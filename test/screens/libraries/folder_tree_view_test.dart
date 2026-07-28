@@ -8,14 +8,13 @@ import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/folder_tree_view.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
-import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/backend_client_fixtures.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 void main() {
@@ -62,12 +61,7 @@ void main() {
         );
       }),
     );
-    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
-    addTearDown(() {
-      provider.dispose();
-      manager.dispose();
-    });
+    final provider = testMultiServer(clients: [client]).provider;
 
     await tester.pumpWidget(
       ChangeNotifierProvider<MultiServerProvider>.value(

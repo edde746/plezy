@@ -14,25 +14,28 @@ internal class PlayerChannelBinding(
   private val streamHandler: EventChannel.StreamHandler,
   private val logTag: String
 ) {
-  private lateinit var methodChannel: MethodChannel
-  private lateinit var eventChannel: EventChannel
+  private var methodChannel: MethodChannel? = null
+  private var eventChannel: EventChannel? = null
   private var eventSink: EventChannel.EventSink? = null
 
   val mainHandler = Handler(Looper.getMainLooper())
 
   fun attach(binding: FlutterPlugin.FlutterPluginBinding) {
-    methodChannel = MethodChannel(binding.binaryMessenger, channelBase)
-    methodChannel.setMethodCallHandler(methodCallHandler)
+    methodChannel = MethodChannel(binding.binaryMessenger, channelBase).also {
+      it.setMethodCallHandler(methodCallHandler)
+    }
 
-    eventChannel = EventChannel(binding.binaryMessenger, "$channelBase/events")
-    eventChannel.setStreamHandler(streamHandler)
-
+    eventChannel = EventChannel(binding.binaryMessenger, "$channelBase/events").also {
+      it.setStreamHandler(streamHandler)
+    }
     Log.d(logTag, "Attached to engine")
   }
 
   fun detach() {
-    methodChannel.setMethodCallHandler(null)
-    eventChannel.setStreamHandler(null)
+    methodChannel?.setMethodCallHandler(null)
+    eventChannel?.setStreamHandler(null)
+    methodChannel = null
+    eventChannel = null
     eventSink = null
     Log.d(logTag, "Detached from engine")
   }

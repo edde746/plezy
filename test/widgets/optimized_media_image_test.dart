@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -54,6 +55,62 @@ void main() {
     expect(widgetCached.maxHeight, isNull);
   });
 
+  testWidgets('artwork dim tints image and fallback paint', (tester) async {
+    final artworkDim = AnimationController(vsync: tester);
+    addTearDown(artworkDim.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 160,
+          height: 90,
+          child: OptimizedMediaImage.thumb(
+            imagePath: 'https://example.invalid/dimmed-thumb.jpg',
+            width: 160,
+            height: 90,
+            artworkDim: artworkDim,
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.widget<Image>(find.byType(Image)).color, isNull);
+
+    artworkDim.value = 0.3;
+    await tester.pump();
+
+    final dimmedImage = tester.widget<Image>(find.byType(Image));
+    expect(dimmedImage.color, Colors.black.withValues(alpha: 0.3));
+    expect(dimmedImage.colorBlendMode, BlendMode.srcATop);
+
+    artworkDim.value = 0;
+    await tester.pump();
+
+    final restoredImage = tester.widget<Image>(find.byType(Image));
+    expect(restoredImage.color, isNull);
+    expect(restoredImage.colorBlendMode, isNull);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SizedBox(
+          width: 160,
+          height: 90,
+          child: OptimizedMediaImage.thumb(imagePath: null, width: 160, height: 90, artworkDim: artworkDim),
+        ),
+      ),
+    );
+    final placeholderFinder = find.descendant(of: find.byType(OptimizedMediaImage), matching: find.byType(Container));
+    final baseColor = tester.widget<Container>(placeholderFinder).color!;
+
+    artworkDim.value = 0.3;
+    await tester.pump();
+
+    expect(
+      tester.widget<Container>(placeholderFinder).color,
+      Color.alphaBlend(Colors.black.withValues(alpha: 0.3), baseColor),
+    );
+  });
+
   testWidgets('failed image placeholders keep explicit dimensions in loose layouts', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -87,6 +144,102 @@ void main() {
     final placeholder = find.descendant(of: find.byType(OptimizedMediaImage), matching: find.byType(Container));
     expect(placeholder, findsOneWidget);
     expect(tester.getSize(placeholder), const Size(96, 96));
+  });
+
+  testWidgets('local resolver rejects stale path completions and disposal completions', (tester) async {
+    final checks = <String, Completer<bool>>{};
+    final probes = <String, int>{};
+    var path = '/artwork/a.png';
+    late StateSetter rebuild;
+    Future<bool> fileExists(File file) {
+      probes.update(file.path, (count) => count + 1, ifAbsent: () => 1);
+      return (checks[file.path] ??= Completer<bool>()).future;
+    }
+
+    Widget resolutionBuilder(BuildContext context, LocalFileResolution resolution, File? file) {
+      return Text('${resolution.name}:${file?.path ?? path}');
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return ResolvedLocalFile(path: path, fileExists: fileExists, builder: resolutionBuilder);
+          },
+        ),
+      ),
+    );
+    expect(find.text('pending:/artwork/a.png'), findsOneWidget);
+
+    rebuild(() => path = '/artwork/b.png');
+    await tester.pump();
+    rebuild(() {});
+    await tester.pump();
+    expect(find.text('pending:/artwork/b.png'), findsOneWidget);
+    expect(probes['/artwork/b.png'], 1);
+
+    checks['/artwork/a.png']!.complete(true);
+    await tester.pump();
+    expect(find.text('pending:/artwork/b.png'), findsOneWidget);
+
+    checks['/artwork/b.png']!.complete(true);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('present:/artwork/b.png'), findsOneWidget);
+
+    rebuild(() => path = '/artwork/c.png');
+    await tester.pump();
+    await tester.pumpWidget(const SizedBox.shrink());
+    checks['/artwork/c.png']!.complete(true);
+    await tester.pump();
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('local resolver caches confirmed missing paths only when requested', (tester) async {
+    final probes = <String, int>{};
+    var path = '/artwork/missing-a.png';
+    late StateSetter rebuild;
+    Future<bool> fileExists(File file) {
+      probes.update(file.path, (count) => count + 1, ifAbsent: () => 1);
+      return Future<bool>.value(false);
+    }
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StatefulBuilder(
+          builder: (context, setState) {
+            rebuild = setState;
+            return ResolvedLocalFile(
+              path: path,
+              cacheMissing: true,
+              fileExists: fileExists,
+              builder: (context, resolution, file) => Text('${resolution.name}:$path'),
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('missing:/artwork/missing-a.png'), findsOneWidget);
+    expect(probes['/artwork/missing-a.png'], 1);
+
+    rebuild(() {});
+    await tester.pump();
+    rebuild(() {});
+    await tester.pump();
+    expect(probes['/artwork/missing-a.png'], 1);
+
+    rebuild(() => path = '/artwork/missing-b.png');
+    await tester.pump();
+    await tester.pump();
+    expect(probes['/artwork/missing-b.png'], 1);
+
+    rebuild(() => path = '/artwork/missing-a.png');
+    await tester.pump();
+    expect(find.text('missing:/artwork/missing-a.png'), findsOneWidget);
+    expect(probes['/artwork/missing-a.png'], 1);
   });
 
   testWidgets('same local artwork path re-resolves after the file appears', (tester) async {

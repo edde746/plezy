@@ -39,18 +39,22 @@ class _DelayedCountingHttpClient extends http.BaseClient {
 
 void main() {
   late Directory tmpRoot;
+  late PathProviderPlatform previousPathProvider;
 
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
     tmpRoot = await Directory.systemTemp.createTemp('download_artwork_service_test_');
+    previousPathProvider = PathProviderPlatform.instance;
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
   });
 
   tearDown(() async {
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
   });
 
@@ -115,13 +119,42 @@ void main() {
     final filePath = await service.localPath(ServerId('srv'), rawPath);
     await File(filePath).writeAsString('<html>not an image</html>');
 
-    await service.downloadSingleArtwork(
-      ServerId('srv'),
-      DownloadArtworkSpec(localKey: artworkStorageKey(rawPath), url: 'https://example.test/logo.png'),
+    expect(
+      await service.downloadSingleArtwork(
+        ServerId('srv'),
+        DownloadArtworkSpec(localKey: artworkStorageKey(rawPath), url: 'https://example.test/logo.png'),
+      ),
+      isTrue,
     );
 
     expect(await File(filePath).readAsBytes(), body);
     expect(await service.existsUsable(ServerId('srv'), rawPath), isTrue);
+  });
+
+  test('artwork settlement reports HTTP and invalid-image failures', () async {
+    final settings = await SettingsService.getInstance();
+    final storage = DownloadStorageService.instance;
+    await storage.initialize(settings);
+    final missingService = DownloadArtworkService(
+      storageService: storage,
+      http: MediaServerHttpClient(client: FakeHttpClient(404, utf8.encode('not found'))),
+    );
+    final invalidService = DownloadArtworkService(
+      storageService: storage,
+      http: MediaServerHttpClient(client: FakeHttpClient(200, utf8.encode('<html>error</html>'))),
+    );
+
+    final missingSettled = await missingService.ensureArtworkSpecs(ServerId('srv'), const [
+      DownloadArtworkSpec(localKey: '/missing.jpg', url: 'https://example.test/missing.jpg'),
+    ]);
+    final invalidSettled = await invalidService.ensureArtworkSpecs(ServerId('srv'), const [
+      DownloadArtworkSpec(localKey: '/invalid.jpg', url: 'https://example.test/invalid.jpg'),
+    ]);
+
+    expect(missingSettled, isFalse);
+    expect(invalidSettled, isFalse);
+    expect(await missingService.existsUsable(ServerId('srv'), '/missing.jpg'), isFalse);
+    expect(await invalidService.existsUsable(ServerId('srv'), '/invalid.jpg'), isFalse);
   });
 
   test('downloadSingleArtwork serializes duplicate writes to the same local file', () async {
@@ -142,7 +175,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     httpClient.release.complete();
 
-    await Future.wait([first, second]);
+    expect(await Future.wait([first, second]), everyElement(isTrue));
 
     expect(httpClient.sends, 1);
     expect(await service.existsUsable(ServerId('srv'), rawPath), isTrue);

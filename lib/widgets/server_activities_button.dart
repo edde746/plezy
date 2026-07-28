@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../exceptions/media_server_exceptions.dart';
 import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import '../models/plex/plex_activity.dart';
 import '../providers/multi_server_provider.dart';
+import '../utils/media_server_http_client.dart';
 
 class ServerActivitiesButton extends StatefulWidget {
   const ServerActivitiesButton({super.key});
@@ -43,6 +45,8 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   OverlayEntry? _overlayEntry;
   final _panelNotifier = ValueNotifier<_PanelData>(_PanelData.loading);
   Timer? _pollTimer;
+  AbortController? _activeLoadAbort;
+  int _loadGeneration = 0;
 
   @override
   void deactivate() {
@@ -60,6 +64,10 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   void _removeOverlay() {
     _pollTimer?.cancel();
     _pollTimer = null;
+    _loadGeneration++;
+    final activeLoadAbort = _activeLoadAbort;
+    _activeLoadAbort = null;
+    activeLoadAbort?.abort();
     _overlayEntry?.remove();
     _overlayEntry = null;
   }
@@ -84,10 +92,10 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       builder: (_) => _buildOverlay(right: right, top: top),
     );
     Overlay.of(context).insert(_overlayEntry!);
-    _fetchActivities();
+    _startRefresh(silent: false);
   }
 
-  Future<List<_ServerResult>> _loadFromServers() async {
+  Future<List<_ServerResult>> _loadFromServers(AbortController abort) async {
     final multiServer = Provider.of<MultiServerProvider>(context, listen: false);
     final serverIds = multiServer.onlineServerIds;
 
@@ -95,7 +103,7 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       // Plex-only: `/activities` API is Plex-specific.
       final client = multiServer.getPlexClientForServer(ServerId(serverId));
       if (client == null) return null;
-      final activities = await client.getActivities();
+      final activities = await client.getActivities(abort: abort);
       return _ServerResult(serverId: serverId, serverName: client.serverName ?? serverId, activities: activities);
     });
 
@@ -103,32 +111,70 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     return rawResults.whereType<_ServerResult>().toList();
   }
 
-  Future<void> _fetchActivities() async {
-    try {
-      final results = await _loadFromServers();
-      if (!mounted) return;
-      _panelNotifier.value = _PanelData(fetchState: _FetchState.loaded, results: results);
-      _startPolling();
-    } catch (_) {
-      if (!mounted) return;
-      _panelNotifier.value = const _PanelData(fetchState: _FetchState.error, results: []);
-    }
-  }
+  void _startRefresh({required bool silent}) {
+    if (!mounted || _overlayEntry == null) return;
 
-  void _startPolling() {
     _pollTimer?.cancel();
-    if (mounted && _overlayEntry != null) {
-      _pollTimer = Timer.periodic(const Duration(seconds: 3), (_) => _silentRefresh());
+    _pollTimer = null;
+    final generation = ++_loadGeneration;
+    final supersededAbort = _activeLoadAbort;
+    final abort = AbortController();
+    _activeLoadAbort = abort;
+    supersededAbort?.abort();
+
+    if (!silent) {
+      _panelNotifier.value = _PanelData.loading;
+    }
+    unawaited(_runRefresh(generation: generation, abort: abort, silent: silent));
+  }
+
+  Future<void> _runRefresh({required int generation, required AbortController abort, required bool silent}) async {
+    var scheduleNext = false;
+    try {
+      final results = await _loadFromServers(abort);
+      if (!_ownsLoad(generation, abort)) return;
+      _panelNotifier.value = _PanelData(fetchState: _FetchState.loaded, results: results);
+      scheduleNext = true;
+    } on MediaServerHttpException catch (error) {
+      if (error.isCancellation || !_ownsLoad(generation, abort)) return;
+      if (silent) {
+        scheduleNext = true;
+      } else {
+        _panelNotifier.value = const _PanelData(fetchState: _FetchState.error, results: []);
+      }
+    } catch (_) {
+      if (!_ownsLoad(generation, abort)) return;
+      if (silent) {
+        scheduleNext = true;
+      } else {
+        _panelNotifier.value = const _PanelData(fetchState: _FetchState.error, results: []);
+      }
+    } finally {
+      if (identical(_activeLoadAbort, abort)) {
+        _activeLoadAbort = null;
+        if (scheduleNext && _isCurrentGeneration(generation)) {
+          _schedulePoll(generation);
+        }
+      }
     }
   }
 
-  Future<void> _silentRefresh() async {
-    if (!mounted) return;
-    try {
-      final results = await _loadFromServers();
-      if (!mounted) return;
-      _panelNotifier.value = _PanelData(fetchState: _FetchState.loaded, results: results);
-    } catch (_) {}
+  bool _ownsLoad(int generation, AbortController abort) {
+    return _isCurrentGeneration(generation) && identical(_activeLoadAbort, abort);
+  }
+
+  bool _isCurrentGeneration(int generation) {
+    return mounted && _overlayEntry != null && _loadGeneration == generation;
+  }
+
+  void _schedulePoll(int generation) {
+    _pollTimer?.cancel();
+    if (!_isCurrentGeneration(generation)) return;
+    _pollTimer = Timer(const Duration(seconds: 3), () {
+      if (!_isCurrentGeneration(generation)) return;
+      _pollTimer = null;
+      _startRefresh(silent: true);
+    });
   }
 
   Future<void> _cancelActivity(ServerId serverId, String uuid) async {
@@ -142,10 +188,7 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       return;
     }
     if (!mounted || _overlayEntry == null) return;
-    _pollTimer?.cancel();
-    _pollTimer = null;
-    _panelNotifier.value = _PanelData.loading;
-    unawaited(_fetchActivities());
+    _startRefresh(silent: false);
   }
 
   Widget _buildOverlay({required double right, required double top}) {

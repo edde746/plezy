@@ -374,14 +374,37 @@ void main() {
       expect(info.trickplayByWidth![320]!.width, 320);
     });
 
-    test('falls back to first nested entry when source id not present as key', () {
+    test('does not attach another source trickplay when selected source is absent', () {
       final info = jellyfinMediaSourceToMediaSourceInfo(
         {'Id': 'unknown', 'MediaStreams': []},
         trickplay: {
           'src-1': {'160': _info(width: 160, height: 90, tw: 4, th: 4, count: 16, interval: 10000)},
         },
       );
+      expect(info.mediaSourceId, 'unknown');
+      expect(info.trickplayByWidth, isNull);
+    });
+
+    test('source-less media accepts exactly one nested trickplay candidate', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo(
+        {'MediaStreams': []},
+        trickplay: {
+          'src-1': {'160': _info(width: 160, height: 90, tw: 4, th: 4, count: 16, interval: 10000)},
+        },
+      );
       expect(info.trickplayByWidth?.keys.single, 160);
+      expect(info.trickplayByWidth?[160]?.interval, 10000);
+    });
+
+    test('source-less media rejects ambiguous nested trickplay candidates', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo(
+        {'MediaStreams': []},
+        trickplay: {
+          'src-1': {'160': _info(width: 160, height: 90, tw: 4, th: 4, count: 16, interval: 10000)},
+          'src-2': {'320': _info(width: 320, height: 180, tw: 4, th: 4, count: 16, interval: 10000)},
+        },
+      );
+      expect(info.trickplayByWidth, isNull);
     });
 
     test('returns null trickplayByWidth when manifest missing', () {

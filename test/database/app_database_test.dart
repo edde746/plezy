@@ -1,14 +1,40 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-import 'package:plezy/media/ids.dart';
-
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/io_client.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
+import 'package:plezy/database/tvos_database_recovery_store.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
+import 'package:plezy/services/credential_vault.dart';
+import 'package:plezy/services/download_manager_service.dart';
+import 'package:plezy/services/download_storage_service.dart';
+import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/utils/active_client_scope.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+import '../test_helpers/download_fixtures.dart';
+import '../test_helpers/prefs.dart';
+
+final class _EnsureOpenTrackingInterceptor extends QueryInterceptor {
+  var calls = 0;
+  var completed = false;
+
+  @override
+  Future<bool> ensureOpen(QueryExecutor executor, QueryExecutorUser user) async {
+    calls++;
+    final result = await executor.ensureOpen(user);
+    completed = true;
+    return result;
+  }
+}
 
 void main() {
   final suite = _AppDatabaseTestSuite();
@@ -56,8 +82,8 @@ class _AppDatabaseTestSuite {
         // v20 dropped the profile_id FK so virtual Plex Home profiles can
         // persist join rows without a parent `profiles` row. Profile deletion
         // instead cleans up join rows explicitly (via the teardown flow's
-        // removeAllProfileConnectionsAndCleanup) before deleting the profile,
-        // so the cascade isn't needed.
+        // ProfileConnectionCleanup.removeAllProfileConnections) before deleting
+        // the profile, so the cascade isn't needed.
         final now = DateTime.now().millisecondsSinceEpoch;
         await db
             .into(db.connections)
@@ -128,6 +154,676 @@ class _AppDatabaseTestSuite {
               .customSelect("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_connections_kind'")
               .get();
           expect(rows, hasLength(1));
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+      test('v17 migration scopes pinned Plex metadata for every owner and removes bare rows', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v17_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+        AppDatabase? reopenedAgain;
+
+        Future<void> expectMigratedState(AppDatabase database) async {
+          final cacheKeys = (await database.select(database.apiCache).get()).map((row) => row.cacheKey).toSet();
+          expect(cacheKeys, {
+            'plex-server:/library/metadata/item/extras',
+            'plex-server:/library/sections/1/all',
+            'plex-server/~plex-profile/profile-a:/library/metadata/item',
+            'plex-server/~plex-profile/profile-b:/library/metadata/item',
+            'plex-server/~plex-profile/profile-a:/library/metadata/item/children',
+            'plex-server/~plex-profile/profile-b:/library/metadata/item/children',
+          });
+          final downloads = await database.select(database.downloadedMedia).get();
+          expect(downloads.map((row) => row.globalKey), ['plex-server:item']);
+          expect(await database.getDownloadOwnerKeysForProfile('profile-a'), {'plex-server:item'});
+          expect(await database.getDownloadOwnerKeysForProfile('profile-b'), {'plex-server:item'});
+          expect(await database.getDownloadOwnerCount('plex-server:item'), 2);
+        }
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.apiCache).get();
+          final database = seeded;
+          Future<void> insertCache(String key, {required bool pinned}) {
+            return database
+                .into(database.apiCache)
+                .insert(ApiCacheCompanion.insert(cacheKey: key, data: '{}', pinned: Value(pinned)));
+          }
+
+          await insertCache('plex-server:/library/metadata/item', pinned: true);
+          await insertCache('plex-server:/library/metadata/item/children', pinned: true);
+          await insertCache('plex-server:/library/metadata/unpinned', pinned: false);
+          await insertCache('plex-server:/library/metadata/item/extras', pinned: true);
+          await insertCache('plex-server:/library/sections/1/all', pinned: true);
+          await insertCache('plex-server/~plex-profile/profile-a:/library/metadata/item', pinned: true);
+          await seeded
+              .into(seeded.downloadedMedia)
+              .insert(
+                DownloadedMediaCompanion.insert(
+                  serverId: 'plex-server',
+                  ratingKey: 'item',
+                  globalKey: 'plex-server:item',
+                  type: 'movie',
+                  status: DownloadStatus.completed.index,
+                  videoFilePath: const Value('/synthetic/download/item.mkv'),
+                ),
+              );
+          await seeded.addDownloadOwner(profileId: 'profile-a', globalKey: 'plex-server:item');
+          await seeded.addDownloadOwner(profileId: 'profile-b', globalKey: 'plex-server:item');
+          await seeded.customStatement('PRAGMA user_version = 16');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          await expectMigratedState(reopened);
+          await reopened.close();
+          reopened = null;
+
+          reopenedAgain = AppDatabase.forTesting(NativeDatabase(file));
+          await expectMigratedState(reopenedAgain);
+        } finally {
+          await reopenedAgain?.close();
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+      test(
+        'schema-v13 ownerless Plex download upgrades through sanitized transfer scope and stays adoptable on retry',
+        () async {
+          await db.close();
+          final tempDir = await Directory.systemTemp.createTemp('plezy_db_v13_plex_transfer_test_');
+          final file = File('${tempDir.path}/plezy_downloads.db');
+          AppDatabase? seeded;
+          AppDatabase? reopened;
+          AppDatabase? reopenedAgain;
+          DownloadManagerService? manager;
+          MediaServerHttpClient? testHttp;
+          const transferScope = 'plex-server/~plex-transfer';
+          const privateFields = {
+            'lastRatedAt',
+            'lastViewedAt',
+            'skipCount',
+            'userRating',
+            'viewCount',
+            'viewOffset',
+            'viewedLeafCount',
+          };
+          final leafPayload = jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'viewOffset': 9000,
+              'Metadata': [
+                {
+                  'ratingKey': 'leaf',
+                  'parentRatingKey': 'season',
+                  'type': 'episode',
+                  'title': 'Offline leaf',
+                  'lastRatedAt': 1,
+                  'lastViewedAt': 2,
+                  'skipCount': 3,
+                  'userRating': 8.5,
+                  'viewCount': 4,
+                  'viewOffset': 5000,
+                  'viewedLeafCount': 6,
+                  'nested': {'viewOffset': 777, 'safe': 'kept'},
+                },
+              ],
+            },
+          });
+          final parentPayload = jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {'ratingKey': 'season', 'type': 'season', 'title': 'Offline parent', 'viewCount': 5},
+              ],
+            },
+          });
+
+          Future<void> expectTransferState(AppDatabase database) async {
+            final cacheRows = await database.select(database.apiCache).get();
+            expect(cacheRows.map((row) => row.cacheKey).toSet(), {
+              '$transferScope:/library/metadata/leaf',
+              '$transferScope:/library/metadata/season',
+              'plex-server:/library/sections/1/all',
+            });
+            for (final row in cacheRows.where((row) => row.cacheKey.startsWith(transferScope))) {
+              final payload = jsonDecode(row.data);
+              expect(_recursiveJsonKeys(payload).intersection(privateFields), isEmpty);
+              expect(row.pinned, isTrue);
+            }
+            final transferredLeaf = cacheRows.singleWhere(
+              (row) => row.cacheKey == '$transferScope:/library/metadata/leaf',
+            );
+            final leaf = jsonDecode(transferredLeaf.data) as Map<String, dynamic>;
+            final leafMetadata =
+                ((leaf['MediaContainer'] as Map<String, dynamic>)['Metadata'] as List).single as Map<String, dynamic>;
+            expect(leafMetadata['title'], 'Offline leaf');
+            expect((leafMetadata['nested'] as Map<String, dynamic>)['safe'], 'kept');
+
+            final transferredParent = cacheRows.singleWhere(
+              (row) => row.cacheKey == '$transferScope:/library/metadata/season',
+            );
+            final parent = jsonDecode(transferredParent.data) as Map<String, dynamic>;
+            final parentMetadata =
+                ((parent['MediaContainer'] as Map<String, dynamic>)['Metadata'] as List).single as Map<String, dynamic>;
+            expect(parentMetadata['title'], 'Offline parent');
+
+            final download = await database.select(database.downloadedMedia).getSingle();
+            expect(download.globalKey, 'plex-server:leaf');
+            expect(download.status, DownloadStatus.completed.index);
+            expect(download.videoFilePath, '/offline/leaf.mkv');
+            expect(download.clientScopeId, transferScope);
+          }
+
+          try {
+            seeded = AppDatabase.forTesting(NativeDatabase(file));
+            await _createSchemaV13Fixture(seeded);
+            await seeded.customStatement(
+              '''
+                INSERT INTO downloaded_media (
+                  server_id, rating_key, global_key, type, parent_rating_key, status, video_file_path
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+              ''',
+              [
+                'plex-server',
+                'leaf',
+                'plex-server:leaf',
+                'episode',
+                'season',
+                DownloadStatus.completed.index,
+                '/offline/leaf.mkv',
+              ],
+            );
+            for (final entry in {
+              'plex-server:/library/metadata/leaf': leafPayload,
+              'plex-server:/library/metadata/season': parentPayload,
+              'plex-server:/library/metadata/orphan': jsonEncode({
+                'MediaContainer': {
+                  'Metadata': [
+                    {'ratingKey': 'orphan', 'title': 'Must be removed'},
+                  ],
+                },
+              }),
+              'plex-server:/library/sections/1/all': '{}',
+            }.entries) {
+              await seeded.customStatement('INSERT INTO api_cache (cache_key, data, pinned) VALUES (?, ?, 1)', [
+                entry.key,
+                entry.value,
+              ]);
+            }
+            await seeded.close();
+            seeded = null;
+
+            reopened = AppDatabase.forTesting(NativeDatabase(file));
+            await expectTransferState(reopened);
+            expect(await reopened.select(reopened.downloadOwners).get(), isEmpty);
+
+            // Exercise the v17 statements a second time against their own
+            // output, matching an interrupted upgrade whose version write did
+            // not survive.
+            await reopened.customStatement('PRAGMA user_version = 16');
+            await reopened.close();
+            reopened = null;
+
+            reopenedAgain = AppDatabase.forTesting(NativeDatabase(file));
+            await expectTransferState(reopenedAgain);
+            expect(await reopenedAgain.select(reopenedAgain.downloadOwners).get(), isEmpty);
+
+            for (final profileId in const ['profile-a', 'profile-b']) {
+              await reopenedAgain
+                  .into(reopenedAgain.profiles)
+                  .insert(
+                    ProfilesCompanion.insert(
+                      id: profileId,
+                      kind: 'local',
+                      displayName: profileId,
+                      configJson: '{}',
+                      createdAt: 1000,
+                    ),
+                  );
+            }
+            await reopenedAgain.adoptLegacyDownloadsForProfile('profile-a');
+            await reopenedAgain.adoptLegacyDownloadsForProfile('profile-a');
+            await reopenedAgain.adoptLegacyDownloadsForProfile('profile-b');
+
+            final owners = await reopenedAgain.select(reopenedAgain.downloadOwners).get();
+            expect(owners, hasLength(1));
+            expect(owners.single.profileId, 'profile-a');
+            expect(owners.single.globalKey, 'plex-server:leaf');
+            expect(owners.single.backend, 'plex');
+            expect(owners.single.clientScopeId, transferScope);
+            expect((await reopenedAgain.getDownloadedMedia('plex-server:leaf'))?.clientScopeId, transferScope);
+            PlexApiCache.initialize(reopenedAgain);
+            testHttp = MediaServerHttpClient(client: IOClient());
+            manager = DownloadManagerService(
+              database: reopenedAgain,
+              storageService: DownloadStorageService.instance,
+              clientResolver: (_, {clientScopeId}) => null,
+              http: testHttp,
+            );
+            await manager.adoptTransferredPlexMetadataForProfile('profile-a');
+            await manager.adoptTransferredPlexMetadataForProfile('profile-a');
+
+            const profileScope = 'plex-server/~plex-profile/profile-a';
+            final adoptedOwner = await reopenedAgain.getDownloadOwner(
+              profileId: 'profile-a',
+              globalKey: 'plex-server:leaf',
+            );
+            expect(adoptedOwner?.backend, 'plex');
+            expect(adoptedOwner?.clientScopeId, profileScope);
+            expect((await reopenedAgain.getDownloadedMedia('plex-server:leaf'))?.clientScopeId, profileScope);
+            final adoptedCacheRows = await reopenedAgain.select(reopenedAgain.apiCache).get();
+            expect(adoptedCacheRows.map((row) => row.cacheKey).toSet(), {
+              '$profileScope:/library/metadata/leaf',
+              '$profileScope:/library/metadata/season',
+              'plex-server:/library/sections/1/all',
+            });
+            expect(adoptedCacheRows.where((row) => row.cacheKey.startsWith(transferScope)), isEmpty);
+            for (final row in adoptedCacheRows.where((row) => row.cacheKey.startsWith(profileScope))) {
+              expect(_recursiveJsonKeys(jsonDecode(row.data)).intersection(privateFields), isEmpty);
+            }
+          } finally {
+            manager?.dispose();
+            testHttp?.close();
+            await reopenedAgain?.close();
+            await reopened?.close();
+            await seeded?.close();
+            await tempDir.delete(recursive: true);
+            db = AppDatabase.forTesting(NativeDatabase.memory());
+          }
+        },
+      );
+      test('tvOS protects legacy connection and profile tokens before the first recovery snapshot', () async {
+        await db.close();
+        resetSharedPreferencesForTest();
+        CredentialVault.resetKeyForTesting();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_credential_recovery_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        final prefs = await BaseSharedPreferencesService.sharedCache();
+        AppDatabase? seeded;
+        AppDatabase? opened;
+        const accountToken = 'legacy-account-token-canary';
+        const serverToken = 'legacy-server-token-canary';
+        const profileToken = 'legacy-profile-token-canary';
+
+        Future<void> expectProtectedConfig(String configJson) async {
+          final config = jsonDecode(configJson) as Map<String, dynamic>;
+          final protectedAccountToken = config['accountToken'] as String;
+          final protectedServerToken =
+              ((config['servers'] as List).single as Map<String, dynamic>)['accessToken'] as String;
+          expect(CredentialVault.isProtected(protectedAccountToken), isTrue);
+          expect(CredentialVault.isProtected(protectedServerToken), isTrue);
+          expect(await CredentialVault.reveal(protectedAccountToken), accountToken);
+          expect(await CredentialVault.reveal(protectedServerToken), serverToken);
+        }
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.connections).get();
+          await seeded
+              .into(seeded.connections)
+              .insert(
+                ConnectionsCompanion.insert(
+                  id: 'plex-account',
+                  kind: 'plex',
+                  displayName: 'Legacy Plex',
+                  configJson: jsonEncode({
+                    'accountToken': accountToken,
+                    'servers': [
+                      {'machineIdentifier': 'plex-server', 'accessToken': serverToken},
+                    ],
+                  }),
+                  createdAt: 1000,
+                ),
+              );
+          await seeded
+              .into(seeded.profiles)
+              .insert(
+                ProfilesCompanion.insert(
+                  id: 'profile-a',
+                  kind: 'local',
+                  displayName: 'Profile A',
+                  configJson: '{}',
+                  createdAt: 1000,
+                ),
+              );
+          await seeded
+              .into(seeded.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-a',
+                  connectionId: 'plex-account',
+                  userToken: const Value(profileToken),
+                  userIdentifier: 'plex-user',
+                ),
+              );
+          await seeded.close();
+          seeded = null;
+
+          final bootstrap = await AppDatabase.open(isTvos: true, databaseFile: file, preferences: prefs);
+          opened = bootstrap.database;
+          expect(bootstrap.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
+
+          final connectionRow = await opened.select(opened.connections).getSingle();
+          final profileConnectionRow = await opened.select(opened.profileConnections).getSingle();
+          await expectProtectedConfig(connectionRow.configJson);
+          expect(CredentialVault.isProtected(profileConnectionRow.userToken), isTrue);
+          expect(await CredentialVault.reveal(profileConnectionRow.userToken), profileToken);
+
+          final identityRaw = prefs.getString(TvosDatabaseRecoveryStore.identityKey);
+          expect(identityRaw, isNotNull);
+          expect(identityRaw, isNot(contains(accountToken)));
+          expect(identityRaw, isNot(contains(serverToken)));
+          expect(identityRaw, isNot(contains(profileToken)));
+          final envelope = jsonDecode(identityRaw!) as Map<String, dynamic>;
+          final recoveryRows = envelope['rows'] as Map<String, dynamic>;
+          final snapshotConnection = (recoveryRows['connections'] as List).single as Map<String, dynamic>;
+          final snapshotJoin = (recoveryRows['profileConnections'] as List).single as Map<String, dynamic>;
+          await expectProtectedConfig(snapshotConnection['configJson'] as String);
+          final snapshotProfileToken = snapshotJoin['userToken'] as String;
+          expect(CredentialVault.isProtected(snapshotProfileToken), isTrue);
+          expect(await CredentialVault.reveal(snapshotProfileToken), profileToken);
+        } finally {
+          await opened?.close();
+          await seeded?.close();
+          CredentialVault.resetKeyForTesting();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+      test('v18 migration preserves v17 downloads and adds nullable SAF roots', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v18_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.downloadedMedia).get();
+          await seeded
+              .into(seeded.downloadedMedia)
+              .insert(
+                DownloadedMediaCompanion.insert(
+                  id: const Value(42),
+                  serverId: 'server',
+                  clientScopeId: const Value('scope'),
+                  ratingKey: 'rating',
+                  globalKey: 'server:rating',
+                  type: 'episode',
+                  parentRatingKey: const Value('season'),
+                  grandparentRatingKey: const Value('show'),
+                  status: DownloadStatus.paused.index,
+                  progress: const Value(37),
+                  totalBytes: const Value(900),
+                  downloadedBytes: const Value(333),
+                  videoFilePath: const Value('content://video'),
+                  thumbPath: const Value('artwork-key'),
+                  downloadedAt: const Value(123456),
+                  errorMessage: const Value('retryable'),
+                  retryCount: const Value(2),
+                  bgTaskId: const Value('task'),
+                  mediaIndex: const Value(3),
+                  mediaSourceId: const Value('source'),
+                ),
+              );
+          await seeded.customStatement('ALTER TABLE downloaded_media DROP COLUMN saf_root_uri');
+          await seeded.customStatement('PRAGMA user_version = 17');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final row = await reopened.select(reopened.downloadedMedia).getSingle();
+          expect(row.id, 42);
+          expect(row.serverId, 'server');
+          expect(row.clientScopeId, 'scope');
+          expect(row.ratingKey, 'rating');
+          expect(row.globalKey, 'server:rating');
+          expect(row.type, 'episode');
+          expect(row.parentRatingKey, 'season');
+          expect(row.grandparentRatingKey, 'show');
+          expect(row.status, DownloadStatus.paused.index);
+          expect(row.progress, 37);
+          expect(row.totalBytes, 900);
+          expect(row.downloadedBytes, 333);
+          expect(row.videoFilePath, 'content://video');
+          expect(row.safRootUri, isNull);
+          expect(row.thumbPath, 'artwork-key');
+          expect(row.downloadedAt, 123456);
+          expect(row.errorMessage, 'retryable');
+          expect(row.retryCount, 2);
+          expect(row.bgTaskId, 'task');
+          expect(row.mediaIndex, 3);
+          expect(row.mediaSourceId, 'source');
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+
+      test('v19 migration derives cache scope independently for every download owner', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v19_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.downloadOwners).get();
+          final now = DateTime.now().millisecondsSinceEpoch;
+          for (final id in const [
+            'jf-machine/user-a',
+            'jf-machine/user-b',
+            'jf-machine/user-z',
+            'jf-machine',
+            'jf%_machine/user-exact',
+            'jf-wildXmachine/user-wrong',
+          ]) {
+            await seeded
+                .into(seeded.connections)
+                .insert(
+                  ConnectionsCompanion.insert(
+                    id: id,
+                    kind: 'jellyfin',
+                    displayName: id,
+                    configJson: '{}',
+                    createdAt: now,
+                  ),
+                );
+          }
+          await seeded
+              .into(seeded.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-a',
+                  connectionId: 'jf-machine/user-a',
+                  userIdentifier: 'user-a',
+                ),
+              );
+          await seeded
+              .into(seeded.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-a',
+                  connectionId: 'jf-machine/user-z',
+                  userIdentifier: 'user-z',
+                  isDefault: const Value(true),
+                  lastUsedAt: Value(now),
+                ),
+              );
+          await seeded
+              .into(seeded.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-b',
+                  connectionId: 'jf-machine/user-b',
+                  userIdentifier: 'user-b',
+                ),
+              );
+          await seeded
+              .into(seeded.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-c',
+                  connectionId: 'jf-machine',
+                  userIdentifier: 'user-c',
+                ),
+              );
+          await seeded
+              .into(seeded.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-literal',
+                  connectionId: 'jf%_machine/user-exact',
+                  userIdentifier: 'user-exact',
+                ),
+              );
+          await seeded
+              .into(seeded.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-unrelated',
+                  connectionId: 'jf-wildXmachine/user-wrong',
+                  userIdentifier: 'user-wrong',
+                ),
+              );
+          await seeded
+              .into(seeded.downloadedMedia)
+              .insert(
+                DownloadedMediaCompanion.insert(
+                  serverId: 'plex-server',
+                  clientScopeId: const Value('plex-server/~plex-profile/profile-a'),
+                  ratingKey: 'plex-item',
+                  globalKey: 'plex-server:plex-item',
+                  type: 'movie',
+                  status: DownloadStatus.completed.index,
+                ),
+              );
+          await seeded
+              .into(seeded.downloadedMedia)
+              .insert(
+                DownloadedMediaCompanion.insert(
+                  serverId: 'jf-machine',
+                  clientScopeId: const Value('jf-machine/user-a'),
+                  ratingKey: 'jf-item',
+                  globalKey: 'jf-machine:jf-item',
+                  type: 'movie',
+                  status: DownloadStatus.completed.index,
+                ),
+              );
+          await seeded
+              .into(seeded.downloadedMedia)
+              .insert(
+                DownloadedMediaCompanion.insert(
+                  serverId: 'jf%_machine',
+                  clientScopeId: const Value('jf%_machine/legacy-user'),
+                  ratingKey: 'literal-item',
+                  globalKey: 'jf%_machine:literal-item',
+                  type: 'movie',
+                  status: DownloadStatus.completed.index,
+                ),
+              );
+          for (final profileId in const ['profile-a', 'profile-b', 'profile-c']) {
+            await seeded.addDownloadOwner(profileId: profileId, globalKey: 'plex-server:plex-item');
+            await seeded.addDownloadOwner(profileId: profileId, globalKey: 'jf-machine:jf-item');
+          }
+          await seeded.addDownloadOwner(profileId: 'profile-literal', globalKey: 'jf%_machine:literal-item');
+          await seeded.addDownloadOwner(profileId: 'profile-unrelated', globalKey: 'jf%_machine:literal-item');
+          await seeded.customStatement('ALTER TABLE download_owners DROP COLUMN backend');
+          await seeded.customStatement('ALTER TABLE download_owners DROP COLUMN client_scope_id');
+          await seeded.customStatement('PRAGMA user_version = 18');
+          await seeded.close();
+          seeded = null;
+
+          resetSharedPreferencesForTest();
+          final prefs = await BaseSharedPreferencesService.sharedCache();
+          final openTracker = _EnsureOpenTrackingInterceptor();
+          final bootstrap = await AppDatabase.open(
+            isTvos: false,
+            databaseFile: file,
+            preferences: prefs,
+            executorFactory: (databaseFile) => NativeDatabase(databaseFile).interceptWith(openTracker),
+          );
+          reopened = bootstrap.database;
+          expect(openTracker.calls, greaterThanOrEqualTo(1));
+          expect(openTracker.completed, isTrue);
+          final owners = await reopened.select(reopened.downloadOwners).get();
+          DownloadOwnerItem owner(String profileId, String globalKey) =>
+              owners.singleWhere((row) => row.profileId == profileId && row.globalKey == globalKey);
+
+          expect(owner('profile-a', 'plex-server:plex-item').backend, 'plex');
+          expect(owner('profile-a', 'plex-server:plex-item').clientScopeId, 'plex-server/~plex-profile/profile-a');
+          expect(owner('profile-b', 'plex-server:plex-item').backend, 'plex');
+          expect(owner('profile-b', 'plex-server:plex-item').clientScopeId, 'plex-server/~plex-profile/profile-b');
+          expect(owner('profile-a', 'jf-machine:jf-item').backend, 'jellyfin');
+          expect(owner('profile-a', 'jf-machine:jf-item').clientScopeId, 'jf-machine/user-z');
+          expect(owner('profile-b', 'jf-machine:jf-item').backend, 'jellyfin');
+          expect(owner('profile-b', 'jf-machine:jf-item').clientScopeId, 'jf-machine/user-b');
+          expect(owner('profile-c', 'jf-machine:jf-item').backend, 'jellyfin');
+          expect(owner('profile-c', 'jf-machine:jf-item').clientScopeId, 'jf-machine/user-c');
+          expect(owner('profile-literal', 'jf%_machine:literal-item').backend, 'jellyfin');
+          expect(owner('profile-literal', 'jf%_machine:literal-item').clientScopeId, 'jf%_machine/user-exact');
+          expect(owner('profile-unrelated', 'jf%_machine:literal-item').backend, isNull);
+          expect(owner('profile-unrelated', 'jf%_machine:literal-item').clientScopeId, isNull);
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
+      test('v20 migration creates sync download associations without claiming legacy rules', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v20_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.syncRuleDownloads).get();
+          await seeded.insertSyncRule(
+            profileId: 'profile-a',
+            serverId: ServerId('server'),
+            ratingKey: 'playlist',
+            globalKey: 'profile-a|server:playlist',
+            targetType: 'playlist',
+            episodeCount: 0,
+          );
+          await seeded.customStatement('DROP TABLE sync_rule_downloads');
+          await seeded.customStatement('ALTER TABLE sync_rules DROP COLUMN download_links_initialized');
+          await seeded.customStatement('PRAGMA user_version = 19');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final legacyRule = await reopened.getSyncRule('profile-a|server:playlist');
+          expect(legacyRule, isNotNull);
+          expect(legacyRule!.downloadLinksInitialized, isFalse);
+          expect(await reopened.select(reopened.syncRuleDownloads).get(), isEmpty);
+
+          await reopened.insertDownload(
+            serverId: ServerId('server'),
+            ratingKey: 'episode',
+            globalKey: 'server:episode',
+            type: 'episode',
+            status: DownloadStatus.completed.index,
+          );
+          await reopened.associateSyncRuleDownload(legacyRule, 'server:episode');
+          expect(await reopened.getSyncRuleDownloadLinks(legacyRule.id), hasLength(1));
+
+          await reopened.deleteSyncRule(legacyRule.globalKey);
+          expect(await reopened.getSyncRuleDownloadLinks(legacyRule.id), isEmpty);
         } finally {
           await reopened?.close();
           await seeded?.close();
@@ -211,26 +907,114 @@ class _AppDatabaseTestSuite {
         expect(await target.readAsBytes(), [9, 8, 7]);
       });
 
-      test('copy failure leaves source intact and never throws', () async {
+      test('interrupted fallback copy leaves no canonical partial file and retry succeeds', () async {
         final source = File('${tempDir.path}/Documents/plezy_downloads.db');
-        // Point target at a non-existent directory so copy fails. The
-        // helper must swallow the error — splash boot must never see it.
-        final target = File('${tempDir.path}/does-not-exist/AppData/plezy_downloads.db');
+        final target = File('${tempDir.path}/AppData/plezy_downloads.db');
+        const sourceBytes = [0xAA, 0xBB, 0xCC, 0xDD];
         await source.parent.create(recursive: true);
-        await source.writeAsBytes([0xAA, 0xBB]);
+        await target.parent.create(recursive: true);
+        await source.writeAsBytes(sourceBytes);
 
+        File? partialTemporary;
         await expectLater(
           migrateLegacyDesktopDatabase(
             sourceOverride: source,
             target: target,
             renameOverride: (_, _) => throw const FileSystemException('cross-drive', ''),
+            copyOverride: (_, temporary) async {
+              partialTemporary = temporary;
+              final output = await temporary.open(mode: FileMode.writeOnly);
+              try {
+                await output.writeFrom(sourceBytes, 0, 2);
+                await output.flush();
+              } finally {
+                await output.close();
+              }
+              throw const FileSystemException('interrupted copy', '');
+            },
           ),
           completes,
         );
 
-        expect(await source.exists(), isTrue, reason: 'source should be preserved when copy fails');
-        expect(await source.readAsBytes(), [0xAA, 0xBB]);
-        expect(await target.exists(), isFalse);
+        expect(await source.exists(), isTrue, reason: 'the intact legacy database must remain retryable');
+        expect(await source.readAsBytes(), sourceBytes);
+        expect(await target.exists(), isFalse, reason: 'a partial copy must never become canonical');
+        expect(partialTemporary, isNotNull);
+        expect(await partialTemporary!.exists(), isFalse, reason: 'failed temporary copies must be cleaned');
+
+        await migrateLegacyDesktopDatabase(
+          sourceOverride: source,
+          target: target,
+          renameOverride: (_, _) => throw const FileSystemException('cross-drive', ''),
+        );
+
+        expect(await source.exists(), isFalse, reason: 'successful retry removes the legacy database');
+        expect(await target.readAsBytes(), sourceBytes);
+      });
+
+      test('overlapping fallback publisher cannot replace canonical updates with its stale copy', () async {
+        final staleSource = File('${tempDir.path}/Documents/stale.db');
+        final winnerSource = File('${tempDir.path}/Documents/winner.db');
+        final target = File('${tempDir.path}/AppData/plezy_downloads.db');
+        const staleBytes = [0x10, 0x20, 0x30];
+        const winnerBytes = [0x40, 0x50, 0x60];
+        const updatedCanonicalBytes = [0x70, 0x80, 0x90];
+        await staleSource.parent.create(recursive: true);
+        await target.parent.create(recursive: true);
+        await staleSource.writeAsBytes(staleBytes);
+        await winnerSource.writeAsBytes(winnerBytes);
+
+        final staleCopyReady = Completer<void>();
+        final releaseStaleCopy = Completer<void>();
+        final staleCopyReleased = Completer<void>();
+        final winnerPublished = Completer<void>();
+        var stalePublishAttempted = false;
+
+        Future<void> failCrossDriveRename(File _, String _) async {
+          throw const FileSystemException('cross-drive', '');
+        }
+
+        final staleMigration = migrateLegacyDesktopDatabase(
+          sourceOverride: staleSource,
+          target: target,
+          renameOverride: failCrossDriveRename,
+          copyOverride: (source, temporary) async {
+            await temporary.writeAsBytes(await source.readAsBytes(), flush: true);
+            staleCopyReady.complete();
+            await releaseStaleCopy.future;
+            staleCopyReleased.complete();
+          },
+          publishOverride: (temporary, canonical) async {
+            stalePublishAttempted = true;
+            await temporary.rename(canonical.path);
+          },
+        );
+        await staleCopyReady.future;
+
+        final winnerMigration = migrateLegacyDesktopDatabase(
+          sourceOverride: winnerSource,
+          target: target,
+          renameOverride: failCrossDriveRename,
+          publishOverride: (temporary, canonical) async {
+            await temporary.rename(canonical.path);
+            winnerPublished.complete();
+            await staleCopyReleased.future;
+            await canonical.writeAsBytes(updatedCanonicalBytes, flush: true);
+          },
+        );
+        await winnerPublished.future;
+
+        releaseStaleCopy.complete();
+        await Future.wait([winnerMigration, staleMigration]);
+
+        expect(stalePublishAttempted, isFalse);
+        expect(await target.readAsBytes(), updatedCanonicalBytes);
+        expect(await winnerSource.exists(), isFalse, reason: 'the winning source is removed after publication');
+        expect(await staleSource.readAsBytes(), staleBytes, reason: 'the skipped stale source remains retryable');
+        final leakedTemporaries = target.parent.listSync().whereType<File>().where(
+          (file) => file.path.endsWith('.tmp'),
+        );
+        expect(leakedTemporaries, isEmpty, reason: 'both publishers clean their sibling temporary copies');
       });
 
       test('documents directory lookup failure is a silent no-op', () async {
@@ -330,6 +1114,43 @@ class _AppDatabaseTestSuite {
         expect(row.clientScopeId, 'jf-machine/user-a');
       });
 
+      test('requeue preserves SAF ownership fields while resetting failed state', () async {
+        await db
+            .into(db.downloadedMedia)
+            .insert(
+              DownloadedMediaCompanion.insert(
+                serverId: ServerId('srv1'),
+                ratingKey: 'saf-retry',
+                globalKey: 'srv1:saf-retry',
+                type: 'movie',
+                status: DownloadStatus.failed.index,
+                progress: const Value(73),
+                videoFilePath: const Value('content://downloads/video.mkv'),
+                safRootUri: const Value('content://downloads'),
+                errorMessage: const Value('stale failure'),
+                retryCount: const Value(4),
+                bgTaskId: const Value('stale-task'),
+              ),
+            );
+
+        await db.insertDownload(
+          serverId: ServerId('srv1'),
+          ratingKey: 'saf-retry',
+          globalKey: 'srv1:saf-retry',
+          type: 'movie',
+          status: DownloadStatus.queued.index,
+        );
+
+        final row = await db.getDownloadedMedia('srv1:saf-retry');
+        expect(row?.videoFilePath, 'content://downloads/video.mkv');
+        expect(row?.safRootUri, 'content://downloads');
+        expect(row?.bgTaskId, 'stale-task');
+        expect(row?.status, DownloadStatus.queued.index);
+        expect(row?.progress, 0);
+        expect(row?.errorMessage, isNull);
+        expect(row?.retryCount, 0);
+      });
+
       test('globalKey unique constraint blocks duplicate insert', () async {
         await insertMovie();
         expect(insertMovie(), throwsA(isA<Exception>()));
@@ -361,6 +1182,78 @@ class _AppDatabaseTestSuite {
         expect(await db.hasDownloadOwner('srv1:1', excludingProfileId: 'profile-b'), isFalse);
       });
 
+      test('shared owner release rebinds only incomplete media and retains the final owner', () async {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        for (final profileId in const ['profile-a', 'profile-b']) {
+          await db
+              .into(db.profiles)
+              .insert(
+                ProfilesCompanion.insert(
+                  id: profileId,
+                  kind: 'local',
+                  displayName: profileId,
+                  configJson: '{}',
+                  createdAt: now,
+                ),
+              );
+        }
+
+        Future<void> seedOwners(String globalKey) async {
+          await db.addDownloadOwner(
+            profileId: 'profile-a',
+            globalKey: globalKey,
+            backendId: 'plex',
+            clientScopeId: 'srv1/plex-profile/profile-a',
+          );
+          await db.addDownloadOwner(
+            profileId: 'profile-b',
+            globalKey: globalKey,
+            backendId: 'plex',
+            clientScopeId: 'srv1/plex-profile/profile-b',
+          );
+        }
+
+        await insertMovie(
+          clientScopeId: 'srv1/plex-profile/profile-a',
+          ratingKey: 'queued-shared',
+          status: DownloadStatus.queued.index,
+        );
+        await seedOwners('srv1:queued-shared');
+
+        final queuedResult = await db.removeSharedDownloadOwnerAndRebindIncompleteMedia(
+          profileId: 'profile-a',
+          globalKey: 'srv1:queued-shared',
+        );
+
+        expect(queuedResult.hasRemainingOwner, isTrue);
+        expect(queuedResult.removedOwner?.profileId, 'profile-a');
+        expect((await db.getDownloadedMedia('srv1:queued-shared'))?.clientScopeId, 'srv1/plex-profile/profile-b');
+        expect(await db.getDownloadOwner(profileId: 'profile-a', globalKey: 'srv1:queued-shared'), isNull);
+        expect(await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'srv1:queued-shared'), isNotNull);
+
+        final finalOwnerResult = await db.removeSharedDownloadOwnerAndRebindIncompleteMedia(
+          profileId: 'profile-b',
+          globalKey: 'srv1:queued-shared',
+        );
+        expect(finalOwnerResult.hasRemainingOwner, isFalse);
+        expect(await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'srv1:queued-shared'), isNotNull);
+
+        await insertMovie(
+          clientScopeId: 'srv1/plex-profile/profile-a',
+          ratingKey: 'completed-shared',
+          status: DownloadStatus.completed.index,
+        );
+        await seedOwners('srv1:completed-shared');
+
+        final completedResult = await db.removeSharedDownloadOwnerAndRebindIncompleteMedia(
+          profileId: 'profile-a',
+          globalKey: 'srv1:completed-shared',
+        );
+
+        expect(completedResult.hasRemainingOwner, isTrue);
+        expect((await db.getDownloadedMedia('srv1:completed-shared'))?.clientScopeId, 'srv1/plex-profile/profile-a');
+      });
+
       test('adoptLegacyDownloadsForProfile claims only ownerless physical rows', () async {
         await insertMovie(ratingKey: '1', status: DownloadStatus.completed.index);
         await insertMovie(ratingKey: '2', status: DownloadStatus.completed.index);
@@ -370,6 +1263,110 @@ class _AppDatabaseTestSuite {
 
         expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv1:1'});
         expect(await db.getDownloadOwnerKeysForProfile('profile-existing'), {'srv1:2'});
+      });
+
+      test(
+        'ownerless Jellyfin download adopts the profile connection scope instead of the removed user scope',
+        () async {
+          final now = DateTime.now().millisecondsSinceEpoch;
+          await db
+              .into(db.profiles)
+              .insert(
+                ProfilesCompanion.insert(
+                  id: 'profile-b',
+                  kind: 'local',
+                  displayName: 'Profile B',
+                  configJson: '{}',
+                  createdAt: now,
+                ),
+              );
+          await db
+              .into(db.connections)
+              .insert(
+                ConnectionsCompanion.insert(
+                  id: 'jf-machine/user-b',
+                  kind: 'jellyfin',
+                  displayName: 'User B',
+                  configJson: jsonEncode({'serverMachineId': 'jf-machine', 'userId': 'user-b'}),
+                  createdAt: now,
+                ),
+              );
+          await db
+              .into(db.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-b',
+                  connectionId: 'jf-machine/user-b',
+                  userIdentifier: 'user-b',
+                ),
+              );
+          await insertMovie(
+            serverId: 'jf-machine',
+            clientScopeId: 'jf-machine/user-a',
+            ratingKey: 'ownerless',
+            status: DownloadStatus.completed.index,
+          );
+
+          await db.adoptLegacyDownloadsForProfile('profile-b');
+
+          final row = await db.getDownloadedMedia('jf-machine:ownerless');
+          final owner = await db.getDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:ownerless');
+          expect(row?.clientScopeId, 'jf-machine/user-b');
+          expect(owner?.backend, 'jellyfin');
+          expect(owner?.clientScopeId, 'jf-machine/user-b');
+        },
+      );
+
+      test('ownerless Jellyfin download defers adoption when the profile has multiple user scopes', () async {
+        final now = DateTime.now().millisecondsSinceEpoch;
+        for (final userId in const ['user-b', 'user-c']) {
+          await db
+              .into(db.connections)
+              .insert(
+                ConnectionsCompanion.insert(
+                  id: 'jf-machine/$userId',
+                  kind: 'jellyfin',
+                  displayName: userId,
+                  configJson: '{}',
+                  createdAt: now,
+                ),
+              );
+          await db
+              .into(db.profileConnections)
+              .insert(
+                ProfileConnectionsCompanion.insert(
+                  profileId: 'profile-b',
+                  connectionId: 'jf-machine/$userId',
+                  userIdentifier: userId,
+                ),
+              );
+        }
+        await insertMovie(
+          serverId: 'jf-machine',
+          clientScopeId: 'jf-machine/user-a',
+          ratingKey: 'ambiguous',
+          status: DownloadStatus.completed.index,
+        );
+
+        await db.adoptLegacyDownloadsForProfile('profile-b');
+
+        expect(await db.getDownloadOwnerKeysForProfile('profile-b'), isEmpty);
+        expect((await db.getDownloadedMedia('jf-machine:ambiguous'))?.clientScopeId, 'jf-machine/user-a');
+      });
+
+      test('legacy Plex download adoption respects the persisted profile scope', () async {
+        final profileAScope = buildPlexProfileScopeId(serverId: ServerId('srv1'), profileId: 'profile-a');
+        await insertMovie(
+          clientScopeId: profileAScope,
+          ratingKey: 'profile-a-item',
+          status: DownloadStatus.completed.index,
+        );
+
+        await db.adoptLegacyDownloadsForProfile('profile-b');
+        expect(await db.getDownloadOwnerKeysForProfile('profile-b'), isEmpty);
+
+        await db.adoptLegacyDownloadsForProfile('profile-a');
+        expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv1:profile-a-item'});
       });
     });
   }
@@ -1186,8 +2183,86 @@ class _AppDatabaseTestSuite {
         expect(remaining, hasLength(1));
         expect(remaining.first.globalKey, 'srv:11');
       });
+      test('exclusive sync download keys preserve downloads covered by another rule', () async {
+        Future<SyncRuleItem> insertRule(String profileId, String id) async {
+          final globalKey = '$profileId|srv:$id';
+          await db.insertSyncRule(
+            profileId: profileId,
+            serverId: ServerId('srv'),
+            ratingKey: id,
+            globalKey: globalKey,
+            targetType: 'playlist',
+            episodeCount: 0,
+          );
+          return (await db.getSyncRule(globalKey))!;
+        }
+
+        Future<void> insertOwnedDownload(String id, List<String> profileIds) async {
+          final globalKey = 'srv:$id';
+          await db.insertDownload(
+            serverId: ServerId('srv'),
+            ratingKey: id,
+            globalKey: globalKey,
+            type: 'episode',
+            status: DownloadStatus.completed.index,
+          );
+          for (final profileId in profileIds) {
+            await db.addDownloadOwner(profileId: profileId, globalKey: globalKey);
+          }
+        }
+
+        final target = await insertRule('profile-a', 'playlist-a');
+        final sibling = await insertRule('profile-a', 'playlist-b');
+        final otherProfile = await insertRule('profile-b', 'playlist-c');
+        await insertOwnedDownload('exclusive', ['profile-a']);
+        await insertOwnedDownload('sibling-shared', ['profile-a']);
+        await insertOwnedDownload('profile-shared', ['profile-a', 'profile-b']);
+
+        await db.associateSyncRuleDownload(target, 'srv:exclusive');
+        await db.associateSyncRuleDownload(target, 'srv:sibling-shared');
+        await db.associateSyncRuleDownload(target, 'srv:profile-shared');
+        await db.associateSyncRuleDownload(sibling, 'srv:sibling-shared');
+        await db.associateSyncRuleDownload(otherProfile, 'srv:profile-shared');
+
+        expect(
+          await db.getExclusiveSyncRuleDownloadKeys(target),
+          unorderedEquals(['srv:exclusive', 'srv:profile-shared']),
+        );
+
+        await db.removeDownloadOwner(profileId: 'profile-a', globalKey: 'srv:profile-shared');
+        expect(await db.getSyncRuleDownloadLinks(otherProfile.id), hasLength(1));
+      });
     });
   }
+}
+
+Future<void> _createSchemaV13Fixture(AppDatabase database) async {
+  await database.select(database.apiCache).get();
+  await database.customStatement('DROP INDEX IF EXISTS idx_offline_watch_progress_profile');
+  await database.customStatement('DROP INDEX IF EXISTS idx_offline_watch_progress_server');
+  await database.customStatement('DROP INDEX IF EXISTS idx_sync_rules_profile');
+  await database.customStatement('DROP TABLE IF EXISTS profile_connections');
+  await database.customStatement('DROP TABLE IF EXISTS profiles');
+  await database.customStatement('DROP TABLE IF EXISTS connections');
+  await database.customStatement('DROP TABLE IF EXISTS download_owners');
+  await database.customStatement('ALTER TABLE downloaded_media DROP COLUMN client_scope_id');
+  await database.customStatement('ALTER TABLE downloaded_media DROP COLUMN media_source_id');
+  await database.customStatement('ALTER TABLE downloaded_media DROP COLUMN saf_root_uri');
+  await database.customStatement('ALTER TABLE offline_watch_progress DROP COLUMN client_scope_id');
+  await database.customStatement('ALTER TABLE offline_watch_progress DROP COLUMN profile_id');
+  await database.customStatement('ALTER TABLE sync_rules DROP COLUMN profile_id');
+  await database.customStatement('ALTER TABLE sync_rules DROP COLUMN include_specials');
+  await database.customStatement('PRAGMA user_version = 13');
+}
+
+Set<String> _recursiveJsonKeys(Object? value) {
+  if (value is Map<String, dynamic>) {
+    return {...value.keys, for (final nested in value.values) ..._recursiveJsonKeys(nested)};
+  }
+  if (value is List) {
+    return {for (final nested in value) ..._recursiveJsonKeys(nested)};
+  }
+  return const {};
 }
 
 class _ThrowingDocumentsPathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {

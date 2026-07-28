@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -12,20 +11,18 @@ import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
+import '../models/catalog/catalog_item.dart';
 import '../providers/trackers_provider.dart';
-import '../providers/trakt_account_provider.dart';
-import '../services/trackers/anilist/anilist_tracker.dart';
-import '../services/trackers/mal/mal_tracker.dart';
-import '../services/trackers/simkl/simkl_tracker.dart';
+import '../screens/settings/tracker_service_info.dart';
 import '../services/trackers/tracker.dart';
 import '../services/trackers/tracker_constants.dart';
 import '../services/trackers/tracker_id_resolver.dart';
-import '../services/trakt/trakt_scrobble_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'backend_badge.dart';
 import 'bottom_sheet_header.dart';
+import 'catalog_source_logo.dart';
 import 'clickable_cursor.dart';
 
 class RatingBottomSheet extends StatefulWidget {
@@ -92,9 +89,10 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     final size = MediaQuery.sizeOf(context);
     final maxHeight = size.height * (size.width > 600 ? 0.64 : 0.74);
 
-    return Consumer2<TraktAccountProvider, TrackersProvider>(
-      builder: (context, trakt, trackers, _) {
-        final allTrackerSources = _trackerSources(trakt, trackers);
+    // Trakt's account provider is watched by [_trackerSources] via `context`.
+    return Consumer<TrackersProvider>(
+      builder: (context, trackers, _) {
+        final allTrackerSources = _trackerSources(context);
         final trackerSources = allTrackerSources.where((source) => !_hiddenTrackers.contains(source.service)).toList();
         _updateTrackerSourceMap(trackerSources);
         _resolverNeedsFribb = trackers.isMalConnected || trackers.isAnilistConnected;
@@ -227,7 +225,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     return _RatingRow(
       focusNode: focusNode,
       autofocus: autofocus,
-      leading: _TrackerLogo(source.logoAsset),
+      leading: CatalogSourceLogo(source.logoSource, size: 24),
       title: source.title,
       subtitle: source.username != null ? t.services.connectedAs(username: source.username!) : source.connectedLabel,
       loading: loading,
@@ -247,58 +245,20 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     );
   }
 
-  List<_TrackerRatingSource> _trackerSources(TraktAccountProvider trakt, TrackersProvider trackers) {
-    final sources = <_TrackerRatingSource>[];
-    if (trakt.isConnected) {
-      sources.add(
+  /// Snapshot of every connected tracker, in the shared display order. Must be
+  /// called from a build so the provider reads register a dependency.
+  List<_TrackerRatingSource> _trackerSources(BuildContext context) => [
+    for (final info in TrackerServiceInfo.all)
+      if (info.isConnected(context))
         _TrackerRatingSource(
-          service: TrackerService.trakt,
-          title: t.trakt.title,
-          username: trakt.username,
+          service: info.service,
+          title: info.displayName,
+          username: info.username(context),
           connectedLabel: t.trakt.connected,
-          logoAsset: 'assets/trakt_circlemark.svg',
-          ratingSource: TraktScrobbleService.instance,
+          logoSource: info.logoSource,
+          ratingSource: info.ratingSource,
         ),
-      );
-    }
-    if (trackers.isMalConnected) {
-      sources.add(
-        _TrackerRatingSource(
-          service: TrackerService.mal,
-          title: t.services.names.mal,
-          username: trackers.malUsername,
-          connectedLabel: t.trakt.connected,
-          logoAsset: 'assets/mal_mark.svg',
-          ratingSource: MalTracker.instance,
-        ),
-      );
-    }
-    if (trackers.isAnilistConnected) {
-      sources.add(
-        _TrackerRatingSource(
-          service: TrackerService.anilist,
-          title: t.services.names.anilist,
-          username: trackers.anilistUsername,
-          connectedLabel: t.trakt.connected,
-          logoAsset: 'assets/anilist_mark.svg',
-          ratingSource: AnilistTracker.instance,
-        ),
-      );
-    }
-    if (trackers.isSimklConnected) {
-      sources.add(
-        _TrackerRatingSource(
-          service: TrackerService.simkl,
-          title: t.services.names.simkl,
-          username: trackers.simklUsername,
-          connectedLabel: t.trakt.connected,
-          logoAsset: 'assets/simkl_mark.svg',
-          ratingSource: SimklTracker.instance,
-        ),
-      );
-    }
-    return sources;
-  }
+  ];
 
   void _updateTrackerSourceMap(List<_TrackerRatingSource> sources) {
     _trackerSourcesByKey
@@ -618,7 +578,7 @@ class _TrackerRatingSource {
   final String title;
   final String? username;
   final String connectedLabel;
-  final String logoAsset;
+  final CatalogSourceId logoSource;
   final TrackerRatingSource ratingSource;
 
   const _TrackerRatingSource({
@@ -626,7 +586,7 @@ class _TrackerRatingSource {
     required this.title,
     required this.username,
     required this.connectedLabel,
-    required this.logoAsset,
+    required this.logoSource,
     required this.ratingSource,
   });
 }
@@ -887,17 +847,5 @@ class _FavoriteControl extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _TrackerLogo extends StatelessWidget {
-  final String asset;
-
-  const _TrackerLogo(this.asset);
-
-  @override
-  Widget build(BuildContext context) {
-    final color = IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
-    return SvgPicture.asset(asset, width: 24, height: 24, theme: SvgTheme(currentColor: color));
   }
 }

@@ -26,6 +26,4 @@ class PlexVideoPlaybackData {
   });
 
   bool get hasValidVideoUrl => videoUrl != null && videoUrl!.isNotEmpty;
-
-  bool get hasMediaInfo => mediaInfo != null;
 }

@@ -71,6 +71,17 @@ class PlaybackProgressTracker {
   /// while paused. Best-effort; failures are the callee's to swallow.
   final Future<void> Function()? onPausedKeepalive;
 
+  /// Whether non-terminal playback reports reflect real playback output.
+  /// Video passes first-frame readiness so a native clock cannot create
+  /// progress before any renderer produces a frame. Other callers default to
+  /// ready.
+  final bool Function()? canReportPlayback;
+
+  /// Whether this item has produced real playback output at least once.
+  /// A stopped report still terminates the backend session when false, but
+  /// must not turn an unrendered native clock position into watched progress.
+  final bool Function()? hasRenderedPlayback;
+
   /// Timer for periodic progress updates
   Timer? _progressTimer;
 
@@ -94,6 +105,7 @@ class PlaybackProgressTracker {
   Future<void>? _stoppedProgressFuture;
 
   Duration? _lastProgressNotifiedPosition;
+  Duration? _lastReportablePosition;
 
   static const Duration _progressNotifyDelta = Duration(seconds: 30);
 
@@ -111,6 +123,8 @@ class PlaybackProgressTracker {
     this.mediaInfo,
     this.onScrobbled,
     this.onPausedKeepalive,
+    this.canReportPlayback,
+    this.hasRenderedPlayback,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
        assert(isOffline || client != null, 'client is required when isOffline is false'),
@@ -195,8 +209,17 @@ class PlaybackProgressTracker {
     Duration? attemptedPosition;
     Duration? attemptedDuration;
     try {
+      final canReport = canReportPlayback?.call() ?? true;
+      final hasRenderedOutput = hasRenderedPlayback?.call() ?? canReport;
+      if (state != 'stopped' && !canReport) return;
+      final isSuppressedStop = state == 'stopped' && !canReport;
       final duration = player.state.duration;
-      final position = _clampPosition(positionOverride ?? player.state.position, duration);
+      final positionSource = isSuppressedStop
+          ? _lastReportablePosition ?? Duration(milliseconds: metadata.viewOffsetMs ?? 0)
+          : positionOverride ?? player.state.position;
+      final position = _clampPosition(positionSource, duration);
+      if (canReport && hasRenderedOutput) _lastReportablePosition = position;
+      final canCommitStoppedProgress = hasRenderedOutput && (!isSuppressedStop || _lastReportablePosition != null);
       attemptedPosition = position;
       attemptedDuration = duration;
 
@@ -206,14 +229,19 @@ class PlaybackProgressTracker {
       }
 
       if (isOffline) {
-        // Queue progress update for later sync
+        // There is no backend session to terminate offline. Do not turn a
+        // resume offset into a fresh queued update when this run rendered
+        // nothing.
+        if (!canCommitStoppedProgress) return;
         await _sendOfflineProgress(position, duration);
         _notifyProgressIfNeeded(position, duration, force: state == 'stopped');
       } else if (state == 'stopped') {
-        // Stopped must complete before disposal
-        final accepted = await _sendOnlineProgress(state, position, duration);
+        // Stopped must complete before disposal. When reporting was disabled
+        // by a fatal error, use the last position captured while output was
+        // healthy rather than the still-advancing native media clock.
+        final accepted = await _sendOnlineProgress(state, position, duration, allowScrobble: canCommitStoppedProgress);
         _resetBackoff();
-        if (accepted) {
+        if (accepted && canCommitStoppedProgress) {
           _notifyProgressIfNeeded(position, duration, force: true);
         }
       } else {
@@ -227,27 +255,14 @@ class PlaybackProgressTracker {
                 }
               })
               .catchError((Object e) {
-                _consecutiveFailures++;
-                // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
-                _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
-                appLogger.d(
-                  'Progress update failed ($_consecutiveFailures consecutive), '
-                  'skipping next $_ticksToSkip tick(s)',
-                  error: e,
-                );
+                _recordProgressFailure(e);
                 unawaited(_queueOnlineFailureProgress(position, duration));
               }),
         );
       }
     } catch (e) {
       if (!isOffline) {
-        _consecutiveFailures++;
-        _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
-        appLogger.d(
-          'Progress update failed ($_consecutiveFailures consecutive), '
-          'skipping next $_ticksToSkip tick(s)',
-          error: e,
-        );
+        _recordProgressFailure(e);
         await _queueOnlineFailureProgress(
           attemptedPosition ?? player.state.position,
           attemptedDuration ?? player.state.duration,
@@ -275,6 +290,17 @@ class PlaybackProgressTracker {
     }
   }
 
+  void _recordProgressFailure(Object e) {
+    _consecutiveFailures++;
+    // Exponential backoff: skip 1, 2, 4, 8... ticks (capped at 6 ≈ 60s)
+    _ticksToSkip = (1 << (_consecutiveFailures - 1)).clamp(1, 6);
+    appLogger.d(
+      'Progress update failed ($_consecutiveFailures consecutive), '
+      'skipping next $_ticksToSkip tick(s)',
+      error: e,
+    );
+  }
+
   void _resetBackoff() {
     if (_consecutiveFailures > 0) {
       _consecutiveFailures = 0;
@@ -296,6 +322,7 @@ class PlaybackProgressTracker {
     _lastProgressNotifiedPosition = position;
     WatchStateNotifier().notifyProgress(
       item: metadata,
+      cacheServerId: client?.cacheServerId,
       viewOffset: position.inMilliseconds,
       duration: duration.inMilliseconds,
       watchedThreshold: client?.watchedThreshold ?? 0.9,
@@ -304,7 +331,12 @@ class PlaybackProgressTracker {
 
   /// Send progress update to the active server through the unified
   /// [MediaServerClient.reportPlayback*] surface.
-  Future<bool> _sendOnlineProgress(String state, Duration position, Duration duration) async {
+  Future<bool> _sendOnlineProgress(
+    String state,
+    Duration position,
+    Duration duration, {
+    bool allowScrobble = true,
+  }) async {
     final c = client;
     final session = _reportSession;
     if (c == null || session == null) return false;
@@ -320,7 +352,7 @@ class PlaybackProgressTracker {
       ),
     );
 
-    if (accepted) {
+    if (accepted && allowScrobble) {
       await _maybeScrobble(c, position, duration);
     }
     return accepted;

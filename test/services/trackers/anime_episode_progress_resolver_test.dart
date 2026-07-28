@@ -34,7 +34,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-MediaItem _season(int number, {int? watched, int? total}) => testMediaItem(
+MediaItem _season(int number, {int? watched, int? total, int? childCount}) => testMediaItem(
   id: 'season-$number',
   backend: MediaBackend.plex,
   kind: MediaKind.season,
@@ -42,6 +42,7 @@ MediaItem _season(int number, {int? watched, int? total}) => testMediaItem(
   index: number,
   leafCount: total,
   viewedLeafCount: watched,
+  childCount: childCount,
 );
 
 MediaItem _episode({int season = 2, int number = 6, String showId = 'show-1', int? viewCount}) => testMediaItem(
@@ -105,6 +106,18 @@ void main() {
       final resolver = AnimeEpisodeProgressResolver(
         _FakeMediaServerClient({
           'show-1': [_season(2, watched: 12, total: 12)],
+        }),
+      );
+
+      final result = await resolver.resolve(_episode(season: 2, number: 12), scope: AnimeProgressScope.season);
+
+      expect(result?.progress, 12);
+    });
+
+    test('season scope uses direct episode count when the leaf total is missing', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(2, watched: 12, childCount: 12)],
         }),
       );
 

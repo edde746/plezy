@@ -41,6 +41,7 @@ class PlaybackSubtitleSelection {
   final SubtitleTrack? secondaryTrack;
   final int? secondarySourceStreamId;
   final PlaybackSubtitleSidecar? secondarySidecar;
+  final List<PlaybackSubtitleSidecar> preloadedSidecars;
 
   const PlaybackSubtitleSelection({
     required this.primaryTrack,
@@ -49,9 +50,10 @@ class PlaybackSubtitleSelection {
     this.secondaryTrack,
     this.secondarySourceStreamId,
     this.secondarySidecar,
+    this.preloadedSidecars = const [],
   });
 
-  const PlaybackSubtitleSelection.off()
+  const PlaybackSubtitleSelection.off({this.preloadedSidecars = const []})
     : primaryTrack = SubtitleTrack.off,
       primarySourceStreamId = null,
       primarySidecar = null,
@@ -63,18 +65,73 @@ class PlaybackSubtitleSelection {
 
   List<SubtitleTrack> get sidecarsAtOpen {
     final tracks = <SubtitleTrack>[];
-    final primary = primarySidecar?.track;
-    if (primary != null) tracks.add(primary);
-    final secondary = secondarySidecar?.track;
-    if (secondary != null && secondary.uri != primary?.uri) tracks.add(secondary);
+    final added = <SubtitleTrack>{};
+    void add(SubtitleTrack? track) {
+      if (track != null && added.add(track)) tracks.add(track);
+    }
+
+    for (final sidecar in preloadedSidecars) {
+      add(sidecar.track);
+    }
+    add(primarySidecar?.track);
+    add(secondarySidecar?.track);
     return tracks;
   }
 }
 
-/// Resolves the server subtitle catalog before opening the native player, so
-/// only the active sidecar is part of the open operation.
+/// Resolves the server subtitle catalog before opening the native player,
+/// combining the active choice with any sidecars marked for preloading.
 class PlaybackSubtitleResolver {
   const PlaybackSubtitleResolver._();
+
+  /// Removes a per-source ID while retaining the semantic identity needed to
+  /// carry a subtitle choice across items or media sources.
+  static SubtitleTrack? preferenceWithoutSourceIdentity(SubtitleTrack? preferred) {
+    if (preferred == null || preferred.id == SubtitleTrack.off.id || !preferred.id.startsWith('source:')) {
+      return preferred;
+    }
+    return SubtitleTrack(
+      id: 'navigation',
+      title: preferred.title,
+      language: preferred.language,
+      codec: preferred.codec,
+      isDefault: preferred.isDefault,
+      isForced: preferred.isForced,
+      isExternal: preferred.isExternal,
+      isContainer: preferred.isContainer,
+    );
+  }
+
+  static SubtitleTrack? _sourceBackedPreference(
+    SubtitleTrack? preferred,
+    MediaSourceInfo? mediaInfo,
+    List<_SubtitleCandidate> candidates, {
+    required bool preserveSourceIdentity,
+  }) {
+    if (preferred == null || preferred.id == SubtitleTrack.off.id) return preferred;
+
+    var semanticPreference = preferred;
+    if (preferred.id.startsWith('source:')) {
+      if (preserveSourceIdentity) {
+        final sourceStreamId = int.tryParse(preferred.id.substring('source:'.length));
+        final exactCandidate = candidates.where((candidate) => candidate.sourceStreamId == sourceStreamId).firstOrNull;
+        if (exactCandidate != null) return exactCandidate.track;
+      } else {
+        semanticPreference = preferenceWithoutSourceIdentity(preferred)!;
+      }
+    }
+
+    final sourceMatch = findPlexTrackForMpvSubtitle(
+      semanticPreference,
+      mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
+    );
+    if (sourceMatch == null) return semanticPreference;
+
+    for (final candidate in candidates) {
+      if (candidate.sourceStreamId == sourceMatch.id) return candidate.track;
+    }
+    return semanticPreference;
+  }
 
   static PlaybackSubtitleSelection resolve({
     required MediaItem metadata,
@@ -84,6 +141,7 @@ class PlaybackSubtitleResolver {
     AudioTrack? preferredAudioTrack,
     SubtitleTrack? preferredSubtitleTrack,
     SubtitleTrack? preferredSecondarySubtitleTrack,
+    bool preserveSourceIdentity = true,
   }) {
     final candidates = <_SubtitleCandidate>[];
     final matchedSidecars = <PlaybackSubtitleSidecar>{};
@@ -109,6 +167,7 @@ class PlaybackSubtitleResolver {
       );
     }
 
+    final preloadedSidecars = sidecars.where((sidecar) => sidecar.preload).toList(growable: false);
     final availableTracks = candidates.map((candidate) => candidate.track).toList(growable: false);
     final service = TrackSelectionService(
       profileSettings: profileSettings,
@@ -116,16 +175,32 @@ class PlaybackSubtitleResolver {
       plexMediaInfo: mediaInfo,
     );
     final selectedAudio = service.selectAudioTrack(_audioTracksForSource(mediaInfo), preferredAudioTrack)?.track;
-    final primaryResult = service.selectSubtitleTrack(availableTracks, preferredSubtitleTrack, selectedAudio);
-    final primary = primaryResult.track;
-    if (primary.id == SubtitleTrack.off.id) return const PlaybackSubtitleSelection.off();
+    final primaryPreference = _sourceBackedPreference(
+      preferredSubtitleTrack,
+      mediaInfo,
+      candidates,
+      preserveSourceIdentity: preserveSourceIdentity,
+    );
+    final primaryResult = service.selectSubtitleTrack(availableTracks, primaryPreference, selectedAudio);
+    final primary = primaryResult?.track;
+    if (primary == null || primary.id == SubtitleTrack.off.id) {
+      return PlaybackSubtitleSelection.off(preloadedSidecars: preloadedSidecars);
+    }
 
     final primaryCandidate = candidates.where((candidate) => candidate.track.id == primary.id).firstOrNull;
-    if (primaryCandidate == null) return const PlaybackSubtitleSelection.off();
+    if (primaryCandidate == null) {
+      return PlaybackSubtitleSelection.off(preloadedSidecars: preloadedSidecars);
+    }
 
     _SubtitleCandidate? secondaryCandidate;
-    if (preferredSecondarySubtitleTrack != null && preferredSecondarySubtitleTrack.id != SubtitleTrack.off.id) {
-      final secondary = service.findBestSubtitleMatch(availableTracks, preferredSecondarySubtitleTrack);
+    final secondaryPreference = _sourceBackedPreference(
+      preferredSecondarySubtitleTrack,
+      mediaInfo,
+      candidates,
+      preserveSourceIdentity: preserveSourceIdentity,
+    );
+    if (secondaryPreference != null && secondaryPreference.id != SubtitleTrack.off.id) {
+      final secondary = service.findBestSubtitleMatch(availableTracks, secondaryPreference);
       secondaryCandidate = candidates
           .where((candidate) => candidate.track.id == secondary?.id && candidate.track.id != primary.id)
           .firstOrNull;
@@ -138,6 +213,7 @@ class PlaybackSubtitleResolver {
       secondaryTrack: secondaryCandidate?.track,
       secondarySourceStreamId: secondaryCandidate?.sourceStreamId,
       secondarySidecar: secondaryCandidate?.sidecar,
+      preloadedSidecars: preloadedSidecars,
     );
   }
 
@@ -159,26 +235,29 @@ class PlaybackSubtitleResolver {
       isDefault: sourceTrack.selected,
       isForced: sourceTrack.forced,
       isExternal: playable != null,
+      isContainer: playable?.isContainer ?? false,
       uri: playable?.uri,
     );
   }
 
-  /// Resolve a server source row to a track already loaded by direct play.
-  /// Resolved sidecars only match by their stable URL key (or the current
-  /// source identity); fuzzy language/codec matching must not select a
-  /// different sidecar that happens to have similar metadata. A server's
-  /// `external delivery` flag is not sufficient to classify a direct-play
-  /// row as a sidecar: Jellyfin applies it to embedded tracks that mpv still
-  /// discovers in the original file.
-  static SubtitleTrack? nativeTrackForDirectPlaySource({
+  /// Resolve a server source row to a track already loaded by the player.
+  /// Standalone sidecars match only by their stable URL key (or current source
+  /// identity), while a container sidecar uses normal Plex/native metadata
+  /// matching across the subtitle tracks extracted from that container.
+  static SubtitleTrack? nativeTrackForSource({
     required MediaSubtitleTrack sourceTrack,
     required List<SubtitleTrack> nativeTracks,
     required List<MediaSubtitleTrack> allSourceTracks,
     required bool isResolvedSidecar,
+    required bool isContainerSidecar,
     int? currentSourceStreamId,
     SubtitleTrack? selectedNativeTrack,
   }) {
     if (isResolvedSidecar) {
+      if (isContainerSidecar) {
+        final containerTracks = nativeTracks.where((track) => track.isContainer).toList(growable: false);
+        return findMpvTrackForPlexSubtitle(sourceTrack, containerTracks, allPlexTracks: allSourceTracks);
+      }
       final key = sourceTrack.key;
       if (key != null && key.isNotEmpty) {
         for (final candidate in nativeTracks) {
@@ -194,13 +273,6 @@ class PlaybackSubtitleResolver {
       return null;
     }
     return findMpvTrackForPlexSubtitle(sourceTrack, nativeTracks, allPlexTracks: allSourceTracks);
-  }
-
-  static PlaybackSourceSubtitleChoice nextSourceChoice(
-    List<MediaSubtitleTrack> tracks,
-    PlaybackSourceSubtitleChoice currentChoice,
-  ) {
-    return advanceSourceChoice(tracks, currentChoice, 1);
   }
 
   static PlaybackSourceSubtitleChoice advanceSourceChoice(

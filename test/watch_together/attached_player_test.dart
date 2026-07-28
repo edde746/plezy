@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -131,18 +133,45 @@ void main() {
       });
     });
 
-    test('non-recoverable PlatformException rethrows', () {
+    test('pending teardown NOT_INITIALIZED reports failure and fires onLost once', () {
+      fakeAsync((async) {
+        final (attached, player, lostEvents) = build(async);
+        final playingIntents = <bool>[];
+        attached.playingIntents.listen(playingIntents.add);
+        final pending = Completer<void>();
+        player.nextCommandFuture = pending.future;
+        bool? result;
+
+        attached.play().then((value) => result = value);
+        async.flushMicrotasks();
+        expect(result, isNull);
+
+        pending.completeError(PlatformException(code: 'NOT_INITIALIZED'));
+        async.flushMicrotasks();
+
+        expect(result, isFalse);
+        expect(lostEvents, ['lost']);
+
+        player.emitPlaying(true);
+        async.flushMicrotasks();
+        expect(playingIntents, [true], reason: 'the failed command must remove its outstanding expectation');
+        attached.dispose();
+      });
+    });
+
+    test('SET_PROPERTY_FAILED remains non-recoverable', () {
       fakeAsync((async) {
         final (attached, player, lostEvents) = build(async);
 
-        player.nextCommandError = PlatformException(code: 'SOMETHING_ELSE');
+        player.nextCommandError = PlatformException(code: 'SET_PROPERTY_FAILED');
         Object? error;
-        attached.play().catchError((Object e) {
-          error = e;
+        attached.play().catchError((Object caught) {
+          error = caught;
           return false;
         });
         async.flushMicrotasks();
         expect(error, isA<PlatformException>());
+        expect((error as PlatformException).code, 'SET_PROPERTY_FAILED');
         expect(lostEvents, isEmpty);
         attached.dispose();
       });

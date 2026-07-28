@@ -34,7 +34,7 @@ class TraktAuthService extends DeviceCodeAuthServiceBase {
     appLogger.d('Trakt POST ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
 
     if (res.statusCode != 200) {
-      throw DeviceCodeAuthFlowException('Trakt device code request failed: HTTP ${res.statusCode}: ${res.body}');
+      throw DeviceCodeAuthFlowException('Trakt device code request failed: HTTP ${res.statusCode}');
     }
 
     final body = json.decode(res.body) as Map<String, dynamic>;
@@ -86,7 +86,7 @@ class TraktAuthService extends DeviceCodeAuthServiceBase {
       case 429:
         return const DevicePollSlowDown();
       default:
-        appLogger.w('Trakt device-code unexpected HTTP ${res.statusCode}: ${res.body}');
+        appLogger.w('Trakt device-code unexpected HTTP ${res.statusCode}');
         return const DevicePollPending();
     }
   }

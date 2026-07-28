@@ -3,9 +3,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../models/catalog/catalog_item.dart';
 import '../../providers/seerr_account_provider.dart';
-import '../../providers/trackers_provider.dart';
-import '../../providers/trakt_account_provider.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/catalog_source_logo.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -13,8 +12,7 @@ import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_section.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
-import 'tracker_settings_screen.dart';
-import 'trakt_settings_screen.dart';
+import 'tracker_service_info.dart';
 
 /// Unified hub for all connected services: the watch-progress trackers
 /// (Trakt, MyAnimeList, AniList, Simkl) and the Seerr request server. Each
@@ -38,7 +36,7 @@ class ServicesSettingsScreen extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
-            SettingsGroup(children: [_trakt(), _mal(), _anilist(), _simkl(), _seerr()]),
+            SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
             const SizedBox(height: 24),
           ]),
         ),
@@ -46,78 +44,9 @@ class ServicesSettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _trakt() => Consumer<TraktAccountProvider>(
-    builder: (context, account, _) => _ServiceHubRow(
-      leading: const CatalogSourceLogo.asset('assets/trakt_circlemark.svg', size: 24),
-      title: t.trakt.title,
-      username: account.isConnected ? account.username : null,
-      onTap: () {
-        if (account.isConnected) {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const TraktSettingsScreen()));
-        } else {
-          startTraktConnection(context);
-        }
-      },
-    ),
-  );
-
-  Widget _mal() => Consumer<TrackersProvider>(
-    builder: (context, account, _) => _ServiceHubRow(
-      leading: const CatalogSourceLogo.asset('assets/mal_mark.svg', size: 24),
-      title: t.services.names.mal,
-      username: account.isMalConnected ? account.malUsername : null,
-      onTap: () {
-        if (account.isMalConnected) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => TrackerSettingsScreen(config: TrackerConfig.mal())),
-          );
-        } else {
-          startMalConnection(context);
-        }
-      },
-    ),
-  );
-
-  Widget _anilist() => Consumer<TrackersProvider>(
-    builder: (context, account, _) => _ServiceHubRow(
-      leading: const CatalogSourceLogo.asset('assets/anilist_mark.svg', size: 24),
-      title: t.services.names.anilist,
-      username: account.isAnilistConnected ? account.anilistUsername : null,
-      onTap: () {
-        if (account.isAnilistConnected) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => TrackerSettingsScreen(config: TrackerConfig.anilist())),
-          );
-        } else {
-          startAnilistConnection(context);
-        }
-      },
-    ),
-  );
-
-  Widget _simkl() => Consumer<TrackersProvider>(
-    builder: (context, account, _) => _ServiceHubRow(
-      leading: const CatalogSourceLogo.asset('assets/simkl_mark.svg', size: 24),
-      title: t.services.names.simkl,
-      username: account.isSimklConnected ? account.simklUsername : null,
-      onTap: () {
-        if (account.isSimklConnected) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => TrackerSettingsScreen(config: TrackerConfig.simkl())),
-          );
-        } else {
-          startSimklConnection(context);
-        }
-      },
-    ),
-  );
-
   Widget _seerr() => Consumer<SeerrAccountProvider>(
     builder: (context, account, _) => _ServiceHubRow(
-      leading: const CatalogSourceLogo.asset('assets/seerr_mark.svg', size: 24),
+      leading: const CatalogSourceLogo(CatalogSourceId.seerr, size: 24),
       title: t.services.names.seerr,
       username: account.isConnected ? account.displayName : null,
       onTap: () {
@@ -130,6 +59,31 @@ class ServicesSettingsScreen extends StatelessWidget {
       },
     ),
   );
+}
+
+/// Hub row for a watch tracker. Owns the `watch` on that service's account
+/// provider so only this row rebuilds when the connection state changes.
+class _TrackerHubRow extends StatelessWidget {
+  final TrackerServiceInfo info;
+
+  const _TrackerHubRow(this.info);
+
+  @override
+  Widget build(BuildContext context) {
+    final connected = info.isConnected(context);
+    return _ServiceHubRow(
+      leading: CatalogSourceLogo(info.logoSource, size: 24),
+      title: info.displayName,
+      username: connected ? info.username(context) : null,
+      onTap: () {
+        if (connected) {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => info.buildSettingsScreen()));
+        } else {
+          info.startConnection(context);
+        }
+      },
+    );
+  }
 }
 
 class _ServiceHubRow extends StatelessWidget {
@@ -147,12 +101,10 @@ class _ServiceHubRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return FocusableListTile(
       leading: leading,
-      title: Text(title, style: settingsOptionTitleStyle(context)),
+      title: Text(title),
       subtitle: Text(username != null ? t.services.connectedAs(username: username!) : t.services.notConnected),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
-      dense: settingsRowDense(),
-      visualDensity: settingsRowVisualDensity(),
     );
   }
 }

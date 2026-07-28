@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../models/seerr/seerr_details.dart';
@@ -65,6 +66,7 @@ class SeerrClient {
 
   // ---------- Auth ----------
 
+  @visibleForTesting
   Future<SeerrUser> getMe() async {
     final data = await _request('GET', '/auth/me');
     return SeerrUser.fromJson(data as Map<String, dynamic>);
@@ -128,14 +130,13 @@ class SeerrClient {
 
   // ---------- Details ----------
 
-  Future<SeerrMovieDetails> getMovie(int tmdbId) async {
-    final data = await _request('GET', '/movie/$tmdbId');
-    return SeerrMovieDetails.fromJson(data as Map<String, dynamic>);
-  }
+  Future<SeerrDetails> getMovie(int tmdbId) => _details('/movie/$tmdbId');
 
-  Future<SeerrTvDetails> getTv(int tmdbId) async {
-    final data = await _request('GET', '/tv/$tmdbId');
-    return SeerrTvDetails.fromJson(data as Map<String, dynamic>);
+  Future<SeerrDetails> getTv(int tmdbId) => _details('/tv/$tmdbId');
+
+  Future<SeerrDetails> _details(String path) async {
+    final data = await _request('GET', path);
+    return SeerrDetails.fromJson(data as Map<String, dynamic>);
   }
 
   // ---------- Requests ----------
@@ -143,10 +144,6 @@ class SeerrClient {
   Future<SeerrRequest> createRequest(SeerrRequestPayload payload) async {
     final data = await _request('POST', '/request', body: payload.toJson());
     return SeerrRequest.fromJson(data as Map<String, dynamic>);
-  }
-
-  Future<void> deleteRequest(int requestId) async {
-    await _request('DELETE', '/request/$requestId');
   }
 
   // ---------- Sonarr / Radarr options (request sheet advanced pickers) ----------

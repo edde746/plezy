@@ -1,13 +1,16 @@
 import '../media/ids.dart';
 
 import 'package:drift/drift.dart';
+import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
+import '../database/plex_metadata_recovery.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/isolate_helper.dart';
 import '../utils/plex_cache_parser.dart';
+import '../utils/active_client_scope.dart';
 import '../utils/plex_library_section_utils.dart';
 import 'api_cache.dart';
 import 'plex_mappers.dart';
@@ -40,6 +43,17 @@ class PlexApiCache extends ApiCache {
     )..where((t) => t.cacheKey.equals(metadataKey) | t.cacheKey.equals(childrenKey))).go();
   }
 
+  /// Remove every profile-private row for a public item after its final
+  /// physical download owner is gone.
+  Future<void> deleteAllProfileRowsForItem(ServerId publicServerId, String ratingKey) async {
+    final rows = await listPinnedRowsByPattern(_metadataKeyPattern);
+    for (final row in rows) {
+      if (row.id == ratingKey && publicPlexServerIdFromScope(row.serverId) == publicServerId) {
+        await deleteForItem(row.serverId, ratingKey);
+      }
+    }
+  }
+
   @override
   Future<void> pinForOffline(ServerId serverId, String ratingKey) async {
     return pin(serverId, '/library/metadata/$ratingKey');
@@ -60,7 +74,28 @@ class PlexApiCache extends ApiCache {
   // Rating keys can be alphanumeric, not just numeric.
   static final RegExp _metadataKeyPattern = RegExp(r'/library/metadata/([^/]+)$');
 
+  @visibleForTesting
   Future<Set<String>> getPinnedKeys(ServerId serverId) => extractPinnedIds(serverId, _metadataKeyPattern);
+
+  /// Copy one pinned item between cache namespaces.
+  ///
+  /// Full logout uses [stripProfileState] while moving metadata into the
+  /// ownerless transfer namespace. The next profile copies that sanitized
+  /// payload into its private namespace before the download is exposed.
+  Future<bool> copyPinnedMetadata({
+    required ServerId sourceServerId,
+    required ServerId destinationServerId,
+    required String ratingKey,
+    bool stripProfileState = false,
+  }) async {
+    final endpoint = '/library/metadata/$ratingKey';
+    final cached = await get(sourceServerId, endpoint);
+    if (cached == null) return false;
+    final payload = stripProfileState ? sanitizePlexMetadataMapForOwnerlessTransfer(cached) : cached;
+    await put(destinationServerId, endpoint, payload);
+    await pin(destinationServerId, endpoint);
+    return true;
+  }
 
   /// Fetch and parse a [MediaItem] from cache.
   ///
@@ -74,7 +109,8 @@ class PlexApiCache extends ApiCache {
     final container = PlexCacheParser.extractMediaContainer(cached);
     final json = PlexCacheParser.extractFirstMetadata(cached);
     if (json == null) return null;
-    return PlexMappers.mediaItemFromCacheJson(_withContainerLibrary(json, container), serverId: serverId);
+    final publicServerId = publicPlexServerIdFromCacheScope(serverId) ?? serverId;
+    return PlexMappers.mediaItemFromCacheJson(_withContainerLibrary(json, container), serverId: publicServerId);
   }
 
   static Map<String, dynamic> _withContainerLibrary(Map<String, dynamic> json, Map<String, dynamic>? container) {
@@ -131,8 +167,11 @@ class PlexApiCache extends ApiCache {
   /// lookups. Used by DownloadProvider to batch-load metadata on startup
   /// instead of issuing per-item DB queries.
   @override
-  Future<Map<String, MediaItem>> getAllPinnedMetadata() async {
-    final entries = await listPinnedRowsByPattern(_metadataKeyPattern);
+  Future<Map<String, MediaItem>> getAllPinnedMetadata({Set<ServerId>? cacheServerIds}) async {
+    final allEntries = await listPinnedRowsByPattern(_metadataKeyPattern);
+    final entries = cacheServerIds == null
+        ? allEntries
+        : allEntries.where((entry) => cacheServerIds.contains(entry.serverId)).toList(growable: false);
     if (entries.isEmpty) return {};
 
     return await tryIsolateRun(
@@ -143,9 +182,10 @@ class PlexApiCache extends ApiCache {
           final container = PlexCacheParser.extractMediaContainer(data);
           final json = PlexCacheParser.extractFirstMetadata(data);
           if (json == null) return null;
+          final publicServerId = publicPlexServerIdFromCacheScope(entry.serverId) ?? entry.serverId;
           return MapEntry(
-            buildGlobalKey(ServerId(entry.serverId), entry.id),
-            PlexMappers.mediaItemFromCacheJson(_withContainerLibrary(json, container), serverId: entry.serverId),
+            buildGlobalKey(publicServerId, entry.id),
+            PlexMappers.mediaItemFromCacheJson(_withContainerLibrary(json, container), serverId: publicServerId),
           );
         },
       ),

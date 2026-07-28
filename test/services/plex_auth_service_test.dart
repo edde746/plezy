@@ -73,11 +73,9 @@ void main() {
       addTearDown(client.close);
       final auth = PlexAuthService.forTesting(http: client);
 
-      final response = await auth.switchToUser('uuid-1', 'account-token');
+      final token = await auth.switchToUser('uuid-1', 'account-token');
 
-      expect(response.authToken, 'minted-user-token');
-      expect(response.profile.defaultAudioLanguages, ['en', 'sv']);
-      expect(response.profile.defaultSubtitleLanguages, ['en', 'sv']);
+      expect(token, 'minted-user-token');
     });
 
     test('fetchServers tolerates scalar drift in server and connection fields', () async {

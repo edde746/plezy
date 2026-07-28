@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../focus/hub_vertical_navigation.dart';
+import '../../../focus/locked_hub_controller.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
@@ -14,7 +15,8 @@ import '../../../mixins/item_updatable.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/deletion_notifier.dart';
-import '../../../utils/global_key_utils.dart';
+import '../../../utils/hub_icons.dart';
+import '../../../utils/media_event_keys.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/watch_state_notifier.dart';
@@ -45,13 +47,22 @@ class LibraryRecommendedTab extends BaseLibraryTab<MediaHub> {
 }
 
 class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryRecommendedTab>
-    with ItemUpdatable, WatchStateAware, DeletionAware {
+    with ItemUpdatable, WatchStateAware, DeletionAware, DeletionMirrorsWatchState {
   /// GlobalKeys for each hub section to enable vertical navigation
   final List<GlobalKey<HubSectionState>> _hubKeys = [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final TvSpotlightController _spotlight = TvSpotlightController();
+  HubFocusMemory _hubFocusMemory = HubFocusMemory();
 
   void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+
+  @override
+  void didUpdateWidget(LibraryRecommendedTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.library.globalKey != widget.library.globalKey) {
+      _hubFocusMemory = HubFocusMemory();
+    }
+  }
 
   @override
   void dispose() {
@@ -62,45 +73,18 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   @override
   String? get watchStateServerId => widget.library.serverId;
 
-  @override
-  String? get deletionServerId => widget.library.serverId;
+  /// Every item on screen, across all hubs.
+  Iterable<MediaItem> get _visibleItems => items.expand((hub) => hub.items);
 
-  // Deletion filtering needs the same id sets as watch state: each visible
-  // item plus its parents, so deleting a season/show also matches the
-  // episodes it contains here.
+  // Deletion mirrors these via DeletionMirrorsWatchState: each visible item
+  // plus its parents, so deleting a season/show also matches the episodes it
+  // contains here.
   @override
-  Set<String>? get deletionIds => watchedIds;
-
-  @override
-  Set<String>? get deletionGlobalKeys => watchedGlobalKeys;
+  Set<String>? get watchedIds => hierarchicalEventIds(_visibleItems);
 
   @override
-  Set<String>? get watchedIds {
-    final keys = <String>{};
-    for (final hub in items) {
-      for (final item in hub.items) {
-        keys.add(item.id);
-        if (item.parentId != null) keys.add(item.parentId!);
-        if (item.grandparentId != null) keys.add(item.grandparentId!);
-      }
-    }
-    return keys;
-  }
-
-  @override
-  Set<String>? get watchedGlobalKeys {
-    final keys = <String>{};
-    for (final hub in items) {
-      for (final item in hub.items) {
-        final serverId = item.serverId ?? widget.library.serverId;
-        if (serverId == null) return null;
-        keys.add(buildGlobalKey(ServerId(serverId), item.id));
-        if (item.parentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.parentId!));
-        if (item.grandparentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.grandparentId!));
-      }
-    }
-    return keys;
-  }
+  Set<String>? get watchedGlobalKeys =>
+      hierarchicalEventGlobalKeys(_visibleItems, fallbackServerId: widget.library.serverId);
 
   @override
   void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
@@ -305,7 +289,8 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               return HubSection(
                 key: index < _hubKeys.length ? _hubKeys[index] : null,
                 hub: hub,
-                icon: _getHubIcon(hub),
+                focusMemory: _hubFocusMemory,
+                icon: hubIconFor(hub),
                 isInContinueWatching: isContinueWatching,
                 usesContinueWatchingAction: usesContinueWatchingAction,
                 onRefresh: updateItem,
@@ -339,7 +324,8 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               child: TvBrowseRail(
                 key: _tvBrowseRailKey,
                 hubs: tvHubs,
-                iconForHub: (hub, _) => _getHubIcon(hub),
+                focusMemory: _hubFocusMemory,
+                iconForHub: (hub, _) => hubIconFor(hub),
                 onFocusedItemChanged: _setSpotlightItem,
                 onRefresh: updateItem,
                 onRemoveFromContinueWatching: _refreshContinueWatching,
@@ -358,25 +344,5 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   void _refreshContinueWatching() {
     // Reload all data to refresh the continue watching section
     loadItems();
-  }
-
-  IconData _getHubIcon(MediaHub hub) {
-    final title = hub.title.toLowerCase();
-    if (title.contains('continue watching') || title.contains('on deck')) {
-      return Symbols.play_circle_rounded;
-    } else if (title.contains('recently') || title.contains('new')) {
-      return Symbols.fiber_new_rounded;
-    } else if (title.contains('popular') || title.contains('trending')) {
-      return Symbols.trending_up_rounded;
-    } else if (title.contains('top') || title.contains('rated')) {
-      return Symbols.star_rounded;
-    } else if (title.contains('recommended')) {
-      return Symbols.thumb_up_rounded;
-    } else if (title.contains('unwatched')) {
-      return Symbols.visibility_off_rounded;
-    } else if (title.contains('genre')) {
-      return Symbols.category_rounded;
-    }
-    return Symbols.movie_rounded;
   }
 }

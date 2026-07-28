@@ -41,6 +41,10 @@ class MainFlutterWindow: NSWindow {
     WindowUtilsPlugin.installWindowDelegate()
     WindowUtilsPlugin.syncWindowChrome()
 
+    // Register Launch Services lookups used to detect installed external players
+    AppLookupPlugin.register(
+      with: flutterViewController.registrar(forPlugin: "AppLookupPlugin"))
+
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     // Enable window position/size persistence

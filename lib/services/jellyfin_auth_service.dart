@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 
 import '../connection/connection.dart';
-import '../connection/connection_auth_service.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
@@ -45,9 +44,9 @@ class _JellyfinAuthenticationResponse {
 ///   2. [authenticateByName] (or future Quick Connect equivalent) — exchanges
 ///      credentials for a long-lived access token and returns a built
 ///      [JellyfinConnection] ready to insert into [ConnectionRegistry].
-///   3. (later) [validate] / [refresh] / [signOut] for the [ConnectionAuthService]
-///      contract.
-class JellyfinConnectionAuthService implements ConnectionAuthService {
+///   3. (later) [validate] / [refresh] / [signOut] to keep the stored
+///      connection current.
+class JellyfinConnectionAuthService {
   JellyfinConnectionAuthService({
     required this.clientName,
     required this.clientVersion,
@@ -114,6 +113,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     required String deviceId,
     JellyfinServerInfo? serverInfo,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final info = serverInfo ?? await probe(normalised);
 
@@ -121,7 +121,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     final client = _buildHttpClient(
       baseUrl: normalised,
@@ -147,7 +147,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
         userId: auth.userId,
         userName: auth.userName,
         accessToken: auth.accessToken,
-        deviceId: deviceId,
+        deviceId: validDeviceId,
         isAdministrator: auth.isAdministrator,
       );
     } finally {
@@ -181,12 +181,13 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     required String baseUrl,
     required String deviceId,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final authHeader = buildJellyfinAuthHeader(
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     final client = _buildHttpClient(baseUrl: normalised, headers: {'Authorization': authHeader});
     try {
@@ -234,6 +235,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     Duration timeout = const Duration(minutes: 5),
     bool Function()? shouldCancel,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final info = serverInfo ?? await probe(normalised);
     LogRedactionManager.registerCustomValue(secret);
@@ -242,7 +244,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     // Reuse a single client across the polling loop — opening one per tick
     // would churn TCP connections needlessly on a 5-minute window.
@@ -312,7 +314,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
         userId: auth.userId,
         userName: auth.userName,
         accessToken: auth.accessToken,
-        deviceId: deviceId,
+        deviceId: validDeviceId,
         isAdministrator: auth.isAdministrator,
       );
     } finally {
@@ -320,7 +322,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     }
   }
 
-  @override
+  /// Best-effort check that an existing token still works. Returns false on
+  /// 401/403; throws on transport failures the caller should retry.
   Future<bool> validate(Connection connection) async {
     if (connection is! JellyfinConnection) return false;
     final client = _authenticatedClient(connection);
@@ -335,7 +338,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     }
   }
 
-  @override
+  /// Re-check the stored token and return the connection with its status
+  /// updated accordingly.
   Future<Connection> refresh(Connection connection) async {
     if (connection is! JellyfinConnection) return connection;
     final ok = await validate(connection);
@@ -345,7 +349,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     return connection.copyWith(status: ConnectionStatus.online, lastAuthenticatedAt: DateTime.now());
   }
 
-  @override
+  /// Revoke the token server-side and forget local credentials. The caller
+  /// is responsible for removing the row from [ConnectionRegistry].
   Future<void> signOut(Connection connection) async {
     if (connection is! JellyfinConnection) return;
     final client = _authenticatedClient(connection);

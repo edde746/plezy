@@ -7,8 +7,6 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/music/queue_sheet.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -17,7 +15,9 @@ import 'package:plezy/widgets/music/track_row.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/stub_music_playback_service.dart';
 
 MediaItem _track(String id, String title) => testMediaItem(
   id: id,
@@ -40,9 +40,6 @@ class _FakeQueueService extends StubMusicPlaybackService {
   final List<int> jumps = [];
 
   _FakeQueueService(this.tracks);
-
-  @override
-  bool get isAvailable => true;
 
   @override
   MediaItem? get currentTrack => tracks[1];
@@ -73,13 +70,8 @@ void main() {
   });
 
   Widget wrap(MusicPlaybackService service) {
-    final manager = MultiServerManager();
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
     addTearDown(service.dispose);
-    addTearDown(() {
-      multiServerProvider.dispose();
-      manager.dispose();
-    });
+    final multiServerProvider = testMultiServer().provider;
 
     return TranslationProvider(
       child: MultiProvider(

@@ -45,15 +45,16 @@ class VideoControlsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final itemTitle = metadata.title ?? t.common.unknown;
     return Row(
       children: [
-        AppBarBackButton(
-          style: BackButtonStyle.video,
-          semanticLabel: t.common.back,
-          onPressed: onBack ?? () => Navigator.of(context).pop(true),
-        ),
+        AppBarBackButton(style: BackButtonStyle.video, onPressed: onBack ?? () => Navigator.of(context).pop(true)),
         const SizedBox(width: 16),
-        Expanded(child: style == VideoHeaderStyle.singleLine ? _buildSingleLineTitle() : _buildMultiLineTitle()),
+        Expanded(
+          child: style == VideoHeaderStyle.singleLine
+              ? _buildSingleLineTitle(itemTitle)
+              : _buildMultiLineTitle(itemTitle),
+        ),
         Selector<WatchTogetherProvider, bool>(
           selector: (_, p) => p.isInSession,
           builder: (context, inSession, child) {
@@ -72,15 +73,15 @@ class VideoControlsHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildSingleLineTitle() {
-    final seriesName = metadata.grandparentTitle ?? metadata.title!;
+  Widget _buildSingleLineTitle(String itemTitle) {
+    final seriesName = metadata.grandparentTitle ?? itemTitle;
     final hasEpisodeInfo = metadata.parentIndex != null && metadata.index != null;
 
     final List<String> parts = [seriesName];
 
     if (hasEpisodeInfo) {
       parts.add('S${metadata.parentIndex}E${metadata.index}');
-      parts.add(metadata.title!);
+      parts.add(itemTitle);
     }
 
     return Text(
@@ -91,13 +92,13 @@ class VideoControlsHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildMultiLineTitle() {
+  Widget _buildMultiLineTitle(String itemTitle) {
     final List<String> secondLineParts = [];
 
     if (metadata.parentIndex != null && metadata.index != null) {
       secondLineParts.add('S${metadata.parentIndex}');
       secondLineParts.add('E${metadata.index}');
-      secondLineParts.add(metadata.title!);
+      secondLineParts.add(itemTitle);
     }
 
     if (metadata.durationMs != null) {
@@ -108,7 +109,7 @@ class VideoControlsHeader extends StatelessWidget {
       crossAxisAlignment: .start,
       children: [
         Text(
-          metadata.grandparentTitle ?? metadata.title!,
+          metadata.grandparentTitle ?? itemTitle,
           style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: .bold),
           maxLines: 1,
           overflow: .ellipsis,

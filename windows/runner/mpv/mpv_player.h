@@ -17,6 +17,12 @@
 #include "../../../shared/mpv/mpv_player_common.h"
 
 namespace mpv {
+struct InnerWindowSubclassState;
+
+// Style of the window mpv renders into. WS_DISABLED takes the host, and every
+// window mpv creates inside it, out of input targeting so mouse, touch, and pen
+// over the video reach the parent Flutter view instead of mpv's thread.
+inline constexpr DWORD kVideoHostWindowStyle = WS_CHILD | WS_CLIPSIBLINGS | WS_DISABLED;
 
 // Wrapper for libmpv that handles initialization, commands, properties,
 // and event dispatching.
@@ -87,6 +93,8 @@ class MpvPlayer {
   void NotifyPowerResume();
 
  private:
+  friend class MpvPlayerPropertyContractTestPeer;
+
   void StartEventLoop();
   void StopEventLoop();
   void EventLoop();
@@ -94,12 +102,17 @@ class MpvPlayer {
   void SendPropertyChange(const char* name, mpv_node* data);
   void SendEvent(const std::string& name, const flutter::EncodableMap& data = {});
   void MaybeRunAudioRecovery();
-  void TryAudioReload(const char* reason, int attempt);
+  void TryAudioReload(const char* reason, int attempt, uint64_t request_generation);
   void LogRecovery(const std::string& text);
+  void EnsureMpvInnerSubclassed();
+  void DetachMpvInnerSubclass();
 
   const bool audio_only_;
   mpv_handle* mpv_ = nullptr;
   HWND hwnd_ = nullptr;
+  HWND forward_target_view_ = nullptr;
+  std::mutex inner_subclass_mutex_;
+  std::shared_ptr<InnerWindowSubclassState> inner_subclass_;
 
   std::thread event_thread_;
   std::atomic<bool> running_{false};

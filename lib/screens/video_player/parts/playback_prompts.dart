@@ -9,10 +9,11 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // Ignore spurious EOF from the old file during an in-place media-source
     // transition (episode swap, transcode restart, channel switch).
     if (_playbackTransition != _PlaybackTransition.idle) return;
+    if (_isResolvingCompletionAdjacency) return;
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
-    unawaited(_setWakelock(false));
+    unawaited(_wakelockController.setEnabled(false));
     final duration = player?.state.duration;
     unawaited(
       duration != null && duration.inMilliseconds > 0
@@ -23,7 +24,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     unawaited(DiscordRPCService.instance.pausePlayback());
     unawaited(TraktScrobbleService.instance.pausePlayback());
     if (_autoPipEnabled) {
-      unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: false));
+      unawaited(_updateAutoPipState(isPlaying: false));
     }
 
     // End-of-video sleep timer takes precedence over autoplay / next-episode
@@ -34,8 +35,35 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       sleepTimerService.notifyVideoCompleted();
       return;
     }
+    if (!_canNavigateMediaItems()) {
+      if (!_completionLatch.triggered) _completionLatch.latch();
+      return;
+    }
 
-    if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionLatch.triggered) {
+    var navigationAction = completionNavigationAction(
+      hasNext: _nextEpisode != null,
+      adjacentStatus: _nextEpisodeStatus,
+    );
+    if (navigationAction == CompletionNavigationAction.retryAdjacent) {
+      _isResolvingCompletionAdjacency = true;
+      try {
+        await _loadAdjacentEpisodes();
+      } finally {
+        _isResolvingCompletionAdjacency = false;
+      }
+      if (!mounted) return;
+      navigationAction = completionNavigationAction(hasNext: _nextEpisode != null, adjacentStatus: _nextEpisodeStatus);
+      if (navigationAction == CompletionNavigationAction.retryAdjacent) {
+        _completionLatch.latch();
+        showGlobalErrorSnackBar(t.messages.errorLoadingSeries);
+        return;
+      }
+    }
+
+    if (navigationAction == CompletionNavigationAction.presentNext &&
+        !_showPlayNextDialog &&
+        !_showStillWatchingPrompt &&
+        !_completionLatch.triggered) {
       _completionLatch.latch();
 
       // PiP: skip dialog (user can't interact), auto-play immediately
@@ -73,13 +101,14 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (_nextEpisode == null && !_completionLatch.triggered) {
+    } else if (navigationAction == CompletionNavigationAction.exit && !_completionLatch.triggered) {
       _completionLatch.latch();
       unawaited(_handleBackButton());
     }
   }
 
   void _startAutoPlayTimer() {
+    if (!_canNavigateMediaItems()) return;
     _autoPlayTimer?.cancel();
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {

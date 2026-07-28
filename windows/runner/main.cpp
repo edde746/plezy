@@ -54,7 +54,7 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   window.SetQuitOnClose(true);
 
   // Recover display mode if a prior crash left it changed.
-  mpv::DisplayModeManager::RecoverIfNeeded(::GetAncestor(window.GetHandle(), GA_ROOT));
+  mpv::DisplayModeManager::RecoverIfNeeded();
 
   ::MSG msg;
   while (::GetMessage(&msg, nullptr, 0, 0)) {

@@ -9,16 +9,20 @@ tags:
 ---
 - runFlow: ../subflows/onboard_jellyfin_tv.yaml
 - pressKey: "Remote Dpad Center"
-- extendedWaitUntil:
-    visible: "Play"
-    timeout: 15000
-- pressKey: "Remote Dpad Center"
+- waitForAnimationToEnd:
+    timeout: 5000
+- runFlow:
+    when:
+      visible: "(?s)^(Play|Resume).*$"
+    commands:
+      - pressKey: "Remote Dpad Center"
 - extendedWaitUntil:
     visible: "Pause"
     timeout: 30000
+- pressKey: "back"
 - extendedWaitUntil:
     notVisible: "Pause"
-    timeout: 15000
+    timeout: 10000
 - pressKey: "Remote Media Play Pause"
 - extendedWaitUntil:
     visible: "Play"
@@ -33,7 +37,14 @@ tags:
     timeout: 10000
 - assertNotVisible: "Overview"
 - pressKey: "back"
+- waitForAnimationToEnd:
+    timeout: 5000
+- runFlow:
+    when:
+      visible: "Overview"
+    commands:
+      - pressKey: "back"
 - extendedWaitUntil:
-    visible: "(?s)^(Play|Resume).*$"
+    visible:
+      id: "tv_browse_rail_selection"
     timeout: 15000
-- assertVisible: "(?s).*Zulu Zone 4.*"

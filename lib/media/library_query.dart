@@ -1,6 +1,7 @@
 // ignore_for_file: invalid_annotation_target
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import '../utils/media_server_http_client.dart' show AbortController;
 import 'media_kind.dart';
 
 part 'library_query.freezed.dart';
@@ -34,6 +35,10 @@ sealed class LibraryQuery with _$LibraryQuery {
   const factory LibraryQuery({
     /// Restrict to a single kind (e.g. `MediaKind.movie`). Null = library default.
     MediaKind? kind,
+
+    /// Restrict to multiple kinds when no single [kind] represents the browse
+    /// surface. When non-empty, translators prefer this over [kind].
+    @Default(<MediaKind>[]) List<MediaKind> includeKinds,
 
     /// Pagination — zero-based offset.
     @Default(0) int offset,
@@ -83,4 +88,34 @@ sealed class LibraryPage<T> with _$LibraryPage<T> {
 int fallbackPageTotal({required int offset, required int itemCount, int? requestedSize}) {
   final fullPage = requestedSize != null && requestedSize > 0 && itemCount >= requestedSize;
   return offset + itemCount + (fullPage ? 1 : 0);
+}
+
+/// Walk every page of a paginated endpoint and concatenate the results.
+///
+/// [fetchPage] receives a zero-based offset and [pageSize] and is called until
+/// a page comes back empty, the accumulated count reaches the page's
+/// [LibraryPage.totalCount], or — when [stopOnShortPage] is set — a page comes
+/// back shorter than [pageSize]. The short-page break is for backends whose
+/// total is unreliable; leave it off when the total is authoritative.
+///
+/// [abort] is checked before and after every request. Errors propagate.
+Future<List<T>> drainPages<T>(
+  Future<LibraryPage<T>> Function(int start, int size) fetchPage, {
+  required int pageSize,
+  AbortController? abort,
+  bool stopOnShortPage = false,
+}) async {
+  final all = <T>[];
+  var start = 0;
+  while (true) {
+    abort?.throwIfAborted();
+    final page = await fetchPage(start, pageSize);
+    abort?.throwIfAborted();
+    if (page.items.isEmpty) break;
+    all.addAll(page.items);
+    start += page.items.length;
+    if (start >= page.totalCount) break;
+    if (stopOnShortPage && page.items.length < pageSize) break;
+  }
+  return all;
 }

@@ -164,6 +164,8 @@ class JellyfinMappers {
     // Folder/CollectionFolder rows resolve via fromString) classify as
     // folders so folder browsing never falls back to raw-map sniffing.
     final kind = type == null && item['IsFolder'] == true ? MediaKind.folder : MediaKind.fromString(type);
+    final childCount = _nonNegativeCount(item['ChildCount']);
+    final leafCount = _nonNegativeCount(item['RecursiveItemCount']) ?? childCount;
     final albumPrimaryImage = kind == MediaKind.track ? _albumPrimaryImage(item) : null;
     final backdropPaths = _backdropImagePaths(id, item['BackdropImageTags']);
     final parentBackdropPaths = _parentBackdropImagePaths(item);
@@ -225,13 +227,12 @@ class JellyfinMappers {
       viewOffsetMs: jellyfinTicksToMs(_userData(item)?['PlaybackPositionTicks']),
       viewCount: _viewCount(item),
       lastViewedAt: jellyfinIsoToEpochSeconds(_userData(item)?['LastPlayedDate'] as String?),
-      // Plex semantics: `leafCount` = total leaf items (episodes for series).
-      // Jellyfin's `ChildCount` is direct children (seasons for a series),
-      // while `RecursiveItemCount` is the recursive total (episodes). Prefer
-      // the recursive count so series show episode counts, not season counts.
-      leafCount: (item['RecursiveItemCount'] as int?) ?? (item['ChildCount'] as int?),
-      viewedLeafCount: _viewedLeafCount(item),
-      childCount: item['ChildCount'] as int?,
+      // leafCount also drives display counts. viewedLeafCount is watched-state
+      // rollup and applies only to container kinds; Jellyfin may include
+      // unrelated child counts on leaf DTOs.
+      leafCount: leafCount,
+      viewedLeafCount: kind.usesLeafWatchCounts ? _viewedLeafCount(item, leafCount) : null,
+      childCount: childCount,
       addedAt: jellyfinIsoToEpochSeconds(item['DateCreated'] as String?),
       updatedAt: jellyfinIsoToEpochSeconds(item['DateLastSaved'] as String? ?? item['DateModified'] as String?),
       rating: (item['CommunityRating'] as num?)?.toDouble(),
@@ -268,11 +269,13 @@ class JellyfinMappers {
     final id = view['Id'] as String?;
     if (id == null || id.isEmpty) return null;
     final collectionType = view['CollectionType'] as String?;
+    final type = view['Type'] as String?;
     return MediaLibrary(
       id: id,
       backend: MediaBackend.jellyfin,
       title: view['Name'] as String? ?? t.libraries.fallbackTitle,
-      kind: _libraryKindFromCollectionType(collectionType, view['Type'] as String?),
+      kind: _libraryKindFromCollectionType(collectionType, type),
+      defaultBrowseKinds: _defaultBrowseKindsFromCollectionType(collectionType, type),
       updatedAt: jellyfinIsoToEpochSeconds(view['DateLastSaved'] as String? ?? view['DateModified'] as String?),
       createdAt: jellyfinIsoToEpochSeconds(view['DateCreated'] as String?),
       hidden: false,
@@ -316,8 +319,8 @@ class JellyfinMappers {
   }
 
   static MediaKind _libraryKindFromCollectionType(String? collectionType, String? type) {
-    final ct = collectionType?.toLowerCase();
-    if (ct != null) {
+    final ct = collectionType?.trim().toLowerCase();
+    if (ct != null && ct.isNotEmpty) {
       return switch (ct) {
         'movies' => MediaKind.movie,
         'tvshows' => MediaKind.show,
@@ -327,11 +330,17 @@ class JellyfinMappers {
         'photos' => MediaKind.photo,
         'boxsets' => MediaKind.collection,
         'playlists' => MediaKind.playlist,
-        'mixed' => MediaKind.unknown,
         _ => MediaKind.unknown,
       };
     }
     return MediaKind.fromString(type);
+  }
+
+  static List<MediaKind> _defaultBrowseKindsFromCollectionType(String? collectionType, String? type) {
+    final ct = collectionType?.trim();
+    return (ct == null || ct.isEmpty) && type?.toLowerCase() == 'collectionfolder'
+        ? const [MediaKind.movie, MediaKind.show]
+        : const <MediaKind>[];
   }
 
   static Map<String, dynamic>? _userData(Map<String, dynamic> item) {
@@ -339,22 +348,24 @@ class JellyfinMappers {
     return ud is Map<String, dynamic> ? ud : null;
   }
 
+  static int? _nonNegativeCount(Object? value) {
+    final count = flexibleInt(value);
+    return count != null && count >= 0 ? count : null;
+  }
+
   static int _viewCount(Map<String, dynamic> item) {
     final ud = _userData(item);
     if (ud?['Played'] != true) return 0;
-    final playCount = ud?['PlayCount'];
-    if (playCount is int && playCount > 0) return playCount;
+    final playCount = flexibleInt(ud?['PlayCount']);
+    if (playCount != null && playCount > 0) return playCount;
     return 1;
   }
 
-  static int? _viewedLeafCount(Map<String, dynamic> item) {
-    final ud = _userData(item);
-    final unplayed = ud?['UnplayedItemCount'] as int?;
-    // Pair with `leafCount` semantics — episodes recursively, not seasons.
-    final total = (item['RecursiveItemCount'] as int?) ?? (item['ChildCount'] as int?);
+  static int? _viewedLeafCount(Map<String, dynamic> item, int? total) {
+    final unplayed = _nonNegativeCount(_userData(item)?['UnplayedItemCount']);
     if (total == null || unplayed == null) return null;
-    final v = total - unplayed;
-    return v < 0 ? 0 : v;
+    if (unplayed >= total) return 0;
+    return total - unplayed;
   }
 
   static String? _firstString(Object? list) {

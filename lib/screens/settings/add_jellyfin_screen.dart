@@ -19,7 +19,6 @@ import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_connection.dart';
-import '../../profiles/profile_registry.dart';
 import '../../services/jellyfin_auth_service.dart';
 import '../../services/jellyfin_endpoint_discovery.dart';
 import '../../services/jellyfin_lan_discovery_service.dart';
@@ -33,6 +32,24 @@ import '../profile/profile_switch_screen.dart';
 import 'async_form_state_mixin.dart';
 import 'connection_persistence.dart';
 import '../../widgets/loading_indicator_box.dart';
+
+@visibleForTesting
+Future<String> resolveJellyfinClientVersion({Future<PackageInfo> Function()? packageInfoLoader}) async {
+  const fallbackVersion = '1.0';
+  try {
+    final packageInfo = await (packageInfoLoader == null ? PackageInfo.fromPlatform() : packageInfoLoader());
+    final version = packageInfo.version.trim();
+    if (version.isNotEmpty) return version;
+    appLogger.w('Package version is empty; using Jellyfin client version $fallbackVersion');
+  } catch (error, stackTrace) {
+    appLogger.w(
+      'Failed to resolve package version; using Jellyfin client version $fallbackVersion',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+  return fallbackVersion;
+}
 
 @visibleForTesting
 bool shouldCreateLocalJellyfinProfile({
@@ -343,23 +360,13 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     _discoveredServerFocusNodes[_localServers.last.id]?.requestFocus();
   }
 
-  List<String> _enteredUrls() {
-    return _urlController.text
-        .split(RegExp(r'[\n,]+'))
-        .map((url) => url.trim())
-        .where((url) => url.isNotEmpty)
-        .toList(growable: false);
-  }
+  List<String> _enteredUrls() => JellyfinEndpointDiscovery.parseUserEnteredUrls(_urlController.text);
 
   /// Shared persistence path for both username/password and Quick Connect:
-  /// upsert the connection, attach a ProfileConnection to the bound profile,
-  /// register with the live manager when binding to the active profile, and
-  /// pop with success.
+  /// atomically provision the optional first-run profile, connection, and
+  /// ownership row, then bind and pop only after durable success.
   Future<void> _persistAndExit(JellyfinConnection connection) async {
     if (!mounted) return;
-    // Bind to the target profile (caller's choice) or the active one. On a
-    // first-run Jellyfin-only sign-in there is no profile yet, so create and
-    // activate a local profile before registering the server.
     final activeProvider = context.read<ActiveProfileProvider>();
     await activeProvider.initialize();
     if (!mounted) return;
@@ -381,29 +388,28 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         return;
       }
     }
+
+    Profile? firstRunProfile;
     if (shouldCreateLocalJellyfinProfile(
       targetProfile: targetProfile,
       activeProfile: boundProfile,
       hasProfiles: activeProvider.profiles.isNotEmpty,
     )) {
       final now = DateTime.now();
-      final profile = Profile.local(
+      firstRunProfile = Profile.local(
         id: 'local-${const Uuid().v4()}',
         displayName: connection.userName.isNotEmpty ? connection.userName : connection.serverName,
         sortOrder: now.millisecondsSinceEpoch,
         createdAt: now,
       );
-      await context.read<ProfileRegistry>().upsert(profile);
-      await activeProvider.activate(profile);
-      if (!mounted) return;
-      boundProfile = activeProvider.active ?? profile;
+      boundProfile = firstRunProfile;
     }
+
     final bindProfile = boundProfile;
     if (bindProfile == null) {
       setErrorText(t.messages.noProfilesAvailable);
       return;
     }
-    final boundToActive = bindProfile.id == activeProvider.activeId;
 
     await persistAndBindConnection(
       context: context,
@@ -416,8 +422,10 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         tokenAcquiredAt: DateTime.now(),
       ),
       addToManager: null,
+      firstRunProfile: firstRunProfile,
     );
 
+    final boundToActive = bindProfile.id == activeProvider.activeId;
     if (!mounted) return;
     if (boundToActive) {
       await context.read<ActiveProfileBinder>().rebindIfActive(bindProfile.id);
@@ -430,14 +438,17 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   Future<JellyfinConnectionAuthService> _buildAuthService() async {
     final authServiceFactory = widget._authServiceFactory;
     if (authServiceFactory != null) return await authServiceFactory();
-    final pkg = await PackageInfo.fromPlatform();
+    final clientVersion = await resolveJellyfinClientVersion();
     final deviceName = await _resolveDeviceName();
-    return JellyfinConnectionAuthService(clientName: 'Plezy', clientVersion: pkg.version, deviceName: deviceName);
+    return JellyfinConnectionAuthService(clientName: 'Plezy', clientVersion: clientVersion, deviceName: deviceName);
   }
 
+  /// The raw name, not a header-sanitized one: the Jellyfin `MediaBrowser`
+  /// header percent-encodes it, so the device list shows it verbatim.
   Future<String> _resolveDeviceName() async {
     final identity = await DeviceIdentityService.resolve();
-    return sanitizeHeaderValue(identity.deviceName) ?? 'Plezy';
+    final name = identity.deviceName?.trim();
+    return name == null || name.isEmpty ? 'Plezy' : name;
   }
 
   @override
@@ -473,8 +484,11 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       FocusableTextFormField(
         controller: _urlController,
         focusNode: _urlFocus,
+        tvTextInputPresentation: PlatformDetector.isAppleTV()
+            ? TvTextInputPresentation.platform
+            : TvTextInputPresentation.automatic,
         autofocus: true,
-        tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
+        tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.afterFirstFocus,
         keyboardType: TextInputType.url,
         minLines: 1,
         maxLines: 4,
@@ -646,12 +660,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
 
     if (_localServers.isEmpty) return const [];
     final tokensRef = tokens(context);
-    // M3E connected-group geometry: large outer corners, small inner corners,
-    // hairline gaps between tiles.
-    BorderRadius radiiFor(int i) => BorderRadius.vertical(
-      top: Radius.circular(i == 0 ? tokensRef.radiusLg : tokensRef.radiusXs),
-      bottom: Radius.circular(i == _localServers.length - 1 ? tokensRef.radiusLg : tokensRef.radiusXs),
-    );
     return [
       const SizedBox(height: 16),
       Text(t.addServer.localServers, style: theme.textTheme.titleSmall),
@@ -660,7 +668,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         if (i > 0) SizedBox(height: tokensRef.groupGap),
         _DiscoveredJellyfinServerTile(
           server: server,
-          borderRadius: radiiFor(i),
+          borderRadius: groupItemRadii(context, i, _localServers.length),
           focusNode: _discoveredServerFocusNodes[server.id],
           onNavigateUp: () {
             final index = _localServers.indexOf(server);

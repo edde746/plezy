@@ -1,0 +1,1110 @@
+{
+  "schemaVersion": 1,
+  "description": "Plezy's curated ISO 639 compatibility catalog, preserved from the application's original generated table. This is not a complete ISO registry.",
+  "languages": {
+    "aa": {
+      "primary": "aa",
+      "terminology": "aar",
+      "bibliographic": null,
+      "name": "Afar"
+    },
+    "ab": {
+      "primary": "ab",
+      "terminology": "abk",
+      "bibliographic": null,
+      "name": "Abkhaz"
+    },
+    "ae": {
+      "primary": "ae",
+      "terminology": "ave",
+      "bibliographic": null,
+      "name": "Avestan"
+    },
+    "af": {
+      "primary": "af",
+      "terminology": "afr",
+      "bibliographic": null,
+      "name": "Afrikaans"
+    },
+    "ak": {
+      "primary": "ak",
+      "terminology": "aka",
+      "bibliographic": null,
+      "name": "Akan"
+    },
+    "am": {
+      "primary": "am",
+      "terminology": "amh",
+      "bibliographic": null,
+      "name": "Amharic"
+    },
+    "an": {
+      "primary": "an",
+      "terminology": "arg",
+      "bibliographic": null,
+      "name": "Aragonese"
+    },
+    "ar": {
+      "primary": "ar",
+      "terminology": "ara",
+      "bibliographic": null,
+      "name": "Arabic"
+    },
+    "as": {
+      "primary": "as",
+      "terminology": "asm",
+      "bibliographic": null,
+      "name": "Assamese"
+    },
+    "av": {
+      "primary": "av",
+      "terminology": "ava",
+      "bibliographic": null,
+      "name": "Avaric"
+    },
+    "ay": {
+      "primary": "ay",
+      "terminology": "aym",
+      "bibliographic": null,
+      "name": "Aymara"
+    },
+    "az": {
+      "primary": "az",
+      "terminology": "aze",
+      "bibliographic": null,
+      "name": "Azerbaijani"
+    },
+    "ba": {
+      "primary": "ba",
+      "terminology": "bak",
+      "bibliographic": null,
+      "name": "Bashkir"
+    },
+    "be": {
+      "primary": "be",
+      "terminology": "bel",
+      "bibliographic": null,
+      "name": "Belarusian"
+    },
+    "bg": {
+      "primary": "bg",
+      "terminology": "bul",
+      "bibliographic": null,
+      "name": "Bulgarian"
+    },
+    "bh": {
+      "primary": "bh",
+      "terminology": "bih",
+      "bibliographic": null,
+      "name": "Bihari"
+    },
+    "bi": {
+      "primary": "bi",
+      "terminology": "bis",
+      "bibliographic": null,
+      "name": "Bislama"
+    },
+    "bm": {
+      "primary": "bm",
+      "terminology": "bam",
+      "bibliographic": null,
+      "name": "Bambara"
+    },
+    "bn": {
+      "primary": "bn",
+      "terminology": "ben",
+      "bibliographic": null,
+      "name": "Bengali, Bangla"
+    },
+    "bo": {
+      "primary": "bo",
+      "terminology": "bod",
+      "bibliographic": "tib",
+      "name": "Tibetan Standard, Tibetan, Central"
+    },
+    "br": {
+      "primary": "br",
+      "terminology": "bre",
+      "bibliographic": null,
+      "name": "Breton"
+    },
+    "bs": {
+      "primary": "bs",
+      "terminology": "bos",
+      "bibliographic": null,
+      "name": "Bosnian"
+    },
+    "ca": {
+      "primary": "ca",
+      "terminology": "cat",
+      "bibliographic": null,
+      "name": "Catalan"
+    },
+    "ce": {
+      "primary": "ce",
+      "terminology": "che",
+      "bibliographic": null,
+      "name": "Chechen"
+    },
+    "ch": {
+      "primary": "ch",
+      "terminology": "cha",
+      "bibliographic": null,
+      "name": "Chamorro"
+    },
+    "co": {
+      "primary": "co",
+      "terminology": "cos",
+      "bibliographic": null,
+      "name": "Corsican"
+    },
+    "cr": {
+      "primary": "cr",
+      "terminology": "cre",
+      "bibliographic": null,
+      "name": "Cree"
+    },
+    "cs": {
+      "primary": "cs",
+      "terminology": "ces",
+      "bibliographic": "cze",
+      "name": "Czech"
+    },
+    "cu": {
+      "primary": "cu",
+      "terminology": "chu",
+      "bibliographic": null,
+      "name": "Old Church Slavonic, Church Slavonic, Old Bulgarian"
+    },
+    "cv": {
+      "primary": "cv",
+      "terminology": "chv",
+      "bibliographic": null,
+      "name": "Chuvash"
+    },
+    "cy": {
+      "primary": "cy",
+      "terminology": "cym",
+      "bibliographic": "wel",
+      "name": "Welsh"
+    },
+    "da": {
+      "primary": "da",
+      "terminology": "dan",
+      "bibliographic": null,
+      "name": "Danish"
+    },
+    "de": {
+      "primary": "de",
+      "terminology": "deu",
+      "bibliographic": "ger",
+      "name": "German"
+    },
+    "dv": {
+      "primary": "dv",
+      "terminology": "div",
+      "bibliographic": null,
+      "name": "Divehi, Dhivehi, Maldivian"
+    },
+    "dz": {
+      "primary": "dz",
+      "terminology": "dzo",
+      "bibliographic": null,
+      "name": "Dzongkha"
+    },
+    "ee": {
+      "primary": "ee",
+      "terminology": "ewe",
+      "bibliographic": null,
+      "name": "Ewe"
+    },
+    "el": {
+      "primary": "el",
+      "terminology": "ell",
+      "bibliographic": "gre",
+      "name": "Greek (modern)"
+    },
+    "en": {
+      "primary": "en",
+      "terminology": "eng",
+      "bibliographic": null,
+      "name": "English"
+    },
+    "eo": {
+      "primary": "eo",
+      "terminology": "epo",
+      "bibliographic": null,
+      "name": "Esperanto"
+    },
+    "es": {
+      "primary": "es",
+      "terminology": "spa",
+      "bibliographic": null,
+      "name": "Spanish"
+    },
+    "et": {
+      "primary": "et",
+      "terminology": "est",
+      "bibliographic": null,
+      "name": "Estonian"
+    },
+    "eu": {
+      "primary": "eu",
+      "terminology": "eus",
+      "bibliographic": "baq",
+      "name": "Basque"
+    },
+    "fa": {
+      "primary": "fa",
+      "terminology": "fas",
+      "bibliographic": "per",
+      "name": "Persian (Farsi)"
+    },
+    "ff": {
+      "primary": "ff",
+      "terminology": "ful",
+      "bibliographic": null,
+      "name": "Fula, Fulah, Pulaar, Pular"
+    },
+    "fi": {
+      "primary": "fi",
+      "terminology": "fin",
+      "bibliographic": null,
+      "name": "Finnish"
+    },
+    "fj": {
+      "primary": "fj",
+      "terminology": "fij",
+      "bibliographic": null,
+      "name": "Fijian"
+    },
+    "fo": {
+      "primary": "fo",
+      "terminology": "fao",
+      "bibliographic": null,
+      "name": "Faroese"
+    },
+    "fr": {
+      "primary": "fr",
+      "terminology": "fra",
+      "bibliographic": "fre",
+      "name": "French"
+    },
+    "fy": {
+      "primary": "fy",
+      "terminology": "fry",
+      "bibliographic": null,
+      "name": "Western Frisian"
+    },
+    "ga": {
+      "primary": "ga",
+      "terminology": "gle",
+      "bibliographic": null,
+      "name": "Irish"
+    },
+    "gd": {
+      "primary": "gd",
+      "terminology": "gla",
+      "bibliographic": null,
+      "name": "Scottish Gaelic, Gaelic"
+    },
+    "gl": {
+      "primary": "gl",
+      "terminology": "glg",
+      "bibliographic": null,
+      "name": "Galician"
+    },
+    "gn": {
+      "primary": "gn",
+      "terminology": "grn",
+      "bibliographic": null,
+      "name": "Guaraní"
+    },
+    "gu": {
+      "primary": "gu",
+      "terminology": "guj",
+      "bibliographic": null,
+      "name": "Gujarati"
+    },
+    "gv": {
+      "primary": "gv",
+      "terminology": "glv",
+      "bibliographic": null,
+      "name": "Manx"
+    },
+    "ha": {
+      "primary": "ha",
+      "terminology": "hau",
+      "bibliographic": null,
+      "name": "Hausa"
+    },
+    "he": {
+      "primary": "he",
+      "terminology": "heb",
+      "bibliographic": null,
+      "name": "Hebrew (modern)"
+    },
+    "hi": {
+      "primary": "hi",
+      "terminology": "hin",
+      "bibliographic": null,
+      "name": "Hindi"
+    },
+    "ho": {
+      "primary": "ho",
+      "terminology": "hmo",
+      "bibliographic": null,
+      "name": "Hiri Motu"
+    },
+    "hr": {
+      "primary": "hr",
+      "terminology": "hrv",
+      "bibliographic": null,
+      "name": "Croatian"
+    },
+    "ht": {
+      "primary": "ht",
+      "terminology": "hat",
+      "bibliographic": null,
+      "name": "Haitian, Haitian Creole"
+    },
+    "hu": {
+      "primary": "hu",
+      "terminology": "hun",
+      "bibliographic": null,
+      "name": "Hungarian"
+    },
+    "hy": {
+      "primary": "hy",
+      "terminology": "hye",
+      "bibliographic": "arm",
+      "name": "Armenian"
+    },
+    "hz": {
+      "primary": "hz",
+      "terminology": "her",
+      "bibliographic": null,
+      "name": "Herero"
+    },
+    "ia": {
+      "primary": "ia",
+      "terminology": "ina",
+      "bibliographic": null,
+      "name": "Interlingua"
+    },
+    "id": {
+      "primary": "id",
+      "terminology": "ind",
+      "bibliographic": null,
+      "name": "Indonesian"
+    },
+    "ie": {
+      "primary": "ie",
+      "terminology": "ile",
+      "bibliographic": null,
+      "name": "Interlingue"
+    },
+    "ig": {
+      "primary": "ig",
+      "terminology": "ibo",
+      "bibliographic": null,
+      "name": "Igbo"
+    },
+    "ii": {
+      "primary": "ii",
+      "terminology": "iii",
+      "bibliographic": null,
+      "name": "Nuosu"
+    },
+    "ik": {
+      "primary": "ik",
+      "terminology": "ipk",
+      "bibliographic": null,
+      "name": "Inupiaq"
+    },
+    "io": {
+      "primary": "io",
+      "terminology": "ido",
+      "bibliographic": null,
+      "name": "Ido"
+    },
+    "is": {
+      "primary": "is",
+      "terminology": "isl",
+      "bibliographic": "ice",
+      "name": "Icelandic"
+    },
+    "it": {
+      "primary": "it",
+      "terminology": "ita",
+      "bibliographic": null,
+      "name": "Italian"
+    },
+    "iu": {
+      "primary": "iu",
+      "terminology": "iku",
+      "bibliographic": null,
+      "name": "Inuktitut"
+    },
+    "ja": {
+      "primary": "ja",
+      "terminology": "jpn",
+      "bibliographic": null,
+      "name": "Japanese"
+    },
+    "jv": {
+      "primary": "jv",
+      "terminology": "jav",
+      "bibliographic": null,
+      "name": "Javanese"
+    },
+    "ka": {
+      "primary": "ka",
+      "terminology": "kat",
+      "bibliographic": "geo",
+      "name": "Georgian"
+    },
+    "kg": {
+      "primary": "kg",
+      "terminology": "kon",
+      "bibliographic": null,
+      "name": "Kongo"
+    },
+    "ki": {
+      "primary": "ki",
+      "terminology": "kik",
+      "bibliographic": null,
+      "name": "Kikuyu, Gikuyu"
+    },
+    "kj": {
+      "primary": "kj",
+      "terminology": "kua",
+      "bibliographic": null,
+      "name": "Kwanyama, Kuanyama"
+    },
+    "kk": {
+      "primary": "kk",
+      "terminology": "kaz",
+      "bibliographic": null,
+      "name": "Kazakh"
+    },
+    "kl": {
+      "primary": "kl",
+      "terminology": "kal",
+      "bibliographic": null,
+      "name": "Kalaallisut, Greenlandic"
+    },
+    "km": {
+      "primary": "km",
+      "terminology": "khm",
+      "bibliographic": null,
+      "name": "Khmer"
+    },
+    "kn": {
+      "primary": "kn",
+      "terminology": "kan",
+      "bibliographic": null,
+      "name": "Kannada"
+    },
+    "ko": {
+      "primary": "ko",
+      "terminology": "kor",
+      "bibliographic": null,
+      "name": "Korean"
+    },
+    "kr": {
+      "primary": "kr",
+      "terminology": "kau",
+      "bibliographic": null,
+      "name": "Kanuri"
+    },
+    "ks": {
+      "primary": "ks",
+      "terminology": "kas",
+      "bibliographic": null,
+      "name": "Kashmiri"
+    },
+    "ku": {
+      "primary": "ku",
+      "terminology": "kur",
+      "bibliographic": null,
+      "name": "Kurdish"
+    },
+    "kv": {
+      "primary": "kv",
+      "terminology": "kom",
+      "bibliographic": null,
+      "name": "Komi"
+    },
+    "kw": {
+      "primary": "kw",
+      "terminology": "cor",
+      "bibliographic": null,
+      "name": "Cornish"
+    },
+    "ky": {
+      "primary": "ky",
+      "terminology": "kir",
+      "bibliographic": null,
+      "name": "Kyrgyz"
+    },
+    "la": {
+      "primary": "la",
+      "terminology": "lat",
+      "bibliographic": null,
+      "name": "Latin"
+    },
+    "lb": {
+      "primary": "lb",
+      "terminology": "ltz",
+      "bibliographic": null,
+      "name": "Luxembourgish, Letzeburgesch"
+    },
+    "lg": {
+      "primary": "lg",
+      "terminology": "lug",
+      "bibliographic": null,
+      "name": "Ganda"
+    },
+    "li": {
+      "primary": "li",
+      "terminology": "lim",
+      "bibliographic": null,
+      "name": "Limburgish, Limburgan, Limburger"
+    },
+    "ln": {
+      "primary": "ln",
+      "terminology": "lin",
+      "bibliographic": null,
+      "name": "Lingala"
+    },
+    "lo": {
+      "primary": "lo",
+      "terminology": "lao",
+      "bibliographic": null,
+      "name": "Lao"
+    },
+    "lt": {
+      "primary": "lt",
+      "terminology": "lit",
+      "bibliographic": null,
+      "name": "Lithuanian"
+    },
+    "lu": {
+      "primary": "lu",
+      "terminology": "lub",
+      "bibliographic": null,
+      "name": "Luba-Katanga"
+    },
+    "lv": {
+      "primary": "lv",
+      "terminology": "lav",
+      "bibliographic": null,
+      "name": "Latvian"
+    },
+    "mg": {
+      "primary": "mg",
+      "terminology": "mlg",
+      "bibliographic": null,
+      "name": "Malagasy"
+    },
+    "mh": {
+      "primary": "mh",
+      "terminology": "mah",
+      "bibliographic": null,
+      "name": "Marshallese"
+    },
+    "mi": {
+      "primary": "mi",
+      "terminology": "mri",
+      "bibliographic": "mao",
+      "name": "Māori"
+    },
+    "mk": {
+      "primary": "mk",
+      "terminology": "mkd",
+      "bibliographic": "mac",
+      "name": "Macedonian"
+    },
+    "ml": {
+      "primary": "ml",
+      "terminology": "mal",
+      "bibliographic": null,
+      "name": "Malayalam"
+    },
+    "mn": {
+      "primary": "mn",
+      "terminology": "mon",
+      "bibliographic": null,
+      "name": "Mongolian"
+    },
+    "mr": {
+      "primary": "mr",
+      "terminology": "mar",
+      "bibliographic": null,
+      "name": "Marathi (Marāṭhī)"
+    },
+    "ms": {
+      "primary": "ms",
+      "terminology": "msa",
+      "bibliographic": "may",
+      "name": "Malay"
+    },
+    "mt": {
+      "primary": "mt",
+      "terminology": "mlt",
+      "bibliographic": null,
+      "name": "Maltese"
+    },
+    "my": {
+      "primary": "my",
+      "terminology": "mya",
+      "bibliographic": "bur",
+      "name": "Burmese"
+    },
+    "na": {
+      "primary": "na",
+      "terminology": "nau",
+      "bibliographic": null,
+      "name": "Nauruan"
+    },
+    "nb": {
+      "primary": "nb",
+      "terminology": "nob",
+      "bibliographic": null,
+      "name": "Norwegian Bokmål"
+    },
+    "nd": {
+      "primary": "nd",
+      "terminology": "nde",
+      "bibliographic": null,
+      "name": "Northern Ndebele"
+    },
+    "ne": {
+      "primary": "ne",
+      "terminology": "nep",
+      "bibliographic": null,
+      "name": "Nepali"
+    },
+    "ng": {
+      "primary": "ng",
+      "terminology": "ndo",
+      "bibliographic": null,
+      "name": "Ndonga"
+    },
+    "nl": {
+      "primary": "nl",
+      "terminology": "nld",
+      "bibliographic": "dut",
+      "name": "Dutch"
+    },
+    "nn": {
+      "primary": "nn",
+      "terminology": "nno",
+      "bibliographic": null,
+      "name": "Norwegian Nynorsk"
+    },
+    "no": {
+      "primary": "no",
+      "terminology": "nor",
+      "bibliographic": null,
+      "name": "Norwegian"
+    },
+    "nr": {
+      "primary": "nr",
+      "terminology": "nbl",
+      "bibliographic": null,
+      "name": "Southern Ndebele"
+    },
+    "nv": {
+      "primary": "nv",
+      "terminology": "nav",
+      "bibliographic": null,
+      "name": "Navajo, Navaho"
+    },
+    "ny": {
+      "primary": "ny",
+      "terminology": "nya",
+      "bibliographic": null,
+      "name": "Chichewa, Chewa, Nyanja"
+    },
+    "oc": {
+      "primary": "oc",
+      "terminology": "oci",
+      "bibliographic": null,
+      "name": "Occitan"
+    },
+    "oj": {
+      "primary": "oj",
+      "terminology": "oji",
+      "bibliographic": null,
+      "name": "Ojibwe, Ojibwa"
+    },
+    "om": {
+      "primary": "om",
+      "terminology": "orm",
+      "bibliographic": null,
+      "name": "Oromo"
+    },
+    "or": {
+      "primary": "or",
+      "terminology": "ori",
+      "bibliographic": null,
+      "name": "Oriya"
+    },
+    "os": {
+      "primary": "os",
+      "terminology": "oss",
+      "bibliographic": null,
+      "name": "Ossetian, Ossetic"
+    },
+    "pa": {
+      "primary": "pa",
+      "terminology": "pan",
+      "bibliographic": null,
+      "name": "(Eastern) Punjabi"
+    },
+    "pi": {
+      "primary": "pi",
+      "terminology": "pli",
+      "bibliographic": null,
+      "name": "Pāli"
+    },
+    "pl": {
+      "primary": "pl",
+      "terminology": "pol",
+      "bibliographic": null,
+      "name": "Polish"
+    },
+    "ps": {
+      "primary": "ps",
+      "terminology": "pus",
+      "bibliographic": null,
+      "name": "Pashto, Pushto"
+    },
+    "pt": {
+      "primary": "pt",
+      "terminology": "por",
+      "bibliographic": null,
+      "name": "Portuguese"
+    },
+    "qu": {
+      "primary": "qu",
+      "terminology": "que",
+      "bibliographic": null,
+      "name": "Quechua"
+    },
+    "rm": {
+      "primary": "rm",
+      "terminology": "roh",
+      "bibliographic": null,
+      "name": "Romansh"
+    },
+    "rn": {
+      "primary": "rn",
+      "terminology": "run",
+      "bibliographic": null,
+      "name": "Kirundi"
+    },
+    "ro": {
+      "primary": "ro",
+      "terminology": "ron",
+      "bibliographic": "rum",
+      "name": "Romanian"
+    },
+    "ru": {
+      "primary": "ru",
+      "terminology": "rus",
+      "bibliographic": null,
+      "name": "Russian"
+    },
+    "rw": {
+      "primary": "rw",
+      "terminology": "kin",
+      "bibliographic": null,
+      "name": "Kinyarwanda"
+    },
+    "sa": {
+      "primary": "sa",
+      "terminology": "san",
+      "bibliographic": null,
+      "name": "Sanskrit (Saṁskṛta)"
+    },
+    "sc": {
+      "primary": "sc",
+      "terminology": "srd",
+      "bibliographic": null,
+      "name": "Sardinian"
+    },
+    "sd": {
+      "primary": "sd",
+      "terminology": "snd",
+      "bibliographic": null,
+      "name": "Sindhi"
+    },
+    "se": {
+      "primary": "se",
+      "terminology": "sme",
+      "bibliographic": null,
+      "name": "Northern Sami"
+    },
+    "sg": {
+      "primary": "sg",
+      "terminology": "sag",
+      "bibliographic": null,
+      "name": "Sango"
+    },
+    "si": {
+      "primary": "si",
+      "terminology": "sin",
+      "bibliographic": null,
+      "name": "Sinhalese, Sinhala"
+    },
+    "sk": {
+      "primary": "sk",
+      "terminology": "slk",
+      "bibliographic": "slo",
+      "name": "Slovak"
+    },
+    "sl": {
+      "primary": "sl",
+      "terminology": "slv",
+      "bibliographic": null,
+      "name": "Slovene"
+    },
+    "sm": {
+      "primary": "sm",
+      "terminology": "smo",
+      "bibliographic": null,
+      "name": "Samoan"
+    },
+    "sn": {
+      "primary": "sn",
+      "terminology": "sna",
+      "bibliographic": null,
+      "name": "Shona"
+    },
+    "so": {
+      "primary": "so",
+      "terminology": "som",
+      "bibliographic": null,
+      "name": "Somali"
+    },
+    "sq": {
+      "primary": "sq",
+      "terminology": "sqi",
+      "bibliographic": "alb",
+      "name": "Albanian"
+    },
+    "sr": {
+      "primary": "sr",
+      "terminology": "srp",
+      "bibliographic": null,
+      "name": "Serbian"
+    },
+    "ss": {
+      "primary": "ss",
+      "terminology": "ssw",
+      "bibliographic": null,
+      "name": "Swati"
+    },
+    "st": {
+      "primary": "st",
+      "terminology": "sot",
+      "bibliographic": null,
+      "name": "Southern Sotho"
+    },
+    "su": {
+      "primary": "su",
+      "terminology": "sun",
+      "bibliographic": null,
+      "name": "Sundanese"
+    },
+    "sv": {
+      "primary": "sv",
+      "terminology": "swe",
+      "bibliographic": null,
+      "name": "Swedish"
+    },
+    "sw": {
+      "primary": "sw",
+      "terminology": "swa",
+      "bibliographic": null,
+      "name": "Swahili"
+    },
+    "ta": {
+      "primary": "ta",
+      "terminology": "tam",
+      "bibliographic": null,
+      "name": "Tamil"
+    },
+    "te": {
+      "primary": "te",
+      "terminology": "tel",
+      "bibliographic": null,
+      "name": "Telugu"
+    },
+    "tg": {
+      "primary": "tg",
+      "terminology": "tgk",
+      "bibliographic": null,
+      "name": "Tajik"
+    },
+    "th": {
+      "primary": "th",
+      "terminology": "tha",
+      "bibliographic": null,
+      "name": "Thai"
+    },
+    "ti": {
+      "primary": "ti",
+      "terminology": "tir",
+      "bibliographic": null,
+      "name": "Tigrinya"
+    },
+    "tk": {
+      "primary": "tk",
+      "terminology": "tuk",
+      "bibliographic": null,
+      "name": "Turkmen"
+    },
+    "tl": {
+      "primary": "tl",
+      "terminology": "tgl",
+      "bibliographic": null,
+      "name": "Tagalog"
+    },
+    "tn": {
+      "primary": "tn",
+      "terminology": "tsn",
+      "bibliographic": null,
+      "name": "Tswana"
+    },
+    "to": {
+      "primary": "to",
+      "terminology": "ton",
+      "bibliographic": null,
+      "name": "Tonga (Tonga Islands)"
+    },
+    "tr": {
+      "primary": "tr",
+      "terminology": "tur",
+      "bibliographic": null,
+      "name": "Turkish"
+    },
+    "ts": {
+      "primary": "ts",
+      "terminology": "tso",
+      "bibliographic": null,
+      "name": "Tsonga"
+    },
+    "tt": {
+      "primary": "tt",
+      "terminology": "tat",
+      "bibliographic": null,
+      "name": "Tatar"
+    },
+    "tw": {
+      "primary": "tw",
+      "terminology": "twi",
+      "bibliographic": null,
+      "name": "Twi"
+    },
+    "ty": {
+      "primary": "ty",
+      "terminology": "tah",
+      "bibliographic": null,
+      "name": "Tahitian"
+    },
+    "ug": {
+      "primary": "ug",
+      "terminology": "uig",
+      "bibliographic": null,
+      "name": "Uyghur"
+    },
+    "uk": {
+      "primary": "uk",
+      "terminology": "ukr",
+      "bibliographic": null,
+      "name": "Ukrainian"
+    },
+    "ur": {
+      "primary": "ur",
+      "terminology": "urd",
+      "bibliographic": null,
+      "name": "Urdu"
+    },
+    "uz": {
+      "primary": "uz",
+      "terminology": "uzb",
+      "bibliographic": null,
+      "name": "Uzbek"
+    },
+    "ve": {
+      "primary": "ve",
+      "terminology": "ven",
+      "bibliographic": null,
+      "name": "Venda"
+    },
+    "vi": {
+      "primary": "vi",
+      "terminology": "vie",
+      "bibliographic": null,
+      "name": "Vietnamese"
+    },
+    "vo": {
+      "primary": "vo",
+      "terminology": "vol",
+      "bibliographic": null,
+      "name": "Volapük"
+    },
+    "wa": {
+      "primary": "wa",
+      "terminology": "wln",
+      "bibliographic": null,
+      "name": "Walloon"
+    },
+    "wo": {
+      "primary": "wo",
+      "terminology": "wol",
+      "bibliographic": null,
+      "name": "Wolof"
+    },
+    "xh": {
+      "primary": "xh",
+      "terminology": "xho",
+      "bibliographic": null,
+      "name": "Xhosa"
+    },
+    "yi": {
+      "primary": "yi",
+      "terminology": "yid",
+      "bibliographic": null,
+      "name": "Yiddish"
+    },
+    "yo": {
+      "primary": "yo",
+      "terminology": "yor",
+      "bibliographic": null,
+      "name": "Yoruba"
+    },
+    "za": {
+      "primary": "za",
+      "terminology": "zha",
+      "bibliographic": null,
+      "name": "Zhuang, Chuang"
+    },
+    "zh": {
+      "primary": "zh",
+      "terminology": "zho",
+      "bibliographic": "chi",
+      "name": "Chinese"
+    },
+    "zu": {
+      "primary": "zu",
+      "terminology": "zul",
+      "bibliographic": null,
+      "name": "Zulu"
+    }
+  }
+}

@@ -12,9 +12,12 @@ import 'package:shared_preferences/util/legacy_to_async_migration_util.dart';
 /// 3. Optionally override onInit() for post-initialization setup
 abstract class BaseSharedPreferencesService {
   static final Map<Type, BaseSharedPreferencesService> _instances = {};
+  static final Map<Type, Future<BaseSharedPreferencesService>> _initializations = {};
+  static int _resetGeneration = 0;
   // Single shared cache across all subclasses so writes from one service are
   // visible to reads from another without per-instance cache divergence.
   static Future<SharedPreferencesWithCache>? _cacheFuture;
+  static Future<SharedPreferencesWithCache> Function() _cacheLoader = _loadSharedCache;
 
   late SharedPreferencesWithCache _cache;
 
@@ -29,29 +32,68 @@ abstract class BaseSharedPreferencesService {
   /// - One-time migration from the legacy SharedPreferences API to the
   ///   SharedPreferencesAsync-backed cache (idempotent across launches)
   /// - Calling onInit() hook for subclass-specific setup
-  static Future<T> initializeInstance<T extends BaseSharedPreferencesService>(T Function() constructor) async {
-    if (_instances[T] == null) {
+  static Future<T> initializeInstance<T extends BaseSharedPreferencesService>(T Function() constructor) {
+    final initialized = _instances[T];
+    if (initialized != null) return Future<T>.value(initialized as T);
+
+    final inFlight = _initializations[T];
+    if (inFlight != null) return inFlight.then((instance) => instance as T);
+
+    final generation = _resetGeneration;
+    final initialization = () async {
       final instance = constructor();
-      _instances[T] = instance;
       instance._cache = await sharedCache();
       await instance.onInit();
-    }
-    return _instances[T] as T;
+      if (generation != _resetGeneration) {
+        return initializeInstance<T>(constructor);
+      }
+      _instances[T] = instance;
+      return instance;
+    }();
+    _initializations[T] = initialization;
+    return initialization.whenComplete(() {
+      if (identical(_initializations[T], initialization)) {
+        _initializations.remove(T);
+      }
+    });
   }
 
   /// Shared preferences cache used app-wide. Runs the legacy → async
   /// migration on first call; subsequent calls return the same future.
   /// Use this from services that don't extend [BaseSharedPreferencesService].
   static Future<SharedPreferencesWithCache> sharedCache() {
-    return _cacheFuture ??= () async {
-      final legacy = await SharedPreferences.getInstance();
-      await migrateLegacySharedPreferencesToSharedPreferencesAsyncIfNecessary(
-        legacySharedPreferencesInstance: legacy,
-        sharedPreferencesAsyncOptions: const SharedPreferencesOptions(),
-        migrationCompletedKey: 'plezy_legacy_prefs_migrated_v1',
-      );
-      return SharedPreferencesWithCache.create(cacheOptions: const SharedPreferencesWithCacheOptions());
-    }();
+    final cached = _cacheFuture;
+    if (cached != null) return cached;
+
+    late final Future<SharedPreferencesWithCache> loading;
+    loading = _cacheLoader().then(
+      (cache) => cache,
+      onError: (Object error, StackTrace stackTrace) {
+        // Do not poison every later startup with one transient plugin/storage
+        // failure. Identity keeps a superseding/reset load intact while all
+        // concurrent callers continue to share this attempt.
+        if (identical(_cacheFuture, loading)) _cacheFuture = null;
+        Error.throwWithStackTrace(error, stackTrace);
+      },
+    );
+    _cacheFuture = loading;
+    return loading;
+  }
+
+  static Future<SharedPreferencesWithCache> _loadSharedCache() async {
+    final legacy = await SharedPreferences.getInstance();
+    await migrateLegacySharedPreferencesToSharedPreferencesAsyncIfNecessary(
+      legacySharedPreferencesInstance: legacy,
+      sharedPreferencesAsyncOptions: const SharedPreferencesOptions(),
+      migrationCompletedKey: 'plezy_legacy_prefs_migrated_v1',
+    );
+    return SharedPreferencesWithCache.create(cacheOptions: const SharedPreferencesWithCacheOptions());
+  }
+
+  @visibleForTesting
+  static void setCacheLoaderForTesting(Future<SharedPreferencesWithCache> Function() loader) {
+    _cacheFuture = null;
+    _cacheLoader = loader;
   }
 
   /// Drop all cached singleton instances and the shared cache future so the
@@ -59,8 +101,11 @@ abstract class BaseSharedPreferencesService {
   /// `SharedPreferences.setMockInitialValues(...)`. Test-only.
   @visibleForTesting
   static void resetForTesting() {
+    _resetGeneration++;
+    _initializations.clear();
     _instances.clear();
     _cacheFuture = null;
+    _cacheLoader = _loadSharedCache;
   }
 
   /// Typed read helpers — return the stored value or [defaultValue] when missing.

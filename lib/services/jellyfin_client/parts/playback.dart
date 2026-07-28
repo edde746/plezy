@@ -1,9 +1,15 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
+bool _canUseJellyfinStaticStreamFallback(Object error) {
+  if (error is MediaServerAuthException) return false;
+  if (error is MediaServerHttpException) {
+    final status = error.statusCode;
+    return !error.isCancellation && status != 401 && status != 403;
+  }
+  return true;
+}
 
+mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// Backend-neutral [PlaybackExtras] for [itemId]. Jellyfin exposes chapters
   /// at the item level (`raw['Chapters']`) and native skip segments through a
   /// separate `/MediaSegments/{itemId}` endpoint. Segment loading is best-effort
@@ -169,6 +175,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
     final wantsOriginal = isTrack ? audioPreset.isOriginal : preset.isOriginal;
     final requestedAudioStreamId = _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
+    final requestedSubtitleStreamId = _validJellyfinSubtitleStreamId(options.preferredSubtitleTrack, mediaInfo);
     final int? maxStreamingBitrate = wantsOriginal
         ? null
         : isTrack
@@ -179,65 +186,75 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     final int? transcodeStartTimeTicks = !wantsOriginal && resumeOffsetMs != null && resumeOffsetMs > 0
         ? msToJellyfinTicks(resumeOffsetMs)
         : null;
-    final negotiation = await getPlaybackInfo(
-      metadata.id,
-      maxStreamingBitrate: maxStreamingBitrate,
-      mediaSourceId: bundle.selectedSourceId,
-      startTimeTicks: transcodeStartTimeTicks,
-      audioStreamIndex: requestedAudioStreamId,
-      audioProfile: isTrack,
-    );
-    if (negotiation == null) {
-      if (!wantsOriginal) {
-        fallbackReason = TranscodeFallbackReason.decisionFailed;
+    Map<String, dynamic>? negotiation;
+    Map<String, dynamic>? chosenSource;
+    try {
+      negotiation = await getPlaybackInfo(
+        metadata.id,
+        maxStreamingBitrate: maxStreamingBitrate,
+        mediaSourceId: bundle.selectedSourceId,
+        startTimeTicks: transcodeStartTimeTicks,
+        audioStreamIndex: requestedAudioStreamId,
+        subtitleStreamIndex: requestedSubtitleStreamId,
+        audioProfile: isTrack,
+      );
+      chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
+    } catch (error, stackTrace) {
+      if (!_canUseJellyfinStaticStreamFallback(error)) {
+        Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
       }
+      appLogger.w(
+        'Jellyfin playback negotiation unavailable; using the static stream',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+
+    if (chosenSource == null) {
+      fallbackReason = TranscodeFallbackReason.decisionFailed;
+      appLogger.w('Jellyfin playback negotiation returned no usable source; using the static stream');
     } else {
-      final chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
-      if (chosenSource != null) {
-        effectiveSourceId = chosenSource['Id'] as String? ?? effectiveSourceId;
-        effectiveContainer = chosenSource['Container'] as String? ?? effectiveContainer;
-        if (chosenSource['MediaStreams'] is List) {
-          mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
-            chosenSource,
-            chapters: bundle.chapters,
-            trickplay: bundle.trickplay,
-          );
-        }
+      final negotiatedSourceId = chosenSource['Id'];
+      final negotiatedContainer = chosenSource['Container'];
+      if (negotiatedSourceId is String) effectiveSourceId = negotiatedSourceId;
+      if (negotiatedContainer is String) effectiveContainer = negotiatedContainer;
+      if (chosenSource['MediaStreams'] is List) {
+        mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
+          chosenSource,
+          chapters: bundle.chapters,
+          trickplay: bundle.trickplay,
+        );
+      }
 
-        final negotiatedPlaySessionId = negotiation['PlaySessionId'];
-        void capturePlaySessionId(String urlOrPath) {
-          playSessionId = Uri.tryParse(urlOrPath)?.queryParameters['PlaySessionId'];
-          if ((playSessionId == null || playSessionId!.isEmpty) && negotiatedPlaySessionId is String) {
-            playSessionId = negotiatedPlaySessionId;
-          }
+      final negotiatedPlaySessionId = negotiation!['PlaySessionId'];
+      void capturePlaySessionId(String urlOrPath) {
+        playSessionId = Uri.tryParse(urlOrPath)?.queryParameters['PlaySessionId'];
+        if ((playSessionId == null || playSessionId!.isEmpty) && negotiatedPlaySessionId is String) {
+          playSessionId = negotiatedPlaySessionId;
         }
+      }
 
-        final transcodingUrl = chosenSource['TranscodingUrl'];
-        final directStreamUrl = chosenSource['DirectStreamUrl'];
-        if (!wantsOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
-          // TranscodingUrl is server-relative and already encodes container,
-          // codecs, MediaSourceId, and PlaySessionId; we just append the
-          // api_key for auth.
-          capturePlaySessionId(transcodingUrl);
-          videoUrl = _withApiKey(transcodingUrl);
-          playMethod = 'Transcode';
-          isTranscoding = true;
-          includeExternalSubtitleDelivery = true;
-        } else if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
-          capturePlaySessionId(directStreamUrl);
-          videoUrl = _withApiKey(directStreamUrl);
-          playMethod = 'DirectStream';
-          // DirectStream remuxes the selected streams into a new container.
-          // Subtitle streams marked for external delivery are not present in
-          // that container, so expose their server URLs as sidecars just as we
-          // do for transcoded playback. True DirectPlay keeps using the
-          // embedded native tracks and does not incur a sidecar fetch.
-          includeExternalSubtitleDelivery = true;
-        } else {
-          if (!wantsOriginal) {
-            fallbackReason = TranscodeFallbackReason.directPlayOnly;
-          }
-        }
+      final transcodingUrl = chosenSource['TranscodingUrl'];
+      final directStreamUrl = chosenSource['DirectStreamUrl'];
+      if (!wantsOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
+        // TranscodingUrl is server-relative and already encodes container,
+        // codecs, MediaSourceId, and PlaySessionId; we just append the
+        // api_key for auth.
+        capturePlaySessionId(transcodingUrl);
+        videoUrl = _withApiKey(transcodingUrl);
+        playMethod = 'Transcode';
+        isTranscoding = true;
+        includeExternalSubtitleDelivery = true;
+      } else if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
+        capturePlaySessionId(directStreamUrl);
+        videoUrl = _withApiKey(directStreamUrl);
+        playMethod = 'DirectStream';
+        // DirectStream remuxes the selected streams into a new container.
+        // Subtitle streams marked for external delivery are not present in
+        // that container, so expose their server URLs as sidecars just as we
+        // do for transcoded playback. True DirectPlay keeps using the
+        // embedded native tracks and does not incur a sidecar fetch.
+        includeExternalSubtitleDelivery = true;
       } else if (!wantsOriginal) {
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
@@ -280,20 +297,67 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     return mediaInfo.audioTracks.any((track) => track.id == explicit) ? explicit : null;
   }
 
+  int? _validJellyfinSubtitleStreamId(SubtitleTrack? preferred, MediaSourceInfo mediaInfo) {
+    if (preferred == null) return null;
+    if (preferred.id == SubtitleTrack.off.id) return -1;
+
+    var semanticPreference = preferred;
+    const sourcePrefix = 'source:';
+    if (preferred.id.startsWith(sourcePrefix)) {
+      semanticPreference = SubtitleTrack(
+        id: 'navigation',
+        title: preferred.title,
+        language: preferred.language,
+        codec: preferred.codec,
+        isDefault: preferred.isDefault,
+        isForced: preferred.isForced,
+        isExternal: preferred.isExternal,
+        isContainer: preferred.isContainer,
+      );
+      final explicit = int.tryParse(preferred.id.substring(sourcePrefix.length));
+      if (explicit != null) {
+        final exactSource = mediaInfo.subtitleTracks.where((track) => track.id == explicit).firstOrNull;
+        if (exactSource != null) {
+          // A source id is authoritative only within one item. When semantic
+          // metadata is available, prefer the best current-source row so a
+          // reused stream index cannot override a better title/codec match.
+          final semanticMatch = findPlexTrackForMpvSubtitle(semanticPreference, mediaInfo.subtitleTracks);
+          final hasLanguage = preferred.language?.isNotEmpty ?? false;
+          if (!hasLanguage || (semanticMatch?.id == explicit && preferred.isForced == exactSource.forced)) {
+            return explicit;
+          }
+          return semanticMatch?.id;
+        }
+      }
+    }
+
+    return findPlexTrackForMpvSubtitle(semanticPreference, mediaInfo.subtitleTracks)?.id;
+  }
+
   Map<String, dynamic>? _selectNegotiatedMediaSource(Object? sources, String? selectedSourceId) {
     if (sources is! List || sources.isEmpty) return null;
     final requestedSourceId = selectedSourceId?.trim();
     if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
       for (final source in sources) {
-        if (source is Map<String, dynamic> &&
-            (source['Id'] as String?)?.toLowerCase() == requestedSourceId.toLowerCase()) {
+        if (source is! Map<String, dynamic>) {
+          throw const FormatException('Malformed Jellyfin PlaybackInfo media source');
+        }
+        final sourceId = source['Id'];
+        if (sourceId is String && sourceId.toLowerCase() == requestedSourceId.toLowerCase()) {
           return source;
         }
       }
       return null;
     }
     final first = sources.first;
-    return first is Map<String, dynamic> ? first : null;
+    if (first is! Map<String, dynamic>) {
+      throw const FormatException('Malformed Jellyfin PlaybackInfo media source');
+    }
+    final firstId = first['Id'];
+    if (firstId != null && firstId is! String) {
+      throw const FormatException('Malformed Jellyfin PlaybackInfo media source id');
+    }
+    return first;
   }
 
   int? _resolveJellyfinAudioStreamId(int? explicit, MediaSourceInfo mediaInfo) {
@@ -499,9 +563,10 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     );
   }
 
-  /// Negotiate playback: returns the parsed `MediaSources[]` array and the
-  /// server's recommended `PlaySessionId`. Caller decides which media source
-  /// to use and feeds the returned `TranscodingUrl` into the player.
+  /// Negotiate playback and return a structurally valid successful response.
+  /// Typed request/decode/cancellation failures propagate unchanged. A
+  /// successful response must be a map with a list-valued `MediaSources`;
+  /// the list may be empty for consumer-specific unavailable-stream policy.
   ///
   /// When non-null, [maxStreamingBitrate] is forwarded as both the top-level
   /// field and inside the `DeviceProfile` so the server caps direct-stream and
@@ -518,7 +583,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// [audioProfile] extends the DeviceProfile with music direct-play and
   /// audio→mp3 transcode entries for track playback; the video profiles (and
   /// the request body when false) are untouched either way.
-  Future<Map<String, dynamic>?> getPlaybackInfo(
+  Future<Map<String, dynamic>> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,
     String? mediaSourceId,
@@ -534,107 +599,109 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     bool? allowAudioStreamCopy,
     bool audioProfile = false,
   }) async {
-    try {
-      final query = <String, String>{
-        'userId': connection.userId,
-        'MaxStreamingBitrate': ?maxStreamingBitrate?.toString(),
+    final query = <String, String>{
+      'userId': connection.userId,
+      'MaxStreamingBitrate': ?maxStreamingBitrate?.toString(),
+      'MediaSourceId': ?mediaSourceId,
+      'LiveStreamId': ?liveStreamId,
+      'StartTimeTicks': ?startTimeTicks?.toString(),
+      'AudioStreamIndex': ?audioStreamIndex?.toString(),
+      'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
+      'AutoOpenLiveStream': ?autoOpenLiveStream?.toString(),
+      'EnableDirectPlay': ?enableDirectPlay?.toString(),
+      'EnableDirectStream': ?enableDirectStream?.toString(),
+      'EnableTranscoding': ?enableTranscoding?.toString(),
+      'AllowVideoStreamCopy': ?allowVideoStreamCopy?.toString(),
+      'AllowAudioStreamCopy': ?allowAudioStreamCopy?.toString(),
+    };
+    final response = await _http.post(
+      '/Items/${_segment(itemId)}/PlaybackInfo',
+      queryParameters: query,
+      body: {
+        'UserId': connection.userId,
+        'MaxStreamingBitrate': ?maxStreamingBitrate,
         'MediaSourceId': ?mediaSourceId,
         'LiveStreamId': ?liveStreamId,
-        'StartTimeTicks': ?startTimeTicks?.toString(),
-        'AudioStreamIndex': ?audioStreamIndex?.toString(),
-        'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
-        'AutoOpenLiveStream': ?autoOpenLiveStream?.toString(),
-        'EnableDirectPlay': ?enableDirectPlay?.toString(),
-        'EnableDirectStream': ?enableDirectStream?.toString(),
-        'EnableTranscoding': ?enableTranscoding?.toString(),
-        'AllowVideoStreamCopy': ?allowVideoStreamCopy?.toString(),
-        'AllowAudioStreamCopy': ?allowAudioStreamCopy?.toString(),
-      };
-      final response = await _http.post(
-        '/Items/${_segment(itemId)}/PlaybackInfo',
-        queryParameters: query,
-        body: {
-          'UserId': connection.userId,
+        'StartTimeTicks': ?startTimeTicks,
+        'AudioStreamIndex': ?audioStreamIndex,
+        'SubtitleStreamIndex': ?subtitleStreamIndex,
+        'AutoOpenLiveStream': ?autoOpenLiveStream,
+        'EnableDirectPlay': ?enableDirectPlay,
+        'EnableDirectStream': ?enableDirectStream,
+        'EnableTranscoding': ?enableTranscoding,
+        'AllowVideoStreamCopy': ?allowVideoStreamCopy,
+        'AllowAudioStreamCopy': ?allowAudioStreamCopy,
+        'DeviceProfile': <String, Object?>{
+          'Name': 'Plezy',
           'MaxStreamingBitrate': ?maxStreamingBitrate,
-          'MediaSourceId': ?mediaSourceId,
-          'LiveStreamId': ?liveStreamId,
-          'StartTimeTicks': ?startTimeTicks,
-          'AudioStreamIndex': ?audioStreamIndex,
-          'SubtitleStreamIndex': ?subtitleStreamIndex,
-          'AutoOpenLiveStream': ?autoOpenLiveStream,
-          'EnableDirectPlay': ?enableDirectPlay,
-          'EnableDirectStream': ?enableDirectStream,
-          'EnableTranscoding': ?enableTranscoding,
-          'AllowVideoStreamCopy': ?allowVideoStreamCopy,
-          'AllowAudioStreamCopy': ?allowAudioStreamCopy,
-          'DeviceProfile': <String, Object?>{
-            'Name': 'Plezy',
-            'MaxStreamingBitrate': ?maxStreamingBitrate,
-            'CodecProfiles': const <Map<String, Object?>>[],
-            // Comma-separated codec lists are order-sensitive — first entry
-            // wins when the server picks an output codec. HEVC is listed
-            // ahead of H.264 so a server that has "Allow encoding in HEVC
-            // format" enabled will actually emit HEVC instead of falling
-            // back to H.264.
-            'TranscodingProfiles': <Map<String, Object?>>[
+          'CodecProfiles': const <Map<String, Object?>>[],
+          // Comma-separated codec lists are order-sensitive — first entry
+          // wins when the server picks an output codec. HEVC is listed
+          // ahead of H.264 so a server that has "Allow encoding in HEVC
+          // format" enabled will actually emit HEVC instead of falling
+          // back to H.264.
+          'TranscodingProfiles': <Map<String, Object?>>[
+            const {
+              'Type': 'Video',
+              'Container': 'ts',
+              'Protocol': 'hls',
+              'VideoCodec': 'hevc,h264',
+              'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus',
+            },
+            // Track playback transcode target: stereo mp3 over plain http.
+            // Appended after the video profile so the first-entry-wins
+            // ordering for video output codecs is untouched.
+            if (audioProfile)
               const {
-                'Type': 'Video',
-                'Container': 'ts',
-                'Protocol': 'hls',
-                'VideoCodec': 'hevc,h264',
-                'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus',
+                'Type': 'Audio',
+                'Container': 'mp3',
+                'AudioCodec': 'mp3',
+                'Protocol': 'http',
+                'Context': 'Streaming',
+                'MaxAudioChannels': '2',
               },
-              // Track playback transcode target: stereo mp3 over plain http.
-              // Appended after the video profile so the first-entry-wins
-              // ordering for video output codecs is untouched.
-              if (audioProfile)
-                const {
-                  'Type': 'Audio',
-                  'Container': 'mp3',
-                  'AudioCodec': 'mp3',
-                  'Protocol': 'http',
-                  'Context': 'Streaming',
-                  'MaxAudioChannels': '2',
-                },
-            ],
-            // Declaring HEVC in DirectPlayProfile.VideoCodec stops the server
-            // from forcing a transcode for HEVC sources whose container we
-            // already accept — mpv decodes HEVC natively on every platform
-            // we ship.
-            'DirectPlayProfiles': <Map<String, Object?>>[
+          ],
+          // Declaring HEVC in DirectPlayProfile.VideoCodec stops the server
+          // from forcing a transcode for HEVC sources whose container we
+          // already accept — mpv decodes HEVC natively on every platform
+          // we ship.
+          'DirectPlayProfiles': <Map<String, Object?>>[
+            const {
+              'Type': 'Video',
+              'Container': 'mp4,mkv,m4v,webm,mov,ts',
+              'VideoCodec': 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video',
+              'AudioCodec': 'aac,mp3,mp2,ac3,eac3,flac,opus,vorbis,dts',
+            },
+            // Music containers/codecs mpv plays natively everywhere.
+            if (audioProfile)
               const {
-                'Type': 'Video',
-                'Container': 'mp4,mkv,m4v,webm,mov,ts',
-                'VideoCodec': 'hevc,h264,h265,vp8,vp9,av1,mpeg4,mpeg2video',
-                'AudioCodec': 'aac,mp3,mp2,ac3,eac3,flac,opus,vorbis,dts',
+                'Type': 'Audio',
+                'Container': 'flac,mp3,ogg,oga,opus,m4a,m4b,aac,alac,wav,aiff,wma,webma',
+                'AudioCodec': 'flac,mp3,aac,alac,opus,vorbis,wav,wma',
               },
-              // Music containers/codecs mpv plays natively everywhere.
-              if (audioProfile)
-                const {
-                  'Type': 'Audio',
-                  'Container': 'flac,mp3,ogg,oga,opus,m4a,m4b,aac,alac,wav,aiff,wma,webma',
-                  'AudioCodec': 'flac,mp3,aac,alac,opus,vorbis,wav,wma',
-                },
-            ],
-            'SubtitleProfiles': const <Map<String, Object?>>[
-              {'Format': 'srt', 'Method': 'External'},
-              {'Format': 'ass', 'Method': 'External'},
-              {'Format': 'ssa', 'Method': 'External'},
-              {'Format': 'vtt', 'Method': 'External'},
-              {'Format': 'pgssub', 'Method': 'External'},
-              {'Format': 'dvdsub', 'Method': 'External'},
-              {'Format': 'dvbsub', 'Method': 'External'},
-            ],
-          },
+          ],
+          'SubtitleProfiles': const <Map<String, Object?>>[
+            {'Format': 'srt', 'Method': 'External'},
+            {'Format': 'ass', 'Method': 'External'},
+            {'Format': 'ssa', 'Method': 'External'},
+            {'Format': 'vtt', 'Method': 'External'},
+            {'Format': 'pgssub', 'Method': 'External'},
+            {'Format': 'dvdsub', 'Method': 'External'},
+            {'Format': 'dvbsub', 'Method': 'External'},
+          ],
         },
+      },
+    );
+    throwIfHttpError(response);
+    final data = response.data;
+    if (data is! Map<String, dynamic> || data['MediaSources'] is! List) {
+      throw MediaServerHttpException(
+        type: MediaServerHttpErrorType.unknown,
+        statusCode: response.statusCode,
+        message: 'Malformed Jellyfin PlaybackInfo response',
       );
-      throwIfHttpError(response);
-      final data = response.data;
-      return data is Map<String, dynamic> ? data : null;
-    } catch (e, st) {
-      appLogger.w('JellyfinClient: getPlaybackInfo failed', error: e, stackTrace: st);
-      return null;
     }
+    return data;
   }
 
   @override
@@ -654,20 +721,16 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   @override
   Map<String, String> get streamHeaders => const {};
 
-  /// Tell the server the user has started playing [itemId]. Body shape
-  /// mirrors the Jellyfin SDK's [PlaybackStartInfo] — Findroid sends the
-  /// same fields, and Jellyfin's session tracker drops events that omit
-  /// `PlayMethod` because it has no way to associate progress with an
-  /// active session row.
-  ///
-  /// [duration] is accepted for interface symmetry with Plex but ignored —
-  /// Jellyfin's `/Sessions/Playing` body has no slot for it. Stream indexes
-  /// are still sent so the active session reflects the chosen tracks.
-  @override
-  Future<void> reportPlaybackStarted({
+  /// Shared body for the `/Sessions/Playing[/Progress]` pair — only [path] and
+  /// [isPaused] differ between start and progress. Shape mirrors the Jellyfin
+  /// SDK's `PlaybackStartInfo`/`PlaybackProgressInfo`: Findroid sends the same
+  /// fields, and Jellyfin's session tracker drops events that omit `PlayMethod`
+  /// because it has no way to associate progress with an active session row.
+  Future<void> _postPlayingState(
+    String path, {
     required String itemId,
     required Duration position,
-    Duration? duration,
+    required bool isPaused,
     String? playSessionId,
     String? playMethod,
     String? liveStreamId,
@@ -676,44 +739,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     int? subtitleStreamIndex,
   }) async {
     final response = await _http.post(
-      '/Sessions/Playing',
-      body: {
-        'ItemId': itemId,
-        'MediaSourceId': ?mediaSourceId,
-        'AudioStreamIndex': ?audioStreamIndex,
-        'SubtitleStreamIndex': ?subtitleStreamIndex,
-        'PositionTicks': msToJellyfinTicks(position.inMilliseconds),
-        'CanSeek': true,
-        'IsPaused': false,
-        'IsMuted': false,
-        'PlayMethod': playMethod ?? 'DirectPlay',
-        'RepeatMode': 'RepeatNone',
-        'PlaybackOrder': 'Default',
-        'PlaySessionId': ?playSessionId,
-        'LiveStreamId': ?liveStreamId,
-      },
-    );
-    throwIfHttpError(response);
-  }
-
-  /// Periodic progress ping (5–10s cadence is typical). Server uses this to
-  /// drive the resume position, detect idle sessions, and save remembered
-  /// audio/subtitle stream indexes when enabled in Jellyfin user settings.
-  @override
-  Future<void> reportPlaybackProgress({
-    required String itemId,
-    required Duration position,
-    required Duration duration,
-    bool isPaused = false,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    final response = await _http.post(
-      '/Sessions/Playing/Progress',
+      path,
       body: {
         'ItemId': itemId,
         'MediaSourceId': ?mediaSourceId,
@@ -732,6 +758,63 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     );
     throwIfHttpError(response);
   }
+
+  /// Tell the server the user has started playing [itemId].
+  ///
+  /// [duration] is accepted for interface symmetry with Plex but ignored —
+  /// Jellyfin's `/Sessions/Playing` body has no slot for it. Stream indexes
+  /// are still sent so the active session reflects the chosen tracks.
+  @override
+  Future<void> reportPlaybackStarted({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? playMethod,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) => _postPlayingState(
+    '/Sessions/Playing',
+    itemId: itemId,
+    position: position,
+    isPaused: false,
+    playSessionId: playSessionId,
+    playMethod: playMethod,
+    liveStreamId: liveStreamId,
+    mediaSourceId: mediaSourceId,
+    audioStreamIndex: audioStreamIndex,
+    subtitleStreamIndex: subtitleStreamIndex,
+  );
+
+  /// Periodic progress ping (5–10s cadence is typical). Server uses this to
+  /// drive the resume position, detect idle sessions, and save remembered
+  /// audio/subtitle stream indexes when enabled in Jellyfin user settings.
+  @override
+  Future<void> reportPlaybackProgress({
+    required String itemId,
+    required Duration position,
+    required Duration duration,
+    bool isPaused = false,
+    String? playSessionId,
+    String? playMethod,
+    String? liveStreamId,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) => _postPlayingState(
+    '/Sessions/Playing/Progress',
+    itemId: itemId,
+    position: position,
+    isPaused: isPaused,
+    playSessionId: playSessionId,
+    playMethod: playMethod,
+    liveStreamId: liveStreamId,
+    mediaSourceId: mediaSourceId,
+    audioStreamIndex: audioStreamIndex,
+    subtitleStreamIndex: subtitleStreamIndex,
+  );
 
   /// End-of-playback signal. Final position becomes the resume bookmark.
   /// [duration] is accepted for interface symmetry with Plex but ignored.

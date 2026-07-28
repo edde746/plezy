@@ -15,6 +15,7 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   ShaderPreset _savedPreset = ShaderPreset.none;
   ShaderPreset _currentPreset = ShaderPreset.none;
   List<ShaderPreset> _customPresets = [];
+  List<ShaderPreset> _allPresets = ShaderPreset.allPresets;
   bool _initialized = false;
 
   ShaderProvider() {
@@ -26,9 +27,22 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   }
 
   void _syncFromSettings(SettingsService service) {
-    final customData = service.read(SettingsService.customShaderPresets);
-    final customPresets = customData.map((json) => ShaderPreset.fromJson(json)).toList();
+    final customPresets = <ShaderPreset>[];
+    for (final json in service.read(SettingsService.customShaderPresets)) {
+      try {
+        final preset = ShaderPreset.fromJson(json);
+        final fileName = preset.fileName;
+        if (preset.type == ShaderPresetType.custom &&
+            fileName != null &&
+            ShaderAssetLoader.isValidCustomShaderFileName(fileName)) {
+          customPresets.add(preset);
+        }
+      } on Object {
+        // Imported settings can contain structurally invalid custom rows.
+      }
+    }
     _customPresets = customPresets;
+    _refreshAllPresets();
 
     final presetId = service.read(SettingsService.globalShaderPreset);
     _savedPreset = findPresetById(presetId) ?? ShaderPreset.none;
@@ -47,7 +61,7 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   bool get initialized => _initialized;
   ShaderPreset get savedPreset => _savedPreset;
   ShaderPreset get currentPreset => _currentPreset;
-  List<ShaderPreset> get allPresets => [...ShaderPreset.allPresets, ..._customPresets];
+  List<ShaderPreset> get allPresets => _allPresets;
   List<ShaderPreset> get customPresets => _customPresets;
   bool get isShaderEnabled => _currentPreset.type != ShaderPresetType.none;
 
@@ -83,6 +97,7 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
     final preset = ShaderPreset(id: id, name: displayName, type: ShaderPresetType.custom, fileName: storedFileName);
 
     _customPresets.add(preset);
+    _refreshAllPresets();
     await _saveCustomPresets();
     return preset;
   }
@@ -94,12 +109,19 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
       await ShaderAssetLoader.deleteCustomShader(preset.fileName!);
     }
     _customPresets.removeWhere((p) => p.id == preset.id);
+    _refreshAllPresets();
     await _saveCustomPresets();
 
     // Reset to none if the deleted preset was active
     if (wasActive) {
       await setPreset(ShaderPreset.none);
     }
+  }
+
+  void _refreshAllPresets() {
+    _allPresets = _customPresets.isEmpty
+        ? ShaderPreset.allPresets
+        : List.unmodifiable([...ShaderPreset.allPresets, ..._customPresets]);
   }
 
   Future<void> _saveCustomPresets() async {

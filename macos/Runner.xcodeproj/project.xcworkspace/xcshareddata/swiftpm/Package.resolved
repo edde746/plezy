@@ -1,20 +1,12 @@
 {
   "pins" : [
     {
-      "identity" : "csqlite",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/simolus3/CSQLite.git",
-      "state" : {
-        "revision" : "1ee46d19a4f451a7aa64ffc64fc99b4748131e62"
-      }
-    },
-    {
       "identity" : "mpvkit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/edde746/MPVKit",
       "state" : {
-        "revision" : "93101dc1d0903c48fa3054652805acacbb75e856",
-        "version" : "1.0.13"
+        "revision" : "39df1216941c1442e9163d2a574ca37ef2c2b4ff",
+        "version" : "1.0.16"
       }
     },
     {
@@ -22,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/getsentry/sentry-cocoa",
       "state" : {
-        "revision" : "16cd512711375fa73f25ae5e373f596bdf4251ae",
-        "version" : "8.58.0"
+        "revision" : "f196cbb98e0388381d57908f2f5a9bdc385cde68",
+        "version" : "8.58.4"
       }
     }
   ],

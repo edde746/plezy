@@ -6,14 +6,21 @@ import android.content.Context
 import android.util.Log
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.mpv.MpvPlayerCore
+import com.edde746.plezy.mpv.completeMpvPropertyNotInitialized
+import com.edde746.plezy.mpv.completeMpvPropertyResult
 import com.edde746.plezy.shared.MpvContentUriResolver
 import com.edde746.plezy.shared.PlayerChannelBinding
+import com.edde746.plezy.shared.PlayerDelegate
+import com.edde746.plezy.shared.ResolvedMpvUri
+import com.edde746.plezy.shared.SurfacePlayerCore
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.CancellationException
+import java.util.concurrent.atomic.AtomicBoolean
 
 class ExoPlayerPlugin :
   FlutterPlugin,
@@ -24,35 +31,101 @@ class ExoPlayerPlugin :
 
   companion object {
     private const val TAG = "ExoPlayerPlugin"
+    private const val MPV_FALLBACK_INIT_TIMEOUT_MS = 10_000L
+    private const val MPV_OPEN_TIMEOUT_MS = 10_000L
     private const val METHOD_CHANNEL = "com.plezy/exo_player"
   }
 
   private val channels = PlayerChannelBinding(METHOD_CHANNEL, this, this, TAG)
   private val mainHandler get() = channels.mainHandler
+  private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
   private var playerCore: ExoPlayerCore? = null
   private var mpvCore: MpvPlayerCore? = null // MPV fallback player
   private var usingMpvFallback: Boolean = false
   private var fallbackInProgress: Boolean = false
+  private var backendSwitchPending: Boolean = false
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
+
+  /** Whichever core currently owns the surface; both expose [SurfacePlayerCore] identically. */
+  private val activeSurfaceCore: SurfacePlayerCore?
+    get() = if (usingMpvFallback) mpvCore else playerCore
 
   // Every Dart observeProperty registration, kept so an ExoPlayer→MPV
   // fallback can re-observe exactly what Dart asked for instead of
   // maintaining a parallel hard-coded list.
   private data class ObservedProperty(val id: Int, val format: String)
+  private class MediaOpenRequest(
+    val mediaGeneration: Int,
+    val uri: String,
+    val headers: Map<String, String>?,
+    val startPositionMs: Long,
+    val hasStartPosition: Boolean,
+    val autoPlay: Boolean,
+    val isLive: Boolean,
+    val externalSubtitles: List<Map<String, Any?>>?,
+    private val result: MethodChannel.Result?
+  ) {
+    private val completed = AtomicBoolean(false)
+
+    fun success() {
+      if (completed.compareAndSet(false, true)) result?.success(null)
+    }
+
+    fun error(code: String, message: String) {
+      if (completed.compareAndSet(false, true)) result?.error(code, message, null)
+    }
+  }
+
+  private sealed class PendingMpvSignal {
+    data class Property(val id: Int, val value: Any?) : PendingMpvSignal()
+    data class Event(val name: String, val data: Map<String, Any>?) : PendingMpvSignal()
+  }
+
+  private data class MpvSignalGate(
+    val core: MpvPlayerCore,
+    val mediaGeneration: Int,
+    val signals: MutableList<PendingMpvSignal> = mutableListOf()
+  )
+
+  private inner class MpvDelegate(private val core: MpvPlayerCore) : PlayerDelegate {
+    override fun onPropertyChange(name: String, value: Any?) {
+      runOnMain { forwardMpvProperty(core, name, value) }
+    }
+
+    override fun onEvent(name: String, data: Map<String, Any>?) {
+      val snapshot = data?.toMap()
+      runOnMain { forwardMpvEvent(core, name, snapshot) }
+    }
+  }
+
   private val observedProperties = LinkedHashMap<String, ObservedProperty>()
 
   private var configuredBufferSizeBytes: Int? = null
 
   private var sessionGeneration = 0
+  private var mediaGeneration = 0
+  private var fallbackMediaGeneration: Int? = null
+  private var terminalEventGeneration: Int? = null
+  private var pendingOpen: MediaOpenRequest? = null
+  private var inFlightOpen: MediaOpenRequest? = null
+  private var mpvForwardGeneration: Int? = null
+  private var mpvSignalGate: MpvSignalGate? = null
+  private var mpvCoreNeedsReplacement = false
+  internal var createMpvCore: (Activity) -> MpvPlayerCore = { MpvPlayerCore(it) }
+  internal var initializeMpvCore: (MpvPlayerCore, (Boolean) -> Unit) -> Unit = { core, onInitialized ->
+    core.initialize(onInitialized)
+  }
+  internal var resolveMpvUri: (String, Activity, (ResolvedMpvUri) -> Unit) -> Unit = { uri, act, onResolved ->
+    MpvContentUriResolver.resolve(uri, act.contentResolver, mainHandler, onResolved)
+  }
   private var debugLoggingEnabled: Boolean = false
 
   // mpv properties set while ExoPlayer is active (including before
   // initialize — Dart queues its startup properties first), replayed into a
   // fallback MPV core. Keyed by property name (last write wins) and cleared
-  // only at real session boundaries (dispose, engine detach, open while the
-  // fallback is already active) so one playback's properties never leak into
-  // the next session's fallback.
+  // only at real session boundaries so settings can be replayed if a
+  // superseded load requires a fresh MPV core.
   private val pendingMpvProperties = LinkedHashMap<String, String>()
   private var currentExternalSubtitles: List<Map<String, Any?>>? = null
 
@@ -63,7 +136,37 @@ class ExoPlayerPlugin :
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    teardownSession(clearActivity = true)
     channels.detach()
+  }
+
+  private fun teardownSession(clearActivity: Boolean) {
+    ++sessionGeneration
+    ++mediaGeneration
+    val exoCore = playerCore
+    val fallbackCore = mpvCore
+    playerCore = null
+    mpvCore = null
+    usingMpvFallback = false
+    fallbackInProgress = false
+    backendSwitchPending = false
+    mpvForwardGeneration = null
+    mpvSignalGate = null
+    mpvCoreNeedsReplacement = false
+    fallbackMediaGeneration = null
+    terminalEventGeneration = null
+    pendingOpen?.error("NOT_INITIALIZED", "Player session ended before media could open")
+    pendingOpen = null
+    inFlightOpen?.error("NOT_INITIALIZED", "Player session ended before media could open")
+    inFlightOpen = null
+    currentExternalSubtitles = null
+    pendingMpvProperties.clear()
+    if (clearActivity) {
+      activity = null
+      activityBinding = null
+    }
+    exoCore?.dispose()
+    fallbackCore?.dispose()
   }
 
   // ActivityAware
@@ -75,17 +178,7 @@ class ExoPlayerPlugin :
   }
 
   override fun onDetachedFromActivity() {
-    sessionGeneration++
-    playerCore?.dispose()
-    playerCore = null
-    mpvCore?.dispose()
-    mpvCore = null
-    usingMpvFallback = false
-    fallbackInProgress = false
-    currentExternalSubtitles = null
-    pendingMpvProperties.clear()
-    activity = null
-    activityBinding = null
+    teardownSession(clearActivity = true)
     Log.d(TAG, "Detached from activity")
   }
 
@@ -96,10 +189,10 @@ class ExoPlayerPlugin :
   }
 
   override fun onDetachedFromActivityForConfigChanges() {
-    sessionGeneration++
-    fallbackInProgress = false
-    activity = null
-    activityBinding = null
+    // MainActivity owns a self-created engine which is destroyed with the old
+    // Activity. There is no cached-engine transfer contract, so retaining an
+    // Activity-bound core here would orphan its views and native resources.
+    teardownSession(clearActivity = true)
     Log.d(TAG, "Detached from activity for config changes")
   }
 
@@ -178,8 +271,9 @@ class ExoPlayerPlugin :
       return
     }
 
-    if (playerCore?.isInitialized == true) {
-      Log.d(TAG, "Already initialized")
+    val requestGeneration = sessionGeneration
+    if (playerCore?.isInitialized == true || mpvCore?.isInitialized == true || fallbackInProgress) {
+      Log.d(TAG, "Already initialized or switching backend")
       result.success(true)
       return
     }
@@ -196,7 +290,11 @@ class ExoPlayerPlugin :
     AssHandler.setRenderScale(subtitleRenderScale)
 
     currentActivity.runOnUiThread {
-      sessionGeneration++
+      if (requestGeneration != sessionGeneration || activity !== currentActivity) {
+        result.success(false)
+        return@runOnUiThread
+      }
+      ++sessionGeneration
       // Do NOT clear pendingMpvProperties here: Dart queues its startup
       // properties (sub-ass, subtitle fonts, ...) before initialize, and the
       // fallback replay in setupMpvFallback needs them. Dispose/detach clear.
@@ -243,19 +341,11 @@ class ExoPlayerPlugin :
   }
 
   private fun handleDispose(result: MethodChannel.Result) {
-    activity?.runOnUiThread {
-      sessionGeneration++
-      playerCore?.dispose()
-      playerCore = null
-      mpvCore?.dispose()
-      mpvCore = null
-      usingMpvFallback = false
-      fallbackInProgress = false
-      currentExternalSubtitles = null
-      pendingMpvProperties.clear()
+    runOnMain {
+      teardownSession(clearActivity = false)
       Log.d(TAG, "Disposed")
       result.success(null)
-    } ?: result.success(null)
+    }
   }
 
   @Suppress("UNCHECKED_CAST")
@@ -277,83 +367,453 @@ class ExoPlayerPlugin :
       result.error("NO_ACTIVITY", "Activity not available", null)
       return
     }
-    val externalSubtitleSnapshot = externalSubtitles?.map { it.toMap() }
-    currentExternalSubtitles = externalSubtitleSnapshot
 
-    // Only clear pending MPV state when MPV is the active backend. A same-core
-    // MPV reload must not inherit a fallback switch that was armed for the
-    // previous load. When ExoPlayer is active, keep queued properties for a
-    // potential ExoPlayer→MPV fallback.
+    val request = MediaOpenRequest(
+      mediaGeneration = ++mediaGeneration,
+      uri = uri,
+      headers = headers,
+      startPositionMs = startPositionMs,
+      hasStartPosition = hasStartPosition,
+      autoPlay = autoPlay,
+      isLive = isLive,
+      externalSubtitles = externalSubtitles?.map { it.toMap() },
+      result = result
+    )
+    terminalEventGeneration = null
+    currentExternalSubtitles = request.externalSubtitles
+
+    if (fallbackInProgress) {
+      pendingOpen?.let(::completeSupersededOpen)
+      pendingOpen = request
+      Log.i(TAG, "Queued media generation ${request.mediaGeneration} until MPV fallback is ready")
+      return
+    }
+
     if (usingMpvFallback) {
-      pendingMpvProperties.clear()
-      val generation = sessionGeneration
-      MpvContentUriResolver.resolve(uri, currentActivity.contentResolver, mainHandler) { source ->
-        if (generation != sessionGeneration || activity !== currentActivity || !usingMpvFallback) {
-          source.closeIfUnused()
-          result.success(null)
-          return@resolve
-        }
-        loadMpvMedia(
-          source.value,
-          headers,
-          startPositionMs,
-          hasStartPosition,
-          autoPlay,
-          externalSubtitleSnapshot
-        )
-        result.success(null)
+      val core = mpvCore
+      if (core?.isInitialized != true) {
+        request.error("NOT_INITIALIZED", "Compatible player is not initialized")
+        return
+      }
+      val activeOpen = inFlightOpen
+      if (activeOpen != null) {
+        completeSupersededOpen(activeOpen)
+        mpvCoreNeedsReplacement = true
+        pendingOpen?.let(::completeSupersededOpen)
+        pendingOpen = request
+        Log.i(TAG, "Queued media generation ${request.mediaGeneration} behind the active MPV open")
+        return
+      }
+      pendingOpen?.let(::completeSupersededOpen)
+      if (mpvCoreNeedsReplacement) {
+        pendingOpen = request
+        dispatchPendingMpvOpen(core, currentActivity, sessionGeneration)
+      } else {
+        pendingOpen = null
+        dispatchMpvOpen(request, core, currentActivity, sessionGeneration)
       }
       return
     }
 
     currentActivity.runOnUiThread {
-      playerCore?.open(uri, headers, startPositionMs, autoPlay, isLive, externalSubtitleSnapshot)
-      result.success(null)
+      if (request.mediaGeneration != mediaGeneration) {
+        completeSupersededOpen(request)
+        return@runOnUiThread
+      }
+      if (activity !== currentActivity) {
+        request.error("NO_ACTIVITY", "Activity is no longer available")
+        return@runOnUiThread
+      }
+      val core = playerCore
+      if (core?.isInitialized != true) {
+        request.error("NOT_INITIALIZED", "ExoPlayer is not initialized")
+        return@runOnUiThread
+      }
+      core.open(
+        uri = uri,
+        headers = headers,
+        startPositionMs = startPositionMs,
+        autoPlay = autoPlay,
+        mediaGeneration = request.mediaGeneration,
+        isLive = isLive,
+        externalSubtitleList = request.externalSubtitles
+      )
+      request.success()
     }
   }
 
   private fun loadMpvMedia(
+    core: MpvPlayerCore,
     uri: String,
     headers: Map<String, String>?,
     startPositionMs: Long,
     hasStartPosition: Boolean,
     autoPlay: Boolean,
-    externalSubtitles: List<Map<String, Any?>>?
+    externalSubtitles: List<Map<String, Any?>>?,
+    onComplete: (Boolean) -> Unit
   ) {
     val startSeconds = startPositionMs / 1000.0
     val options = mutableListOf<String>()
     options.add(if (hasStartPosition && startPositionMs > 0L) "start=$startSeconds" else "start=none")
-    if (!autoPlay) options.add("pause=yes")
+    options.add(if (autoPlay) "pause=no" else "pause=yes")
     options.add("sid=no")
     options.add("secondary-sid=no")
     appendExternalSubtitleOptions(options, externalSubtitles)
     appendHttpHeaderOptions(options, headers)
     val optionsStr = options.joinToString(",")
-    mpvCore?.command(arrayOf("loadfile", uri, "replace", "-1", optionsStr)) { success ->
-      if (success && autoPlay) {
-        mpvCore?.setProperty("pause", "no")
+    core.command(arrayOf("loadfile", uri, "replace", "-1", optionsStr), onComplete)
+  }
+
+  private fun completeSupersededOpen(request: MediaOpenRequest) {
+    request.error("OPEN_SUPERSEDED", "A newer media open replaced this request")
+  }
+
+  private fun forwardMpvProperty(core: MpvPlayerCore, name: String, value: Any?) {
+    if (mpvCore !== core || !usingMpvFallback) return
+    val propId = observedProperties[name]?.id ?: return
+    val gate = mpvSignalGate
+    if (gate != null) {
+      if (gate.core === core && gate.mediaGeneration == mediaGeneration) {
+        gate.signals.add(PendingMpvSignal.Property(propId, value))
+      }
+      return
+    }
+    if (mpvForwardGeneration == mediaGeneration) channels.emitProperty(propId, value)
+  }
+
+  private fun forwardMpvEvent(core: MpvPlayerCore, name: String, data: Map<String, Any>?) {
+    if (mpvCore !== core || !usingMpvFallback) return
+    val gate = mpvSignalGate
+    if (gate != null) {
+      if (gate.core === core && gate.mediaGeneration == mediaGeneration) {
+        gate.signals.add(PendingMpvSignal.Event(name, data))
+      }
+      return
+    }
+    if (mpvForwardGeneration == mediaGeneration) channels.emitEvent(name, data)
+  }
+
+  private fun flushMpvSignals(core: MpvPlayerCore, request: MediaOpenRequest) {
+    val gate = mpvSignalGate ?: return
+    if (gate.core !== core || gate.mediaGeneration != request.mediaGeneration) return
+    mpvSignalGate = null
+    for (signal in gate.signals) {
+      when (signal) {
+        is PendingMpvSignal.Property -> channels.emitProperty(signal.id, signal.value)
+        is PendingMpvSignal.Event -> channels.emitEvent(signal.name, signal.data)
+      }
+    }
+  }
+
+  private fun discardMpvSignals(core: MpvPlayerCore, request: MediaOpenRequest) {
+    val gate = mpvSignalGate ?: return
+    if (gate.core === core && gate.mediaGeneration == request.mediaGeneration) {
+      mpvSignalGate = null
+    }
+  }
+
+  private fun dispatchPendingMpvOpen(core: MpvPlayerCore, act: Activity, generation: Int) {
+    runOnMain {
+      if (inFlightOpen != null) return@runOnMain
+      val next = pendingOpen ?: return@runOnMain
+      pendingOpen = null
+      if (generation != sessionGeneration || activity !== act || !usingMpvFallback || mpvCore !== core) {
+        next.error("NOT_INITIALIZED", "Compatible player is no longer available")
+        return@runOnMain
+      }
+      if (mpvCoreNeedsReplacement) {
+        replaceMpvCoreForOpen(next, core, act, generation)
+      } else {
+        dispatchMpvOpen(next, core, act, generation)
+      }
+    }
+  }
+
+  private fun replaceMpvCoreForOpen(
+    request: MediaOpenRequest,
+    oldCore: MpvPlayerCore,
+    act: Activity,
+    generation: Int
+  ) {
+    fallbackInProgress = true
+    pendingOpen = request
+    mpvForwardGeneration = null
+    mpvSignalGate = null
+    if (mpvCore === oldCore) mpvCore = null
+    oldCore.dispose()
+
+    val replacementCore = try {
+      createMpvCore(act)
+    } catch (error: Exception) {
+      failMpvReplacementInitialization(
+        request.mediaGeneration,
+        null,
+        "Failed to recreate compatible player",
+        error
+      )
+      return
+    }
+    replacementCore.delegate = MpvDelegate(replacementCore)
+    mpvCore = replacementCore
+
+    val settled = AtomicBoolean(false)
+    val timeout = Runnable {
+      if (!settled.compareAndSet(false, true)) return@Runnable
+      failMpvReplacementInitialization(
+        request.mediaGeneration,
+        replacementCore,
+        "Timed out recreating compatible player"
+      )
+    }
+    mainHandler.postDelayed(timeout, MPV_FALLBACK_INIT_TIMEOUT_MS)
+
+    try {
+      initializeMpvCore(replacementCore) { success ->
+        runOnMain {
+          if (!settled.compareAndSet(false, true)) return@runOnMain
+          mainHandler.removeCallbacks(timeout)
+          if (
+            generation != sessionGeneration ||
+            activity !== act ||
+            !usingMpvFallback ||
+            mpvCore !== replacementCore
+          ) {
+            replacementCore.dispose()
+            return@runOnMain
+          }
+          if (!success) {
+            failMpvReplacementInitialization(
+              request.mediaGeneration,
+              replacementCore,
+              "Failed to recreate compatible player"
+            )
+            return@runOnMain
+          }
+
+          fallbackInProgress = false
+          mpvCoreNeedsReplacement = false
+          val next = pendingOpen
+          pendingOpen = null
+          if (next == null) return@runOnMain
+          replacementCore.setPauseIntentForLoad(paused = !next.autoPlay)
+          prepareMpvFallback(replacementCore)
+          dispatchMpvOpen(next, replacementCore, act, generation)
+        }
+      }
+    } catch (error: Exception) {
+      if (settled.compareAndSet(false, true)) {
+        mainHandler.removeCallbacks(timeout)
+        failMpvReplacementInitialization(
+          request.mediaGeneration,
+          replacementCore,
+          "Failed to recreate compatible player",
+          error
+        )
+      }
+    }
+  }
+
+  private fun failMpvReplacementInitialization(
+    mediaGeneration: Int,
+    core: MpvPlayerCore?,
+    logMessage: String,
+    error: Throwable? = null
+  ) {
+    if (error == null) {
+      Log.e(TAG, logMessage)
+    } else {
+      Log.e(TAG, logMessage, error)
+    }
+    if (core != null && mpvCore !== core) return
+
+    fallbackInProgress = false
+    usingMpvFallback = false
+    backendSwitchPending = false
+    mpvCoreNeedsReplacement = false
+    mpvForwardGeneration = null
+    mpvSignalGate = null
+    mpvCore = null
+    core?.dispose()
+    val failed = pendingOpen
+    pendingOpen = null
+    failed?.error("FALLBACK_FAILED", "Compatible player failed to initialize")
+    emitFallbackErrorOnce(failed?.mediaGeneration ?: mediaGeneration, "Compatible player failed to initialize")
+  }
+
+  private fun dispatchMpvOpen(
+    request: MediaOpenRequest,
+    core: MpvPlayerCore,
+    act: Activity,
+    generation: Int
+  ) {
+    inFlightOpen = request
+    val settled = AtomicBoolean(false)
+    val timeout = Runnable {
+      if (!settled.compareAndSet(false, true)) return@Runnable
+      val wasActive = inFlightOpen === request
+      if (wasActive) inFlightOpen = null
+      discardMpvSignals(core, request)
+      if (mpvForwardGeneration == request.mediaGeneration) mpvForwardGeneration = null
+      request.error("OPEN_TIMEOUT", "Timed out opening media with compatible player")
+
+      val fallbackIsCurrent =
+        wasActive &&
+          request.mediaGeneration == mediaGeneration &&
+          generation == sessionGeneration &&
+          activity === act &&
+          usingMpvFallback &&
+          mpvCore === core
+      if (fallbackIsCurrent) {
+        failActiveFallback(request.mediaGeneration, "Timed out opening media with MPV fallback")
+      } else if (generation == sessionGeneration && activity === act && usingMpvFallback && mpvCore === core) {
+        dispatchPendingMpvOpen(core, act, generation)
+      }
+    }
+    mainHandler.postDelayed(timeout, MPV_OPEN_TIMEOUT_MS)
+
+    resolveMpvUri(request.uri, act) { source ->
+      if (settled.get()) {
+        source.closeIfUnused()
+        return@resolveMpvUri
+      }
+      if (generation != sessionGeneration || activity !== act || !usingMpvFallback || mpvCore !== core) {
+        if (!settled.compareAndSet(false, true)) {
+          source.closeIfUnused()
+          return@resolveMpvUri
+        }
+        mainHandler.removeCallbacks(timeout)
+        source.closeIfUnused()
+        if (inFlightOpen === request) inFlightOpen = null
+        request.error("NOT_INITIALIZED", "Compatible player is no longer available")
+        return@resolveMpvUri
+      }
+      if (request.mediaGeneration != mediaGeneration) {
+        if (!settled.compareAndSet(false, true)) {
+          source.closeIfUnused()
+          return@resolveMpvUri
+        }
+        mainHandler.removeCallbacks(timeout)
+        source.closeIfUnused()
+        if (inFlightOpen === request) inFlightOpen = null
+        completeSupersededOpen(request)
+        dispatchPendingMpvOpen(core, act, generation)
+        return@resolveMpvUri
+      }
+
+      core.setPauseIntentForLoad(paused = !request.autoPlay)
+      mpvForwardGeneration = request.mediaGeneration
+      mpvSignalGate = MpvSignalGate(core, request.mediaGeneration)
+      loadMpvMedia(
+        core = core,
+        uri = source.value,
+        headers = request.headers,
+        startPositionMs = request.startPositionMs,
+        hasStartPosition = request.hasStartPosition,
+        autoPlay = request.autoPlay,
+        externalSubtitles = request.externalSubtitles
+      ) { success ->
+        if (!settled.compareAndSet(false, true)) {
+          if (!success) source.closeIfUnused()
+          return@loadMpvMedia
+        }
+        mainHandler.removeCallbacks(timeout)
+        if (inFlightOpen === request) inFlightOpen = null
+
+        if (request.mediaGeneration != mediaGeneration) {
+          if (!success) source.closeIfUnused()
+          discardMpvSignals(core, request)
+          if (mpvForwardGeneration == request.mediaGeneration) mpvForwardGeneration = null
+          completeSupersededOpen(request)
+          dispatchPendingMpvOpen(core, act, generation)
+          return@loadMpvMedia
+        }
+        if (generation != sessionGeneration || activity !== act || !usingMpvFallback || mpvCore !== core) {
+          if (!success) source.closeIfUnused()
+          discardMpvSignals(core, request)
+          if (mpvForwardGeneration == request.mediaGeneration) mpvForwardGeneration = null
+          request.error("NOT_INITIALIZED", "Compatible player is no longer available")
+          return@loadMpvMedia
+        }
+        if (!success) {
+          source.closeIfUnused()
+          discardMpvSignals(core, request)
+          if (mpvForwardGeneration == request.mediaGeneration) mpvForwardGeneration = null
+          request.error("OPEN_FAILED", "Compatible player failed to open media")
+          failActiveFallback(request.mediaGeneration, "Failed to open media with MPV fallback")
+          return@loadMpvMedia
+        }
+
+        if (backendSwitchPending) {
+          backendSwitchPending = false
+          notifyBackendSwitched()
+          Log.i(TAG, "Successfully switched to MPV fallback")
+        }
+        flushMpvSignals(core, request)
+        request.success()
+      }
+    }
+  }
+
+  private fun handleFallbackMpvProperty(
+    name: String,
+    value: String,
+    result: MethodChannel.Result,
+    successValue: Any? = null
+  ) {
+    val currentActivity = activity
+    val core = mpvCore
+    if (currentActivity == null || core?.isInitialized != true) {
+      completeMpvPropertyNotInitialized(result)
+      return
+    }
+    val generation = sessionGeneration
+    currentActivity.runOnUiThread {
+      if (
+        !usingMpvFallback ||
+        generation != sessionGeneration ||
+        activity !== currentActivity ||
+        mpvCore !== core ||
+        !core.isInitialized
+      ) {
+        completeMpvPropertyNotInitialized(result)
+        return@runOnUiThread
+      }
+      pendingMpvProperties[name] = value
+      core.setProperty(name, value) { outcome ->
+        val fallbackIsCurrent =
+          usingMpvFallback &&
+            generation == sessionGeneration &&
+            activity === currentActivity &&
+            mpvCore === core
+        val currentOutcome =
+          if (fallbackIsCurrent || outcome.isFailure) {
+            outcome
+          } else {
+            Result.failure(CancellationException("MPV fallback unavailable"))
+          }
+        completeMpvPropertyResult(result, currentOutcome, successValue)
       }
     }
   }
 
   private fun handlePlay(result: MethodChannel.Result) {
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("pause", "no", result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("pause", "no")
-      } else {
-        playerCore?.play()
-      }
+      playerCore?.play()
       result.success(null)
     } ?: result.success(null)
   }
 
   private fun handlePause(result: MethodChannel.Result) {
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("pause", "yes", result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("pause", "yes")
-      } else {
-        playerCore?.pause()
-      }
+      playerCore?.pause()
       result.success(null)
     } ?: result.success(null)
   }
@@ -397,12 +857,12 @@ class ExoPlayerPlugin :
       return
     }
 
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("volume", volume.toString(), result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("volume", volume.toString())
-      } else {
-        playerCore?.setVolume(volume / 100f) // Convert 0-100 to 0-1
-      }
+      playerCore?.setVolume(volume / 100f) // Convert 0-100 to 0-1
       result.success(null)
     } ?: result.success(null)
   }
@@ -415,12 +875,12 @@ class ExoPlayerPlugin :
       return
     }
 
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("speed", rate.toString(), result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("speed", rate.toString())
-      } else {
-        playerCore?.setPlaybackSpeed(rate)
-      }
+      playerCore?.setPlaybackSpeed(rate)
       result.success(null)
     } ?: result.success(null)
   }
@@ -433,13 +893,13 @@ class ExoPlayerPlugin :
       return
     }
 
+    if (usingMpvFallback) {
+      // After fallback, track IDs come from mpv's track-list (already 1-indexed)
+      handleFallbackMpvProperty("aid", trackId, result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        // After fallback, track IDs come from mpv's track-list (already 1-indexed)
-        mpvCore?.setProperty("aid", trackId)
-      } else {
-        playerCore?.selectAudioTrack(trackId)
-      }
+      playerCore?.selectAudioTrack(trackId)
       result.success(null)
     } ?: result.success(null)
   }
@@ -448,12 +908,12 @@ class ExoPlayerPlugin :
     val trackId = call.argument<String>("trackId")
 
     // trackId can be null or "no" to disable subtitles
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty("sid", trackId ?: "no", result)
+      return
+    }
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.setProperty("sid", trackId ?: "no")
-      } else {
-        playerCore?.selectSubtitleTrack(trackId)
-      }
+      playerCore?.selectSubtitleTrack(trackId)
       result.success(null)
     } ?: result.success(null)
   }
@@ -496,20 +956,12 @@ class ExoPlayerPlugin :
       return
     }
 
-    if (usingMpvFallback) {
-      mpvCore?.setVisible(visible)
-    } else {
-      playerCore?.setVisible(visible)
-    }
+    activeSurfaceCore?.setVisible(visible)
     result.success(null)
   }
 
   private fun handleUpdateFrame(result: MethodChannel.Result) {
-    if (usingMpvFallback) {
-      mpvCore?.updateFrame()
-    } else {
-      playerCore?.updateFrame()
-    }
+    activeSurfaceCore?.updateFrame()
     result.success(null)
   }
 
@@ -521,51 +973,31 @@ class ExoPlayerPlugin :
     val videoHeight = call.argument<Number>("videoHeight")?.toInt() ?: 0
 
     Log.d(TAG, "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs, video=${videoWidth}x$videoHeight")
-    val onComplete: (Boolean) -> Unit = { switched -> result.success(switched) }
-    if (usingMpvFallback) {
-      val core = mpvCore
-      if (core == null) {
-        result.success(false)
-      } else {
-        core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight, onComplete)
-      }
-    } else {
-      val core = playerCore
-      if (core == null) {
-        result.success(false)
-      } else {
-        core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight, onComplete)
-      }
+    val core = activeSurfaceCore
+    if (core == null) {
+      result.success(false)
+      return
+    }
+    core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight) { switched ->
+      result.success(switched)
     }
   }
 
   private fun handleClearVideoFrameRate(result: MethodChannel.Result) {
     Log.d(TAG, "clearVideoFrameRate")
-    if (usingMpvFallback) {
-      mpvCore?.clearVideoFrameRate()
-    } else {
-      playerCore?.clearVideoFrameRate()
-    }
+    activeSurfaceCore?.clearVideoFrameRate()
     result.success(null)
   }
 
   private fun handleRequestAudioFocus(result: MethodChannel.Result) {
     Log.d(TAG, "requestAudioFocus")
-    val granted = if (usingMpvFallback) {
-      mpvCore?.requestAudioFocus() ?: false
-    } else {
-      playerCore?.requestAudioFocus() ?: false
-    }
+    val granted = activeSurfaceCore?.requestAudioFocus() ?: false
     result.success(granted)
   }
 
   private fun handleAbandonAudioFocus(result: MethodChannel.Result) {
     Log.d(TAG, "abandonAudioFocus")
-    if (usingMpvFallback) {
-      mpvCore?.abandonAudioFocus()
-    } else {
-      playerCore?.abandonAudioFocus()
-    }
+    activeSurfaceCore?.abandonAudioFocus()
     result.success(null)
   }
 
@@ -705,8 +1137,7 @@ class ExoPlayerPlugin :
     val audioSpdif = if (enabled) "ac3,eac3,dts,dts-hd,truehd" else ""
     pendingMpvProperties["audio-spdif"] = audioSpdif
     if (usingMpvFallback) {
-      mpvCore?.setProperty("audio-spdif", audioSpdif)
-      result.success(true)
+      handleFallbackMpvProperty("audio-spdif", audioSpdif, result, true)
       return
     }
     activity?.runOnUiThread {
@@ -724,24 +1155,23 @@ class ExoPlayerPlugin :
       return
     }
 
-    // Apply sync offsets to ExoPlayer when active
-    if (!usingMpvFallback) {
-      when (name) {
-        "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
-        "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
-        // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
-        // events to the visible screen (Dart sets 'yes' for cover mode / zoom > 1)
-        "sub-ass-force-margins" -> playerCore?.setAssForceMargins(value == "yes")
-        "force-seekable" -> playerCore?.setForceSeekable(value == "yes")
-      }
+    if (usingMpvFallback) {
+      handleFallbackMpvProperty(name, value, result)
+      return
     }
 
-    if (usingMpvFallback) {
-      mpvCore?.setProperty(name, value)
-    } else {
-      // Store for later application if ExoPlayer falls back to MPV
-      pendingMpvProperties[name] = value
+    // Apply sync offsets to ExoPlayer when active
+    when (name) {
+      "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
+      "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
+      // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
+      // events to the visible screen (Dart sets 'yes' for cover mode / zoom > 1)
+      "sub-ass-force-margins" -> playerCore?.setAssForceMargins(value == "yes")
+      "force-seekable" -> playerCore?.setForceSeekable(value == "yes")
     }
+
+    // Before fallback this is queue acceptance, not a completed MPV write.
+    pendingMpvProperties[name] = value
     result.success(null)
   }
 
@@ -777,11 +1207,7 @@ class ExoPlayerPlugin :
 
   fun onPipModeChanged(isInPipMode: Boolean) {
     activity?.runOnUiThread {
-      if (usingMpvFallback) {
-        mpvCore?.onPipModeChanged(isInPipMode)
-      } else {
-        playerCore?.onPipModeChanged(isInPipMode)
-      }
+      activeSurfaceCore?.onPipModeChanged(isInPipMode)
     }
   }
 
@@ -807,6 +1233,7 @@ class ExoPlayerPlugin :
     val escapedUris = externalSubtitles.orEmpty()
       .mapNotNull { it["uri"] as? String }
       .filter { it.isNotEmpty() }
+      .distinct()
       .map(::escapeMpvPathListEntry)
       .toList()
 
@@ -834,95 +1261,110 @@ class ExoPlayerPlugin :
    * the media at the handoff position. Runs in MpvPlayerCore.initialize's
    * completion callback on the main thread.
    */
-  private fun setupMpvFallback(
-    core: MpvPlayerCore,
-    act: Activity,
-    uri: String,
-    headers: Map<String, String>?,
-    positionMs: Long,
-    externalSubtitles: List<Map<String, Any?>>?,
-    playWhenReady: Boolean,
-    generation: Int
-  ) {
-    // Snapshot Dart-registered state on main thread before clearing.
+  private fun prepareMpvFallback(core: MpvPlayerCore) {
     val pendingProps = pendingMpvProperties.toList()
-    pendingMpvProperties.clear()
     val observedProps = observedProperties.toList()
     val bufferSize = configuredBufferSizeBytes
 
-    MpvContentUriResolver.resolve(uri, act.contentResolver, mainHandler) { source ->
-      if (generation != sessionGeneration || mpvCore !== core || activity !== act || !usingMpvFallback) {
-        source.closeIfUnused()
-        core.dispose()
-        return@resolve
-      }
+    core.setProperty("hwdec", "mediacodec,mediacodec-copy")
+    core.setProperty("vo", "gpu")
+    core.setProperty("ao", "audiotrack")
 
-      // Configure basic MPV properties for Plex playback.
-      core.setProperty("hwdec", "mediacodec,mediacodec-copy")
-      core.setProperty("vo", "gpu")
-      core.setProperty("ao", "audiotrack")
-
-      if (bufferSize != null && bufferSize > 0) {
-        core.setProperty("demuxer-max-bytes", bufferSize.toString())
-      }
-
-      for ((propName, propValue) in pendingProps) {
-        core.setProperty(propName, propValue)
-      }
-
-      // Re-observe exactly what Dart registered via observeProperty, so the
-      // event stream keeps flowing for every property the Dart side consumes.
-      for ((propName, observed) in observedProps) {
-        core.observeProperty(propName, observed.format)
-      }
-
-      core.setVisible(true)
-
-      val startSeconds = positionMs / 1000.0
-      val options = mutableListOf<String>()
-      options.add(if (positionMs > 0L) "start=$startSeconds" else "start=none")
-      if (!playWhenReady) options.add("pause=yes")
-      options.add("sid=no")
-      options.add("secondary-sid=no")
-      appendExternalSubtitleOptions(options, externalSubtitles)
-      appendHttpHeaderOptions(options, headers)
-      val optionsStr = options.joinToString(",")
-      notifyBackendSwitched()
-      core.command(arrayOf("loadfile", source.value, "replace", "-1", optionsStr))
-
-      // On GPUs without compute shaders, MPV can't do dynamic peak detection
-      // and spline tone-mapping produces dim/washed-out results with extreme
-      // static HDR peak metadata. Use reinhard which handles this better.
-      Thread {
-        val peakDetection = core.getProperty("hdr-compute-peak")
-        if (peakDetection == "no") {
-          Log.i(TAG, "No compute shaders — overriding tone-mapping to reinhard")
-          core.setProperty("tone-mapping", "reinhard")
-          core.setProperty("tone-mapping-param", "0.7")
-          core.setProperty("tone-mapping-mode", "luma")
-        }
-      }.start()
-
-      core.requestAudioFocus()
-      Log.i(TAG, "Successfully switched to MPV fallback")
+    if (bufferSize != null && bufferSize > 0) {
+      core.setProperty("demuxer-max-bytes", bufferSize.toString())
     }
+
+    for ((propName, propValue) in pendingProps) {
+      core.setProperty(propName, propValue) { outcome ->
+        if (outcome.isFailure) {
+          Log.w(TAG, "Failed to replay queued MPV property")
+        }
+      }
+    }
+
+    for ((propName, observed) in observedProps) {
+      core.observeProperty(propName, observed.format)
+    }
+
+    core.setVisible(true)
+
+    Thread {
+      val peakDetection = core.getProperty("hdr-compute-peak")
+      if (peakDetection == "no") {
+        Log.i(TAG, "No compute shaders — overriding tone-mapping to reinhard")
+        core.setProperty("tone-mapping", "reinhard")
+        core.setProperty("tone-mapping-param", "0.7")
+        core.setProperty("tone-mapping-mode", "luma")
+      }
+    }.start()
+
+    core.requestAudioFocus()
+  }
+
+  private fun emitFallbackErrorOnce(mediaGeneration: Int, message: String) {
+    if (mediaGeneration != this.mediaGeneration || terminalEventGeneration == mediaGeneration) return
+    terminalEventGeneration = mediaGeneration
+    onEvent("end-file", mapOf("reason" to "error", "message" to message))
+  }
+
+  private fun failActiveFallback(fallbackGeneration: Int, logMessage: String, error: Throwable? = null) {
+    if (error == null) {
+      Log.e(TAG, logMessage)
+    } else {
+      Log.e(TAG, logMessage, error)
+    }
+    val core = mpvCore
+    mpvCore = null
+    core?.dispose()
+    usingMpvFallback = false
+    fallbackInProgress = false
+    backendSwitchPending = false
+    mpvForwardGeneration = null
+    mpvCoreNeedsReplacement = false
+    mpvSignalGate = null
+    fallbackMediaGeneration = null
+
+    val pending = pendingOpen
+    pendingOpen = null
+    val inFlight = inFlightOpen
+    inFlightOpen = null
+    val activeGeneration = pending?.mediaGeneration ?: inFlight?.mediaGeneration ?: fallbackGeneration
+    pending?.error("FALLBACK_FAILED", "Compatible player failed to initialize")
+    inFlight?.error("FALLBACK_FAILED", "Compatible player failed to initialize")
+    emitFallbackErrorOnce(activeGeneration, "Compatible player failed to initialize")
   }
 
   override fun onFormatUnsupported(
+    mediaGeneration: Int,
     uri: String,
     headers: Map<String, String>?,
     positionMs: Long,
     playWhenReady: Boolean,
     errorMessage: String
   ): Boolean {
+    if (mediaGeneration != this.mediaGeneration) {
+      Log.d(TAG, "Ignoring stale fallback request for media generation $mediaGeneration")
+      return true
+    }
     if (usingMpvFallback || fallbackInProgress) {
-      Log.w(TAG, "Fallback already active/in-progress, ignoring duplicate request")
+      Log.w(TAG, "Fallback already active/in-progress, coalescing duplicate request")
       return true
     }
 
     val currentActivity = activity ?: return false
-    val fallbackExternalSubtitles = currentExternalSubtitles?.map { it.toMap() }
+    val fallbackRequest = MediaOpenRequest(
+      mediaGeneration = mediaGeneration,
+      uri = uri,
+      headers = headers,
+      startPositionMs = positionMs,
+      hasStartPosition = positionMs > 0L,
+      autoPlay = playWhenReady,
+      isLive = false,
+      externalSubtitles = currentExternalSubtitles?.map { it.toMap() },
+      result = null
+    )
     fallbackInProgress = true
+    fallbackMediaGeneration = mediaGeneration
 
     Log.i(TAG, "ExoPlayer error, switching to MPV fallback at ${positionMs}ms: $errorMessage")
     if (debugLoggingEnabled) {
@@ -936,72 +1378,81 @@ class ExoPlayerPlugin :
       )
     }
 
+    onPropertyChange("paused-for-cache", true)
+    onPropertyChange("pause", true)
+
     currentActivity.runOnUiThread {
       try {
-        // Dispose ExoPlayer
         playerCore?.dispose()
         playerCore = null
         mpvCore?.dispose()
         mpvCore = null
-        usingMpvFallback = false // Clear before handoff
+        usingMpvFallback = false
 
         val generation = sessionGeneration
-
         mainHandler.post {
-          if (generation != sessionGeneration) {
-            fallbackInProgress = false
-            return@post
-          }
-          val act = activity
-          if (act == null) {
-            fallbackInProgress = false
-            return@post
-          }
+          if (generation != sessionGeneration) return@post
+          val act = activity ?: return@post
 
           try {
-            val core = MpvPlayerCore(act).apply {
-              delegate = this@ExoPlayerPlugin
+            val core = createMpvCore(act)
+            core.delegate = MpvDelegate(core)
+            mpvCore = core
+
+            val initializationSettled = AtomicBoolean(false)
+            val timeout = Runnable {
+              if (!initializationSettled.compareAndSet(false, true)) return@Runnable
+              if (generation != sessionGeneration || mpvCore !== core) {
+                if (mpvCore === core) mpvCore = null
+                core.dispose()
+                return@Runnable
+              }
+              failActiveFallback(mediaGeneration, "Timed out initializing MPV fallback")
             }
-            mpvCore = core // publish so dispose/init can reach it
+            mainHandler.postDelayed(timeout, MPV_FALLBACK_INIT_TIMEOUT_MS)
 
-            core.initialize { success ->
-              if (generation != sessionGeneration) {
-                if (mpvCore === core) {
+            try {
+              initializeMpvCore(core) onInitialized@{ success ->
+                if (!initializationSettled.compareAndSet(false, true)) return@onInitialized
+                mainHandler.removeCallbacks(timeout)
+                if (generation != sessionGeneration || mpvCore !== core) {
+                  if (mpvCore === core) mpvCore = null
                   core.dispose()
-                  mpvCore = null
+                  return@onInitialized
                 }
-                fallbackInProgress = false
-                return@initialize
-              }
-              if (!success) {
-                if (mpvCore === core) {
-                  core.dispose()
-                  mpvCore = null
+                if (!success) {
+                  failActiveFallback(mediaGeneration, "Failed to initialize MPV fallback")
+                  return@onInitialized
                 }
+
+                usingMpvFallback = true
                 fallbackInProgress = false
-                Log.e(TAG, "Failed to initialize MPV fallback")
-                onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: $errorMessage"))
-                return@initialize
+                fallbackMediaGeneration = null
+                backendSwitchPending = true
+                val request = pendingOpen?.also { pendingOpen = null } ?: fallbackRequest
+                if (request.mediaGeneration != this.mediaGeneration) {
+                  completeSupersededOpen(request)
+                  return@onInitialized
+                }
+                core.setPauseIntentForLoad(paused = !request.autoPlay)
+                prepareMpvFallback(core)
+                dispatchMpvOpen(request, core, act, generation)
               }
-
-              usingMpvFallback = true
-              fallbackInProgress = false
-
-              setupMpvFallback(core, act, uri, headers, positionMs, fallbackExternalSubtitles, playWhenReady, generation)
+            } catch (e: Exception) {
+              if (initializationSettled.compareAndSet(false, true)) {
+                mainHandler.removeCallbacks(timeout)
+                failActiveFallback(mediaGeneration, "Failed to initialize MPV fallback", e)
+              }
             }
           } catch (e: Exception) {
-            fallbackInProgress = false
-            Log.e(TAG, "Failed to switch to MPV fallback", e)
-            onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: ${e.message}"))
+            failActiveFallback(mediaGeneration, "Failed to switch to MPV fallback", e)
           }
         }
       } catch (e: Exception) {
-        fallbackInProgress = false
-        Log.e(TAG, "Failed to switch to MPV fallback", e)
-        onEvent("end-file", mapOf("reason" to "error", "message" to "Fallback failed: ${e.message}"))
+        failActiveFallback(mediaGeneration, "Failed to switch to MPV fallback", e)
       }
     }
 
-    return true // Fallback is being handled
+    return true
   }
 }

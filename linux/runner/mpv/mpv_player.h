@@ -9,6 +9,7 @@
 #include <mpv/render_gl.h>
 
 #include <atomic>
+#include <condition_variable>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -30,6 +31,45 @@ using EventCallback = std::function<void(::_FlValue*)>;
 
 /// Callback for requesting a redraw (called from mpv render update thread).
 using RedrawCallback = std::function<void()>;
+
+// Linux-runner-internal teardown boundary. A render context may only be
+// released while its EGL context is current; the batch retains the shared mpv
+// handle until every render/context pair has been safely released.
+struct NativeRenderTeardownResource {
+  mpv_render_context* render = nullptr;
+  EGLDisplay display = EGL_NO_DISPLAY;
+  EGLContext context = EGL_NO_CONTEXT;
+};
+
+struct NativeRenderTeardownBatch {
+  std::vector<NativeRenderTeardownResource> resources;
+  mpv_handle* handle = nullptr;
+  std::shared_ptr<void> callback_keep_alive;
+};
+
+struct NativeRenderTeardownOperations {
+  std::function<bool(EGLDisplay, EGLContext)> make_current;
+  std::function<bool(EGLDisplay)> release_current;
+  std::function<bool(EGLDisplay, EGLContext)> destroy_context;
+  std::function<void(mpv_render_context*)> free_render;
+  std::function<void(mpv_handle*)> terminate_handle;
+};
+
+// Attempts one teardown pass. Failed resources remain owned by |batch| for a
+// later retry, and |handle| is never terminated while any resource remains.
+bool TryReleaseNativeRenderTeardown(NativeRenderTeardownBatch& batch, const NativeRenderTeardownOperations& operations);
+
+// Releases render contexts retained by a failed initialization attempt. A
+// false result must block another render-context creation on the same core.
+bool TryReleaseRetainedNativeRenderContexts(
+    std::vector<NativeRenderTeardownResource>& resources, const NativeRenderTeardownOperations& operations);
+
+#ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
+// Focused-test boundary for exercising the process-lifetime teardown queue
+// without invoking real EGL or libmpv resources.
+void ConfigureNativeRenderTeardownQueueForTesting(NativeRenderTeardownOperations operations);
+void EnqueueNativeRenderTeardownForTesting(NativeRenderTeardownBatch batch);
+#endif
 
 /// Wrapper for libmpv that handles initialization, OpenGL rendering,
 /// commands, properties, and event dispatching.
@@ -54,26 +94,26 @@ class MpvPlayer {
   bool InitRenderContext();
 
   /// Returns true if the render context has been created.
-  bool HasRenderContext() const { return mpv_gl_ != nullptr; }
+  bool HasRenderContext() const;
 
   /// Returns the isolated EGL display used for mpv rendering.
-  EGLDisplay GetEglDisplay() const { return egl_display_; }
+  EGLDisplay GetEglDisplay() const;
 
   /// Returns the isolated EGL context used for mpv rendering.
-  EGLContext GetEglContext() const { return egl_context_; }
+  EGLContext GetEglContext() const;
 
   /// Disposes mpv and releases resources.
   void Dispose();
 
   /// Returns true if mpv is initialized (has both mpv handle and render
   /// context; audio-only players never have a render context).
-  bool IsInitialized() const { return mpv_ != nullptr && (audio_only_ || mpv_gl_ != nullptr); }
+  bool IsInitialized() const;
 
   /// Returns true if this player has been disposed.
   bool IsDisposed() const { return disposed_.load(); }
 
   /// Returns true if mpv handle exists (even without render context).
-  bool HasMpvHandle() const { return mpv_ != nullptr; }
+  bool HasMpvHandle() const;
 
   /// Queues an mpv command without waiting for completion.
   void Command(const std::vector<std::string>& args);
@@ -119,12 +159,71 @@ class MpvPlayer {
   /// Sets the MPV log message level (e.g., "warn", "v", "debug").
   void SetLogLevel(const std::string& level);
 
+  /// Retries process-owned native teardown work on the managed EGL teardown
+  /// thread. Primarily useful before creating another render context.
+  static void RetryPendingNativeTeardown();
+
  private:
+  class CallbackContext {
+   public:
+    class Lease {
+     public:
+      Lease() = default;
+      Lease(const Lease&) = delete;
+      Lease& operator=(const Lease&) = delete;
+      Lease(Lease&& other) noexcept;
+      Lease& operator=(Lease&& other) noexcept;
+      ~Lease();
+
+      explicit operator bool() const { return player_ != nullptr; }
+      MpvPlayer* player() const { return player_; }
+
+     private:
+      friend class CallbackContext;
+      Lease(CallbackContext* context, MpvPlayer* player);
+      void Release();
+
+      CallbackContext* context_ = nullptr;
+      MpvPlayer* player_ = nullptr;
+    };
+
+    explicit CallbackContext(MpvPlayer* player);
+    ~CallbackContext();
+
+    Lease Acquire();
+    void DetachAndWait();
+    void WaitUntilDetached();
+    GMainContext* main_context() const { return main_context_; }
+
+   private:
+    void ReleaseLease();
+
+    std::mutex mutex_;
+    std::condition_variable quiescent_;
+    MpvPlayer* player_;
+    size_t in_flight_ = 0;
+    GMainContext* main_context_;
+  };
+
+  struct SourceCallbackData;
+
+  friend class MpvPlayerLifecycleTestPeer;
+
   /// MPV event wakeup callback (called from mpv thread).
   static void OnMpvWakeup(void* ctx);
 
   /// MPV render update callback (called when frame is ready).
   static void OnMpvRenderUpdate(void* ctx);
+
+  static gboolean DispatchWakeupSource(gpointer data);
+  static gboolean DispatchRedrawSource(gpointer data);
+  static gboolean DispatchRecoverySource(gpointer data);
+  static void DestroySourceCallbackData(gpointer data);
+
+  void ScheduleWakeupSource();
+  void ScheduleRedrawSource();
+  void ScheduleRecoverySource();
+  void RemoveTrackedSources();
 
   /// Processes pending mpv events.
   bool ProcessEvents();
@@ -138,13 +237,14 @@ class MpvPlayer {
   /// Sends an event notification.
   void SendEvent(const std::string& name, ::_FlValue* data = nullptr);
   void MaybeRunAudioRecovery();
-  void TryAudioReload(const char* reason, int attempt);
+  void TryAudioReload(const char* reason, int attempt, uint64_t request_generation);
   void EnsureAudioRecoveryTimer();
   void LogRecovery(const std::string& text);
   void SetHDREnabled(bool enabled, StatusCallback callback = nullptr);
 
-  /// Helper to convert mpv_node to FlValue.
+  /// Helper to convert mpv_node to FlValue, bounded by the shared node budget.
   ::_FlValue* NodeToFlValue(mpv_node* node);
+  ::_FlValue* NodeToFlValue(mpv_node* node, plezy::mpv_common::NodeConversionBudget* budget);
 
   const bool audio_only_;
   mpv_handle* mpv_ = nullptr;
@@ -153,6 +253,8 @@ class MpvPlayer {
   // Isolated EGL context for mpv rendering (not shared with Flutter)
   EGLDisplay egl_display_ = EGL_NO_DISPLAY;
   EGLContext egl_context_ = EGL_NO_CONTEXT;
+  std::vector<NativeRenderTeardownResource> retained_render_contexts_;
+  mutable std::mutex native_mutex_;
 
   std::atomic<bool> needs_redraw_{false};
   std::atomic<bool> disposed_{false};
@@ -164,8 +266,12 @@ class MpvPlayer {
   plezy::mpv_common::PropertyObservationRegistry observed_properties_;
   bool hdr_enabled_ = true;
 
-  // GLib sources for event delivery and scheduled audio recovery.
-  guint event_source_id_ = 0;
+  // All player-carrying sources are attached to CallbackContext::main_context()
+  // and protected by source_mutex_.
+  std::shared_ptr<CallbackContext> callback_context_;
+  std::mutex source_mutex_;
+  guint wakeup_source_id_ = 0;
+  guint redraw_source_id_ = 0;
   guint recovery_source_id_ = 0;
 };
 

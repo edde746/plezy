@@ -26,6 +26,7 @@ class ChapterSheet extends StatefulWidget {
   final Player player;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
+  final bool canControl;
   final String? serverId; // Server ID for the metadata these chapters belong to
   final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration position)? onSeekCompleted;
@@ -35,6 +36,7 @@ class ChapterSheet extends StatefulWidget {
     required this.player,
     required this.chapters,
     required this.chaptersLoaded,
+    required this.canControl,
     this.serverId,
     this.onSeekRequested,
     this.onSeekCompleted,
@@ -75,6 +77,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
   }
 
   Future<void> _handleChapterTap(Duration position) async {
+    if (!widget.canControl) return;
     final clamped = clampSeekPosition(widget.player, position);
     await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     if (mounted) {
@@ -155,9 +158,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                 trailing: isCurrentChapter
                     ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: Theme.of(context).colorScheme.primary)
                     : null,
-                onTap: () {
-                  unawaited(_handleChapterTap(chapter.startTime));
-                },
+                onTap: widget.canControl ? () => unawaited(_handleChapterTap(chapter.startTime)) : null,
               );
             },
           );

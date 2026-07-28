@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import '../../providers/playback_state_provider.dart';
 
 /// Position must be within this many ms of the best-known duration for a
 /// player EOF signal to count as the real end of the media.
@@ -12,6 +13,20 @@ const int spuriousEofToleranceMs = 10000;
 
 /// How a player EOF signal should be interpreted.
 enum EofSignalClass { genuine, spurious, unknown }
+
+/// End-of-media action after considering queue adjacency discovery.
+enum CompletionNavigationAction { presentNext, retryAdjacent, exit }
+
+CompletionNavigationAction completionNavigationAction({
+  required bool hasNext,
+  required QueueNavigationStatus adjacentStatus,
+}) {
+  if (hasNext) return CompletionNavigationAction.presentNext;
+  if (adjacentStatus == QueueNavigationStatus.failed) {
+    return CompletionNavigationAction.retryAdjacent;
+  }
+  return CompletionNavigationAction.exit;
+}
 
 /// Classify a player EOF signal against the best-known media duration.
 ///

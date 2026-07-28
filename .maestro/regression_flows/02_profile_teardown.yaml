@@ -17,7 +17,7 @@ tags:
     visible: "Profile name"
     timeout: 10000
 - assertVisible: "(?s)^E2E Guest.*"
-- assertVisible: "(?s)^Maestro Jellyfin.*Default.*Manage$"
+- assertVisible: "(?s)^Maestro Jellyfin.*Default.*$"
 - tapOn: "Manage"
 - extendedWaitUntil:
     visible: "Remove"
@@ -29,13 +29,16 @@ tags:
 - assertVisible: "(?s).*E2E Guest's access to Maestro Jellyfin.*"
 - tapOn: "Remove"
 - extendedWaitUntil:
-    notVisible: "(?s)^Maestro Jellyfin.*Default.*Manage$"
+    notVisible: "(?s)^Maestro Jellyfin.*"
     timeout: 15000
 - assertVisible: "Delete profile"
-- tapOn: "Delete profile"
-- extendedWaitUntil:
-    visible: "^Delete profile\\?$"
-    timeout: 10000
+- retry:
+    maxRetries: 2
+    commands:
+      - tapOn: "Delete profile"
+      - extendedWaitUntil:
+          visible: "^Delete profile\\?$"
+          timeout: 10000
 - tapOn: "^Delete$"
 - extendedWaitUntil:
     visible: "Switch Profile"
@@ -44,5 +47,5 @@ tags:
 - assertVisible: "(?s)^M\nMaestro\nActive.*"
 - back
 - extendedWaitUntil:
-    visible: "(?s).*Zulu Zone 4.*"
+    visible: "(?s)^Recently Added in Maestro Movies.*"
     timeout: 30000

@@ -17,6 +17,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../utils/dialogs.dart';
 import '../../main.dart' show gitCommit;
+import '../../services/background_work_diagnostics_service.dart';
 import '../../services/device_performance.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
@@ -58,7 +59,10 @@ String constrainLogUploadPayload({required String header, required String logs, 
 }
 
 class LogsScreen extends StatefulWidget {
-  const LogsScreen({super.key});
+  const LogsScreen({super.key, this.httpClient, this.deviceInfoPlugin});
+
+  final MediaServerHttpClient? httpClient;
+  final DeviceInfoPlugin? deviceInfoPlugin;
 
   @override
   State<LogsScreen> createState() => _LogsScreenState();
@@ -69,6 +73,8 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   String _deviceInfo = '';
   final ScrollController _scrollController = ScrollController();
 
+  MediaServerHttpClient get _httpClient => widget.httpClient ?? httpClient;
+
   @override
   void initState() {
     super.initState();
@@ -78,7 +84,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
 
   Future<void> _loadDeviceInfo() async {
     final packageInfo = await PackageInfo.fromPlatform();
-    final deviceInfo = DeviceInfoPlugin();
+    final deviceInfo = widget.deviceInfoPlugin ?? DeviceInfoPlugin();
     final buffer = StringBuffer();
     final commitSuffix = gitCommit.isNotEmpty ? ' ${gitCommit.substring(0, 7)}' : '';
     buffer.writeln('${t.app.title} v${packageInfo.version} (${packageInfo.buildNumber})$commitSuffix');
@@ -101,6 +107,12 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
         renderer = 'unknown';
       }
       buffer.writeln('Renderer: $renderer');
+      // "Are downloads allowed to run in the background" is the single most
+      // asked support question; answering it from the uploaded log turns a
+      // four-message thread into one reply.
+      final backgroundWork = BackgroundWorkDiagnosticsService.instance;
+      await backgroundWork.refresh();
+      buffer.writeln('Background: ${backgroundWork.describeSync()}');
     } else if (Platform.isIOS) {
       final info = await deviceInfo.iosInfo;
       buffer.writeln('iOS ${info.systemVersion}');
@@ -182,7 +194,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     showLoadingDialog(context);
 
     try {
-      final response = await httpClient.post(
+      final response = await _httpClient.post(
         'https://ice.plezy.app/logs',
         body: logText,
         headers: {'Content-Type': 'text/plain'},
@@ -199,20 +211,29 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
           context: context,
           builder: (ctx) => AlertDialog(
             title: Text(t.messages.logsUploaded),
-            content: Row(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${t.messages.logId}: '),
-                SelectableText(
-                  id,
-                  style: const TextStyle(fontWeight: .bold, fontFamily: 'monospace', fontSize: 18),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const AppIcon(Symbols.content_copy_rounded, size: 20),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: id));
-                    showSuccessSnackBar(context, t.messages.logsCopied);
-                  },
+                Text('${t.messages.logId}:'),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SelectableText(
+                        id,
+                        style: const TextStyle(fontWeight: .bold, fontFamily: 'monospace', fontSize: 18),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const AppIcon(Symbols.content_copy_rounded, size: 20),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: id));
+                        showSuccessSnackBar(context, t.messages.logsCopied);
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),

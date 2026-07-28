@@ -13,6 +13,7 @@ import '../../mpv/mpv.dart';
 import '../../media/media_source_info.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/scrub_preview_source.dart';
+import '../../services/video_volume_controller.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
@@ -22,6 +23,7 @@ import '../../models/livetv_capture_buffer.dart';
 import 'models/track_controls_state.dart';
 import 'player_chrome_controller.dart';
 import 'widgets/content_strip.dart';
+import 'widgets/content_strip_panel.dart';
 import 'widgets/live_timeline_bar.dart';
 import 'widgets/first_frame_guard.dart';
 import 'widgets/play_pause_stream_builder.dart';
@@ -33,9 +35,11 @@ import 'widgets/track_chapter_controls.dart';
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatefulWidget {
   final Player player;
+  final VideoVolumeController volumeController;
   final MediaItem metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
+  final VoidCallback onPlayPause;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final bool showChapterMarkersOnTimeline;
@@ -114,9 +118,11 @@ class DesktopVideoControls extends StatefulWidget {
   const DesktopVideoControls({
     super.key,
     required this.player,
+    required this.volumeController,
     required this.metadata,
     this.onNext,
     this.onPrevious,
+    required this.onPlayPause,
     required this.chapters,
     required this.chaptersLoaded,
     this.showChapterMarkersOnTimeline = true,
@@ -609,50 +615,28 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       _buildBottomControlsContent(context, hasFrame: true),
                       // Down arrow hint when strip content is available
                       if (widget.useDpadNavigation && _hasStripContent)
-                        const Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 12,
-                          child: AppIcon(Symbols.keyboard_arrow_down_rounded, color: Colors.white24, size: 24),
-                        ),
+                        const ContentStripHint(Symbols.keyboard_arrow_down_rounded),
                     ],
                   ),
                 // Content strip (TV/dpad only) — replaces normal controls
                 if (_contentStripVisible && widget.useDpadNavigation)
-                  Container(
+                  ContentStripPanel(
                     padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.65),
-                          Colors.black.withValues(alpha: 0.7),
-                        ],
-                        stops: const [0.0, 0.42, 1.0],
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisSize: .min,
-                      children: [
-                        const AppIcon(Symbols.keyboard_arrow_up_rounded, color: Colors.white38, size: 20),
-                        const SizedBox(height: 4),
-                        ContentStrip(
-                          key: _contentStripKey,
-                          player: widget.player,
-                          chapters: widget.chapters,
-                          chaptersLoaded: widget.chaptersLoaded,
-                          serverId: widget.serverId,
-                          showQueueTab: widget.showQueueTab,
-                          onQueueItemSelected: widget.onQueueItemSelected,
-                          onSeekRequested: widget.onSeekRequested,
-                          onSeekCompleted: widget.onSeekCompleted,
-                          useFocusNavigation: true,
-                          onNavigateUp: _onContentStripNavigateUp,
-                          onFocusActivity: widget.onFocusActivity,
-                        ),
-                      ],
+                    chevron: Symbols.keyboard_arrow_up_rounded,
+                    child: ContentStrip(
+                      key: _contentStripKey,
+                      player: widget.player,
+                      chapters: widget.chapters,
+                      chaptersLoaded: widget.chaptersLoaded,
+                      serverId: widget.serverId,
+                      canControl: _canControl,
+                      showQueueTab: widget.showQueueTab,
+                      onQueueItemSelected: widget.onQueueItemSelected,
+                      onSeekRequested: widget.onSeekRequested,
+                      onSeekCompleted: widget.onSeekCompleted,
+                      useFocusNavigation: true,
+                      onNavigateUp: _onContentStripNavigateUp,
+                      onFocusActivity: widget.onFocusActivity,
                     ),
                   ),
               ],
@@ -819,15 +803,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                         index: 3,
                         icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
                         iconSize: 32,
-                        onPressed: _canControl
-                            ? () {
-                                if (isPlaying) {
-                                  widget.player.pause();
-                                } else {
-                                  widget.player.play();
-                                }
-                              }
-                            : null,
+                        onPressed: _canControl ? widget.onPlayPause : null,
                         semanticLabel: isPlaying ? t.videoControls.pauseButton : t.videoControls.playButton,
                       );
                     },
@@ -937,7 +913,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                 // Volume control (hidden on TV — hardware handles volume)
                 if (!PlatformDetector.isTV()) ...[
                   VolumeControl(
-                    player: widget.player,
+                    volumeController: widget.volumeController,
                     focusNode: _volumeFocusNode,
                     onKeyEvent: _handleVolumeKeyEvent,
                     onFocusChange: _onFocusChange,

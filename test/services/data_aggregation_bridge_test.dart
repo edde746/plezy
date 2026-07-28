@@ -12,15 +12,17 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
 
 JellyfinConnection _conn() => testJellyfinConnection(
@@ -32,11 +34,15 @@ JellyfinConnection _conn() => testJellyfinConnection(
 
 http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
 
-/// Minimal client whose `fetchLibraries` either returns canned libraries or
-/// throws [error] — enough surface to exercise the fan-out's per-server
-/// failure classification without a real backend.
+/// Minimal client with independently configurable library and search outcomes.
 class _LibrariesClient implements MediaServerClient {
-  _LibrariesClient(this.serverId, {this.error, this.libraries = const []});
+  _LibrariesClient(
+    this.serverId, {
+    this.error,
+    this.libraries = const [],
+    this.searchError,
+    this.searchResults = const [],
+  });
 
   @override
   final ServerId serverId;
@@ -46,11 +52,20 @@ class _LibrariesClient implements MediaServerClient {
 
   final Object? error;
   final List<MediaLibrary> libraries;
+  final Object? searchError;
+  final List<MediaItem> searchResults;
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() async {
     if (error != null) throw error!;
     return libraries;
+  }
+
+  @override
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort}) async {
+    abort?.throwIfAborted();
+    if (searchError != null) throw searchError!;
+    return searchResults;
   }
 
   @override
@@ -92,7 +107,11 @@ void main() {
     });
 
     test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {
-      expect(await service.searchAcrossServers('hello'), isEmpty);
+      final search = await service.searchAcrossServers('hello');
+      expect(search.items, isEmpty);
+      expect(search.succeededServerIds, isEmpty);
+      expect(search.cancelledServerIds, isEmpty);
+      expect(search.failedServerIds, isEmpty);
       final onDeck = await service.getOnDeckFromAllServers();
       expect(onDeck.items, isEmpty);
       expect(onDeck.succeededServerIds, isEmpty);
@@ -129,11 +148,41 @@ void main() {
       expect(result.cancelledServerIds, {'torn-down'});
     });
 
+    test('search classifies successful, cancelled, and failed servers independently', () async {
+      final item = testMediaItem(
+        id: 'show-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        title: 'Target',
+        serverId: 'ok',
+      );
+      manager.debugRegisterClientForTesting(_LibrariesClient(ServerId('ok'), searchResults: [item]));
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(
+          ServerId('cancelled'),
+          searchError: MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'superseded search'),
+        ),
+      );
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(
+          ServerId('failed'),
+          searchError: MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'refused'),
+        ),
+      );
+
+      final result = await service.searchAcrossServers('Target');
+
+      expect(result.items.map((item) => item.id), ['show-1']);
+      expect(result.succeededServerIds, {'ok'});
+      expect(result.cancelledServerIds, {'cancelled'});
+      expect(result.failedServerIds, {'failed'});
+    });
+
     test('searchAcrossServers overfetches and ranks before trimming across backends', () async {
       final plexRequests = <Uri>[];
       final jellyfinRequests = <Uri>[];
 
-      final plexClient = PlexClient.forTesting(
+      final plexClient = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -151,7 +200,7 @@ void main() {
                 'SearchResult': [
                   {
                     'score': 100,
-                    'Metadata': {'ratingKey': 'plex-movie', 'type': 'movie', 'title': 'The Boys in the Boat'},
+                    'Metadata': {'ratingKey': 'plex-movie', 'type': 'movie', 'title': 'Spider Man Returns'},
                   },
                 ],
               },
@@ -170,7 +219,7 @@ void main() {
           if (req.url.path == '/Items') {
             return _json({
               'Items': [
-                {'Id': 'jf-show', 'Type': 'Series', 'Name': 'The Boys'},
+                {'Id': 'jf-show', 'Type': 'Series', 'Name': 'Spider‑Man'},
               ],
             });
           }
@@ -180,23 +229,25 @@ void main() {
       addTearDown(jellyfinClient.close);
       manager.debugRegisterJellyfinClientForTesting(jellyfinClient);
 
-      final results = await service.searchAcrossServers('The Boys', limit: 1);
+      final results = await service.searchAcrossServers('Spider Man', limit: 1);
 
-      expect(results.map((item) => item.id), ['jf-show']);
+      expect(results.items.map((item) => item.id), ['jf-show']);
+      expect(plexRequests.single.queryParameters['query'], 'Spider Man');
       expect(plexRequests.single.queryParameters['limit'], '100');
       expect(plexRequests.single.queryParameters['searchTypes'], 'movies,tv,music');
       // Jellyfin search fans out to /Items plus a best-effort /Artists call
       // (500 above → treated as empty).
       final jfItemsRequest = jellyfinRequests.singleWhere((url) => url.path == '/Items');
       expect(jfItemsRequest.queryParameters['Limit'], '100');
+      expect(jfItemsRequest.queryParameters['SearchTerm'], 'Spider Man');
       final jfArtistsRequest = jellyfinRequests.singleWhere((url) => url.path == '/Artists');
-      expect(jfArtistsRequest.queryParameters['searchTerm'], 'The Boys');
+      expect(jfArtistsRequest.queryParameters['searchTerm'], 'Spider Man');
     });
 
     test('getOnDeckFromAllServers forwards preview limit to clients', () async {
       final captured = <Uri>[];
 
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -241,7 +292,7 @@ void main() {
     });
 
     test('getOnDeckFromAllServers filters hidden Plex continue-watching libraries', () async {
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -296,7 +347,7 @@ void main() {
     });
 
     test('getOnDeckFromAllServers hides duplicate show entries by stable show ids', () async {
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -378,7 +429,7 @@ void main() {
       // reliably. The locally recorded play must decide the surviving card —
       // and it must keep the winner in the group's original shelf slot,
       // ahead of the unrelated movie sorted between the two episodes (#1492).
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -462,7 +513,7 @@ void main() {
     });
 
     test('getOnDeckFromAllServers prefers a duplicate recorded by item key', () async {
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -537,7 +588,7 @@ void main() {
     });
 
     test('getOnDeckFromAllServers keeps duplicate titles without stable ids', () async {
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -868,7 +919,7 @@ void main() {
     test('Plex home layout keeps promoted hubs instead of splitting by preview libraries', () async {
       final captured = <Uri>[];
 
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',
@@ -943,7 +994,7 @@ void main() {
     test('Plex home layout appends music library hubs the promoted endpoint excludes', () async {
       final captured = <Uri>[];
 
-      final client = PlexClient.forTesting(
+      final client = testPlexClient(
         config: PlexConfig(
           baseUrl: 'https://plex.example.com',
           token: 'token',

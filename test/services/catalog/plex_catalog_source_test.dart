@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -12,10 +10,9 @@ import 'package:plezy/services/catalog/plex_catalog_source.dart';
 import 'package:plezy/services/plex_discover_client.dart';
 import 'package:plezy/utils/external_ids.dart';
 
-const _session = PlexDiscoverSession(accessToken: 'profile-token', clientIdentifier: 'client-id');
+import '../../test_helpers/http_fixtures.dart';
 
-http.Response _json(Object body, [int status = 200]) =>
-    http.Response(jsonEncode(body), status, headers: const {'content-type': 'application/json'});
+const _session = PlexDiscoverSession(accessToken: 'profile-token', clientIdentifier: 'client-id');
 
 Map<String, Object?> _metadata({
   String ratingKey = 'plex-movie-1',
@@ -51,7 +48,7 @@ void main() {
           _session,
           httpClient: MockClient((request) async {
             captured = request;
-            return _json({
+            return jsonResponse({
               'MediaContainer': {
                 'offset': 25,
                 'size': 1,
@@ -94,7 +91,7 @@ void main() {
           httpClient: MockClient((request) async {
             requests.add(request);
             if (request.url.path == '/hubs/sections/watchlist') {
-              return _json({
+              return jsonResponse({
                 'MediaContainer': {
                   'Hub': [
                     {
@@ -122,7 +119,7 @@ void main() {
               });
             }
             if (request.url.path == '/hubs/sections/watchlist/because-watchlisted') {
-              return _json({
+              return jsonResponse({
                 'MediaContainer': {
                   'offset': 2,
                   'totalSize': 3,
@@ -130,7 +127,7 @@ void main() {
                 },
               });
             }
-            return _json({'error': 'unexpected'}, 500);
+            return jsonResponse({'error': 'unexpected'}, status: 500);
           }),
         ),
       );
@@ -162,7 +159,7 @@ void main() {
           _session,
           httpClient: MockClient((request) async {
             requests.add(request);
-            return _json({'error': 'unexpected'}, 500);
+            return jsonResponse({'error': 'unexpected'}, status: 500);
           }),
         ),
       );
@@ -181,7 +178,7 @@ void main() {
           _session,
           httpClient: MockClient((request) async {
             captured = request;
-            return _json({
+            return jsonResponse({
               'MediaContainer': {
                 'SearchResults': [
                   {
@@ -221,7 +218,7 @@ void main() {
           httpClient: MockClient((request) async {
             requests.add(request);
             if (request.url.path == '/library/sections/watchlist/all') {
-              return _json({
+              return jsonResponse({
                 'MediaContainer': {
                   'totalSize': watchlisted ? 1 : 0,
                   'Metadata': watchlisted ? [_metadata()] : <Object>[],
@@ -232,7 +229,7 @@ void main() {
             expect(request.url.path, '/actions/removeFromWatchlist');
             expect(request.url.queryParameters['ratingKey'], 'plex-movie-1');
             watchlisted = false;
-            return _json(const <String, Object?>{});
+            return jsonResponse(const <String, Object?>{});
           }),
         ),
       );
@@ -256,7 +253,7 @@ void main() {
             requests.add(request);
             if (request.url.path == '/library/metadata/matches') {
               expect(request.url.queryParameters['guid'], 'imdb://tt1375666');
-              return _json({
+              return jsonResponse({
                 'MediaContainer': {
                   'Metadata': [_metadata()],
                 },
@@ -265,7 +262,7 @@ void main() {
             expect(request.method, 'PUT');
             expect(request.url.path, '/actions/addToWatchlist');
             expect(request.url.queryParameters['ratingKey'], 'plex-movie-1');
-            return _json(const <String, Object?>{});
+            return jsonResponse(const <String, Object?>{});
           }),
         ),
       );
@@ -283,13 +280,13 @@ void main() {
             switch (request.url.path) {
               case '/library/metadata/matches':
                 expect(request.url.queryParameters['guid'], 'imdb://tt1375666');
-                return _json({
+                return jsonResponse({
                   'MediaContainer': {
                     'Metadata': [_metadata(type: 'show')],
                   },
                 });
               case '/library/metadata/plex-movie-1':
-                return _json({
+                return jsonResponse({
                   'MediaContainer': {
                     'Metadata': [
                       {
@@ -302,7 +299,7 @@ void main() {
                   },
                 });
               case '/library/metadata/plex-movie-1/related':
-                return _json({
+                return jsonResponse({
                   'MediaContainer': {
                     'Hub': [
                       {
@@ -312,7 +309,7 @@ void main() {
                   },
                 });
             }
-            return _json({'error': 'unexpected'}, 500);
+            return jsonResponse({'error': 'unexpected'}, status: 500);
           }),
         ),
       );

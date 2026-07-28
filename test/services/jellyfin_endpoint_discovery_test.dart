@@ -157,9 +157,11 @@ void main() {
       );
     });
 
-    test('retains explicit user-entered failover URLs when using input candidates', () async {
+    test('persists explicit URLs while probing without authentication', () async {
+      final probeRequests = <http.Request>[];
       final discovery = JellyfinEndpointDiscovery(
         testHttpClientFactory: () => MockClient((req) async {
+          probeRequests.add(req);
           if (req.url.host == 'offline.example.com') {
             throw TimeoutException('offline');
           }
@@ -179,6 +181,13 @@ void main() {
 
       expect(result.activeBaseUrl, 'https://jf.example.com');
       expect(result.baseUrls, ['https://jf.example.com', 'https://offline.example.com']);
+      expect(probeRequests, isNotEmpty);
+      for (final request in probeRequests) {
+        final headerNames = request.headers.keys.map((name) => name.toLowerCase());
+        expect(headerNames, isNot(contains('authorization')));
+        expect(headerNames, isNot(contains('x-emby-token')));
+        expect(request.url.queryParameters.keys.map((name) => name.toLowerCase()), isNot(contains('api_key')));
+      }
     });
 
     test('races URLs and selects the lowest-latency reachable endpoint', () async {
@@ -200,20 +209,42 @@ void main() {
       expect(result.serverInfo.machineId, 'srv-1');
     });
 
-    test('keeps unreachable URLs but validates every reachable URL is the same server', () async {
+    test('an unreachable persisted endpoint survives a save', () async {
+      const offlineUrl = 'https://offline.example.com';
+      const activeUrl = 'https://jf.example.com';
       final discovery = JellyfinEndpointDiscovery(
-        testHttpClientFactory: () => MockClient((req) async {
-          if (req.url.host == 'offline.example.com') {
+        testHttpClientFactory: () => MockClient((request) async {
+          if (request.url.host == 'offline.example.com') {
             throw TimeoutException('offline');
           }
           return _info(id: 'srv-1');
         }),
       );
 
-      final result = await discovery.raceEndpoints(['https://offline.example.com', 'https://jf.example.com']);
+      final result = await discovery.raceEndpoints([offlineUrl, activeUrl], baseUrlsToPersist: [offlineUrl, activeUrl]);
 
-      expect(result.activeBaseUrl, 'https://jf.example.com');
-      expect(result.baseUrls, ['https://jf.example.com', 'https://offline.example.com']);
+      expect(result.activeBaseUrl, activeUrl);
+      expect(result.baseUrls, [activeUrl, offlineUrl]);
+    });
+
+    test('a different-machine persisted endpoint remains excluded', () async {
+      const activeUrl = 'https://jf.example.com';
+      const differentMachineUrl = 'https://other.example.com';
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () =>
+            MockClient((request) async => _info(id: request.url.host == 'other.example.com' ? 'srv-2' : 'srv-1')),
+      );
+
+      final result = await discovery.raceEndpoints(
+        [activeUrl, differentMachineUrl],
+        expectedMachineId: 'srv-1',
+        baseUrlsToPersist: [activeUrl, differentMachineUrl],
+        baseUrlsToValidate: const [],
+      );
+
+      expect(result.activeBaseUrl, activeUrl);
+      expect(result.baseUrls, [activeUrl]);
+      expect(result.reconcilePreviouslyStoredBaseUrls([activeUrl, differentMachineUrl]), [activeUrl]);
     });
 
     test('rejects reachable URLs that point to different Jellyfin servers', () async {
@@ -239,6 +270,90 @@ void main() {
         throwsA(isA<MediaServerUrlException>()),
       );
     });
+
+    test('expected machine ID retains candidates that returned no identity', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((request) async {
+          if (request.url.host == 'offline.example.com') {
+            throw TimeoutException('offline');
+          }
+          return _info(id: 'srv-1');
+        }),
+      );
+
+      final result = await discovery.raceEndpoints([
+        'https://matching.example.com',
+        'https://offline.example.com',
+      ], expectedMachineId: 'srv-1');
+
+      expect(result.activeBaseUrl, 'https://matching.example.com');
+      expect(result.baseUrls, ['https://matching.example.com', 'https://offline.example.com']);
+    });
+
+    test('reconciles stored endpoints without pruning candidates that returned no identity', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((request) async {
+          if (request.url.host == 'offline.example.com') {
+            throw TimeoutException('offline');
+          }
+          return _info(id: request.url.host == 'wrong.example.com' ? 'srv-2' : 'srv-1');
+        }),
+      );
+      const storedBaseUrls = ['https://active.example.com', 'https://offline.example.com', 'https://wrong.example.com'];
+
+      final result = await discovery.raceEndpoints(
+        storedBaseUrls,
+        expectedMachineId: 'srv-1',
+        baseUrlsToValidate: const [],
+      );
+
+      expect(result.baseUrls, ['https://active.example.com', 'https://offline.example.com']);
+      expect(result.reconcilePreviouslyStoredBaseUrls(storedBaseUrls), [
+        'https://active.example.com',
+        'https://offline.example.com',
+      ]);
+    });
+
+    test('waits for a late phase-one identity before filtering persisted fallbacks', () async {
+      final allowLateIdentity = Completer<void>();
+      final lateProbeStarted = Completer<void>();
+      final phaseTwoFallbackFinished = Completer<void>();
+      var fallbackRequests = 0;
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((request) async {
+          if (request.url.host != 'fallback.example.com') {
+            return _info(id: 'srv-1');
+          }
+          fallbackRequests++;
+          if (fallbackRequests == 1) {
+            lateProbeStarted.complete();
+            await allowLateIdentity.future;
+            return _info(id: 'srv-1');
+          }
+          phaseTwoFallbackFinished.complete();
+          throw TimeoutException('phase-two fallback probe failed');
+        }),
+      );
+
+      var raceCompleted = false;
+      final raceFuture = discovery
+          .raceEndpoints(['https://active.example.com', 'https://fallback.example.com'], expectedMachineId: 'srv-1')
+          .then((result) {
+            raceCompleted = true;
+            return result;
+          });
+
+      await lateProbeStarted.future;
+      await phaseTwoFallbackFinished.future;
+      await Future<void>.delayed(Duration.zero);
+      expect(raceCompleted, isFalse);
+
+      allowLateIdentity.complete();
+      final result = await raceFuture;
+      expect(result.activeBaseUrl, 'https://active.example.com');
+      expect(result.baseUrls, ['https://active.example.com', 'https://fallback.example.com']);
+    });
+
     test('promotes a same-host HTTPS redirect before persisting the endpoint', () async {
       final discovery = JellyfinEndpointDiscovery(
         testHttpClientFactory: () => _RedirectedInfoClient((requestedUrl) => requestedUrl.replace(scheme: 'https')),
@@ -251,6 +366,7 @@ void main() {
 
       expect(result.activeBaseUrl, 'https://jf.example.com');
       expect(result.baseUrls, ['https://jf.example.com']);
+      expect(result.reconcilePreviouslyStoredBaseUrls(['http://jf.example.com']), ['https://jf.example.com']);
     });
 
     test('preserves a Jellyfin base path when promoting a redirect', () async {

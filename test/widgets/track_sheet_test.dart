@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:ui' show Tristate;
 
 import 'package:flutter/material.dart';
@@ -6,29 +8,12 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/playback_subtitle_resolver.dart';
-import 'package:plezy/theme/mono_tokens.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/video_controls/models/track_controls_state.dart';
 import 'package:plezy/widgets/video_controls/sheets/track_sheet.dart';
 
-const _testTokens = MonoTokens(
-  radiusSm: 8,
-  radiusMd: 12,
-  radiusLg: 20,
-  radiusXs: 5,
-  groupGap: 2,
-  space: 8,
-  fast: Duration(milliseconds: 1),
-  normal: Duration(milliseconds: 1),
-  slow: Duration(milliseconds: 1),
-  expressive: Duration(milliseconds: 1),
-  bg: Colors.black,
-  surface: Colors.black,
-  outline: Colors.white24,
-  text: Colors.white,
-  textMuted: Colors.white70,
-  splashFactory: NoSplash.splashFactory,
-);
+import '../test_helpers/theme.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -106,7 +91,9 @@ void main() {
           isTranscoding: true,
           sourceSubtitleTracks: [MediaSubtitleTrack(id: 0, title: 'Stream zero', selected: false, forced: false)],
           selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.off(),
-          onSwitchSubtitle: (choice) => switchedChoice = choice,
+          onSwitchSubtitle: (choice) async {
+            switchedChoice = choice;
+          },
           subtitleSearchSupported: false,
         ),
       );
@@ -115,7 +102,8 @@ void main() {
       expect(switchedChoice, const PlaybackSourceSubtitleChoice.source(0));
     });
 
-    testWidgets('direct play keeps native tracks and appends unloaded source sidecars', (tester) async {
+    testWidgets('keeps an unloaded source sidecar selectable', (tester) async {
+      const remoteUri = 'https://example.test/source/remote.ass';
       final player = _FakeTrackSheetPlayer(
         tracks: const Tracks(
           subtitle: [SubtitleTrack(id: 's1', language: 'eng', codec: 'srt')],
@@ -142,8 +130,15 @@ void main() {
             ),
           ],
           selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(1),
-          sourceSubtitleSidecarIds: const {2},
-          onSwitchSubtitle: (choice) => switchedSourceChoice = choice,
+          sourceSubtitleSidecars: [
+            PlaybackSubtitleSidecar(
+              sourceStreamId: 2,
+              track: SubtitleTrack.uri(remoteUri, title: 'Remote sidecar', codec: 'ass'),
+            ),
+          ],
+          onSwitchSubtitle: (choice) async {
+            switchedSourceChoice = choice;
+          },
           subtitleSearchSupported: false,
         ),
       );
@@ -153,6 +148,175 @@ void main() {
 
       await tester.tap(find.text('Remote sidecar'));
       expect(switchedSourceChoice, const PlaybackSourceSubtitleChoice.source(2));
+    });
+
+    testWidgets('does not duplicate a previously attached sidecar after selecting an embedded track', (tester) async {
+      const remoteUri = 'https://example.test/source/attached.ass';
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(
+          subtitle: [
+            SubtitleTrack(id: 's1', language: 'eng', codec: 'srt'),
+            SubtitleTrack(id: 's2', title: 'Remote sidecar', codec: 'ass', isExternal: true, uri: remoteUri),
+          ],
+        ),
+        track: const TrackSelection(
+          subtitle: SubtitleTrack(id: 's1', language: 'eng', codec: 'srt'),
+        ),
+      );
+
+      await _pumpTrackSheet(
+        tester,
+        player: player,
+        trackControlsState: TrackControlsState(
+          sourceSubtitleTracks: [
+            MediaSubtitleTrack(id: 1, languageCode: 'eng', codec: 'srt', selected: true, forced: false),
+            MediaSubtitleTrack(
+              id: 2,
+              title: 'Remote sidecar',
+              codec: 'ass',
+              external: true,
+              selected: false,
+              forced: false,
+            ),
+          ],
+          selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(1),
+          sourceSubtitleSidecars: [
+            PlaybackSubtitleSidecar(
+              sourceStreamId: 2,
+              track: SubtitleTrack.uri(remoteUri, title: 'Remote sidecar', codec: 'ass'),
+            ),
+          ],
+          onSwitchSubtitle: (_) async {},
+          subtitleSearchSupported: false,
+        ),
+      );
+
+      expect(find.text('Remote sidecar'), findsOneWidget);
+    });
+
+    testWidgets('keeps an unloaded source sidecar beside an unrelated downloaded subtitle', (tester) async {
+      const sourceUri = 'https://example.test/source/unloaded.ass';
+      const downloadedUri = 'file:///tmp/downloaded.srt';
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(
+          subtitle: [
+            SubtitleTrack(id: 's1', title: 'Embedded subtitle', codec: 'srt'),
+            SubtitleTrack(
+              id: 'downloaded',
+              title: 'Downloaded subtitle',
+              codec: 'srt',
+              isExternal: true,
+              uri: downloadedUri,
+            ),
+          ],
+        ),
+        track: const TrackSelection(
+          subtitle: SubtitleTrack(id: 's1', title: 'Embedded subtitle', codec: 'srt'),
+        ),
+      );
+
+      await _pumpTrackSheet(
+        tester,
+        player: player,
+        trackControlsState: TrackControlsState(
+          sourceSubtitleTracks: [
+            MediaSubtitleTrack(
+              id: 2,
+              title: 'Remote sidecar',
+              codec: 'ass',
+              external: true,
+              selected: false,
+              forced: false,
+            ),
+          ],
+          selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(1),
+          sourceSubtitleSidecars: [
+            PlaybackSubtitleSidecar(
+              sourceStreamId: 2,
+              track: SubtitleTrack.uri(sourceUri, title: 'Remote sidecar', codec: 'ass'),
+            ),
+          ],
+          onSwitchSubtitle: (_) async {},
+          subtitleSearchSupported: false,
+        ),
+      );
+
+      expect(find.text('Downloaded subtitle'), findsOneWidget);
+      expect(find.text('Remote sidecar'), findsOneWidget);
+    });
+
+    testWidgets('keeps a source sheet open until the async selection commits', (tester) async {
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(
+          subtitle: [SubtitleTrack(id: 's1', language: 'eng', codec: 'srt')],
+        ),
+        track: const TrackSelection(
+          subtitle: SubtitleTrack(id: 's1', language: 'eng', codec: 'srt'),
+        ),
+      );
+      final selectionGate = Completer<void>();
+      late BuildContext hostContext;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [testMonoTokens]),
+          home: OverlaySheetHost(
+            child: Builder(
+              builder: (context) {
+                hostContext = context;
+                return const Scaffold(body: SizedBox.expand());
+              },
+            ),
+          ),
+        ),
+      );
+      final sheetResult = OverlaySheetController.of(hostContext).show<void>(
+        builder: (_) => SizedBox(
+          height: 400,
+          child: TrackSheet(
+            player: player,
+            trackControlsState: TrackControlsState(
+              sourceSubtitleTracks: [
+                MediaSubtitleTrack(id: 1, languageCode: 'eng', codec: 'srt', selected: true, forced: false),
+                MediaSubtitleTrack(
+                  id: 2,
+                  title: 'Remote sidecar',
+                  codec: 'ass',
+                  external: true,
+                  selected: false,
+                  forced: false,
+                ),
+              ],
+              selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(1),
+              sourceSubtitleSidecars: [
+                PlaybackSubtitleSidecar(
+                  sourceStreamId: 2,
+                  track: SubtitleTrack.uri(
+                    'https://example.test/source/pending.ass',
+                    title: 'Remote sidecar',
+                    codec: 'ass',
+                  ),
+                ),
+              ],
+              onSwitchSubtitle: (_) => selectionGate.future,
+              subtitleSearchSupported: false,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Remote sidecar'));
+      await tester.pump();
+
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      expect(find.text('Remote sidecar'), findsOneWidget);
+
+      selectionGate.complete();
+      await tester.pumpAndSettle();
+      await sheetResult;
+
+      expect(find.text('Remote sidecar'), findsNothing);
     });
 
     testWidgets('direct-play embedded selection stays on the native player path', (tester) async {
@@ -178,7 +342,9 @@ void main() {
             MediaSubtitleTrack(id: 2, languageCode: 'swe', selected: false, forced: false),
           ],
           selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(1),
-          onSwitchSubtitle: (choice) => switchedSourceChoice = choice,
+          onSwitchSubtitle: (choice) async {
+            switchedSourceChoice = choice;
+          },
           subtitleSearchSupported: false,
         ),
       );
@@ -189,18 +355,26 @@ void main() {
       expect(switchedSourceChoice, isNull);
     });
 
-    testWidgets('does not append a source sidecar already loaded as the secondary track', (tester) async {
+    testWidgets('does not append source sidecars already loaded as primary and secondary tracks', (tester) async {
+      const primaryUri = 'https://example.test/source/primary.ass';
+      const secondaryUri = 'https://example.test/source/secondary.ass';
       final player = _FakeTrackSheetPlayer(
         supportsSecondarySubtitles: true,
         tracks: const Tracks(
           subtitle: [
-            SubtitleTrack(id: 's1', language: 'eng', codec: 'srt'),
-            SubtitleTrack(id: 's2', title: 'Remote sidecar', codec: 'ass', isExternal: true),
+            SubtitleTrack(id: 's1', title: 'Primary sidecar', codec: 'ass', isExternal: true, uri: primaryUri),
+            SubtitleTrack(id: 's2', title: 'Secondary sidecar', codec: 'ass', isExternal: true, uri: secondaryUri),
           ],
         ),
         track: const TrackSelection(
-          subtitle: SubtitleTrack(id: 's1', language: 'eng', codec: 'srt'),
-          secondarySubtitle: SubtitleTrack(id: 's2', title: 'Remote sidecar', codec: 'ass', isExternal: true),
+          subtitle: SubtitleTrack(id: 's1', title: 'Primary sidecar', codec: 'ass', isExternal: true, uri: primaryUri),
+          secondarySubtitle: SubtitleTrack(
+            id: 's2',
+            title: 'Secondary sidecar',
+            codec: 'ass',
+            isExternal: true,
+            uri: secondaryUri,
+          ),
         ),
       );
 
@@ -210,8 +384,16 @@ void main() {
         trackControlsState: TrackControlsState(
           sourceSubtitleTracks: [
             MediaSubtitleTrack(
+              id: 1,
+              title: 'Primary sidecar',
+              codec: 'ass',
+              external: true,
+              selected: true,
+              forced: false,
+            ),
+            MediaSubtitleTrack(
               id: 2,
-              title: 'Remote sidecar',
+              title: 'Secondary sidecar',
               codec: 'ass',
               external: true,
               selected: false,
@@ -220,13 +402,23 @@ void main() {
           ],
           selectedSubtitleChoice: const PlaybackSourceSubtitleChoice.source(1),
           selectedSecondarySubtitleStreamId: 2,
-          sourceSubtitleSidecarIds: const {2},
-          onSwitchSubtitle: (_) {},
+          sourceSubtitleSidecars: [
+            PlaybackSubtitleSidecar(
+              sourceStreamId: 1,
+              track: SubtitleTrack.uri(primaryUri, title: 'Primary sidecar', codec: 'ass'),
+            ),
+            PlaybackSubtitleSidecar(
+              sourceStreamId: 2,
+              track: SubtitleTrack.uri(secondaryUri, title: 'Secondary sidecar', codec: 'ass'),
+            ),
+          ],
+          onSwitchSubtitle: (_) async {},
           subtitleSearchSupported: false,
         ),
       );
 
-      expect(find.text('Remote sidecar'), findsOneWidget);
+      expect(find.text('Primary sidecar'), findsOneWidget);
+      expect(find.text('Secondary sidecar'), findsOneWidget);
     });
   });
 
@@ -284,18 +476,21 @@ void main() {
         TrackControlsState(
           isTranscoding: true,
           sourceSubtitleTracks: [sourceSubtitle],
-          onSwitchSubtitle: (_) {},
+          onSwitchSubtitle: (_) async {},
         ).hasSubtitleControls(const Tracks()),
         isTrue,
       );
     });
 
     test('counts direct-play source sidecars without replacing native tracks', () {
+      const sourceUri = 'https://example.test/source/available.ass';
       final sourceSidecar = MediaSubtitleTrack(id: 1, external: true, selected: false, forced: false);
       final state = TrackControlsState(
         sourceSubtitleTracks: [sourceSidecar],
-        sourceSubtitleSidecarIds: {sourceSidecar.id},
-        onSwitchSubtitle: (_) {},
+        sourceSubtitleSidecars: [
+          PlaybackSubtitleSidecar(sourceStreamId: sourceSidecar.id, track: SubtitleTrack.uri(sourceUri)),
+        ],
+        onSwitchSubtitle: (_) async {},
       );
 
       expect(state.canUseSourceSubtitles, isFalse);
@@ -305,7 +500,7 @@ void main() {
 
     test('does not misclassify a Jellyfin external-delivery embedded row as a sidecar', () {
       final sourceTrack = MediaSubtitleTrack(id: 1, usesExternalDelivery: true, selected: false, forced: false);
-      final state = TrackControlsState(sourceSubtitleTracks: [sourceTrack], onSwitchSubtitle: (_) {});
+      final state = TrackControlsState(sourceSubtitleTracks: [sourceTrack], onSwitchSubtitle: (_) async {});
 
       expect(state.directPlaySourceSidecars, isEmpty);
     });
@@ -326,7 +521,7 @@ Future<void> _pumpTrackSheet(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
-      theme: ThemeData(extensions: const [_testTokens]),
+      theme: ThemeData(extensions: const [testMonoTokens]),
       home: OverlaySheetHost(
         child: Scaffold(
           body: SizedBox(

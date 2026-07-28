@@ -29,7 +29,7 @@ class ConnectionBootstrap {
     required this.profileRegistry,
     Future<List<PlexHomeUser>> Function(String accountToken)? plexHomeUserFetcher,
     Future<Map<String, dynamic>> Function(String accountToken)? plexUserInfoFetcher,
-  }) : _plexHomeUserFetcher = plexHomeUserFetcher ?? _fetchPlexHomeUsers,
+  }) : _plexHomeUserFetcher = plexHomeUserFetcher ?? fetchPlexHomeUsers,
        _plexUserInfoFetcher = plexUserInfoFetcher ?? _fetchPlexUserInfo;
 
   final StorageService storage;
@@ -280,16 +280,6 @@ class ConnectionBootstrap {
     final target = await _firstPlexAccount(account);
     if (target == null) return;
     await _preparePlexVirtualProfile(target);
-  }
-}
-
-Future<List<PlexHomeUser>> _fetchPlexHomeUsers(String accountToken) async {
-  final auth = await PlexAuthService.create();
-  try {
-    final home = await auth.getHomeUsers(accountToken);
-    return home.users;
-  } finally {
-    auth.dispose();
   }
 }
 

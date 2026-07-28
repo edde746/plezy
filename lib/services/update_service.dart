@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:auto_updater/auto_updater.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/utils/app_logger.dart';
@@ -115,14 +116,16 @@ class UpdateService {
   static Future<bool> shouldCheckForUpdates() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     final lastCheckString = prefs.getString(_keyLastCheckTime);
-
     if (lastCheckString == null) return true;
 
-    final lastCheck = DateTime.parse(lastCheckString);
     final now = DateTime.now();
-    final timeSinceLastCheck = now.difference(lastCheck);
+    final lastCheck = DateTime.tryParse(lastCheckString);
+    if (lastCheck == null || lastCheck.isAfter(now)) {
+      await prefs.remove(_keyLastCheckTime);
+      return true;
+    }
 
-    return timeSinceLastCheck >= _checkCooldown;
+    return now.difference(lastCheck) >= _checkCooldown;
   }
 
   static Future<void> _updateLastCheckTime() async {
@@ -131,9 +134,13 @@ class UpdateService {
   }
 
   /// Internal method that performs the actual update check
-  /// [respectCooldown] - if true, checks cooldown and updates last check time
-  static Future<Map<String, dynamic>?> _performUpdateCheck({required bool respectCooldown}) async {
-    if (!isUpdateCheckEnabled) {
+  /// [respectCooldown] - if true, checks cooldown and records the attempt before the request
+  static Future<Map<String, dynamic>?> _performUpdateCheck({
+    required bool respectCooldown,
+    MediaServerHttpClient? client,
+    bool forceEnabled = false,
+  }) async {
+    if (!forceEnabled && !isUpdateCheckEnabled) {
       return null;
     }
 
@@ -146,7 +153,11 @@ class UpdateService {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      final response = await httpClient.get(
+      if (respectCooldown) {
+        await _updateLastCheckTime();
+      }
+
+      final response = await (client ?? httpClient).get(
         'https://api.github.com/repos/$_githubRepo/releases/latest',
         headers: {'Accept': 'application/vnd.github+json'},
       );
@@ -164,16 +175,7 @@ class UpdateService {
           // Check if this version was skipped
           final skippedVersion = await getSkippedVersion();
           if (skippedVersion == cleanVersion) {
-            // Update last check time even when skipped (if respecting cooldown)
-            if (respectCooldown) {
-              await _updateLastCheckTime();
-            }
             return null;
-          }
-
-          // Update last check time on success (if respecting cooldown)
-          if (respectCooldown) {
-            await _updateLastCheckTime();
           }
 
           return {
@@ -187,16 +189,19 @@ class UpdateService {
           };
         }
       }
-
-      // Update last check time even when no update (if respecting cooldown)
-      if (respectCooldown) {
-        await _updateLastCheckTime();
-      }
     } catch (error, stackTrace) {
       appLogger.e('Failed to check for updates', error: error, stackTrace: stackTrace);
     }
 
     return null;
+  }
+
+  @visibleForTesting
+  static Future<Map<String, dynamic>?> debugPerformUpdateCheck({
+    required bool respectCooldown,
+    required MediaServerHttpClient client,
+  }) {
+    return _performUpdateCheck(respectCooldown: respectCooldown, client: client, forceEnabled: true);
   }
 
   /// Check for updates on GitHub (manual check, ignores cooldown)

@@ -108,24 +108,19 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// filter to a one-element set when no filter is currently set.
   void addToVisibleServerIds(ServerId serverId) {
     final current = _visibleServerIds;
-    if (current == null) {
-      _serverManager.setVisibleServerIds({serverId});
-      _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
-      safeNotifyListeners();
-      _refreshLiveTvAvailabilitySoon();
-      return;
-    }
-    if (current.contains(serverId)) return;
-    _serverManager.setVisibleServerIds({...current, serverId});
+    if (current != null && current.contains(serverId)) return;
+    _serverManager.setVisibleServerIds({...?current, serverId});
     _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
     safeNotifyListeners();
     _refreshLiveTvAvailabilitySoon();
   }
 
+  /// Keep only ids the manager considers visible under the active filter.
+  List<String> _visible(List<String> ids) => ids.where((id) => _serverManager.isServerVisible(ServerId(id))).toList();
+
   void _pruneLiveTvServersForVisibility() {
-    final filter = _visibleServerIds;
-    if (filter == null) return;
-    _liveTvServers.removeWhere((s) => !filter.contains(s.serverId));
+    if (_visibleServerIds == null) return;
+    _liveTvServers.removeWhere((s) => !_serverManager.isServerVisible(ServerId(s.serverId)));
     _hasLiveTv = _liveTvServers.isNotEmpty;
   }
 
@@ -199,20 +194,10 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   }
 
   /// Get all online server IDs (visibility-filtered).
-  List<String> get onlineServerIds {
-    final all = _serverManager.onlineServerIds;
-    final filter = _visibleServerIds;
-    if (filter == null) return all;
-    return all.where(filter.contains).toList();
-  }
+  List<String> get onlineServerIds => _visible(_serverManager.onlineServerIds);
 
   /// Get all server IDs (visibility-filtered).
-  List<String> get serverIds {
-    final all = _serverManager.serverIds;
-    final filter = _visibleServerIds;
-    if (filter == null) return all;
-    return all.where(filter.contains).toList();
-  }
+  List<String> get serverIds => _visible(_serverManager.serverIds);
 
   /// Server ids the active profile is expected to have, including unreachable
   /// Plex servers that have no live client yet.
@@ -223,11 +208,8 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   }
 
   /// Check if a server is online (and visible under the active profile).
-  bool isServerOnline(ServerId serverId) {
-    final filter = _visibleServerIds;
-    if (filter != null && !filter.contains(serverId)) return false;
-    return _serverManager.isServerOnline(serverId);
-  }
+  bool isServerOnline(ServerId serverId) =>
+      _serverManager.isServerVisible(serverId) && _serverManager.isServerOnline(serverId);
 
   /// Get number of online servers
   int get onlineServerCount => onlineServerIds.length;
@@ -312,10 +294,9 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
       }
     }
 
-    final filter = _visibleServerIds;
-    final visibleLiveTvServers = filter == null
-        ? newLiveTvServers
-        : newLiveTvServers.where((s) => filter.contains(s.serverId)).toList();
+    final visibleLiveTvServers = newLiveTvServers
+        .where((s) => _serverManager.isServerVisible(ServerId(s.serverId)))
+        .toList();
 
     final hadLiveTv = _hasLiveTv;
     final oldServerIds = _liveTvServers.map((s) => '${s.serverId}\u0000${s.dvrKey}').toSet();

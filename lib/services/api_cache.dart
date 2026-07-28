@@ -166,27 +166,6 @@ abstract class ApiCache {
     await (_db.delete(_db.apiCache)..where((t) => t.pinned.equals(false))).go();
   }
 
-  /// Pin every row whose `cacheKey` matches the SQL `LIKE` [pattern]. Used by
-  /// backend subclasses that pin by item-shape rather than a single endpoint
-  /// (e.g. Jellyfin's per-user item rows where the user segment is a
-  /// wildcard).
-  Future<void> pinByKeyPattern(String pattern) async {
-    await (_db.update(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.like(pattern))).write(const ApiCacheCompanion(pinned: Value(true)));
-  }
-
-  Future<void> unpinByKeyPattern(String pattern) async {
-    await (_db.update(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.like(pattern))).write(const ApiCacheCompanion(pinned: Value(false)));
-  }
-
-  Future<bool> hasPinnedMatching(String pattern) async {
-    final rows = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.like(pattern) & t.pinned.equals(true))).get();
-    return rows.isNotEmpty;
-  }
-
   /// Pull pinned rows for [serverId] and extract the first capture group of
   /// [keyPattern] from each `cacheKey`. Returns the unique set of captured
   /// ids — backend subclasses use this to enumerate their pinned items
@@ -261,8 +240,8 @@ abstract class ApiCache {
     int? viewedLeafCount,
   });
 
-  /// Bulk-load every pinned metadata row into a [MediaItem] map keyed by
-  /// `buildGlobalKey(ServerId(serverId), itemId)`. Used by [DownloadManagerService] on
-  /// cold start to hydrate offline state in a single query per backend.
-  Future<Map<String, MediaItem>> getAllPinnedMetadata();
+  /// Bulk-load pinned metadata whose private cache namespace is included in
+  /// [cacheServerIds]. A null set retains the backend's complete diagnostic
+  /// view; profile-visible hydration must always pass exact allowed scopes.
+  Future<Map<String, MediaItem>> getAllPinnedMetadata({Set<ServerId>? cacheServerIds});
 }

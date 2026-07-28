@@ -3,17 +3,26 @@ import 'package:plezy/utils/device_identity.dart';
 
 void main() {
   group('sanitizeHeaderValue', () {
-    test('passes plain latin-1 names through trimmed', () {
+    test('passes plain ASCII names through trimmed', () {
       expect(sanitizeHeaderValue('  Living Room TV '), 'Living Room TV');
-      expect(sanitizeHeaderValue("Édouard's Mac"), "Édouard's Mac");
     });
 
-    test('strips code units above latin-1 (emoji would break dart:io headers)', () {
+    // Regression: header values above 0x7F make dart:io throw and CFNetwork
+    // emit a Latin-1 byte that UTF-8 header parsers reject as a bad request.
+    test('folds accented Latin letters instead of emitting them', () {
+      expect(sanitizeHeaderValue("Édouard's Mac"), "Edouard's Mac");
+      expect(sanitizeHeaderValue('Bjørn stue-TV'), 'Bjorn stue-TV');
+      expect(sanitizeHeaderValue('Håkons Æra Straße'), 'Hakons AEra Strasse');
+      expect(sanitizeHeaderValue('Łukasz Đorđe'), 'Lukasz Dorde');
+    });
+
+    test('drops code units that have no ASCII equivalent', () {
       expect(sanitizeHeaderValue('📱 Bob\'s iPhone'), "Bob's iPhone");
       expect(sanitizeHeaderValue('电视'), isNull);
     });
 
-    test('strips CR/LF', () {
+    test('strips HTTP control characters', () {
+      expect(sanitizeHeaderValue('\u0000Living\u001f Room\u007f TV'), 'Living Room TV');
       expect(sanitizeHeaderValue('evil\r\nX-Injected: 1'), 'evilX-Injected: 1');
     });
 

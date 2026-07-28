@@ -28,6 +28,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
 
   final Set<int> _loadingRanges = {};
   AbortController? _cancelToken;
+  Object? _paginationError;
 
   /// Monotonic generation — bumped on reset/dispose so stale fetches are
   /// discarded instead of mutating state from a prior load.
@@ -37,6 +38,8 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
   Timer? _retryTimer;
   bool _visibleRangeLoading = false;
   DateTime? _lastEagerPrefetch;
+  Object? get paginationError => _paginationError;
+  bool get isPaginationLoading => _loadingRanges.isNotEmpty;
 
   /// Re-invoked by the retry timer. Most recent range-load args.
   VoidCallback? _scheduledRetry;
@@ -48,6 +51,10 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
   /// Hook fired after each successful page merge. Default: no-op.
   /// Override for image prefetch, syncing a base-class `items` list, etc.
   void onPageLoaded(int _, List<T> _) {}
+
+  /// Hook fired when a lazy page starts or finishes loading, or fails.
+  /// Override when the surrounding UI exposes loading or retry state.
+  void onPaginationStateChanged() {}
 
   /// Synchronously clear pagination state and bump the generation counter.
   /// Call from inside the subclass's `setState` before awaiting
@@ -61,6 +68,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     _visibleRangeLoading = false;
     _lastEagerPrefetch = null;
     _scheduledRetry = null;
+    _paginationError = null;
     loadedItems.clear();
     _loadingRanges.clear();
     totalSize = 0;
@@ -94,43 +102,6 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     totalSize = result.totalCount;
     onPageLoaded(0, result.items);
     return (page: result, applied: true);
-  }
-
-  /// Shared initial-load transaction for paginated consumers.
-  ///
-  /// Owns reset, stale-result rejection, mounted checks, and error-state
-  /// application. Callers supply only their view fields, logging, and
-  /// post-success behavior.
-  Future<bool> loadInitialPaginatedItems({
-    required int pageSize,
-    required VoidCallback resetViewState,
-    required void Function(List<T> items) applyLoadedItems,
-    required void Function(Object error, StackTrace stackTrace) applyError,
-    void Function(int loadedCount, int totalCount)? onLoaded,
-    void Function(Object error, StackTrace stackTrace)? onError,
-  }) async {
-    setState(() {
-      resetViewState();
-      resetPaginationState();
-    });
-
-    try {
-      final initialPage = await loadInitialPageWithStatus(pageSize);
-      if (!initialPage.applied || !mounted) return false;
-
-      setState(() {
-        applyLoadedItems(loadedItems.values.toList());
-      });
-      onLoaded?.call(loadedItems.length, totalSize);
-      return true;
-    } catch (error, stackTrace) {
-      onError?.call(error, stackTrace);
-      if (!mounted) return false;
-      setState(() {
-        applyError(error, stackTrace);
-      });
-      return false;
-    }
   }
 
   /// Fetch any unloaded items inside [firstIndex, firstIndex + visibleCount)
@@ -265,6 +236,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     _retryTimer?.cancel();
     _retryTimer = null;
     _loadingRanges.clear();
+    _paginationError = null;
     _scheduledRetry = null;
   }
 
@@ -276,6 +248,8 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
     final indices = List.generate(clampedSize, (i) => start + i);
     if (indices.every((i) => _loadingRanges.contains(i) || loadedItems.containsKey(i))) return true;
     _loadingRanges.addAll(indices);
+    _paginationError = null;
+    onPaginationStateChanged();
 
     final generation = _requestId;
 
@@ -295,6 +269,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
       return true;
     } catch (e) {
       if (e is MediaServerHttpException && e.type == MediaServerHttpErrorType.cancelled) return false;
+      _paginationError = e;
       _retryCount++;
       final delay = Duration(milliseconds: 500 * (1 << _retryCount.clamp(0, 4)));
       _retryTimer?.cancel();
@@ -304,6 +279,7 @@ mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
       return false;
     } finally {
       _loadingRanges.removeAll(indices);
+      onPaginationStateChanged();
     }
   }
 }

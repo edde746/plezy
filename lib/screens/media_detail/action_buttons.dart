@@ -473,6 +473,10 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     }
 
     if (progress?.status == DownloadStatus.failed) {
+      // A failed download is the likeliest moment for the restriction to be
+      // the actual cause, so check before spending another attempt on it.
+      if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
+
       final client = _getMediaClientForMetadata(context);
       if (client == null) return;
 
@@ -502,6 +506,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         await downloadProvider.deleteDownload(globalKey);
         if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
       } else if (retry && mounted) {
+        if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
         final client = _getMediaClientForMetadata(context);
         if (client == null) return;
 
@@ -524,6 +529,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         await _showSyncRuleActions(context, downloadProvider, metadata, ruleKey: ruleKey, downloadGlobalKey: globalKey);
         return;
       }
+      if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
 
       final client = _getMediaClientForMetadata(context);
       if (client == null) return;

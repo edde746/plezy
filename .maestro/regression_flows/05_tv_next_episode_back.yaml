@@ -18,14 +18,12 @@ tags:
 - tapOn:
     point: "87%,90%"
 - extendedWaitUntil:
-    visible: "(?s).*Maestro Show$"
+    visible: "(?s)^Maestro Show, TV show, (?:watched|unwatched)$"
     timeout: 15000
-- tapOn:
-    point: "50%,24%"
+- tapOn: "(?s)^Maestro Show, TV show, (?:watched|unwatched)$"
 - waitForAnimationToEnd:
     timeout: 5000
-- tapOn:
-    point: "15%,76%"
+- tapOn: "(?s)^Play S1E1$"
 - extendedWaitUntil:
     visible: "Pause"
     timeout: 30000
@@ -34,7 +32,16 @@ tags:
 - extendedWaitUntil:
     visible: "Next Episode"
     timeout: 20000
-- pressKey: "back"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "Cancel"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - pressKey: "back"
 - assertNotVisible: "Next Episode"
 - assertNotVisible: "Overview"
 - pressKey: "Remote Dpad Up"

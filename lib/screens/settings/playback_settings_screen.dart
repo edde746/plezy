@@ -266,7 +266,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     ],
   );
 
-  Widget _playerBackendSelector() => SettingSegmentedTile<bool, bool>(
+  Widget _playerBackendSelector() => SettingSegmentedTile<bool>(
     pref: SettingsService.useExoPlayer,
     icon: Symbols.play_circle_rounded,
     title: t.settings.playerBackend,
@@ -274,8 +274,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       ButtonSegment(value: true, label: Text(t.settings.exoPlayer)),
       ButtonSegment(value: false, label: Text(t.settings.mpv)),
     ],
-    decode: (s) => s,
-    encode: (s) => s,
   );
 
   Widget _externalPlayerTile() => SettingsBuilder(
@@ -391,7 +389,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     subtitle: t.settings.tunneledPlaybackDescription,
   );
 
-  Widget _dvConversionModeTile() => SettingSelectionTile<DvConversionModePreference, DvConversionModePreference>(
+  Widget _dvConversionModeTile() => SettingSelectionTile<DvConversionModePreference>(
     pref: SettingsService.dvConversionMode,
     icon: Symbols.hdr_strong_rounded,
     title: t.settings.dvConversionMode,
@@ -399,8 +397,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     options: DvConversionModePreference.values
         .map((m) => DialogOption(value: m, title: _dvConversionModeLabel(m)))
         .toList(),
-    decode: (m) => m,
-    encode: (m) => m,
   );
 
   String _dvConversionModeLabel(DvConversionModePreference mode) => switch (mode) {
@@ -412,7 +408,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
 
   Widget _bufferSizeTile() {
     final bufferOptions = const [0, 64, 128, 256, 512, 1024];
-    return SettingSelectionTile<int, int>(
+    return SettingSelectionTile<int>(
       pref: SettingsService.bufferSize,
       icon: Symbols.memory_rounded,
       title: t.settings.bufferSize,
@@ -420,8 +416,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       options: bufferOptions
           .map((s) => DialogOption(value: s, title: s == 0 ? t.settings.bufferSizeAuto : '${s}MB'))
           .toList(),
-      decode: (s) => s,
-      encode: (s) => s,
       onAfterWrite: (value) async {
         if (Platform.isAndroid && value > 0) {
           final heapMB = await PlayerAndroid.getHeapSize();
@@ -433,7 +427,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     );
   }
 
-  Widget _defaultQualityTile() => SettingSelectionTile<TranscodeQualityPreset, TranscodeQualityPreset>(
+  Widget _defaultQualityTile() => SettingSelectionTile<TranscodeQualityPreset>(
     pref: SettingsService.defaultQualityPreset,
     icon: Symbols.high_quality_rounded,
     title: t.settings.defaultQualityTitle,
@@ -441,18 +435,14 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     options: TranscodeQualityPreset.displayOrder
         .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
         .toList(),
-    decode: (p) => p,
-    encode: (p) => p,
   );
 
-  Widget _musicQualityTile() => SettingSelectionTile<AudioQualityPreset, AudioQualityPreset>(
+  Widget _musicQualityTile() => SettingSelectionTile<AudioQualityPreset>(
     pref: SettingsService.musicQualityPreset,
     icon: Symbols.music_note_rounded,
     title: t.settings.musicQualityTitle,
     subtitleBuilder: _musicQualityLabel,
     options: AudioQualityPreset.values.map((p) => DialogOption(value: p, title: _musicQualityLabel(p))).toList(),
-    decode: (p) => p,
-    encode: (p) => p,
   );
 
   String _musicQualityLabel(AudioQualityPreset preset) =>

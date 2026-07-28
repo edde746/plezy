@@ -3,14 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../i18n/strings.g.dart';
 import '../focus/dpad_navigator.dart';
-import '../focus/focus_theme.dart';
 import '../focus/focusable_text_field.dart';
-import '../focus/input_mode_tracker.dart';
-import '../focus/key_repeat_helper.dart';
 import '../mixins/controller_disposer_mixin.dart';
-import '../theme/mono_tokens.dart';
-import 'package:material_symbols_icons/symbols.dart';
-import 'app_icon.dart';
+import 'tv_number_spinner.dart';
 
 /// A TV-friendly color picker using HSV sliders for D-pad navigation.
 ///
@@ -106,6 +101,31 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
     widget.onColorChanged(color);
   }
 
+  Widget _channelRow({
+    required String label,
+    required String semanticLabel,
+    required int value,
+    required int max,
+    required String suffix,
+    required ValueChanged<int> onChanged,
+    bool autofocus = false,
+  }) {
+    return TvNumberSpinner(
+      label: label,
+      semanticLabel: semanticLabel,
+      value: value,
+      min: 0,
+      max: max,
+      step: 5,
+      suffix: suffix,
+      autofocus: autofocus,
+      onConfirm: widget.onConfirm,
+      onChanged: onChanged,
+      verticalKeysAdjustValue: false,
+      density: TvNumberSpinnerDensity.compact,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentColor = _currentColor();
@@ -123,46 +143,37 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
           ),
         ),
         const SizedBox(height: 16),
-        _ColorChannelRow(
+        _channelRow(
           label: 'H',
           semanticLabel: Translations.of(context).accessibility.hue,
           value: _hue,
-          min: 0,
           max: 360,
-          step: 5,
           suffix: '°',
           autofocus: true,
-          onConfirm: widget.onConfirm,
           onChanged: (v) {
             setState(() => _hue = v);
             _onChannelChanged();
           },
         ),
         const SizedBox(height: 8),
-        _ColorChannelRow(
+        _channelRow(
           label: 'S',
           semanticLabel: Translations.of(context).accessibility.saturation,
           value: _saturation,
-          min: 0,
           max: 100,
-          step: 5,
           suffix: '%',
-          onConfirm: widget.onConfirm,
           onChanged: (v) {
             setState(() => _saturation = v);
             _onChannelChanged();
           },
         ),
         const SizedBox(height: 8),
-        _ColorChannelRow(
+        _channelRow(
           label: 'V',
           semanticLabel: Translations.of(context).accessibility.brightness,
           value: _value,
-          min: 0,
           max: 100,
-          step: 5,
           suffix: '%',
-          onConfirm: widget.onConfirm,
           onChanged: (v) {
             setState(() => _value = v);
             _onChannelChanged();
@@ -182,214 +193,6 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
           onChanged: _onHexChanged,
         ),
       ],
-    );
-  }
-}
-
-/// A horizontal channel row for a single HSV component.
-///
-/// LEFT/RIGHT adjust the value (with repeat timer for held keys).
-/// UP/DOWN are ignored so focus traverses normally between rows.
-class _ColorChannelRow extends StatefulWidget {
-  final String label;
-  final String semanticLabel;
-  final int value;
-  final int min;
-  final int max;
-  final int step;
-  final String suffix;
-  final bool autofocus;
-  final ValueChanged<int> onChanged;
-
-  /// Called when the user presses SELECT to confirm.
-  final VoidCallback? onConfirm;
-
-  const _ColorChannelRow({
-    required this.label,
-    required this.semanticLabel,
-    required this.value,
-    required this.min,
-    required this.max,
-    required this.step,
-    required this.suffix,
-    required this.onChanged,
-    this.autofocus = false,
-    this.onConfirm,
-  });
-
-  @override
-  State<_ColorChannelRow> createState() => _ColorChannelRowState();
-}
-
-class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper<_ColorChannelRow> {
-  late FocusNode _focusNode;
-  bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _focusNode = FocusNode(debugLabel: 'ColorChannel_${widget.label}');
-  }
-
-  @override
-  void dispose() {
-    stopRepeat();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  void _increment() {
-    final newValue = widget.value + widget.step;
-    if (newValue <= widget.max) {
-      widget.onChanged(newValue);
-    }
-  }
-
-  void _decrement() {
-    final newValue = widget.value - widget.step;
-    if (newValue >= widget.min) {
-      widget.onChanged(newValue);
-    }
-  }
-
-  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
-    final key = event.logicalKey;
-
-    // Let UP/DOWN pass through for focus traversal between rows
-    if (key.isUpKey || key.isDownKey) {
-      return KeyEventResult.ignored;
-    }
-
-    if (event is KeyDownEvent) {
-      if (key.isSelectKey && widget.onConfirm != null) {
-        widget.onConfirm!();
-        return KeyEventResult.handled;
-      }
-      if (key.isRightKey) {
-        startRepeat(_increment);
-        return KeyEventResult.handled;
-      } else if (key.isLeftKey) {
-        startRepeat(_decrement);
-        return KeyEventResult.handled;
-      }
-    } else if (event is KeyRepeatEvent) {
-      // Consume repeat events for LEFT/RIGHT so they don't escape
-      // to the focus system as traversal actions. The repeat timer
-      // from KeyDown already handles value repetition.
-      if (key.isRightKey || key.isLeftKey) {
-        return KeyEventResult.handled;
-      }
-    } else if (event is KeyUpEvent) {
-      if (key.isRightKey || key.isLeftKey) {
-        stopRepeat();
-        return KeyEventResult.handled;
-      }
-    }
-
-    return KeyEventResult.ignored;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final tokens = theme.extension<MonoTokens>();
-    final canDecrement = widget.value > widget.min;
-    final canIncrement = widget.value < widget.max;
-    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-
-    return Focus(
-      focusNode: _focusNode,
-      autofocus: widget.autofocus,
-      descendantsAreFocusable: false,
-      onFocusChange: (hasFocus) {
-        setState(() => _isFocused = hasFocus);
-        if (!hasFocus) stopRepeat();
-      },
-      onKeyEvent: _handleKeyEvent,
-      child: AnimatedContainer(
-        duration: tokens?.fast ?? const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(FocusTheme.defaultBorderRadius)),
-          border: Border.fromBorderSide(
-            BorderSide(
-              color: _isFocused && isKeyboardMode ? FocusTheme.getFocusBorderColor(context) : Colors.transparent,
-              width: FocusTheme.focusBorderWidth,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 24,
-              child: Text(widget.label, style: theme.textTheme.titleMedium?.copyWith(fontWeight: .bold)),
-            ),
-            const SizedBox(width: 8),
-            _ChannelButton(
-              icon: Symbols.remove_rounded,
-              onPressed: canDecrement ? _decrement : null,
-              semanticLabel: Translations.of(context).accessibility.decreaseValue(label: widget.semanticLabel),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              constraints: const BoxConstraints(minWidth: 56),
-              alignment: .center,
-              child: Text('${widget.value}${widget.suffix}', style: theme.textTheme.titleMedium),
-            ),
-            const SizedBox(width: 8),
-            _ChannelButton(
-              icon: Symbols.add_rounded,
-              onPressed: canIncrement ? _increment : null,
-              semanticLabel: Translations.of(context).accessibility.increaseValue(label: widget.semanticLabel),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ChannelButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onPressed;
-  final String semanticLabel;
-
-  const _ChannelButton({required this.icon, required this.onPressed, required this.semanticLabel});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isEnabled = onPressed != null;
-
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      enabled: isEnabled,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: const BorderRadius.all(Radius.circular(20)),
-          child: Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isEnabled ? theme.colorScheme.primaryContainer : theme.colorScheme.surfaceContainerHighest,
-            ),
-            child: Center(
-              child: AppIcon(
-                icon,
-                size: 18,
-                fill: 1,
-                color: isEnabled
-                    ? theme.colorScheme.onPrimaryContainer
-                    : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

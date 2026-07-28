@@ -40,59 +40,60 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	Translations $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => Translations(meta: meta ?? this.$meta);
 
 	// Translations
-	late final TranslationsAppEn app = TranslationsAppEn.internal(_root);
-	late final TranslationsAuthEn auth = TranslationsAuthEn.internal(_root);
-	late final TranslationsCommonEn common = TranslationsCommonEn.internal(_root);
-	late final TranslationsScreensEn screens = TranslationsScreensEn.internal(_root);
-	late final TranslationsUpdateEn update = TranslationsUpdateEn.internal(_root);
-	late final TranslationsSettingsEn settings = TranslationsSettingsEn.internal(_root);
-	late final TranslationsSearchEn search = TranslationsSearchEn.internal(_root);
-	late final TranslationsHotkeysEn hotkeys = TranslationsHotkeysEn.internal(_root);
-	late final TranslationsFileInfoEn fileInfo = TranslationsFileInfoEn.internal(_root);
-	late final TranslationsMediaMenuEn mediaMenu = TranslationsMediaMenuEn.internal(_root);
-	late final TranslationsRateSheetEn rateSheet = TranslationsRateSheetEn.internal(_root);
-	late final TranslationsAccessibilityEn accessibility = TranslationsAccessibilityEn.internal(_root);
-	late final TranslationsTooltipsEn tooltips = TranslationsTooltipsEn.internal(_root);
-	late final TranslationsVideoControlsEn videoControls = TranslationsVideoControlsEn.internal(_root);
-	late final TranslationsMessagesEn messages = TranslationsMessagesEn.internal(_root);
-	late final TranslationsSubtitlingStylingEn subtitlingStyling = TranslationsSubtitlingStylingEn.internal(_root);
-	late final TranslationsMpvConfigEn mpvConfig = TranslationsMpvConfigEn.internal(_root);
-	late final TranslationsDialogEn dialog = TranslationsDialogEn.internal(_root);
-	late final TranslationsProfilesEn profiles = TranslationsProfilesEn.internal(_root);
-	late final TranslationsConnectionsEn connections = TranslationsConnectionsEn.internal(_root);
-	late final TranslationsDiscoverEn discover = TranslationsDiscoverEn.internal(_root);
-	late final TranslationsErrorsEn errors = TranslationsErrorsEn.internal(_root);
-	late final TranslationsLibrariesEn libraries = TranslationsLibrariesEn.internal(_root);
-	late final TranslationsAboutEn about = TranslationsAboutEn.internal(_root);
-	late final TranslationsServerSelectionEn serverSelection = TranslationsServerSelectionEn.internal(_root);
-	late final TranslationsHubDetailEn hubDetail = TranslationsHubDetailEn.internal(_root);
-	late final TranslationsLogsEn logs = TranslationsLogsEn.internal(_root);
-	late final TranslationsLicensesEn licenses = TranslationsLicensesEn.internal(_root);
-	late final TranslationsNavigationEn navigation = TranslationsNavigationEn.internal(_root);
-	late final TranslationsExploreEn explore = TranslationsExploreEn.internal(_root);
-	late final TranslationsLiveTvEn liveTv = TranslationsLiveTvEn.internal(_root);
-	late final TranslationsCollectionsEn collections = TranslationsCollectionsEn.internal(_root);
-	late final TranslationsPlaylistsEn playlists = TranslationsPlaylistsEn.internal(_root);
-	late final TranslationsMusicEn music = TranslationsMusicEn.internal(_root);
-	late final TranslationsWatchTogetherEn watchTogether = TranslationsWatchTogetherEn.internal(_root);
-	late final TranslationsDownloadsEn downloads = TranslationsDownloadsEn.internal(_root);
-	late final TranslationsShadersEn shaders = TranslationsShadersEn.internal(_root);
-	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn.internal(_root);
-	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn.internal(_root);
-	late final TranslationsPerformanceOverlayEn performanceOverlay = TranslationsPerformanceOverlayEn.internal(_root);
-	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn.internal(_root);
-	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn.internal(_root);
-	late final TranslationsMatchScreenEn matchScreen = TranslationsMatchScreenEn.internal(_root);
-	late final TranslationsServerTasksEn serverTasks = TranslationsServerTasksEn.internal(_root);
-	late final TranslationsTraktEn trakt = TranslationsTraktEn.internal(_root);
-	late final TranslationsSeerrEn seerr = TranslationsSeerrEn.internal(_root);
-	late final TranslationsServicesEn services = TranslationsServicesEn.internal(_root);
-	late final TranslationsAddServerEn addServer = TranslationsAddServerEn.internal(_root);
+	late final Translations$app$en app = Translations$app$en.internal(_root);
+	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
+	late final Translations$common$en common = Translations$common$en.internal(_root);
+	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
+	late final Translations$update$en update = Translations$update$en.internal(_root);
+	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
+	late final Translations$search$en search = Translations$search$en.internal(_root);
+	late final Translations$hotkeys$en hotkeys = Translations$hotkeys$en.internal(_root);
+	late final Translations$fileInfo$en fileInfo = Translations$fileInfo$en.internal(_root);
+	late final Translations$mediaMenu$en mediaMenu = Translations$mediaMenu$en.internal(_root);
+	late final Translations$rateSheet$en rateSheet = Translations$rateSheet$en.internal(_root);
+	late final Translations$accessibility$en accessibility = Translations$accessibility$en.internal(_root);
+	late final Translations$tooltips$en tooltips = Translations$tooltips$en.internal(_root);
+	late final Translations$audioTracks$en audioTracks = Translations$audioTracks$en.internal(_root);
+	late final Translations$videoControls$en videoControls = Translations$videoControls$en.internal(_root);
+	late final Translations$messages$en messages = Translations$messages$en.internal(_root);
+	late final Translations$subtitlingStyling$en subtitlingStyling = Translations$subtitlingStyling$en.internal(_root);
+	late final Translations$mpvConfig$en mpvConfig = Translations$mpvConfig$en.internal(_root);
+	late final Translations$dialog$en dialog = Translations$dialog$en.internal(_root);
+	late final Translations$profiles$en profiles = Translations$profiles$en.internal(_root);
+	late final Translations$connections$en connections = Translations$connections$en.internal(_root);
+	late final Translations$discover$en discover = Translations$discover$en.internal(_root);
+	late final Translations$errors$en errors = Translations$errors$en.internal(_root);
+	late final Translations$libraries$en libraries = Translations$libraries$en.internal(_root);
+	late final Translations$about$en about = Translations$about$en.internal(_root);
+	late final Translations$serverSelection$en serverSelection = Translations$serverSelection$en.internal(_root);
+	late final Translations$hubDetail$en hubDetail = Translations$hubDetail$en.internal(_root);
+	late final Translations$logs$en logs = Translations$logs$en.internal(_root);
+	late final Translations$licenses$en licenses = Translations$licenses$en.internal(_root);
+	late final Translations$navigation$en navigation = Translations$navigation$en.internal(_root);
+	late final Translations$explore$en explore = Translations$explore$en.internal(_root);
+	late final Translations$liveTv$en liveTv = Translations$liveTv$en.internal(_root);
+	late final Translations$collections$en collections = Translations$collections$en.internal(_root);
+	late final Translations$playlists$en playlists = Translations$playlists$en.internal(_root);
+	late final Translations$music$en music = Translations$music$en.internal(_root);
+	late final Translations$watchTogether$en watchTogether = Translations$watchTogether$en.internal(_root);
+	late final Translations$downloads$en downloads = Translations$downloads$en.internal(_root);
+	late final Translations$shaders$en shaders = Translations$shaders$en.internal(_root);
+	late final Translations$companionRemote$en companionRemote = Translations$companionRemote$en.internal(_root);
+	late final Translations$videoSettings$en videoSettings = Translations$videoSettings$en.internal(_root);
+	late final Translations$performanceOverlay$en performanceOverlay = Translations$performanceOverlay$en.internal(_root);
+	late final Translations$externalPlayer$en externalPlayer = Translations$externalPlayer$en.internal(_root);
+	late final Translations$metadataEdit$en metadataEdit = Translations$metadataEdit$en.internal(_root);
+	late final Translations$matchScreen$en matchScreen = Translations$matchScreen$en.internal(_root);
+	late final Translations$serverTasks$en serverTasks = Translations$serverTasks$en.internal(_root);
+	late final Translations$trakt$en trakt = Translations$trakt$en.internal(_root);
+	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
+	late final Translations$services$en services = Translations$services$en.internal(_root);
+	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 }
 
 // Path: app
-class TranslationsAppEn {
-	TranslationsAppEn.internal(this._root);
+class Translations$app$en {
+	Translations$app$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -103,8 +104,8 @@ class TranslationsAppEn {
 }
 
 // Path: auth
-class TranslationsAuthEn {
-	TranslationsAuthEn.internal(this._root);
+class Translations$auth$en {
+	Translations$auth$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -151,11 +152,14 @@ class TranslationsAuthEn {
 
 	/// en: 'Quick Connect expired. Try again.'
 	String get quickConnectExpired => 'Quick Connect expired. Try again.';
+
+	/// en: 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.'
+	String get localDataRecoveryRequired => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.';
 }
 
 // Path: common
-class TranslationsCommonEn {
-	TranslationsCommonEn.internal(this._root);
+class Translations$common$en {
+	Translations$common$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -188,8 +192,8 @@ class TranslationsCommonEn {
 	/// en: 'Retry'
 	String get retry => 'Retry';
 
-	/// en: 'Logout'
-	String get logout => 'Logout';
+	/// en: 'Log out'
+	String get logout => 'Log out';
 
 	/// en: 'Unknown'
 	String get unknown => 'Unknown';
@@ -298,8 +302,8 @@ class TranslationsCommonEn {
 }
 
 // Path: screens
-class TranslationsScreensEn {
-	TranslationsScreensEn.internal(this._root);
+class Translations$screens$en {
+	Translations$screens$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -322,8 +326,8 @@ class TranslationsScreensEn {
 }
 
 // Path: update
-class TranslationsUpdateEn {
-	TranslationsUpdateEn.internal(this._root);
+class Translations$update$en {
+	Translations$update$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -352,8 +356,8 @@ class TranslationsUpdateEn {
 }
 
 // Path: settings
-class TranslationsSettingsEn {
-	TranslationsSettingsEn.internal(this._root);
+class Translations$settings$en {
+	Translations$settings$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -650,6 +654,9 @@ class TranslationsSettingsEn {
 	/// en: 'https://my-relay.example.com'
 	String get watchTogetherRelayHint => 'https://my-relay.example.com';
 
+	/// en: 'Enter a valid HTTP or HTTPS relay base URL.'
+	String get watchTogetherRelayInvalid => 'Enter a valid HTTP or HTTPS relay base URL.';
+
 	/// en: 'Crash Reporting'
 	String get crashReporting => 'Crash Reporting';
 
@@ -668,14 +675,14 @@ class TranslationsSettingsEn {
 	/// en: 'View application logs'
 	String get viewLogsDescription => 'View application logs';
 
-	/// en: 'Clear Cache'
-	String get clearCache => 'Clear Cache';
+	/// en: 'Clear Image Cache'
+	String get clearImageCache => 'Clear Image Cache';
 
-	/// en: 'Clear cached images and data. Content may load slower.'
-	String get clearCacheDescription => 'Clear cached images and data. Content may load slower.';
+	/// en: 'Clear cached artwork and thumbnails. Images may load slower until downloaded again.'
+	String get clearImageCacheDescription => 'Clear cached artwork and thumbnails. Images may load slower until downloaded again.';
 
-	/// en: 'Cache cleared successfully'
-	String get clearCacheSuccess => 'Cache cleared successfully';
+	/// en: 'Image cache cleared successfully'
+	String get clearImageCacheSuccess => 'Image cache cleared successfully';
 
 	/// en: 'Reset Settings'
 	String get resetSettings => 'Reset Settings';
@@ -698,9 +705,6 @@ class TranslationsSettingsEn {
 	/// en: 'Settings exported'
 	String get exportSettingsSuccess => 'Settings exported';
 
-	/// en: 'Could not export settings'
-	String get exportSettingsFailed => 'Could not export settings';
-
 	/// en: 'Import Settings'
 	String get importSettings => 'Import Settings';
 
@@ -712,9 +716,6 @@ class TranslationsSettingsEn {
 
 	/// en: 'Settings imported'
 	String get importSettingsSuccess => 'Settings imported';
-
-	/// en: 'Could not import settings'
-	String get importSettingsFailed => 'Could not import settings';
 
 	/// en: 'This file isn't a valid Plezy settings export'
 	String get importSettingsInvalidFile => 'This file isn\'t a valid Plezy settings export';
@@ -757,6 +758,9 @@ class TranslationsSettingsEn {
 
 	/// en: 'Shortcut updated for ${action}'
 	String shortcutUpdated({required Object action}) => 'Shortcut updated for ${action}';
+
+	/// en: 'Could not save changes. Try again.'
+	String get saveFailed => 'Could not save changes. Try again.';
 
 	/// en: 'Auto Skip'
 	String get autoSkip => 'Auto Skip';
@@ -833,11 +837,11 @@ class TranslationsSettingsEn {
 	/// en: 'Selected folder is not writable'
 	String get downloadLocationInvalid => 'Selected folder is not writable';
 
-	/// en: 'Failed to select folder'
-	String get downloadLocationSelectError => 'Failed to select folder';
+	/// en: 'Folder selection is not available on this device'
+	String get downloadLocationPickerUnavailable => 'Folder selection is not available on this device';
 
-	/// en: 'Download on WiFi only'
-	String get downloadOnWifiOnly => 'Download on WiFi only';
+	/// en: 'Download on Wi-Fi only'
+	String get downloadOnWifiOnly => 'Download on Wi-Fi only';
 
 	/// en: 'Prevent downloads when on cellular data'
 	String get downloadOnWifiOnlyDescription => 'Prevent downloads when on cellular data';
@@ -848,8 +852,8 @@ class TranslationsSettingsEn {
 	/// en: 'Delete watched downloads automatically'
 	String get autoRemoveWatchedDownloadsDescription => 'Delete watched downloads automatically';
 
-	/// en: 'Downloads are blocked on cellular. Use WiFi or change the setting.'
-	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use WiFi or change the setting.';
+	/// en: 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.'
+	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.';
 
 	/// en: 'Maximum Volume'
 	String get maxVolume => 'Maximum Volume';
@@ -884,8 +888,8 @@ class TranslationsSettingsEn {
 	/// en: 'Auto Picture-in-Picture'
 	String get autoPip => 'Auto Picture-in-Picture';
 
-	/// en: 'Enter picture-in-picture when leaving during playback'
-	String get autoPipDescription => 'Enter picture-in-picture when leaving during playback';
+	/// en: 'Automatically enter picture-in-picture when you leave the app during playback'
+	String get autoPipDescription => 'Automatically enter picture-in-picture when you leave the app during playback';
 
 	/// en: 'Match Content Frame Rate'
 	String get matchContentFrameRate => 'Match Content Frame Rate';
@@ -976,6 +980,33 @@ class TranslationsSettingsEn {
 
 	/// en: 'Plays the test file with a known length. Needs the test file URL.'
 	String get atmosTestRawFileDescription => 'Plays the test file with a known length. Needs the test file URL.';
+
+	/// en: 'Sample-buffer renderer (native)'
+	String get atmosTestAsbarNative => 'Sample-buffer renderer (native)';
+
+	/// en: 'Feeds the file's untouched compressed audio straight to the system renderer. Needs the test file URL.'
+	String get atmosTestAsbarNativeDescription => 'Feeds the file\'s untouched compressed audio straight to the system renderer. Needs the test file URL.';
+
+	/// en: 'Sample-buffer renderer (rebuilt)'
+	String get atmosTestAsbarGenerated => 'Sample-buffer renderer (rebuilt)';
+
+	/// en: 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.'
+	String get atmosTestAsbarGeneratedDescription => 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.';
+
+	/// en: 'Use movie playback session mode'
+	String get atmosTestSessionMode => 'Use movie playback session mode';
+
+	/// en: 'Off uses the mode Dolby documents. On uses the mode playback used previously.'
+	String get atmosTestSessionModeDescription => 'Off uses the mode Dolby documents. On uses the mode playback used previously.';
+
+	/// en: 'Choose AirPlay output'
+	String get atmosTestShowRoutePicker => 'Choose AirPlay output';
+
+	/// en: 'Hide AirPlay output picker'
+	String get atmosTestHideRoutePicker => 'Hide AirPlay output picker';
+
+	/// en: 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.'
+	String get atmosTestRoutePickerDescription => 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.';
 
 	/// en: 'Stop test'
 	String get atmosTestStop => 'Stop test';
@@ -1096,8 +1127,8 @@ class TranslationsSettingsEn {
 }
 
 // Path: search
-class TranslationsSearchEn {
-	TranslationsSearchEn.internal(this._root);
+class Translations$search$en {
+	Translations$search$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1117,8 +1148,8 @@ class TranslationsSearchEn {
 }
 
 // Path: hotkeys
-class TranslationsHotkeysEn {
-	TranslationsHotkeysEn.internal(this._root);
+class Translations$hotkeys$en {
+	Translations$hotkeys$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1142,12 +1173,12 @@ class TranslationsHotkeysEn {
 	/// en: 'Press the shortcut now'
 	String get recordingShortcut => 'Press the shortcut now';
 
-	late final TranslationsHotkeysActionsEn actions = TranslationsHotkeysActionsEn.internal(_root);
+	late final Translations$hotkeys$actions$en actions = Translations$hotkeys$actions$en.internal(_root);
 }
 
 // Path: fileInfo
-class TranslationsFileInfoEn {
-	TranslationsFileInfoEn.internal(this._root);
+class Translations$fileInfo$en {
+	Translations$fileInfo$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1230,8 +1261,8 @@ class TranslationsFileInfoEn {
 }
 
 // Path: mediaMenu
-class TranslationsMediaMenuEn {
-	TranslationsMediaMenuEn.internal(this._root);
+class Translations$mediaMenu$en {
+	Translations$mediaMenu$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1287,8 +1318,8 @@ class TranslationsMediaMenuEn {
 }
 
 // Path: rateSheet
-class TranslationsRateSheetEn {
-	TranslationsRateSheetEn.internal(this._root);
+class Translations$rateSheet$en {
+	Translations$rateSheet$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1317,8 +1348,8 @@ class TranslationsRateSheetEn {
 }
 
 // Path: accessibility
-class TranslationsAccessibilityEn {
-	TranslationsAccessibilityEn.internal(this._root);
+class Translations$accessibility$en {
+	Translations$accessibility$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1377,11 +1408,23 @@ class TranslationsAccessibilityEn {
 
 	/// en: 'Collapse text'
 	String get collapseText => 'Collapse text';
+
+	/// en: 'Alphabet navigation'
+	String get alphabetNavigation => 'Alphabet navigation';
+
+	/// en: 'Swipe up or down to move by letter'
+	String get alphabetScrollHint => 'Swipe up or down to move by letter';
+
+	/// en: 'Row ${row} of ${rowCount}, column ${column} of ${columnCount}'
+	String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Row ${row} of ${rowCount}, column ${column} of ${columnCount}';
+
+	/// en: 'Row ${row} of ${rowCount}'
+	String rowPosition({required Object row, required Object rowCount}) => 'Row ${row} of ${rowCount}';
 }
 
 // Path: tooltips
-class TranslationsTooltipsEn {
-	TranslationsTooltipsEn.internal(this._root);
+class Translations$tooltips$en {
+	Translations$tooltips$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1400,9 +1443,21 @@ class TranslationsTooltipsEn {
 	String get markAsUnwatched => 'Mark as unwatched';
 }
 
+// Path: audioTracks
+class Translations$audioTracks$en {
+	Translations$audioTracks$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Audio Track ${n}'
+	String track({required Object n}) => 'Audio Track ${n}';
+}
+
 // Path: videoControls
-class TranslationsVideoControlsEn {
-	TranslationsVideoControlsEn.internal(this._root);
+class Translations$videoControls$en {
+	Translations$videoControls$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1485,6 +1540,12 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Pause'
 	String get pauseButton => 'Pause';
+
+	/// en: 'Show playback controls'
+	String get showPlaybackControls => 'Show playback controls';
+
+	/// en: 'Hide playback controls'
+	String get hidePlaybackControls => 'Hide playback controls';
 
 	/// en: 'Seek backward ${seconds} seconds'
 	String seekBackwardButton({required Object seconds}) => 'Seek backward ${seconds} seconds';
@@ -1591,7 +1652,7 @@ class TranslationsVideoControlsEn {
 	/// en: 'Zoom ${percent}%'
 	String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 
-	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn.internal(_root);
+	late final Translations$videoControls$pipErrors$en pipErrors = Translations$videoControls$pipErrors$en.internal(_root);
 
 	/// en: 'Chapters'
 	String get chapters => 'Chapters';
@@ -1614,15 +1675,6 @@ class TranslationsVideoControlsEn {
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
 
-	/// en: 'No subtitles available'
-	String get noSubtitlesAvailable => 'No subtitles available';
-
-	/// en: 'No audio tracks available'
-	String get noAudioTracksAvailable => 'No audio tracks available';
-
-	/// en: 'No tracks available'
-	String get noTracksAvailable => 'No tracks available';
-
 	/// en: 'Subtitle downloaded'
 	String get subtitleDownloaded => 'Subtitle downloaded';
 
@@ -1637,8 +1689,8 @@ class TranslationsVideoControlsEn {
 }
 
 // Path: messages
-class TranslationsMessagesEn {
-	TranslationsMessagesEn.internal(this._root);
+class Translations$messages$en {
+	Translations$messages$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1671,6 +1723,9 @@ class TranslationsMessagesEn {
 	/// en: 'Error: ${error}'
 	String errorLoading({required Object error}) => 'Error: ${error}';
 
+	/// en: 'Some media servers could not be searched. Showing available results.'
+	String get searchPartialResults => 'Some media servers could not be searched. Showing available results.';
+
 	/// en: 'The stream was interrupted. Press play or seek to retry.'
 	String get streamInterrupted => 'The stream was interrupted. Press play or seek to retry.';
 
@@ -1679,6 +1734,21 @@ class TranslationsMessagesEn {
 
 	/// en: 'File information not available'
 	String get fileInfoNotAvailable => 'File information not available';
+
+	/// en: 'Sign in to the media server again to play this item.'
+	String get playbackAuthenticationRequired => 'Sign in to the media server again to play this item.';
+
+	/// en: 'The media server is unavailable. Try again later.'
+	String get playbackServerUnavailable => 'The media server is unavailable. Try again later.';
+
+	/// en: 'The server returned invalid playback information.'
+	String get playbackDataInvalid => 'The server returned invalid playback information.';
+
+	/// en: 'Playback was canceled.'
+	String get playbackCancelled => 'Playback was canceled.';
+
+	/// en: 'Playback could not be started.'
+	String get playbackFailed => 'Playback could not be started.';
 
 	/// en: 'Error loading file info: ${error}'
 	String errorLoadingFileInfo({required Object error}) => 'Error loading file info: ${error}';
@@ -1728,8 +1798,8 @@ class TranslationsMessagesEn {
 	/// en: 'Failed to refresh metadata: ${error}'
 	String metadataRefreshFailed({required Object error}) => 'Failed to refresh metadata: ${error}';
 
-	/// en: 'Are you sure you want to logout?'
-	String get logoutConfirm => 'Are you sure you want to logout?';
+	/// en: 'Are you sure you want to log out?'
+	String get logoutConfirm => 'Are you sure you want to log out?';
 
 	/// en: 'No seasons found'
 	String get noSeasonsFound => 'No seasons found';
@@ -1755,8 +1825,8 @@ class TranslationsMessagesEn {
 	/// en: 'No items available'
 	String get noItemsAvailable => 'No items available';
 
-	/// en: 'Failed to create play queue - no items'
-	String get failedToCreatePlayQueueNoItems => 'Failed to create play queue - no items';
+	/// en: 'Failed to create a play queue — no items'
+	String get failedToCreatePlayQueueNoItems => 'Failed to create a play queue — no items';
 
 	/// en: 'Failed to ${action}: ${error}'
 	String failedPlayback({required Object action, required Object error}) => 'Failed to ${action}: ${error}';
@@ -1781,8 +1851,8 @@ class TranslationsMessagesEn {
 }
 
 // Path: subtitlingStyling
-class TranslationsSubtitlingStylingEn {
-	TranslationsSubtitlingStylingEn.internal(this._root);
+class Translations$subtitlingStyling$en {
+	Translations$subtitlingStyling$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1853,8 +1923,8 @@ class TranslationsSubtitlingStylingEn {
 }
 
 // Path: mpvConfig
-class TranslationsMpvConfigEn {
-	TranslationsMpvConfigEn.internal(this._root);
+class Translations$mpvConfig$en {
+	Translations$mpvConfig$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1904,8 +1974,8 @@ class TranslationsMpvConfigEn {
 }
 
 // Path: dialog
-class TranslationsDialogEn {
-	TranslationsDialogEn.internal(this._root);
+class Translations$dialog$en {
+	Translations$dialog$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1916,8 +1986,8 @@ class TranslationsDialogEn {
 }
 
 // Path: profiles
-class TranslationsProfilesEn {
-	TranslationsProfilesEn.internal(this._root);
+class Translations$profiles$en {
+	Translations$profiles$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2058,6 +2128,9 @@ class TranslationsProfilesEn {
 	/// en: 'Connect Plex or Jellyfin to another profile first.'
 	String get borrowEmptySubtitle => 'Connect Plex or Jellyfin to another profile first.';
 
+	/// en: 'Available connections could not be loaded. Try again.'
+	String get borrowLoadFailed => 'Available connections could not be loaded. Try again.';
+
 	/// en: 'From ${displayName}'
 	String borrowFromProfile({required Object displayName}) => 'From ${displayName}';
 
@@ -2135,8 +2208,8 @@ class TranslationsProfilesEn {
 }
 
 // Path: connections
-class TranslationsConnectionsEn {
-	TranslationsConnectionsEn.internal(this._root);
+class Translations$connections$en {
+	Translations$connections$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2171,8 +2244,8 @@ class TranslationsConnectionsEn {
 }
 
 // Path: discover
-class TranslationsDiscoverEn {
-	TranslationsDiscoverEn.internal(this._root);
+class Translations$discover$en {
+	Translations$discover$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2232,6 +2305,12 @@ class TranslationsDiscoverEn {
 	/// en: 'Rating'
 	String get rating => 'Rating';
 
+	/// en: 'Director'
+	String get director => 'Director';
+
+	/// en: 'Directors'
+	String get directors => 'Directors';
+
 	/// en: 'Movie'
 	String get movie => 'Movie';
 
@@ -2246,8 +2325,8 @@ class TranslationsDiscoverEn {
 }
 
 // Path: errors
-class TranslationsErrorsEn {
-	TranslationsErrorsEn.internal(this._root);
+class Translations$errors$en {
+	Translations$errors$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2255,6 +2334,9 @@ class TranslationsErrorsEn {
 
 	/// en: 'Search failed: ${error}'
 	String searchFailed({required Object error}) => 'Search failed: ${error}';
+
+	/// en: 'Search could not reach any media server.'
+	String get searchUnavailable => 'Search could not reach any media server.';
 
 	/// en: 'Connection timeout while loading ${context}'
 	String connectionTimeout({required Object context}) => 'Connection timeout while loading ${context}';
@@ -2288,8 +2370,8 @@ class TranslationsErrorsEn {
 }
 
 // Path: libraries
-class TranslationsLibrariesEn {
-	TranslationsLibrariesEn.internal(this._root);
+class Translations$libraries$en {
+	Translations$libraries$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2418,15 +2500,15 @@ class TranslationsLibrariesEn {
 	/// en: 'folders'
 	String get folders => 'folders';
 
-	late final TranslationsLibrariesTabsEn tabs = TranslationsLibrariesTabsEn.internal(_root);
-	late final TranslationsLibrariesGroupingsEn groupings = TranslationsLibrariesGroupingsEn.internal(_root);
-	late final TranslationsLibrariesFilterCategoriesEn filterCategories = TranslationsLibrariesFilterCategoriesEn.internal(_root);
-	late final TranslationsLibrariesSortLabelsEn sortLabels = TranslationsLibrariesSortLabelsEn.internal(_root);
+	late final Translations$libraries$tabs$en tabs = Translations$libraries$tabs$en.internal(_root);
+	late final Translations$libraries$groupings$en groupings = Translations$libraries$groupings$en.internal(_root);
+	late final Translations$libraries$filterCategories$en filterCategories = Translations$libraries$filterCategories$en.internal(_root);
+	late final Translations$libraries$sortLabels$en sortLabels = Translations$libraries$sortLabels$en.internal(_root);
 }
 
 // Path: about
-class TranslationsAboutEn {
-	TranslationsAboutEn.internal(this._root);
+class Translations$about$en {
+	Translations$about$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2449,8 +2531,8 @@ class TranslationsAboutEn {
 }
 
 // Path: serverSelection
-class TranslationsServerSelectionEn {
-	TranslationsServerSelectionEn.internal(this._root);
+class Translations$serverSelection$en {
+	Translations$serverSelection$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2464,8 +2546,8 @@ class TranslationsServerSelectionEn {
 }
 
 // Path: hubDetail
-class TranslationsHubDetailEn {
-	TranslationsHubDetailEn.internal(this._root);
+class Translations$hubDetail$en {
+	Translations$hubDetail$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2488,8 +2570,8 @@ class TranslationsHubDetailEn {
 }
 
 // Path: logs
-class TranslationsLogsEn {
-	TranslationsLogsEn.internal(this._root);
+class Translations$logs$en {
+	Translations$logs$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2506,8 +2588,8 @@ class TranslationsLogsEn {
 }
 
 // Path: licenses
-class TranslationsLicensesEn {
-	TranslationsLicensesEn.internal(this._root);
+class Translations$licenses$en {
+	Translations$licenses$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2527,8 +2609,8 @@ class TranslationsLicensesEn {
 }
 
 // Path: navigation
-class TranslationsNavigationEn {
-	TranslationsNavigationEn.internal(this._root);
+class Translations$navigation$en {
+	Translations$navigation$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2548,8 +2630,8 @@ class TranslationsNavigationEn {
 }
 
 // Path: explore
-class TranslationsExploreEn {
-	TranslationsExploreEn.internal(this._root);
+class Translations$explore$en {
+	Translations$explore$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2561,8 +2643,8 @@ class TranslationsExploreEn {
 	/// en: 'Select source'
 	String get selectSource => 'Select source';
 
-	late final TranslationsExploreRowsEn rows = TranslationsExploreRowsEn.internal(_root);
-	late final TranslationsExploreStatusEn status = TranslationsExploreStatusEn.internal(_root);
+	late final Translations$explore$rows$en rows = Translations$explore$rows$en.internal(_root);
+	late final Translations$explore$status$en status = Translations$explore$status$en.internal(_root);
 
 	/// en: '(one) {${n} episode} (other) {${n} episodes}'
 	String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
@@ -2614,8 +2696,8 @@ class TranslationsExploreEn {
 }
 
 // Path: liveTv
-class TranslationsLiveTvEn {
-	TranslationsLiveTvEn.internal(this._root);
+class Translations$liveTv$en {
+	Translations$liveTv$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2708,6 +2790,9 @@ class TranslationsLiveTvEn {
 	/// en: 'Could not load favorites. Check your connection and try again.'
 	String get favoritesLoadFailed => 'Could not load favorites. Check your connection and try again.';
 
+	/// en: 'Could not update favorites. Check your connection and try again.'
+	String get favoritesUpdateFailed => 'Could not update favorites. Check your connection and try again.';
+
 	/// en: 'Join Session in Progress'
 	String get joinSession => 'Join Session in Progress';
 
@@ -2786,8 +2871,8 @@ class TranslationsLiveTvEn {
 	/// en: 'Recording not available for this program'
 	String get recordNotAvailable => 'Recording not available for this program';
 
-	/// en: 'Recording cancelled'
-	String get recordingCancelled => 'Recording cancelled';
+	/// en: 'Recording canceled'
+	String get recordingCancelled => 'Recording canceled';
 
 	/// en: 'Recording rule deleted'
 	String get recordingRuleDeleted => 'Recording rule deleted';
@@ -2821,8 +2906,8 @@ class TranslationsLiveTvEn {
 }
 
 // Path: collections
-class TranslationsCollectionsEn {
-	TranslationsCollectionsEn.internal(this._root);
+class Translations$collections$en {
+	Translations$collections$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2890,8 +2975,8 @@ class TranslationsCollectionsEn {
 }
 
 // Path: playlists
-class TranslationsPlaylistsEn {
-	TranslationsPlaylistsEn.internal(this._root);
+class Translations$playlists$en {
+	Translations$playlists$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2977,8 +3062,8 @@ class TranslationsPlaylistsEn {
 }
 
 // Path: music
-class TranslationsMusicEn {
-	TranslationsMusicEn.internal(this._root);
+class Translations$music$en {
+	Translations$music$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3055,8 +3140,8 @@ class TranslationsMusicEn {
 }
 
 // Path: watchTogether
-class TranslationsWatchTogetherEn {
-	TranslationsWatchTogetherEn.internal(this._root);
+class Translations$watchTogether$en {
+	Translations$watchTogether$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3224,8 +3309,8 @@ class TranslationsWatchTogetherEn {
 	/// en: '${name} resumed'
 	String participantResumed({required Object name}) => '${name} resumed';
 
-	/// en: '${name} seeked'
-	String participantSeeked({required Object name}) => '${name} seeked';
+	/// en: '${name} changed the playback position'
+	String participantSeeked({required Object name}) => '${name} changed the playback position';
 
 	/// en: '${name} is buffering'
 	String participantBuffering({required Object name}) => '${name} is buffering';
@@ -3259,8 +3344,8 @@ class TranslationsWatchTogetherEn {
 }
 
 // Path: downloads
-class TranslationsDownloadsEn {
-	TranslationsDownloadsEn.internal(this._root);
+class Translations$downloads$en {
+	Translations$downloads$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3308,6 +3393,9 @@ class TranslationsDownloadsEn {
 	/// en: 'Server error: file may exceed the remote bitrate limit'
 	String get serverErrorBitrate => 'Server error: file may exceed the remote bitrate limit';
 
+	/// en: 'Downloads stopped because device storage is full. Free some space, then retry.'
+	String get storageFull => 'Downloads stopped because device storage is full. Free some space, then retry.';
+
 	/// en: '${count} episodes queued for download'
 	String episodesQueued({required Object count}) => '${count} episodes queued for download';
 
@@ -3317,11 +3405,11 @@ class TranslationsDownloadsEn {
 	/// en: 'Delete "${title}" from this device?'
 	String deleteConfirm({required Object title}) => 'Delete "${title}" from this device?';
 
-	/// en: 'Cancelled Download'
-	String get cancelledDownloadTitle => 'Cancelled Download';
+	/// en: 'Canceled Download'
+	String get cancelledDownloadTitle => 'Canceled Download';
 
-	/// en: 'This download was cancelled. What would you like to do?'
-	String get cancelledDownloadMessage => 'This download was cancelled. What would you like to do?';
+	/// en: 'This download was canceled. What would you like to do?'
+	String get cancelledDownloadMessage => 'This download was canceled. What would you like to do?';
 
 	/// en: 'All episodes already downloaded'
 	String get allEpisodesAlreadyDownloaded => 'All episodes already downloaded';
@@ -3329,8 +3417,8 @@ class TranslationsDownloadsEn {
 	/// en: 'Resume download'
 	String get resumeDownload => 'Resume download';
 
-	/// en: 'Cancelled download'
-	String get cancelledDownload => 'Cancelled download';
+	/// en: 'Canceled download'
+	String get cancelledDownload => 'Canceled download';
 
 	/// en: '${file} (syncing ${status})'
 	String syncingFile({required Object file, required Object status}) => '${file} (syncing ${status})';
@@ -3413,6 +3501,15 @@ class TranslationsDownloadsEn {
 	/// en: 'Stop syncing "${title}"? Downloaded episodes will be kept.'
 	String removeSyncRuleConfirm({required Object title}) => 'Stop syncing "${title}"? Downloaded episodes will be kept.';
 
+	/// en: 'Stop syncing "${title}"?'
+	String removeListSyncRuleConfirm({required Object title}) => 'Stop syncing "${title}"?';
+
+	/// en: 'Also delete associated downloads'
+	String get deleteSyncRuleDownloads => 'Also delete associated downloads';
+
+	/// en: 'Downloads used by another sync rule or profile will be kept.'
+	String get deleteSyncRuleDownloadsDescription => 'Downloads used by another sync rule or profile will be kept.';
+
 	/// en: 'Sync rule created — keeping ${count} unwatched episodes'
 	String syncRuleCreated({required Object count}) => 'Sync rule created — keeping ${count} unwatched episodes';
 
@@ -3421,6 +3518,15 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Sync rule removed'
 	String get syncRuleRemoved => 'Sync rule removed';
+
+	/// en: 'Sync rule and associated downloads removed'
+	String get syncRuleAndDownloadsRemoved => 'Sync rule and associated downloads removed';
+
+	/// en: 'Sync rules are currently updating. Try again in a moment.'
+	String get syncRuleCleanupBusy => 'Sync rules are currently updating. Try again in a moment.';
+
+	/// en: 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.'
+	String get syncRuleCleanupUnavailable => 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.';
 
 	/// en: 'Synced ${count} new episodes for ${title}'
 	String syncedNewEpisodes({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}';
@@ -3466,11 +3572,13 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Sync rule created'
 	String get syncRuleListCreated => 'Sync rule created';
+
+	late final Translations$downloads$backgroundWarning$en backgroundWarning = Translations$downloads$backgroundWarning$en.internal(_root);
 }
 
 // Path: shaders
-class TranslationsShadersEn {
-	TranslationsShadersEn.internal(this._root);
+class Translations$shaders$en {
+	Translations$shaders$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3523,8 +3631,8 @@ class TranslationsShadersEn {
 }
 
 // Path: companionRemote
-class TranslationsCompanionRemoteEn {
-	TranslationsCompanionRemoteEn.internal(this._root);
+class Translations$companionRemote$en {
+	Translations$companionRemote$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3539,15 +3647,15 @@ class TranslationsCompanionRemoteEn {
 	/// en: 'Unknown Device'
 	String get unknownDevice => 'Unknown Device';
 
-	late final TranslationsCompanionRemoteSessionEn session = TranslationsCompanionRemoteSessionEn.internal(_root);
-	late final TranslationsCompanionRemotePairingEn pairing = TranslationsCompanionRemotePairingEn.internal(_root);
-	late final TranslationsCompanionRemoteRemoteEn remote = TranslationsCompanionRemoteRemoteEn.internal(_root);
-	late final TranslationsCompanionRemoteErrorsEn errors = TranslationsCompanionRemoteErrorsEn.internal(_root);
+	late final Translations$companionRemote$session$en session = Translations$companionRemote$session$en.internal(_root);
+	late final Translations$companionRemote$pairing$en pairing = Translations$companionRemote$pairing$en.internal(_root);
+	late final Translations$companionRemote$remote$en remote = Translations$companionRemote$remote$en.internal(_root);
+	late final Translations$companionRemote$errors$en errors = Translations$companionRemote$errors$en.internal(_root);
 }
 
 // Path: videoSettings
-class TranslationsVideoSettingsEn {
-	TranslationsVideoSettingsEn.internal(this._root);
+class Translations$videoSettings$en {
+	Translations$videoSettings$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3586,6 +3694,21 @@ class TranslationsVideoSettingsEn {
 	/// en: 'Audio Passthrough'
 	String get audioPassthrough => 'Audio Passthrough';
 
+	/// en: 'Dolby Atmos'
+	String get audioOutputDolbyAtmos => 'Dolby Atmos';
+
+	/// en: 'Dolby Audio'
+	String get audioOutputDolbyAudio => 'Dolby Audio';
+
+	/// en: 'Surround'
+	String get audioOutputSurround => 'Surround';
+
+	/// en: 'Spatial Audio'
+	String get audioOutputSpatial => 'Spatial Audio';
+
+	/// en: 'Stereo'
+	String get audioOutputStereo => 'Stereo';
+
 	/// en: 'Normalize Loudness'
 	String get audioNormalization => 'Normalize Loudness';
 
@@ -3594,8 +3717,8 @@ class TranslationsVideoSettingsEn {
 }
 
 // Path: performanceOverlay
-class TranslationsPerformanceOverlayEn {
-	TranslationsPerformanceOverlayEn.internal(this._root);
+class Translations$performanceOverlay$en {
+	Translations$performanceOverlay$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3708,8 +3831,8 @@ class TranslationsPerformanceOverlayEn {
 }
 
 // Path: externalPlayer
-class TranslationsExternalPlayerEn {
-	TranslationsExternalPlayerEn.internal(this._root);
+class Translations$externalPlayer$en {
+	Translations$externalPlayer$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3765,8 +3888,8 @@ class TranslationsExternalPlayerEn {
 }
 
 // Path: metadataEdit
-class TranslationsMetadataEditEn {
-	TranslationsMetadataEditEn.internal(this._root);
+class Translations$metadataEdit$en {
+	Translations$metadataEdit$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4002,8 +4125,8 @@ class TranslationsMetadataEditEn {
 }
 
 // Path: matchScreen
-class TranslationsMatchScreenEn {
-	TranslationsMatchScreenEn.internal(this._root);
+class Translations$matchScreen$en {
+	Translations$matchScreen$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4047,8 +4170,8 @@ class TranslationsMatchScreenEn {
 }
 
 // Path: serverTasks
-class TranslationsServerTasksEn {
-	TranslationsServerTasksEn.internal(this._root);
+class Translations$serverTasks$en {
+	Translations$serverTasks$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4065,8 +4188,8 @@ class TranslationsServerTasksEn {
 }
 
 // Path: trakt
-class TranslationsTraktEn {
-	TranslationsTraktEn.internal(this._root);
+class Translations$trakt$en {
+	Translations$trakt$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4096,13 +4219,13 @@ class TranslationsTraktEn {
 	/// en: 'Sync watched status'
 	String get watchedSync => 'Sync watched status';
 
-	/// en: 'When you mark items watched in Plezy, mark them on Trakt.'
-	String get watchedSyncDescription => 'When you mark items watched in Plezy, mark them on Trakt.';
+	/// en: 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.'
+	String get watchedSyncDescription => 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.';
 }
 
 // Path: seerr
-class TranslationsSeerrEn {
-	TranslationsSeerrEn.internal(this._root);
+class Translations$seerr$en {
+	Translations$seerr$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4200,8 +4323,8 @@ class TranslationsSeerrEn {
 }
 
 // Path: services
-class TranslationsServicesEn {
-	TranslationsServicesEn.internal(this._root);
+class Translations$services$en {
+	Translations$services$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4234,15 +4357,15 @@ class TranslationsServicesEn {
 	/// en: 'Couldn't connect to ${service}. Try again.'
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
-	late final TranslationsServicesNamesEn names = TranslationsServicesNamesEn.internal(_root);
-	late final TranslationsServicesDeviceCodeEn deviceCode = TranslationsServicesDeviceCodeEn.internal(_root);
-	late final TranslationsServicesOauthProxyEn oauthProxy = TranslationsServicesOauthProxyEn.internal(_root);
-	late final TranslationsServicesLibraryFilterEn libraryFilter = TranslationsServicesLibraryFilterEn.internal(_root);
+	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
+	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
+	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
+	late final Translations$services$libraryFilter$en libraryFilter = Translations$services$libraryFilter$en.internal(_root);
 }
 
 // Path: addServer
-class TranslationsAddServerEn {
-	TranslationsAddServerEn.internal(this._root);
+class Translations$addServer$en {
+	Translations$addServer$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4334,8 +4457,8 @@ class TranslationsAddServerEn {
 }
 
 // Path: hotkeys.actions
-class TranslationsHotkeysActionsEn {
-	TranslationsHotkeysActionsEn.internal(this._root);
+class Translations$hotkeys$actions$en {
+	Translations$hotkeys$actions$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4418,8 +4541,8 @@ class TranslationsHotkeysActionsEn {
 }
 
 // Path: videoControls.pipErrors
-class TranslationsVideoControlsPipErrorsEn {
-	TranslationsVideoControlsPipErrorsEn.internal(this._root);
+class Translations$videoControls$pipErrors$en {
+	Translations$videoControls$pipErrors$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4448,8 +4571,8 @@ class TranslationsVideoControlsPipErrorsEn {
 }
 
 // Path: libraries.tabs
-class TranslationsLibrariesTabsEn {
-	TranslationsLibrariesTabsEn.internal(this._root);
+class Translations$libraries$tabs$en {
+	Translations$libraries$tabs$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4469,8 +4592,8 @@ class TranslationsLibrariesTabsEn {
 }
 
 // Path: libraries.groupings
-class TranslationsLibrariesGroupingsEn {
-	TranslationsLibrariesGroupingsEn.internal(this._root);
+class Translations$libraries$groupings$en {
+	Translations$libraries$groupings$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4508,8 +4631,8 @@ class TranslationsLibrariesGroupingsEn {
 }
 
 // Path: libraries.filterCategories
-class TranslationsLibrariesFilterCategoriesEn {
-	TranslationsLibrariesFilterCategoriesEn.internal(this._root);
+class Translations$libraries$filterCategories$en {
+	Translations$libraries$filterCategories$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4538,8 +4661,8 @@ class TranslationsLibrariesFilterCategoriesEn {
 }
 
 // Path: libraries.sortLabels
-class TranslationsLibrariesSortLabelsEn {
-	TranslationsLibrariesSortLabelsEn.internal(this._root);
+class Translations$libraries$sortLabels$en {
+	Translations$libraries$sortLabels$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4607,8 +4730,8 @@ class TranslationsLibrariesSortLabelsEn {
 }
 
 // Path: explore.rows
-class TranslationsExploreRowsEn {
-	TranslationsExploreRowsEn.internal(this._root);
+class Translations$explore$rows$en {
+	Translations$explore$rows$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4658,8 +4781,8 @@ class TranslationsExploreRowsEn {
 }
 
 // Path: explore.status
-class TranslationsExploreStatusEn {
-	TranslationsExploreStatusEn.internal(this._root);
+class Translations$explore$status$en {
+	Translations$explore$status$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4678,9 +4801,96 @@ class TranslationsExploreStatusEn {
 	String get upcoming => 'Upcoming';
 }
 
+// Path: downloads.backgroundWarning
+class Translations$downloads$backgroundWarning$en {
+	Translations$downloads$backgroundWarning$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Downloads will stop when you leave the app'
+	String get bannerBlocked => 'Downloads will stop when you leave the app';
+
+	/// en: 'Background downloads may be limited'
+	String get bannerDegraded => 'Background downloads may be limited';
+
+	/// en: 'Details'
+	String get bannerAction => 'Details';
+
+	/// en: 'Background downloads are blocked'
+	String get sheetTitle => 'Background downloads are blocked';
+
+	/// en: 'Background downloads may be limited'
+	String get sheetTitleDegraded => 'Background downloads may be limited';
+
+	/// en: 'Android is preventing Plezy from downloading reliably in the background.'
+	String get sheetIntro => 'Android is preventing Plezy from downloading reliably in the background.';
+
+	/// en: 'Your device is limiting when Plezy can download in the background.'
+	String get sheetIntroDegraded => 'Your device is limiting when Plezy can download in the background.';
+
+	/// en: 'Plezy's background usage is restricted. Set its battery or background usage to "Unrestricted".'
+	String get reasonBackgroundRestricted => 'Plezy\'s background usage is restricted. Set its battery or background usage to "Unrestricted".';
+
+	/// en: 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".'
+	String get reasonStandbyRestricted => 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".';
+
+	/// en: 'Download notifications are turned off, so progress and controls may be unavailable.'
+	String get reasonDownloadChannelBlocked => 'Download notifications are turned off, so progress and controls may be unavailable.';
+
+	/// en: 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.'
+	String get reasonNotificationsDisabled => 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.';
+
+	/// en: 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.'
+	String get reasonDataSaver => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.';
+
+	/// en: 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy's battery or background usage settings.'
+	String get reasonOemUnknown => 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy\'s battery or background usage settings.';
+
+	/// en: 'Open settings'
+	String get openSettings => 'Open settings';
+
+	/// en: 'Device-specific help'
+	String get stillNotWorking => 'Device-specific help';
+
+	/// en: 'See steps for your device, or send a log from Settings › View Logs if the issue continues.'
+	String get stillNotWorkingDescription => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.';
+
+	/// en: 'Downloads may not finish'
+	String get dialogTitle => 'Downloads may not finish';
+
+	/// en: 'Download anyway'
+	String get dialogDownloadAnyway => 'Download anyway';
+
+	/// en: 'Fix this first'
+	String get dialogFixFirst => 'Fix this first';
+
+	/// en: 'Background downloads'
+	String get statusTile => 'Background downloads';
+
+	/// en: 'Allowed to run in the background'
+	String get statusOk => 'Allowed to run in the background';
+
+	/// en: 'Blocked by system settings'
+	String get statusBlocked => 'Blocked by system settings';
+
+	/// en: 'Limited by system settings'
+	String get statusDegraded => 'Limited by system settings';
+
+	/// en: 'Not checked yet'
+	String get statusUnknown => 'Not checked yet';
+
+	/// en: 'Couldn't open system settings on this device'
+	String get settingsUnavailable => 'Couldn\'t open system settings on this device';
+
+	/// en: 'Couldn't open dontkillmyapp.com on this device'
+	String get linkUnavailable => 'Couldn\'t open dontkillmyapp.com on this device';
+}
+
 // Path: companionRemote.session
-class TranslationsCompanionRemoteSessionEn {
-	TranslationsCompanionRemoteSessionEn.internal(this._root);
+class Translations$companionRemote$session$en {
+	Translations$companionRemote$session$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4721,8 +4931,8 @@ class TranslationsCompanionRemoteSessionEn {
 }
 
 // Path: companionRemote.pairing
-class TranslationsCompanionRemotePairingEn {
-	TranslationsCompanionRemotePairingEn.internal(this._root);
+class Translations$companionRemote$pairing$en {
+	Translations$companionRemote$pairing$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4743,8 +4953,8 @@ class TranslationsCompanionRemotePairingEn {
 	/// en: 'No devices found on your network'
 	String get noDevicesFound => 'No devices found on your network';
 
-	/// en: 'Open Plezy on desktop and use the same WiFi'
-	String get noDevicesHint => 'Open Plezy on desktop and use the same WiFi';
+	/// en: 'Open Plezy on desktop and use the same Wi-Fi'
+	String get noDevicesHint => 'Open Plezy on desktop and use the same Wi-Fi';
 
 	/// en: 'Available Devices'
 	String get availableDevices => 'Available Devices';
@@ -4775,8 +4985,8 @@ class TranslationsCompanionRemotePairingEn {
 }
 
 // Path: companionRemote.remote
-class TranslationsCompanionRemoteRemoteEn {
-	TranslationsCompanionRemoteRemoteEn.internal(this._root);
+class Translations$companionRemote$remote$en {
+	Translations$companionRemote$remote$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4865,8 +5075,8 @@ class TranslationsCompanionRemoteRemoteEn {
 }
 
 // Path: companionRemote.errors
-class TranslationsCompanionRemoteErrorsEn {
-	TranslationsCompanionRemoteErrorsEn.internal(this._root);
+class Translations$companionRemote$errors$en {
+	Translations$companionRemote$errors$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4898,8 +5108,8 @@ class TranslationsCompanionRemoteErrorsEn {
 }
 
 // Path: services.names
-class TranslationsServicesNamesEn {
-	TranslationsServicesNamesEn.internal(this._root);
+class Translations$services$names$en {
+	Translations$services$names$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4919,8 +5129,8 @@ class TranslationsServicesNamesEn {
 }
 
 // Path: services.deviceCode
-class TranslationsServicesDeviceCodeEn {
-	TranslationsServicesDeviceCodeEn.internal(this._root);
+class Translations$services$deviceCode$en {
+	Translations$services$deviceCode$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4946,8 +5156,8 @@ class TranslationsServicesDeviceCodeEn {
 }
 
 // Path: services.oauthProxy
-class TranslationsServicesOauthProxyEn {
-	TranslationsServicesOauthProxyEn.internal(this._root);
+class Translations$services$oauthProxy$en {
+	Translations$services$oauthProxy$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -4970,8 +5180,8 @@ class TranslationsServicesOauthProxyEn {
 }
 
 // Path: services.libraryFilter
-class TranslationsServicesLibraryFilterEn {
-	TranslationsServicesLibraryFilterEn.internal(this._root);
+class Translations$services$libraryFilter$en {
+	Translations$services$libraryFilter$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -5037,6 +5247,7 @@ extension on Translations {
 			'auth.quickConnectWaiting' => 'Waiting for approval…',
 			'auth.quickConnectCancel' => 'Cancel',
 			'auth.quickConnectExpired' => 'Quick Connect expired. Try again.',
+			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -5046,7 +5257,7 @@ extension on Translations {
 			'common.submit' => 'Submit',
 			'common.confirm' => 'Confirm',
 			'common.retry' => 'Retry',
-			'common.logout' => 'Logout',
+			'common.logout' => 'Log out',
 			'common.unknown' => 'Unknown',
 			'common.refresh' => 'Refresh',
 			'common.yes' => 'Yes',
@@ -5191,15 +5402,16 @@ extension on Translations {
 			'settings.watchTogetherRelay' => 'Watch Together Relay',
 			'settings.watchTogetherRelayDescription' => 'Set a custom relay. Everyone must use the same server.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
+			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Crash Reporting',
 			'settings.crashReportingDescription' => 'Send crash reports to help improve the app',
 			'settings.debugLogging' => 'Debug Logging',
 			'settings.debugLoggingDescription' => 'Enable detailed logging for troubleshooting',
 			'settings.viewLogs' => 'View Logs',
 			'settings.viewLogsDescription' => 'View application logs',
-			'settings.clearCache' => 'Clear Cache',
-			'settings.clearCacheDescription' => 'Clear cached images and data. Content may load slower.',
-			'settings.clearCacheSuccess' => 'Cache cleared successfully',
+			'settings.clearImageCache' => 'Clear Image Cache',
+			'settings.clearImageCacheDescription' => 'Clear cached artwork and thumbnails. Images may load slower until downloaded again.',
+			'settings.clearImageCacheSuccess' => 'Image cache cleared successfully',
 			'settings.resetSettings' => 'Reset Settings',
 			'settings.resetSettingsDescription' => 'Restore default settings. This can\'t be undone.',
 			'settings.resetSettingsSuccess' => 'Settings reset successfully',
@@ -5207,12 +5419,10 @@ extension on Translations {
 			'settings.exportSettings' => 'Export Settings',
 			'settings.exportSettingsDescription' => 'Save your preferences to a file',
 			'settings.exportSettingsSuccess' => 'Settings exported',
-			'settings.exportSettingsFailed' => 'Could not export settings',
 			'settings.importSettings' => 'Import Settings',
 			'settings.importSettingsDescription' => 'Restore preferences from a file',
 			'settings.importSettingsConfirm' => 'This will replace your current settings. Continue?',
 			'settings.importSettingsSuccess' => 'Settings imported',
-			'settings.importSettingsFailed' => 'Could not import settings',
 			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid Plezy settings export',
 			'settings.importSettingsNoUser' => 'Sign in before importing settings',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
@@ -5227,6 +5437,7 @@ extension on Translations {
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Duration must be between ${min} and ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Shortcut already assigned to ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Shortcut updated for ${action}',
+			'settings.saveFailed' => 'Could not save changes. Try again.',
 			'settings.autoSkip' => 'Auto Skip',
 			'settings.autoSkipIntro' => 'Auto Skip Intro',
 			'settings.autoSkipIntroDescription' => 'Automatically skip intro markers after a few seconds',
@@ -5252,12 +5463,12 @@ extension on Translations {
 			'settings.downloadLocationChanged' => 'Download location changed',
 			'settings.downloadLocationReset' => 'Download location reset to default',
 			'settings.downloadLocationInvalid' => 'Selected folder is not writable',
-			'settings.downloadLocationSelectError' => 'Failed to select folder',
-			'settings.downloadOnWifiOnly' => 'Download on WiFi only',
+			'settings.downloadLocationPickerUnavailable' => 'Folder selection is not available on this device',
+			'settings.downloadOnWifiOnly' => 'Download on Wi-Fi only',
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
-			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use WiFi or change the setting.',
+			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
 			'settings.maxVolumePercent' => ({required Object percent}) => '${percent}%',
@@ -5269,7 +5480,7 @@ extension on Translations {
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Allow mobile devices on your network to control this app',
 			'settings.autoPip' => 'Auto Picture-in-Picture',
-			'settings.autoPipDescription' => 'Enter picture-in-picture when leaving during playback',
+			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when you leave the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Match display refresh rate to video content',
 			'settings.matchRefreshRate' => 'Match Refresh Rate',
@@ -5300,6 +5511,15 @@ extension on Translations {
 			'settings.atmosTestRawStreamDescription' => 'Streams the test file exactly like in-player Atmos playback. Needs the test file URL.',
 			'settings.atmosTestRawFile' => 'Raw EAC3 file',
 			'settings.atmosTestRawFileDescription' => 'Plays the test file with a known length. Needs the test file URL.',
+			'settings.atmosTestAsbarNative' => 'Sample-buffer renderer (native)',
+			'settings.atmosTestAsbarNativeDescription' => 'Feeds the file\'s untouched compressed audio straight to the system renderer. Needs the test file URL.',
+			'settings.atmosTestAsbarGenerated' => 'Sample-buffer renderer (rebuilt)',
+			'settings.atmosTestAsbarGeneratedDescription' => 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.',
+			'settings.atmosTestSessionMode' => 'Use movie playback session mode',
+			'settings.atmosTestSessionModeDescription' => 'Off uses the mode Dolby documents. On uses the mode playback used previously.',
+			'settings.atmosTestShowRoutePicker' => 'Choose AirPlay output',
+			'settings.atmosTestHideRoutePicker' => 'Hide AirPlay output picker',
+			'settings.atmosTestRoutePickerDescription' => 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.',
 			'settings.atmosTestStop' => 'Stop test',
 			'settings.atmosTestUrl' => 'Test file URL',
 			'settings.atmosTestUrlDescription' => 'HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)',
@@ -5440,10 +5660,15 @@ extension on Translations {
 			'accessibility.hexColor' => 'Hex color',
 			'accessibility.expandText' => 'Expand text',
 			'accessibility.collapseText' => 'Collapse text',
+			'accessibility.alphabetNavigation' => 'Alphabet navigation',
+			'accessibility.alphabetScrollHint' => 'Swipe up or down to move by letter',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Row ${row} of ${rowCount}, column ${column} of ${columnCount}',
+			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Row ${row} of ${rowCount}',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
+			'audioTracks.track' => ({required Object n}) => 'Audio Track ${n}',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Subtitles',
 			'videoControls.resetToZero' => 'Reset to 0ms',
@@ -5470,6 +5695,8 @@ extension on Translations {
 			'videoControls.playNext' => 'Play Next',
 			'videoControls.playButton' => 'Play',
 			'videoControls.pauseButton' => 'Pause',
+			'videoControls.showPlaybackControls' => 'Show playback controls',
+			'videoControls.hidePlaybackControls' => 'Hide playback controls',
 			'videoControls.seekBackwardButton' => ({required Object seconds}) => 'Seek backward ${seconds} seconds',
 			'videoControls.seekForwardButton' => ({required Object seconds}) => 'Seek forward ${seconds} seconds',
 			'videoControls.previousButton' => 'Previous episode',
@@ -5517,11 +5744,10 @@ extension on Translations {
 			'videoControls.queue' => 'Queue',
 			'videoControls.noQueueItems' => 'No items in queue',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
-			'videoControls.noSubtitlesAvailable' => 'No subtitles available',
-			'videoControls.noAudioTracksAvailable' => 'No audio tracks available',
-			'videoControls.noTracksAvailable' => 'No tracks available',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitle downloaded, but it could not be selected',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
@@ -5534,11 +5760,15 @@ extension on Translations {
 			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${n} watched download', other: 'Auto-removed ${n} watched downloads', ), 
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
-			_ => null,
-		} ?? switch (path) {
+			'messages.searchPartialResults' => 'Some media servers could not be searched. Showing available results.',
 			'messages.streamInterrupted' => 'The stream was interrupted. Press play or seek to retry.',
 			'messages.liveStreamInterrupted' => 'The live stream was interrupted. Press play to retry.',
 			'messages.fileInfoNotAvailable' => 'File information not available',
+			'messages.playbackAuthenticationRequired' => 'Sign in to the media server again to play this item.',
+			'messages.playbackServerUnavailable' => 'The media server is unavailable. Try again later.',
+			'messages.playbackDataInvalid' => 'The server returned invalid playback information.',
+			'messages.playbackCancelled' => 'Playback was canceled.',
+			'messages.playbackFailed' => 'Playback could not be started.',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
@@ -5555,7 +5785,7 @@ extension on Translations {
 			'messages.metadataRefreshing' => ({required Object title}) => 'Refreshing metadata for "${title}"...',
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata refresh started for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
-			'messages.logoutConfirm' => 'Are you sure you want to logout?',
+			'messages.logoutConfirm' => 'Are you sure you want to log out?',
 			'messages.noSeasonsFound' => 'No seasons found',
 			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
@@ -5564,7 +5794,7 @@ extension on Translations {
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
-			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create play queue - no items',
+			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create a play queue — no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
@@ -5653,6 +5883,7 @@ extension on Translations {
 			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
 			'profiles.borrowEmptySubtitle' => 'Connect Plex or Jellyfin to another profile first.',
+			'profiles.borrowLoadFailed' => 'Available connections could not be loaded. Try again.',
 			'profiles.borrowFromProfile' => ({required Object displayName}) => 'From ${displayName}',
 			'profiles.borrowConnectionBorrowed' => 'Connection borrowed.',
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
@@ -5705,11 +5936,14 @@ extension on Translations {
 			'discover.extras' => 'Trailers & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
+			'discover.director' => 'Director',
+			'discover.directors' => 'Directors',
 			'discover.movie' => 'Movie',
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
+			'errors.searchUnavailable' => 'Search could not reach any media server.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
 			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.unableToLoad' => ({required Object context}) => 'Unable to load ${context}. Please try again.',
@@ -5889,6 +6123,7 @@ extension on Translations {
 			'liveTv.favorites' => 'Favorites',
 			'liveTv.reorderFavorites' => 'Reorder Favorites',
 			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
+			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Join Session in Progress',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
 			'liveTv.watchLive' => 'Watch Live',
@@ -5915,7 +6150,7 @@ extension on Translations {
 			'liveTv.recordingFailed' => 'Couldn\'t schedule recording',
 			'liveTv.recordingTargetMissing' => 'Couldn\'t determine recording library',
 			'liveTv.recordNotAvailable' => 'Recording not available for this program',
-			'liveTv.recordingCancelled' => 'Recording cancelled',
+			'liveTv.recordingCancelled' => 'Recording canceled',
 			'liveTv.recordingRuleDeleted' => 'Recording rule deleted',
 			'liveTv.processRecordingRules' => 'Re-evaluate rules',
 			'liveTv.recordingInProgress' => 'Recording now',
@@ -6023,6 +6258,8 @@ extension on Translations {
 			'watchTogether.endSessionQuestion' => 'End Session?',
 			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
 			'watchTogether.endSessionConfirm' => 'This will end the session for all participants.',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.leaveSessionConfirm' => 'You will be removed from the session.',
 			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
 			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
@@ -6048,9 +6285,7 @@ extension on Translations {
 			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
 			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
-			_ => null,
-		} ?? switch (path) {
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
+			'watchTogether.participantSeeked' => ({required Object name}) => '${name} changed the playback position',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
 			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
 			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
@@ -6075,14 +6310,15 @@ extension on Translations {
 			'downloads.downloadQueued' => 'Download queued',
 			'downloads.downloadResumed' => 'Download resumed',
 			'downloads.serverErrorBitrate' => 'Server error: file may exceed the remote bitrate limit',
+			'downloads.storageFull' => 'Downloads stopped because device storage is full. Free some space, then retry.',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',
-			'downloads.cancelledDownloadTitle' => 'Cancelled Download',
-			'downloads.cancelledDownloadMessage' => 'This download was cancelled. What would you like to do?',
+			'downloads.cancelledDownloadTitle' => 'Canceled Download',
+			'downloads.cancelledDownloadMessage' => 'This download was canceled. What would you like to do?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
 			'downloads.resumeDownload' => 'Resume download',
-			'downloads.cancelledDownload' => 'Cancelled download',
+			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
@@ -6110,9 +6346,15 @@ extension on Translations {
 			'downloads.editSyncRule' => 'Edit sync rule',
 			'downloads.removeSyncRule' => 'Remove sync rule',
 			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Stop syncing "${title}"? Downloaded episodes will be kept.',
+			'downloads.removeListSyncRuleConfirm' => ({required Object title}) => 'Stop syncing "${title}"?',
+			'downloads.deleteSyncRuleDownloads' => 'Also delete associated downloads',
+			'downloads.deleteSyncRuleDownloadsDescription' => 'Downloads used by another sync rule or profile will be kept.',
 			'downloads.syncRuleCreated' => ({required Object count}) => 'Sync rule created — keeping ${count} unwatched episodes',
 			'downloads.syncRuleUpdated' => 'Sync rule updated',
 			'downloads.syncRuleRemoved' => 'Sync rule removed',
+			'downloads.syncRuleAndDownloadsRemoved' => 'Sync rule and associated downloads removed',
+			'downloads.syncRuleCleanupBusy' => 'Sync rules are currently updating. Try again in a moment.',
+			'downloads.syncRuleCleanupUnavailable' => 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
 			'downloads.activeSyncRules' => 'Sync rules',
 			'downloads.noSyncRules' => 'No sync rules',
@@ -6128,6 +6370,32 @@ extension on Translations {
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
 			'downloads.syncRuleListCreated' => 'Sync rule created',
+			'downloads.backgroundWarning.bannerBlocked' => 'Downloads will stop when you leave the app',
+			'downloads.backgroundWarning.bannerDegraded' => 'Background downloads may be limited',
+			'downloads.backgroundWarning.bannerAction' => 'Details',
+			'downloads.backgroundWarning.sheetTitle' => 'Background downloads are blocked',
+			'downloads.backgroundWarning.sheetTitleDegraded' => 'Background downloads may be limited',
+			'downloads.backgroundWarning.sheetIntro' => 'Android is preventing Plezy from downloading reliably in the background.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Your device is limiting when Plezy can download in the background.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezy\'s background usage is restricted. Set its battery or background usage to "Unrestricted".',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android has put Plezy in a restricted standby state. Set its battery usage to "Unrestricted".',
+			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Download notifications are turned off, so progress and controls may be unavailable.',
+			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.',
+			'downloads.backgroundWarning.reasonDataSaver' => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy\'s battery or background usage settings.',
+			'downloads.backgroundWarning.openSettings' => 'Open settings',
+			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
+			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
+			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
+			'downloads.backgroundWarning.dialogFixFirst' => 'Fix this first',
+			'downloads.backgroundWarning.statusTile' => 'Background downloads',
+			'downloads.backgroundWarning.statusOk' => 'Allowed to run in the background',
+			'downloads.backgroundWarning.statusBlocked' => 'Blocked by system settings',
+			'downloads.backgroundWarning.statusDegraded' => 'Limited by system settings',
+			'downloads.backgroundWarning.statusUnknown' => 'Not checked yet',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
+			'downloads.backgroundWarning.linkUnavailable' => 'Couldn\'t open dontkillmyapp.com on this device',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
@@ -6162,7 +6430,7 @@ extension on Translations {
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
-			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same WiFi',
+			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
@@ -6218,6 +6486,11 @@ extension on Translations {
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
+			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
+			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
+			'videoSettings.audioOutputSurround' => 'Surround',
+			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
+			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioDownmix' => 'Downmix to Stereo',
 			'performanceOverlay.color' => 'Color',
@@ -6370,7 +6643,7 @@ extension on Translations {
 			'trakt.scrobble' => 'Real-time scrobbling',
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
-			'trakt.watchedSyncDescription' => 'When you mark items watched in Plezy, mark them on Trakt.',
+			'trakt.watchedSyncDescription' => 'When you mark items as watched in Plezy, they are also marked as watched on Trakt.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Connect Seerr',
 			'seerr.serverUrl' => 'Server URL',

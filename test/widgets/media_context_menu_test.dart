@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
-import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/navigation/profile_navigation_scope.dart';
@@ -26,14 +25,11 @@ import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
-import 'package:plezy/profiles/plex_home_service.dart';
-import 'package:plezy/profiles/profile_connection_registry.dart';
-import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/music/album_detail_screen.dart';
 import 'package:plezy/screens/music/artist_detail_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
@@ -42,14 +38,17 @@ import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:provider/provider.dart';
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/profile_stack.dart';
+import '../test_helpers/stub_music_playback_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -125,28 +124,14 @@ void main() {
       ];
       final client = _AudioPlaylistClient(tracks);
       final music = _RecordingMusicPlaybackService();
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
       final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
-      final connections = ConnectionRegistry(db);
-      final profileConnections = ProfileConnectionRegistry(db);
-      final plexHome = PlexHomeService(
-        connections: connections,
-        profileConnections: profileConnections,
-        plexHomeUserFetcher: (_) async => const [],
-      );
-      final activeProfileProvider = ActiveProfileProvider(
-        registry: ProfileRegistry(db),
-        plexHome: plexHome,
-        connections: connections,
-      );
+      final multiServerProvider = testMultiServerProvider(manager);
+      final stack = await ProfileStack.create(withStorage: false);
       addTearDown(() async {
-        activeProfileProvider.dispose();
-        await plexHome.dispose();
+        await stack.dispose();
         music.dispose();
         multiServerProvider.dispose();
         manager.dispose();
-        await db.close();
       });
 
       final menuKey = GlobalKey<MediaContextMenuState>();
@@ -163,7 +148,7 @@ void main() {
           child: MultiProvider(
             providers: [
               ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
-              ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+              ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
               ChangeNotifierProvider<MusicPlaybackService>.value(value: music),
             ],
             child: MaterialApp(
@@ -228,32 +213,93 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('Jellyfin video playlist context Play exposes cancellable loading', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      TvDetectionService.debugSetAppleTVOverride(true);
+      addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+      final client = _AudioPlaylistClient([
+        testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          title: 'Movie',
+          serverId: 'srv-1',
+        ),
+      ])..blockWithAbort = true;
+      final playback = PlaybackStateProvider();
+      final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+      final multiServerProvider = testMultiServerProvider(manager);
+      final stack = await ProfileStack.create(withStorage: false);
+      addTearDown(() async {
+        playback.dispose();
+        await stack.dispose();
+        multiServerProvider.dispose();
+        manager.dispose();
+      });
+
+      final menuKey = GlobalKey<MediaContextMenuState>();
+      const playlist = MediaPlaylist(
+        id: 'playlist-video',
+        backend: MediaBackend.jellyfin,
+        title: 'Video Playlist',
+        playlistType: 'video',
+        serverId: 'srv-1',
+      );
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+              ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+              ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ],
+            child: MaterialApp(
+              theme: monoTheme(dark: true),
+              home: Scaffold(
+                body: Center(
+                  child: MediaContextMenu(
+                    key: menuKey,
+                    item: playlist,
+                    child: const SizedBox(width: 120, height: 80, child: Text('video target')),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('video target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.common.play));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text(t.common.cancel), findsOneWidget);
+      expect(client.activeAbort, isNotNull);
+      await tester.tap(find.text(t.common.cancel));
+      await tester.pumpAndSettle();
+
+      expect(client.activeAbort!.isAborted, isTrue);
+      expect(playback.isQueueActive, isFalse);
+      expect(find.text('video target'), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
     testWidgets('file info client resolution failure shows an error without popping another route', (tester) async {
       LocaleSettings.setLocaleSync(AppLocale.en);
       TvDetectionService.debugSetAppleTVOverride(true);
       addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
 
-      final db = AppDatabase.forTesting(NativeDatabase.memory());
       final manager = MultiServerManager();
-      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
-      final connections = ConnectionRegistry(db);
-      final profileConnections = ProfileConnectionRegistry(db);
-      final plexHome = PlexHomeService(
-        connections: connections,
-        profileConnections: profileConnections,
-        plexHomeUserFetcher: (_) async => const [],
-      );
-      final activeProfileProvider = ActiveProfileProvider(
-        registry: ProfileRegistry(db),
-        plexHome: plexHome,
-        connections: connections,
-      );
+      final multiServerProvider = testMultiServerProvider(manager);
+      final stack = await ProfileStack.create(withStorage: false);
       addTearDown(() async {
-        activeProfileProvider.dispose();
-        await plexHome.dispose();
+        await stack.dispose();
         multiServerProvider.dispose();
         manager.dispose();
-        await db.close();
       });
 
       final menuKey = GlobalKey<MediaContextMenuState>();
@@ -270,7 +316,7 @@ void main() {
           child: MultiProvider(
             providers: [
               ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
-              ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+              ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
             ],
             child: MaterialApp(
               theme: monoTheme(dark: true),
@@ -489,7 +535,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
 
   final db = AppDatabase.forTesting(NativeDatabase.memory());
   PlexApiCache.initialize(db);
-  final client = PlexClient.forTesting(
+  final client = testPlexClient(
     config: PlexConfig(
       baseUrl: 'https://plex.example.com',
       token: 'token',
@@ -524,22 +570,10 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
     }),
   );
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
-  final connections = ConnectionRegistry(db);
-  final profileConnections = ProfileConnectionRegistry(db);
-  final plexHome = PlexHomeService(
-    connections: connections,
-    profileConnections: profileConnections,
-    plexHomeUserFetcher: (_) async => const [],
-  );
-  final activeProfileProvider = ActiveProfileProvider(
-    registry: ProfileRegistry(db),
-    plexHome: plexHome,
-    connections: connections,
-  );
+  final multiServerProvider = testMultiServerProvider(manager);
+  final stack = await ProfileStack.create(db: db, withStorage: false);
   addTearDown(() async {
-    activeProfileProvider.dispose();
-    await plexHome.dispose();
+    await stack.dispose();
     multiServerProvider.dispose();
     manager.dispose();
     await db.close();
@@ -558,7 +592,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
       child: MultiProvider(
         providers: [
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
-          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
@@ -591,6 +625,8 @@ Future<void> _openPlaylistPicker(WidgetTester tester, GlobalKey<MediaContextMenu
 class _AudioPlaylistClient implements MediaServerClient {
   final List<MediaItem> tracks;
   Completer<void>? fetchGate;
+  bool blockWithAbort = false;
+  AbortController? activeAbort;
 
   _AudioPlaylistClient(this.tracks);
 
@@ -608,6 +644,15 @@ class _AudioPlaylistClient implements MediaServerClient {
 
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
+    if (blockWithAbort) {
+      activeAbort = abort;
+      if (abort == null) {
+        await Completer<void>().future;
+      } else {
+        await abort.trigger;
+        abort.throwIfAborted();
+      }
+    }
     await fetchGate?.future;
     return fakeLibraryPage(tracks, start: start, size: size);
   }
@@ -625,9 +670,6 @@ class _RecordingMusicPlaybackService extends StubMusicPlaybackService {
   MusicPlayContext? playedContext;
   bool? shuffle;
   int callCount = 0;
-
-  @override
-  bool get isAvailable => true;
 
   @override
   Future<void> playFromList({
@@ -727,19 +769,8 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
   await downloadProvider.ensureInitialized();
   final client = _RelatedMusicClient(relatedItems);
   final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
-  final connections = ConnectionRegistry(db);
-  final profileConnections = ProfileConnectionRegistry(db);
-  final plexHome = PlexHomeService(
-    connections: connections,
-    profileConnections: profileConnections,
-    plexHomeUserFetcher: (_) async => const [],
-  );
-  final activeProfileProvider = ActiveProfileProvider(
-    registry: ProfileRegistry(db),
-    plexHome: plexHome,
-    connections: connections,
-  );
+  final multiServerProvider = testMultiServerProvider(manager);
+  final stack = await ProfileStack.create(db: db, withStorage: false);
   final music = _RecordingMusicPlaybackService();
   final rootNavigatorKey = GlobalKey<NavigatorState>();
   final profileNavigatorKey = GlobalKey<NavigatorState>();
@@ -748,8 +779,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
   addTearDown(() async {
     downloadProvider.dispose();
     downloadManager.dispose();
-    activeProfileProvider.dispose();
-    await plexHome.dispose();
+    await stack.dispose();
     music.dispose();
     multiServerProvider.dispose();
     manager.dispose();
@@ -765,7 +795,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
           providers: [
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
             ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
-            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
             ChangeNotifierProvider<MusicPlaybackService>.value(value: music),
           ],
           child: ProfileNavigationScope(

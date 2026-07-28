@@ -1,18 +1,36 @@
 import 'dart:convert';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:plezy/connection/connection.dart';
+import 'package:plezy/connection/connection_registry.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/profiles/active_profile_binder.dart';
+import 'package:plezy/profiles/active_profile_provider.dart';
+import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
+import 'package:plezy/profiles/profile_connection.dart';
+import 'package:plezy/profiles/profile_connection_registry.dart';
+import 'package:plezy/profiles/profile_registry.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
+import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/jellyfin_lan_discovery_service.dart';
+import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:provider/provider.dart';
 
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 Profile _profile(String id) =>
@@ -79,9 +97,246 @@ JellyfinConnectionAuthService _jellyfinAuthServiceForBareHost() {
   );
 }
 
+JellyfinConnectionAuthService _successfulAuthService({required bool quickConnect}) {
+  Map<String, Object?> authResponse() => {
+    'AccessToken': '',
+    'User': {
+      'Id': 'opaque-user',
+      'Name': 'Opaque User',
+      'Policy': {'IsAdministrator': false},
+    },
+  };
+
+  return JellyfinConnectionAuthService(
+    clientName: 'Plezy',
+    clientVersion: 'test',
+    deviceName: 'Opaque Device',
+    testHttpClientFactory: () => MockClient((request) async {
+      switch (request.url.path) {
+        case '/System/Info/Public':
+          return http.Response(
+            jsonEncode({'Id': 'opaque-machine', 'ServerName': 'Opaque Server', 'Version': '10.9.0'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        case '/QuickConnect/Enabled':
+          return http.Response(jsonEncode(quickConnect), 200, headers: {'content-type': 'application/json'});
+        case '/QuickConnect/Initiate':
+          return http.Response(
+            jsonEncode({'Code': '654321', 'Secret': 'opaque-secret'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        case '/QuickConnect/Connect':
+          return http.Response(jsonEncode({'Authenticated': true}), 200, headers: {'content-type': 'application/json'});
+        case '/Users/AuthenticateByName':
+        case '/Users/AuthenticateWithQuickConnect':
+          return http.Response(jsonEncode(authResponse()), 200, headers: {'content-type': 'application/json'});
+      }
+      return http.Response('', 404);
+    }),
+  );
+}
+
+class _NoTimerPlexHomeService extends PlexHomeService {
+  _NoTimerPlexHomeService({required super.connections, required super.profileConnections, required super.storage});
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> reloadFromStorage() async {}
+}
+
+class _CountingJellyfinManager extends MultiServerManager {
+  int calls = 0;
+
+  @override
+  Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
+    calls++;
+    updateServerStatus(ServerId(connection.serverMachineId), true);
+    return true;
+  }
+}
+
+class _RouteJoinFailure implements Exception {
+  const _RouteJoinFailure();
+}
+
+class _NoWatchActiveProfileProvider extends ActiveProfileProvider {
+  _NoWatchActiveProfileProvider({
+    required super.registry,
+    required super.plexHome,
+    required super.connections,
+    required super.storage,
+  });
+
+  @override
+  Future<void> initialize() async {}
+}
+
+class _CountingActiveProfileBinder extends ActiveProfileBinder {
+  _CountingActiveProfileBinder({
+    required super.activeProfile,
+    required super.connections,
+    required super.profileConnections,
+    required super.serverManager,
+    required super.multiServerProvider,
+    required super.pinPrompt,
+  });
+
+  int calls = 0;
+
+  @override
+  Future<void> rebindIfActive(String profileId) async {
+    calls++;
+  }
+}
+
+class _FailingRouteJoinRegistry extends ProfileConnectionRegistry {
+  _FailingRouteJoinRegistry(super.db);
+
+  @override
+  Future<void> upsert(ProfileConnection connection, {bool makeDefault = false}) async {
+    await super.upsert(connection, makeDefault: makeDefault);
+    throw const _RouteJoinFailure();
+  }
+}
+
+class _RouteHarness {
+  _RouteHarness._({
+    required this.db,
+    required this.storage,
+    required this.profiles,
+    required this.connections,
+    required this.profileConnections,
+    required this.plexHome,
+    required this.activeProfiles,
+    required this.manager,
+    required this.multiServerProvider,
+    required this.binder,
+  });
+
+  final AppDatabase db;
+  final StorageService storage;
+  final ProfileRegistry profiles;
+  final ConnectionRegistry connections;
+  final ProfileConnectionRegistry profileConnections;
+  final PlexHomeService plexHome;
+  final ActiveProfileProvider activeProfiles;
+  final _CountingJellyfinManager manager;
+  final MultiServerProvider multiServerProvider;
+  final _CountingActiveProfileBinder binder;
+  static Future<_RouteHarness> create({bool failJoin = false}) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final storage = await StorageService.getInstance();
+    final profiles = ProfileRegistry(db);
+    final connections = ConnectionRegistry(db);
+    final profileConnections = failJoin ? _FailingRouteJoinRegistry(db) : ProfileConnectionRegistry(db);
+    final plexHome = _NoTimerPlexHomeService(
+      connections: connections,
+      profileConnections: profileConnections,
+      storage: storage,
+    );
+    final activeProfiles = _NoWatchActiveProfileProvider(
+      registry: profiles,
+      plexHome: plexHome,
+      connections: connections,
+      storage: storage,
+    );
+    final manager = _CountingJellyfinManager();
+    final multiServerProvider = testMultiServerProvider(manager);
+    final binder = _CountingActiveProfileBinder(
+      activeProfile: activeProfiles,
+      connections: connections,
+      profileConnections: profileConnections,
+      serverManager: manager,
+      multiServerProvider: multiServerProvider,
+      pinPrompt: (_, {String? errorMessage}) async => null,
+    );
+    return _RouteHarness._(
+      db: db,
+      storage: storage,
+      profiles: profiles,
+      connections: connections,
+      profileConnections: profileConnections,
+      plexHome: plexHome,
+      activeProfiles: activeProfiles,
+      manager: manager,
+      multiServerProvider: multiServerProvider,
+      binder: binder,
+    );
+  }
+
+  Widget app({required bool quickConnect, required ValueChanged<Future<bool?>> onRoute}) {
+    return MultiProvider(
+      providers: [
+        Provider<AppDatabase>.value(value: db),
+        Provider<StorageService>.value(value: storage),
+        Provider<ProfileRegistry>.value(value: profiles),
+        Provider<ConnectionRegistry>.value(value: connections),
+        Provider<ProfileConnectionRegistry>.value(value: profileConnections),
+        ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfiles),
+        Provider<ActiveProfileBinder>.value(value: binder),
+      ],
+      child: MaterialApp(
+        theme: monoTheme(dark: true),
+        home: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => onRoute(
+              Navigator.of(context).push<bool>(
+                MaterialPageRoute(
+                  builder: (_) => AddJellyfinScreen(
+                    authServiceFactory: () => _successfulAuthService(quickConnect: quickConnect),
+                    localDiscoveryFactory: _noLocalServers,
+                  ),
+                ),
+              ),
+            ),
+            child: const Text('Open route'),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> dispose() async {
+    binder.dispose();
+    multiServerProvider.dispose();
+    await activeProfiles.resetForTesting();
+    activeProfiles.dispose();
+    await plexHome.dispose();
+    await db.close();
+  }
+}
+
 Future<List<DiscoveredJellyfinServer>> _noLocalServers() async => const [];
 
 void main() {
+  group('resolveJellyfinClientVersion', () {
+    PackageInfo packageInfo(String version) =>
+        PackageInfo(appName: 'Plezy', packageName: 'com.example.plezy', version: version, buildNumber: '1');
+
+    test('uses a non-empty package version', () async {
+      final version = await resolveJellyfinClientVersion(packageInfoLoader: () async => packageInfo(' 2.9.1 '));
+      expect(version, '2.9.1');
+    });
+
+    test('falls back when the package version is empty', () async {
+      for (final packageVersion in ['', '   ']) {
+        final version = await resolveJellyfinClientVersion(packageInfoLoader: () async => packageInfo(packageVersion));
+        expect(version, '1.0');
+      }
+    });
+
+    test('falls back when package metadata lookup throws', () async {
+      final version = await resolveJellyfinClientVersion(
+        packageInfoLoader: () async => throw StateError('version metadata unavailable'),
+      );
+      expect(version, '1.0');
+    });
+  });
+
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.setForceTVSync(false);
@@ -107,6 +362,7 @@ void main() {
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).keyboardType, TextInputType.url);
   });
 
   testWidgets('Android TV D-pad can leave initial URL focus before keyboard opens', (tester) async {
@@ -162,8 +418,9 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
   });
 
   testWidgets('D-pad moves from URL through Change to credentials after server is found', (tester) async {
@@ -394,6 +651,142 @@ void main() {
     await tester.pump();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Discovered:srv-2');
+  });
+
+  testWidgets('password sign-in commits one complete bundle and binds once', (tester) async {
+    resetSharedPreferencesForTest();
+    CredentialVault.resetKeyForTesting();
+    final harness = await _RouteHarness.create();
+    await tester.runAsync(() => CredentialVault.protect('opaque-vault-warmup'));
+    late Future<bool?> routeResult;
+    await tester.pumpWidget(harness.app(quickConnect: false, onRoute: (result) => routeResult = result));
+    await tester.tap(find.text('Open route'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'https://media.invalid');
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), 'Opaque User');
+    await tester.enterText(find.byType(TextField).at(2), 'opaque-password');
+    await tester.tap(find.text('Sign in'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(harness.binder.calls, 1);
+    expect(find.text('Open route'), findsOneWidget);
+
+    expect(await routeResult, isTrue);
+    final bundle = await tester.runAsync(() async {
+      return (
+        profiles: await harness.profiles.list(),
+        connections: await harness.connections.list(),
+        joins: await harness.profileConnections.listAll(),
+      );
+    });
+    expect(bundle!.profiles, hasLength(1));
+    expect(bundle.connections, hasLength(1));
+    expect(bundle.joins, hasLength(1));
+    expect(bundle.joins.single.profileId, bundle.profiles.single.id);
+    expect(bundle.joins.single.connectionId, bundle.connections.single.id);
+    expect(harness.storage.getActiveProfileId(), bundle.profiles.single.id);
+    expect(harness.activeProfiles.activeId, bundle.profiles.single.id);
+    expect(harness.binder.calls, 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await harness.dispose();
+  });
+
+  testWidgets('Quick Connect commits one complete bundle and binds once', (tester) async {
+    resetSharedPreferencesForTest();
+    CredentialVault.resetKeyForTesting();
+    final harness = await _RouteHarness.create();
+    await tester.runAsync(() => CredentialVault.protect('opaque-vault-warmup'));
+    late Future<bool?> routeResult;
+    await tester.pumpWidget(harness.app(quickConnect: true, onRoute: (result) => routeResult = result));
+    await tester.tap(find.text('Open route'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'https://media.invalid');
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Use Quick Connect'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+    await tester.pump();
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(await routeResult, isTrue);
+    final bundle = await tester.runAsync(() async {
+      return (
+        profiles: await harness.profiles.list(),
+        connections: await harness.connections.list(),
+        joins: await harness.profileConnections.listAll(),
+      );
+    });
+    expect(bundle!.profiles, hasLength(1));
+    expect(bundle.connections, hasLength(1));
+    expect(bundle.joins, hasLength(1));
+    expect(bundle.joins.single.profileId, bundle.profiles.single.id);
+    expect(bundle.joins.single.connectionId, bundle.connections.single.id);
+    expect(harness.storage.getActiveProfileId(), bundle.profiles.single.id);
+    expect(harness.activeProfiles.activeId, bundle.profiles.single.id);
+    expect(harness.binder.calls, 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await harness.dispose();
+  });
+
+  testWidgets('join failure leaves route open, state unchanged, and never binds', (tester) async {
+    resetSharedPreferencesForTest();
+    CredentialVault.resetKeyForTesting();
+    final harness = await _RouteHarness.create(failJoin: true);
+    await tester.runAsync(() => CredentialVault.protect('opaque-vault-warmup'));
+    var routeCompleted = false;
+    late Future<bool?> routeResult;
+    await tester.pumpWidget(
+      harness.app(
+        quickConnect: false,
+        onRoute: (result) {
+          routeResult = result;
+          result.then((_) => routeCompleted = true);
+        },
+      ),
+    );
+    await tester.tap(find.text('Open route'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'https://media.invalid');
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).at(1), 'Opaque User');
+    await tester.enterText(find.byType(TextField).at(2), 'opaque-password');
+    await tester.tap(find.text('Sign in'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(routeCompleted, isFalse);
+    expect(find.textContaining('Sign-in failed'), findsOneWidget);
+    final bundle = await tester.runAsync(() async {
+      return (
+        profiles: await harness.profiles.list(),
+        connections: await harness.connections.list(),
+        joins: await harness.profileConnections.listAll(),
+      );
+    });
+    expect(bundle!.profiles, isEmpty);
+    expect(bundle.connections, isEmpty);
+    expect(bundle.joins, isEmpty);
+    expect(harness.storage.getActiveProfileId(), isNull);
+    expect(harness.binder.calls, 0);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    routeResult.ignore();
+    await harness.dispose();
   });
 
   group('Jellyfin profile binding decisions', () {

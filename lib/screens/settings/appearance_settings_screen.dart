@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../i18n/app_locale_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -211,14 +212,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
   Widget _themeSelector() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
-        return SettingSelectionTile<settings.ThemeMode, settings.ThemeMode>(
+        return SettingSelectionTile<settings.ThemeMode>(
           pref: SettingsService.themeMode,
           icon: themeProvider.themeModeIcon,
           title: t.settings.theme,
           subtitleBuilder: themeModeLabel,
           options: settings.ThemeMode.values.map((m) => DialogOption(value: m, title: themeModeLabel(m))).toList(),
-          decode: (v) => v,
-          encode: (v) => v,
         );
       },
     );
@@ -243,7 +242,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           await SettingsService.instance.write(SettingsService.appLocale, value);
           unawaited(LocaleSettings.setLocale(value));
           if (context.mounted) {
-            context.read<MultiServerProvider>().serverManager.updatePlexLanguage(value.languageCode);
+            context.read<MultiServerProvider>().serverManager.updatePlexLanguage(value.plexLanguageCode);
           }
           if (context.mounted) _restartApp(context);
         }
@@ -292,7 +291,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _viewModeSelector() => SettingSegmentedTile<ViewMode, ViewMode>(
+  Widget _viewModeSelector() => SettingSegmentedTile<ViewMode>(
     pref: SettingsService.viewMode,
     icon: Symbols.view_list_rounded,
     title: t.settings.viewMode,
@@ -300,11 +299,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: ViewMode.grid, label: Text(t.settings.gridView)),
       ButtonSegment(value: ViewMode.list, label: Text(t.settings.listView)),
     ],
-    decode: (v) => v,
-    encode: (v) => v,
   );
 
-  Widget _episodePosterModeSelector() => SettingSegmentedTile<EpisodePosterMode, EpisodePosterMode>(
+  Widget _episodePosterModeSelector() => SettingSegmentedTile<EpisodePosterMode>(
     pref: SettingsService.episodePosterMode,
     icon: Symbols.image_rounded,
     title: t.settings.episodePosterMode,
@@ -313,11 +310,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: EpisodePosterMode.seasonPoster, label: Text(t.settings.seasonPoster)),
       ButtonSegment(value: EpisodePosterMode.episodeThumbnail, label: Text(t.settings.episodeThumbnail)),
     ],
-    decode: (v) => v,
-    encode: (v) => v,
   );
 
-  Widget _continueWatchingActionSelector() => SettingSegmentedTile<ContinueWatchingAction, ContinueWatchingAction>(
+  Widget _continueWatchingActionSelector() => SettingSegmentedTile<ContinueWatchingAction>(
     pref: SettingsService.continueWatchingAction,
     icon: Symbols.play_circle_rounded,
     title: t.settings.continueWatchingAction,
@@ -325,11 +320,9 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: ContinueWatchingAction.play, label: Text(t.settings.continueWatchingPlay)),
       ButtonSegment(value: ContinueWatchingAction.details, label: Text(t.settings.continueWatchingDetails)),
     ],
-    decode: (v) => v,
-    encode: (v) => v,
   );
 
-  Widget _episodeActionSelector() => SettingSegmentedTile<EpisodeAction, EpisodeAction>(
+  Widget _episodeActionSelector() => SettingSegmentedTile<EpisodeAction>(
     pref: SettingsService.episodeAction,
     icon: Symbols.tv_rounded,
     title: t.settings.episodeAction,
@@ -337,8 +330,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: EpisodeAction.play, label: Text(t.settings.episodePlay)),
       ButtonSegment(value: EpisodeAction.details, label: Text(t.settings.episodeDetails)),
     ],
-    decode: (v) => v,
-    encode: (v) => v,
   );
 
   // Sections offered as a startup destination, in display order. Live TV is
@@ -352,14 +343,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
 
   String _startupSectionLabel(NavigationTabId id) => allNavigationTabs.firstWhere((t) => t.id == id).getLabel();
 
-  Widget _startupSectionSelector() => SettingSelectionTile<NavigationTabId, NavigationTabId>(
+  Widget _startupSectionSelector() => SettingSelectionTile<NavigationTabId>(
     pref: SettingsService.startupSection,
     icon: Symbols.start_rounded,
     title: t.settings.startupSection,
     subtitleBuilder: _startupSectionLabel,
     options: _startupSectionOptions.map((id) => DialogOption(value: id, title: _startupSectionLabel(id))).toList(),
-    decode: (v) => v,
-    encode: (v) => v,
   );
 
   String _visualEffectsLabel(VisualEffectsSetting value) => switch (value) {
@@ -368,32 +357,29 @@ class AppearanceSettingsScreen extends StatelessWidget {
     VisualEffectsSetting.reduced => t.settings.visualEffectsReduced,
   };
 
-  Widget _visualEffectsSelector(BuildContext context) =>
-      SettingSelectionTile<VisualEffectsSetting, VisualEffectsSetting>(
-        pref: SettingsService.visualEffects,
-        icon: Symbols.animation_rounded,
-        title: t.settings.visualEffects,
-        subtitleBuilder: _visualEffectsLabel,
-        options: [
-          DialogOption(
-            value: VisualEffectsSetting.auto,
-            title: t.settings.visualEffectsAuto,
-            subtitle: t.settings.visualEffectsAutoDescription,
-          ),
-          DialogOption(value: VisualEffectsSetting.full, title: t.settings.visualEffectsFull),
-          DialogOption(
-            value: VisualEffectsSetting.reduced,
-            title: t.settings.visualEffectsReduced,
-            subtitle: t.settings.visualEffectsReducedDescription,
-          ),
-        ],
-        decode: (v) => v,
-        encode: (v) => v,
-        onAfterWrite: (value) {
-          DevicePerformance.setOverrideSync(value);
-          _restartApp(context);
-        },
-      );
+  Widget _visualEffectsSelector(BuildContext context) => SettingSelectionTile<VisualEffectsSetting>(
+    pref: SettingsService.visualEffects,
+    icon: Symbols.animation_rounded,
+    title: t.settings.visualEffects,
+    subtitleBuilder: _visualEffectsLabel,
+    options: [
+      DialogOption(
+        value: VisualEffectsSetting.auto,
+        title: t.settings.visualEffectsAuto,
+        subtitle: t.settings.visualEffectsAutoDescription,
+      ),
+      DialogOption(value: VisualEffectsSetting.full, title: t.settings.visualEffectsFull),
+      DialogOption(
+        value: VisualEffectsSetting.reduced,
+        title: t.settings.visualEffectsReduced,
+        subtitle: t.settings.visualEffectsReducedDescription,
+      ),
+    ],
+    onAfterWrite: (value) {
+      DevicePerformance.setOverrideSync(value);
+      _restartApp(context);
+    },
+  );
 
   String _getLanguageDisplayName(AppLocale locale) {
     switch (locale) {
@@ -409,8 +395,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return 'Nederlands';
       case AppLocale.de:
         return 'Deutsch';
+      case AppLocale.hu:
+        return 'Magyar';
       case AppLocale.zh:
-        return '中文';
+        return '简体中文';
+      case AppLocale.zhHant:
+        return '繁體中文';
       case AppLocale.ko:
         return '한국어';
       case AppLocale.es:
@@ -429,6 +419,14 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return 'Norsk bokmål';
       case AppLocale.bg:
         return 'Български';
+      case AppLocale.tr:
+        return 'Türkçe';
+      case AppLocale.az:
+        return 'Azərbaycanca';
+      case AppLocale.kk:
+        return 'Қазақша';
+      case AppLocale.uz:
+        return 'Oʻzbekcha';
     }
   }
 

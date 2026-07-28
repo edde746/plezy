@@ -69,13 +69,12 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Check if episode navigation controls should be enabled
-  /// Returns true if not in Watch Together session, or if user is the host
-  bool _canNavigateEpisodes() {
-    if (_watchTogetherProvider == null) return true;
-    if (!_watchTogetherProvider!.isInSession) return true;
-    return _watchTogetherProvider!.isHost;
-  }
+  /// Playback intent is guest-controllable only when the active room permits
+  /// it. Outside a room, the local screen remains authoritative.
+  bool _canControlPlayback() => _activeWatchTogetherSession()?.canControl() ?? true;
+
+  /// Choosing another queue item or episode is host-only in every room mode.
+  bool _canNavigateMediaItems() => _activeWatchTogetherSession()?.isHost ?? true;
 
   /// Notify watch together session of current media change (host only)
   /// If [metadata] is provided, uses that instead of _currentMetadata (for episode navigation)

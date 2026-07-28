@@ -67,29 +67,31 @@ class ProfileConnectionRegistry {
   /// Fast path: when no default-flip is requested, skips the transaction
   /// (one cheap SELECT to detect first-row, then a single insert).
   Future<void> upsert(ProfileConnection pc, {bool makeDefault = false}) async {
-    final wantsDefault = makeDefault || pc.isDefault;
-    if (!wantsDefault) {
-      // Preserve the row's existing `isDefault` on update so token/metadata
-      // refreshes don't clobber the default flag. First-row inserts inherit
-      // default automatically.
-      final existing = await get(pc.profileId, pc.connectionId);
-      final bool isDefault;
-      if (existing != null) {
-        isDefault = existing.isDefault;
-      } else {
-        isDefault = !await _hasAnyForProfile(pc.profileId);
+    await _db.runIdentityMutation(() async {
+      final wantsDefault = makeDefault || pc.isDefault;
+      if (!wantsDefault) {
+        // Preserve the row's existing `isDefault` on update so token/metadata
+        // refreshes don't clobber the default flag. First-row inserts inherit
+        // default automatically.
+        final existing = await get(pc.profileId, pc.connectionId);
+        final bool isDefault;
+        if (existing != null) {
+          isDefault = existing.isDefault;
+        } else {
+          isDefault = !await _hasAnyForProfile(pc.profileId);
+        }
+        await _db.into(_db.profileConnections).insertOnConflictUpdate(await _companion(pc, isDefault: isDefault));
+        appLogger.d('ProfileConnectionRegistry: upserted ${pc.profileId}/${pc.connectionId}');
+        return;
       }
-      await _db.into(_db.profileConnections).insertOnConflictUpdate(await _companion(pc, isDefault: isDefault));
-      appLogger.d('ProfileConnectionRegistry: upserted ${pc.profileId}/${pc.connectionId}');
-      return;
-    }
-    await _db.transaction(() async {
-      await (_db.update(_db.profileConnections)..where((t) => t.profileId.equals(pc.profileId))).write(
-        const ProfileConnectionsCompanion(isDefault: Value(false)),
-      );
-      await _db.into(_db.profileConnections).insertOnConflictUpdate(await _companion(pc, isDefault: true));
+      await _db.transaction(() async {
+        await (_db.update(_db.profileConnections)..where((t) => t.profileId.equals(pc.profileId))).write(
+          const ProfileConnectionsCompanion(isDefault: Value(false)),
+        );
+        await _db.into(_db.profileConnections).insertOnConflictUpdate(await _companion(pc, isDefault: true));
+      });
+      appLogger.d('ProfileConnectionRegistry: upserted ${pc.profileId}/${pc.connectionId} (default)');
     });
-    appLogger.d('ProfileConnectionRegistry: upserted ${pc.profileId}/${pc.connectionId} (default)');
   }
 
   Future<bool> _hasAnyForProfile(String profileId) async {
@@ -121,36 +123,44 @@ class ProfileConnectionRegistry {
   /// Cache the freshly-acquired user token (e.g. after a `/home/users/switch`
   /// call). Updates `tokenAcquiredAt` to now.
   Future<void> recordToken(String profileId, String connectionId, String token) async {
-    await (_db.update(
-      _db.profileConnections,
-    )..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId))).write(
-      ProfileConnectionsCompanion(
-        userToken: Value(await CredentialVault.protect(token)),
-        tokenAcquiredAt: Value(DateTime.now().millisecondsSinceEpoch),
-      ),
-    );
+    await _db.runIdentityMutation(() async {
+      await (_db.update(
+        _db.profileConnections,
+      )..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId))).write(
+        ProfileConnectionsCompanion(
+          userToken: Value(await CredentialVault.protect(token)),
+          tokenAcquiredAt: Value(DateTime.now().millisecondsSinceEpoch),
+        ),
+      );
+    });
   }
 
   /// Reset the stored token to the empty-string lazy-fetch sentinel (used
   /// when the vault can no longer decrypt it).
   Future<void> _clearToken(String profileId, String connectionId) async {
-    await (_db.update(_db.profileConnections)
-          ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
-        .write(const ProfileConnectionsCompanion(userToken: Value(''), tokenAcquiredAt: Value(null)));
+    await _db.runIdentityMutation(() async {
+      await (_db.update(_db.profileConnections)
+            ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
+          .write(const ProfileConnectionsCompanion(userToken: Value(''), tokenAcquiredAt: Value(null)));
+    });
   }
 
   /// Mark the row as recently used.
   Future<void> markUsed(String profileId, String connectionId) async {
-    await (_db.update(_db.profileConnections)
-          ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
-        .write(ProfileConnectionsCompanion(lastUsedAt: Value(DateTime.now().millisecondsSinceEpoch)));
+    await _db.runIdentityMutation(() async {
+      await (_db.update(_db.profileConnections)
+            ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
+          .write(ProfileConnectionsCompanion(lastUsedAt: Value(DateTime.now().millisecondsSinceEpoch)));
+    });
   }
 
   Future<void> remove(String profileId, String connectionId) async {
-    await (_db.delete(
-      _db.profileConnections,
-    )..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId))).go();
-    await _promoteDefaultIfMissing(profileId);
+    await _db.runIdentityMutation(() async {
+      await (_db.delete(
+        _db.profileConnections,
+      )..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId))).go();
+      await _promoteDefaultIfMissing(profileId);
+    });
   }
 
   /// Re-promote a default for [profileId] when it has join rows but none is
@@ -171,22 +181,26 @@ class ProfileConnectionRegistry {
   /// join rows silently when a Connection is removed, so a profile can be left
   /// with surviving rows but no default flag.
   Future<void> promoteMissingDefaults() async {
-    final profileIds = (await _db.select(_db.profileConnections).get()).map((r) => r.profileId).toSet();
-    for (final profileId in profileIds) {
-      await _promoteDefaultIfMissing(profileId);
-    }
+    await _db.runIdentityMutation(() async {
+      final profileIds = (await _db.select(_db.profileConnections).get()).map((r) => r.profileId).toSet();
+      for (final profileId in profileIds) {
+        await _promoteDefaultIfMissing(profileId);
+      }
+    });
   }
 
   /// Make [connectionId] the default for [profileId]. Clears the flag on
   /// every other row for the same profile.
   Future<void> setDefault(String profileId, String connectionId) async {
-    await _db.transaction(() async {
-      await (_db.update(
-        _db.profileConnections,
-      )..where((t) => t.profileId.equals(profileId))).write(const ProfileConnectionsCompanion(isDefault: Value(false)));
-      await (_db.update(_db.profileConnections)
-            ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
-          .write(const ProfileConnectionsCompanion(isDefault: Value(true)));
+    await _db.runIdentityMutation(() async {
+      await _db.transaction(() async {
+        await (_db.update(_db.profileConnections)..where((t) => t.profileId.equals(profileId))).write(
+          const ProfileConnectionsCompanion(isDefault: Value(false)),
+        );
+        await (_db.update(_db.profileConnections)
+              ..where((t) => t.profileId.equals(profileId) & t.connectionId.equals(connectionId)))
+            .write(const ProfileConnectionsCompanion(isDefault: Value(true)));
+      });
     });
   }
 
@@ -196,15 +210,21 @@ class ProfileConnectionRegistry {
   /// stays the explicit path for callers that drop the rows first, and either
   /// way repairs any profile the removal left without a default.
   Future<int> removeAllForConnection(String connectionId) async {
-    final removed = await (_db.delete(_db.profileConnections)..where((t) => t.connectionId.equals(connectionId))).go();
-    await promoteMissingDefaults();
-    return removed;
+    return _db.runIdentityMutation(() async {
+      final removed = await (_db.delete(
+        _db.profileConnections,
+      )..where((t) => t.connectionId.equals(connectionId))).go();
+      await promoteMissingDefaults();
+      return removed;
+    });
   }
 
   /// Wipe the entire join table. Used by sign-out so a fresh sign-in starts
   /// with no stale (profile, connection, token) rows.
   Future<void> clear() async {
-    await _db.delete(_db.profileConnections).go();
+    await _db.runIdentityMutation(() async {
+      await _db.delete(_db.profileConnections).go();
+    });
   }
 
   Future<ProfileConnection> _rowToModel(ProfileConnectionRow row) async {
@@ -217,7 +237,7 @@ class ProfileConnectionRegistry {
       // Clear it to the empty-string lazy-fetch sentinel so the binder
       // re-acquires a token on next use instead of re-failing every boot.
       appLogger.w('ProfileConnectionRegistry: clearing undecryptable token for ${row.profileId}/${row.connectionId}');
-      unawaited(_clearToken(row.profileId, row.connectionId));
+      await _clearToken(row.profileId, row.connectionId);
     }
     return ProfileConnection(
       profileId: row.profileId,

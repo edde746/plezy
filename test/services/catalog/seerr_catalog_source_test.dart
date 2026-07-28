@@ -1,7 +1,4 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
@@ -10,6 +7,8 @@ import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/seerr/seerr_client.dart';
 import 'package:plezy/utils/external_ids.dart';
+
+import '../../test_helpers/http_fixtures.dart';
 
 SeerrCatalogSource _source(MockClient mock) {
   final client = SeerrClient(
@@ -36,15 +35,13 @@ SeerrCatalogSource _source(MockClient mock) {
   return source;
 }
 
-http.Response _json(Object body) => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'});
-
 void main() {
   group('SeerrCatalogSource', () {
     test('trending row keeps movies and shows, drops people, maps TMDB images', () async {
       final source = _source(
         MockClient((request) async {
           expect(request.url.path, '/api/v1/discover/trending');
-          return _json({
+          return jsonResponse({
             'page': 1,
             'totalPages': 3,
             'results': [
@@ -89,7 +86,7 @@ void main() {
       final source = _source(
         MockClient((request) async {
           paths.add('${request.url.path}?${request.url.query}');
-          return _json({
+          return jsonResponse({
             'page': 2,
             'totalPages': 2,
             'results': [
@@ -106,13 +103,13 @@ void main() {
     });
 
     test('rows Seerr does not serve throw', () {
-      final source = _source(MockClient((request) async => _json({})));
+      final source = _source(MockClient((request) async => jsonResponse({})));
       expect(() => source.fetchRow(CatalogRowId.watchlist), throwsArgumentError);
       expect(() => source.fetchRow(CatalogRowId.suggestedAnime), throwsArgumentError);
     });
 
     test('resolveItemIds needs a tmdb id', () async {
-      final source = _source(MockClient((request) async => _json({})));
+      final source = _source(MockClient((request) async => jsonResponse({})));
       final resolved = await source.resolveItemIds(MediaKind.movie, const ExternalIds(tmdb: 603, imdb: 'tt0133093'));
       expect(resolved?.tmdb, 603);
       expect(resolved?.imdb, 'tt0133093');
@@ -123,7 +120,7 @@ void main() {
       final source = _source(
         MockClient((request) async {
           expect(request.url.path, '/api/v1/tv/1396');
-          return _json({
+          return jsonResponse({
             'id': 1396,
             'name': 'Breaking Bad',
             'credits': {
@@ -156,7 +153,7 @@ void main() {
         MockClient((request) async {
           expect(request.url.path, '/api/v1/search');
           expect(request.url.queryParameters['query'], 'the matrix');
-          return _json({
+          return jsonResponse({
             'page': 1,
             'totalPages': 1,
             'results': [
@@ -175,7 +172,7 @@ void main() {
       final source = _source(
         MockClient((request) async {
           expect(request.url.path, '/api/v1/movie/603/recommendations');
-          return _json({
+          return jsonResponse({
             'page': 1,
             'totalPages': 1,
             'results': [
@@ -197,13 +194,13 @@ void main() {
 
     test('canRequest honors the per-kind permission split', () {
       // permissions: 2 = ADMIN in the fixture session → everything allowed.
-      final source = _source(MockClient((request) async => _json({})));
+      final source = _source(MockClient((request) async => jsonResponse({})));
       expect(source.canRequest(MediaKind.movie), isTrue);
       expect(source.canRequest(MediaKind.show), isTrue);
     });
 
     test('has no watchlist: membership unknown, mutations unsupported', () async {
-      final source = _source(MockClient((request) async => _json({})));
+      final source = _source(MockClient((request) async => jsonResponse({})));
       expect(source.supportsWatchlist, isFalse);
       expect(source.isOnWatchlist(MediaKind.movie, const CatalogItemIds(tmdb: 603)), isNull);
       expect(() => source.addToWatchlist(MediaKind.movie, const CatalogItemIds(tmdb: 603)), throwsUnsupportedError);

@@ -1,7 +1,32 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
 void main() {
+  setUp(() {
+    TvDetectionService.debugReset();
+    addTearDown(TvDetectionService.debugReset);
+  });
+
+  test('concurrent callers wait for TV detection', () async {
+    final detection = Completer<void>();
+    TvDetectionService.debugDetectionGate = detection.future;
+
+    final first = TvDetectionService.getInstance(forceTv: true);
+    var secondCompleted = false;
+    final second = TvDetectionService.getInstance();
+    unawaited(second.then((_) => secondCompleted = true));
+    await Future<void>.delayed(Duration.zero);
+
+    expect(secondCompleted, isFalse);
+    detection.complete();
+
+    final instances = await Future.wait([first, second]);
+    expect(identical(instances.first, instances.last), isTrue);
+    expect(instances.first.isTV, isTrue);
+  });
+
   group('detectAndroidTvFromSystemFeatures', () {
     test('detects leanback devices', () {
       final detection = detectAndroidTvFromSystemFeatures([

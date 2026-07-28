@@ -5,6 +5,9 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'async_singleton.dart';
+import 'device_channel.dart';
+
 const _androidFeatureTelevision = 'android.hardware.type.television';
 const _androidFeatureLeanback = 'android.software.leanback';
 const _androidFeatureFireTv = 'amazon.hardware.fire_tv';
@@ -30,7 +33,9 @@ AndroidTvFeatureDetection detectAndroidTvFromSystemFeatures(Iterable<String> fea
 
 /// Service for detecting if the app is running on Android TV or Apple TV.
 class TvDetectionService {
-  static TvDetectionService? _instance;
+  static final AsyncSingleton<TvDetectionService> _singleton = AsyncSingleton();
+  @visibleForTesting
+  static set debugDetectionGate(Future<void>? value) => _singleton.debugGate = value;
   static bool? _debugAppleTVOverride;
   bool _detected = false;
   bool _forceTv = false;
@@ -43,16 +48,10 @@ class TvDetectionService {
 
   /// Get the singleton instance, initializing if needed.
   /// Pass [forceTv] to combine a user override with the system-feature check.
-  static Future<TvDetectionService> getInstance({bool forceTv = false}) async {
-    if (_instance == null) {
-      _instance = TvDetectionService._();
-      await _instance!._detect(forceTv);
-    }
-    return _instance!;
-  }
+  static Future<TvDetectionService> getInstance({bool forceTv = false}) =>
+      _singleton.getInstance(TvDetectionService._, (instance) => instance._detect(forceTv));
 
   static const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
-  static const MethodChannel _deviceChannel = MethodChannel('com.plezy/device');
 
   Future<void> _detect(bool forceTv) async {
     if (_initialized) return;
@@ -92,8 +91,6 @@ class TvDetectionService {
 
   bool get isTV => _isTV;
 
-  List<String> get tvDetectionReasons => _effectiveDetectionReasons;
-
   List<String> get _effectiveDetectionReasons {
     final reasons = <String>[..._detectionReasons];
     if (_forceTv && !reasons.contains('force_tv')) reasons.add('force_tv');
@@ -102,7 +99,7 @@ class TvDetectionService {
 
   Future<AndroidTvFeatureDetection?> _getNativeAndroidTvDetection() async {
     try {
-      final result = await _deviceChannel.invokeMapMethod<dynamic, dynamic>('getTvDetection');
+      final result = await deviceChannel.invokeMapMethod<dynamic, dynamic>('getTvDetection');
       if (result == null) return null;
       final reasonsValue = result['reasons'];
       final reasons = reasonsValue is Iterable ? reasonsValue.whereType<String>().toList() : <String>[];
@@ -121,7 +118,7 @@ class TvDetectionService {
   static Future<String?> getAndroidDeviceName() async {
     if (!Platform.isAndroid) return null;
     try {
-      final name = (await _deviceChannel.invokeMethod<String>('getDeviceName'))?.trim();
+      final name = (await deviceChannel.invokeMethod<String>('getDeviceName'))?.trim();
       return (name == null || name.isEmpty) ? null : name;
     } on MissingPluginException {
       return null;
@@ -137,20 +134,26 @@ class TvDetectionService {
   }
 
   /// Synchronous access after initialization (returns false if not initialized)
-  static bool isTVSync() => _debugAppleTVOverride ?? _instance?._isTV ?? false;
+  static bool isTVSync() => _debugAppleTVOverride ?? _singleton.instance?._isTV ?? false;
 
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
-  static bool isAppleTVSync() => _debugAppleTVOverride ?? (_tvosBuild || _instance?._isAppleTV == true);
+  static bool isAppleTVSync() => _debugAppleTVOverride ?? (_tvosBuild || _singleton.instance?._isAppleTV == true);
 
   @visibleForTesting
   static void debugSetAppleTVOverride(bool? value) {
     _debugAppleTVOverride = value;
   }
 
-  static List<String> tvDetectionReasonsSync() => _instance?._effectiveDetectionReasons ?? const [];
+  @visibleForTesting
+  static void debugReset() {
+    _singleton.debugReset();
+    _debugAppleTVOverride = null;
+  }
+
+  static List<String> tvDetectionReasonsSync() => _singleton.instance?._effectiveDetectionReasons ?? const [];
 
   /// Convenience setter that forwards to the singleton if available.
-  static void setForceTVSync(bool value) => _instance?.setForceTv(value);
+  static void setForceTVSync(bool value) => _singleton.instance?.setForceTv(value);
 }
 
 class PlatformDetector {

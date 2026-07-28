@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/hub_vertical_navigation.dart';
+import '../../../focus/locked_hub_controller.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
@@ -39,6 +40,7 @@ class WhatsOnTabState extends State<WhatsOnTab>
   Timer? _refreshTimer;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysById = {};
   List<GlobalKey<HubSectionState>> _hubKeys = [];
+  final _hubFocusMemory = HubFocusMemory();
   bool _refreshRequested = true;
   bool _tickerEnabled = false;
   bool _appRefreshActive = true;
@@ -78,6 +80,9 @@ class WhatsOnTabState extends State<WhatsOnTab>
     }
   }
 
+  // Refreshes only while all three gates hold: tab selected, subtree visible,
+  // app foregrounded. Resume just re-arms the tick — unlike RecordingsTab there
+  // is no immediate reload, since nothing done on the other tabs changes hubs.
   void pauseRefresh() {
     _refreshRequested = false;
     _syncRefreshTimer();
@@ -210,6 +215,7 @@ class WhatsOnTabState extends State<WhatsOnTab>
         return HubSection(
           key: _hubKeys[index],
           hub: hub.mediaHub,
+          focusMemory: _hubFocusMemory,
           icon: Symbols.live_tv_rounded,
           cardSizing: HubCardSizing.grid,
           episodePosterModeOverride: EpisodePosterMode.seriesPoster,

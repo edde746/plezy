@@ -10,8 +10,7 @@ part 'plex_user_profile.g.dart';
 ///
 /// Every field parses tolerantly: the account API drifts (~July 2026 the
 /// language-list fields switched from arrays to CSV strings, #1488), and a
-/// profile blob must never fail to parse — token minting embeds it (see
-/// UserSwitchResponse.fromJson).
+/// single drifted field must never sink the whole profile.
 @JsonSerializable()
 class PlexUserProfile implements MediaServerUserProfile {
   @JsonKey(fromJson: _boolOrTrue)
@@ -61,19 +60,6 @@ class PlexUserProfile implements MediaServerUserProfile {
     required this.mediaReviewsVisibility,
     this.mediaReviewsLanguages,
   });
-
-  /// Neutral fallback matching the generated defaults — used when the account
-  /// API returns a profile blob that cannot be parsed at all (schema drift
-  /// must never break token minting, see UserSwitchResponse.fromJson).
-  factory PlexUserProfile.defaults() => PlexUserProfile(
-    autoSelectAudio: true,
-    defaultAudioAccessibility: 0,
-    autoSelectSubtitle: 0,
-    defaultSubtitleAccessibility: 0,
-    defaultSubtitleForced: 1,
-    watchedIndicator: 1,
-    mediaReviewsVisibility: 0,
-  );
 
   factory PlexUserProfile.fromJson(Map<String, dynamic> json) {
     final envelope = json['profile'];

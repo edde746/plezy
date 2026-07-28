@@ -5,31 +5,27 @@
   import AmazonIcon from "~icons/cib/amazon";
   import ChevronDownIcon from "~icons/heroicons/chevron-down-solid";
   import WindowsIcon from "./WindowsIcon.svelte";
+  import { AMAZON_URL, linuxArchitectures, releaseAsset, storeOptions } from "$lib/content/downloads";
 
-  const linuxArchitectures = [
-    {
-      label: "x64 (Intel/AMD)",
-      formats: [
-        { label: ".deb (Debian/Ubuntu)", url: "https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb" },
-        { label: ".rpm (Fedora/RHEL)", url: "https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm" },
-        { label: ".pkg.tar.zst (Arch)", url: "https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst" },
-        { label: ".tar.gz (Portable)", url: "https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz" },
-      ],
-    },
-    {
-      label: "ARM64",
-      formats: [
-        { label: ".deb (Debian/Ubuntu)", url: "https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb" },
-        { label: ".rpm (Fedora/RHEL)", url: "https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm" },
-        { label: ".pkg.tar.zst (Arch)", url: "https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst" },
-        { label: ".tar.gz (Portable)", url: "https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz" },
-      ],
-    },
-  ];
-
+  const componentId = $props.id();
+  const linuxPanelId = `${componentId}-linux-downloads`;
   let linuxOpen = $state(false);
   let hovered = $state(false);
   let showDropdown = $derived(linuxOpen || hovered);
+
+  function hoverDisclosure(node: HTMLElement) {
+    const update = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') hovered = event.type === 'pointerenter';
+    };
+    node.addEventListener('pointerenter', update);
+    node.addEventListener('pointerleave', update);
+    return {
+      destroy() {
+        node.removeEventListener('pointerenter', update);
+        node.removeEventListener('pointerleave', update);
+      },
+    };
+  }
 </script>
 
 <svelte:window onclick={() => { linuxOpen = false; }} />
@@ -38,7 +34,7 @@
   <!-- Primary row -->
   <div class="store-buttons">
     <a
-      href="https://apps.apple.com/us/app/id6754315964"
+      href={storeOptions.ios.url}
       target="_blank"
       rel="noopener noreferrer"
       class="store-button"
@@ -48,7 +44,7 @@
     </a>
 
     <a
-      href="https://play.google.com/store/apps/details?id=com.edde746.plezy"
+      href={storeOptions.android.url}
       target="_blank"
       rel="noopener noreferrer"
       class="store-button"
@@ -58,7 +54,7 @@
     </a>
 
     <a
-      href="https://www.amazon.com/gp/product/B0GK65CVS1"
+      href={AMAZON_URL}
       target="_blank"
       rel="noopener noreferrer"
       class="store-button"
@@ -71,7 +67,7 @@
   <!-- Desktop row -->
   <div class="desktop-buttons">
     <a
-      href="https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe"
+      href={releaseAsset("plezy-windows-installer.exe")}
       class="desktop-button"
     >
       <WindowsIcon />
@@ -79,7 +75,7 @@
     </a>
 
     <a
-      href="https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg"
+      href={releaseAsset("plezy-macos.dmg")}
       class="desktop-button"
     >
       <AppleIcon />
@@ -87,17 +83,12 @@
     </a>
 
     <!-- Linux dropdown -->
-    <div
-      class="linux-control"
-      role="group"
-      onpointerenter={(e) => { if (e.pointerType === 'mouse') hovered = true; }}
-      onpointerleave={(e) => { if (e.pointerType === 'mouse') hovered = false; }}
-    >
+    <div class="linux-control" use:hoverDisclosure>
       <button
         type="button"
         onclick={(e) => { e.stopPropagation(); linuxOpen = !linuxOpen; }}
         aria-expanded={showDropdown}
-        aria-haspopup="true"
+        aria-controls={linuxPanelId}
         class="desktop-button linux-button"
         class:active={showDropdown}
       >
@@ -109,17 +100,19 @@
       </button>
 
       <div
-        role="menu"
+        id={linuxPanelId}
         class="linux-menu"
         class:open={showDropdown}
+        aria-hidden={!showDropdown}
+        inert={!showDropdown}
       >
         {#each linuxArchitectures as arch, i}
           {#if i > 0}
-            <div class="linux-separator"></div>
+            <div class="linux-separator" aria-hidden="true"></div>
           {/if}
           <div class="linux-arch-label">{arch.label}</div>
           {#each arch.formats as format}
-            <a href={format.url} role="menuitem" onclick={() => { linuxOpen = false; }} class="linux-menu-item">
+            <a href={format.url} onclick={() => { linuxOpen = false; }} class="linux-menu-item">
               {format.label}
             </a>
           {/each}
@@ -170,7 +163,6 @@
   .store-button:focus-visible {
     border-radius: var(--radius-md);
     background: #fff;
-    outline: none;
   }
 
   .store-button :global(svg) {
@@ -188,7 +180,6 @@
   .linux-button.active {
     color: var(--color-text);
     background: var(--color-surface-hover);
-    outline: none;
   }
 
   .desktop-button:hover,
@@ -278,7 +269,6 @@
   .linux-menu-item:focus-visible {
     color: var(--color-text);
     background: rgb(237 237 237 / 0.12);
-    outline: none;
   }
 
   @media (max-width: 460px) {

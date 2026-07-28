@@ -83,24 +83,6 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
   FocusNode? get widgetFocusNode => widget.focusNode;
 
   @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableListTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     // When hovered/focused with a custom hoverColor, use onError-style foreground
     // to keep text readable against the colored background.
@@ -213,24 +195,6 @@ class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>>
   FocusNode? get widgetFocusNode => widget.focusNode;
 
   @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableRadioListTile<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return ClickableCursor(
       enabled: widget.enabled ?? true,
@@ -317,24 +281,6 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
   FocusNode? get widgetFocusNode => widget.focusNode;
 
   @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableSwitchListTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return ClickableCursor(
       enabled: widget.onChanged != null,
@@ -397,24 +343,6 @@ class _FocusableCheckboxListTileState extends State<FocusableCheckboxListTile>
     with FocusableTileStateMixin<FocusableCheckboxListTile> {
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableCheckboxListTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {

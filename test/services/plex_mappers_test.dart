@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -5,11 +8,127 @@ import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/plex_mappers.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 const _serverId = 'plex-machine-1';
 const _serverName = 'Home';
 
+void _expectSafePlexMapperEvent(
+  SentryEvent event, {
+  required Iterable<String> responseMarkers,
+  required int topLevelFieldCount,
+}) {
+  final eventJson = event.toJson();
+  final serializedEvent = jsonEncode(eventJson);
+  for (final marker in responseMarkers) {
+    expect(serializedEvent, isNot(contains(marker)), reason: marker);
+  }
+
+  final contexts = Map<String, dynamic>.from(eventJson['contexts'] as Map);
+  expect(contexts.containsKey('json'), isFalse);
+  expect(Map<String, dynamic>.from(contexts['plex_mapper'] as Map), {
+    'backend': 'plex',
+    'dto': 'PlexMetadataDto',
+    'topLevelFieldCount': topLevelFieldCount,
+  });
+
+  final exception = Map<String, dynamic>.from(((eventJson['exception'] as Map)['values'] as List).single as Map);
+  expect(exception['type'], contains('TypeError'));
+  final stackTrace = Map<String, dynamic>.from(exception['stacktrace'] as Map);
+  expect(stackTrace['frames'], isNotEmpty);
+}
+
 void main() {
+  group('Plex metadata Sentry diagnostics', () {
+    late Completer<SentryEvent> capturedEvent;
+
+    setUp(() async {
+      capturedEvent = Completer<SentryEvent>();
+      await Sentry.init((options) {
+        options
+          ..dsn = 'https://public@example.com/1'
+          ..beforeSend = (event, hint) {
+            capturedEvent.complete(event);
+            return null;
+          };
+      });
+      addTearDown(Sentry.close);
+    });
+
+    test('captures only a closed projection and rethrows malformed metadata', () async {
+      const responseMarkers = [
+        'cc004-rating-marker',
+        'cc004-title-marker',
+        'cc004-summary-marker',
+        'cc004-unmodeled-key-marker',
+        'cc004-nested-marker',
+        'cc004-file-marker',
+      ];
+      final malformedMetadata = <String, dynamic>{
+        'ratingKey': responseMarkers[0],
+        'title': responseMarkers[1],
+        'summary': responseMarkers[2],
+        responseMarkers[3]: {'value': responseMarkers[4]},
+        'Media': [
+          {
+            'id': 1,
+            'Part': [
+              {'id': 1, 'file': responseMarkers[5]},
+            ],
+          },
+        ],
+        'guid': 7,
+      };
+
+      expect(() => PlexMetadataDto.fromJson(malformedMetadata), throwsA(isA<TypeError>()));
+
+      final event = await capturedEvent.future;
+      _expectSafePlexMapperEvent(event, responseMarkers: responseMarkers, topLevelFieldCount: malformedMetadata.length);
+    });
+
+    test('captures diagnostics while a hub omits only the malformed sibling', () async {
+      const responseMarkers = [
+        'cc004-hub-rating-marker',
+        'cc004-hub-title-marker',
+        'cc004-hub-summary-marker',
+        'cc004-hub-unmodeled-key-marker',
+        'cc004-hub-nested-marker',
+        'cc004-hub-file-marker',
+      ];
+      final malformedMetadata = <String, dynamic>{
+        'ratingKey': responseMarkers[0],
+        'title': responseMarkers[1],
+        'summary': responseMarkers[2],
+        responseMarkers[3]: {'value': responseMarkers[4]},
+        'Media': [
+          {
+            'id': 1,
+            'Part': [
+              {'id': 1, 'file': responseMarkers[5]},
+            ],
+          },
+        ],
+        'guid': 7,
+      };
+
+      final hub = PlexMappers.mediaHubFromJson({
+        'key': '/hubs/cc004',
+        'title': 'Synthetic hub',
+        'type': 'movie',
+        'Metadata': [
+          {'ratingKey': 'valid-sibling', 'type': 'movie', 'title': 'Valid sibling'},
+          malformedMetadata,
+        ],
+      });
+
+      expect(hub.items, hasLength(1));
+      expect(hub.items.single.id, 'valid-sibling');
+      expect(hub.items.single.title, 'Valid sibling');
+
+      final event = await capturedEvent.future;
+      _expectSafePlexMapperEvent(event, responseMarkers: responseMarkers, topLevelFieldCount: malformedMetadata.length);
+    });
+  });
   test('PlexMetadataDto accepts string ratings', () {
     final dto = PlexMetadataDto.fromJson({
       'ratingKey': '1',
@@ -169,6 +288,21 @@ void main() {
       // Server-tagging.
       expect(item.serverId, _serverId);
       expect(item.serverName, _serverName);
+    });
+
+    test('normalizes aggregate watch counts off leaf items', () {
+      final item = PlexMappers.mediaItemFromJson({
+        'ratingKey': 'leaf-with-counts',
+        'type': 'movie',
+        'viewCount': 0,
+        'leafCount': 1,
+        'viewedLeafCount': 1,
+      }, serverId: ServerId(_serverId));
+
+      expect(item.leafCount, 1);
+      expect(item.viewedLeafCount, isNull);
+      expect(item.isWatched, isFalse);
+      expect(item.unwatchedCount, isNull);
     });
   });
 

@@ -19,12 +19,12 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
     _autoPipEnteringCallback = null;
   }
 
-  /// Initialize VideoFilterManager and VideoPIPManager if not already set up.
+  /// Initialize VideoFilterManager and the PiP methods if not already set up.
   /// Called from both live TV and VOD playback paths.
   Future<void> _initVideoFilterAndPip() async {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
-    if (_videoFilterManager != null && _videoPIPManager != null) {
+    if (_videoFilterManager != null && _pipInitialized) {
       _attachPipStateListener();
       return;
     }
@@ -44,17 +44,91 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
       unawaited(_videoFilterManager!.updateVideoFilter());
     }
 
-    _videoPIPManager ??= VideoPIPManager(player: currentPlayer, initialPlayerSize: initialPlayerSize);
-    _videoPIPManager!.onBeforeEnterPip = _preparePipFiltersForEntry;
+    _pipInitialized = true;
     _attachPipStateListener();
   }
 
   Future<void> _togglePIPMode() async {
-    final result = await _videoPIPManager?.togglePIP();
-    if (result != null && !result.$1 && mounted) {
-      _restorePipFiltersAfterExit();
-      showErrorSnackBar(context, result.$2 ?? t.videoControls.pipFailed);
+    if (!_pipInitialized) return;
+
+    final supported = await PipService.isSupported();
+    if (!supported) {
+      _onPipRequestFailed('PiP not supported on this device');
+      return;
     }
+
+    // If PiP is already active, exit it
+    if (PipService().isPipActive.value) {
+      await PipService.exit();
+      return;
+    }
+
+    // Reset video filter to contain mode before entering PiP. Android, iOS,
+    // and macOS all reuse the inline video surface/layer for PiP.
+    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+      if (_pipInitialized) _preparePipFiltersForEntry();
+      // Wait a frame for the filter change to take effect
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+
+    final dims = await _getVideoDimensions();
+    final result = await PipService.enter(width: dims.$1, height: dims.$2);
+    if (!result.$1) _onPipRequestFailed(result.$2);
+  }
+
+  void _onPipRequestFailed(String? error) {
+    if (!mounted) return;
+    _restorePipFiltersAfterExit();
+    showErrorSnackBar(context, error ?? t.videoControls.pipFailed);
+  }
+
+  Future<void> _updateAutoPipState({required bool isPlaying}) async {
+    if (!_pipInitialized) return;
+
+    if (!isPlaying) {
+      await PipService.setAutoPipReady(ready: false);
+      return;
+    }
+
+    final dims = await _getVideoDimensions();
+    await PipService.setAutoPipReady(ready: true, width: dims.$1, height: dims.$2);
+  }
+
+  /// Get current video dimensions (display or storage or fallback to viewport)
+  Future<(int? width, int? height)> _getVideoDimensions() async {
+    final currentPlayer = player;
+    int? width;
+    int? height;
+
+    try {
+      final dwidth = await currentPlayer?.getProperty('dwidth');
+      final dheight = await currentPlayer?.getProperty('dheight');
+      if (dwidth != null && dheight != null) {
+        width = int.tryParse(dwidth);
+        height = int.tryParse(dheight);
+      }
+    } catch (e) {
+      appLogger.d('PiP: dwidth/dheight unavailable', error: e);
+    }
+
+    if (width == null || height == null) {
+      try {
+        final videoWidth = await currentPlayer?.getProperty('width');
+        final videoHeight = await currentPlayer?.getProperty('height');
+        if (videoWidth != null && videoHeight != null) {
+          width = int.tryParse(videoWidth);
+          height = int.tryParse(videoHeight);
+        }
+      } catch (e) {
+        appLogger.d('PiP: width/height unavailable', error: e);
+      }
+    }
+
+    final viewport = _lastVideoLayoutPlayer == currentPlayer ? _lastVideoLayoutSize : null;
+    width ??= viewport?.width.toInt();
+    height ??= viewport?.height.toInt();
+
+    return (width, height);
   }
 
   void _preparePipFiltersForEntry() {
@@ -92,11 +166,11 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
       return;
     }
 
-    final isInPip = _videoPIPManager?.isPipActive.value ?? PipService().isPipActive.value;
+    final isInPip = PipService().isPipActive.value;
     _setAndroidAutoPipTransitionInFlight(false, reason: 'pip_state_changed');
     _recordLifecycleState('pip_state_changed', action: isInPip ? 'entered' : 'exited');
 
-    if (_videoPIPManager == null || _videoFilterManager == null) return;
+    if (!_pipInitialized || _videoFilterManager == null) return;
 
     if (isInPip) {
       _preparePipFiltersForEntry();

@@ -56,6 +56,12 @@ JNIEXPORT void JNICALL Java_com_edde746_plezy_libass_Ass_nativeAssAddFont(
   }
 }
 
+JNIEXPORT void JNICALL Java_com_edde746_plezy_libass_Ass_nativeAssClearFonts(JNIEnv* env, jclass clazz, jlong ass) {
+  if (ass) {
+    ass_clear_fonts((ASS_Library*)ass);
+  }
+}
+
 JNIEXPORT void JNICALL Java_com_edde746_plezy_libass_Ass_nativeAssDeinit(JNIEnv* env, jclass clazz, jlong ass) {
   if (ass) {
     ass_library_done((ASS_Library*)ass);

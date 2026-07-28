@@ -11,7 +11,7 @@ import 'package:plezy/utils/download_version_utils.dart';
 import 'package:plezy/media/episode_collection.dart';
 import '../test_helpers/media_items.dart';
 
-MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCount}) => testMediaItem(
+MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCount, int? childCount}) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.season,
@@ -19,6 +19,7 @@ MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCoun
   index: index,
   leafCount: leafCount,
   viewedLeafCount: viewedLeafCount,
+  childCount: childCount,
 );
 
 MediaItem _episode(
@@ -160,6 +161,12 @@ void main() {
     final season3 = _season('season-3', index: 3, leafCount: 5, viewedLeafCount: 0);
 
     expect(firstUnwatchedSeasonIndex([special, season1, season2, season3]), 2);
+  });
+
+  test('firstUnwatchedSeasonIndex uses direct episode count when the leaf total is missing', () {
+    final season = _season('season-1', childCount: 5, viewedLeafCount: 2);
+
+    expect(firstUnwatchedSeasonIndex([season]), 0);
   });
 
   test('firstUnwatchedSeasonIndex falls back to specials only when no regular season qualifies', () {

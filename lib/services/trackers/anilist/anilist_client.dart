@@ -408,6 +408,8 @@ class AnilistClient implements DisposableTrackerClient {
 
     final res = await send();
 
+    // Rate limits are typed here and in Trakt only; MAL and Simkl surface a 429
+    // as a plain TrackerApiException.
     if (res.statusCode == 429) {
       throw TrackerRateLimitException(
         service: TrackerService.anilist,
@@ -425,12 +427,16 @@ class AnilistClient implements DisposableTrackerClient {
       );
     }
     if (res.statusCode != 200) {
-      throw TrackerApiException(service: TrackerService.anilist, statusCode: res.statusCode, body: res.body);
+      throw TrackerApiException(service: TrackerService.anilist, statusCode: res.statusCode);
     }
     final decoded = json.decode(res.body) as Map<String, dynamic>;
     final errors = decoded['errors'];
     if (errors is List && errors.isNotEmpty) {
-      throw TrackerApiException(service: TrackerService.anilist, statusCode: res.statusCode, body: json.encode(errors));
+      throw TrackerApiException(
+        service: TrackerService.anilist,
+        statusCode: res.statusCode,
+        category: TrackerApiFailureCategory.graphqlErrors,
+      );
     }
     final data = decoded['data'];
     return data is Map ? data.cast<String, dynamic>() : <String, dynamic>{};

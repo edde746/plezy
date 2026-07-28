@@ -1,14 +1,13 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  String? _absolutizeImagePath(String? path);
+mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
   Future<List<Map<String, dynamic>>> _safeFetchItemsArray(
     String path,
     Map<String, dynamic> queryParameters, {
     // ignore: unused_element_parameter
     _HubRetryPolicy? retry,
+    // ignore: unused_element_parameter
+    AbortController? abort,
   });
 
   /// Returns `true` when this server has Live TV configured (channels
@@ -171,15 +170,20 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
       allowVideoStreamCopy: true,
       allowAudioStreamCopy: true,
     );
-    final sources = info?['MediaSources'];
-    final source = sources is List && sources.isNotEmpty && sources.first is Map<String, dynamic>
-        ? sources.first as Map<String, dynamic>
-        : null;
-    if (source == null) return null;
+    final sources = info['MediaSources'] as List;
+    if (sources.isEmpty) return null;
+    final firstSource = sources.first;
+    if (firstSource is! Map<String, dynamic>) {
+      throw const PlaybackException(
+        'Jellyfin returned invalid Live TV playback data',
+        reason: PlaybackFailureReason.invalidPlaybackData,
+      );
+    }
+    final source = firstSource;
 
     String? nonEmptyString(dynamic raw) => raw is String && raw.isNotEmpty ? raw : null;
 
-    var playSessionId = nonEmptyString(info?['PlaySessionId']);
+    var playSessionId = nonEmptyString(info['PlaySessionId']);
     var mediaSourceId = nonEmptyString(source['Id']);
     var liveStreamId = nonEmptyString(source['LiveStreamId']);
     final rawUrl = nonEmptyString(source['TranscodingUrl']);
@@ -230,43 +234,55 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   @override
   FavoriteChannelPersistenceMode get favoritePersistenceMode => FavoriteChannelPersistenceMode.serverSlice;
 
+  Future<List<FavoriteChannel>> _readPersistedFavoriteChannels() =>
+      _client._favoritesRepository.read(key: _favoritesPrefsKey, legacyKey: _legacyFavoritesPrefsKey);
+
   /// Local list is the source of truth (preserves order + display fields).
   /// Server-side `IsFavorite` is mirrored on writes via [setFavoriteChannels].
   @override
-  Future<List<FavoriteChannel>> fetchFavoriteChannels() async {
-    try {
-      return await _client._favoritesRepository.read(key: _favoritesPrefsKey, legacyKey: _legacyFavoritesPrefsKey);
-    } catch (e) {
-      appLogger.e('Failed to read Jellyfin favorite channels', error: e);
-      return const [];
-    }
-  }
+  Future<List<FavoriteChannel>> fetchFavoriteChannels() => _readPersistedFavoriteChannels();
 
   @override
   Future<void> setFavoriteChannels(List<FavoriteChannel> channels) async {
-    try {
-      final previous = await fetchFavoriteChannels();
-      final previousIds = previous.map((c) => c.id).toSet();
-      final newIds = channels.map((c) => c.id).toSet();
+    final previous = await _readPersistedFavoriteChannels();
+    final previousIds = previous.map((channel) => channel.id).toSet();
+    final requestedIds = channels.map((channel) => channel.id).toSet();
+    final confirmedIds = {...previousIds};
+    Object? firstError;
+    StackTrace? firstStackTrace;
 
-      for (final id in newIds.difference(previousIds)) {
-        try {
-          await _client._setItemFavorite(id, true);
-        } catch (e) {
-          appLogger.w('Failed to mark Jellyfin channel $id favorite: $e');
+    Future<void> applyMutation(String id, bool isFavorite) async {
+      try {
+        await _client._setItemFavorite(id, isFavorite);
+        if (isFavorite) {
+          confirmedIds.add(id);
+        } else {
+          confirmedIds.remove(id);
         }
+      } catch (error, stackTrace) {
+        firstError ??= error;
+        firstStackTrace ??= stackTrace;
+        appLogger.w('Failed to update a Jellyfin favorite channel', error: error, stackTrace: stackTrace);
       }
-      for (final id in previousIds.difference(newIds)) {
-        try {
-          await _client._setItemFavorite(id, false);
-        } catch (e) {
-          appLogger.w('Failed to unmark Jellyfin channel $id favorite: $e');
-        }
-      }
+    }
 
-      await _client._favoritesRepository.write(_favoritesPrefsKey, channels);
-    } catch (e) {
-      appLogger.e('Failed to save Jellyfin favorite channels', error: e);
+    for (final id in requestedIds.difference(previousIds)) {
+      await applyMutation(id, true);
+    }
+    for (final id in previousIds.difference(requestedIds)) {
+      await applyMutation(id, false);
+    }
+
+    final confirmed = <FavoriteChannel>[
+      for (final channel in channels)
+        if (confirmedIds.contains(channel.id)) channel,
+      for (final channel in previous)
+        if (!requestedIds.contains(channel.id) && confirmedIds.contains(channel.id)) channel,
+    ];
+    await _client._favoritesRepository.write(_favoritesPrefsKey, confirmed);
+
+    if (firstError != null) {
+      Error.throwWithStackTrace(firstError!, firstStackTrace!);
     }
   }
 }

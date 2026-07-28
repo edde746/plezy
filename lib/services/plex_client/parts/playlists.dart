@@ -1,31 +1,8 @@
 part of '../../plex_client.dart';
 
-mixin _PlexPlaylistMethods on MediaServerCacheMixin {
+mixin _PlexPlaylistMethods on _PlexClientInternals {
   static const int _playlistPageSize = 200;
   static const int _defaultPlaylistContainerSize = 100;
-
-  FailoverHttpClient get _http;
-  @override
-  ServerId get serverId;
-  @override
-  String? get serverName;
-
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    AbortController? abort,
-    // ignore: unused_element_parameter
-    bool allowEndpointFailover = true,
-  });
-
-  Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
-  Map<String, dynamic> _buildPaginationParams(int? start, int? size);
-
-  Future<_LibraryContentResult> _fetchPaginatedList(String path, {int? start, int? size, AbortController? abort});
 
   ({List<PlexPlaylistDto> items, int totalSize}) _extractPlaylistListResult(
     MediaServerResponse response, {
@@ -33,30 +10,15 @@ mixin _PlexPlaylistMethods on MediaServerCacheMixin {
     int? size,
   });
 
-  Future<bool> _wrapBoolApiCall(Future<MediaServerResponse> Function() apiCall, String errorMessage);
-
-  Future<String> buildMetadataUri(String ratingKey);
-
   Future<_LibraryContentResult> _getPlaylist(String playlistId, {int? start, int? size, AbortController? abort}) =>
       _fetchPaginatedList('/playlists/$playlistId/items', start: start, size: size, abort: abort);
 
   Future<List<PlexPlaylistDto>> _getPlaylists({String playlistType = 'video', bool? smart}) async {
     try {
-      final all = <PlexPlaylistDto>[];
-      var start = 0;
-      while (true) {
-        final page = await _getPlaylistsPage(
-          playlistType: playlistType,
-          smart: smart,
-          start: start,
-          size: _playlistPageSize,
-        );
-        if (page.items.isEmpty) break;
-        all.addAll(page.items);
-        start += page.items.length;
-        if (start >= page.totalSize) break;
-      }
-      return all;
+      return await drainPages<PlexPlaylistDto>((start, size) async {
+        final page = await _getPlaylistsPage(playlistType: playlistType, smart: smart, start: start, size: size);
+        return LibraryPage(items: page.items, totalCount: page.totalSize, offset: start);
+      }, pageSize: _playlistPageSize);
     } catch (e, st) {
       appLogger.e('Failed to get playlists', error: e, stackTrace: st);
       return [];

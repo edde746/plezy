@@ -4,19 +4,30 @@ tags:
   - e2e
   - library
 ---
-- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/ensure_onboarded.yaml
 - tapOn: "(?s)^Libraries.*"
+- tapOn: "Browse"
 - extendedWaitUntil:
-    visible: "Maestro Movies"
+    visible: "(?s).*Maestro Movies.*"
     timeout: 15000
 - extendedWaitUntil:
-    visible: "(?s).*Zulu Zone 4$"
+    visible: "(?s).*Alpha Archive.*"
     timeout: 15000
-- tapOn: "(?s).*Zulu Zone 4$"
+- tapOn: "(?s).*Alpha Archive.*"
 - extendedWaitUntil:
     visible: "Overview"
     timeout: 15000
 - assertVisible: "A deterministic title for TV alphabet focus coverage."
 - assertVisible: "Play"
-- back
-- assertVisible: "Maestro Movies"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          point: "6%, 9%"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+- assertVisible: "(?s).*Maestro Movies.*"

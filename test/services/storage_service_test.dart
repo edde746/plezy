@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
@@ -7,6 +8,19 @@ import 'package:plezy/services/storage_service.dart';
 
 import '../test_helpers/prefs.dart';
 
+class _GatedPreferencesService extends BaseSharedPreferencesService {
+  _GatedPreferencesService(this.started, this.release);
+
+  final Completer<void> started;
+  final Future<void> release;
+
+  @override
+  Future<void> onInit() async {
+    started.complete();
+    await release;
+  }
+}
+
 void main() {
   setUp(resetSharedPreferencesForTest);
 
@@ -15,6 +29,33 @@ void main() {
       final a = await StorageService.getInstance();
       final b = await StorageService.getInstance();
       expect(identical(a, b), isTrue);
+    });
+
+    test('coalesces callers until asynchronous initialization completes', () async {
+      final started = Completer<void>();
+      final release = Completer<void>();
+      var constructorCalls = 0;
+
+      Future<_GatedPreferencesService> acquire() => BaseSharedPreferencesService.initializeInstance(() {
+        constructorCalls++;
+        return _GatedPreferencesService(started, release.future);
+      });
+
+      final first = acquire();
+      await started.future;
+      var secondCompleted = false;
+      final second = acquire().then((instance) {
+        secondCompleted = true;
+        return instance;
+      });
+      await Future<void>.delayed(Duration.zero);
+
+      expect(secondCompleted, isFalse);
+      expect(constructorCalls, 1);
+
+      release.complete();
+      final instances = await Future.wait([first, second]);
+      expect(identical(instances.first, instances.last), isTrue);
     });
 
     test('reset rebuilds against current SharedPreferences', () async {

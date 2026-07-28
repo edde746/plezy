@@ -138,28 +138,29 @@ class DoviConvertingTrackOutput(
 
   override fun transformSample(inputLength: Int, flags: Int): Int {
     val processStartNs = System.nanoTime()
-    outputIsProcessed = if ((flags and C.BUFFER_FLAG_ENCRYPTED) != 0) {
+    if ((flags and C.BUFFER_FLAG_ENCRYPTED) != 0) {
+      outputIsProcessed = false
       if (!loggedEncryptedSupplementalPassthrough && (flags and C.BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA) != 0) {
         loggedEncryptedSupplementalPassthrough = true
         logWarn("Encrypted supplemental sample encountered, passing raw sample")
       }
-      false
-    } else {
-      try {
-        processSampleData(flags, inputLength)
-        true
-      } catch (e: Exception) {
-        logError("NAL processing failed, passing raw sample", e)
-        false
-      }
-    }
-    val transformedLength = if (outputIsProcessed) outputLen else inputLength
-    if (outputIsProcessed) {
-      recordSampleProcessing((System.nanoTime() - processStartNs) / 1_000L)
+      return if (inputLength == 0) -1 else inputLength
     }
 
-    // Skip empty samples (all NALs were DV layers) — don't confuse the decoder.
-    return if (transformedLength == 0) -1 else transformedLength
+    return try {
+      if (!processSampleData(flags, inputLength)) {
+        outputIsProcessed = true
+        -1
+      } else {
+        outputIsProcessed = true
+        recordSampleProcessing((System.nanoTime() - processStartNs) / 1_000L)
+        if (outputLen == 0) -1 else outputLen
+      }
+    } catch (e: Exception) {
+      outputIsProcessed = false
+      logError("NAL processing failed, passing raw sample", e)
+      if (inputLength == 0) -1 else inputLength
+    }
   }
 
   /**
@@ -169,23 +170,21 @@ class DoviConvertingTrackOutput(
    * [4-byte big-endian main sample size][main sample][supplemental data].
    * Only the main sample contains video NALs and should be rewritten.
    */
-  private fun processSampleData(flags: Int, dataLen: Int) {
+  private fun processSampleData(flags: Int, dataLen: Int): Boolean {
     if ((flags and C.BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA) == 0) {
       processNalUnits(0, dataLen)
-      return
+      return true
     }
 
     if (dataLen < 4) {
-      logWarn("Bad supplemental sample: ${dataLen}B is too small")
-      copyRawSample(dataLen)
-      return
+      logWarn("Bad supplemental sample: ${dataLen}B is too small; dropping sample")
+      return false
     }
 
     val mainSampleLen = readInt32BE(inputBuffer, 0)
     if (mainSampleLen < 0 || mainSampleLen > dataLen - 4) {
-      logWarn("Bad supplemental sample: mainLen=$mainSampleLen total=$dataLen")
-      copyRawSample(dataLen)
-      return
+      logWarn("Bad supplemental sample: mainLen=$mainSampleLen total=$dataLen; dropping sample")
+      return false
     }
 
     val supplementalLen = dataLen - 4 - mainSampleLen
@@ -200,10 +199,7 @@ class DoviConvertingTrackOutput(
     processNalUnits(4, mainSampleLen)
 
     val processedMainLen = outputLen
-    if (processedMainLen == 0) {
-      outputLen = 0
-      return
-    }
+    if (processedMainLen == 0) return true
 
     ensureOutputCapacity(4 + processedMainLen + supplementalLen)
     System.arraycopy(outputBuf, 0, outputBuf, 4, processedMainLen)
@@ -219,6 +215,7 @@ class DoviConvertingTrackOutput(
           "supplemental=${supplementalLen}B, total=${dataLen}B -> ${outputLen}B"
       )
     }
+    return true
   }
 
   /**
@@ -609,12 +606,6 @@ class DoviConvertingTrackOutput(
     ((buf[offset + 1].toInt() and 0xFF) shl 16) or
     ((buf[offset + 2].toInt() and 0xFF) shl 8) or
     (buf[offset + 3].toInt() and 0xFF)
-
-  private fun copyRawSample(dataLen: Int) {
-    ensureOutputCapacity(dataLen)
-    System.arraycopy(inputBuffer, 0, outputBuf, 0, dataLen)
-    outputLen = dataLen
-  }
 
   private fun formatBytes(data: ByteArray, offset: Int, length: Int): String {
     val end = minOf(data.size, offset + length)

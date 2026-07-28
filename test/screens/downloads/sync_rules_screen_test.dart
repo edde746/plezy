@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +28,7 @@ import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
 import '../../test_helpers/media_items.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 
 PlexConnection _plexConnection() {
   return PlexConnection(
@@ -80,6 +82,16 @@ MediaItem _show(ServerId serverId, String ratingKey, String title) {
     id: ratingKey,
     backend: MediaBackend.plex,
     kind: MediaKind.show,
+    title: title,
+    serverId: serverId,
+  );
+}
+
+MediaItem _playlist(ServerId serverId, String ratingKey, String title) {
+  return testMediaItem(
+    id: ratingKey,
+    backend: MediaBackend.plex,
+    kind: MediaKind.playlist,
     title: title,
     serverId: serverId,
   );
@@ -141,6 +153,15 @@ void main() {
     );
   }
 
+  Future<void> insertPlaylistRule(ServerId serverId, String ratingKey) {
+    return downloadProvider.createSyncRule(
+      serverId: serverId,
+      ratingKey: ratingKey,
+      targetType: 'playlist',
+      episodeCount: 0,
+    );
+  }
+
   Future<void> pumpScreen(WidgetTester tester, {bool keyboardMode = false}) async {
     downloadProvider.debugSeedState(
       metadata: {
@@ -148,6 +169,7 @@ void main() {
         'jf-machine:show-2': _show(ServerId('jf-machine'), 'show-2', 'Jellyfin Show'),
         'auth-jf:show-3': _show(ServerId('auth-jf'), 'show-3', 'Auth Show'),
         'unknown-srv:show-4': _show(ServerId('unknown-srv'), 'show-4', 'Unknown Show'),
+        'playlist-srv:playlist-1': _playlist(ServerId('playlist-srv'), 'playlist-1', 'Road Trip'),
       },
     );
 
@@ -213,7 +235,7 @@ void main() {
     addTearDown(authClient.close);
     serverManager.debugRegisterJellyfinClientForTesting(authClient, online: false);
     serverManager.debugMarkAuthErrorForTesting(ServerId('auth-jf'));
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
 
     await insertRule(ServerId('plex-srv'), 'show-1');
     await insertRule(ServerId('jf-machine'), 'show-2');
@@ -233,7 +255,7 @@ void main() {
   });
 
   testWidgets('removes orphaned sync rules from the sync rules screen', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester);
@@ -255,8 +277,60 @@ void main() {
     expect(find.text('No sync rules'), findsOneWidget);
   });
 
-  testWidgets('provider rebuilds reuse the connection stream subscription', (tester) async {
+  testWidgets('playlist rule removal exposes and runs the destructive cleanup choice', (tester) async {
     multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    await insertPlaylistRule(ServerId('playlist-srv'), 'playlist-1');
+    final ruleKey = downloadProvider.syncRuleKeyFor(ServerId('playlist-srv'), 'playlist-1');
+    await db.markSyncRuleDownloadLinksInitialized(ruleKey);
+
+    await pumpScreen(tester);
+    await tester.drag(find.text('Road Trip'), const Offset(-140, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('sync_rule_swipe_delete')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Stop syncing "Road Trip"?'), findsOneWidget);
+    final toggle = tester.widget<SwitchListTile>(
+      find.descendant(
+        of: find.byKey(const ValueKey('delete_sync_rule_downloads')),
+        matching: find.byType(SwitchListTile),
+      ),
+    );
+    expect(toggle.value, isFalse);
+
+    final removalCompleted = Completer<void>();
+    void handleRemoval() {
+      if (!downloadProvider.hasSyncRule(ruleKey) && !removalCompleted.isCompleted) {
+        removalCompleted.complete();
+      }
+    }
+
+    downloadProvider.addListener(handleRemoval);
+    addTearDown(() => downloadProvider.removeListener(handleRemoval));
+
+    await tester.tap(find.byKey(const ValueKey('delete_sync_rule_downloads')));
+    await tester.pump();
+    expect(
+      tester
+          .widget<SwitchListTile>(
+            find.descendant(
+              of: find.byKey(const ValueKey('delete_sync_rule_downloads')),
+              matching: find.byType(SwitchListTile),
+            ),
+          )
+          .value,
+      isTrue,
+    );
+    await tester.tap(find.widgetWithText(FilledButton, 'Remove sync rule'));
+    await tester.runAsync(() => removalCompleted.future.timeout(const Duration(seconds: 5)));
+    await tester.pumpAndSettle();
+
+    expect(await db.getSyncRule(ruleKey), isNull);
+    expect(find.text('Sync rule and associated downloads removed'), findsOneWidget);
+  });
+
+  testWidgets('provider rebuilds reuse the connection stream subscription', (tester) async {
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
     await pumpScreen(tester);
 
@@ -268,7 +342,7 @@ void main() {
   });
 
   testWidgets('does not autofocus the first sync rule in pointer mode', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -279,7 +353,7 @@ void main() {
   });
 
   testWidgets('keyboard navigation reaches and toggles the sync rule switch', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester, keyboardMode: true);
@@ -297,7 +371,7 @@ void main() {
   });
 
   testWidgets('setting sync rule count to zero removes the rule', (tester) async {
-    multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    multiServerProvider = testMultiServerProvider(serverManager);
     await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester, keyboardMode: true);

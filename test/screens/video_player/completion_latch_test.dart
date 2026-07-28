@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player/completion_latch.dart';
 
 void main() {
@@ -75,6 +76,45 @@ void main() {
     expect(l.triggered, isTrue);
     l.rearmIfClear(promptVisible: false, countdownActive: false);
     expect(l.triggered, isFalse);
+  });
+
+  group('completionNavigationAction', () {
+    test('presents a resolved next item', () {
+      expect(
+        completionNavigationAction(hasNext: true, adjacentStatus: QueueNavigationStatus.found),
+        CompletionNavigationAction.presentNext,
+      );
+    });
+
+    test('retries queued movie adjacency instead of exiting after a load failure', () {
+      expect(
+        completionNavigationAction(hasNext: false, adjacentStatus: QueueNavigationStatus.failed),
+        CompletionNavigationAction.retryAdjacent,
+      );
+    });
+
+    test('does not exit while the initial adjacency load is unresolved', () {
+      // VideoPlayerScreen initializes adjacency status to failed until its
+      // fire-and-forget first load commits a resolved status.
+      expect(
+        completionNavigationAction(hasNext: false, adjacentStatus: QueueNavigationStatus.failed),
+        CompletionNavigationAction.retryAdjacent,
+      );
+    });
+
+    test('exits a standalone movie after adjacency resolves unavailable', () {
+      expect(
+        completionNavigationAction(hasNext: false, adjacentStatus: QueueNavigationStatus.unavailable),
+        CompletionNavigationAction.exit,
+      );
+    });
+
+    test('exits only after the queue boundary was resolved', () {
+      expect(
+        completionNavigationAction(hasNext: false, adjacentStatus: QueueNavigationStatus.boundary),
+        CompletionNavigationAction.exit,
+      );
+    });
   });
 
   group('classifyEofSignal', () {

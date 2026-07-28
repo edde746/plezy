@@ -109,6 +109,20 @@ class GamepadDuplicateInputGuard {
   }
 }
 
+@visibleForTesting
+bool isTvosEngineOwnedGamepadButton({required bool isAppleTV, required GamepadButton button}) {
+  if (!isAppleTV) return false;
+  return switch (button) {
+    GamepadButton.dpadUp ||
+    GamepadButton.dpadDown ||
+    GamepadButton.dpadLeft ||
+    GamepadButton.dpadRight ||
+    GamepadButton.a ||
+    GamepadButton.b => true,
+    _ => false,
+  };
+}
+
 /// Service that bridges gamepad input to Flutter's focus navigation system.
 ///
 /// Listens to gamepad events from the `universal_gamepad` package and translates
@@ -380,6 +394,10 @@ class GamepadService with WindowListener {
     );
     if (!_windowFocused) {
       _logGamepadDiag('button ignored because window is not focused ${_describeGamepadButton(event)}');
+      return;
+    }
+    if (isTvosEngineOwnedGamepadButton(isAppleTV: PlatformDetector.isAppleTV(), button: event.button)) {
+      _logGamepadDiag('button ignored because tvOS engine owns its key lifecycle ${_describeGamepadButton(event)}');
       return;
     }
 

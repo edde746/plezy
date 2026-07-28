@@ -30,70 +30,22 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   Future<void> toggleFullscreen() async {
     if (!PlatformDetector.isDesktopOS()) return;
 
-    if (Platform.isMacOS) {
-      final isCurrentlyFullscreen = await MacOSWindowService.isFullscreen();
-      if (isCurrentlyFullscreen) {
-        await MacOSWindowService.exitFullscreen();
-      } else {
-        await MacOSWindowService.enterFullscreen();
-      }
-    } else if (Platform.isWindows) {
-      // Route through the native Win32 runner, which restores to the monitor
-      // the window is currently on (window_manager 0.5.1 picks the wrong one
-      // on multi-monitor setups — see issue #880). The native code also
-      // preserves maximized state internally, so no unmaximize dance here.
-      final isCurrentlyFullscreen = await NativeWindowService.isFullScreen();
-      await NativeWindowService.setFullScreen(!isCurrentlyFullscreen);
-    } else {
-      final isCurrentlyFullscreen = await windowManager.isFullScreen();
-      if (isCurrentlyFullscreen) {
-        await windowManager.setFullScreen(false);
-        if (_wasMaximized) {
-          await windowManager.maximize();
-          _wasMaximized = false;
-        }
-      } else {
-        _wasMaximized = await windowManager.isMaximized();
-        if (_wasMaximized) {
-          await windowManager.unmaximize();
-        }
-        await windowManager.setFullScreen(true);
-      }
-    }
+    final isCurrentlyFullscreen = await _platformIsFullscreen();
+    await _platformSetFullscreen(!isCurrentlyFullscreen);
   }
 
   /// Enter fullscreen, preserving maximized state on Windows/Linux for restoration on exit.
   Future<void> enterFullscreen() async {
     if (!PlatformDetector.isDesktopOS()) return;
 
-    if (Platform.isMacOS) {
-      await MacOSWindowService.enterFullscreen();
-    } else if (Platform.isWindows) {
-      await NativeWindowService.setFullScreen(true);
-    } else {
-      _wasMaximized = await windowManager.isMaximized();
-      if (_wasMaximized) {
-        await windowManager.unmaximize();
-      }
-      await windowManager.setFullScreen(true);
-    }
+    await _platformSetFullscreen(true);
   }
 
   /// Exit fullscreen, restoring maximized state if needed
   Future<void> exitFullscreen() async {
     if (!PlatformDetector.isDesktopOS()) return;
 
-    if (Platform.isMacOS) {
-      await MacOSWindowService.exitFullscreen();
-    } else if (Platform.isWindows) {
-      await NativeWindowService.setFullScreen(false);
-    } else {
-      await windowManager.setFullScreen(false);
-      if (_wasMaximized) {
-        await windowManager.maximize();
-        _wasMaximized = false;
-      }
-    }
+    await _platformSetFullscreen(false);
   }
 
   /// Exits fullscreen when the platform window is currently fullscreen.
@@ -103,15 +55,45 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   Future<bool> exitFullscreenIfActive() async {
     if (!PlatformDetector.isDesktopOS()) return false;
 
-    final isActive = Platform.isMacOS
-        ? await MacOSWindowService.isFullscreen()
-        : Platform.isWindows
-        ? await NativeWindowService.isFullScreen()
-        : await windowManager.isFullScreen();
+    final isActive = await _platformIsFullscreen();
     if (!isActive) return false;
 
-    await exitFullscreen();
+    await _platformSetFullscreen(false);
     return true;
+  }
+
+  Future<bool> _platformIsFullscreen() {
+    if (Platform.isMacOS) return MacOSWindowService.isFullscreen();
+    if (Platform.isWindows) return NativeWindowService.isFullScreen();
+    return windowManager.isFullScreen();
+  }
+
+  Future<void> _platformSetFullscreen(bool value) async {
+    if (Platform.isMacOS) {
+      if (value) {
+        await MacOSWindowService.enterFullscreen();
+      } else {
+        await MacOSWindowService.exitFullscreen();
+      }
+    } else if (Platform.isWindows) {
+      // Route through the native Win32 runner, which restores to the monitor
+      // the window is currently on (window_manager 0.5.1 picks the wrong one
+      // on multi-monitor setups — see issue #880). The native code also
+      // preserves maximized state internally, so no unmaximize dance here.
+      await NativeWindowService.setFullScreen(value);
+    } else if (value) {
+      _wasMaximized = await windowManager.isMaximized();
+      if (_wasMaximized) {
+        await windowManager.unmaximize();
+      }
+      await windowManager.setFullScreen(true);
+    } else {
+      await windowManager.setFullScreen(false);
+      if (_wasMaximized) {
+        await windowManager.maximize();
+        _wasMaximized = false;
+      }
+    }
   }
 
   void startMonitoring() {

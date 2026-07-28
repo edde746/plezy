@@ -34,7 +34,7 @@ class SimklAuthService extends DeviceCodeAuthServiceBase {
       operation: 'Simkl PIN request',
     );
     if (res.statusCode != 200) {
-      throw DeviceCodeAuthFlowException('Simkl PIN request failed: HTTP ${res.statusCode}: ${res.body}');
+      throw DeviceCodeAuthFlowException('Simkl PIN request failed: HTTP ${res.statusCode}');
     }
     final body = json.decode(res.body) as Map<String, dynamic>;
     return DeviceCode(

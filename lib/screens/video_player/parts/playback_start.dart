@@ -5,6 +5,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
+    _hasRenderedFirstFrame = false;
+    _hasFatalPlaybackError = false;
 
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {
@@ -97,6 +99,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
     // Capture providers before async gaps
     final offlineWatchService = context.read<OfflineWatchSyncService>();
+    var primaryMediaOpened = false;
 
     try {
       PlaybackContext playbackContext;
@@ -107,15 +110,17 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           database: context.read<AppDatabase>(),
         );
         playbackContext = await playbackResolver.resolve(
-          metadata: _currentMetadata,
-          selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _requestedMediaSourceId,
+          PlaybackInitializationOptions(
+            metadata: _currentMetadata,
+            selectedMediaIndex: _effectiveSelectedMediaIndex,
+            selectedMediaSourceId: _requestedMediaSourceId,
+            qualityPreset: _selectedQualityPreset,
+            selectedAudioStreamId: _selectedAudioStreamId,
+            preferredSubtitleTrack: _preferredSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+          ),
           offlineLibraryMode: true,
-          qualityPreset: _selectedQualityPreset,
-          selectedAudioStreamId: _selectedAudioStreamId,
-          preferredSubtitleTrack: _preferredSubtitleTrack,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
         );
         if (playbackContext.result.videoUrl == null) {
           throw PlaybackException(t.messages.fileInfoNotAvailable);
@@ -255,6 +260,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           play: shouldAutoPlay,
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: () => attempt.isCurrent,
+          onMediaAvailabilityChanged: (available) => primaryMediaOpened = available,
         );
         if (!openResult.didOpen || !attempt.isCurrent) return;
         if (openResult.sidecarFallbackUsed) {
@@ -301,9 +307,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
             _autoPipEnteringCallback = autoPipEnteringCallback;
             PipService.onAutoPipEntering = autoPipEnteringCallback;
-            final pipManager = _videoPIPManager;
-            if (currentPlayer.state.playing && pipManager != null) {
-              unawaited(pipManager.updateAutoPipState(isPlaying: true));
+            if (currentPlayer.state.playing) {
+              unawaited(_updateAutoPipState(isPlaying: true));
             }
           }
 
@@ -358,11 +363,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           plan: frameRatePlan,
-          resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
+          resumeAfterStartupGate: (reason) => _finishPlaybackAfterStartupGate(
             currentPlayer: currentPlayer,
             externalSubtitlePlan: externalSubtitlePlan,
             reason: reason,
-            wtOwnsStart: wtOwnsStart,
+            shouldResume: !wtOwnsStart,
+            watchTogetherOwnsStart: wtOwnsStart,
             wtStartupHold: wtStartupHold,
           ),
           playbackResumedForStartupFrame: resumeForStartupFrame,
@@ -375,14 +381,20 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
     } on PlaybackException catch (e, st) {
       appLogger.w('Playback initialization failed', error: e, stackTrace: st);
-      if (mounted) {
-        _hasFirstFrame.value = true; // Hide spinner on error
+      if (attempt.isCurrent && mounted) {
+        if (!primaryMediaOpened) {
+          _hasFatalPlaybackError = true;
+        }
+        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
         showErrorSnackBar(context, e.message);
       }
     } catch (e, st) {
       appLogger.e('Failed to start playback', error: e, stackTrace: st);
-      if (mounted) {
-        _hasFirstFrame.value = true; // Hide spinner on error
+      if (attempt.isCurrent && mounted) {
+        if (!primaryMediaOpened) {
+          _hasFatalPlaybackError = true;
+        }
+        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }

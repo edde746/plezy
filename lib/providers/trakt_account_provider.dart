@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/trackers/device_code.dart';
@@ -19,7 +20,12 @@ import '../services/trakt/trakt_sync_service.dart';
 /// Single rebind seam: `onActiveProfileChanged` loads the new profile's
 /// session and pushes it to both `TraktScrobbleService` and `TraktSyncService`.
 class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  final TraktAuthService _auth = TraktAuthService();
+  /// Each client returned by [httpClientFactory] is owned by this provider and
+  /// closed when the provider is disposed.
+  TraktAccountProvider({http.Client Function()? httpClientFactory})
+    : _auth = httpClientFactory == null ? TraktAuthService() : TraktAuthService(httpClient: httpClientFactory());
+
+  final TraktAuthService _auth;
   final TrackerAccountStore _store = trackerAccountStore(TrackerService.trakt);
 
   TrackerSession? _session;

@@ -30,62 +30,92 @@ class WakelockPlusLinuxPlugin extends WakelockPlusPlatformInterface {
           name: 'org.freedesktop.portal.Desktop',
           path: DBusObjectPath('/org/freedesktop/portal/desktop'),
         );
-    return WakelockPlusLinuxPlugin._internal(
-      dbusClient,
-      remoteObject,
-      appNameGetter,
-    );
+    return WakelockPlusLinuxPlugin._internal(dbusClient, remoteObject, appNameGetter);
   }
 
-  WakelockPlusLinuxPlugin._internal(
-    this._client,
-    this._object,
-    this._appNameGetter,
-  );
+  WakelockPlusLinuxPlugin._internal(this._client, this._object, this._appNameGetter);
 
   final DBusClient _client;
   final DBusRemoteObject _object;
   final Future<String> Function()? _appNameGetter;
   DBusObjectPath? _requestHandle;
+  bool _desiredEnabled = false;
+  Future<void> _operationTail = Future<void>.value();
 
-  Future<String> get _appName =>
-      _appNameGetter?.call() ??
-      PackageInfo.fromPlatform().then((info) => info.appName);
+  Future<String> get _appName => _appNameGetter?.call() ?? PackageInfo.fromPlatform().then((info) => info.appName);
 
-  @override
-  Future<void> toggle({required bool enable}) async {
-    if (enable) {
-      final appName = await _appName;
-      _requestHandle = await _object
-          .callMethod(
-            'org.freedesktop.portal.Inhibit',
-            'Inhibit',
-            [
-              const DBusString(''),
-              const DBusUint32(8),
-              DBusDict.stringVariant({
-                'reason': DBusString('$appName: wakelock active'),
-              }),
-            ],
-            replySignature: DBusSignature('o'),
-          )
-          .then((response) => response.returnValues.single.asObjectPath());
-    } else if (_requestHandle != null) {
-      final requestObject = DBusRemoteObject(
-        _client,
-        name: 'org.freedesktop.portal.Desktop',
-        path: _requestHandle!,
-      );
-      await requestObject.callMethod(
-        'org.freedesktop.portal.Request',
-        'Close',
-        [],
-        replySignature: DBusSignature.empty,
-      );
-      _requestHandle = null;
+  Future<DBusObjectPath> _acquire() async {
+    final appName = await _appName;
+    if (!_desiredEnabled) {
+      throw const _AcquisitionCancelled();
+    }
+
+    return _object
+        .callMethod('org.freedesktop.portal.Inhibit', 'Inhibit', [
+          const DBusString(''),
+          const DBusUint32(8),
+          DBusDict.stringVariant({'reason': DBusString('$appName: wakelock active')}),
+        ], replySignature: DBusSignature('o'))
+        .then((response) => response.returnValues.single.asObjectPath());
+  }
+
+  Future<void> _close(DBusObjectPath handle) async {
+    final requestObject = DBusRemoteObject(_client, name: 'org.freedesktop.portal.Desktop', path: handle);
+    await requestObject.callMethod('org.freedesktop.portal.Request', 'Close', [], replySignature: DBusSignature.empty);
+  }
+
+  Future<void> _reconcile() async {
+    final handle = _requestHandle;
+    if (!_desiredEnabled) {
+      if (handle == null) {
+        return;
+      }
+
+      await _close(handle);
+      if (identical(_requestHandle, handle)) {
+        _requestHandle = null;
+      }
+      return;
+    }
+
+    if (handle != null) {
+      return;
+    }
+
+    late final DBusObjectPath acquiredHandle;
+    try {
+      acquiredHandle = await _acquire();
+    } on _AcquisitionCancelled {
+      return;
+    }
+
+    if (_desiredEnabled && _requestHandle == null) {
+      _requestHandle = acquiredHandle;
+      return;
+    }
+
+    try {
+      await _close(acquiredHandle);
+    } catch (_) {
+      // Retain an acquisition whose rollback failed so it remains observable
+      // and a later disable can retry closing it.
+      _requestHandle ??= acquiredHandle;
+      rethrow;
     }
   }
 
   @override
+  Future<void> toggle({required bool enable}) {
+    _desiredEnabled = enable;
+    final operation = _operationTail.then((_) => _reconcile());
+    _operationTail = operation.catchError((_) {});
+    return operation;
+  }
+
+  @override
   Future<bool> get enabled async => _requestHandle != null;
+}
+
+class _AcquisitionCancelled implements Exception {
+  const _AcquisitionCancelled();
 }

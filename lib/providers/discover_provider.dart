@@ -14,7 +14,7 @@ import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/coalesced_load_coordinator.dart';
 import '../utils/deletion_notifier.dart';
-import '../utils/global_key_utils.dart';
+import '../utils/media_event_keys.dart';
 import '../utils/media_hub_ordering.dart';
 import '../utils/watch_state_notifier.dart';
 import 'hidden_libraries_provider.dart';
@@ -46,8 +46,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     this._multiServer,
     this._hiddenLibraries,
     this._libraries, {
+    required this.profileId,
     required this.isProfileBinding,
-    Future<void> Function(List<MediaItem>)? syncSystemShelf,
+    Future<void> Function(String profileId, List<MediaItem>)? syncSystemShelf,
   }) : _syncSystemShelfOverride = syncSystemShelf {
     _loadCoordinator = CoalescedLoadCoordinator<String>(onFull: _loadOnce, onDelta: _loadDeltaOnce);
     // Late server connects (reconnect after outage, slow wave) refresh
@@ -78,6 +79,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final MultiServerProvider _multiServer;
   final HiddenLibrariesProvider _hiddenLibraries;
   final LibrariesProvider _libraries;
+  final String? profileId;
 
   /// Whether the profile binder is still wiring servers — a no-servers load
   /// during binding stays in the loading state instead of flashing an error,
@@ -85,7 +87,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// instead of flashing the empty placeholder (main_screen primes another
   /// load once binding settles).
   final bool Function() isProfileBinding;
-  final Future<void> Function(List<MediaItem>)? _syncSystemShelfOverride;
+  final Future<void> Function(String profileId, List<MediaItem>)? _syncSystemShelfOverride;
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
@@ -465,28 +467,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Watch on-deck items and their parent shows/seasons (an episode's watch
   /// flip changes what Continue Watching should show for its series).
-  Set<String>? get _watchedIds {
-    final keys = <String>{};
-    for (final item in _onDeck) {
-      keys.add(item.id);
-      if (item.parentId != null) keys.add(item.parentId!);
-      if (item.grandparentId != null) keys.add(item.grandparentId!);
-    }
-    return keys;
-  }
+  Set<String>? get _watchedIds => hierarchicalEventIds(_onDeck);
 
-  Set<String>? get _watchedGlobalKeys {
-    final keys = <String>{};
-    for (final item in _onDeck) {
-      final serverId = item.serverId;
-      if (serverId == null) return null;
-
-      keys.add(buildGlobalKey(ServerId(serverId), item.id));
-      if (item.parentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.parentId!));
-      if (item.grandparentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.grandparentId!));
-    }
-    return keys;
-  }
+  Set<String>? get _watchedGlobalKeys => hierarchicalEventGlobalKeys(_onDeck);
 
   void _onWatchStateChanged(WatchStateEvent event) {
     if (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched != true) {
@@ -510,46 +493,15 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     unawaited(refreshContinueWatching());
   }
 
+  /// Everything on screen: the Continue Watching row plus every hub row.
+  Iterable<MediaItem> get _visibleItems => _onDeck.followedBy(_hubs.expand((hub) => hub.items));
+
   /// Deletions can affect any visible list, so the filter covers on-deck and
   /// hub items plus their parents (a deleted season/show takes its visible
   /// episodes with it).
-  Set<String>? get _deletionIds {
-    final keys = <String>{};
-    void addItem(MediaItem item) {
-      keys.add(item.id);
-      if (item.parentId != null) keys.add(item.parentId!);
-      if (item.grandparentId != null) keys.add(item.grandparentId!);
-    }
+  Set<String>? get _deletionIds => hierarchicalEventIds(_visibleItems);
 
-    _onDeck.forEach(addItem);
-    for (final hub in _hubs) {
-      hub.items.forEach(addItem);
-    }
-    return keys;
-  }
-
-  Set<String>? get _deletionGlobalKeys {
-    final keys = <String>{};
-    bool addItem(MediaItem item) {
-      final serverId = item.serverId;
-      if (serverId == null) return false;
-
-      keys.add(buildGlobalKey(ServerId(serverId), item.id));
-      if (item.parentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.parentId!));
-      if (item.grandparentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.grandparentId!));
-      return true;
-    }
-
-    for (final item in _onDeck) {
-      if (!addItem(item)) return null;
-    }
-    for (final hub in _hubs) {
-      for (final item in hub.items) {
-        if (!addItem(item)) return null;
-      }
-    }
-    return keys;
-  }
+  Set<String>? get _deletionGlobalKeys => hierarchicalEventGlobalKeys(_visibleItems);
 
   void _onDeletion(DeletionEvent event) {
     // On-deck and hubs are server-backed: a download-only deletion leaves the
@@ -607,6 +559,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// follow-up pass with the latest items.
   Future<void> _syncSystemShelf(List<MediaItem> onDeck) async {
     if (isDisposed) return;
+    final owner = profileId;
+    if (owner == null) return;
     _pendingSystemShelfItems = List<MediaItem>.unmodifiable(onDeck);
     if (_systemShelfSyncFuture != null) {
       await _systemShelfSyncFuture;
@@ -619,6 +573,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   Future<void> _drainSystemShelfSyncQueue() async {
+    final owner = profileId;
+    if (owner == null) return;
     try {
       while (_pendingSystemShelfItems != null) {
         final onDeck = _pendingSystemShelfItems!;
@@ -628,7 +584,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         try {
           final syncOverride = _syncSystemShelfOverride;
           if (syncOverride != null) {
-            await syncOverride(onDeck);
+            await syncOverride(owner, onDeck);
             continue;
           }
           final settings = await SettingsService.getInstance();
@@ -640,6 +596,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
               })
               .toList(growable: false);
           await SystemShelfService().syncFromContinueWatching(
+            owner,
             syncableOnDeck,
             _clientForShelfItem,
             hideSpoilers: settings.read(SettingsService.hideSpoilers),

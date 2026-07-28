@@ -18,13 +18,13 @@ import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
 
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 /// Poll [condition] until it holds, failing after [timeout]. Used to observe
@@ -74,7 +74,7 @@ void main() {
       storage: storage,
     );
     manager = MultiServerManager();
-    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServerProvider = testMultiServerProvider(manager);
     shouldDeferInitialBind = false;
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
@@ -193,7 +193,7 @@ void main() {
 
     final failingManager = _FailingPlexMultiServerManager();
     manager = failingManager;
-    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServerProvider = testMultiServerProvider(manager);
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
       connections: connections,
@@ -247,7 +247,7 @@ void main() {
 
     final mixedManager = _BlockingMixedMultiServerManager();
     manager = mixedManager;
-    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServerProvider = testMultiServerProvider(manager);
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
       connections: connections,
@@ -349,7 +349,7 @@ void main() {
 
       final capturingManager = _CapturingMultiServerManager();
       manager = capturingManager;
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -415,6 +415,7 @@ void main() {
       expect(prepared.manager.refreshCalls, 1);
       expect(prepared.manager.lastConnection?.servers.single.accessToken, 'home-user-token');
       expect(prepared.manager.lastConnection?.servers.single.clientIdentifier, 'srv-1');
+      expect(prepared.manager.lastProfileId, prepared.profileId);
     });
 
     test('binds from cache when plex.tv rejects the token, then flags re-auth from the reconcile', () async {
@@ -433,6 +434,7 @@ void main() {
       expect(activeProfile.lastBindingSucceeded, isTrue);
       expect(prepared.manager.refreshCalls, 1);
       expect(prepared.manager.lastConnection?.servers.single.accessToken, 'home-user-token');
+      expect(prepared.manager.lastProfileId, prepared.profileId);
 
       // The background reconcile sees the 401: wipes the cached token and
       // flags the account for re-auth — no silent /switch re-mint that
@@ -470,6 +472,7 @@ void main() {
       // per-server tokens in place.
       await pumpUntil(() async => prepared.manager.refreshCalls == 2);
       expect(prepared.manager.lastConnection?.servers.single.accessToken, 'server-token');
+      expect(prepared.manager.lastProfileId, prepared.profileId);
 
       // And the refreshed metadata was persisted onto the stored account row.
       final account = await connections.getPlexAccount('plex.account');
@@ -588,7 +591,7 @@ void main() {
 
     final recoveringManager = _RecordingPlexManager();
     manager = recoveringManager;
-    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    multiServerProvider = testMultiServerProvider(manager);
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
       connections: connections,
@@ -641,7 +644,7 @@ void main() {
       multiServerProvider.dispose();
 
       manager = testManager ?? _CapturingMultiServerManager();
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -806,7 +809,7 @@ void main() {
 
       final gated = _GatedJellyfinManager();
       manager = gated;
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -846,7 +849,7 @@ void main() {
 
       final gated = _GatedJellyfinManager();
       manager = gated;
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -887,7 +890,7 @@ void main() {
 
       final failing = _CountingFailingJellyfinManager();
       manager = failing;
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -926,7 +929,7 @@ void main() {
 
       var pinPrompts = 0;
       manager = _CapturingMultiServerManager();
-      multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      multiServerProvider = testMultiServerProvider(manager);
       binder = ActiveProfileBinder(
         activeProfile: activeProfile,
         connections: connections,
@@ -1095,14 +1098,17 @@ class _CountingFailingJellyfinManager extends MultiServerManager {
 class _CapturingMultiServerManager extends MultiServerManager {
   int refreshCalls = 0;
   PlexAccountConnection? lastConnection;
+  String? lastProfileId;
 
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     refreshCalls++;
     lastConnection = connection;
+    lastProfileId = profileId;
     return connection.servers.map((server) => server.clientIdentifier).toSet();
   }
 }
@@ -1113,6 +1119,7 @@ class _FailingPlexMultiServerManager extends MultiServerManager {
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     refreshCalls++;
@@ -1129,6 +1136,7 @@ class _RecordingPlexManager extends MultiServerManager {
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     calls++;
@@ -1148,6 +1156,7 @@ class _BlockingMixedMultiServerManager extends MultiServerManager {
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
+    required String profileId,
     Duration timeout = MediaServerTimeouts.perServerConnect,
   }) async {
     if (!plexStarted.isCompleted) plexStarted.complete();

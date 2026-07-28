@@ -4,12 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/providers/offline_mode_provider.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -105,7 +104,7 @@ void main() {
         httpClient: MockClient((_) async => http.Response('', 401)),
       );
       manager.debugRegisterJellyfinClientForTesting(client, online: false);
-      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
 
@@ -122,7 +121,7 @@ void main() {
 
     test('expected but unreachable visible servers enter offline without live clients', () async {
       final manager = MultiServerManager();
-      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
       manager.updateServerStatus(ServerId('plex-server'), false);
@@ -146,7 +145,7 @@ void main() {
 
     test('expected but unreachable profile servers enter offline once visibility settles', () async {
       final manager = MultiServerManager();
-      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
 
       expect(p.isOffline, isFalse);
@@ -173,7 +172,7 @@ void main() {
 
     test('Plex auth errors without live clients stay out of generic offline', () async {
       final manager = MultiServerManager();
-      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final multi = testMultiServerProvider(manager);
       final p = OfflineModeProvider(manager, multiServerProvider: multi);
       await p.initialize();
 

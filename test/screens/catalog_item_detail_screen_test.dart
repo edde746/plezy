@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,11 +10,9 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -22,10 +22,18 @@ import 'package:plezy/widgets/media_card.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 class _FakeCatalogSource implements CatalogSource {
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
+  _FakeCatalogSource({bool watchlistLoading = false})
+    : _watchlistValue = watchlistLoading ? null : false,
+      _watchlistLoad = watchlistLoading ? Completer<void>() : null;
+
+  bool? _watchlistValue;
+  final Completer<void>? _watchlistLoad;
+  int addToWatchlistCalls = 0;
 
   @override
   CatalogSourceId get id => CatalogSourceId.trakt;
@@ -56,7 +64,26 @@ class _FakeCatalogSource implements CatalogSource {
   ];
 
   @override
-  bool? isOnWatchlist(MediaKind kind, CatalogItemIds ids) => false;
+  Future<void> ensureWatchlistLoaded() async {
+    final load = _watchlistLoad;
+    if (load != null) await load.future;
+  }
+
+  void completeWatchlistLoad() {
+    _watchlistValue = false;
+    _watchlistChanges.notify();
+    _watchlistLoad!.complete();
+  }
+
+  @override
+  Future<void> addToWatchlist(MediaKind kind, CatalogItemIds ids) async {
+    addToWatchlistCalls++;
+    _watchlistValue = true;
+    _watchlistChanges.notify();
+  }
+
+  @override
+  bool? isOnWatchlist(MediaKind kind, CatalogItemIds ids) => _watchlistValue;
 
   @override
   void dispose() => _watchlistChanges.dispose();
@@ -99,7 +126,7 @@ Future<void> _pumpDetail(
 }) async {
   final sources = _FakeCatalogSourcesProvider(source);
   final serverManager = MultiServerManager();
-  final multiServer = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+  final multiServer = testMultiServerProvider(serverManager);
   final matcher = _FakeCatalogLibraryMatcher(multiServer, matches);
   addTearDown(sources.dispose);
   addTearDown(source.dispose);
@@ -216,6 +243,28 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_1');
   });
 
+  testWidgets('pending watchlist action keeps initial focus and its press retries the snapshot', (tester) async {
+    final source = _FakeCatalogSource(watchlistLoading: true);
+    await _pumpDetail(tester, source);
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+    final actionNode = tester
+        .widgetList<Focus>(find.descendant(of: find.byType(FocusableActionBar), matching: find.byType(Focus)))
+        .map((widget) => widget.focusNode)
+        .whereType<FocusNode>()
+        .singleWhere((node) => node.debugLabel == 'ActionBar[0]');
+    expect(actionNode.canRequestFocus, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(source.addToWatchlistCalls, 0);
+
+    source.completeWatchlistLoad();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(source.addToWatchlistCalls, 1);
+  });
   testWidgets('TV Back closes a hosted sheet without popping the catalog route', (tester) async {
     await _pumpDetail(tester, _FakeCatalogSource(), pushedRoute: true);
 

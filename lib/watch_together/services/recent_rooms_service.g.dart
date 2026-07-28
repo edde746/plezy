@@ -8,6 +8,7 @@ part of 'recent_rooms_service.dart';
 
 RecentRoom _$RecentRoomFromJson(Map<String, dynamic> json) => RecentRoom(
   code: json['code'] as String,
+  relayScope: json['relayScope'] as String,
   name: json['name'] as String?,
   lastUsed: _dateTimeFromMillis((json['lastUsed'] as num).toInt()),
   controlMode: _controlModeFromIndex((json['controlMode'] as num?)?.toInt()),
@@ -16,6 +17,7 @@ RecentRoom _$RecentRoomFromJson(Map<String, dynamic> json) => RecentRoom(
 Map<String, dynamic> _$RecentRoomToJson(RecentRoom instance) =>
     <String, dynamic>{
       'code': instance.code,
+      'relayScope': instance.relayScope,
       'name': ?instance.name,
       'lastUsed': _dateTimeToMillis(instance.lastUsed),
       'controlMode': ?_controlModeToIndex(instance.controlMode),

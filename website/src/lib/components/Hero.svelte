@@ -113,7 +113,7 @@
     font-weight: 700;
   }
 
-  .brand-logo :global(svg) {
+  .brand-logo :global(img) {
     width: 2.25rem;
     height: 2.25rem;
   }

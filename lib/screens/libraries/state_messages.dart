@@ -39,9 +39,7 @@ class StateMessageWidget extends StatelessWidget {
   final IconData? actionIcon;
   final FocusNode? actionFocusNode;
   final VoidCallback? onActionNavigateUp;
-  final VoidCallback? onActionNavigateDown;
   final VoidCallback? onActionNavigateLeft;
-  final VoidCallback? onActionNavigateRight;
   final VoidCallback? onActionBack;
 
   /// Whether the action button should request focus when it appears.
@@ -63,9 +61,7 @@ class StateMessageWidget extends StatelessWidget {
     this.actionLabel,
     this.actionFocusNode,
     this.onActionNavigateUp,
-    this.onActionNavigateDown,
     this.onActionNavigateLeft,
-    this.onActionNavigateRight,
     this.onActionBack,
     this.actionIcon,
     this.actionAutofocus = false,
@@ -110,9 +106,7 @@ class StateMessageWidget extends StatelessWidget {
               FocusableButton(
                 focusNode: actionFocusNode,
                 onNavigateUp: onActionNavigateUp,
-                onNavigateDown: onActionNavigateDown,
                 onNavigateLeft: onActionNavigateLeft,
-                onNavigateRight: onActionNavigateRight,
                 onBack: onActionBack,
                 onPressed: onAction,
                 autofocus: actionAutofocus,
@@ -155,9 +149,7 @@ class EmptyStateWidget extends StatelessWidget {
   final IconData? actionIcon;
   final FocusNode? actionFocusNode;
   final VoidCallback? onActionNavigateUp;
-  final VoidCallback? onActionNavigateDown;
   final VoidCallback? onActionNavigateLeft;
-  final VoidCallback? onActionNavigateRight;
   final VoidCallback? onActionBack;
 
   const EmptyStateWidget({
@@ -171,9 +163,7 @@ class EmptyStateWidget extends StatelessWidget {
     this.actionIcon,
     this.actionFocusNode,
     this.onActionNavigateUp,
-    this.onActionNavigateDown,
     this.onActionNavigateLeft,
-    this.onActionNavigateRight,
     this.onActionBack,
   });
 
@@ -189,9 +179,7 @@ class EmptyStateWidget extends StatelessWidget {
       actionIcon: actionIcon ?? Symbols.add_rounded,
       actionFocusNode: actionFocusNode,
       onActionNavigateUp: onActionNavigateUp,
-      onActionNavigateDown: onActionNavigateDown,
       onActionNavigateLeft: onActionNavigateLeft,
-      onActionNavigateRight: onActionNavigateRight,
       onActionBack: onActionBack,
     );
   }
@@ -218,9 +206,7 @@ class ErrorStateWidget extends StatelessWidget {
   final String? retryLabel;
   final FocusNode? actionFocusNode;
   final VoidCallback? onActionNavigateUp;
-  final VoidCallback? onActionNavigateDown;
   final VoidCallback? onActionNavigateLeft;
-  final VoidCallback? onActionNavigateRight;
   final VoidCallback? onActionBack;
 
   const ErrorStateWidget({
@@ -231,9 +217,7 @@ class ErrorStateWidget extends StatelessWidget {
     this.retryLabel,
     this.actionFocusNode,
     this.onActionNavigateUp,
-    this.onActionNavigateDown,
     this.onActionNavigateLeft,
-    this.onActionNavigateRight,
     this.onActionBack,
     this.actionAutofocus = false,
     this.actionUseBackgroundFocus = false,
@@ -251,9 +235,7 @@ class ErrorStateWidget extends StatelessWidget {
       actionIcon: Symbols.refresh_rounded,
       actionFocusNode: actionFocusNode,
       onActionNavigateUp: onActionNavigateUp,
-      onActionNavigateDown: onActionNavigateDown,
       onActionNavigateLeft: onActionNavigateLeft,
-      onActionNavigateRight: onActionNavigateRight,
       onActionBack: onActionBack,
       actionAutofocus: actionAutofocus,
       actionUseBackgroundFocus: actionUseBackgroundFocus,

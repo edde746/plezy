@@ -1,20 +1,20 @@
-/// Manages focus memory for hub navigation.
+/// Manages focus memory for one browse surface.
 ///
 /// Tracks two things:
 /// 1. Per-hub memory: Each hub remembers which item was last focused
-/// 2. Global column hint: When entering a hub that hasn't been visited,
+/// 2. Last column hint: When entering a hub that hasn't been visited,
 ///    we use the column position from the last focused hub as a hint
 class HubFocusMemory {
-  static final Map<String, int> _perHubMemory = {};
-  static int _lastColumnHint = 0;
+  final Map<String, int> _perHubMemory = {};
+  int _lastColumnHint = 0;
 
-  static void setForHub(String hubKey, int index) {
+  void setForHub(String hubKey, int index) {
     _perHubMemory[hubKey] = index;
     _lastColumnHint = index;
   }
 
   /// Get the remembered index for a hub, or fall back to column hint
-  static int getForHub(String hubKey, int itemCount) {
+  int getForHub(String hubKey, int itemCount) {
     if (itemCount <= 0) return 0;
 
     // If this hub has memory, use it
@@ -26,16 +26,10 @@ class HubFocusMemory {
     return _lastColumnHint.clamp(0, itemCount - 1);
   }
 
-  /// Get only this hub's remembered index, without falling back to the global column hint.
-  static int getForHubOnly(String hubKey, int itemCount, {int fallback = 0}) {
+  /// Get only this hub's remembered index, without falling back to the last column hint.
+  int getForHubOnly(String hubKey, int itemCount, {int fallback = 0}) {
     if (itemCount <= 0) return 0;
     final remembered = _perHubMemory[hubKey];
     return (remembered ?? fallback).clamp(0, itemCount - 1);
-  }
-
-  /// Clear all memory (e.g., when leaving a screen)
-  static void clear() {
-    _perHubMemory.clear();
-    _lastColumnHint = 0;
   }
 }

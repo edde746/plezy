@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:collection/collection.dart';
 
 import '../../utils/app_logger.dart';
 import '../../utils/udp_broadcast_sockets.dart';
@@ -35,11 +36,15 @@ class DiscoveredHost {
 /// Hosts broadcast authenticated beacons; clients listen and filter
 /// by matching Plex home membership.
 class LanDiscoveryService {
-  static const int discoveryPort = 48633;
+  static const int defaultDiscoveryPort = 48633;
   static const int _broadcastIntervalSeconds = 3;
   static const int _staleTimeoutSeconds = 10;
   static const int _beaconVersion = 1;
 
+  /// UDP port used for both beacon targets and listener binding.
+  final int discoveryPort;
+
+  LanDiscoveryService({this.discoveryPort = defaultDiscoveryPort});
   // Broadcaster state (host)
   UdpBroadcastSocketSet? _broadcastSockets;
   Timer? _broadcastTimer;
@@ -236,22 +241,31 @@ class LanDiscoveryService {
         return; // Different home
       }
 
-      // Valid beacon from same home
+      // Valid beacon from same home. Normalize only after authentication so
+      // stored endpoint order matches the canonical HMAC representation.
+      final normalizedIps = List<String>.from(ips)..sort();
+      final lastSeen = DateTime.now();
       final hostKey = clientId;
-      if (_discoveredHosts.containsKey(hostKey)) {
-        final existing = _discoveredHosts[hostKey]!;
-        existing.lastSeen = DateTime.now();
-        // Only emit if fields actually changed
-        if (existing.name != name || existing.port != port) {
+      final existing = _discoveredHosts[hostKey];
+      if (existing != null) {
+        final hostChanged =
+            existing.name != name ||
+            existing.platform != platform ||
+            existing.port != port ||
+            !const ListEquality<String>().equals(existing.ips, normalizedIps);
+        if (hostChanged) {
           _discoveredHosts[hostKey] = DiscoveredHost(
             authContextId: existing.authContextId,
             clientId: clientId,
             name: name,
             platform: platform,
             port: port,
-            ips: ips,
+            ips: normalizedIps,
+            lastSeen: lastSeen,
           );
           _emitHosts();
+        } else {
+          existing.lastSeen = lastSeen;
         }
       } else {
         _discoveredHosts[hostKey] = DiscoveredHost(
@@ -260,9 +274,10 @@ class LanDiscoveryService {
           name: name,
           platform: platform,
           port: port,
-          ips: ips,
+          ips: normalizedIps,
+          lastSeen: lastSeen,
         );
-        appLogger.d('LanDiscovery: Discovered host: $name ($platform) at ${ips.join(", ")}:$port');
+        appLogger.d('LanDiscovery: Discovered host: $name ($platform) at ${normalizedIps.join(", ")}:$port');
         _emitHosts();
       }
     } catch (e) {

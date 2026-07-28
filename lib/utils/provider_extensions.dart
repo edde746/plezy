@@ -58,7 +58,11 @@ extension ProviderExtensions on BuildContext {
     return provider?.getPlexClientForServer(serverId);
   }
 
-  PlexClient getPlexClientForLibrary(MediaLibrary library) => _requireClient(serverIdOrNull(library.serverId));
+  PlexClient getPlexClientForLibrary(MediaLibrary library) {
+    final serverId = serverIdOrNull(library.serverId);
+    if (serverId == null) throw Exception(t.errors.noClientAvailable);
+    return getPlexClientForServer(serverId);
+  }
 
   PlexClient getPlexClientWithFallback(ServerId? serverId) => _requireClient(serverId);
 
@@ -91,9 +95,9 @@ extension ProviderExtensions on BuildContext {
   }
 
   MediaServerClient getMediaClientForLibrary(MediaLibrary library) {
-    final c = _resolveMediaClient(serverIdOrNull(library.serverId));
-    if (c == null) throw Exception(t.errors.noClientAvailable);
-    return c;
+    final serverId = serverIdOrNull(library.serverId);
+    if (serverId == null) throw Exception(t.errors.noClientAvailable);
+    return getMediaClientForServer(serverId);
   }
 
   /// Get a [MediaServerClient] for a [MediaItem], or null in offline mode /

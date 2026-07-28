@@ -209,6 +209,52 @@ void main() {
     expect((fallback as OptimizedMediaImage).imagePath, albumArtwork);
     expect(fallback.imageType, ImageType.square);
   });
+
+  testWidgets('unresolved track artwork fallback is not memoized', (tester) async {
+    const trackArtwork = 'https://poster-memo.example/unresolved-track.jpg';
+    const albumArtwork = 'https://poster-memo.example/unresolved-album.jpg';
+    final item = testMediaItem(
+      id: 'track-with-unresolved-artwork',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.track,
+      title: 'Track',
+      thumbPath: trackArtwork,
+      parentThumbPath: albumArtwork,
+    );
+
+    Future<void> pumpCard() => tester.pumpWidget(
+      _TestApp(child: MediaCard(item: item, width: 200, height: 194, forceGridMode: true, isOffline: true)),
+    );
+
+    await pumpCard();
+    final primaryFinder = find.descendant(of: find.byType(MediaCard), matching: find.byType(OptimizedMediaImage)).first;
+    final primary = tester.widget<OptimizedMediaImage>(primaryFinder);
+    expect(primary.imagePath, trackArtwork);
+    expect(primary.errorWidget, isNotNull);
+
+    final unresolvedFallback = primary.errorWidget!(
+      tester.element(primaryFinder),
+      trackArtwork,
+      const UnresolvedImageUrl(trackArtwork),
+    );
+    expect(unresolvedFallback, isA<OptimizedMediaImage>());
+    expect((unresolvedFallback as OptimizedMediaImage).imagePath, albumArtwork);
+
+    await pumpCard();
+    final unresolvedRebuild = tester.widget<OptimizedMediaImage>(primaryFinder);
+    expect(unresolvedRebuild.imagePath, trackArtwork);
+
+    final failedFallback = unresolvedRebuild.errorWidget!(
+      tester.element(primaryFinder),
+      trackArtwork,
+      StateError('decode failed'),
+    );
+    expect(failedFallback, isA<OptimizedMediaImage>());
+    expect((failedFallback as OptimizedMediaImage).imagePath, albumArtwork);
+
+    await pumpCard();
+    expect(tester.widget<OptimizedMediaImage>(primaryFinder).imagePath, albumArtwork);
+  });
 }
 
 class _TestApp extends StatelessWidget {

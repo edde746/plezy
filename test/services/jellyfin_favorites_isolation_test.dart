@@ -1,9 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/testing.dart';
 
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/models/livetv_channel.dart';
+import 'package:plezy/services/favorite_channels_repository.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,11 +22,13 @@ JellyfinConnection _conn({required String userId}) => testJellyfinConnection(
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );
 
-JellyfinClient _client(JellyfinConnection conn) => testJellyfinClient(
-  connection: conn,
-  // Favorites read path is local-only; any HTTP call is a test failure.
-  handler: (_) async => throw StateError('no HTTP expected'),
-);
+JellyfinClient _client(JellyfinConnection conn, {FavoriteChannelsRepository? favoritesRepository}) =>
+    JellyfinClient.forTesting(
+      connection: conn,
+      favoritesRepository: favoritesRepository,
+      // Favorites read path is local-only; any HTTP call is a test failure.
+      httpClient: MockClient((_) async => throw StateError('no HTTP expected')),
+    );
 
 String _favKey(JellyfinConnection conn) => 'jellyfin_fav_channels:${conn.id}';
 String _legacyFavKey(JellyfinConnection conn) => 'jellyfin_fav_channels:${conn.serverMachineId}';
@@ -67,5 +71,27 @@ void main() {
       expect(prefs.getString(_legacyFavKey(connA)), isNull);
       expect(prefs.getString(_favKey(connA)), isNotNull);
     });
+    test('repository read failures propagate through the favorite Future', () async {
+      final failure = StateError('favorite repository unavailable');
+      final client = _client(
+        _conn(userId: 'user-a'),
+        favoritesRepository: _ThrowingFavoriteChannelsRepository(failure),
+      );
+      addTearDown(client.close);
+
+      await expectLater(client.liveTv.fetchFavoriteChannels(), throwsA(same(failure)));
+    });
   });
+}
+
+class _ThrowingFavoriteChannelsRepository implements FavoriteChannelsRepository {
+  const _ThrowingFavoriteChannelsRepository(this.failure);
+
+  final Object failure;
+
+  @override
+  Future<List<FavoriteChannel>> read({required String key, required String legacyKey}) => Future.error(failure);
+
+  @override
+  Future<void> write(String key, List<FavoriteChannel> channels) async {}
 }

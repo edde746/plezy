@@ -46,7 +46,205 @@ void main() {
       );
     });
 
-    test('ExoPlayer forwards external subtitle metadata at open', () async {
+    test('ExoPlayer clears stale timeline state before dispatching a new open', () async {
+      late PlayerAndroid player;
+      Duration? positionAtNativeOpen;
+      Duration? durationAtNativeOpen;
+
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            case 'open':
+              positionAtNativeOpen = player.state.position;
+              durationAtNativeOpen = player.state.duration;
+              return Future.value(null);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          player = PlayerAndroid();
+          try {
+            player.handlePropertyChange('time-pos', 188.0);
+            player.handlePropertyChange('duration', 439.968);
+
+            await player.open(Media('https://example.test/next.mkv'));
+
+            expect(positionAtNativeOpen, Duration.zero);
+            expect(durationAtNativeOpen, Duration.zero);
+
+            player.handlePropertyChange('duration', 401.0);
+            expect(player.state.duration, const Duration(seconds: 401));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer restores the previous timeline when native open is rejected', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          if (call.method == 'initialize') return Future.value(true);
+          if (call.method == 'open') {
+            throw PlatformException(code: 'OPEN_FAILED', message: 'rejected');
+          }
+          return Future.value(null);
+        },
+        testBody: () async {
+          final player = _TestPlayerAndroid();
+          try {
+            _seedTracks(player);
+            player.seedExternalSubtitleMetadata(const [
+              SubtitleTrack(
+                id: 'old-external',
+                title: 'Old sidecar',
+                language: 'eng',
+                codec: 'srt',
+                isDefault: false,
+                isForced: true,
+                isExternal: true,
+                uri: 'https://example.test/old.srt',
+              ),
+            ]);
+            player.handlePropertyChange('time-pos', 188.0);
+            player.handlePropertyChange('duration', 439.968);
+
+            await expectLater(
+              player.open(
+                Media('https://example.test/rejected.mkv', start: const Duration(seconds: 12)),
+                timelineDuration: const Duration(seconds: 401),
+                externalSubtitles: const [
+                  SubtitleTrack(
+                    id: 'rejected-external',
+                    title: 'Rejected sidecar',
+                    language: 'spa',
+                    codec: 'ass',
+                    isDefault: false,
+                    isForced: false,
+                    isExternal: true,
+                    uri: 'https://example.test/rejected.ass',
+                  ),
+                ],
+              ),
+              throwsA(isA<PlatformException>()),
+            );
+
+            expect(player.state.position, const Duration(seconds: 188));
+            expect(player.state.duration, const Duration(milliseconds: 439968));
+            expect(player.state.tracks.audio.single.title, 'English');
+            expect(player.state.tracks.subtitle.single.title, 'English');
+
+            player.handlePropertyChange('track-list', const [
+              {
+                'type': 'sub',
+                'id': 'restored-external',
+                'external': true,
+                'external-filename': 'https://example.test/old.srt',
+                'selected': true,
+              },
+            ]);
+            expect(player.state.tracks.subtitle.single.title, 'Old sidecar');
+            expect(player.state.tracks.subtitle.single.isForced, isTrue);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer applies audio settings queued before initialization', () async {
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) async {
+          calls.add(call);
+          if (call.method == 'initialize') return true;
+          if (call.method == 'requestAudioFocus') return true;
+          return null;
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            await player.setAudioNormalization(true);
+            await player.setAudioDownmix(enabled: true, centerBoostDb: 4, normalize: false);
+
+            expect(calls.where((call) => call.method == 'setAudioNormalization'), isEmpty);
+            expect(calls.where((call) => call.method == 'setAudioDownmix'), isEmpty);
+
+            expect(await player.requestAudioFocus(), isTrue);
+
+            final normalization = calls.singleWhere((call) => call.method == 'setAudioNormalization');
+            expect((normalization.arguments as Map)['enabled'], isTrue);
+            final downmix = calls.singleWhere((call) => call.method == 'setAudioDownmix');
+            expect(downmix.arguments, {'enabled': true, 'centerBoostDb': 4, 'normalize': false});
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer retries initialization after a recoverable native failure', () async {
+      var initializeAttempts = 0;
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) async {
+          if (call.method == 'initialize') return ++initializeAttempts > 1;
+          if (call.method == 'requestAudioFocus') return true;
+          return null;
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            await expectLater(player.requestAudioFocus(), throwsA(isA<Exception>()));
+            expect(await player.requestAudioFocus(), isTrue);
+            expect(initializeAttempts, 2);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer initialization cannot commit after disposal starts', () async {
+      final initialize = Completer<bool>();
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          if (call.method == 'initialize') return initialize.future;
+          return Future.value(null);
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          final initialization = player.requestAudioFocus();
+          final initializationFailure = expectLater(initialization, throwsA(isA<StateError>()));
+          await Future<void>.delayed(Duration.zero);
+
+          final disposal = player.dispose();
+          initialize.complete(true);
+          await initializationFailure;
+          await disposal;
+
+          expect(calls.where((call) => call.method == 'observeProperty'), isEmpty);
+          expect(calls.where((call) => call.method == 'requestAudioFocus'), isEmpty);
+          expect(calls.where((call) => call.method == 'dispose'), hasLength(1));
+        },
+      );
+    });
+
+    test('ExoPlayer forwards complete container metadata and rejects empty sidecar URIs', () async {
       final calls = <MethodCall>[];
 
       await withMockPlayerChannels(
@@ -54,18 +252,14 @@ void main() {
         eventChannelName: 'com.plezy/exo_player/events',
         methodHandler: (call) {
           calls.add(call);
-          switch (call.method) {
-            case 'initialize':
-              return Future.value(true);
-            default:
-              return Future.value(null);
-          }
+          return call.method == 'initialize' ? Future.value(true) : Future.value(null);
         },
         testBody: () async {
           final player = PlayerAndroid();
           try {
+            const containerUri = 'https://example.test/movie.mkv';
             await player.open(
-              Media('https://example.test/movie.mkv'),
+              Media('https://example.test/transcode.m3u8'),
               externalSubtitles: const [
                 SubtitleTrack(
                   id: 'external-sub',
@@ -77,20 +271,44 @@ void main() {
                   isExternal: true,
                   uri: 'https://example.test/sub.srt',
                 ),
+                SubtitleTrack(
+                  id: 'container:1',
+                  title: 'English Dialogue',
+                  language: 'eng',
+                  codec: 'ass',
+                  isDefault: true,
+                  isExternal: true,
+                  isContainer: true,
+                  uri: containerUri,
+                ),
+                SubtitleTrack(
+                  id: 'container:2',
+                  title: 'English Signs',
+                  language: 'eng',
+                  codec: 'ass',
+                  isForced: true,
+                  isExternal: true,
+                  isContainer: true,
+                  uri: containerUri,
+                ),
+                SubtitleTrack(id: 'invalid', uri: '', isExternal: true, isContainer: true),
               ],
             );
 
             final openCall = calls.singleWhere((call) => call.method == 'open');
             final args = Map<Object?, Object?>.from(openCall.arguments as Map);
-            final external = args['externalSubtitles'] as List;
-            final subtitle = Map<Object?, Object?>.from(external.single as Map);
+            final external = (args['externalSubtitles'] as List)
+                .map((entry) => Map<Object?, Object?>.from(entry as Map))
+                .toList();
 
-            expect(subtitle['uri'], 'https://example.test/sub.srt');
-            expect(subtitle['title'], 'English Forced');
-            expect(subtitle['language'], 'eng');
-            expect(subtitle['codec'], 'srt');
-            expect(subtitle['isDefault'], isTrue);
-            expect(subtitle['isForced'], isTrue);
+            expect(external, hasLength(3));
+            expect(external.first['uri'], 'https://example.test/sub.srt');
+            expect(external.first['title'], 'English Forced');
+            expect(external.first['isDefault'], isTrue);
+            expect(external.first['isForced'], isTrue);
+            expect(external.skip(1).map((entry) => entry['uri']).toSet(), {containerUri});
+            expect(external.skip(1).map((entry) => entry['title']), ['English Dialogue', 'English Signs']);
+            expect(external.skip(1).every((entry) => entry['isContainer'] == true), isTrue);
           } finally {
             await player.dispose();
           }
@@ -414,41 +632,119 @@ void main() {
       );
     });
 
-    test('MPV preserves external subtitle metadata for loadfile sidecars', () async {
+    test('MPV restores per-stream metadata while loading a shared container once', () async {
+      final calls = <MethodCall>[];
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          return call.method == 'initialize' ? Future.value(true) : Future.value(null);
+        },
         testBody: () async {
           final player = PlayerNative();
           try {
-            const subtitleUri = 'https://example.test/subtitles/en-forced.srt';
+            const subtitleUri = 'https://example.test/movie.mkv?X-Plex-Token=secret';
             await player.open(
-              Media('https://example.test/movie.mkv'),
+              Media('https://example.test/transcode.m3u8'),
               externalSubtitles: const [
                 SubtitleTrack(
-                  id: 'server-subtitle',
+                  id: 'container:1',
                   uri: subtitleUri,
-                  title: 'English Forced',
+                  title: 'English Dialogue',
                   language: 'eng',
-                  codec: 'srt',
+                  codec: 'ass',
                   isDefault: true,
+                  isExternal: true,
+                  isContainer: true,
+                ),
+                SubtitleTrack(
+                  id: 'container:2',
+                  uri: subtitleUri,
+                  title: 'English Signs',
+                  language: 'eng',
+                  codec: 'ass',
                   isForced: true,
                   isExternal: true,
+                  isContainer: true,
                 ),
               ],
             );
-
-            player.handlePropertyChange('track-list', const [
-              {'type': 'sub', 'id': '1', 'codec': 'subrip', 'external': true, 'external-filename': subtitleUri},
+            expect(_loadfileArgs(calls), [
+              'loadfile',
+              'https://example.test/transcode.m3u8',
+              'replace',
+              '-1',
+              'sub-files=${_fixedLengthPathList([subtitleUri])}',
             ]);
 
-            final subtitle = player.state.tracks.subtitle.single;
-            expect(subtitle.title, 'English Forced');
-            expect(subtitle.language, 'eng');
-            expect(subtitle.codec, 'srt');
-            expect(subtitle.isDefault, isTrue);
-            expect(subtitle.isForced, isTrue);
-            expect(subtitle.uri, subtitleUri);
+            player.handlePropertyChange('track-list', const [
+              {'type': 'audio', 'id': 'sidecar-audio', 'external': true, 'external-filename': subtitleUri},
+              {
+                'type': 'sub',
+                'id': '1',
+                'title': 'movie.mkv?X-Plex-Token=secret',
+                'default': false,
+                'forced': false,
+                'external': true,
+                'external-filename': subtitleUri,
+              },
+              {
+                'type': 'sub',
+                'id': '2',
+                'title': 'movie.mkv?X-Plex-Token=secret',
+                'default': false,
+                'forced': false,
+                'external': true,
+                'external-filename': subtitleUri,
+              },
+            ]);
+
+            expect(player.state.tracks.audio, isEmpty);
+            final subtitles = player.state.tracks.subtitle;
+            expect(subtitles, hasLength(2));
+            expect(subtitles.map((track) => track.title), ['English Dialogue', 'English Signs']);
+            expect(subtitles.map((track) => track.language), ['eng', 'eng']);
+            expect(subtitles.map((track) => track.codec), ['ass', 'ass']);
+            expect(subtitles.map((track) => track.isDefault), [true, false]);
+            expect(subtitles.map((track) => track.isForced), [false, true]);
+            expect(subtitles.every((track) => track.uri == subtitleUri && track.isContainer), isTrue);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV keeps native metadata fallbacks for non-container subtitles', () async {
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) => call.method == 'initialize' ? Future.value(true) : Future.value(null),
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            const sidecarUri = 'https://example.test/subtitle.srt';
+            await player.open(
+              Media('https://example.test/movie.mkv'),
+              externalSubtitles: const [SubtitleTrack(id: 'external', uri: sidecarUri, isExternal: true)],
+            );
+
+            player.handlePropertyChange('track-list', const [
+              {
+                'type': 'sub',
+                'id': 'external',
+                'title': 'English Dialogue - SRT',
+                'lang': 'eng',
+                'codec': 'subrip',
+                'external': true,
+                'external-filename': sidecarUri,
+              },
+              {'type': 'sub', 'id': 'embedded', 'title': 'French Dialogue - ASS', 'lang': 'fre', 'codec': 'ass'},
+            ]);
+
+            expect(player.state.tracks.subtitle.map((track) => track.title), ['English Dialogue', 'French Dialogue']);
+            expect(player.state.tracks.subtitle.map((track) => track.language), ['eng', 'fre']);
           } finally {
             await player.dispose();
           }
@@ -739,6 +1035,12 @@ void main() {
       );
     });
   });
+}
+
+class _TestPlayerAndroid extends PlayerAndroid {
+  void seedExternalSubtitleMetadata(List<SubtitleTrack> subtitles) {
+    setExternalSubtitleMetadata(subtitles);
+  }
 }
 
 void _seedTracks(dynamic player) {

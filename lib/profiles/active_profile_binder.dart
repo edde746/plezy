@@ -113,8 +113,6 @@ class ActiveProfileBinder {
   final Set<String> _plexHomePreVerified = {};
   final Set<String> _userInitiatedActivations = {};
 
-  bool get isSwitching => _isSwitching;
-
   @visibleForTesting
   String? get debugLastBoundProfileId => _lastBoundProfileId;
 
@@ -374,6 +372,11 @@ class ActiveProfileBinder {
     return success;
   }
 
+  /// Server ids the profile should reach once bound: its join rows plus the
+  /// implicit Plex Home parent, which normally has no row. Not shared with
+  /// `_serverIdsForProfile` (profile_connection_cleanup.dart) — that one is
+  /// join-rows-only and [ServerId]-typed, while this set keeps growing with
+  /// bind results and is compared against the manager's raw string ids.
   Set<String> _expectedServerIdsForProfile(
     Profile profile, {
     required List<ProfileConnection> joinRows,
@@ -645,7 +648,12 @@ class ActiveProfileBinder {
         // profile token. A partial pass stays on the splash and awaits the
         // per-server tokens from plex.tv instead of reporting shared servers
         // offline with a token that cannot authenticate to them.
-        optimistic = await _bindOptimisticallyFromCache(account: account, userToken: token, profileLabel: profileLabel);
+        optimistic = await _bindOptimisticallyFromCache(
+          account: account,
+          userToken: token,
+          profileId: profileId,
+          profileLabel: profileLabel,
+        );
         if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
         final cachedServerIds = account.servers.map((server) => server.clientIdentifier).toSet();
         if (optimistic != null && setEquals(optimistic.visibleServerIds, cachedServerIds)) {
@@ -673,7 +681,7 @@ class ActiveProfileBinder {
             '$profileLabel (${servers.length} servers)',
           );
           unawaited(_persistRefreshedServers(account, servers));
-          final result = await _connectFromServers(account, token, servers, profileLabel);
+          final result = await _connectFromServers(account, token, servers, profileLabel, profileId: profileId);
           if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
           await markUsed?.call();
           return result;
@@ -687,7 +695,13 @@ class ActiveProfileBinder {
             usingCachedToken = false;
             continue;
           }
-          final result = await _connectFromServers(account, token, const <PlexServer>[], profileLabel);
+          final result = await _connectFromServers(
+            account,
+            token,
+            const <PlexServer>[],
+            profileLabel,
+            profileId: profileId,
+          );
           if (!_isCurrentBind(profileId, generation)) return const _ProfileBindResult.empty();
           await markUsed?.call();
           return result;
@@ -726,6 +740,7 @@ class ActiveProfileBinder {
             account,
             token,
             profileLabel,
+            profileId: profileId,
             error: fetched.error,
             stackTrace: fetched.stackTrace,
           );
@@ -772,6 +787,7 @@ class ActiveProfileBinder {
     PlexAccountConnection account,
     String userToken,
     String profileLabel, {
+    required String profileId,
     Object? error,
     StackTrace? stackTrace,
   }) async {
@@ -783,22 +799,23 @@ class ActiveProfileBinder {
     );
     final servers = _cachedServersCompatibleWithUserToken(account, userToken, profileLabel);
     if (servers.isEmpty) return const _ProfileBindResult.empty();
-    return _connectFromServers(account, userToken, servers, profileLabel);
+    return _connectFromServers(account, userToken, servers, profileLabel, profileId: profileId);
   }
 
   Future<_ProfileBindResult> _connectFromServers(
     PlexAccountConnection account,
     String userToken,
     List<PlexServer> servers,
-    String profileLabel,
-  ) async {
+    String profileLabel, {
+    required String profileId,
+  }) async {
     if (servers.isEmpty) {
       appLogger.w('ActiveProfileBinder: no servers for $profileLabel on ${account.accountLabel}');
       return const _ProfileBindResult.empty();
     }
     final stopwatch = Stopwatch()..start();
     final updatedConn = account.copyWith(servers: servers);
-    final boundIds = await serverManager.refreshTokensForProfile(updatedConn);
+    final boundIds = await serverManager.refreshTokensForProfile(updatedConn, profileId: profileId);
     appLogger.i(
       'ActiveProfileBinder: bound ${boundIds.length}/${servers.length} Plex servers for $profileLabel',
       error: {'elapsedMs': stopwatch.elapsedMilliseconds},
@@ -888,6 +905,7 @@ class ActiveProfileBinder {
   Future<_ProfileBindResult?> _bindOptimisticallyFromCache({
     required PlexAccountConnection account,
     required String userToken,
+    required String profileId,
     required String profileLabel,
   }) async {
     if (account.servers.isEmpty) return null;
@@ -898,7 +916,7 @@ class ActiveProfileBinder {
       'while resources refresh',
       error: {'servers': cachedServers.length, 'totalServers': account.servers.length},
     );
-    return _connectFromServers(account, userToken, cachedServers, profileLabel);
+    return _connectFromServers(account, userToken, cachedServers, profileLabel, profileId: profileId);
   }
 
   /// Apply the background resource refresh after an optimistic cached bind:
@@ -972,7 +990,7 @@ class ActiveProfileBinder {
         // optimistic pass left offline. Newly-online expected servers are
         // promoted into the visibility filter by MultiServerProvider when the
         // status emission this triggers lands.
-        await serverManager.refreshTokensForProfile(account.copyWith(servers: fresh));
+        await serverManager.refreshTokensForProfile(account.copyWith(servers: fresh), profileId: profileId);
       }().catchError((Object error, StackTrace stackTrace) {
         appLogger.w(
           'ActiveProfileBinder: background reconcile failed for $profileLabel',

@@ -1,8 +1,12 @@
 #include "mpv_plugin.h"
 
 #include <cstring>
+#include <new>
 
 #include "mpv_texture.h"
+
+enum class VideoBootstrapState { kIdle, kPending, kReady, kFailed };
+using PlayerPtr = std::unique_ptr<mpv::MpvPlayer>;
 
 struct _MpvPlugin {
   GObject parent_instance;
@@ -12,11 +16,17 @@ struct _MpvPlugin {
   FlEventChannel* event_channel;
   FlTextureRegistrar* texture_registrar;
 
-  std::unique_ptr<mpv::MpvPlayer> player;
+  PlayerPtr player;
   MpvTexture* texture;  // owned via GObject ref
+  gboolean texture_registered;
   gboolean visible;
   gboolean initialized;
   gboolean audio_only;
+  VideoBootstrapState bootstrap_state;
+  gchar* bootstrap_error;
+  FlMethodCall* ready_call;
+  guint64 generation;
+  guint ready_timeout_source_id;
 };
 
 G_DEFINE_TYPE(MpvPlugin, mpv_plugin, G_TYPE_OBJECT)
@@ -27,48 +37,163 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
 static void send_event(MpvPlugin* self, FlValue* event) {
   if (self->event_channel) {
     g_autoptr(GError) error = nullptr;
-    if (!fl_event_channel_send(self->event_channel, event, nullptr, &error)) {
-      if (error != nullptr) {
-        g_warning("Failed to send event: %s", error->message);
-      }
+    if (!fl_event_channel_send(self->event_channel, event, nullptr, &error) && error != nullptr) {
+      g_warning("Failed to send event: %s", error->message);
     }
   }
 }
 
-static void mpv_plugin_dispose(GObject* object) {
-  MpvPlugin* self = MPV_PLUGIN(object);
+static gboolean handle_ready_timeout(gpointer user_data);
 
-  // Texture must be disposed BEFORE player — mpv_texture_dispose needs
-  // the player's EGL context to clean up GL resources.
+static void complete_ready_call(MpvPlugin* self, gboolean success, const char* message) {
+  if (self->ready_timeout_source_id != 0) {
+    g_source_remove(self->ready_timeout_source_id);
+    self->ready_timeout_source_id = 0;
+  }
+  if (!self->ready_call) return;
+  g_autoptr(FlMethodResponse) response =
+      success ? FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr))
+              : FL_METHOD_RESPONSE(fl_method_error_response_new(
+                    "INIT_FAILED", message ? message : "Video initialization failed", nullptr));
+  fl_method_call_respond(self->ready_call, response, nullptr);
+  g_object_unref(self->ready_call);
+  self->ready_call = nullptr;
+}
+
+static void release_video_resources(MpvPlugin* self) {
+  ++self->generation;
+  if (self->player) {
+    // The texture is a raw callback target. Revoke both callback paths before
+    // unregistering or unreferencing it; Dispose then drains any callback
+    // already holding a native lease.
+    self->player->SetRedrawCallback(nullptr);
+    self->player->SetEventCallback(nullptr);
+  }
   if (self->texture) {
-    mpv_texture_dispose(self->texture);
-    if (self->texture_registrar) {
+    if (self->texture_registered && self->texture_registrar) {
       fl_texture_registrar_unregister_texture(self->texture_registrar, FL_TEXTURE(self->texture));
+      self->texture_registered = FALSE;
     }
+    mpv_texture_dispose(self->texture);
     g_object_unref(self->texture);
     self->texture = nullptr;
   }
-
   if (self->player) {
     self->player->Dispose();
     self->player.reset();
   }
+  self->initialized = FALSE;
+  self->visible = FALSE;
+}
 
+struct TextureReadyContext {
+  MpvPlugin* plugin;
+  guint64 generation;
+};
+
+struct TextureReadyResult {
+  MpvPlugin* plugin;
+  guint64 generation;
+  gboolean success;
+  gchar* message;
+};
+
+static gboolean handle_texture_ready_result(gpointer data) {
+  auto* result = static_cast<TextureReadyResult*>(data);
+  MpvPlugin* self = result->plugin;
+  if (result->generation != self->generation || self->bootstrap_state != VideoBootstrapState::kPending) {
+    return G_SOURCE_REMOVE;
+  }
+
+  if (result->success) {
+    self->bootstrap_state = VideoBootstrapState::kReady;
+    self->initialized = TRUE;
+    complete_ready_call(self, TRUE, nullptr);
+  } else {
+    self->bootstrap_state = VideoBootstrapState::kFailed;
+    g_free(self->bootstrap_error);
+    self->bootstrap_error = g_strdup(result->message ? result->message : "Video initialization failed");
+    complete_ready_call(self, FALSE, self->bootstrap_error);
+    release_video_resources(self);
+  }
+  return G_SOURCE_REMOVE;
+}
+
+static void destroy_texture_ready_result(gpointer data) {
+  auto* result = static_cast<TextureReadyResult*>(data);
+  g_object_unref(result->plugin);
+  g_free(result->message);
+  delete result;
+}
+
+static void on_texture_ready(gboolean success, const gchar* message, gpointer user_data) {
+  auto* context = static_cast<TextureReadyContext*>(user_data);
+  auto* result = new TextureReadyResult{
+      MPV_PLUGIN(g_object_ref(context->plugin)),
+      context->generation,
+      success,
+      g_strdup(message),
+  };
+  g_main_context_invoke_full(
+      nullptr, G_PRIORITY_DEFAULT, handle_texture_ready_result, result, destroy_texture_ready_result);
+}
+
+static void destroy_texture_ready_context(gpointer data) {
+  auto* context = static_cast<TextureReadyContext*>(data);
+  g_object_unref(context->plugin);
+  delete context;
+}
+
+static gboolean handle_ready_timeout(gpointer user_data) {
+  MpvPlugin* self = MPV_PLUGIN(user_data);
+  self->ready_timeout_source_id = 0;
+  if (self->bootstrap_state != VideoBootstrapState::kPending || !self->ready_call) {
+    return G_SOURCE_REMOVE;
+  }
+  self->bootstrap_state = VideoBootstrapState::kFailed;
+  g_free(self->bootstrap_error);
+  self->bootstrap_error = g_strdup("Video texture did not become ready before the initialization deadline");
+  complete_ready_call(self, FALSE, self->bootstrap_error);
+  release_video_resources(self);
+  return G_SOURCE_REMOVE;
+}
+
+static void mpv_plugin_dispose(GObject* object) {
+  MpvPlugin* self = MPV_PLUGIN(object);
+  complete_ready_call(self, FALSE, "Video initialization was cancelled");
+  release_video_resources(self);
+  self->bootstrap_state = VideoBootstrapState::kIdle;
+  g_clear_pointer(&self->bootstrap_error, g_free);
   g_clear_object(&self->method_channel);
   g_clear_object(&self->event_channel);
   g_clear_object(&self->registrar);
-
   G_OBJECT_CLASS(mpv_plugin_parent_class)->dispose(object);
 }
 
-static void mpv_plugin_class_init(MpvPluginClass* klass) { G_OBJECT_CLASS(klass)->dispose = mpv_plugin_dispose; }
+static void mpv_plugin_finalize(GObject* object) {
+  MpvPlugin* self = MPV_PLUGIN(object);
+  self->player.~PlayerPtr();
+  G_OBJECT_CLASS(mpv_plugin_parent_class)->finalize(object);
+}
+
+static void mpv_plugin_class_init(MpvPluginClass* klass) {
+  G_OBJECT_CLASS(klass)->dispose = mpv_plugin_dispose;
+  G_OBJECT_CLASS(klass)->finalize = mpv_plugin_finalize;
+}
 
 static void mpv_plugin_init(MpvPlugin* self) {
+  new (&self->player) PlayerPtr();
   self->visible = FALSE;
   self->initialized = FALSE;
   self->texture = nullptr;
+  self->texture_registered = FALSE;
   self->texture_registrar = nullptr;
   self->audio_only = FALSE;
+  self->bootstrap_state = VideoBootstrapState::kIdle;
+  self->bootstrap_error = nullptr;
+  self->ready_call = nullptr;
+  self->generation = 0;
+  self->ready_timeout_source_id = 0;
 }
 
 MpvPlugin* mpv_plugin_new(FlPluginRegistrar* registrar, const gchar* channel_name, gboolean audio_only) {
@@ -135,62 +260,73 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         response =
             FL_METHOD_RESPONSE(fl_method_error_response_new("INIT_FAILED", "Failed to initialize MPV player", nullptr));
       }
-    } else if (self->initialized && self->texture) {
-      // Already initialized — return existing texture ID
+    } else if (
+        self->texture && (self->bootstrap_state == VideoBootstrapState::kPending ||
+                          self->bootstrap_state == VideoBootstrapState::kReady)) {
       response =
           FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_int(mpv_texture_get_id(self->texture))));
     } else {
-      // Create player if it was disposed or doesn't exist
+      g_clear_pointer(&self->bootstrap_error, g_free);
+      self->bootstrap_state = VideoBootstrapState::kIdle;
       if (!self->player || self->player->IsDisposed()) {
         self->player = std::make_unique<mpv::MpvPlayer>();
       }
 
-      if (self->player->Initialize()) {
-        // Create the FlTextureGL and register it
+      if (!self->player->Initialize()) {
+        release_video_resources(self);
+        self->bootstrap_state = VideoBootstrapState::kFailed;
+        self->bootstrap_error = g_strdup("Failed to initialize MPV player");
+        response = FL_METHOD_RESPONSE(fl_method_error_response_new("INIT_FAILED", self->bootstrap_error, nullptr));
+      } else {
         FlView* view = fl_plugin_registrar_get_view(self->registrar);
         self->texture = mpv_texture_new(self->player.get(), self->texture_registrar, view);
+        ++self->generation;
+        self->bootstrap_state = VideoBootstrapState::kPending;
+        auto* ready_context = new TextureReadyContext{MPV_PLUGIN(g_object_ref(self)), self->generation};
+        mpv_texture_set_ready_callback(self->texture, on_texture_ready, ready_context, destroy_texture_ready_context);
 
-        fl_texture_registrar_register_texture(self->texture_registrar, FL_TEXTURE(self->texture));
-
-        // Create the render context eagerly — mpv needs it BEFORE any
-        // file is loaded, otherwise VO init fails with "No render context
-        // set" and the video track is dropped entirely.
-        self->player->InitRenderContext();
-
-        // Set redraw callback: when mpv has a frame, mark texture available
-        MpvTexture* tex = self->texture;
-        self->player->SetRedrawCallback([tex]() { mpv_texture_mark_frame_available(tex); });
-
-        self->initialized = TRUE;
-
-        // Set up event callback
-        self->player->SetEventCallback([self](FlValue* event) { send_event(self, event); });
-
-        // Return the texture ID for the Dart Texture widget
-        response =
-            FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_int(mpv_texture_get_id(self->texture))));
-      } else {
-        response =
-            FL_METHOD_RESPONSE(fl_method_error_response_new("INIT_FAILED", "Failed to initialize MPV player", nullptr));
+        if (!fl_texture_registrar_register_texture(self->texture_registrar, FL_TEXTURE(self->texture))) {
+          self->bootstrap_state = VideoBootstrapState::kFailed;
+          self->bootstrap_error = g_strdup("Failed to register video texture");
+          release_video_resources(self);
+          response = FL_METHOD_RESPONSE(fl_method_error_response_new("INIT_FAILED", self->bootstrap_error, nullptr));
+        } else {
+          self->texture_registered = TRUE;
+          MpvTexture* texture = self->texture;
+          self->player->SetRedrawCallback([texture]() { mpv_texture_mark_frame_available(texture); });
+          self->player->SetEventCallback([self](FlValue* event) { send_event(self, event); });
+          mpv_texture_mark_frame_available(self->texture);
+          response =
+              FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_int(mpv_texture_get_id(self->texture))));
+        }
       }
     }
+  } else if (strcmp(method, "waitForVideoReady") == 0) {
+    if (self->audio_only) {
+      response = FL_METHOD_RESPONSE(
+          fl_method_error_response_new("INIT_FAILED", "Audio players have no video readiness state", nullptr));
+    } else if (self->bootstrap_state == VideoBootstrapState::kReady && self->initialized) {
+      response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+    } else if (self->bootstrap_state == VideoBootstrapState::kFailed) {
+      response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+          "INIT_FAILED", self->bootstrap_error ? self->bootstrap_error : "Video initialization failed", nullptr));
+    } else if (self->bootstrap_state != VideoBootstrapState::kPending || !self->texture) {
+      response = FL_METHOD_RESPONSE(
+          fl_method_error_response_new("INIT_FAILED", "Video initialization is not pending", nullptr));
+    } else if (self->ready_call) {
+      response = FL_METHOD_RESPONSE(
+          fl_method_error_response_new("INIT_IN_PROGRESS", "Video readiness is already being awaited", nullptr));
+    } else {
+      self->ready_call = FL_METHOD_CALL(g_object_ref(method_call));
+      self->ready_timeout_source_id =
+          g_timeout_add_seconds_full(G_PRIORITY_DEFAULT, 5, handle_ready_timeout, g_object_ref(self), g_object_unref);
+      return;
+    }
   } else if (strcmp(method, "dispose") == 0) {
-    // Disconnect and unregister texture FIRST — this stops Flutter from
-    // calling populate(), preventing concurrent mpv_render_context_render()
-    // during player disposal.
-    if (self->texture) {
-      mpv_texture_dispose(self->texture);
-      fl_texture_registrar_unregister_texture(self->texture_registrar, FL_TEXTURE(self->texture));
-      g_object_unref(self->texture);
-      self->texture = nullptr;
-    }
-    if (self->player) {
-      self->player->Dispose();
-      // Don't reset player here — stray g_idle callbacks still reference it.
-      // It will be replaced on next initialize() call.
-    }
-    self->initialized = FALSE;
-    self->visible = FALSE;
+    complete_ready_call(self, FALSE, "Video initialization was cancelled");
+    release_video_resources(self);
+    self->bootstrap_state = VideoBootstrapState::kIdle;
+    g_clear_pointer(&self->bootstrap_error, g_free);
     response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
   } else if (strcmp(method, "command") == 0) {
     if (!self->player || !self->initialized) {
@@ -225,7 +361,8 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
     }
   } else if (strcmp(method, "setProperty") == 0) {
     if (!self->player || !self->initialized) {
-      response = FL_METHOD_RESPONSE(fl_method_error_response_new("NOT_INITIALIZED", "Player not initialized", nullptr));
+      response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+          plezy::mpv_common::kSetPropertyNotInitializedCode, "Player not initialized", nullptr));
     } else {
       FlValue* name_value = fl_value_lookup_string(args, "name");
       FlValue* value_value = fl_value_lookup_string(args, "value");
@@ -238,7 +375,17 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         g_object_ref(method_call);
         self->player->SetPropertyAsync(
             fl_value_get_string(name_value), fl_value_get_string(value_value), [method_call](int error) {
-              g_autoptr(FlMethodResponse) async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+              g_autoptr(FlMethodResponse) async_response = nullptr;
+              if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
+                async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+              } else {
+                const char* error_code = plezy::mpv_common::SetPropertyErrorCode(error);
+                const std::string description = error == MPV_ERROR_UNINITIALIZED
+                                                    ? std::string("Player not initialized")
+                                                    : plezy::mpv_common::SetPropertyErrorDescription(error);
+                async_response =
+                    FL_METHOD_RESPONSE(fl_method_error_response_new(error_code, description.c_str(), nullptr));
+              }
               fl_method_call_respond(method_call, async_response, nullptr);
               g_object_unref(method_call);
             });

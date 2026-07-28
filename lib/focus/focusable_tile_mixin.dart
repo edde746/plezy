@@ -7,23 +7,35 @@ import 'owned_focus_node_binding.dart';
 /// auto-scrolls the tile into view when it gains focus.
 mixin FocusableTileStateMixin<T extends StatefulWidget> on State<T> {
   final _focusNodeBinding = OwnedFocusNodeBinding();
+  FocusNode? _boundExternalNode;
 
   FocusNode? get widgetFocusNode;
 
   FocusNode get effectiveFocusNode => _focusNodeBinding.node;
 
-  void initFocusNode() {
-    _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange);
+  @override
+  void initState() {
+    super.initState();
+    _bindFocusNode();
   }
 
-  void updateFocusNode(FocusNode? oldFocusNode) {
-    if (oldFocusNode != widgetFocusNode) {
-      _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange);
+  @override
+  void didUpdateWidget(T oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_boundExternalNode != widgetFocusNode) {
+      _bindFocusNode();
     }
   }
 
-  void disposeFocusNode() {
+  @override
+  void dispose() {
     _focusNodeBinding.dispose();
+    super.dispose();
+  }
+
+  void _bindFocusNode() {
+    _boundExternalNode = widgetFocusNode;
+    _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange);
   }
 
   void _onFocusChange() {

@@ -10,6 +10,8 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
+import '../focus/locked_hub_controller.dart';
+import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -52,9 +54,11 @@ class CatalogItemDetailScreen extends StatefulWidget {
 
 class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  final _backButtonFocusNode = FocusNode(debugLabel: 'catalog_detail_back');
   final _castSectionKey = GlobalKey();
   final _castStripKey = GlobalKey<CastMemberStripState>();
   final _relatedSectionKey = GlobalKey<HubSectionState>();
+  final _hubFocusMemory = HubFocusMemory();
   final ScrollController _scrollController = ScrollController();
   List<FocusNode> _libraryMatchFocusNodes = const [];
   CatalogSource? _watchlistSource;
@@ -101,6 +105,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   @override
   void dispose() {
+    _backButtonFocusNode.dispose();
     _watchlistSource?.watchlistChanges.removeListener(_onWatchlistChanged);
     for (final node in _libraryMatchFocusNodes) {
       node.dispose();
@@ -284,8 +289,15 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   Future<void> _toggleWatchlist() async {
     final source = _watchlistSource;
+    if (source == null || _mutatingWatchlist) return;
     final current = _isOnWatchlist;
-    if (source == null || current == null || _mutatingWatchlist) return;
+    // Parity with lib/screens/media_detail/action_buttons.dart: the action
+    // stays focusable while membership is unknown, and a press kicks the
+    // snapshot load rather than toggling a state we haven't read yet.
+    if (current == null) {
+      unawaited(source.ensureWatchlistLoaded());
+      return;
+    }
     _mutatingWatchlist = true;
     try {
       if (current) {
@@ -303,8 +315,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   Widget _buildLibraryMatchTile(MediaItem match, int index) {
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],
-      dense: false,
-      visualDensity: VisualDensity.standard,
       leading: BackendBadge(backend: match.backend, size: 24),
       // Plex matches carry their library title; Jellyfin's search-based
       // lookup doesn't, so fall back to the server name alone.
@@ -385,7 +395,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     if (item.rating != null) {
       score = item.rating!.toStringAsFixed(1);
       if (item.votes != null && item.votes! > 0) {
-        final compactVotes = NumberFormat.compact(locale: LocaleSettings.currentLocale.languageCode);
+        final compactVotes = NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName);
         score = '$score (${compactVotes.format(item.votes)})';
       }
     }
@@ -441,6 +451,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         items: [for (final item in related) item.toMediaItem()],
         size: related.length,
       ),
+      focusMemory: _hubFocusMemory,
       icon: Symbols.recommend_rounded,
       inset: true,
       onNavigateUp: _focusSectionAboveRelated,
@@ -560,9 +571,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                                 tooltip: onWatchlist ?? false
                                                     ? t.explore.removeFromWatchlist
                                                     : t.explore.addToWatchlist,
-                                                onPressed: onWatchlist == null
-                                                    ? () {}
-                                                    : () => unawaited(_toggleWatchlist()),
+                                                onPressed: () => unawaited(_toggleWatchlist()),
                                               ),
                                             if (_requestSource case final SeerrCatalogSource seerr)
                                               FocusableAction(
@@ -608,7 +617,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                   top: 0,
                   left: 0,
                   child: DesktopAppBarHelper.buildAdjustedLeading(
-                    const AppBarBackButton(style: BackButtonStyle.circular),
+                    AppBarBackButton(style: BackButtonStyle.circular, focusNode: _backButtonFocusNode),
                     context: hostContext,
                   )!,
                 ),

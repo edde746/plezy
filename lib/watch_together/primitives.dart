@@ -1,7 +1,5 @@
 int watchTogetherSystemNowMs() => DateTime.now().millisecondsSinceEpoch;
 
-String watchTogetherHostPeerId(String sessionId) => 'wt-${sessionId.toUpperCase()}';
-
 bool orderedStringListsEqual(List<String> first, List<String> second) {
   if (first.length != second.length) return false;
   for (var i = 0; i < first.length; i++) {

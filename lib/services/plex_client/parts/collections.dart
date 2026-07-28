@@ -1,23 +1,6 @@
 part of '../../plex_client.dart';
 
-mixin _PlexCollectionMethods on MediaServerCacheMixin {
-  FailoverHttpClient get _http;
-
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    AbortController? abort,
-    // ignore: unused_element_parameter
-    bool allowEndpointFailover = true,
-  });
-
-  Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
-  Map<String, dynamic> _buildPaginationParams(int? start, int? size);
-
+mixin _PlexCollectionMethods on _PlexClientInternals {
   _LibraryContentResult _extractLibraryContentResult(
     MediaServerResponse response, {
     int? librarySectionID,
@@ -27,24 +10,11 @@ mixin _PlexCollectionMethods on MediaServerCacheMixin {
     int? requestedSize,
   });
 
-  Future<_LibraryContentResult> _fetchPaginatedList(
-    String path, {
-    int? start,
-    int? size,
-    AbortController? abort,
-    int? librarySectionID,
-    String? librarySectionTitle,
-  });
-
   Future<List<PlexMetadataDto>> _fetchAllPages(
     Future<_LibraryContentResult> Function(int start, int size, AbortController? abort) fetchPage, {
     // ignore: unused_element_parameter
     AbortController? abort,
   });
-
-  Future<bool> _wrapBoolApiCall(Future<MediaServerResponse> Function() apiCall, String errorMessage);
-
-  Future<String> buildMetadataUri(String ratingKey);
 
   Future<_LibraryContentResult> _getLibraryCollectionsPage(
     String sectionId, {
@@ -212,26 +182,20 @@ mixin _PlexCollectionMethods on MediaServerCacheMixin {
     required String uri,
     int? type,
   }) async {
-    try {
-      appLogger.d('Creating collection: sectionId=$sectionId, title=$title, type=$type');
-      final response = await _http.post(
-        '/library/collections',
-        queryParameters: {'type': ?type, 'title': title, 'smart': 0, 'sectionId': sectionId, 'uri': uri},
-      );
-      throwIfHttpError(response);
-      appLogger.d('Create collection response: ${response.statusCode}');
+    appLogger.d('Creating collection: sectionId=$sectionId, title=$title, type=$type');
+    final response = await _http.post(
+      '/library/collections',
+      queryParameters: {'type': ?type, 'title': title, 'smart': 0, 'sectionId': sectionId, 'uri': uri},
+    );
+    throwIfHttpError(response);
+    appLogger.d('Create collection response: ${response.statusCode}');
 
-      final metadata = _getMediaContainer(response)?['Metadata'];
-      if (metadata is List && metadata.isNotEmpty) {
-        final collectionId = metadata.first['ratingKey']?.toString();
-        appLogger.d('Created collection with ID: $collectionId');
-        return collectionId;
-      }
-      return null;
-    } catch (e) {
-      appLogger.e('Failed to create collection', error: e);
-      return null;
-    }
+    final metadata = _getMediaContainer(response)?['Metadata'];
+    if (metadata is! List || metadata.isEmpty || metadata.first is! Map) return null;
+    final collectionId = (metadata.first as Map)['ratingKey']?.toString().trim();
+    if (collectionId == null || collectionId.isEmpty) return null;
+    appLogger.d('Created collection with ID: $collectionId');
+    return collectionId;
   }
 
   @override

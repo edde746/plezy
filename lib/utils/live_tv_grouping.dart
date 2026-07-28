@@ -45,15 +45,15 @@ List<LiveTvChannelGroup> groupLiveTvChannelsBySource(List<LiveTvChannel> channel
 }
 
 String liveTvChannelSourceKey(LiveTvChannel channel) {
-  final serverId = _nonEmpty(channel.serverId) ?? '';
-  final providerSource = _nonEmpty(channel.favoriteSource) ?? _nonEmpty(channel.lineup) ?? '';
-  final dvrSource = _nonEmpty(channel.liveDvrKey) ?? '';
+  final serverId = liveTvNonEmpty(channel.serverId) ?? '';
+  final providerSource = liveTvNonEmpty(channel.favoriteSource) ?? liveTvNonEmpty(channel.lineup) ?? '';
+  final dvrSource = liveTvNonEmpty(channel.liveDvrKey) ?? '';
   return '$serverId\u0000$providerSource\u0000$dvrSource';
 }
 
 String liveTvChannelSourceLabel(LiveTvChannel channel) {
-  final serverLabel = _nonEmpty(channel.serverName) ?? _nonEmpty(channel.serverId) ?? 'Live TV';
-  final sourceTitle = _nonEmpty(channel.liveTvSourceTitle);
+  final serverLabel = liveTvNonEmpty(channel.serverName) ?? liveTvNonEmpty(channel.serverId) ?? 'Live TV';
+  final sourceTitle = liveTvNonEmpty(channel.liveTvSourceTitle);
   if (sourceTitle == null || sourceTitle == serverLabel) return serverLabel;
   return '$serverLabel - $sourceTitle';
 }
@@ -62,8 +62,8 @@ String _deduplicatedLabel(LiveTvChannelGroup group) {
   if (group.channels.isEmpty) return group.label;
   final first = group.channels.first;
   final suffixes = [
-    _nonEmpty(first.liveTvSourceTitle),
-    _nonEmpty(first.liveDvrKey),
+    liveTvNonEmpty(first.liveTvSourceTitle),
+    liveTvNonEmpty(first.liveDvrKey),
     liveTvProviderIdentifierForChannel(first),
   ];
   String? suffix;
@@ -75,9 +75,4 @@ String _deduplicatedLabel(LiveTvChannelGroup group) {
   }
   if (suffix == null || group.label.contains(suffix)) return group.label;
   return '${group.label} - $suffix';
-}
-
-String? _nonEmpty(String? value) {
-  final trimmed = value?.trim();
-  return trimmed == null || trimmed.isEmpty ? null : trimmed;
 }

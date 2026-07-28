@@ -10,6 +10,7 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       OAUTH_BASE_URL: https://ice.plezy.app
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:?Set TRUSTED_PROXY_CIDRS to the reverse proxy network CIDR}
       MAL_CLIENT_ID: ${MAL_CLIENT_ID:-}
       ANILIST_CLIENT_ID: ${ANILIST_CLIENT_ID:-}
       ANILIST_CLIENT_SECRET: ${ANILIST_CLIENT_SECRET:-}
@@ -20,7 +21,9 @@ services:
         max-file: "3"
 
   bugs:
-    image: ghcr.io/edde746/bugs:latest
+    # Update the source-revision tag, index digest, and platforms together using CONTRIBUTING.md.
+    # Platforms: linux/amd64, linux/arm64
+    image: ghcr.io/edde746/bugs:sha-319e0eb@sha256:1e5a2d8ab80e703de4a8a8b15d858ce931609e2226bf1e6d04979c0ca52a3005
     restart: unless-stopped
     mem_limit: 512m
     volumes:

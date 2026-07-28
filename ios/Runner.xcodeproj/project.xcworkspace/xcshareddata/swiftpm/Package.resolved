@@ -1,14 +1,6 @@
 {
   "pins" : [
     {
-      "identity" : "csqlite",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/simolus3/CSQLite.git",
-      "state" : {
-        "revision" : "1ee46d19a4f451a7aa64ffc64fc99b4748131e62"
-      }
-    },
-    {
       "identity" : "dkcamera",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/zhangao0086/DKCamera",
@@ -40,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/edde746/MPVKit",
       "state" : {
-        "revision" : "93101dc1d0903c48fa3054652805acacbb75e856",
-        "version" : "1.0.13"
+        "revision" : "39df1216941c1442e9163d2a574ca37ef2c2b4ff",
+        "version" : "1.0.16"
       }
     },
     {
@@ -58,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/getsentry/sentry-cocoa",
       "state" : {
-        "revision" : "dad229c665bfd043c5d80ac7aa77717cbd19a1c3",
-        "version" : "8.58.3"
+        "revision" : "f196cbb98e0388381d57908f2f5a9bdc385cde68",
+        "version" : "8.58.4"
       }
     },
     {

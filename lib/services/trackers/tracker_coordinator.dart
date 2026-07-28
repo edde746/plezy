@@ -118,23 +118,19 @@ class TrackerCoordinator {
     animeProgress: _debugAnimeProgress,
   );
 
-  Future<void> markWatched(MediaItem item, MediaServerClient client) async {
+  Future<void> markWatched(MediaItem item, MediaServerClient client) => _markManual(item, client, watched: true);
+
+  Future<void> markUnwatched(MediaItem item, MediaServerClient client) => _markManual(item, client, watched: false);
+
+  Future<void> _markManual(MediaItem item, MediaServerClient client, {required bool watched}) async {
     try {
-      await _markWatched(item, client);
+      await _applyManualMark(item, client, watched: watched);
     } catch (e) {
-      appLogger.d('Trackers: manual markWatched failed for ${item.id}', error: e);
+      appLogger.d('Trackers: manual ${watched ? 'markWatched' : 'markUnwatched'} failed for ${item.id}', error: e);
     }
   }
 
-  Future<void> markUnwatched(MediaItem item, MediaServerClient client) async {
-    try {
-      await _markUnwatched(item, client);
-    } catch (e) {
-      appLogger.d('Trackers: manual markUnwatched failed for ${item.id}', error: e);
-    }
-  }
-
-  Future<void> _markWatched(MediaItem item, MediaServerClient client) async {
+  Future<void> _applyManualMark(MediaItem item, MediaServerClient client, {required bool watched}) async {
     final kind = item.kind;
     if (kind != MediaKind.movie && kind != MediaKind.episode && kind != MediaKind.season && kind != MediaKind.show) {
       return;
@@ -146,38 +142,18 @@ class TrackerCoordinator {
     final resolver = _newResolver(client, needsFribb: () => _anyTrackerNeedsFribbForLibrary(libraryGlobalKey));
 
     if (kind == MediaKind.movie || kind == MediaKind.episode) {
-      await _markSingleWatched(item, resolver);
+      await (watched ? _markSingleWatched(item, resolver) : _markSingleUnwatched(item, resolver));
       return;
     }
 
     final episodes = <MediaItem>[];
     await collectEpisodes(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    appLogger.d('Trackers: manual ${kind.name} ${item.id} expanded to ${episodes.length} episodes');
+    final expansion = watched ? 'expanded' : 'unwatched expanded';
+    appLogger.d('Trackers: manual ${kind.name} ${item.id} $expansion to ${episodes.length} episodes');
 
-    await _markContainerEpisodesWatched(episodes, resolver);
-  }
-
-  Future<void> _markUnwatched(MediaItem item, MediaServerClient client) async {
-    final kind = item.kind;
-    if (kind != MediaKind.movie && kind != MediaKind.episode && kind != MediaKind.season && kind != MediaKind.show) {
-      return;
-    }
-
-    final libraryGlobalKey = item.libraryGlobalKey;
-    if (!_hasActiveTrackerForLibrary(libraryGlobalKey)) return;
-
-    final resolver = _newResolver(client, needsFribb: () => _anyTrackerNeedsFribbForLibrary(libraryGlobalKey));
-
-    if (kind == MediaKind.movie || kind == MediaKind.episode) {
-      await _markSingleUnwatched(item, resolver);
-      return;
-    }
-
-    final episodes = <MediaItem>[];
-    await collectEpisodes(client, item.id, unwatchedOnly: false, out: episodes, fallback: item);
-    appLogger.d('Trackers: manual ${kind.name} ${item.id} unwatched expanded to ${episodes.length} episodes');
-
-    await _markContainerEpisodesUnwatched(episodes, resolver);
+    await (watched
+        ? _markContainerEpisodesWatched(episodes, resolver)
+        : _markContainerEpisodesUnwatched(episodes, resolver));
   }
 
   Future<void> _markContainerEpisodesWatched(List<MediaItem> episodes, TrackerIdResolver resolver) async {
@@ -189,7 +165,7 @@ class TrackerCoordinator {
       if (ctx == null) continue;
       resolved++;
 
-      await _dispatchToTrackers([SimklTracker.instance], ctx);
+      await _dispatch([SimklTracker.instance], ctx, watched: true);
 
       final key = _animeGroupKey(ctx);
       if (key == null) continue;
@@ -200,7 +176,7 @@ class TrackerCoordinator {
 
     for (final group in animeGroups.values) {
       final ctx = group.context;
-      if (ctx != null) await _dispatchToTrackers([MalTracker.instance, AnilistTracker.instance], ctx);
+      if (ctx != null) await _dispatch([MalTracker.instance, AnilistTracker.instance], ctx, watched: true);
     }
     appLogger.d('Trackers: manual container resolved ${animeGroups.length} anime entries');
   }
@@ -220,7 +196,7 @@ class TrackerCoordinator {
       if (ctx == null) continue;
       resolved++;
 
-      await _dispatchUnwatchedToTrackers([SimklTracker.instance], ctx);
+      await _dispatch([SimklTracker.instance], ctx, watched: false);
 
       final anime = ctx.anime;
       if (anime == null) continue;
@@ -279,7 +255,7 @@ class TrackerCoordinator {
       appLogger.d('Trackers: no external IDs for manually watched ${item.id}');
       return;
     }
-    await _dispatchMarkWatched(ctx);
+    await _dispatch(_trackers, ctx, watched: true);
   }
 
   Future<void> _markSingleUnwatched(MediaItem item, TrackerIdResolver resolver) async {
@@ -289,9 +265,9 @@ class TrackerCoordinator {
       return;
     }
     if (ctx.isMovie) {
-      await _dispatchMarkUnwatched(ctx);
+      await _dispatch(_trackers, ctx, watched: false);
     } else {
-      await _dispatchUnwatchedToTrackers([SimklTracker.instance], ctx);
+      await _dispatch([SimklTracker.instance], ctx, watched: false);
     }
   }
 
@@ -301,7 +277,7 @@ class TrackerCoordinator {
     final shouldMarkWatched = ctx != null && !_thresholdCrossed && _timeline.watchedThresholdReached;
     _reset();
     if (ctx != null && shouldMarkWatched) {
-      await _dispatchMarkWatched(ctx);
+      await _dispatch(_trackers, ctx, watched: true);
     }
   }
 
@@ -311,7 +287,7 @@ class TrackerCoordinator {
     if (ctx == null || _thresholdCrossed) return;
     if (!_timeline.watchedThresholdReached) return;
     _thresholdCrossed = true;
-    unawaited(_dispatchMarkWatched(ctx));
+    unawaited(_dispatch(_trackers, ctx, watched: true));
   }
 
   void updateDuration(Duration duration) {
@@ -340,40 +316,17 @@ class TrackerCoordinator {
     _thresholdCrossed = false;
   }
 
-  Future<void> _dispatchMarkWatched(TrackerContext ctx) async {
-    final active = _trackers.where((t) => t.canScrobble && t.shouldScrobbleForLibrary(ctx.libraryGlobalKey));
-    await _dispatchToTrackers(active, ctx);
-  }
-
-  Future<void> _dispatchMarkUnwatched(TrackerContext ctx) async {
-    final active = _trackers.where((t) => t.canScrobble && t.shouldScrobbleForLibrary(ctx.libraryGlobalKey));
-    await _dispatchUnwatchedToTrackers(active, ctx);
-  }
-
   bool _isActive(Tracker tracker, String? libraryGlobalKey) =>
       tracker.canScrobble && tracker.shouldScrobbleForLibrary(libraryGlobalKey);
 
-  Future<void> _dispatchToTrackers(Iterable<Tracker> trackers, TrackerContext ctx) async {
+  Future<void> _dispatch(Iterable<Tracker> trackers, TrackerContext ctx, {required bool watched}) async {
     final active = trackers.where((t) => _isActive(t, ctx.libraryGlobalKey));
     await Future.wait(
       active.map((t) async {
         try {
-          await t.markWatched(ctx);
+          await (watched ? t.markWatched(ctx) : t.markUnwatched(ctx));
         } catch (e) {
-          appLogger.d('${t.name}: markWatched failed', error: e);
-        }
-      }),
-    );
-  }
-
-  Future<void> _dispatchUnwatchedToTrackers(Iterable<Tracker> trackers, TrackerContext ctx) async {
-    final active = trackers.where((t) => _isActive(t, ctx.libraryGlobalKey));
-    await Future.wait(
-      active.map((t) async {
-        try {
-          await t.markUnwatched(ctx);
-        } catch (e) {
-          appLogger.d('${t.name}: markUnwatched failed', error: e);
+          appLogger.d('${t.name}: ${watched ? 'markWatched' : 'markUnwatched'} failed', error: e);
         }
       }),
     );

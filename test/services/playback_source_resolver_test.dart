@@ -57,10 +57,12 @@ void main() {
     manager.debugRegisterClientForTesting(client, online: false);
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
-      metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
-      selectedMediaIndex: 0,
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+        selectedMediaIndex: 0,
+        qualityPreset: TranscodeQualityPreset.original,
+      ),
       offlineLibraryMode: false,
-      qualityPreset: TranscodeQualityPreset.original,
     );
 
     expect(context.result.videoUrl, 'https://example.com/video.mp4');
@@ -80,11 +82,13 @@ void main() {
     manager.debugRegisterClientForTesting(client, online: true);
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
-      metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
-      selectedMediaIndex: 0,
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+        selectedMediaIndex: 0,
+        qualityPreset: TranscodeQualityPreset.original,
+        sessionIdentifier: 'playback-session-id',
+      ),
       offlineLibraryMode: false,
-      qualityPreset: TranscodeQualityPreset.original,
-      sessionIdentifier: 'playback-session-id',
     );
 
     expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
@@ -104,11 +108,13 @@ void main() {
     manager.debugRegisterClientForTesting(client, online: true);
 
     final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
-      metadata: testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
-      selectedMediaIndex: 0,
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        selectedMediaIndex: 0,
+        qualityPreset: TranscodeQualityPreset.original,
+        sessionIdentifier: 'playback-session-id',
+      ),
       offlineLibraryMode: false,
-      qualityPreset: TranscodeQualityPreset.original,
-      sessionIdentifier: 'playback-session-id',
     );
 
     expect(context.sourceKind, PlaybackSourceKind.remoteDirect);

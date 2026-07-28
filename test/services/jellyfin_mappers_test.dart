@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/settings_service.dart' show EpisodePosterMode;
@@ -168,6 +169,28 @@ void main() {
       expect(musicVideo.kind.isVideo, isTrue);
     });
 
+    test('music video watch state ignores recursive and child counts', () {
+      MediaItem mapMusicVideo(bool played) => JellyfinMappers.mediaItem(
+        {
+          'Id': 'music-video',
+          'Name': 'Music Video',
+          'Type': 'MusicVideo',
+          'RecursiveItemCount': '1',
+          'ChildCount': 1,
+          'UserData': {'Played': played, 'PlayCount': played ? '1' : '0', 'UnplayedItemCount': '0'},
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      final unplayed = mapMusicVideo(false);
+      final played = mapMusicVideo(true);
+      expect(unplayed.leafCount, 1);
+      expect(unplayed.viewedLeafCount, isNull);
+      expect(unplayed.isWatched, isFalse);
+      expect(played.isWatched, isTrue);
+    });
+
     test('episode preserves series/season hierarchy', () {
       final json = {
         'Id': 'ep1',
@@ -258,6 +281,27 @@ void main() {
       expect(item.leafCount, 12);
       expect(item.viewedLeafCount, 8);
       expect(item.isPartiallyWatched, isTrue);
+      expect(item.isWatched, isFalse);
+    });
+
+    test('container leaf counts tolerate scalar drift and clamp invalid unplayed totals', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 's-invalid-counts',
+          'Name': 'Show',
+          'Type': 'Series',
+          'RecursiveItemCount': '5',
+          'ChildCount': 2.0,
+          'UserData': {'UnplayedItemCount': '8'},
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.leafCount, 5);
+      expect(item.childCount, 2);
+      expect(item.viewedLeafCount, 0);
+      expect(item.unwatchedCount, 5);
       expect(item.isWatched, isFalse);
     });
 
@@ -474,13 +518,24 @@ void main() {
       }
     });
 
-    test('falls back to MediaKind.unknown for unrecognised collections', () {
-      final lib = JellyfinMappers.library({
-        'Id': 'view-x',
-        'Name': 'Mixed',
-        'CollectionType': 'mixed',
+    test('maps content-type-less collection folders to a movie and show root browse', () {
+      for (final view in [
+        {'Id': 'view-missing-type', 'Name': 'Mixed', 'Type': 'CollectionFolder', 'IsFolder': true},
+        {'Id': 'view-empty-type', 'Name': 'Mixed', 'Type': 'CollectionFolder', 'CollectionType': '', 'IsFolder': true},
+      ]) {
+        final mixed = JellyfinMappers.library(view, serverId: ServerId(_serverId))!;
+        expect(mixed.kind, MediaKind.folder);
+        expect(mixed.defaultBrowseKinds, const [MediaKind.movie, MediaKind.show]);
+      }
+
+      final unrecognised = JellyfinMappers.library({
+        'Id': 'view-books',
+        'Name': 'Books',
+        'Type': 'CollectionFolder',
+        'CollectionType': 'books',
       }, serverId: ServerId(_serverId))!;
-      expect(lib.kind, MediaKind.unknown);
+      expect(unrecognised.kind, MediaKind.unknown);
+      expect(unrecognised.defaultBrowseKinds, isEmpty);
     });
   });
 

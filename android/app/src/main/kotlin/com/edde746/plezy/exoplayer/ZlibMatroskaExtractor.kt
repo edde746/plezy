@@ -102,6 +102,7 @@ class ZlibMatroskaExtractor(
 
   override fun seek(position: Long, timeUs: Long) {
     latmOutput?.resetTracks()
+    zlibOutput?.resetTracks()
     super.seek(position, timeUs)
   }
 
@@ -115,16 +116,22 @@ class ZlibMatroskaExtractor(
   ) : ExtractorOutput {
 
     private var lastCreatedWrapper: ZlibInflatingTrackOutput? = null
+    private val trackOutputs = mutableListOf<ZlibInflatingTrackOutput>()
 
     override fun track(id: Int, type: Int): TrackOutput {
       val original = delegate.track(id, type)
-      val wrapper = ZlibInflatingTrackOutput(original)
-      lastCreatedWrapper = wrapper
-      return wrapper
+      return ZlibInflatingTrackOutput(original).also {
+        trackOutputs.add(it)
+        lastCreatedWrapper = it
+      }
     }
 
     fun activateLast() {
       lastCreatedWrapper?.active = true
+    }
+
+    fun resetTracks() {
+      trackOutputs.forEach { it.resetBufferedData() }
     }
 
     override fun endTracks() = delegate.endTracks()

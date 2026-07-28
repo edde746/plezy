@@ -6,6 +6,7 @@ import '../connection/connection_registry.dart';
 import '../i18n/strings.g.dart';
 import '../screens/profile/pin_entry_dialog.dart';
 import '../services/storage_service.dart';
+import '../services/system_shelf_service.dart';
 import '../services/tvos_user_profile_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
@@ -22,6 +23,14 @@ import 'profile_connection_registry.dart';
 /// of a PIN dialog) is not an error and must not surface a failure message.
 enum ProfileActivationOutcome { activated, cancelled, failed }
 
+class _ProfileActivationResult {
+  const _ProfileActivationResult(this.outcome, {this.rollbackProfile, this.activationGeneration});
+
+  final ProfileActivationOutcome outcome;
+  final Profile? rollbackProfile;
+  final int? activationGeneration;
+}
+
 /// Activate [profile] from a UI surface, prompting for the PIN when the
 /// profile is protected. Loops on wrong-PIN entries until the user submits
 /// the right PIN or backs out.
@@ -34,42 +43,105 @@ enum ProfileActivationOutcome { activated, cancelled, failed }
 /// failed PIN never flips `_active`. The minted user-token is saved and
 /// the profile is marked pre-verified on the binder, so it reuses the cached
 /// token instead of re-prompting for the same PIN.
-Future<ProfileActivationOutcome> activateProfileWithPin(BuildContext context, Profile profile) async {
-  final active = context.read<ActiveProfileProvider>();
-  final binder = context.read<ActiveProfileBinder>();
-
+Future<_ProfileActivationResult> _activateProfileWithPin(BuildContext context, Profile profile) async {
   if (profile.isPlexHome) {
     if (profile.plexProtected) {
       final verified = await _preVerifyPlexHomePin(context, profile);
+      if (!context.mounted) {
+        return const _ProfileActivationResult(ProfileActivationOutcome.cancelled);
+      }
       if (verified != PlexHomeSwitchStatus.success) {
-        return verified == PlexHomeSwitchStatus.cancelled
-            ? ProfileActivationOutcome.cancelled
-            : ProfileActivationOutcome.failed;
+        return _ProfileActivationResult(
+          verified == PlexHomeSwitchStatus.cancelled
+              ? ProfileActivationOutcome.cancelled
+              : ProfileActivationOutcome.failed,
+        );
       }
     }
-    binder.markUserInitiatedActivation(profile.id);
-    return await active.activate(profile) ? ProfileActivationOutcome.activated : ProfileActivationOutcome.failed;
+    return _activateVerifiedProfile(context, profile);
   }
 
   if (!profile.isPinProtected) {
-    binder.markUserInitiatedActivation(profile.id);
-    return await active.activate(profile) ? ProfileActivationOutcome.activated : ProfileActivationOutcome.failed;
+    return _activateVerifiedProfile(context, profile);
   }
 
   String? errorMessage;
   while (true) {
-    if (!context.mounted) return ProfileActivationOutcome.cancelled;
+    if (!context.mounted) {
+      return const _ProfileActivationResult(ProfileActivationOutcome.cancelled);
+    }
     final pin = await showPinEntryDialog(context, profile.displayName, errorMessage: errorMessage);
-    if (pin == null) return ProfileActivationOutcome.cancelled; // user backed out
+    if (!context.mounted) {
+      return const _ProfileActivationResult(ProfileActivationOutcome.cancelled);
+    }
+    if (pin == null) {
+      return const _ProfileActivationResult(ProfileActivationOutcome.cancelled);
+    }
     final hash = profile.pinHash;
     if (hash != null && verifyPin(pin, hash)) {
-      binder.markUserInitiatedActivation(profile.id);
-      return await active.activate(profile, pin: pin)
-          ? ProfileActivationOutcome.activated
-          : ProfileActivationOutcome.failed;
+      return _activateVerifiedProfile(context, profile, pin: pin);
     }
     errorMessage = t.profiles.incorrectPinTryAgain;
   }
+}
+
+Future<_ProfileActivationResult> _activateVerifiedProfile(BuildContext context, Profile profile, {String? pin}) async {
+  final active = context.read<ActiveProfileProvider>();
+  final binder = context.read<ActiveProfileBinder>();
+  final shelf = SystemShelfService();
+  final oldOwner = active.activeId;
+  final requestGeneration = active.beginIdentityMutationRequest();
+  int? activationGeneration;
+
+  try {
+    if (oldOwner != null && oldOwner != profile.id) {
+      await shelf.endProfileSession(oldOwner);
+      if (!active.isIdentityMutationRequestCurrent(requestGeneration)) {
+        return const _ProfileActivationResult(ProfileActivationOutcome.cancelled);
+      }
+    }
+
+    // Capture the rollback owner only once this verified request has been
+    // admitted. Protected-profile verification may have awaited while another
+    // profile became authoritative, so anything captured by the UI caller is
+    // stale by this point.
+    final rollbackProfile = active.active;
+    binder.markUserInitiatedActivation(profile.id);
+    final activation = active.activate(profile, pin: pin);
+    activationGeneration = active.identityMutationGeneration;
+    final activated = await activation;
+    if (activated) {
+      return _ProfileActivationResult(
+        ProfileActivationOutcome.activated,
+        rollbackProfile: rollbackProfile,
+        activationGeneration: activationGeneration,
+      );
+    }
+  } catch (error, stackTrace) {
+    final stillCurrent = activationGeneration == null
+        ? active.isIdentityMutationRequestCurrent(requestGeneration)
+        : active.identityMutationGeneration == activationGeneration;
+    if (stillCurrent) {
+      appLogger.w('Failed to activate profile ${profile.id}', error: error, stackTrace: stackTrace);
+    }
+  } finally {
+    active.finishIdentityMutationRequest(requestGeneration);
+  }
+
+  final stillCurrent = activationGeneration == null
+      ? active.isIdentityMutationRequestCurrent(requestGeneration)
+      : active.identityMutationGeneration == activationGeneration;
+  if (!stillCurrent) {
+    return const _ProfileActivationResult(ProfileActivationOutcome.cancelled);
+  }
+
+  // Activation may fail or throw while the prior identity is still
+  // authoritative. Admit it again, but never replay rows captured before the
+  // failed switch.
+  if (oldOwner != null && active.activeId == oldOwner) {
+    shelf.beginProfileSession(oldOwner);
+  }
+  return const _ProfileActivationResult(ProfileActivationOutcome.failed);
 }
 
 /// Activate [profile] from a UI surface, then wait until the active profile's
@@ -78,9 +150,11 @@ Future<ProfileActivationOutcome> activateProfileWithPin(BuildContext context, Pr
 /// which is the user changing their mind, not an error.
 Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
   final activeProvider = context.read<ActiveProfileProvider>();
-  final outcome = await activateProfileWithPin(context, profile);
+  final binder = context.read<ActiveProfileBinder>();
+  final shelf = SystemShelfService();
+  final activation = await _activateProfileWithPin(context, profile);
   if (!context.mounted) return false;
-  switch (outcome) {
+  switch (activation.outcome) {
     case ProfileActivationOutcome.cancelled:
       return false;
     case ProfileActivationOutcome.failed:
@@ -90,14 +164,64 @@ Future<bool> switchProfileFromUi(BuildContext context, Profile profile) async {
       break;
   }
 
+  final previousProfile = activation.rollbackProfile;
+  var activationGeneration = activation.activationGeneration;
+  if (activationGeneration == null) return false;
+  bool isCurrentActivation(String expectedProfileId) =>
+      activeProvider.committedIdentityGeneration == activationGeneration &&
+      activeProvider.activeId == expectedProfileId;
+
+  if (!isCurrentActivation(profile.id)) return false;
   final bound = await activeProvider.awaitBindingSettle();
-  if (!context.mounted) return false;
-  if (!bound) {
-    showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
-    return false;
+  if (!isCurrentActivation(profile.id)) return false;
+  if (bound) {
+    if (context.mounted) await maybePromptTvosProfileMapping(context, profile);
+    return true;
   }
-  await maybePromptTvosProfileMapping(context, profile);
-  return true;
+
+  if (previousProfile != null && previousProfile.id != profile.id && isCurrentActivation(profile.id)) {
+    final rollbackRequestGeneration = activeProvider.beginIdentityMutationRequest();
+    try {
+      await shelf.endProfileSession(profile.id);
+      if (!isCurrentActivation(profile.id)) return false;
+
+      final rollbackGeneration = await activeProvider.restoreAfterFailedActivation(
+        previousProfile,
+        expectedActiveId: profile.id,
+        expectedCommittedGeneration: activationGeneration,
+        requestGeneration: rollbackRequestGeneration,
+      );
+      if (rollbackGeneration == null) return false;
+      activationGeneration = rollbackGeneration;
+      if (!isCurrentActivation(previousProfile.id)) return false;
+
+      binder.markUserInitiatedActivation(previousProfile.id);
+      final rebind = binder.rebindActive();
+      final restored = await activeProvider.awaitBindingSettle();
+      if (!isCurrentActivation(previousProfile.id)) {
+        await rebind;
+        return false;
+      }
+      await rebind;
+      if (!isCurrentActivation(previousProfile.id)) return false;
+
+      if (restored) {
+        shelf.beginProfileSession(previousProfile.id);
+      }
+    } catch (error, stackTrace) {
+      appLogger.w(
+        'Failed to restore ${previousProfile.id} after profile switch failure',
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } finally {
+      activeProvider.finishIdentityMutationRequest(rollbackRequestGeneration);
+    }
+  }
+  if (context.mounted && activeProvider.committedIdentityGeneration == activationGeneration) {
+    showErrorSnackBar(context, t.errors.failedToSwitchProfile(displayName: profile.displayName));
+  }
+  return false;
 }
 
 enum _TvosMappingChoice { yes, notNow, dontAskAgain }
@@ -172,6 +296,8 @@ Future<PlexHomeSwitchStatus> _preVerifyPlexHomePin(BuildContext context, Profile
   final connections = context.read<ConnectionRegistry>();
   final pcRegistry = context.read<ProfileConnectionRegistry>();
   final binder = context.read<ActiveProfileBinder>();
+  // Built before the await: capturing the prompt needs a live context.
+  final promptForPin = dialogPinPrompt(context, profile.displayName);
   final all = await connections.list();
   PlexAccountConnection? account;
   for (final c in all) {
@@ -186,10 +312,7 @@ Future<PlexHomeSwitchStatus> _preVerifyPlexHomePin(BuildContext context, Profile
     account: account,
     homeUserUuid: homeUuid,
     requiresPin: true,
-    promptForPin: ({String? errorMessage}) async {
-      if (!context.mounted) return null;
-      return showPinEntryDialog(context, profile.displayName, errorMessage: errorMessage);
-    },
+    promptForPin: promptForPin,
     persistTo: pcRegistry,
     persistProfileId: profile.id,
     logLabel: profile.displayName,
@@ -203,7 +326,7 @@ Future<PlexHomeSwitchStatus> _preVerifyPlexHomePin(BuildContext context, Profile
 /// [StorageService.getProfileIdForTvosUser]).
 ///
 /// Non-PIN profiles switch silently. A PIN-protected mapped profile routes
-/// through [activateProfileWithPin] — the same prompt as a manual switch —
+/// through [_activateProfileWithPin] — the same prompt as a manual switch —
 /// when [context] is usable; a cancelled or wrong PIN just leaves the
 /// current profile in place. Without a context, protected profiles are
 /// skipped as a safe fallback. Returns true when a different profile was
@@ -231,7 +354,8 @@ Future<bool> activateTvosMappedProfile({
   if (match.isPinProtected) {
     if (context == null || !context.mounted) return false;
     appLogger.i('tvOS user mapping: asking PIN to activate ${match.displayName} ($mappedId)');
-    return await activateProfileWithPin(context, match) == ProfileActivationOutcome.activated;
+    final activation = await _activateProfileWithPin(context, match);
+    return activation.outcome == ProfileActivationOutcome.activated;
   }
   appLogger.i('tvOS user mapping: auto-activating ${match.displayName} ($mappedId)');
   binder.markUserInitiatedActivation(match.id);

@@ -2,41 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../../i18n/strings.g.dart';
-import '../../../mpv/mpv.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/track_label_builder.dart';
 import '../../../widgets/focusable_list_tile.dart';
 
 class TrackSelectionHelper {
-  /// Get the appropriate empty message based on track type
-  static String getEmptyMessage<T>() {
-    if (T == SubtitleTrack) {
-      return t.videoControls.noSubtitlesAvailable;
-    } else if (T == AudioTrack) {
-      return t.videoControls.noAudioTracksAvailable;
-    }
-    return t.videoControls.noTracksAvailable;
-  }
-
-  static Widget buildEmptyState<T>() {
-    return Center(child: Text(getEmptyMessage<T>()));
-  }
-
-  /// Check if "Off" is selected for a track
-  static bool isOffSelected<T>(T? selectedTrack, bool Function(T track)? isOffTrack) {
-    return selectedTrack == null || (isOffTrack?.call(selectedTrack) ?? false);
-  }
-
-  static String getTrackId<T>(T track) {
-    if (track is AudioTrack) {
-      return track.id;
-    } else if (track is SubtitleTrack) {
-      return track.id;
-    }
-    return '';
-  }
-
-  static Widget buildOffTile<T>({
+  static Widget buildOffTile({
     required BuildContext context,
     required bool isSelected,
     required VoidCallback onTap,
@@ -59,7 +30,7 @@ class TrackSelectionHelper {
     );
   }
 
-  static Widget buildTrackTile<T>({
+  static Widget buildTrackTile({
     required BuildContext context,
     required TrackLabel label,
     required bool isSelected,

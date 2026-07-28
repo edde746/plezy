@@ -1,5 +1,32 @@
 part of '../../video_player_screen.dart';
 
+/// Keeps an explicit transcode subtitle choice pending while the native
+/// player finishes discovering sidecars that were attached during open.
+///
+/// Returning true tells the source-switch caller that no media reload is
+/// needed. [TrackManager] owns the generation-scoped late-track listener.
+Future<bool> deferTranscodeSubtitleSelection({
+  required TrackManager trackManager,
+  required MediaSubtitleTrack sourceTrack,
+  required PlaybackSubtitleSidecar sourceSidecar,
+  required int sourceStreamId,
+  required Future<void> Function(SubtitleTrack track, {int? sourceStreamId}) onSubtitleTrackChanged,
+  required bool Function() shouldContinue,
+}) async {
+  final deferredTrack = PlaybackSubtitleResolver.subtitleTrackForSource(sourceTrack, sidecar: sourceSidecar);
+  trackManager.preferredSubtitleTrack = deferredTrack;
+  // Persist first: the screen callback routes to onSubtitleTrackSelectedByUser,
+  // which invalidates the pending selection. Arming before that would retire the
+  // deferred pass we depend on to apply this choice once mpv discovers the sidecar.
+  await onSubtitleTrackChanged(deferredTrack, sourceStreamId: sourceStreamId);
+  // Persisting suspends, so the switch may have been superseded meanwhile.
+  // Arming then would attach a listener belonging to an operation nobody is
+  // waiting on any more.
+  if (!shouldContinue()) return false;
+  trackManager.applyTrackSelectionWhenReady();
+  return true;
+}
+
 extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   void _clearEpisodeLoadingFlags() {
     if (!_isLoadingNext && !_isLoadingPrevious) return;
@@ -22,6 +49,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   }
 
   Future<void> _playNext() async {
+    if (!_canNavigateMediaItems()) return;
     if (!mounted) return;
     if (_nextEpisode == null || _isLoadingNext) return;
 
@@ -40,6 +68,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   }
 
   Future<void> _playPrevious() async {
+    if (!_canNavigateMediaItems()) return;
     if (_previousEpisode == null || _isLoadingPrevious) return;
 
     _notifyWatchTogetherMediaChange(metadata: _previousEpisode);
@@ -52,6 +81,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   }
 
   Future<void> _restartOrPlayPrevious() async {
+    if (!_canNavigateMediaItems()) return;
     final currentPlayer = player;
     if (!mounted || currentPlayer == null || _isLoadingPrevious) return;
 
@@ -103,7 +133,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
   /// Navigates to a new episode by reusing the current player whenever possible.
   Future<void> _navigateToEpisode(MediaItem episodeMetadata) async {
-    if (player == null) {
+    final currentPlayer = player;
+    if (currentPlayer == null) {
       if (mounted) unawaited(_replaceScreenWithPlayer(episodeMetadata));
       return;
     }
@@ -115,6 +146,17 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         _effectiveSelectedMediaIndex >= 0 && _effectiveSelectedMediaIndex < _availableVersions.length
         ? _availableVersions[_effectiveSelectedMediaIndex].signature
         : null;
+    final committedSubtitleSelection = _playbackSession?.subtitleSelection;
+    final primarySubtitlePreference = subtitlePreferenceForItemChange(
+      hasCommittedSelection: committedSubtitleSelection != null,
+      committedTrack: committedSubtitleSelection?.primaryTrack,
+      nativeTrack: currentPlayer.state.track.subtitle,
+    );
+    final secondarySubtitlePreference = subtitlePreferenceForItemChange(
+      hasCommittedSelection: committedSubtitleSelection != null,
+      committedTrack: committedSubtitleSelection?.secondaryTrack,
+      nativeTrack: currentPlayer.state.track.secondarySubtitle,
+    );
     await _reloadMediaInPlace(
       metadata: episodeMetadata,
       selectedMediaIndex: _effectiveSelectedMediaIndex,
@@ -125,6 +167,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // meaningless on the new item, so let preferences pick the track.
       useCurrentAudioStreamSelection: false,
       preserveCurrentTrackSelection: true,
+      preservedSubtitleTrack: primarySubtitlePreference,
+      preservedSecondarySubtitleTrack: secondarySubtitlePreference,
       reason: 'episode navigation',
     );
   }
@@ -181,7 +225,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
     if (newSubtitleChoice != null && newMediaIndex == null && newPreset == null && newAudioStreamId == null) {
       try {
-        final selected = await _selectDirectPlaySourceSubtitleLocally(
+        final selected = await _selectSourceSubtitleLocally(
           currentPlayer,
           newSubtitleChoice,
           shouldContinue: isCurrentSourceSwitch,
@@ -285,12 +329,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<bool> _selectDirectPlaySourceSubtitleLocally(
+  Future<bool> _selectSourceSubtitleLocally(
     Player currentPlayer,
     PlaybackSourceSubtitleChoice choice, {
     required bool Function() shouldContinue,
   }) async {
-    if (_isTranscoding) return false;
     if (choice.isOff) {
       await currentPlayer.selectSecondarySubtitleTrack(SubtitleTrack.off);
       if (!shouldContinue()) return false;
@@ -314,15 +357,30 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     if (sourceTrack == null) return false;
 
     final nativeTracks = currentPlayer.state.tracks.subtitle;
-    final nativeTrack = PlaybackSubtitleResolver.nativeTrackForDirectPlaySource(
+    final session = _playbackSession;
+    final sourceSidecar = session == null ? null : _sidecarForSourceStreamId(session, sourceStreamId);
+    final nativeTrack = PlaybackSubtitleResolver.nativeTrackForSource(
       sourceTrack: sourceTrack,
       nativeTracks: nativeTracks,
       allSourceTracks: info.subtitleTracks,
-      isResolvedSidecar: _sourceSubtitleSidecarIdsForControls().contains(sourceStreamId),
-      currentSourceStreamId: _playbackSession?.subtitleSelection.primarySourceStreamId,
+      isResolvedSidecar: sourceSidecar != null,
+      isContainerSidecar: sourceSidecar?.track.isContainer == true,
+      currentSourceStreamId: session?.subtitleSelection.primarySourceStreamId,
       selectedNativeTrack: currentPlayer.state.track.subtitle,
     );
-    if (nativeTrack == null) return false;
+    if (nativeTrack == null) {
+      final trackManager = _trackManager;
+      if (!_isTranscoding || sourceSidecar == null || trackManager == null) return false;
+
+      return deferTranscodeSubtitleSelection(
+        trackManager: trackManager,
+        sourceTrack: sourceTrack,
+        sourceSidecar: sourceSidecar,
+        sourceStreamId: sourceStreamId,
+        onSubtitleTrackChanged: _onSubtitleTrackChanged,
+        shouldContinue: shouldContinue,
+      );
+    }
 
     await currentPlayer.selectSubtitleTrack(nativeTrack);
     if (!shouldContinue()) return false;
@@ -395,15 +453,19 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     try {
       final currentPlayer = existingPlayer;
       final attempt = _beginPlaybackAttempt(currentPlayer, isMediaReload: true);
-      bool isCurrentReload() => attempt.isCurrent;
+      bool isCurrentReload() => attempt.isCurrent && !_hasFatalPlaybackError && !_isExiting.value;
 
       // The session itself swaps atomically at the open boundary, so the only
       // rollback state is the eagerly-set identity (shown by the loading UI)
       // and the first-frame flag.
       final previousMetadata = _currentMetadata;
-      final previousMediaIndex = _effectiveSelectedMediaIndex;
+      final previousLaunchIdentity = VideoPlayerScreenState._activeRouteGuard.identityFor(this);
       final previousPartId = _currentMediaInfo?.partId;
+      final previousMediaSourceId = _currentMediaInfo?.mediaSourceId;
       final previousHasFirstFrame = _hasFirstFrame.value;
+      final previousHasRenderedFirstFrame = _hasRenderedFirstFrame;
+      final previousHasFatalPlaybackError = _hasFatalPlaybackError;
+      _hasFatalPlaybackError = false;
       final isItemChange = previousMetadata.globalKey != metadata.globalKey;
 
       final currentAudioTrack = preserveCurrentTrackSelection
@@ -456,6 +518,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         return _MediaReloadOutcome.failed;
       }
 
+      final shouldAutoStart = shouldAutoStartReloadedMedia(
+        wasPlayingBeforeReload: wasPlayingBeforeReload,
+        watchTogetherOwnsStart: wtOwnsStart,
+        startPaused: startPaused,
+      );
+
       if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
@@ -463,13 +531,27 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       final targetAudioStreamId = useCurrentAudioStreamSelection
           ? selectedAudioStreamId ?? _selectedAudioStreamId
           : selectedAudioStreamId;
+      final targetLaunchIdentity = VideoPlayerLaunchIdentity(
+        metadata: metadata,
+        mediaIndex: targetMediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+        selectedQualityPreset: targetQualityPreset,
+        isOffline: _offlineLibraryMode,
+        routeKind: VideoPlayerRouteKind.vod,
+      );
+      final preservesRequestedSubtitleSource =
+          !isItemChange &&
+          targetMediaIndex == _effectiveSelectedMediaIndex &&
+          (selectedMediaSourceId == null || selectedMediaSourceId == previousMediaSourceId);
+      final initializationSubtitleTrack = preservesRequestedSubtitleSource
+          ? currentSubtitleTrack
+          : PlaybackSubtitleResolver.preferenceWithoutSourceIdentity(currentSubtitleTrack);
       try {
         // Eager identity-only: the loading UI shows the new title immediately,
         // while the selection/source state flips with the session commit at
         // the open boundary. Keep these writes inside the rollback boundary.
         _currentMetadata = metadata;
-        VideoPlayerScreenState._activeId = metadata.id;
-        VideoPlayerScreenState._activeMediaIndex = targetMediaIndex;
+        VideoPlayerScreenState._activeRouteGuard.update(this, targetLaunchIdentity);
         _unfocusPlayNextPrompt();
         _showPlayNextDialog = false;
         _autoPlayTimer?.cancel();
@@ -493,16 +575,18 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
         final playbackContext = await playbackResolver.resolve(
-          metadata: metadata,
-          selectedMediaIndex: targetMediaIndex,
-          selectedMediaSourceId: selectedMediaSourceId,
-          preferredVersionSignature: preferredVersionSignature,
+          PlaybackInitializationOptions(
+            metadata: metadata,
+            selectedMediaIndex: targetMediaIndex,
+            selectedMediaSourceId: selectedMediaSourceId,
+            preferredVersionSignature: preferredVersionSignature,
+            qualityPreset: targetQualityPreset,
+            selectedAudioStreamId: targetAudioStreamId,
+            preferredSubtitleTrack: initializationSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+          ),
           offlineLibraryMode: _offlineLibraryMode,
-          qualityPreset: targetQualityPreset,
-          selectedAudioStreamId: targetAudioStreamId,
-          preferredSubtitleTrack: currentSubtitleTrack,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         final result = playbackContext.result;
@@ -520,6 +604,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           preferredAudioTrack: currentAudioTrack,
           preferredSubtitleTrack: currentSubtitleTrack,
           preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
+          preserveSubtitleSourceIdentity:
+              result.mediaInfo != null &&
+              ((previousMediaSourceId != null && previousMediaSourceId == result.mediaInfo!.mediaSourceId) ||
+                  (previousPartId != null && previousPartId == result.mediaInfo!.partId)),
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
@@ -587,6 +675,14 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         unawaited(TrackerCoordinator.instance.stopPlayback());
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
+        // Generation invalidation prevents follow-on selection calls, but a
+        // native audio/subtitle/rate mutation may already have been
+        // dispatched. Drain exactly that captured operation before reusing
+        // the player for replacement media, otherwise its late completion can
+        // mutate the replacement item's tracks.
+        await attempt.trackMutationDrain;
+        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+
         frameRatePlan.armStartupRefreshGate(currentPlayer);
         final externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
           player: currentPlayer,
@@ -604,13 +700,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           selectedVersion: result.selectedVersion,
           timing: openTiming,
           headers: result.usesLocalMedia ? null : streamHeaders,
-          play:
-              !frameRatePlan.holdPlaybackStart &&
-              !wtOwnsStart &&
-              !startPaused &&
-              externalSubtitlePlan.canStartBeforeTrackSetup,
+          play: shouldAutoStart && !frameRatePlan.holdPlaybackStart && externalSubtitlePlan.canStartBeforeTrackSetup,
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: isCurrentReload,
+          onOpening: () {
+            _hasRenderedFirstFrame = false;
+          },
           onOpened: () {
             // The player now owns the new file — publish the session at the
             // same boundary so identity and source state flip together.
@@ -669,10 +764,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         trackManager.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);
 
         final resumeForStartupFrame =
-            frameRatePlan.needsStartupRefresh &&
-            effectiveExternalSubtitlePlan.requiresPostOpenAdd &&
-            !wtOwnsStart &&
-            !startPaused;
+            shouldAutoStart && frameRatePlan.needsStartupRefresh && effectiveExternalSubtitlePlan.requiresPostOpenAdd;
         await _applyTracksAfterOpen(
           trackManager: trackManager,
           externalSubtitlePlan: effectiveExternalSubtitlePlan,
@@ -681,12 +773,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           // start) own the resume instead. Post-open external-subtitle paths
           // resume once here so the startup refresh gate can observe a frame.
           shouldResumeAfterSubtitleLoad: () =>
+              shouldAutoStart &&
               (!frameRatePlan.holdPlaybackStart || resumeForStartupFrame) &&
-              !wtOwnsStart &&
-              !startPaused &&
               mounted &&
               player == currentPlayer,
-          applySelectionWhenResumeSkipped: (wtOwnsStart || startPaused) && !frameRatePlan.holdPlaybackStart,
+          applySelectionWhenResumeSkipped: !shouldAutoStart && !frameRatePlan.holdPlaybackStart,
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
@@ -694,13 +785,15 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           plan: frameRatePlan,
-          // startPaused rides the Watch Together yield path: the gate release
-          // arms track selection but leaves the player paused for the caller.
-          resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
+          // Paused reloads use the same no-resume branch as an externally
+          // coordinated start: track selection is armed without manufacturing
+          // a new play intent.
+          resumeAfterStartupGate: (reason) => _finishPlaybackAfterStartupGate(
             currentPlayer: currentPlayer,
             externalSubtitlePlan: effectiveExternalSubtitlePlan,
             reason: reason,
-            wtOwnsStart: wtOwnsStart || startPaused,
+            shouldResume: shouldAutoStart,
+            watchTogetherOwnsStart: wtOwnsStart,
           ),
           playbackResumedForStartupFrame: resumeForStartupFrame,
         );
@@ -717,6 +810,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           mediaInfo: _currentMediaInfo,
         );
 
+        _setPlayerState(() {
+          _nextEpisode = null;
+          _previousEpisode = null;
+          _nextEpisodeStatus = QueueNavigationStatus.failed;
+        });
+
         try {
           playbackState.setCurrentItem(metadata);
         } catch (e) {
@@ -727,7 +826,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
         if (_autoPipEnabled) {
-          unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: currentPlayer.state.playing));
+          unawaited(_updateAutoPipState(isPlaying: currentPlayer.state.playing));
         }
         return _MediaReloadOutcome.opened;
       } catch (e) {
@@ -737,9 +836,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           // Nothing was opened: the previous session is still committed, so
           // only the eagerly-set identity needs restoring before resuming.
           _currentMetadata = previousMetadata;
-          VideoPlayerScreenState._activeId = previousMetadata.id;
-          VideoPlayerScreenState._activeMediaIndex = previousMediaIndex;
+          if (previousLaunchIdentity != null) {
+            VideoPlayerScreenState._activeRouteGuard.update(this, previousLaunchIdentity);
+          }
           _hasFirstFrame.value = previousHasFirstFrame;
+          _hasRenderedFirstFrame = previousHasRenderedFirstFrame;
+          _hasFatalPlaybackError = previousHasFatalPlaybackError;
           // If the stop report already went out, un-latch the tracker so the
           // resumed session keeps reporting (and its eventual real stop sends).
           _progressTracker?.resumeAfterStoppedReport();

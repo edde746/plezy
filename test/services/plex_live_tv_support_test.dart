@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
@@ -6,11 +7,13 @@ import 'package:drift/native.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/media_subscription.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 
 void main() {
   late AppDatabase db;
@@ -42,13 +45,14 @@ void main() {
         machineIdentifier: 'machine-1',
       ),
       serverId: ServerId('machine-1'),
+      profileScopeId: buildPlexProfileScopeId(serverId: ServerId('machine-1'), profileId: 'profile-a'),
       httpClient: MockClient(handler),
       epgProviders: epgProviders,
     );
   }
 
-  http.Response jsonResponse(Map<String, dynamic> body, {Map<String, String>? headers}) {
-    return http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json', ...?headers});
+  http.Response jsonResponse(Map<String, dynamic> body) {
+    return http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
   }
 
   test('favorite source follows requested lineup provider', () async {
@@ -81,6 +85,51 @@ void main() {
     expect(a.liveTv.favoriteStoreKey, b.liveTv.favoriteStoreKey);
   });
 
+  test('favorite read preserves a successful empty response', () async {
+    final client = makeClient((request) async {
+      expect(request.url.path, '/settings/favoriteChannels');
+      return jsonResponse({'MediaContainer': <String, dynamic>{}});
+    });
+    addTearDown(client.close);
+
+    await expectLater(client.liveTv.fetchFavoriteChannels(), completion(isEmpty));
+  });
+
+  test('favorite read propagates HTTP errors', () async {
+    final client = makeClient((request) async {
+      expect(request.url.path, '/settings/favoriteChannels');
+      return http.Response('service unavailable', 503);
+    });
+    addTearDown(client.close);
+
+    await expectLater(
+      client.liveTv.fetchFavoriteChannels(),
+      throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 503)),
+    );
+  });
+
+  test('favorite write propagates HTTP errors to the mutation caller', () async {
+    final requestStarted = Completer<void>();
+    final releaseResponse = Completer<void>();
+    final client = makeClient((request) async {
+      expect(request.method, 'PUT');
+      expect(request.url.path, '/settings/favoriteChannels');
+      requestStarted.complete();
+      await releaseResponse.future;
+      return http.Response('service unavailable', 503);
+    });
+    addTearDown(client.close);
+
+    final mutation = client.liveTv.setFavoriteChannels(const []);
+    await requestStarted.future;
+    releaseResponse.complete();
+
+    await expectLater(
+      mutation,
+      throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 503)),
+    );
+  });
+
   test('DVR list applies root channel mapping to each DVR and parses string numbers', () async {
     final client = makeClient((request) async {
       expect(request.url.path, '/livetv/dvrs');
@@ -104,37 +153,6 @@ void main() {
     expect(dvrs.single.status, 1);
     expect(dvrs.single.channelMappings.single.channelKey, 'ch-1');
     expect(dvrs.single.channelMappings.single.enabled, isTrue);
-  });
-
-  test('createDvr sends repeated device and lineup query params and exposes activity id', () async {
-    late http.Request captured;
-    final client = makeClient((request) async {
-      captured = request;
-      return jsonResponse(
-        {
-          'MediaContainer': {
-            'Dvr': [
-              {'key': '42', 'uuid': 'dvr-42'},
-            ],
-          },
-        },
-        headers: {'x-plex-activity': 'activity-1'},
-      );
-    });
-    addTearDown(client.close);
-
-    final result = await client.liveTvDvr!.createDvr(
-      devices: const ['dev-a', 'dev-b'],
-      lineups: const ['lineup-a', 'lineup-b'],
-      language: 'eng',
-    );
-
-    expect(captured.url.path, '/livetv/dvrs');
-    expect(captured.url.queryParametersAll['device'], ['dev-a', 'dev-b']);
-    expect(captured.url.queryParametersAll['lineup'], ['lineup-a', 'lineup-b']);
-    expect(captured.url.queryParameters['language'], 'eng');
-    expect(result.activityUuid, 'activity-1');
-    expect(result.value?.key, '42');
   });
 
   test('subscription template parses settings and URL-encoded enum labels', () async {

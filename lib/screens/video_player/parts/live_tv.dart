@@ -28,8 +28,9 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   }
 
   Future<void> _sendLiveTimeline(String state) async {
-    final session = _live.session;
-    if (session == null) return;
+    final requestSession = _live.session;
+    if (requestSession == null) return;
+    final requestGeneration = _live.timelineGeneration;
     // For live TV, player position/duration are unreliable (often 0). Use
     // elapsed wall-clock as the position and the program duration from tune
     // metadata; the per-backend session owns the wire mapping.
@@ -38,19 +39,23 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         : 0;
 
     try {
-      final updatedBuffer = await session.reportTimeline(
+      await runLiveTimelineReport(
+        requestSession: requestSession,
+        requestGeneration: requestGeneration,
         state: state,
         positionMs: playbackTime,
-        durationMs: session.program.durationMs ?? 0,
+        currentSession: () => _live.session,
+        currentGeneration: () => _live.timelineGeneration,
+        isMounted: () => mounted,
+        commit: (updatedBuffer) {
+          _setPlayerState(() {
+            _live.captureBuffer = updatedBuffer;
+            _live.atLiveEdge =
+                (_currentPositionEpoch >=
+                updatedBuffer.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
+          });
+        },
       );
-      if (updatedBuffer != null && mounted) {
-        _setPlayerState(() {
-          _live.captureBuffer = updatedBuffer;
-          _live.atLiveEdge =
-              (_currentPositionEpoch >=
-              updatedBuffer.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
-        });
-      }
     } catch (e) {
       appLogger.d('Live timeline update failed', error: e);
     }
@@ -264,6 +269,8 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _liveSeek.cancel();
 
     final previousSession = _live.session;
+    final previousHasFirstFrame = _hasFirstFrame.value;
+    final previousHasRenderedFirstFrame = _hasRenderedFirstFrame;
     final channel = channels[newIndex];
     appLogger.d('Switching to channel: ${channel.displayName} (${channel.key})');
 
@@ -293,7 +300,10 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         return;
       }
 
-      _setPlayerState(() => _hasFirstFrame.value = false);
+      _setPlayerState(() {
+        _hasFirstFrame.value = false;
+        _hasRenderedFirstFrame = false;
+      });
       replacementOpenStarted = true;
       await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
       if (!isCurrentChannelSwitch()) {
@@ -331,7 +341,10 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       if (orphan != null && _live.session != orphan) _abandonLiveSession(orphan);
       if (!isCurrentChannelSwitch()) return;
       if (replacementOpenStarted && mounted && _live.session == previousSession) {
-        _setPlayerState(() => _hasFirstFrame.value = true);
+        _setPlayerState(() {
+          _hasFirstFrame.value = previousHasFirstFrame;
+          _hasRenderedFirstFrame = previousHasRenderedFirstFrame;
+        });
       }
       appLogger.e('Failed to switch channel', error: e);
       if (mounted) showErrorSnackBar(context, e.toString());

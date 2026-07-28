@@ -4,6 +4,7 @@ import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/watch_state_store.dart';
+import 'package:plezy/services/watch_state_resolver.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import '../test_helpers/media_items.dart';
 
@@ -56,7 +57,7 @@ void main() {
     expect(patch?.viewOffsetMs, 0);
   });
 
-  test('newer unscoped patch wins over older active scoped patch', () async {
+  test('known active scope resolves a newer legacy bare event into that scope', () async {
     final provider = WatchStateStore();
     addTearDown(provider.dispose);
     provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
@@ -69,6 +70,16 @@ void main() {
     expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isFalse);
   });
 
+  test('unscoped patch remains visible when the active client scope arrives later', () async {
+    final provider = WatchStateStore();
+    addTearDown(provider.dispose);
+
+    await _emit(_event(changeType: WatchStateChangeType.watched, isNowWatched: true));
+    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+
+    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
+  });
+
   test('newer active scoped patch wins over older unscoped patch', () async {
     final provider = WatchStateStore();
     addTearDown(provider.dispose);
@@ -77,6 +88,21 @@ void main() {
     await _emit(_event(changeType: WatchStateChangeType.unwatched, isNowWatched: false));
     await _emit(
       _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+    );
+
+    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
+  });
+
+  test('explicit foreign scope is ignored when resolving the active scope', () async {
+    final provider = WatchStateStore();
+    addTearDown(provider.dispose);
+    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
+
+    await _emit(
+      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+    );
+    await _emit(
+      _event(changeType: WatchStateChangeType.unwatched, isNowWatched: false, cacheServerId: 'jf-machine/user-b'),
     );
 
     expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
@@ -165,13 +191,13 @@ void main() {
     store.setHydratedPatches(const [
       HydratedWatchStatePatch(
         globalKey: 'jf-machine:show-1',
-        patch: WatchStatePatch(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0),
+        patch: WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0),
         updatedAt: 100,
         order: 1,
       ),
       HydratedWatchStatePatch(
         globalKey: 'jf-machine:episode-1',
-        patch: WatchStatePatch(isWatched: false, hasViewOffsetMs: true, viewOffsetMs: 0),
+        patch: WatchStateSnapshot(isWatched: false, hasViewOffsetMs: true, viewOffsetMs: 0),
         updatedAt: 200,
         order: 2,
       ),
@@ -188,13 +214,13 @@ void main() {
     store.setHydratedPatches(const [
       HydratedWatchStatePatch(
         globalKey: 'jf-machine/user-a:show-1',
-        patch: WatchStatePatch(isWatched: true),
+        patch: WatchStateSnapshot(isWatched: true),
         updatedAt: 100,
         order: 1,
       ),
       HydratedWatchStatePatch(
         globalKey: 'jf-machine/user-b:show-1',
-        patch: WatchStatePatch(isWatched: false),
+        patch: WatchStateSnapshot(isWatched: false),
         updatedAt: 100,
         order: 2,
       ),

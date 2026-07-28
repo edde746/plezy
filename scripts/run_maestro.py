@@ -20,7 +20,12 @@ import urllib.request
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 APP_ID = "com.edde746.plezy"
-FAULTS = ("music-failure", "recovery")
+FAULTS = ("music-failure", "offline", "recovery")
+ANIMATION_SCALES = (
+    "window_animation_scale",
+    "transition_animation_scale",
+    "animator_duration_scale",
+)
 
 
 class RunnerError(RuntimeError):
@@ -316,6 +321,16 @@ def _require_commands(names: Sequence[str]) -> None:
         raise RunnerError(f"Required command not found: {', '.join(missing)}")
 
 
+def flutter_build_command() -> tuple[str, ...]:
+    return (
+        "flutter",
+        "build",
+        "apk",
+        "--debug",
+        "--dart-define=PLEZY_MAESTRO_E2E=true",
+    )
+
+
 def build_jellyfin_image(config: RunnerConfig) -> None:
     _require_commands(("docker",))
     command = (
@@ -373,14 +388,14 @@ class MaestroRunner:
             if not self.config.skip_jellyfin_build:
                 build_jellyfin_image(self.config)
             self._start_jellyfin()
-        self._wait_for_health(self.host_jellyfin_url, attempts=120, interval=0.25, service="Jellyfin")
+        self._wait_for_health(self.host_jellyfin_url, attempts=180, interval=1, service="Jellyfin")
 
         if self.config.jellyfin_fault:
             self._start_proxy()
 
         if not self.config.skip_build:
             _run_checked(("flutter", "pub", "get"))
-            _run_checked(("flutter", "build", "apk", "--debug"))
+            _run_checked(flutter_build_command())
 
         self._prepare_device()
         _run_checked((*self.adb_prefix, "install", "-r", self.config.apk_path))
@@ -392,6 +407,8 @@ class MaestroRunner:
             default_url = f"http://127.0.0.1:{self.device_service_port}"
         jellyfin_url = self.config.jellyfin_url or default_url
         command = ["maestro", "test", "-e", f"JELLYFIN_URL={jellyfin_url}"]
+        if self.config.jellyfin_fault == "offline":
+            command.extend(("-e", f"JELLYFIN_CONTROL_URL={self.host_jellyfin_url}"))
         if self.device_id:
             command.extend(("--device", self.device_id))
         if self.config.maestro_config:
@@ -451,11 +468,13 @@ class MaestroRunner:
         for _ in range(attempts):
             try:
                 with urllib.request.urlopen(health_url, timeout=1) as response:
-                    response.read()
-                return
+                    status = response.read().decode(errors="replace").strip()
+                if status.casefold() == "healthy":
+                    return
+                last_error = RunnerError(f"{service} health status is {status or 'empty'}")
             except (OSError, urllib.error.URLError) as error:
                 last_error = error
-                time.sleep(interval)
+            time.sleep(interval)
         raise RunnerError(f"{service} did not become ready at {base_url}: {last_error}")
 
     def _start_proxy(self) -> None:
@@ -533,6 +552,7 @@ class MaestroRunner:
             ("global", "stay_on_while_plugged_in"),
             ("secure", "immersive_mode_confirmations"),
             ("global", "hide_error_dialogs"),
+            *((("global", key) for key in ANIMATION_SCALES)),
         ):
             value = self._adb_capture("shell", "settings", "get", namespace, key)
             if value is not None:
@@ -558,6 +578,14 @@ class MaestroRunner:
             check=False,
             quiet=True,
         )
+        # Maestro waits for the view hierarchy to settle after every tap, input,
+        # and key press. With animations at their default 1.0 scale each of
+        # those waits pays for a real transition, which dominates a flow: taps
+        # measured 3-5s apiece on a physical Pixel 7. CI's emulator gets this
+        # from the runner's disable-animations flag; nothing was setting it for
+        # a real device. cleanup() restores the captured values.
+        for key in ANIMATION_SCALES:
+            self._adb_run("shell", "settings", "put", "global", key, "0", check=False, quiet=True)
         self._adb_run("shell", "input", "keyevent", "KEYCODE_BACK", check=False, quiet=True)
         _run_checked((*self.adb_prefix, "shell", "svc", "power", "stayon", "true"))
         _run_checked((*self.adb_prefix, "shell", "input", "keyevent", "KEYCODE_WAKEUP"))

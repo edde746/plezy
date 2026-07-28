@@ -10,34 +10,49 @@
 		055E465F9095D0B6E9B91D46 /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */; };
 		1C6B234E223CDFFE5BF3FC0B /* TVServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */; };
 		28DB4404B17342F46BC2B0A1 /* TopShelfProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F829B3F190657106F66379 /* TopShelfProvider.swift */; };
+		2A7C0B1D9E5F4A6381027C12 /* MpvPlayerContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */; };
+		A7A0C001A7A0C001A7A0C002 /* AtmosProbeContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7A0C001A7A0C001A7A0C001 /* AtmosProbeContractTests.swift */; };
 		35DB0C8FEF635A3BCA0B722A /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */; };
-		7A11A7C50113007825B00A01 /* AtmosProbePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11A7C50113007825B00A02 /* AtmosProbePlugin.swift */; };
+		4F1000024F1000024F100002 /* FlutterNativeTextInputTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4F1000014F1000014F100001 /* FlutterNativeTextInputTests.mm */; };
+		65AC2C222043B3E6723E2076 /* ConnectivityPlusPluginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 934BC4E316D2AC788C954766 /* ConnectivityPlusPluginTests.swift */; };
 		691577F0EB3F4EB1A5160280 /* MpvPlayerCoreBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52A3BDA46E79969EA1DF3AC /* MpvPlayerCoreBase.swift */; };
-		B1D51A6A2F00110000000014 /* MpvAudioPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000015 /* MpvAudioPlayerCore.swift */; };
-		B1D51A6A2F00110000000016 /* MpvAudioPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000017 /* MpvAudioPlayerPlugin.swift */; };
 		6F3C0DD6F2F8DA14E7E2F386 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12B8610AE5D580077264851 /* MpvPlayerCore.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		7A11A7C50113007825B00A01 /* AtmosProbePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A11A7C50113007825B00A02 /* AtmosProbePlugin.swift */; };
 		81325C1CD13794375A81AC02 /* messages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CD411CCD84E381C4BF4C1B /* messages.g.swift */; };
 		81F08E404EBEB19B00FF148D /* ConnectivityPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */; };
+		89CF031971F407719E4B5DD8 /* TvosEventDeliveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F56950138FF220CA079EB3 /* TvosEventDeliveryCoordinator.swift */; };
 		8E5EED3DDAC9455D4DAA9776 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		A5E1F001234567890ABCDE02 /* SystemShelfPluginTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5E1F001234567890ABCDE01 /* SystemShelfPluginTests.swift */; };
 		A7596F780E93AF0BE3838A26 /* ConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCA7E80F3A99D8759F2E59F /* ConnectivityProvider.swift */; };
 		AA34E3E5872B3792D6959EAA /* MpvPipController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2635E12EB9322B151EE5127 /* MpvPipController.swift */; };
+		B1D51A6A2F00110000000014 /* MpvAudioPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000015 /* MpvAudioPlayerCore.swift */; };
+		B1D51A6A2F00110000000016 /* MpvAudioPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000017 /* MpvAudioPlayerPlugin.swift */; };
 		BDD87DA7F5C435F9DBB8F9BE /* TopShelfExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 824D2C68D1F1206932E118C2 /* Pods_Runner.framework */; };
 		CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */; };
+		D2004D7BB4A40340AB7A01E0 /* TvosEventDeliveryCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */; };
 		D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */; };
 		4E7D1B90A3C2F5E8D6104A21 /* TvUserPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C2F6E41B7D90A35E14C8B02 /* TvUserPlugin.swift */; };
-		EA0F4264E7B912702C490109 /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = EA0F4263E7B912702C490108 /* MPVKit */; };
 		E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */; };
 		E79A4474D308631AFA59CAE7 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */; };
+		EA0F4264E7B912702C490109 /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = EA0F4263E7B912702C490108 /* MPVKit */; };
+		F9C95D532B6F6B72D187217D /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = EF0E0C298AEDE34FF7C8BFD5 /* Pods_RunnerTests.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		312B21E3C26DC9F7E1AC1F8C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
+			remoteInfo = Runner;
+		};
 		3E4E59C5E29F44BA64BEB559 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
@@ -77,21 +92,27 @@
 		0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemShelfPlugin.swift; sourceTree = "<group>"; };
 		8C2F6E41B7D90A35E14C8B02 /* TvUserPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvUserPlugin.swift; sourceTree = "<group>"; };
 		0C25F4F2367A30B47E945AD6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
+		1B17916D7270A141E3AC7B5D /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		1CC83B6BDD3EF9204BEF754B /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TVServices.framework; path = System/Library/Frameworks/TVServices.framework; sourceTree = SDKROOT; };
 		34CD411CCD84E381C4BF4C1B /* messages.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = messages.g.swift; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		3CCA7E80F3A99D8759F2E59F /* ConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityProvider.swift; sourceTree = "<group>"; };
+		41369A2B262AECB35079F6CC /* Pods-RunnerTests.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.profile.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.profile.xcconfig"; sourceTree = "<group>"; };
 		420881FB6A648A2AFD39FFF2 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		4F1000014F1000014F100001 /* FlutterNativeTextInputTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterNativeTextInputTests.mm; sourceTree = "<group>"; };
 		5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceInfoPlusPlugin.swift; sourceTree = "<group>"; };
+		66F56950138FF220CA079EB3 /* TvosEventDeliveryCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvosEventDeliveryCoordinator.swift; sourceTree = "<group>"; };
 		67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityPlusPlugin.swift; sourceTree = "<group>"; };
 		6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathMonitorConnectivityProvider.swift; sourceTree = "<group>"; };
 		73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPluginShared.swift; path = ../shared/apple/MpvPlayer/MpvPlayerPluginShared.swift; sourceTree = "<source_root>"; };
-		7A11A7C50113007825B00A02 /* AtmosProbePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AtmosProbePlugin.swift; path = ../shared/apple/AtmosProbe/AtmosProbePlugin.swift; sourceTree = "<source_root>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		7A11A7C50113007825B00A02 /* AtmosProbePlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AtmosProbePlugin.swift; path = ../shared/apple/AtmosProbe/AtmosProbePlugin.swift; sourceTree = "<source_root>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		824D2C68D1F1206932E118C2 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9165AF55B967D8845D042FE7 /* TopShelfExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = TopShelfExtension.entitlements; sourceTree = "<group>"; };
+		934BC4E316D2AC788C954766 /* ConnectivityPlusPluginTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityPlusPluginTests.swift; sourceTree = "<group>"; };
 		937C0D45D6114EF1E957F5F6 /* Runner.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -102,15 +123,21 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPlugin.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerPlugin.swift; sourceTree = "<source_root>"; };
 		A12B8610AE5D580077264851 /* MpvPlayerCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCore.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerCore.swift; sourceTree = "<source_root>"; };
+		2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MpvPlayerContractTests.swift; sourceTree = "<group>"; };
+		A7A0C001A7A0C001A7A0C001 /* AtmosProbeContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AtmosProbeContractTests.swift; sourceTree = "<group>"; };
+		A2484B9C94406BF0A99EB64A /* Pods-RunnerTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.debug.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.debug.xcconfig"; sourceTree = "<group>"; };
 		A2635E12EB9322B151EE5127 /* MpvPipController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPipController.swift; path = ../ios/Runner/MpvPlayer/MpvPipController.swift; sourceTree = "<source_root>"; };
+		A5E1F001234567890ABCDE01 /* SystemShelfPluginTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemShelfPluginTests.swift; sourceTree = "<group>"; };
+		B1D51A6A2F00110000000015 /* MpvAudioPlayerCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerCore.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerCore.swift; sourceTree = "<source_root>"; };
+		B1D51A6A2F00110000000017 /* MpvAudioPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerPlugin.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerPlugin.swift; sourceTree = "<source_root>"; };
 		BBCB49C8AE9E90DEF97A87CA /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedPreferencesPlugin.swift; sourceTree = "<group>"; };
 		D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathProviderPlugin.swift; sourceTree = "<group>"; };
-		B1D51A6A2F00110000000015 /* MpvAudioPlayerCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerCore.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerCore.swift; sourceTree = "<source_root>"; };
-		B1D51A6A2F00110000000017 /* MpvAudioPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerPlugin.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerPlugin.swift; sourceTree = "<source_root>"; };
 		D52A3BDA46E79969EA1DF3AC /* MpvPlayerCoreBase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCoreBase.swift; path = ../shared/apple/MpvPlayer/MpvPlayerCoreBase.swift; sourceTree = "<source_root>"; };
+		EF0E0C298AEDE34FF7C8BFD5 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2F829B3F190657106F66379 /* TopShelfProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TopShelfProvider.swift; sourceTree = "<group>"; };
 		F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PackageInfoPlusPlugin.swift; sourceTree = "<group>"; };
+		FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvosEventDeliveryCoordinatorTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +146,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				1C6B234E223CDFFE5BF3FC0B /* TVServices.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5E27C9DB84FD0E86AD0F4664 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F9C95D532B6F6B72D187217D /* Pods_RunnerTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -181,6 +216,9 @@
 				0C25F4F2367A30B47E945AD6 /* Pods-Runner.debug.xcconfig */,
 				04DD35536DEE7C27FFA53862 /* Pods-Runner.release.xcconfig */,
 				420881FB6A648A2AFD39FFF2 /* Pods-Runner.profile.xcconfig */,
+				1CC83B6BDD3EF9204BEF754B /* Pods-RunnerTests.release.xcconfig */,
+				A2484B9C94406BF0A99EB64A /* Pods-RunnerTests.debug.xcconfig */,
+				41369A2B262AECB35079F6CC /* Pods-RunnerTests.profile.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -190,6 +228,8 @@
 			children = (
 				824D2C68D1F1206932E118C2 /* Pods_Runner.framework */,
 				25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */,
+				6D9369A1A01A73D85CAEC2A6 /* tvOS */,
+				EF0E0C298AEDE34FF7C8BFD5 /* Pods_RunnerTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -201,6 +241,13 @@
 			);
 			name = device_info_plus;
 			path = device_info_plus;
+			sourceTree = "<group>";
+		};
+		6D9369A1A01A73D85CAEC2A6 /* tvOS */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = tvOS;
 			sourceTree = "<group>";
 		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
@@ -223,6 +270,7 @@
 				53CDD29681161166962B9FA5 /* Pods */,
 				5833EC5B503BBB4E370BA1B7 /* Frameworks */,
 				47C2D3F50A23DE33DE92F592 /* TopShelfExtension */,
+				F9BDF6E09E3B9347861D2A50 /* RunnerTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -231,6 +279,7 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */,
+				1B17916D7270A141E3AC7B5D /* RunnerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -249,6 +298,7 @@
 				0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */,
 				8C2F6E41B7D90A35E14C8B02 /* TvUserPlugin.swift */,
 				937C0D45D6114EF1E957F5F6 /* Runner.entitlements */,
+				66F56950138FF220CA079EB3 /* TvosEventDeliveryCoordinator.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -289,6 +339,20 @@
 			);
 			name = path_provider;
 			path = path_provider;
+			sourceTree = "<group>";
+		};
+		F9BDF6E09E3B9347861D2A50 /* RunnerTests */ = {
+			isa = PBXGroup;
+			children = (
+				4F1000014F1000014F100001 /* FlutterNativeTextInputTests.mm */,
+				2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */,
+				A7A0C001A7A0C001A7A0C001 /* AtmosProbeContractTests.swift */,
+				FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */,
+				934BC4E316D2AC788C954766 /* ConnectivityPlusPluginTests.swift */,
+				A5E1F001234567890ABCDE01 /* SystemShelfPluginTests.swift */,
+			);
+			name = RunnerTests;
+			path = RunnerTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -339,6 +403,25 @@
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
 		};
+		B03B26B6860DAA4B4861ABE8 /* RunnerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0F018DBFAD5E036F8B3DED3 /* Build configuration list for PBXNativeTarget "RunnerTests" */;
+			buildPhases = (
+				A61FC3E730D67F10B0AAB6F9 /* [CP] Check Pods Manifest.lock */,
+				877FBDFAE7193C414BFC7581 /* Sources */,
+				5E27C9DB84FD0E86AD0F4664 /* Frameworks */,
+				BA52311F6E3823811234FBB7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B904E5D4A048ADFF0B26C3B3 /* PBXTargetDependency */,
+			);
+			name = RunnerTests;
+			productName = RunnerTests;
+			productReference = 1B17916D7270A141E3AC7B5D /* RunnerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -372,6 +455,7 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				63C63C245D7F38BFF091CEC3 /* TopShelfExtension */,
+				B03B26B6860DAA4B4861ABE8 /* RunnerTests */,
 			);
 		};
 /* End PBXProject section */
@@ -392,6 +476,13 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA52311F6E3823811234FBB7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -451,20 +542,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E2B5A6D75C9F4D1B9E8C7A63 /* Sync Version */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Sync Version";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "/bin/bash \"$SOURCE_ROOT/scripts/xcode_appletv.sh\" sync_version\n";
-		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -479,9 +556,58 @@
 			shellPath = /bin/sh;
 			shellScript = "#/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n/bin/bash \"$SOURCE_ROOT/scripts/xcode_appletv.sh\" build\n";
 		};
+		A61FC3E730D67F10B0AAB6F9 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-RunnerTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		E2B5A6D75C9F4D1B9E8C7A63 /* Sync Version */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Sync Version";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"$SOURCE_ROOT/scripts/xcode_appletv.sh\" sync_version\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		877FBDFAE7193C414BFC7581 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4F1000024F1000024F100002 /* FlutterNativeTextInputTests.mm in Sources */,
+				2A7C0B1D9E5F4A6381027C12 /* MpvPlayerContractTests.swift in Sources */,
+				A7A0C001A7A0C001A7A0C002 /* AtmosProbeContractTests.swift in Sources */,
+				D2004D7BB4A40340AB7A01E0 /* TvosEventDeliveryCoordinatorTests.swift in Sources */,
+				65AC2C222043B3E6723E2076 /* ConnectivityPlusPluginTests.swift in Sources */,
+				A5E1F001234567890ABCDE02 /* SystemShelfPluginTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EA1CF9000F007C117D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -505,6 +631,7 @@
 				CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */,
 				D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */,
 				4E7D1B90A3C2F5E8D6104A21 /* TvUserPlugin.swift in Sources */,
+				89CF031971F407719E4B5DD8 /* TvosEventDeliveryCoordinator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -519,6 +646,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		B904E5D4A048ADFF0B26C3B3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Runner;
+			target = 97C146ED1CF9000F007C117D /* Runner */;
+			targetProxy = 312B21E3C26DC9F7E1AC1F8C /* PBXContainerItemProxy */;
+		};
 		F0399FC35D3A6ED67E74810D /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = TopShelfExtension;
@@ -695,6 +828,24 @@
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Profile;
+		};
+		4F937E75F619E4ABE22B1F17 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1CC83B6BDD3EF9204BEF754B /* Pods-RunnerTests.release.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/Runner";
+				TVOS_DEPLOYMENT_TARGET = 14.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
 		};
 		65F6020FE0DF48006BADE49C /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -911,6 +1062,41 @@
 			};
 			name = Release;
 		};
+		AE855FD4D5DF4B132727705D /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 41369A2B262AECB35079F6CC /* Pods-RunnerTests.profile.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/Runner";
+				TVOS_DEPLOYMENT_TARGET = 14.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Profile;
+		};
+		CD5AF092D8A44891EB23CECC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A2484B9C94406BF0A99EB64A /* Pods-RunnerTests.debug.xcconfig */;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.RunnerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Runner.app/Runner";
+				TVOS_DEPLOYMENT_TARGET = 14.0;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -944,6 +1130,16 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		E0F018DBFAD5E036F8B3DED3 /* Build configuration list for PBXNativeTarget "RunnerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4F937E75F619E4ABE22B1F17 /* Release */,
+				CD5AF092D8A44891EB23CECC /* Debug */,
+				AE855FD4D5DF4B132727705D /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -952,7 +1148,7 @@
 			repositoryURL = "https://github.com/edde746/MPVKit";
 			requirement = {
 				kind = exactVersion;
-				version = 1.0.13;
+				version = 1.0.16;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

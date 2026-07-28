@@ -16,6 +16,9 @@ class FocusableMediaCard extends StatefulWidget {
   /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because
   /// Dart has no nominal union type. Forwarded as-is to the inner [MediaCard].
   final Object item;
+
+  /// Optional row/column position announced with this card.
+  final String? semanticValue;
   final double? width;
   final double? height;
   final void Function(MediaItem source)? onRefresh;
@@ -78,6 +81,7 @@ class FocusableMediaCard extends StatefulWidget {
   const FocusableMediaCard({
     super.key,
     required this.item,
+    this.semanticValue,
     this.width,
     this.height,
     this.onRefresh,
@@ -114,6 +118,10 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
   Widget build(BuildContext context) {
     return FocusableWrapper(
       focusNode: widget.focusNode,
+      // The MediaCard already exposes the complete static button semantics.
+      // Avoid invalidating a dense TV grid's semantics tree on every D-pad
+      // focus change unless an accessibility service needs focused state.
+      includeFocusSemantics: !PlatformDetector.isTV() || MediaQuery.accessibleNavigationOf(context),
       onSelect: () => _mediaCardKey.currentState?.handleTap(),
       onLongPress: () => _mediaCardKey.currentState?.showContextMenu(),
       onNavigateUp: widget.onNavigateUp,
@@ -134,6 +142,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
       child: MediaCard(
         key: _mediaCardKey,
         item: widget.item,
+        semanticValue: widget.semanticValue,
         width: widget.width,
         height: widget.height,
         onRefresh: widget.onRefresh,

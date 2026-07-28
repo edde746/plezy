@@ -42,7 +42,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       _lastVideoLayoutSize = pendingSize;
       _lastVideoLayoutPlayer = currentPlayer;
       _videoFilterManager?.updatePlayerSize(pendingSize);
-      _videoPIPManager?.updatePlayerSize(pendingSize);
       _updateAmbientLightingOnResize(pendingSize);
       unawaited(currentPlayer.updateFrame());
     });
@@ -64,8 +63,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     return const PlaybackSourceSubtitleChoice.off();
   }
 
+  List<PlaybackSubtitleSidecar> _sourceSubtitleSidecarsForControls() =>
+      _playbackSession?.context.result.subtitleSidecars ?? const <PlaybackSubtitleSidecar>[];
+
   List<MediaSubtitleTrack> _sourceSubtitleTracksForControls() {
-    final sidecarSourceIds = _sourceSubtitleSidecarIdsForControls();
+    final sidecarSourceIds = {for (final sidecar in _sourceSubtitleSidecarsForControls()) ?sidecar.sourceStreamId};
     return selectableSourceSubtitleTracks(
       _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
       isTranscoding: _isTranscoding,
@@ -74,17 +76,27 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     );
   }
 
-  Set<int> _sourceSubtitleSidecarIdsForControls() {
-    return {
-      for (final sidecar in _playbackSession?.context.result.subtitleSidecars ?? const <PlaybackSubtitleSidecar>[])
-        ?sidecar.sourceStreamId,
-    };
-  }
-
   Widget _buildLoadingSpinner() {
     return const Scaffold(
       backgroundColor: Colors.black,
       body: Center(child: CircularProgressIndicator(color: Colors.white)),
+    );
+  }
+
+  Widget _buildPlayerInitializationSurface() {
+    final bootstrapPlayer = _bootstrapPlayer;
+    if (bootstrapPlayer == null) return _buildLoadingSpinner();
+
+    // Linux creates the texture before its EGL/mpv render bootstrap can be
+    // proven. Mount the provisional surface so Flutter drives one texture
+    // copy, while retaining the black loading cover until playback itself
+    // reports its first frame.
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Video(player: bootstrapPlayer, hasFirstFrame: _hasFirstFrame),
+        const Center(child: CircularProgressIndicator(color: Colors.white)),
+      ],
     );
   }
 
@@ -112,29 +124,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                   children: [
                     FocusableButton(
                       autofocus: true,
-                      onPressed: () {
-                        final playerToDispose = player;
-                        player = null;
-                        if (playerToDispose != null) unawaited(playerToDispose.dispose());
-                        _setPlayerState(() {
-                          _playerInitializationError = null;
-                          _isPlayerInitialized = false;
-                        });
-                        unawaited(_initializePlayer());
-                      },
-                      child: FilledButton(
-                        onPressed: () {
-                          final playerToDispose = player;
-                          player = null;
-                          if (playerToDispose != null) unawaited(playerToDispose.dispose());
-                          _setPlayerState(() {
-                            _playerInitializationError = null;
-                            _isPlayerInitialized = false;
-                          });
-                          unawaited(_initializePlayer());
-                        },
-                        child: Text(t.common.retry),
-                      ),
+                      onPressed: _retryPlayerInitialization,
+                      child: FilledButton(onPressed: _retryPlayerInitialization, child: Text(t.common.retry)),
                     ),
                     const SizedBox(width: 12),
                     FocusableButton(
@@ -240,21 +231,30 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     final newSize = Size(constraints.maxWidth, constraints.maxHeight);
                     _scheduleVideoLayoutUpdate(newSize);
 
-                    // Compute canControl from Watch Together provider (reactive)
-                    bool canControl = true;
+                    var authority = (canControlPlayback: true, canNavigateMediaItems: true);
                     try {
-                      canControl = context.select<WatchTogetherProvider, bool>(
-                        (wt) => wt.isInSession ? wt.canControl() : true,
-                      );
-                    } catch (e) {
-                      // Watch Together not available, default to can control
+                      authority = context
+                          .select<WatchTogetherProvider, ({bool canControlPlayback, bool canNavigateMediaItems})>(
+                            (wt) => (
+                              canControlPlayback: !wt.isInSession || wt.canControl(),
+                              canNavigateMediaItems: !wt.isInSession || wt.isHost,
+                            ),
+                          );
+                    } catch (_) {
+                      // Watch Together is optional outside the main app shell.
+                    }
+                    if (_lastMediaControlAuthority != authority) {
+                      _lastMediaControlAuthority = authority;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) unawaited(_syncMediaControlsAvailability());
+                      });
                     }
 
                     VoidCallback? onNext;
                     if (widget.isLive) {
                       onNext = _hasNextChannel ? () => _switchLiveChannel(1) : null;
                     } else {
-                      onNext = (_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null;
+                      onNext = (_nextEpisode != null && authority.canNavigateMediaItems) ? _playNext : null;
                     }
 
                     VoidCallback? onPrevious;
@@ -262,18 +262,21 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                       onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
                     } else {
                       final canRestartOrPrevious = _currentMetadata.isEpisode || _previousEpisode != null;
-                      onPrevious = (canRestartOrPrevious && _canNavigateEpisodes()) ? _restartOrPlayPrevious : null;
+                      onPrevious = (canRestartOrPrevious && authority.canNavigateMediaItems)
+                          ? _restartOrPlayPrevious
+                          : null;
                     }
 
                     final sourceAudioTracks = _currentMediaInfo?.audioTracks ?? const <MediaAudioTrack>[];
+                    final sourceSubtitleSidecars = _sourceSubtitleSidecarsForControls();
                     final sourceSubtitleTracks = _sourceSubtitleTracksForControls();
-                    final sourceSubtitleSidecarIds = _sourceSubtitleSidecarIdsForControls();
 
                     return Video(
                       player: player!,
                       hasFirstFrame: _hasFirstFrame,
                       controls: (context) => PlexVideoControls(
                         player: player!,
+                        volumeController: _volumeController!,
                         metadata: _currentMetadata,
                         onNext: onNext,
                         onPrevious: onPrevious,
@@ -288,7 +291,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         sourceSubtitleTracks: sourceSubtitleTracks,
                         selectedSubtitleChoice: _selectedSourceSubtitleChoiceForControls(sourceSubtitleTracks),
                         selectedSecondarySubtitleStreamId: _playbackSession?.subtitleSelection.secondarySourceStreamId,
-                        sourceSubtitleSidecarIds: sourceSubtitleSidecarIds,
+                        sourceSubtitleSidecars: sourceSubtitleSidecars,
                         sourcePartId: _currentMediaInfo?.partId,
                         onPlaybackSourceChanged: _switchPlaybackSource,
                         onTogglePIPMode: _togglePIPMode,
@@ -310,7 +313,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onBack: _handleBackButton,
                         onReachedEnd: ({skipAutoPlayCountdown = false}) =>
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
-                        canControl: canControl,
+                        canControl: authority.canControlPlayback,
+                        canNavigateMediaItems: authority.canNavigateMediaItems,
                         hasFirstFrame: _hasFirstFrame,
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
                         chromeController: _chromeController,

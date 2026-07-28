@@ -20,6 +20,7 @@ import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/desktop_window_padding.dart';
+import '../../utils/live_tv_matching.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/serial_future_queue.dart';
 import '../../utils/snackbar_helper.dart';
@@ -30,6 +31,8 @@ import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
 import 'tabs/recordings_tab.dart';
 import 'tabs/whats_on_tab.dart';
+
+typedef _FavoriteScope = ({String source, String storeKey, FavoriteChannelPersistenceMode mode});
 
 enum LiveTvTab { guide, whatsOn, recordings }
 
@@ -66,30 +69,42 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   Set<String> _favoriteKeys = {};
   List<FavoriteChannel> _favoriteChannels = [];
 
-  /// Source URI per Live TV server/DVR, built from machineIdentifier + EPG provider identifier.
-  final Map<String, String> _favoriteSourceByLiveServer = {};
-  final Map<String, String> _favoriteSourceByChannel = {};
-  final Map<String, String> _favoriteStoreByLiveServer = {};
-  final Map<String, String> _favoriteStoreByChannel = {};
+  /// Favorite source URI, store key and persistence mode per Live TV server/DVR.
+  /// The source is built from machineIdentifier + EPG provider identifier.
+  final Map<String, _FavoriteScope> _favoriteScopeByLiveServer = {};
+  final Map<String, String> _liveServerKeyByChannel = {};
+
+  /// Store key per favorite source. A superset of the scope sources: it also
+  /// collects sources of fetched and toggled favorites that belong to other
+  /// servers sharing an account-scoped store.
   final Map<String, String> _favoriteStoreBySource = {};
-  final Map<String, FavoriteChannelPersistenceMode> _favoriteModeByStore = {};
   Future<void>? _channelsLoadFuture;
   int _favoritesLoadGeneration = 0;
   Future<void>? _favoritesLoadFuture;
   final SerialFutureQueue _favoritesMutationQueue = SerialFutureQueue();
+
+  /// True while [_favoriteChannels] holds an authoritative set. A refresh keeps the previous set live until the new
+  /// one commits, so the favorites filter never widens mid-load.
   bool _favoritesLoaded = false;
+  bool _favoritesWritable = false;
 
   List<LiveTvChannel> get _filteredChannels => filterLiveTvChannelsForFavorites(
     channels: _channels,
     favoritesOnly: _showFavoritesOnly,
+    favoritesLoaded: _favoritesLoaded,
     favorites: _favoriteChannels,
     sourceForChannel: _sourceForChannel,
   );
 
   String _liveServerScopeKey(LiveTvServerInfo serverInfo) => '${serverInfo.serverId}\u0000${serverInfo.dvrKey}';
 
+  _FavoriteScope? _favoriteScopeForChannel(LiveTvChannel channel) {
+    final liveServerKey = _liveServerKeyByChannel[liveTvChannelScopeKey(channel)];
+    return liveServerKey == null ? null : _favoriteScopeByLiveServer[liveServerKey];
+  }
+
   String _sourceForChannel(LiveTvChannel channel) {
-    return channel.favoriteSource ?? _favoriteSourceByChannel[liveTvChannelScopeKey(channel)] ?? '';
+    return channel.favoriteSource ?? _favoriteScopeForChannel(channel)?.source ?? '';
   }
 
   String _favoriteKeyForChannel(LiveTvChannel channel) => favoriteChannelKey(_sourceForChannel(channel), channel.key);
@@ -164,59 +179,54 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       await _recordingsTabKey.currentState?.reload();
       return;
     }
-    await _serverReloadGuide();
+    await _broadcastToDvrs(
+      actionLabel: 'Reload guide',
+      successMessage: t.liveTv.guideReloadRequested,
+      action: (dvr, serverInfo) => dvr.reloadGuide(serverInfo.dvrKey),
+    );
     await _loadChannels();
   }
 
-  Future<void> _serverReloadGuide() async {
+  /// Runs [action] on every DVR-capable Live TV server in parallel, then reports
+  /// [successMessage]. Per-DVR failures are non-fatal — 403 (admin only) and
+  /// transient errors are logged under [actionLabel] and swallowed, since
+  /// callers re-fetch their own client-side state regardless. Returns `true`
+  /// once at least one DVR was reached and this widget is still mounted.
+  Future<bool> _broadcastToDvrs({
+    required String actionLabel,
+    required String successMessage,
+    required Future<void> Function(LiveTvDvrSupport dvr, LiveTvServerInfo serverInfo) action,
+  }) async {
     final multiServer = context.read<MultiServerProvider>();
+    Future<void> runSafely(LiveTvDvrSupport dvr, LiveTvServerInfo serverInfo) async {
+      try {
+        await action(dvr, serverInfo);
+      } catch (e) {
+        appLogger.d('$actionLabel failed for DVR ${serverInfo.dvrKey}: $e');
+      }
+    }
+
     final futures = <Future<void>>[];
     for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null || client.liveTvDvr == null) continue;
-      futures.add(_reloadGuideSafe(client, serverInfo.dvrKey));
+      final dvr = multiServer.getClientForServer(ServerId(serverInfo.serverId))?.liveTvDvr;
+      if (dvr == null) continue;
+      futures.add(runSafely(dvr, serverInfo));
     }
-    if (futures.isEmpty) return;
+    if (futures.isEmpty) return false;
     await Future.wait(futures);
-    if (!mounted) return;
-    showSnackBar(context, t.liveTv.guideReloadRequested);
-  }
-
-  Future<void> _reloadGuideSafe(MediaServerClient client, String dvrId) async {
-    try {
-      final dvr = client.liveTvDvr;
-      if (dvr == null) return;
-      await dvr.reloadGuide(dvrId);
-    } catch (e) {
-      // 403 (admin only) and transient errors are non-fatal — caller still
-      // re-fetches client-side channels.
-      appLogger.d('Reload guide failed for DVR $dvrId: $e');
-    }
+    if (!mounted) return false;
+    showSnackBar(context, successMessage);
+    return true;
   }
 
   Future<void> _processRecordingRules() async {
-    final multiServer = context.read<MultiServerProvider>();
-    final futures = <Future<void>>[];
-    for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null || client.liveTvDvr == null) continue;
-      futures.add(_processRulesSafe(client));
-    }
-    if (futures.isEmpty) return;
-    await Future.wait(futures);
-    if (!mounted) return;
-    showSnackBar(context, t.liveTv.rulesProcessRequested);
+    final reached = await _broadcastToDvrs(
+      actionLabel: 'processRecordingRules',
+      successMessage: t.liveTv.rulesProcessRequested,
+      action: (dvr, _) => dvr.processRecordingRules(),
+    );
+    if (!reached) return;
     await _recordingsTabKey.currentState?.reload();
-  }
-
-  Future<void> _processRulesSafe(MediaServerClient client) async {
-    try {
-      final dvr = client.liveTvDvr;
-      if (dvr == null) return;
-      await dvr.processRecordingRules();
-    } catch (e) {
-      appLogger.d('processRecordingRules failed: $e');
-    }
   }
 
   /// Recompute visible tabs from the current MultiServerProvider state.
@@ -263,15 +273,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   String? _sourceTitleForServerInfo(LiveTvServerInfo serverInfo) {
     for (final dvr in serverInfo.dvrs) {
       if (dvr.key == serverInfo.dvrKey) {
-        return _nonEmpty(dvr.lineupTitle) ?? _nonEmpty(dvr.lineupURL) ?? _nonEmpty(dvr.lineup);
+        return liveTvNonEmpty(dvr.lineupTitle) ?? liveTvNonEmpty(dvr.lineupURL) ?? liveTvNonEmpty(dvr.lineup);
       }
     }
-    return _nonEmpty(serverInfo.lineup);
-  }
-
-  String? _nonEmpty(String? value) {
-    final trimmed = value?.trim();
-    return trimmed == null || trimmed.isEmpty ? null : trimmed;
+    return liveTvNonEmpty(serverInfo.lineup);
   }
 
   Future<void> _loadChannels() {
@@ -306,12 +311,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
       final allChannels = <LiveTvChannel>[];
       final seenChannels = <String>{};
-      final favoriteSourceByLiveServer = <String, String>{};
-      final favoriteSourceByChannel = <String, String>{};
-      final favoriteStoreByLiveServer = <String, String>{};
-      final favoriteStoreByChannel = <String, String>{};
+      final favoriteScopeByLiveServer = <String, _FavoriteScope>{};
+      final liveServerKeyByChannel = <String, String>{};
       final favoriteStoreBySource = <String, String>{};
-      final favoriteModeByStore = <String, FavoriteChannelPersistenceMode>{};
 
       appLogger.d(
         'Live TV DVRs: ${liveTvServers.map((s) => '${s.serverId}/${s.dvrKey} lineup=${s.lineup}').join(', ')}',
@@ -336,10 +338,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           final sourceTitle = _sourceTitleForServerInfo(serverInfo);
           final storeKey = liveTv.favoriteStoreKey;
           final liveServerKey = _liveServerScopeKey(serverInfo);
-          favoriteSourceByLiveServer[liveServerKey] = source;
-          favoriteStoreByLiveServer[liveServerKey] = storeKey;
+          favoriteScopeByLiveServer[liveServerKey] = (
+            source: source,
+            storeKey: storeKey,
+            mode: liveTv.favoritePersistenceMode,
+          );
           favoriteStoreBySource[source] = storeKey;
-          favoriteModeByStore[storeKey] = liveTv.favoritePersistenceMode;
 
           final channels = await genericClient.liveTv.fetchChannels(lineup: serverInfo.lineup);
           // Plex's DVR exposes a separate enabled-channel mapping; Jellyfin
@@ -358,9 +362,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             );
             final dedupKey = liveTvChannelScopeKey(scopedChannel);
             if (seenChannels.add(dedupKey)) {
-              final scopeKey = liveTvChannelScopeKey(scopedChannel);
-              favoriteSourceByChannel[scopeKey] = source;
-              favoriteStoreByChannel[scopeKey] = storeKey;
+              liveServerKeyByChannel[dedupKey] = liveServerKey;
               allChannels.add(scopedChannel);
             }
           }
@@ -381,24 +383,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
       setState(() {
         _channels = allChannels;
-        _favoriteSourceByLiveServer
+        _favoriteScopeByLiveServer
           ..clear()
-          ..addAll(favoriteSourceByLiveServer);
-        _favoriteSourceByChannel
+          ..addAll(favoriteScopeByLiveServer);
+        _liveServerKeyByChannel
           ..clear()
-          ..addAll(favoriteSourceByChannel);
-        _favoriteStoreByLiveServer
-          ..clear()
-          ..addAll(favoriteStoreByLiveServer);
-        _favoriteStoreByChannel
-          ..clear()
-          ..addAll(favoriteStoreByChannel);
+          ..addAll(liveServerKeyByChannel);
         _favoriteStoreBySource
           ..clear()
           ..addAll(favoriteStoreBySource);
-        _favoriteModeByStore
-          ..clear()
-          ..addAll(favoriteModeByStore);
         _isLoading = false;
       });
 
@@ -433,56 +426,68 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   Future<void> _loadFavorites(MultiServerProvider multiServer) async {
     final loadGeneration = ++_favoritesLoadGeneration;
-    _favoritesLoaded = false;
-    try {
-      final sourceByLiveServer = Map<String, String>.of(_favoriteSourceByLiveServer);
-      final storeByLiveServer = Map<String, String>.of(_favoriteStoreByLiveServer);
-      final storeBySource = Map<String, String>.of(_favoriteStoreBySource);
-      final modeByStore = Map<String, FavoriteChannelPersistenceMode>.of(_favoriteModeByStore);
-      final merged = <FavoriteChannel>[];
-      final fetchedStores = <String>{};
-      final seenFavorites = <String>{};
-      for (final serverInfo in multiServer.liveTvServers) {
-        final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-        if (client == null) continue;
-        final liveTv = client.liveTv;
+    _favoritesWritable = false;
+    final previousStoreBySource = Map<String, String>.of(_favoriteStoreBySource);
+    final scopeByLiveServer = Map<String, _FavoriteScope>.of(_favoriteScopeByLiveServer);
+    final storeBySource = Map<String, String>.of(_favoriteStoreBySource);
+    final merged = <FavoriteChannel>[];
+    final successfulStores = <String>{};
+    final failedStores = <String>{};
+    final seenFavorites = <String>{};
+
+    for (final serverInfo in multiServer.liveTvServers) {
+      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
+      if (client == null) continue;
+      final liveTv = client.liveTv;
+      final storeKey = liveTv.favoriteStoreKey;
+      final liveServerKey = _liveServerScopeKey(serverInfo);
+
+      try {
         final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
-        final storeKey = liveTv.favoriteStoreKey;
-        final liveServerKey = _liveServerScopeKey(serverInfo);
-        sourceByLiveServer[liveServerKey] = source;
-        storeByLiveServer[liveServerKey] = storeKey;
+        scopeByLiveServer[liveServerKey] = (source: source, storeKey: storeKey, mode: liveTv.favoritePersistenceMode);
         storeBySource[source] = storeKey;
-        modeByStore[storeKey] = liveTv.favoritePersistenceMode;
-        if (!fetchedStores.add(storeKey)) continue;
+        if (successfulStores.contains(storeKey)) continue;
+
         final serverFavorites = await liveTv.fetchFavoriteChannels();
+        successfulStores.add(storeKey);
+        failedStores.remove(storeKey);
         for (final favorite in serverFavorites) {
           storeBySource[favorite.source] = storeKey;
           if (seenFavorites.add(favorite.stableKey)) merged.add(favorite);
         }
+      } catch (error, stackTrace) {
+        if (!successfulStores.contains(storeKey)) failedStores.add(storeKey);
+        appLogger.e('Failed to load favorite channels for $storeKey', error: error, stackTrace: stackTrace);
       }
-
-      if (!mounted || loadGeneration != _favoritesLoadGeneration) return;
-      setState(() {
-        _favoriteSourceByLiveServer
-          ..clear()
-          ..addAll(sourceByLiveServer);
-        _favoriteStoreByLiveServer
-          ..clear()
-          ..addAll(storeByLiveServer);
-        _favoriteStoreBySource
-          ..clear()
-          ..addAll(storeBySource);
-        _favoriteModeByStore
-          ..clear()
-          ..addAll(modeByStore);
-        _favoriteChannels = merged;
-        _refreshFavoriteKeys();
-      });
-      _favoritesLoaded = true;
-      appLogger.d('Live TV: loaded ${merged.length} favorite channels');
-    } catch (e) {
-      appLogger.e('Failed to load favorite channels', error: e);
     }
+
+    // A failed store keeps its last committed in-memory slice. Healthy stores
+    // still refresh, but mutations stay disabled until every store has loaded
+    // so a later persist cannot replace the failed store with an empty list.
+    for (final favorite in _favoriteChannels) {
+      final storeKey = previousStoreBySource[favorite.source];
+      if (storeKey != null && failedStores.contains(storeKey) && seenFavorites.add(favorite.stableKey)) {
+        merged.add(favorite);
+      }
+    }
+
+    if (!mounted || loadGeneration != _favoritesLoadGeneration) return;
+    setState(() {
+      _favoriteScopeByLiveServer
+        ..clear()
+        ..addAll(scopeByLiveServer);
+      _favoriteStoreBySource
+        ..clear()
+        ..addAll(storeBySource);
+      _favoriteChannels = merged;
+      _refreshFavoriteKeys();
+      _favoritesLoaded = failedStores.isEmpty || successfulStores.isNotEmpty || merged.isNotEmpty;
+      _favoritesWritable = failedStores.isEmpty;
+    });
+    appLogger.d(
+      'Live TV: loaded ${merged.length} favorite channels'
+      '${failedStores.isEmpty ? '' : ' (${failedStores.length} store(s) deferred)'}',
+    );
   }
 
   void _toggleFavoritesFilter() {
@@ -495,8 +500,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     _enqueueFavoriteMutation(() {
       final source = _sourceForChannel(channel);
       final favoriteKey = favoriteChannelKey(source, channel.key);
-      final scopeKey = liveTvChannelScopeKey(channel);
-      final storeKey = channel.favoriteStoreKey ?? _favoriteStoreByChannel[scopeKey];
+      final storeKey = channel.favoriteStoreKey ?? _favoriteScopeForChannel(channel)?.storeKey;
       if (storeKey != null) _favoriteStoreBySource[source] = storeKey;
 
       setState(() {
@@ -517,7 +521,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           .run(() async {
             if (pendingLoad != null) await pendingLoad;
             if (!mounted) return;
-            if (!_favoritesLoaded) {
+            if (!_favoritesWritable) {
               showErrorSnackBar(context, t.liveTv.favoritesLoadFailed);
               return;
             }
@@ -526,6 +530,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           })
           .catchError((Object error, StackTrace stackTrace) {
             appLogger.e('Failed to mutate favorite channels', error: error, stackTrace: stackTrace);
+            if (mounted) {
+              showErrorSnackBar(context, t.liveTv.favoritesUpdateFailed);
+            }
           }),
     );
   }
@@ -573,16 +580,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     for (final serverInfo in multiServer.liveTvServers) {
       final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null) continue;
-      final liveServerKey = _liveServerScopeKey(serverInfo);
-      final storeKey = _favoriteStoreByLiveServer[liveServerKey];
-      if (storeKey == null || !writtenStores.add(storeKey)) continue;
-      final mode = _favoriteModeByStore[storeKey] ?? client.liveTv.favoritePersistenceMode;
-      final source = _favoriteSourceByLiveServer[liveServerKey];
-      if (source == null) continue;
-      final channels = switch (mode) {
-        FavoriteChannelPersistenceMode.sharedFullList => byStore[storeKey] ?? const <FavoriteChannel>[],
+      final scope = _favoriteScopeByLiveServer[_liveServerScopeKey(serverInfo)];
+      if (scope == null || !writtenStores.add(scope.storeKey)) continue;
+      final storeChannels = byStore[scope.storeKey] ?? const <FavoriteChannel>[];
+      final channels = switch (scope.mode) {
+        FavoriteChannelPersistenceMode.sharedFullList => storeChannels,
         FavoriteChannelPersistenceMode.serverSlice =>
-          (byStore[storeKey] ?? const <FavoriteChannel>[]).where((favorite) => favorite.source == source).toList(),
+          storeChannels.where((favorite) => favorite.source == scope.source).toList(),
       };
       writes.add(client.liveTv.setFavoriteChannels(channels));
     }

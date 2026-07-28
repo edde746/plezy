@@ -6,6 +6,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/play_queue.dart';
+import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
@@ -13,23 +14,7 @@ import 'package:plezy/services/episode_navigation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/media_items.dart';
-
-// NOTE on coverage scope:
-// `EpisodeNavigationService` has two methods:
-//
-//   1. `loadAdjacentEpisodes` — pure-ish: reads PlaybackStateProvider, asks for
-//      next/prev episode, wraps the result. The interesting branch is the
-//      "no queue active" short-circuit, which we exercise without any client
-//      or network because PlaybackStateProvider can be constructed bare.
-//
-//   2. `navigateToEpisode` — performs full navigation through
-//      [navigateToVideoPlayer], which depends on a Navigator, a
-//      DownloadProvider, a MultiServerProvider, and the [SettingsService]
-//      singleton. Skipped: not unit-testable without recreating the entire
-//      app shell.
-//
-// We also cover the [AdjacentEpisodes] data class invariants since that's
-// the public surface callers depend on.
+import '../test_helpers/multi_server_fixtures.dart';
 
 MediaItem _meta(String id, {String? title}) =>
     testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
@@ -41,6 +26,27 @@ MediaItem _jfEpisode(String id, {required String seriesId, ServerId? serverId}) 
   title: 'Episode $id',
   serverId: serverId ?? ServerId('srv-jf'),
   grandparentId: seriesId,
+);
+
+MediaItem _jfMovie(String id) => testMediaItem(
+  id: id,
+  backend: MediaBackend.jellyfin,
+  kind: MediaKind.movie,
+  title: 'Movie $id',
+  serverId: ServerId('srv-jf'),
+);
+
+PlexMediaItem _plexMovie(String id, int playQueueItemId) =>
+    PlexMediaItem(id: id, kind: MediaKind.movie, title: 'Movie $id', playQueueItemId: playQueueItemId);
+
+MediaItem _plexEpisode(String id, {required String seriesId, int? viewCount}) => testMediaItem(
+  id: id,
+  backend: MediaBackend.plex,
+  kind: MediaKind.episode,
+  title: 'Episode $id',
+  serverId: 'srv-plex',
+  grandparentId: seriesId,
+  viewCount: viewCount,
 );
 
 /// MultiServerManager subclass that returns a pre-supplied client without
@@ -57,18 +63,22 @@ class _StubManager extends MultiServerManager {
 /// Recording client whose `fetchClientSideEpisodeQueue` is observable —
 /// callers can assert it was (or wasn't) hit.
 class _RecordingClient implements MediaServerClient {
-  _RecordingClient({required this.seriesEpisodes});
+  _RecordingClient({required this.seriesEpisodes, this.clientBackend = MediaBackend.jellyfin, this.fetchError});
   final List<MediaItem> seriesEpisodes;
+  final MediaBackend clientBackend;
+  final Object? fetchError;
   final List<String> seriesQueueCalls = [];
 
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
     seriesQueueCalls.add(seriesId);
+    final error = fetchError;
+    if (error != null) throw error;
     return seriesEpisodes;
   }
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => clientBackend;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -105,31 +115,243 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('loadAdjacentEpisodes', () {
-    testWidgets('returns empty AdjacentEpisodes when no play queue is active', (tester) async {
-      // Bare provider — no setPlaybackFromPlayQueue() call → isQueueActive = false.
+    testWidgets('returns unavailable when no play queue is active for a standalone movie', (tester) async {
       final playback = PlaybackStateProvider();
       addTearDown(playback.dispose);
+      final manager = _StubManager(null);
+      final serverProvider = testMultiServerProvider(manager);
+      addTearDown(serverProvider.dispose);
 
       AdjacentEpisodes? result;
       await tester.pumpWidget(
-        ChangeNotifierProvider<PlaybackStateProvider>.value(
-          value: playback,
-          child: _ProbeWidget(metadata: _meta('42'), onResult: (r) => result = r),
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: _jfMovie('42'), onResult: (r) => result = r),
         ),
       );
-      // Drain the post-frame callback and the awaited service call.
       await tester.pump();
       await tester.pump();
 
       expect(result, isNotNull);
+      expect(result!.nextStatus, QueueNavigationStatus.unavailable);
+      expect(result!.previousStatus, QueueNavigationStatus.unavailable);
+      expect(result!.hasNext, isFalse);
+      expect(result!.hasPrevious, isFalse);
+      expect(playback.isQueueActive, isFalse);
+    });
+
+    testWidgets('preserves adjacency for a movie in an active local queue', (tester) async {
+      final previous = _jfMovie('movie-1');
+      final current = _jfMovie('movie-2');
+      final next = _jfMovie('movie-3');
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      playback.setPlaybackFromLocalQueue(
+        LocalPlayQueue(
+          id: 'jellyfin:playlist-movies',
+          items: [previous, current, next],
+          currentIndex: 1,
+          backendId: MediaBackend.jellyfin.id,
+        ),
+        contextKey: 'playlist-movies',
+      );
+      final client = _RecordingClient(seriesEpisodes: const []);
+      final manager = _StubManager(client);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: current, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(client.seriesQueueCalls, isEmpty);
+      expect(playback.isQueueActive, isTrue);
+      expect(playback.shuffleContextKey, 'playlist-movies');
+      expect(playback.currentQueueItem, same(current));
+      expect(playback.currentPlayQueueItemID, 1);
+      expect(playback.loadedItems, [previous, current, next]);
+      expect(result, isNotNull);
+      expect(result!.nextStatus, QueueNavigationStatus.found);
+      expect(result!.previousStatus, QueueNavigationStatus.found);
+      expect(result!.next, same(next));
+      expect(result!.previous, same(previous));
+      expect(result!.hasNext, isTrue);
+      expect(result!.hasPrevious, isTrue);
+    });
+
+    testWidgets('preserves a local movie collection queue for a current-item clone', (tester) async {
+      final previous = _jfMovie('movie-1');
+      final storedCurrent = _jfMovie('movie-2');
+      final next = _jfMovie('movie-3');
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      playback.setPlaybackFromLocalQueue(
+        LocalPlayQueue(
+          id: 'jellyfin:collection-movies',
+          items: [previous, storedCurrent, next],
+          currentIndex: 1,
+          backendId: MediaBackend.jellyfin.id,
+        ),
+        contextKey: 'collection-movies',
+      );
+      final client = _RecordingClient(seriesEpisodes: const []);
+      final manager = _StubManager(client);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+      final currentClone = storedCurrent.copyWith(viewOffsetMs: 42);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: currentClone, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(client.seriesQueueCalls, isEmpty);
+      expect(playback.isQueueActive, isTrue);
+      expect(playback.shuffleContextKey, 'collection-movies');
+      expect(playback.currentQueueItem, same(storedCurrent));
+      expect(playback.currentPlayQueueItemID, 1);
+      expect(playback.loadedItems, [previous, storedCurrent, next]);
+      expect(result, isNotNull);
+      expect(result!.next, same(next));
+      expect(result!.previous, same(previous));
+      expect(result!.hasNext, isTrue);
+      expect(result!.hasPrevious, isTrue);
+    });
+
+    testWidgets('extends a Plex movie queue window for adjacency', (tester) async {
+      final previous = _plexMovie('movie-1', 1001);
+      final current = _plexMovie('movie-2', 1002);
+      final next = _plexMovie('movie-3', 1003);
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      await playback.setPlaybackFromPlayQueue(
+        PlayQueueResponse(
+          playQueueID: 77,
+          playQueueSelectedItemID: 1002,
+          playQueueShuffled: false,
+          playQueueTotalCount: 3,
+          playQueueVersion: 1,
+          items: [current],
+        ),
+        'collection-movies',
+      );
+      var windowFetches = 0;
+      String? requestedCenter;
+      playback.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) async {
+        windowFetches++;
+        requestedCenter = center;
+        expect(playQueueId, 77);
+        return PlayQueueResponse(
+          playQueueID: playQueueId,
+          playQueueSelectedItemID: 1002,
+          playQueueShuffled: false,
+          playQueueTotalCount: 3,
+          playQueueVersion: 2,
+          items: [previous, current, next],
+        );
+      });
+      final manager = _StubManager(null);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: current, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(windowFetches, 1);
+      expect(requestedCenter, '1002');
+      expect(playback.isQueueActive, isTrue);
+      expect(playback.playQueueId, 77);
+      expect(playback.currentQueueItem, same(current));
+      expect(playback.currentPlayQueueItemID, 1002);
+      expect(playback.loadedItems, [previous, current, next]);
+      expect(result, isNotNull);
+      expect(result!.nextStatus, QueueNavigationStatus.found);
+      expect(result!.previousStatus, QueueNavigationStatus.found);
+      expect(result!.next, same(next));
+      expect(result!.previous, same(previous));
+      expect(result!.hasNext, isTrue);
+      expect(result!.hasPrevious, isTrue);
+    });
+
+    testWidgets('does not use an unrelated active queue for a standalone movie', (tester) async {
+      final queuedPrevious = _jfMovie('queued-1');
+      final queuedCurrent = _jfMovie('queued-2');
+      final unrelated = _jfMovie('unrelated');
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      playback.setPlaybackFromLocalQueue(
+        LocalPlayQueue(
+          id: 'jellyfin:stale-playlist',
+          items: [queuedPrevious, queuedCurrent],
+          currentIndex: 1,
+          backendId: MediaBackend.jellyfin.id,
+        ),
+        contextKey: 'stale-playlist',
+      );
+      final client = _RecordingClient(seriesEpisodes: const []);
+      final manager = _StubManager(client);
+      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: unrelated, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(client.seriesQueueCalls, isEmpty);
+      expect(playback.isQueueActive, isTrue);
+      expect(playback.shuffleContextKey, 'stale-playlist');
+      expect(playback.currentQueueItem, same(queuedCurrent));
+      expect(playback.currentPlayQueueItemID, 1);
+      expect(playback.loadedItems, [queuedPrevious, queuedCurrent]);
+      expect(result, isNotNull);
+      expect(result!.nextStatus, QueueNavigationStatus.failed);
+      expect(result!.previousStatus, QueueNavigationStatus.failed);
       expect(result!.hasNext, isFalse);
       expect(result!.hasPrevious, isFalse);
     });
 
-    testWidgets('catches downstream exceptions and returns empty AdjacentEpisodes', (tester) async {
-      // PlaybackStateProvider not provided → context.read throws. The service
-      // wraps the entire body in try/catch and returns AdjacentEpisodes() so
-      // the UI never crashes when the queue subsystem is unavailable.
+    testWidgets('catches downstream exceptions and reports failed adjacency', (tester) async {
+      // Required providers are absent, so context.read throws. The service
+      // converts the exception into an explicit failed result.
       AdjacentEpisodes? result;
       await tester.pumpWidget(_ProbeWidget(metadata: _meta('42'), onResult: (r) => result = r));
       await tester.pump();
@@ -138,6 +360,7 @@ void main() {
       expect(result, isNotNull);
       expect(result!.hasNext, isFalse);
       expect(result!.hasPrevious, isFalse);
+      expect(result!.nextStatus, QueueNavigationStatus.failed);
     });
 
     testWidgets('preserves an active playlist/collection queue against series rebuild', (tester) async {
@@ -173,8 +396,7 @@ void main() {
         ],
       );
       final manager = _StubManager(client);
-      final aggregation = DataAggregationService(manager);
-      final serverProvider = MultiServerProvider(manager, aggregation);
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
 
       AdjacentEpisodes? result;
@@ -198,6 +420,96 @@ void main() {
       expect(result, isNotNull);
       expect(result!.next?.id, 'ep3');
       expect(result!.previous?.id, 'ep1');
+    });
+
+    testWidgets('builds a Plex local fallback queue with watched episodes', (tester) async {
+      final ep1 = _plexEpisode('ep1', seriesId: 'series-P', viewCount: 1);
+      final ep2 = _plexEpisode('ep2', seriesId: 'series-P', viewCount: 1);
+      final ep3 = _plexEpisode('ep3', seriesId: 'series-P', viewCount: 1);
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3], clientBackend: MediaBackend.plex);
+      final manager = _StubManager(client);
+      final serverProvider = testMultiServerProvider(manager);
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: ep2, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(client.seriesQueueCalls, ['series-P']);
+      expect(playback.loadedItems.map((item) => item.id), ['ep1', 'ep2', 'ep3']);
+      expect(result!.nextStatus, QueueNavigationStatus.found);
+      expect(result!.next?.id, 'ep3');
+      expect(result!.previous?.id, 'ep1');
+    });
+
+    testWidgets('distinguishes a fallback fetch failure from the end of a series', (tester) async {
+      final current = _plexEpisode('ep2', seriesId: 'series-P');
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      final client = _RecordingClient(
+        seriesEpisodes: const [],
+        clientBackend: MediaBackend.plex,
+        fetchError: StateError('network unavailable'),
+      );
+      final manager = _StubManager(client);
+      final serverProvider = testMultiServerProvider(manager);
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: current, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(result!.nextStatus, QueueNavigationStatus.failed);
+      expect(result!.isEndConfirmed, isFalse);
+      expect(playback.isQueueActive, isFalse);
+    });
+
+    testWidgets('confirms the end only after loading a queue containing the current episode', (tester) async {
+      final ep1 = _plexEpisode('ep1', seriesId: 'series-P', viewCount: 1);
+      final ep2 = _plexEpisode('ep2', seriesId: 'series-P', viewCount: 1);
+      final playback = PlaybackStateProvider();
+      addTearDown(playback.dispose);
+      final client = _RecordingClient(seriesEpisodes: [ep1, ep2], clientBackend: MediaBackend.plex);
+      final manager = _StubManager(client);
+      final serverProvider = testMultiServerProvider(manager);
+      addTearDown(serverProvider.dispose);
+
+      AdjacentEpisodes? result;
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: serverProvider),
+          ],
+          child: _ProbeWidget(metadata: ep2, onResult: (r) => result = r),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(result!.nextStatus, QueueNavigationStatus.boundary);
+      expect(result!.isEndConfirmed, isTrue);
+      expect(result!.next, isNull);
     });
   });
 
@@ -237,7 +549,7 @@ void main() {
       );
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);
       final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
       return (playback, client, serverProvider);
     }
@@ -310,7 +622,7 @@ void main() {
       addTearDown(playback.dispose);
       final client = _RecordingClient(seriesEpisodes: [ep1, ep2, ep3, ep4, ep5]);
       final manager = _StubManager(client);
-      final serverProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final serverProvider = testMultiServerProvider(manager);
       addTearDown(serverProvider.dispose);
 
       final result = await probe(tester, playback, serverProvider, ep3);

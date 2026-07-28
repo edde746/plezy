@@ -50,4 +50,30 @@ void main() {
       expect(MpvNodeDecoder.decodeMap(testCase.input), testCase.map);
     });
   }
+
+  test('rejects hostile structured payloads before traversal', () {
+    Object? acceptedDepth = 'leaf';
+    for (var i = 0; i < 31; i++) {
+      acceptedDepth = [acceptedDepth];
+    }
+    expect(MpvNodeDecoder.decodeList(acceptedDepth), isNotNull);
+
+    Object? excessiveDepth = acceptedDepth;
+    excessiveDepth = [excessiveDepth];
+    expect(MpvNodeDecoder.decodeList(excessiveDepth), isNull);
+    expect(MpvNodeDecoder.decodeList(List<Object?>.filled(16384, null)), isNull);
+    expect(MpvNodeDecoder.decodeList([double.nan]), isNull);
+    expect(MpvNodeDecoder.decodeMap({1: 'non-string key'}), isNull);
+  });
+
+  test('preflights deeply nested and oversized JSON', () {
+    final deepestAccepted = '${List.filled(31, '[').join()}null${List.filled(31, ']').join()}';
+    final tooDeep = '[$deepestAccepted]';
+    expect(MpvNodeDecoder.decodeList(deepestAccepted), isNotNull);
+    expect(MpvNodeDecoder.decodeList(tooDeep), isNull);
+
+    final tooManyEntries = '[${List.filled(16385, 'null').join(',')}]';
+    expect(MpvNodeDecoder.decodeList(tooManyEntries), isNull);
+    expect(MpvNodeDecoder.decodeList('["brackets [ and braces { stay quoted"]'), isNotNull);
+  });
 }

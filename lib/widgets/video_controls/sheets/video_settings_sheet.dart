@@ -12,24 +12,25 @@ import 'package:path/path.dart' as path;
 import 'package:provider/provider.dart';
 
 import '../../../models/shader_preset.dart';
-import '../../../models/transcode_quality_preset.dart';
-import '../../../media/media_version.dart';
+import '../../../media/playback_rate.dart';
 import '../../../mpv/mpv.dart';
 import '../../../providers/shader_provider.dart';
 import '../../../services/file_picker_service.dart';
 import '../../../services/settings_service.dart';
-import '../../../services/shader_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../services/video_filter_manager.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/dialogs.dart';
+import '../../../utils/app_logger.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../utils/quality_preset_labels.dart';
+import '../../../utils/latest_async_write.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
+import '../models/track_controls_state.dart';
 import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
@@ -91,7 +92,7 @@ class _SettingsMenuItem extends StatelessWidget {
   }
 }
 
-class _SettingsToggleItem extends StatelessWidget {
+class _SettingsToggleItem extends StatefulWidget {
   final Pref<bool> pref;
   final IconData icon;
   final String title;
@@ -100,24 +101,142 @@ class _SettingsToggleItem extends StatelessWidget {
   const _SettingsToggleItem({required this.pref, required this.icon, required this.title, this.onAfterWrite});
 
   @override
+  State<_SettingsToggleItem> createState() => _SettingsToggleItemState();
+}
+
+class _SettingsToggleItemState extends State<_SettingsToggleItem> {
+  static final LatestAsyncWrite<String> _writes = LatestAsyncWrite<String>();
+
+  bool? _pendingValue;
+  int _writeGeneration = 0;
+
+  @override
+  void didUpdateWidget(covariant _SettingsToggleItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pref != widget.pref) {
+      ++_writeGeneration;
+      _pendingValue = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    ++_writeGeneration;
+    super.dispose();
+  }
+
+  void _write(bool next) {
+    final pref = widget.pref;
+    final callback = widget.onAfterWrite;
+    final generation = ++_writeGeneration;
+    final writeToken = _writes.begin(pref.key);
+    setState(() {
+      _pendingValue = next;
+    });
+    unawaited(_commitWrite(pref, callback, next, generation, writeToken));
+  }
+
+  Future<void> _commitWrite(
+    Pref<bool> pref,
+    FutureOr<void> Function(bool value)? callback,
+    bool next,
+    int generation,
+    int writeToken,
+  ) async {
+    try {
+      final committed = await _writes.commitIfLatest(pref.key, writeToken, () async {
+        if (callback != null) await callback(next);
+        await SettingsService.instance.write(pref, next);
+      });
+      if (!committed || !mounted || generation != _writeGeneration) return;
+      setState(() {
+        _pendingValue = null;
+      });
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to update playback setting', error: error, stackTrace: stackTrace);
+      if (!mounted || generation != _writeGeneration) return;
+      setState(() {
+        _pendingValue = null;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final settings = SettingsService.instance;
     return ValueListenableBuilder<bool>(
-      valueListenable: settings.listenable(pref),
+      valueListenable: settings.listenable(widget.pref),
       builder: (context, value, _) {
-        Future<void> write(bool next) async {
-          await settings.write(pref, next);
-          final callback = onAfterWrite;
-          if (callback != null) await callback(next);
-        }
-
+        final displayedValue = _pendingValue ?? value;
+        final isPending = _pendingValue != null;
         return FocusableListTile(
-          leading: AppIcon(icon, fill: 1, color: value ? Colors.amber : tokens(context).textMuted),
-          title: Text(title),
-          trailing: Switch(value: value, onChanged: write, activeThumbColor: Colors.amber),
-          onTap: () => write(!value),
+          leading: AppIcon(widget.icon, fill: 1, color: displayedValue ? Colors.amber : tokens(context).textMuted),
+          title: Text(widget.title),
+          trailing: Switch(value: displayedValue, onChanged: isPending ? null : _write, activeThumbColor: Colors.amber),
+          onTap: isPending ? null : () => _write(!displayedValue),
         );
       },
+    );
+  }
+}
+
+/// Reflects the system's resolved audio rendering mode, as the Dolby
+/// application guide requires. Renders nothing until the system reports a
+/// conclusive value: Apple only resolves `renderingMode` for CarPlay and
+/// AirPlay routes, and showing "Stereo" for an inconclusive HDMI route would
+/// be worse than showing nothing.
+class _AudioRenderingModeItem extends StatefulWidget {
+  const _AudioRenderingModeItem({required this.player});
+
+  final Player player;
+
+  @override
+  State<_AudioRenderingModeItem> createState() => _AudioRenderingModeItemState();
+}
+
+class _AudioRenderingModeItemState extends State<_AudioRenderingModeItem> {
+  AudioRenderingMode? _mode;
+  Timer? _poll;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+    _poll = Timer.periodic(const Duration(seconds: 2), (_) => unawaited(_refresh()));
+  }
+
+  @override
+  void dispose() {
+    _poll?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _refresh() async {
+    final mode = await widget.player.getAudioRenderingMode();
+    if (!mounted) return;
+    setState(() => _mode = mode);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mode = _mode;
+    if (mode == null || !mode.isConclusive) return const SizedBox.shrink();
+    final label = switch (mode.rawValue) {
+      AudioRenderingMode.dolbyAtmos => t.videoSettings.audioOutputDolbyAtmos,
+      AudioRenderingMode.dolbyAudio => t.videoSettings.audioOutputDolbyAudio,
+      AudioRenderingMode.surround => t.videoSettings.audioOutputSurround,
+      AudioRenderingMode.spatialAudio => t.videoSettings.audioOutputSpatial,
+      _ => t.videoSettings.audioOutputStereo,
+    };
+    final highlighted = mode.isDolbyAtmos || mode.isDolbyAudio;
+    return FocusableListTile(
+      leading: AppIcon(
+        Symbols.spatial_audio_rounded,
+        fill: 1,
+        color: highlighted ? Colors.amber : tokens(context).textMuted,
+      ),
+      title: Text(t.videoSettings.audioOutput),
+      trailing: Text(label, style: TextStyle(color: tokens(context).textMuted)),
     );
   }
 }
@@ -125,72 +244,23 @@ class _SettingsToggleItem extends StatelessWidget {
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
   final Player player;
-  final int audioSyncOffset;
-  final int subtitleSyncOffset;
-  final double videoZoomScale;
-  final ValueChanged<double>? onVideoZoomChanged;
-  final VoidCallback? onResetVideoZoom;
 
-  /// Whether the user can control playback (false hides speed option in host-only mode).
-  final bool canControl;
+  /// Whether this player surface supports Plezy's HDR control.
+  ///
+  /// Defaults to the native platform capability, but can be supplied by
+  /// embedders whose capability is known independently of the host platform.
+  final bool? supportsHdrControl;
 
-  /// Whether this is a live TV stream (hides speed settings).
-  final bool isLive;
-
-  /// Available media versions and quality controls shown inside playback settings.
-  final List<MediaVersion> availableVersions;
-  final int selectedMediaIndex;
-  final TranscodeQualityPreset selectedQualityPreset;
-  final bool serverSupportsTranscoding;
-  final int? sourceDurationMs;
-  final ValueChanged<int>? onVersionSelected;
-  final ValueChanged<TranscodeQualityPreset>? onQualitySelected;
-
-  /// Optional shader service for MPV shader control
-  final ShaderService? shaderService;
-
-  /// Called when shader preset changes
-  final VoidCallback? onShaderChanged;
-
-  /// Whether ambient lighting is currently enabled
-  final bool isAmbientLightingEnabled;
-
-  /// Called to toggle ambient lighting on/off (null if unsupported)
-  final VoidCallback? onToggleAmbientLighting;
-
-  /// Called to cancel the video controls auto-hide timer.
-  final VoidCallback? onCancelAutoHide;
-
-  /// Called to restart the video controls auto-hide timer.
-  final VoidCallback? onStartAutoHide;
-
-  /// Called when a sync offset changes (so the parent can update its state).
-  final void Function(String propertyName, int offset)? onSyncOffsetChanged;
+  /// Shared player-control state. Every playback value and callback this sheet
+  /// shows (sync offsets, zoom, versions/quality, shaders, ambient lighting,
+  /// auto-hide) is read straight off it.
+  final TrackControlsState trackControlsState;
 
   const VideoSettingsSheet({
     super.key,
     required this.player,
-    required this.audioSyncOffset,
-    required this.subtitleSyncOffset,
-    this.videoZoomScale = 1.0,
-    this.onVideoZoomChanged,
-    this.onResetVideoZoom,
-    this.canControl = true,
-    this.isLive = false,
-    this.availableVersions = const [],
-    this.selectedMediaIndex = 0,
-    this.selectedQualityPreset = TranscodeQualityPreset.original,
-    this.serverSupportsTranscoding = false,
-    this.sourceDurationMs,
-    this.onVersionSelected,
-    this.onQualitySelected,
-    this.shaderService,
-    this.onShaderChanged,
-    this.isAmbientLightingEnabled = false,
-    this.onToggleAmbientLighting,
-    this.onCancelAutoHide,
-    this.onStartAutoHide,
-    this.onSyncOffsetChanged,
+    this.supportsHdrControl,
+    required this.trackControlsState,
   });
 
   @override
@@ -203,6 +273,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late int _subtitleSyncOffset;
   late double _zoomScale;
   String _dvConversionMode = 'auto';
+  int _dvConversionWriteGeneration = 0;
+
+  TrackControlsState get _state => widget.trackControlsState;
+
+  bool get _supportsHdrControl =>
+      widget.supportsHdrControl ?? (Platform.isIOS || Platform.isMacOS || Platform.isWindows);
 
   bool get _showDebugDvConversionMode {
     if (!kDebugMode) return false;
@@ -213,16 +289,16 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   @override
   void initState() {
     super.initState();
-    _audioSyncOffset = widget.audioSyncOffset;
-    _subtitleSyncOffset = widget.subtitleSyncOffset;
-    _zoomScale = VideoFilterManager.normalizeZoomScale(widget.videoZoomScale);
+    _audioSyncOffset = _state.audioSyncOffset;
+    _subtitleSyncOffset = _state.subtitleSyncOffset;
+    _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
     _loadDebugDvConversionMode();
   }
 
   @override
   void didUpdateWidget(covariant VideoSettingsSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final nextZoomScale = VideoFilterManager.normalizeZoomScale(widget.videoZoomScale);
+    final nextZoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
     if (_zoomScale != nextZoomScale) {
       _zoomScale = nextZoomScale;
     }
@@ -237,13 +313,21 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     });
   }
 
-  Future<void> _setDebugDvConversionMode(String mode) async {
-    await widget.player.setProperty('dv-conversion-mode', mode);
-    if (!mounted) return;
-    setState(() {
-      _dvConversionMode = mode;
-    });
-    OverlaySheetController.of(context).close();
+  void _setDebugDvConversionMode(String mode) {
+    final targetPlayer = widget.player;
+    final generation = ++_dvConversionWriteGeneration;
+    unawaited(() async {
+      try {
+        await targetPlayer.setProperty('dv-conversion-mode', mode);
+        if (!mounted || generation != _dvConversionWriteGeneration || targetPlayer != widget.player) return;
+        setState(() {
+          _dvConversionMode = mode;
+        });
+        OverlaySheetController.of(context).close();
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to update Dolby Vision conversion mode', error: error, stackTrace: stackTrace);
+      }
+    }());
   }
 
   void _navigateTo(_SettingsView view) {
@@ -294,19 +378,19 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               } else {
                 await settings.write(SettingsService.audioSyncOffset, offset);
               }
-              widget.onSyncOffsetChanged?.call(propertyName, offset);
+              _state.onSyncOffsetChanged?.call(propertyName, offset);
             },
           ),
         )
         .whenComplete(() {
           sliderFocusNode.dispose();
-          widget.onStartAutoHide?.call();
+          _state.onStartAutoHide?.call();
         });
 
     // Cancel auto-hide after show() — the previous sheet's whenComplete
     // fires as a microtask and restarts the timer, so schedule our cancel
     // to run after that microtask.
-    Future.microtask(() => widget.onCancelAutoHide?.call());
+    Future.microtask(() => _state.onCancelAutoHide?.call());
   }
 
   void _navigateBack() {
@@ -398,44 +482,44 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     setState(() {
       _zoomScale = next;
     });
-    widget.onVideoZoomChanged?.call(next);
+    _state.onVideoZoomChanged?.call(next);
   }
 
   void _resetZoomScale() {
     setState(() {
       _zoomScale = 1.0;
     });
-    final reset = widget.onResetVideoZoom;
+    final reset = _state.onResetVideoZoom;
     if (reset != null) {
       reset();
     } else {
-      widget.onVideoZoomChanged?.call(1.0);
+      _state.onVideoZoomChanged?.call(1.0);
     }
   }
 
   bool get _hasVersionQuality {
-    return (widget.availableVersions.length > 1 || widget.serverSupportsTranscoding) &&
-        (widget.onVersionSelected != null || widget.onQualitySelected != null);
+    return (_state.availableVersions.length > 1 || _state.serverSupportsTranscoding) &&
+        (_state.onSwitchVersion != null || _state.onSwitchQualityPreset != null);
   }
 
   String _versionQualityTitle() {
     return versionQualityPickerTitle(
-      showVersions: widget.availableVersions.length > 1,
-      showQuality: widget.serverSupportsTranscoding,
+      showVersions: _state.availableVersions.length > 1,
+      showQuality: _state.serverSupportsTranscoding,
     );
   }
 
   String _versionQualityValueText() {
     final values = <String>[];
-    if (widget.availableVersions.length > 1) values.add(_selectedVersionLabel());
-    if (widget.serverSupportsTranscoding) values.add(qualityPresetLabel(widget.selectedQualityPreset));
+    if (_state.availableVersions.length > 1) values.add(_selectedVersionLabel());
+    if (_state.serverSupportsTranscoding) values.add(qualityPresetLabel(_state.selectedQualityPreset));
     return values.join(' / ');
   }
 
   String _selectedVersionLabel() {
-    final index = widget.selectedMediaIndex;
-    if (index >= 0 && index < widget.availableVersions.length) {
-      return widget.availableVersions[index].displayLabel;
+    final index = _state.selectedMediaIndex;
+    if (index >= 0 && index < _state.availableVersions.length) {
+      return _state.availableVersions[index].displayLabel;
     }
     return t.videoControls.versionColumnHeader;
   }
@@ -447,7 +531,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return ListView(
       children: [
         // Playback Speed - hidden for live TV and when user cannot control playback
-        if (widget.canControl && !widget.isLive)
+        if (_state.canControl && !_state.isLive)
           StreamBuilder<double>(
             stream: widget.player.streams.rate,
             initialData: widget.player.state.rate,
@@ -462,7 +546,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             },
           ),
 
-        if (widget.onVideoZoomChanged != null || widget.onResetVideoZoom != null)
+        if (_state.onVideoZoomChanged != null || _state.onResetVideoZoom != null)
           _SettingsMenuItem(
             icon: Symbols.zoom_in_rounded,
             title: t.videoSettings.zoom,
@@ -513,8 +597,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
 
-        // HDR Toggle (iOS, macOS, and Windows)
-        if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
+        // HDR Toggle
+        if (_supportsHdrControl)
           _SettingsToggleItem(
             pref: SettingsService.enableHDR,
             icon: Symbols.hdr_strong_rounded,
@@ -557,6 +641,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             onAfterWrite: widget.player.setAudioPassthrough,
           ),
 
+        // Dolby playback badge. The Dolby application guide requires the app
+        // to reflect AVAudioSession.renderingMode; Apple only resolves that
+        // for CarPlay/AirPlay routes, so it is hidden rather than shown as
+        // "not Dolby" when the system reports notApplicable.
+        if (PlatformDetector.isAppleTV()) _AudioRenderingModeItem(player: widget.player),
+
         // Audio Normalization
         _SettingsToggleItem(
           pref: SettingsService.audioNormalization,
@@ -578,36 +668,36 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         ),
 
         // Shader Preset (MPV only)
-        if (widget.shaderService != null && widget.shaderService!.isSupported)
+        if (_state.shaderService != null && _state.shaderService!.isSupported)
           _SettingsMenuItem(
             icon: Symbols.auto_fix_high_rounded,
             title: t.shaders.title,
-            valueText: widget.shaderService!.currentPreset.id == ShaderPreset.none.id
+            valueText: _state.shaderService!.currentPreset.id == ShaderPreset.none.id
                 ? t.common.off
-                : widget.shaderService!.currentPreset.name,
-            isHighlighted: widget.shaderService!.currentPreset.isEnabled,
+                : _state.shaderService!.currentPreset.name,
+            isHighlighted: _state.shaderService!.currentPreset.isEnabled,
             onTap: () => _navigateTo(_SettingsView.shader),
           ),
 
         // Ambient Lighting (MPV only)
-        if (widget.onToggleAmbientLighting != null)
+        if (_state.onToggleAmbientLighting != null)
           FocusableListTile(
             leading: AppIcon(
               Symbols.blur_on_rounded,
               fill: 1,
-              color: widget.isAmbientLightingEnabled ? Colors.amber : tokens(context).textMuted,
+              color: _state.isAmbientLightingEnabled ? Colors.amber : tokens(context).textMuted,
             ),
             title: Text(t.videoControls.ambientLighting),
             trailing: Switch(
-              value: widget.isAmbientLightingEnabled,
+              value: _state.isAmbientLightingEnabled,
               onChanged: (_) {
-                widget.onToggleAmbientLighting?.call();
+                _state.onToggleAmbientLighting?.call();
                 OverlaySheetController.of(context).close();
               },
               activeThumbColor: Colors.amber,
             ),
             onTap: () {
-              widget.onToggleAmbientLighting?.call();
+              _state.onToggleAmbientLighting?.call();
               OverlaySheetController.of(context).close();
             },
           ),
@@ -687,7 +777,26 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       initialData: widget.player.state.rate,
       builder: (context, snapshot) {
         final currentRate = snapshot.data ?? 1.0;
-        final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
+        const speeds = <double>[
+          0.5,
+          0.75,
+          1.0,
+          1.25,
+          1.5,
+          1.75,
+          2.0,
+          2.25,
+          2.5,
+          2.75,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0,
+          6.0,
+          7.0,
+          maximumPlaybackRate,
+        ];
 
         return ListView.builder(
           itemCount: speeds.length,
@@ -753,13 +862,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Widget _buildVersionQualityView() {
     return VersionQualityPicker(
-      availableVersions: widget.availableVersions,
-      selectedMediaIndex: widget.selectedMediaIndex,
-      selectedQualityPreset: widget.selectedQualityPreset,
-      serverSupportsTranscoding: widget.serverSupportsTranscoding,
-      sourceDurationMs: widget.sourceDurationMs,
-      onVersionSelected: (index) => widget.onVersionSelected?.call(index),
-      onQualitySelected: (preset) => widget.onQualitySelected?.call(preset),
+      availableVersions: _state.availableVersions,
+      selectedMediaIndex: _state.selectedMediaIndex,
+      selectedQualityPreset: _state.selectedQualityPreset,
+      serverSupportsTranscoding: _state.serverSupportsTranscoding,
+      sourceDurationMs: _state.sourceDurationMs,
+      onVersionSelected: (index) => _state.onSwitchVersion?.call(index),
+      onQualitySelected: (preset) => _state.onSwitchQualityPreset?.call(preset),
     );
   }
 
@@ -864,11 +973,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildShaderView() {
-    if (widget.shaderService == null) return const SizedBox.shrink();
+    if (_state.shaderService == null) return const SizedBox.shrink();
 
     return Consumer<ShaderProvider>(
       builder: (context, shaderProvider, _) {
-        final currentPreset = widget.shaderService!.currentPreset;
+        final currentPreset = _state.shaderService!.currentPreset;
         final presets = shaderProvider.allPresets;
 
         // +1 for the import button at the end
@@ -908,13 +1017,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               ),
               onTap: () async {
                 // Disable ambient lighting when selecting a shader
-                if (preset.type != ShaderPresetType.none && widget.isAmbientLightingEnabled) {
-                  widget.onToggleAmbientLighting?.call();
+                if (preset.type != ShaderPresetType.none && _state.isAmbientLightingEnabled) {
+                  _state.onToggleAmbientLighting?.call();
                 }
-                await widget.shaderService!.applyPreset(preset);
+                await _state.shaderService!.applyPreset(preset);
                 await shaderProvider.setPreset(preset);
                 if (!context.mounted) return;
-                widget.onShaderChanged?.call();
+                _state.onShaderChanged?.call();
                 OverlaySheetController.of(context).close();
               },
             );
@@ -936,14 +1045,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       final displayName = path.basenameWithoutExtension(filePath);
       final preset = await shaderProvider.importCustomShader(filePath, displayName);
 
-      if (widget.shaderService != null && mounted) {
-        if (preset.type != ShaderPresetType.none && widget.isAmbientLightingEnabled) {
-          widget.onToggleAmbientLighting?.call();
+      if (_state.shaderService != null && mounted) {
+        if (preset.type != ShaderPresetType.none && _state.isAmbientLightingEnabled) {
+          _state.onToggleAmbientLighting?.call();
         }
-        await widget.shaderService!.applyPreset(preset);
+        await _state.shaderService!.applyPreset(preset);
         await shaderProvider.setPreset(preset);
         if (!mounted) return;
-        widget.onShaderChanged?.call();
+        _state.onShaderChanged?.call();
       }
 
       if (mounted) showSuccessSnackBar(context, t.shaders.shaderImported);
@@ -961,9 +1070,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     if (!confirmed || !mounted) return;
 
     // If the deleted shader is active, clear it from the player first
-    if (widget.shaderService!.currentPreset.id == preset.id) {
-      await widget.shaderService!.applyPreset(ShaderPreset.none);
-      if (mounted) widget.onShaderChanged?.call();
+    if (_state.shaderService!.currentPreset.id == preset.id) {
+      await _state.shaderService!.applyPreset(ShaderPreset.none);
+      if (mounted) _state.onShaderChanged?.call();
     }
 
     await shaderProvider.deleteCustomShader(preset);
@@ -1002,7 +1111,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   @override
   Widget build(BuildContext context) {
     final sleepTimer = SleepTimerService();
-    final isShaderActive = widget.shaderService != null && widget.shaderService!.currentPreset.isEnabled;
+    final isShaderActive = _state.shaderService != null && _state.shaderService!.currentPreset.isEnabled;
     final isZoomActive = (_zoomScale - 1.0).abs() > 0.0001;
     final isIconActive =
         _currentView == _SettingsView.menu &&

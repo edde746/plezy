@@ -10,10 +10,10 @@ import 'package:flutter/services.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../mpv/mpv.dart';
 import '../mpv/player/platform/player_android.dart';
+import '../mpv/player/player_native.dart';
 
 import '../services/scrub_preview_source.dart';
 import '../media/media_backend.dart';
@@ -58,13 +58,14 @@ import '../services/playback_source_resolver.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
+import '../services/media_control_router.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_manager.dart';
 import '../services/track_selection_service.dart';
 import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
-import '../services/video_pip_manager.dart';
+import '../services/video_volume_controller.dart';
 import '../services/pip_service.dart';
 import '../models/shader_preset.dart';
 import '../services/shader_service.dart';
@@ -81,9 +82,12 @@ import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
 import '../utils/video_player_navigation.dart';
+import '../utils/android_exit_diagnostics.dart';
 import 'video_player/completion_latch.dart';
 import 'video_player/frame_rate_matcher.dart';
 import 'video_player/live_stream_retry.dart';
+import 'video_player/live_timeline_report.dart';
+import 'video_player/wakelock_controller.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
 import 'video_player/tv_background_suspend_policy.dart';
@@ -117,21 +121,58 @@ part 'video_player/parts/seeking.dart';
 part 'video_player/parts/build.dart';
 part 'video_player/parts/watch_together.dart';
 
-bool? _wakelockEnabled;
+final WakelockController _wakelockController = WakelockController();
 
-Future<void> _setWakelock(bool enabled) async {
-  if (_wakelockEnabled == enabled) return;
-  _wakelockEnabled = enabled;
-  try {
-    if (enabled) {
-      await WakelockPlus.enable();
-    } else {
-      await WakelockPlus.disable();
-    }
-  } catch (e) {
-    _wakelockEnabled = null;
-    appLogger.w('Wakelock ${enabled ? 'enable' : 'disable'} failed: $e');
+/// Whether an in-place source reload may start the replacement media.
+///
+/// Reloading a paused player must not manufacture a new play intent. Watch
+/// Together and explicit paused starts keep owning the eventual resume.
+bool shouldAutoStartReloadedMedia({
+  required bool wasPlayingBeforeReload,
+  required bool watchTogetherOwnsStart,
+  required bool startPaused,
+}) => wasPlayingBeforeReload && !watchTogetherOwnsStart && !startPaused;
+
+/// Builds an item-agnostic subtitle preference for an episode replacement.
+///
+/// Source ids and sidecar URIs belong to the current media item. Only the
+/// committed semantic choice may cross the item boundary; native state is a
+/// fallback for sessions created before source-backed selection was recorded.
+SubtitleTrack? subtitlePreferenceForItemChange({
+  required bool hasCommittedSelection,
+  required SubtitleTrack? committedTrack,
+  required SubtitleTrack? nativeTrack,
+}) {
+  SubtitleTrack? normalize(SubtitleTrack? track, {required bool preserveOff}) {
+    if (track == null) return null;
+    if (track.id == SubtitleTrack.off.id) return preserveOff ? SubtitleTrack.off : null;
+
+    final hasSemanticMetadata =
+        (track.title?.isNotEmpty ?? false) ||
+        (track.language?.isNotEmpty ?? false) ||
+        (track.codec?.isNotEmpty ?? false);
+    if (!hasSemanticMetadata) return null;
+
+    return SubtitleTrack(
+      id: 'navigation',
+      title: track.title,
+      language: track.language,
+      codec: track.codec,
+      isDefault: track.isDefault,
+      isForced: track.isForced,
+      isExternal: track.isExternal,
+    );
   }
+
+  if (!hasCommittedSelection) {
+    return normalize(nativeTrack, preserveOff: true);
+  }
+
+  if (committedTrack == null) return SubtitleTrack.off;
+
+  final committedPreference = normalize(committedTrack, preserveOff: true);
+  if (committedPreference != null) return committedPreference;
+  return normalize(nativeTrack, preserveOff: false);
 }
 
 /// The in-place media-source transitions a [VideoPlayerScreenState] can run.
@@ -181,11 +222,12 @@ enum _MediaReloadOutcome {
 /// Async continuations check [isCurrent] after every await while the screen
 /// is mounted, the captured player is active, and no newer attempt exists.
 class _PlaybackAttempt {
-  _PlaybackAttempt._(this._owner, this.generation, this.player);
+  _PlaybackAttempt._(this._owner, this.generation, this.player, this.trackMutationDrain);
 
   final VideoPlayerScreenState _owner;
   final int generation;
   final Player player;
+  final Future<void> trackMutationDrain;
 
   bool get isCurrent => _owner._isCurrentPlaybackGeneration(generation, player);
 }
@@ -281,19 +323,28 @@ class VideoPlayerScreen extends StatefulWidget {
 class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindingObserver, MountedSetStateMixin {
   static const int _liveEdgeThresholdSeconds = 5;
 
-  // Track the currently active video to guard against duplicate navigation
-  static String? _activeId;
-  static int? _activeMediaIndex;
+  // Track the currently active route target to guard duplicate navigation and
+  // project the server-qualified media key to housekeeping consumers.
+  static final VideoPlayerActiveRouteGuard _activeRouteGuard = VideoPlayerActiveRouteGuard();
 
-  static String? get activeId => _activeId;
-  static int? get activeMediaIndex => _activeMediaIndex;
+  static String? get activeGlobalKey => _activeRouteGuard.activeGlobalKey;
+
+  static bool isNavigationActive(VideoPlayerLaunchIdentity identity) => _activeRouteGuard.blocks(identity);
 
   Player? player;
+  Player? _bootstrapPlayer;
+  VideoVolumeController? _volumeController;
   bool _isPlayerInitialized = false;
   String? _playerInitializationError;
+  Future<void>? _playerInitializationOperation;
+  int _playerInitializationGeneration = 0;
   late MediaItem _currentMetadata;
   MediaItem? _nextEpisode;
   MediaItem? _previousEpisode;
+  // Retryable sentinel until the fire-and-forget initial adjacency load
+  // commits found, boundary, or unavailable.
+  QueueNavigationStatus _nextEpisodeStatus = QueueNavigationStatus.failed;
+  bool _isResolvingCompletionAdjacency = false;
   bool _isLoadingNext = false;
   bool _isLoadingPrevious = false;
 
@@ -328,7 +379,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   SubtitleTrack? _preferredSubtitleTrack;
   SubtitleTrack? _preferredSecondarySubtitleTrack;
   bool _serverSupportsTranscoding = false;
-  // Kicked off early in `_initializePlayer` for online non-live playback so
+  // Kicked off early in the player initialization attempt for online non-live playback so
   // the metadata fetch (and transcode-decision HTTP, if non-original preset)
   // overlaps with MPV property configuration. Awaited inside `_startPlayback`
   // immediately before `player.open()` needs the video URL.
@@ -472,9 +523,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
   MediaControlsManager? _mediaControlsManager;
+  ({bool canControlPlayback, bool canNavigateMediaItems})? _lastMediaControlAuthority;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
-  VideoPIPManager? _videoPIPManager;
+  bool _pipInitialized = false;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
   bool _fullscreenListenerAttached = false;
@@ -494,7 +546,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   VoidCallback? _savedOnHome;
 
   /// Backend-neutral lookup. Returns whichever client (Plex or Jellyfin)
-  /// owns this item. Used by the playback-init path in [_initializePlayer].
+  /// owns this item. Used by the player initialization path.
   MediaServerClient? _getMediaServerClient(BuildContext context) {
     final id = _currentMetadata.serverId;
     if (id == null) return null;
@@ -617,11 +669,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  /// Start a new playback attempt: bumps the generation and captures the
-  /// owning player so async continuations can check [_PlaybackAttempt.isCurrent]
-  /// uniformly instead of threading (generation, player) pairs around.
+  /// Start a new playback attempt: invalidates automatic track selection,
+  /// bumps the generation, and captures the owning player so async
+  /// continuations can check [_PlaybackAttempt.isCurrent] uniformly instead of
+  /// threading (generation, player) pairs around. Reloads await the captured,
+  /// bounded mutation drain at their replacement-open boundary.
   _PlaybackAttempt _beginPlaybackAttempt(Player currentPlayer, {bool isMediaReload = false}) {
-    return _PlaybackAttempt._(this, _beginPlaybackGeneration(isMediaReload: isMediaReload), currentPlayer);
+    final trackMutationDrain = _trackManager?.invalidatePendingSelection() ?? Future<void>.value();
+    return _PlaybackAttempt._(
+      this,
+      _beginPlaybackGeneration(isMediaReload: isMediaReload),
+      currentPlayer,
+      trackMutationDrain,
+    );
   }
 
   bool _isCurrentPlaybackGeneration(int generation, Player currentPlayer) {
@@ -663,6 +723,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false);
+  // UI readiness may be forced true to hide the loading spinner after a
+  // startup failure. Reporting readiness is stricter: only a renderer event
+  // (or the established non-ExoPlayer position fallback) sets this latch.
+  bool _hasRenderedFirstFrame = false;
+  bool _hasFatalPlaybackError = false;
+
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
   final PlayerChromeController _chromeController = PlayerChromeController();
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;
@@ -670,6 +736,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void initState() {
     super.initState();
+    unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.player));
 
     _playerNavigationCoordinator = PlayerNavigationCoordinator(
       chromeController: _chromeController,
@@ -691,8 +758,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
 
     _currentMetadata = widget.metadata;
-    _activeId = widget.metadata.id;
-    _activeMediaIndex = widget.selectedMediaIndex;
+    _activeRouteGuard.activate(
+      this,
+      VideoPlayerLaunchIdentity(
+        metadata: widget.metadata,
+        mediaIndex: widget.selectedMediaIndex,
+        selectedMediaSourceId: widget.selectedMediaSourceId,
+        selectedQualityPreset: widget.selectedQualityPreset,
+        isOffline: widget.isOffline,
+        routeKind: widget.isLive ? VideoPlayerRouteKind.liveTv : VideoPlayerRouteKind.vod,
+      ),
+    );
     _effectiveSelectedMediaIndex = widget.selectedMediaIndex;
     _requestedMediaSourceId = widget.selectedMediaSourceId;
 
@@ -763,7 +839,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (mounted) _showStillWatchingDialog();
     });
 
-    _initializePlayer();
+    unawaited(_startPlayerInitialization(replaceCurrent: false));
   }
 
   @override
@@ -807,7 +883,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         } else {
           unawaited(_mediaControlsManager?.clear());
         }
-        unawaited(_setWakelock(false));
+        unawaited(_wakelockController.setEnabled(false));
         _recordLifecycleState('paused', action: 'backgrounded');
         break;
       case AppLifecycleState.resumed:
@@ -824,15 +900,98 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  Future<void> _initializePlayer() async {
-    var initPhase = 'starting';
-    try {
-      if (mounted) {
-        setState(() => _playerInitializationError = null);
+  Future<void> _startPlayerInitialization({required bool replaceCurrent}) {
+    final activeOperation = _playerInitializationOperation;
+    if (activeOperation != null) return activeOperation;
+
+    final generation = ++_playerInitializationGeneration;
+    final operationCompleter = Completer<void>();
+    final operation = operationCompleter.future;
+    _playerInitializationOperation = operation;
+
+    unawaited(() async {
+      try {
+        await _runPlayerInitializationAttempt(generation, replaceCurrent: replaceCurrent);
+      } catch (e, st) {
+        appLogger.e('Unexpected player initialization lifecycle failure', error: e, stackTrace: st);
+      } finally {
+        if (identical(_playerInitializationOperation, operation)) {
+          _playerInitializationOperation = null;
+        }
+        operationCompleter.complete();
       }
+    }());
+    return operation;
+  }
+
+  void _retryPlayerInitialization() {
+    unawaited(_startPlayerInitialization(replaceCurrent: true));
+  }
+
+  bool _isPlayerInitializationCurrent(int generation) {
+    return mounted && generation == _playerInitializationGeneration;
+  }
+
+  bool _ownsPlayerInitializationAttempt(int generation, Player currentPlayer) {
+    return _isPlayerInitializationCurrent(generation) && identical(player, currentPlayer);
+  }
+
+  void _disposeVolumeControllerForPlayer(Player currentPlayer) {
+    final controller = _volumeController;
+    if (controller == null || !controller.ownsPlayer(currentPlayer)) return;
+    _volumeController = null;
+    controller.dispose();
+  }
+
+  Future<void> _disposePlayerInitializationAttempt(Player attemptPlayer) async {
+    _playbackGeneration++;
+    _disposeVolumeControllerForPlayer(attemptPlayer);
+    if (identical(player, attemptPlayer)) {
+      player = null;
+    }
+    if (identical(_bootstrapPlayer, attemptPlayer)) {
+      _bootstrapPlayer = null;
+    }
+    try {
+      await _tearDownFailedPlayerAttempt(attemptPlayer);
+    } catch (e, st) {
+      appLogger.w('Failed to tear down player collaborators during initialization rollback', error: e, stackTrace: st);
+    }
+    try {
+      await attemptPlayer.abandonAudioFocus();
+    } catch (e, st) {
+      appLogger.w('Failed to abandon audio focus during player rollback', error: e, stackTrace: st);
+    }
+    try {
+      await attemptPlayer.dispose(preserveDisplayMode: false);
+    } catch (e, st) {
+      appLogger.w('Failed to dispose player during initialization rollback', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> _runPlayerInitializationAttempt(int generation, {required bool replaceCurrent}) async {
+    var initPhase = 'starting';
+    Player? attemptPlayer;
+    var committed = false;
+    String? failureMessage;
+    try {
+      if (!_isPlayerInitializationCurrent(generation)) return;
+      setState(() {
+        _playerInitializationError = null;
+        _isPlayerInitialized = false;
+      });
+
+      if (replaceCurrent) {
+        final previousPlayer = player;
+        if (previousPlayer != null) {
+          await _disposePlayerInitializationAttempt(previousPlayer);
+        }
+        if (!_isPlayerInitializationCurrent(generation)) return;
+      }
+
       initPhase = 'loading settings';
       final settingsService = await SettingsService.getInstance();
-      if (!mounted) return;
+      if (!_isPlayerInitializationCurrent(generation)) return;
       _videoPlayerNavigationEnabled = settingsService.read(SettingsService.videoPlayerNavigationEnabled);
       _autoPipEnabled = settingsService.read(SettingsService.autoPip);
       _exitFullscreenOnPlayerClose = settingsService.read(SettingsService.exitFullscreenOnPlayerClose);
@@ -846,7 +1005,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         initPhase = 'syncing display mode';
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
         await _displayModeService!.syncWithNative();
-        if (!mounted) return;
+        if (!_isPlayerInitializationCurrent(generation)) return;
         if (!_fullscreenListenerAttached) {
           FullscreenStateManager().addListener(_onFullscreenChanged);
           _fullscreenListenerAttached = true;
@@ -858,15 +1017,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // video core (see PlaybackCoordinator).
       initPhase = 'claiming playback session';
       await PlaybackCoordinator.instance.claimVideo();
-      if (!mounted) return;
+      if (!mounted || generation != _playerInitializationGeneration) return;
 
       initPhase = 'creating player';
       final currentPlayer = Player(useExoPlayer: useExoPlayer);
-      player = currentPlayer;
-      _playerBackendLabel = currentPlayer.playerType;
+      attemptPlayer = currentPlayer;
+      if (!mounted || generation != _playerInitializationGeneration) return;
+      if (currentPlayer is PlayerNative && currentPlayer.requiresProvisionalTextureSurface) {
+        setState(() => _bootstrapPlayer = currentPlayer);
+      }
       if (Platform.isAndroid && useExoPlayer) {
         await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
-        if (!mounted || player != currentPlayer) return;
+        if (!mounted || generation != _playerInitializationGeneration) return;
       }
 
       // Kick off getPlaybackData() in parallel with the rest of MPV setup.
@@ -875,7 +1037,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // no async gaps invalidate it before the calls below read it.
       // Skipped for live TV (has its own tune path) and offline (its own
       // branch in _startPlayback).
-      if (!widget.isLive && !_offlineLibraryMode && mounted) {
+      if (!widget.isLive && !_offlineLibraryMode) {
         // Backend-neutral lookup so Jellyfin items also flow through here.
         // Plex-specific transcoder caching is gated on capabilities below;
         // Jellyfin's `streamHeaders` is empty because it embeds api_key in
@@ -900,16 +1062,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           database: context.read<AppDatabase>(),
         );
         _playbackDataFuture = playbackResolver.resolve(
-          metadata: _currentMetadata,
-          selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _requestedMediaSourceId,
-          preferredVersionSignature: widget.preferredVersionSignature,
+          PlaybackInitializationOptions(
+            metadata: _currentMetadata,
+            selectedMediaIndex: _effectiveSelectedMediaIndex,
+            selectedMediaSourceId: _requestedMediaSourceId,
+            preferredVersionSignature: widget.preferredVersionSignature,
+            qualityPreset: _selectedQualityPreset,
+            selectedAudioStreamId: _selectedAudioStreamId,
+            preferredSubtitleTrack: _preferredSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+          ),
           offlineLibraryMode: false,
-          qualityPreset: _selectedQualityPreset,
-          selectedAudioStreamId: _selectedAudioStreamId,
-          preferredSubtitleTrack: _preferredSubtitleTrack,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
         );
         // If MPV setup below throws before `_startPlayback` awaits this,
         // tell Dart we've "handled" the future so it's not reported as an
@@ -917,7 +1081,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _playbackDataFuture!.ignore();
       }
 
-      if (!mounted || player != currentPlayer) return;
+      if (!_isPlayerInitializationCurrent(generation)) return;
       initPhase = 'configuring player';
       await currentPlayer.configureSubtitleFonts();
       await currentPlayer.setProperty('sub-ass', 'yes'); // Enable libass
@@ -944,7 +1108,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // buffering, which combined with decoded frames and GPU textures
         // exhausts the process address space on memory-constrained devices.
         final heapMB = await PlayerAndroid.getHeapSize();
-        if (!mounted || player != currentPlayer) return;
+        if (!_isPlayerInitializationCurrent(generation)) return;
         if (heapMB > 0) {
           int autoBackMB;
           if (heapMB <= 256) {
@@ -1082,8 +1246,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
       await currentPlayer.setVolume(savedVolume);
+      if (!_isPlayerInitializationCurrent(generation)) return;
+      _volumeController = VideoVolumeController(
+        player: currentPlayer,
+        settings: settingsService,
+        initialVolume: savedVolume,
+      );
 
-      if (!mounted || player != currentPlayer) return;
+      player = currentPlayer;
+      _playerBackendLabel = currentPlayer.playerType;
 
       initPhase = 'wiring player streams';
       await _wirePlayerStreams(
@@ -1091,24 +1262,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         settingsService: settingsService,
         useExoPlayer: useExoPlayer,
       );
-      if (!mounted || player != currentPlayer) return;
+      if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
 
       if (mounted) {
         setState(() {
           _isPlayerInitialized = true;
+          _bootstrapPlayer = null;
         });
 
         // Restart sleep timer if we're starting a new playback session
         SleepTimerService().restartIfNeeded(() => unawaited(_pauseWithPlaybackIntent(currentPlayer)));
 
         // Enable wakelock to prevent screen from turning off during playback
-        unawaited(_setWakelock(true));
+        unawaited(_wakelockController.setEnabled(true));
         appLogger.d('Wakelock enabled for video playback');
       }
 
       initPhase = 'starting playback';
       await _startPlayback();
-      if (!mounted || player != currentPlayer) return;
+      if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
 
       // Set fullscreen mode and orientation based on rotation lock setting
       initPhase = 'applying orientation';
@@ -1131,7 +1303,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       }
 
-      if (!mounted || player != currentPlayer) return;
+      if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
       // Player streams are wired before open so broadcast first-frame events
       // cannot be dropped. Service init follows immediately after open.
       // `_loadAdjacentEpisodes` depends on the play queue being in state
@@ -1146,14 +1318,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       );
       initPhase = 'initializing playback services';
       await _initializeServices();
+      if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
+      committed = true;
     } catch (e, st) {
+      failureMessage = _safePlaybackErrorMessage(e);
       appLogger.e('Failed to initialize player during $initPhase', error: e, stackTrace: st);
-      if (mounted) {
-        setState(() {
-          _isPlayerInitialized = false;
-          _playerInitializationError = _safePlaybackErrorMessage(e);
-        });
+    } finally {
+      final failedAttempt = attemptPlayer;
+      if (!committed && failedAttempt != null) {
+        await _disposePlayerInitializationAttempt(failedAttempt);
       }
+    }
+
+    if (failureMessage != null && _isPlayerInitializationCurrent(generation)) {
+      setState(() {
+        _isPlayerInitialized = false;
+        _playerInitializationError = failureMessage;
+      });
     }
   }
 
@@ -1190,6 +1371,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return exitPosition;
   }
 
+  /// Pause/hide the player, flush stopped progress, restore system UI and
+  /// orientation, then leave the player route. No-op when the route cannot pop.
+  Future<void> _exitPlayerRoute({required bool navigateHome}) async {
+    final navigator = Navigator.of(context);
+    if (!navigator.canPop()) return;
+
+    _isExiting.value = true;
+    final exitPosition = await _pauseAndHidePlayerForRouteExit();
+    if (!mounted) return;
+    await _sendStoppedProgressOnce(positionOverride: exitPosition);
+    if (!mounted) return;
+    await _restoreSystemUiAndOrientation();
+    if (!mounted) return;
+    _finishPlayerNavigation(navigator, navigateHome: navigateHome);
+  }
+
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton({bool navigateHome = false}) async {
@@ -1211,37 +1408,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         );
 
         if (confirmed && mounted) {
-          await _watchTogetherProvider!.leaveSession();
-          if (mounted) {
-            final navigator = Navigator.of(context);
-            if (navigator.canPop()) {
-              _isExiting.value = true;
-              final exitPosition = await _pauseAndHidePlayerForRouteExit();
-              if (!mounted) return;
-              await _sendStoppedProgressOnce(positionOverride: exitPosition);
-              if (!mounted) return;
-              await _restoreSystemUiAndOrientation();
-              if (!mounted) return;
-              _finishPlayerNavigation(navigator, navigateHome: navigateHome);
-            }
+          try {
+            await _watchTogetherProvider!.leaveSession();
+          } catch (error, stackTrace) {
+            appLogger.e('WatchTogether: Session leave failed', error: error, stackTrace: stackTrace);
           }
+          if (mounted) await _exitPlayerRoute(navigateHome: navigateHome);
         }
         return;
       }
 
       // Default behavior for hosts or non-session users
       if (!mounted) return;
-      final navigator = Navigator.of(context);
-      if (navigator.canPop()) {
-        _isExiting.value = true;
-        final exitPosition = await _pauseAndHidePlayerForRouteExit();
-        if (!mounted) return;
-        await _sendStoppedProgressOnce(positionOverride: exitPosition);
-        if (!mounted) return;
-        await _restoreSystemUiAndOrientation();
-        if (!mounted) return;
-        _finishPlayerNavigation(navigator, navigateHome: navigateHome);
-      }
+      await _exitPlayerRoute(navigateHome: navigateHome);
     } finally {
       _isHandlingBack = false;
     }
@@ -1302,6 +1481,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   @override
   void dispose() {
+    unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.mainScreen));
+    _playerInitializationGeneration++;
+    _frameRate.dispose();
     WidgetsBinding.instance.removeObserver(this);
 
     final transitionCompleter = _playbackTransitionIdleCompleter;
@@ -1328,6 +1510,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _chromeController.dispose();
     _toastController.dispose();
 
+    // The release sequence below mirrors _tearDownFailedPlayerAttempt but is
+    // deliberately separate: dispose() cannot await, and it destroys the
+    // notifiers, focus nodes and player that the rollback path keeps alive
+    // for a retry on a still-mounted screen.
+    //
     // Stop progress tracking and send final state. Normal back navigation
     // awaits this before popping; dispose keeps a fallback for externally
     // removed routes where dispose() cannot await.
@@ -1337,11 +1524,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _stopLiveTimelineUpdates();
 
     _detachPipStateListener();
-    _videoPIPManager?.onBeforeEnterPip = null;
-    unawaited(_videoPIPManager?.disableAutoPip());
+    if (_pipInitialized) unawaited(PipService.setAutoPipReady(ready: false));
     _clearAutoPipEnteringCallback();
     _videoFilterManager?.dispose();
-    _videoPIPManager = null;
+    _pipInitialized = false;
     _videoFilterManager = null;
 
     _scrubPreviewSource?.dispose();
@@ -1350,6 +1536,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       SleepTimerService().markNeedsRestart();
     }
 
+    // Teardown scope: every subscription the screen ever owns, including the
+    // initState-owned sleep-timer and Apple TV ones that the rollback path
+    // must leave alive.
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _errorSubscription?.cancel();
@@ -1396,12 +1585,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       FullscreenStateManager().removeListener(_onFullscreenChanged);
       _fullscreenListenerAttached = false;
     }
+    // Not _restoreWindowsDisplayMode(): that helper waits 200ms after clearing
+    // the HDR hint before restoring, which dispose() cannot do. Fire the hint
+    // clear at the still-live player and restore immediately.
     if (!isReplacingWithVideo &&
         Platform.isWindows &&
         _displayModeService != null &&
         _displayModeService!.anyChangeApplied) {
       if (_displayModeService!.hdrStateChanged && player != null) {
-        player!.setProperty('target-colorspace-hint', 'no');
+        final currentPlayer = player!;
+        unawaited(() async {
+          try {
+            await currentPlayer.setProperty('target-colorspace-hint', 'no');
+          } catch (error, stackTrace) {
+            appLogger.w(
+              'Failed to clear the Windows HDR colorspace hint during teardown',
+              error: error,
+              stackTrace: stackTrace,
+            );
+          }
+        }());
       }
       _displayModeService!.restoreAll();
     }
@@ -1417,7 +1620,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player!.abandonAudioFocus();
     }
 
-    unawaited(_setWakelock(false));
+    unawaited(_wakelockController.setEnabled(false));
     appLogger.d('Wakelock disabled');
 
     if (!isReplacingWithVideo) {
@@ -1425,17 +1628,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
-    final playerToDispose = player;
+    final volumeController = _volumeController;
+    _volumeController = null;
+    volumeController?.dispose();
+    final playerToDispose = player ?? _bootstrapPlayer;
     player = null;
+    _bootstrapPlayer = null;
     if (playerToDispose != null) {
       // Keep the native display mode (tvOS HDMI criteria) across a
       // player→player handoff; the replacement screen primes its own.
       unawaited(playerToDispose.dispose(preserveDisplayMode: isReplacingWithVideo));
     }
-    if (_activeId == _currentMetadata.id) {
-      _activeId = null;
-      _activeMediaIndex = null;
-    }
+    _activeRouteGuard.clear(this);
     super.dispose();
   }
 
@@ -1499,7 +1703,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       return;
     }
 
-    if (!_canControlPlaybackFromRemote()) {
+    if (!_canControlPlayback()) {
       appLogger.d('$source play/pause ignored: playback control unavailable');
       return;
     }
@@ -1522,15 +1726,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       key == LogicalKeyboardKey.mediaPlay ||
       key == LogicalKeyboardKey.mediaPause;
 
-  bool _canControlPlaybackFromRemote() {
-    try {
-      final watchTogether = _watchTogetherProvider ?? context.read<WatchTogetherProvider>();
-      return !watchTogether.isInSession || watchTogether.canControl();
-    } catch (e) {
-      return true;
-    }
-  }
-
   String? _lastLogError;
   bool _sawServer500 = false;
 
@@ -1540,6 +1735,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Navigate to a specific queue item (called from QueueSheet)
   Future<void> navigateToQueueItem(MediaItem metadata) async {
+    if (!_canNavigateMediaItems()) return;
     _notifyWatchTogetherMediaChange(metadata: metadata);
     await _navigateToEpisode(metadata);
   }
@@ -1571,11 +1767,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  Future<void> _onAudioTrackChanged(AudioTrack track) async => _trackManager?.onAudioTrackChanged(track);
+  Future<void> _onAudioTrackChanged(AudioTrack track) async => _trackManager?.onAudioTrackSelectedByUser(track);
 
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
     _rememberNativeSubtitleSelection(track, sourceStreamId: sourceStreamId);
-    await _trackManager?.onSubtitleTrackChanged(track, sourceStreamId: sourceStreamId);
+    await _trackManager?.onSubtitleTrackSelectedByUser(track, sourceStreamId: sourceStreamId);
   }
 
   void _rememberNativeSubtitleSelection(SubtitleTrack track, {int? sourceStreamId}) {
@@ -1754,7 +1950,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               ? _buildVideoPlayer(sheetContext)
               : (_playerInitializationError != null
                     ? _buildInitializationError(_playerInitializationError!)
-                    : _buildLoadingSpinner()),
+                    : _buildPlayerInitializationSurface()),
         ),
       ),
     );

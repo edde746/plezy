@@ -1,33 +1,7 @@
 part of '../../plex_client.dart';
 
-mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
-  FailoverHttpClient get _http;
+mixin _PlexMetadataEditMethods on _PlexClientInternals {
   PlexApiCache get _cache;
-  @override
-  ServerId get serverId;
-
-  Future<MediaServerResponse> _getWithFailover(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    // ignore: unused_element_parameter
-    Map<String, String>? headers,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    // ignore: unused_element_parameter
-    AbortController? abort,
-    // ignore: unused_element_parameter
-    bool allowEndpointFailover = true,
-  });
-
-  Map<String, dynamic>? _getMediaContainer(MediaServerResponse response);
-
-  Future<bool> _wrapBoolApiCall(Future<MediaServerResponse> Function() apiCall, String errorMessage);
-
-  Future<List<T>> _wrapListApiCall<T>(
-    Future<MediaServerResponse> Function() apiCall,
-    List<T> Function(MediaServerResponse response) parseResponse,
-    String errorMessage,
-  );
 
   Future<bool> updateMetadata({
     required int sectionId,
@@ -167,6 +141,14 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
     return result;
   }
 
+  Future<Map<String, String>> getMetadataPrefs(String ratingKey) async {
+    final response = await _getWithFailover(
+      '/library/metadata/$ratingKey',
+      queryParameters: const {'includePreferences': 1},
+    );
+    return PlexMetadataPreferences.fromMediaContainer(_getMediaContainer(response)).values;
+  }
+
   Future<bool> updateMetadataPrefs(String ratingKey, Map<String, String> prefs) async {
     final result = await _wrapBoolApiCall(
       () => _http.put('/library/metadata/$ratingKey/prefs', queryParameters: prefs),
@@ -182,7 +164,7 @@ mixin _PlexMetadataEditMethods on MediaServerCacheMixin {
 
   Future<void> _deleteMetadataEditCache(String ratingKey) async {
     try {
-      await _cache.deleteForItem(serverId, ratingKey);
+      await _cache.deleteForItem(ServerId(cacheServerId), ratingKey);
     } catch (e, st) {
       appLogger.w('Plex metadata edit cache invalidation failed', error: e, stackTrace: st);
     }

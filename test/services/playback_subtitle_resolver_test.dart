@@ -11,6 +11,8 @@ import '../test_helpers/media_items.dart';
 MediaSubtitleTrack _sourceSubtitle(
   int id, {
   String language = 'eng',
+  String codec = 'srt',
+  bool forced = false,
   bool selected = false,
   bool external = false,
   bool usesExternalDelivery = false,
@@ -19,24 +21,39 @@ MediaSubtitleTrack _sourceSubtitle(
     id: id,
     language: language,
     languageCode: language,
+    codec: codec,
     title: 'Subtitle $id',
     selected: selected,
-    forced: false,
+    forced: forced,
     external: external,
     usesExternalDelivery: usesExternalDelivery,
   );
 }
 
-PlaybackSubtitleSidecar _sidecar(int id, {String language = 'eng', bool isDefault = false}) {
+PlaybackSubtitleSidecar _sidecar(
+  int id, {
+  String language = 'eng',
+  bool isDefault = false,
+  bool preload = false,
+  bool isContainer = false,
+  String? uri,
+}) {
+  final sidecarUri = uri ?? 'https://example.test/subtitles/$id.srt';
   return PlaybackSubtitleSidecar(
     sourceStreamId: id,
-    track: SubtitleTrack.uri(
-      'https://example.test/subtitles/$id.srt',
-      title: 'Subtitle $id',
-      language: language,
-      codec: 'srt',
-      isDefault: isDefault,
-    ),
+    preload: preload,
+    track: isContainer
+        ? SubtitleTrack(
+            id: 'container:$id',
+            title: 'Subtitle $id',
+            language: language,
+            codec: 'srt',
+            isDefault: isDefault,
+            isExternal: true,
+            isContainer: true,
+            uri: sidecarUri,
+          )
+        : SubtitleTrack.uri(sidecarUri, title: 'Subtitle $id', language: language, codec: 'srt', isDefault: isDefault),
   );
 }
 
@@ -45,17 +62,18 @@ MediaSourceInfo _mediaInfo(List<MediaSubtitleTrack> subtitles) {
 }
 
 void main() {
-  group('direct-play source routing', () {
+  group('source subtitle routing', () {
     test('matches an embedded source to its loaded native track', () {
       final source = _sourceSubtitle(2, language: 'eng');
       const native = SubtitleTrack(id: '7', language: 'eng', codec: 'srt');
 
       expect(
-        PlaybackSubtitleResolver.nativeTrackForDirectPlaySource(
+        PlaybackSubtitleResolver.nativeTrackForSource(
           sourceTrack: source,
           nativeTracks: const [native],
           allSourceTracks: [source],
           isResolvedSidecar: false,
+          isContainerSidecar: false,
         ),
         native,
       );
@@ -80,11 +98,12 @@ void main() {
       );
 
       expect(
-        PlaybackSubtitleResolver.nativeTrackForDirectPlaySource(
+        PlaybackSubtitleResolver.nativeTrackForSource(
           sourceTrack: source,
           nativeTracks: const [other],
           allSourceTracks: [source],
           isResolvedSidecar: true,
+          isContainerSidecar: false,
         ),
         isNull,
       );
@@ -94,15 +113,15 @@ void main() {
       final tracks = [_sourceSubtitle(0), _sourceSubtitle(2)];
 
       expect(
-        PlaybackSubtitleResolver.nextSourceChoice(tracks, const PlaybackSourceSubtitleChoice.off()),
+        PlaybackSubtitleResolver.advanceSourceChoice(tracks, const PlaybackSourceSubtitleChoice.off(), 1),
         const PlaybackSourceSubtitleChoice.source(0),
       );
       expect(
-        PlaybackSubtitleResolver.nextSourceChoice(tracks, const PlaybackSourceSubtitleChoice.source(0)),
+        PlaybackSubtitleResolver.advanceSourceChoice(tracks, const PlaybackSourceSubtitleChoice.source(0), 1),
         const PlaybackSourceSubtitleChoice.source(2),
       );
       expect(
-        PlaybackSubtitleResolver.nextSourceChoice(tracks, const PlaybackSourceSubtitleChoice.source(2)),
+        PlaybackSubtitleResolver.advanceSourceChoice(tracks, const PlaybackSourceSubtitleChoice.source(2), 1),
         const PlaybackSourceSubtitleChoice.off(),
       );
       expect(
@@ -116,13 +135,48 @@ void main() {
       const native = SubtitleTrack(id: '7', language: 'eng', codec: 'srt');
 
       expect(
-        PlaybackSubtitleResolver.nativeTrackForDirectPlaySource(
+        PlaybackSubtitleResolver.nativeTrackForSource(
           sourceTrack: source,
           nativeTracks: const [native],
           allSourceTracks: [source],
           isResolvedSidecar: false,
+          isContainerSidecar: false,
         ),
         native,
+      );
+    });
+    test('matches a requested source among tracks from one container sidecar', () {
+      final sources = [_sourceSubtitle(2, language: 'eng'), _sourceSubtitle(3, language: 'eng')];
+      const nativeTracks = [
+        SubtitleTrack(
+          id: '7',
+          title: 'Subtitle 2',
+          language: 'eng',
+          codec: 'srt',
+          isExternal: true,
+          isContainer: true,
+          uri: 'https://example.test/video.mkv',
+        ),
+        SubtitleTrack(
+          id: '8',
+          title: 'Subtitle 3',
+          language: 'eng',
+          codec: 'srt',
+          isExternal: true,
+          isContainer: true,
+          uri: 'https://example.test/video.mkv',
+        ),
+      ];
+
+      expect(
+        PlaybackSubtitleResolver.nativeTrackForSource(
+          sourceTrack: sources.last,
+          nativeTracks: nativeTracks,
+          allSourceTracks: sources,
+          isResolvedSidecar: true,
+          isContainerSidecar: true,
+        ),
+        nativeTracks.last,
       );
     });
   });
@@ -159,6 +213,24 @@ void main() {
     expect(result.sidecarsAtOpen, isEmpty);
   });
 
+  test('retains each source metadata row for a shared preloaded container', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([_sourceSubtitle(2, selected: true), _sourceSubtitle(3)]),
+      sidecars: [
+        _sidecar(2, preload: true, isContainer: true, uri: 'https://example.test/video.mkv'),
+        _sidecar(3, preload: true, isContainer: true, uri: 'https://example.test/video.mkv'),
+      ],
+      preferredSubtitleTrack: SubtitleTrack.off,
+    );
+
+    expect(result.isOff, isTrue);
+    expect(result.sidecarsAtOpen, hasLength(2));
+    expect(result.sidecarsAtOpen.every((track) => track.isContainer), isTrue);
+    expect(result.sidecarsAtOpen.map((track) => track.id), ['container:2', 'container:3']);
+    expect(result.sidecarsAtOpen.map((track) => track.uri).toSet(), {'https://example.test/video.mkv'});
+  });
+
   test('explicit source selection wins over the server default', () {
     final mediaInfo = _mediaInfo([
       _sourceSubtitle(2, selected: true, usesExternalDelivery: true),
@@ -178,6 +250,130 @@ void main() {
     expect(result.sidecarsAtOpen.single.uri, 'https://example.test/subtitles/3.srt');
   });
 
+  test('explicit source identity wins when subtitle metadata is identical', () {
+    final mediaInfo = _mediaInfo([
+      MediaSubtitleTrack(
+        id: 2,
+        language: 'eng',
+        languageCode: 'eng',
+        codec: 'ass',
+        title: 'English',
+        selected: true,
+        forced: false,
+      ),
+      MediaSubtitleTrack(
+        id: 3,
+        language: 'eng',
+        languageCode: 'eng',
+        codec: 'ass',
+        title: 'English',
+        selected: false,
+        forced: false,
+      ),
+    ]);
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: mediaInfo,
+      sidecars: [
+        _sidecar(2, isContainer: true, uri: 'https://example.test/video.mkv'),
+        _sidecar(3, isContainer: true, uri: 'https://example.test/video.mkv'),
+      ],
+      preferredSubtitleTrack: PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+    );
+
+    expect(result.primarySourceStreamId, 3);
+  });
+
+  test('source identity is ignored across media-source changes', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([
+        _sourceSubtitle(3, language: 'eng', selected: true, usesExternalDelivery: true),
+        _sourceSubtitle(7, language: 'fra', usesExternalDelivery: true),
+      ]),
+      sidecars: [
+        _sidecar(3),
+        _sidecar(7, language: 'fra'),
+      ],
+      preferredSubtitleTrack: const SubtitleTrack(
+        id: 'source:3',
+        title: 'French from the previous source',
+        language: 'fra',
+        codec: 'srt',
+        isExternal: true,
+        uri: 'https://example.test/previous/3.srt',
+      ),
+      preserveSourceIdentity: false,
+    );
+
+    expect(result.primarySourceStreamId, 7);
+  });
+
+  test('unmatched source identity cannot bind a reused id after a source change', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng'), _sourceSubtitle(7, language: 'spa', selected: true)]),
+      sidecars: const [],
+      preferredSubtitleTrack: const SubtitleTrack(
+        id: 'source:3',
+        title: 'French from the previous source',
+        language: 'fra',
+        codec: 'srt',
+      ),
+      preserveSourceIdentity: false,
+    );
+
+    expect(result.primarySourceStreamId, 7);
+  });
+
+  test('item-change semantic preference selects the matching new sidecar', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([
+        _sourceSubtitle(7, language: 'eng', usesExternalDelivery: true),
+        _sourceSubtitle(9, language: 'fra', usesExternalDelivery: true),
+      ]),
+      sidecars: [
+        _sidecar(7),
+        _sidecar(9, language: 'fra'),
+      ],
+      preferredSubtitleTrack: const SubtitleTrack(
+        id: 'navigation',
+        title: 'English from the previous episode',
+        language: 'eng',
+        codec: 'srt',
+        isExternal: true,
+      ),
+    );
+
+    expect(result.primarySourceStreamId, 7);
+    expect(result.primarySidecar?.track.uri, 'https://example.test/subtitles/7.srt');
+    expect(result.sidecarsAtOpen, hasLength(1));
+  });
+
+  test('item-change semantic preference distinguishes forced and full subtitles in one language', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([
+        _sourceSubtitle(7, language: 'eng', usesExternalDelivery: true),
+        _sourceSubtitle(8, language: 'eng', forced: true, usesExternalDelivery: true),
+      ]),
+      sidecars: [_sidecar(7), _sidecar(8)],
+      preferredSubtitleTrack: const SubtitleTrack(
+        id: 'navigation',
+        title: 'English forced from the previous episode',
+        language: 'eng',
+        codec: 'srt',
+        isForced: true,
+        isExternal: true,
+      ),
+    );
+
+    expect(result.primarySourceStreamId, 8);
+    expect(result.primaryTrack.isForced, isTrue);
+    expect(result.primarySidecar?.track.uri, 'https://example.test/subtitles/8.srt');
+  });
+
   test('selected embedded subtitle keeps sidecars out of the open', () {
     final result = PlaybackSubtitleResolver.resolve(
       metadata: metadata,
@@ -189,6 +385,17 @@ void main() {
     expect(result.primarySourceStreamId, 2);
     expect(result.primarySidecar, isNull);
     expect(result.sidecarsAtOpen, isEmpty);
+  });
+
+  test('selected metadata-free embedded subtitle resolves by source identity', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([MediaSubtitleTrack(id: 2, codec: 'ass', selected: true, forced: false)]),
+      sidecars: const [],
+    );
+
+    expect(result.isOff, isFalse);
+    expect(result.primarySourceStreamId, 2);
   });
 
   test('preferred secondary subtitle attaches a second distinct sidecar', () {

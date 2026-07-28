@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
@@ -85,7 +87,13 @@ class AmbientLightingService {
   /// The shader adapts automatically via dynamic `target_size` uniform.
   void updateOutputAspect(double outputAspect) {
     if (!_enabled) return;
-    _player.setProperty('video-aspect-override', outputAspect.toString());
+    unawaited(() async {
+      try {
+        await _player.setProperty('video-aspect-override', outputAspect.toString());
+      } catch (error, stackTrace) {
+        appLogger.w('AmbientLightingService: Failed to update output aspect', error: error, stackTrace: stackTrace);
+      }
+    }());
   }
 
   /// Generate a static multi-pass GLSL shader.

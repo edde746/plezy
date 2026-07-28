@@ -150,6 +150,7 @@ void main() {
 
       expect(result.selectedMediaIndex, 1);
       expect(result.videoUrl, 'http://plex:32400/library/parts/20/file.mkv?X-Plex-Token=tok');
+      expect(result.mediaInfo?.mediaSourceId, '102');
     });
 
     test('selects version by preferred signature when the id misses', () {
@@ -185,6 +186,7 @@ void main() {
       );
 
       expect(result.selectedMediaIndex, 1);
+      expect(result.mediaInfo?.mediaSourceId, '202');
     });
 
     test('keeps the requested index when id and signature both miss', () {
@@ -214,6 +216,7 @@ void main() {
       );
 
       expect(result.selectedMediaIndex, 1);
+      expect(result.mediaInfo?.mediaSourceId, '302');
     });
 
     test('signature-resolved version still falls back when unplayable', () {

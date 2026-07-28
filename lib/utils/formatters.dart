@@ -1,6 +1,7 @@
 import 'package:duration/duration.dart';
 import 'package:duration/locale.dart';
 import 'package:intl/intl.dart';
+import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 
 /// Formats a number with a minimum number of digits using leading zeros.
@@ -128,13 +129,12 @@ String formatSyncOffset(double offsetMs) {
 /// Falls back to English if the locale is not supported by the duration package.
 DurationLocale _getDurationLocale() {
   final appLocale = LocaleSettings.currentLocale;
-  final languageCode = appLocale.languageCode;
 
   // Map supported locales to duration package locales
   // The duration package supports many languages, but we'll focus on the ones
   // that our app supports: en, de, it, nl, sv, zh
   try {
-    return DurationLocale.fromLanguageCode(languageCode) ?? const EnglishDurationLocale();
+    return DurationLocale.fromLanguageCode(appLocale.durationLocaleName) ?? const EnglishDurationLocale();
   } catch (e) {
     return const EnglishDurationLocale();
   }
@@ -143,7 +143,7 @@ DurationLocale _getDurationLocale() {
 /// Formats a [DateTime] as a clock time string, respecting the system 24-hour preference.
 /// Uses `DateFormat.Hm` for 24-hour format and `DateFormat.jm` for 12-hour format.
 String formatClockTime(DateTime time, {required bool is24Hour}) {
-  final locale = LocaleSettings.currentLocale.languageCode;
+  final locale = LocaleSettings.currentLocale.intlLocaleName;
   final formatter = is24Hour ? DateFormat.Hm(locale) : DateFormat.jm(locale);
   return formatter.format(time);
 }
@@ -157,7 +157,7 @@ String formatRelativeDayLabel(DateTime date, {DateTime? now}) {
   return switch (diff) {
     0 => t.liveTv.today,
     1 => t.liveTv.tomorrow,
-    _ => DateFormat.E(LocaleSettings.currentLocale.languageCode).format(date),
+    _ => DateFormat.E(LocaleSettings.currentLocale.intlLocaleName).format(date),
   };
 }
 
@@ -197,7 +197,7 @@ String formatFullDate(String dateString) {
   try {
     final date = DateTime.parse(dateString);
 
-    final formatter = DateFormat.yMMMMd(LocaleSettings.currentLocale.languageCode);
+    final formatter = DateFormat.yMMMMd(LocaleSettings.currentLocale.intlLocaleName);
 
     return formatter.format(date);
   } catch (e) {
@@ -212,7 +212,7 @@ String formatAbbreviatedDate(String dateString) {
   try {
     final date = DateTime.parse(dateString);
 
-    final formatter = DateFormat.yMMMd(LocaleSettings.currentLocale.languageCode);
+    final formatter = DateFormat.yMMMd(LocaleSettings.currentLocale.intlLocaleName);
 
     return formatter.format(date);
   } catch (e) {

@@ -21,12 +21,6 @@ class NavigationTab {
     return NavigationDestination(icon: AppIcon(icon, fill: 1), selectedIcon: AppIcon(icon, fill: 1), label: getLabel());
   }
 
-  /// Get the index for a tab ID in the visible tabs list
-  static int indexFor(NavigationTabId id, {required bool isOffline, bool hasLiveTv = false, bool hasExplore = false}) {
-    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv, hasExplore: hasExplore);
-    return tabs.indexWhere((tab) => tab.id == id);
-  }
-
   /// Get tabs filtered by offline mode and feature availability
   static List<NavigationTab> getVisibleTabs({
     required bool isOffline,

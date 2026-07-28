@@ -138,6 +138,16 @@ class MediaImageHelper {
     }
   }
 
+  /// Whether [type] fills its slot ([BoxFit.cover]) or sits inside it
+  /// ([BoxFit.contain]), which is what [MediaServerClient.thumbnailUrl]'s
+  /// `cover` flag selects. Logos are the contain case: asking Plex to cover
+  /// their slot overshoots the long axis by 20-30% in bytes, and the decode
+  /// bounds throw those pixels away again.
+  static bool _coversSlot(ImageType type) => switch (type) {
+    ImageType.logo || ImageType.heroLogo => false,
+    ImageType.art || ImageType.thumb || ImageType.poster || ImageType.avatar || ImageType.square => true,
+  };
+
   /// Creates an optimized image URL.
   ///
   /// Falls back to the raw [thumbPath] when the path is empty, when no
@@ -190,7 +200,7 @@ class MediaImageHelper {
         devicePixelRatio: devicePixelRatio,
         imageType: imageType,
       );
-      return client.externalImageUrl(basePath, width: width, height: height);
+      return client.externalImageUrl(basePath, width: width, height: height, cover: _coversSlot(imageType));
     }
 
     // Relative path — let the client build the sized URL using its native
@@ -217,7 +227,7 @@ class MediaImageHelper {
     // hands the full original to the decoder, and a multi-megapixel
     // original behind a 40px avatar is exactly the decode spike that OOMs
     // low-RAM devices. The floor is 160×240 via [roundDimensions].
-    return client.thumbnailUrl(basePath, width: width, height: height);
+    return client.thumbnailUrl(basePath, width: width, height: height, cover: _coversSlot(imageType));
   }
 
   /// Generates cache-friendly dimensions for memory caching.
@@ -333,32 +343,5 @@ class MediaImageHelper {
     }
 
     return true;
-  }
-
-  /// Optimized URL for clear-logo overlays ([ImageType.logo]).
-  static String logoUrl({
-    required MediaServerClient? client,
-    required String? thumbPath,
-    required BuildContext context,
-    required double containerWidth,
-    required double containerHeight,
-  }) => _typedUrl(client, thumbPath, context, containerWidth, containerHeight, ImageType.logo);
-
-  static String _typedUrl(
-    MediaServerClient? client,
-    String? thumbPath,
-    BuildContext context,
-    double containerWidth,
-    double containerHeight,
-    ImageType type,
-  ) {
-    return getOptimizedImageUrl(
-      client: client,
-      thumbPath: thumbPath,
-      maxWidth: containerWidth,
-      maxHeight: containerHeight,
-      devicePixelRatio: effectiveDevicePixelRatio(context),
-      imageType: type,
-    );
   }
 }

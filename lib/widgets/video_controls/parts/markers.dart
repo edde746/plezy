@@ -86,6 +86,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
   }
 
   Future<void> _skipMarker({bool skipAutoPlayCountdown = false}) async {
+    if (!widget.canControl) return;
     if (_currentMarker == null || !_hasRenderedFirstFrame) return;
 
     final marker = _currentMarker!;
@@ -188,6 +189,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
 
   /// Perform the appropriate skip action based on marker type and next episode availability
   void _performAutoSkip({bool skipAutoPlayCountdown = false}) {
+    if (!widget.canControl) return;
     if (_currentMarker == null || !_hasRenderedFirstFrame) return;
     unawaited(_skipMarker(skipAutoPlayCountdown: skipAutoPlayCountdown));
   }

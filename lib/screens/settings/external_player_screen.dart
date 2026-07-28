@@ -24,7 +24,6 @@ class ExternalPlayerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final knownPlayers = KnownPlayers.getForCurrentPlatform();
     return SettingsPage(
       title: Text(t.externalPlayer.title),
       children: [
@@ -51,9 +50,19 @@ class ExternalPlayerScreen extends StatelessWidget {
             final custom = svc.read(SettingsService.customExternalPlayers);
             return Column(
               children: [
-                SettingsGroup(
-                  title: t.externalPlayer.selectPlayer,
-                  children: [for (final p in knownPlayers) _PlayerTile(player: p, selectedId: selected.id)],
+                FutureBuilder<List<ExternalPlayer>>(
+                  future: KnownPlayers.getForCurrentPlatform(),
+                  builder: (context, snapshot) {
+                    final detected = snapshot.data;
+                    if (detected == null) return const SizedBox.shrink();
+                    return SettingsGroup(
+                      title: t.externalPlayer.selectPlayer,
+                      children: [
+                        for (final p in _withSelected(detected, selected.id))
+                          _PlayerTile(player: p, selectedId: selected.id),
+                      ],
+                    );
+                  },
                 ),
                 SettingsGroup(
                   title: t.externalPlayer.customPlayers,
@@ -74,6 +83,15 @@ class ExternalPlayerScreen extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Keeps the current choice on screen when detection missed it, so a false
+/// negative cannot leave the list with nothing selected.
+List<ExternalPlayer> _withSelected(List<ExternalPlayer> detected, String selectedId) {
+  if (detected.any((p) => p.id == selectedId)) return detected;
+  final selected = KnownPlayers.findById(selectedId);
+  if (selected == null || !selected.isAvailable) return detected;
+  return [...detected, selected];
 }
 
 class _PlayerTile extends StatelessWidget {

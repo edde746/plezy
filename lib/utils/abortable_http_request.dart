@@ -14,6 +14,9 @@ Future<http.Response> sendAbortableHttpRequest(
   Future<void>? abortTrigger,
   String? operation,
 }) {
+  // Deliberately not `AbortController`: that type lives with the media-server
+  // client and throws `MediaServerHttpException`, which the tracker/Seerr
+  // callers of this helper must stay independent of.
   final abort = Completer<void>();
   void abortRequest() {
     if (!abort.isCompleted) abort.complete();

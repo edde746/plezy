@@ -6,12 +6,10 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/screens/catalog_search_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
@@ -19,6 +17,7 @@ import 'package:plezy/widgets/app_menu.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
 /// Only the members the search screen touches; everything else throws.
@@ -197,7 +196,7 @@ Future<void> _pumpMenuSearch(WidgetTester tester, _FakeSearchSource source, {req
 
   final sources = _FakeCatalogSourcesProvider(source);
   final manager = MultiServerManager();
-  final multiServer = MultiServerProvider(manager, DataAggregationService(manager));
+  final multiServer = testMultiServerProvider(manager);
   final matcher = _FakeCatalogLibraryMatcher(multiServer);
   addTearDown(manager.dispose);
   addTearDown(multiServer.dispose);

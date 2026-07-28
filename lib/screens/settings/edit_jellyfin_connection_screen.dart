@@ -69,13 +69,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
     );
   }
 
-  List<String> _enteredUrls() {
-    return _urlsController.text
-        .split(RegExp(r'[\n,]+'))
-        .map((url) => url.trim())
-        .where((url) => url.isNotEmpty)
-        .toList(growable: false);
-  }
+  List<String> _enteredUrls() => JellyfinEndpointDiscovery.parseUserEnteredUrls(_urlsController.text);
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +93,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
                   FocusableTextFormField(
                     controller: _urlsController,
                     focusNode: _urlsFocus,
+                    tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                     autofocus: true,
                     keyboardType: TextInputType.url,
                     minLines: 1,

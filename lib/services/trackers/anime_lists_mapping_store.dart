@@ -1,27 +1,23 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:xml/xml.dart';
 
 import '../../models/trackers/anime_lists_mapping.dart';
-import '../../utils/abortable_http_request.dart';
-import '../../utils/app_logger.dart';
 import '../../utils/json_utils.dart';
-import '../../utils/platform_http_client_stub.dart'
-    if (dart.library.io) '../../utils/platform_http_client_io.dart'
-    as platform;
-import '../base_shared_preferences_service.dart';
+import 'etag_cached_remote_store.dart';
 
-class AnimeListsIndex {
+class AnimeListsIndex implements RemoteIndex {
   final Map<int, List<AnimeListEntry>> byTvdb;
   final Map<int, List<AnimeListEntry>> byTmdbTv;
 
   const AnimeListsIndex({required this.byTvdb, required this.byTmdbTv});
 
+  @override
   bool get isEmpty => byTvdb.isEmpty && byTmdbTv.isEmpty;
+
+  @override
+  String get logSummary => '${byTvdb.length} tvdb entries';
 }
 
 abstract interface class AnimeListsMappingLookup {
@@ -32,88 +28,25 @@ abstract interface class AnimeListsMappingLookup {
   Future<Set<int>> lookupAnimeIdsForShow({int? tvdbId, int? tmdbId});
 }
 
-class AnimeListsMappingStore implements AnimeListsMappingLookup {
-  static const String _diskFileName = 'anime-list.xml';
-  static const String _prefsEtagKey = 'anime_lists_etag';
-  static const String _prefsLastCheckKey = 'anime_lists_last_check';
-  static const String _sourceUrl = 'https://cdn.jsdelivr.net/gh/Anime-Lists/anime-lists@master/anime-list.xml';
-
-  static const Duration _refreshInterval = Duration(days: 7);
-  static const Duration _requestTimeout = Duration(seconds: 60);
-
-  AnimeListsMappingStore._();
-  static final AnimeListsMappingStore instance = AnimeListsMappingStore._();
-
-  AnimeListsIndex? _index;
-  Future<AnimeListsIndex>? _loading;
-  bool _refreshRunning = false;
-
-  Future<AnimeListsIndex> _ensureLoaded() async {
-    final existing = _index;
-    if (existing != null) return existing;
-    final loading = _loading;
-    if (loading != null) return loading;
-
-    final fresh = _loadOrFetch();
-    _loading = fresh;
-    try {
-      final idx = await fresh;
-      if (!idx.isEmpty) {
-        _index = idx;
-        unawaited(maybeRefresh());
-      }
-      return idx;
-    } finally {
-      _loading = null;
-    }
-  }
-
-  Future<AnimeListsIndex> _loadOrFetch() async {
-    final path = await _diskPath();
-    try {
-      return await compute(_readAndParseAnimeLists, path);
-    } on FileSystemException {
-      appLogger.d('Anime-Lists: no disk cache, downloading from jsDelivr');
-      final raw = await _download();
-      if (raw == null) return const AnimeListsIndex(byTvdb: {}, byTmdbTv: {});
-      return await compute(parseAnimeListsIndex, raw);
-    } catch (e) {
-      appLogger.w('Anime-Lists: parse failed - deleting disk copy so next lookup re-downloads', error: e);
-      await _deleteDiskCopy();
-      return const AnimeListsIndex(byTvdb: {}, byTmdbTv: {});
-    }
-  }
-
-  Future<String?> _download() async {
-    final client = platform.createPlatformClient();
-    try {
-      final res = await sendAbortableHttpRequest(
-        client,
-        'GET',
-        Uri.parse(_sourceUrl),
-        headers: const {'Accept': 'application/xml,text/xml'},
-        timeout: _requestTimeout,
-        operation: 'Anime-Lists mapping download',
+class AnimeListsMappingStore extends EtagCachedRemoteStore<AnimeListsIndex> implements AnimeListsMappingLookup {
+  AnimeListsMappingStore._()
+    : super(
+        diskFileName: 'anime-list.xml',
+        prefsEtagKey: 'anime_lists_etag',
+        prefsLastCheckKey: 'anime_lists_last_check',
+        sourceUrl: 'https://cdn.jsdelivr.net/gh/Anime-Lists/anime-lists@master/anime-list.xml',
+        acceptHeader: 'application/xml,text/xml',
+        logLabel: 'Anime-Lists',
+        emptyIndex: const AnimeListsIndex(byTvdb: {}, byTmdbTv: {}),
+        parse: parseAnimeListsIndex,
+        readAndParse: _readAndParseAnimeLists,
       );
-      if (res.statusCode != 200) {
-        appLogger.d('Anime-Lists: download returned HTTP ${res.statusCode}');
-        return null;
-      }
-      await _writeDiskCopy(res.body, etag: res.headers['etag']);
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setInt(_prefsLastCheckKey, DateTime.now().millisecondsSinceEpoch);
-      return res.body;
-    } catch (e) {
-      appLogger.w('Anime-Lists: download failed', error: e);
-      return null;
-    } finally {
-      client.close();
-    }
-  }
+
+  static final AnimeListsMappingStore instance = AnimeListsMappingStore._();
 
   @override
   Future<AnimeEpisodeMatch?> lookupEpisode({int? tvdbId, int? tmdbId, int? season, int? episodeNumber}) async {
-    final idx = await _ensureLoaded();
+    final idx = await ensureLoaded();
     return lookupAnimeListEpisodeInIndex(
       idx,
       tvdbId: tvdbId,
@@ -125,7 +58,7 @@ class AnimeListsMappingStore implements AnimeListsMappingLookup {
 
   @override
   Future<Set<int>> lookupAnimeIdsForSeason({int? tvdbId, int? tmdbId, required int season}) async {
-    final idx = await _ensureLoaded();
+    final idx = await ensureLoaded();
     if (tvdbId != null) {
       final ids = _seasonAnimeIds(idx.byTvdb[tvdbId], AnimeListProvider.tvdb, season);
       if (ids.isNotEmpty) return ids;
@@ -138,7 +71,7 @@ class AnimeListsMappingStore implements AnimeListsMappingLookup {
 
   @override
   Future<Set<int>> lookupAnimeIdsForShow({int? tvdbId, int? tmdbId}) async {
-    final idx = await _ensureLoaded();
+    final idx = await ensureLoaded();
     if (tvdbId != null) {
       final entries = idx.byTvdb[tvdbId];
       if (entries != null && entries.isNotEmpty) return {for (final entry in entries) entry.anidbId};
@@ -148,79 +81,6 @@ class AnimeListsMappingStore implements AnimeListsMappingLookup {
       if (entries != null && entries.isNotEmpty) return {for (final entry in entries) entry.anidbId};
     }
     return const <int>{};
-  }
-
-  Future<void> maybeRefresh() async {
-    if (_refreshRunning) return;
-    if (_index == null) return;
-    _refreshRunning = true;
-    try {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      final lastCheck = prefs.getInt(_prefsLastCheckKey) ?? 0;
-      final now = DateTime.now().millisecondsSinceEpoch;
-      if (now - lastCheck < _refreshInterval.inMilliseconds) return;
-
-      final etag = prefs.getString(_prefsEtagKey);
-      final client = platform.createPlatformClient();
-      try {
-        final res = await sendAbortableHttpRequest(
-          client,
-          'GET',
-          Uri.parse(_sourceUrl),
-          headers: {'If-None-Match': ?etag, 'Accept': 'application/xml,text/xml'},
-          timeout: _requestTimeout,
-          operation: 'Anime-Lists mapping refresh',
-        );
-        await prefs.setInt(_prefsLastCheckKey, now);
-
-        if (res.statusCode == 304) {
-          appLogger.d('Anime-Lists: mapping unchanged (304)');
-          return;
-        }
-        if (res.statusCode != 200) {
-          appLogger.d('Anime-Lists: refresh returned HTTP ${res.statusCode}');
-          return;
-        }
-
-        await _writeDiskCopy(res.body, etag: res.headers['etag']);
-        final fresh = await compute(parseAnimeListsIndex, res.body);
-        _index = fresh;
-        appLogger.d('Anime-Lists: mapping refreshed (${fresh.byTvdb.length} tvdb entries)');
-      } finally {
-        client.close();
-      }
-    } catch (e) {
-      appLogger.d('Anime-Lists: refresh failed (non-fatal)', error: e);
-    } finally {
-      _refreshRunning = false;
-    }
-  }
-
-  Future<void> _writeDiskCopy(String body, {String? etag}) async {
-    await File(await _diskPath()).writeAsString(body, flush: true);
-    if (etag != null) {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      await prefs.setString(_prefsEtagKey, etag);
-    }
-  }
-
-  Future<void> _deleteDiskCopy() async {
-    try {
-      await File(await _diskPath()).delete();
-    } on FileSystemException {
-      // Already gone.
-    }
-  }
-
-  Future<String> _diskPath() async {
-    final dir = await getApplicationSupportDirectory();
-    return p.join(dir.path, _diskFileName);
-  }
-
-  @visibleForTesting
-  void resetForTesting() {
-    _index = null;
-    _loading = null;
   }
 }
 

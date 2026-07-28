@@ -10,60 +10,98 @@ import androidx.tvprovider.media.tv.TvContractCompat
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
-/**
- * Flutter plugin for Android TV Watch Next integration.
- * Syncs Plex "On Deck" content to the Android TV launcher's Watch Next row.
- */
-class WatchNextPlugin :
+class WatchNextPlugin() :
   FlutterPlugin,
   MethodChannel.MethodCallHandler {
+  internal constructor(executorFactory: () -> ExecutorService) : this() {
+    this.executorFactory = executorFactory
+  }
 
   companion object {
     private const val TAG = "WatchNextPlugin"
     private const val METHOD_CHANNEL = "com.plezy/watch_next"
-
+    private const val SCHEMA_VERSION = 2
     private var pendingDeepLink: String? = null
 
-    /**
-     * Parse a Watch Next deep link intent.
-     * Returns the content ID if this was a Watch Next intent, null otherwise.
-     */
     fun handleIntent(intent: Intent?): String? {
       val data = intent?.data ?: return null
-      if (data.scheme == "plezy" && data.authority == "play") {
-        return data.getQueryParameter("content_id")
+      return if (data.scheme == "plezy" && data.authority == "play") {
+        data.getQueryParameter("content_id")
+      } else {
+        null
       }
-      return null
     }
+  }
+
+  private var executorFactory: () -> ExecutorService = { Executors.newSingleThreadExecutor() }
+
+  private class EngineSession(val context: Context) {
+    private val closed = AtomicBoolean(false)
+    var lease: SystemShelfLifecycle.Lease? = null
+    var provider: WatchNextProvider? = null
+
+    fun close() {
+      closed.set(true)
+    }
+
+    fun isOpen(): Boolean = !closed.get()
   }
 
   private lateinit var methodChannel: MethodChannel
   private var applicationContext: Context? = null
-  private var watchNextProvider: WatchNextProvider? = null
-  private val ioExecutor by lazy { Executors.newSingleThreadExecutor() }
+  private var engineSession: EngineSession? = null
+  private var ioExecutor: ExecutorService? = null
   private val mainHandler = Handler(Looper.getMainLooper())
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
+    val executor = executorFactory()
+    val session = EngineSession(binding.applicationContext)
+    ioExecutor = executor
+    engineSession = session
     applicationContext = binding.applicationContext
-    watchNextProvider = WatchNextProvider(binding.applicationContext)
     methodChannel = MethodChannel(binding.binaryMessenger, METHOD_CHANNEL)
     methodChannel.setMethodCallHandler(this)
+    executor.execute {
+      val lease = SystemShelfLifecycle.acquireIf(session::isOpen) ?: return@execute
+      session.lease = lease
+      if (session.isOpen()) {
+        session.provider = WatchNextProvider(session.context, lease)
+      }
+    }
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     methodChannel.setMethodCallHandler(null)
+    val session = engineSession
+    val executor = ioExecutor
+    session?.close()
+    engineSession = null
+    ioExecutor = null
     applicationContext = null
-    watchNextProvider = null
-    ioExecutor.shutdown()
+    if (session != null && executor != null) {
+      try {
+        executor.execute {
+          session.lease?.let(SystemShelfLifecycle::invalidate)
+          session.lease = null
+          session.provider = null
+        }
+      } catch (_: java.util.concurrent.RejectedExecutionException) {
+        Log.e(TAG, "System shelf lifecycle executor rejected detach")
+      } finally {
+        executor.shutdown()
+      }
+    }
   }
 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
       "isSupported" -> handleIsSupported(result)
       "sync" -> handleSync(call, result)
-      "clear" -> handleClear(result)
+      "clear" -> handleClear(call, result)
       "remove" -> handleRemove(call, result)
       "getInitialDeepLink" -> handleGetInitialDeepLink(result)
       else -> result.notImplemented()
@@ -72,66 +110,78 @@ class WatchNextPlugin :
 
   private fun handleIsSupported(result: MethodChannel.Result) {
     val context = applicationContext
-    if (context == null) {
-      result.success(false)
-      return
-    }
-    result.success(context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK))
+    result.success(context?.packageManager?.hasSystemFeature(PackageManager.FEATURE_LEANBACK) == true)
+  }
+
+  private fun ownerArguments(call: MethodCall): Pair<String, Long>? {
+    if (call.argument<Number>("schemaVersion")?.toInt() != SCHEMA_VERSION) return null
+    val owner = call.argument<String>("ownerId")?.takeIf(String::isNotBlank) ?: return null
+    val generation = call.argument<Number>("generation")?.toLong()?.takeIf { it > 0 } ?: return null
+    return owner to generation
   }
 
   private fun handleSync(call: MethodCall, result: MethodChannel.Result) {
-    val provider = watchNextProvider
-    if (provider == null) {
-      result.error("NOT_INITIALIZED", "WatchNextProvider not initialized", null)
-      return
-    }
-
+    val session = engineSession ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val executor = ioExecutor ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val (owner, generation) = ownerArguments(call)
+      ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
     val itemsData = call.argument<List<Map<String, Any?>>>("items")
-    if (itemsData == null) {
-      result.error("INVALID_ARGS", "Missing 'items' argument", null)
-      return
+      ?: return result.error("INVALID_ARGS", "Missing items", null)
+    if (itemsData.size > SystemShelfArtworkStore.MAX_ITEMS) {
+      return result.error("INVALID_ARGS", "Too many items", null)
     }
-
-    val items = itemsData.mapNotNull { parseWatchNextItem(it) }
-    executeOnIo(result) { provider.syncWatchNextPrograms(items) }
+    val items = itemsData.mapNotNull(::parseWatchNextItem)
+    executeOnIo(executor, result) {
+      if (!session.isOpen()) return@executeOnIo false
+      val provider = session.provider ?: return@executeOnIo false
+      val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
+      if (!session.isOpen()) return@executeOnIo false
+      provider.syncWatchNextPrograms(owner, generation, items, ownership, session::isOpen)
+    }
   }
 
-  private fun handleClear(result: MethodChannel.Result) {
-    val provider = watchNextProvider
-    if (provider == null) {
-      result.error("NOT_INITIALIZED", "WatchNextProvider not initialized", null)
-      return
+  private fun handleClear(call: MethodCall, result: MethodChannel.Result) {
+    val session = engineSession ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val executor = ioExecutor ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val (owner, generation) = ownerArguments(call)
+      ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
+    executeOnIo(executor, result) {
+      if (!session.isOpen()) return@executeOnIo false
+      val provider = session.provider ?: return@executeOnIo false
+      val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
+      if (!session.isOpen()) return@executeOnIo false
+      provider.clearAll(owner, generation, ownership, session::isOpen)
     }
-    executeOnIo(result) { provider.clearAll() }
   }
 
   private fun handleRemove(call: MethodCall, result: MethodChannel.Result) {
-    val provider = watchNextProvider
-    if (provider == null) {
-      result.error("NOT_INITIALIZED", "WatchNextProvider not initialized", null)
-      return
-    }
-
+    val session = engineSession ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val executor = ioExecutor ?: return result.error("NOT_INITIALIZED", "Provider unavailable", null)
+    val (owner, generation) = ownerArguments(call)
+      ?: return result.error("INVALID_ARGS", "Invalid shelf envelope", null)
     val contentId = call.argument<String>("contentId")
-    if (contentId == null) {
-      result.error("INVALID_ARGS", "Missing 'contentId' argument", null)
-      return
+      ?: return result.error("INVALID_ARGS", "Missing contentId", null)
+    executeOnIo(executor, result) {
+      if (!session.isOpen()) return@executeOnIo false
+      val provider = session.provider ?: return@executeOnIo false
+      val ownership = provider.claimOwnership(owner, generation) ?: return@executeOnIo false
+      if (!session.isOpen()) return@executeOnIo false
+      provider.removeItem(owner, generation, contentId, ownership, session::isOpen)
     }
-    executeOnIo(result) { provider.removeItem(contentId) }
   }
 
-  private fun executeOnIo(result: MethodChannel.Result, block: () -> Any?) {
+  private fun executeOnIo(executor: ExecutorService, result: MethodChannel.Result, block: () -> Any?) {
     try {
-      ioExecutor.execute {
+      executor.execute {
         try {
           val value = block()
           mainHandler.post { result.success(value) }
-        } catch (e: Exception) {
-          Log.e(TAG, "IO operation failed: ${e.message}", e)
-          mainHandler.post { result.error("IO_ERROR", e.message, null) }
+        } catch (_: Exception) {
+          Log.e(TAG, "System shelf IO operation failed")
+          mainHandler.post { result.error("IO_ERROR", "System shelf operation failed", null) }
         }
       }
-    } catch (e: java.util.concurrent.RejectedExecutionException) {
+    } catch (_: java.util.concurrent.RejectedExecutionException) {
       result.error("SHUTDOWN", "Plugin is shutting down", null)
     }
   }
@@ -143,22 +193,18 @@ class WatchNextPlugin :
   }
 
   private fun parseWatchNextItem(data: Map<String, Any?>): WatchNextProvider.WatchNextItem? {
-    val contentId = data["contentId"] as? String ?: return null
+    val contentId = (data["contentId"] as? String)?.takeIf(String::isNotBlank) ?: return null
     val title = data["title"] as? String ?: return null
-
-    val typeString = data["type"] as? String ?: "movie"
-    val type = when (typeString.lowercase()) {
+    val type = when ((data["type"] as? String)?.lowercase()) {
       "episode" -> TvContractCompat.WatchNextPrograms.TYPE_TV_EPISODE
-      "movie" -> TvContractCompat.WatchNextPrograms.TYPE_MOVIE
       else -> TvContractCompat.WatchNextPrograms.TYPE_MOVIE
     }
-
     return WatchNextProvider.WatchNextItem(
       contentId = contentId,
       title = title,
       episodeTitle = data["episodeTitle"] as? String,
       description = data["description"] as? String,
-      posterUri = data["posterUri"] as? String,
+      posterSourceUri = data["posterSourceUri"] as? String,
       type = type,
       duration = (data["duration"] as? Number)?.toLong() ?: 0L,
       lastPlaybackPosition = (data["lastPlaybackPosition"] as? Number)?.toLong() ?: 0L,
@@ -169,16 +215,12 @@ class WatchNextPlugin :
     )
   }
 
-  /**
-   * Store a deep link content ID for delivery to Flutter.
-   * Called from MainActivity on intent receipt.
-   */
   fun notifyDeepLink(contentId: String) {
     pendingDeepLink = contentId
     try {
       methodChannel.invokeMethod("onWatchNextTap", mapOf("contentId" to contentId))
-    } catch (e: Exception) {
-      Log.d(TAG, "Method channel not ready, stored as pending deep link")
+    } catch (_: Exception) {
+      Log.d(TAG, "Method channel not ready; deep link retained")
     }
   }
 }

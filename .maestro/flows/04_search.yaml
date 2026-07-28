@@ -4,18 +4,27 @@ tags:
   - e2e
   - search
 ---
-- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/ensure_onboarded.yaml
 - tapOn: "(?s)^Search.*"
 - extendedWaitUntil:
     visible: "Search movies, shows, music..."
     timeout: 10000
 - tapOn: "Search movies, shows, music..."
 - inputText: "Maestro"
-- hideKeyboard
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - pressKey: ENTER
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
 - extendedWaitUntil:
-    visible: "Maestro Movie"
+    visible: "(?s).*Maestro Movie.*"
     timeout: 15000
-- tapOn: "Maestro Movie"
+- tapOn: "(?s).*Maestro Movie.*"
 - extendedWaitUntil:
     visible: "Overview"
     timeout: 15000

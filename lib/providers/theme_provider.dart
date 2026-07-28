@@ -88,6 +88,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
 
   static const _themeChannel = MethodChannel('com.plezy/theme');
 
+  @visibleForTesting
   Future<void> setThemeMode(settings.ThemeMode mode) async {
     if (_themeMode == mode) return;
     final service = _settingsBinding.settings ?? await settings.SettingsService.getInstance();

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' show protected;
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier, protected, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
@@ -11,6 +11,7 @@ import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
 import '../models.dart';
 import 'mpv_node_decoder.dart';
+import 'audio_rendering_mode.dart';
 import 'player.dart';
 import 'player_state.dart';
 import 'player_stream_controllers.dart';
@@ -48,12 +49,23 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   PlayerStreams get streams => _streams;
 
+  final ValueNotifier<int?> _textureId = ValueNotifier<int?>(null);
+
   @override
-  int? get textureId => null;
+  int? get textureId => _textureId.value;
+
+  ValueListenable<int?> get textureIdListenable => _textureId;
+
+  @protected
+  void setTextureId(int? value) {
+    if (!_disposed) _textureId.value = value;
+  }
 
   StreamSubscription? _eventSubscription;
   StreamSubscription? _logSubscription;
   bool _disposed = false;
+  late final Future<void>? _nativeOwnershipReady;
+  final Completer<void> _nativeRelease = Completer<void>();
   final _throttleSw = Stopwatch()..start();
   int _lastEmitMs = 0;
   int _lastCacheStateMs = 0;
@@ -61,9 +73,39 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Duration? _timelineDuration;
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
-  Map<String, SubtitleTrack> _externalSubtitleMetadataByUri = const {};
+  Map<String, List<SubtitleTrack>> _externalSubtitleMetadataByUri = const {};
   bool _primaryMediaLoadStarted = false;
   bool _primaryMediaReadyEmitted = false;
+
+  @visibleForTesting
+  static Duration debugNativeOwnershipDisposeTimeout = const Duration(seconds: 3);
+
+  static const _maximumDurationMilliseconds = 9223372036854775;
+
+  static double? _finiteDouble(Object? value) {
+    if (value is! num) return null;
+    final result = value.toDouble();
+    return result.isFinite ? result : null;
+  }
+
+  static int? _millisecondsFromSeconds(Object? value, {bool round = false}) {
+    final seconds = _finiteDouble(value);
+    if (seconds == null) return null;
+    final milliseconds = seconds * Duration.millisecondsPerSecond;
+    if (!milliseconds.isFinite ||
+        milliseconds < -_maximumDurationMilliseconds ||
+        milliseconds > _maximumDurationMilliseconds) {
+      return null;
+    }
+    return round ? milliseconds.round() : milliseconds.toInt();
+  }
+
+  static int? _finiteInt(Object? value) {
+    if (value is int) return value;
+    final result = _finiteDouble(value);
+    if (result == null || result < -9007199254740991 || result > 9007199254740991) return null;
+    return result.toInt();
+  }
 
   @protected
   bool initialized = false;
@@ -78,6 +120,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   String get logPrefix;
 
   PlayerBase() {
+    _nativeOwnershipReady = _eventChannelOwners[eventChannel.name]?._nativeRelease.future;
     _streams = createStreams();
     _setupEventListener();
     _logSubscription = logController.stream.listen(_forwardToAppLogger);
@@ -161,15 +204,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   void _handleEvent(dynamic event) {
     if (_disposed) return;
     if (event is List && event.length == 2) {
-      final name = _propIdToName[event.first as int];
+      final propertyId = event.first;
+      if (propertyId is! int) return;
+      final name = _propIdToName[propertyId];
       if (name != null) {
         handlePropertyChange(name, event[1]);
       }
     } else if (event is Map) {
-      final type = event['type'] as String?;
-      final name = event['name'] as String?;
-      if (type == 'event' && name != null) {
-        handlePlayerEvent(name, event['data'] as Map?);
+      final type = event['type'];
+      final name = event['name'];
+      if (type == 'event' && name is String) {
+        final rawData = event['data'];
+        handlePlayerEvent(name, rawData is Map ? rawData : null);
       }
     }
   }
@@ -196,11 +242,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'time-pos':
-        if (value is num) {
-          final pos = Duration(milliseconds: (value * 1000).round());
-          _positionMs = pos.inMilliseconds;
-          // Only allocate Duration + copyWith + emit at ~4Hz (250ms).
-          // Raw int is stored every tick so synchronous reads via _positionMs stay current.
+        final positionMs = _millisecondsFromSeconds(value, round: true);
+        if (positionMs != null) {
+          final pos = Duration(milliseconds: positionMs);
+          _positionMs = positionMs;
+          // Only allocate PlayerState + emit at ~4Hz (250ms). The raw integer
+          // remains current for synchronous position reads on every tick.
           final nowMs = _throttleSw.elapsedMilliseconds;
           if (nowMs - _lastEmitMs >= 250) {
             _lastEmitMs = nowMs;
@@ -211,8 +258,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'duration':
-        if (value is num) {
-          final duration = _timelineDuration ?? Duration(milliseconds: (value * 1000).toInt());
+        final durationMs = _millisecondsFromSeconds(value);
+        if (durationMs != null) {
+          final duration = _timelineDuration ?? Duration(milliseconds: durationMs);
           _state = _state.copyWith(duration: duration);
           durationController.add(duration);
         }
@@ -225,11 +273,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'demuxer-cache-time':
-        if (value is num) {
+        final bufferMs = _millisecondsFromSeconds(value);
+        if (bufferMs != null) {
           final nowMs = _throttleSw.elapsedMilliseconds;
           if (nowMs - _lastCacheStateMs < 250) break;
           _lastCacheStateMs = nowMs;
-          final buffer = Duration(milliseconds: (value * 1000).toInt());
+          final buffer = Duration(milliseconds: bufferMs);
           _state = _state.copyWith(buffer: buffer);
           bufferController.add(buffer);
           // Synthesize a single range for players without demuxer-cache-state (ExoPlayer).
@@ -245,14 +294,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'volume':
-        if (value is num) {
-          setVolumeState(value.toDouble());
+        final volume = _finiteDouble(value);
+        if (volume != null) {
+          setVolumeState(volume);
         }
         break;
 
       case 'speed':
-        if (value is num) {
-          final rate = value.toDouble();
+        final rate = _finiteDouble(value);
+        if (rate != null) {
           _state = _state.copyWith(rate: rate);
           rateController.add(rate);
         }
@@ -295,10 +345,14 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'audio-device-list':
         final deviceList = MpvNodeDecoder.decodeList(value);
         if (deviceList != null) {
-          final devices = deviceList
-              .whereType<Map>()
-              .map((d) => AudioDevice(name: d['name'] as String? ?? '', description: d['description'] as String? ?? ''))
-              .toList();
+          final devices = <AudioDevice>[];
+          for (final entry in deviceList) {
+            if (entry is! Map) continue;
+            final name = entry['name'];
+            final description = entry['description'];
+            if (name is! String) continue;
+            devices.add(AudioDevice(name: name, description: description is String ? description : ''));
+          }
           _state = _state.copyWith(audioDevices: devices);
           audioDevicesController.add(devices);
         }
@@ -326,9 +380,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (cacheState == null) return;
 
     // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
-    final cacheEnd = cacheState['cache-end'] as num?;
-    if (cacheEnd != null) {
-      final buffer = Duration(milliseconds: (cacheEnd * 1000).toInt());
+    final cacheEndMs = _millisecondsFromSeconds(cacheState['cache-end']);
+    if (cacheEndMs != null) {
+      final buffer = Duration(milliseconds: cacheEndMs);
       _state = _state.copyWith(buffer: buffer);
       bufferController.add(buffer);
     }
@@ -338,17 +392,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (seekableRanges is List) {
       final ranges = <BufferRange>[];
       for (final range in seekableRanges) {
-        if (range is Map) {
-          final start = range['start'] as num?;
-          final end = range['end'] as num?;
-          if (start != null && end != null) {
-            ranges.add(
-              BufferRange(
-                start: Duration(milliseconds: (start * 1000).toInt()),
-                end: Duration(milliseconds: (end * 1000).toInt()),
-              ),
-            );
-          }
+        if (range is! Map) continue;
+        final startMs = _millisecondsFromSeconds(range['start']);
+        final endMs = _millisecondsFromSeconds(range['end']);
+        if (startMs != null && endMs != null) {
+          ranges.add(
+            BufferRange(
+              start: Duration(milliseconds: startMs),
+              end: Duration(milliseconds: endMs),
+            ),
+          );
         }
       }
       _state = _state.copyWith(bufferRanges: ranges);
@@ -383,8 +436,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           completedController.add(true);
         } else if (reason == 'error') {
           fileLoadFailedController.add(null);
+          final rawMessage = data?['message'];
+          final rawCause = data?['cause'];
           errorController.add(
-            PlayerError(data?['message'] as String? ?? 'Playback error', cause: data?['cause'] as String?),
+            PlayerError(
+              rawMessage is String ? rawMessage : 'Playback error',
+              cause: rawCause is String ? rawCause : null,
+            ),
           );
         }
         break;
@@ -400,10 +458,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         break;
 
       case 'log-message':
-        final prefix = data?['prefix'] as String? ?? '';
-        final levelStr = data?['level'] as String? ?? 'info';
-        final text = data?['text'] as String? ?? '';
-        final level = parseLogLevel(levelStr);
+        final rawPrefix = data?['prefix'];
+        final rawLevel = data?['level'];
+        final rawText = data?['text'];
+        final prefix = rawPrefix is String ? rawPrefix : '';
+        final level = parseLogLevel(rawLevel is String ? rawLevel : 'info');
+        final text = rawText is String ? rawText : '';
         logController.add(PlayerLog(level: level, prefix: prefix, text: text));
         break;
     }
@@ -440,41 +500,79 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     final subtitleTracks = <SubtitleTrack>[];
     String? selectedAudioId;
     String? selectedSubtitleId;
+    final containerMetadataIndexes = <String, int>{};
 
     for (final track in trackList) {
       if (track is! Map) continue;
 
-      final type = track['type'] as String?;
-      final id = track['id']?.toString() ?? '';
-      final selected = track['selected'] as bool? ?? false;
+      final rawType = track['type'];
+      if (rawType is! String) continue;
+      final type = rawType;
+      final rawId = track['id'];
+      final id = rawId is String || rawId is num ? rawId.toString() : '';
+      final selected = track['selected'] == true;
 
       if (type == 'audio') {
+        final rawExternalFilename = track['external-filename'];
+        final externalFilename = rawExternalFilename is String ? rawExternalFilename : null;
+        final externalMetadata = externalFilename == null ? null : _externalSubtitleMetadataByUri[externalFilename];
+        // Container sidecars are opened only to expose their subtitle tracks.
+        // Do not let their audio streams participate in normal track matching.
+        if (externalMetadata?.any((metadata) => metadata.isContainer) == true) continue;
+
         if (selected) selectedAudioId = id;
         audioTracks.add(
           AudioTrack(
             id: id,
-            title: cleanTrackMetadataValue(track['title'] as String?),
-            language: cleanTrackMetadataValue(track['lang'] as String?),
-            codec: track['codec'] as String?,
-            channels: (track['demux-channel-count'] as num?)?.toInt(),
-            sampleRate: (track['demux-samplerate'] as num?)?.toInt(),
-            isDefault: track['default'] as bool? ?? false,
+            title: cleanTrackMetadataValue(track['title'] is String ? track['title'] as String : null),
+            language: cleanTrackMetadataValue(track['lang'] is String ? track['lang'] as String : null),
+            codec: track['codec'] is String ? track['codec'] as String : null,
+            channels: _finiteInt(track['demux-channel-count']),
+            sampleRate: _finiteInt(track['demux-samplerate']),
+            isDefault: track['default'] == true,
           ),
         );
       } else if (type == 'sub') {
         if (selected) selectedSubtitleId = id;
-        final codec = track['codec'] as String?;
-        final externalFilename = track['external-filename'] as String?;
+        final rawCodec = track['codec'];
+        final codec = rawCodec is String ? rawCodec : null;
+        final rawTitle = track['title'];
+        final rawLanguage = track['lang'];
+        final rawExternalFilename = track['external-filename'];
+        final externalFilename = rawExternalFilename is String ? rawExternalFilename : null;
         final externalMetadata = externalFilename == null ? null : _externalSubtitleMetadataByUri[externalFilename];
+        final isContainer =
+            track['container'] == true || externalMetadata?.any((metadata) => metadata.isContainer) == true;
+        SubtitleTrack? matchedMetadata;
+        if (externalMetadata != null && externalMetadata.isNotEmpty) {
+          if (isContainer && externalFilename != null) {
+            final metadataIndex = containerMetadataIndexes[externalFilename] ?? 0;
+            containerMetadataIndexes[externalFilename] = metadataIndex + 1;
+            if (metadataIndex < externalMetadata.length && externalMetadata[metadataIndex].isContainer) {
+              matchedMetadata = externalMetadata[metadataIndex];
+            }
+          } else {
+            matchedMetadata = externalMetadata.first;
+          }
+        }
         subtitleTracks.add(
           SubtitleTrack(
             id: id,
-            title: externalMetadata?.title ?? cleanSubtitleTitle(track['title'] as String?, codec: codec),
-            language: externalMetadata?.language ?? cleanTrackMetadataValue(track['lang'] as String?),
-            codec: externalMetadata?.codec ?? codec,
-            isDefault: externalMetadata?.isDefault ?? (track['default'] as bool? ?? false),
-            isForced: externalMetadata?.isForced ?? (track['forced'] as bool? ?? false),
-            isExternal: track['external'] as bool? ?? false,
+            // mpv may synthesize a container track title from the signed
+            // source filename. Source-catalog metadata is both safer and more
+            // accurate there, including on builds that drop disposition flags.
+            // Ordinary sidecars still fall back to metadata reported by mpv.
+            title: isContainer
+                ? matchedMetadata?.title
+                : matchedMetadata?.title ?? cleanSubtitleTitle(rawTitle is String ? rawTitle : null, codec: codec),
+            language: isContainer
+                ? matchedMetadata?.language
+                : matchedMetadata?.language ?? cleanTrackMetadataValue(rawLanguage is String ? rawLanguage : null),
+            codec: matchedMetadata?.codec ?? codec,
+            isDefault: matchedMetadata?.isDefault ?? (track['default'] == true),
+            isForced: matchedMetadata?.isForced ?? (track['forced'] == true),
+            isExternal: track['external'] == true,
+            isContainer: isContainer,
             uri: externalFilename,
           ),
         );
@@ -490,13 +588,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   void updateSelectedAudioTrack(dynamic trackId) {
     final id = trackId?.toString();
-    AudioTrack? selectedTrack;
+    final selectedTrack = (id == null || id == 'no')
+        ? null
+        : _state.tracks.audio.firstWhereOrNull((track) => track.id == id);
+    if (id != null && id != 'no' && selectedTrack == null) return;
 
-    if (id != null && id != 'no') {
-      selectedTrack = _state.tracks.audio.firstWhereOrNull((t) => t.id == id);
-    }
-
-    if (selectedTrack == null) return;
     _state = _state.copyWith(track: _state.track.copyWith(audio: selectedTrack));
     trackController.add(_state.track);
   }
@@ -505,7 +601,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     final id = trackId?.toString();
     final selectedTrack = (id == null || id == 'no')
         ? SubtitleTrack.off
-        : _state.tracks.subtitle.firstWhereOrNull((t) => t.id == id);
+        : _state.tracks.subtitle.firstWhereOrNull((track) => track.id == id);
 
     if (selectedTrack == null) return;
     _state = _state.copyWith(track: _state.track.copyWith(subtitle: selectedTrack));
@@ -535,14 +631,23 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @protected
   void setExternalSubtitleMetadata(List<SubtitleTrack>? externalSubtitles) {
-    final metadataByUri = <String, SubtitleTrack>{};
+    final metadataByUri = <String, List<SubtitleTrack>>{};
     for (final subtitle in externalSubtitles ?? const <SubtitleTrack>[]) {
       final uri = subtitle.uri;
       if (uri != null && uri.isNotEmpty) {
-        metadataByUri[uri] = subtitle;
+        (metadataByUri[uri] ??= <SubtitleTrack>[]).add(subtitle);
       }
     }
     _externalSubtitleMetadataByUri = metadataByUri;
+  }
+
+  @protected
+  Map<String, List<SubtitleTrack>> snapshotExternalSubtitleMetadata() =>
+      Map<String, List<SubtitleTrack>>.of(_externalSubtitleMetadataByUri);
+
+  @protected
+  void restoreExternalSubtitleMetadata(Map<String, List<SubtitleTrack>> snapshot) {
+    _externalSubtitleMetadataByUri = Map<String, List<SubtitleTrack>>.of(snapshot);
   }
 
   @protected
@@ -565,6 +670,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @protected
+  Duration? get configuredTimelineDuration => _timelineDuration;
+
+  @protected
   void resetPlaybackProgress(Duration sourcePosition) {
     final position = sourcePosition;
     _positionMs = position.inMilliseconds;
@@ -583,7 +691,40 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   @protected
+  void restoreTracks(PlayerState snapshot) {
+    _state = _state.copyWith(tracks: snapshot.tracks, track: snapshot.track);
+    tracksController.add(snapshot.tracks);
+    trackController.add(snapshot.track);
+  }
+
+  @protected
+  void restorePlaybackProgress(PlayerState snapshot, {Duration? position}) {
+    final restoredPosition = position ?? snapshot.position;
+    _positionMs = restoredPosition.inMilliseconds;
+    _state = _state.copyWith(
+      completed: snapshot.completed,
+      position: restoredPosition,
+      duration: snapshot.duration,
+      buffer: snapshot.buffer,
+      bufferRanges: snapshot.bufferRanges,
+    );
+    completedController.add(snapshot.completed);
+    positionController.add(restoredPosition);
+    durationController.add(snapshot.duration);
+    bufferController.add(snapshot.buffer);
+    bufferRangesController.add(snapshot.bufferRanges);
+  }
+
+  @protected
   Future<T?> invoke<T>(String method, [dynamic args]) async {
+    if (_disposed) return null;
+    if (_nativeOwnershipReady case final ready?) {
+      try {
+        await ready.timeout(debugNativeOwnershipDisposeTimeout);
+      } on TimeoutException {
+        return null;
+      }
+    }
     if (_disposed) return null;
     return methodChannel.invokeMethod<T>(method, args);
   }
@@ -695,6 +836,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioPassthrough(bool enabled) async {}
 
+  @override
+  Future<AudioRenderingMode?> getAudioRenderingMode() async => null;
+
   /// mpv loudnorm targeting streaming-style loudness; mirrored by the
   /// Android ExoPlayer effect parameters in AudioNormalizationEffect.kt.
   static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4';
@@ -800,13 +944,35 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     errorController.add(const PlayerError('HTTP 500', cause: PlayerError.serverHttp500));
   }
 
+  Future<bool> _waitForNativeOwnershipForDispose() async {
+    final ready = _nativeOwnershipReady;
+    if (ready == null) return true;
+    try {
+      await ready.timeout(debugNativeOwnershipDisposeTimeout);
+      return true;
+    } on TimeoutException catch (error, stackTrace) {
+      appLogger.w(
+        'Timed out waiting for the previous player to release the native channel; skipping native dispose',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      if (!_nativeRelease.isCompleted) _nativeRelease.complete(ready);
+      return false;
+    }
+  }
+
   @override
   Future<void> dispose({bool preserveDisplayMode = false}) async {
     if (_disposed) return;
     _disposed = true;
+    _textureId.value = null;
 
-    if (identical(_eventChannelOwners[eventChannel.name], this)) {
-      _eventChannelOwners.remove(eventChannel.name);
+    final channelName = eventChannel.name;
+    if (identical(_eventChannelOwners[channelName], this)) {
+      // Keep this owner registered while its native release is pending so a
+      // player created during disposal inherits the complete release chain.
+      // The newer listen cannot interleave before cancel() is invoked on this
+      // isolate; after the first await, ownership is checked again at removal.
       try {
         await _eventSubscription?.cancel();
       } on PlatformException catch (e, st) {
@@ -822,15 +988,33 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
     _eventSubscription = null;
     await _logSubscription?.cancel();
+    final ownsNativeChannel = await _waitForNativeOwnershipForDispose();
     try {
-      await methodChannel.invokeMethod('dispose', {
-        'preserveDisplayMode': preserveDisplayMode,
-      }); // Direct call — already guarded by _disposed check above
+      if (ownsNativeChannel) {
+        await methodChannel.invokeMethod('dispose', {
+          'preserveDisplayMode': preserveDisplayMode,
+        }); // Direct call — invoke() is disabled once _disposed is set.
+      }
     } on PlatformException catch (e, st) {
       appLogger.w('Player native dispose failed during teardown', error: e, stackTrace: st);
     } on MissingPluginException catch (e, st) {
       appLogger.w('Player native dispose plugin missing during teardown', error: e, stackTrace: st);
+    } finally {
+      if (ownsNativeChannel && !_nativeRelease.isCompleted) _nativeRelease.complete();
+    }
+
+    // A timed-out predecessor is still represented by this release future.
+    // Do not expose an empty ownership slot until that chained release settles.
+    if (_nativeRelease.isCompleted) {
+      unawaited(
+        _nativeRelease.future.whenComplete(() {
+          if (identical(_eventChannelOwners[channelName], this)) {
+            _eventChannelOwners.remove(channelName);
+          }
+        }),
+      );
     }
     await closeStreamControllers();
+    _textureId.dispose();
   }
 }

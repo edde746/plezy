@@ -28,6 +28,16 @@ tags:
     timeout: 10000
 - assertVisible: "(?s)Server URLs.*"
 - assertVisible: "Find server"
-- hideKeyboard
-- back
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "Back"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard:
+          optional: true
+      - back
 - assertVisible: "Sign in with Plex"

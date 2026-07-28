@@ -5,7 +5,6 @@ import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/external_ids.dart';
 import '../../../utils/json_utils.dart';
-import '../../settings_service.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
 import '../tracker_id_resolver.dart';
@@ -33,9 +32,6 @@ class SimklTracker extends TrackerBase with ClientBackedTracker<SimklClient> imp
 
   @override
   bool get needsFribb => false;
-
-  @override
-  bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableSimklScrobble);
 
   void rebindSession(
     TrackerSession? session, {

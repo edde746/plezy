@@ -38,4 +38,35 @@ class KeyedFutureCoalescer<K, T> {
     _inFlight[key] = future;
     return future;
   }
+
+  /// Detach every in-flight future — the keyed form of [FutureCoalescer.reset].
+  void clear() {
+    _inFlight.clear();
+  }
+}
+
+/// Keyed cache of loads: like [KeyedFutureCoalescer], but a successful future
+/// stays memoized instead of being dropped on completion, and only a failure
+/// evicts the key so the next call retries. [onError] fires once per failed
+/// load, before the error is rethrown to every caller.
+class KeyedFutureCache<K, T> {
+  final Map<K, Future<T>> _entries = {};
+
+  Future<T> run(K key, Future<T> Function() create, {void Function(Object error)? onError}) {
+    final existing = _entries[key];
+    if (existing != null) return existing;
+
+    late final Future<T> future;
+    future = create().catchError((Object e) {
+      if (identical(_entries[key], future)) _entries.remove(key);
+      onError?.call(e);
+      throw e;
+    });
+    _entries[key] = future;
+    return future;
+  }
+
+  void clear() {
+    _entries.clear();
+  }
 }

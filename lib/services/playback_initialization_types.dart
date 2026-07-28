@@ -1,3 +1,5 @@
+import '../exceptions/media_server_exceptions.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
@@ -70,12 +72,15 @@ class PlaybackInitializationOptions {
 ///
 /// [sourceStreamId] links the playable URI back to the authoritative server
 /// subtitle catalog. It is nullable for legacy/offline files whose filename
-/// cannot be mapped to cached stream metadata.
+/// cannot be mapped to cached stream metadata. [preload] makes the sidecar
+/// available before it is selected, allowing local track switches without a
+/// media reload.
 class PlaybackSubtitleSidecar {
   final int? sourceStreamId;
   final SubtitleTrack track;
+  final bool preload;
 
-  const PlaybackSubtitleSidecar({required this.sourceStreamId, required this.track});
+  const PlaybackSubtitleSidecar({required this.sourceStreamId, required this.track, this.preload = false});
 }
 
 /// Reason the transcode branch fell back to direct play.
@@ -93,8 +98,8 @@ class PlaybackInitializationResult {
   final String? videoUrl;
   final MediaSourceInfo? mediaInfo;
 
-  /// Complete sidecar catalog for this source. Callers must resolve the active
-  /// subtitle choice and attach only the selected sidecar(s) at open time.
+  /// Complete sidecar catalog for this source. Callers resolve the active
+  /// subtitle choice and also attach sidecars marked for preloading.
   final List<PlaybackSubtitleSidecar> subtitleSidecars;
   final bool isOffline;
 
@@ -154,12 +159,57 @@ class PlaybackInitializationResult {
   });
 }
 
+/// Stable, payload-free reason for a playback initialization failure.
+///
+/// Display exceptions intentionally retain no transport cause, request URI,
+/// response body, or authentication metadata.
+enum PlaybackFailureReason {
+  authenticationRequired,
+  serverUnavailable,
+  cancelled,
+  invalidPlaybackData,
+  noPlayableSource,
+  unknown,
+}
+
 /// Exception thrown when playback initialization fails
 class PlaybackException implements Exception {
   final String message;
+  final PlaybackFailureReason reason;
 
-  PlaybackException(this.message);
+  const PlaybackException(this.message, {this.reason = PlaybackFailureReason.unknown});
 
   @override
   String toString() => message;
+}
+
+/// Maps a transport-level failure raised while initializing playback onto a
+/// display-safe [PlaybackException].
+///
+/// Backend-neutral on purpose: Plex and Jellyfin both throw the same
+/// [MediaServerException] hierarchy, so both clients classify identically.
+PlaybackException classifyPlaybackFailure(Object error) {
+  if (error is MediaServerAuthException ||
+      error is MediaServerHttpException && (error.statusCode == 401 || error.statusCode == 403)) {
+    return PlaybackException(
+      t.messages.playbackAuthenticationRequired,
+      reason: PlaybackFailureReason.authenticationRequired,
+    );
+  }
+  if (error is MediaServerHttpException) {
+    if (error.isCancellation) {
+      return PlaybackException(t.messages.playbackCancelled, reason: PlaybackFailureReason.cancelled);
+    }
+    final status = error.statusCode;
+    if (error.isTransient || status != null && status >= 500) {
+      return PlaybackException(t.messages.playbackServerUnavailable, reason: PlaybackFailureReason.serverUnavailable);
+    }
+    if (error.type == MediaServerHttpErrorType.unknown && status != null && status < 400) {
+      return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
+    }
+  }
+  if (error is FormatException || error is TypeError) {
+    return PlaybackException(t.messages.playbackDataInvalid, reason: PlaybackFailureReason.invalidPlaybackData);
+  }
+  return PlaybackException(t.messages.playbackFailed);
 }

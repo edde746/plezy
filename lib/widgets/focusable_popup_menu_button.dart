@@ -23,6 +23,9 @@ class FocusablePopupMenuButton<T> extends StatefulWidget {
   final VoidCallback? onNavigateLeft;
   final VoidCallback? onNavigateRight;
   final String? semanticLabel;
+
+  /// Optional current value announced after the effective semantic label.
+  final String? semanticValue;
   final double borderRadius;
   final bool useBackgroundFocus;
   final bool enableLongPress;
@@ -47,6 +50,7 @@ class FocusablePopupMenuButton<T> extends StatefulWidget {
     this.onNavigateLeft,
     this.onNavigateRight,
     this.semanticLabel,
+    this.semanticValue,
     this.borderRadius = 100,
     this.useBackgroundFocus = true,
     this.enableLongPress = true,
@@ -73,6 +77,7 @@ class _FocusablePopupMenuButtonState<T> extends State<FocusablePopupMenuButton<T
       useBackgroundFocus: widget.useBackgroundFocus,
       descendantsAreFocusable: false,
       semanticLabel: widget.semanticLabel ?? widget.tooltip,
+      semanticValue: widget.semanticValue,
       enableLongPress: widget.enableLongPress,
       onNavigateUp: widget.onNavigateUp,
       onNavigateDown: widget.onNavigateDown,

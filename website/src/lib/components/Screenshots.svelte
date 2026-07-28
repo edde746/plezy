@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ScrollReveal from './ScrollReveal.svelte';
+  import SectionHeader from './SectionHeader.svelte';
   import DevicePhoneIcon from '~icons/heroicons/device-phone-mobile-solid';
   import DeviceTabletIcon from '~icons/heroicons/device-tablet-solid';
   import DesktopIcon from '~icons/heroicons/computer-desktop-solid';
@@ -98,11 +98,21 @@
   };
 
   let active: DeviceType = $state('phone');
+  let loaded: Record<DeviceType, boolean> = $state({
+    phone: true,
+    tablet: false,
+    desktop: false,
+    tv: false,
+  });
   let scrollContainer: HTMLElement | undefined = $state();
   let canScrollLeft = $state(false);
   let canScrollRight = $state(false);
   let intendedScrollLeft: number | undefined;
 
+  function selectDevice(device: DeviceType) {
+    loaded[device] = true;
+    active = device;
+  }
   function updateScrollState() {
     if (!scrollContainer) return;
     if (intendedScrollLeft !== undefined && Math.abs(scrollContainer.scrollLeft - intendedScrollLeft) < 2) {
@@ -160,13 +170,14 @@
   });
 </script>
 
-<section id="screenshots" class="screenshots-section">
+<section id="screenshots" class="bleed-section">
   <div class="screenshots-header">
-    <ScrollReveal>
-      <p class="section-label">Preview</p>
-      <h2 class="section-heading">Designed with care</h2>
-      <p class="section-description">An experience that feels right at home on every device.</p>
-
+    <SectionHeader
+      label="Preview"
+      heading="Designed with care"
+      description="An experience that feels right at home on every device."
+      descriptionGap="2rem"
+    >
       <div class="screenshot-controls">
         <!-- Device tabs -->
         <div class="device-tabs" role="group" aria-label="Screenshot device">
@@ -174,7 +185,7 @@
             {@const DeviceIcon = device.icon}
             <button
               type="button"
-              onclick={() => active = device.id}
+              onclick={() => selectDevice(device.id)}
               aria-pressed={active === device.id}
               aria-controls={`screenshots-${device.id}-panel`}
               aria-label={`Show ${device.label} screenshots`}
@@ -211,7 +222,7 @@
           </button>
         </div>
       </div>
-    </ScrollReveal>
+    </SectionHeader>
   </div>
 
   <div class="screenshot-panels">
@@ -228,66 +239,32 @@
           if (active === device.id) updateScrollState();
         }}
       >
-        {#each screenshot.shots as shot}
-          <div class="screenshot-item">
-            <div class={`screenshot-frame ${screenshot.frameClass}`}>
-              <enhanced:img
-                src={shot.image}
-                alt={shot.alt}
-                loading="eager"
-                class="screenshot-image"
-                sizes={screenshot.sizes}
-              />
+        {#if loaded[device.id]}
+          {#each screenshot.shots as shot}
+            <div class="screenshot-item">
+              <div class={`screenshot-frame ${screenshot.frameClass}`}>
+                <enhanced:img
+                  src={shot.image}
+                  alt={shot.alt}
+                  loading="lazy"
+                  class="screenshot-image"
+                  sizes={screenshot.sizes}
+                />
+              </div>
             </div>
-          </div>
-        {/each}
+          {/each}
+        {/if}
       </div>
     {/each}
   </div>
 </section>
 
 <style>
-  .screenshots-section {
-    overflow: hidden;
-    padding-block: clamp(4rem, 9vw, 8rem);
-  }
-
   .screenshots-header {
     max-width: 64rem;
     margin-inline: auto;
     margin-bottom: clamp(2rem, 5vw, 3.5rem);
     padding-inline: 1.5rem;
-  }
-
-  .section-label {
-    width: fit-content;
-    margin-bottom: 1rem;
-    border-radius: var(--radius-full);
-    padding: 0.5rem 0.875rem;
-    color: var(--color-text-muted);
-    background: var(--color-surface);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.03em;
-  }
-
-  .section-heading {
-    max-width: 12ch;
-    margin-bottom: 1rem;
-    font-family: var(--font-display);
-    font-size: clamp(2.5rem, 7vw, 4.75rem);
-    font-weight: 700;
-    letter-spacing: -0.045em;
-    line-height: 1;
-    text-wrap: balance;
-  }
-
-  .section-description {
-    max-width: 34rem;
-    margin-bottom: 2rem;
-    color: var(--color-text-muted);
-    font-size: clamp(1rem, 2vw, 1.125rem);
-    line-height: 1.7;
   }
 
   .screenshot-controls {
@@ -334,7 +311,6 @@
   .device-button:not(.active):focus-visible {
     color: var(--color-text);
     background: rgb(237 237 237 / 0.12);
-    outline: none;
   }
 
   .device-button.active {
@@ -346,7 +322,6 @@
   .device-button.active:focus-visible {
     border-radius: var(--radius-md);
     background: #fff;
-    outline: none;
   }
 
   .device-button :global(svg),
@@ -389,7 +364,6 @@
   .scroll-arrow.enabled:focus-visible {
     border-radius: var(--radius-md);
     background: var(--color-surface-highest);
-    outline: none;
   }
 
   .screenshot-panels {

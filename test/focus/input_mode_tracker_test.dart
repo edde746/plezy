@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/services/gamepad_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -50,5 +51,66 @@ void main() {
     expect(listeningBuilds, 2);
     expect(oneShotMode, InputMode.pointer);
     expect(oneShotBuilds, 1);
+  });
+
+  testWidgets('keyboard-mode cursor shield preserves pointer activation', (tester) async {
+    var taps = 0;
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: GestureDetector(
+            key: const Key('target'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox(width: 120, height: 80),
+          ),
+        ),
+      ),
+    );
+
+    GamepadService.onGamepadInput!.call();
+    await tester.pump();
+
+    expect(tester.widget<MouseRegion>(find.byType(MouseRegion)).cursor, SystemMouseCursors.none);
+
+    await tester.tap(find.byKey(const Key('target')));
+    await tester.pump();
+
+    expect(taps, 1);
+    expect(find.byType(MouseRegion), findsNothing);
+  });
+
+  testWidgets('non-desktop TV path has no cursor shield and remains pointer-reachable', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    PlatformDetector.debugSetIsDesktopOSOverride(false);
+    addTearDown(() {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      PlatformDetector.debugSetIsDesktopOSOverride(null);
+    });
+    var taps = 0;
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: Directionality(
+          textDirection: TextDirection.ltr,
+          child: GestureDetector(
+            key: const Key('tv-target'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () => taps++,
+            child: const SizedBox(width: 120, height: 80),
+          ),
+        ),
+      ),
+    );
+
+    GamepadService.onGamepadInput!.call();
+    await tester.pump();
+
+    expect(find.byType(MouseRegion), findsNothing);
+    await tester.tap(find.byKey(const Key('tv-target')));
+    await tester.pump();
+    expect(taps, 1);
   });
 }

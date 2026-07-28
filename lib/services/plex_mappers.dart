@@ -734,7 +734,11 @@ class PlexMetadataDto {
         e,
         stackTrace: st,
         withScope: (scope) {
-          scope.setContexts('json', json);
+          scope.setContexts('plex_mapper', {
+            'backend': 'plex',
+            'dto': 'PlexMetadataDto',
+            'topLevelFieldCount': json.length,
+          });
         },
       );
       rethrow;
@@ -1002,7 +1006,7 @@ class PlexMappers {
       viewCount: dto.viewCount,
       lastViewedAt: dto.lastViewedAt,
       leafCount: dto.leafCount,
-      viewedLeafCount: dto.viewedLeafCount,
+      viewedLeafCount: kind.usesLeafWatchCounts ? dto.viewedLeafCount : null,
       childCount: dto.childCount,
       addedAt: dto.addedAt,
       updatedAt: dto.updatedAt,

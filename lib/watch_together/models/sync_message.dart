@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'playback_state.dart';
 
-/// Types of sync messages sent over the relay data channel (protocol v2).
+/// Types of sync messages sent over the relay data channel (protocol v3).
 enum SyncMessageType {
   /// Authoritative playback state broadcast by the host
   state,
@@ -37,7 +37,7 @@ class SyncMessage {
   /// Current sync protocol version, carried on join messages. Peers with a
   /// different version are excluded from readiness gating and surfaced as
   /// needing an update.
-  static const int protocolVersion = 2;
+  static const int protocolVersion = 3;
 
   /// Type of this message
   final SyncMessageType type;

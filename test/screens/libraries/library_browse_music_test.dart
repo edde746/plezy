@@ -6,27 +6,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/focus/focusable_button.dart';
-import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
-import 'package:plezy/navigation/main_screen_scope.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_filter_chip.dart';
 import 'package:plezy/widgets/media_card.dart';
-import 'package:provider/provider.dart';
 
 import '../../test_helpers/backend_client_fixtures.dart';
+import '../../test_helpers/library_tab_scaffold.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
 
 final _musicLibrary = MediaLibrary(
@@ -88,66 +85,50 @@ void main() {
     expect(retry.focusNode!.hasFocus, isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await _pumpRequestFrames(tester);
+    await pumpRequestFrames(tester);
 
     expect(harness.browseRequestCount, 2);
     expect(find.byType(ErrorStateWidget), findsNothing);
     expect(find.text('Artist One'), findsOneWidget);
   });
+
+  testWidgets('missing library owner shows an error without querying another online server', (tester) async {
+    final harness = _MusicBrowseHarness();
+    addTearDown(harness.dispose);
+    final missingOwnerLibrary = MediaLibrary(
+      id: _musicLibrary.id,
+      backend: _musicLibrary.backend,
+      title: _musicLibrary.title,
+      kind: _musicLibrary.kind,
+      serverId: 'missing-server',
+    );
+
+    await _pumpBrowseTab(tester, harness, library: missingOwnerLibrary);
+
+    expect(find.byType(ErrorStateWidget), findsOneWidget);
+    expect(harness.requestCount, 0);
+    expect(tester.takeException(), isNull);
+  });
 }
 
-Future<void> _pumpBrowseTab(WidgetTester tester, _MusicBrowseHarness harness) async {
-  tester.view.devicePixelRatio = 1;
-  tester.view.physicalSize = const Size(1280, 720);
-  addTearDown(() {
-    tester.view.resetDevicePixelRatio();
-    tester.view.resetPhysicalSize();
-  });
-
-  await tester.pumpWidget(
-    ChangeNotifierProvider<MultiServerProvider>.value(
-      value: harness.provider,
-      child: InputModeTracker(
-        child: MaterialApp(
-          theme: monoTheme(dark: true),
-          home: MainScreenFocusScope(
-            focusSidebar: () {},
-            focusContent: () {},
-            isSidebarFocused: false,
-            sideNavigationWidth: 0,
-            child: Scaffold(
-              body: NestedScrollView(
-                headerSliverBuilder: (context, _) => [
-                  SliverOverlapAbsorber(
-                    handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
-                    sliver: const SliverToBoxAdapter(child: SizedBox(height: 1)),
-                  ),
-                ],
-                body: LibraryBrowseTab(
-                  library: _musicLibrary,
-                  canGroupByFolders: true,
-                  suppressAutoFocus: true,
-                  onBack: () {},
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+Future<void> _pumpBrowseTab(WidgetTester tester, _MusicBrowseHarness harness, {MediaLibrary? library}) async {
+  await pumpLibraryTab(
+    tester,
+    provider: harness.provider,
+    tab: LibraryBrowseTab(
+      library: library ?? _musicLibrary,
+      canGroupByFolders: true,
+      suppressAutoFocus: true,
+      onBack: () {},
     ),
   );
-  await _pumpRequestFrames(tester);
-}
-
-Future<void> _pumpRequestFrames(WidgetTester tester) async {
-  await tester.pump();
-  await tester.pump(const Duration(milliseconds: 100));
-  await tester.pump(const Duration(milliseconds: 500));
+  await pumpRequestFrames(tester);
 }
 
 class _MusicBrowseHarness {
   final bool failFirstBrowse;
   var browseRequestCount = 0;
+  var requestCount = 0;
   late final JellyfinClient client;
   late final MultiServerManager manager;
   late final MultiServerProvider provider;
@@ -156,6 +137,7 @@ class _MusicBrowseHarness {
     client = JellyfinClient.forTesting(
       connection: testJellyfinConnection(machineId: 'music-server'),
       httpClient: MockClient((request) async {
+        requestCount++;
         if (request.url.path == '/Items/Filters') {
           return http.Response(
             jsonEncode({'Genres': const [], 'OfficialRatings': const [], 'Tags': const [], 'Years': const []}),
@@ -183,7 +165,7 @@ class _MusicBrowseHarness {
       }),
     );
     manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    provider = MultiServerProvider(manager, DataAggregationService(manager));
+    provider = testMultiServerProvider(manager);
   }
 
   void dispose() {

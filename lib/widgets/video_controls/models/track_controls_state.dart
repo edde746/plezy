@@ -5,6 +5,7 @@ import '../../../media/media_version.dart';
 import '../../../media/media_source_info.dart';
 import '../../../models/transcode_quality_preset.dart';
 import '../../../mpv/mpv.dart';
+import '../../../services/playback_initialization_types.dart';
 import '../../../services/playback_subtitle_resolver.dart';
 import '../../../services/shader_service.dart';
 import '../helpers/track_filter_helper.dart';
@@ -23,7 +24,7 @@ class TrackControlsState {
   final List<MediaSubtitleTrack> sourceSubtitleTracks;
   final PlaybackSourceSubtitleChoice? selectedSubtitleChoice;
   final int? selectedSecondarySubtitleStreamId;
-  final Set<int> sourceSubtitleSidecarIds;
+  final List<PlaybackSubtitleSidecar> sourceSubtitleSidecars;
   final int? sourcePartId;
 
   /// Total media duration in milliseconds. Used by the version/quality sheet
@@ -34,7 +35,6 @@ class TrackControlsState {
   final int audioSyncOffset;
   final int subtitleSyncOffset;
   final bool isRotationLocked;
-  final bool isScreenLocked;
   final bool isFullscreen;
   final bool isAlwaysOnTop;
   final VoidCallback? onTogglePIPMode;
@@ -47,8 +47,8 @@ class TrackControlsState {
   final VoidCallback? onToggleAlwaysOnTop;
   final Function(int)? onSwitchVersion;
   final ValueChanged<TranscodeQualityPreset>? onSwitchQualityPreset;
-  final ValueChanged<int>? onSwitchAudioStreamId;
-  final ValueChanged<PlaybackSourceSubtitleChoice>? onSwitchSubtitle;
+  final Future<void> Function(int)? onSwitchAudioStreamId;
+  final Future<void> Function(PlaybackSourceSubtitleChoice)? onSwitchSubtitle;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
@@ -88,7 +88,7 @@ class TrackControlsState {
     this.sourceSubtitleTracks = const [],
     this.selectedSubtitleChoice,
     this.selectedSecondarySubtitleStreamId,
-    this.sourceSubtitleSidecarIds = const <int>{},
+    this.sourceSubtitleSidecars = const <PlaybackSubtitleSidecar>[],
     this.sourcePartId,
     this.sourceDurationMs,
     this.boxFitMode = 0,
@@ -96,7 +96,6 @@ class TrackControlsState {
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,
     this.isRotationLocked = false,
-    this.isScreenLocked = false,
     this.isFullscreen = false,
     this.isAlwaysOnTop = false,
     this.onTogglePIPMode,
@@ -141,7 +140,13 @@ class TrackControlsState {
   /// Direct play keeps embedded/native switching instant while still exposing
   /// unloaded server sidecars that require one source reopen when selected.
   List<MediaSubtitleTrack> get directPlaySourceSidecars => !isTranscoding && onSwitchSubtitle != null
-      ? sourceSubtitleTracks.where((track) => sourceSubtitleSidecarIds.contains(track.id)).toList(growable: false)
+      ? sourceSubtitleTracks
+            .where(
+              (track) => sourceSubtitleSidecars.any(
+                (sidecar) => sidecar.sourceStreamId != null && sidecar.sourceStreamId == track.id,
+              ),
+            )
+            .toList(growable: false)
       : const <MediaSubtitleTrack>[];
 
   /// External subtitle search needs both a searchable media item and a server

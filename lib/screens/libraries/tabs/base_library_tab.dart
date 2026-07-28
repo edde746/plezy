@@ -74,6 +74,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   bool _isLoading = false;
   String? _errorMessage;
   StreamSubscription<void>? _refreshSubscription;
+  int _loadGeneration = 0;
 
   // Focus management
   bool _hasLoadedData = false;
@@ -97,6 +98,22 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   @protected
   set hasLoadedData(bool value) => _hasLoadedData = value;
 
+  @protected
+  int get libraryLoadGeneration => _loadGeneration;
+
+  @protected
+  int beginLibraryLoad() => ++_loadGeneration;
+
+  @protected
+  void invalidateLibraryLoad() {
+    _loadGeneration++;
+  }
+
+  @protected
+  bool isCurrentLibraryLoad(int generation, String libraryGlobalKey) {
+    return mounted && generation == _loadGeneration && widget.library.globalKey == libraryGlobalKey;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -115,6 +132,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
 
   @override
   void dispose() {
+    invalidateLibraryLoad();
     _refreshSubscription?.cancel();
     super.dispose();
   }
@@ -124,6 +142,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     super.didUpdateWidget(oldWidget);
     // Reload if library changed
     if (oldWidget.library.globalKey != widget.library.globalKey) {
+      invalidateLibraryLoad();
       // Reset focus state for new library
       hasFocused = false;
       _hasFocusedChromeFallback = false;
@@ -173,12 +192,14 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
 
     if (!widget.isActive || !_hasLoadedData) return;
 
+    final loadGeneration = _loadGeneration;
+    final libraryGlobalKey = widget.library.globalKey;
     if (hasFocusableContent) {
       _hasFocusedChromeFallback = false;
       if (hasFocused) return;
       hasFocused = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
+        if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) {
           focusFirstItem();
         }
       });
@@ -188,9 +209,23 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     if (!_hasFocusedChromeFallback) {
       _hasFocusedChromeFallback = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
+        if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) {
           focusEmptyState();
         }
+      });
+    }
+  }
+
+  /// Post-load bookkeeping for tabs that replace [loadItems] with their own
+  /// (paginated) fetch: mark the tab loaded, take focus if it's due, and let
+  /// the parent know once the frame carrying the items is in.
+  @protected
+  void markItemsLoaded() {
+    _hasLoadedData = true;
+    tryFocus();
+    if (widget.onDataLoaded != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onDataLoaded!();
       });
     }
   }
@@ -220,6 +255,10 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
 
   /// Load items with error handling and state management
   Future<void> loadItems() async {
+    if (!mounted) return;
+    final loadGeneration = beginLibraryLoad();
+    final libraryGlobalKey = widget.library.globalKey;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -228,27 +267,28 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
 
     try {
       final loadedItems = await loadData();
-
-      if (!mounted) return;
+      if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
 
       setState(() {
         _items = loadedItems;
         _isLoading = false;
+        _hasLoadedData = true;
       });
 
-      // Mark data as loaded and try to focus
-      _hasLoadedData = true;
       tryFocus();
 
-      // Notify parent that data has loaded
-      if (widget.onDataLoaded != null) {
+      final onDataLoaded = widget.onDataLoaded;
+      if (onDataLoaded != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          widget.onDataLoaded!();
+          if (isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) {
+            onDataLoaded();
+          }
         });
       }
     } catch (e, stackTrace) {
+      if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
       final message = localizedLoadErrorMessage(e, stackTrace, context: errorContext);
-      if (!mounted) return;
+      if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
 
       setState(() {
         _errorMessage = message;

@@ -1,57 +1,27 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/live_session_tracker.dart';
 
-class _FakeJellyfinClient implements JellyfinClient {
+import '../test_helpers/playback_report_fakes.dart';
+
+class _FakeJellyfinClient with PlaybackReportRecorder implements JellyfinClient {
   final calls = <String>[];
   final startGate = Completer<void>();
 
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    await startGate.future;
-    calls.add('started:$itemId:$playSessionId:$mediaSourceId:$liveStreamId:$playMethod');
-  }
-
-  @override
-  Future<void> reportPlaybackProgress({
-    required String itemId,
-    required Duration position,
-    required Duration duration,
-    bool isPaused = false,
-    String? playSessionId,
-    String? playMethod,
-    String? liveStreamId,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    calls.add('${isPaused ? 'paused' : 'playing'}:$itemId:$playSessionId:$mediaSourceId:$liveStreamId');
-  }
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? liveStreamId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) async {
-    calls.add('stopped:$itemId:$playSessionId:$mediaSourceId:$liveStreamId');
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    final identity = '${call.itemId}:${call.playSessionId}:${call.mediaSourceId}:${call.liveStreamId}';
+    switch (call.kind) {
+      case PlaybackReportKind.started:
+        await startGate.future;
+        calls.add('started:$identity:${call.playMethod}');
+      case PlaybackReportKind.progress:
+        calls.add('${call.isPaused ? 'paused' : 'playing'}:$identity');
+      case PlaybackReportKind.stopped:
+        calls.add('stopped:$identity');
+    }
   }
 
   @override

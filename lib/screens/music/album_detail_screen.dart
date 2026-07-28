@@ -25,16 +25,15 @@ import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/background_download_warning_banner.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/download_status_icon.dart';
-import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../../widgets/media_context_menu.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/music/music_detail_header.dart';
 import '../../widgets/music/music_actions.dart';
 import '../../widgets/music/track_row.dart';
 import '../../widgets/optimized_media_image.dart';
-import '../../widgets/overlay_sheet.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
 
@@ -177,6 +176,8 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
       if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
       return;
     }
+
+    if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
 
     // Not downloaded (or partial/failed): queue the album — already-active
     // tracks are skipped inside the provider, so this also fills gaps.
@@ -388,35 +389,15 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
 
   @override
   Widget build(BuildContext context) {
-    return PrimaryScrollController(
-      controller: scrollController,
-      child: IosStatusBarTapScrollToTop(
-        controller: scrollController,
-        child: OverlaySheetHost(
-          // Host owns sheet + system back: a back with a sheet open closes it;
-          // otherwise focus the action row first, then pop.
-          canPop: PlatformDetector.isHandheldIOS(context),
-          onSystemBack: () {
-            if (BackKeyCoordinator.consumeIfHandled()) return;
-            if (handleBackNavigation() && mounted) Navigator.pop(context);
-          },
-          child: Scaffold(
-            body: CustomScrollView(
-              primary: true,
-              slivers: [
-                CustomAppBar(title: Text(widget.album.displayTitle)),
-                SliverToBoxAdapter(child: _buildHeader()),
-                ...buildStateSlivers(),
-                if (hasItems) _buildTrackList(),
-                // Keep the last rows reachable above the floating mini-player.
-                SliverToBoxAdapter(
-                  child: SizedBox(height: context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return buildDetailScaffold(
+      slivers: [
+        CustomAppBar(title: Text(widget.album.displayTitle)),
+        SliverToBoxAdapter(child: _buildHeader()),
+        ...buildStateSlivers(),
+        if (hasItems) _buildTrackList(),
+        // Keep the last rows reachable above the floating mini-player.
+        SliverToBoxAdapter(child: SizedBox(height: context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0)),
+      ],
     );
   }
 }

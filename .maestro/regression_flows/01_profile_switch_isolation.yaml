@@ -7,7 +7,7 @@ tags:
   - profiles
 ---
 - runFlow: ../subflows/onboard_jellyfin.yaml
-- assertVisible: "(?s).*Zulu Zone 4.*"
+- assertVisible: "(?s).*Zulu Zone.*"
 - tapOn: "(?s)^Libraries.*"
 - extendedWaitUntil:
     visible: "Maestro Movies"
@@ -17,9 +17,9 @@ tags:
 - runFlow: ../subflows/create_guest_jellyfin_profile.yaml
 - tapOn: "(?s)^E\nE2E Guest\n.*"
 - extendedWaitUntil:
-    visible: "(?s).*Guest Galaxy$"
+    visible: "(?s).*Guest Galaxy.*"
     timeout: 30000
-- assertNotVisible: "(?s).*Zulu Zone 4.*"
+- assertNotVisible: "(?s).*Zulu Zone.*"
 - tapOn: "(?s)^Libraries.*"
 - extendedWaitUntil:
     visible: "Guest Movies"
@@ -27,7 +27,7 @@ tags:
 - assertNotVisible: "Maestro Movies"
 - tapOn: "(?s)^Home.*"
 - extendedWaitUntil:
-    visible: "(?s).*Guest Galaxy$"
+    visible: "(?s).*Guest Galaxy.*"
     timeout: 15000
 - tapOn: "E"
 - tapOn:
@@ -39,9 +39,9 @@ tags:
     timeout: 10000
 - tapOn: "(?s)^M\nMaestro\n.*"
 - extendedWaitUntil:
-    visible: "(?s).*Zulu Zone 4.*"
+    visible: "(?s).*Zulu Zone.*"
     timeout: 30000
-- assertNotVisible: "(?s).*Guest Galaxy$"
+- assertNotVisible: "(?s).*Guest Galaxy.*"
 - tapOn: "(?s)^Libraries.*"
 - extendedWaitUntil:
     visible: "Maestro Movies"
@@ -49,7 +49,7 @@ tags:
 - assertNotVisible: "Guest Movies"
 - tapOn: "(?s)^Home.*"
 - extendedWaitUntil:
-    visible: "(?s).*Zulu Zone 4.*"
+    visible: "(?s).*Zulu Zone.*"
     timeout: 15000
 - tapOn: "M"
 - tapOn:
@@ -61,6 +61,6 @@ tags:
     timeout: 10000
 - tapOn: "(?s)^E\nE2E Guest\n.*"
 - extendedWaitUntil:
-    visible: "(?s).*Guest Galaxy$"
+    visible: "(?s).*Guest Galaxy.*"
     timeout: 30000
-- assertNotVisible: "(?s).*Zulu Zone 4.*"
+- assertNotVisible: "(?s).*Zulu Zone.*"

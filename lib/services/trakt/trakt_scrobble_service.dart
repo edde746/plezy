@@ -59,7 +59,7 @@ class TraktScrobbleService implements TrackerRatingSource {
     if (_isInitialized) return;
     _isInitialized = true;
     final settings = await SettingsService.getInstance();
-    _isEnabled = settings.read(SettingsService.enableTraktScrobble);
+    _isEnabled = settings.read(SettingsService.scrobblePref(TrackerService.trakt));
   }
 
   Future<void> setEnabled(bool enabled) async {

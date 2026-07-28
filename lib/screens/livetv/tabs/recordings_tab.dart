@@ -68,13 +68,16 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
   bool _refreshRequested = true;
   bool _tickerEnabled = false;
   bool _appRefreshActive = true;
+  int _loadGeneration = 0;
+  Future<void>? _loadFuture;
+  bool _loadPending = false;
   final _firstTileFocusNode = FocusNode(debugLabel: 'recordings_tab_first_tile');
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _load();
+    unawaited(_load());
   }
 
   @override
@@ -104,6 +107,7 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
 
   @override
   void dispose() {
+    _loadGeneration++;
     WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
     _firstTileFocusNode.dispose();
@@ -121,6 +125,9 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
     }
   }
 
+  // Same three gates as WhatsOnTab (tab selected, subtree visible, app
+  // foregrounded), but resume also reloads: a recording scheduled from the
+  // guide has to show up on arrival, not on the next 30s tick.
   void pauseRefresh() {
     _refreshRequested = false;
     _syncRefreshTimer();
@@ -142,8 +149,39 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
   /// Public reload helper for the parent screen's refresh action.
   Future<void> reload() => _load();
 
-  Future<void> _load() async {
+  bool _isCurrentLoad(int generation) => mounted && generation == _loadGeneration;
+
+  Future<void> _load() {
+    if (!mounted) return Future.value();
+    final inFlight = _loadFuture;
+    if (inFlight != null) {
+      _loadPending = true;
+      return inFlight;
+    }
+
+    final completer = Completer<void>();
+    _loadFuture = completer.future;
+    unawaited(_drainLoads(completer));
+    return completer.future;
+  }
+
+  Future<void> _drainLoads(Completer<void> completer) async {
+    try {
+      do {
+        _loadPending = false;
+        await _loadOnce();
+      } while (mounted && _loadPending);
+      completer.complete();
+    } catch (error, stackTrace) {
+      completer.completeError(error, stackTrace);
+    } finally {
+      _loadFuture = null;
+    }
+  }
+
+  Future<void> _loadOnce() async {
     if (!mounted) return;
+    final loadGeneration = ++_loadGeneration;
     setState(() {
       _isLoading = _serverRecordings.isEmpty;
       _error = null;
@@ -155,7 +193,7 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
     var anyOtherError = false;
     final seenServers = <String>{};
 
-    for (final serverInfo in multiServer.liveTvServers) {
+    for (final serverInfo in List<LiveTvServerInfo>.of(multiServer.liveTvServers)) {
       if (!seenServers.add(serverInfo.serverId)) continue;
       final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null) continue;
@@ -163,9 +201,12 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
       if (dvr == null) continue;
       try {
         final grabs = await dvr.fetchScheduledRecordings();
+        if (!_isCurrentLoad(loadGeneration)) return;
         final rules = await dvr.fetchRecordingRules();
+        if (!_isCurrentLoad(loadGeneration)) return;
         results.add(_ServerRecordings(serverId: serverInfo.serverId, client: client, grabs: grabs, rules: rules));
       } catch (e) {
+        if (!_isCurrentLoad(loadGeneration)) return;
         appLogger.e('Failed to load recordings for ${serverInfo.serverId}', error: e);
         if (e is MediaServerHttpException && e.statusCode == 403) {
           anyAdminError = true;
@@ -175,7 +216,7 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
       }
     }
 
-    if (!mounted) return;
+    if (!_isCurrentLoad(loadGeneration)) return;
     setState(() {
       _serverRecordings = results;
       _isLoading = false;
@@ -184,7 +225,7 @@ class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserve
     });
     if (_pendingFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) focusContent();
+        if (_isCurrentLoad(loadGeneration)) focusContent();
       });
     }
   }

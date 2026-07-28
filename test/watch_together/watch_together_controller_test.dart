@@ -209,6 +209,74 @@ void main() {
     });
   });
 
+  test('anyone-mode: invalid controls are rejected and the queue continues', () {
+    fakeAsync((async) {
+      final room = _Room(async, controlMode: ControlMode.anyone);
+      final actions = <(String, PlaybackActionHint)>[];
+      room.host.onRemoteAction = (peer, hint) => actions.add((peer, hint));
+      room.hostStartsMedia();
+      room.guestJoinsMedia();
+      room.bothBecomeReady();
+      final delay = room.lastHostState().anchorHostTimeMs - room.nowMs();
+      async.elapse(Duration(milliseconds: delay + 100));
+      room.hostPlayer.commandLog.clear();
+      final statesBefore = room.hostService.outgoingLog
+          .where((message) => message.type == SyncMessageType.state)
+          .length;
+      final stateBefore = room.lastHostState();
+
+      SyncMessage wireControl(ControlRequest request) {
+        return SyncMessage.fromJson(SyncMessage.control(request, peerId: 'forged-peer').toJson());
+      }
+
+      room.guestService.sendTo(
+        'host',
+        wireControl(
+          ControlRequest(kind: ControlRequestKind.seek, positionMs: room.hostPlayer.state.duration.inMilliseconds + 1),
+        ),
+      );
+      room.guestService.sendTo(
+        'host',
+        wireControl(const ControlRequest(kind: ControlRequestKind.rate, rate: 8.000001)),
+      );
+      async.flushMicrotasks();
+
+      expect(room.hostPlayer.commandLog, isEmpty);
+      expect(actions, isEmpty);
+      expect(
+        room.hostService.outgoingLog.where((message) => message.type == SyncMessageType.state),
+        hasLength(statesBefore),
+      );
+      expect(room.lastHostState().seq, stateBefore.seq);
+      expect(room.lastHostState().anchorPositionMs, stateBefore.anchorPositionMs);
+      expect(room.lastHostState().rate, stateBefore.rate);
+
+      room.guestService.sendTo(
+        'host',
+        wireControl(const ControlRequest(kind: ControlRequestKind.seek, positionMs: 600000)),
+      );
+      async.flushMicrotasks();
+      room.guestService.sendTo('host', wireControl(const ControlRequest(kind: ControlRequestKind.rate, rate: 0.25)));
+      async.flushMicrotasks();
+
+      expect(room.hostPlayer.commandLog, ['seek:600000', 'rate:0.25']);
+      expect(actions, [('guest', PlaybackActionHint.seek), ('guest', PlaybackActionHint.rate)]);
+      final acceptedStates = room.hostService.outgoingLog
+          .where((message) => message.type == SyncMessageType.state)
+          .skip(statesBefore)
+          .map((message) => message.state!)
+          .toList();
+      expect(acceptedStates, hasLength(2));
+      expect(acceptedStates[0].anchorPositionMs, 600000);
+      expect(acceptedStates[0].actionHint, PlaybackActionHint.seek);
+      expect(acceptedStates[0].actorPeerId, 'guest');
+      expect(acceptedStates[1].rate, 0.25);
+      expect(acceptedStates[1].actionHint, PlaybackActionHint.rate);
+      expect(acceptedStates[1].actorPeerId, 'guest');
+      room.dispose();
+    });
+  });
+
   test('guest controller starts clock-sync pings automatically', () {
     fakeAsync((async) {
       final room = _Room(async);
@@ -221,15 +289,14 @@ void main() {
     });
   });
 
-  test('v1 peers are flagged and never gate the start', () {
+  test('v2 peers are flagged and never gate the start', () {
     fakeAsync((async) {
       final needsUpdate = <String>[];
       final room = _Room(async);
       room.host.onPeerNeedsUpdate = needsUpdate.add;
 
-      // A legacy client joins on its own connection: its join message has no
-      // version field (the relay stamps the sender id, so it must really
-      // connect as itself — peerId spoofing is rewritten).
+      // A sync-protocol-2 client joins on its own connection. The relay
+      // stamps the sender ID, so it must really connect as itself.
       final legacyService = room.hub.register('legacy');
       legacyService.sendTo(
         'host',
@@ -239,6 +306,7 @@ void main() {
           peerId: 'legacy',
           displayName: 'Old App',
           isHost: false,
+          version: 2,
         ),
       );
       async.flushMicrotasks();
@@ -248,6 +316,34 @@ void main() {
       room.guestJoinsMedia();
       room.bothBecomeReady();
       // The legacy peer never reports status, yet the room starts.
+      expect(room.lastHostState().phase, PlaybackPhase.playing);
+      room.dispose();
+    });
+  });
+
+  test('versionless legacy peers are flagged and never gate the start', () {
+    fakeAsync((async) {
+      final needsUpdate = <String>[];
+      final room = _Room(async);
+      room.host.onPeerNeedsUpdate = needsUpdate.add;
+
+      final versionlessService = room.hub.register('versionless');
+      versionlessService.sendTo(
+        'host',
+        SyncMessage(
+          type: SyncMessageType.join,
+          timestamp: room.nowMs(),
+          peerId: 'versionless',
+          displayName: 'Old App',
+          isHost: false,
+        ),
+      );
+      async.flushMicrotasks();
+      expect(needsUpdate, ['versionless']);
+
+      room.hostStartsMedia();
+      room.guestJoinsMedia();
+      room.bothBecomeReady();
       expect(room.lastHostState().phase, PlaybackPhase.playing);
       room.dispose();
     });
@@ -272,6 +368,46 @@ void main() {
       expect(targeted, isNotEmpty);
       room.dispose();
     });
+  });
+
+  test('only relay-stamped state from the declared host reaches guest reconciliation', () {
+    fakeAsync((async) {
+      final room = _Room(async);
+      final mediaDispatches = <String>[];
+      room.guest.onMediaStateReceived = (ratingKey, serverId, title) => mediaDispatches.add(ratingKey);
+      const state = PlaybackState(
+        seq: 10,
+        ratingKey: 'relay-authority',
+        serverId: 'srv',
+        mediaTitle: 'Authorized',
+        phase: PlaybackPhase.loading,
+        anchorPositionMs: 0,
+        anchorHostTimeMs: _epochMs,
+        rate: 1,
+        controlMode: ControlMode.hostOnly,
+      );
+      final unprivileged = room.hub.register('unprivileged');
+
+      // The fake relay overwrites the payload claim with the connection's
+      // routing ID, just like the production relay envelope parser.
+      unprivileged.broadcast(SyncMessage.state(state, peerId: 'host'));
+      async.flushMicrotasks();
+      expect(mediaDispatches, isEmpty);
+
+      room.hostService.broadcast(SyncMessage.state(state, peerId: 'host'));
+      async.flushMicrotasks();
+      expect(mediaDispatches, ['relay-authority']);
+      room.dispose();
+    });
+  });
+
+  test('fake relay rejects duplicate routing IDs instead of replacing authority', () async {
+    final hub = FakeRelayHub();
+    hub.register('reserved');
+
+    expect(() => hub.register('reserved'), throwsStateError);
+
+    await hub.dispose();
   });
 
   group('hostExitedPlayer routing', () {

@@ -85,6 +85,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     AudioTrack? preferredAudioTrack,
     SubtitleTrack? preferredSubtitleTrack,
     SubtitleTrack? preferredSecondarySubtitleTrack,
+    bool preserveSubtitleSourceIdentity = true,
   }) async {
     await _waitForProfileSettingsIfNeeded();
     if (!mounted) return const PlaybackSubtitleSelection.off();
@@ -97,6 +98,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
+      preserveSourceIdentity: preserveSubtitleSourceIdentity,
     );
   }
 
@@ -357,32 +359,35 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Gate-release resume that yields to Watch Together when a session owns
-  /// the playback start: track selection is still armed, but instead of
-  /// playing, the sync readiness hold (if any) is released — the
-  /// coordinated group start unpauses later. Shared by the start and reload
-  /// flows.
-  Future<void> _resumeAfterStartupGateOrYieldToWatchTogether({
+  /// Resolves the post-gate playback decision without inventing a play
+  /// intent. Track selection is still armed when playback must remain paused;
+  /// a Watch Together owner also receives its readiness release.
+  Future<void> _finishPlaybackAfterStartupGate({
     required Player currentPlayer,
     required _ExternalSubtitleOpenPlan externalSubtitlePlan,
     required String reason,
-    required bool wtOwnsStart,
+    required bool shouldResume,
+    required bool watchTogetherOwnsStart,
     Completer<void>? wtStartupHold,
   }) async {
-    if (!wtOwnsStart) {
+    if (shouldResume) {
       return _resumeAfterFrameRateStartupGate(
         currentPlayer: currentPlayer,
         externalSubtitlePlan: externalSubtitlePlan,
         reason: reason,
       );
     }
-    appLogger.d('Frame rate matching: yielding post-gate resume to Watch Together ($reason)');
+    appLogger.d(
+      watchTogetherOwnsStart
+          ? 'Frame rate matching: yielding post-gate resume to Watch Together ($reason)'
+          : 'Frame rate matching: preserving paused playback after $reason',
+    );
     final trackManager = _trackManager;
     if (trackManager != null && externalSubtitlePlan.requiresPostOpenAdd) {
       trackManager.waitingForExternalSubsTrackSelection = false;
       trackManager.applyTrackSelectionWhenReady();
     }
-    if (wtStartupHold != null && !wtStartupHold.isCompleted) {
+    if (watchTogetherOwnsStart && wtStartupHold != null && !wtStartupHold.isCompleted) {
       wtStartupHold.complete();
     }
   }
@@ -590,7 +595,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool play,
     List<SubtitleTrack>? externalSubtitlesAtOpen,
     bool Function()? shouldContinue,
+    void Function()? onOpening,
     void Function()? onOpened,
+    void Function(bool available)? onMediaAvailabilityChanged,
   }) async {
     await _applyNetworkStreamTuning(
       player: player,
@@ -603,6 +610,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     final media = Media(videoUrl, start: timing.mediaStart, headers: headers);
     final sidecarOpenGuard = MpvSidecarOpenGuard.armIfNeeded(player: player, subtitles: externalSubtitlesAtOpen);
     Future<void> openMedia({required bool shouldPlay, List<SubtitleTrack>? externalSubtitles}) {
+      onOpening?.call();
       return player.open(
         media,
         play: shouldPlay,
@@ -614,6 +622,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     try {
       await openMedia(shouldPlay: play, externalSubtitles: externalSubtitlesAtOpen);
       onOpened?.call();
+      onMediaAvailabilityChanged?.call(true);
     } catch (_) {
       await sidecarOpenGuard?.dispose();
       rethrow;
@@ -630,10 +639,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         return const _MediaOpenResult(didOpen: true);
       }
       await player.stop();
+      onMediaAvailabilityChanged?.call(false);
       if (shouldContinue != null && !shouldContinue()) return const _MediaOpenResult(didOpen: true);
       // Respect a pause requested while mpv was waiting on the sidecar. A
       // startup gate encoded by [play] remains authoritative when it is false.
       await openMedia(shouldPlay: play && _playbackIntentShouldPlay);
+      onMediaAvailabilityChanged?.call(true);
       sidecarFallbackUsed = true;
       if (mounted && (shouldContinue == null || shouldContinue())) {
         showErrorSnackBar(context, t.videoControls.subtitleUnavailableFallback);

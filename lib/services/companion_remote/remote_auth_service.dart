@@ -388,10 +388,6 @@ class RemoteAuthService {
     _cachedSecret = null;
     _cachedSecretKey = null;
   }
-
-  // Static direction constants for external use
-  static int get directionHost => _directionHost;
-  static int get directionClient => _directionClient;
 }
 
 /// Helper for building byte arrays.

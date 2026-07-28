@@ -22,7 +22,6 @@ import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/watch_state_store.dart';
 import 'package:plezy/screens/media_detail_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 
 import '../test_helpers/paged_fakes.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -46,6 +45,7 @@ import 'package:provider/provider.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_navigation.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -308,7 +308,7 @@ void main() {
       pendingPlayableDescendants: descendantsCompleter.future,
     );
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(provider.dispose);
 
     await tester.pumpWidget(
@@ -434,7 +434,7 @@ void main() {
       },
     );
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(provider.dispose);
 
     await tester.pumpWidget(
@@ -531,7 +531,7 @@ void main() {
       childrenPageErrors: {season1.id: Exception('season cache failed')},
     );
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(provider.dispose);
 
     await tester.pumpWidget(
@@ -622,7 +622,7 @@ void main() {
       childrenPageFutures: {season2.id: season2Completer.future},
     );
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    final provider = testMultiServerProvider(manager);
     addTearDown(provider.dispose);
 
     await tester.pumpWidget(
@@ -708,7 +708,7 @@ void main() {
     PlexApiCache.initialize(database);
     JellyfinApiCache.initialize(database);
     final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    final multiServerProvider = testMultiServerProvider(manager);
     final offlineWatch = OfflineWatchSyncService(database: database, serverManager: manager);
     final downloadManager = DownloadManagerService(
       database: database,
@@ -764,7 +764,7 @@ void main() {
     expect(observer.pushedRouteNames, contains(kVideoPlayerRouteName));
   });
 
-  group('watch state freshness (phone layout)', () {
+  group('phone layout', () {
     MediaItem buildShow({String? summary}) => testMediaItem(
       id: 'show_1',
       backend: MediaBackend.jellyfin,
@@ -832,7 +832,7 @@ void main() {
       await downloadProvider.ensureInitialized();
 
       final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-      final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+      final multiServerProvider = testMultiServerProvider(manager);
       final watchStateOverlay = WatchStateStore();
 
       addTearDown(() async {
@@ -903,6 +903,43 @@ void main() {
         },
       );
     }
+
+    testWidgets('shows directors when they are the only additional info', (tester) async {
+      final movie = testMediaItem(
+        id: 'director_only',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Director-only metadata',
+        directors: ['Jane Director'],
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      expect(find.text('Director'), findsOneWidget);
+      expect(find.text('Jane Director'), findsOneWidget);
+    });
+
+    testWidgets('omits the director row for an empty list', (tester) async {
+      final movie = testMediaItem(
+        id: 'no_directors',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'No directors',
+        studio: 'Example Studio',
+        directors: const [],
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      expect(find.text('Example Studio'), findsOneWidget);
+      expect(find.text('Director'), findsNothing);
+    });
 
     FocusNode overviewFocusNode(WidgetTester tester) {
       final overviewFocus = find.byWidgetPredicate(
