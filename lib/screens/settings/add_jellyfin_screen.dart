@@ -443,9 +443,12 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     return JellyfinConnectionAuthService(clientName: 'Plezy', clientVersion: clientVersion, deviceName: deviceName);
   }
 
+  /// The raw name, not a header-sanitized one: the Jellyfin `MediaBrowser`
+  /// header percent-encodes it, so the device list shows it verbatim.
   Future<String> _resolveDeviceName() async {
     final identity = await DeviceIdentityService.resolve();
-    return sanitizeHeaderValue(identity.deviceName) ?? 'Plezy';
+    final name = identity.deviceName?.trim();
+    return name == null || name.isEmpty ? 'Plezy' : name;
   }
 
   @override

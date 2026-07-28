@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:unorm_dart/unorm_dart.dart';
 
 import 'app_logger.dart';
 import 'platform_detector.dart';
@@ -98,13 +99,54 @@ class DeviceIdentityService {
   }
 }
 
-/// Makes a free-form device name safe to send as an HTTP header value:
-/// drops HTTP control characters and code units above 0xFF (dart:io's
-/// HttpHeaders rejects them), trims, and returns null when nothing usable
-/// remains.
+/// Makes a free-form device name safe to send as an HTTP header value on
+/// every transport Plezy uses: folds Latin letters to their base form
+/// (`Bjørn PC` → `Bjorn PC`), drops whatever is still outside printable
+/// ASCII, trims, and returns null when nothing usable remains.
+///
+/// The ASCII restriction is not cosmetic. `dart:io` rejects header values
+/// containing anything above 0x7F with a `FormatException`, and CFNetwork
+/// puts the raw code unit on the wire as a Latin-1 byte, which HTTP servers
+/// decoding headers as UTF-8 (Kestrel, hosting Jellyfin) reject as a
+/// malformed request. Headers with a documented percent-encoded wire format
+/// carry the name intact instead — see `buildJellyfinAuthHeader`.
 String? sanitizeHeaderValue(String? value) {
   if (value == null) return null;
-  final filtered = String.fromCharCodes(value.codeUnits.where((unit) => unit >= 0x20 && unit != 0x7F && unit <= 0xFF));
-  final trimmed = filtered.trim();
+  final buffer = StringBuffer();
+  for (final unit in nfd(_foldNonDecomposableLatin(value)).codeUnits) {
+    if (unit >= 0x20 && unit < 0x7F) buffer.writeCharCode(unit);
+  }
+  final trimmed = buffer.toString().trim();
   return trimmed.isEmpty ? null : trimmed;
 }
+
+/// Latin letters NFD leaves alone because they are single code points rather
+/// than base + combining mark. Without this, Nordic and Central European
+/// device names lose whole letters instead of being transliterated.
+const Map<String, String> _nonDecomposableLatin = {
+  'æ': 'ae',
+  'Æ': 'AE',
+  'œ': 'oe',
+  'Œ': 'OE',
+  'ø': 'o',
+  'Ø': 'O',
+  'ß': 'ss',
+  'đ': 'd',
+  'Đ': 'D',
+  'ð': 'd',
+  'Ð': 'D',
+  'þ': 'th',
+  'Þ': 'Th',
+  'ł': 'l',
+  'Ł': 'L',
+  'ħ': 'h',
+  'Ħ': 'H',
+  'ı': 'i',
+  'ŧ': 't',
+  'Ŧ': 'T',
+};
+
+final RegExp _nonDecomposableLatinPattern = RegExp('[${_nonDecomposableLatin.keys.join()}]');
+
+String _foldNonDecomposableLatin(String value) =>
+    value.replaceAllMapped(_nonDecomposableLatinPattern, (match) => _nonDecomposableLatin[match[0]]!);
