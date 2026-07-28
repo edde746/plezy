@@ -4150,7 +4150,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     return blurArtwork(
                       CyclingMediaBackdrop(
                         mediaKey: metadata.globalKey,
-                        imagePaths: metadata.heroBackdropPaths,
+                        imagePaths: metadata.heroRotationPaths(containerAspectRatio: containerAspect),
                         fallbackImagePaths: heroArtPaths,
                         client: _getArtworkMediaClient(context),
                         localArtworkPathResolver: widget.isOffline

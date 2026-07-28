@@ -1202,7 +1202,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final isEpisode = heroItem.isEpisode;
     final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: screenWidth / heroHeight);
+    final heroAspectRatio = screenWidth / heroHeight;
+    final heroArtPaths = heroItem.heroArtCandidates(containerAspectRatio: heroAspectRatio);
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
     final isTv = PlatformDetector.isTV();
     final alignLeft = isTv || isLargeScreen;
@@ -1268,7 +1269,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           return blurArtwork(
                             CyclingMediaBackdrop(
                               mediaKey: heroItem.globalKey,
-                              imagePaths: heroItem.heroBackdropPaths,
+                              imagePaths: heroItem.heroRotationPaths(containerAspectRatio: heroAspectRatio),
                               fallbackImagePaths: heroArtPaths,
                               client: heroClient,
                               active: _isTabVisible,

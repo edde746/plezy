@@ -228,6 +228,67 @@ void main() {
     });
   });
 
+  group('MediaItem.heroRotationPaths', () {
+    /// The order `CyclingMediaBackdrop` attempts paths as each one fails:
+    /// every rotating path, then the fallbacks it is not already rotating.
+    /// Only the head of this list is ever displayed by a healthy server.
+    List<String> displayOrder(MediaItem item, double aspect) {
+      final rotation = item.heroRotationPaths(containerAspectRatio: aspect);
+      final candidates = item.heroArtCandidates(containerAspectRatio: aspect);
+      return [...rotation, ...candidates.where((path) => !rotation.contains(path))];
+    }
+
+    test('near-square containers hold on square art instead of rotating backdrops', () {
+      final movie = _movie(
+        backend: MediaBackend.jellyfin,
+        artPath: '/art-0',
+        backdropPaths: ['/art-0', '/art-1'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(movie.heroRotationPaths(containerAspectRatio: 1.0), ['/square']);
+    });
+
+    test('near-square containers rotate backdrops when there is no square art', () {
+      final movie = _movie(backend: MediaBackend.jellyfin, artPath: '/art-0', backdropPaths: ['/art-0', '/art-1']);
+
+      expect(movie.heroRotationPaths(containerAspectRatio: 1.0), ['/art-0', '/art-1']);
+    });
+
+    test('wide containers rotate backdrops and leave square art behind them', () {
+      final movie = _movie(
+        backend: MediaBackend.jellyfin,
+        artPath: '/art-0',
+        backdropPaths: ['/art-0', '/art-1'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(movie.heroRotationPaths(containerAspectRatio: 16 / 9), ['/art-0', '/art-1']);
+    });
+
+    test('rotation before fallback reproduces the candidate order at every aspect', () {
+      final episode = testMediaItem(
+        id: 'e-order',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        artPath: '/episode-0',
+        backdropPaths: ['/episode-0', '/episode-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1'],
+        backgroundSquarePath: '/square',
+        serverId: 's1',
+      );
+
+      for (final aspect in [0.75, 1.0, 1.38, 1.39, 16 / 9, 2.4]) {
+        expect(
+          displayOrder(episode, aspect),
+          episode.heroArtCandidates(containerAspectRatio: aspect),
+          reason: 'aspect $aspect',
+        );
+      }
+    });
+  });
+
   group('MediaItem.isPartiallyWatched', () {
     test('show with some leaves watched is partially watched', () {
       final show = testMediaItem(

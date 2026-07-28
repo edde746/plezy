@@ -75,7 +75,7 @@ class TvSpotlightBackground extends StatelessWidget {
         final backdropSize = cornerBackdrop ? Size(size.width * 0.68, size.height * 0.72) : size;
         final backdrop = CyclingMediaBackdrop(
           mediaKey: media?.globalKey,
-          imagePaths: media?.heroBackdropPaths ?? const [],
+          imagePaths: media?.heroRotationPaths(containerAspectRatio: containerAspect) ?? const [],
           fallbackImagePaths: fallbackPaths,
           client: client,
           localArtworkPathResolver: localArtworkPathResolver == null ? null : (path) => localArtworkPathResolver!(path),
