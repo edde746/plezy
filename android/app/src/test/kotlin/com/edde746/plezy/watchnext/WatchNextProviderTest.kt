@@ -464,25 +464,143 @@ class WatchNextProviderTest {
   }
 
   @Test
-  fun onlySelectedHomeHandlerIsAnArtworkGrantConsumer() {
+  fun everyHomeHandlerIsAnArtworkGrantConsumer() {
     val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
     val selected = registerHandler(homeIntent, "selected.home.launcher")
-    val inactive = registerHandler(homeIntent, "inactive.home.launcher")
-    selectDefaultHome(selected, selected, inactive)
+    val sideloaded = registerHandler(homeIntent, "sideloaded.home.launcher")
+    selectDefaultHome(selected, selected, sideloaded)
     registerHandler(
       Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LEANBACK_LAUNCHER),
       "unrelated.leanback.app"
     )
 
-    assertEquals(setOf("selected.home.launcher"), WatchNextProvider(context).consumerPackages())
+    assertEquals(
+      setOf("selected.home.launcher", "sideloaded.home.launcher"),
+      WatchNextProvider(context).consumerPackages()
+    )
   }
 
   @Test
-  fun bootRestoresConfinedArtworkGrantOnlyToSelectedHomeLauncher() {
+  fun homeHandlersAreArtworkGrantConsumersWithoutASelectedDefault() {
+    val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+    registerHandler(homeIntent, "first.home.launcher")
+    registerHandler(homeIntent, "second.home.launcher")
+
+    assertEquals(
+      setOf("first.home.launcher", "second.home.launcher"),
+      WatchNextProvider(context).consumerPackages()
+    )
+  }
+
+  @Test
+  fun syncGrantsArtworkToAHomeLauncherThatIsNotTheSystemDefault() {
+    withServer("image/png", imageBytes) { source ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      val systemDefault = registerHandler(homeIntent, "system.default.launcher")
+      val sideloaded = registerHandler(homeIntent, "sideloaded.home.launcher")
+      selectDefaultHome(systemDefault, systemDefault, sideloaded)
+      val grantContext = RecordingGrantContext(context)
+
+      assertTrue(
+        WatchNextProvider(grantContext).syncWatchNextPrograms("owner-a", 1, listOf(item(source)))
+      )
+
+      val poster = committedPoster()!!
+      assertEquals(
+        setOf(
+          Grant("system.default.launcher", poster, Intent.FLAG_GRANT_READ_URI_PERMISSION),
+          Grant("sideloaded.home.launcher", poster, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        ),
+        grantContext.grants.toSet()
+      )
+      assertEquals(
+        setOf("system.default.launcher", "sideloaded.home.launcher"),
+        context.getSharedPreferences("system_shelf_state", 0)
+          .getStringSet("granted_packages", emptySet())
+      )
+      assertArrayEquals(imageBytes, openArtwork(poster))
+    }
+  }
+
+  @Test
+  fun syncIsAbandonedWhenNoLauncherCanBeGrantedArtwork() {
+    withServer("image/png", imageBytes) { source ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      registerHandler(homeIntent, "rejecting.home.launcher")
+      val grantContext = RecordingGrantContext(context, setOf("rejecting.home.launcher"))
+
+      assertFalse(
+        WatchNextProvider(grantContext).syncWatchNextPrograms("owner-a", 1, listOf(item(source)))
+      )
+
+      assertTrue(tvProvider.inserted.isEmpty())
+      assertTrue(artworkFiles().isEmpty())
+      assertTrue(
+        context.getSharedPreferences("system_shelf_state", 0)
+          .getStringSet("granted_uris", null)
+          .isNullOrEmpty()
+      )
+    }
+  }
+
+  @Test
+  fun syncPublishesWhenOneLauncherRejectsTheGrantAndAnotherAcceptsIt() {
+    withServer("image/png", imageBytes) { source ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      registerHandler(homeIntent, "rejecting.home.launcher")
+      registerHandler(homeIntent, "accepting.home.launcher")
+      val grantContext = RecordingGrantContext(context, setOf("rejecting.home.launcher"))
+
+      assertTrue(
+        WatchNextProvider(grantContext).syncWatchNextPrograms("owner-a", 1, listOf(item(source)))
+      )
+
+      val poster = committedPoster()!!
+      assertEquals(
+        setOf(Grant("accepting.home.launcher", poster, Intent.FLAG_GRANT_READ_URI_PERMISSION)),
+        grantContext.grants.toSet()
+      )
+      assertArrayEquals(imageBytes, openArtwork(poster))
+    }
+  }
+
+  @Test
+  fun syncIsAbandonedWhenOnePosterOfManyReachesNoLauncher() {
+    ScriptedHttpServer(
+      listOf(
+        ScriptedResponse(body = imageBytes),
+        ScriptedResponse(body = imageBytes)
+      )
+    ).use { server ->
+      val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+      registerHandler(homeIntent, "only.home.launcher")
+      // The first poster is granted, the second reaches nobody. A global "something was granted"
+      // check would happily publish the second as a broken tile.
+      val grantContext = RecordingGrantContext(context, acceptedGrantLimit = 1)
+
+      assertFalse(
+        WatchNextProvider(grantContext).syncWatchNextPrograms(
+          "owner-a",
+          1,
+          listOf(
+            item("${server.baseUrl}/first"),
+            item("${server.baseUrl}/second").copy(contentId = "second")
+          )
+        )
+      )
+
+      assertEquals(1, grantContext.grants.size)
+      assertTrue(tvProvider.inserted.isEmpty())
+      assertTrue(artworkFiles().isEmpty())
+    }
+  }
+
+  @Test
+  fun bootRestoresConfinedArtworkGrantsToEveryHomeLauncher() {
     val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
     val selected = registerHandler(homeIntent, "selected.home.launcher")
-    val inactive = registerHandler(homeIntent, "inactive.home.launcher")
-    selectDefaultHome(selected, selected, inactive)
+    val sideloaded = registerHandler(homeIntent, "sideloaded.home.launcher")
+    selectDefaultHome(selected, selected, sideloaded)
     val owner = "a".repeat(64)
     val legacyKey = "${"b".repeat(32)}.art"
     val contentKey = "${"c".repeat(64)}.art"
@@ -518,7 +636,9 @@ class WatchNextProviderTest {
     assertEquals(
       setOf(
         Grant("selected.home.launcher", legacy, Intent.FLAG_GRANT_READ_URI_PERMISSION),
-        Grant("selected.home.launcher", contentAddressed, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        Grant("selected.home.launcher", contentAddressed, Intent.FLAG_GRANT_READ_URI_PERMISSION),
+        Grant("sideloaded.home.launcher", legacy, Intent.FLAG_GRANT_READ_URI_PERMISSION),
+        Grant("sideloaded.home.launcher", contentAddressed, Intent.FLAG_GRANT_READ_URI_PERMISSION)
       ),
       recordingContext.grants.toSet()
     )
@@ -1289,7 +1409,11 @@ private data class Grant(val packageName: String, val uri: Uri, val modeFlags: I
 
 private data class PackageRevocation(val packageName: String, val uri: Uri, val modeFlags: Int)
 
-private class RecordingGrantContext(base: Context) : ContextWrapper(base) {
+private class RecordingGrantContext(
+  base: Context,
+  private val rejectingPackages: Set<String> = emptySet(),
+  private val acceptedGrantLimit: Int = Int.MAX_VALUE
+) : ContextWrapper(base) {
   val grants = mutableListOf<Grant>()
   val uriWideRevocations = mutableListOf<Uri>()
   val packageRevocations = mutableListOf<PackageRevocation>()
@@ -1297,6 +1421,9 @@ private class RecordingGrantContext(base: Context) : ContextWrapper(base) {
   override fun getApplicationContext(): Context = this
 
   override fun grantUriPermission(toPackage: String?, uri: Uri?, modeFlags: Int) {
+    if (toPackage in rejectingPackages || grants.size >= acceptedGrantLimit) {
+      throw SecurityException("Cannot grant to $toPackage")
+    }
     if (toPackage != null && uri != null) grants += Grant(toPackage, uri, modeFlags)
   }
 

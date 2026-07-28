@@ -5,9 +5,7 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.os.Binder
 import android.os.ParcelFileDescriptor
-import android.os.Process
 import android.system.Os
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -27,22 +25,16 @@ class SystemShelfArtworkProvider : ContentProvider() {
 
   override fun onCreate(): Boolean = context != null
 
+  /**
+   * The provider is not exported, so the framework admits a cross-process caller only when it
+   * holds a read grant for this exact URI. Grants are issued by [WatchNextProvider] to the
+   * packages that declare a HOME activity; do not re-derive the consumer here, because a device
+   * whose HOME launcher is not the resolved default (Fire OS, or any device with several
+   * launchers and no default) has no single package to compare against.
+   */
   override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
     if (mode != "r") throw FileNotFoundException("Read-only artwork")
     val appContext = context ?: throw FileNotFoundException("Provider unavailable")
-    val callingUid = Binder.getCallingUid()
-    if (callingUid != Process.myUid()) {
-      val homeIntent = android.content.Intent(android.content.Intent.ACTION_MAIN)
-        .addCategory(android.content.Intent.CATEGORY_HOME)
-      val homePackage = appContext.packageManager
-        .resolveActivity(homeIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
-        ?.activityInfo
-        ?.packageName
-      val callerPackages = appContext.packageManager.getPackagesForUid(callingUid)
-      if (homePackage == null || callerPackages == null || homePackage !in callerPackages) {
-        throw FileNotFoundException("Artwork caller is not the active HOME launcher")
-      }
-    }
     val file = SystemShelfArtworkStore(appContext.cacheDir).resolve(uri)
       ?: throw FileNotFoundException("Unknown artwork")
     return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
