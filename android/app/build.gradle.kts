@@ -391,7 +391,43 @@ android {
         debugSymbolLevel = "FULL"
       }
     }
+
+    // Instrumentation target that runs R8 (see testBuildType below).
+    //
+    // R8 only ever ran on `release`, so every gate in this repository exercised code
+    // the shipped APK does not contain: reflective lookups, JNI callbacks and native
+    // library loading can all break under shrinking while every debug check passes.
+    // #1703 shipped that way — DefaultRenderersFactory's Class.forName for the bundled
+    // FFmpeg audio renderer failed in release builds only.
+    //
+    // Inherits release's minification and keep rules (the Flutter plugin has already
+    // installed them by the time this block runs) but stays debuggable and debug-signed,
+    // so it is an ordinary test artifact and never a publishable one. Debuggable also
+    // makes the Flutter plugin treat it as debug mode, so it uses debug Dart artifacts.
+    create("minified") {
+      initWith(getByName("release"))
+      isDebuggable = true
+      // Resource shrinking is orthogonal to the reachability this variant guards and
+      // would only slow the instrumentation build down.
+      isShrinkResources = false
+      testProguardFiles("proguard-test-rules.pro")
+      proguardFile("proguard-instrumentation-rules.pro")
+      // Release has no signing config unless key.properties exists, which would leave
+      // this variant unsigned and uninstallable in CI.
+      signingConfig = signingConfigs.getByName("debug")
+      // Plugin subprojects only publish debug and release variants.
+      matchingFallbacks += listOf("debug", "release")
+      ndk {
+        debugSymbolLevel = "NONE"
+      }
+    }
   }
+
+  // Instrumentation normally runs against `debug`; the R8 reachability gate opts into the
+  // minified variant with -Pplezy.testBuildType=minified. Only one build type can host
+  // androidTest, and the existing playback suites need media3 builder APIs the app itself
+  // never calls — which R8 legitimately shrinks — so they stay on debug.
+  testBuildType = (findProperty("plezy.testBuildType") as String?) ?: "debug"
 
   packaging {
     jniLibs {

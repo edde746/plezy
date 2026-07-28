@@ -197,6 +197,22 @@ jobs:
             -no-boot-anim -camera-back none
           script: python3 scripts/run_maestro_ci.py android-15-instrumentation
 
+      - name: Run Android R8 reachability
+        id: api35-r8
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_6
+          avd-name: maestro-api35-instrumentation
+          force-avd-creation: false
+          disable-animations: true
+          emulator-options: >-
+            -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio
+            -no-boot-anim -camera-back none
+          script: python3 scripts/run_maestro_ci.py android-r8-reachability
+
       - name: Run Android 15 suites
         id: api35
         continue-on-error: true
@@ -299,9 +315,10 @@ jobs:
           retention-days: 7
 
       - name: Report suite failures
-        if: ${{ always() && (steps.api35-instrumentation.outcome != 'success' || steps.api35.outcome != 'success' || steps.api28.outcome != 'success') }}
+        if: ${{ always() && (steps.api35-instrumentation.outcome != 'success' || steps.api35-r8.outcome != 'success' || steps.api35.outcome != 'success' || steps.api28.outcome != 'success') }}
         run: |
           echo "Android 15 instrumentation outcome: ${{ steps.api35-instrumentation.outcome }}"
+          echo "Android R8 reachability outcome: ${{ steps.api35-r8.outcome }}"
           echo "Android 15 outcome: ${{ steps.api35.outcome }}"
           echo "Android 9 outcome: ${{ steps.api28.outcome }}"
           exit 1
