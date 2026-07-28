@@ -23,7 +23,8 @@ for checker in \
   scripts/check_workflow_security.py \
   scripts/check_workflow_action_pins.py \
   scripts/check_container_image_pins.py \
-  scripts/check_update_packages_workflow.py; do
+  scripts/check_update_packages_workflow.py \
+  scripts/check_windows_installer.py; do
   python3 "$checker"
 done
 
