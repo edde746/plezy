@@ -20,8 +20,6 @@ class PlayerAndroid extends PlayerBase {
   int _downmixCenterBoostDb = 0;
   bool _downmixNormalize = true;
 
-  static const String _passthroughCodecs = 'ac3,eac3,dts,dts-hd,truehd';
-
   /// The native plugin switched from ExoPlayer to its mpv fallback for this
   /// session. Sticky for the instance lifetime, mirroring the native flag
   /// (which resets only on initialize/dispose).
@@ -358,7 +356,11 @@ class PlayerAndroid extends PlayerBase {
       () => invoke('setAudioPassthrough', {'enabled': enabled}),
       () => _audioPassthroughEnabled == enabled,
     );
-    await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
+    // Deliberately no 'audio-spdif' write: unlike normalization and downmix, the
+    // mpv value is not this list. mpv force-passthroughs every codec named there
+    // with no decode fallback, so the plugin derives it from the audio route when
+    // the fallback core starts. Queuing the raw list here would overwrite it and
+    // strand TrueHD/DTS-HD on sinks that cannot bitstream them (#1703).
   }
 
   @override

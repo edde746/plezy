@@ -73,6 +73,22 @@ class ExoPlayerPluginTest {
   }
 
   @Test
+  fun fallbackPassthroughOnlyForcesCodecsTheRouteCanBitstream() {
+    val writes = mutableListOf<Pair<String, String>>()
+    val plugin = fallbackPlugin { name, value -> writes += name to value }
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("setAudioPassthrough", mapOf("enabled" to true)), result)
+    awaitCompletion(result)
+
+    // mpv force-passthroughs every codec named in audio-spdif and has no decode
+    // fallback, so a route that bitstreams nothing must be told to force nothing —
+    // otherwise the fallback renders video against a dead audio output (#1703).
+    assertEquals(listOf("audio-spdif" to ""), writes)
+    assertEquals(true, result.successValue)
+  }
+
+  @Test
   fun fallbackPropertyHandlersMapRejectedWritesToBoundedErrorsOnce() {
     for (case in fallbackPropertyCases()) {
       val writes = AtomicInteger()
@@ -602,6 +618,28 @@ class ExoPlayerPluginTest {
   }
 
   @Test
+  fun fallbackPrepareDerivesPassthroughFromTheRouteInsteadOfReplayingQueuedCodecs() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+    val core = MpvPlayerCore(activity, true) { name, value -> writes += name to value }
+    val plugin = initialFallbackPlugin(activity, core)
+    setField(plugin, "audioPassthroughRequested", true)
+    @Suppress("UNCHECKED_CAST")
+    val pending = getField(plugin, "pendingMpvProperties") as MutableMap<String, String>
+    pending["audio-spdif"] = "ac3,eac3,dts,dts-hd,truehd"
+
+    invokeSetupMpvFallback(plugin, core, playWhenReady = true)
+
+    // The queued ExoPlayer-era list is never replayed. This emulated route bitstreams
+    // nothing, and mpv has no decode fallback for a codec it force-passes through, so
+    // replaying it would strand playback on a dead audio output (#1703).
+    assertTrue(awaitQueueEntry(writes, "audio-spdif" to ""))
+    assertFalse(writes.contains("audio-spdif" to "ac3,eac3,dts,dts-hd,truehd"))
+    assertEquals("", pending["audio-spdif"])
+    core.dispose()
+  }
+
+  @Test
   fun reusedHeldFallbackSynchronouslyBlocksAutoResumeWithoutPausePropertyWrite() {
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
@@ -814,8 +852,8 @@ class ExoPlayerPluginTest {
     FallbackPropertyCase("selectSubtitleTrack", emptyMap<String, Any?>(), "sid" to "no"),
     FallbackPropertyCase(
       "setAudioPassthrough",
-      mapOf("enabled" to true),
-      "audio-spdif" to "ac3,eac3,dts,dts-hd,truehd",
+      mapOf("enabled" to false),
+      "audio-spdif" to "",
       true
     ),
     FallbackPropertyCase(

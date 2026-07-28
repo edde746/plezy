@@ -127,6 +127,11 @@ class ExoPlayerPlugin :
   // only at real session boundaries so settings can be replayed if a
   // superseded load requires a fresh MPV core.
   private val pendingMpvProperties = LinkedHashMap<String, String>()
+
+  // Audio passthrough is a request, not a queued mpv property: mpv force-passthroughs
+  // every codec in audio-spdif with no decode fallback, so the fallback core's value is
+  // derived from the audio route at the moment mpv actually starts (#1703).
+  private var audioPassthroughRequested = false
   private var currentExternalSubtitles: List<Map<String, Any?>>? = null
 
   // FlutterPlugin
@@ -161,6 +166,7 @@ class ExoPlayerPlugin :
     inFlightOpen = null
     currentExternalSubtitles = null
     pendingMpvProperties.clear()
+    audioPassthroughRequested = false
     if (clearActivity) {
       activity = null
       activityBinding = null
@@ -285,6 +291,9 @@ class ExoPlayerPlugin :
     val assVideoLatencyFrames = call.argument<Int>("assVideoLatencyFrames") ?: 0
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1.0f
     configuredBufferSizeBytes = bufferSizeBytes
+    // Seed the request here rather than waiting for Dart's separate setAudioPassthrough
+    // call, so a fallback raised before that arrives still derives audio-spdif correctly.
+    audioPassthroughRequested = audioPassthroughEnabled
     // Global libass overlay render scale — set before the player/handler is built below so the
     // first frame-size apply already uses it.
     AssHandler.setRenderScale(subtitleRenderScale)
@@ -1134,13 +1143,14 @@ class ExoPlayerPlugin :
       result.error("INVALID_ARGS", "Missing 'enabled'", null)
       return
     }
-    val audioSpdif = if (enabled) "ac3,eac3,dts,dts-hd,truehd" else ""
-    pendingMpvProperties["audio-spdif"] = audioSpdif
+    audioPassthroughRequested = enabled
+    val currentActivity = activity
     if (usingMpvFallback) {
+      val audioSpdif = if (enabled && currentActivity != null) supportedMpvSpdifCodecs(currentActivity) else ""
       handleFallbackMpvProperty("audio-spdif", audioSpdif, result, true)
       return
     }
-    activity?.runOnUiThread {
+    currentActivity?.runOnUiThread {
       playerCore?.setAudioPassthrough(enabled)
       result.success(true)
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
@@ -1262,7 +1272,7 @@ class ExoPlayerPlugin :
    * completion callback on the main thread.
    */
   private fun prepareMpvFallback(core: MpvPlayerCore) {
-    val pendingProps = pendingMpvProperties.toList()
+    val pendingProps = pendingMpvProperties.filterKeys { it != "audio-spdif" }.toList()
     val observedProps = observedProperties.toList()
     val bufferSize = configuredBufferSizeBytes
 
@@ -1281,6 +1291,16 @@ class ExoPlayerPlugin :
         }
       }
     }
+
+    // Derived last so it wins over any replayed value, and resolved here rather than
+    // when the setting was applied: the HDMI/AVR route can change between ExoPlayer
+    // startup and the moment mpv takes over (#1703).
+    val audioSpdif = activity
+      ?.takeIf { audioPassthroughRequested }
+      ?.let(::supportedMpvSpdifCodecs)
+      .orEmpty()
+    pendingMpvProperties["audio-spdif"] = audioSpdif
+    core.setProperty("audio-spdif", audioSpdif)
 
     for ((propName, observed) in observedProps) {
       core.observeProperty(propName, observed.format)

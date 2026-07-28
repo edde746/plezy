@@ -192,6 +192,40 @@ void main() {
       );
     });
 
+    test('ExoPlayer leaves the mpv passthrough codec list to the native fallback', () async {
+      final calls = <MethodCall>[];
+      await withMockPlayerChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) async {
+          calls.add(call);
+          if (call.method == 'initialize') return true;
+          if (call.method == 'requestAudioFocus') return true;
+          return null;
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            expect(await player.requestAudioFocus(), isTrue);
+            await player.setAudioPassthrough(true);
+
+            final passthrough = calls.singleWhere((call) => call.method == 'setAudioPassthrough');
+            expect((passthrough.arguments as Map)['enabled'], isTrue);
+            // mpv force-passthroughs audio-spdif with no decode fallback, so the
+            // plugin derives it from the audio route instead (#1703).
+            expect(
+              calls.where(
+                (call) => call.method == 'setMpvProperty' && (call.arguments as Map)['name'] == 'audio-spdif',
+              ),
+              isEmpty,
+            );
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('ExoPlayer retries initialization after a recoverable native failure', () async {
       var initializeAttempts = 0;
       await withMockPlayerChannels(
