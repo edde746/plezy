@@ -14,6 +14,7 @@ import '../../mpv/player/player.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/notification_permission.dart';
 import '../../utils/platform_detector.dart';
+import '../driver_distraction.dart';
 import '../media_control_router.dart';
 import '../media_controls_manager.dart';
 import '../multi_server_manager.dart';
@@ -74,10 +75,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
        _coordinator = coordinator ?? PlaybackCoordinator.instance,
        _volumePersistenceWriter = volumePersistenceWriter ?? _writePersistedVolume {
     _coordinator.registerMusicSession(stopAndDispose: _stopForVideoClaim);
-    // tvOS has no background-audio session in v1 — pause on backgrounding so
-    // audio doesn't play over other apps / the home screen. Other platforms
-    // keep playing under their OS media session.
-    if (PlatformDetector.isAppleTV()) {
+    // tvOS has no background-audio session in v1, so it pauses on
+    // backgrounding. AAOS must stop audio while driving per DD-2. Other
+    // platforms keep playing under their OS media session.
+    if (PlatformDetector.isAppleTV() || PlatformDetector.isAutomotive()) {
       _observesLifecycle = true;
       WidgetsBinding.instance.addObserver(this);
     }
@@ -287,7 +288,15 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     // Android 13+: the background playback notification needs
     // POST_NOTIFICATIONS. Fire-and-forget — playback and the foreground
     // service run regardless; a denial only hides the notification.
-    unawaited(NotificationPermission.ensure());
+    //
+    // Skipped on a car, where `setBackgroundMode(false)` means the foreground
+    // service and its notification never start, so there is nothing to
+    // authorize. The prompt would also take focus, leaving the app briefly not
+    // resumed, and the automotive gate would then open the track paused and
+    // silently drop the user's play intent.
+    if (!PlatformDetector.isAutomotive()) {
+      unawaited(NotificationPermission.ensure());
+    }
     final generation = ++_generation;
     _invalidateArmRequests();
     _finalizeCurrentTrack();
@@ -327,7 +336,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       // Re-asserted per open (cheap, idempotent): the native side drops the
       // background-mode opt-in when the user swipes the task away, so a
       // session that survives task removal heals itself here.
-      unawaited(_mediaControls?.setBackgroundMode(true));
+      // Passing false on AAOS also heals any stale opt-in from an earlier session.
+      unawaited(_mediaControls?.setBackgroundMode(!PlatformDetector.isAutomotive()));
 
       // Clear any native arm left over from the previous item before the open
       // replaces it, so a stray transition can't fire mid-switch.
@@ -358,8 +368,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       }
       if (generation != _generation || _player != player) return;
 
+      final shouldPlay = play && automotivePlaybackAllowedNow();
       try {
-        await player.open(Media(source.url, headers: source.headers), play: play);
+        await player.open(Media(source.url, headers: source.headers), play: shouldPlay);
       } catch (e, st) {
         appLogger.w('Music open failed for ${track.id}', error: e, stackTrace: st);
         if (generation == _generation) _handlePlaybackFailure(e);
@@ -367,8 +378,13 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       }
       if (generation != _generation || _player != player) return;
 
+      final playbackStarted = shouldPlay && automotivePlaybackAllowedNow();
+      if (shouldPlay && !playbackStarted) {
+        await player.pause();
+        if (generation != _generation || _player != player) return;
+      }
       committedPlayer = player;
-      _setStatus(play ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
+      _setStatus(playbackStarted ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
       _bindTrackServices(track, source);
     } finally {
       // A stale open must never release a newer open's ownership. Only a
@@ -456,7 +472,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   void _requestArmNext() {
-    if (_disposed) return;
+    if (_disposed || !automotivePlaybackAllowedNow()) return;
     _armRequestGeneration++;
     _armRequestPending = true;
     _ensureArmDrain();
@@ -502,6 +518,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   Future<bool> _trySetNext(Player player, Media? media) async {
+    if (media != null && !automotivePlaybackAllowedNow()) return false;
     try {
       await player.setNext(media);
       return true;
@@ -559,14 +576,19 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   }
 
   void _onPlayingChanged(bool isPlaying) {
+    final playbackAllowed = automotivePlaybackAllowedNow();
+    final shouldBePlaying = isPlaying && playbackAllowed;
+    if (isPlaying && !playbackAllowed) {
+      unawaited(_player?.pause());
+    }
     if (_status == MusicPlaybackStatus.playing || _status == MusicPlaybackStatus.paused) {
-      _setStatus(isPlaying ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
-      unawaited(_tracker?.sendProgress(isPlaying ? 'playing' : 'paused'));
+      _setStatus(shouldBePlaying ? MusicPlaybackStatus.playing : MusicPlaybackStatus.paused);
+      unawaited(_tracker?.sendProgress(shouldBePlaying ? 'playing' : 'paused'));
     }
     final player = _player;
     if (player != null) {
       _mediaControls?.updatePlaybackState(
-        isPlaying: player.state.isActive,
+        isPlaying: shouldBePlaying && player.state.isActive,
         position: player.currentPosition,
         speed: 1.0,
         force: true,
@@ -629,7 +651,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _currentSource = adopted.source;
     _consecutiveFailures = 0;
     appLogger.d('Music: transition received "${adopted.track.title}" → cursor ${_queue.cursor}');
-    _setStatus(MusicPlaybackStatus.playing, forceNotify: true);
+    if (automotivePlaybackAllowedNow()) {
+      _setStatus(MusicPlaybackStatus.playing, forceNotify: true);
+    } else {
+      unawaited(_player?.pause());
+      _setStatus(MusicPlaybackStatus.paused, forceNotify: true);
+    }
     _bindTrackServices(_currentTrack!, adopted.source);
     _requestArmNext();
   }
@@ -808,11 +835,15 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     );
   }
 
-  /// OS transport commands. Music has no authorization gate: the session only
-  /// exists while a track is loaded, and that is checked in [_onControlEvent].
+  /// OS transport commands. Music has no authorization gate for playback: the
+  /// session only exists while a track is loaded, and that is checked in
+  /// [_onControlEvent]. The automotive gate deliberately does NOT sit on
+  /// [MediaControlRouter.canControlPlayback] — the router consumes a denied
+  /// event, so gating it there would swallow `PauseEvent` and leave the OS
+  /// unable to stop audio. Starting audio is gated inside [play] instead.
   late final _mediaControlRouter = MediaControlRouter(
     canControlPlayback: () => true,
-    canNavigateMediaItems: () => true,
+    canNavigateMediaItems: automotivePlaybackAllowedNow,
     onPlay: () => unawaited(play()),
     onPause: () => unawaited(pause()),
     onTogglePlayPause: () => unawaited(togglePlayPause()),
@@ -873,6 +904,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   @override
   Future<void> play() async {
+    if (!automotivePlaybackAllowedNow()) {
+      appLogger.d('Music play denied while automotive playback is restricted');
+      return;
+    }
     final player = _player;
     if (player == null || _currentTrack == null) return;
     final generation = _generation;
@@ -887,9 +922,23 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       }
       _requestArmNext();
     }
+    if (!automotivePlaybackAllowedNow()) {
+      appLogger.d('Music play denied while automotive playback is restricted');
+      return;
+    }
     await player.play();
     if (!_isCurrentTransport(player, generation)) return;
+    if (!automotivePlaybackAllowedNow()) {
+      await player.pause();
+      if (_isCurrentTransport(player, generation)) {
+        _setStatus(MusicPlaybackStatus.paused);
+      }
+      return;
+    }
     _setStatus(MusicPlaybackStatus.playing);
+    // A restriction cleared the native arm on the way in; restore it so gapless
+    // playback survives a park-and-resume cycle.
+    if (PlatformDetector.isAutomotive()) _requestArmNext();
   }
 
   @override
@@ -913,17 +962,36 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     return player.state.isActive ? pause() : play();
   }
 
-  /// Apple TV only (observer registered in the constructor): pause when the
-  /// app leaves the foreground — tvOS background audio is not attempted in
-  /// v1, so playback must not continue under the home screen.
+  /// On Apple TV, pause when the app leaves the foreground because tvOS
+  /// background audio is not attempted in v1. On AAOS, stop audio whenever
+  /// the app is not resumed to comply with driver-distraction rule DD-2.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (_disposed) return;
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
-      if (isPlaying) {
-        appLogger.d('App backgrounded on Apple TV — pausing music playback');
-        unawaited(pause());
+    if (PlatformDetector.isAutomotive()) {
+      if (!automotivePlaybackAllowedNow()) {
+        _invalidateArmRequests();
+        _rememberStaleArm();
+        final player = _player;
+        if (player != null) {
+          unawaited(_trySetNext(player, null));
+        }
+        if (isPlaying) {
+          appLogger.d('App restricted on Android Automotive — pausing music playback');
+          unawaited(pause());
+        }
+        return;
       }
+      // Restrictions lifted: re-arm the next track that was cleared on entry.
+      // Playback itself stays paused until the user asks for it.
+      if (_currentTrack != null) _requestArmNext();
+      return;
+    }
+    if (PlatformDetector.isAppleTV() &&
+        (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) &&
+        isPlaying) {
+      appLogger.d('App backgrounded on Apple TV — pausing music playback');
+      unawaited(pause());
     }
   }
 

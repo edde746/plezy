@@ -77,5 +77,40 @@ void main() {
       expect(detection.isTv, isFalse);
       expect(detection.reasons, isEmpty);
     });
+
+    test('classifies automotive head units as cars, not TVs', () {
+      final detection = detectAndroidTvFromSystemFeatures([
+        'android.hardware.type.automotive',
+        'android.hardware.touchscreen',
+      ]);
+
+      expect(detection.isAutomotive, isTrue);
+      expect(detection.isTv, isFalse);
+    });
+
+    test('rotary-only head units are cars despite reporting no touchscreen', () {
+      final detection = detectAndroidTvFromSystemFeatures(['android.hardware.type.automotive']);
+
+      expect(detection.isAutomotive, isTrue);
+      expect(detection.isTv, isFalse);
+      expect(detection.reasons, contains('no_touchscreen'));
+    });
+
+    test('automotive vetoes a stray leanback flag from an OEM image', () {
+      final detection = detectAndroidTvFromSystemFeatures([
+        'android.hardware.type.automotive',
+        'android.software.leanback',
+        'android.hardware.touchscreen',
+      ]);
+
+      expect(detection.isAutomotive, isTrue);
+      expect(detection.isTv, isFalse);
+    });
+
+    test('ordinary devices are not automotive', () {
+      final detection = detectAndroidTvFromSystemFeatures(['android.hardware.touchscreen']);
+
+      expect(detection.isAutomotive, isFalse);
+    });
   });
 }

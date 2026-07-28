@@ -48,7 +48,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       }
 
       if (mounted && player != null) {
-        await player!.play();
+        await _playWithPlaybackIntent(player!);
       }
 
       unawaited(

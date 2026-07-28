@@ -100,6 +100,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// [SettingsService.rotationLocked] via [bindEffect] so any change — from
   /// this toggle or from the settings screen — fires the same SystemChrome call.
   void _applyRotationLock(bool locked) {
+    if (PlatformDetector.isAutomotive()) return;
     unawaited(
       SystemChrome.setPreferredOrientations(
         locked ? const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight] : DeviceOrientation.values,

@@ -20,6 +20,7 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.debugSetAutomotiveOverride(null);
   });
 
   group('SettingsService.parseMpvConfigText', () {
@@ -227,6 +228,17 @@ void main() {
       await settings.write(SettingsService.autoPip, true);
 
       TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(settings.read(SettingsService.autoPip), isFalse);
+    });
+
+    test('forces auto PiP off on automotive while honoring the stored value elsewhere', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.autoPip, true);
+
+      expect(settings.read(SettingsService.autoPip), isTrue);
+
+      TvDetectionService.debugSetAutomotiveOverride(true);
 
       expect(settings.read(SettingsService.autoPip), isFalse);
     });

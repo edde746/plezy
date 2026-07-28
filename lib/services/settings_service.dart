@@ -169,14 +169,13 @@ class _AppLocalePref extends Pref<AppLocale> {
   Future<void> writeTo(BaseSharedPreferencesService svc, AppLocale value) => svc.writeString(key, value.name);
 }
 
-/// Mobile-only with a macOS-disabled-by-default rule; forced off on TV and non-mobile platforms.
+/// Uses a macOS-disabled default and is forced off when [PlatformDetector] disables PiP.
 class _AutoPipPref extends Pref<bool> {
   const _AutoPipPref() : super('auto_pip');
 
   @override
   bool readFrom(BaseSharedPreferencesService svc) {
-    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return false;
-    if (PlatformDetector.isTV()) return false;
+    if (!PlatformDetector.supportsPictureInPicture()) return false;
     return svc.prefs.getBool(key) ?? !Platform.isMacOS;
   }
 

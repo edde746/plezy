@@ -40,6 +40,7 @@ import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
+import '../services/driver_distraction.dart';
 import '../services/discord_rpc_service.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
@@ -689,6 +690,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _playWithPlaybackIntent(Player currentPlayer) {
+    if (!automotivePlaybackAllowedNow()) {
+      _playbackIntentShouldPlay = false;
+      appLogger.d('Playback blocked while Android Automotive app is not resumed');
+      return Future<void>.value();
+    }
     _playbackIntentShouldPlay = true;
     if (widget.isLive && _live.retryFailed) {
       if (_live.retrying) return Future.value();
@@ -710,6 +716,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _playOrPauseWithPlaybackIntent(Player currentPlayer) {
+    if (!automotivePlaybackAllowedNow()) {
+      appLogger.d('Play/pause requested while Android Automotive app is not resumed; keeping playback paused');
+      return _pauseWithPlaybackIntent(currentPlayer);
+    }
     if (widget.isLive && _live.retryFailed) {
       return _playWithPlaybackIntent(currentPlayer);
     }
@@ -867,6 +877,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     switch (state) {
       case AppLifecycleState.inactive:
         _recordLifecycleState('inactive');
+        if (PlatformDetector.isAutomotive()) {
+          _enqueueLifecycleTransition('inactive_automotive', _handleAppHidden);
+        }
         break;
       case AppLifecycleState.hidden:
         _recordLifecycleState('hidden');
@@ -1462,6 +1475,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     } catch (e) {
       appLogger.w('Failed to restore system UI', error: e);
     }
+
+    // Cars are fixed-orientation devices, and a compact head unit can read as a
+    // phone below, which would pin it to portrait on player exit.
+    if (PlatformDetector.isAutomotive()) return;
 
     try {
       if (_isPhone) {
