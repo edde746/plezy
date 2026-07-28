@@ -247,7 +247,7 @@ Future<bool?> navigateToVideoPlayer(
   bool resolveWatchState = true,
   bool skipPreroll = false,
 }) async {
-  if (!skipPreroll && !isOffline && !usePushReplacement && metadata.kind == MediaKind.movie) {
+  if (!skipPreroll && !isOffline && !usePushReplacement && metadata.kind == MediaKind.movie && !metadata.hasActiveProgress) {
     final preroll = await pickRandomPreroll(context);
     if (preroll != null && context.mounted) {
       await navigateToVideoPlayer(context, metadata: preroll, resolveWatchState: false, skipPreroll: true);
