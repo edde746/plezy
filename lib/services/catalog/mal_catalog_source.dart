@@ -118,6 +118,15 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
     source: CatalogSourceId.mal,
     kind: anime.isMovie ? MediaKind.movie : MediaKind.show,
     title: anime.displayTitle,
+    altTitles: [
+      for (final title in <String?>[
+        anime.alternativeTitles?.en,
+        anime.title,
+        anime.alternativeTitles?.ja,
+        ...?anime.alternativeTitles?.synonyms,
+      ])
+        if (title != null && title.isNotEmpty && title != anime.displayTitle) title,
+    ],
     year: anime.year,
     overview: anime.synopsis,
     runtimeMinutes: anime.runtimeMinutes,
@@ -134,6 +143,9 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
       tmdb: row?.tmdbIds?.firstOrNull,
       tvdb: row?.tvdbId,
     ),
+    season: row == null || (row.tvdbSeason == null && row.tmdbSeason == null)
+        ? null
+        : ExternalSeasonRef(tvdb: row.tvdbSeason, tmdb: row.tmdbSeason),
     posterUrl: anime.mainPicture?.primary,
   );
 

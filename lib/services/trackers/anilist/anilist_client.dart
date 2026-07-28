@@ -27,6 +27,7 @@ class AnilistClient implements DisposableTrackerClient {
       english
       romaji
       userPreferred
+      native
     }
     format
     status
@@ -40,6 +41,7 @@ class AnilistClient implements DisposableTrackerClient {
       year
     }
     genres
+    synonyms
     isAdult
     coverImage {
       extraLarge

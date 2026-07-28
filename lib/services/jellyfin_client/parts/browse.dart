@@ -1110,47 +1110,65 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _mapItems([...results.first, ...results[1]]);
   }
 
-  /// Jellyfin removed `anyProviderIdEquals`, so the reverse lookup is a
-  /// title search verified against each candidate's inline `ProviderIds` —
-  /// exact-id verification, so localized-title misses are possible but a
-  /// wrong item can never match.
+  /// Jellyfin removed `anyProviderIdEquals` (silently ignored on 10.11.10, so
+  /// it returns the unfiltered page), leaving a title search verified against
+  /// each candidate's inline `ProviderIds`. [plexGuid] is a Plex-only hint and
+  /// has no meaning in Jellyfin's provider-id model, so it is ignored.
   ///
-  /// When [year] is known, a ±1 `years=` window (comma-OR, verified on JF
-  /// 10.11) is applied first so short/common titles keep the true match
-  /// inside the 20-item response; a second unfiltered attempt covers items
-  /// with missing or off-window year metadata.
+  /// Jellyfin cannot report season ordering to a non-admin: on 10.11.10,
+  /// `/Library/VirtualFolders` returns 403 and Series items omit
+  /// `DisplayOrder`. Resolve against an unknown provider rather than guessing
+  /// from `ProviderIds`, so only seasons on which TVDB and TMDB agree are gated.
   @override
-  Future<MediaItem?> findByExternalIds(ExternalIds ids, {required MediaKind kind, String? title, int? year}) async {
+  Future<MediaItem?> findByExternalIds(
+    ExternalIds ids, {
+    required MediaKind kind,
+    List<String> titles = const [],
+    int? year,
+    String? plexGuid,
+    ExternalSeasonRef? season,
+  }) async {
     final itemType = switch (kind) {
       MediaKind.movie => 'Movie',
       MediaKind.show => 'Series',
       _ => null,
     };
-    if (itemType == null || !ids.hasAny || title == null || title.isEmpty) return null;
+    if (itemType == null || !ids.hasAny || titles.isEmpty) return null;
 
-    Future<MediaItem?> attempt(String? years) async {
+    final seasonIndex = season?.agreedSeason;
+    final shouldGateSeason = kind == MediaKind.show && seasonIndex != null && seasonIndex > 1;
+    // Not `seasonIndex`: when the two providers disagree the season number is
+    // unusable but the entry is still a sequel, and the ±1 window around a
+    // sequel's own year excludes the parent show (its year is season one's).
+    final skipYearWindow = season?.isSequel ?? false;
+
+    for (var index = 0; index < titles.length; index++) {
+      final isFirstCandidate = index == 0;
+      final years = isFirstCandidate && year != null && !skipYearWindow ? '${year - 1},$year,${year + 1}' : null;
       final candidates = await _fetchItemsArray('/Items', {
         'userId': connection.userId,
-        'SearchTerm': title,
+        'SearchTerm': titles[index],
         'Recursive': 'true',
-        'Limit': '20',
+        'Limit': isFirstCandidate ? '20' : '50',
         'IncludeItemTypes': itemType,
         'Fields': 'ProviderIds,$_browseFields',
         'years': ?years,
         ...jellyfinImageQueryParameters,
       });
       final match = ExternalIds.jellyfinCandidateMatching(candidates, ids);
-      if (match == null) return null;
+      if (match == null) continue;
       final item = _mapItems([match]).firstOrNull;
-      if (item == null) return null;
+      if (item == null) continue;
+
+      if (shouldGateSeason) {
+        final children = await fetchChildren(item.id);
+        if (!children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex)) {
+          return null;
+        }
+      }
       return _withLibraryFromAncestors(item);
     }
-
-    if (year != null) {
-      final match = await attempt('${year - 1},$year,${year + 1}');
-      if (match != null) return match;
-    }
-    return attempt(null);
+    return null;
   }
 
   /// Best-effort library stamp for items found outside a library context

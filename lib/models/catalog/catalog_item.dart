@@ -65,6 +65,24 @@ class CatalogItemIds {
     return null;
   }
 
+  /// Identity of *this* entry, preferring provider-native entry ids over the
+  /// series ids it shares with its own other seasons.
+  ///
+  /// [canonicalKey] deliberately prefers imdb/tmdb/tvdb so two sources
+  /// describing the same title agree; that is exactly wrong for anything
+  /// season-specific, because every MAL/AniList season of one series carries
+  /// the same series ids. All five Mushoku Tensei entries collapse to
+  /// `imdb:tt13293588` under [canonicalKey].
+  String? get entryKey {
+    if (mal != null) return 'mal:$mal';
+    if (anilist != null) return 'anilist:$anilist';
+    if (simkl != null) return 'simkl:$simkl';
+    if (trakt != null) return 'trakt:$trakt';
+    if (plex != null) return 'plex:$plex';
+    if (slug != null) return 'slug:$slug';
+    return canonicalKey;
+  }
+
   /// Every id-form key. Membership checks match on any of these so that two
   /// sides carrying different id subsets (e.g. Jellyfin tmdb-only vs a Trakt
   /// entry keyed by imdb) still intersect.
@@ -120,6 +138,17 @@ class CatalogItem {
   /// [MediaKind.movie] or [MediaKind.show].
   final MediaKind kind;
   final String title;
+
+  /// Other titles the same entry is known by (MAL `alternative_titles`,
+  /// AniList `romaji`/`native`/`synonyms`). Media servers index one localized
+  /// title each, so these widen the reverse lookup without weakening it —
+  /// candidates are still verified by exact external id.
+  final List<String> altTitles;
+
+  /// Season of the parent series this entry maps to, when the provider covers
+  /// one season of a longer show (Fribb `season`). Null for whole-series
+  /// entries and every non-anime source.
+  final ExternalSeasonRef? season;
   final int? year;
   final String? overview;
   final int? runtimeMinutes;
@@ -149,6 +178,8 @@ class CatalogItem {
     required this.source,
     required this.kind,
     required this.title,
+    this.altTitles = const [],
+    this.season,
     this.year,
     this.overview,
     this.runtimeMinutes,
@@ -167,6 +198,10 @@ class CatalogItem {
 
   /// Kind-namespaced identity key for caches and dedupe.
   String get identityKey => '${kind.id}/${ids.canonicalKey}';
+
+  /// Cache key for anything whose answer is season-specific — see
+  /// [CatalogItemIds.entryKey], which [identityKey] deliberately does not use.
+  String get entryIdentityKey => '${kind.id}/${ids.entryKey}';
 
   /// Synthesize a [MediaItem] so catalog items flow through the existing
   /// shelf/grid/card stack ([MediaHub.items] is `List<MediaItem>`).
@@ -196,6 +231,8 @@ class CatalogItem {
     'source': source.name,
     'kind': kind.id,
     'title': title,
+    if (altTitles.isNotEmpty) 'altTitles': altTitles,
+    if (season != null) 'season': season!.toJson(),
     if (year != null) 'year': year,
     if (overview != null) 'overview': overview,
     if (runtimeMinutes != null) 'runtimeMinutes': runtimeMinutes,
@@ -221,6 +258,12 @@ class CatalogItem {
         (throw ArgumentError('Unknown catalog source: ${json['source']}')),
     kind: MediaKind.fromString(json['kind'] as String?),
     title: json['title'] as String? ?? '',
+    altTitles: (json['altTitles'] as List?)?.cast<String>() ?? const [],
+    season: switch (json['season']) {
+      final Map<String, Object?> s => ExternalSeasonRef.fromJson(s),
+      final Map s => ExternalSeasonRef.fromJson(s.cast<String, Object?>()),
+      _ => null,
+    },
     year: json['year'] as int?,
     overview: json['overview'] as String?,
     runtimeMinutes: json['runtimeMinutes'] as int?,

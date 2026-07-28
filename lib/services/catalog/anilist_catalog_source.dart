@@ -118,6 +118,16 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
     source: CatalogSourceId.anilist,
     kind: anime.isMovie ? MediaKind.movie : MediaKind.show,
     title: anime.displayTitle,
+    altTitles: [
+      for (final title in <String?>[
+        anime.titleEnglish,
+        anime.titleUserPreferred,
+        anime.titleRomaji,
+        anime.titleNative,
+        ...?anime.synonyms,
+      ])
+        if (title != null && title.isNotEmpty && title != anime.displayTitle) title,
+    ],
     year: anime.year,
     overview: anime.description,
     runtimeMinutes: anime.runtimeMinutes,
@@ -135,6 +145,9 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
       tmdb: row?.tmdbIds?.firstOrNull,
       tvdb: row?.tvdbId,
     ),
+    season: row == null || (row.tvdbSeason == null && row.tmdbSeason == null)
+        ? null
+        : ExternalSeasonRef(tvdb: row.tvdbSeason, tmdb: row.tmdbSeason),
     posterUrl: anime.posterUrl,
     backdropUrl: anime.backdropUrl,
   );

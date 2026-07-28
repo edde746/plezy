@@ -47,12 +47,14 @@ Map<String, dynamic> _node({
   required int id,
   required String title,
   String? en,
+  String? ja,
+  List<String>? synonyms,
   String mediaType = 'tv',
   String status = 'finished_airing',
 }) => {
   'id': id,
   'title': title,
-  if (en != null) 'alternative_titles': {'en': en},
+  if (en != null || ja != null || synonyms != null) 'alternative_titles': {'en': ?en, 'ja': ?ja, 'synonyms': ?synonyms},
   'media_type': mediaType,
   'main_picture': {'large': 'https://cdn.myanimelist.net/images/anime/$id.jpg'},
   'status': status,
@@ -73,7 +75,13 @@ Map<String, dynamic> _pageBody(List<Map<String, dynamic>> nodes, {bool hasMore =
 void main() {
   // Attack on Titan: split-cour show — one Fribb row per season, same tvdb id.
   const aotSeason1 = FribbMappingRow(malId: 16498, tvdbId: 267440, tvdbSeason: 1, imdbIds: ['tt2560140']);
-  const aotSeason3 = FribbMappingRow(malId: 35760, tvdbId: 267440, tvdbSeason: 3, imdbIds: ['tt2560140']);
+  const aotSeason3 = FribbMappingRow(
+    malId: 35760,
+    tvdbId: 267440,
+    tvdbSeason: 3,
+    tmdbSeason: 2,
+    imdbIds: ['tt2560140'],
+  );
   // An anime movie.
   const yourName = FribbMappingRow(malId: 32281, tmdbIds: [372058], imdbIds: ['tt5311514'], type: 'MOVIE');
 
@@ -143,6 +151,32 @@ void main() {
       // finished_airing on a movie is noise, and movies have no episode chip.
       expect(movie.airStatus, isNull);
       expect(movie.episodeCount, isNull);
+    });
+
+    test('sequel entries preserve alternate-title order and both Fribb season numbers', () async {
+      handlers.add(
+        (request) => http.Response(
+          json.encode(
+            _pageBody([
+              _node(
+                id: 35760,
+                title: 'Shingeki no Kyojin Season 3',
+                en: 'Attack on Titan Season 3',
+                ja: '進撃の巨人 Season 3',
+                synonyms: ['', 'Attack on Titan Season 3', 'AoT 3'],
+              ),
+            ]),
+          ),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        ),
+      );
+
+      final item = (await source.fetchRow(CatalogRowId.watchlist)).items.single;
+
+      expect(item.title, 'Attack on Titan Season 3');
+      expect(item.altTitles, ['Shingeki no Kyojin Season 3', '進撃の巨人 Season 3', 'AoT 3']);
+      expect(item.season, const ExternalSeasonRef(tvdb: 3, tmdb: 2));
     });
 
     test('fetchCast maps MAL characters with joined names and roles', () async {

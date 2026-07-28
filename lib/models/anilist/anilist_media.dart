@@ -11,6 +11,7 @@ class AnilistMedia {
   final String? titleEnglish;
   final String? titleRomaji;
   final String? titleUserPreferred;
+  final String? titleNative;
   final String? format;
   final String? status;
   final int? episodes;
@@ -21,6 +22,7 @@ class AnilistMedia {
   final int? seasonYear;
   final int? startYear;
   final List<String>? genres;
+  final List<String>? synonyms;
   final bool isAdult;
   final String? coverImageExtraLarge;
   final String? coverImageLarge;
@@ -35,6 +37,7 @@ class AnilistMedia {
     this.titleEnglish,
     this.titleRomaji,
     this.titleUserPreferred,
+    this.titleNative,
     this.format,
     this.status,
     this.episodes,
@@ -45,6 +48,7 @@ class AnilistMedia {
     this.seasonYear,
     this.startYear,
     this.genres,
+    this.synonyms,
     this.isAdult = false,
     this.coverImageExtraLarge,
     this.coverImageLarge,
@@ -67,6 +71,7 @@ class AnilistMedia {
       titleEnglish: title is Map ? title['english'] as String? : null,
       titleRomaji: title is Map ? title['romaji'] as String? : null,
       titleUserPreferred: title is Map ? title['userPreferred'] as String? : null,
+      titleNative: title is Map ? title['native'] as String? : null,
       format: json['format'] as String?,
       status: json['status'] as String?,
       episodes: flexibleInt(json['episodes']),
@@ -77,6 +82,7 @@ class AnilistMedia {
       seasonYear: flexibleInt(json['seasonYear']),
       startYear: startDate is Map ? flexibleInt(startDate['year']) : null,
       genres: _stringList(json['genres']),
+      synonyms: _stringList(json['synonyms']),
       isAdult: json['isAdult'] == true,
       coverImageExtraLarge: coverImage is Map ? coverImage['extraLarge'] as String? : null,
       coverImageLarge: coverImage is Map ? coverImage['large'] as String? : null,

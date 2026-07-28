@@ -97,6 +97,7 @@ void main() {
     malId: 35760,
     tvdbId: 267440,
     tvdbSeason: 3,
+    tmdbSeason: 2,
     imdbIds: ['tt2560140'],
   );
   const movie = FribbMappingRow(
@@ -215,6 +216,34 @@ void main() {
       expect(item.overview, 'Humanity\nfights & survives.');
       expect(item.airStatus, CatalogAirStatus.airing);
       expect(item.episodeCount, 25);
+    });
+
+    test('sequel entries preserve alternate-title order and both Fribb season numbers', () async {
+      responder = (request) {
+        final query = _requestBody(request)['query'] as String;
+        expect(query, contains('native'));
+        expect(query, contains('synonyms'));
+        final sequel = _media(id: 35760, idMal: 35760, title: 'Attack on Titan Season 3');
+        sequel['title'] = {
+          'english': 'Attack on Titan Season 3',
+          'userPreferred': 'Preferred Season 3',
+          'romaji': 'Shingeki no Kyojin Season 3',
+          'native': '進撃の巨人 Season 3',
+        };
+        sequel['synonyms'] = ['', 'Attack on Titan Season 3', 'AoT 3'];
+        return _data({
+          'Page': {
+            'pageInfo': {'hasNextPage': false},
+            'media': [sequel],
+          },
+        });
+      };
+
+      final item = (await source.fetchRow(CatalogRowId.trendingAnime)).items.single;
+
+      expect(item.title, 'Attack on Titan Season 3');
+      expect(item.altTitles, ['Preferred Season 3', 'Shingeki no Kyojin Season 3', '進撃の巨人 Season 3', 'AoT 3']);
+      expect(item.season, const ExternalSeasonRef(tvdb: 3, tmdb: 2));
     });
 
     test('seasonal client sends season and year variables', () async {
