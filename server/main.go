@@ -41,7 +41,7 @@ const (
 	pingInterval               = 30 * time.Second
 	maxLogSize                 = 1 * 1024 * 1024 // 1MB
 	logMaxAge                  = 3 * 24 * time.Hour
-	logIDLength                = 25
+	logIDLength                = 5
 	logRateInterval            = 1 * time.Minute
 	logLookupRateBurst         = 10
 	logLookupRateSustained     = 1
