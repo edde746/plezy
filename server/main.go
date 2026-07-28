@@ -1883,16 +1883,13 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 					}
 					continue
 				}
-				authorizedLegacyReplacement :=
-					len(existing.Peers) == 0 &&
-						!existing.closing &&
-						msg.ProtocolVersion == legacyRelayProtocolVersion &&
-						existing.ProtocolVersion == legacyRelayProtocolVersion &&
-						msg.PeerID == existing.HostPeerID &&
-						msg.ReconnectToken != "" &&
-						reconnectVerifierMatches(existing.hostVerifier, hostVerifier)
+				// A room nobody is connected to is an abandoned code, not property.
+				// Whoever asks for it next takes it, so a host that restarted with a
+				// fresh reconnect token can reuse its own code instead of waiting out
+				// the cleanup sweep. An occupied room still belongs to its peers.
+				reclaimable := len(existing.Peers) == 0 && !existing.closing
 				existing.mu.Unlock()
-				if !authorizedLegacyReplacement {
+				if !reclaimable {
 					rejection = &serverMsg{Type: relayTypeError, Code: relayErrorRoomExists, Message: "Room already exists"}
 				}
 			} else if len(s.rooms) >= maxRetainedRooms {

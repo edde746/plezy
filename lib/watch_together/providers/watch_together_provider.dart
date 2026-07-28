@@ -438,8 +438,8 @@ class WatchTogetherProvider with ChangeNotifier {
     }
   }
 
-  /// Enter a room by code — joins any reserved room and creates only when the
-  /// relay reports that no room reservation exists.
+  /// Enter a room by code — joins a room that still has someone in it and
+  /// hosts the code otherwise.
   ///
   /// Returns `true` if the user became the host.
   Future<bool> enterRoom(
@@ -453,13 +453,19 @@ class WatchTogetherProvider with ChangeNotifier {
     final probe = _peerServiceFactory(endpoint: relayEndpoint);
     var shouldBeHost = false;
     try {
+      var probeJoined = false;
       try {
         await probe.joinSession(sessionId);
+        probeJoined = true;
       } on PeerError catch (error) {
         if (error.serverCode != RelayProtocol.roomNotFoundCode) rethrow;
-        shouldBeHost = true;
       }
-      if (!shouldBeHost) {
+      // A room the relay still holds but nobody is connected to is an
+      // abandoned code, not a session: its declared host is gone and the
+      // reservation only survives until the next cleanup sweep. Take the code
+      // over instead of waiting on a host that is never coming back.
+      shouldBeHost = !probeJoined || probe.connectedPeers.isEmpty;
+      if (probeJoined) {
         await probe.releaseSession();
       }
     } finally {

@@ -698,7 +698,7 @@ void main() {
   });
 
   group('WatchTogetherProvider — relay authority', () {
-    test('an empty successful probe joins the reserved room without creating', () async {
+    test('an occupied room is joined as a guest without creating', () async {
       late final _ProviderRelay relay;
       relay = await _ProviderRelay.start((socket, message) {
         if (message['type'] == 'join') {
@@ -708,6 +708,7 @@ void main() {
             'hostPeerId': _providerHostId,
             'reconnectToken': message['reconnectToken'],
             'protocolVersion': 2,
+            'peers': [_providerHostId],
           });
         } else if (message['type'] == 'leave') {
           relay.send(socket, {
@@ -726,7 +727,7 @@ void main() {
         provider.dispose();
       });
 
-      final becameHost = await provider.enterRoom('empty1', relayEndpoint: endpoint, displayName: 'Guest');
+      final becameHost = await provider.enterRoom('busy01', relayEndpoint: endpoint, displayName: 'Guest');
 
       expect(becameHost, isFalse);
       expect(provider.isHost, isFalse);
@@ -744,6 +745,60 @@ void main() {
       expect(joins.last['peerId'], isNot(joins.first['peerId']));
       expect(relay.messages.map((message) => message['type']).take(3), ['join', 'leave', 'join']);
       expect(relay.messages.where((message) => message['type'] == 'create'), isEmpty);
+    });
+
+    test('an abandoned room with no peers is hosted instead of joined', () async {
+      late final _ProviderRelay relay;
+      relay = await _ProviderRelay.start((socket, message) {
+        switch (message['type']) {
+          case 'join':
+            relay.send(socket, {
+              'type': 'joined',
+              'sessionId': message['sessionId'],
+              'hostPeerId': _providerHostId,
+              'reconnectToken': message['reconnectToken'],
+              'protocolVersion': 2,
+            });
+          case 'leave':
+            relay.send(socket, {
+              'type': 'left',
+              'sessionId': message['sessionId'],
+              'peerId': message['peerId'],
+              'protocolVersion': 2,
+            });
+          case 'create':
+            relay.send(socket, {
+              'type': 'created',
+              'sessionId': message['sessionId'],
+              'hostPeerId': message['peerId'],
+              'reconnectToken': message['reconnectToken'],
+              'protocolVersion': 2,
+            });
+          case 'endSession':
+            relay.send(socket, {'type': 'ended', 'sessionId': message['sessionId'], 'protocolVersion': 2});
+        }
+      });
+      addTearDown(relay.close);
+      final endpoint = WatchTogetherRelayEndpoint.resolve(relay.baseUrl);
+      final provider = WatchTogetherProvider();
+      addTearDown(() async {
+        await provider.leaveSession();
+        provider.dispose();
+      });
+
+      final becameHost = await provider.enterRoom('empty1', relayEndpoint: endpoint, displayName: 'Host');
+
+      expect(becameHost, isTrue);
+      expect(provider.isHost, isTrue);
+      // The probe identity is released before the code is taken over, so the
+      // relay sees an empty room when the create lands.
+      expect(relay.messages.map((message) => message['type']).take(3), ['join', 'leave', 'create']);
+      final create = relay.messages.singleWhere((message) => message['type'] == 'create');
+      expect(create['sessionId'], 'EMPTY1');
+      expect(provider.session?.hostPeerId, create['peerId']);
+      final probeJoin = relay.messages.firstWhere((message) => message['type'] == 'join');
+      expect(create['peerId'], isNot(probeJoin['peerId']));
+      expect(provider.session?.hostPeerId, isNot(_providerHostId));
     });
 
     test('a room-not-found probe creates with relay-declared host authority', () async {
