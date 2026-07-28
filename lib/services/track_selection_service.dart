@@ -740,10 +740,16 @@ class TrackSelectionService {
     return sourceId == null ? null : plexMediaInfo?.subtitleTracks.where((track) => track.id == sourceId).firstOrNull;
   }
 
-  bool _hasCompleteDirectPlexCatalogFor(MediaSubtitleTrack? sourceTrack, List<SubtitleTrack> availableTracks) {
+  /// Whether the source catalog can prove it has already delivered every
+  /// ordinary direct-embedded row, so a still-unmatched [sourceTrack] is a
+  /// real mismatch rather than a native track that has not arrived yet.
+  ///
+  /// Backend-neutral: any backend whose source rows describe streams inside
+  /// the container can reach completeness. Rows delivered as sidecars never
+  /// can, because they arrive on their own schedule.
+  bool _hasCompleteDirectSourceCatalogFor(MediaSubtitleTrack? sourceTrack, List<SubtitleTrack> availableTracks) {
     final info = plexMediaInfo;
-    return metadata.backend == MediaBackend.plex &&
-        info != null &&
+    return info != null &&
         sourceTrack != null &&
         _isDirectEmbeddedPlexSubtitle(sourceTrack) &&
         _classifyDirectEmbeddedSubtitleCatalog(info.subtitleTracks, availableTracks) ==
@@ -917,11 +923,18 @@ class TrackSelectionService {
   /// Returns null only while the source catalog can still deliver the requested
   /// subtitle. A complete catalog with no unambiguous match proceeds through
   /// the safe default/off priorities instead of waiting indefinitely.
+  ///
+  /// [waitForPendingSource] disables that wait when the caller has run out of
+  /// patience: every pending branch falls through to the priorities below, so
+  /// the result is a real decision rather than "ask again later". A deadline
+  /// pass must use it, otherwise it re-derives the same null and applies
+  /// nothing at all.
   TrackSelectionResult<SubtitleTrack>? selectSubtitleTrack(
     List<SubtitleTrack> availableTracks,
     SubtitleTrack? preferredSubtitleTrack,
-    AudioTrack? selectedAudioTrack,
-  ) {
+    AudioTrack? selectedAudioTrack, {
+    bool waitForPendingSource = true,
+  }) {
     // Priority 1: Try preferred track from navigation
     if (preferredSubtitleTrack != null) {
       if (preferredSubtitleTrack.id == 'no') {
@@ -932,9 +945,15 @@ class TrackSelectionService {
           return TrackSelectionResult(subtitleToSelect, TrackSelectionPriority.navigation);
         }
       }
-      if (preferredSubtitleTrack.id.startsWith('source:') &&
-          !_hasCompleteDirectPlexCatalogFor(_sourceSubtitleTrack(preferredSubtitleTrack.id), availableTracks)) {
-        return null;
+      if (waitForPendingSource && preferredSubtitleTrack.id.startsWith('source:')) {
+        // Only a row this catalog actually advertises can still show up
+        // natively. An id the catalog does not carry — a stale preference from
+        // another media source — resolves the same way on every retry, so
+        // waiting for it would defer selection forever.
+        final sourceTrack = _sourceSubtitleTrack(preferredSubtitleTrack.id);
+        if (sourceTrack != null && !_hasCompleteDirectSourceCatalogFor(sourceTrack, availableTracks)) {
+          return null;
+        }
       }
     }
 
@@ -954,8 +973,11 @@ class TrackSelectionService {
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
         }
-        if (metadata.backend == MediaBackend.plex &&
-            !_hasCompleteDirectPlexCatalogFor(serverSelectedTrack, availableTracks)) {
+        // A server-selected row the native player has not produced yet must
+        // keep the pass pending on every backend. Falling through here would
+        // commit an unrelated native default and, because readiness is this
+        // same decision, retire the listener before the real track lands.
+        if (waitForPendingSource && !_hasCompleteDirectSourceCatalogFor(serverSelectedTrack, availableTracks)) {
           return null;
         }
       } else if (metadata.backend == MediaBackend.jellyfin) {
@@ -982,11 +1004,11 @@ class TrackSelectionService {
           }
         }
       } else if (metadata.backend == MediaBackend.plex && info.subtitleTracks.isNotEmpty) {
-        if (availableTracks.isEmpty) return null;
+        if (availableTracks.isEmpty && waitForPendingSource) return null;
         // Native tracks exist and none maps to a server-selected stream.
         return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
       }
-      if (availableTracks.isEmpty && info.subtitleTracks.isNotEmpty) return null;
+      if (waitForPendingSource && availableTracks.isEmpty && info.subtitleTracks.isNotEmpty) return null;
     }
 
     // Priority 3: Apply server profile subtitle mode when the backend exposes
@@ -1014,6 +1036,7 @@ class TrackSelectionService {
     Function(SubtitleTrack)? onSubtitleTrackChanged,
     bool Function()? isActive,
     void Function(Future<void> mutation)? onPlayerMutationDispatched,
+    bool waitForPendingSource = true,
   }) async {
     final player = this.player;
     if (player == null) {
@@ -1063,7 +1086,12 @@ class TrackSelectionService {
 
     // Select and apply subtitle track. A null result means source metadata
     // advertises subtitles that the native player has not exposed yet.
-    final subtitleResult = selectSubtitleTrack(realSubtitleTracks, preferredSubtitleTrack, selectedAudioTrack);
+    final subtitleResult = selectSubtitleTrack(
+      realSubtitleTracks,
+      preferredSubtitleTrack,
+      selectedAudioTrack,
+      waitForPendingSource: waitForPendingSource,
+    );
     if (subtitleResult != null) {
       final selectedSubtitleTrack = subtitleResult.track;
       final subtitleName = selectedSubtitleTrack.id == 'no'

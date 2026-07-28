@@ -272,6 +272,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
             mediaInfo,
             includeExternalDelivery: includeExternalSubtitleDelivery,
           );
+    mediaInfo = _withSidecarBackedSubtitleIdentity(mediaInfo, subtitleSidecars);
     final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
     videoUrl ??= isTrack
         ? buildAudioDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId)
@@ -375,31 +376,36 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     if (selectedStreamId == null || !mediaInfo.audioTracks.any((track) => track.id == selectedStreamId)) {
       return mediaInfo;
     }
-    return MediaSourceInfo(
-      videoUrl: mediaInfo.videoUrl,
-      audioTracks: [
-        for (final track in mediaInfo.audioTracks)
-          MediaAudioTrack(
-            id: track.id,
-            index: track.index,
-            codec: track.codec,
-            language: track.language,
-            languageCode: track.languageCode,
-            title: track.title,
-            displayTitle: track.displayTitle,
-            channels: track.channels,
-            selected: track.id == selectedStreamId,
-            external: track.external,
-          ),
+    return mediaInfo.copyWith(
+      audioTracks: [for (final track in mediaInfo.audioTracks) track.withSelected(track.id == selectedStreamId)],
+    );
+  }
+
+  /// Restrict sidecar identity to the subtitle rows this open actually fetched
+  /// as sidecars.
+  ///
+  /// Plezy's device profile declares every subtitle format with
+  /// `Method: External`, so Jellyfin returns `DeliveryMethod: External` and a
+  /// `DeliveryUrl` even for streams embedded in a direct-played container.
+  /// [_buildExternalSubtitles] correctly skips those, and the native player
+  /// reads them out of the container instead — but the leftover delivery URL
+  /// makes the shared track matchers demand a sidecar that will never load,
+  /// which leaves automatic subtitle selection permanently unresolved.
+  ///
+  /// `IsExternal` rows are left alone: a stream that lives in a separate file
+  /// is absent from the container whether or not this open managed to build a
+  /// sidecar URL for it, so it must never fuzzy-match a native track.
+  MediaSourceInfo _withSidecarBackedSubtitleIdentity(
+    MediaSourceInfo mediaInfo,
+    List<PlaybackSubtitleSidecar> sidecars,
+  ) {
+    if (mediaInfo.subtitleTracks.isEmpty) return mediaInfo;
+    final sidecarSourceIds = {for (final sidecar in sidecars) ?sidecar.sourceStreamId};
+    return mediaInfo.copyWith(
+      subtitleTracks: [
+        for (final track in mediaInfo.subtitleTracks)
+          track.isExternalFile || sidecarSourceIds.contains(track.id) ? track : track.withoutSidecarIdentity(),
       ],
-      subtitleTracks: mediaInfo.subtitleTracks,
-      chapters: mediaInfo.chapters,
-      partId: mediaInfo.partId,
-      displayCriteria: mediaInfo.displayCriteria,
-      mediaSourceId: mediaInfo.mediaSourceId,
-      defaultAudioStreamIndex: mediaInfo.defaultAudioStreamIndex,
-      defaultSubtitleStreamIndex: mediaInfo.defaultSubtitleStreamIndex,
-      trickplayByWidth: mediaInfo.trickplayByWidth,
     );
   }
 
@@ -680,7 +686,20 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
                 'AudioCodec': 'flac,mp3,aac,alac,opus,vorbis,wav,wma',
               },
           ],
+          // Embed is listed first so a direct-played container reports its
+          // subtitle streams as `DeliveryMethod: Embed`, matching what the
+          // native player actually reads. External stays declared for every
+          // format because a remux or transcode drops those streams from the
+          // rendition and the server must hand us sidecar URLs instead; the
+          // server picks per play method, so both entries are required.
           'SubtitleProfiles': const <Map<String, Object?>>[
+            {'Format': 'srt', 'Method': 'Embed'},
+            {'Format': 'ass', 'Method': 'Embed'},
+            {'Format': 'ssa', 'Method': 'Embed'},
+            {'Format': 'vtt', 'Method': 'Embed'},
+            {'Format': 'pgssub', 'Method': 'Embed'},
+            {'Format': 'dvdsub', 'Method': 'Embed'},
+            {'Format': 'dvbsub', 'Method': 'Embed'},
             {'Format': 'srt', 'Method': 'External'},
             {'Format': 'ass', 'Method': 'External'},
             {'Format': 'ssa', 'Method': 'External'},

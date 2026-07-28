@@ -67,39 +67,14 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
 
 List<MediaAudioTrack> _withDefaultAudioSelection(List<MediaAudioTrack> tracks, int? defaultStreamIndex) {
   if (defaultStreamIndex == null) return tracks;
-  return [
-    for (final track in tracks)
-      MediaAudioTrack(
-        id: track.id,
-        index: track.index,
-        codec: track.codec,
-        language: track.language,
-        languageCode: track.languageCode,
-        title: track.title,
-        displayTitle: track.displayTitle,
-        channels: track.channels,
-        selected: track.index == defaultStreamIndex,
-        external: track.external,
-      ),
-  ];
+  return [for (final track in tracks) track.withSelected(track.index == defaultStreamIndex)];
 }
 
 List<MediaSubtitleTrack> _withDefaultSubtitleSelection(List<MediaSubtitleTrack> tracks, int? defaultStreamIndex) {
   return [
     for (final track in tracks)
-      MediaSubtitleTrack(
-        id: track.id,
-        index: track.index,
-        codec: track.codec,
-        language: track.language,
-        languageCode: track.languageCode,
-        title: track.title,
-        displayTitle: track.displayTitle,
-        selected: defaultStreamIndex != null ? track.index == defaultStreamIndex : track.selected || track.forced,
-        forced: track.forced,
-        key: track.key,
-        external: track.external,
-        usesExternalDelivery: track.usesExternalDelivery,
+      track.withSelected(
+        defaultStreamIndex != null ? track.index == defaultStreamIndex : track.selected || track.forced,
       ),
   ];
 }

@@ -205,7 +205,10 @@ class TrackManager {
   /// The five-second fallback applies any ready audio/rate settings, but a
   /// source that advertises subtitles keeps listening for their late native
   /// track-list update. The listener has a separate hard deadline and every
-  /// callback is scoped to the current media generation.
+  /// callback is scoped to the current media generation. The deadline pass
+  /// resolves the subtitle from whatever has arrived rather than deferring
+  /// again, so a source the native player never exposes ends as an explicit
+  /// decision instead of silently leaving subtitles untouched.
   ///
   /// Callers may arm this after an `await`, so a manager disposed or
   /// deactivated in the meantime must not subscribe or start a timer: nothing
@@ -259,7 +262,7 @@ class TrackManager {
         if (!_tracksReadyForSelection(player.state.tracks)) {
           appLogger.w('Advertised native subtitle selection did not resolve before the 30-second deadline');
         }
-        unawaited(applyTrackSelection());
+        unawaited(applyTrackSelection(waitForPendingSource: false));
       });
     });
   }
@@ -284,7 +287,11 @@ class TrackManager {
 
   /// Core track selection: delegates to [TrackSelectionService]. Returns
   /// whether every player mutation completed for this still-active owner.
-  Future<bool> applyTrackSelection() async {
+  ///
+  /// Pass `waitForPendingSource: false` from a deadline pass so an advertised
+  /// subtitle that never materialized resolves to the best available choice
+  /// instead of deferring forever.
+  Future<bool> applyTrackSelection({bool waitForPendingSource = true}) async {
     final selectionGeneration = _selectionGeneration;
     bool selectionIsActive() => _isSelectionCurrent(selectionGeneration);
     if (!selectionIsActive()) return false;
@@ -298,7 +305,7 @@ class TrackManager {
       if (activeSelectionDone == null) return false;
       await activeSelectionDone;
       if (!selectionIsActive()) return false;
-      return applyTrackSelection();
+      return applyTrackSelection(waitForPendingSource: waitForPendingSource);
     }
 
     _isApplyingTrackSelection = true;
@@ -328,6 +335,7 @@ class TrackManager {
         onSubtitleTrackChanged: onSubtitleTrackChanged,
         isActive: selectionIsActive,
         onPlayerMutationDispatched: _trackDispatchedPlayerMutation,
+        waitForPendingSource: waitForPendingSource,
       );
     } catch (e) {
       appLogger.w('Failed to apply track selection', error: e);

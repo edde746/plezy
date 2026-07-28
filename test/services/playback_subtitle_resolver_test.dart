@@ -16,6 +16,7 @@ MediaSubtitleTrack _sourceSubtitle(
   bool selected = false,
   bool external = false,
   bool usesExternalDelivery = false,
+  String? key,
 }) {
   return MediaSubtitleTrack(
     id: id,
@@ -25,6 +26,9 @@ MediaSubtitleTrack _sourceSubtitle(
     title: 'Subtitle $id',
     selected: selected,
     forced: forced,
+    // Mirrors JellyfinFileInfoStreamReader: the server ships a delivery URL
+    // with every row it marks external, and _sidecar's URL contains it.
+    key: key ?? (external || usesExternalDelivery ? '/subtitles/$id.srt' : null),
     external: external,
     usesExternalDelivery: usesExternalDelivery,
   );
@@ -130,8 +134,10 @@ void main() {
       );
     });
 
-    test('fuzzy-matches Jellyfin external-delivery rows that remain embedded in direct play', () {
-      final source = _sourceSubtitle(2, language: 'eng', usesExternalDelivery: true);
+    test('fuzzy-matches a Jellyfin external-delivery row once direct play strips its sidecar identity', () {
+      // JellyfinClient.getPlaybackInitialization normalizes rows it did not
+      // fetch as sidecars, which is what makes the embedded stream reachable.
+      final source = _sourceSubtitle(2, language: 'eng', usesExternalDelivery: true).withoutSidecarIdentity();
       const native = SubtitleTrack(id: '7', language: 'eng', codec: 'srt');
 
       expect(
@@ -145,6 +151,23 @@ void main() {
         native,
       );
     });
+
+    test('a row that kept its sidecar identity never fuzzy-matches a native track', () {
+      final source = _sourceSubtitle(2, language: 'eng', usesExternalDelivery: true);
+      const native = SubtitleTrack(id: '7', language: 'eng', codec: 'srt');
+
+      expect(
+        PlaybackSubtitleResolver.nativeTrackForSource(
+          sourceTrack: source,
+          nativeTracks: const [native],
+          allSourceTracks: [source],
+          isResolvedSidecar: false,
+          isContainerSidecar: false,
+        ),
+        isNull,
+      );
+    });
+
     test('matches a requested source among tracks from one container sidecar', () {
       final sources = [_sourceSubtitle(2, language: 'eng'), _sourceSubtitle(3, language: 'eng')];
       const nativeTracks = [

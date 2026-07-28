@@ -41,6 +41,26 @@ class MediaSourceInfo {
     this.trickplayByWidth,
     this.videoAspectRatio,
   });
+
+  /// Field-preserving rebuild. Track lists are the only members that the
+  /// playback pipeline rewrites after construction; every other field must
+  /// survive those rewrites untouched.
+  MediaSourceInfo copyWith({List<MediaAudioTrack>? audioTracks, List<MediaSubtitleTrack>? subtitleTracks}) {
+    return MediaSourceInfo(
+      videoUrl: videoUrl,
+      audioTracks: audioTracks ?? this.audioTracks,
+      subtitleTracks: subtitleTracks ?? this.subtitleTracks,
+      chapters: chapters,
+      partId: partId,
+      displayCriteria: displayCriteria,
+      mediaSourceId: mediaSourceId,
+      defaultAudioStreamIndex: defaultAudioStreamIndex,
+      defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
+      trickplayByWidth: trickplayByWidth,
+      videoAspectRatio: videoAspectRatio,
+    );
+  }
+
   int? getPartId() => partId;
 }
 
@@ -106,6 +126,22 @@ class MediaAudioTrack with _TrackLabelMixin {
   });
 
   bool get isExternal => external;
+
+  /// Rebuild with a different server-selected flag.
+  MediaAudioTrack withSelected(bool selected) {
+    return MediaAudioTrack(
+      id: id,
+      index: index,
+      codec: codec,
+      language: language,
+      languageCode: languageCode,
+      title: title,
+      displayTitle: displayTitle,
+      channels: channels,
+      selected: selected,
+      external: external,
+    );
+  }
 
   TrackLabel get label {
     return TrackLabelBuilder.audioLabel(
@@ -173,6 +209,35 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   bool get isExternalFile => external;
 
   bool get isExternal => external || usesExternalDelivery || (key != null && key!.isNotEmpty);
+
+  /// Rebuild with a different server-selected flag.
+  MediaSubtitleTrack withSelected(bool selected) => _rebuild(selected: selected);
+
+  /// Rebuild without the sidecar identity fields ([key] and
+  /// [usesExternalDelivery]).
+  ///
+  /// Whether a row has sidecar identity is a per-playback fact that only the
+  /// backend service layer can establish; this just applies that decision.
+  /// [external] is left untouched for the caller to interpret.
+  MediaSubtitleTrack withoutSidecarIdentity() =>
+      key == null && !usesExternalDelivery ? this : _rebuild(dropSidecarIdentity: true);
+
+  MediaSubtitleTrack _rebuild({bool? selected, bool dropSidecarIdentity = false}) {
+    return MediaSubtitleTrack(
+      id: id,
+      index: index,
+      codec: codec,
+      language: language,
+      languageCode: languageCode,
+      title: title,
+      displayTitle: displayTitle,
+      selected: selected ?? this.selected,
+      forced: forced,
+      key: dropSidecarIdentity ? null : key,
+      external: external,
+      usesExternalDelivery: dropSidecarIdentity ? false : usesExternalDelivery,
+    );
+  }
 }
 
 class MediaChapter {

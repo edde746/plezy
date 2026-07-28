@@ -701,6 +701,142 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
+    group('Jellyfin direct play (issue #1696)', () {
+      // JellyfinClient strips sidecar identity from rows it did not fetch, so
+      // a direct-played embedded stream reaches selection as a plain row.
+      MediaSourceInfo directPlayInfo() => _info(
+        defaultSubtitleStreamIndex: 3,
+        subs: [
+          _plexSub(
+            3,
+            index: 3,
+            languageCode: 'eng',
+            title: 'English Forced',
+            codec: 'ass',
+            selected: true,
+            forced: true,
+          ),
+          _plexSub(4, index: 4, languageCode: 'eng', title: 'English', codec: 'ass'),
+        ],
+      );
+
+      final nativeTracks = [
+        _sub('1', lang: 'eng', title: 'English Forced', codec: 'ass', isForced: true),
+        _sub('2', lang: 'eng', title: 'English', codec: 'ass'),
+      ];
+
+      test('applies the server default instead of waiting for a sidecar', () {
+        final result = _svc(
+          metadata: _meta(backend: MediaBackend.jellyfin),
+          info: directPlayInfo(),
+        ).selectSubtitleTrack(nativeTracks, null, null);
+
+        expect(result?.priority, TrackSelectionPriority.serverSelected);
+        expect(result?.track.id, '1');
+      });
+
+      test('resolves a source preference carried over from the open', () {
+        final result =
+            _svc(
+              metadata: _meta(backend: MediaBackend.jellyfin),
+              info: directPlayInfo(),
+            ).selectSubtitleTrack(
+              nativeTracks,
+              _sub('source:3', lang: 'eng', title: 'English Forced', codec: 'ass', isForced: true, isDefault: true),
+              null,
+            );
+
+        expect(result?.priority, TrackSelectionPriority.navigation);
+        expect(result?.track.id, '1');
+      });
+
+      test('an unmatched source preference stops waiting once the catalog is complete', () {
+        // Both source rows are present natively, so nothing more can arrive:
+        // the unresolvable preference must fall through, not defer forever.
+        final result = _svc(
+          metadata: _meta(backend: MediaBackend.jellyfin),
+          info: directPlayInfo(),
+        ).selectSubtitleTrack(nativeTracks, _sub('source:9', lang: 'kor', codec: 'srt'), null);
+
+        expect(result, isNotNull);
+        expect(result!.track.id, '1');
+      });
+
+      test('waits for a server-selected sidecar even when another native track has arrived', () {
+        // Transcode: the selected row is delivered as a sidecar and has not
+        // attached yet, while a different sidecar already has. Committing that
+        // unrelated track would also mark the pass ready and retire the
+        // listener, so the real selection could never land.
+        final info = _info(
+          defaultSubtitleStreamIndex: 3,
+          subs: [
+            _plexSub(3, index: 3, languageCode: 'eng', codec: 'srt', key: '/Subtitles/3', selected: true),
+            _plexSub(4, index: 4, languageCode: 'swe', codec: 'srt', key: '/Subtitles/4'),
+          ],
+        );
+        final arrivedTracks = [_sub('sw', lang: 'swe', codec: 'srt', isDefault: true, isExternal: true)];
+        final service = _svc(
+          metadata: _meta(backend: MediaBackend.jellyfin),
+          info: info,
+        );
+
+        expect(service.selectSubtitleTrack(arrivedTracks, null, null), isNull);
+
+        // Once the selected sidecar attaches, its keyed identity resolves.
+        final selectedNative = SubtitleTrack(
+          id: 'en',
+          language: 'eng',
+          codec: 'srt',
+          isExternal: true,
+          uri: 'https://jf.example.com/Subtitles/3?api_key=tok',
+        );
+        final resolved = service.selectSubtitleTrack([...arrivedTracks, selectedNative], null, null);
+        expect(resolved?.priority, TrackSelectionPriority.serverSelected);
+        expect(resolved?.track.id, 'en');
+      });
+    });
+
+    group('deadline resolution', () {
+      test('waitForPendingSource: false resolves a source that never arrived', () {
+        // A sidecar-delivered catalog can never prove completeness, so this
+        // stays pending until the caller gives up on it.
+        final info = _info(
+          subs: [
+            _plexSub(3, index: 3, languageCode: 'eng', codec: 'srt', key: '/Subtitles/3', selected: true),
+            _plexSub(4, index: 4, languageCode: 'swe', codec: 'srt', key: '/Subtitles/4'),
+          ],
+        );
+        final nativeTracks = [_sub('1', lang: 'eng', codec: 'srt', isDefault: true)];
+        final service = _svc(
+          metadata: _meta(backend: MediaBackend.jellyfin),
+          info: info,
+        );
+        final preferred = _sub('source:3', lang: 'eng', codec: 'srt');
+
+        expect(service.selectSubtitleTrack(nativeTracks, preferred, null), isNull);
+
+        final resolved = service.selectSubtitleTrack(nativeTracks, preferred, null, waitForPendingSource: false);
+        expect(resolved?.priority, TrackSelectionPriority.defaultTrack);
+        expect(resolved?.track.id, '1');
+      });
+
+      test('waitForPendingSource: false turns an empty native catalog into an explicit off', () {
+        final info = _info(
+          subs: [_plexSub(3, index: 3, languageCode: 'eng', codec: 'srt', key: '/Subtitles/3')],
+        );
+        final service = _svc(
+          metadata: _meta(backend: MediaBackend.jellyfin),
+          info: info,
+        );
+
+        expect(service.selectSubtitleTrack(const [], null, null), isNull);
+        expect(
+          service.selectSubtitleTrack(const [], null, null, waitForPendingSource: false)?.track.id,
+          SubtitleTrack.off.id,
+        );
+      });
+    });
+
     test('Jellyfin explicit DefaultSubtitleStreamIndex=-1 forces subtitles off', () {
       final tracks = [_sub('1', lang: 'eng', isDefault: true), _sub('2', lang: 'fre')];
       final info = _info(

@@ -990,6 +990,54 @@ void main() {
         mgr.dispose();
       });
     });
+
+    test('thirty-second deadline resolves a subtitle the source never delivered', () async {
+      await SettingsService.getInstance();
+
+      fakeAsync((async) {
+        // A keyed sidecar that never attaches: the catalog can never prove it
+        // is complete, so selection defers until the deadline gives up on it.
+        final mediaInfo = MediaSourceInfo(
+          videoUrl: 'https://example.com/video.mp4',
+          audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
+          subtitleTracks: [
+            MediaSubtitleTrack(
+              id: 10,
+              languageCode: 'eng',
+              codec: 'srt',
+              selected: true,
+              forced: false,
+              key: '/library/streams/10',
+              external: true,
+            ),
+          ],
+          chapters: const [],
+        );
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: '1', language: 'eng')],
+            subtitle: [SubtitleTrack(id: '10', language: 'eng', codec: 'srt', isDefault: true)],
+          ),
+        );
+        final mgr = _make(player: player, mediaInfo: mediaInfo);
+
+        mgr.applyTrackSelectionWhenReady();
+        async.elapse(const Duration(seconds: 5));
+        async.flushMicrotasks();
+
+        // The five-second pass applies ready audio and keeps waiting.
+        expect(player.selectedAudio, hasLength(1));
+        expect(player.selectedSubtitle, isEmpty);
+
+        async.elapse(const Duration(seconds: 25));
+        async.flushMicrotasks();
+
+        // The deadline must decide rather than defer a third time.
+        expect(player.selectedSubtitle.map((track) => track.id), ['10']);
+        expect(async.nonPeriodicTimerCount, 0);
+        mgr.dispose();
+      });
+    });
   });
 
   // ============================================================

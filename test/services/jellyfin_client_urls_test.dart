@@ -725,6 +725,114 @@ void main() {
       expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
     });
 
+    test('getPlaybackInitialization strips sidecar identity from direct-played embedded subtitles', () async {
+      // Jellyfin answers `Method: External` subtitle profiles with an
+      // `External` delivery method plus a DeliveryUrl even for streams that
+      // stay inside a direct-played container. Direct play never fetches those
+      // URLs, so the rows must not keep an identity that makes track matching
+      // wait for a sidecar (issue #1696).
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'Movie',
+              'MediaSources': [
+                {'Id': 'src-1', 'Container': 'mkv', 'MediaStreams': []},
+              ],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            return jsonResponse({
+              'MediaSources': [
+                {
+                  'Id': 'src-1',
+                  'Container': 'mkv',
+                  'SupportsDirectPlay': true,
+                  'DefaultSubtitleStreamIndex': 3,
+                  'MediaStreams': [
+                    {'Index': 1, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'IsDefault': true},
+                    {
+                      'Index': 3,
+                      'Type': 'Subtitle',
+                      'Codec': 'ass',
+                      'Language': 'eng',
+                      'DisplayTitle': 'English Forced - ASS',
+                      'IsDefault': true,
+                      'IsForced': true,
+                      'IsExternal': false,
+                      'DeliveryMethod': 'External',
+                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/0/Stream.ass',
+                    },
+                    {
+                      'Index': 4,
+                      'Type': 'Subtitle',
+                      'Codec': 'ass',
+                      'Language': 'eng',
+                      'DisplayTitle': 'English - ASS',
+                      'IsExternal': false,
+                      'DeliveryMethod': 'External',
+                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/0/Stream.ass',
+                    },
+                    {
+                      'Index': 5,
+                      'Type': 'Subtitle',
+                      'Codec': 'srt',
+                      'Language': 'swe',
+                      'DisplayTitle': 'Swedish - SRT',
+                      'IsExternal': true,
+                      'DeliveryMethod': 'External',
+                      'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/5/0/Stream.srt',
+                    },
+                  ],
+                },
+              ],
+            });
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      expect(result.isTranscoding, isFalse);
+      expect(result.playMethod, 'DirectPlay');
+
+      final tracks = result.mediaInfo!.subtitleTracks;
+      expect(tracks.map((track) => track.id), [3, 4, 5]);
+
+      // Embedded rows lose the delivery hint they cannot honour.
+      for (final track in tracks.where((track) => track.id != 5)) {
+        expect(track.key, isNull, reason: 'embedded row ${track.id} kept a delivery URL');
+        expect(track.usesExternalDelivery, isFalse);
+        expect(track.isExternal, isFalse);
+      }
+
+      // A genuine separate file is absent from the container either way, and
+      // direct play does load it, so it keeps its sidecar identity.
+      final sidecarRow = tracks.singleWhere((track) => track.id == 5);
+      expect(sidecarRow.key, '/Videos/item-1/src-1/Subtitles/5/0/Stream.srt');
+      expect(sidecarRow.isExternalFile, isTrue);
+      expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [5]);
+
+      // The server default survives normalization so selection can honour it.
+      expect(result.mediaInfo!.defaultSubtitleStreamIndex, 3);
+      expect(tracks.singleWhere((track) => track.id == 3).selected, isTrue);
+    });
+
     test('getPlaybackInitialization uses negotiated DirectStreamUrl when transcode URL is absent', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -1578,7 +1686,7 @@ void main() {
       expect(capturedUri.toString(), contains('/Items/folder%2Fitem%20%231%3Fx/PlaybackInfo'));
     });
 
-    test('getPlaybackInfo advertises external subtitle support', () async {
+    test('getPlaybackInfo advertises embedded and external subtitle delivery', () async {
       Uri? capturedUri;
       String? capturedBody;
       final scoped = JellyfinClient.forTesting(
@@ -1617,12 +1725,25 @@ void main() {
       expect(directPlayProfile['AudioCodec'], contains('mp2'));
       expect(profile['TranscodingProfiles'], isNotEmpty);
       expect(profile['CodecProfiles'], isEmpty);
-      final subtitleProfiles = profile['SubtitleProfiles'] as List<dynamic>;
+      const subtitleFormats = ['srt', 'ass', 'ssa', 'vtt', 'pgssub', 'dvdsub', 'dvbsub'];
+      final subtitleProfiles = [
+        for (final entry in profile['SubtitleProfiles'] as List<dynamic>) entry as Map<String, dynamic>,
+      ];
+      // Every format is offered both ways, Embed first: the server picks per
+      // play method, so direct play reports its container streams as embedded
+      // while a remux or transcode still hands back sidecar URLs.
       expect(
-        subtitleProfiles.map((profile) => (profile as Map<String, dynamic>)['Format']),
-        containsAll(['srt', 'ass', 'ssa', 'vtt', 'pgssub', 'dvdsub', 'dvbsub']),
+        subtitleProfiles.where((entry) => entry['Method'] == 'Embed').map((entry) => entry['Format']),
+        subtitleFormats,
       );
-      expect(subtitleProfiles.every((profile) => (profile as Map<String, dynamic>)['Method'] == 'External'), isTrue);
+      expect(
+        subtitleProfiles.where((entry) => entry['Method'] == 'External').map((entry) => entry['Format']),
+        subtitleFormats,
+      );
+      expect(
+        subtitleProfiles.indexWhere((entry) => entry['Method'] == 'Embed'),
+        lessThan(subtitleProfiles.indexWhere((entry) => entry['Method'] == 'External')),
+      );
     });
 
     test('path-encodes reserved ids for browse and watch-state endpoints', () async {
