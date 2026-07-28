@@ -14,6 +14,7 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/catalog_source_logo.dart';
+import 'package:plezy/widgets/search_input_field.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -30,6 +31,12 @@ class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
   final int? itemId;
   final String? providerHubTitle;
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
+
+  /// Search bookkeeping: [searchTitles] overrides the single default hit so a
+  /// suite can assert the empty-result state.
+  final searchQueries = <String>[];
+  List<String>? searchTitles;
+  bool searchFails = false;
 
   @override
   List<CatalogRowId> get supportedRows => const [CatalogRowId.popularMovies];
@@ -53,6 +60,21 @@ class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
           ),
       ],
     );
+  }
+
+  @override
+  Future<List<CatalogItem>> search(String query, {int limit = 30}) async {
+    searchQueries.add(query);
+    if (searchFails) throw Exception('search boom');
+    return [
+      for (final title in searchTitles ?? ['$displayName search: $query'])
+        CatalogItem(
+          source: id,
+          kind: MediaKind.movie,
+          title: title,
+          ids: CatalogItemIds(slug: title),
+        ),
+    ];
   }
 
   @override
@@ -116,7 +138,9 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
   WidgetTester tester, {
   int? traktItemId = 1,
   int? malItemId = 2,
+  bool? tv,
 }) async {
+  if (tv != null) TvDetectionService.debugSetAppleTVOverride(tv);
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(1280, 720);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -153,6 +177,9 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
   await tester.pumpAndSettle();
   return sources;
 }
+
+_FakeCatalogSource _fakeSource(_FakeCatalogSourcesProvider sources, CatalogSourceId id) =>
+    sources.sources.firstWhere((source) => source.id == id) as _FakeCatalogSource;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -275,5 +302,91 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
+
+  group('inline search', () {
+    testWidgets('results replace the shelves while the query is live and the shelves return on clear', (tester) async {
+      final sources = await _pumpExplore(tester, tv: false);
+      final trakt = _fakeSource(sources, CatalogSourceId.trakt);
+
+      expect(find.text(t.explore.searchHint(source: 'Trakt')), findsOneWidget);
+      // The pushed search route is TV-only now; the inline field replaces it.
+      expect(find.byTooltip(t.common.search), findsNothing);
+      expect(find.text(t.explore.rows.popularMovies), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), 'incep');
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+
+      expect(trakt.searchQueries, ['incep']);
+      expect(find.text(t.explore.rows.popularMovies), findsNothing);
+      expect(find.text('Trakt search: incep'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField), '');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Trakt search: incep'), findsNothing);
+      expect(find.text(t.explore.rows.popularMovies), findsOneWidget);
+    });
+
+    testWidgets('a query with no hits keeps the shelves hidden behind the empty state', (tester) async {
+      final sources = await _pumpExplore(tester, tv: false);
+      _fakeSource(sources, CatalogSourceId.trakt).searchTitles = const [];
+
+      await tester.enterText(find.byType(TextField), 'zzz');
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.explore.searchEmpty(query: 'zzz')), findsOneWidget);
+      expect(find.text(t.explore.rows.popularMovies), findsNothing);
+    });
+
+    testWidgets('a failed search shows the failure state and recovers on the next query', (tester) async {
+      final sources = await _pumpExplore(tester, tv: false);
+      final trakt = _fakeSource(sources, CatalogSourceId.trakt)..searchFails = true;
+
+      await tester.enterText(find.byType(TextField), 'abc');
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(find.text(t.explore.searchFailed), findsOneWidget);
+
+      trakt.searchFails = false;
+      await tester.enterText(find.byType(TextField), 'abcd');
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.explore.searchFailed), findsNothing);
+      expect(find.text('Trakt search: abcd'), findsOneWidget);
+    });
+
+    testWidgets('switching source re-runs the live query against the new source', (tester) async {
+      final sources = await _pumpExplore(tester, tv: false);
+
+      await tester.enterText(find.byType(TextField), 'abc');
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(find.text('Trakt search: abc'), findsOneWidget);
+
+      await sources.setActiveSource(CatalogSourceId.mal);
+      await tester.pumpAndSettle();
+
+      expect(_fakeSource(sources, CatalogSourceId.mal).searchQueries, ['abc']);
+      expect(find.text('MyAnimeList search: abc'), findsOneWidget);
+      expect(find.text('Trakt search: abc'), findsNothing);
+    });
+
+    testWidgets('the field sits between the app bar and the first shelf at phone width', (tester) async {
+      await _pumpExplore(tester, tv: false);
+      tester.view.physicalSize = const Size(390, 844);
+      await tester.pumpAndSettle();
+
+      final title = tester.getRect(find.text('Trakt'));
+      final field = tester.getRect(find.byType(SearchInputField));
+      final shelf = tester.getRect(find.text(t.explore.rows.popularMovies));
+
+      expect(field.top, greaterThan(title.bottom));
+      expect(field.bottom, lessThan(shelf.top));
+      expect(field.width, lessThanOrEqualTo(390));
+    });
   });
 }

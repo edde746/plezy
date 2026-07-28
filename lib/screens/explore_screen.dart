@@ -11,6 +11,7 @@ import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../mixins/debounced_media_search.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../models/catalog/catalog_item.dart';
@@ -26,7 +27,10 @@ import '../widgets/app_menu.dart';
 import '../widgets/catalog_source_logo.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/focusable_media_card.dart';
 import '../widgets/focusable_popup_menu_button.dart';
+import '../widgets/loading_indicator_box.dart';
+import '../widgets/search_input_field.dart';
 import '../widgets/settings_builder.dart';
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/tv_browse_rail.dart';
@@ -37,6 +41,12 @@ import 'libraries/state_messages.dart';
 /// The Explore tab: watchlist + discover rows from the active external
 /// catalog source (Trakt). Only mounted when a source is connected (the tab
 /// is hidden otherwise, see [NavigationTab.getVisibleTabs]).
+///
+/// Touch/pointer builds carry an inline search field under the app bar whose
+/// results replace the rows while the query is non-empty. TV keeps the
+/// toolbar's search action instead: a text field cannot share the spotlight
+/// scaffold with the bottom-pinned browse rail and the on-screen keyboard,
+/// so that path pushes [CatalogSearchScreen].
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
 
@@ -45,8 +55,10 @@ class ExploreScreen extends StatefulWidget {
 }
 
 class ExploreScreenState extends State<ExploreScreen>
-    with Refreshable, FullRefreshable, TabVisibilityAware, FocusableTab {
+    with Refreshable, FullRefreshable, TabVisibilityAware, FocusableTab, DebouncedMediaSearch {
   late ExploreProvider _explore;
+  late CatalogSourcesProvider _sources;
+  CatalogSourceId? _activeSourceId;
 
   /// Per-row focus keys, keyed by hub id so focus memory survives reloads.
   final Map<String, GlobalKey<HubSectionState>> _hubKeysById = {};
@@ -59,19 +71,66 @@ class ExploreScreenState extends State<ExploreScreen>
   final TvSpotlightController _spotlight = TvSpotlightController();
 
   @override
+  String get searchDebugLabel => 'ExploreSearch';
+
+  /// Results take over the page the moment the field holds text: the mixin's
+  /// [hasSearched] only flips once a query actually runs, so keying the swap
+  /// off that would flash the rows back for the length of every debounce.
+  bool get searchIsActive => searchController.text.trim().isNotEmpty;
+
+  @override
+  Future<List<MediaItem>> performSearchQuery(String query) async {
+    final source = _explore.activeSource;
+    if (source == null) return const [];
+    final items = await source.search(query);
+    return [for (final item in items) item.toMediaItem()];
+  }
+
+  @override
   void initState() {
     super.initState();
     _explore = context.read<ExploreProvider>();
     _explore.ensureFresh();
+    _sources = context.read<CatalogSourcesProvider>();
+    _activeSourceId = _sources.activeSource?.id;
+    _sources.addListener(_onActiveSourceChanged);
+  }
+
+  /// A live query belongs to the source it was typed against, so a source
+  /// switch re-runs it instead of leaving the previous source's results
+  /// sitting under the new source's name.
+  void _onActiveSourceChanged() {
+    final id = _sources.activeSource?.id;
+    if (id == _activeSourceId) return;
+    _activeSourceId = id;
+    if (!mounted) return;
+    final query = searchController.text.trim();
+    if (query.isEmpty) return;
+    unawaited(runSearch(query));
+  }
+
+  /// Pull-to-refresh and the toolbar refresh action: re-run the query that is
+  /// actually on screen, not the hidden rows behind it.
+  Future<void> _handleRefresh() {
+    final query = searchController.text.trim();
+    if (query.isNotEmpty) return runSearch(query);
+    return _explore.load();
   }
 
   @override
   void refresh() {
+    final query = searchController.text.trim();
+    if (query.isNotEmpty) {
+      unawaited(runSearch(query));
+      return;
+    }
     _explore.ensureFresh();
   }
 
   @override
   void fullRefresh() {
+    // Clearing routes through the text listener, which resets the search state.
+    searchController.clear();
     unawaited(_explore.load());
   }
 
@@ -85,6 +144,7 @@ class ExploreScreenState extends State<ExploreScreen>
 
   @override
   void dispose() {
+    _sources.removeListener(_onActiveSourceChanged);
     _spotlight.dispose();
     super.dispose();
   }
@@ -96,6 +156,16 @@ class ExploreScreenState extends State<ExploreScreen>
         _tvBrowseRailKey.currentState?.requestFocus();
       } else {
         _actionBarKey.currentState?.requestFocusOnFirst();
+      }
+      return;
+    }
+    if (searchIsActive) {
+      // Never re-open the soft keyboard on a tab switch when results are
+      // already there to land on.
+      if (searchResults.isNotEmpty) {
+        firstResultFocusNode.requestFocus();
+      } else {
+        searchFocusNode.requestFocus();
       }
       return;
     }
@@ -118,7 +188,7 @@ class ExploreScreenState extends State<ExploreScreen>
       hubCount: keys.length,
       hubIndex: hubIndex,
       isUp: isUp,
-      onTopBoundary: _actionBarKey.currentState?.requestFocusOnFirst,
+      onTopBoundary: searchFocusNode.requestFocus,
       requestFocus: (targetIndex) {
         keys[targetIndex].currentState?.requestFocusFromMemory();
       },
@@ -228,7 +298,7 @@ class ExploreScreenState extends State<ExploreScreen>
     // SliverPersistentHeader variant (a different element type), which
     // reparents the GlobalKey'd action bar into a header that builds its
     // children during performLayout — and if a tooltip overlay is showing at
-    // that moment (hover on refresh/search), its OverlayPortal re-activation
+    // that moment (hover on refresh), its OverlayPortal re-activation
     // mutates the render tree mid-layout and asserts. Floating behaves
     // identically to pinned over the non-scrolling state widgets, so nothing
     // is lost by unifying.
@@ -244,83 +314,130 @@ class ExploreScreenState extends State<ExploreScreen>
       actions: [
         FocusableActionBar(
           key: _actionBarKey,
-          onNavigateDown: () => _orderedHubKeys.firstOrNull?.currentState?.requestFocusFromMemory(),
+          onNavigateDown: searchFocusNode.requestFocus,
           actions: [
-            if (sources.activeSource case final CatalogSource source)
-              FocusableAction(
-                icon: Symbols.search_rounded,
-                tooltip: t.common.search,
-                onPressed: () => Navigator.of(
-                  context,
-                ).push(MaterialPageRoute<void>(builder: (_) => CatalogSearchScreen(source: source))),
-              ),
             FocusableAction(
               icon: Symbols.refresh_rounded,
               tooltip: t.common.refresh,
-              onPressed: () => unawaited(_explore.load()),
+              onPressed: () => unawaited(_handleRefresh()),
             ),
           ],
         ),
       ],
     );
 
-    Widget buildSimpleScroll({required Widget body}) {
-      return CustomScrollView(
-        // Android clamping physics won't start a drag on non-filling
-        // content, killing pull-to-refresh in the loading/empty/error
-        // states without this.
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          appBar(),
-          SliverFillRemaining(child: body),
-        ],
-      );
-    }
+    // The field sits in every state, so the sliver list keeps one shape and
+    // search stays reachable while the rows are loading, empty, or failed.
+    Widget searchField() => SliverToBoxAdapter(
+      child: SearchInputField(
+        controller: searchController,
+        focusNode: searchFocusNode,
+        debugLabel: searchDebugLabel,
+        hintText: t.explore.searchHint(source: sources.activeSource?.displayName ?? ''),
+        onNavigateLeft: _navigateToSidebar,
+        onNavigateDown: _searchFieldDownTarget(),
+        onEditingComplete: handleSearchSubmit,
+      ),
+    );
+
+    Widget scroll(List<Widget> body) => CustomScrollView(
+      // Android clamping physics won't start a drag on non-filling
+      // content, killing pull-to-refresh in the loading/empty/error
+      // states without this.
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [appBar(), searchField(), ...body],
+    );
 
     Widget content;
-    if (rowHubs.isEmpty && explore.isLoading) {
-      content = buildSimpleScroll(body: const Center(child: CircularProgressIndicator()));
+    if (searchIsActive) {
+      content = scroll([_buildSearchResults()]);
+    } else if (rowHubs.isEmpty && explore.isLoading) {
+      content = scroll(const [SliverFillRemaining(child: Center(child: CircularProgressIndicator()))]);
     } else if (rowHubs.isEmpty && explore.state == ExploreLoadState.error) {
-      content = buildSimpleScroll(
-        body: ErrorStateWidget(
-          message: explore.errorMessage ?? t.explore.emptyTitle,
-          icon: Symbols.error_outline_rounded,
-          onRetry: () => unawaited(_explore.load()),
+      content = scroll([
+        SliverFillRemaining(
+          child: ErrorStateWidget(
+            message: explore.errorMessage ?? t.explore.emptyTitle,
+            icon: Symbols.error_outline_rounded,
+            onRetry: () => unawaited(_explore.load()),
+          ),
         ),
-      );
+      ]);
     } else if (rowHubs.isEmpty) {
-      content = buildSimpleScroll(
-        body: EmptyStateWidget(
-          message: t.explore.emptyMessage(source: explore.activeSource?.displayName ?? ''),
-          icon: Symbols.explore_rounded,
+      content = scroll([
+        SliverFillRemaining(
+          child: EmptyStateWidget(
+            message: t.explore.emptyMessage(source: explore.activeSource?.displayName ?? ''),
+            icon: Symbols.explore_rounded,
+          ),
         ),
-      );
+      ]);
     } else {
-      content = CustomScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        slivers: [
-          appBar(),
-          for (var i = 0; i < rowHubs.length; i++)
-            SliverToBoxAdapter(
-              child: HubSection(
-                key: _orderedHubKeys[i],
-                hub: rowHubs[i].hub,
-                focusMemory: _hubFocusMemory,
-                icon: _rowIcon(rowHubs[i].row),
-                loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,
-                onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
-                onNavigateUp: i == 0 ? () => _actionBarKey.currentState?.requestFocusOnFirst() : null,
-                onNavigateToSidebar: _navigateToSidebar,
-              ),
+      content = scroll([
+        for (var i = 0; i < rowHubs.length; i++)
+          SliverToBoxAdapter(
+            child: HubSection(
+              key: _orderedHubKeys[i],
+              hub: rowHubs[i].hub,
+              focusMemory: _hubFocusMemory,
+              icon: _rowIcon(rowHubs[i].row),
+              loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,
+              onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
+              onNavigateUp: i == 0 ? searchFocusNode.requestFocus : null,
+              onNavigateToSidebar: _navigateToSidebar,
             ),
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
-        ],
-      );
+          ),
+        const SliverToBoxAdapter(child: SizedBox(height: 16)),
+      ]);
     }
 
     return Scaffold(
-      body: RefreshIndicator(onRefresh: _explore.load, child: content),
+      body: RefreshIndicator(onRefresh: _handleRefresh, child: content),
     );
+  }
+
+  /// DOWN out of the field: the first result when there is one to land on,
+  /// otherwise the first shelf behind the (empty) query.
+  VoidCallback? _searchFieldDownTarget() {
+    if (searchIsActive) {
+      return searchResults.isNotEmpty && !isSearching ? firstResultFocusNode.requestFocus : null;
+    }
+    final first = _orderedHubKeys.firstOrNull;
+    if (first == null) return null;
+    return () => first.currentState?.requestFocusFromMemory();
+  }
+
+  Widget _buildSearchResults() {
+    if (isSearching) return LoadingIndicatorBox.sliver;
+    if (lastSearchFailed) {
+      return SliverFillRemaining(
+        child: StateMessageWidget(message: t.explore.searchFailed, icon: Symbols.error_rounded, iconSize: 80),
+      );
+    }
+    // The debounce window right after the field goes from empty to typed: no
+    // query has run yet, so there is nothing truthful to show.
+    if (!hasSearched) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (searchResults.isEmpty) {
+      return SliverFillRemaining(
+        child: StateMessageWidget(
+          message: t.explore.searchEmpty(query: lastSearchedQuery),
+          icon: Symbols.search_off_rounded,
+          iconSize: 80,
+        ),
+      );
+    }
+    return buildResultsSliver((context, index) {
+      final item = searchResults[index];
+      return FocusableMediaCard(
+        key: Key(item.globalKey),
+        item: item,
+        forceListMode: true,
+        disableScale: true,
+        focusNode: index == 0 ? firstResultFocusNode : null,
+        onNavigateLeft: _navigateToSidebar,
+        onNavigateUp: index == 0 ? searchFocusNode.requestFocus : null,
+      );
+    });
   }
 
   ExploreRowHub? _rowForHub(MediaHub hub) {

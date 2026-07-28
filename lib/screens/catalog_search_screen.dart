@@ -14,9 +14,10 @@ import '../widgets/search_input_field.dart';
 import 'libraries/state_messages.dart';
 
 /// Free-text search of one catalog source (the Explore tab's active source),
-/// pushed from the Explore app bar. Results are catalog items rendered
-/// through the synthesized-MediaItem card stack, so taps land on the catalog
-/// detail screen with library matching, exactly like the Explore rows.
+/// pushed from the Explore TV toolbar — touch/pointer builds search inline on
+/// the Explore page instead. Results are catalog items rendered through the
+/// synthesized-MediaItem card stack, so taps land on the catalog detail
+/// screen with library matching, exactly like the Explore rows.
 class CatalogSearchScreen extends StatefulWidget {
   final CatalogSource source;
 
