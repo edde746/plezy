@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_version.dart';
 import '../media/media_version_preference.dart';
 import '../mpv/mpv.dart';
@@ -22,6 +23,7 @@ import '../services/settings_service.dart';
 import 'app_logger.dart';
 import 'global_key_utils.dart';
 import 'platform_detector.dart';
+import 'preroll_service.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
 
@@ -243,7 +245,15 @@ Future<bool?> navigateToVideoPlayer(
   bool usePushReplacement = false,
   bool isOffline = false,
   bool resolveWatchState = true,
+  bool skipPreroll = false,
 }) async {
+  if (!skipPreroll && !isOffline && !usePushReplacement && metadata.kind == MediaKind.movie) {
+    final preroll = await pickRandomPreroll(context);
+    if (preroll != null && context.mounted) {
+      await navigateToVideoPlayer(context, metadata: preroll, resolveWatchState: false, skipPreroll: true);
+      if (!context.mounted) return null;
+    }
+  }
   if (resolveWatchState) {
     metadata = context.readFreshWatchState(metadata);
   }
