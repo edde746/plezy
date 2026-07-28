@@ -2893,28 +2893,26 @@ void main() {
       expect(items, hasLength(60));
     });
 
-    test('fetchContinueWatching abandons last-played lookups against a stalled endpoint', () {
+    /// Next Up rows for [seriesCount] distinct series, nothing resumable.
+    Map<String, Object> stalledShelfRoutes(int seriesCount) => {
+      'Items': [
+        for (var i = 0; i < seriesCount; i++)
+          {'Id': 'next-$i', 'Type': 'Episode', 'Name': 'Next $i', 'SeriesId': 'show-$i'},
+      ],
+    };
+
+    test('fetchContinueWatching abandons last-played lookups when connects go silent', () {
       fakeAsync((async) {
         final requests = <Uri>[];
-        final stalled = Completer<http.Response>();
+        final silent = Completer<http.Response>();
         final scoped = JellyfinClient.forTesting(
           connection: _conn(),
           httpClient: MockClient((req) {
             requests.add(req.url);
             if (req.url.path == '/UserItems/Resume') return Future.value(jsonResponse({'Items': []}));
-            if (req.url.path == '/Shows/NextUp') {
-              return Future.value(
-                jsonResponse({
-                  'Items': [
-                    for (var i = 0; i < 24; i++)
-                      {'Id': 'next-$i', 'Type': 'Episode', 'Name': 'Next $i', 'SeriesId': 'show-$i'},
-                  ],
-                }),
-              );
-            }
-            // Never answers: the endpoint accepted the request and went quiet,
-            // which is exactly how the #1699 server behaved.
-            if (req.url.path == '/Items') return stalled.future;
+            if (req.url.path == '/Shows/NextUp') return Future.value(jsonResponse(stalledShelfRoutes(24)));
+            // Accepted, then never answered — how the #1699 server behaved.
+            if (req.url.path == '/Items') return silent.future;
             return Future.value(http.Response('not found', 404));
           }),
         );
@@ -2923,27 +2921,82 @@ void main() {
         unawaited(scoped.fetchContinueWatching(count: null).then((result) => items = result));
         async.flushMicrotasks();
 
-        // Only one batch is ever open at a time, and it is exactly
-        // _seriesLastPlayedConcurrency wide — a wider burst is the failure mode
-        // this whole change exists to remove.
+        // Exactly one batch open, exactly _seriesLastPlayedConcurrency wide — a
+        // wider burst is the failure mode this change exists to remove.
         expect(
           requests.where((uri) => uri.path == '/Items').length,
           4,
           reason: 'the first batch must be four lookups, not the whole shelf',
         );
 
-        // Six batches at the shared 10s default would serialise into a minute of
-        // blocking. The documented bound is the shared budget plus the one
-        // in-flight request timeout.
-        async.elapse(const Duration(seconds: 7));
+        // Six batches on the shared 10s/120s defaults would block for minutes.
+        async.elapse(const Duration(milliseconds: 3900));
         async.flushMicrotasks();
+        expect(items, isNull, reason: 'a second batch runs after the first request timeout');
+        expect(requests.where((uri) => uri.path == '/Items').length, 8);
 
-        expect(items, isNotNull, reason: 'the enrichment must give up, not hang on a silent endpoint');
+        async.elapse(const Duration(milliseconds: 200));
+        async.flushMicrotasks();
+        expect(items, isNotNull, reason: 'the shared budget must end the pass, not the per-request timeout');
         expect(items!.map((item) => item.id), [for (var i = 0; i < 24; i++) 'next-$i']);
         expect(
           requests.where((uri) => uri.path == '/Items').length,
           8,
-          reason: 'the 4s budget expires during the second batch, so the last four series go unstamped',
+          reason: 'no batch may start after the budget expires',
+        );
+        scoped.close();
+      });
+    });
+
+    test('fetchContinueWatching honours the last-played budget when a response body stalls', () {
+      fakeAsync((async) {
+        final requests = <Uri>[];
+        final scoped = JellyfinClient.forTesting(
+          connection: _conn(),
+          httpClient: MockClient.streaming((req, _) async {
+            requests.add(req.url);
+            if (req.url.path == '/UserItems/Resume') {
+              return http.StreamedResponse(
+                http.ByteStream.fromBytes(utf8.encode(jsonEncode({'Items': []}))),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+            if (req.url.path == '/Shows/NextUp') {
+              return http.StreamedResponse(
+                http.ByteStream.fromBytes(utf8.encode(jsonEncode(stalledShelfRoutes(24)))),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+            // Headers land just inside the per-request budget, then the body
+            // never arrives. `MediaServerHttpClient` times connect and receive
+            // separately, so this lookup would otherwise run for 2.5s + 3s and
+            // two batches would outlast the enrichment's whole ceiling.
+            await Future<void>.delayed(const Duration(milliseconds: 2500));
+            return http.StreamedResponse(
+              StreamController<List<int>>().stream,
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }),
+        );
+
+        List<MediaItem>? items;
+        unawaited(scoped.fetchContinueWatching(count: null).then((result) => items = result));
+        async.elapse(const Duration(milliseconds: 3900));
+        async.flushMicrotasks();
+        expect(items, isNull);
+
+        async.elapse(const Duration(milliseconds: 200));
+        async.flushMicrotasks();
+
+        expect(items, isNotNull, reason: 'a stalled body must not outlast the shared budget');
+        expect(items!.map((item) => item.id), [for (var i = 0; i < 24; i++) 'next-$i']);
+        expect(
+          requests.where((uri) => uri.path == '/Items').length,
+          4,
+          reason: 'the first batch is still mid-receive when the budget fires',
         );
         scoped.close();
       });

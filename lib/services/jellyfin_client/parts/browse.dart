@@ -134,17 +134,20 @@ const _seriesLastPlayedConcurrency = 4;
 /// Next Up half is limited only by how many series the user has started.
 const _seriesLastPlayedLookupLimit = 24;
 
-/// Per-lookup budget for [_fetchSeriesLastPlayed]. A `ParentId`-scoped
-/// `Limit=1` row answered in tens of milliseconds even on the pathological
-/// 12.0-rc3 sort, so anything near this means the endpoint is in trouble and
-/// the shelf is better off unstamped than waiting on the shared default.
+/// Per-phase budget for one [_fetchSeriesLastPlayed] lookup.
+/// [MediaServerHttpClient] applies a per-call `timeout` to connect and receive
+/// independently, so this bounds a single lookup at twice this value — the
+/// shared [_seriesLastPlayedBudget] is what bounds the pass. A `ParentId`-scoped
+/// `Limit=1` row answered in well under half a second even on the pathological
+/// 12.0-rc3 sort, so reaching this means the endpoint is in trouble and the
+/// shelf is better off unstamped than waiting on the 10s/120s shared defaults.
 const _seriesLastPlayedRequestTimeout = Duration(seconds: 3);
 
-/// Wall-clock ceiling on [_attachSeriesLastPlayed]'s sequential batches, checked
-/// before each one. Bounds the whole pass at this plus one
-/// [_seriesLastPlayedRequestTimeout] — still under the single default-budget
-/// request this enrichment replaced, so a stalled endpoint cannot make the
-/// scoped form slower than the unscoped one it fixes.
+/// Hard ceiling on [_attachSeriesLastPlayed]. On expiry it aborts the in-flight
+/// batch, so it bounds the whole pass regardless of how many batches remain or
+/// which request phase a lookup is stuck in. Two orders of magnitude under the
+/// 10s-connect/120s-receive defaults the single unscoped scan ran with, so a
+/// stalled endpoint cannot make the scoped form slower than the query it fixes.
 const _seriesLastPlayedBudget = Duration(seconds: 4);
 
 const _childrenPageSize = 500;
@@ -1700,11 +1703,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// `addedAt` in the sort — the same degradation the previous 200-row lookback
   /// window applied to a series whose last play fell outside it.
   ///
-  /// The batches are sequential, so they also share a wall-clock budget: a stalled
-  /// endpoint must not let a best-effort enrichment serialise
-  /// [_seriesLastPlayedRequestTimeout] six times over. Checking
-  /// [_seriesLastPlayedBudget] before each batch caps the whole pass at budget +
-  /// one request timeout, below the single default-budget request it replaced.
+  /// The batches are sequential and [MediaServerHttpClient] applies a per-call
+  /// `timeout` to the connect and receive phases *separately*, so a per-request
+  /// budget alone would still let a stalled endpoint hold this best-effort
+  /// enrichment for batches × 2 × [_seriesLastPlayedRequestTimeout]. The whole
+  /// pass therefore shares one [_seriesLastPlayedBudget] deadline that aborts
+  /// in-flight lookups rather than merely gating the next batch: whatever phase a
+  /// lookup is stuck in — silent connect, delayed headers, stalled body — the
+  /// pass is done within the budget.
   Future<List<MediaItem>> _attachSeriesLastPlayed(List<MediaItem> nextUp) async {
     // Set literal over `nextUp` order: insertion-ordered, so `take` below keeps
     // the most recently played series.
@@ -1717,20 +1723,30 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
 
     final seriesIds = pendingSeriesIds.take(_seriesLastPlayedLookupLimit).toList(growable: false);
     final lastPlayedBySeries = <String, int>{};
-    // A Timer, not a Stopwatch: the batches are the only thing that has to stop,
-    // and a timer is the deadline primitive the test harness can virtualise.
-    var withinBudget = true;
-    final deadline = Timer(_seriesLastPlayedBudget, () => withinBudget = false);
+    // A timer, not a Stopwatch: fake_async virtualises timers, and the deadline
+    // has to fire *into* the in-flight batch, not just before the next one.
+    final budgetAbort = AbortController();
+    final deadline = Timer(_seriesLastPlayedBudget, budgetAbort.abort);
     try {
       for (var start = 0; start < seriesIds.length; start += _seriesLastPlayedConcurrency) {
-        if (!withinBudget) break;
+        if (budgetAbort.isAborted) break;
         final batch = seriesIds.skip(start).take(_seriesLastPlayedConcurrency);
-        for (final (seriesId, playedAt) in await Future.wait(batch.map(_fetchSeriesLastPlayed))) {
+        final lookups = Future.wait(batch.map((id) => _fetchSeriesLastPlayed(id, budgetAbort)));
+        // Aborting only asks the transport to stop, and not every client honours
+        // `abortTrigger`. Racing the same deadline here makes the ceiling ours
+        // rather than the transport's.
+        final played = await Future.any([lookups, budgetAbort.trigger.then((_) => const <(String, int?)>[])]);
+        // No-op once `lookups` has won; suppresses the loser's late completion.
+        lookups.ignore();
+        for (final (seriesId, playedAt) in played) {
           if (playedAt != null) lastPlayedBySeries[seriesId] = playedAt;
         }
       }
     } finally {
       deadline.cancel();
+      // Releases any lookup still waiting on the trigger and tells the transport
+      // to drop the socket instead of finishing a response nobody reads.
+      budgetAbort.abort();
     }
     if (lastPlayedBySeries.isEmpty) return nextUp;
 
@@ -1754,26 +1770,36 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// Null dates sort last under `Descending`, so the single row returned is the
   /// series' newest play whenever it has one. Endpoint failover stays off: a slow
   /// enrichment row must not move the whole client off a working endpoint.
-  Future<(String, int?)> _fetchSeriesLastPlayed(String seriesId) async {
-    final raw = await _safeFetchItemsArray(
-      '/Items',
-      {
-        'userId': connection.userId,
-        'ParentId': seriesId,
-        'IncludeItemTypes': 'Episode',
-        'Recursive': 'true',
-        'SortBy': 'DatePlayed',
-        'SortOrder': 'Descending',
-        // Only `UserData.LastPlayedDate` is read off the row.
-        'Fields': 'UserData',
-        'Limit': '1',
-        'EnableImages': 'false',
-        'EnableTotalRecordCount': 'false',
-      },
-      timeout: _seriesLastPlayedRequestTimeout,
-      allowEndpointFailover: false,
-    );
-    return (seriesId, _mapItems(raw).firstOrNull?.lastViewedAt);
+  ///
+  /// [budgetAbort] fires when the shared deadline expires. `_safeFetchItemsArray`
+  /// rethrows cancellation so paged callers can tell "disrupted" from "empty";
+  /// here disrupted *is* undated, which is the intended degradation, so it is
+  /// swallowed with every other failure instead of sinking the shelf.
+  Future<(String, int?)> _fetchSeriesLastPlayed(String seriesId, AbortController budgetAbort) async {
+    try {
+      final raw = await _safeFetchItemsArray(
+        '/Items',
+        {
+          'userId': connection.userId,
+          'ParentId': seriesId,
+          'IncludeItemTypes': 'Episode',
+          'Recursive': 'true',
+          'SortBy': 'DatePlayed',
+          'SortOrder': 'Descending',
+          // Only `UserData.LastPlayedDate` is read off the row.
+          'Fields': 'UserData',
+          'Limit': '1',
+          'EnableImages': 'false',
+          'EnableTotalRecordCount': 'false',
+        },
+        abort: budgetAbort,
+        timeout: _seriesLastPlayedRequestTimeout,
+        allowEndpointFailover: false,
+      );
+      return (seriesId, _mapItems(raw).firstOrNull?.lastViewedAt);
+    } on MediaServerHttpException {
+      return (seriesId, null);
+    }
   }
 
   /// Merge Jellyfin's two continue-watching sources into one recency-ordered
