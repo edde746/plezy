@@ -91,10 +91,11 @@ class MalClient implements DisposableTrackerClient {
       'nsfw,source,end_date';
 
   /// The existing detail request widened by +22.3% in the measured sample
-  /// (18,624 -> 22,772 bytes), still with no additional round trip.
+  /// (18,624 -> 22,772 bytes) — less since the unused `pictures` gallery came
+  /// back out — still with no additional round trip.
   static const String detailFields =
       '$catalogFields,recommendations%7B$catalogFields%7D,'
-      'related_anime%7B$catalogFields%7D,statistics,pictures,background';
+      'related_anime%7B$catalogFields%7D,statistics,background';
 
   static const String _characterFields = 'role,main_picture,first_name,last_name';
 

@@ -5445,8 +5445,8 @@ class Translations$explore$detail$en {
 	/// en: 'Recommended by ${percent} of viewers'
 	String recommendedByPercent({required Object percent}) => 'Recommended by ${percent} of viewers';
 
-	/// en: 'Gallery'
-	String get gallery => 'Gallery';
+	/// en: 'Related titles'
+	String get relatedTitles => 'Related titles';
 
 	/// en: 'Background'
 	String get background => 'Background';
@@ -6966,7 +6966,7 @@ extension on Translations {
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
-			'explore.detail.gallery' => 'Gallery',
+			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
 			'explore.relation.prequel' => 'Prequel',

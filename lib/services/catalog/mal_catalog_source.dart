@@ -131,14 +131,7 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
           .add(relationItems[i]);
     }
 
-    final detailPosterUrl = detail.anime.mainPicture?.primary ?? item.posterUrl;
-    final detailItem = _toCatalogItem(
-      detail.anime,
-      null,
-      statistics: detail.statistics,
-      gallery: _galleryFor(detail.pictures, detailPosterUrl),
-      background: detail.background,
-    );
+    final detailItem = _toCatalogItem(detail.anime, null, statistics: detail.statistics, background: detail.background);
     return CatalogDetail(
       item: item.enrichedWith(detailItem),
       cast: cast,
@@ -193,7 +186,6 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
     CatalogRankScope? rankingScope,
     int? recommendationCount,
     MalStatistics? statistics,
-    List<String>? gallery,
     String? background,
   }) {
     final title = anime.displayTitle;
@@ -247,7 +239,6 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
       sourceMaterial: _sourceMaterialFor(anime.source),
       isAdult: _isAdultFor(anime.nsfw),
       recommendationCount: recommendationCount,
-      gallery: gallery,
       background: background,
     );
   }
@@ -357,15 +348,6 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
   };
 
   static DateTime? _dateFor(String? value) => value == null ? null : DateTime.tryParse(value);
-
-  static List<String>? _galleryFor(List<MalPicture> pictures, String? posterUrl) {
-    final urls = <String>{};
-    for (final picture in pictures) {
-      final url = picture.primary;
-      if (url != null && url != posterUrl) urls.add(url);
-    }
-    return urls.isEmpty ? null : urls.toList(growable: false);
-  }
 
   static CatalogRelationType _relationTypeFor(String? type) => switch (type) {
     'prequel' => CatalogRelationType.prequel,

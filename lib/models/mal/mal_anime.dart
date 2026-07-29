@@ -283,7 +283,6 @@ class MalAnimeDetail {
   final List<MalAnimeRecommendation> recommendations;
   final List<MalAnimeRelation> relations;
   final MalStatistics? statistics;
-  final List<MalPicture> pictures;
   final String? background;
 
   const MalAnimeDetail({
@@ -291,7 +290,6 @@ class MalAnimeDetail {
     this.recommendations = const [],
     this.relations = const [],
     this.statistics,
-    this.pictures = const [],
     this.background,
   });
 
@@ -299,7 +297,6 @@ class MalAnimeDetail {
     final recommendations = json['recommendations'];
     final relations = json['related_anime'];
     final statistics = json['statistics'];
-    final pictures = json['pictures'];
     final rawBackground = json['background'];
     final background = rawBackground is String ? rawBackground.trim() : null;
     return MalAnimeDetail(
@@ -313,11 +310,6 @@ class MalAnimeDetail {
           for (final raw in relations.take(relatedLimit)) ?MalAnimeRelation.fromEntry(raw),
       ],
       statistics: statistics is Map ? MalStatistics.fromJson(statistics) : null,
-      pictures: [
-        if (pictures is List)
-          for (final raw in pictures)
-            if (raw is Map) MalPicture.fromJson(raw.cast<String, dynamic>()),
-      ],
       background: background == null || background.isEmpty ? null : background,
     );
   }

@@ -1147,7 +1147,7 @@
       "favoritedBy": "Favorited by ${who}",
       "unairedEpisodes": "${n} not aired yet",
       "recommendedByPercent": "Recommended by ${percent} of viewers",
-      "gallery": "Gallery",
+      "relatedTitles": "Related titles",
       "background": "Background"
     },
     "totalResults": {

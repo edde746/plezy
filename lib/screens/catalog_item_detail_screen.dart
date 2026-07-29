@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_button.dart';
+import '../focus/focusable_wrapper.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
@@ -25,18 +27,19 @@ import '../services/catalog/catalog_library_matcher.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../utils/app_logger.dart';
+import '../utils/catalog_navigation_helper.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/formatters.dart';
 import '../utils/country_codes.dart';
 import '../utils/language_codes.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/platform_detector.dart';
+import '../utils/rating_utils.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/app_bar_back_button.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/backend_badge.dart';
 import '../widgets/cast_member_strip.dart';
-import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/optimized_media_image.dart';
@@ -68,7 +71,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   final _spoilerTagFocusNode = FocusNode(debugLabel: 'catalog_spoiler_tags');
   List<FocusNode> _linkFocusNodes = const [];
-  List<GlobalKey<HubSectionState>> _relationSectionKeys = const [];
+  List<FocusNode> _relationFocusNodes = const [];
   List<CatalogTag> _orderedTags = const [];
   List<CatalogLink> _streamingLinks = const [];
   List<CatalogLink> _otherLinks = const [];
@@ -91,8 +94,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// row only renders once loaded non-empty).
   List<CatalogItem>? _related;
 
-  /// Labelled franchise edges, kept separate from taste-based recommendations.
-  List<CatalogRelation> _relations = const [];
+  /// Labelled franchise edges, flattened to one entry per title. Providers
+  /// routinely return a single sequel or spin-off per label, and a shelf per
+  /// label spent a whole hub row — header, scroll row, one card — on it.
+  List<({CatalogRelationType type, CatalogItem item})> _relationEntries = const [];
 
   @override
   void initState() {
@@ -130,6 +135,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
     _watchlistSource?.watchlistChanges.removeListener(_onWatchlistChanged);
     for (final node in _libraryMatchFocusNodes) {
+      node.dispose();
+    }
+    for (final node in _relationFocusNodes) {
       node.dispose();
     }
     _scrollController.dispose();
@@ -201,21 +209,30 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     try {
       final detail = await source.fetchDetail(widget.item);
       if (!mounted) return;
-      final relations = [
+      final relationEntries = [
         for (final relation in detail.relations)
-          if (relation.items.isNotEmpty) relation,
+          for (final item in relation.items) (type: relation.type, item: item),
       ];
       _syncDetailCollections(detail.item);
+      _replaceRelationFocusNodes(relationEntries.length);
       setState(() {
         _detailItem = detail.item;
         _cast = detail.cast;
         _related = detail.related;
-        _relations = relations;
-        _relationSectionKeys = [for (var index = 0; index < relations.length; index++) GlobalKey<HubSectionState>()];
+        _relationEntries = relationEntries;
       });
     } catch (e) {
       appLogger.d('Catalog detail load failed for ${widget.item.identityKey}', error: e);
     }
+  }
+
+  void _replaceRelationFocusNodes(int count) {
+    for (final node in _relationFocusNodes) {
+      node.dispose();
+    }
+    _relationFocusNodes = [
+      for (var index = 0; index < count; index++) FocusNode(debugLabel: 'catalog_relation_$index'),
+    ];
   }
 
   bool get _hasTrailer => _item.trailerUrl?.trim().isNotEmpty ?? false;
@@ -230,7 +247,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   bool get _hasDetailActions => _hasSpoilerReveal || _linkFocusNodes.isNotEmpty;
 
-  bool get _hasHubRows => _relations.isNotEmpty || (_related?.isNotEmpty ?? false);
+  bool get _hasCast => _cast?.isNotEmpty ?? false;
+
+  bool get _hasRelations => _relationEntries.isNotEmpty;
+
+  bool get _hasRelated => _related?.isNotEmpty ?? false;
+
+  bool get _hasSectionsBelowCast => _hasRelations || _hasRelated;
 
   void _revealFocusNode(FocusNode? node, {double alignment = 0.3}) {
     final focusContext = node?.context;
@@ -299,16 +322,18 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   void _requestRelationFocus(int index) {
-    if (index < 0 || index >= _relationSectionKeys.length) return;
-    _relationSectionKeys[index].currentState?.requestFocusFromMemory();
+    if (index < 0 || index >= _relationFocusNodes.length) return;
+    final node = _relationFocusNodes[index];
+    node.requestFocus();
+    _revealFocusNode(node);
   }
 
   void _requestRelatedFocus() {
     _relatedSectionKey.currentState?.requestFocusFromMemory();
   }
 
-  void _requestFirstHubFocus() {
-    if (_relations.isNotEmpty) {
+  void _focusSectionBelowCast() {
+    if (_hasRelations) {
       _requestRelationFocus(0);
     } else {
       _requestRelatedFocus();
@@ -316,12 +341,12 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   bool _focusSectionBelowLibraryMatches() {
-    if (_cast?.isNotEmpty ?? false) {
+    if (_hasCast) {
       _requestCastFocus();
       return true;
     }
-    if (_hasHubRows) {
-      _requestFirstHubFocus();
+    if (_hasSectionsBelowCast) {
+      _focusSectionBelowCast();
       return true;
     }
     return false;
@@ -330,10 +355,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   void _focusSectionBelowDetailActions() {
     if (_hasLibraryMatches) {
       _requestLibraryMatchFocus(0);
-    } else if (_cast?.isNotEmpty ?? false) {
+    } else if (_hasCast) {
       _requestCastFocus();
-    } else {
-      _requestFirstHubFocus();
+    } else if (_hasSectionsBelowCast) {
+      _focusSectionBelowCast();
     }
   }
 
@@ -363,23 +388,19 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
   }
 
-  void _focusSectionAboveFirstHub() {
-    if (_cast?.isNotEmpty ?? false) {
+  void _focusSectionAboveRelations() {
+    if (_hasCast) {
       _requestCastFocus();
-    } else if (_hasLibraryMatches) {
-      _requestLibraryMatchFocus(_libraryMatchFocusNodes.length - 1);
-    } else if (_hasDetailActions) {
-      _requestLastDetailActionFocus();
     } else {
-      _requestActionBarFocus();
+      _focusSectionAboveCast();
     }
   }
 
   void _focusSectionAboveRelated() {
-    if (_relations.isNotEmpty) {
-      _requestRelationFocus(_relations.length - 1);
+    if (_hasRelations) {
+      _requestRelationFocus(_relationEntries.length - 1);
     } else {
-      _focusSectionAboveFirstHub();
+      _focusSectionAboveRelations();
     }
   }
 
@@ -750,17 +771,29 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     return Wrap(spacing: 8, runSpacing: 8, children: chips);
   }
 
+  /// Attributed scores, each behind its own brand badge where the source has
+  /// one — the same Rotten Tomatoes/IMDb/TMDB marks the media detail screen
+  /// draws. Sources without a mark (`critic`, `audience`, tracker scores)
+  /// keep their written label.
   Widget? _buildRatingsSection(ThemeData theme) {
     final compact = NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName);
     final chips = <Widget>[];
     for (final rating in _item.ratings ?? const <CatalogRatingSource>[]) {
       final source = _ratingSourceLabel(rating.source);
-      if (source == null) continue;
-      var label = '$source ${rating.value.toStringAsFixed(1)}';
+      final badge = catalogRatingInfo(rating.source, rating.value);
+      if (source == null && badge == null) continue;
+      var label = badge == null ? '$source ${rating.value.toStringAsFixed(1)}' : badge.formattedValue;
       if (rating.votes case final votes?) {
         label = '$label (${t.explore.stats.votes(n: compact.format(votes))})';
       }
-      chips.add(StatChip(icon: Symbols.star_rounded, iconColor: Colors.amber, label: label));
+      chips.add(
+        badge == null
+            ? StatChip(icon: Symbols.star_rounded, iconColor: Colors.amber, label: label)
+            : StatChip(
+                leading: SvgPicture.asset(badge.assetPath, width: 14, height: 14, semanticsLabel: source),
+                label: label,
+              ),
+      );
     }
     if (chips.isEmpty) return null;
     return Column(
@@ -833,6 +866,45 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     );
   }
 
+  /// Gap between definition-grid columns, and between relation tiles.
+  static const double _factColumnSpacing = 24;
+  static const double _relationTileSpacing = 12;
+
+  /// Definition rows flow into columns once there is room for them: budget,
+  /// box office and the rest are short values, and one pair per line leaves
+  /// most of a desktop window empty.
+  Widget _buildFactGrid(ThemeData theme, List<({String label, String value})> facts) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = _gridColumns(constraints.maxWidth, facts.length);
+        if (columns < 2) {
+          return Column(
+            crossAxisAlignment: .start,
+            children: [for (final fact in facts) _buildFactRow(theme, fact.label, fact.value)],
+          );
+        }
+        final columnWidth = (constraints.maxWidth - _factColumnSpacing * (columns - 1)) / columns;
+        return Wrap(
+          spacing: _factColumnSpacing,
+          children: [
+            for (final fact in facts) SizedBox(width: columnWidth, child: _buildFactRow(theme, fact.label, fact.value)),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Columns that fit [width], never more than there are entries: two facts
+  /// on a wide window stay two columns instead of stretching to three.
+  static int _gridColumns(double width, int count) {
+    final fits = width >= 1100
+        ? 3
+        : width >= 700
+        ? 2
+        : 1;
+    return fits < count ? fits : count;
+  }
+
   Widget? _buildFactsSection(ThemeData theme) {
     final item = _item;
     final locale = LocaleSettings.currentLocale.intlLocaleName;
@@ -858,10 +930,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     if (item.revenue case final revenue?) add(t.explore.detail.revenue, currency.format(revenue));
     add(t.explore.detail.contentAdvisory, item.contentAdvisory);
     if (facts.isEmpty) return null;
-    return Column(
-      crossAxisAlignment: .start,
-      children: [for (final fact in facts) _buildFactRow(theme, fact.label, fact.value)],
-    );
+    return _buildFactGrid(theme, facts);
   }
 
   Widget? _buildRecommendersSection(ThemeData theme) {
@@ -890,10 +959,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   Widget? _buildCrewSection(ThemeData theme) {
     final credits = _item.credits;
     if (credits == null || credits.isEmpty) return null;
-    final rows = <Widget>[];
+    final rows = <({String label, String value})>[];
     for (final role in CatalogCreditRole.values) {
       final names = _joinValues(credits.where((credit) => credit.role == role).map((credit) => credit.name));
-      if (names != null) rows.add(_buildFactRow(theme, _creditRoleLabel(role), names));
+      if (names != null) rows.add((label: _creditRoleLabel(role), value: names));
     }
     if (rows.isEmpty) return null;
     return Column(
@@ -901,7 +970,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       children: [
         Text(t.explore.detail.crew, style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
-        ...rows,
+        _buildFactGrid(theme, rows),
       ],
     );
   }
@@ -1001,42 +1070,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     );
   }
 
-  Widget _buildGallerySection(ThemeData theme, List<String> gallery) {
-    final cardWidth = CastMemberStrip.responsiveCardWidth(context);
-    final imageHeight = cardWidth * 1.5;
-    return Column(
-      crossAxisAlignment: .start,
-      children: [
-        Text(t.explore.detail.gallery, style: theme.textTheme.titleMedium),
-        const SizedBox(height: 4),
-        ExcludeFocus(
-          child: SizedBox(
-            height: imageHeight + 10,
-            child: HorizontalScrollWithArrows(
-              builder: (scrollController) => ListView.builder(
-                key: const Key('catalog_detail_gallery'),
-                addAutomaticKeepAlives: false,
-                addSemanticIndexes: false,
-                controller: scrollController,
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                itemCount: gallery.length,
-                itemBuilder: (context, index) => Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: OptimizedMediaImage.poster(imagePath: gallery[index], width: cardWidth, height: imageHeight),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   /// Horizontal cast strip — the same [CastMemberStrip] cards as the media
   /// detail screen. Trakt serves actors with their character; MAL serves
   /// characters with their role, so the section is titled accordingly.
@@ -1058,48 +1091,109 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
             for (final member in cast) (name: member.name, secondary: member.secondary, imagePath: member.imageUrl),
           ],
           onNavigateUp: _hasLibraryMatches || _hasDetailActions || _hasActions ? _focusSectionAboveCast : null,
-          onNavigateDown: _hasHubRows ? _requestFirstHubFocus : null,
+          onNavigateDown: _hasSectionsBelowCast ? _focusSectionBelowCast : null,
           debugLabel: 'catalog_cast_row',
         ),
       ],
     );
   }
 
-  Widget _buildRelationSection(CatalogRelation relation, int index) {
-    return HubSection(
-      key: _relationSectionKeys[index],
-      hub: MediaHub(
-        id: 'catalog-relation:${_item.source.name}:${_item.identityKey}:${relation.type.name}:$index',
-        identifier: 'explore.relation.${relation.type.name}',
-        title: _relationLabel(relation.type),
-        type: 'mixed',
-        items: [for (final item in relation.items) item.toMediaItem()],
-        size: relation.items.length,
-      ),
-      focusMemory: _hubFocusMemory,
-      icon: Symbols.link_rounded,
-      inset: true,
-      onNavigateUp: index == 0 ? _focusSectionAboveFirstHub : () => _requestRelationFocus(index - 1),
-      onVerticalNavigation: (isUp) {
-        if (isUp) {
-          if (index == 0) {
-            _focusSectionAboveFirstHub();
-          } else {
-            _requestRelationFocus(index - 1);
-          }
-          return true;
-        }
-        if (index + 1 < _relations.length) {
-          _requestRelationFocus(index + 1);
-          return true;
-        }
-        if (_related?.isNotEmpty ?? false) {
-          _requestRelatedFocus();
-          return true;
-        }
-        return false;
+  /// Labelled franchise edges as compact rows rather than one hub per label:
+  /// a provider that returns a single sequel used to spend an entire shelf on
+  /// it. Rows flow into columns on wide viewports, like the facts above.
+  Widget _buildRelationsSection(ThemeData theme) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final count = _relationEntries.length;
+        final columns = _gridColumns(constraints.maxWidth, count);
+        final tileWidth = (constraints.maxWidth - _relationTileSpacing * (columns - 1)) / columns;
+        return Column(
+          crossAxisAlignment: .start,
+          children: [
+            Text(t.explore.detail.relatedTitles, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: _relationTileSpacing,
+              runSpacing: _relationTileSpacing,
+              children: [
+                for (var index = 0; index < count; index++)
+                  SizedBox(
+                    width: tileWidth,
+                    child: _buildRelationTile(theme, index, columns: columns, count: count),
+                  ),
+              ],
+            ),
+          ],
+        );
       },
-      cardSizing: HubCardSizing.grid,
+    );
+  }
+
+  Widget _buildRelationTile(ThemeData theme, int index, {required int columns, required int count}) {
+    final entry = _relationEntries[index];
+    final item = entry.item;
+    final label = _relationLabel(entry.type);
+    final year = item.year;
+    void open() => unawaited(navigateToCatalogItem(context, item));
+    return FocusableWrapper(
+      focusNode: _relationFocusNodes[index],
+      borderRadius: 12,
+      semanticLabel: '$label: ${item.title}',
+      onSelect: open,
+      onNavigateUp: index >= columns ? () => _requestRelationFocus(index - columns) : _focusSectionAboveRelations,
+      onNavigateDown: index + columns < count
+          ? () => _requestRelationFocus(index + columns)
+          : _hasRelated
+          ? _requestRelatedFocus
+          : null,
+      onNavigateLeft: index % columns == 0 ? null : () => _requestRelationFocus(index - 1),
+      onNavigateRight: (index + 1) % columns == 0 || index + 1 >= count ? null : () => _requestRelationFocus(index + 1),
+      child: GestureDetector(
+        onTap: open,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: OptimizedMediaImage.poster(imagePath: item.posterUrl, width: 40, height: 60),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: .start,
+                  mainAxisSize: .min,
+                  children: [
+                    Text(
+                      label,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      year == null ? item.title : '${item.title} • $year',
+                      style: theme.textTheme.bodyMedium,
+                      maxLines: 2,
+                      overflow: .ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              AppIcon(
+                Symbols.chevron_right_rounded,
+                fill: 1,
+                size: 18,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1284,10 +1378,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                               const SizedBox(height: 24),
                               _buildBackgroundSection(theme, background),
                             ],
-                            if (item.gallery case final List<String> gallery when gallery.isNotEmpty) ...[
-                              const SizedBox(height: 24),
-                              _buildGallerySection(theme, gallery),
-                            ],
                             if (_buildFactsSection(theme) case final Widget facts) ...[
                               const SizedBox(height: 24),
                               facts,
@@ -1320,10 +1410,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                               const SizedBox(height: 28),
                               _buildCastSection(theme, cast),
                             ],
-                            for (var index = 0; index < _relations.length; index++) ...[
-                              const SizedBox(height: 20),
-                              _buildRelationSection(_relations[index], index),
-                            ],
+                            if (_hasRelations) ...[const SizedBox(height: 24), _buildRelationsSection(theme)],
                             if (_related case final List<CatalogItem> related when related.isNotEmpty) ...[
                               const SizedBox(height: 20),
                               _buildRelatedSection(related),

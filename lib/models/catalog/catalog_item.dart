@@ -318,11 +318,6 @@ class CatalogItem {
   /// Provider search relevance. Ordering input only — never rendered.
   final double? relevance;
 
-  /// Extra artwork the provider ships alongside the poster (MAL `pictures`).
-  /// Plain URLs: these providers publish no pixel widths, so they cannot go
-  /// through [posterVariants], whose keys must be real widths.
-  final List<String>? gallery;
-
   /// Production/background prose (MAL `background`) — trivia about how the
   /// title came to exist, distinct from the plot [overview].
   final String? background;
@@ -387,7 +382,6 @@ class CatalogItem {
     this.recommendationPercent,
     this.playState,
     this.relevance,
-    this.gallery,
     this.background,
     this.cast,
     this.unairedEpisodeCount,
@@ -461,7 +455,6 @@ class CatalogItem {
     recommendationCount: recommendationCount ?? detail.recommendationCount,
     recommendationPercent: recommendationPercent ?? detail.recommendationPercent,
     relevance: relevance ?? detail.relevance,
-    gallery: detail.gallery ?? gallery,
     background: detail.background ?? background,
     cast: detail.cast ?? cast,
     recommenders: recommenders ?? detail.recommenders,
@@ -563,7 +556,6 @@ class CatalogItem {
     if (recommendationPercent != null) 'recommendationPercent': recommendationPercent,
     if (playState != null) 'playState': playState!.toJson(),
     if (relevance != null) 'relevance': relevance,
-    if (gallery != null) 'gallery': gallery,
     if (background != null) 'background': background,
     if (cast != null) 'cast': [for (final c in cast!) c.toJson()],
   };
@@ -634,7 +626,6 @@ class CatalogItem {
     unairedEpisodeCount: json['unairedEpisodeCount'] as int?,
     recommenders: decodeCatalogList(json['recommenders'], CatalogRecommender.fromJson),
     relevance: (json['relevance'] as num?)?.toDouble(),
-    gallery: (json['gallery'] as List?)?.cast<String>(),
     background: json['background'] as String?,
     cast: decodeCatalogList(json['cast'], CatalogCastMember.fromJson),
   );

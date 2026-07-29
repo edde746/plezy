@@ -90,7 +90,7 @@ const _expectedCatalogFields =
     'nsfw,source,end_date';
 const _expectedDetailFields =
     '$_expectedCatalogFields,recommendations{$_expectedCatalogFields},'
-    'related_anime{$_expectedCatalogFields},statistics,pictures,background';
+    'related_anime{$_expectedCatalogFields},statistics,background';
 
 void main() {
   // Attack on Titan: split-cour show — one Fribb row per season, same tvdb id.
@@ -456,19 +456,6 @@ void main() {
                 'plan_to_watch': '350000',
               },
             },
-            'pictures': [
-              {
-                'medium': 'https://cdn.myanimelist.net/images/anime/16498-poster-medium.jpg',
-                'large': 'https://cdn.myanimelist.net/images/anime/16498.jpg',
-              },
-              {
-                'medium': 'https://cdn.myanimelist.net/images/anime/16498-gallery-medium.jpg',
-                'large': 'https://cdn.myanimelist.net/images/anime/16498-gallery-large.jpg',
-              },
-              {'medium': 'https://cdn.myanimelist.net/images/anime/16498-medium-only.jpg'},
-              {'medium': 'https://cdn.myanimelist.net/images/anime/16498-fallback-medium.jpg', 'large': ''},
-              {'medium': '', 'large': ''},
-            ],
             'background': 'Created from the original manga.',
           }),
           200,
@@ -504,11 +491,6 @@ void main() {
       expect(detail.item.audience?.onHold, 40000);
       expect(detail.item.audience?.dropped, 90000);
       expect(detail.item.audience?.planning, 350000);
-      expect(detail.item.gallery, [
-        'https://cdn.myanimelist.net/images/anime/16498-gallery-large.jpg',
-        'https://cdn.myanimelist.net/images/anime/16498-medium-only.jpg',
-        'https://cdn.myanimelist.net/images/anime/16498-fallback-medium.jpg',
-      ]);
       expect(detail.item.background, 'Created from the original manga.');
       expect(detail.item.posterVariants, isNull);
 
@@ -530,20 +512,13 @@ void main() {
       expect(detail.relations.single.items.single.title, 'Shingeki no Kyojin Season 3');
     });
 
-    test('fetchDetail normalizes a blank background and pictures without URLs to null', () async {
+    test('fetchDetail normalizes a blank background to null', () async {
       http.Response respond(http.Request request) {
         if (request.url.path.endsWith('/characters')) {
           return http.Response(json.encode({'data': <Object>[], 'paging': <String, dynamic>{}}), 200);
         }
         return http.Response(
-          json.encode({
-            ..._node(id: 16498, title: 'Shingeki no Kyojin'),
-            'pictures': [
-              <String, dynamic>{},
-              {'medium': '  ', 'large': ''},
-            ],
-            'background': ' \n\t ',
-          }),
+          json.encode({..._node(id: 16498, title: 'Shingeki no Kyojin'), 'background': ' \n\t '}),
           200,
         );
       }
@@ -560,7 +535,6 @@ void main() {
 
       final detail = await source.fetchDetail(item);
 
-      expect(detail.item.gallery, isNull);
       expect(detail.item.background, isNull);
       expect(detail.item.posterVariants, isNull);
     });
