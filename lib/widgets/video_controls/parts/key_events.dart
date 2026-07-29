@@ -16,6 +16,10 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         key == LogicalKeyboardKey.arrowRight;
   }
 
+  bool _isHorizontalKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
+  }
+
   bool _isSelectKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.select ||
         key == LogicalKeyboardKey.enter ||
@@ -23,27 +27,28 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         key == LogicalKeyboardKey.gameButtonA;
   }
 
-  /// Determine if the key event should toggle play/pause based on configured hotkeys.
-  bool _isPlayPauseKey(KeyEvent event) {
-    final logicalKey = event.logicalKey;
-    final physicalKey = event.physicalKey;
+  /// Resolve the transport intent for a key event, or null when the key is not
+  /// a transport key. Hardware `mediaPlay`/`mediaPause` stay *directed*; the
+  /// configured hotkey is always a toggle.
+  TransportCommand? _transportCommandFor(KeyEvent event) {
+    // Always accept hardware media transport keys (Android TV remotes)
+    final hardware = classifyTransportKey(event.logicalKey);
+    if (hardware != null) return hardware;
 
-    // Always accept hardware media play/pause keys (Android TV remotes)
-    if (logicalKey == LogicalKeyboardKey.mediaPlayPause ||
-        logicalKey == LogicalKeyboardKey.mediaPlay ||
-        logicalKey == LogicalKeyboardKey.mediaPause) {
-      return true;
-    }
+    final physicalKey = event.physicalKey;
 
     // When the shortcuts service is available, respect the configured play/pause hotkey
     if (_keyboardService != null) {
       final hotkey = _keyboardService!.hotkeys['play_pause'];
-      if (hotkey == null) return false;
-      return hotkey.key == physicalKey;
+      if (hotkey == null) return null;
+      return hotkey.key == physicalKey ? TransportCommand.toggle : null;
     }
 
     // Fallback to defaults while the service is loading
-    return physicalKey == PhysicalKeyboardKey.space || physicalKey == PhysicalKeyboardKey.mediaPlayPause;
+    if (physicalKey == PhysicalKeyboardKey.space || physicalKey == PhysicalKeyboardKey.mediaPlayPause) {
+      return TransportCommand.toggle;
+    }
+    return null;
   }
 
   bool _isMediaSeekKey(LogicalKeyboardKey key) {
@@ -57,8 +62,8 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     return key == LogicalKeyboardKey.mediaTrackNext || key == LogicalKeyboardKey.mediaTrackPrevious;
   }
 
-  bool _isPlayPauseActivation(KeyEvent event) {
-    return event is KeyDownEvent && _isPlayPauseKey(event);
+  TransportCommand? _playPauseActivation(KeyEvent event) {
+    return event is KeyDownEvent ? _transportCommandFor(event) : null;
   }
 
   void _activateHiddenControlsPrimaryAction() {
@@ -70,8 +75,11 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       _activateSkipMarker();
       return;
     }
-    _playOrPause();
+    // Raise the chrome *before* toggling: Select is the deliberate "show me the
+    // controls" affordance, and the visible chrome suppresses the transient
+    // transport disc that would otherwise flash underneath it.
     _showControlsWithFocus();
+    unawaited(_playOrPause());
   }
 
   KeyEventResult _handleLocalPlayerNavigationKeyEvent(KeyEvent event, PlayerNavigationKey navigationKey) {
@@ -126,6 +134,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onToggleMute: widget.volumeController.toggleMute,
       onLiveSeekBy: widget.onLiveSeekBy,
       onSeekRequested: widget.onSeekRequested,
+      onSeekBy: _keyboardSeekBy,
     );
   }
 
@@ -158,10 +167,12 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
     if (isMobile) return false;
 
-    // Handle play/pause globally - works regardless of focus
-    if (_isPlayPauseActivation(event)) {
-      _playOrPause();
-      _showControlsWithFocus(requestFocus: false);
+    // Handle play/pause globally - works regardless of focus. The screen
+    // announces the accepted command with a transient disc, so the chrome
+    // stays down and subtitles stay readable (#1676).
+    final globalCommand = _playPauseActivation(event);
+    if (globalCommand != null) {
+      unawaited(_playOrPause(command: globalCommand));
       return true; // Event handled, stop propagation
     }
 
@@ -187,6 +198,18 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     }
     if (navigationKey != PlayerNavigationKey.none) return KeyEventResult.ignored;
 
+    // Releasing a key ends its seek burst, before the KeyUp is consumed below.
+    // Two independent reasons to fire:
+    //  - a released hidden-chrome arrow must reset the acceleration tier even
+    //    when nothing is pending, because live TV (and a zero-duration item)
+    //    seeks straight through onLiveSeekBy without touching the accumulator;
+    //  - any key holding a pending target commits it now, so rebound shortcuts
+    //    and Shift+arrow large seeks land promptly rather than on the debounce.
+    if (event is KeyUpEvent &&
+        ((!_showControls && _isHorizontalKey(event.logicalKey)) || _hiddenSeek.pendingPosition != null)) {
+      _flushHiddenDirectionalSeek();
+    }
+
     // Only handle KeyDown and KeyRepeat events.
     // Consume KeyUp events for navigation keys to prevent leaking to previous routes.
     // Let non-navigation keys (volume, etc.) pass through to the OS.
@@ -201,16 +224,15 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     }
 
     final key = event.logicalKey;
-    final isPlayPauseKey = _isPlayPauseKey(event);
+    final transportCommand = _transportCommandFor(event);
 
-    // Always consume play/pause keys to prevent propagation to background routes.
-    // On TV/mobile, handle play/pause here; on desktop, the global handler does it.
-    if (isPlayPauseKey) {
-      if (_videoPlayerNavigationEnabled || isMobile) {
-        if (_isPlayPauseActivation(event)) {
-          _playOrPause();
-          _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
-        }
+    // Always consume transport keys to prevent propagation to background routes.
+    // On TV/mobile, handle them here; on desktop, the global handler does it.
+    // The chrome deliberately stays down — the screen announces the accepted
+    // command with a centred transient disc instead (#1676).
+    if (transportCommand != null) {
+      if ((_videoPlayerNavigationEnabled || isMobile) && event is KeyDownEvent) {
+        unawaited(_playOrPause(command: transportCommand));
       }
       return KeyEventResult.handled;
     }
@@ -220,9 +242,8 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     if (event is KeyDownEvent && _isMediaSeekKey(key)) {
       if (widget.canControl) {
         final isForward = key == LogicalKeyboardKey.mediaFastForward || key == LogicalKeyboardKey.mediaSkipForward;
-        unawaited(_seekToChapter(forward: isForward));
+        _seekToChapterWithFeedback(forward: isForward);
       }
-      _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
       return KeyEventResult.handled;
     }
 
@@ -230,9 +251,8 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // Uses same behavior as seek keys: chapter navigation or time-based seek.
     if (event is KeyDownEvent && _isMediaTrackKey(key)) {
       if (widget.canControl) {
-        unawaited(_seekToChapter(forward: key == LogicalKeyboardKey.mediaTrackNext));
+        _seekToChapterWithFeedback(forward: key == LogicalKeyboardKey.mediaTrackNext);
       }
-      _showControlsWithFocus(requestFocus: _videoPlayerNavigationEnabled);
       return KeyEventResult.handled;
     }
 
@@ -244,21 +264,17 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       return handleOneShotSelect(event, _activateHiddenControlsPrimaryAction);
     }
 
-    // On desktop/TV, show controls on directional input.
-    // LEFT/RIGHT focuses timeline for seeking, UP/DOWN focuses play/pause.
+    // On desktop/TV, directional input drives the player without the chrome.
+    // LEFT/RIGHT seeks in place with a transient badge; UP/DOWN is the
+    // deliberate "show me the controls" gesture.
     if (!isMobile && _isDirectionalKey(key) && (_videoPlayerNavigationEnabled || PlatformDetector.isTV())) {
       if (!_showControls) {
-        final isHorizontal = key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.arrowRight;
-        if (isHorizontal) {
-          _showControlsWithTimelineFocus();
-          // A repeat may arrive before the post-frame focus handoff reaches
-          // the timeline. Consume it here without adding another seek step;
-          // once focused, the timeline owns intentional held-key repeats.
-          if (shouldStartHiddenDirectionalSeek(event) && widget.canControl) {
-            final forward = key == LogicalKeyboardKey.arrowRight;
-            unawaited(_seekByTime(forward: forward));
+        if (_isHorizontalKey(key)) {
+          if (shouldStartHiddenDirectionalSeek(event)) {
+            _hiddenDirectionalSeek(forward: key == LogicalKeyboardKey.arrowRight, isRepeat: event is KeyRepeatEvent);
           }
         } else {
+          _flushHiddenDirectionalSeek();
           _showControlsWithFocus();
         }
         return KeyEventResult.handled;

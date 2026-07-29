@@ -493,6 +493,8 @@
     "playNext": "Odtwórz następny",
     "playButton": "Odtwórz",
     "pauseButton": "Pauza",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Pokaż elementy sterujące odtwarzaniem",
     "hidePlaybackControls": "Ukryj elementy sterujące odtwarzaniem",
     "seekBackwardButton": "Przewiń do tyłu o ${seconds} sekund",

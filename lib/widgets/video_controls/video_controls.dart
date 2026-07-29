@@ -26,6 +26,7 @@ import 'package:flutter/services.dart'
         KeyEvent,
         KeyDownEvent,
         KeyUpEvent,
+        KeyRepeatEvent,
         HardwareKeyboard;
 import '../../services/fullscreen_state_manager.dart';
 import '../../services/macos_window_service.dart';
@@ -43,6 +44,7 @@ import '../../focus/dpad_navigator.dart';
 import '../../database/app_database.dart';
 import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
+import '../../media/stepped_seek.dart';
 import '../../models/livetv_capture_buffer.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../media/media_source_info.dart';
@@ -67,6 +69,7 @@ import 'icons.dart';
 import 'player_chrome_controller.dart';
 import 'playback_extras_loader.dart';
 import 'widgets/player_toast_indicator.dart';
+import 'widgets/transport_feedback_indicator.dart';
 import '../../utils/app_logger.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
@@ -391,8 +394,25 @@ bool shouldSkipDuplicateTimelineSeek({required Duration? lastDispatchedSeek, req
   return lastDispatchedSeek == finalSeek;
 }
 
+/// A user transport intent. `play`/`pause` are *directed* — a remote with
+/// dedicated buttons must not flip the state it explicitly asked for.
+enum TransportCommand { play, pause, toggle }
+
+/// Maps hardware media transport keys to their intent. Returns null for keys
+/// that are not transport keys (including the configured play/pause hotkey,
+/// which callers resolve to [TransportCommand.toggle] themselves).
+TransportCommand? classifyTransportKey(LogicalKeyboardKey key) {
+  if (key == LogicalKeyboardKey.mediaPlay) return TransportCommand.play;
+  if (key == LogicalKeyboardKey.mediaPause) return TransportCommand.pause;
+  if (key == LogicalKeyboardKey.mediaPlayPause) return TransportCommand.toggle;
+  return null;
+}
+
+/// Directional seeking with the chrome hidden owns the whole key burst —
+/// repeats accelerate in place rather than escalating to the timeline — so
+/// both the initial press and its repeats perform a step.
 @visibleForTesting
-bool shouldStartHiddenDirectionalSeek(KeyEvent event) => event is KeyDownEvent;
+bool shouldStartHiddenDirectionalSeek(KeyEvent event) => event.isActionable;
 
 typedef PlaybackSourceChangeCallback =
     Future<PlaybackSourceChangeOutcome> Function({
@@ -444,9 +464,10 @@ class PlexVideoControls extends StatefulWidget {
   /// playback state around the native player seek.
   final Future<void> Function(Duration position)? onSeekRequested;
 
-  /// Called for app-level play/pause requests so the owning screen can track
-  /// user playback intent separately from transient buffering state.
-  final Future<void> Function()? onPlayPauseRequested;
+  /// Called for app-level transport requests so the owning screen can track
+  /// user playback intent separately from transient buffering state, and
+  /// announce the accepted command.
+  final Future<void> Function(TransportCommand command)? onPlayPauseRequested;
 
   /// Called when a seek operation completes (for Watch Together sync)
   final Function(Duration position)? onSeekCompleted;
@@ -522,12 +543,19 @@ class PlexVideoControls extends StatefulWidget {
   /// Toast controller for VLC-style in-player notifications (rate changes, backend switch).
   final PlayerToastController toastController;
 
+  /// Seeds the chapter list so widget tests can exercise chapter-dependent
+  /// behaviour without a media-server client. Production always loads through
+  /// [VideoControlsPlaybackExtrasLoader].
+  @visibleForTesting
+  final List<MediaChapter>? initialChapters;
+
   const PlexVideoControls({
     super.key,
     required this.player,
     required this.volumeController,
     required this.metadata,
     required this.toastController,
+    this.initialChapters,
     this.onNext,
     this.onPrevious,
     this.availableVersions = const [],
@@ -600,8 +628,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // item can start while a stale one is still in flight (and the stale
   // response is discarded).
   String? _extrasLoadKey;
-  List<MediaChapter> _chapters = [];
-  bool _chaptersLoaded = false;
+  late List<MediaChapter> _chapters = widget.initialChapters ?? [];
+  late bool _chaptersLoaded = widget.initialChapters != null;
   bool _isFullscreen = false;
   bool _isAlwaysOnTop = false;
   late final FocusNode _focusNode;
@@ -634,7 +662,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Custom tap detection state (more reliable than Flutter's onDoubleTap)
   DateTime? _lastSkipTapTime;
   bool _lastSkipTapWasForward = true;
-  Timer? _feedbackHideTimer; // Removes the skip pill after its fade-out completes
+  Timer? _feedbackHideTimer; // Removes the skip readout after its fade-out completes
   Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
   final TwoFingerDoubleTapTracker _twoFingerDoubleTapTracker = TwoFingerDoubleTapTracker();
   final MobileEdgeAdjustmentTracker _edgeAdjustmentTracker = MobileEdgeAdjustmentTracker();
@@ -663,6 +691,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   late final Throttle _seekThrottle;
   Duration? _lastDispatchedTimelineSeek;
   Future<void>? _lastDispatchedTimelineSeekFuture;
+  // Directional key seeking while the chrome is hidden (#1676). Owns the whole
+  // key burst — repeats accelerate in place rather than escalating to the
+  // timeline — and coalesces it into one absolute seek, like the timeline does.
+  late final DebouncedSeekAccumulator _hiddenSeek;
+  bool? _hiddenSeekForward;
+  int _hiddenSeekRepeatCount = 0;
   // Current marker state
   MediaMarker? _currentMarker;
   List<MediaMarker> _markers = [];
@@ -701,7 +735,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   StreamSubscription<double>? _rateSubscription;
   double? _lastReportedRate;
   // Suppression window used when long-press ends so the rate-restore emission
-  // doesn't flash a second pill as the rate snaps back.
+  // doesn't flash a second notice as the rate snaps back.
   DateTime? _suppressRateToastUntil;
 
   // PiP support
@@ -724,6 +758,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       const Duration(milliseconds: 200),
       leading: true,
       trailing: true,
+    );
+    _hiddenSeek = DebouncedSeekAccumulator(
+      currentPosition: () => widget.player.state.position,
+      duration: () => widget.player.state.duration,
+      seek: (target) => unawaited(_seekToPosition(target)),
     );
     // Side effects: rotation lock + focus on nav-enable. Both fire immediately
     // so init wiring (orientation, focus) lives in one place.
@@ -847,6 +886,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
+    _hiddenSeek.dispose();
     _edgeAdjustmentTracker.cancel();
     _edgeAdjustmentIndicator.dispose();
     _pipService.isPipActive.removeListener(_onEdgeAdjustmentPipChanged);
@@ -1132,8 +1172,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                             ),
                           ),
                   ),
-                  // Visual feedback overlay for double-tap
-                  if (isMobile && _showDoubleTapFeedback)
+                  // Transient skip badge: mobile double-tap and keyboard/remote
+                  // seeking both use it so neither has to raise the full chrome.
+                  if (_showDoubleTapFeedback)
                     Positioned.fill(
                       child: IgnorePointer(
                         child: AnimatedOpacity(
@@ -1148,7 +1189,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     ),
                   // Speed indicator overlay for long-press 2x
                   if (_showSpeedIndicator) Positioned.fill(child: IgnorePointer(child: _buildSpeedIndicator())),
-                  // Stream-driven VLC-style pill (rate changes, backend-switch notifications)
+                  // Stream-driven transient feedback: an icon-only disc centred
+                  // in the frame for accepted transport commands, a textual pill
+                  // at the top for rate changes and other notices.
                   Positioned.fill(
                     child: IgnorePointer(
                       child: ListenableBuilder(
@@ -1156,14 +1199,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         builder: (context, _) {
                           final toast = widget.toastController.current;
                           if (toast == null) return const SizedBox.shrink();
-                          return AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 150),
-                            child: PlayerToastIndicator(
-                              key: ValueKey('${toast.icon.codePoint}:${toast.text}'),
+                          return switch (toast.kind) {
+                            PlayerToastKind.transport => TransportFeedbackIndicator(
                               icon: toast.icon,
                               text: toast.text,
+                              pulse: toast.pulse,
                             ),
-                          );
+                            PlayerToastKind.notice => AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 150),
+                              child: PlayerToastIndicator(
+                                key: ValueKey('${toast.icon.codePoint}:${toast.text}'),
+                                icon: toast.icon,
+                                text: toast.text,
+                              ),
+                            ),
+                          };
                         },
                       ),
                     ),

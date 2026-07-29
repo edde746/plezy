@@ -493,6 +493,8 @@
     "playNext": "Келесіні ойнату",
     "playButton": "Ойнату",
     "pauseButton": "Кідірту",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Басқару элементтерін көрсету",
     "hidePlaybackControls": "Басқару элементтерін жасыру",
     "seekBackwardButton": "${seconds} секунд артқа айналдыру",

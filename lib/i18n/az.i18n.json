@@ -493,6 +493,8 @@
     "playNext": "Növbətini oynat",
     "playButton": "Oynat",
     "pauseButton": "Fasilə",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Oynatma idarəetmələrini göstər",
     "hidePlaybackControls": "Oynatma idarəetmələrini gizlət",
     "seekBackwardButton": "${seconds} saniyə geri sar",

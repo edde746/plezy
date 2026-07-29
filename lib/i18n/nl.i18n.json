@@ -493,6 +493,8 @@
     "playNext": "Volgende afspelen",
     "playButton": "Afspelen",
     "pauseButton": "Pauzeren",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Afspeelbediening tonen",
     "hidePlaybackControls": "Afspeelbediening verbergen",
     "seekBackwardButton": "${seconds} seconden terugspoelen",

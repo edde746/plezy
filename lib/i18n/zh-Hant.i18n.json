@@ -493,6 +493,8 @@
     "playNext": "播放下一集",
     "playButton": "播放",
     "pauseButton": "暫停",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "顯示播放控制項",
     "hidePlaybackControls": "隱藏播放控制項",
     "seekBackwardButton": "後退 ${seconds} 秒",

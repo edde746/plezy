@@ -1705,13 +1705,30 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       'Apple TV remote play/pause received source=${action.source}'
       '${action.detail == null ? '' : ' detail=${action.detail}'}',
     );
-    await _toggleRemotePlayPause(source: 'Apple TV remote');
+    await _remoteTransport(TransportCommand.toggle, source: 'Apple TV remote');
   }
 
-  /// Toggle play/pause on behalf of a hardware remote (Apple TV bridge or a
-  /// hardware media key). Mirrors the controls path: rewind-on-resume, then
-  /// play/pause with playback intent.
-  Future<void> _toggleRemotePlayPause({required String source}) async {
+  /// Announce an *accepted user transport command* with a centred transient disc.
+  ///
+  /// Deliberately not driven from `player.streams.playing` or the
+  /// `_*WithPlaybackIntent` helpers: those also fire for the sleep timer,
+  /// lifecycle and audio-session changes, frame-rate re-opens, still-watching
+  /// prompts, route exit and episode reloads — none of which are user
+  /// commands. Each accepted command site opts in explicitly instead (#1676).
+  void _announceTransportCommand({required bool willPlay}) {
+    if (!mounted) return;
+    // Visible chrome already renders the play/pause state.
+    if (_chromeController.controlsVisible) return;
+    _toastController.showTransport(
+      willPlay ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
+      willPlay ? t.videoControls.playbackResumed : t.videoControls.playbackPaused,
+    );
+  }
+
+  /// Apply a transport command on behalf of a hardware remote (Apple TV bridge
+  /// or a hardware media key). Mirrors the controls path: rewind-on-resume,
+  /// then play/pause with playback intent, then announce.
+  Future<void> _remoteTransport(TransportCommand command, {required String source}) async {
     if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
 
     final currentPlayer = player;
@@ -1725,23 +1742,43 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       return;
     }
 
+    // Rewind-on-resume follows the resolved intent, never the current state: a
+    // directed pause on an already-paused video must not jump backwards.
+    final resumes = switch (command) {
+      TransportCommand.play => !currentPlayer.state.playing,
+      TransportCommand.pause => false,
+      TransportCommand.toggle => !currentPlayer.state.playing,
+    };
+
     try {
-      if (!currentPlayer.state.playing) {
+      if (resumes) {
         await _seekBackForRewind(currentPlayer);
         if (!mounted || player != currentPlayer) return;
       }
-      await _playOrPauseWithPlaybackIntent(currentPlayer);
+      await switch (command) {
+        TransportCommand.play => _playWithPlaybackIntent(currentPlayer),
+        TransportCommand.pause => _pauseWithPlaybackIntent(currentPlayer),
+        TransportCommand.toggle => _playOrPauseWithPlaybackIntent(currentPlayer),
+      };
+      _announceTransportCommand(willPlay: _playbackIntentShouldPlay);
     } catch (e, st) {
       appLogger.w('$source play/pause failed', error: e, stackTrace: st);
     }
   }
 
-  /// Hardware media play/pause keys (Android TV remotes). Deliberately not
-  /// space/configured hotkeys — text fields must still receive those.
-  static bool _isHardwarePlayPauseKey(LogicalKeyboardKey key) =>
-      key == LogicalKeyboardKey.mediaPlayPause ||
-      key == LogicalKeyboardKey.mediaPlay ||
-      key == LogicalKeyboardKey.mediaPause;
+  /// Transport requested from the player controls (keyboard hotkey, companion
+  /// remote, on-screen button, click-to-toggle, D-pad Select). Authorization
+  /// and rewind-on-resume already ran in the controls layer.
+  Future<void> _handleControlsTransport(TransportCommand command) async {
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
+    await switch (command) {
+      TransportCommand.play => _playWithPlaybackIntent(currentPlayer),
+      TransportCommand.pause => _pauseWithPlaybackIntent(currentPlayer),
+      TransportCommand.toggle => _playOrPauseWithPlaybackIntent(currentPlayer),
+    };
+    _announceTransportCommand(willPlay: _playbackIntentShouldPlay);
+  }
 
   String? _lastLogError;
   bool _sawServer500 = false;
@@ -1923,20 +1960,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             () => _handleScreenPlayerNavigation(navigationKey),
           );
         }
-        // Hardware media play/pause must act even when focus rests on this
+        // Hardware media transport must act even when focus rests on this
         // node or a sibling overlay — otherwise the key only reveals the
         // chrome and leaks to the (possibly stale/suspended) Android
         // MediaSession (#1375). Gated to TV-style nav: on desktop the global
         // HardwareKeyboard handler already acts (handlers don't stop focus
         // dispatch), and Apple TV delivers play/pause via its native bridge.
-        if (_videoPlayerNavigationEnabled &&
-            !PlatformDetector.isAppleTV() &&
-            _isHardwarePlayPauseKey(event.logicalKey)) {
+        // The chrome deliberately stays down; _remoteTransport announces the
+        // accepted command with a centred transient disc instead (#1676).
+        final transportCommand = classifyTransportKey(event.logicalKey);
+        if (_videoPlayerNavigationEnabled && !PlatformDetector.isAppleTV() && transportCommand != null) {
           if (event is KeyDownEvent) {
-            unawaited(_toggleRemotePlayPause(source: 'Hardware media key'));
-            if (node.hasPrimaryFocus) {
-              _chromeController.show(focusTarget: PlayerChromeFocusTarget.playPause);
-            }
+            unawaited(_remoteTransport(transportCommand, source: 'Hardware media key'));
           }
           return KeyEventResult.handled; // consume down, repeat, and up
         }

@@ -493,6 +493,8 @@
     "playNext": "다음 재생",
     "playButton": "재생",
     "pauseButton": "일시정지",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "재생 컨트롤 표시",
     "hidePlaybackControls": "재생 컨트롤 숨기기",
     "seekBackwardButton": "${seconds}초 뒤로 이동",

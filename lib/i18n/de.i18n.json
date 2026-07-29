@@ -493,6 +493,8 @@
     "playNext": "Nächstes abspielen",
     "playButton": "Abspielen",
     "pauseButton": "Pause",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Wiedergabesteuerung anzeigen",
     "hidePlaybackControls": "Wiedergabesteuerung ausblenden",
     "seekBackwardButton": "${seconds} Sekunden zurück",

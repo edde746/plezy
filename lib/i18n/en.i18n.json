@@ -493,6 +493,8 @@
     "playNext": "Play Next",
     "playButton": "Play",
     "pauseButton": "Pause",
+    "playbackPaused": "Paused",
+    "playbackResumed": "Playing",
     "showPlaybackControls": "Show playback controls",
     "hidePlaybackControls": "Hide playback controls",
     "seekBackwardButton": "Seek backward ${seconds} seconds",

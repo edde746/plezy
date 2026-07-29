@@ -493,6 +493,8 @@
     "playNext": "Riproduci il successivo",
     "playButton": "Riproduci",
     "pauseButton": "Pausa",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Mostra i controlli di riproduzione",
     "hidePlaybackControls": "Nascondi i controlli di riproduzione",
     "seekBackwardButton": "Riavvolgi di ${seconds} secondi",

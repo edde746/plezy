@@ -493,6 +493,8 @@
     "playNext": "Következő lejátszása",
     "playButton": "Lejátszás",
     "pauseButton": "Szünet",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Lejátszásvezérlők megjelenítése",
     "hidePlaybackControls": "Lejátszásvezérlők elrejtése",
     "seekBackwardButton": "Tekerés hátra ${seconds} másodperccel",

@@ -206,6 +206,12 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onToggleMute,
     ValueChanged<int>? onLiveSeekBy,
     Future<void> Function(Duration position)? onSeekRequested,
+
+    /// Takes over relative seeking entirely when supplied, so the caller can
+    /// coalesce a burst of presses and report the accepted offset. Without it
+    /// each press rebases off `player.state.position`, which a slow backend
+    /// has not applied yet.
+    ValueChanged<int>? onSeekBy,
   }) {
     final isRepeat = event is KeyRepeatEvent;
     if (event is! KeyDownEvent && !isRepeat) return KeyEventResult.ignored;
@@ -278,6 +284,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
         }
 
         void performSeek(int offsetSeconds) {
+          if (onSeekBy != null) {
+            onSeekBy(offsetSeconds);
+            return;
+          }
           // Relative live-TV skip: route through the parent accumulator, which
           // coalesces a rapid burst into one transcode re-open (#1253).
           if (onLiveSeekBy != null) {

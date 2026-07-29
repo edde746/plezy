@@ -493,6 +493,8 @@
     "playNext": "Sonrakini Oynat",
     "playButton": "Oynat",
     "pauseButton": "Duraklat",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Oynatma kontrollerini göster",
     "hidePlaybackControls": "Oynatma kontrollerini gizle",
     "seekBackwardButton": "${seconds} saniye geri sar",

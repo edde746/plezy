@@ -1541,6 +1541,12 @@ class Translations$videoControls$en {
 	/// en: 'Pause'
 	String get pauseButton => 'Pause';
 
+	/// en: 'Paused'
+	String get playbackPaused => 'Paused';
+
+	/// en: 'Playing'
+	String get playbackResumed => 'Playing';
+
 	/// en: 'Show playback controls'
 	String get showPlaybackControls => 'Show playback controls';
 
@@ -5662,6 +5668,8 @@ extension on Translations {
 			'videoControls.playNext' => 'Play Next',
 			'videoControls.playButton' => 'Play',
 			'videoControls.pauseButton' => 'Pause',
+			'videoControls.playbackPaused' => 'Paused',
+			'videoControls.playbackResumed' => 'Playing',
 			'videoControls.showPlaybackControls' => 'Show playback controls',
 			'videoControls.hidePlaybackControls' => 'Hide playback controls',
 			'videoControls.seekBackwardButton' => ({required Object seconds}) => 'Seek backward ${seconds} seconds',
@@ -5709,10 +5717,10 @@ extension on Translations {
 			'videoControls.chapters' => 'Chapters',
 			'videoControls.noChaptersAvailable' => 'No chapters available',
 			'videoControls.queue' => 'Queue',
-			'videoControls.noQueueItems' => 'No items in queue',
-			'videoControls.searchSubtitles' => 'Search Subtitles',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
@@ -6223,10 +6231,10 @@ extension on Translations {
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 5-character code',
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
-			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
-			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
+			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
 			'watchTogether.joinInstructions' => 'Enter the host\'s session code to join.',
 			'watchTogether.failedToCreate' => 'Failed to create session',
 			'watchTogether.failedToJoin' => 'Failed to join session',

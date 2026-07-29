@@ -479,6 +479,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         unawaited(_seekBackForRewind(currentPlayer));
         unawaited(_playWithPlaybackIntent(currentPlayer));
         _wasPlayingBeforeInactive = false;
+        _announceTransportCommand(willPlay: true);
         _updateMediaControlsPlaybackState();
       },
       onPause: () {
@@ -489,6 +490,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           return;
         }
         unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        _announceTransportCommand(willPlay: false);
         _updateMediaControlsPlaybackState();
       },
       onTogglePlayPause: () {
@@ -496,10 +498,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         if (currentPlayer == null) return;
         if (currentPlayer.state.isActive) {
           unawaited(_pauseWithPlaybackIntent(currentPlayer));
+          _announceTransportCommand(willPlay: false);
         } else {
           unawaited(_seekBackForRewind(currentPlayer));
           unawaited(_playWithPlaybackIntent(currentPlayer));
           _wasPlayingBeforeInactive = false;
+          _announceTransportCommand(willPlay: true);
         }
         _updateMediaControlsPlaybackState();
       },

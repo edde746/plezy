@@ -493,6 +493,8 @@
     "playNext": "Keyingisini ijro etish",
     "playButton": "Ijro etish",
     "pauseButton": "Pauza",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Boshqaruv tugmalarini koʻrsatish",
     "hidePlaybackControls": "Boshqaruv tugmalarini yashirish",
     "seekBackwardButton": "${seconds} soniya orqaga oʻtkazish",

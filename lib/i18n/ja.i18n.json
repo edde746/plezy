@@ -493,6 +493,8 @@
     "playNext": "次を再生",
     "playButton": "再生",
     "pauseButton": "一時停止",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "再生コントロールを表示",
     "hidePlaybackControls": "再生コントロールを非表示",
     "seekBackwardButton": "${seconds}秒戻る",

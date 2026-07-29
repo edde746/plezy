@@ -493,6 +493,8 @@
     "playNext": "Spill neste",
     "playButton": "Spill av",
     "pauseButton": "Pause",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Vis avspillingskontroller",
     "hidePlaybackControls": "Skjul avspillingskontroller",
     "seekBackwardButton": "Spol tilbake ${seconds} sekunder",

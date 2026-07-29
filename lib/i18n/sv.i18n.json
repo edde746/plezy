@@ -493,6 +493,8 @@
     "playNext": "Spela nästa",
     "playButton": "Spela",
     "pauseButton": "Pausa",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Visa uppspelningskontroller",
     "hidePlaybackControls": "Dölj uppspelningskontroller",
     "seekBackwardButton": "Spola bakåt ${seconds} sekunder",

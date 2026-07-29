@@ -493,6 +493,8 @@
     "playNext": "Lire l'épisode suivant",
     "playButton": "Lire",
     "pauseButton": "Pause",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Afficher les commandes de lecture",
     "hidePlaybackControls": "Masquer les commandes de lecture",
     "seekBackwardButton": "Reculer de ${seconds} secondes",

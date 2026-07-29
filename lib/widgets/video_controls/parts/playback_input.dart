@@ -25,20 +25,128 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     await _seekByOffset(delta);
   }
 
-  Future<void> _seekToChapter({required bool forward}) async {
-    if (_chapters.isEmpty) {
-      // No chapters - seek by configured amount
-      final delta = Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall);
-      await _seekByOffset(delta);
+  /// Relative seek reported through the transient skip badge instead of the
+  /// scrub bar, so the picture and its subtitles stay uncovered (#1676).
+  ///
+  /// Steps are coalesced into one absolute seek pinned to the pending target,
+  /// so a burst of presses cannot rebase off a position a slow backend has not
+  /// applied yet — without that the badge would report a total the player
+  /// never actually seeks.
+  void _seekByWithFeedback(Duration delta) {
+    if (!widget.canControl || delta == Duration.zero) return;
+    final forward = !delta.isNegative;
+
+    // Live TV: relative epoch-based skips go through the parent accumulator —
+    // an absolute target is meaningless against a moving live edge (#1253).
+    if (widget.isLive && widget.onLiveSeekBy != null) {
+      final stepSeconds = (delta.inMilliseconds.abs() / 1000).round().clamp(1, 300);
+      widget.onLiveSeekBy!(forward ? stepSeconds : -stepSeconds);
+      _registerSkipFeedback(isForward: forward, seconds: stepSeconds);
       return;
     }
 
-    final targetIndex = MediaChapter.seekTargetIndex(widget.player.state.position, _chapters, forward: forward);
-    if (targetIndex != null) {
-      await _seekToPosition(_chapters[targetIndex].startTime);
-    } else if (!forward) {
-      await _seekToPosition(Duration.zero);
+    if (widget.player.state.duration.inMilliseconds <= 0) return;
+
+    _hiddenSeek.seekBy(delta);
+    _registerSkipFeedback(isForward: forward, seconds: (delta.inMilliseconds.abs() / 1000).round());
+  }
+
+  /// Seek requested by a configured keyboard shortcut (the default Left/Right
+  /// and Shift+Left/Right bindings, plus any rebinding of them). Desktop never
+  /// reaches the D-pad path below, so this is its route to the same badge.
+  void _keyboardSeekBy(int offsetSeconds) => _seekByWithFeedback(Duration(seconds: offsetSeconds));
+
+  /// Directional D-pad seek with the chrome hidden. Mirrors the focused
+  /// timeline's held-key behaviour — progressive acceleration plus one
+  /// coalesced seek — without raising the timeline.
+  void _hiddenDirectionalSeek({required bool forward, required bool isRepeat}) {
+    if (!widget.canControl) return;
+
+    if (_hiddenSeekForward != forward) {
+      _hiddenSeekForward = forward;
+      _hiddenSeekRepeatCount = 0;
     }
+    if (isRepeat) _hiddenSeekRepeatCount++;
+    final multiplier = isRepeat ? steppedSeekMultiplier(_hiddenSeekRepeatCount) : 1.0;
+
+    final stepMs = (_seekTimeSmall * 1000 * multiplier).clamp(500, 120_000).toInt();
+    _seekByWithFeedback(Duration(milliseconds: forward ? stepMs : -stepMs));
+  }
+
+  /// Commit the pending coalesced seek — the key was released, or the chrome
+  /// took over. A no-op when nothing is pending.
+  void _flushHiddenDirectionalSeek() {
+    _hiddenSeekForward = null;
+    _hiddenSeekRepeatCount = 0;
+    _hiddenSeek.flush();
+  }
+
+  /// Tolerance for "already at the start", so a previous-chapter press at the
+  /// very beginning is recognised as a no-op rather than a rewind to zero.
+  static const Duration _startOfMediaTolerance = Duration(milliseconds: 500);
+
+  /// What an adjacent-chapter seek would do from the current position, without
+  /// performing it. Resolving separately lets a caller show feedback on key
+  /// down rather than after a potentially slow transcode re-open.
+  ///
+  /// A null [target] with chapters present means there is nowhere to go — past
+  /// the last chapter going forward, or already at the start going back — so
+  /// callers must neither seek nor announce.
+  ({bool usedChapters, MediaChapter? chapter, Duration? target}) _resolveChapterSeek({required bool forward}) {
+    if (_chapters.isEmpty) return (usedChapters: false, chapter: null, target: null);
+
+    final position = widget.player.state.position;
+    final targetIndex = MediaChapter.seekTargetIndex(position, _chapters, forward: forward);
+    if (targetIndex != null) {
+      final chapter = _chapters[targetIndex];
+      return (usedChapters: true, chapter: chapter, target: chapter.startTime);
+    }
+    if (!forward && position > _startOfMediaTolerance) {
+      return (usedChapters: true, chapter: null, target: Duration.zero);
+    }
+    return (usedChapters: true, chapter: null, target: null);
+  }
+
+  Future<void> _seekToChapter({required bool forward}) {
+    return _applyChapterSeek(_resolveChapterSeek(forward: forward), forward: forward);
+  }
+
+  Future<void> _applyChapterSeek(
+    ({bool usedChapters, MediaChapter? chapter, Duration? target}) resolved, {
+    required bool forward,
+  }) async {
+    if (!resolved.usedChapters) {
+      // No chapters - seek by configured amount
+      await _seekByOffset(Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall));
+      return;
+    }
+    final target = resolved.target;
+    if (target != null) await _seekToPosition(target);
+  }
+
+  /// Chapter-aware seek driven by a remote's transport keys. Shows a transient
+  /// badge instead of raising the chrome (#1676).
+  void _seekToChapterWithFeedback({required bool forward}) {
+    final resolved = _resolveChapterSeek(forward: forward);
+    if (!resolved.usedChapters) {
+      // No chapters: take the same coalesced path as every other badged seek.
+      // Going through _applyChapterSeek here would rebase each press off
+      // player.state.position, so a burst would report a total it never
+      // commits.
+      _seekByWithFeedback(Duration(seconds: forward ? _seekTimeSmall : -_seekTimeSmall));
+      return;
+    }
+    if (resolved.target != null) {
+      // Only announce a jump that actually happens.
+      final title = resolved.chapter?.title?.trim();
+      widget.toastController.show(
+        forward ? Symbols.skip_next_rounded : Symbols.skip_previous_rounded,
+        title != null && title.isNotEmpty
+            ? title
+            : (forward ? t.videoControls.nextChapterButton : t.videoControls.previousChapterButton),
+      );
+    }
+    unawaited(_applyChapterSeek(resolved, forward: forward));
   }
 
   Future<void> _seekToPosition(Duration position, {bool notifyCompletion = true}) async {
@@ -73,14 +181,31 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     return seekFuture;
   }
 
-  Future<void> _playOrPause() async {
+  Future<void> _playOrPause({TransportCommand command = TransportCommand.toggle}) async {
     if (!widget.canControl) return;
-    if (!widget.player.state.playing && _rewindOnResume > 0) {
+    // Rewind-on-resume keys off the *resolved* intent, not the current state:
+    // a directed pause on an already-paused video must leave the position
+    // untouched instead of jumping backwards.
+    final willPlay = switch (command) {
+      TransportCommand.play => true,
+      TransportCommand.pause => false,
+      TransportCommand.toggle => !widget.player.state.playing,
+    };
+    if (willPlay && !widget.player.state.playing && _rewindOnResume > 0) {
       final target = widget.player.state.position - Duration(seconds: _rewindOnResume);
       final clamped = clampSeekPosition(widget.player, target);
       await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     }
-    await (widget.onPlayPauseRequested ?? widget.player.playOrPause)();
+    final requested = widget.onPlayPauseRequested;
+    if (requested != null) {
+      await requested(command);
+      return;
+    }
+    await switch (command) {
+      TransportCommand.play => widget.player.play(),
+      TransportCommand.pause => widget.player.pause(),
+      TransportCommand.toggle => widget.player.playOrPause(),
+    };
   }
 
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms.
@@ -442,11 +567,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _singleTapTimer?.cancel();
     _singleTapTimer = null;
 
-    // While the skip pill is visible, every tap in the same-direction zone
+    // While the skip readout is visible, every tap in the same-direction zone
     // stacks another skip immediately — repeat skips cost one tap, not a
     // fresh double-tap. A tap in the opposite zone falls through to pairing.
     if (_showDoubleTapFeedback && _lastDoubleTapWasForward == isForward) {
-      _handleStackingSkip(isForward: isForward);
+      _handleDoubleTapSkip(isForward: isForward);
       return;
     }
 
@@ -480,31 +605,36 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     return renderObject is RenderBox ? renderObject.size : Size.zero;
   }
 
-  /// Handle stacking skip - add to accumulated skip when feedback is active.
-  void _handleStackingSkip({required bool isForward}) {
-    if (!widget.canControl) return;
-
-    _accumulatedSkipSeconds += _seekTimeSmall;
+  /// Accumulate skip feedback. Consecutive skips in the same direction stack
+  /// into one running total; a direction flip restarts the count.
+  void _registerSkipFeedback({required bool isForward, required int seconds}) {
+    final stacking = _showDoubleTapFeedback && _lastDoubleTapWasForward == isForward;
+    _accumulatedSkipSeconds = stacking ? _accumulatedSkipSeconds + seconds : seconds;
     _showSkipFeedback(isForward: isForward);
-
-    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
-    unawaited(_seekByOffset(delta));
   }
 
+  /// Handle a skip-zone double tap (and every stacked tap that follows it).
   void _handleDoubleTapSkip({required bool isForward}) {
     if (!widget.canControl) return;
 
-    _accumulatedSkipSeconds = _seekTimeSmall;
-    _showSkipFeedback(isForward: isForward);
+    _registerSkipFeedback(isForward: isForward, seconds: _seekTimeSmall);
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
     unawaited(_seekByOffset(delta));
   }
+
+  /// How long the skip badge stays at full opacity. 1200 ms gives time to read
+  /// the value and keep skipping; Maestro builds hold it far longer because
+  /// accessibility-tree queries on physical devices routinely outlast the
+  /// production timeout — the same reason the chrome hide delay is extended.
+  Duration get _skipFeedbackDuration => const bool.fromEnvironment('PLEZY_MAESTRO_E2E')
+      ? const Duration(seconds: 30)
+      : const Duration(milliseconds: 1200);
 
   /// Show animated visual feedback for skip gesture
   void _showSkipFeedback({required bool isForward}) {
     // Cancel BOTH timers: a skip landing during the fade-out window must not
-    // leave the old hide timer pending, or it kills the fresh pill and zeroes
+    // leave the old hide timer pending, or it kills the fresh readout and zeroes
     // the accumulated count mid-display.
     _feedbackTimer?.cancel();
     _feedbackHideTimer?.cancel();
@@ -518,8 +648,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     // Capture duration before timer to avoid context access in callback
     final slowDuration = tokens(context).slow;
 
-    // Fade out after delay (1200ms gives time to see value and continue tapping)
-    _feedbackTimer = Timer(const Duration(milliseconds: 1200), () {
+    _feedbackTimer = Timer(_skipFeedbackDuration, () {
       if (mounted) {
         _setControlsState(() {
           _doubleTapFeedbackOpacity = 0.0;

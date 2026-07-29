@@ -493,6 +493,8 @@
     "playNext": "Следующее",
     "playButton": "Воспроизвести",
     "pauseButton": "Пауза",
+    "playbackPaused": "",
+    "playbackResumed": "",
     "showPlaybackControls": "Показать элементы управления воспроизведением",
     "hidePlaybackControls": "Скрыть элементы управления воспроизведением",
     "seekBackwardButton": "Перемотать назад на ${seconds} с",
