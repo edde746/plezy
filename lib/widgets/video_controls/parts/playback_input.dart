@@ -559,45 +559,41 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _lastSkipTapTime = now;
   }
 
-  /// Handle tap in skip zone with custom double-tap detection
+  /// Handle a tap in a skip zone. Every skip costs a fresh same-direction
+  /// double tap; a lone tap toggles the chrome.
+  ///
+  /// The badge left over from the previous skip is a readout, not an armed
+  /// state — it says nothing about what the next tap does.
+  ///
+  /// The pending single-tap timer *is* the pairing window: while it is live the
+  /// tap that started it is still unresolved, so a same-direction tap pairs with
+  /// it. One deadline instead of a timer plus a `DateTime.now()` difference that
+  /// a clock adjustment could stretch or collapse — and it leaves
+  /// [_lastSkipTapTime] to the desktop double-click paths alone. Suppressing
+  /// touch taps cancels the timer, which correctly disarms a half-finished pair.
   void _handleTapInSkipZone({required bool isForward}) {
     if (_isTouchTapSuppressed) return;
 
-    // Cancel any pending single-tap action
+    final pairsWithPendingTap = (_singleTapTimer?.isActive ?? false) && _lastSkipTapWasForward == isForward;
+
+    // Either way the pending tap is resolved now: paired below, or replaced by
+    // this one as the start of a new pair.
     _singleTapTimer?.cancel();
     _singleTapTimer = null;
 
-    // While the skip readout is visible, every tap in the same-direction zone
-    // stacks another skip immediately — repeat skips cost one tap, not a
-    // fresh double-tap. A tap in the opposite zone falls through to pairing.
-    if (_showDoubleTapFeedback && _lastDoubleTapWasForward == isForward) {
+    if (pairsWithPendingTap) {
       _handleDoubleTapSkip(isForward: isForward);
       return;
     }
 
-    final now = DateTime.now();
-    final isDoubleTap =
-        _lastSkipTapTime != null &&
-        now.difference(_lastSkipTapTime!) < kDoubleTapTimeout &&
-        _lastSkipTapWasForward == isForward;
+    _lastSkipTapWasForward = isForward;
 
-    // Skip ONLY on detected double-tap (no single-tap-to-add behavior)
-    if (isDoubleTap) {
-      _lastSkipTapTime = null;
-      _handleDoubleTapSkip(isForward: isForward);
-    } else {
-      // First tap - record timestamp and start timer for single-tap action
-      _lastSkipTapTime = now;
-      _lastSkipTapWasForward = isForward;
-
-      // If no second tap within the double-tap window, treat as single tap
-      // to toggle controls
-      _singleTapTimer = Timer(kDoubleTapTimeout, () {
-        if (mounted) {
-          _toggleControls();
-        }
-      });
-    }
+    // No partner within the window, and this resolves as a lone tap.
+    _singleTapTimer = Timer(kDoubleTapTimeout, () {
+      if (mounted) {
+        _toggleControls();
+      }
+    });
   }
 
   Size _sizeOf(BuildContext context) {
@@ -613,7 +609,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _showSkipFeedback(isForward: isForward);
   }
 
-  /// Handle a skip-zone double tap (and every stacked tap that follows it).
+  /// Handle a completed skip-zone double tap.
   void _handleDoubleTapSkip({required bool isForward}) {
     if (!widget.canControl) return;
 

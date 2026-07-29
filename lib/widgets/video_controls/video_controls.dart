@@ -659,11 +659,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _lastDoubleTapWasForward = true;
   Timer? _feedbackTimer;
   int _accumulatedSkipSeconds = 0; // Stacking skip: total skip during active feedback
-  // Custom tap detection state (more reliable than Flutter's onDoubleTap)
+  // Desktop double-click detection (more reliable than Flutter's onDoubleTap).
+  // The mobile skip zones do not use this; they pair off _singleTapTimer.
   DateTime? _lastSkipTapTime;
+  // Direction of the skip-zone tap _singleTapTimer is currently counting down.
   bool _lastSkipTapWasForward = true;
   Timer? _feedbackHideTimer; // Removes the skip readout after its fade-out completes
-  Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
+  // Deferred lone-tap action for the skip zones, and the pairing window itself:
+  // while it is active the tap that started it can still become a double tap.
+  Timer? _singleTapTimer;
   final TwoFingerDoubleTapTracker _twoFingerDoubleTapTracker = TwoFingerDoubleTapTracker();
   final MobileEdgeAdjustmentTracker _edgeAdjustmentTracker = MobileEdgeAdjustmentTracker();
   final DeviceAdjustmentService _deviceAdjustmentService = DeviceAdjustmentService.instance;
