@@ -1021,10 +1021,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
               onHover: (_) => _showControlsFromPointerActivity(),
               child: Stack(
                 children: [
-                  // Keep-alive: 1px widget that continuously repaints to prevent
-                  // Flutter animations from freezing when the frame clock goes idle
-                  if (Platform.isLinux || Platform.isWindows)
-                    const Positioned(top: 0, left: 0, child: LinuxKeepAlive()),
+                  // Keep-alive for Linux's idle GTK frame clock; inert on every
+                  // other platform (the widget owns the platform decision).
+                  // Windows must NOT tick here: forced repaints during playback
+                  // perturb VRR scanout in fullscreen (#1707).
+                  const Positioned(top: 0, left: 0, child: LinuxKeepAlive()),
                   // Also handles long-press for 2x speed.
                   Positioned.fill(
                     child: Semantics(
