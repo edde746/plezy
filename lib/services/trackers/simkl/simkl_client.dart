@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../models/simkl/simkl_all_items_entry.dart';
 import '../../../models/simkl/simkl_best_item.dart';
-import '../../../models/simkl/simkl_recommendation.dart';
+import '../../../models/simkl/simkl_detail.dart';
 import '../../../models/simkl/simkl_search_result.dart';
 import '../../../models/simkl/simkl_trending_item.dart';
 import '../../trakt/trakt_page.dart';
@@ -113,15 +113,9 @@ class SimklClient implements DisposableTrackerClient {
     await _request('POST', '/sync/add-to-list', body: body);
   }
 
-  Future<List<SimklRecommendation>> getRecommendations(SimklCatalogType urlType, int simklId) async {
+  Future<SimklDetail?> getDetail(SimklCatalogType urlType, int simklId) async {
     final decoded = await _request('GET', '/${urlType.detailPath}/$simklId');
-    if (decoded is! Map) return const [];
-    final recommendations = decoded['users_recommendations'];
-    if (recommendations is! List) return const [];
-    return [
-      for (final item in recommendations)
-        if (item is Map<String, dynamic>) SimklRecommendation.fromJson(item),
-    ];
+    return decoded is Map<String, dynamic> ? SimklDetail.fromJson(decoded) : null;
   }
 
   Future<dynamic> _request(

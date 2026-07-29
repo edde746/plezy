@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -8,8 +9,11 @@ import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
 
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/layout_constants.dart';
@@ -17,12 +21,17 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_grid_delegate.dart';
+import 'package:plezy/widgets/optimized_media_image.dart';
 
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    LocaleSettings.setLocaleSync(AppLocale.en);
+  });
 
   setUp(() async {
     resetSharedPreferencesForTest();
@@ -114,6 +123,219 @@ void main() {
     expect(find.text('Visible Movie'), findsOneWidget);
   });
 
+  testWidgets('catalog grid metadata leads with the rating and omits certification', (tester) async {
+    // Measured on a Pixel 7: at shelf width the full list composition renders
+    // `PG-13 • 2006 • 2h 10mi…` and ellipsizes the rating away — the one value
+    // this line exists to surface. The grid therefore leads with the rating
+    // and drops certification, votes and genres; the list keeps them.
+    final item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Catalog Movie',
+      year: 2024,
+      runtimeMinutes: 125,
+      rating: 8.6,
+      votes: 12345,
+      genres: const ['Drama', 'Mystery'],
+      certification: 'PG-13',
+      ids: const CatalogItemIds(tmdb: 1),
+    ).toMediaItem();
+
+    await tester.pumpWidget(_catalogGridHarness(item));
+
+    final metadata = tester.widget<Text>(
+      find.byWidgetPredicate((widget) => widget is Text && (widget.data?.contains('8.6★') ?? false)),
+    );
+    expect(metadata.maxLines, 1);
+    expect(metadata.overflow, TextOverflow.ellipsis);
+    expect(metadata.data, '8.6★ • 2024 • 2h 5min');
+    expect(metadata.data, isNot(contains('PG-13')), reason: 'certification is detail/search only');
+    expect(metadata.data, isNot(contains('Drama')), reason: 'genres do not fit a shelf caption');
+    expect(metadata.data, isNot(contains('(')), reason: 'vote counts do not fit a shelf caption');
+  });
+
+  testWidgets('plain library grid metadata remains year only', (tester) async {
+    final item = testMediaItem(
+      id: 'library-movie',
+      kind: MediaKind.movie,
+      title: 'Library Movie',
+      year: 2024,
+      contentRating: 'PG-13',
+      durationMs: const Duration(minutes: 125).inMilliseconds,
+      rating: 8.6,
+      genres: const ['Drama'],
+    );
+
+    await tester.pumpWidget(_catalogGridHarness(item));
+
+    expect(find.text('2024'), findsOneWidget);
+    expect(find.textContaining('PG-13'), findsNothing);
+    expect(find.textContaining('2h 5m'), findsNothing);
+    expect(find.textContaining('8.6★'), findsNothing);
+    expect(find.textContaining('Drama'), findsNothing);
+  });
+
+  testWidgets('seasonal rank badge names its season instead of claiming all-time rank', (tester) async {
+    final item = CatalogItem(
+      source: CatalogSourceId.anilist,
+      kind: MediaKind.show,
+      title: 'Seasonal Show',
+      ids: const CatalogItemIds(anilist: 1),
+      ranks: const [
+        CatalogRank(
+          rank: 3,
+          scope: CatalogRankScope.popular,
+          allTime: false,
+          year: 2026,
+          season: CatalogSeasonName.summer,
+        ),
+      ],
+    ).toMediaItem();
+    final season = t.explore.season.withYear(season: t.explore.season.summer, year: 2026);
+
+    await tester.pumpWidget(_catalogGridHarness(item));
+
+    expect(find.text(t.explore.badge.rankSeasonal(n: 3, season: season)), findsOneWidget);
+    expect(find.text(t.explore.badge.rankPopular(n: 3)), findsNothing);
+  });
+
+  testWidgets('windowed viewers render only when their period is present', (tester) async {
+    final withoutPeriod = CatalogItem(
+      source: CatalogSourceId.simkl,
+      kind: MediaKind.show,
+      title: 'No Viewer Window',
+      ids: const CatalogItemIds(simkl: 1),
+      audience: const CatalogAudience(viewers: 37),
+    ).toMediaItem();
+
+    await tester.pumpWidget(_catalogGridHarness(withoutPeriod, key: const ValueKey('viewer-card')));
+    expect(find.textContaining('37'), findsNothing);
+
+    final withPeriod = CatalogItem(
+      source: CatalogSourceId.simkl,
+      kind: MediaKind.show,
+      title: 'Viewer Window',
+      ids: const CatalogItemIds(simkl: 1),
+      audience: const CatalogAudience(viewers: 37, viewersPeriod: CatalogAudiencePeriod.week),
+    ).toMediaItem();
+    await tester.pumpWidget(_catalogGridHarness(withPeriod, key: const ValueKey('viewer-card')));
+
+    expect(find.text(t.explore.stats.viewersWeek(n: '37')), findsOneWidget);
+  });
+
+  testWidgets('HD availability and pending 4K request render as independent badges', (tester) async {
+    final item = CatalogItem(
+      source: CatalogSourceId.seerr,
+      kind: MediaKind.movie,
+      title: 'Server Movie',
+      ids: const CatalogItemIds(tmdb: 1),
+      serverState: const CatalogServerState(
+        availability: CatalogAvailability.available,
+        request4k: CatalogRequestState.pending,
+      ),
+    ).toMediaItem();
+
+    await tester.pumpWidget(_catalogGridHarness(item));
+
+    expect(find.text(t.explore.badge.available), findsOneWidget);
+    expect(find.text(t.explore.badge.pendingApproval), findsOneWidget);
+  });
+
+  testWidgets('catalog poster badges are capped at three by priority', (tester) async {
+    final item = CatalogItem(
+      source: CatalogSourceId.seerr,
+      kind: MediaKind.show,
+      title: 'Busy Show',
+      ids: const CatalogItemIds(tmdb: 1),
+      isAdult: true,
+      serverState: const CatalogServerState(
+        availability: CatalogAvailability.available,
+        request4k: CatalogRequestState.pending,
+      ),
+      nextEpisode: CatalogNextEpisode(airsAt: DateTime.now().add(const Duration(days: 1)), episode: 4),
+      ranks: const [CatalogRank(rank: 2, scope: CatalogRankScope.popular)],
+      audience: const CatalogAudience(watchingNow: 200),
+    ).toMediaItem();
+
+    await tester.pumpWidget(_catalogGridHarness(item));
+
+    final badgeTexts = find.descendant(of: find.byKey(const Key('catalog-badges')), matching: find.byType(Text));
+    expect(badgeTexts, findsNWidgets(3));
+    expect(find.text(t.explore.badge.available), findsOneWidget);
+    expect(find.text(t.explore.badge.pendingApproval), findsOneWidget);
+    expect(find.text(t.explore.badge.adult), findsOneWidget);
+    expect(find.text(t.explore.badge.rankPopular(n: 2)), findsNothing);
+  });
+
+  testWidgets('catalog item is rehydrated once across rebuilds of the same item identity', (tester) async {
+    final catalog = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Cached Catalog Movie',
+      ids: const CatalogItemIds(tmdb: 1),
+      ranks: const [CatalogRank(rank: 1, scope: CatalogRankScope.trending)],
+    );
+    final rawCatalog = _ReadCountingMap(catalog.toJson());
+    final mediaItem = testMediaItem(
+      id: 'catalog:cached',
+      kind: MediaKind.movie,
+      title: catalog.title,
+      raw: {CatalogItem.rawKey: rawCatalog},
+    );
+    const cardKey = ValueKey('cached-catalog-card');
+
+    await tester.pumpWidget(_catalogGridHarness(mediaItem, key: cardKey));
+    final readsAfterFirstBuild = rawCatalog.reads;
+    expect(readsAfterFirstBuild, greaterThan(0));
+
+    await tester.pumpWidget(_catalogGridHarness(mediaItem, key: cardKey));
+    expect(rawCatalog.reads, readsAfterFirstBuild);
+  });
+
+  testWidgets('catalog poster selection covers the card width at device pixel ratio', (tester) async {
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final item = CatalogItem(
+      source: CatalogSourceId.seerr,
+      kind: MediaKind.movie,
+      title: 'Sharp Poster',
+      ids: const CatalogItemIds(tmdb: 1),
+      posterUrl: 'https://example.com/default.jpg',
+      posterVariants: const {200: 'https://example.com/200.jpg', 500: 'https://example.com/500.jpg'},
+    ).toMediaItem();
+
+    await tester.pumpWidget(_catalogGridHarness(item, width: 150));
+
+    final image = tester.widget<OptimizedMediaImage>(find.byType(OptimizedMediaImage));
+    expect(image.imagePath, 'https://example.com/500.jpg');
+  });
+
+  testWidgets('recommendation badge prefers a user count and falls back to viewer percentage', (tester) async {
+    final withCount = CatalogItem(
+      source: CatalogSourceId.simkl,
+      kind: MediaKind.movie,
+      title: 'Counted Recommendation',
+      ids: const CatalogItemIds(simkl: 1),
+      recommendationCount: 19,
+      recommendationPercent: 0.42,
+    ).toMediaItem();
+
+    await tester.pumpWidget(_catalogGridHarness(withCount, key: const ValueKey('recommendation-card')));
+    expect(find.text(t.explore.detail.recommendedByUsers(n: 19)), findsOneWidget);
+    expect(find.text(t.explore.detail.recommendedByPercent(percent: '42%')), findsNothing);
+
+    final withPercent = CatalogItem(
+      source: CatalogSourceId.simkl,
+      kind: MediaKind.movie,
+      title: 'Percentage Recommendation',
+      ids: const CatalogItemIds(simkl: 2),
+      recommendationPercent: 0.42,
+    ).toMediaItem();
+    await tester.pumpWidget(_catalogGridHarness(withPercent, key: const ValueKey('recommendation-card')));
+
+    expect(find.text(t.explore.detail.recommendedByPercent(percent: '42%')), findsOneWidget);
+  });
+
   testWidgets('full bleed flag does not hide list media card text', (tester) async {
     final item = testMediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'List Movie');
 
@@ -128,6 +350,37 @@ void main() {
     );
 
     expect(find.text('List Movie'), findsOneWidget);
+  });
+
+  testWidgets('catalog list metadata keeps certification, votes and genres', (tester) async {
+    // The counterpart to the grid contract above: search uses the list card,
+    // which is wide enough for the full composition and must not be trimmed
+    // by the grid's compact mode.
+    final item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Catalog Movie',
+      year: 2024,
+      runtimeMinutes: 125,
+      rating: 8.6,
+      votes: 12345,
+      genres: const ['Drama', 'Mystery'],
+      certification: 'PG-13',
+      ids: const CatalogItemIds(tmdb: 1),
+    ).toMediaItem();
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: SizedBox(width: 420, height: 160, child: MediaCard(item: item, forceListMode: true, isOffline: true)),
+      ),
+    );
+
+    final metadata = tester.widget<Text>(
+      find.byWidgetPredicate((widget) => widget is Text && (widget.data?.contains('8.6★') ?? false)),
+    );
+    expect(metadata.data, startsWith('PG-13 • 2024 • 2h 5m'));
+    expect(metadata.data, contains('8.6★ (12.3K)'));
+    expect(metadata.data, contains('Drama, Mystery'));
   });
 
   testWidgets('full bleed focusable media card lifts the glow into an overlay above siblings', (tester) async {
@@ -527,6 +780,51 @@ Widget _fullCardHarness({required FocusNode focusNode, required bool fullBleed})
       ),
     ),
   );
+}
+
+Widget _catalogGridHarness(MediaItem item, {Key? key, double width = 220}) {
+  return _TestApp(
+    child: SizedBox(
+      width: width,
+      height: 330,
+      child: MediaCard(
+        key: key,
+        item: item,
+        width: width,
+        height: 280,
+        forceGridMode: true,
+        isOffline: true,
+        onTap: () {},
+      ),
+    ),
+  );
+}
+
+class _ReadCountingMap extends MapBase<String, Object?> {
+  final Map<String, Object?> _values;
+  int reads = 0;
+
+  _ReadCountingMap(this._values);
+
+  @override
+  Object? operator [](Object? key) {
+    reads++;
+    return _values[key];
+  }
+
+  @override
+  void operator []=(String key, Object? value) {
+    _values[key] = value;
+  }
+
+  @override
+  void clear() => _values.clear();
+
+  @override
+  Iterable<String> get keys => _values.keys;
+
+  @override
+  Object? remove(Object? key) => _values.remove(key);
 }
 
 class _TestApp extends StatelessWidget {

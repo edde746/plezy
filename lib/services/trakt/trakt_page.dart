@@ -6,7 +6,7 @@ class TraktPage<T> {
   final List<T> items;
   final int page;
   final int pageCount;
-  final int itemCount;
+  final int? itemCount;
 
   const TraktPage({required this.items, required this.page, required this.pageCount, required this.itemCount});
 
@@ -18,6 +18,6 @@ class TraktPage<T> {
     items: items,
     page: int.tryParse(res.headers['x-pagination-page'] ?? '') ?? 1,
     pageCount: int.tryParse(res.headers['x-pagination-page-count'] ?? '') ?? 1,
-    itemCount: int.tryParse(res.headers['x-pagination-item-count'] ?? '') ?? items.length,
+    itemCount: int.tryParse(res.headers['x-pagination-item-count'] ?? ''),
   );
 }

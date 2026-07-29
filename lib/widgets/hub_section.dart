@@ -55,6 +55,9 @@ class HubSection extends StatefulWidget {
   final bool showServerName;
   final Future<List<MediaItem>> Function()? loadMoreItems;
 
+  /// Provider-reported result count shown alongside the existing hub title.
+  final int? totalResults;
+
   /// Reports the current focused media item. Used by TV spotlight layouts.
   final ValueChanged<MediaItem>? onFocusedItemChanged;
 
@@ -103,6 +106,7 @@ class HubSection extends StatefulWidget {
     bool? usesContinueWatchingAction,
     this.showServerName = false,
     this.loadMoreItems,
+    this.totalResults,
     this.onFocusedItemChanged,
     this.onItemTap,
     this.onItemLongPress,
@@ -447,6 +451,18 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                       Flexible(
                         child: Text(widget.hub.title, style: titleStyle, overflow: .ellipsis, maxLines: 1),
                       ),
+                      if (widget.totalResults case final totalResults?) ...[
+                        SizedBox(width: isTv ? 12 : 8),
+                        Text(
+                          t.explore.totalResults(n: totalResults),
+                          maxLines: 1,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.62),
+                            fontSize: isTv ? 17 : null,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                       if (widget.showServerName && widget.hub.serverName != null) ...[
                         const SizedBox(width: 8),
                         Text(

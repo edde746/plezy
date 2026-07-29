@@ -29,17 +29,34 @@ class PlexDiscoverSession {
 class PlexDiscoverPage {
   final List<Map<String, dynamic>> items;
   final bool hasMore;
+  final int? totalResults;
 
-  const PlexDiscoverPage({required this.items, this.hasMore = false});
+  const PlexDiscoverPage({required this.items, this.hasMore = false, this.totalResults});
+}
+
+class PlexDiscoverSearchResult {
+  final Map<String, dynamic> metadata;
+  final double? score;
+
+  const PlexDiscoverSearchResult({required this.metadata, this.score});
 }
 
 class PlexDiscoverHub {
   final String id;
   final String key;
   final String title;
+  final String? type;
+  final String? style;
   final PlexDiscoverPage page;
 
-  const PlexDiscoverHub({required this.id, required this.key, required this.title, required this.page});
+  const PlexDiscoverHub({
+    required this.id,
+    required this.key,
+    required this.title,
+    required this.page,
+    this.type,
+    this.style,
+  });
 }
 
 class PlexDiscoverException implements Exception {
@@ -79,8 +96,9 @@ class PlexDiscoverClient {
     );
     final container = _mediaContainer(data!);
     final items = flexibleMapList(container['Metadata']);
-    final total = flexibleInt(container['totalSize']) ?? flexibleInt(container['size']) ?? items.length;
-    return PlexDiscoverPage(items: items, hasMore: offset + items.length < total);
+    final reportedTotal = flexibleInt(container['totalSize']);
+    final total = reportedTotal ?? flexibleInt(container['size']) ?? items.length;
+    return PlexDiscoverPage(items: items, hasMore: offset + items.length < total, totalResults: reportedTotal);
   }
 
   /// Discover's Home shelves — the rows Plex's own web client renders on its
@@ -93,19 +111,24 @@ class PlexDiscoverClient {
   /// produce a catalog item are dropped before spending that request:
   /// `directory` shelves list browse categories (genre/decade/award) and
   /// `clip` shelves list trailers.
-  Future<List<PlexDiscoverHub>> getHomeHubs({int limit = 25, int concurrency = 6}) async {
+  Future<List<PlexDiscoverHub>> getHomeHubs({
+    int limit = 25,
+    int concurrency = 6,
+    bool includeImageVariants = false,
+  }) async {
     final safeLimit = limit.clamp(1, 100);
     final data = await _request('GET', '/hubs/sections/home', query: {'includeMeta': 1});
     final container = _mediaContainer(data!);
-    final candidates = <({String id, String key, String title})>[];
+    final candidates = <({String id, String key, String title, String? type, String? style})>[];
     final seen = <String>{};
     for (final hub in flexibleMapList(container['Hub'])) {
-      if (_unrenderableHubTypes.contains(hub['type'])) continue;
+      final type = _nonEmptyString(hub['type']);
+      if (_unrenderableHubTypes.contains(type)) continue;
       final key = _nonEmptyString(hub['key'] ?? hub['hubKey']);
       final id = _nonEmptyString(hub['hubIdentifier']) ?? key;
       final title = _nonEmptyString(hub['title']);
       if (key == null || id == null || title == null || !seen.add(id)) continue;
-      candidates.add((id: id, key: key, title: title));
+      candidates.add((id: id, key: key, title: title, type: type, style: _nonEmptyString(hub['style'])));
     }
     if (candidates.isEmpty) return const [];
 
@@ -123,7 +146,7 @@ class PlexDiscoverClient {
         final candidate = candidates[index];
         try {
           // One over the shelf size is what tells View All there is more.
-          pages[index] = await getHub(candidate.key, limit: safeLimit + 1);
+          pages[index] = await getHub(candidate.key, limit: safeLimit + 1, includeImageVariants: includeImageVariants);
         } catch (error, stackTrace) {
           firstError ??= error;
           firstStackTrace ??= stackTrace;
@@ -144,7 +167,13 @@ class PlexDiscoverClient {
             id: candidates[i].id,
             key: candidates[i].key,
             title: candidates[i].title,
-            page: PlexDiscoverPage(items: page.items.take(safeLimit).toList(), hasMore: page.items.length > safeLimit),
+            type: candidates[i].type,
+            style: candidates[i].style,
+            page: PlexDiscoverPage(
+              items: page.items.take(safeLimit).toList(),
+              hasMore: page.items.length > safeLimit || (page.totalResults != null && page.totalResults! > safeLimit),
+              totalResults: page.totalResults,
+            ),
           ),
     ];
   }
@@ -152,23 +181,33 @@ class PlexDiscoverClient {
   /// One Discover hub in full. The provider ignores container offsets on hub
   /// keys and truncates with `limit` instead, so a hub is always a single
   /// page and [PlexDiscoverPage.hasMore] never reports one.
-  Future<PlexDiscoverPage> getHub(String key, {int limit = 100}) async {
+  Future<PlexDiscoverPage> getHub(String key, {int limit = 100, bool includeImageVariants = false}) async {
     final safeLimit = limit.clamp(1, 500);
     final data = await _request(
       'GET',
       key,
-      // Streaming parts and image variants roughly double the payload of a
-      // 25-item shelf and nothing in the catalog layer reads them.
-      query: {'limit': safeLimit, 'includeMeta': 1, 'excludeElements': 'Media,Image'},
+      query: {
+        'limit': safeLimit,
+        'includeMeta': 1,
+        'includeUserState': 1,
+        // Allowing Image on the measured 26-item hub grew 27,287 -> 55,925
+        // bytes (+104.95%). Discover is uncached and Home hydrates up to six
+        // hubs concurrently, so spotlight/logo consumers must opt in per
+        // request and ordinary shelves stay narrow.
+        'excludeElements': includeImageVariants ? 'Media' : 'Media,Image',
+      },
     );
     final container = _mediaContainer(data!);
     final hub = firstFlexibleMap(container['Hub']);
     final containerItems = flexibleMapList(container['Metadata']);
     final rawItems = containerItems.isNotEmpty ? containerItems : flexibleMapList(hub?['Metadata']);
-    return PlexDiscoverPage(items: rawItems.take(safeLimit).toList());
+    return PlexDiscoverPage(
+      items: rawItems.take(safeLimit).toList(),
+      totalResults: flexibleInt(container['totalSize']),
+    );
   }
 
-  Future<List<Map<String, dynamic>>> search(String query, {int limit = 30}) async {
+  Future<List<PlexDiscoverSearchResult>> search(String query, {int limit = 30}) async {
     final data = await _request(
       'GET',
       '/library/search',
@@ -185,7 +224,8 @@ class PlexDiscoverClient {
     return [
       for (final group in flexibleMapList(container['SearchResults']))
         for (final result in flexibleMapList(group['SearchResult']))
-          if (firstFlexibleMap(result['Metadata']) case final Map<String, dynamic> metadata) metadata,
+          if (firstFlexibleMap(result['Metadata']) case final Map<String, dynamic> metadata)
+            PlexDiscoverSearchResult(metadata: metadata, score: flexibleDouble(result['score'])),
     ];
   }
 

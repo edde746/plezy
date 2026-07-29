@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:plezy/media/catalog_item_ref.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/trakt_catalog_source.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
@@ -27,11 +29,14 @@ Map<String, dynamic> _watchlistBody() => {
   'entries': [
     {
       'rank': 1,
+      'listed_at': '2026-01-03T12:34:56.000Z',
       'type': 'movie',
       'movie': {
         'title': 'The Matrix',
         'year': 1999,
         'ids': {'trakt': 1, 'imdb': 'tt0133093', 'tmdb': 603},
+        'trailer': 'https://youtube.com/watch?v=m8e-FF8MsqU',
+        'released': '1999-03-31T00:00:00.000Z',
       },
     },
     {
@@ -46,6 +51,18 @@ Map<String, dynamic> _watchlistBody() => {
         'aired_episodes': 19,
         'votes': 7294,
         'rating': 8.5,
+        'comment_count': 432,
+        'tagline': 'Your innie has a life of its own.',
+        'original_title': 'Severance',
+        'first_aired': '2022-02-18T00:00:00.000Z',
+        'language': 'en',
+        'languages': ['en'],
+        'available_translations': ['es', 'fr'],
+        'country': 'us',
+        'airs': {'day': 'Tuesday', 'time': '21:00', 'timezone': 'America/New_York'},
+        'images': {
+          'logo': ['walter-r2.trakt.tv/images/shows/logos/severance.webp'],
+        },
       },
     },
     // Episode entries are not Explore rows and must be skipped.
@@ -88,10 +105,15 @@ void main() {
     });
 
     test('fetchRow(watchlist) maps mixed entries and skips non-movie/show types', () async {
+      handlers.add(
+        (request) =>
+            http.Response(json.encode(_watchlistBody()['entries']), 200, headers: {'x-pagination-item-count': '3'}),
+      );
       final page = await source.fetchRow(CatalogRowId.watchlist);
 
       expect(requests.single.url.path, '/sync/watchlist');
       expect(page.items, hasLength(2));
+      expect(page.totalResults, 3);
       expect(page.items[0].kind, MediaKind.movie);
       expect(page.items[0].identityKey, 'movie/imdb:tt0133093');
       expect(page.items[1].kind, MediaKind.show);
@@ -103,6 +125,22 @@ void main() {
       expect(show.episodeCount, 19);
       expect(show.votes, 7294);
       expect(show.rating, 8.5);
+      expect(show.audience?.comments, 432);
+      expect(show.broadcast?.weekday, DateTime.tuesday);
+      expect(show.broadcast?.time, '21:00');
+      expect(show.broadcast?.timezone, 'America/New_York');
+      expect(show.tagline, 'Your innie has a life of its own.');
+      expect(show.originalTitle, 'Severance');
+      expect(show.releaseDate, DateTime.utc(2022, 2, 18));
+      expect(show.languages, ['en', 'es', 'fr']);
+      expect(show.logoUrl, 'https://walter-r2.trakt.tv/images/shows/logos/severance.webp');
+      expect(show.countries, ['US']);
+      expect(page.items[0].trailerUrl, 'https://youtube.com/watch?v=m8e-FF8MsqU');
+      expect(page.items[0].releaseDate, DateTime.utc(1999, 3, 31));
+      expect(page.items[1].addedAt, isNull);
+      expect(page.items[0].addedAt, DateTime.utc(2026, 1, 3, 12, 34, 56));
+      expect(page.items[0].audience, isNull);
+      expect(page.items[0].broadcast, isNull);
       expect(page.items[0].airStatus, isNull);
 
       final rendered = page.items[0].toMediaItem();
@@ -150,48 +188,179 @@ void main() {
       expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(tmdb: 1396)), isTrue);
     });
 
-    test('fetchCast maps people to cast members with https-prefixed headshots', () async {
-      handlers.add(
-        (request) => http.Response(
-          json.encode({
-            'cast': [
-              {
-                'characters': ['Walter White'],
-                'person': {
-                  'name': 'Bryan Cranston',
-                  'images': {
-                    'headshot': ['media.trakt.tv/images/people/headshots/medium/25eb34a2d5.jpg.webp'],
+    test('fetchDetail appends bounded guest stars and maps cast metadata, crew, and related titles', () async {
+      http.Response detailResponse(http.Request request) {
+        if (request.url.path == '/shows/1388/people') {
+          return http.Response(
+            json.encode({
+              'cast': [
+                {
+                  'characters': ['Walter White', 'Heisenberg'],
+                  'episode_count': 62,
+                  'person': {
+                    'name': 'Bryan Cranston',
+                    'images': {
+                      'headshot': ['media.trakt.tv/images/people/headshots/medium/25eb34a2d5.jpg.webp'],
+                    },
                   },
                 },
+              ],
+              'guest_stars': [
+                {
+                  'characters': ['Tuco Salamanca'],
+                  'episode_count': 4,
+                  'person': {'name': 'Raymond Cruz'},
+                },
+                {
+                  'characters': ['Gale Boetticher'],
+                  'episode_count': 7,
+                  'person': {'name': 'David Costabile'},
+                },
+              ],
+              'crew': {
+                'directing': [
+                  {
+                    'jobs': ['Director'],
+                    'person': {'name': 'Vince Gilligan'},
+                  },
+                ],
+                'writing': [
+                  {
+                    'jobs': ['Writer', 'Screenplay'],
+                    'person': {'name': 'Peter Gould'},
+                  },
+                ],
+                'production': [
+                  {
+                    'jobs': ['Executive Producer'],
+                    'person': {'name': 'Mark Johnson'},
+                  },
+                ],
               },
-              {
-                'characters': <String>[],
-                'person': {'name': 'Aaron Paul'},
+            }),
+            200,
+          );
+        }
+        expect(request.url.path, '/shows/1388/related');
+        return http.Response(
+          json.encode([
+            {
+              'title': 'Better Call Saul',
+              'year': 2015,
+              'ids': {'trakt': 5},
+            },
+          ]),
+          200,
+        );
+      }
+
+      handlers
+        ..add(detailResponse)
+        ..add(detailResponse);
+      final item = CatalogItem(
+        source: CatalogSourceId.trakt,
+        kind: MediaKind.show,
+        title: 'Breaking Bad',
+        tagline: 'All bad things must come to an end.',
+        ids: const CatalogItemIds(trakt: 1388, slug: 'breaking-bad'),
+      );
+      final detail = await source.fetchDetail(item, castLimit: 2, relatedLimit: 7);
+
+      expect(requests.map((request) => request.url.path).toSet(), {'/shows/1388/people', '/shows/1388/related'});
+      final peopleRequest = requests.singleWhere((request) => request.url.path.endsWith('/people'));
+      expect(peopleRequest.url.queryParameters['extended'], 'full,images,guest_stars');
+      final relatedRequest = requests.singleWhere((request) => request.url.path.endsWith('/related'));
+      expect(relatedRequest.url.queryParameters['limit'], '7');
+      expect(detail.cast, hasLength(2));
+      expect(detail.cast[0].name, 'Bryan Cranston');
+      expect(detail.cast[0].secondary, 'Walter White, Heisenberg · 62 eps');
+      expect(detail.cast[0].imageUrl, 'https://media.trakt.tv/images/people/headshots/medium/25eb34a2d5.jpg.webp');
+      expect(detail.cast[1].name, 'Raymond Cruz');
+      expect(detail.cast[1].secondary, 'Tuco Salamanca · 4 eps');
+      expect(detail.item.tagline, item.tagline);
+      expect(detail.item.credits, [
+        isA<CatalogCredit>()
+            .having((credit) => credit.name, 'name', 'Vince Gilligan')
+            .having((credit) => credit.role, 'role', CatalogCreditRole.director),
+        isA<CatalogCredit>()
+            .having((credit) => credit.name, 'name', 'Peter Gould')
+            .having((credit) => credit.role, 'role', CatalogCreditRole.writer),
+        isA<CatalogCredit>()
+            .having((credit) => credit.name, 'name', 'Mark Johnson')
+            .having((credit) => credit.role, 'role', CatalogCreditRole.producer),
+      ]);
+      expect(detail.related.single.title, 'Better Call Saul');
+      expect(detail.related.single.kind, MediaKind.show);
+    });
+
+    test('trending watchers reach audience and pagination count reaches totalResults', () async {
+      handlers.add(
+        (request) => http.Response(
+          json.encode([
+            {
+              'watchers': 120,
+              'movie': {
+                'title': 'The Matrix',
+                'ids': {'trakt': 1},
               },
-              {'characters': <String>[]}, // no person — skipped
-            ],
-            'crew': <String, dynamic>{},
-          }),
+            },
+          ]),
+          200,
+          headers: {'x-pagination-item-count': '987'},
+        ),
+      );
+
+      final page = await source.fetchRow(CatalogRowId.trendingMovies);
+
+      expect(page.items.single.audience?.watchingNow, 120);
+      expect(page.items.single.recommenders, isNull);
+      expect(page.totalResults, 987);
+    });
+
+    test('recommendation users and their notes reach row-only provenance', () async {
+      handlers.add(
+        (request) => http.Response(
+          json.encode([
+            {
+              'title': 'The Matrix',
+              'ids': {'trakt': 1},
+              'favorited_by': [
+                {'username': 'alice', 'name': 'Alice', 'notes': 'A forever favorite.'},
+              ],
+              'recommended_by': [
+                {'username': 'bob', 'name': null, 'notes': 'The lobby scene.'},
+              ],
+            },
+          ]),
           200,
         ),
       );
 
-      final cast = await source.fetchCast(
-        const CatalogItem(
-          source: CatalogSourceId.trakt,
-          kind: MediaKind.show,
-          title: 'Breaking Bad',
-          ids: CatalogItemIds(trakt: 1388, slug: 'breaking-bad'),
-        ),
-      );
+      final page = await source.fetchRow(CatalogRowId.recommendedMovies);
 
-      expect(requests.single.url.path, '/shows/1388/people');
-      expect(cast, hasLength(2));
-      expect(cast[0].name, 'Bryan Cranston');
-      expect(cast[0].secondary, 'Walter White');
-      expect(cast[0].imageUrl, 'https://media.trakt.tv/images/people/headshots/medium/25eb34a2d5.jpg.webp');
-      expect(cast[1].imageUrl, isNull);
-      expect(cast[1].secondary, isNull);
+      expect(page.items.single.recommendationCount, isNull);
+      expect(page.items.single.recommenders, [
+        isA<CatalogRecommender>()
+            .having((recommender) => recommender.username, 'username', 'alice')
+            .having((recommender) => recommender.name, 'name', 'Alice')
+            .having((recommender) => recommender.note, 'note', 'A forever favorite.')
+            .having((recommender) => recommender.reason, 'reason', CatalogRecommendationReason.favorited),
+        isA<CatalogRecommender>()
+            .having((recommender) => recommender.username, 'username', 'bob')
+            .having((recommender) => recommender.note, 'note', 'The lobby scene.')
+            .having((recommender) => recommender.reason, 'reason', CatalogRecommendationReason.recommended),
+      ]);
+    });
+
+    test('weekday mapping covers every Trakt day name and rejects unknown values', () {
+      expect(TraktCatalogSource.weekdayFor('Monday'), DateTime.monday);
+      expect(TraktCatalogSource.weekdayFor('Tuesday'), DateTime.tuesday);
+      expect(TraktCatalogSource.weekdayFor('Wednesday'), DateTime.wednesday);
+      expect(TraktCatalogSource.weekdayFor('Thursday'), DateTime.thursday);
+      expect(TraktCatalogSource.weekdayFor('Friday'), DateTime.friday);
+      expect(TraktCatalogSource.weekdayFor('Saturday'), DateTime.saturday);
+      expect(TraktCatalogSource.weekdayFor('Sunday'), DateTime.sunday);
+      expect(TraktCatalogSource.weekdayFor('Someday'), isNull);
     });
 
     test('air status normalization covers the Trakt vocabulary', () {
@@ -287,30 +456,68 @@ void main() {
       expect(requests, isEmpty);
     });
 
-    test('fetchRelated hits /related and keeps the item kind', () async {
-      handlers.add((request) {
-        expect(request.url.path, '/shows/2/related');
-        return http.Response(
-          json.encode([
-            {
-              'title': 'Dark',
-              'year': 2017,
-              'ids': {'trakt': 5, 'tmdb': 70523},
-            },
-          ]),
-          200,
-        );
+    test('fetchDetail starts people and related concurrently and isolates related failure', () async {
+      final peopleStarted = Completer<void>();
+      final relatedStarted = Completer<void>();
+      final peopleResponse = Completer<http.Response>();
+      final relatedResponse = Completer<http.Response>();
+      final concurrentClient = TraktClient(
+        _session(),
+        onSessionInvalidated: () => fail('should not invalidate'),
+        httpClient: MockClient((request) {
+          if (request.url.path.endsWith('/people')) {
+            peopleStarted.complete();
+            return peopleResponse.future;
+          }
+          if (request.url.path.endsWith('/related')) {
+            relatedStarted.complete();
+            return relatedResponse.future;
+          }
+          return Future.value(http.Response('not found', 404));
+        }),
+      );
+      final concurrentSource = TraktCatalogSource(concurrentClient);
+      addTearDown(() {
+        concurrentSource.dispose();
+        concurrentClient.dispose();
       });
-
       final item = CatalogItem(
         source: CatalogSourceId.trakt,
         kind: MediaKind.show,
         title: 'Severance',
         ids: const CatalogItemIds(trakt: 2),
       );
-      final related = await source.fetchRelated(item);
-      expect(related.single.title, 'Dark');
-      expect(related.single.kind, MediaKind.show);
+
+      final detailFuture = concurrentSource.fetchDetail(item);
+      await Future.wait([peopleStarted.future, relatedStarted.future]).timeout(const Duration(seconds: 1));
+      peopleResponse.complete(
+        http.Response(
+          json.encode({
+            'cast': [
+              {
+                'characters': ['Mark Scout'],
+                'person': {'name': 'Adam Scott'},
+              },
+            ],
+            'crew': {
+              'directing': [
+                {
+                  'jobs': ['Director'],
+                  'person': {'name': 'Ben Stiller'},
+                },
+              ],
+            },
+          }),
+          200,
+        ),
+      );
+      relatedResponse.complete(http.Response('upstream failure', 500));
+
+      final detail = await detailFuture;
+      expect(detail.cast.single.name, 'Adam Scott');
+      expect(detail.item.credits?.single.name, 'Ben Stiller');
+      expect(detail.item.credits?.single.role, CatalogCreditRole.director);
+      expect(detail.related, isEmpty);
     });
   });
 }

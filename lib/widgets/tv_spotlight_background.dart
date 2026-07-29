@@ -37,6 +37,9 @@ class TvSpotlightBackground extends StatelessWidget {
   final String? Function(String? artworkPath)? localArtworkPathResolver;
   final bool allowNetwork;
 
+  /// Optional caller-owned fact appended to the existing metadata line.
+  final Widget? metadataTrailing;
+
   const TvSpotlightBackground({
     super.key,
     required this.item,
@@ -52,6 +55,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.showInfo = true,
     this.localArtworkPathResolver,
     this.allowNetwork = true,
+    this.metadataTrailing,
   });
 
   double _scale(BuildContext context) => TvLayoutConstants.scaleOf(context);
@@ -341,6 +345,7 @@ class TvSpotlightBackground extends StatelessWidget {
     } else if (media.year != null) {
       addTextPart(media.year.toString());
     }
+    if (metadataTrailing case final metadata?) addWidgetPart(metadata);
 
     if (children.isEmpty) return const SizedBox.shrink();
 

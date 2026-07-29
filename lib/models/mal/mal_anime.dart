@@ -14,8 +14,10 @@ class MalPicture {
   const MalPicture({this.medium, this.large});
 
   String? get primary {
-    final url = large ?? medium;
-    return url == null || url.isEmpty ? null : url;
+    final largeUrl = large?.trim();
+    if (largeUrl != null && largeUrl.isNotEmpty) return largeUrl;
+    final mediumUrl = medium?.trim();
+    return mediumUrl == null || mediumUrl.isEmpty ? null : mediumUrl;
   }
 
   factory MalPicture.fromJson(Map<String, dynamic> json) => _$MalPictureFromJson(json);
@@ -54,10 +56,24 @@ class MalStudio {
 class MalStartSeason {
   @JsonKey(fromJson: flexibleInt)
   final int? year;
+  final String? season;
 
-  const MalStartSeason({this.year});
+  const MalStartSeason({this.year, this.season});
 
   factory MalStartSeason.fromJson(Map<String, dynamic> json) => _$MalStartSeasonFromJson(json);
+}
+
+@JsonSerializable(createFactory: false, createToJson: false)
+class MalBroadcast {
+  @JsonKey(name: 'day_of_the_week')
+  final String? dayOfTheWeek;
+  @JsonKey(name: 'start_time')
+  final String? startTime;
+
+  const MalBroadcast({this.dayOfTheWeek, this.startTime});
+
+  factory MalBroadcast.fromJson(Map<String, dynamic> json) =>
+      MalBroadcast(dayOfTheWeek: json['day_of_the_week'] as String?, startTime: json['start_time'] as String?);
 }
 
 /// An anime summary node from MAL API v2 catalog endpoints
@@ -115,6 +131,23 @@ class MalAnime {
   @JsonKey(name: 'num_scoring_users', fromJson: flexibleInt)
   final int? numScoringUsers;
 
+  final MalBroadcast? broadcast;
+  @JsonKey(fromJson: flexibleInt)
+  final int? popularity;
+  @JsonKey(name: 'num_list_users', fromJson: flexibleInt)
+  final int? numListUsers;
+
+  /// MAL score rank, distinct from `/anime/ranking`'s entry-level leaderboard
+  /// position.
+  @JsonKey(fromJson: flexibleInt)
+  final int? rank;
+
+  /// `white` / `gray` / `black`.
+  final String? nsfw;
+  final String? source;
+  @JsonKey(name: 'end_date')
+  final String? endDate;
+
   const MalAnime({
     this.id,
     this.title,
@@ -132,6 +165,13 @@ class MalAnime {
     this.status,
     this.studios,
     this.numScoringUsers,
+    this.broadcast,
+    this.popularity,
+    this.numListUsers,
+    this.rank,
+    this.nsfw,
+    this.source,
+    this.endDate,
   });
 
   bool get isMovie => mediaType == 'movie';
@@ -172,4 +212,113 @@ class MalAnime {
   }
 
   factory MalAnime.fromJson(Map<String, dynamic> json) => _$MalAnimeFromJson(json);
+}
+
+/// One community recommendation from an anime detail body.
+class MalAnimeRecommendation {
+  final MalAnime anime;
+  final int? count;
+
+  const MalAnimeRecommendation({required this.anime, this.count});
+
+  static MalAnimeRecommendation? fromEntry(Object? raw) {
+    if (raw is! Map) return null;
+    final node = raw['node'];
+    if (node is! Map) return null;
+    return MalAnimeRecommendation(
+      anime: MalAnime.fromJson(node.cast<String, dynamic>()),
+      count: flexibleInt(raw['num_recommendations']),
+    );
+  }
+}
+
+/// One labelled franchise edge from an anime detail body.
+class MalAnimeRelation {
+  final MalAnime anime;
+  final String? type;
+
+  const MalAnimeRelation({required this.anime, this.type});
+
+  static MalAnimeRelation? fromEntry(Object? raw) {
+    if (raw is! Map) return null;
+    final node = raw['node'];
+    if (node is! Map) return null;
+    final type = raw['relation_type'];
+    return MalAnimeRelation(
+      anime: MalAnime.fromJson(node.cast<String, dynamic>()),
+      type: type is String && type.isNotEmpty ? type : null,
+    );
+  }
+}
+
+/// MAL list-status counts from an anime detail body.
+class MalStatistics {
+  final int? numListUsers;
+  final int? watching;
+  final int? completed;
+  final int? onHold;
+  final int? dropped;
+  final int? planToWatch;
+
+  const MalStatistics({this.numListUsers, this.watching, this.completed, this.onHold, this.dropped, this.planToWatch});
+
+  factory MalStatistics.fromJson(Map<dynamic, dynamic> json) {
+    final status = json['status'];
+    final statuses = status is Map ? status : const <String, dynamic>{};
+    return MalStatistics(
+      numListUsers: flexibleInt(json['num_list_users']),
+      watching: flexibleInt(statuses['watching']),
+      completed: flexibleInt(statuses['completed']),
+      onHold: flexibleInt(statuses['on_hold']),
+      dropped: flexibleInt(statuses['dropped']),
+      planToWatch: flexibleInt(statuses['plan_to_watch']),
+    );
+  }
+}
+
+/// The single `GET /anime/{id}` body used for detail enrichment,
+/// recommendations and labelled franchise relations.
+class MalAnimeDetail {
+  final MalAnime anime;
+  final List<MalAnimeRecommendation> recommendations;
+  final List<MalAnimeRelation> relations;
+  final MalStatistics? statistics;
+  final List<MalPicture> pictures;
+  final String? background;
+
+  const MalAnimeDetail({
+    required this.anime,
+    this.recommendations = const [],
+    this.relations = const [],
+    this.statistics,
+    this.pictures = const [],
+    this.background,
+  });
+
+  factory MalAnimeDetail.fromJson(Map<String, dynamic> json, {int relatedLimit = 20}) {
+    final recommendations = json['recommendations'];
+    final relations = json['related_anime'];
+    final statistics = json['statistics'];
+    final pictures = json['pictures'];
+    final rawBackground = json['background'];
+    final background = rawBackground is String ? rawBackground.trim() : null;
+    return MalAnimeDetail(
+      anime: MalAnime.fromJson(json),
+      recommendations: [
+        if (recommendations is List)
+          for (final raw in recommendations.take(relatedLimit)) ?MalAnimeRecommendation.fromEntry(raw),
+      ],
+      relations: [
+        if (relations is List)
+          for (final raw in relations.take(relatedLimit)) ?MalAnimeRelation.fromEntry(raw),
+      ],
+      statistics: statistics is Map ? MalStatistics.fromJson(statistics) : null,
+      pictures: [
+        if (pictures is List)
+          for (final raw in pictures)
+            if (raw is Map) MalPicture.fromJson(raw.cast<String, dynamic>()),
+      ],
+      background: background == null || background.isEmpty ? null : background,
+    );
+  }
 }

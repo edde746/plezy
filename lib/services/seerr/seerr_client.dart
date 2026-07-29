@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
+import '../../i18n/app_locale_utils.dart';
+import '../../i18n/strings.g.dart';
+
 import '../../models/seerr/seerr_details.dart';
 import '../../models/seerr/seerr_media.dart';
 import '../../models/seerr/seerr_page.dart';
@@ -103,7 +106,7 @@ class SeerrClient {
   /// `/search` — Seerr's TMDB-backed catalog search (mixed results, person
   /// entries dropped).
   Future<SeerrPage<SeerrMedia>> search(String query, {int page = 1}) async {
-    final data = await _request('GET', '/search', query: {'query': query, 'page': page});
+    final data = await _request('GET', '/search', query: {'query': query, 'page': page, 'language': _language});
     return _parseMediaPage(data, null);
   }
 
@@ -116,7 +119,7 @@ class SeerrClient {
       _mediaPage('/tv/$tmdbId/recommendations', page, 'tv');
 
   Future<SeerrPage<SeerrMedia>> _mediaPage(String path, int page, String? coerceMediaType) async {
-    final data = await _request('GET', path, query: {'page': page});
+    final data = await _request('GET', path, query: {'page': page, 'language': _language});
     return _parseMediaPage(data, coerceMediaType);
   }
 
@@ -135,7 +138,7 @@ class SeerrClient {
   Future<SeerrDetails> getTv(int tmdbId) => _details('/tv/$tmdbId');
 
   Future<SeerrDetails> _details(String path) async {
-    final data = await _request('GET', path);
+    final data = await _request('GET', path, query: {'language': _language});
     return SeerrDetails.fromJson(data as Map<String, dynamic>);
   }
 
@@ -171,6 +174,7 @@ class SeerrClient {
   }
 
   // ---------- Internals ----------
+  String get _language => LocaleSettings.currentLocale.plexLanguageCode;
 
   Future<dynamic> _request(
     String method,

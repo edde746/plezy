@@ -4,8 +4,9 @@
 class SeerrPage<T> {
   final List<T> items;
   final bool hasMore;
+  final int? totalResults;
 
-  const SeerrPage({required this.items, required this.hasMore});
+  const SeerrPage({required this.items, required this.hasMore, this.totalResults});
 
   /// [skip] drops results the mapper can't represent (person entries in
   /// mixed trending/search results) — return null from [fromItem] for those.
@@ -13,6 +14,7 @@ class SeerrPage<T> {
     final info = json['pageInfo'] is Map<String, dynamic> ? json['pageInfo'] as Map<String, dynamic> : json;
     final page = (info['page'] as num?)?.toInt() ?? 1;
     final totalPages = ((info['pages'] ?? info['totalPages']) as num?)?.toInt() ?? page;
+    final totalResults = ((json['totalResults'] ?? info['totalResults']) as num?)?.toInt();
     final results = json['results'];
     return SeerrPage(
       items: [
@@ -22,6 +24,7 @@ class SeerrPage<T> {
               if (fromItem(item) case final T parsed) parsed,
       ],
       hasMore: page < totalPages,
+      totalResults: totalResults,
     );
   }
 }

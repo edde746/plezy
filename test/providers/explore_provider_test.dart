@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/explore_provider.dart';
@@ -67,9 +66,8 @@ class _FakeSource implements CatalogSource {
   @override
   Future<List<CatalogItem>> search(String query, {int limit = 30}) async => const [];
   @override
-  Future<List<CatalogCastMember>> fetchCast(CatalogItem item, {int limit = 20}) async => const [];
-  @override
-  Future<List<CatalogItem>> fetchRelated(CatalogItem item, {int limit = 20}) async => const [];
+  Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async =>
+      CatalogDetail(item: item);
   @override
   Future<void> ensureWatchlistLoaded() async {}
   @override
@@ -91,6 +89,8 @@ class _FakeHubSource extends _FakeSource implements CatalogHubSource {
   int hubFetches = 0;
   int hubFailuresRemaining = 0;
   bool returnEmptyHubs = false;
+  CatalogHubStyle? hubStyle;
+  int? hubTotalResults;
 
   CatalogItem _hubItem(String title) => CatalogItem(
     source: id,
@@ -111,7 +111,8 @@ class _FakeHubSource extends _FakeSource implements CatalogHubSource {
       CatalogHub(
         id: 'trending-plex',
         title: 'Trending on Plex',
-        page: CatalogPage(items: [_hubItem('Initial Recommendation')], hasMore: true),
+        style: hubStyle,
+        page: CatalogPage(items: [_hubItem('Initial Recommendation')], hasMore: true, totalResults: hubTotalResults),
       ),
     ];
   }
@@ -206,6 +207,50 @@ void main() {
 
       expect(source.hubPageFetches, [1, 2]);
       expect(allItems.map((item) => item.title), ['Recommendation Page 1', 'Recommendation Page 2']);
+    });
+
+    test('null and shelf styles retain the existing shelf appearance', () async {
+      final source = _FakeHubSource(CatalogSourceId.plex);
+      addTearDown(source.dispose);
+      sources.setActive(source);
+      await _pumpMicrotasks();
+
+      final unstyled = explore.rowHubs.last;
+      expect(unstyled.style, isNull);
+
+      source.hubStyle = CatalogHubStyle.shelf;
+      await explore.load();
+      final shelf = explore.rowHubs.last;
+
+      expect(shelf.style, CatalogHubStyle.shelf);
+      expect(shelf.hub.title, unstyled.hub.title);
+      expect(shelf.hub.type, unstyled.hub.type);
+      expect(shelf.hub.items.map((item) => item.title), unstyled.hub.items.map((item) => item.title));
+      expect(shelf.hub.more, unstyled.hub.more);
+    });
+
+    test('availability platform hubs are skipped instead of rendered as title posters', () async {
+      final source = _FakeHubSource(CatalogSourceId.plex)..hubStyle = CatalogHubStyle.availabilityPlatforms;
+      addTearDown(source.dispose);
+      sources.setActive(source);
+      await _pumpMicrotasks();
+
+      expect(explore.rowHubs, hasLength(1));
+      expect(explore.rowHubs.single.row, CatalogRowId.watchlist);
+      expect(explore.rowHubs.single.hub.items.single.title, 'plex:watchlist');
+      expect(explore.rowHubs.where((hub) => hub.providerHubId != null), isEmpty);
+    });
+
+    test('provider totalResults reaches the rendered hub without replacing its loaded items', () async {
+      final source = _FakeHubSource(CatalogSourceId.plex)..hubTotalResults = 347;
+      addTearDown(source.dispose);
+      sources.setActive(source);
+      await _pumpMicrotasks();
+
+      final providerHub = explore.rowHubs.last;
+      expect(providerHub.totalResults, 347);
+      expect(providerHub.hub.size, 347);
+      expect(providerHub.hub.items, hasLength(1));
     });
 
     test('mutation during the initial load is caught up by ensureFresh', () async {

@@ -48,7 +48,28 @@ class CatalogPage {
   final List<CatalogItem> items;
   final bool hasMore;
 
-  const CatalogPage({required this.items, this.hasMore = false});
+  /// Provider-reported size of the whole result set, when the envelope says
+  /// (Seerr `totalResults`). Null when the provider only reports `hasMore`.
+  final int? totalResults;
+
+  const CatalogPage({required this.items, this.hasMore = false, this.totalResults});
+}
+
+/// How a provider intends a hub to be presented. Providers tag hubs (Plex
+/// `style`), and rendering every one as the same shelf discards that.
+///
+/// Only values a provider was actually observed to send are declared. A live
+/// Plex Home response returned 17 renderable hubs: 5 `shelf`, 1
+/// `availabilityPlatforms`, 11 with no style at all. Absent stays absent —
+/// null means "the provider expressed no preference", which is not the same
+/// as `shelf`, even though both render identically today. Do not add a
+/// speculative style before a provider is seen sending it.
+enum CatalogHubStyle {
+  /// The default horizontal poster shelf.
+  shelf,
+
+  /// A hub whose entries are streaming services/platforms rather than titles.
+  availabilityPlatforms,
 }
 
 /// One provider-defined Explore shelf. Unlike [CatalogRowId], hubs are
@@ -58,7 +79,64 @@ class CatalogHub {
   final String title;
   final CatalogPage page;
 
-  const CatalogHub({required this.id, required this.title, required this.page});
+  /// The provider's presentation hint, or null when it sent none.
+  final CatalogHubStyle? style;
+
+  const CatalogHub({required this.id, required this.title, required this.page, this.style});
+}
+
+/// Everything a catalog detail screen needs from the item's own provider.
+///
+/// The contract is a request-count ceiling, not a single response: an
+/// implementation must issue no more requests than the separate cast and
+/// related calls it replaces, and [item] must be enriched purely from bodies
+/// it was already fetching. Providers differ — Simkl's detail body already
+/// carries recommendations, while Plex (`/library/metadata/{id}` plus
+/// `/related`) and Seerr (detail plus `/recommendations`) genuinely need two.
+/// Where two calls remain, run them concurrently and isolate their failures:
+/// a failed related call must still yield the enriched item and its cast.
+class CatalogDetail {
+  /// The opening item enriched with everything the detail body added, via
+  /// [CatalogItem.enrichedWith]. Equal to the input item when the provider
+  /// has no detail endpoint.
+  final CatalogItem item;
+
+  /// Actors with characters, or characters with roles, in billing order.
+  final List<CatalogCastMember> cast;
+
+  /// "More like this" — recommendations, which are a similarity judgement and
+  /// carry no relationship to the item.
+  final List<CatalogItem> related;
+
+  /// Franchise relations, grouped and labelled by how each group relates to
+  /// the item (MAL `related_anime`, AniList `relations`). Deliberately not
+  /// merged into [related]: "sequel" is a fact about the work, "recommended"
+  /// is an opinion about taste, and flattening them would lose the label the
+  /// UI needs to head each shelf.
+  final List<CatalogRelation> relations;
+
+  const CatalogDetail({required this.item, this.cast = const [], this.related = const [], this.relations = const []});
+}
+
+/// How a group of titles relates to the item they were fetched from.
+enum CatalogRelationType {
+  prequel,
+  sequel,
+  sideStory,
+  spinOff,
+  alternativeVersion,
+  summary,
+  parentStory,
+  adaptation,
+  other,
+}
+
+/// One labelled group of franchise relations.
+class CatalogRelation {
+  final CatalogRelationType type;
+  final List<CatalogItem> items;
+
+  const CatalogRelation({required this.type, required this.items});
 }
 
 /// Optional capability for catalog providers that expose dynamic hub rows.
@@ -95,15 +173,10 @@ abstract class CatalogSource {
   /// rejects queries under 3 characters).
   Future<List<CatalogItem>> search(String query, {int limit = 30});
 
-  /// Cast of an item for its detail screen (actors with characters, or MAL
-  /// characters with roles), in billing order. One request, fetched lazily
-  /// on detail open; empty when the provider has none for this item.
-  Future<List<CatalogCastMember>> fetchCast(CatalogItem item, {int limit = 20});
-
-  /// "More like this" titles for an item's detail screen (Trakt related,
-  /// MAL recommendations, Seerr/TMDB recommendations). One request, fetched
-  /// lazily on detail open; empty when the provider has none.
-  Future<List<CatalogItem>> fetchRelated(CatalogItem item, {int limit = 20});
+  /// Enriched item, cast and related titles for a detail screen, in as few
+  /// requests as the provider allows. Fetched lazily on detail open; a
+  /// provider with nothing to add returns the item unchanged and empty lists.
+  Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20});
 
   /// Load the full watchlist membership snapshot (coalesced; cached for the
   /// session). [isOnWatchlist] returns null until this has completed once.

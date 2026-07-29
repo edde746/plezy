@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 void main() {
@@ -136,6 +137,55 @@ void main() {
       final decoded = CatalogItem.fromJson(bare.toJson());
       expect(decoded.altTitles, isEmpty);
       expect(decoded.season, isNull);
+    });
+
+    test('enrichedWith unions audience counters instead of replacing them', () {
+      // A Simkl trending row supplies windowed viewers and planning; its
+      // detail body supplies only a drop rate. Replacing the object wholesale
+      // silently dropped the row's counters.
+      const row = CatalogItem(
+        source: CatalogSourceId.simkl,
+        kind: MediaKind.show,
+        title: 'House of the Dragon',
+        ids: CatalogItemIds(simkl: 1197910),
+        audience: CatalogAudience(viewers: 7603, viewersPeriod: CatalogAudiencePeriod.week, planning: 8422),
+      );
+      const detail = CatalogItem(
+        source: CatalogSourceId.simkl,
+        kind: MediaKind.show,
+        title: 'House of the Dragon',
+        ids: CatalogItemIds(simkl: 1197910),
+        audience: CatalogAudience(dropRate: 0.031),
+      );
+
+      final merged = row.enrichedWith(detail).audience!;
+      expect(merged.viewers, 7603);
+      expect(merged.viewersPeriod, CatalogAudiencePeriod.week);
+      expect(merged.planning, 8422);
+      expect(merged.dropRate, 0.031);
+    });
+
+    test('enrichedWith lets detail replace a row value and merges ids per key', () {
+      const row = CatalogItem(
+        source: CatalogSourceId.seerr,
+        kind: MediaKind.movie,
+        title: 'The Matrix',
+        ids: CatalogItemIds(imdb: 'tt0133093'),
+        ranks: [CatalogRank(rank: 3, scope: CatalogRankScope.trending, allTime: false)],
+      );
+      const detail = CatalogItem(
+        source: CatalogSourceId.seerr,
+        kind: MediaKind.movie,
+        title: 'The Matrix',
+        overview: 'A full synopsis the row never carried.',
+        ids: CatalogItemIds(tmdb: 603),
+      );
+
+      final merged = row.enrichedWith(detail);
+      expect(merged.overview, 'A full synopsis the row never carried.');
+      expect(merged.ids.imdb, 'tt0133093', reason: 'row-only id must survive');
+      expect(merged.ids.tmdb, 603, reason: 'detail id must be adopted');
+      expect(merged.ranks?.single.rank, 3, reason: 'a rank is row context a detail body cannot know');
     });
   });
 }

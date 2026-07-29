@@ -28,7 +28,10 @@ MalStudio _$MalStudioFromJson(Map<String, dynamic> json) =>
     MalStudio(name: json['name'] as String?);
 
 MalStartSeason _$MalStartSeasonFromJson(Map<String, dynamic> json) =>
-    MalStartSeason(year: flexibleInt(json['year']));
+    MalStartSeason(
+      year: flexibleInt(json['year']),
+      season: json['season'] as String?,
+    );
 
 MalAnime _$MalAnimeFromJson(Map<String, dynamic> json) => MalAnime(
   id: flexibleInt(json['id']),
@@ -59,4 +62,13 @@ MalAnime _$MalAnimeFromJson(Map<String, dynamic> json) => MalAnime(
       ?.map((e) => MalStudio.fromJson(e as Map<String, dynamic>))
       .toList(),
   numScoringUsers: flexibleInt(json['num_scoring_users']),
+  broadcast: json['broadcast'] == null
+      ? null
+      : MalBroadcast.fromJson(json['broadcast'] as Map<String, dynamic>),
+  popularity: flexibleInt(json['popularity']),
+  numListUsers: flexibleInt(json['num_list_users']),
+  rank: flexibleInt(json['rank']),
+  nsfw: json['nsfw'] as String?,
+  source: json['source'] as String?,
+  endDate: json['end_date'] as String?,
 );

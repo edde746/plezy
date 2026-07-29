@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:plezy/i18n/app_locale_utils.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/seerr/seerr_page.dart';
 import 'package:plezy/models/seerr/seerr_request.dart';
 import 'package:plezy/models/seerr/seerr_session.dart';
@@ -281,6 +283,7 @@ void main() {
           return _json({
             'page': 1,
             'totalPages': 1,
+            'totalResults': 37,
             'results': [
               {'id': 4, 'title': 'Dune', 'releaseDate': '2021-09-15'},
             ],
@@ -291,6 +294,48 @@ void main() {
       final page = await client.getPopularMovies();
       expect(page.items.single.isMovie, isTrue);
       expect(page.hasMore, isFalse);
+      expect(page.totalResults, 37);
+    });
+
+    test('adds the current Plezy locale to every catalog GET', () async {
+      final urls = <Uri>[];
+      final client = clientWith(
+        MockClient((request) async {
+          urls.add(request.url);
+          if (request.url.path == '/api/v1/movie/4' || request.url.path == '/api/v1/tv/4') {
+            return _json({});
+          }
+          return _json({'page': 1, 'totalPages': 1, 'results': []});
+        }),
+      );
+
+      await client.getPopularMovies();
+      await client.getPopularTv();
+      await client.getUpcomingMovies();
+      await client.getUpcomingTv();
+      await client.getTrending();
+      await client.search('dune');
+      await client.getMovieRecommendations(4);
+      await client.getTvRecommendations(4);
+      await client.getMovie(4);
+      await client.getTv(4);
+
+      expect(urls.map((url) => url.path).toSet(), {
+        '/api/v1/discover/movies',
+        '/api/v1/discover/tv',
+        '/api/v1/discover/movies/upcoming',
+        '/api/v1/discover/tv/upcoming',
+        '/api/v1/discover/trending',
+        '/api/v1/search',
+        '/api/v1/movie/4/recommendations',
+        '/api/v1/tv/4/recommendations',
+        '/api/v1/movie/4',
+        '/api/v1/tv/4',
+      });
+      final expectedLanguage = LocaleSettings.currentLocale.plexLanguageCode;
+      for (final url in urls) {
+        expect(url.queryParameters['language'], expectedLanguage, reason: url.path);
+      }
     });
 
     test('createRequest posts the movie payload without seasons', () async {
@@ -341,7 +386,7 @@ void main() {
   group('SeerrPage', () {
     test('parses the pageInfo pagination shape', () {
       final page = SeerrPage<int>.fromJson({
-        'pageInfo': {'page': 2, 'pages': 2},
+        'pageInfo': {'page': 2, 'pages': 2, 'totalResults': 55},
         'results': [
           {'id': 1},
         ],
@@ -349,6 +394,7 @@ void main() {
 
       expect(page.hasMore, isFalse);
       expect(page.items, [1]);
+      expect(page.totalResults, 55);
     });
   });
 

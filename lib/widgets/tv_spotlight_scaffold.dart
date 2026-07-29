@@ -1,13 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../i18n/strings.g.dart';
+import '../media/catalog_item_ref.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
+import '../models/catalog/catalog_item.dart';
 import '../navigation/main_screen_scope.dart';
 import '../services/settings_service.dart';
 import '../utils/debouncer.dart';
 import '../utils/layout_constants.dart';
+import '../utils/formatters.dart';
 import 'tv_browse_rail.dart';
 import 'tv_spotlight_background.dart';
 
@@ -118,15 +122,14 @@ class TvSpotlightScaffold extends StatelessWidget {
                     valueListenable: spotlightListenable,
                     builder: (context, _, _) {
                       final spotlight = resolveSpotlight();
-                      return TvSpotlightBackground(
+                      return _CatalogSpotlightBackground(
                         item: spotlight,
                         client: resolveClient(spotlight),
                         hideSpoilers: hideSpoilers ?? settings.read(SettingsService.hideSpoilers),
                         contentTop: spotlightTop,
                         contentBottom: spotlightBottom,
                         contentLeft: spotlightLeft + foregroundLeft,
-                        compact: true,
-                        showPrimaryAction: false,
+                        targetWidthPx: (size.width * MediaQuery.devicePixelRatioOf(context)).ceil(),
                       );
                     },
                   ),
@@ -139,6 +142,130 @@ class TvSpotlightScaffold extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CatalogSpotlightBackground extends StatefulWidget {
+  const _CatalogSpotlightBackground({
+    required this.item,
+    required this.client,
+    required this.hideSpoilers,
+    required this.contentTop,
+    required this.contentBottom,
+    required this.contentLeft,
+    required this.targetWidthPx,
+  });
+
+  final MediaItem? item;
+  final MediaServerClient? client;
+  final bool hideSpoilers;
+  final double contentTop;
+  final double contentBottom;
+  final double contentLeft;
+  final int targetWidthPx;
+
+  @override
+  State<_CatalogSpotlightBackground> createState() => _CatalogSpotlightBackgroundState();
+}
+
+class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground> {
+  CatalogItem? _catalogItem;
+  MediaItem? _renderItem;
+  Color? _accentColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _rehydrateCatalogItem();
+  }
+
+  @override
+  void didUpdateWidget(_CatalogSpotlightBackground oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.item, oldWidget.item)) {
+      _rehydrateCatalogItem();
+    } else if (widget.targetWidthPx != oldWidget.targetWidthPx) {
+      _projectArtwork();
+    }
+  }
+
+  void _rehydrateCatalogItem() {
+    _catalogItem = widget.item?.catalogItem;
+    _projectArtwork();
+  }
+
+  void _projectArtwork() {
+    final item = widget.item;
+    final catalogItem = _catalogItem;
+    if (item == null || catalogItem == null) {
+      _renderItem = item;
+      _accentColor = null;
+      return;
+    }
+
+    final bannerUrl = catalogItem.bannerUrl;
+    final backdrop = bannerUrl != null && bannerUrl.isNotEmpty
+        ? bannerUrl
+        : catalogItem.backdropFor(widget.targetWidthPx);
+    final logoUrl = catalogItem.logoUrl;
+    _renderItem = item.copyWith(
+      artPath: backdrop ?? item.artPath,
+      backdropPaths: backdrop == null ? item.backdropPaths : [backdrop],
+      clearLogoPath: logoUrl != null && logoUrl.isNotEmpty ? logoUrl : null,
+    );
+    _accentColor = _parseAccentColor(catalogItem.accentColor);
+  }
+
+  Color? _parseAccentColor(String? value) {
+    final match = RegExp(r'^#([0-9a-fA-F]{6})$').firstMatch(value ?? '');
+    final hex = match?.group(1);
+    if (hex == null) return null;
+    return Color(0xff000000 | int.parse(hex, radix: 16));
+  }
+
+  Widget? _buildNextEpisodeMetadata(BuildContext context) {
+    final nextEpisode = _catalogItem?.nextEpisode;
+    if (nextEpisode == null) return null;
+    final duration = formatDurationTextual(nextEpisode.timeUntil(DateTime.now()).inMilliseconds);
+    final episode = nextEpisode.episode;
+    final label = episode == null
+        ? t.explore.badge.nextAiringIn(duration: duration)
+        : t.explore.badge.nextEpisodeIn(episode: episode, duration: duration);
+    final scale = TvLayoutConstants.scaleOf(context);
+    return Text(
+      label,
+      maxLines: 1,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 16 * scale,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.1,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accentColor = _accentColor;
+    final background = TvSpotlightBackground(
+      item: _renderItem,
+      client: widget.client,
+      hideSpoilers: widget.hideSpoilers,
+      contentTop: widget.contentTop,
+      contentBottom: widget.contentBottom,
+      contentLeft: widget.contentLeft,
+      compact: true,
+      showPrimaryAction: false,
+      metadataTrailing: _buildNextEpisodeMetadata(context),
+    );
+    if (accentColor == null) return background;
+    return Theme(
+      data: theme.copyWith(
+        scaffoldBackgroundColor: Color.alphaBlend(accentColor.withValues(alpha: 0.18), theme.scaffoldBackgroundColor),
+      ),
+      child: background,
     );
   }
 }

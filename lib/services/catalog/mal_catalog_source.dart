@@ -3,8 +3,10 @@ import 'package:collection/collection.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
+import '../../models/catalog/catalog_metadata.dart';
 import '../../models/mal/mal_anime.dart';
 import '../../models/trackers/fribb_mapping_row.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/external_ids.dart';
 import '../trackers/fribb_mapping_store.dart';
 import '../trackers/mal/mal_client.dart';
@@ -74,7 +76,15 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
       CatalogRowId.upcomingMovies ||
       CatalogRowId.upcomingShows => throw ArgumentError('MAL does not serve ${row.name}'),
     };
-    return CatalogPage(items: await _toCatalogItems(res.items), hasMore: res.hasMore);
+    final rankingScope = switch (row) {
+      CatalogRowId.airingAnime => CatalogRankScope.airing,
+      CatalogRowId.popularAnime => CatalogRankScope.popular,
+      _ => null,
+    };
+    return CatalogPage(
+      items: await _toCatalogItems(res.items, rankingRanks: res.rankingRanks, rankingScope: rankingScope),
+      hasMore: res.hasMore,
+    );
   }
 
   /// MAL rejects queries under 3 characters (`invalid q`) — return empty
@@ -88,21 +98,83 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
   }
 
   @override
-  Future<List<CatalogItem>> fetchRelated(CatalogItem item, {int limit = 20}) async {
+  Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async {
     final malId = item.ids.mal;
-    if (malId == null) return const [];
-    return _toCatalogItems(await _client.getAnimeRecommendations(malId, limit: limit));
+    if (malId == null) return CatalogDetail(item: item);
+
+    final responses = await Future.wait<Object?>([_loadAnimeDetail(malId, relatedLimit), _loadCast(malId, castLimit)]);
+    final detail = responses[0] as MalAnimeDetail?;
+    final cast = responses[1] as List<CatalogCastMember>;
+    if (detail == null) return CatalogDetail(item: item, cast: cast);
+
+    final recommendations = [
+      for (final recommendation in detail.recommendations)
+        if (recommendation.anime.id != null) recommendation,
+    ];
+    final relationEntries = [
+      for (final relation in detail.relations)
+        if (relation.anime.id != null) relation,
+    ];
+    final mapped = await Future.wait([
+      _toCatalogItems(
+        [for (final recommendation in recommendations) recommendation.anime],
+        recommendationCounts: [for (final recommendation in recommendations) recommendation.count],
+      ),
+      _toCatalogItems([for (final relation in relationEntries) relation.anime]),
+    ]);
+    final related = mapped[0];
+    final relationItems = mapped[1];
+    final groupedRelations = <CatalogRelationType, List<CatalogItem>>{};
+    for (var i = 0; i < relationEntries.length; i++) {
+      groupedRelations
+          .putIfAbsent(_relationTypeFor(relationEntries[i].type), () => <CatalogItem>[])
+          .add(relationItems[i]);
+    }
+
+    final detailPosterUrl = detail.anime.mainPicture?.primary ?? item.posterUrl;
+    final detailItem = _toCatalogItem(
+      detail.anime,
+      null,
+      statistics: detail.statistics,
+      gallery: _galleryFor(detail.pictures, detailPosterUrl),
+      background: detail.background,
+    );
+    return CatalogDetail(
+      item: item.enrichedWith(detailItem),
+      cast: cast,
+      related: related,
+      relations: [for (final entry in groupedRelations.entries) CatalogRelation(type: entry.key, items: entry.value)],
+    );
   }
 
   /// Enrich concurrently so all items share one Fribb index load (per-item
   /// awaits would retry the download for every item when it is failing).
-  Future<List<CatalogItem>> _toCatalogItems(List<MalAnime> anime) async {
-    final withIds = [
-      for (final entry in anime)
-        if (entry.id != null) entry,
-    ];
+  Future<List<CatalogItem>> _toCatalogItems(
+    List<MalAnime> anime, {
+    List<int?> rankingRanks = const [],
+    CatalogRankScope? rankingScope,
+    List<int?> recommendationCounts = const [],
+  }) async {
+    final withIds = <MalAnime>[];
+    final originalIndexes = <int>[];
+    for (var i = 0; i < anime.length; i++) {
+      if (anime[i].id == null) continue;
+      withIds.add(anime[i]);
+      originalIndexes.add(i);
+    }
     final rows = await Future.wait([for (final entry in withIds) _fribb.lookupByMal(entry.id!)]);
-    return [for (var i = 0; i < withIds.length; i++) _toCatalogItem(withIds[i], rows[i])];
+    return [
+      for (var i = 0; i < withIds.length; i++)
+        _toCatalogItem(
+          withIds[i],
+          rows[i],
+          rankingRank: originalIndexes[i] < rankingRanks.length ? rankingRanks[originalIndexes[i]] : null,
+          rankingScope: rankingScope,
+          recommendationCount: originalIndexes[i] < recommendationCounts.length
+              ? recommendationCounts[originalIndexes[i]]
+              : null,
+        ),
+    ];
   }
 
   /// Normalize MAL's status strings. `finished_airing` on a movie maps to
@@ -114,52 +186,198 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
     _ => null,
   };
 
-  CatalogItem _toCatalogItem(MalAnime anime, FribbMappingRow? row) => CatalogItem(
-    source: CatalogSourceId.mal,
-    kind: anime.isMovie ? MediaKind.movie : MediaKind.show,
-    title: anime.displayTitle,
-    altTitles: [
-      for (final title in <String?>[
-        anime.alternativeTitles?.en,
-        anime.title,
-        anime.alternativeTitles?.ja,
-        ...?anime.alternativeTitles?.synonyms,
-      ])
-        if (title != null && title.isNotEmpty && title != anime.displayTitle) title,
-    ],
-    year: anime.year,
-    overview: anime.synopsis,
-    runtimeMinutes: anime.runtimeMinutes,
-    rating: anime.mean,
-    votes: anime.numScoringUsers,
-    genres: anime.genreNames,
-    certification: anime.certification,
-    airStatus: airStatusFor(anime),
-    episodeCount: anime.isMovie || (anime.numEpisodes ?? 0) <= 0 ? null : anime.numEpisodes,
-    network: anime.primaryStudio,
-    ids: CatalogItemIds(
-      mal: anime.id,
-      imdb: row?.imdbIds?.firstOrNull,
-      tmdb: row?.tmdbIds?.firstOrNull,
-      tvdb: row?.tvdbId,
-    ),
-    season: row == null || (row.tvdbSeason == null && row.tmdbSeason == null)
-        ? null
-        : ExternalSeasonRef(tvdb: row.tvdbSeason, tmdb: row.tmdbSeason),
-    posterUrl: anime.mainPicture?.primary,
-  );
-
-  @override
-  Future<List<CatalogCastMember>> fetchCast(CatalogItem item, {int limit = 20}) async {
-    final malId = item.ids.mal;
-    if (malId == null) return const [];
-    final res = await _client.getAnimeCharacters(malId, limit: limit);
-    return [
-      for (final character in res.items)
-        if (character.name.isNotEmpty)
-          CatalogCastMember(name: character.name, secondary: character.role, imageUrl: character.imageUrl),
-    ];
+  CatalogItem _toCatalogItem(
+    MalAnime anime,
+    FribbMappingRow? row, {
+    int? rankingRank,
+    CatalogRankScope? rankingScope,
+    int? recommendationCount,
+    MalStatistics? statistics,
+    List<String>? gallery,
+    String? background,
+  }) {
+    final title = anime.displayTitle;
+    final originalTitle = anime.title;
+    return CatalogItem(
+      source: CatalogSourceId.mal,
+      kind: anime.isMovie ? MediaKind.movie : MediaKind.show,
+      title: title,
+      // Set literal: insertion-ordered and deduped. MAL repeats the English
+      // and romaji titles inside `synonyms`, and a duplicate candidate costs
+      // the reverse library lookup a wasted request.
+      altTitles: <String>{
+        for (final candidate in <String?>[
+          anime.alternativeTitles?.en,
+          anime.title,
+          anime.alternativeTitles?.ja,
+          ...?anime.alternativeTitles?.synonyms,
+        ])
+          if (candidate != null && candidate.isNotEmpty && candidate != title) candidate,
+      }.toList(),
+      year: anime.year,
+      overview: anime.synopsis,
+      runtimeMinutes: anime.runtimeMinutes,
+      rating: anime.mean,
+      votes: anime.numScoringUsers,
+      genres: anime.genreNames,
+      certification: anime.certification,
+      airStatus: airStatusFor(anime),
+      episodeCount: anime.isMovie || (anime.numEpisodes ?? 0) <= 0 ? null : anime.numEpisodes,
+      network: anime.primaryStudio,
+      ids: CatalogItemIds(
+        mal: anime.id,
+        anilist: row?.anilistId,
+        simkl: row?.simklId,
+        imdb: row?.imdbIds?.firstOrNull,
+        tmdb: row?.tmdbIds?.firstOrNull,
+        tvdb: row?.tvdbId,
+      ),
+      // Which season of the parent series this entry maps to, for the reverse
+      // library lookup — distinct from the calendar broadcastSeason below.
+      season: row == null || (row.tvdbSeason == null && row.tmdbSeason == null)
+          ? null
+          : ExternalSeasonRef(tvdb: row.tvdbSeason, tmdb: row.tmdbSeason),
+      posterUrl: anime.mainPicture?.primary,
+      ranks: _ranksFor(anime, rankingRank: rankingRank, rankingScope: rankingScope),
+      audience: _audienceFor(anime, statistics),
+      broadcast: _broadcastFor(anime.broadcast),
+      endDate: _dateFor(anime.endDate),
+      originalTitle: originalTitle != null && originalTitle.isNotEmpty && originalTitle != title ? originalTitle : null,
+      broadcastSeason: _seasonFor(anime.startSeason),
+      sourceMaterial: _sourceMaterialFor(anime.source),
+      isAdult: _isAdultFor(anime.nsfw),
+      recommendationCount: recommendationCount,
+      gallery: gallery,
+      background: background,
+    );
   }
+
+  Future<MalAnimeDetail?> _loadAnimeDetail(int malId, int relatedLimit) async {
+    try {
+      return await _client.getAnimeDetail(malId, relatedLimit: relatedLimit);
+    } catch (e, st) {
+      appLogger.w('MAL: anime detail load failed', error: e, stackTrace: st);
+      return null;
+    }
+  }
+
+  Future<List<CatalogCastMember>> _loadCast(int malId, int limit) async {
+    try {
+      final res = await _client.getAnimeCharacters(malId, limit: limit);
+      return [
+        for (final character in res.items)
+          if (character.name.isNotEmpty)
+            CatalogCastMember(name: character.name, secondary: character.role, imageUrl: character.imageUrl),
+      ];
+    } catch (e, st) {
+      appLogger.w('MAL: character load failed', error: e, stackTrace: st);
+      return const [];
+    }
+  }
+
+  static List<CatalogRank>? _ranksFor(MalAnime anime, {int? rankingRank, CatalogRankScope? rankingScope}) {
+    final ranks = <CatalogRank>[];
+    var rowRankIsPopular = false;
+    if (rankingRank != null && rankingRank > 0 && rankingScope != null) {
+      ranks.add(CatalogRank(rank: rankingRank, scope: rankingScope, allTime: true));
+      rowRankIsPopular = rankingScope == CatalogRankScope.popular;
+    }
+    final popularity = anime.popularity;
+    if (popularity != null && popularity > 0 && !rowRankIsPopular) {
+      ranks.add(CatalogRank(rank: popularity, scope: CatalogRankScope.popular, allTime: true));
+    }
+    final scoreRank = anime.rank;
+    if (scoreRank != null && scoreRank > 0) {
+      ranks.add(CatalogRank(rank: scoreRank, scope: CatalogRankScope.rated, allTime: true));
+    }
+    return ranks.isEmpty ? null : ranks;
+  }
+
+  static CatalogAudience? _audienceFor(MalAnime anime, MalStatistics? statistics) {
+    final audience = CatalogAudience(
+      listed: statistics?.numListUsers ?? anime.numListUsers,
+      planning: statistics?.planToWatch,
+      watching: statistics?.watching,
+      completed: statistics?.completed,
+      onHold: statistics?.onHold,
+      dropped: statistics?.dropped,
+    );
+    return audience.isEmpty ? null : audience;
+  }
+
+  static CatalogBroadcast? _broadcastFor(MalBroadcast? broadcast) {
+    if (broadcast == null) return null;
+    final weekday = switch (broadcast.dayOfTheWeek?.toLowerCase()) {
+      'monday' => DateTime.monday,
+      'tuesday' => DateTime.tuesday,
+      'wednesday' => DateTime.wednesday,
+      'thursday' => DateTime.thursday,
+      'friday' => DateTime.friday,
+      'saturday' => DateTime.saturday,
+      'sunday' => DateTime.sunday,
+      _ => null,
+    };
+    final time = _normalizedTime(broadcast.startTime);
+    if (weekday == null && time == null) return null;
+    return CatalogBroadcast(weekday: weekday, time: time, timezone: 'Asia/Tokyo');
+  }
+
+  static String? _normalizedTime(String? value) {
+    if (value == null || value.length != 5 || value[2] != ':') return null;
+    final hour = int.tryParse(value.substring(0, 2));
+    final minute = int.tryParse(value.substring(3));
+    if (hour == null || hour < 0 || hour > 23 || minute == null || minute < 0 || minute > 59) {
+      return null;
+    }
+    return value;
+  }
+
+  static CatalogSeasonInfo? _seasonFor(MalStartSeason? season) {
+    final name = CatalogSeasonInfo.parseName(season?.season);
+    return name == null ? null : CatalogSeasonInfo(name: name, year: season?.year);
+  }
+
+  static CatalogSourceMaterial? _sourceMaterialFor(String? source) => switch (source) {
+    null || '' => null,
+    'original' => CatalogSourceMaterial.original,
+    'manga' || '4_koma_manga' || 'digital_manga' => CatalogSourceMaterial.manga,
+    'light_novel' => CatalogSourceMaterial.lightNovel,
+    'novel' => CatalogSourceMaterial.novel,
+    'visual_novel' => CatalogSourceMaterial.visualNovel,
+    'game' || 'card_game' => CatalogSourceMaterial.game,
+    'web_manga' => CatalogSourceMaterial.webComic,
+    'music' => CatalogSourceMaterial.musicRelease,
+    _ => CatalogSourceMaterial.otherMedia,
+  };
+
+  static bool? _isAdultFor(String? nsfw) => switch (nsfw) {
+    'gray' || 'black' => true,
+    'white' => false,
+    _ => null,
+  };
+
+  static DateTime? _dateFor(String? value) => value == null ? null : DateTime.tryParse(value);
+
+  static List<String>? _galleryFor(List<MalPicture> pictures, String? posterUrl) {
+    final urls = <String>{};
+    for (final picture in pictures) {
+      final url = picture.primary;
+      if (url != null && url != posterUrl) urls.add(url);
+    }
+    return urls.isEmpty ? null : urls.toList(growable: false);
+  }
+
+  static CatalogRelationType _relationTypeFor(String? type) => switch (type) {
+    'prequel' => CatalogRelationType.prequel,
+    'sequel' => CatalogRelationType.sequel,
+    'side_story' => CatalogRelationType.sideStory,
+    'spin_off' => CatalogRelationType.spinOff,
+    'alternative_version' => CatalogRelationType.alternativeVersion,
+    'summary' => CatalogRelationType.summary,
+    'parent_story' => CatalogRelationType.parentStory,
+    'adaptation' => CatalogRelationType.adaptation,
+    _ => CatalogRelationType.other,
+  };
 
   /// Reverse-map a library item's external ids to its MAL entry. A show-level
   /// id can resolve to several rows (split-cour anime, one row per season);

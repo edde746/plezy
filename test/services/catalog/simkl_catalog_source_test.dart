@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/models/simkl/simkl_trending_item.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/simkl_catalog_source.dart';
@@ -31,25 +32,41 @@ http.Response _json(Object? body, {int status = 200, Map<String, String>? header
 
 Map<String, dynamic> _trending({required int simkl, String title = 'Inception', String? animeType}) => {
   'title': title,
+  'title_romaji': animeType == null ? null : 'Inception no Yume',
+  'alt_titles': [
+    {'name': title},
+    {'name': 'Le rêve'},
+  ],
+  'url': '/${animeType == null ? 'movies' : 'anime'}/$simkl/inception',
   'poster': '12/posterhash',
   'fanart': '34/fanarthash',
   'release_date': '07/16/2010',
+  'rank': 7,
+  'drop_rate': '2.5%',
+  'watched': 321,
+  'plan_to_watch': 654,
   'runtime': '2h 37m',
   'status': 'ended',
   'overview': 'Dreams within dreams.',
   'genres': ['Action', 'Science Fiction'],
   'trailer': 'YoHD9XEInc0',
+  'country': 'us',
+  'original_language': 'en',
+  'dvd_date': '12/03/2010',
+  'theater': '07/15/2010',
   'total_episodes': animeType == null ? null : 12,
   'anime_type': ?animeType,
   'ids': {'simkl_id': simkl, 'slug': 'inception', 'imdb': 'tt1375666', 'tmdb': '27205', 'tvdb': '123'},
   'ratings': {
     'simkl': {'rating': 8.8, 'votes': 1234},
+    if (animeType == null) 'imdb': {'rating': 8.7, 'votes': 2345} else 'mal': {'rating': 8.6, 'votes': 3456},
   },
 };
 
-Map<String, dynamic> _best(int simkl) => {
+Map<String, dynamic> _best(int simkl, {int? watched}) => {
   'title': 'Best $simkl',
   'year': 2020,
+  'watched': ?watched,
   'ids': {'simkl': simkl},
 };
 
@@ -69,6 +86,9 @@ Map<String, dynamic> _allItemsBody() => {
   'shows': [
     {
       'status': 'plantowatch',
+      'added_to_watchlist_at': '2025-04-03T02:01:00Z',
+      'user_rating': 9,
+      'not_aired_episodes_count': 4,
       'total_episodes_count': 62,
       'show': {
         'title': 'Breaking Bad',
@@ -88,6 +108,51 @@ Map<String, dynamic> _allItemsBody() => {
         'poster': '55/animehash',
         'ids': {'simkl': 3, 'mal': '32281', 'anilist': '21519'},
       },
+    },
+  ],
+};
+
+Map<String, dynamic> _detailBody() => {
+  'title': 'One Piece',
+  'year': 1999,
+  'type': 'anime',
+  'anime_type': 'tv',
+  'poster': '15/detailposter',
+  'fanart': '87/detailfanart',
+  'first_aired': '1999-10-20T14:15:00Z',
+  'last_aired': null,
+  'airs': {'day': 'Sunday', 'time': '11:15 PM', 'timezone': 'Asia/Tokyo'},
+  'runtime': 25,
+  'certification': 'PG-13',
+  'overview': 'The full detail overview.',
+  'genres': ['Action', 'Adventure'],
+  'country': 'jp',
+  'total_episodes': 1176,
+  'status': 'airing',
+  'network': 'Fuji TV',
+  'season_name_year': 'Fall 1999',
+  'studios': [
+    {'id': 74, 'name': 'Toei Animation'},
+  ],
+  'ratings': {
+    'simkl': {'rating': 8.9, 'votes': 8037},
+    'imdb': {'rating': 8.3, 'votes': 15720},
+    'mal': {'rating': 8.7, 'votes': 1548013},
+  },
+  'trailers': [
+    {'youtube': 'tnj5YOZpCyo', 'size': 1080},
+  ],
+  'ids': {'simkl': 3, 'mal': 21, 'anilist': 21},
+  'users_recommendations': [
+    {
+      'title': 'Fairy Tail',
+      'year': 2009,
+      'poster': '64/related',
+      'type': 'anime',
+      'anime_type': 'tv',
+      'users_percent': '19%',
+      'users_count': 76,
+      'ids': {'simkl': 4},
     },
   ],
 };
@@ -151,6 +216,24 @@ void main() {
       expect(first.items.single.runtimeMinutes, 157);
       expect(first.items.single.posterUrl, 'https://simkl.in/posters/12/posterhash_m.webp');
       expect(first.items.single.backdropUrl, 'https://simkl.in/fanart/34/fanarthash_medium.webp');
+      final item = first.items.single;
+      expect(item.posterVariants, containsPair(170, 'https://simkl.in/posters/12/posterhash_c.webp'));
+      expect(item.posterVariants, containsPair(340, item.posterUrl));
+      expect(item.backdropVariants, containsPair(960, 'https://simkl.in/fanart/34/fanarthash_mobile.webp'));
+      expect(item.backdropVariants, containsPair(1920, item.backdropUrl));
+      expect(item.ratings?.map((rating) => rating.source), ['simkl', 'imdb']);
+      expect(item.ratings?.map((rating) => rating.votes), [1234, 2345]);
+      expect(item.audience?.viewers, 321);
+      expect(item.audience?.viewersPeriod, CatalogAudiencePeriod.week);
+      expect(item.audience?.planning, 654);
+      expect(item.audience?.dropRate, 0.025);
+      expect(item.ranks?.single.scope, CatalogRankScope.trending);
+      expect(item.ranks?.single.allTime, isFalse);
+      expect(item.releaseDate, DateTime(2010, 7, 15));
+      expect(item.physicalReleaseDate, DateTime(2010, 12, 3));
+      expect(item.countries, ['US']);
+      expect(item.languages, ['en']);
+      expect(item.links?.single.url, 'https://simkl.com/movies/1/inception');
       expect(second.items.single.title, 'Second');
       expect(second.hasMore, isFalse);
     });
@@ -179,6 +262,15 @@ void main() {
       final page = await source.fetchRow(CatalogRowId.popularShows);
       expect(page.items, isEmpty);
       expect(page.hasMore, isFalse);
+    });
+
+    test('best watched counts are monthly viewers', () async {
+      responder = (request) => _json([_best(1, watched: 987)]);
+
+      final page = await source.fetchRow(CatalogRowId.popularShows);
+
+      expect(page.items.single.audience?.viewers, 987);
+      expect(page.items.single.audience?.viewersPeriod, CatalogAudiencePeriod.month);
     });
 
     test('best rows expose all cached pages without refetching', () async {
@@ -219,7 +311,33 @@ void main() {
       expect(movie.runtimeMinutes, 148);
       expect(first.items.last.kind, MediaKind.movie);
       expect(first.items.last.ids.anilist, 21519);
+      final show = first.items[1];
+      expect(show.addedAt, DateTime.parse('2025-04-03T02:01:00Z'));
+      expect(show.userRating, 9);
+      expect(show.unairedEpisodeCount, 4);
       expect(second.items, hasLength(3));
+    });
+
+    test('absent optional row fields stay absent', () async {
+      responder = (request) => _json([
+        {
+          'title': 'Sparse',
+          'ids': {'simkl_id': 99},
+        },
+      ]);
+
+      final page = await source.fetchRow(CatalogRowId.trendingMovies);
+      final item = page.items.single;
+
+      expect(item.ratings, isNull);
+      expect(item.audience, isNull);
+      expect(item.ranks, isNull);
+      expect(item.posterUrl, isNull);
+      expect(item.posterVariants, isNull);
+      expect(item.backdropVariants, isNull);
+      expect(item.originalTitle, isNull);
+      expect(item.altTitles, isEmpty);
+      expect(item.links, isNull);
     });
 
     test('watchlist row and membership snapshot share one full-library download', () async {
@@ -337,47 +455,59 @@ void main() {
       expect(results.map((item) => item.kind), [MediaKind.movie, MediaKind.show, MediaKind.movie]);
     });
 
-    test('fetchCast performs no requests', () async {
+    test('fetchDetail without a Simkl id returns the row unchanged without a request', () async {
       const item = CatalogItem(
         source: CatalogSourceId.simkl,
         kind: MediaKind.movie,
         title: 'Inception',
-        ids: CatalogItemIds(simkl: 1),
+        ids: CatalogItemIds(imdb: 'tt1375666'),
       );
 
-      expect(await source.fetchCast(item), isEmpty);
+      final detail = await source.fetchDetail(item);
+
+      expect(detail.item, same(item));
+      expect(detail.cast, isEmpty);
+      expect(detail.related, isEmpty);
+      expect(detail.relations, isEmpty);
       expect(requests, isEmpty);
     });
 
-    test('related retries anime when the kind endpoint returns an empty array', () async {
+    test('fetchDetail uses one request for an enriched item and recommendations', () async {
       responder = (request) {
-        expect(request.url.queryParameters, isNot(contains('extended')));
-        if (request.url.path == '/tv/3') return _json([]);
+        if (request.url.host == 'data.simkl.in') {
+          return _json([_trending(simkl: 3, animeType: 'tv')]);
+        }
         expect(request.url.path, '/anime/3');
-        return _json({
-          'users_recommendations': [
-            {
-              'title': 'A Silent Voice',
-              'year': 2016,
-              'poster': '1/related',
-              'type': 'anime',
-              'ids': {'simkl': 4, 'mal': 28851},
-            },
-          ],
-        });
+        expect(request.url.queryParameters, isNot(contains('extended')));
+        return _json(_detailBody());
       };
-      const item = CatalogItem(
-        source: CatalogSourceId.simkl,
-        kind: MediaKind.show,
-        title: 'Anime',
-        ids: CatalogItemIds(simkl: 3),
-      );
+      final row = await source.fetchRow(CatalogRowId.trendingAnime);
+      final item = row.items.single;
+      requests.clear();
 
-      final related = await source.fetchRelated(item);
+      final detail = await source.fetchDetail(item);
 
-      expect(requests.map((request) => request.url.path), ['/tv/3', '/anime/3']);
-      expect(related.single.title, 'A Silent Voice');
-      expect(related.single.ids.mal, 28851);
+      expect(requests, hasLength(1));
+      expect(detail.cast, isEmpty);
+      expect(detail.relations, isEmpty);
+      expect(detail.item.title, 'One Piece');
+      expect(detail.item.overview, 'The full detail overview.');
+      expect(detail.item.certification, 'PG-13');
+      expect(detail.item.runtimeMinutes, 25);
+      expect(detail.item.ratings?.map((rating) => rating.source), ['simkl', 'imdb', 'mal']);
+      expect(detail.item.ranks, same(item.ranks));
+      expect(detail.item.posterVariants, containsPair(170, 'https://simkl.in/posters/15/detailposter_c.webp'));
+      expect(detail.item.backdropVariants, containsPair(960, 'https://simkl.in/fanart/87/detailfanart_mobile.webp'));
+      expect(detail.item.trailerUrl, 'https://www.youtube.com/watch?v=tnj5YOZpCyo');
+      expect(detail.item.broadcast?.weekday, DateTime.sunday);
+      expect(detail.item.broadcast?.time, '23:15');
+      expect(detail.item.countries, ['JP']);
+      expect(detail.item.studios, ['Toei Animation']);
+      expect(detail.related, hasLength(1));
+      expect(detail.related.single.title, 'Fairy Tail');
+      expect(detail.related.single.recommendationCount, 76);
+      expect(detail.related.single.recommendationPercent, 0.19);
+      expect(detail.related.single.posterVariants, isNotNull);
     });
   });
 }

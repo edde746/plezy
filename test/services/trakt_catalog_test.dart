@@ -24,21 +24,42 @@ TrackerSession _session() {
   );
 }
 
-Map<String, dynamic> _movieJson({int trakt = 1, String? posterUrl = 'walter-r2.trakt.tv/images/movies/p.webp'}) {
+Map<String, dynamic> _movieJson({
+  int trakt = 1,
+  String? posterUrl = 'walter-r2.trakt.tv/images/movies/p.webp',
+  bool withRecommenders = false,
+}) {
   return {
     'title': 'The Matrix',
     'year': 1999,
     'ids': {'trakt': trakt, 'slug': 'the-matrix-1999', 'imdb': 'tt0133093', 'tmdb': 603},
     'overview': 'A hacker learns the truth.',
+    'tagline': 'Welcome to the Real World.',
+    'original_title': 'The Matrix',
+    'released': '1999-03-31T00:00:00.000Z',
     'runtime': 136,
     'rating': 8.7,
     'votes': 42000,
     'genres': ['action', 'sci-fi'],
     'certification': 'R',
     'trailer': 'https://youtube.com/watch?v=m8e-FF8MsqU',
+    'comment_count': 1234,
+    'language': 'en',
+    'languages': ['en'],
+    'available_translations': ['es', 'fr'],
+    'country': 'us',
+    if (withRecommenders) ...{
+      'favorited_by': [
+        {'username': 'alice', 'name': 'Alice', 'notes': 'A forever favorite.'},
+      ],
+      'recommended_by': [
+        {'username': 'bob', 'name': null, 'notes': 'The lobby scene.'},
+      ],
+    },
     'images': {
       'poster': [?posterUrl],
       'fanart': ['walter-r2.trakt.tv/images/movies/f.webp'],
+      'logo': ['walter-r2.trakt.tv/images/movies/logo.webp'],
     },
   };
 }
@@ -51,6 +72,8 @@ Map<String, dynamic> _showJson() {
     'overview': 'Work-life balance, surgically.',
     'runtime': 50,
     'rating': 8.9,
+    'first_aired': '2022-02-18T00:00:00.000Z',
+    'airs': {'day': 'Friday', 'time': '09:30', 'timezone': 'America/New_York'},
     'images': <String, dynamic>{},
   };
 }
@@ -73,6 +96,7 @@ void main() {
         'poster': ['walter-r2.trakt.tv/images/movies/p.webp'],
       });
       expect(images.primaryPoster, 'https://walter-r2.trakt.tv/images/movies/p.webp');
+      expect(images.primaryLogo, isNull);
     });
 
     test('keeps absolute URLs and falls back fanart -> thumb for backdrop', () {
@@ -82,6 +106,7 @@ void main() {
       });
       expect(images.primaryPoster, 'https://example.com/p.webp');
       expect(images.primaryBackdrop, 'https://walter-r2.trakt.tv/t.webp');
+      expect(images.primaryLogo, isNull);
     });
 
     test('returns null for missing or empty image arrays', () {
@@ -137,6 +162,7 @@ void main() {
       expect(page.page, 1);
       expect(page.pageCount, 1);
       expect(page.hasMore, isFalse);
+      expect(page.itemCount, isNull);
 
       client.dispose();
     });
@@ -159,6 +185,7 @@ void main() {
       expect(requests.single.url.queryParameters['limit'], '10');
       expect(page.items.single.watchers, 120);
       expect(page.items.single.media?.title, 'The Matrix');
+      expect(page.itemCount, isNull);
 
       client.dispose();
     });
@@ -174,6 +201,11 @@ void main() {
       expect(requests.single.url.path, '/shows/popular');
       expect(page.items.single, isA<TraktCatalogMedia>());
       expect(page.items.single.title, 'Severance');
+      expect(page.items.single.firstAired, '2022-02-18T00:00:00.000Z');
+      expect(page.items.single.airs?.day, 'Friday');
+      expect(page.items.single.airs?.time, '09:30');
+      expect(page.items.single.airs?.timezone, 'America/New_York');
+      expect(page.items.single.commentCount, isNull);
 
       client.dispose();
     });
@@ -192,6 +224,75 @@ void main() {
       expect(request.url.queryParameters['ignore_collected'], 'false');
       expect(request.url.queryParameters['ignore_watchlisted'], 'true');
       expect(items.single.title, 'The Matrix');
+
+      client.dispose();
+    });
+
+    test('getRecommended parses recommendation provenance without reducing it to a count', () async {
+      final client = _client((request) async {
+        return http.Response(json.encode([_movieJson(withRecommenders: true)]), 200);
+      });
+
+      final items = await client.getRecommended(TraktCatalogType.movies, limit: 15);
+
+      final item = items.single;
+      expect(item.favoritedBy?.single.username, 'alice');
+      expect(item.favoritedBy?.single.name, 'Alice');
+      expect(item.favoritedBy?.single.notes, 'A forever favorite.');
+      expect(item.recommendedBy?.single.username, 'bob');
+      expect(item.recommendedBy?.single.notes, 'The lobby scene.');
+
+      client.dispose();
+    });
+
+    test('getPeople widens show people for guest stars and parses cast and crew metadata', () async {
+      final requests = <http.Request>[];
+      final client = _client(requests: requests, (request) async {
+        return http.Response(
+          json.encode({
+            'cast': [
+              {
+                'characters': ['Mark Scout', 'Mark S.'],
+                'episode_count': 19,
+                'person': {'name': 'Adam Scott'},
+              },
+            ],
+            'guest_stars': [
+              {
+                'characters': ['June'],
+                'episode_count': 1,
+                'person': {'name': 'Guest Actor'},
+              },
+            ],
+            'crew': {
+              'directing': [
+                {
+                  'jobs': ['Director'],
+                  'person': {'name': 'Ben Stiller'},
+                },
+              ],
+              'production': [
+                {
+                  'job': 'Executive Producer',
+                  'person': {'name': 'Jackie Cohn'},
+                },
+              ],
+            },
+          }),
+          200,
+        );
+      });
+
+      final people = await client.getPeople(TraktCatalogType.shows, 'severance');
+
+      expect(requests.single.url.path, '/shows/severance/people');
+      expect(requests.single.url.queryParameters['extended'], 'full,images,guest_stars');
+      expect(people.cast.single.characters, ['Mark Scout', 'Mark S.']);
+      expect(people.cast.single.episodeCount, 19);
+      expect(people.guestStars.single.person?.name, 'Guest Actor');
+      expect(people.crew, hasLength(2));
+      expect(people.crew.first.jobs, ['Director']);
+      expect(people.crew.last.job, 'Executive Producer');
 
       client.dispose();
     });

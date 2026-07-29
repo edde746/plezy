@@ -9,6 +9,8 @@ part of 'simkl_best_item.dart';
 SimklBestItem _$SimklBestItemFromJson(Map<String, dynamic> json) =>
     SimklBestItem(
       title: json['title'] as String?,
+      url: json['url'] as String?,
+      watched: flexibleInt(json['watched']),
       year: flexibleInt(json['year']),
       poster: json['poster'] as String?,
       ids: SimklIds.fromJson(json['ids'] as Map<String, dynamic>),
