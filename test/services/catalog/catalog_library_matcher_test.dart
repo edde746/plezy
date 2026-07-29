@@ -243,6 +243,43 @@ void main() {
     expect(call.plexGuid, 'plex://movie/5d776828880197001ec90e13');
   });
 
+  test('an id-poor negative does not suppress the detail-enriched retry', () async {
+    // #1715: a Plex Discover row item carries only its rating key, and the
+    // exact-guid lookup can miss even for owned titles (Discover dupes).
+    // The detail body brings the external ids moments later; that richer
+    // lookup must reach the servers instead of the bare form's cached
+    // negative.
+    final harness = _Harness();
+    addTearDown(harness.dispose);
+    final hit = testMediaItem(id: 'server-movie', kind: MediaKind.movie);
+    harness.aggregation.responses.addAll([
+      const [],
+      [hit],
+    ]);
+    const bare = CatalogItem(
+      source: CatalogSourceId.plex,
+      kind: MediaKind.movie,
+      title: 'Night on the Galactic Railroad',
+      ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8'),
+    );
+    const enriched = CatalogItem(
+      source: CatalogSourceId.plex,
+      kind: MediaKind.movie,
+      title: 'Night on the Galactic Railroad',
+      ids: CatalogItemIds(plex: '5d776b59ad5437001f79c6f8', imdb: 'tt0089445', tmdb: 34523),
+    );
+
+    expect(bare.entryIdentityKey, enriched.entryIdentityKey);
+    expect(await harness.matcher.match(bare), isEmpty);
+    expect((await harness.matcher.match(enriched)).single, same(hit));
+    expect(harness.aggregation.calls, hasLength(2));
+    expect(harness.aggregation.calls.last.ids.imdb, 'tt0089445');
+
+    // Both forms stay memoized independently.
+    expect((await harness.matcher.match(enriched)).single, same(hit));
+    expect(harness.aggregation.calls, hasLength(2));
+  });
+
   test('only a Plex Discover item contributes a guid, and it costs no request', () async {
     final harness = _Harness();
     addTearDown(harness.dispose);

@@ -35,11 +35,16 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
   @override
   String get watchlistLogLabel => 'Plex: watchlist';
 
+  // Discover validates X-Plex-Container-Size against a cap it drifts
+  // without notice (#1715: 500 became invalid). 100 keeps the snapshot at
+  // few requests while staying well under the observed cap, and the client
+  // degrades to 25-item chunks if the cap ever drops below it; more pages
+  // preserve the 5000-entry coverage.
   @override
-  int get watchlistPageLimit => 500;
+  int get watchlistPageLimit => 100;
 
   @override
-  int get watchlistMaxPages => 10;
+  int get watchlistMaxPages => 50;
 
   @override
   Future<CatalogPage> fetchRow(CatalogRowId row, {int page = 1, int limit = 25}) async {

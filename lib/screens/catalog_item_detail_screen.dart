@@ -103,7 +103,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   void initState() {
     super.initState();
     _syncDetailCollections(widget.item);
-    unawaited(_resolveMatches());
+    unawaited(_resolveMatches(widget.item));
     unawaited(_loadDetail());
     final sources = context.read<CatalogSourcesProvider>();
     _watchlistSource = sources.watchlistSourceFor(widget.item);
@@ -149,13 +149,22 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     setState(() {});
   }
 
-  Future<void> _resolveMatches() async {
+  /// Monotonic guard for match resolution: the bare row item and its
+  /// detail-enriched form resolve concurrently, and only the latest-issued
+  /// resolution may publish (a slow bare lookup must not overwrite the
+  /// enriched verdict with its own).
+  int _matchGeneration = 0;
+
+  Future<void> _resolveMatches(CatalogItem item) async {
+    final generation = ++_matchGeneration;
+    List<MediaItem> matches;
     try {
-      _setMatches(await context.read<CatalogLibraryMatcher>().match(widget.item));
+      matches = await context.read<CatalogLibraryMatcher>().match(item);
     } catch (e) {
-      appLogger.w('Catalog library match failed for ${widget.item.identityKey}', error: e);
-      _setMatches(const []);
+      appLogger.w('Catalog library match failed for ${item.identityKey}', error: e);
+      matches = const [];
     }
+    if (generation == _matchGeneration) _setMatches(matches);
   }
 
   void _setMatches(List<MediaItem> matches) {
@@ -221,6 +230,14 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         _related = detail.related;
         _relationEntries = relationEntries;
       });
+      // The row form of a Plex Discover item carries only its rating key;
+      // the detail body brings the external ids (#1715). When enrichment
+      // added id forms and the bare lookup found nothing, ask again with
+      // the full set.
+      final gainedIds = !widget.item.ids.allKeys.toSet().containsAll(detail.item.ids.allKeys);
+      if (gainedIds && (_matches?.isEmpty ?? true)) {
+        unawaited(_resolveMatches(detail.item));
+      }
     } catch (e) {
       appLogger.d('Catalog detail load failed for ${widget.item.identityKey}', error: e);
     }

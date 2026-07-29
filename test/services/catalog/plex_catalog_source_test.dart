@@ -83,6 +83,7 @@ void main() {
       expect(captured.url.path, '/library/sections/watchlist/all');
       expect(captured.url.queryParameters['X-Plex-Container-Start'], '25');
       expect(captured.url.queryParameters['X-Plex-Container-Size'], '25');
+      expect(captured.url.queryParameters['includeGuids'], '1');
       expect(captured.url.queryParameters['includeMeta'], '1');
       expect(captured.headers['X-Plex-Token'], 'profile-token');
       expect(captured.headers['X-Plex-Client-Identifier'], 'client-id');
@@ -485,6 +486,72 @@ void main() {
       await source.removeFromWatchlist(MediaKind.movie, ids);
       expect(source.isOnWatchlist(MediaKind.movie, ids), isFalse);
       expect(requests, hasLength(2));
+      // The snapshot page must stay under Discover's container-size cap
+      // (#1715: 500 was rejected outright).
+      expect(requests.first.url.queryParameters['X-Plex-Container-Size'], '100');
+    });
+
+    test('an oversized watchlist page refetches as chunks when Discover rejects it', () async {
+      final requests = <http.Request>[];
+      final client = PlexDiscoverClient(
+        _session,
+        httpClient: MockClient((request) async {
+          requests.add(request);
+          final size = int.parse(request.url.queryParameters['X-Plex-Container-Size']!);
+          if (size > 25) {
+            return jsonResponse({
+              'Error': {'message': 'Invalid value provided for x-plex-container-size!'},
+            }, status: 400);
+          }
+          final start = int.parse(request.url.queryParameters['X-Plex-Container-Start']!);
+          const total = 180;
+          final count = (total - start).clamp(0, size);
+          return jsonResponse({
+            'MediaContainer': {
+              'totalSize': total,
+              'Metadata': [
+                for (var i = 0; i < count; i++)
+                  {'ratingKey': 'rk-${start + i}', 'type': 'movie', 'title': 'Movie ${start + i}'},
+              ],
+            },
+          });
+        }),
+      );
+      addTearDown(client.dispose);
+
+      final page = await client.getWatchlist(page: 2, limit: 100);
+
+      // The rejected request, then the same range in proven-size chunks:
+      // the caller's offset math survives the cap drift.
+      expect(
+        requests.map(
+          (request) =>
+              (request.url.queryParameters['X-Plex-Container-Start'], request.url.queryParameters['X-Plex-Container-Size']),
+        ),
+        [('100', '100'), ('100', '25'), ('125', '25'), ('150', '25'), ('175', '25')],
+      );
+      expect(page.items, hasLength(80));
+      expect(page.items.first['ratingKey'], 'rk-100');
+      expect(page.items.last['ratingKey'], 'rk-179');
+      expect(page.hasMore, isFalse);
+      expect(page.totalResults, 180);
+    });
+
+    test('other Discover rejections surface instead of chunking', () async {
+      var requestCount = 0;
+      final client = PlexDiscoverClient(
+        _session,
+        httpClient: MockClient((request) async {
+          requestCount++;
+          return jsonResponse({
+            'Error': {'message': 'Maintenance'},
+          }, status: 400);
+        }),
+      );
+      addTearDown(client.dispose);
+
+      await expectLater(client.getWatchlist(limit: 100), throwsA(isA<PlexDiscoverException>()));
+      expect(requestCount, 1);
     });
 
     test('watchlist mutation resolves a missing Plex rating key from external ids', () async {

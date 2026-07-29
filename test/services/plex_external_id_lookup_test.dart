@@ -288,6 +288,34 @@ void main() {
     expect(requests.single.queryParameters.containsKey('title'), isFalse);
   });
 
+  test('a guid-only lookup stops after the exact guid miss', () async {
+    // Title attempts verify candidates by external-id intersection, so with
+    // no external ids they can never confirm anything — the guid miss must
+    // be the lookup's only request (#1715).
+    final requests = <Uri>[];
+    final client = testPlexClient(
+      handler: (request) async {
+        requests.add(request.url);
+        return _json({
+          'MediaContainer': {'Metadata': <Object>[]},
+        });
+      },
+    );
+    addTearDown(client.close);
+
+    final match = await client.findByExternalIds(
+      const ExternalIds(),
+      kind: MediaKind.movie,
+      titles: const ['Night on the Galactic Railroad'],
+      plexGuid: 'plex://movie/5d776b59ad5437001f79c6f8',
+    );
+
+    expect(match, isNull);
+    expect(requests, hasLength(1));
+    expect(requests.single.queryParameters['guid'], 'plex://movie/5d776b59ad5437001f79c6f8');
+    expect(requests.single.queryParameters.containsKey('title'), isFalse);
+  });
+
   test('an agreed season ref gates on the season hierarchy and nothing else', () async {
     final childRequests = <String>[];
     final extraRequests = <String>[];

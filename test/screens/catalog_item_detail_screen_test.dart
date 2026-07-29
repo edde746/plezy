@@ -13,6 +13,7 @@ import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
@@ -128,6 +129,22 @@ class _FakeCatalogLibraryMatcher extends CatalogLibraryMatcher {
   Future<List<MediaItem>> match(CatalogItem item) async => matches;
 }
 
+/// Matches only items that carry an external id, the way a real lookup for a
+/// Plex Discover row does (#1715): the bare rating-key form misses, the
+/// detail-enriched form hits.
+class _ExternalIdGatedMatcher extends CatalogLibraryMatcher {
+  _ExternalIdGatedMatcher(super.multiServer, this.hit);
+
+  final MediaItem hit;
+  final List<CatalogItem> calls = [];
+
+  @override
+  Future<List<MediaItem>> match(CatalogItem item) async {
+    calls.add(item);
+    return item.ids.toExternalIds().hasAny ? [hit] : const [];
+  }
+}
+
 const _item = CatalogItem(
   source: CatalogSourceId.trakt,
   kind: MediaKind.movie,
@@ -142,11 +159,12 @@ Future<void> _pumpDetail(
   List<MediaItem> matches = const [],
   bool pushedRoute = false,
   CatalogItem item = _item,
+  CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
 }) async {
   final sources = _FakeCatalogSourcesProvider(source);
   final serverManager = MultiServerManager();
   final multiServer = testMultiServerProvider(serverManager);
-  final matcher = _FakeCatalogLibraryMatcher(multiServer, matches);
+  final matcher = matcherBuilder?.call(multiServer) ?? _FakeCatalogLibraryMatcher(multiServer, matches);
   addTearDown(sources.dispose);
   addTearDown(source.dispose);
   addTearDown(serverManager.dispose);
@@ -229,6 +247,40 @@ void main() {
     expect(find.text('Enriched Catalog Movie'), findsOneWidget);
     expect(find.text('Enriched overview'), findsOneWidget);
     expect(find.text('Catalog Movie'), findsNothing);
+  });
+
+  testWidgets('detail enrichment that adds external ids re-resolves library matches', (tester) async {
+    // #1715: the row form of a Plex Discover item carries only its rating
+    // key and the first lookup misses; the detail body brings the external
+    // ids, which must trigger a second lookup instead of leaving the screen
+    // on "Not in your library".
+    const bare = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Row-only Movie',
+      ids: CatalogItemIds(trakt: 5),
+    );
+    const enriched = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Row-only Movie',
+      ids: CatalogItemIds(trakt: 5, tmdb: 99),
+    );
+    final hit = testMediaItem(id: 'server-match', libraryTitle: 'Movies', serverName: 'Living Room');
+    late _ExternalIdGatedMatcher matcher;
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: enriched));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: bare,
+      matcherBuilder: (multiServer) => matcher = _ExternalIdGatedMatcher(multiServer, hit),
+    );
+
+    expect(matcher.calls.map((call) => call.ids.tmdb), [null, 99]);
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
+    expect(find.text('Movies'), findsOneWidget);
   });
 
   testWidgets('fetchDetail failure leaves the opening item rendered', (tester) async {

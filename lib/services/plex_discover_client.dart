@@ -85,14 +85,41 @@ class PlexDiscoverClient {
   PlexDiscoverClient(this.session, {http.Client? httpClient, this.requestTimeout = const Duration(seconds: 20)})
     : _http = httpClient ?? http.Client();
 
+  /// Largest container size field-proven against Discover's request
+  /// validation: the Explore row fetch uses it on every load. Oversized
+  /// pages refetch as chunks of it, so the cap can drift below a caller's
+  /// page size without breaking that caller's offset math (#1715: 500
+  /// became "Invalid value provided for x-plex-container-size!").
+  static const int _watchlistChunkSize = 25;
+
   Future<PlexDiscoverPage> getWatchlist({int page = 1, int limit = 25}) async {
     final safePage = page < 1 ? 1 : page;
     final safeLimit = limit.clamp(1, 500);
     final offset = (safePage - 1) * safeLimit;
+    try {
+      return await _watchlistRange(offset, safeLimit);
+    } on PlexDiscoverException catch (error) {
+      if (safeLimit <= _watchlistChunkSize || !_isContainerSizeRejection(error)) rethrow;
+      appLogger.w('Plex Discover: container size $safeLimit rejected, refetching in chunks of $_watchlistChunkSize');
+      final items = <Map<String, dynamic>>[];
+      PlexDiscoverPage chunk;
+      do {
+        final remaining = safeLimit - items.length;
+        chunk = await _watchlistRange(
+          offset + items.length,
+          remaining > _watchlistChunkSize ? _watchlistChunkSize : remaining,
+        );
+        items.addAll(chunk.items);
+      } while (items.length < safeLimit && chunk.hasMore && chunk.items.isNotEmpty);
+      return PlexDiscoverPage(items: items, hasMore: chunk.hasMore, totalResults: chunk.totalResults);
+    }
+  }
+
+  Future<PlexDiscoverPage> _watchlistRange(int offset, int size) async {
     final data = await _request(
       'GET',
       '/library/sections/watchlist/all',
-      query: {'X-Plex-Container-Start': offset, 'X-Plex-Container-Size': safeLimit, 'includeMeta': 1},
+      query: {'X-Plex-Container-Start': offset, 'X-Plex-Container-Size': size, 'includeGuids': 1, 'includeMeta': 1},
     );
     final container = _mediaContainer(data!);
     final items = flexibleMapList(container['Metadata']);
@@ -100,6 +127,9 @@ class PlexDiscoverClient {
     final total = reportedTotal ?? flexibleInt(container['size']) ?? items.length;
     return PlexDiscoverPage(items: items, hasMore: offset + items.length < total, totalResults: reportedTotal);
   }
+
+  static bool _isContainerSizeRejection(PlexDiscoverException error) =>
+      error.statusCode == 400 && error.message.toLowerCase().contains('container-size');
 
   /// Discover's Home shelves — the rows Plex's own web client renders on its
   /// Home ▸ Trending tab, which reads
@@ -188,6 +218,7 @@ class PlexDiscoverClient {
       key,
       query: {
         'limit': safeLimit,
+        'includeGuids': 1,
         'includeMeta': 1,
         'includeUserState': 1,
         // Allowing Image on the measured 26-item hub grew 27,287 -> 55,925
@@ -216,6 +247,7 @@ class PlexDiscoverClient {
         'limit': limit.clamp(1, 100),
         'searchTypes': 'movies,tv',
         'searchProviders': 'discover',
+        'includeGuids': 1,
         'includeMetadata': 1,
         'filterPeople': 1,
       },
@@ -237,7 +269,12 @@ class PlexDiscoverClient {
       _ => null,
     };
     if (guid == null) return null;
-    final data = await _request('GET', '/library/metadata/matches', query: {'guid': guid}, allowNotFound: true);
+    final data = await _request(
+      'GET',
+      '/library/metadata/matches',
+      query: {'guid': guid, 'includeGuids': 1},
+      allowNotFound: true,
+    );
     if (data == null) return null;
     return firstFlexibleMap(_mediaContainer(data)['Metadata']);
   }
@@ -306,7 +343,11 @@ class PlexDiscoverClient {
       'PUT' => _http.put(uri, headers: headers),
       _ => throw ArgumentError.value(method, 'method', 'Unsupported Plex Discover method'),
     };
+    final stopwatch = Stopwatch()..start();
     final response = await request.timeout(requestTimeout);
+    // The other API surfaces log every request; without this line Discover
+    // drift is invisible in reporter logs (#1715 shipped blind).
+    appLogger.d('Discover $method ${relative.path} → ${response.statusCode} (${stopwatch.elapsedMilliseconds}ms)');
     if (allowNotFound && response.statusCode == 404) return null;
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw PlexDiscoverException(response.statusCode, _errorMessage(response.body));

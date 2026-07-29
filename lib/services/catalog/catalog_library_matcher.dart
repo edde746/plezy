@@ -33,8 +33,12 @@ class CatalogLibraryMatcher {
     // `mal45576 s1`, `mal51179 s2`, `mal55888 s2`, `mal59193 s3`) collapse to
     // `imdb:tt13293588`, so the first season-gated result would poison the rest.
     // Namespace by source too: MAL and AniList can share a MAL id while
-    // contributing different localized title candidates.
-    final key = '${item.source.name}/${item.entryIdentityKey}';
+    // contributing different localized title candidates. The id forms join
+    // the key because a detail load can enrich an item with external ids its
+    // row form lacked (#1715: Plex rows carry only a rating key); the richer
+    // lookup must not be short-circuited by the poorer form's cached
+    // negative.
+    final key = '${item.source.name}/${item.entryIdentityKey}/${item.ids.allKeys.join(',')}';
     final cached = _cache[key];
     if (cached != null && (cached.items.isNotEmpty || _now().difference(cached.at) < negativeTtl)) {
       return cached.items;

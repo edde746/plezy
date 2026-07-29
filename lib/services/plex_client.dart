@@ -3876,6 +3876,11 @@ class PlexClient
       }
     }
 
+    // Title attempts confirm candidates by external-id intersection, so
+    // without external ids they cannot match anything — stop at the exact
+    // guid lookup instead of burning requests that always come back empty.
+    if (!ids.hasAny) return null;
+
     Future<({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})> attempt(
       String title, {
       required int size,
