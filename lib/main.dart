@@ -499,6 +499,10 @@ void _startNonessentialInitialization(SettingsService settings) {
 
   bestEffort('Trakt scrobble', TraktScrobbleService.instance.initialize);
   bestEffort('Shader licenses', _registerShaderLicenses);
+  // The startup-gate application can precede the engine's first metrics
+  // report, which reads as a 1.0 display budget; re-derive it now that the
+  // tree is mounted and the display is known.
+  bestEffort('Image cache budget', DevicePerformance.applyImageCacheBudget);
   bestEffort('Environment diagnostics', _logEnvironmentDiagnostics);
 }
 
@@ -515,6 +519,7 @@ Future<void> _logEnvironmentDiagnostics() async {
     'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
     ' [effects: ${DevicePerformance.describeSync()}]',
   );
+  appLogger.i('Display: ${DevicePerformance.describeDisplay()}');
   if (Platform.isAndroid) {
     appLogger.i('Startup RSS: ${ProcessInfo.currentRss >> 20}MB');
   }

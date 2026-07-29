@@ -127,6 +127,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     }
 
     buffer.writeln('Effects: ${DevicePerformance.describeSync()}');
+    buffer.writeln('Display: ${DevicePerformance.describeDisplay()}');
 
     setStateIfMounted(() => _deviceInfo = buffer.toString().trimRight());
   }
