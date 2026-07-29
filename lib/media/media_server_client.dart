@@ -771,6 +771,10 @@ mixin MediaServerCacheMixin implements MediaServerClient {
   ///
   /// Returns `null` when offline mode is on and no cached row exists, or
   /// when both network and cache come up empty.
+  ///
+  /// Pass [cacheScope] when the caller already snapshotted a request context
+  /// (see [fetchWithCacheFirst]); otherwise the live profile is sampled, which
+  /// is only safe when nothing has awaited since the call began.
   Future<T?> fetchWithCacheFallback<T>({
     required String cacheKey,
     required Future<MediaServerResponse> Function() networkCall,
@@ -778,10 +782,11 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     required T? Function(MediaServerResponse response) parseResponse,
     bool Function(Object error)? shouldFallback,
     bool cacheResponse = true,
+    ServerId? cacheScope,
   }) async {
-    final cacheScope = ServerId(cacheServerId);
+    final scope = cacheScope ?? ServerId(cacheServerId);
     if (isOfflineMode) {
-      final cached = await cache.get(cacheScope, cacheKey);
+      final cached = await cache.get(scope, cacheKey);
       if (cached != null) return parseCache(cached);
       return null;
     }
@@ -790,13 +795,13 @@ mixin MediaServerCacheMixin implements MediaServerClient {
       throwIfHttpError(response);
       final parsed = parseResponse(response);
       if (cacheResponse) {
-        await _putCacheResponse(cacheScope, cacheKey, response.data);
+        await _putCacheResponse(scope, cacheKey, response.data);
       }
       return parsed;
     } catch (e) {
       if (shouldFallback != null && !shouldFallback(e)) rethrow;
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
-      final cached = await cache.get(cacheScope, cacheKey);
+      final cached = await cache.get(scope, cacheKey);
       if (cached != null) return parseCache(cached);
       rethrow;
     }

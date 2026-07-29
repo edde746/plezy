@@ -1187,23 +1187,62 @@ class Translations$fileInfo$en {
 	/// en: 'File Info'
 	String get title => 'File Info';
 
+	/// en: 'Overview'
+	String get overview => 'Overview';
+
 	/// en: 'Video'
 	String get video => 'Video';
 
 	/// en: 'Audio'
 	String get audio => 'Audio';
 
+	/// en: 'Subtitles'
+	String get subtitles => 'Subtitles';
+
+	/// en: 'Embedded Images'
+	String get images => 'Embedded Images';
+
+	/// en: 'Data Streams'
+	String get dataStreams => 'Data Streams';
+
+	/// en: 'Lyrics'
+	String get lyrics => 'Lyrics';
+
 	/// en: 'File'
 	String get file => 'File';
 
-	/// en: 'Advanced'
-	String get advanced => 'Advanced';
+	/// en: 'Attachments'
+	String get attachments => 'Attachments';
+
+	/// en: 'Delivery'
+	String get delivery => 'Delivery';
+
+	/// en: 'Version ${index} of ${count}'
+	String versionCounter({required Object index, required Object count}) => 'Version ${index} of ${count}';
+
+	/// en: 'File ${index} of ${count}'
+	String fileCounter({required Object index, required Object count}) => 'File ${index} of ${count}';
+
+	/// en: 'The server reported no streams for this file.'
+	String get noStreams => 'The server reported no streams for this file.';
+
+	/// en: 'Copy path'
+	String get copyPath => 'Copy path';
+
+	/// en: 'File path copied'
+	String get pathCopied => 'File path copied';
 
 	/// en: 'Codec'
 	String get codec => 'Codec';
 
+	/// en: 'Codec Tag'
+	String get codecTag => 'Codec Tag';
+
 	/// en: 'Resolution'
 	String get resolution => 'Resolution';
+
+	/// en: 'Coded Resolution'
+	String get codedResolution => 'Coded Resolution';
 
 	/// en: 'Bitrate'
 	String get bitrate => 'Bitrate';
@@ -1211,14 +1250,50 @@ class Translations$fileInfo$en {
 	/// en: 'Frame Rate'
 	String get frameRate => 'Frame Rate';
 
+	/// en: 'Rotation'
+	String get rotation => 'Rotation';
+
+	/// en: 'Comment'
+	String get comment => 'Comment';
+
+	/// en: 'Audio Description'
+	String get audioDescription => 'Audio Description';
+
+	/// en: 'Header Compression'
+	String get headerCompression => 'Header Compression';
+
+	/// en: 'Sidecar File'
+	String get sidecarFile => 'Sidecar File';
+
+	/// en: 'Transport Timestamp'
+	String get transportTimestamp => 'Transport Timestamp';
+
+	/// en: 'Display Offset'
+	String get displayOffset => 'Display Offset';
+
+	/// en: 'Preview Failure Code'
+	String get previewFailureCode => 'Preview Failure Code';
+
+	/// en: 'Preview Retries'
+	String get previewRetries => 'Preview Retries';
+
 	/// en: 'Aspect Ratio'
 	String get aspectRatio => 'Aspect Ratio';
+
+	/// en: 'Pixel Aspect Ratio'
+	String get pixelAspectRatio => 'Pixel Aspect Ratio';
 
 	/// en: 'Profile'
 	String get profile => 'Profile';
 
+	/// en: 'Level'
+	String get level => 'Level';
+
 	/// en: 'Bit Depth'
 	String get bitDepth => 'Bit Depth';
+
+	/// en: 'Pixel Format'
+	String get pixelFormat => 'Pixel Format';
 
 	/// en: 'Color Space'
 	String get colorSpace => 'Color Space';
@@ -1229,14 +1304,107 @@ class Translations$fileInfo$en {
 	/// en: 'Color Primaries'
 	String get colorPrimaries => 'Color Primaries';
 
+	/// en: 'Color Transfer'
+	String get colorTransfer => 'Color Transfer';
+
 	/// en: 'Chroma Subsampling'
 	String get chromaSubsampling => 'Chroma Subsampling';
+
+	/// en: 'Chroma Location'
+	String get chromaLocation => 'Chroma Location';
+
+	/// en: 'Scan Type'
+	String get scanType => 'Scan Type';
+
+	/// en: 'Interlaced'
+	String get interlaced => 'Interlaced';
+
+	/// en: 'Anamorphic'
+	String get anamorphic => 'Anamorphic';
+
+	/// en: 'Reference Frames'
+	String get referenceFrames => 'Reference Frames';
+
+	/// en: 'Dynamic Range'
+	String get dynamicRange => 'Dynamic Range';
+
+	/// en: 'Dolby Vision'
+	String get dolbyVision => 'Dolby Vision';
+
+	/// en: 'Dolby Vision Level'
+	String get dolbyVisionLevel => 'Dolby Vision Level';
+
+	/// en: 'Dolby Vision Version'
+	String get dolbyVisionVersion => 'Dolby Vision Version';
+
+	/// en: 'Dolby Vision Layers'
+	String get dolbyVisionLayers => 'Dolby Vision Layers';
+
+	/// en: 'Base Layer Compatibility'
+	String get baseLayerCompatibility => 'Base Layer Compatibility';
+
+	/// en: 'AVC Bitstream'
+	String get avcBitstream => 'AVC Bitstream';
+
+	/// en: 'NAL Length Size'
+	String get nalLengthSize => 'NAL Length Size';
+
+	/// en: 'Custom Scaling Matrix'
+	String get scalingMatrix => 'Custom Scaling Matrix';
+
+	/// en: 'Stream Identifier'
+	String get streamIdentifier => 'Stream Identifier';
+
+	/// en: 'Stream Index'
+	String get streamIndex => 'Stream Index';
+
+	/// en: 'Stream ID'
+	String get streamId => 'Stream ID';
+
+	/// en: 'Language'
+	String get language => 'Language';
+
+	/// en: 'Language Code'
+	String get languageCode => 'Language Code';
+
+	/// en: 'Track Title'
+	String get streamTitle => 'Track Title';
 
 	/// en: 'Channels'
 	String get channels => 'Channels';
 
-	/// en: 'Subtitles'
-	String get subtitles => 'Subtitles';
+	/// en: 'Sample Rate'
+	String get sampleRate => 'Sample Rate';
+
+	/// en: 'Spatial Audio'
+	String get spatialAudio => 'Spatial Audio';
+
+	/// en: 'Text Based'
+	String get textBased => 'Text Based';
+
+	/// en: 'Sidecar Format'
+	String get subtitleFormat => 'Sidecar Format';
+
+	/// en: 'Provider'
+	String get provider => 'Provider';
+
+	/// en: 'Match Score'
+	String get matchScore => 'Match Score';
+
+	/// en: 'Can Be Served Separately'
+	String get externalDelivery => 'Can Be Served Separately';
+
+	/// en: 'Sidecar Path'
+	String get sidecarPath => 'Sidecar Path';
+
+	/// en: 'Copied From'
+	String get sourceStream => 'Copied From';
+
+	/// en: 'Temporary'
+	String get temporary => 'Temporary';
+
+	/// en: 'Time Base'
+	String get timeBase => 'Time Base';
 
 	/// en: 'Overall Bitrate'
 	String get overallBitrate => 'Overall Bitrate';
@@ -1244,8 +1412,14 @@ class Translations$fileInfo$en {
 	/// en: 'Path'
 	String get path => 'Path';
 
+	/// en: 'File Name'
+	String get fileName => 'File Name';
+
 	/// en: 'Size'
 	String get size => 'Size';
+
+	/// en: 'Total Size'
+	String get totalSize => 'Total Size';
 
 	/// en: 'Container'
 	String get container => 'Container';
@@ -1253,11 +1427,101 @@ class Translations$fileInfo$en {
 	/// en: 'Duration'
 	String get duration => 'Duration';
 
+	/// en: 'Preview Thumbnails'
+	String get previewThumbnails => 'Preview Thumbnails';
+
+	/// en: 'Preview Index'
+	String get previewIndex => 'Preview Index';
+
+	/// en: 'Packet Length'
+	String get packetLength => 'Packet Length';
+
+	/// en: 'File Present'
+	String get filePresent => 'File Present';
+
+	/// en: 'Readable by Server'
+	String get fileReadable => 'Readable by Server';
+
+	/// en: 'Stream Path'
+	String get streamPath => 'Stream Path';
+
 	/// en: 'Optimized for Streaming'
 	String get optimizedForStreaming => 'Optimized for Streaming';
 
 	/// en: '64-bit Offsets'
 	String get has64bitOffsets => '64-bit Offsets';
+
+	/// en: 'Protocol'
+	String get protocol => 'Protocol';
+
+	/// en: 'Media Type'
+	String get mediaType => 'Media Type';
+
+	/// en: 'Source Kind'
+	String get sourceKind => 'Source Kind';
+
+	/// en: 'Optimized Version'
+	String get optimizedVersion => 'Optimized Version';
+
+	/// en: 'Optimization Target'
+	String get optimizationTarget => 'Optimization Target';
+
+	/// en: 'Deleted'
+	String get deletedAt => 'Deleted';
+
+	/// en: 'Remote Source'
+	String get remoteSource => 'Remote Source';
+
+	/// en: 'Infinite Stream'
+	String get infiniteStream => 'Infinite Stream';
+
+	/// en: 'Direct Play'
+	String get directPlay => 'Direct Play';
+
+	/// en: 'Direct Stream'
+	String get directStream => 'Direct Stream';
+
+	/// en: 'Transcoding'
+	String get transcoding => 'Transcoding';
+
+	/// en: 'ETag'
+	String get etag => 'ETag';
+
+	/// en: 'Version ID'
+	String get versionId => 'Version ID';
+
+	/// en: 'File ID'
+	String get fileId => 'File ID';
+
+	/// en: 'Default Audio Track'
+	String get defaultAudioTrack => 'Default Audio Track';
+
+	/// en: 'Default Subtitle Track'
+	String get defaultSubtitleTrack => 'Default Subtitle Track';
+
+	/// en: 'Off'
+	String get subtitlesOff => 'Off';
+
+	/// en: 'Default'
+	String get flagDefault => 'Default';
+
+	/// en: 'Forced'
+	String get flagForced => 'Forced';
+
+	/// en: 'Selected'
+	String get flagSelected => 'Selected';
+
+	/// en: 'External'
+	String get flagExternal => 'External';
+
+	/// en: 'Hearing impaired'
+	String get flagHearingImpaired => 'Hearing impaired';
+
+	/// en: 'Dub'
+	String get flagDub => 'Dub';
+
+	/// en: 'Original'
+	String get flagOriginal => 'Original';
 }
 
 // Path: mediaMenu
@@ -5568,30 +5832,118 @@ extension on Translations {
 			'hotkeys.actions.skipMarker' => 'Skip Intro/Credits',
 			'hotkeys.actions.screenshot' => 'Take Screenshot',
 			'fileInfo.title' => 'File Info',
+			'fileInfo.overview' => 'Overview',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Subtitles',
+			'fileInfo.images' => 'Embedded Images',
+			'fileInfo.dataStreams' => 'Data Streams',
+			'fileInfo.lyrics' => 'Lyrics',
 			'fileInfo.file' => 'File',
-			'fileInfo.advanced' => 'Advanced',
+			'fileInfo.attachments' => 'Attachments',
+			'fileInfo.delivery' => 'Delivery',
+			'fileInfo.versionCounter' => ({required Object index, required Object count}) => 'Version ${index} of ${count}',
+			'fileInfo.fileCounter' => ({required Object index, required Object count}) => 'File ${index} of ${count}',
+			'fileInfo.noStreams' => 'The server reported no streams for this file.',
+			'fileInfo.copyPath' => 'Copy path',
+			'fileInfo.pathCopied' => 'File path copied',
 			'fileInfo.codec' => 'Codec',
+			'fileInfo.codecTag' => 'Codec Tag',
 			'fileInfo.resolution' => 'Resolution',
+			'fileInfo.codedResolution' => 'Coded Resolution',
 			'fileInfo.bitrate' => 'Bitrate',
 			'fileInfo.frameRate' => 'Frame Rate',
+			'fileInfo.rotation' => 'Rotation',
+			'fileInfo.comment' => 'Comment',
+			'fileInfo.audioDescription' => 'Audio Description',
+			'fileInfo.headerCompression' => 'Header Compression',
+			'fileInfo.sidecarFile' => 'Sidecar File',
+			'fileInfo.transportTimestamp' => 'Transport Timestamp',
+			'fileInfo.displayOffset' => 'Display Offset',
+			'fileInfo.previewFailureCode' => 'Preview Failure Code',
+			'fileInfo.previewRetries' => 'Preview Retries',
 			'fileInfo.aspectRatio' => 'Aspect Ratio',
+			'fileInfo.pixelAspectRatio' => 'Pixel Aspect Ratio',
 			'fileInfo.profile' => 'Profile',
+			'fileInfo.level' => 'Level',
 			'fileInfo.bitDepth' => 'Bit Depth',
+			'fileInfo.pixelFormat' => 'Pixel Format',
 			'fileInfo.colorSpace' => 'Color Space',
 			'fileInfo.colorRange' => 'Color Range',
 			'fileInfo.colorPrimaries' => 'Color Primaries',
+			'fileInfo.colorTransfer' => 'Color Transfer',
 			'fileInfo.chromaSubsampling' => 'Chroma Subsampling',
+			'fileInfo.chromaLocation' => 'Chroma Location',
+			'fileInfo.scanType' => 'Scan Type',
+			'fileInfo.interlaced' => 'Interlaced',
+			'fileInfo.anamorphic' => 'Anamorphic',
+			'fileInfo.referenceFrames' => 'Reference Frames',
+			'fileInfo.dynamicRange' => 'Dynamic Range',
+			'fileInfo.dolbyVision' => 'Dolby Vision',
+			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
+			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
+			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
+			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
+			'fileInfo.avcBitstream' => 'AVC Bitstream',
+			'fileInfo.nalLengthSize' => 'NAL Length Size',
+			'fileInfo.scalingMatrix' => 'Custom Scaling Matrix',
+			'fileInfo.streamIdentifier' => 'Stream Identifier',
+			'fileInfo.streamIndex' => 'Stream Index',
+			'fileInfo.streamId' => 'Stream ID',
+			'fileInfo.language' => 'Language',
+			'fileInfo.languageCode' => 'Language Code',
+			'fileInfo.streamTitle' => 'Track Title',
 			'fileInfo.channels' => 'Channels',
-			'fileInfo.subtitles' => 'Subtitles',
+			'fileInfo.sampleRate' => 'Sample Rate',
+			'fileInfo.spatialAudio' => 'Spatial Audio',
+			'fileInfo.textBased' => 'Text Based',
+			'fileInfo.subtitleFormat' => 'Sidecar Format',
+			'fileInfo.provider' => 'Provider',
+			'fileInfo.matchScore' => 'Match Score',
+			'fileInfo.externalDelivery' => 'Can Be Served Separately',
+			'fileInfo.sidecarPath' => 'Sidecar Path',
+			'fileInfo.sourceStream' => 'Copied From',
+			'fileInfo.temporary' => 'Temporary',
+			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
+			'fileInfo.fileName' => 'File Name',
 			'fileInfo.size' => 'Size',
+			'fileInfo.totalSize' => 'Total Size',
 			'fileInfo.container' => 'Container',
 			'fileInfo.duration' => 'Duration',
+			'fileInfo.previewThumbnails' => 'Preview Thumbnails',
+			'fileInfo.previewIndex' => 'Preview Index',
+			'fileInfo.packetLength' => 'Packet Length',
+			'fileInfo.filePresent' => 'File Present',
+			'fileInfo.fileReadable' => 'Readable by Server',
+			'fileInfo.streamPath' => 'Stream Path',
 			'fileInfo.optimizedForStreaming' => 'Optimized for Streaming',
 			'fileInfo.has64bitOffsets' => '64-bit Offsets',
+			'fileInfo.protocol' => 'Protocol',
+			'fileInfo.mediaType' => 'Media Type',
+			'fileInfo.sourceKind' => 'Source Kind',
+			'fileInfo.optimizedVersion' => 'Optimized Version',
+			'fileInfo.optimizationTarget' => 'Optimization Target',
+			'fileInfo.deletedAt' => 'Deleted',
+			'fileInfo.remoteSource' => 'Remote Source',
+			'fileInfo.infiniteStream' => 'Infinite Stream',
+			'fileInfo.directPlay' => 'Direct Play',
+			'fileInfo.directStream' => 'Direct Stream',
+			'fileInfo.transcoding' => 'Transcoding',
+			'fileInfo.etag' => 'ETag',
+			'fileInfo.versionId' => 'Version ID',
+			'fileInfo.fileId' => 'File ID',
+			'fileInfo.defaultAudioTrack' => 'Default Audio Track',
+			'fileInfo.defaultSubtitleTrack' => 'Default Subtitle Track',
+			'fileInfo.subtitlesOff' => 'Off',
+			'fileInfo.flagDefault' => 'Default',
+			'fileInfo.flagForced' => 'Forced',
+			'fileInfo.flagSelected' => 'Selected',
+			'fileInfo.flagExternal' => 'External',
+			'fileInfo.flagHearingImpaired' => 'Hearing impaired',
+			'fileInfo.flagDub' => 'Dub',
+			'fileInfo.flagOriginal' => 'Original',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
@@ -5629,6 +5981,8 @@ extension on Translations {
 			'accessibility.increaseValue' => ({required Object label}) => 'Increase ${label}',
 			'accessibility.hue' => 'Hue',
 			'accessibility.saturation' => 'Saturation',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.brightness' => 'Brightness',
 			'accessibility.hexColor' => 'Hex color',
 			'accessibility.expandText' => 'Expand text',
@@ -5717,8 +6071,6 @@ extension on Translations {
 			'videoControls.chapters' => 'Chapters',
 			'videoControls.noChaptersAvailable' => 'No chapters available',
 			'videoControls.queue' => 'Queue',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.noQueueItems' => 'No items in queue',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
@@ -6143,6 +6495,8 @@ extension on Translations {
 			'collections.removeFromCollectionConfirm' => ({required Object title}) => 'Remove "${title}" from this collection?',
 			'collections.removedFromCollection' => 'Removed from collection',
 			'collections.removeFromCollectionFailed' => 'Failed to remove from collection',
+			_ => null,
+		} ?? switch (path) {
 			'collections.removeFromCollectionError' => ({required Object error}) => 'Error removing from collection: ${error}',
 			'collections.searchCollections' => 'Search collections...',
 			'playlists.title' => 'Playlists',
@@ -6231,8 +6585,6 @@ extension on Translations {
 			'watchTogether.joinWatchSession' => 'Join Watch Session',
 			'watchTogether.enterCodeHint' => 'Enter 5-character code',
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
 			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
 			'watchTogether.joinInstructions' => 'Enter the host\'s session code to join.',
@@ -6657,6 +7009,8 @@ extension on Translations {
 			'services.deviceCode.copyCode' => 'Copy activation code',
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'services.deviceCode.codeCopied' => 'Code copied',
+			_ => null,
+		} ?? switch (path) {
 			'services.oauthProxy.title' => ({required Object service}) => 'Sign in to ${service}',
 			'services.oauthProxy.body' => 'Scan this QR code or open the URL on any device.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Open ${service} to sign in',

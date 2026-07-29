@@ -507,8 +507,8 @@ class _Translations$fileInfo$ru extends Translations$fileInfo$en {
 	@override String get title => 'Информация о файле';
 	@override String get video => 'Видео';
 	@override String get audio => 'Аудио';
+	@override String get subtitles => 'Субтитры';
 	@override String get file => 'Файл';
-	@override String get advanced => 'Дополнительно';
 	@override String get codec => 'Кодек';
 	@override String get resolution => 'Разрешение';
 	@override String get bitrate => 'Битрейт';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$ru extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Основные цвета';
 	@override String get chromaSubsampling => 'Субдискретизация цветности';
 	@override String get channels => 'Каналы';
-	@override String get subtitles => 'Субтитры';
 	@override String get overallBitrate => 'Общий битрейт';
 	@override String get path => 'Путь';
 	@override String get size => 'Размер';
@@ -2566,8 +2565,8 @@ extension on TranslationsRu {
 			'fileInfo.title' => 'Информация о файле',
 			'fileInfo.video' => 'Видео',
 			'fileInfo.audio' => 'Аудио',
+			'fileInfo.subtitles' => 'Субтитры',
 			'fileInfo.file' => 'Файл',
-			'fileInfo.advanced' => 'Дополнительно',
 			'fileInfo.codec' => 'Кодек',
 			'fileInfo.resolution' => 'Разрешение',
 			'fileInfo.bitrate' => 'Битрейт',
@@ -2580,7 +2579,6 @@ extension on TranslationsRu {
 			'fileInfo.colorPrimaries' => 'Основные цвета',
 			'fileInfo.chromaSubsampling' => 'Субдискретизация цветности',
 			'fileInfo.channels' => 'Каналы',
-			'fileInfo.subtitles' => 'Субтитры',
 			'fileInfo.overallBitrate' => 'Общий битрейт',
 			'fileInfo.path' => 'Путь',
 			'fileInfo.size' => 'Размер',
@@ -2716,9 +2714,9 @@ extension on TranslationsRu {
 			'videoControls.language' => 'Язык',
 			'videoControls.noSubtitlesFound' => 'Субтитры не найдены',
 			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
+			'videoControls.subtitleDownloadedNotApplied' => 'Субтитры загружены, но их не удалось выбрать',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'Субтитры загружены, но их не удалось выбрать',
 			'videoControls.subtitleDownloadFailed' => 'Не удалось загрузить субтитры',
 			'videoControls.searchLanguages' => 'Поиск языков...',
 			'messages.markedAsWatched' => 'Отмечено как просмотренное',
@@ -3230,9 +3228,9 @@ extension on TranslationsRu {
 			'watchTogether.failedToJoin' => 'Не удалось присоединиться к сессии',
 			'watchTogether.sessionCodeCopied' => 'Код сессии скопирован в буфер обмена',
 			'watchTogether.relayUnreachable' => 'Сервер ретрансляции недоступен. Блокировка интернет-провайдером может помешать совместному просмотру.',
+			'watchTogether.reconnectingToHost' => 'Повторное подключение к организатору...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Повторное подключение к организатору...',
 			'watchTogether.currentPlayback' => 'Текущее воспроизведение',
 			'watchTogether.joinCurrentPlayback' => 'Присоединиться к текущему воспроизведению',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Вернуться к материалу, который сейчас смотрит организатор',

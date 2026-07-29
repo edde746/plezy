@@ -507,8 +507,8 @@ class _Translations$fileInfo$ko extends Translations$fileInfo$en {
 	@override String get title => '파일 정보';
 	@override String get video => '비디오';
 	@override String get audio => '오디오';
+	@override String get subtitles => '자막';
 	@override String get file => '파일';
-	@override String get advanced => '고급';
 	@override String get codec => '코덱';
 	@override String get resolution => '해상도';
 	@override String get bitrate => '비트레이트';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$ko extends Translations$fileInfo$en {
 	@override String get colorPrimaries => '색 원색';
 	@override String get chromaSubsampling => '색차 서브샘플링';
 	@override String get channels => '채널';
-	@override String get subtitles => '자막';
 	@override String get overallBitrate => '전체 비트레이트';
 	@override String get path => '경로';
 	@override String get size => '크기';
@@ -2557,8 +2556,8 @@ extension on TranslationsKo {
 			'fileInfo.title' => '파일 정보',
 			'fileInfo.video' => '비디오',
 			'fileInfo.audio' => '오디오',
+			'fileInfo.subtitles' => '자막',
 			'fileInfo.file' => '파일',
-			'fileInfo.advanced' => '고급',
 			'fileInfo.codec' => '코덱',
 			'fileInfo.resolution' => '해상도',
 			'fileInfo.bitrate' => '비트레이트',
@@ -2571,7 +2570,6 @@ extension on TranslationsKo {
 			'fileInfo.colorPrimaries' => '색 원색',
 			'fileInfo.chromaSubsampling' => '색차 서브샘플링',
 			'fileInfo.channels' => '채널',
-			'fileInfo.subtitles' => '자막',
 			'fileInfo.overallBitrate' => '전체 비트레이트',
 			'fileInfo.path' => '경로',
 			'fileInfo.size' => '크기',
@@ -2707,9 +2705,9 @@ extension on TranslationsKo {
 			'videoControls.language' => '언어',
 			'videoControls.noSubtitlesFound' => '자막을 찾을 수 없습니다',
 			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
+			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
 			'videoControls.subtitleDownloadFailed' => '자막 다운로드에 실패했습니다',
 			'videoControls.searchLanguages' => '언어 검색...',
 			'messages.markedAsWatched' => '시청 완료로 표시됨',
@@ -3221,9 +3219,9 @@ extension on TranslationsKo {
 			'watchTogether.failedToJoin' => '세션 참여 실패',
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
 			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. ISP 차단으로 함께 보기를 사용하지 못할 수 있습니다.',
+			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
 			'watchTogether.currentPlayback' => '현재 재생',
 			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',
 			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 시청 중인 콘텐츠로 이동합니다',

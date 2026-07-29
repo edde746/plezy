@@ -507,8 +507,8 @@ class Translations$fileInfo$zh extends Translations$fileInfo$en {
 	@override String get title => '文件信息';
 	@override String get video => '视频';
 	@override String get audio => '音频';
+	@override String get subtitles => '字幕';
 	@override String get file => '文件';
-	@override String get advanced => '高级';
 	@override String get codec => '编解码器';
 	@override String get resolution => '分辨率';
 	@override String get bitrate => '比特率';
@@ -521,7 +521,6 @@ class Translations$fileInfo$zh extends Translations$fileInfo$en {
 	@override String get colorPrimaries => '色彩基色';
 	@override String get chromaSubsampling => '色度子采样';
 	@override String get channels => '声道';
-	@override String get subtitles => '字幕';
 	@override String get overallBitrate => '总比特率';
 	@override String get path => '路径';
 	@override String get size => '大小';
@@ -2557,8 +2556,8 @@ extension on TranslationsZh {
 			'fileInfo.title' => '文件信息',
 			'fileInfo.video' => '视频',
 			'fileInfo.audio' => '音频',
+			'fileInfo.subtitles' => '字幕',
 			'fileInfo.file' => '文件',
-			'fileInfo.advanced' => '高级',
 			'fileInfo.codec' => '编解码器',
 			'fileInfo.resolution' => '分辨率',
 			'fileInfo.bitrate' => '比特率',
@@ -2571,7 +2570,6 @@ extension on TranslationsZh {
 			'fileInfo.colorPrimaries' => '色彩基色',
 			'fileInfo.chromaSubsampling' => '色度子采样',
 			'fileInfo.channels' => '声道',
-			'fileInfo.subtitles' => '字幕',
 			'fileInfo.overallBitrate' => '总比特率',
 			'fileInfo.path' => '路径',
 			'fileInfo.size' => '大小',
@@ -2707,9 +2705,9 @@ extension on TranslationsZh {
 			'videoControls.language' => '语言',
 			'videoControls.noSubtitlesFound' => '未找到字幕',
 			'videoControls.subtitleDownloaded' => '字幕已下载',
+			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
 			'videoControls.subtitleDownloadFailed' => '字幕下载失败',
 			'videoControls.searchLanguages' => '搜索语言…',
 			'messages.markedAsWatched' => '已标记为已观看',
@@ -3221,9 +3219,9 @@ extension on TranslationsZh {
 			'watchTogether.failedToJoin' => '加入会话失败',
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
 			'watchTogether.relayUnreachable' => '无法访问中继服务器。网络运营商的屏蔽可能导致“一起看”不可用。',
+			'watchTogether.reconnectingToHost' => '正在重新连接到主持人…',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => '正在重新连接到主持人…',
 			'watchTogether.currentPlayback' => '当前播放',
 			'watchTogether.joinCurrentPlayback' => '加入当前播放',
 			'watchTogether.joinCurrentPlaybackDescription' => '加入主持人当前正在观看的内容',

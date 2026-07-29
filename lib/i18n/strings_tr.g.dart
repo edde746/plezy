@@ -510,8 +510,8 @@ class _Translations$fileInfo$tr extends Translations$fileInfo$en {
 	@override String get title => 'Dosya Bilgisi';
 	@override String get video => 'Video';
 	@override String get audio => 'Ses';
+	@override String get subtitles => 'Altyazılar';
 	@override String get file => 'Dosya';
-	@override String get advanced => 'Gelişmiş';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Çözünürlük';
 	@override String get bitrate => 'Bit Hızı (Bitrate)';
@@ -524,7 +524,6 @@ class _Translations$fileInfo$tr extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Ana Renkler';
 	@override String get chromaSubsampling => 'Renk Alt Örneklemesi';
 	@override String get channels => 'Kanallar';
-	@override String get subtitles => 'Altyazılar';
 	@override String get overallBitrate => 'Genel Bit Hızı';
 	@override String get path => 'Yol';
 	@override String get size => 'Boyut';
@@ -2574,8 +2573,8 @@ extension on TranslationsTr {
 			'fileInfo.title' => 'Dosya Bilgisi',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Ses',
+			'fileInfo.subtitles' => 'Altyazılar',
 			'fileInfo.file' => 'Dosya',
-			'fileInfo.advanced' => 'Gelişmiş',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Çözünürlük',
 			'fileInfo.bitrate' => 'Bit Hızı (Bitrate)',
@@ -2588,7 +2587,6 @@ extension on TranslationsTr {
 			'fileInfo.colorPrimaries' => 'Ana Renkler',
 			'fileInfo.chromaSubsampling' => 'Renk Alt Örneklemesi',
 			'fileInfo.channels' => 'Kanallar',
-			'fileInfo.subtitles' => 'Altyazılar',
 			'fileInfo.overallBitrate' => 'Genel Bit Hızı',
 			'fileInfo.path' => 'Yol',
 			'fileInfo.size' => 'Boyut',
@@ -2721,9 +2719,9 @@ extension on TranslationsTr {
 			'videoControls.queue' => 'Kuyruk',
 			'videoControls.noQueueItems' => 'Kuyrukta öge yok',
 			'videoControls.searchSubtitles' => 'Altyazı Ara',
+			'videoControls.language' => 'Dil',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı bulunamadı',
 			'videoControls.subtitleDownloaded' => 'Altyazı indirildi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı indirildi ancak seçilemedi',
@@ -3235,9 +3233,9 @@ extension on TranslationsTr {
 			'watchTogether.pasteFromClipboard' => 'Panodan yapıştır',
 			'watchTogether.pleaseEnterCode' => 'Lütfen bir oturum kodu girin',
 			'watchTogether.codeMustBe5Chars' => 'Oturum kodu 5 karakter olmalıdır',
+			'watchTogether.joinInstructions' => 'Katılmak için kurucunun oturum kodunu girin.',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.joinInstructions' => 'Katılmak için kurucunun oturum kodunu girin.',
 			'watchTogether.failedToCreate' => 'Oturum oluşturulamadı',
 			'watchTogether.failedToJoin' => 'Oturuma katılınamadı',
 			'watchTogether.sessionCodeCopied' => 'Oturum kodu panoya kopyalandı',

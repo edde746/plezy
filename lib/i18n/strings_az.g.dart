@@ -510,8 +510,8 @@ class _Translations$fileInfo$az extends Translations$fileInfo$en {
 	@override String get title => 'Fayl məlumatı';
 	@override String get video => 'Video';
 	@override String get audio => 'Səs';
+	@override String get subtitles => 'Altyazılar';
 	@override String get file => 'Fayl';
-	@override String get advanced => 'Təkmilləşdirilmiş';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Ayırdetmə';
 	@override String get bitrate => 'Bit sürəti (Bitrate)';
@@ -524,7 +524,6 @@ class _Translations$fileInfo$az extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Əsas rənglər';
 	@override String get chromaSubsampling => 'Rəng alt-diskretləşdirməsi';
 	@override String get channels => 'Kanallar';
-	@override String get subtitles => 'Altyazılar';
 	@override String get overallBitrate => 'Ümumi bit sürəti';
 	@override String get path => 'Yol';
 	@override String get size => 'Həcm';
@@ -2574,8 +2573,8 @@ extension on TranslationsAz {
 			'fileInfo.title' => 'Fayl məlumatı',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Səs',
+			'fileInfo.subtitles' => 'Altyazılar',
 			'fileInfo.file' => 'Fayl',
-			'fileInfo.advanced' => 'Təkmilləşdirilmiş',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Ayırdetmə',
 			'fileInfo.bitrate' => 'Bit sürəti (Bitrate)',
@@ -2588,7 +2587,6 @@ extension on TranslationsAz {
 			'fileInfo.colorPrimaries' => 'Əsas rənglər',
 			'fileInfo.chromaSubsampling' => 'Rəng alt-diskretləşdirməsi',
 			'fileInfo.channels' => 'Kanallar',
-			'fileInfo.subtitles' => 'Altyazılar',
 			'fileInfo.overallBitrate' => 'Ümumi bit sürəti',
 			'fileInfo.path' => 'Yol',
 			'fileInfo.size' => 'Həcm',
@@ -2721,9 +2719,9 @@ extension on TranslationsAz {
 			'videoControls.queue' => 'Növbə',
 			'videoControls.noQueueItems' => 'Növbədə element yoxdur',
 			'videoControls.searchSubtitles' => 'Altyazı axtar',
+			'videoControls.language' => 'Dil',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı tapılmadı',
 			'videoControls.subtitleDownloaded' => 'Altyazı yükləndi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı yükləndi, lakin seçilə bilmədi',
@@ -3235,9 +3233,9 @@ extension on TranslationsAz {
 			'watchTogether.pasteFromClipboard' => 'Buferdən yapışdır',
 			'watchTogether.pleaseEnterCode' => 'Lütfən seans kodunu daxil edin',
 			'watchTogether.codeMustBe5Chars' => 'Seans kodu 5 simvol olmalıdır',
+			'watchTogether.joinInstructions' => 'Qoşulmaq üçün təşkilatçının seans kodunu daxil edin.',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.joinInstructions' => 'Qoşulmaq üçün təşkilatçının seans kodunu daxil edin.',
 			'watchTogether.failedToCreate' => 'Seans yaradıla bilmədi',
 			'watchTogether.failedToJoin' => 'Seansa qoşuluna bilmədi',
 			'watchTogether.sessionCodeCopied' => 'Seans kodu buferə kopyalandı',

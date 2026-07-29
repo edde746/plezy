@@ -507,8 +507,8 @@ class _Translations$fileInfo$nl extends Translations$fileInfo$en {
 	@override String get title => 'Bestandsinformatie';
 	@override String get video => 'Video';
 	@override String get audio => 'Audio';
+	@override String get subtitles => 'Ondertitels';
 	@override String get file => 'Bestand';
-	@override String get advanced => 'Geavanceerd';
 	@override String get codec => 'Codec';
 	@override String get resolution => 'Resolutie';
 	@override String get bitrate => 'Bitrate';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$nl extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Kleurprimaires';
 	@override String get chromaSubsampling => 'Chroma-subsampling';
 	@override String get channels => 'Kanalen';
-	@override String get subtitles => 'Ondertitels';
 	@override String get overallBitrate => 'Totale bitrate';
 	@override String get path => 'Pad';
 	@override String get size => 'Grootte';
@@ -2560,8 +2559,8 @@ extension on TranslationsNl {
 			'fileInfo.title' => 'Bestandsinformatie',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Ondertitels',
 			'fileInfo.file' => 'Bestand',
-			'fileInfo.advanced' => 'Geavanceerd',
 			'fileInfo.codec' => 'Codec',
 			'fileInfo.resolution' => 'Resolutie',
 			'fileInfo.bitrate' => 'Bitrate',
@@ -2574,7 +2573,6 @@ extension on TranslationsNl {
 			'fileInfo.colorPrimaries' => 'Kleurprimaires',
 			'fileInfo.chromaSubsampling' => 'Chroma-subsampling',
 			'fileInfo.channels' => 'Kanalen',
-			'fileInfo.subtitles' => 'Ondertitels',
 			'fileInfo.overallBitrate' => 'Totale bitrate',
 			'fileInfo.path' => 'Pad',
 			'fileInfo.size' => 'Grootte',
@@ -2710,9 +2708,9 @@ extension on TranslationsNl {
 			'videoControls.language' => 'Taal',
 			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
 			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
+			'videoControls.subtitleDownloadedNotApplied' => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd',
 			'videoControls.subtitleDownloadFailed' => 'Ondertitel downloaden mislukt',
 			'videoControls.searchLanguages' => 'Talen zoeken...',
 			'messages.markedAsWatched' => 'Gemarkeerd als gekeken',
@@ -3224,9 +3222,9 @@ extension on TranslationsNl {
 			'watchTogether.failedToJoin' => 'Deelnemen aan sessie mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode naar het klembord gekopieerd',
 			'watchTogether.relayUnreachable' => 'De relayserver is onbereikbaar. Een blokkering door je internetprovider kan Samen kijken verhinderen.',
+			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
 			'watchTogether.currentPlayback' => 'Wat nu wordt afgespeeld',
 			'watchTogether.joinCurrentPlayback' => 'Deelnemen aan huidige weergave',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Ga terug naar wat de host nu kijkt',

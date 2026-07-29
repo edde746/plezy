@@ -507,8 +507,8 @@ class _Translations$fileInfo$pl extends Translations$fileInfo$en {
 	@override String get title => 'Informacje o pliku';
 	@override String get video => 'Wideo';
 	@override String get audio => 'Audio';
+	@override String get subtitles => 'Napisy';
 	@override String get file => 'Plik';
-	@override String get advanced => 'Zaawansowane';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Rozdzielczość';
 	@override String get bitrate => 'Przepływność';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$pl extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Kolory podstawowe';
 	@override String get chromaSubsampling => 'Podpróbkowanie chrominancji';
 	@override String get channels => 'Kanały';
-	@override String get subtitles => 'Napisy';
 	@override String get overallBitrate => 'Całkowita przepływność';
 	@override String get path => 'Ścieżka';
 	@override String get size => 'Rozmiar';
@@ -2566,8 +2565,8 @@ extension on TranslationsPl {
 			'fileInfo.title' => 'Informacje o pliku',
 			'fileInfo.video' => 'Wideo',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Napisy',
 			'fileInfo.file' => 'Plik',
-			'fileInfo.advanced' => 'Zaawansowane',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Rozdzielczość',
 			'fileInfo.bitrate' => 'Przepływność',
@@ -2580,7 +2579,6 @@ extension on TranslationsPl {
 			'fileInfo.colorPrimaries' => 'Kolory podstawowe',
 			'fileInfo.chromaSubsampling' => 'Podpróbkowanie chrominancji',
 			'fileInfo.channels' => 'Kanały',
-			'fileInfo.subtitles' => 'Napisy',
 			'fileInfo.overallBitrate' => 'Całkowita przepływność',
 			'fileInfo.path' => 'Ścieżka',
 			'fileInfo.size' => 'Rozmiar',
@@ -2716,9 +2714,9 @@ extension on TranslationsPl {
 			'videoControls.language' => 'Język',
 			'videoControls.noSubtitlesFound' => 'Nie znaleziono napisów',
 			'videoControls.subtitleDownloaded' => 'Napisy pobrane',
+			'videoControls.subtitleDownloadedNotApplied' => 'Napisy zostały pobrane, ale nie można ich było wybrać',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'Napisy zostały pobrane, ale nie można ich było wybrać',
 			'videoControls.subtitleDownloadFailed' => 'Nie udało się pobrać napisów',
 			'videoControls.searchLanguages' => 'Szukaj języków...',
 			'messages.markedAsWatched' => 'Oznaczono jako obejrzane',
@@ -3230,9 +3228,9 @@ extension on TranslationsPl {
 			'watchTogether.failedToJoin' => 'Nie udało się dołączyć do sesji',
 			'watchTogether.sessionCodeCopied' => 'Kod sesji skopiowany do schowka',
 			'watchTogether.relayUnreachable' => 'Serwer pośredniczący jest nieosiągalny. Blokada operatora internetowego może uniemożliwiać korzystanie z funkcji „Oglądaj razem”.',
+			'watchTogether.reconnectingToHost' => 'Ponowne łączenie z gospodarzem...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Ponowne łączenie z gospodarzem...',
 			'watchTogether.currentPlayback' => 'Bieżące odtwarzanie',
 			'watchTogether.joinCurrentPlayback' => 'Dołącz do bieżącego odtwarzania',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Wróć do treści oglądanej obecnie przez gospodarza',

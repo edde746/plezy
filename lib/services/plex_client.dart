@@ -1814,12 +1814,65 @@ class PlexClient
 
   Future<MediaFileInfo?> _fetchFileInfo(String ratingKey) async {
     try {
-      final metadataJson = await _fetchRawMetadataJsonCacheFirst(ratingKey);
+      // One snapshot for both reads: the cache lookup yields before the
+      // refetch decision, and `applyProfileUpdate` may land in between.
+      // Sampling the live profile for the second read would cross identities.
+      final requestContext = _captureCacheFirstRequestContext();
+      var metadataJson = await _fetchRawMetadataJsonCacheFirst(ratingKey, requestContext);
+      // The `/library/metadata/{id}` cache row is shared, and lighter writers
+      // (getPlaybackExtras) fill it from a request without `includeStreams` /
+      // `checkFiles`. Serving that row here would render a file-info sheet
+      // with no stream table and no presence flags, so re-fetch the full
+      // shape once. Offline, or when the refetch fails, the partial row is
+      // still better than nothing.
+      if (!_plexMetadataHasStreamDetail(metadataJson) && !isOfflineMode) {
+        metadataJson = await _refetchRawMetadataJson(ratingKey, requestContext) ?? metadataJson;
+      }
       return parsePlexFileInfoFromJson(metadataJson);
     } catch (e) {
       appLogger.e('Failed to get file info: $e');
       return null;
     }
+  }
+
+  /// Whether a `/library/metadata` row was fetched with the file-info query
+  /// shape.
+  ///
+  /// Checks for the *keys* `includeStreams=1` and `checkFiles=1` add, on every
+  /// part: a fully probed part may legitimately report `Stream: []`, and one
+  /// populated sibling must not make a lean multi-part row look complete. A
+  /// row with no media at all needs no refetch — there is nothing to probe.
+  static bool _plexMetadataHasStreamDetail(Map<String, dynamic>? metadataJson) {
+    for (final media in flexibleMapList(metadataJson?['Media'])) {
+      for (final part in flexibleMapList(media['Part'])) {
+        if (!part.containsKey('Stream') || !part.containsKey('exists') || !part.containsKey('accessible')) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /// Network-first re-read of the full metadata shape, refreshing the shared
+  /// cache row so the next reader gets the complete payload too. Runs under
+  /// the caller's [requestContext] so the token that goes out and the cache
+  /// namespace that comes back belong to the same profile.
+  Future<Map<String, dynamic>?> _refetchRawMetadataJson(
+    String ratingKey,
+    ({ServerId cacheScope, Map<String, String> headers}) requestContext,
+  ) async {
+    final data = await fetchWithCacheFallback<Map<String, dynamic>>(
+      cacheScope: requestContext.cacheScope,
+      cacheKey: '/library/metadata/$ratingKey',
+      networkCall: () => _http.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
+        headers: requestContext.headers,
+      ),
+      parseCache: (cached) => cached as Map<String, dynamic>?,
+      parseResponse: (response) => response.data as Map<String, dynamic>?,
+    );
+    return _getFirstMetadataJsonFromData(data);
   }
 
   /// Cache-first raw metadata JSON for [ratingKey]. Serves the shared
@@ -1828,8 +1881,11 @@ class PlexClient
   /// with the full playback query params so the row it caches stays complete
   /// for the cache-only readers ([fetchPlaybackExtrasFromCacheOnly],
   /// [fetchCachedMediaSourceInfo]).
-  Future<Map<String, dynamic>?> _fetchRawMetadataJsonCacheFirst(String ratingKey) async {
-    final requestContext = _captureCacheFirstRequestContext();
+  Future<Map<String, dynamic>?> _fetchRawMetadataJsonCacheFirst(
+    String ratingKey, [
+    ({ServerId cacheScope, Map<String, String> headers})? context,
+  ]) async {
+    final requestContext = context ?? _captureCacheFirstRequestContext();
     final data = await fetchWithCacheFirst<Map<String, dynamic>>(
       cacheScope: requestContext.cacheScope,
       cacheKey: '/library/metadata/$ratingKey',

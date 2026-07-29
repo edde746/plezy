@@ -507,8 +507,8 @@ class _Translations$fileInfo$ja extends Translations$fileInfo$en {
 	@override String get title => 'ファイル情報';
 	@override String get video => '映像';
 	@override String get audio => '音声';
+	@override String get subtitles => '字幕';
 	@override String get file => 'ファイル';
-	@override String get advanced => '詳細';
 	@override String get codec => 'コーデック';
 	@override String get resolution => '解像度';
 	@override String get bitrate => 'ビットレート';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$ja extends Translations$fileInfo$en {
 	@override String get colorPrimaries => '色原色';
 	@override String get chromaSubsampling => 'クロマサブサンプリング';
 	@override String get channels => 'チャンネル';
-	@override String get subtitles => '字幕';
 	@override String get overallBitrate => '全体ビットレート';
 	@override String get path => 'パス';
 	@override String get size => 'サイズ';
@@ -2557,8 +2556,8 @@ extension on TranslationsJa {
 			'fileInfo.title' => 'ファイル情報',
 			'fileInfo.video' => '映像',
 			'fileInfo.audio' => '音声',
+			'fileInfo.subtitles' => '字幕',
 			'fileInfo.file' => 'ファイル',
-			'fileInfo.advanced' => '詳細',
 			'fileInfo.codec' => 'コーデック',
 			'fileInfo.resolution' => '解像度',
 			'fileInfo.bitrate' => 'ビットレート',
@@ -2571,7 +2570,6 @@ extension on TranslationsJa {
 			'fileInfo.colorPrimaries' => '色原色',
 			'fileInfo.chromaSubsampling' => 'クロマサブサンプリング',
 			'fileInfo.channels' => 'チャンネル',
-			'fileInfo.subtitles' => '字幕',
 			'fileInfo.overallBitrate' => '全体ビットレート',
 			'fileInfo.path' => 'パス',
 			'fileInfo.size' => 'サイズ',
@@ -2707,9 +2705,9 @@ extension on TranslationsJa {
 			'videoControls.language' => '言語',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
 			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
+			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
 			'videoControls.subtitleDownloadFailed' => '字幕のダウンロードに失敗しました',
 			'videoControls.searchLanguages' => '言語を検索…',
 			'messages.markedAsWatched' => '視聴済みにしました',
@@ -3221,9 +3219,9 @@ extension on TranslationsJa {
 			'watchTogether.failedToJoin' => 'セッションへの参加に失敗しました',
 			'watchTogether.sessionCodeCopied' => 'セッションコードをクリップボードにコピーしました',
 			'watchTogether.relayUnreachable' => 'リレーサーバーに接続できません。ISPによるブロックのため「一緒に見る」を利用できない可能性があります。',
+			'watchTogether.reconnectingToHost' => 'ホストに再接続中…',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'ホストに再接続中…',
 			'watchTogether.currentPlayback' => '現在の再生',
 			'watchTogether.joinCurrentPlayback' => '現在の再生に参加',
 			'watchTogether.joinCurrentPlaybackDescription' => 'ホストが現在視聴中のコンテンツに戻る',

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_file_info.dart';
 import 'package:plezy/services/plex_playback_mapper.dart';
 
 void main() {
@@ -421,20 +422,32 @@ void main() {
         ],
       });
 
-      expect(info?.container, 'mkv');
-      expect(info?.videoCodec, 'h264');
-      expect(info?.filePath, '/media/movie.mkv');
-      expect(info?.fileSize, 123456);
-      expect(info?.optimizedForStreaming, isTrue);
-      expect(info?.has64bitOffsets, isFalse);
-      expect(info?.frameRate, 24);
-      expect(info?.bitDepth, 8);
-      expect(info?.audioTracks.single.id, 301);
-      expect(info?.audioTracks.single.selected, isTrue);
-      expect(info?.subtitleTracks.single.key, '/subtitles/401');
+      final version = info!.versions.single;
+      final part = version.parts.single;
+      expect(version.container, 'mkv');
+      expect(version.videoCodec, 'h264');
+      expect(part.filePath, '/media/movie.mkv');
+      expect(part.fileSize, 123456);
+      expect(version.optimizedForStreaming, isTrue);
+      expect(version.has64bitOffsets, isFalse);
+
+      final video = part.streamsOfKind(MediaStreamKind.video).single;
+      expect(video.frameRate, 24);
+      expect(video.bitDepth, 8);
+      expect(video.colorSpace, 'bt709');
+
+      final audio = part.streamsOfKind(MediaStreamKind.audio).single;
+      expect(audio.id, '301');
+      expect(audio.isSelected, isTrue);
+      expect(audio.channelLayout, 'stereo');
+
+      expect(part.streamsOfKind(MediaStreamKind.subtitle).single.id, '401');
     });
 
-    test('skips unidentifiable subtitle streams in file info', () {
+    test('keeps subtitle streams that the playback reader would reject', () {
+      // The playback path needs a numeric stream id and drops the rest; the
+      // file-info view is purely descriptive, so embedded caption tracks with
+      // no usable id still belong in the table.
       final info = parsePlexFileInfoFromJson({
         'Media': [
           {
@@ -455,8 +468,11 @@ void main() {
       });
 
       expect(info, isNotNull);
-      expect(info!.filePath, '/media/movie.mp4');
-      expect(info.subtitleTracks.map((track) => track.id), [402]);
+      final part = info!.versions.single.parts.single;
+      expect(part.filePath, '/media/movie.mp4');
+      final subtitles = part.streamsOfKind(MediaStreamKind.subtitle).toList();
+      expect(subtitles.map((stream) => stream.id), [null, 'cea-608', '402']);
+      expect(subtitles.map((stream) => stream.ordinal), [1, 2, 3]);
     });
   });
 }

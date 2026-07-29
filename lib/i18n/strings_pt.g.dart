@@ -507,8 +507,8 @@ class _Translations$fileInfo$pt extends Translations$fileInfo$en {
 	@override String get title => 'Informações do arquivo';
 	@override String get video => 'Vídeo';
 	@override String get audio => 'Áudio';
+	@override String get subtitles => 'Legendas';
 	@override String get file => 'Arquivo';
-	@override String get advanced => 'Avançado';
 	@override String get codec => 'Codec';
 	@override String get resolution => 'Resolução';
 	@override String get bitrate => 'Taxa de bits';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$pt extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Primárias de Cor';
 	@override String get chromaSubsampling => 'Subamostragem de Croma';
 	@override String get channels => 'Canais';
-	@override String get subtitles => 'Legendas';
 	@override String get overallBitrate => 'Taxa de bits total';
 	@override String get path => 'Caminho';
 	@override String get size => 'Tamanho';
@@ -2560,8 +2559,8 @@ extension on TranslationsPt {
 			'fileInfo.title' => 'Informações do arquivo',
 			'fileInfo.video' => 'Vídeo',
 			'fileInfo.audio' => 'Áudio',
+			'fileInfo.subtitles' => 'Legendas',
 			'fileInfo.file' => 'Arquivo',
-			'fileInfo.advanced' => 'Avançado',
 			'fileInfo.codec' => 'Codec',
 			'fileInfo.resolution' => 'Resolução',
 			'fileInfo.bitrate' => 'Taxa de bits',
@@ -2574,7 +2573,6 @@ extension on TranslationsPt {
 			'fileInfo.colorPrimaries' => 'Primárias de Cor',
 			'fileInfo.chromaSubsampling' => 'Subamostragem de Croma',
 			'fileInfo.channels' => 'Canais',
-			'fileInfo.subtitles' => 'Legendas',
 			'fileInfo.overallBitrate' => 'Taxa de bits total',
 			'fileInfo.path' => 'Caminho',
 			'fileInfo.size' => 'Tamanho',
@@ -2710,9 +2708,9 @@ extension on TranslationsPt {
 			'videoControls.language' => 'Idioma',
 			'videoControls.noSubtitlesFound' => 'Nenhuma legenda encontrada',
 			'videoControls.subtitleDownloaded' => 'Legenda baixada',
+			'videoControls.subtitleDownloadedNotApplied' => 'A legenda foi baixada, mas não foi possível selecioná-la',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'A legenda foi baixada, mas não foi possível selecioná-la',
 			'videoControls.subtitleDownloadFailed' => 'Falha ao baixar legenda',
 			'videoControls.searchLanguages' => 'Pesquisar idiomas...',
 			'messages.markedAsWatched' => 'Marcado como assistido',
@@ -3224,9 +3222,9 @@ extension on TranslationsPt {
 			'watchTogether.failedToJoin' => 'Falha ao entrar na sessão',
 			'watchTogether.sessionCodeCopied' => 'Código da sessão copiado para a área de transferência',
 			'watchTogether.relayUnreachable' => 'Servidor de retransmissão inacessível. O bloqueio pelo provedor de internet pode impedir o uso do Assistir Juntos.',
+			'watchTogether.reconnectingToHost' => 'Reconectando ao anfitrião...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Reconectando ao anfitrião...',
 			'watchTogether.currentPlayback' => 'Reprodução atual',
 			'watchTogether.joinCurrentPlayback' => 'Entrar na reprodução atual',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Voltar ao conteúdo que o anfitrião está assistindo agora',

@@ -507,8 +507,8 @@ class _Translations$fileInfo$bg extends Translations$fileInfo$en {
 	@override String get title => 'Информация за файла';
 	@override String get video => 'Видео';
 	@override String get audio => 'Аудио';
+	@override String get subtitles => 'Субтитри';
 	@override String get file => 'Файл';
-	@override String get advanced => 'Разширени';
 	@override String get codec => 'Кодек';
 	@override String get resolution => 'Резолюция';
 	@override String get bitrate => 'Битрейт';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$bg extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Основни цветове';
 	@override String get chromaSubsampling => 'Цветова субдискретизация';
 	@override String get channels => 'Канали';
-	@override String get subtitles => 'Субтитри';
 	@override String get overallBitrate => 'Общ битрейт';
 	@override String get path => 'Път';
 	@override String get size => 'Размер';
@@ -2560,8 +2559,8 @@ extension on TranslationsBg {
 			'fileInfo.title' => 'Информация за файла',
 			'fileInfo.video' => 'Видео',
 			'fileInfo.audio' => 'Аудио',
+			'fileInfo.subtitles' => 'Субтитри',
 			'fileInfo.file' => 'Файл',
-			'fileInfo.advanced' => 'Разширени',
 			'fileInfo.codec' => 'Кодек',
 			'fileInfo.resolution' => 'Резолюция',
 			'fileInfo.bitrate' => 'Битрейт',
@@ -2574,7 +2573,6 @@ extension on TranslationsBg {
 			'fileInfo.colorPrimaries' => 'Основни цветове',
 			'fileInfo.chromaSubsampling' => 'Цветова субдискретизация',
 			'fileInfo.channels' => 'Канали',
-			'fileInfo.subtitles' => 'Субтитри',
 			'fileInfo.overallBitrate' => 'Общ битрейт',
 			'fileInfo.path' => 'Път',
 			'fileInfo.size' => 'Размер',
@@ -2710,9 +2708,9 @@ extension on TranslationsBg {
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
 			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
+			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
 			'videoControls.searchLanguages' => 'Търсене на езици...',
 			'messages.markedAsWatched' => 'Маркирано като гледано',
@@ -3224,9 +3222,9 @@ extension on TranslationsBg {
 			'watchTogether.failedToJoin' => 'Неуспешно присъединяване към сесия',
 			'watchTogether.sessionCodeCopied' => 'Кодът на сесията е копиран в клипборда',
 			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
+			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
 			'watchTogether.currentPlayback' => 'Текущо възпроизвеждане',
 			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',

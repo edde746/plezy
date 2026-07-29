@@ -507,8 +507,8 @@ class _Translations$fileInfo$da extends Translations$fileInfo$en {
 	@override String get title => 'Filinfo';
 	@override String get video => 'Video';
 	@override String get audio => 'Lyd';
+	@override String get subtitles => 'Undertekster';
 	@override String get file => 'Fil';
-	@override String get advanced => 'Avanceret';
 	@override String get codec => 'Codec';
 	@override String get resolution => 'Opløsning';
 	@override String get bitrate => 'Bitrate';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$da extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Farveprimærer';
 	@override String get chromaSubsampling => 'Chroma-subsampling';
 	@override String get channels => 'Kanaler';
-	@override String get subtitles => 'Undertekster';
 	@override String get overallBitrate => 'Samlet bitrate';
 	@override String get path => 'Sti';
 	@override String get size => 'Størrelse';
@@ -2560,8 +2559,8 @@ extension on TranslationsDa {
 			'fileInfo.title' => 'Filinfo',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Lyd',
+			'fileInfo.subtitles' => 'Undertekster',
 			'fileInfo.file' => 'Fil',
-			'fileInfo.advanced' => 'Avanceret',
 			'fileInfo.codec' => 'Codec',
 			'fileInfo.resolution' => 'Opløsning',
 			'fileInfo.bitrate' => 'Bitrate',
@@ -2574,7 +2573,6 @@ extension on TranslationsDa {
 			'fileInfo.colorPrimaries' => 'Farveprimærer',
 			'fileInfo.chromaSubsampling' => 'Chroma-subsampling',
 			'fileInfo.channels' => 'Kanaler',
-			'fileInfo.subtitles' => 'Undertekster',
 			'fileInfo.overallBitrate' => 'Samlet bitrate',
 			'fileInfo.path' => 'Sti',
 			'fileInfo.size' => 'Størrelse',
@@ -2710,9 +2708,9 @@ extension on TranslationsDa {
 			'videoControls.language' => 'Sprog',
 			'videoControls.noSubtitlesFound' => 'Ingen undertekster fundet',
 			'videoControls.subtitleDownloaded' => 'Undertekst downloadet',
+			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten blev downloadet, men kunne ikke vælges',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten blev downloadet, men kunne ikke vælges',
 			'videoControls.subtitleDownloadFailed' => 'Kunne ikke downloade undertekst',
 			'videoControls.searchLanguages' => 'Søg sprog...',
 			'messages.markedAsWatched' => 'Markeret som set',
@@ -3224,9 +3222,9 @@ extension on TranslationsDa {
 			'watchTogether.failedToJoin' => 'Kunne ikke deltage i session',
 			'watchTogether.sessionCodeCopied' => 'Sessionskode kopieret til udklipsholder',
 			'watchTogether.relayUnreachable' => 'Relayserveren kan ikke nås. Blokering hos internetudbyderen kan forhindre Se sammen.',
+			'watchTogether.reconnectingToHost' => 'Genopretter forbindelse til vært...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Genopretter forbindelse til vært...',
 			'watchTogether.currentPlayback' => 'Nuværende afspilning',
 			'watchTogether.joinCurrentPlayback' => 'Deltag i nuværende afspilning',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hop tilbage til det værten ser nu',

@@ -9,7 +9,12 @@ class StatChip extends StatelessWidget {
   final Color? iconColor;
   final String label;
 
-  const StatChip({super.key, this.icon, this.iconColor, required this.label});
+  /// Overrides the default fill. Needed where the chip sits on a surface that
+  /// already uses `surfaceContainerHigh` — the mono theme collapses several
+  /// container roles onto one colour, so the default would be invisible.
+  final Color? backgroundColor;
+
+  const StatChip({super.key, this.icon, this.iconColor, required this.label, this.backgroundColor});
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +22,7 @@ class StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
+        color: backgroundColor ?? theme.colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(

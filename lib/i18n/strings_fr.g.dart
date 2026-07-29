@@ -507,8 +507,8 @@ class _Translations$fileInfo$fr extends Translations$fileInfo$en {
 	@override String get title => 'Informations sur le fichier';
 	@override String get video => 'Vidéo';
 	@override String get audio => 'Audio';
+	@override String get subtitles => 'Sous-titres';
 	@override String get file => 'Fichier';
-	@override String get advanced => 'Avancé';
 	@override String get codec => 'Codec';
 	@override String get resolution => 'Résolution';
 	@override String get bitrate => 'Débit';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$fr extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Couleurs primaires';
 	@override String get chromaSubsampling => 'Sous-échantillonnage chromatique';
 	@override String get channels => 'Canaux';
-	@override String get subtitles => 'Sous-titres';
 	@override String get overallBitrate => 'Débit global';
 	@override String get path => 'Chemin';
 	@override String get size => 'Taille';
@@ -2560,8 +2559,8 @@ extension on TranslationsFr {
 			'fileInfo.title' => 'Informations sur le fichier',
 			'fileInfo.video' => 'Vidéo',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Sous-titres',
 			'fileInfo.file' => 'Fichier',
-			'fileInfo.advanced' => 'Avancé',
 			'fileInfo.codec' => 'Codec',
 			'fileInfo.resolution' => 'Résolution',
 			'fileInfo.bitrate' => 'Débit',
@@ -2574,7 +2573,6 @@ extension on TranslationsFr {
 			'fileInfo.colorPrimaries' => 'Couleurs primaires',
 			'fileInfo.chromaSubsampling' => 'Sous-échantillonnage chromatique',
 			'fileInfo.channels' => 'Canaux',
-			'fileInfo.subtitles' => 'Sous-titres',
 			'fileInfo.overallBitrate' => 'Débit global',
 			'fileInfo.path' => 'Chemin',
 			'fileInfo.size' => 'Taille',
@@ -2710,9 +2708,9 @@ extension on TranslationsFr {
 			'videoControls.language' => 'Langue',
 			'videoControls.noSubtitlesFound' => 'Aucun sous-titre trouvé',
 			'videoControls.subtitleDownloaded' => 'Sous-titre téléchargé',
+			'videoControls.subtitleDownloadedNotApplied' => 'Le sous-titre a été téléchargé, mais n’a pas pu être sélectionné',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'Le sous-titre a été téléchargé, mais n’a pas pu être sélectionné',
 			'videoControls.subtitleDownloadFailed' => 'Échec du téléchargement du sous-titre',
 			'videoControls.searchLanguages' => 'Rechercher des langues...',
 			'messages.markedAsWatched' => 'Marqué comme vu',
@@ -3224,9 +3222,9 @@ extension on TranslationsFr {
 			'watchTogether.failedToJoin' => 'Échec de la connexion à la session',
 			'watchTogether.sessionCodeCopied' => 'Code de session copié dans le presse-papiers',
 			'watchTogether.relayUnreachable' => 'Serveur relais inaccessible. Un blocage par le fournisseur d’accès peut empêcher le fonctionnement de Regarder ensemble.',
+			'watchTogether.reconnectingToHost' => 'Reconnexion à l\'hôte...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Reconnexion à l\'hôte...',
 			'watchTogether.currentPlayback' => 'Lecture en cours',
 			'watchTogether.joinCurrentPlayback' => 'Rejoindre la lecture en cours',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Reprendre le contenu que l’hôte regarde actuellement',

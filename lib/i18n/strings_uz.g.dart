@@ -510,8 +510,8 @@ class _Translations$fileInfo$uz extends Translations$fileInfo$en {
 	@override String get title => 'Fayl haqida maʼlumot';
 	@override String get video => 'Video';
 	@override String get audio => 'Audio';
+	@override String get subtitles => 'Subtitrlar';
 	@override String get file => 'Fayl';
-	@override String get advanced => 'Kengaytirilgan';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Oʻlchamlari (Resolution)';
 	@override String get bitrate => 'Bitreyt (Bitrate)';
@@ -524,7 +524,6 @@ class _Translations$fileInfo$uz extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Asosiy ranglar';
 	@override String get chromaSubsampling => 'Rangli subdiskretlash';
 	@override String get channels => 'Kanallar';
-	@override String get subtitles => 'Subtitrlar';
 	@override String get overallBitrate => 'Umumiy bitreyt';
 	@override String get path => 'Yoʻl';
 	@override String get size => 'Hajmi';
@@ -2574,8 +2573,8 @@ extension on TranslationsUz {
 			'fileInfo.title' => 'Fayl haqida maʼlumot',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Subtitrlar',
 			'fileInfo.file' => 'Fayl',
-			'fileInfo.advanced' => 'Kengaytirilgan',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Oʻlchamlari (Resolution)',
 			'fileInfo.bitrate' => 'Bitreyt (Bitrate)',
@@ -2588,7 +2587,6 @@ extension on TranslationsUz {
 			'fileInfo.colorPrimaries' => 'Asosiy ranglar',
 			'fileInfo.chromaSubsampling' => 'Rangli subdiskretlash',
 			'fileInfo.channels' => 'Kanallar',
-			'fileInfo.subtitles' => 'Subtitrlar',
 			'fileInfo.overallBitrate' => 'Umumiy bitreyt',
 			'fileInfo.path' => 'Yoʻl',
 			'fileInfo.size' => 'Hajmi',
@@ -2721,9 +2719,9 @@ extension on TranslationsUz {
 			'videoControls.queue' => 'Navbat',
 			'videoControls.noQueueItems' => 'Navbatda elementlar yoʻq',
 			'videoControls.searchSubtitles' => 'Subtitr qidirish',
+			'videoControls.language' => 'Til',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.language' => 'Til',
 			'videoControls.noSubtitlesFound' => 'Subtitr topilmadi',
 			'videoControls.subtitleDownloaded' => 'Subtitr yuklab olindi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitr yuklab olindi, lekin qoʻllanilmadi',
@@ -3235,9 +3233,9 @@ extension on TranslationsUz {
 			'watchTogether.pasteFromClipboard' => 'Xotiradan joylash',
 			'watchTogether.pleaseEnterCode' => 'Seans kodini kiriting',
 			'watchTogether.codeMustBe5Chars' => 'Seans kodi 5 ta belgidan iborat boʻlishi kerak',
+			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
 			'watchTogether.failedToCreate' => 'Seansni yaratib boʻlmadi',
 			'watchTogether.failedToJoin' => 'Seansga qoʻshilib boʻlmadi',
 			'watchTogether.sessionCodeCopied' => 'Seans kodi nusxalandi',

@@ -507,8 +507,8 @@ class _Translations$fileInfo$de extends Translations$fileInfo$en {
 	@override String get title => 'Dateiinformationen';
 	@override String get video => 'Video';
 	@override String get audio => 'Audio';
+	@override String get subtitles => 'Untertitel';
 	@override String get file => 'Datei';
-	@override String get advanced => 'Erweitert';
 	@override String get codec => 'Codec';
 	@override String get resolution => 'Auflösung';
 	@override String get bitrate => 'Bitrate';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$de extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Primärfarben';
 	@override String get chromaSubsampling => 'Chroma-Subsampling';
 	@override String get channels => 'Kanäle';
-	@override String get subtitles => 'Untertitel';
 	@override String get overallBitrate => 'Gesamtbitrate';
 	@override String get path => 'Pfad';
 	@override String get size => 'Größe';
@@ -2560,8 +2559,8 @@ extension on TranslationsDe {
 			'fileInfo.title' => 'Dateiinformationen',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Untertitel',
 			'fileInfo.file' => 'Datei',
-			'fileInfo.advanced' => 'Erweitert',
 			'fileInfo.codec' => 'Codec',
 			'fileInfo.resolution' => 'Auflösung',
 			'fileInfo.bitrate' => 'Bitrate',
@@ -2574,7 +2573,6 @@ extension on TranslationsDe {
 			'fileInfo.colorPrimaries' => 'Primärfarben',
 			'fileInfo.chromaSubsampling' => 'Chroma-Subsampling',
 			'fileInfo.channels' => 'Kanäle',
-			'fileInfo.subtitles' => 'Untertitel',
 			'fileInfo.overallBitrate' => 'Gesamtbitrate',
 			'fileInfo.path' => 'Pfad',
 			'fileInfo.size' => 'Größe',
@@ -2710,9 +2708,9 @@ extension on TranslationsDe {
 			'videoControls.language' => 'Sprache',
 			'videoControls.noSubtitlesFound' => 'Keine Untertitel gefunden',
 			'videoControls.subtitleDownloaded' => 'Untertitel heruntergeladen',
+			'videoControls.subtitleDownloadedNotApplied' => 'Der Untertitel wurde heruntergeladen, konnte aber nicht ausgewählt werden',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'Der Untertitel wurde heruntergeladen, konnte aber nicht ausgewählt werden',
 			'videoControls.subtitleDownloadFailed' => 'Untertitel konnte nicht heruntergeladen werden',
 			'videoControls.searchLanguages' => 'Sprachen suchen...',
 			'messages.markedAsWatched' => 'Als gesehen markiert',
@@ -3224,9 +3222,9 @@ extension on TranslationsDe {
 			'watchTogether.failedToJoin' => 'Beitritt zur Sitzung fehlgeschlagen',
 			'watchTogether.sessionCodeCopied' => 'Sitzungscode in Zwischenablage kopiert',
 			'watchTogether.relayUnreachable' => 'Relay-Server nicht erreichbar. Eine Sperre durch den Internetanbieter kann gemeinsames Schauen verhindern.',
+			'watchTogether.reconnectingToHost' => 'Verbindung zum Host wird wiederhergestellt …',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Verbindung zum Host wird wiederhergestellt …',
 			'watchTogether.currentPlayback' => 'Aktuelle Wiedergabe',
 			'watchTogether.joinCurrentPlayback' => 'Aktueller Wiedergabe beitreten',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Zu dem Inhalt wechseln, den der Host gerade ansieht',

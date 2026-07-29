@@ -507,8 +507,8 @@ class _Translations$fileInfo$sv extends Translations$fileInfo$en {
 	@override String get title => 'Filinformation';
 	@override String get video => 'Video';
 	@override String get audio => 'Ljud';
+	@override String get subtitles => 'Undertexter';
 	@override String get file => 'Fil';
-	@override String get advanced => 'Avancerat';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Upplösning';
 	@override String get bitrate => 'Bithastighet';
@@ -521,7 +521,6 @@ class _Translations$fileInfo$sv extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Färgprimärer';
 	@override String get chromaSubsampling => 'Krominansnedsampling';
 	@override String get channels => 'Kanaler';
-	@override String get subtitles => 'Undertexter';
 	@override String get overallBitrate => 'Total bithastighet';
 	@override String get path => 'Sökväg';
 	@override String get size => 'Storlek';
@@ -2560,8 +2559,8 @@ extension on TranslationsSv {
 			'fileInfo.title' => 'Filinformation',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Ljud',
+			'fileInfo.subtitles' => 'Undertexter',
 			'fileInfo.file' => 'Fil',
-			'fileInfo.advanced' => 'Avancerat',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Upplösning',
 			'fileInfo.bitrate' => 'Bithastighet',
@@ -2574,7 +2573,6 @@ extension on TranslationsSv {
 			'fileInfo.colorPrimaries' => 'Färgprimärer',
 			'fileInfo.chromaSubsampling' => 'Krominansnedsampling',
 			'fileInfo.channels' => 'Kanaler',
-			'fileInfo.subtitles' => 'Undertexter',
 			'fileInfo.overallBitrate' => 'Total bithastighet',
 			'fileInfo.path' => 'Sökväg',
 			'fileInfo.size' => 'Storlek',
@@ -2710,9 +2708,9 @@ extension on TranslationsSv {
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
 			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
+			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
 			'videoControls.subtitleDownloadFailed' => 'Det gick inte att ladda ned undertexten',
 			'videoControls.searchLanguages' => 'Sök språk...',
 			'messages.markedAsWatched' => 'Markerad som sedd',
@@ -3224,9 +3222,9 @@ extension on TranslationsSv {
 			'watchTogether.failedToJoin' => 'Det gick inte att gå med i sessionen',
 			'watchTogether.sessionCodeCopied' => 'Sessionskoden har kopierats till urklipp',
 			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Din internetleverantör kan blockera Titta tillsammans.',
+			'watchTogether.reconnectingToHost' => 'Återansluter till värden...',
 			_ => null,
 		} ?? switch (path) {
-			'watchTogether.reconnectingToHost' => 'Återansluter till värden...',
 			'watchTogether.currentPlayback' => 'Aktuell uppspelning',
 			'watchTogether.joinCurrentPlayback' => 'Gå med i aktuell uppspelning',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hoppa tillbaka till det värden tittar på just nu',
