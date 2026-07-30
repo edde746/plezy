@@ -19,7 +19,6 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../providers/trakt_account_provider.dart';
 import '../providers/seerr_account_provider.dart';
 import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
@@ -150,17 +149,6 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
               ),
               ChangeNotifierProvider(
                 create: (context) {
-                  final provider = TraktAccountProvider(httpClientFactory: widget.trackerHttpClientFactory);
-                  unawaited(
-                    provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
-                      appLogger.w('Trakt profile hydrate failed', error: e, stackTrace: s);
-                    }),
-                  );
-                  return provider;
-                },
-              ),
-              ChangeNotifierProvider(
-                create: (context) {
                   final provider = TrackersProvider(httpClientFactory: widget.trackerHttpClientFactory);
                   unawaited(
                     provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
@@ -188,8 +176,7 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   return provider;
                 },
               ),
-              ChangeNotifierProxyProvider4<
-                TraktAccountProvider,
+              ChangeNotifierProxyProvider3<
                 TrackersProvider,
                 SeerrAccountProvider,
                 ActiveProfileProvider,
@@ -204,9 +191,9 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   );
                   return provider;
                 },
-                update: (context, trakt, trackers, seerr, activeProfile, previous) {
+                update: (context, trackers, seerr, activeProfile, previous) {
                   final provider = previous ?? _createCatalogSourcesProvider(context);
-                  provider.update(trakt, trackers, seerr);
+                  provider.update(trackers, seerr);
                   unawaited(provider.onProfileBindingStateChanged(activeProfile.isBinding));
                   return provider;
                 },

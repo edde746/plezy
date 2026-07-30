@@ -3,20 +3,20 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../models/trakt/trakt_cast_entry.dart';
-import '../../models/trakt/trakt_catalog_entry.dart';
-import '../../models/trakt/trakt_catalog_media.dart';
-import '../../models/trakt/trakt_scrobble_request.dart';
-import '../../models/trakt/trakt_user.dart';
-import '../../utils/app_logger.dart';
-import '../trackers/future_coalescer.dart';
-import '../trackers/tracker.dart';
-import '../trackers/tracker_constants.dart';
-import '../trackers/tracker_exceptions.dart';
-import '../trackers/tracker_http_client.dart';
-import '../trackers/tracker_session.dart';
+import '../../../models/trakt/trakt_cast_entry.dart';
+import '../../../models/trakt/trakt_catalog_entry.dart';
+import '../../../models/trakt/trakt_catalog_media.dart';
+import '../../../models/trakt/trakt_scrobble_request.dart';
+import '../../../models/trakt/trakt_user.dart';
+import '../../../utils/app_logger.dart';
+import '../future_coalescer.dart';
+import '../tracker.dart';
+import '../tracker_constants.dart';
+import '../tracker_exceptions.dart';
+import '../tracker_http_client.dart';
+import '../tracker_session.dart';
 import 'trakt_constants.dart';
-import 'trakt_page.dart';
+import '../tracker_page.dart';
 
 /// HTTP wrapper for the Trakt REST API.
 ///
@@ -93,7 +93,7 @@ class TraktClient implements DisposableTrackerClient {
   /// types mixed, in the user's rank order. Pagination is currently optional
   /// on this endpoint; sending page/limit makes Trakt echo X-Pagination
   /// headers.
-  Future<TraktPage<TraktCatalogEntry>> getWatchlist({
+  Future<TrackerPage<TraktCatalogEntry>> getWatchlist({
     TraktCatalogType? type,
     String sort = 'added',
     int page = 1,
@@ -101,21 +101,21 @@ class TraktClient implements DisposableTrackerClient {
   }) async {
     final path = type == null ? '/sync/watchlist' : '/sync/watchlist/${type.name}/$sort';
     final res = await _requestResponse('GET', '$path?$_catalogExtended&page=$page&limit=$limit');
-    return TraktPage.fromResponse(res, _decodeEntries(res.body));
+    return TrackerPage.fromResponse(res, _decodeEntries(res.body));
   }
 
   /// Items are wrapped as `{watchers, movie|show}`. Public endpoint, but sent
   /// authenticated: the tab only exists with a session and per-user rate
   /// limiting is cleaner than app-level.
-  Future<TraktPage<TraktCatalogEntry>> getTrending(TraktCatalogType type, {int page = 1, int limit = 25}) async {
+  Future<TrackerPage<TraktCatalogEntry>> getTrending(TraktCatalogType type, {int page = 1, int limit = 25}) async {
     final res = await _requestResponse('GET', '/${type.name}/trending?$_catalogExtended&page=$page&limit=$limit');
-    return TraktPage.fromResponse(res, _decodeEntries(res.body));
+    return TrackerPage.fromResponse(res, _decodeEntries(res.body));
   }
 
   /// Returns bare movie/show objects (not wrapped like trending).
-  Future<TraktPage<TraktCatalogMedia>> getPopular(TraktCatalogType type, {int page = 1, int limit = 25}) async {
+  Future<TrackerPage<TraktCatalogMedia>> getPopular(TraktCatalogType type, {int page = 1, int limit = 25}) async {
     final res = await _requestResponse('GET', '/${type.name}/popular?$_catalogExtended&page=$page&limit=$limit');
-    return TraktPage.fromResponse(res, _decodeMedia(res.body));
+    return TrackerPage.fromResponse(res, _decodeMedia(res.body));
   }
 
   /// Personalized recommendations. OAuth-required, limit-only (no pagination).
@@ -135,12 +135,12 @@ class TraktClient implements DisposableTrackerClient {
 
   /// Title search across movies and shows (`GET /search/movie,show`).
   /// Results are wrapped `{type, score, movie|show}` like watchlist entries.
-  Future<TraktPage<TraktCatalogEntry>> searchCatalog(String query, {int page = 1, int limit = 25}) async {
+  Future<TrackerPage<TraktCatalogEntry>> searchCatalog(String query, {int page = 1, int limit = 25}) async {
     final res = await _requestResponse(
       'GET',
       '/search/movie,show?query=${Uri.encodeQueryComponent(query)}&$_catalogExtended&page=$page&limit=$limit',
     );
-    return TraktPage.fromResponse(res, _decodeEntries(res.body));
+    return TrackerPage.fromResponse(res, _decodeEntries(res.body));
   }
 
   /// Similar titles (`GET /{movies|shows}/{id}/related`) — bare media

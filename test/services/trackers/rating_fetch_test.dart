@@ -10,7 +10,7 @@ import 'package:plezy/services/trackers/mal/mal_tracker.dart';
 import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
 import 'package:plezy/services/trackers/tracker_id_resolver.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
-import 'package:plezy/services/trakt/trakt_scrobble_service.dart';
+import 'package:plezy/services/trackers/trakt/trakt_tracker.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 int _now() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -47,7 +47,7 @@ TrackerRatingContext _ctx({
 
 void main() {
   tearDown(() {
-    TraktScrobbleService.instance.rebindToProfile(null, onSessionInvalidated: () {});
+    TraktTracker.instance.rebindSession(null, onSessionInvalidated: () {});
     SimklTracker.instance.rebindSession(null, onSessionInvalidated: () {});
     MalTracker.instance.rebindSession(null, onSessionInvalidated: () {});
     AnilistTracker.instance.rebindSession(null, onSessionInvalidated: () {});
@@ -70,11 +70,9 @@ void main() {
         200,
       );
     });
-    TraktScrobbleService.instance.rebindToProfile(_traktSession(), onSessionInvalidated: () {}, httpClient: client);
+    TraktTracker.instance.rebindSession(_traktSession(), onSessionInvalidated: () {}, httpClient: client);
 
-    final score = await TraktScrobbleService.instance.getRating(
-      _ctx(kind: MediaKind.episode, season: 1, episodeNumber: 2),
-    );
+    final score = await TraktTracker.instance.getRating(_ctx(kind: MediaKind.episode, season: 1, episodeNumber: 2));
 
     expect(score, 8);
   });

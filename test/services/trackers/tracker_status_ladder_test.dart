@@ -9,7 +9,7 @@ import 'package:plezy/services/trackers/simkl/simkl_client.dart';
 import 'package:plezy/services/trackers/simkl/simkl_constants.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
-import 'package:plezy/services/trakt/trakt_client.dart';
+import 'package:plezy/services/trackers/trakt/trakt_client.dart';
 
 TrackerSession _session({String refreshToken = 'refresh-old'}) {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;

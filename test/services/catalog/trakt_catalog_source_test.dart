@@ -11,7 +11,7 @@ import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/trakt_catalog_source.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
-import 'package:plezy/services/trakt/trakt_client.dart';
+import 'package:plezy/services/trackers/trakt/trakt_client.dart';
 
 TrackerSession _session() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;

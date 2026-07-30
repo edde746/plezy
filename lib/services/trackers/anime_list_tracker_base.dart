@@ -6,7 +6,7 @@ import 'tracker.dart';
 import 'tracker_id_resolver.dart';
 
 mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBase, ClientBackedTracker<TClient>
-    implements TrackerRatingSource {
+    implements TrackerRatingSource, SeriesProgressTracker {
   final KeyedFutureCache<int, int?> _episodeCountLoads = KeyedFutureCache();
 
   @override
@@ -31,12 +31,22 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
   }
 
   @override
-  Future<void> markWatched(TrackerContext ctx) async {
+  Object? seriesEntryId(TrackerContext ctx) => animeId(ctx.anime);
+
+  /// A movie entry is a single unit; an episode claims the mapped anime progress
+  /// when Fribb defined that scope, else its own episode number.
+  @override
+  int? seriesProgress(TrackerContext ctx) => ctx.isMovie ? 1 : (ctx.animeProgress ?? ctx.episodeNumber);
+
+  /// [watchedAt] is ignored: a list entry stores a progress counter, not dated
+  /// plays, so a replayed write is indistinguishable from a fresh one.
+  @override
+  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {
     final activeClient = client;
     final id = animeId(ctx.anime);
     if (activeClient == null || id == null) return;
 
-    final progress = ctx.isMovie ? 1 : (ctx.animeProgress ?? ctx.episodeNumber);
+    final progress = seriesProgress(ctx);
     if (progress == null || progress <= 0) return;
     final total = ctx.isMovie || ctx.animeProgress == null ? null : await _episodeCount(activeClient, id);
     final watched = total != null && progress > total ? total : progress;
@@ -52,6 +62,7 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
     }
   }
 
+  @override
   Future<void> removeFromList(TrackerContext ctx) async {
     final activeClient = client;
     final id = animeId(ctx.anime);

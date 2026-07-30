@@ -7,8 +7,8 @@ import 'package:plezy/models/trakt/trakt_catalog_entry.dart';
 import 'package:plezy/models/trakt/trakt_catalog_media.dart';
 import 'package:plezy/models/trakt/trakt_images.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
-import 'package:plezy/services/trakt/trakt_client.dart';
-import 'package:plezy/services/trakt/trakt_constants.dart';
+import 'package:plezy/services/trackers/trakt/trakt_client.dart';
+import 'package:plezy/services/trackers/trakt/trakt_constants.dart';
 
 int _now() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 

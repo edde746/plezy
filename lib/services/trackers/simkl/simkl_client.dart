@@ -7,7 +7,7 @@ import '../../../models/simkl/simkl_best_item.dart';
 import '../../../models/simkl/simkl_detail.dart';
 import '../../../models/simkl/simkl_search_result.dart';
 import '../../../models/simkl/simkl_trending_item.dart';
-import '../../trakt/trakt_page.dart';
+import '../tracker_page.dart';
 
 import '../tracker.dart';
 import '../tracker_constants.dart';
@@ -81,7 +81,7 @@ class SimklClient implements DisposableTrackerClient {
     ];
   }
 
-  Future<TraktPage<SimklSearchResult>> searchCatalog(
+  Future<TrackerPage<SimklSearchResult>> searchCatalog(
     SimklCatalogType type,
     String search, {
     int page = 1,
@@ -98,7 +98,7 @@ class SimklClient implements DisposableTrackerClient {
         for (final item in decoded)
           if (item is Map<String, dynamic>) SimklSearchResult.fromJson(item),
     ];
-    return TraktPage.fromResponse(response, items);
+    return TrackerPage.fromResponse(response, items);
   }
 
   Future<List<SimklBestItem>> getBest(SimklCatalogType type, {String filter = 'watched'}) async {

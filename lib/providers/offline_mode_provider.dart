@@ -74,8 +74,13 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     return OfflineModeReason.online;
   }
 
-  /// Whether there is network connectivity (WiFi, mobile data, etc.)
-  @visibleForTesting
+  /// Whether there is network connectivity at all (WiFi, Ethernet, cellular…).
+  ///
+  /// Public alongside [hasWifiOrEthernet] because this provider owns the app's
+  /// single connectivity subscription: consumers that care about reaching the
+  /// internet rather than a media server — the tracker write-queue retry, for
+  /// one — read it here instead of subscribing themselves. Changes to it notify,
+  /// even when the composite [isOffline] does not move.
   bool get hasNetworkConnection => _hasNetworkConnection;
 
   /// Whether at least one media server (Plex or Jellyfin) is reachable
@@ -141,6 +146,30 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     safeNotifyListeners();
   }
 
+  /// Apply a connectivity snapshot and notify when anything observable moved.
+  ///
+  /// All three observable answers count, not just [isOffline]: regaining
+  /// cellular while every media server stays unreachable leaves [isOffline] true
+  /// through `noServerConnection` and [hasWifiOrEthernet] false, yet
+  /// [hasNetworkConnection] has flipped — and consumers that only need the
+  /// internet (tracker history writes) can act on exactly that.
+  @visibleForTesting
+  void applyConnectivityResults(List<ConnectivityResult> results) {
+    final hadNetwork = _hasNetworkConnection;
+    _lastConnectivityResults = results;
+    _hasNetworkConnection = !results.contains(ConnectivityResult.none);
+
+    final wifiNow = hasWifiOrEthernet;
+    final offline = isOffline;
+    final changed =
+        _hasNetworkConnection != hadNetwork || wifiNow != _lastWifiOrEthernetState || offline != _lastOfflineState;
+    if (!changed) return;
+
+    _lastWifiOrEthernetState = wifiNow;
+    _lastOfflineState = offline;
+    safeNotifyListeners();
+  }
+
   /// Initialize the provider and start monitoring
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -154,20 +183,7 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     runZonedGuarded(
       () {
         _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
-          (results) {
-            _lastConnectivityResults = results;
-            _hasNetworkConnection = !results.contains(ConnectivityResult.none);
-            // Notify on connection-type changes too (WiFi <-> cellular), not
-            // just offline flips — type consumers listen through this provider.
-            final wifiNow = hasWifiOrEthernet;
-            if (wifiNow != _lastWifiOrEthernetState) {
-              _lastWifiOrEthernetState = wifiNow;
-              _lastOfflineState = isOffline;
-              safeNotifyListeners();
-            } else {
-              _notifyIfOfflineChanged();
-            }
-          },
+          applyConnectivityResults,
           onError: (e) {
             _hasNetworkConnection = true;
           },

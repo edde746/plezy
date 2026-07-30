@@ -43,7 +43,6 @@ import '../services/fullscreen_state_manager.dart';
 import '../services/driver_distraction.dart';
 import '../services/discord_rpc_service.dart';
 import '../services/trackers/tracker_coordinator.dart';
-import '../services/trakt/trakt_scrobble_service.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/apple_tv_remote_touch_service.dart';
 import '../services/media_controls_manager.dart';
@@ -901,7 +900,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           // trackers that own their own watched semantics need the terminal
           // report.
           unawaited(TrackerCoordinator.instance.stopPlayback());
-          unawaited(TraktScrobbleService.instance.stopPlayback());
         }
         break;
     }
@@ -1589,7 +1587,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _mediaControlsManager?.dispose();
 
     DiscordRPCService.instance.stopPlayback();
-    TraktScrobbleService.instance.stopPlayback();
     TrackerCoordinator.instance.stopPlayback();
 
     if (_fullscreenListenerAttached) {

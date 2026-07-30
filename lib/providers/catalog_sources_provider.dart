@@ -23,9 +23,8 @@ import '../services/seerr/seerr_client.dart';
 import '../services/trackers/anilist/anilist_client.dart';
 import '../services/trackers/mal/mal_client.dart';
 import '../services/trackers/simkl/simkl_client.dart';
-import '../services/trakt/trakt_client.dart';
+import '../services/trackers/trakt/trakt_client.dart';
 import 'seerr_account_provider.dart';
-import 'trakt_account_provider.dart';
 import 'trackers_provider.dart';
 import '../utils/platform_detector.dart';
 import '../utils/app_logger.dart';
@@ -219,9 +218,9 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
 
   /// Proxy-provider update hook: rebuild a source when its catalog client
   /// was rebound (connect/disconnect/profile switch).
-  void update(TraktAccountProvider trakt, TrackersProvider trackers, SeerrAccountProvider seerr) {
+  void update(TrackersProvider trackers, SeerrAccountProvider seerr) {
     var changed = false;
-    changed = _trakt.update(trakt.catalogClient) || changed;
+    changed = _trakt.update(trackers.traktCatalogClient) || changed;
     changed = _mal.update(trackers.malCatalogClient) || changed;
     changed = _anilist.update(trackers.anilistCatalogClient) || changed;
     changed = _simkl.update(trackers.simklCatalogClient) || changed;

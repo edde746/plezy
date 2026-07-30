@@ -8,6 +8,7 @@ import '../../../utils/json_utils.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
 import '../tracker_id_resolver.dart';
+import '../tracker_write_queue.dart';
 import '../tracker_rating_match.dart';
 import '../tracker_session.dart';
 import 'simkl_client.dart';
@@ -27,7 +28,7 @@ import 'simkl_client.dart';
 /// Plex exposes.
 class SimklTracker extends TrackerBase
     with ClientBackedTracker<SimklClient>
-    implements TrackerRatingSource, RealtimeScrobbleTracker {
+    implements TrackerRatingSource, RealtimeScrobbleTracker, EpisodeHistoryTracker {
   static SimklTracker? _instance;
   static SimklTracker get instance => _instance ??= SimklTracker._();
   SimklTracker._();
@@ -50,6 +51,29 @@ class SimklTracker extends TrackerBase
   @override
   Object? get scrobbleBinding => client;
 
+  @override
+  bool get canReportPlayback => isEnabledWithSession;
+
+  @override
+  ScrobblePolicy get scrobblePolicy => const ScrobblePolicy(
+    // Simkl serialises scrobble writes behind a 20-second per-user lock and
+    // fails whatever queues up with a 400, so a re-sent `start` waits it out.
+    resendThrottle: Duration(seconds: 20),
+    // Simkl asks for nothing on a seek, so it receives no seek checkpoints.
+    seekThrottle: null,
+  );
+
+  /// Prefers the server's external ids, which are always present when Simkl can
+  /// write at all; its own id is a fallback, not part of the identity, because it
+  /// only appears once an anime mapping has been downloaded.
+  @override
+  String? historyRowIdentity(TrackerContext ctx) {
+    final external = trackerExternalRowIdentity(ctx.external);
+    if (external != null) return external;
+    final simklId = ctx.anime?.simkl;
+    return simklId == null ? null : 'simkl=$simklId';
+  }
+
   void rebindSession(
     TrackerSession? session, {
     required void Function() onSessionInvalidated,
@@ -62,8 +86,10 @@ class SimklTracker extends TrackerBase
     );
   }
 
+  /// [watchedAt] is ignored: the history body Simkl accepts here carries no
+  /// timestamp, so a replayed write records as "now".
   @override
-  Future<void> markWatched(TrackerContext ctx) async {
+  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {
     final client = this.client;
     if (client == null) return;
 
@@ -100,7 +126,9 @@ class SimklTracker extends TrackerBase
       TrackerScrobbleState.start => 'start',
       TrackerScrobbleState.pause => 'pause',
       TrackerScrobbleState.stop => 'stop',
+      TrackerScrobbleState.seek => null,
     };
+    if (action == null) return;
     await client.scrobble(
       action,
       _scrobbleBody(ctx, ids, progressPercent),

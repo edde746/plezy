@@ -4,9 +4,10 @@ import 'tracker_constants.dart';
 import 'tracker_id_resolver.dart';
 import 'tracker_session.dart';
 
-/// Abstract tracker contract: the coordinator calls [markWatched] once per
-/// playback when progress crosses the watched threshold. Enabled/auth gating
-/// lives in [TrackerBase].
+/// Abstract tracker contract. Every write a tracker performs enters through
+/// this interface, and [TrackerCoordinator] is the only caller: playback
+/// lifecycle for [RealtimeScrobbleTracker]s, watched-threshold and manual
+/// marks for everyone else. Enabled/auth gating lives in [TrackerBase].
 abstract class Tracker {
   String get name;
 
@@ -14,12 +15,18 @@ abstract class Tracker {
   /// scrobble enabled, etc.).
   TrackerService get service;
 
-  bool get canScrobble;
+  /// True when a watched/unwatched history write may go out right now — the
+  /// service's own toggle is on and a session is bound.
+  ///
+  /// Separate from [RealtimeScrobbleTracker.canReportPlayback] because Trakt
+  /// exposes the two as independent user settings; for every other service the
+  /// two answers are the same.
+  bool get canWriteWatched;
 
   /// True if this tracker's IDs only come from the Fribb anime mapping
-  /// (MAL, AniList). Simkl returns false because it accepts Plex tvdb/imdb/
-  /// tmdb directly; when Simkl is the only active tracker we skip the 5.6 MB
-  /// Fribb download entirely.
+  /// (MAL, AniList). Simkl and Trakt return false because they accept Plex
+  /// tvdb/imdb/tmdb directly; when no active tracker needs Fribb we skip the
+  /// 5.6 MB mapping download entirely.
   bool get needsFribb;
 
   Future<void> initialize();
@@ -31,7 +38,11 @@ abstract class Tracker {
   /// configured for this tracker.
   bool shouldScrobbleForLibrary(String? libraryGlobalKey);
 
-  Future<void> markWatched(TrackerContext ctx);
+  /// [watchedAt] carries the moment the watch actually happened, set only when
+  /// replaying a queued write whose original attempt failed. Services that
+  /// cannot express a historical timestamp ignore it and record "now".
+  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt});
+
   Future<void> markUnwatched(TrackerContext ctx);
 }
 
@@ -41,12 +52,67 @@ abstract interface class TrackerRatingSource {
   Future<void> clearRating(TrackerRatingContext ctx);
 }
 
+/// A tracker whose history is a per-item record: every movie and episode is
+/// added or removed on its own (Simkl, Trakt). The coordinator can therefore
+/// hand it one item at a time, including a single episode of a container.
+abstract interface class EpisodeHistoryTracker implements Tracker {
+  /// A stable identifier for the remote row this tracker's history writes target,
+  /// or null when it cannot name one — in which case no write could apply either.
+  ///
+  /// Queued writes coalesce on this, so it has to stay the same for one row over
+  /// time. That rules out both the media-server rating key (server-local, so two
+  /// unrelated items collide) and the full outbound id set (which grows an anime
+  /// id as soon as some other tracker's mapping is downloaded, leaving rows
+  /// already queued unmatchable). Prefer [trackerExternalRowIdentity].
+  String? historyRowIdentity(TrackerContext ctx);
+}
+
+/// A tracker that keeps one progress counter per series instead of per-episode
+/// rows (MAL, AniList). The coordinator aggregates a container's episodes into
+/// a single entry update, and unwatching means dropping the whole entry.
+abstract interface class SeriesProgressTracker implements Tracker {
+  /// Identity of the series entry this tracker would write for [ctx], or null
+  /// when it cannot map the item. Episodes sharing an entry id collapse into
+  /// one write.
+  Object? seriesEntryId(TrackerContext ctx);
+
+  /// The absolute progress a watched write for [ctx] would claim on that entry.
+  ///
+  /// Because the write is absolute rather than incremental, this is what makes a
+  /// deferred retry safe: a claim is monotonic, so two claims about one entry
+  /// coalesce to the higher, and a claim already covered by a completed write is
+  /// dropped instead of walking the counter backwards.
+  int? seriesProgress(TrackerContext ctx);
+
+  Future<void> removeFromList(TrackerContext ctx);
+}
+
 /// Playback state reported to trackers that accept real-time progress.
-enum TrackerScrobbleState { start, pause, stop }
+///
+/// [seek] is a checkpoint rather than a transition: playback is still running,
+/// the position just jumped. A service that has no seek concept declares so
+/// through [ScrobblePolicy.seekThrottle] and never receives one.
+enum TrackerScrobbleState { start, pause, seek, stop }
+
+/// How closely one service tolerates repeated playback reports. Each rule
+/// exists because of a documented server-side constraint, so it lives with the
+/// tracker that knows it rather than in the coordinator.
+class ScrobblePolicy {
+  /// Minimum gap before the same state may be reported again. Guards against a
+  /// pause/play storm turning into a burst of identical writes.
+  final Duration resendThrottle;
+
+  /// Minimum gap between two seek checkpoints, or null when the service wants
+  /// no seek reports at all.
+  final Duration? seekThrottle;
+
+  const ScrobblePolicy({required this.resendThrottle, this.seekThrottle});
+}
 
 /// Trackers that record playback progress as it happens, not just a terminal
 /// watched mark. [TrackerCoordinator] drives these from player lifecycle
-/// events (start/resume, pause, stop) with the current progress percentage.
+/// events (start/resume, pause, seek, stop) with the current progress
+/// percentage.
 ///
 /// A real-time tracker owns its own watched semantics for in-player playback:
 /// the coordinator deliberately excludes it from the watched-threshold
@@ -59,6 +125,11 @@ abstract interface class RealtimeScrobbleTracker implements Tracker {
   /// before writing, so a rebind — profile switch, disconnect, reconnect —
   /// cannot redirect a write to whichever account replaced it.
   Object? get scrobbleBinding;
+
+  /// True when a playback lifecycle report may go out right now.
+  bool get canReportPlayback;
+
+  ScrobblePolicy get scrobblePolicy;
 
   /// Report a playback lifecycle event with the current progress percentage.
   Future<void> scrobble(TrackerContext ctx, TrackerScrobbleState state, double progressPercent);
@@ -95,8 +166,12 @@ abstract class TrackerBase implements Tracker {
 
   bool get hasActiveClient;
 
+  /// The service's own scrobble toggle ANDed with a bound session. The default
+  /// answer for both tracker capabilities; Trakt splits them.
+  bool get isEnabledWithSession => _isEnabled && hasActiveClient;
+
   @override
-  bool get canScrobble => _isEnabled && hasActiveClient;
+  bool get canWriteWatched => isEnabledWithSession;
 
   @override
   Future<void> initialize() async {

@@ -15,8 +15,7 @@ import '../../utils/snackbar_helper.dart';
 /// once `connect` hands us a payload, auto-launches the browser on pointer
 /// platforms, closes the dialog when the flow resolves, and surfaces a failure
 /// snack. Service-specific pieces are supplied via [connect], [buildDialog],
-/// and [urlFor] so both `TrackersProvider`-backed and `TraktAccountProvider`-
-/// backed flows share one code path.
+/// and [urlFor] so every `TrackersProvider`-backed flow shares one code path.
 Future<void> launchTrackerConnect<T>(
   BuildContext context, {
   required bool isBusyOrConnected,

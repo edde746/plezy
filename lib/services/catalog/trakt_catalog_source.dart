@@ -10,15 +10,15 @@ import '../../models/trakt/trakt_ids.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/country_codes.dart';
 import '../../utils/external_ids.dart';
-import '../trakt/trakt_client.dart';
-import '../trakt/trakt_constants.dart';
+import '../trackers/trakt/trakt_client.dart';
+import '../trackers/trakt/trakt_constants.dart';
 import 'catalog_source.dart';
 import 'catalog_watchlist_machinery.dart';
 
 /// [CatalogSource] backed by the Trakt API.
 ///
-/// Wraps the catalog [TraktClient] owned by `TraktAccountProvider` (not owned
-/// here — never disposed by this class). Watchlist membership rides
+/// Wraps the catalog [TraktClient] owned by `TrackersProvider` (not owned here
+/// — never disposed by this class). Watchlist membership rides
 /// [CatalogWatchlistMachinery] with kind-namespaced keys over every id form.
 class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
   final TraktClient _client;

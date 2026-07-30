@@ -22,7 +22,6 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     );
     _updateMediaControlsPlaybackState();
     unawaited(DiscordRPCService.instance.pausePlayback());
-    unawaited(TraktScrobbleService.instance.pausePlayback());
     // The item finished, so real-time trackers get a terminal report now rather
     // than whenever the screen happens to tear down: a completion prompt or
     // end-of-video sleep timer can leave it open for minutes, and until then
