@@ -350,6 +350,10 @@ class SettingsService extends BaseSharedPreferencesService {
   static const subtitleItalic = BoolPref('subtitle_italic');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
   static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
+
+  /// Episode advance follows the server's per-episode audio/subtitle
+  /// selections instead of carrying the current choice over (#1717).
+  static const followServerTrackSelections = BoolPref('follow_server_track_selections');
   static const showChapterMarkersOnTimeline = BoolPref('show_chapter_markers_on_timeline', defaultValue: true);
   static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
   static const autoSkipIntro = BoolPref('auto_skip_intro');
@@ -838,6 +842,7 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleBackgroundColor,
     subtitleBackgroundOpacity,
     rememberTrackSelections,
+    followServerTrackSelections,
     downloadOnWifiOnly,
     backgroundDownloadWarningAcknowledged,
     downloadIncludeSpecials,

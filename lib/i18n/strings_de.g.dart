@@ -300,6 +300,8 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} Minuten';
 	@override String get rememberTrackSelections => 'Spurauswahl pro Serie/Film merken';
 	@override String get rememberTrackSelectionsDescription => 'Audio- und Untertitelauswahl je Titel merken';
+	@override String get followServerTrackSelections => 'Serverseitige Spurauswahl pro Episode verwenden';
+	@override String get followServerTrackSelectionsDescription => 'Beim Episodenwechsel die auf dem Server ausgewählten Audio- und Untertitelspuren übernehmen, statt die aktuelle Auswahl zu übertragen';
 	@override String get showChapterMarkersOnTimeline => 'Kapitelmarkierungen auf der Suchleiste anzeigen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Die Suchleiste an Kapitelgrenzen unterteilen';
 	@override String get clickVideoTogglesPlayback => 'Video zum Abspielen oder Pausieren anklicken';
@@ -2355,6 +2357,8 @@ extension on TranslationsDe {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} Minuten',
 			'settings.rememberTrackSelections' => 'Spurauswahl pro Serie/Film merken',
 			'settings.rememberTrackSelectionsDescription' => 'Audio- und Untertitelauswahl je Titel merken',
+			'settings.followServerTrackSelections' => 'Serverseitige Spurauswahl pro Episode verwenden',
+			'settings.followServerTrackSelectionsDescription' => 'Beim Episodenwechsel die auf dem Server ausgewählten Audio- und Untertitelspuren übernehmen, statt die aktuelle Auswahl zu übertragen',
 			'settings.showChapterMarkersOnTimeline' => 'Kapitelmarkierungen auf der Suchleiste anzeigen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Die Suchleiste an Kapitelgrenzen unterteilen',
 			'settings.clickVideoTogglesPlayback' => 'Video zum Abspielen oder Pausieren anklicken',
@@ -2707,10 +2711,10 @@ extension on TranslationsDe {
 			'videoControls.searchSubtitles' => 'Untertitel suchen',
 			'videoControls.language' => 'Sprache',
 			'videoControls.noSubtitlesFound' => 'Keine Untertitel gefunden',
-			'videoControls.subtitleDownloaded' => 'Untertitel heruntergeladen',
-			'videoControls.subtitleDownloadedNotApplied' => 'Der Untertitel wurde heruntergeladen, konnte aber nicht ausgewählt werden',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Untertitel heruntergeladen',
+			'videoControls.subtitleDownloadedNotApplied' => 'Der Untertitel wurde heruntergeladen, konnte aber nicht ausgewählt werden',
 			'videoControls.subtitleDownloadFailed' => 'Untertitel konnte nicht heruntergeladen werden',
 			'videoControls.searchLanguages' => 'Sprachen suchen...',
 			'messages.markedAsWatched' => 'Als gesehen markiert',
@@ -3221,10 +3225,10 @@ extension on TranslationsDe {
 			'watchTogether.failedToCreate' => 'Sitzung konnte nicht erstellt werden',
 			'watchTogether.failedToJoin' => 'Beitritt zur Sitzung fehlgeschlagen',
 			'watchTogether.sessionCodeCopied' => 'Sitzungscode in Zwischenablage kopiert',
-			'watchTogether.relayUnreachable' => 'Relay-Server nicht erreichbar. Eine Sperre durch den Internetanbieter kann gemeinsames Schauen verhindern.',
-			'watchTogether.reconnectingToHost' => 'Verbindung zum Host wird wiederhergestellt …',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Relay-Server nicht erreichbar. Eine Sperre durch den Internetanbieter kann gemeinsames Schauen verhindern.',
+			'watchTogether.reconnectingToHost' => 'Verbindung zum Host wird wiederhergestellt …',
 			'watchTogether.currentPlayback' => 'Aktuelle Wiedergabe',
 			'watchTogether.joinCurrentPlayback' => 'Aktueller Wiedergabe beitreten',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Zu dem Inhalt wechseln, den der Host gerade ansieht',

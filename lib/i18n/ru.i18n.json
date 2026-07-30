@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} мин",
     "rememberTrackSelections": "Запоминать выбор дорожек для каждого сериала/фильма",
     "rememberTrackSelectionsDescription": "Запоминать выбор аудиодорожки и субтитров для каждого материала",
+    "followServerTrackSelections": "Использовать выбор дорожек сервера для каждой серии",
+    "followServerTrackSelectionsDescription": "При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора",
     "showChapterMarkersOnTimeline": "Показывать маркеры глав на шкале перемотки",
     "showChapterMarkersOnTimelineDescription": "Разделять шкалу перемотки по границам глав",
     "clickVideoTogglesPlayback": "Нажатие на видео запускает или приостанавливает воспроизведение",

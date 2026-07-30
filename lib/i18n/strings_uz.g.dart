@@ -300,6 +300,8 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} daqiqa';
 	@override String get rememberTrackSelections => 'Har bir film/serial uchun ovoz/subtitr tanlovini eslab qolish';
 	@override String get rememberTrackSelectionsDescription => 'Har bir media uchun ovoz va subtitr sozlamalarini saqlash';
+	@override String get followServerTrackSelections => 'Har bir epizod uchun serverdagi tanlovlardan foydalanish';
+	@override String get followServerTrackSelectionsDescription => 'Epizod almashganda joriy tanlovni ko\'chirish o\'rniga serverda tanlangan ovoz va subtitrni qo\'llash';
 	@override String get showChapterMarkersOnTimeline => 'Vaqt shkalasida boʻlim belgilarini koʻrsatish';
 	@override String get showChapterMarkersOnTimelineDescription => 'Vaqt shkalasini boʻlimlarga boʻlish';
 	@override String get clickVideoTogglesPlayback => 'Ijro/pauza uchun videoga bosing';
@@ -2366,6 +2368,8 @@ extension on TranslationsUz {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} daqiqa',
 			'settings.rememberTrackSelections' => 'Har bir film/serial uchun ovoz/subtitr tanlovini eslab qolish',
 			'settings.rememberTrackSelectionsDescription' => 'Har bir media uchun ovoz va subtitr sozlamalarini saqlash',
+			'settings.followServerTrackSelections' => 'Har bir epizod uchun serverdagi tanlovlardan foydalanish',
+			'settings.followServerTrackSelectionsDescription' => 'Epizod almashganda joriy tanlovni ko\'chirish o\'rniga serverda tanlangan ovoz va subtitrni qo\'llash',
 			'settings.showChapterMarkersOnTimeline' => 'Vaqt shkalasida boʻlim belgilarini koʻrsatish',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Vaqt shkalasini boʻlimlarga boʻlish',
 			'settings.clickVideoTogglesPlayback' => 'Ijro/pauza uchun videoga bosing',
@@ -2718,10 +2722,10 @@ extension on TranslationsUz {
 			'videoControls.noChaptersAvailable' => 'Boʻlimlar mavjud emas',
 			'videoControls.queue' => 'Navbat',
 			'videoControls.noQueueItems' => 'Navbatda elementlar yoʻq',
-			'videoControls.searchSubtitles' => 'Subtitr qidirish',
-			'videoControls.language' => 'Til',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.searchSubtitles' => 'Subtitr qidirish',
+			'videoControls.language' => 'Til',
 			'videoControls.noSubtitlesFound' => 'Subtitr topilmadi',
 			'videoControls.subtitleDownloaded' => 'Subtitr yuklab olindi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitr yuklab olindi, lekin qoʻllanilmadi',
@@ -3232,10 +3236,10 @@ extension on TranslationsUz {
 			'watchTogether.enterCodeHint' => '5 xonali kodni kiriting',
 			'watchTogether.pasteFromClipboard' => 'Xotiradan joylash',
 			'watchTogether.pleaseEnterCode' => 'Seans kodini kiriting',
-			'watchTogether.codeMustBe5Chars' => 'Seans kodi 5 ta belgidan iborat boʻlishi kerak',
-			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.codeMustBe5Chars' => 'Seans kodi 5 ta belgidan iborat boʻlishi kerak',
+			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
 			'watchTogether.failedToCreate' => 'Seansni yaratib boʻlmadi',
 			'watchTogether.failedToJoin' => 'Seansga qoʻshilib boʻlmadi',
 			'watchTogether.sessionCodeCopied' => 'Seans kodi nusxalandi',

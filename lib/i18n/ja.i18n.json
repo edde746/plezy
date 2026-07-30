@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes}分",
     "rememberTrackSelections": "番組/映画ごとにトラック選択を記憶",
     "rememberTrackSelectionsDescription": "タイトルごとに音声と字幕の選択を記憶します",
+    "followServerTrackSelections": "サーバーのエピソードごとのトラック選択を使用",
+    "followServerTrackSelectionsDescription": "エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します",
     "showChapterMarkersOnTimeline": "シークバーにチャプターマーカーを表示",
     "showChapterMarkersOnTimelineDescription": "チャプターの境界でシークバーを区切る",
     "clickVideoTogglesPlayback": "動画クリックで再生/一時停止を切替",

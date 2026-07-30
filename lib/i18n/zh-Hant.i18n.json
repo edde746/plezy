@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} 分鐘",
     "rememberTrackSelections": "記住每部影集或電影的音訊與字幕選擇",
     "rememberTrackSelectionsDescription": "記住每部影片的音軌與字幕選擇",
+    "followServerTrackSelections": "使用伺服器為每集選擇的軌道",
+    "followServerTrackSelectionsDescription": "切換劇集時，套用伺服器上為該集選擇的音訊與字幕，而不是沿用目前選擇",
     "showChapterMarkersOnTimeline": "在進度條上顯示章節標記",
     "showChapterMarkersOnTimelineDescription": "依章節分段顯示進度條",
     "clickVideoTogglesPlayback": "點選影片可切換播放或暫停",

@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} daqiqa",
     "rememberTrackSelections": "Har bir film/serial uchun ovoz/subtitr tanlovini eslab qolish",
     "rememberTrackSelectionsDescription": "Har bir media uchun ovoz va subtitr sozlamalarini saqlash",
+    "followServerTrackSelections": "Har bir epizod uchun serverdagi tanlovlardan foydalanish",
+    "followServerTrackSelectionsDescription": "Epizod almashganda joriy tanlovni ko'chirish o'rniga serverda tanlangan ovoz va subtitrni qo'llash",
     "showChapterMarkersOnTimeline": "Vaqt shkalasida boʻlim belgilarini koʻrsatish",
     "showChapterMarkersOnTimelineDescription": "Vaqt shkalasini boʻlimlarga boʻlish",
     "clickVideoTogglesPlayback": "Ijro/pauza uchun videoga bosing",

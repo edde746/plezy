@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} minutter",
     "rememberTrackSelections": "Husk sporvalg per serie/film",
     "rememberTrackSelectionsDescription": "Husk lyd- og undertekstvalg per tittel",
+    "followServerTrackSelections": "Bruk serverens sporvalg per episode",
+    "followServerTrackSelectionsDescription": "Ved episodebytte brukes lyden og undertekstene som er valgt på serveren, i stedet for å videreføre gjeldende valg",
     "showChapterMarkersOnTimeline": "Vis kapittelmarkører på tidslinjen",
     "showChapterMarkersOnTimelineDescription": "Del tidslinjen ved kapittelgrenser",
     "clickVideoTogglesPlayback": "Klikk på video for å veksle avspilling",

@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} minutes",
     "rememberTrackSelections": "Remember track selections per show/movie",
     "rememberTrackSelectionsDescription": "Remember audio and subtitle choices per title",
+    "followServerTrackSelections": "Use server's per-episode track selections",
+    "followServerTrackSelectionsDescription": "On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice",
     "showChapterMarkersOnTimeline": "Show chapter markers on seek bar",
     "showChapterMarkersOnTimelineDescription": "Segment the seek bar at chapter boundaries",
     "clickVideoTogglesPlayback": "Click on video to toggle play/pause",

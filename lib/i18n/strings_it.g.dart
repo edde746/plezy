@@ -300,6 +300,8 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuti';
 	@override String get rememberTrackSelections => 'Ricorda la selezione delle tracce per ogni serie o film';
 	@override String get rememberTrackSelectionsDescription => 'Ricorda le scelte di audio e sottotitoli per ogni titolo';
+	@override String get followServerTrackSelections => 'Usa le tracce selezionate sul server per ogni episodio';
+	@override String get followServerTrackSelectionsDescription => 'Al cambio di episodio applica l\'audio e i sottotitoli selezionati sul server invece di mantenere la scelta corrente';
 	@override String get showChapterMarkersOnTimeline => 'Mostra i marcatori dei capitoli sulla barra di avanzamento';
 	@override String get showChapterMarkersOnTimelineDescription => 'Segmenta la barra di avanzamento ai confini dei capitoli';
 	@override String get clickVideoTogglesPlayback => 'Fai clic sul video per alternare riproduzione e pausa';
@@ -2355,6 +2357,8 @@ extension on TranslationsIt {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuti',
 			'settings.rememberTrackSelections' => 'Ricorda la selezione delle tracce per ogni serie o film',
 			'settings.rememberTrackSelectionsDescription' => 'Ricorda le scelte di audio e sottotitoli per ogni titolo',
+			'settings.followServerTrackSelections' => 'Usa le tracce selezionate sul server per ogni episodio',
+			'settings.followServerTrackSelectionsDescription' => 'Al cambio di episodio applica l\'audio e i sottotitoli selezionati sul server invece di mantenere la scelta corrente',
 			'settings.showChapterMarkersOnTimeline' => 'Mostra i marcatori dei capitoli sulla barra di avanzamento',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segmenta la barra di avanzamento ai confini dei capitoli',
 			'settings.clickVideoTogglesPlayback' => 'Fai clic sul video per alternare riproduzione e pausa',
@@ -2707,10 +2711,10 @@ extension on TranslationsIt {
 			'videoControls.searchSubtitles' => 'Cerca sottotitoli',
 			'videoControls.language' => 'Lingua',
 			'videoControls.noSubtitlesFound' => 'Nessun sottotitolo trovato',
-			'videoControls.subtitleDownloaded' => 'Sottotitolo scaricato',
-			'videoControls.subtitleDownloadedNotApplied' => 'Il sottotitolo è stato scaricato, ma non è stato possibile selezionarlo',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Sottotitolo scaricato',
+			'videoControls.subtitleDownloadedNotApplied' => 'Il sottotitolo è stato scaricato, ma non è stato possibile selezionarlo',
 			'videoControls.subtitleDownloadFailed' => 'Impossibile scaricare il sottotitolo',
 			'videoControls.searchLanguages' => 'Cerca lingue...',
 			'messages.markedAsWatched' => 'Segnato come visto',
@@ -3221,10 +3225,10 @@ extension on TranslationsIt {
 			'watchTogether.failedToCreate' => 'Impossibile creare la sessione',
 			'watchTogether.failedToJoin' => 'Impossibile unirsi alla sessione',
 			'watchTogether.sessionCodeCopied' => 'Codice della sessione copiato negli appunti',
-			'watchTogether.relayUnreachable' => 'Il server relay non è raggiungibile. Eventuali blocchi dell\'ISP potrebbero impedire l\'uso di Guarda insieme.',
-			'watchTogether.reconnectingToHost' => 'Riconnessione all\'host...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Il server relay non è raggiungibile. Eventuali blocchi dell\'ISP potrebbero impedire l\'uso di Guarda insieme.',
+			'watchTogether.reconnectingToHost' => 'Riconnessione all\'host...',
 			'watchTogether.currentPlayback' => 'Riproduzione corrente',
 			'watchTogether.joinCurrentPlayback' => 'Unisciti alla riproduzione corrente',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Torna a ciò che l\'host sta guardando in questo momento',

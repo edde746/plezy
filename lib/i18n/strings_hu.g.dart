@@ -300,6 +300,8 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} perc';
 	@override String get rememberTrackSelections => 'Sávválasztások megjegyzése sorozatonként/filmenként';
 	@override String get rememberTrackSelectionsDescription => 'Hang- és feliratválasztások megjegyzése címenként';
+	@override String get followServerTrackSelections => 'A szerver epizódonkénti sávválasztásának használata';
+	@override String get followServerTrackSelectionsDescription => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett';
 	@override String get showChapterMarkersOnTimeline => 'Fejezetjelölők megjelenítése az idősávon';
 	@override String get showChapterMarkersOnTimelineDescription => 'Az idősáv felosztása a fejezetek határainál';
 	@override String get clickVideoTogglesPlayback => 'Kattintás a videóra a lejátszás/szünet váltásához';
@@ -2355,6 +2357,8 @@ extension on TranslationsHu {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} perc',
 			'settings.rememberTrackSelections' => 'Sávválasztások megjegyzése sorozatonként/filmenként',
 			'settings.rememberTrackSelectionsDescription' => 'Hang- és feliratválasztások megjegyzése címenként',
+			'settings.followServerTrackSelections' => 'A szerver epizódonkénti sávválasztásának használata',
+			'settings.followServerTrackSelectionsDescription' => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett',
 			'settings.showChapterMarkersOnTimeline' => 'Fejezetjelölők megjelenítése az idősávon',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Az idősáv felosztása a fejezetek határainál',
 			'settings.clickVideoTogglesPlayback' => 'Kattintás a videóra a lejátszás/szünet váltásához',
@@ -2707,10 +2711,10 @@ extension on TranslationsHu {
 			'videoControls.searchSubtitles' => 'Feliratok keresése',
 			'videoControls.language' => 'Nyelv',
 			'videoControls.noSubtitlesFound' => 'Nem találhatók feliratok',
-			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
-			'videoControls.subtitleDownloadedNotApplied' => 'Felirat letöltve, de nem sikerült kiválasztani',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
+			'videoControls.subtitleDownloadedNotApplied' => 'Felirat letöltve, de nem sikerült kiválasztani',
 			'videoControls.subtitleDownloadFailed' => 'Nem sikerült a felirat letöltése',
 			'videoControls.searchLanguages' => 'Nyelvek keresése...',
 			'messages.markedAsWatched' => 'Megjelölve megtekintettként',
@@ -3221,10 +3225,10 @@ extension on TranslationsHu {
 			'watchTogether.failedToCreate' => 'Nem sikerült a munkamenet létrehozása',
 			'watchTogether.failedToJoin' => 'Nem sikerült csatlakozni a munkamenethez',
 			'watchTogether.sessionCodeCopied' => 'A munkamenetkód a vágólapra másolva',
-			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
-			'watchTogether.reconnectingToHost' => 'Újracsatlakozás a házigazdához...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
+			'watchTogether.reconnectingToHost' => 'Újracsatlakozás a házigazdához...',
 			'watchTogether.currentPlayback' => 'Jelenlegi lejátszás',
 			'watchTogether.joinCurrentPlayback' => 'Csatlakozás a jelenlegi lejátszáshoz',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Visszatérés ahhoz, amit a házigazda éppen néz',

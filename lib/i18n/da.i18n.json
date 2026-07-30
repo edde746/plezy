@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} minutter",
     "rememberTrackSelections": "Husk sporvalg for hver serie/film",
     "rememberTrackSelectionsDescription": "Husk valget af lyd og undertekster for hver titel",
+    "followServerTrackSelections": "Brug serverens sporvalg for hvert afsnit",
+    "followServerTrackSelectionsDescription": "Ved afsnitsskift anvendes lyden og underteksterne valgt på serveren i stedet for at videreføre det aktuelle valg",
     "showChapterMarkersOnTimeline": "Vis kapitelmarkører på tidslinjen",
     "showChapterMarkersOnTimelineDescription": "Opdel tidslinjen ved kapitelgrænser",
     "clickVideoTogglesPlayback": "Klik på videoen for at skifte mellem afspilning og pause",

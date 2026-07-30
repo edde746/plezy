@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes}분",
     "rememberTrackSelections": "시리즈/영화별 트랙 선택 기억",
     "rememberTrackSelectionsDescription": "작품별 오디오 및 자막 선택 기억",
+    "followServerTrackSelections": "서버의 에피소드별 트랙 선택 사용",
+    "followServerTrackSelectionsDescription": "에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다",
     "showChapterMarkersOnTimeline": "탐색 막대에 챕터 마커 표시",
     "showChapterMarkersOnTimelineDescription": "챕터 경계에서 탐색 막대 구분",
     "clickVideoTogglesPlayback": "동영상 클릭으로 재생/일시정지 전환",

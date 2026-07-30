@@ -300,6 +300,8 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes}분';
 	@override String get rememberTrackSelections => '시리즈/영화별 트랙 선택 기억';
 	@override String get rememberTrackSelectionsDescription => '작품별 오디오 및 자막 선택 기억';
+	@override String get followServerTrackSelections => '서버의 에피소드별 트랙 선택 사용';
+	@override String get followServerTrackSelectionsDescription => '에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다';
 	@override String get showChapterMarkersOnTimeline => '탐색 막대에 챕터 마커 표시';
 	@override String get showChapterMarkersOnTimelineDescription => '챕터 경계에서 탐색 막대 구분';
 	@override String get clickVideoTogglesPlayback => '동영상 클릭으로 재생/일시정지 전환';
@@ -2352,6 +2354,8 @@ extension on TranslationsKo {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}분',
 			'settings.rememberTrackSelections' => '시리즈/영화별 트랙 선택 기억',
 			'settings.rememberTrackSelectionsDescription' => '작품별 오디오 및 자막 선택 기억',
+			'settings.followServerTrackSelections' => '서버의 에피소드별 트랙 선택 사용',
+			'settings.followServerTrackSelectionsDescription' => '에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다',
 			'settings.showChapterMarkersOnTimeline' => '탐색 막대에 챕터 마커 표시',
 			'settings.showChapterMarkersOnTimelineDescription' => '챕터 경계에서 탐색 막대 구분',
 			'settings.clickVideoTogglesPlayback' => '동영상 클릭으로 재생/일시정지 전환',
@@ -2704,10 +2708,10 @@ extension on TranslationsKo {
 			'videoControls.searchSubtitles' => '자막 검색',
 			'videoControls.language' => '언어',
 			'videoControls.noSubtitlesFound' => '자막을 찾을 수 없습니다',
-			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
-			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => '자막이 다운로드되었습니다',
+			'videoControls.subtitleDownloadedNotApplied' => '자막을 다운로드했지만 선택할 수 없습니다',
 			'videoControls.subtitleDownloadFailed' => '자막 다운로드에 실패했습니다',
 			'videoControls.searchLanguages' => '언어 검색...',
 			'messages.markedAsWatched' => '시청 완료로 표시됨',
@@ -3218,10 +3222,10 @@ extension on TranslationsKo {
 			'watchTogether.failedToCreate' => '세션 생성 실패',
 			'watchTogether.failedToJoin' => '세션 참여 실패',
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
-			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. ISP 차단으로 함께 보기를 사용하지 못할 수 있습니다.',
-			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. ISP 차단으로 함께 보기를 사용하지 못할 수 있습니다.',
+			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
 			'watchTogether.currentPlayback' => '현재 재생',
 			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',
 			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 시청 중인 콘텐츠로 이동합니다',

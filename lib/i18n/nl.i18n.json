@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} minuten",
     "rememberTrackSelections": "Trackselecties per serie of film onthouden",
     "rememberTrackSelectionsDescription": "Onthoud audio- en ondertitelkeuzes per titel",
+    "followServerTrackSelections": "Trackselecties van de server per aflevering gebruiken",
+    "followServerTrackSelectionsDescription": "Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen",
     "showChapterMarkersOnTimeline": "Hoofdstukmarkeringen op tijdlijn tonen",
     "showChapterMarkersOnTimelineDescription": "Verdeel de tijdlijn bij hoofdstukgrenzen",
     "clickVideoTogglesPlayback": "Klik op de video om afspelen of pauzeren te wisselen",

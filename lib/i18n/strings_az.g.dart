@@ -300,6 +300,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} dəqiqə';
 	@override String get rememberTrackSelections => 'Hər film/serial üçün səs/altyazı seçimlərini xatırla';
 	@override String get rememberTrackSelectionsDescription => 'Hər məzmun üçün səs və altyazı seçimlərini yadda saxla';
+	@override String get followServerTrackSelections => 'Hər epizod üçün serverin trek seçimlərini istifadə et';
+	@override String get followServerTrackSelectionsDescription => 'Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et';
 	@override String get showChapterMarkersOnTimeline => 'Zaman çubuğunda hissə işarələrini göstər';
 	@override String get showChapterMarkersOnTimelineDescription => 'Zaman çubuğunu hissə sərhədlərinə böl';
 	@override String get clickVideoTogglesPlayback => 'Oynat/fasilə üçün videoya toxun';
@@ -2366,6 +2368,8 @@ extension on TranslationsAz {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} dəqiqə',
 			'settings.rememberTrackSelections' => 'Hər film/serial üçün səs/altyazı seçimlərini xatırla',
 			'settings.rememberTrackSelectionsDescription' => 'Hər məzmun üçün səs və altyazı seçimlərini yadda saxla',
+			'settings.followServerTrackSelections' => 'Hər epizod üçün serverin trek seçimlərini istifadə et',
+			'settings.followServerTrackSelectionsDescription' => 'Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et',
 			'settings.showChapterMarkersOnTimeline' => 'Zaman çubuğunda hissə işarələrini göstər',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Zaman çubuğunu hissə sərhədlərinə böl',
 			'settings.clickVideoTogglesPlayback' => 'Oynat/fasilə üçün videoya toxun',
@@ -2718,10 +2722,10 @@ extension on TranslationsAz {
 			'videoControls.noChaptersAvailable' => 'Hissələr əlçatan deyil',
 			'videoControls.queue' => 'Növbə',
 			'videoControls.noQueueItems' => 'Növbədə element yoxdur',
-			'videoControls.searchSubtitles' => 'Altyazı axtar',
-			'videoControls.language' => 'Dil',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.searchSubtitles' => 'Altyazı axtar',
+			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı tapılmadı',
 			'videoControls.subtitleDownloaded' => 'Altyazı yükləndi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı yükləndi, lakin seçilə bilmədi',
@@ -3232,10 +3236,10 @@ extension on TranslationsAz {
 			'watchTogether.enterCodeHint' => '5 rəqəmli/hərfli kodu daxil edin',
 			'watchTogether.pasteFromClipboard' => 'Buferdən yapışdır',
 			'watchTogether.pleaseEnterCode' => 'Lütfən seans kodunu daxil edin',
-			'watchTogether.codeMustBe5Chars' => 'Seans kodu 5 simvol olmalıdır',
-			'watchTogether.joinInstructions' => 'Qoşulmaq üçün təşkilatçının seans kodunu daxil edin.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.codeMustBe5Chars' => 'Seans kodu 5 simvol olmalıdır',
+			'watchTogether.joinInstructions' => 'Qoşulmaq üçün təşkilatçının seans kodunu daxil edin.',
 			'watchTogether.failedToCreate' => 'Seans yaradıla bilmədi',
 			'watchTogether.failedToJoin' => 'Seansa qoşuluna bilmədi',
 			'watchTogether.sessionCodeCopied' => 'Seans kodu buferə kopyalandı',

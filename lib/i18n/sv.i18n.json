@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} minuter",
     "rememberTrackSelections": "Kom ihåg spårval per serie/film",
     "rememberTrackSelectionsDescription": "Kom ihåg ljud- och undertextval per titel",
+    "followServerTrackSelections": "Använd serverns spårval per avsnitt",
+    "followServerTrackSelectionsDescription": "Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet",
     "showChapterMarkersOnTimeline": "Visa kapitelmarkörer på tidslinjen",
     "showChapterMarkersOnTimelineDescription": "Dela upp tidslinjen vid kapitelgränser",
     "clickVideoTogglesPlayback": "Klicka på videon för att spela upp eller pausa",

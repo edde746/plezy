@@ -300,6 +300,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuten';
 	@override String get rememberTrackSelections => 'Trackselecties per serie of film onthouden';
 	@override String get rememberTrackSelectionsDescription => 'Onthoud audio- en ondertitelkeuzes per titel';
+	@override String get followServerTrackSelections => 'Trackselecties van de server per aflevering gebruiken';
+	@override String get followServerTrackSelectionsDescription => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen';
 	@override String get showChapterMarkersOnTimeline => 'Hoofdstukmarkeringen op tijdlijn tonen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Verdeel de tijdlijn bij hoofdstukgrenzen';
 	@override String get clickVideoTogglesPlayback => 'Klik op de video om afspelen of pauzeren te wisselen';
@@ -2355,6 +2357,8 @@ extension on TranslationsNl {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuten',
 			'settings.rememberTrackSelections' => 'Trackselecties per serie of film onthouden',
 			'settings.rememberTrackSelectionsDescription' => 'Onthoud audio- en ondertitelkeuzes per titel',
+			'settings.followServerTrackSelections' => 'Trackselecties van de server per aflevering gebruiken',
+			'settings.followServerTrackSelectionsDescription' => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen',
 			'settings.showChapterMarkersOnTimeline' => 'Hoofdstukmarkeringen op tijdlijn tonen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Verdeel de tijdlijn bij hoofdstukgrenzen',
 			'settings.clickVideoTogglesPlayback' => 'Klik op de video om afspelen of pauzeren te wisselen',
@@ -2707,10 +2711,10 @@ extension on TranslationsNl {
 			'videoControls.searchSubtitles' => 'Ondertitels zoeken',
 			'videoControls.language' => 'Taal',
 			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
-			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
-			'videoControls.subtitleDownloadedNotApplied' => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
+			'videoControls.subtitleDownloadedNotApplied' => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd',
 			'videoControls.subtitleDownloadFailed' => 'Ondertitel downloaden mislukt',
 			'videoControls.searchLanguages' => 'Talen zoeken...',
 			'messages.markedAsWatched' => 'Gemarkeerd als gekeken',
@@ -3221,10 +3225,10 @@ extension on TranslationsNl {
 			'watchTogether.failedToCreate' => 'Sessie maken mislukt',
 			'watchTogether.failedToJoin' => 'Deelnemen aan sessie mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode naar het klembord gekopieerd',
-			'watchTogether.relayUnreachable' => 'De relayserver is onbereikbaar. Een blokkering door je internetprovider kan Samen kijken verhinderen.',
-			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'De relayserver is onbereikbaar. Een blokkering door je internetprovider kan Samen kijken verhinderen.',
+			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
 			'watchTogether.currentPlayback' => 'Wat nu wordt afgespeeld',
 			'watchTogether.joinCurrentPlayback' => 'Deelnemen aan huidige weergave',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Ga terug naar wat de host nu kijkt',

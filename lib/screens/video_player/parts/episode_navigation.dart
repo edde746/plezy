@@ -146,17 +146,27 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         _effectiveSelectedMediaIndex >= 0 && _effectiveSelectedMediaIndex < _availableVersions.length
         ? _availableVersions[_effectiveSelectedMediaIndex].signature
         : null;
+    // Users who curate per-episode selections server-side (e.g. via Plex Auto
+    // Languages) opt out of carrying tracks across episodes entirely: with no
+    // preferences, both audio and subtitles start at the server-selected
+    // priority (#1717).
+    final settingsService = await SettingsService.getInstance();
+    final followServerSelections = settingsService.read(SettingsService.followServerTrackSelections);
     final committedSubtitleSelection = _playbackSession?.subtitleSelection;
-    final primarySubtitlePreference = subtitlePreferenceForItemChange(
-      hasCommittedSelection: committedSubtitleSelection != null,
-      committedTrack: committedSubtitleSelection?.primaryTrack,
-      nativeTrack: currentPlayer.state.track.subtitle,
-    );
-    final secondarySubtitlePreference = subtitlePreferenceForItemChange(
-      hasCommittedSelection: committedSubtitleSelection != null,
-      committedTrack: committedSubtitleSelection?.secondaryTrack,
-      nativeTrack: currentPlayer.state.track.secondarySubtitle,
-    );
+    final primarySubtitlePreference = followServerSelections
+        ? null
+        : subtitlePreferenceForItemChange(
+            hasCommittedSelection: committedSubtitleSelection != null,
+            committedTrack: committedSubtitleSelection?.primaryTrack,
+            nativeTrack: currentPlayer.state.track.subtitle,
+          );
+    final secondarySubtitlePreference = followServerSelections
+        ? null
+        : subtitlePreferenceForItemChange(
+            hasCommittedSelection: committedSubtitleSelection != null,
+            committedTrack: committedSubtitleSelection?.secondaryTrack,
+            nativeTrack: currentPlayer.state.track.secondarySubtitle,
+          );
     await _reloadMediaInPlace(
       metadata: episodeMetadata,
       selectedMediaIndex: _effectiveSelectedMediaIndex,
@@ -166,7 +176,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // Stream ids are per-part: the previous episode's audio id is
       // meaningless on the new item, so let preferences pick the track.
       useCurrentAudioStreamSelection: false,
-      preserveCurrentTrackSelection: true,
+      preserveCurrentTrackSelection: !followServerSelections,
       preservedSubtitleTrack: primarySubtitlePreference,
       preservedSecondarySubtitleTrack: secondarySubtitlePreference,
       reason: 'episode navigation',

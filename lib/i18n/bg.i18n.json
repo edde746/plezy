@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} минути",
     "rememberTrackSelections": "Запомняй избора на аудио и субтитри за всеки сериал или филм",
     "rememberTrackSelectionsDescription": "Запомняй избора на аудиопътечка и субтитри за всяко заглавие",
+    "followServerTrackSelections": "Използвай избора на пътечки от сървъра за всеки епизод",
+    "followServerTrackSelectionsDescription": "При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор",
     "showChapterMarkersOnTimeline": "Показвай маркери на глави върху времевата линия",
     "showChapterMarkersOnTimelineDescription": "Разделяй времевата линия на сегменти по границите на главите",
     "clickVideoTogglesPlayback": "Клик върху видеото превключва възпроизвеждане/пауза",

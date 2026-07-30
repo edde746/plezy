@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} minutes",
     "rememberTrackSelections": "Mémoriser les pistes choisies pour chaque série ou film",
     "rememberTrackSelectionsDescription": "Mémoriser les choix audio et sous-titres par titre",
+    "followServerTrackSelections": "Utiliser les pistes sélectionnées sur le serveur pour chaque épisode",
+    "followServerTrackSelectionsDescription": "Au changement d'épisode, appliquer l'audio et les sous-titres sélectionnés sur le serveur au lieu de conserver le choix en cours",
     "showChapterMarkersOnTimeline": "Afficher les marqueurs de chapitres sur la barre de lecture",
     "showChapterMarkersOnTimelineDescription": "Segmenter la barre de lecture aux limites des chapitres",
     "clickVideoTogglesPlayback": "Cliquer sur la vidéo pour alterner entre lecture et pause",

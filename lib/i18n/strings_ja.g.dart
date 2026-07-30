@@ -300,6 +300,8 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes}分';
 	@override String get rememberTrackSelections => '番組/映画ごとにトラック選択を記憶';
 	@override String get rememberTrackSelectionsDescription => 'タイトルごとに音声と字幕の選択を記憶します';
+	@override String get followServerTrackSelections => 'サーバーのエピソードごとのトラック選択を使用';
+	@override String get followServerTrackSelectionsDescription => 'エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します';
 	@override String get showChapterMarkersOnTimeline => 'シークバーにチャプターマーカーを表示';
 	@override String get showChapterMarkersOnTimelineDescription => 'チャプターの境界でシークバーを区切る';
 	@override String get clickVideoTogglesPlayback => '動画クリックで再生/一時停止を切替';
@@ -2352,6 +2354,8 @@ extension on TranslationsJa {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes}分',
 			'settings.rememberTrackSelections' => '番組/映画ごとにトラック選択を記憶',
 			'settings.rememberTrackSelectionsDescription' => 'タイトルごとに音声と字幕の選択を記憶します',
+			'settings.followServerTrackSelections' => 'サーバーのエピソードごとのトラック選択を使用',
+			'settings.followServerTrackSelectionsDescription' => 'エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します',
 			'settings.showChapterMarkersOnTimeline' => 'シークバーにチャプターマーカーを表示',
 			'settings.showChapterMarkersOnTimelineDescription' => 'チャプターの境界でシークバーを区切る',
 			'settings.clickVideoTogglesPlayback' => '動画クリックで再生/一時停止を切替',
@@ -2704,10 +2708,10 @@ extension on TranslationsJa {
 			'videoControls.searchSubtitles' => '字幕を検索',
 			'videoControls.language' => '言語',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
-			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
-			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
+			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
 			'videoControls.subtitleDownloadFailed' => '字幕のダウンロードに失敗しました',
 			'videoControls.searchLanguages' => '言語を検索…',
 			'messages.markedAsWatched' => '視聴済みにしました',
@@ -3218,10 +3222,10 @@ extension on TranslationsJa {
 			'watchTogether.failedToCreate' => 'セッションの作成に失敗しました',
 			'watchTogether.failedToJoin' => 'セッションへの参加に失敗しました',
 			'watchTogether.sessionCodeCopied' => 'セッションコードをクリップボードにコピーしました',
-			'watchTogether.relayUnreachable' => 'リレーサーバーに接続できません。ISPによるブロックのため「一緒に見る」を利用できない可能性があります。',
-			'watchTogether.reconnectingToHost' => 'ホストに再接続中…',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'リレーサーバーに接続できません。ISPによるブロックのため「一緒に見る」を利用できない可能性があります。',
+			'watchTogether.reconnectingToHost' => 'ホストに再接続中…',
 			'watchTogether.currentPlayback' => '現在の再生',
 			'watchTogether.joinCurrentPlayback' => '現在の再生に参加',
 			'watchTogether.joinCurrentPlaybackDescription' => 'ホストが現在視聴中のコンテンツに戻る',

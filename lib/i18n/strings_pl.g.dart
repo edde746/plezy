@@ -300,6 +300,8 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minut';
 	@override String get rememberTrackSelections => 'Zapamiętuj wybór ścieżek dla każdego serialu i filmu';
 	@override String get rememberTrackSelectionsDescription => 'Zapamiętuj wybór ścieżki dźwiękowej i napisów dla każdego tytułu';
+	@override String get followServerTrackSelections => 'Używaj wyboru ścieżek z serwera dla każdego odcinka';
+	@override String get followServerTrackSelectionsDescription => 'Przy zmianie odcinka stosuj ścieżkę dźwiękową i napisy wybrane na serwerze zamiast przenosić bieżący wybór';
 	@override String get showChapterMarkersOnTimeline => 'Pokaż znaczniki rozdziałów na pasku przewijania';
 	@override String get showChapterMarkersOnTimelineDescription => 'Podziel pasek przewijania na granicach rozdziałów';
 	@override String get clickVideoTogglesPlayback => 'Kliknięcie wideo przełącza odtwarzanie/pauzę';
@@ -2361,6 +2363,8 @@ extension on TranslationsPl {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minut',
 			'settings.rememberTrackSelections' => 'Zapamiętuj wybór ścieżek dla każdego serialu i filmu',
 			'settings.rememberTrackSelectionsDescription' => 'Zapamiętuj wybór ścieżki dźwiękowej i napisów dla każdego tytułu',
+			'settings.followServerTrackSelections' => 'Używaj wyboru ścieżek z serwera dla każdego odcinka',
+			'settings.followServerTrackSelectionsDescription' => 'Przy zmianie odcinka stosuj ścieżkę dźwiękową i napisy wybrane na serwerze zamiast przenosić bieżący wybór',
 			'settings.showChapterMarkersOnTimeline' => 'Pokaż znaczniki rozdziałów na pasku przewijania',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Podziel pasek przewijania na granicach rozdziałów',
 			'settings.clickVideoTogglesPlayback' => 'Kliknięcie wideo przełącza odtwarzanie/pauzę',
@@ -2713,10 +2717,10 @@ extension on TranslationsPl {
 			'videoControls.searchSubtitles' => 'Szukaj napisów',
 			'videoControls.language' => 'Język',
 			'videoControls.noSubtitlesFound' => 'Nie znaleziono napisów',
-			'videoControls.subtitleDownloaded' => 'Napisy pobrane',
-			'videoControls.subtitleDownloadedNotApplied' => 'Napisy zostały pobrane, ale nie można ich było wybrać',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Napisy pobrane',
+			'videoControls.subtitleDownloadedNotApplied' => 'Napisy zostały pobrane, ale nie można ich było wybrać',
 			'videoControls.subtitleDownloadFailed' => 'Nie udało się pobrać napisów',
 			'videoControls.searchLanguages' => 'Szukaj języków...',
 			'messages.markedAsWatched' => 'Oznaczono jako obejrzane',
@@ -3227,10 +3231,10 @@ extension on TranslationsPl {
 			'watchTogether.failedToCreate' => 'Nie udało się utworzyć sesji',
 			'watchTogether.failedToJoin' => 'Nie udało się dołączyć do sesji',
 			'watchTogether.sessionCodeCopied' => 'Kod sesji skopiowany do schowka',
-			'watchTogether.relayUnreachable' => 'Serwer pośredniczący jest nieosiągalny. Blokada operatora internetowego może uniemożliwiać korzystanie z funkcji „Oglądaj razem”.',
-			'watchTogether.reconnectingToHost' => 'Ponowne łączenie z gospodarzem...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Serwer pośredniczący jest nieosiągalny. Blokada operatora internetowego może uniemożliwiać korzystanie z funkcji „Oglądaj razem”.',
+			'watchTogether.reconnectingToHost' => 'Ponowne łączenie z gospodarzem...',
 			'watchTogether.currentPlayback' => 'Bieżące odtwarzanie',
 			'watchTogether.joinCurrentPlayback' => 'Dołącz do bieżącego odtwarzania',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Wróć do treści oglądanej obecnie przez gospodarza',

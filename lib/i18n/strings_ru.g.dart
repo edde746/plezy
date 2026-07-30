@@ -300,6 +300,8 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} мин';
 	@override String get rememberTrackSelections => 'Запоминать выбор дорожек для каждого сериала/фильма';
 	@override String get rememberTrackSelectionsDescription => 'Запоминать выбор аудиодорожки и субтитров для каждого материала';
+	@override String get followServerTrackSelections => 'Использовать выбор дорожек сервера для каждой серии';
+	@override String get followServerTrackSelectionsDescription => 'При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора';
 	@override String get showChapterMarkersOnTimeline => 'Показывать маркеры глав на шкале перемотки';
 	@override String get showChapterMarkersOnTimelineDescription => 'Разделять шкалу перемотки по границам глав';
 	@override String get clickVideoTogglesPlayback => 'Нажатие на видео запускает или приостанавливает воспроизведение';
@@ -2361,6 +2363,8 @@ extension on TranslationsRu {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} мин',
 			'settings.rememberTrackSelections' => 'Запоминать выбор дорожек для каждого сериала/фильма',
 			'settings.rememberTrackSelectionsDescription' => 'Запоминать выбор аудиодорожки и субтитров для каждого материала',
+			'settings.followServerTrackSelections' => 'Использовать выбор дорожек сервера для каждой серии',
+			'settings.followServerTrackSelectionsDescription' => 'При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора',
 			'settings.showChapterMarkersOnTimeline' => 'Показывать маркеры глав на шкале перемотки',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Разделять шкалу перемотки по границам глав',
 			'settings.clickVideoTogglesPlayback' => 'Нажатие на видео запускает или приостанавливает воспроизведение',
@@ -2713,10 +2717,10 @@ extension on TranslationsRu {
 			'videoControls.searchSubtitles' => 'Поиск субтитров',
 			'videoControls.language' => 'Язык',
 			'videoControls.noSubtitlesFound' => 'Субтитры не найдены',
-			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
-			'videoControls.subtitleDownloadedNotApplied' => 'Субтитры загружены, но их не удалось выбрать',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
+			'videoControls.subtitleDownloadedNotApplied' => 'Субтитры загружены, но их не удалось выбрать',
 			'videoControls.subtitleDownloadFailed' => 'Не удалось загрузить субтитры',
 			'videoControls.searchLanguages' => 'Поиск языков...',
 			'messages.markedAsWatched' => 'Отмечено как просмотренное',
@@ -3227,10 +3231,10 @@ extension on TranslationsRu {
 			'watchTogether.failedToCreate' => 'Не удалось создать сессию',
 			'watchTogether.failedToJoin' => 'Не удалось присоединиться к сессии',
 			'watchTogether.sessionCodeCopied' => 'Код сессии скопирован в буфер обмена',
-			'watchTogether.relayUnreachable' => 'Сервер ретрансляции недоступен. Блокировка интернет-провайдером может помешать совместному просмотру.',
-			'watchTogether.reconnectingToHost' => 'Повторное подключение к организатору...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Сервер ретрансляции недоступен. Блокировка интернет-провайдером может помешать совместному просмотру.',
+			'watchTogether.reconnectingToHost' => 'Повторное подключение к организатору...',
 			'watchTogether.currentPlayback' => 'Текущее воспроизведение',
 			'watchTogether.joinCurrentPlayback' => 'Присоединиться к текущему воспроизведению',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Вернуться к материалу, который сейчас смотрит организатор',

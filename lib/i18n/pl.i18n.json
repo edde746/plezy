@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} minut",
     "rememberTrackSelections": "Zapamiętuj wybór ścieżek dla każdego serialu i filmu",
     "rememberTrackSelectionsDescription": "Zapamiętuj wybór ścieżki dźwiękowej i napisów dla każdego tytułu",
+    "followServerTrackSelections": "Używaj wyboru ścieżek z serwera dla każdego odcinka",
+    "followServerTrackSelectionsDescription": "Przy zmianie odcinka stosuj ścieżkę dźwiękową i napisy wybrane na serwerze zamiast przenosić bieżący wybór",
     "showChapterMarkersOnTimeline": "Pokaż znaczniki rozdziałów na pasku przewijania",
     "showChapterMarkersOnTimelineDescription": "Podziel pasek przewijania na granicach rozdziałów",
     "clickVideoTogglesPlayback": "Kliknięcie wideo przełącza odtwarzanie/pauzę",

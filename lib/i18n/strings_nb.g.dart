@@ -300,6 +300,8 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutter';
 	@override String get rememberTrackSelections => 'Husk sporvalg per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Husk lyd- og undertekstvalg per tittel';
+	@override String get followServerTrackSelections => 'Bruk serverens sporvalg per episode';
+	@override String get followServerTrackSelectionsDescription => 'Ved episodebytte brukes lyden og undertekstene som er valgt på serveren, i stedet for å videreføre gjeldende valg';
 	@override String get showChapterMarkersOnTimeline => 'Vis kapittelmarkører på tidslinjen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Del tidslinjen ved kapittelgrenser';
 	@override String get clickVideoTogglesPlayback => 'Klikk på video for å veksle avspilling';
@@ -2355,6 +2357,8 @@ extension on TranslationsNb {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutter',
 			'settings.rememberTrackSelections' => 'Husk sporvalg per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Husk lyd- og undertekstvalg per tittel',
+			'settings.followServerTrackSelections' => 'Bruk serverens sporvalg per episode',
+			'settings.followServerTrackSelectionsDescription' => 'Ved episodebytte brukes lyden og undertekstene som er valgt på serveren, i stedet for å videreføre gjeldende valg',
 			'settings.showChapterMarkersOnTimeline' => 'Vis kapittelmarkører på tidslinjen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Del tidslinjen ved kapittelgrenser',
 			'settings.clickVideoTogglesPlayback' => 'Klikk på video for å veksle avspilling',
@@ -2707,10 +2711,10 @@ extension on TranslationsNb {
 			'videoControls.searchSubtitles' => 'Søk etter undertekster',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Ingen undertekster funnet',
-			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
-			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten ble lastet ned, men kunne ikke velges',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
+			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten ble lastet ned, men kunne ikke velges',
 			'videoControls.subtitleDownloadFailed' => 'Kunne ikke laste ned undertekst',
 			'videoControls.searchLanguages' => 'Søk etter språk...',
 			'messages.markedAsWatched' => 'Merket som sett',
@@ -3221,10 +3225,10 @@ extension on TranslationsNb {
 			'watchTogether.failedToCreate' => 'Kunne ikke opprette økt',
 			'watchTogether.failedToJoin' => 'Kunne ikke bli med i økt',
 			'watchTogether.sessionCodeCopied' => 'Øktkode kopiert til utklippstavle',
-			'watchTogether.relayUnreachable' => 'Reléserveren kan ikke nås. Blokkering hos internettleverandøren kan hindre Se sammen.',
-			'watchTogether.reconnectingToHost' => 'Kobler til verten på nytt...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Reléserveren kan ikke nås. Blokkering hos internettleverandøren kan hindre Se sammen.',
+			'watchTogether.reconnectingToHost' => 'Kobler til verten på nytt...',
 			'watchTogether.currentPlayback' => 'Gjeldende avspilling',
 			'watchTogether.joinCurrentPlayback' => 'Bli med i gjeldende avspilling',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hopp tilbake til det verten ser på nå',

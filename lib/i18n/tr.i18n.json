@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} dakika",
     "rememberTrackSelections": "Dizi/film başına ses/altyazı seçimlerini hatırla",
     "rememberTrackSelectionsDescription": "İçerik başına ses ve altyazı tercihlerini hatırla",
+    "followServerTrackSelections": "Sunucunun bölüm başına parça seçimlerini kullan",
+    "followServerTrackSelectionsDescription": "Bölüm değiştiğinde geçerli seçimi taşımak yerine sunucuda seçilen ses ve altyazıyı uygula",
     "showChapterMarkersOnTimeline": "Zaman çubuğunda kısım işaretçilerini göster",
     "showChapterMarkersOnTimelineDescription": "Zaman çubuğunu kısım sınırlarına göre böl",
     "clickVideoTogglesPlayback": "Oynat/duraklat için videoya tıkla",

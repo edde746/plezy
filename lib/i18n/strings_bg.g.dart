@@ -300,6 +300,8 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} минути';
 	@override String get rememberTrackSelections => 'Запомняй избора на аудио и субтитри за всеки сериал или филм';
 	@override String get rememberTrackSelectionsDescription => 'Запомняй избора на аудиопътечка и субтитри за всяко заглавие';
+	@override String get followServerTrackSelections => 'Използвай избора на пътечки от сървъра за всеки епизод';
+	@override String get followServerTrackSelectionsDescription => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор';
 	@override String get showChapterMarkersOnTimeline => 'Показвай маркери на глави върху времевата линия';
 	@override String get showChapterMarkersOnTimelineDescription => 'Разделяй времевата линия на сегменти по границите на главите';
 	@override String get clickVideoTogglesPlayback => 'Клик върху видеото превключва възпроизвеждане/пауза';
@@ -2355,6 +2357,8 @@ extension on TranslationsBg {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} минути',
 			'settings.rememberTrackSelections' => 'Запомняй избора на аудио и субтитри за всеки сериал или филм',
 			'settings.rememberTrackSelectionsDescription' => 'Запомняй избора на аудиопътечка и субтитри за всяко заглавие',
+			'settings.followServerTrackSelections' => 'Използвай избора на пътечки от сървъра за всеки епизод',
+			'settings.followServerTrackSelectionsDescription' => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор',
 			'settings.showChapterMarkersOnTimeline' => 'Показвай маркери на глави върху времевата линия',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Разделяй времевата линия на сегменти по границите на главите',
 			'settings.clickVideoTogglesPlayback' => 'Клик върху видеото превключва възпроизвеждане/пауза',
@@ -2707,10 +2711,10 @@ extension on TranslationsBg {
 			'videoControls.searchSubtitles' => 'Търсене на субтитри',
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
-			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
-			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
+			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
 			'videoControls.searchLanguages' => 'Търсене на езици...',
 			'messages.markedAsWatched' => 'Маркирано като гледано',
@@ -3221,10 +3225,10 @@ extension on TranslationsBg {
 			'watchTogether.failedToCreate' => 'Неуспешно създаване на сесия',
 			'watchTogether.failedToJoin' => 'Неуспешно присъединяване към сесия',
 			'watchTogether.sessionCodeCopied' => 'Кодът на сесията е копиран в клипборда',
-			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
-			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
+			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
 			'watchTogether.currentPlayback' => 'Текущо възпроизвеждане',
 			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',

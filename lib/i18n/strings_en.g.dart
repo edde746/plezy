@@ -618,6 +618,12 @@ class Translations$settings$en {
 	/// en: 'Remember audio and subtitle choices per title'
 	String get rememberTrackSelectionsDescription => 'Remember audio and subtitle choices per title';
 
+	/// en: 'Use server's per-episode track selections'
+	String get followServerTrackSelections => 'Use server\'s per-episode track selections';
+
+	/// en: 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice'
+	String get followServerTrackSelectionsDescription => 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice';
+
 	/// en: 'Show chapter markers on seek bar'
 	String get showChapterMarkersOnTimeline => 'Show chapter markers on seek bar';
 
@@ -6077,6 +6083,8 @@ extension on Translations {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.rememberTrackSelectionsDescription' => 'Remember audio and subtitle choices per title',
+			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
+			'settings.followServerTrackSelectionsDescription' => 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice',
 			'settings.showChapterMarkersOnTimeline' => 'Show chapter markers on seek bar',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segment the seek bar at chapter boundaries',
 			'settings.clickVideoTogglesPlayback' => 'Click on video to toggle play/pause',
@@ -6429,10 +6437,10 @@ extension on Translations {
 			'accessibility.increase' => 'Increase',
 			'accessibility.decreaseValue' => ({required Object label}) => 'Decrease ${label}',
 			'accessibility.increaseValue' => ({required Object label}) => 'Increase ${label}',
-			'accessibility.hue' => 'Hue',
-			'accessibility.saturation' => 'Saturation',
 			_ => null,
 		} ?? switch (path) {
+			'accessibility.hue' => 'Hue',
+			'accessibility.saturation' => 'Saturation',
 			'accessibility.brightness' => 'Brightness',
 			'accessibility.hexColor' => 'Hex color',
 			'accessibility.expandText' => 'Expand text',
@@ -6943,10 +6951,10 @@ extension on Translations {
 			'explore.detail.country' => 'Country',
 			'explore.detail.language' => 'Language',
 			'explore.detail.released' => 'Released',
-			'explore.detail.physicalRelease' => 'On disc',
-			'explore.detail.ended' => 'Ended',
 			_ => null,
 		} ?? switch (path) {
+			'explore.detail.physicalRelease' => 'On disc',
+			'explore.detail.ended' => 'Ended',
 			'explore.detail.addedOn' => ({required Object date}) => 'Added ${date}',
 			'explore.detail.yourRating' => 'Your rating',
 			'explore.detail.budget' => 'Budget',
@@ -7457,10 +7465,10 @@ extension on Translations {
 			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
-			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
-			'metadataEdit.notSet' => 'Not set',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
+			'metadataEdit.notSet' => 'Not set',
 			'metadataEdit.libraryDefault' => 'Library default',
 			'metadataEdit.accountDefault' => 'Account default',
 			'metadataEdit.seriesDefault' => 'Series default',

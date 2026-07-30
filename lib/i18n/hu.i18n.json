@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} perc",
     "rememberTrackSelections": "Sávválasztások megjegyzése sorozatonként/filmenként",
     "rememberTrackSelectionsDescription": "Hang- és feliratválasztások megjegyzése címenként",
+    "followServerTrackSelections": "A szerver epizódonkénti sávválasztásának használata",
+    "followServerTrackSelectionsDescription": "Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett",
     "showChapterMarkersOnTimeline": "Fejezetjelölők megjelenítése az idősávon",
     "showChapterMarkersOnTimelineDescription": "Az idősáv felosztása a fejezetek határainál",
     "clickVideoTogglesPlayback": "Kattintás a videóra a lejátszás/szünet váltásához",

@@ -168,6 +168,8 @@
     "minutesUnit": "${minutes} Minuten",
     "rememberTrackSelections": "Spurauswahl pro Serie/Film merken",
     "rememberTrackSelectionsDescription": "Audio- und Untertitelauswahl je Titel merken",
+    "followServerTrackSelections": "Serverseitige Spurauswahl pro Episode verwenden",
+    "followServerTrackSelectionsDescription": "Beim Episodenwechsel die auf dem Server ausgewählten Audio- und Untertitelspuren übernehmen, statt die aktuelle Auswahl zu übertragen",
     "showChapterMarkersOnTimeline": "Kapitelmarkierungen auf der Suchleiste anzeigen",
     "showChapterMarkersOnTimelineDescription": "Die Suchleiste an Kapitelgrenzen unterteilen",
     "clickVideoTogglesPlayback": "Video zum Abspielen oder Pausieren anklicken",
