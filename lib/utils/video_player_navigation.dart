@@ -246,6 +246,7 @@ Future<bool?> navigateToVideoPlayer(
   bool isOffline = false,
   bool resolveWatchState = true,
   bool skipPreroll = false,
+  bool isPreroll = false,
 }) async {
   final wantsPreroll =
       !skipPreroll &&
@@ -256,11 +257,17 @@ Future<bool?> navigateToVideoPlayer(
       prerollsEnabled();
   if (wantsPreroll) {
     final preroll = await pickRandomPreroll(context);
-    if (!context.mounted) return null;
-    if (preroll != null) {
-      await navigateToVideoPlayer(context, metadata: preroll, resolveWatchState: false, skipPreroll: true);
       if (!context.mounted) return null;
-    }
+      if (preroll != null) {
+        await navigateToVideoPlayer(
+          context,
+          metadata: preroll,
+          resolveWatchState: false,
+          skipPreroll: true,
+          isPreroll: true,
+        );
+        if (!context.mounted) return null;
+      }
   }
   if (resolveWatchState) {
     metadata = context.readFreshWatchState(metadata);
@@ -390,6 +397,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredVersionSignature: savedVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
+        isPreroll: isPreroll,
       ),
     );
 
