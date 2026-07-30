@@ -420,7 +420,104 @@ void main() {
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    // Returning to the URL field by D-pad must not raise the system keyboard;
+    // only an explicit Select does. Auto-opening on focus made the form
+    // untraversable on Apple TV (#1728).
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+  });
+
+  /// Drives the Apple TV Add Jellyfin flow up to the credentials step and
+  /// leaves focus on the username field, as the probe does.
+  Future<void> pumpAppleTvCredentialsStep(WidgetTester tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    PlatformDetector.debugSetIsDesktopOSOverride(false);
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: _testApp(
+          AddJellyfinScreen(authServiceFactory: () => _jellyfinAuthService(), localDiscoveryFactory: _noLocalServers),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    tester.testTextInput.updateEditingValue(const TextEditingValue(text: 'https://jf.example.com'));
+    await tester.pump();
+  }
+
+  List<String> drainTextInput(WidgetTester tester) {
+    final methods = tester.testTextInput.log.map((call) => call.method).toList();
+    tester.testTextInput.log.clear();
+    return methods;
+  }
+
+  testWidgets('Apple TV probe handoff attaches text input exactly once', (tester) async {
+    await pumpAppleTvCredentialsStep(tester);
+
+    drainTextInput(tester);
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+    final handoff = drainTextInput(tester);
+
+    // The username field's first focus legitimately raises input once. What
+    // must not happen is a second attach: EditableText used to schedule a
+    // connection restart on submit (submit action + non-null onFieldSubmitted)
+    // and re-show the URL field it had just dismissed, so the handoff carried
+    // two setClient/show pairs. On tvOS that tears the system keyboard down
+    // and re-presents it while the next field is claiming it.
+    expect(handoff.where((m) => m == 'TextInput.setClient'), hasLength(1));
+    expect(handoff.where((m) => m == 'TextInput.show'), hasLength(1));
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Username');
+    expect(tester.widget<TextField>(find.byType(TextField).at(1)).readOnly, isFalse);
+  });
+
+  testWidgets('Apple TV D-pad traversal stops raising the keyboard after each field is seen', (tester) async {
+    await pumpAppleTvCredentialsStep(tester);
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+
+    // On device the D-pad belongs to the tvOS keyboard while it is up, so a
+    // user can only traverse after dismissing it. Model that: dismiss via the
+    // platform (as UIKit does), which must leave focus on the field, and only
+    // then send the arrow.
+    Future<void> dismissIfOpen() async {
+      final open = tester.widgetList<TextField>(find.byType(TextField)).any((field) => !field.readOnly);
+      if (!open) return;
+      final focused = FocusManager.instance.primaryFocus?.debugLabel;
+      tester.testTextInput.closeConnection();
+      await tester.pumpAndSettle();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, focused, reason: 'dismissal must not move focus');
+    }
+
+    Future<void> walk() async {
+      for (final key in [LogicalKeyboardKey.arrowDown, LogicalKeyboardKey.arrowUp]) {
+        for (var step = 0; step < 3; step++) {
+          await dismissIfOpen();
+          await tester.sendKeyEvent(key);
+          await tester.pumpAndSettle();
+        }
+      }
+    }
+
+    // First pass may raise input once per field it has never focused before —
+    // arriving at a field is an intent to type.
+    await walk();
+
+    // Every later pass must be silent. `onFocus` re-raised the system keyboard
+    // on every single traversal step, which made the form unusable.
+    for (var pass = 2; pass <= 3; pass++) {
+      drainTextInput(tester);
+      await walk();
+      final traversal = drainTextInput(tester);
+      expect(traversal, isNot(contains('TextInput.setClient')), reason: 'pass $pass');
+      expect(traversal, isNot(contains('TextInput.show')), reason: 'pass $pass');
+    }
   });
 
   testWidgets('D-pad moves from URL through Change to credentials after server is found', (tester) async {

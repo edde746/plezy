@@ -184,7 +184,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
         controller: _urlController,
         focusNode: _urlFocus,
         autofocus: true,
-        tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.afterFirstFocus,
+        tvTextInputAutoOpenBehavior: deferredUrlFieldAutoOpen,
         keyboardType: TextInputType.url,
         autocorrect: false,
         enableSuggestions: false,

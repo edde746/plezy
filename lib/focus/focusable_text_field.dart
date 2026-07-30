@@ -36,9 +36,24 @@ bool _usesTvKeyboard({required TvTextInputPresentation presentation, TextInputTy
 String? _keyboardHint(InputDecoration? decoration) => decoration?.hintText ?? decoration?.labelText;
 
 enum TvTextInputAutoOpenBehavior {
+  /// Resolve per presentation: [onFirstFocus] for the native tvOS keyboard —
+  /// arriving at a field opens it once, but returning to it during D-pad
+  /// traversal does not, since it is a modal full-screen surface and
+  /// re-raising it on every pass makes a form untraversable. [onFocus] for the
+  /// in-app Flutter overlay, which is cheap, non-modal, and involves no UIKit
+  /// first responder.
+  automatic,
+
   /// Open the selected TV text input presentation whenever the field receives
-  /// focus.
+  /// focus. On Apple TV this raises the system keyboard on every focus entry,
+  /// including plain D-pad traversal — prefer [automatic] unless the field is
+  /// the sole purpose of its screen.
   onFocus,
+
+  /// Open on the field's first focus, then stay closed on later focus entries.
+  /// Explicit tap/select still opens it, as does the first focus after a
+  /// focus-node or presentation change.
+  onFirstFocus,
 
   /// Keep initial focus on the field without opening text input, then open it
   /// automatically on later focus entries. Explicit tap/select still opens it.
@@ -47,6 +62,17 @@ enum TvTextInputAutoOpenBehavior {
   /// Never auto-open text input on focus. Explicit tap/select still opens it.
   never,
 }
+
+/// Auto-open policy for an autofocused server-URL field (#1217): entering the
+/// screen must not bury the form under a keyboard the user did not ask for.
+///
+/// This is the one documented exception to the `automatic` rule that a field's
+/// first focus opens text input — the URL field's first focus is the screen's
+/// own `autofocus`, not the user arriving. Apple TV therefore waits for an
+/// explicit Select; the in-app overlay is cheap enough to open on a deliberate
+/// return.
+TvTextInputAutoOpenBehavior get deferredUrlFieldAutoOpen =>
+    PlatformDetector.isAppleTV() ? TvTextInputAutoOpenBehavior.never : TvTextInputAutoOpenBehavior.afterFirstFocus;
 
 /// Imperative handle to TV text input for a [FocusableTextField] /
 /// [FocusableTextFormField]. Pass the same instance to the field's
@@ -618,7 +644,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     this.autofocus = false,
     this.enabled = true,
     this.tvTextInputPresentation = TvTextInputPresentation.automatic,
-    this.tvTextInputAutoOpenBehavior = TvTextInputAutoOpenBehavior.onFocus,
+    this.tvTextInputAutoOpenBehavior = TvTextInputAutoOpenBehavior.automatic,
     this.tvTextInputController,
     this.obscureText = false,
     this.autocorrect = true,
@@ -818,9 +844,44 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   }
 
   void _handleFocusChanged() {
+    _restoreFocusAfterPlatformDismissal();
     _syncNativeTextInputActivation();
     _syncNativeTextInputFocus();
     _syncTvKeyboardAutoOpen();
+  }
+
+  /// [EditableText.connectionClosed] unfocuses the field outright
+  /// (editable_text.dart:4138-4145). On tvOS that fires whenever UIKit
+  /// dismisses the system keyboard, which is a dismissal, not a navigation —
+  /// left alone it strands the user with nothing focused and no way back.
+  ///
+  /// Deliberate exits never reach here: every path that moves focus off an
+  /// active field (D-pad escape, Menu, [TvTextInputController.closeTextInput],
+  /// submit) deactivates first. `unfocus()` parks focus on the field's own
+  /// enclosing scope, so that exact node — not merely "some scope" — is the
+  /// signature. A dialog or route opening in the post-frame gap makes *its*
+  /// scope primary, which must not be mistaken for our dismissal.
+  void _restoreFocusAfterPlatformDismissal() {
+    final node = _installedFocusNode;
+    if (node == null || node.hasFocus || !_nativeTextInputActivated) return;
+    // Apple TV only: Android TV's IME close keeps its historical semantics,
+    // and no production field selects the native path there anyway.
+    if (!PlatformDetector.isAppleTV()) return;
+    if (!widget.input.enabled || !widget.input._usesNativeTvKeyboard) return;
+    final scope = node.enclosingScope;
+    if (scope == null || !identical(FocusManager.instance.primaryFocus, scope)) return;
+
+    _setNativeTextInputActivated(false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final target = _installedFocusNode;
+      if (target == null || target.hasFocus || !target.canRequestFocus) return;
+      if (!identical(FocusManager.instance.primaryFocus, scope)) return;
+      // Set before requesting focus so the resulting focus-change callback
+      // cannot reopen the keyboard we were just dismissed out of.
+      _suppressNativeTextInputForCurrentFocus = true;
+      target.requestFocus();
+    });
   }
 
   void _syncNativeTextInputActivation() {
@@ -834,6 +895,22 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     if (_suppressNativeTextInputForCurrentFocus) return;
 
     switch (input.tvTextInputAutoOpenBehavior) {
+      // Apple TV's system keyboard is modal and full-screen. Arriving at a
+      // field should still open it — otherwise typing always costs two
+      // presses — but re-raising it every time D-pad traversal passes back
+      // over the field makes a multi-field form unusable, so `automatic`
+      // resolves to `onFirstFocus` there. Android TV's native IME is a docked
+      // soft keyboard that does not take over the screen, so it keeps the
+      // historical auto-open. Explicit modes stay literal on both: a caller
+      // that asks for onFocus gets onFocus.
+      case TvTextInputAutoOpenBehavior.automatic:
+        if (PlatformDetector.isAppleTV() && _hasSeenNativeTextInputFocus) return;
+        _hasSeenNativeTextInputFocus = true;
+        _setNativeTextInputActivated(true);
+      case TvTextInputAutoOpenBehavior.onFirstFocus:
+        if (_hasSeenNativeTextInputFocus) return;
+        _hasSeenNativeTextInputFocus = true;
+        _setNativeTextInputActivated(true);
       case TvTextInputAutoOpenBehavior.onFocus:
         _hasSeenNativeTextInputFocus = true;
         _setNativeTextInputActivated(true);
@@ -880,15 +957,24 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
 
     final input = widget.input;
     final callback = input._effectiveOnEditingComplete;
+    final onSubmitted = input.onSubmitted;
     if (callback != null) {
       callback();
-    } else if (input.onSubmitted == null) {
+    } else if (onSubmitted == null) {
       // Supplying this wrapper replaces EditableText's default completion.
       // Preserve it when there is no submit callback; submitted TV fields keep
       // focus until their callback chooses the next target so D-pad navigation
       // cannot dead-end while asynchronous work runs.
       _defaultEditingComplete(input.textInputAction);
     }
+
+    // EditableText invokes onEditingComplete and onSubmitted independently
+    // (_finalizeEditing, editable_text.dart:3841-3898), so both must fire when
+    // both are supplied. The native path withholds onSubmitted from the widget
+    // — letting EditableText own it would schedule a connection restart that
+    // re-attaches and re-shows the input we just dismissed, which on tvOS
+    // tears the system keyboard down and back up mid-submit — so call it here.
+    onSubmitted?.call(input.controller.text);
   }
 
   void _syncNativeTextInputFocus() {
@@ -946,7 +1032,14 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
 
   bool _shouldAutoOpenTvKeyboardForCurrentFocus() {
     switch (widget.input.tvTextInputAutoOpenBehavior) {
+      // The Flutter overlay is an in-app, non-modal widget with no UIKit first
+      // responder behind it, so opening it on focus costs nothing.
+      case TvTextInputAutoOpenBehavior.automatic:
       case TvTextInputAutoOpenBehavior.onFocus:
+        return true;
+      case TvTextInputAutoOpenBehavior.onFirstFocus:
+        if (_hasSeenTvKeyboardFocus) return false;
+        _hasSeenTvKeyboardFocus = true;
         return true;
       case TvTextInputAutoOpenBehavior.afterFirstFocus:
         if (!_hasSeenTvKeyboardFocus) {
@@ -1237,7 +1330,10 @@ class FocusableTextField extends _FocusableTextInputBase {
         textInputAction: textInputAction,
         inputFormatters: inputFormatters,
         onChanged: onChanged,
-        onSubmitted: onSubmitted,
+        // Withheld on the native TV path: the host invokes it from
+        // _handleNativeEditingComplete so EditableText cannot schedule a
+        // connection restart that re-shows the dismissed input.
+        onSubmitted: _usesNativeTvKeyboard ? null : onSubmitted,
         onEditingComplete: onEditingComplete,
         autofocus: autofocus,
         autocorrect: autocorrect,
@@ -1326,7 +1422,8 @@ class FocusableTextFormField extends _FocusableTextInputBase {
         textInputAction: textInputAction,
         inputFormatters: inputFormatters,
         onChanged: onChanged,
-        onFieldSubmitted: onFieldSubmitted,
+        // Withheld on the native TV path — see FocusableTextField.build.
+        onFieldSubmitted: _usesNativeTvKeyboard ? null : onFieldSubmitted,
         onEditingComplete: onEditingComplete,
         validator: validator,
         autovalidateMode: autovalidateMode,
