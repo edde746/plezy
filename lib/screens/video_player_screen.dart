@@ -62,6 +62,7 @@ import '../services/display_mode_service.dart';
 import '../services/media_control_router.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
+import '../services/subtitle_preference.dart';
 import '../services/track_manager.dart';
 import '../services/track_selection_service.dart';
 import '../services/ambient_lighting_service.dart';
@@ -137,39 +138,27 @@ bool shouldAutoStartReloadedMedia({
 /// Builds an item-agnostic subtitle preference for an episode replacement.
 ///
 /// Source ids and sidecar URIs belong to the current media item. Only the
-/// committed semantic choice may cross the item boundary; native state is a
-/// fallback for sessions created before source-backed selection was recorded.
-SubtitleTrack? subtitlePreferenceForItemChange({
+/// committed semantic choice — a [SubtitleIntent] — may cross the item
+/// boundary; native state is a fallback for sessions created before
+/// source-backed selection was recorded.
+SubtitlePreference? subtitlePreferenceForItemChange({
   required bool hasCommittedSelection,
   required SubtitleTrack? committedTrack,
   required SubtitleTrack? nativeTrack,
 }) {
-  SubtitleTrack? normalize(SubtitleTrack? track, {required bool preserveOff}) {
+  SubtitlePreference? normalize(SubtitleTrack? track, {required bool preserveOff}) {
     if (track == null) return null;
-    if (track.id == SubtitleTrack.off.id) return preserveOff ? SubtitleTrack.off : null;
+    if (track.id == SubtitleTrack.off.id) return preserveOff ? const SubtitlePreference.off() : null;
 
-    final hasSemanticMetadata =
-        (track.title?.isNotEmpty ?? false) ||
-        (track.language?.isNotEmpty ?? false) ||
-        (track.codec?.isNotEmpty ?? false);
-    if (!hasSemanticMetadata) return null;
-
-    return SubtitleTrack(
-      id: 'navigation',
-      title: track.title,
-      language: track.language,
-      codec: track.codec,
-      isDefault: track.isDefault,
-      isForced: track.isForced,
-      isExternal: track.isExternal,
-    );
+    final intent = SubtitleIntent.fromTrack(track);
+    return intent == null ? null : SubtitlePreference.intent(intent);
   }
 
   if (!hasCommittedSelection) {
     return normalize(nativeTrack, preserveOff: true);
   }
 
-  if (committedTrack == null) return SubtitleTrack.off;
+  if (committedTrack == null) return const SubtitlePreference.off();
 
   final committedPreference = normalize(committedTrack, preserveOff: true);
   if (committedPreference != null) return committedPreference;
@@ -377,8 +366,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late TranscodeQualityPreset _selectedQualityPreset;
   int? _selectedAudioStreamId;
   AudioTrack? _preferredAudioTrack;
-  SubtitleTrack? _preferredSubtitleTrack;
-  SubtitleTrack? _preferredSecondarySubtitleTrack;
+  SubtitlePreference? _preferredSubtitleTrack;
+  SubtitlePreference? _preferredSecondarySubtitleTrack;
   bool _serverSupportsTranscoding = false;
   // Kicked off early in the player initialization attempt for online non-live playback so
   // the metadata fetch (and transcode-decision HTTP, if non-original preset)
@@ -788,8 +777,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playbackTranscodeSessionId = generateSessionIdentifier();
     _selectedAudioStreamId = widget.selectedAudioStreamId;
     _preferredAudioTrack = widget.preferredAudioTrack;
-    _preferredSubtitleTrack = widget.preferredSubtitleTrack;
-    _preferredSecondarySubtitleTrack = widget.preferredSecondarySubtitleTrack;
+    _preferredSubtitleTrack = SubtitlePreference.trackOrNull(widget.preferredSubtitleTrack);
+    _preferredSecondarySubtitleTrack = SubtitlePreference.trackOrNull(widget.preferredSecondarySubtitleTrack);
     _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
 
     _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
@@ -811,10 +800,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       );
     }
     if (_preferredSubtitleTrack != null) {
-      final subtitleDesc = _preferredSubtitleTrack!.id == "no"
-          ? "OFF"
-          : "${_preferredSubtitleTrack!.title ?? _preferredSubtitleTrack!.id} (${_preferredSubtitleTrack!.language ?? "unknown"})";
-      appLogger.d('Preferred subtitle track: $subtitleDesc');
+      appLogger.d('Preferred subtitle track: $_preferredSubtitleTrack');
     }
 
     try {

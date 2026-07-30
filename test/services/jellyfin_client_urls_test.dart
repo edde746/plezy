@@ -17,6 +17,7 @@ import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
+import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/utils/device_identity.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
@@ -1060,7 +1061,7 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      Future<PlaybackInitializationResult> initialize(SubtitleTrack preference) {
+      Future<PlaybackInitializationResult> initialize(SubtitlePreference preference) {
         return scoped.getPlaybackInitialization(
           PlaybackInitializationOptions(
             metadata: testMediaItem(
@@ -1082,31 +1083,41 @@ void main() {
       }
 
       final result = await initialize(
-        const SubtitleTrack(id: 'source:4', title: 'French - SRT', language: 'fra', codec: 'srt'),
+        const SubtitlePreference.track(
+          SubtitleTrack(id: 'source:4', title: 'French - SRT', language: 'fra', codec: 'srt'),
+        ),
       );
       expectRequestedSubtitleIndex(4);
 
-      await initialize(const SubtitleTrack(id: 'navigation', title: 'English - SRT', language: 'eng', codec: 'srt'));
+      await initialize(
+        const SubtitlePreference.intent(
+          SubtitleIntent(language: 'eng', forced: false, title: 'English - SRT', codec: 'srt'),
+        ),
+      );
       expectRequestedSubtitleIndex(3);
 
-      await initialize(const SubtitleTrack(id: 'source:3', title: 'French - SRT', language: 'fra', codec: 'srt'));
+      await initialize(
+        const SubtitlePreference.track(
+          SubtitleTrack(id: 'source:3', title: 'French - SRT', language: 'fra', codec: 'srt'),
+        ),
+      );
       expectRequestedSubtitleIndex(4);
 
       await initialize(
-        const SubtitleTrack(
-          id: 'source:3',
-          title: 'English Forced - SRT',
-          language: 'eng',
-          codec: 'srt',
-          isForced: true,
+        const SubtitlePreference.track(
+          SubtitleTrack(id: 'source:3', title: 'English Forced - SRT', language: 'eng', codec: 'srt', isForced: true),
         ),
       );
       expectRequestedSubtitleIndex(5);
 
-      await initialize(SubtitleTrack.off);
+      await initialize(const SubtitlePreference.off());
       expectRequestedSubtitleIndex(-1);
 
-      await initialize(const SubtitleTrack(id: 'navigation', title: 'Japanese - SRT', language: 'jpn', codec: 'srt'));
+      await initialize(
+        const SubtitlePreference.intent(
+          SubtitleIntent(language: 'jpn', forced: false, title: 'Japanese - SRT', codec: 'srt'),
+        ),
+      );
       expectRequestedSubtitleIndex(null);
 
       expect(result.playMethod, 'DirectStream');

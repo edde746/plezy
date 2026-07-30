@@ -9,6 +9,8 @@ import '../media/media_source_info.dart';
 import '../utils/future_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
+import '../utils/subtitle_forced_semantics.dart';
+import 'subtitle_preference.dart';
 
 // These functions match MPV tracks to Plex tracks by properties (language,
 // codec, title, etc.) instead of list index, since the two may be ordered
@@ -34,7 +36,7 @@ int _scoreSubtitleMatch(SubtitleTrack mpvTrack, MediaSubtitleTrack plexTrack, {r
 
   score += _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle);
 
-  if (mpvTrack.isForced == plexTrack.forced) {
+  if (mpvTrack.effectiveForced == plexTrack.effectiveForced) {
     score += 2;
   }
 
@@ -130,7 +132,7 @@ bool _lowMetadataSubtitleFactsAreCompatible(SubtitleTrack mpvTrack, MediaSubtitl
     return false;
   }
 
-  return mpvTrack.isForced == plexTrack.forced;
+  return mpvTrack.effectiveForced == plexTrack.effectiveForced;
 }
 
 int _scoreLowMetadataSubtitleFacts(SubtitleTrack mpvTrack, MediaSubtitleTrack plexTrack) {
@@ -152,7 +154,7 @@ int _scoreLowMetadataSubtitleFacts(SubtitleTrack mpvTrack, MediaSubtitleTrack pl
       _titleScore(mpvTrack.title, plexTrack.title, plexTrack.displayTitle) > 0) {
     score += 3;
   }
-  if (mpvTrack.isForced == plexTrack.forced) score += 2;
+  if (mpvTrack.effectiveForced == plexTrack.effectiveForced) score += 2;
   return score;
 }
 
@@ -339,6 +341,54 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
     isCompatible: (candidate) => _lowMetadataSubtitleFactsAreCompatible(mpvTrack, candidate),
     score: (candidate) => _scoreLowMetadataSubtitleFacts(mpvTrack, candidate),
   );
+}
+
+/// Find the source-catalog row that serves a cross-item subtitle intent.
+///
+/// Identity matching ([findPlexTrackForMpvSubtitle]) answers "which row IS
+/// this track"; this answers "which row of a DIFFERENT item serves the same
+/// intent". Language and effective forced-ness are hard requirements: the
+/// intent's class is preserved or the match declines, so the selection ladder
+/// can fall back to the server's own per-item choice (#1716/#1717).
+MediaSubtitleTrack? findSourceTrackForIntent(SubtitleIntent intent, List<MediaSubtitleTrack> sourceTracks) {
+  MediaSubtitleTrack? bestMatch;
+  var bestScore = -1;
+  for (final row in sourceTracks) {
+    if (!_languagesMatch(intent.language, row.languageCode ?? row.language)) continue;
+    if (row.effectiveForced != intent.forced) continue;
+
+    var score = 0;
+    if (_subtitleCodecsMatch(intent.codec, row.codec)) score += 5;
+    score += _titleScore(intent.title, row.title, row.displayTitle);
+    if (intent.isExternal == row.isExternal) score += 1;
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = row;
+    }
+  }
+  return bestMatch;
+}
+
+/// Native-track twin of [findSourceTrackForIntent], for catalogs the source
+/// side cannot describe (legacy offline sidecars) and late-arriving tracks.
+SubtitleTrack? findNativeTrackForIntent(SubtitleIntent intent, List<SubtitleTrack> tracks) {
+  SubtitleTrack? bestMatch;
+  var bestScore = -1;
+  for (final track in tracks) {
+    if (track.id == SubtitleTrack.auto.id || track.id == SubtitleTrack.off.id) continue;
+    if (!_languagesMatch(intent.language, track.language)) continue;
+    if (track.effectiveForced != intent.forced) continue;
+
+    var score = 0;
+    if (_subtitleCodecsMatch(intent.codec, track.codec)) score += 5;
+    score += _titleScore(intent.title, track.title, null);
+    if (intent.isExternal == track.isExternal) score += 1;
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = track;
+    }
+  }
+  return bestMatch;
 }
 
 /// Find the MPV audio track that matches a Plex audio track
@@ -642,7 +692,7 @@ class TrackSelectionService {
     MediaServerUserProfile profile, {
     bool forcedOnly = false,
   }) {
-    final candidates = forcedOnly ? availableTracks.where((track) => track.isForced).toList() : availableTracks;
+    final candidates = forcedOnly ? availableTracks.where((track) => track.effectiveForced).toList() : availableTracks;
     if (candidates.isEmpty) return null;
 
     final preferredLanguages = _buildPreferredLanguages(profile, isAudio: false);
@@ -675,7 +725,7 @@ class TrackSelectionService {
 
   SubtitleTrack? _findForcedSubtitleTrack(List<SubtitleTrack> availableTracks) {
     for (final track in availableTracks) {
-      if (track.isForced) return track;
+      if (track.effectiveForced) return track;
     }
     return null;
   }
@@ -931,30 +981,57 @@ class TrackSelectionService {
   /// nothing at all.
   TrackSelectionResult<SubtitleTrack>? selectSubtitleTrack(
     List<SubtitleTrack> availableTracks,
-    SubtitleTrack? preferredSubtitleTrack,
+    SubtitlePreference? preference,
     AudioTrack? selectedAudioTrack, {
     bool waitForPendingSource = true,
   }) {
-    // Priority 1: Try preferred track from navigation
-    if (preferredSubtitleTrack != null) {
-      if (preferredSubtitleTrack.id == 'no') {
+    // Priority 1: the caller's preference — an identity reference into this
+    // item, or a semantic intent carried across an item boundary.
+    switch (preference) {
+      case null:
+        break;
+      case SubtitleOffPreference():
         return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.navigation);
-      } else if (availableTracks.isNotEmpty) {
-        final subtitleToSelect = findBestSubtitleMatch(availableTracks, preferredSubtitleTrack);
-        if (subtitleToSelect != null) {
-          return TrackSelectionResult(subtitleToSelect, TrackSelectionPriority.navigation);
+      case SubtitleTrackPreference(:final track):
+        if (track.id == 'no') {
+          return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.navigation);
         }
-      }
-      if (waitForPendingSource && preferredSubtitleTrack.id.startsWith('source:')) {
-        // Only a row this catalog actually advertises can still show up
-        // natively. An id the catalog does not carry — a stale preference from
-        // another media source — resolves the same way on every retry, so
-        // waiting for it would defer selection forever.
-        final sourceTrack = _sourceSubtitleTrack(preferredSubtitleTrack.id);
-        if (sourceTrack != null && !_hasCompleteDirectSourceCatalogFor(sourceTrack, availableTracks)) {
-          return null;
+        if (availableTracks.isNotEmpty) {
+          final subtitleToSelect = findBestSubtitleMatch(availableTracks, track);
+          if (subtitleToSelect != null) {
+            return TrackSelectionResult(subtitleToSelect, TrackSelectionPriority.navigation);
+          }
         }
-      }
+        if (waitForPendingSource && track.id.startsWith('source:')) {
+          // Only a row this catalog actually advertises can still show up
+          // natively. An id the catalog does not carry — a stale preference
+          // from another media source — resolves the same way on every retry,
+          // so waiting for it would defer selection forever.
+          final sourceTrack = _sourceSubtitleTrack(track.id);
+          if (sourceTrack != null && !_hasCompleteDirectSourceCatalogFor(sourceTrack, availableTracks)) {
+            return null;
+          }
+        }
+      case SubtitleIntentPreference(:final intent):
+        if (availableTracks.isNotEmpty) {
+          final match = findNativeTrackForIntent(intent, availableTracks);
+          if (match != null) {
+            return TrackSelectionResult(match, TrackSelectionPriority.navigation);
+          }
+        }
+        if (waitForPendingSource) {
+          // Mirror of the source-id rule above: only an intent this catalog
+          // can actually serve may still show up natively. A class-preserving
+          // row proves the catalog can serve it; an incomplete direct catalog
+          // means its native track may not have arrived yet. An unservable
+          // intent resolves the same way on every retry — decline immediately
+          // and let the ladder decide.
+          final servableRow = findSourceTrackForIntent(intent, plexMediaInfo?.subtitleTracks ?? const []);
+          if (servableRow != null && !_hasCompleteDirectSourceCatalogFor(servableRow, availableTracks)) {
+            return null;
+          }
+        }
+        appLogger.d('Subtitle intent declined: $intent');
     }
 
     // Priority 2: Trust the server's selected track. Plex computes this from
@@ -1029,8 +1106,8 @@ class TrackSelectionService {
   /// Select and apply audio and subtitle tracks based on preferences
   Future<bool> selectAndApplyTracks({
     AudioTrack? preferredAudioTrack,
-    SubtitleTrack? preferredSubtitleTrack,
-    SubtitleTrack? preferredSecondarySubtitleTrack,
+    SubtitlePreference? preferredSubtitleTrack,
+    SubtitlePreference? preferredSecondarySubtitleTrack,
     double? defaultPlaybackSpeed,
     Function(AudioTrack)? onAudioTrackChanged,
     Function(SubtitleTrack)? onSubtitleTrackChanged,
@@ -1113,11 +1190,17 @@ class TrackSelectionService {
     }
 
     // Apply preferred secondary subtitle track if provided (mpv-only)
-    if (preferredSecondarySubtitleTrack != null &&
-        preferredSecondarySubtitleTrack.id != 'no' &&
+    final secondaryPreference = preferredSecondarySubtitleTrack;
+    if (secondaryPreference != null &&
+        secondaryPreference is! SubtitleOffPreference &&
         player.supportsSecondarySubtitles &&
         realSubtitleTracks.isNotEmpty) {
-      final secondaryMatch = findBestSubtitleMatch(realSubtitleTracks, preferredSecondarySubtitleTrack);
+      final secondaryMatch = switch (secondaryPreference) {
+        SubtitleOffPreference() => null,
+        SubtitleTrackPreference(:final track) =>
+          track.id == 'no' ? null : findBestSubtitleMatch(realSubtitleTracks, track),
+        SubtitleIntentPreference(:final intent) => findNativeTrackForIntent(intent, realSubtitleTracks),
+      };
       if (secondaryMatch != null && secondaryMatch.id != 'no') {
         appLogger.d(
           'Secondary subtitle: ${secondaryMatch.title ?? secondaryMatch.language ?? "Track ${secondaryMatch.id}"}',

@@ -346,8 +346,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           plexClient: mediaClient is PlexClient ? mediaClient : null,
           getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
           preferredAudioTrack: _preferredAudioTrack,
-          preferredSubtitleTrack: subtitleSelection.primaryTrack,
-          preferredSecondarySubtitleTrack: subtitleSelection.secondaryTrack,
+          preferredSubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
+          preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
         );
 
         // Store only the active sidecars for re-use after backend fallback.

@@ -7,6 +7,7 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
 import 'package:plezy/models/plex/plex_user_profile.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/services/track_selection_service.dart';
 import '../test_helpers/media_items.dart';
 
@@ -453,14 +454,14 @@ void main() {
   group('selectSubtitleTrack', () {
     test('Priority 1: preferred id="no" forces subtitles off', () {
       final tracks = [_sub('1', lang: 'eng', isDefault: true)];
-      final result = _svc().selectSubtitleTrack(tracks, const SubtitleTrack(id: 'no'), null)!;
+      final result = _svc().selectSubtitleTrack(tracks, const SubtitlePreference.off(), null)!;
       expect(result.priority, TrackSelectionPriority.navigation);
       expect(result.track.id, 'no');
     });
 
     test('Priority 1: preferred subtitle from navigation matches by language', () {
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
-      final result = _svc().selectSubtitleTrack(tracks, _sub('99', lang: 'fre'), null)!;
+      final result = _svc().selectSubtitleTrack(tracks, SubtitlePreference.track(_sub('99', lang: 'fre')), null)!;
       expect(result.priority, TrackSelectionPriority.navigation);
       expect(result.track.id, '2');
     });
@@ -486,7 +487,7 @@ void main() {
 
       final preferredResult = service.selectSubtitleTrack(
         [nativeTrack],
-        const SubtitleTrack(id: 'source:20', codec: 'ass'),
+        const SubtitlePreference.track(SubtitleTrack(id: 'source:20', codec: 'ass')),
         null,
       )!;
       final serverResult = service.selectSubtitleTrack([nativeTrack], null, null)!;
@@ -523,7 +524,7 @@ void main() {
 
       final preferredResult = service.selectSubtitleTrack(
         nativeTracks,
-        const SubtitleTrack(id: 'source:40', codec: 'ass'),
+        const SubtitlePreference.track(SubtitleTrack(id: 'source:40', codec: 'ass')),
         null,
       )!;
       final serverResult = service.selectSubtitleTrack(nativeTracks, null, null)!;
@@ -540,7 +541,7 @@ void main() {
 
       final result = _svc(
         info: _info(subs: plexTracks),
-      ).selectSubtitleTrack(nativeTracks, const SubtitleTrack(id: 'source:50', codec: 'ass'), null)!;
+      ).selectSubtitleTrack(nativeTracks, const SubtitlePreference.track(SubtitleTrack(id: 'source:50', codec: 'ass')), null)!;
 
       expect(result.priority, TrackSelectionPriority.defaultTrack);
       expect(result.track.id, 'native-default');
@@ -552,7 +553,11 @@ void main() {
       final service = _svc(info: _info(subs: plexTracks));
 
       expect(
-        service.selectSubtitleTrack(nativeTracks, const SubtitleTrack(id: 'source:60', codec: 'ass'), null),
+        service.selectSubtitleTrack(
+          nativeTracks,
+          const SubtitlePreference.track(SubtitleTrack(id: 'source:60', codec: 'ass')),
+          null,
+        ),
         isNull,
       );
       expect(service.selectSubtitleTrack(nativeTracks, null, null), isNull);
@@ -607,8 +612,11 @@ void main() {
       );
       final service = _svc(info: info);
 
-      expect(service.selectSubtitleTrack(const [first], preferred, null), isNull);
-      expect(service.selectSubtitleTrack(const [first, second], preferred, null)?.track.id, 'native-1');
+      expect(service.selectSubtitleTrack(const [first], SubtitlePreference.track(preferred), null), isNull);
+      expect(
+        service.selectSubtitleTrack(const [first, second], SubtitlePreference.track(preferred), null)?.track.id,
+        'native-1',
+      );
     });
 
     test('preferred keyed source does not fuzzy-match an early same-language container track', () {
@@ -634,7 +642,10 @@ void main() {
         uri: 'https://example.test/video.mkv',
       );
 
-      expect(_svc(info: info).selectSubtitleTrack(const [earlyContainer], preferred, null), isNull);
+      expect(
+        _svc(info: info).selectSubtitleTrack(const [earlyContainer], SubtitlePreference.track(preferred), null),
+        isNull,
+      );
     });
 
     test('Jellyfin selected subtitle stream wins over DefaultSubtitleStreamIndex', () {
@@ -742,7 +753,9 @@ void main() {
               info: directPlayInfo(),
             ).selectSubtitleTrack(
               nativeTracks,
-              _sub('source:3', lang: 'eng', title: 'English Forced', codec: 'ass', isForced: true, isDefault: true),
+              SubtitlePreference.track(
+                _sub('source:3', lang: 'eng', title: 'English Forced', codec: 'ass', isForced: true, isDefault: true),
+              ),
               null,
             );
 
@@ -756,7 +769,7 @@ void main() {
         final result = _svc(
           metadata: _meta(backend: MediaBackend.jellyfin),
           info: directPlayInfo(),
-        ).selectSubtitleTrack(nativeTracks, _sub('source:9', lang: 'kor', codec: 'srt'), null);
+        ).selectSubtitleTrack(nativeTracks, SubtitlePreference.track(_sub('source:9', lang: 'kor', codec: 'srt')), null);
 
         expect(result, isNotNull);
         expect(result!.track.id, '1');
@@ -811,7 +824,7 @@ void main() {
           metadata: _meta(backend: MediaBackend.jellyfin),
           info: info,
         );
-        final preferred = _sub('source:3', lang: 'eng', codec: 'srt');
+        final preferred = SubtitlePreference.track(_sub('source:3', lang: 'eng', codec: 'srt'));
 
         expect(service.selectSubtitleTrack(nativeTracks, preferred, null), isNull);
 
@@ -870,6 +883,16 @@ void main() {
         _sub('2', lang: 'eng', isForced: true),
         _sub('3', lang: 'jpn', isForced: true),
       ];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
+      ).selectSubtitleTrack(tracks, null, null)!;
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('Jellyfin SubtitleMode.OnlyForced honors a title-only forced subtitle (#1716)', () {
+      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'eng', title: 'English Forced')];
       final result = _svc(
         metadata: _meta(backend: MediaBackend.jellyfin),
         profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
@@ -1025,6 +1048,189 @@ void main() {
 
       expect(findPlexTrackForMpvSubtitle(mpvForcedByName, plexTracks, allMpvTracks: allMpv)?.id, 30);
       expect(findPlexTrackForMpvSubtitle(mpvRegular, plexTracks, allMpvTracks: allMpv)?.id, 31);
+    });
+
+    // Cross-form pairs: one side flags forced in the container, the other only
+    // says it in the title. Effective-forced semantics (#1716) treat both forms
+    // as the same class, so the pair still gets the +2 agreement nudge.
+    test('flag-forced native track maps to a title-only forced row', () {
+      final plexTracks = [
+        _plexSub(50, index: 0, languageCode: 'fre', title: 'FR Forced', codec: 'ass', forced: false),
+        _plexSub(51, index: 1, languageCode: 'fre', codec: 'ass', forced: false),
+      ];
+      final mpvForced = _sub('2_0', lang: 'fre', codec: 'ass', isForced: true);
+      final mpvRegular = _sub('2_1', lang: 'fre', codec: 'ass');
+      final allMpv = [mpvForced, mpvRegular];
+
+      expect(findPlexTrackForMpvSubtitle(mpvForced, plexTracks, allMpvTracks: allMpv)?.id, 50);
+      expect(findPlexTrackForMpvSubtitle(mpvRegular, plexTracks, allMpvTracks: allMpv)?.id, 51);
+    });
+
+    test('title-only forced native track maps to a flag-forced row', () {
+      final plexTracks = [
+        _plexSub(60, index: 0, languageCode: 'fre', codec: 'ass', forced: true),
+        _plexSub(61, index: 1, languageCode: 'fre', codec: 'ass', forced: false),
+      ];
+      final mpvForcedByName = _sub('2_0', lang: 'fre', title: 'FR Forced [ASS]', codec: 'ass');
+      final mpvRegular = _sub('2_1', lang: 'fre', codec: 'ass');
+      final allMpv = [mpvForcedByName, mpvRegular];
+
+      expect(findPlexTrackForMpvSubtitle(mpvForcedByName, plexTracks, allMpvTracks: allMpv)?.id, 60);
+      expect(findPlexTrackForMpvSubtitle(mpvRegular, plexTracks, allMpvTracks: allMpv)?.id, 61);
+    });
+  });
+
+  // ============================================================
+  // Cross-item intent matching (#1716/#1717): language and effective
+  // forced-ness are hard requirements — the intent's class is preserved or
+  // the match declines so the ladder falls to the server's own selection.
+  // ============================================================
+
+  group('findSourceTrackForIntent', () {
+    const forcedIntent = SubtitleIntent(language: 'fre', forced: true, title: 'FR Forced [ASS]', codec: 'ass');
+    const fullIntent = SubtitleIntent(language: 'fre', forced: false, title: 'French', codec: 'srt');
+
+    test('forced intent picks the title-only forced row over the full row', () {
+      final rows = [
+        _plexSub(1, languageCode: 'fre', title: 'French', codec: 'srt'),
+        _plexSub(2, languageCode: 'fre', title: 'FR Forced', codec: 'ass'),
+      ];
+      expect(findSourceTrackForIntent(forcedIntent, rows)?.id, 2);
+    });
+
+    test('forced intent picks a flag-forced row (cross-form)', () {
+      final rows = [
+        _plexSub(1, languageCode: 'fre', title: 'French', codec: 'srt'),
+        _plexSub(2, languageCode: 'fre', codec: 'ass', forced: true),
+      ];
+      expect(findSourceTrackForIntent(forcedIntent, rows)?.id, 2);
+    });
+
+    test('forced intent declines when only full same-language rows exist', () {
+      final rows = [
+        _plexSub(1, languageCode: 'fre', title: 'French', codec: 'srt'),
+        _plexSub(2, languageCode: 'eng', title: 'English', codec: 'srt'),
+      ];
+      expect(findSourceTrackForIntent(forcedIntent, rows), isNull);
+    });
+
+    test('full intent declines when only forced rows share the language', () {
+      final rows = [
+        _plexSub(1, languageCode: 'fre', title: 'FR Forced', codec: 'srt'),
+        _plexSub(2, languageCode: 'fre', codec: 'ass', forced: true),
+      ];
+      expect(findSourceTrackForIntent(fullIntent, rows), isNull);
+    });
+
+    test('codec and title break ties between same-class rows', () {
+      final rows = [
+        _plexSub(1, languageCode: 'fre', title: 'Commentary', codec: 'ass'),
+        _plexSub(2, languageCode: 'fre', title: 'French', codec: 'srt'),
+      ];
+      expect(findSourceTrackForIntent(fullIntent, rows)?.id, 2);
+    });
+
+    test('language-less intents decline', () {
+      const intent = SubtitleIntent(forced: false, title: 'French', codec: 'srt');
+      expect(findSourceTrackForIntent(intent, [_plexSub(1, languageCode: 'fre')]), isNull);
+    });
+  });
+
+  group('findNativeTrackForIntent', () {
+    const forcedIntent = SubtitleIntent(language: 'fre', forced: true, title: 'FR Forced [ASS]', codec: 'ass');
+
+    test('forced intent picks the forced native track in either form', () {
+      final byTitle = [
+        _sub('1', lang: 'fre', title: 'French', codec: 'srt'),
+        _sub('2', lang: 'fre', title: 'FR Forced', codec: 'ass'),
+      ];
+      final byFlag = [
+        _sub('1', lang: 'fre', title: 'French', codec: 'srt'),
+        _sub('2', lang: 'fre', codec: 'ass', isForced: true),
+      ];
+      expect(findNativeTrackForIntent(forcedIntent, byTitle)?.id, '2');
+      expect(findNativeTrackForIntent(forcedIntent, byFlag)?.id, '2');
+    });
+
+    test('declines symmetrically and skips the auto/off sentinels', () {
+      final fullOnly = [SubtitleTrack.auto, SubtitleTrack.off, _sub('1', lang: 'fre', title: 'French', codec: 'srt')];
+      expect(findNativeTrackForIntent(forcedIntent, fullOnly), isNull);
+
+      const fullIntent = SubtitleIntent(language: 'fre', forced: false);
+      final forcedOnly = [_sub('1', lang: 'fre', title: 'FR Forced', codec: 'ass')];
+      expect(findNativeTrackForIntent(fullIntent, forcedOnly), isNull);
+    });
+  });
+
+  group('selectSubtitleTrack - intent preferences (#1716/#1717)', () {
+    const forcedIntent = SubtitlePreference.intent(
+      SubtitleIntent(language: 'fre', forced: true, title: 'FR Forced [ASS]', codec: 'ass'),
+    );
+
+    test('a class-preserving intent match carries navigation priority', () {
+      final tracks = [_sub('1', lang: 'fre', codec: 'ass'), _sub('2', lang: 'fre', title: 'FR Forced', codec: 'ass')];
+      final result = _svc().selectSubtitleTrack(tracks, forcedIntent, null)!;
+      expect(result.priority, TrackSelectionPriority.navigation);
+      expect(result.track.id, '2');
+    });
+
+    test('a declined forced intent falls to the server-selected full track', () {
+      final tracks = [_sub('1', lang: 'fre', codec: 'ass')];
+      final info = _info(subs: [_plexSub(10, languageCode: 'fre', codec: 'ass', selected: true)]);
+      final result = _svc(info: info).selectSubtitleTrack(tracks, forcedIntent, null)!;
+      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.id, '1');
+    });
+
+    test("a declined forced intent honors the server's subtitles-off state", () {
+      // #1717 headline: the next episode has no forced track and no selected
+      // stream — the server's own decision (off) wins over the full track.
+      final tracks = [_sub('1', lang: 'fre', codec: 'ass')];
+      final info = _info(subs: [_plexSub(10, languageCode: 'fre', codec: 'ass')]);
+      final result = _svc(info: info).selectSubtitleTrack(tracks, forcedIntent, null)!;
+      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.id, 'no');
+    });
+
+    test('a servable intent stays pending until its native track arrives', () {
+      final info = _info(
+        subs: [
+          _plexSub(10, languageCode: 'fre', codec: 'ass'),
+          _plexSub(11, languageCode: 'fre', title: 'FR Forced', codec: 'ass'),
+        ],
+      );
+      final service = _svc(info: info);
+      final arrived = [_sub('1', lang: 'fre', codec: 'ass')];
+
+      expect(service.selectSubtitleTrack(arrived, forcedIntent, null), isNull);
+
+      final complete = [...arrived, _sub('2', lang: 'fre', title: 'FR Forced', codec: 'ass')];
+      final resolved = service.selectSubtitleTrack(complete, forcedIntent, null)!;
+      expect(resolved.priority, TrackSelectionPriority.navigation);
+      expect(resolved.track.id, '2');
+    });
+
+    test('a deadline pass resolves a pending intent through the ladder', () {
+      final info = _info(
+        subs: [
+          _plexSub(10, languageCode: 'fre', codec: 'ass', selected: true),
+          _plexSub(11, languageCode: 'fre', title: 'FR Forced', codec: 'ass'),
+        ],
+      );
+      final arrived = [_sub('1', lang: 'fre', codec: 'ass', isDefault: true)];
+      final result = _svc(info: info).selectSubtitleTrack(arrived, forcedIntent, null, waitForPendingSource: false)!;
+      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.id, '1');
+    });
+
+    test('a full intent does not grab a forced-only catalog (symmetric decline)', () {
+      const fullIntent = SubtitlePreference.intent(
+        SubtitleIntent(language: 'fre', forced: false, title: 'French', codec: 'ass'),
+      );
+      final tracks = [_sub('1', lang: 'fre', title: 'FR Forced', codec: 'ass')];
+      final result = _svc().selectSubtitleTrack(tracks, fullIntent, null)!;
+      expect(result.priority, TrackSelectionPriority.off);
+      expect(result.track.id, 'no');
     });
   });
 

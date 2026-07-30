@@ -83,8 +83,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required MediaItem metadata,
     required PlaybackInitializationResult result,
     AudioTrack? preferredAudioTrack,
-    SubtitleTrack? preferredSubtitleTrack,
-    SubtitleTrack? preferredSecondarySubtitleTrack,
+    SubtitlePreference? preferredSubtitleTrack,
+    SubtitlePreference? preferredSecondarySubtitleTrack,
     bool preserveSubtitleSourceIdentity = true,
   }) async {
     await _waitForProfileSettingsIfNeeded();
@@ -440,8 +440,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required PlexClient? plexClient,
     required MediaServerUserProfile? Function() getProfileSettings,
     AudioTrack? preferredAudioTrack,
-    SubtitleTrack? preferredSubtitleTrack,
-    SubtitleTrack? preferredSecondarySubtitleTrack,
+    SubtitlePreference? preferredSubtitleTrack,
+    SubtitlePreference? preferredSecondarySubtitleTrack,
   }) {
     return TrackManager(
       player: forPlayer,

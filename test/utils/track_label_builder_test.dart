@@ -17,6 +17,24 @@ void main() {
     });
   });
 
+  group('titleSaysForced', () {
+    test('matches the forced token anywhere in the title', () {
+      expect(titleSaysForced('Forced'), isTrue);
+      expect(titleSaysForced('FORCED'), isTrue);
+      expect(titleSaysForced('FR Forced [ASS]'), isTrue);
+      expect(titleSaysForced('French (Forced)'), isTrue);
+      expect(titleSaysForced('forced.eng'), isTrue);
+    });
+
+    test('requires a whole token, not a substring', () {
+      expect(titleSaysForced('unforced'), isFalse);
+      expect(titleSaysForced('Reinforced'), isFalse);
+      expect(titleSaysForced('French'), isFalse);
+      expect(titleSaysForced(''), isFalse);
+      expect(titleSaysForced(null), isFalse);
+    });
+  });
+
   group('resolveTrackLanguageDisplay', () {
     test('resolves 2-letter, 3-letter, and bibliographic codes', () {
       expect(resolveTrackLanguageDisplay(language: 'en'), 'English');

@@ -319,8 +319,8 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       resumePosition: resumePosition,
       preserveCurrentTrackSelection: true,
       preservedAudioTrack: audioTrack,
-      preservedSubtitleTrack: subtitleTrack,
-      preservedSecondarySubtitleTrack: secondarySubtitleTrack,
+      preservedSubtitleTrack: SubtitlePreference.trackOrNull(subtitleTrack),
+      preservedSecondarySubtitleTrack: SubtitlePreference.trackOrNull(secondarySubtitleTrack),
       startPaused: true,
       reason: 'TV background suspend restore',
     );

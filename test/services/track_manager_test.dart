@@ -11,6 +11,7 @@ import 'package:plezy/mpv/player/player_stream_controllers.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/services/track_manager.dart';
 
 import '../test_helpers/prefs.dart';
@@ -162,7 +163,7 @@ TrackManager _make({
     metadata: metadata ?? _meta(),
     mediaInfo: mediaInfo,
     preferredAudioTrack: preferredAudioTrack,
-    preferredSubtitleTrack: preferredSubtitleTrack,
+    preferredSubtitleTrack: SubtitlePreference.trackOrNull(preferredSubtitleTrack),
     showMessage: showMessage,
   );
 }
@@ -660,7 +661,7 @@ void main() {
       );
 
       expect(handledLocally, isTrue);
-      expect(mgr.preferredSubtitleTrack?.id, 'source:31');
+      expect((mgr.preferredSubtitleTrack! as SubtitleTrackPreference).track.id, 'source:31');
       expect(persistedTrack?.id, 'source:31');
       expect(persistedSourceStreamId, 31);
       expect(player.selectedSubtitle, isEmpty);
@@ -1266,7 +1267,7 @@ void main() {
       await mgr.invalidatePendingSelection();
 
       mgr.preferredAudioTrack = audioTracks[1];
-      mgr.preferredSubtitleTrack = subtitleTracks[1];
+      mgr.preferredSubtitleTrack = SubtitlePreference.track(subtitleTracks[1]);
       final replacementApplication = mgr.applyTrackSelection();
       await _drainAsync();
 

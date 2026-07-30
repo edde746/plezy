@@ -8,6 +8,7 @@ import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/subtitle_preference.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/media_items.dart';
@@ -59,14 +60,26 @@ void main() {
       nativeTrack: SubtitleTrack.off,
     );
 
-    expect(result, isNotNull);
-    expect(result!.id, 'navigation');
-    expect(result.title, committed.title);
-    expect(result.language, committed.language);
-    expect(result.codec, committed.codec);
-    expect(result.isForced, isTrue);
-    expect(result.isExternal, isTrue);
-    expect(result.uri, isNull);
+    expect(result, isA<SubtitleIntentPreference>());
+    final intent = (result! as SubtitleIntentPreference).intent;
+    expect(intent.title, committed.title);
+    expect(intent.language, committed.language);
+    expect(intent.codec, committed.codec);
+    expect(intent.forced, isTrue);
+    expect(intent.isExternal, isTrue);
+  });
+
+  test('item-change subtitle preference derives forced-ness from a forced title (#1716)', () {
+    const committed = SubtitleTrack(id: 'source:4', title: 'FR Forced [ASS]', language: 'fra', codec: 'ass');
+
+    final result = subtitlePreferenceForItemChange(
+      hasCommittedSelection: true,
+      committedTrack: committed,
+      nativeTrack: SubtitleTrack.off,
+    );
+
+    expect(result, isA<SubtitleIntentPreference>());
+    expect((result! as SubtitleIntentPreference).intent.forced, isTrue);
   });
 
   test('item-change subtitle preference preserves committed off and empty secondary slots', () {
@@ -76,7 +89,7 @@ void main() {
         committedTrack: SubtitleTrack.off,
         nativeTrack: const SubtitleTrack(id: '7', language: 'eng'),
       ),
-      same(SubtitleTrack.off),
+      const SubtitlePreference.off(),
     );
     expect(
       subtitlePreferenceForItemChange(
@@ -84,7 +97,7 @@ void main() {
         committedTrack: null,
         nativeTrack: const SubtitleTrack(id: '8', language: 'swe'),
       ),
-      same(SubtitleTrack.off),
+      const SubtitlePreference.off(),
     );
   });
 
@@ -100,9 +113,8 @@ void main() {
       ),
     );
 
-    expect(result?.id, 'navigation');
-    expect(result?.language, 'eng');
-    expect(result?.uri, isNull);
+    expect(result, isA<SubtitleIntentPreference>());
+    expect((result! as SubtitleIntentPreference).intent.language, 'eng');
   });
 
   testWidgets('initialization ownership serializes rollback, retry, and route removal', (tester) async {

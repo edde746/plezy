@@ -62,6 +62,7 @@ import 'jellyfin_playback_urls.dart';
 import 'jellyfin_trickplay_service.dart';
 import 'playback_initialization_types.dart';
 import 'scrub_preview_source.dart';
+import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
 import '../mpv/mpv.dart';
 

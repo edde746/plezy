@@ -298,41 +298,31 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     return mediaInfo.audioTracks.any((track) => track.id == explicit) ? explicit : null;
   }
 
-  int? _validJellyfinSubtitleStreamId(SubtitleTrack? preferred, MediaSourceInfo mediaInfo) {
-    if (preferred == null) return null;
-    if (preferred.id == SubtitleTrack.off.id) return -1;
-
-    var semanticPreference = preferred;
-    const sourcePrefix = 'source:';
-    if (preferred.id.startsWith(sourcePrefix)) {
-      semanticPreference = SubtitleTrack(
-        id: 'navigation',
-        title: preferred.title,
-        language: preferred.language,
-        codec: preferred.codec,
-        isDefault: preferred.isDefault,
-        isForced: preferred.isForced,
-        isExternal: preferred.isExternal,
-        isContainer: preferred.isContainer,
-      );
-      final explicit = int.tryParse(preferred.id.substring(sourcePrefix.length));
-      if (explicit != null) {
-        final exactSource = mediaInfo.subtitleTracks.where((track) => track.id == explicit).firstOrNull;
-        if (exactSource != null) {
-          // A source id is authoritative only within one item. When semantic
-          // metadata is available, prefer the best current-source row so a
-          // reused stream index cannot override a better title/codec match.
-          final semanticMatch = findPlexTrackForMpvSubtitle(semanticPreference, mediaInfo.subtitleTracks);
-          final hasLanguage = preferred.language?.isNotEmpty ?? false;
-          if (!hasLanguage || (semanticMatch?.id == explicit && preferred.isForced == exactSource.forced)) {
-            return explicit;
+  int? _validJellyfinSubtitleStreamId(SubtitlePreference? preferred, MediaSourceInfo mediaInfo) {
+    switch (preferred) {
+      case null:
+        return null;
+      case SubtitleOffPreference():
+        return -1;
+      case SubtitleIntentPreference(:final intent):
+        return findSourceTrackForIntent(intent, mediaInfo.subtitleTracks)?.id;
+      case SubtitleTrackPreference(:final track):
+        const sourcePrefix = 'source:';
+        final intent = SubtitleIntent.fromTrack(track);
+        if (track.id.startsWith(sourcePrefix)) {
+          final explicit = int.tryParse(track.id.substring(sourcePrefix.length));
+          if (explicit != null && mediaInfo.subtitleTracks.any((row) => row.id == explicit)) {
+            // A source id is authoritative only within one item. When semantic
+            // metadata is available, re-derive the row through the hard-gated
+            // intent match so a reused stream index cannot cross language or
+            // forced-ness classes (#1716).
+            final hasLanguage = intent?.language?.isNotEmpty ?? false;
+            if (!hasLanguage) return explicit;
+            return findSourceTrackForIntent(intent!, mediaInfo.subtitleTracks)?.id;
           }
-          return semanticMatch?.id;
         }
-      }
+        return intent == null ? null : findSourceTrackForIntent(intent, mediaInfo.subtitleTracks)?.id;
     }
-
-    return findPlexTrackForMpvSubtitle(semanticPreference, mediaInfo.subtitleTracks)?.id;
   }
 
   Map<String, dynamic>? _selectNegotiatedMediaSource(Object? sources, String? selectedSourceId) {

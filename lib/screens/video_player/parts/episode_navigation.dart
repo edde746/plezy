@@ -14,7 +14,7 @@ Future<bool> deferTranscodeSubtitleSelection({
   required bool Function() shouldContinue,
 }) async {
   final deferredTrack = PlaybackSubtitleResolver.subtitleTrackForSource(sourceTrack, sidecar: sourceSidecar);
-  trackManager.preferredSubtitleTrack = deferredTrack;
+  trackManager.preferredSubtitleTrack = SubtitlePreference.track(deferredTrack);
   // Persist first: the screen callback routes to onSubtitleTrackSelectedByUser,
   // which invalidates the pending selection. Arming before that would retire the
   // deferred pass we depend on to apply this choice once mpv discovers the sidecar.
@@ -248,10 +248,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final effectiveAudioStreamId = newAudioStreamId ?? _selectedAudioStreamId;
     final currentSubtitleChoice = _selectedSourceSubtitleChoiceForControls(_sourceSubtitleTracksForControls());
     final preferredSubtitleTrackForReload = newSubtitleChoice == null
-        ? _playbackSession?.subtitleSelection.primaryTrack
+        ? SubtitlePreference.trackOrNull(_playbackSession?.subtitleSelection.primaryTrack)
         : newSubtitleChoice.isOff
-        ? SubtitleTrack.off
-        : PlaybackSubtitleResolver.preferredTrackForSource(_currentMediaInfo, newSubtitleChoice.sourceStreamId!);
+        ? const SubtitlePreference.off()
+        : SubtitlePreference.trackOrNull(
+            PlaybackSubtitleResolver.preferredTrackForSource(_currentMediaInfo, newSubtitleChoice.sourceStreamId!),
+          );
     final effectiveMediaSourceId = newMediaIndex != null
         ? PlaybackSession.mediaSourceIdForIndex(_availableVersions, effectiveMediaIndex) ?? _requestedMediaSourceId
         : _requestedMediaSourceId;
@@ -417,9 +419,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     Duration? resumePosition,
     bool preserveCurrentTrackSelection = false,
     AudioTrack? preservedAudioTrack,
-    SubtitleTrack? preservedSubtitleTrack,
-    SubtitleTrack? preservedSecondarySubtitleTrack,
-    SubtitleTrack? preferredSubtitleTrackOverride,
+    SubtitlePreference? preservedSubtitleTrack,
+    SubtitlePreference? preservedSecondarySubtitleTrack,
+    SubtitlePreference? preferredSubtitleTrackOverride,
     bool startPaused = false,
     bool useCurrentAudioStreamSelection = true,
     bool showErrorUi = true,
@@ -473,9 +475,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           : null;
       final currentSubtitleTrack =
           preferredSubtitleTrackOverride ??
-          (preserveCurrentTrackSelection ? preservedSubtitleTrack ?? currentPlayer.state.track.subtitle : null);
+          (preserveCurrentTrackSelection
+              ? preservedSubtitleTrack ?? SubtitlePreference.trackOrNull(currentPlayer.state.track.subtitle)
+              : null);
       final currentSecondarySubtitleTrack = preserveCurrentTrackSelection
-          ? preservedSecondarySubtitleTrack ?? currentPlayer.state.track.secondarySubtitle
+          ? preservedSecondarySubtitleTrack ??
+                SubtitlePreference.trackOrNull(currentPlayer.state.track.secondarySubtitle)
           : null;
       final wasPlayingBeforeReload = _playbackIntentShouldPlay;
       var didOpenReplacement = false;
@@ -545,7 +550,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           (selectedMediaSourceId == null || selectedMediaSourceId == previousMediaSourceId);
       final initializationSubtitleTrack = preservesRequestedSubtitleSource
           ? currentSubtitleTrack
-          : PlaybackSubtitleResolver.preferenceWithoutSourceIdentity(currentSubtitleTrack);
+          : SubtitlePreference.demoteToIntent(currentSubtitleTrack);
       try {
         // Eager identity-only: the loading UI shows the new title immediately,
         // while the selection/source state flips with the session commit at
@@ -757,8 +762,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           plexClient: plexClient,
           getProfileSettings: () => userProfileProvider.profileSettings,
           preferredAudioTrack: currentAudioTrack,
-          preferredSubtitleTrack: subtitleSelection.primaryTrack,
-          preferredSecondarySubtitleTrack: subtitleSelection.secondaryTrack,
+          preferredSubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
+          preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
         );
         _trackManager = trackManager;
         trackManager.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);

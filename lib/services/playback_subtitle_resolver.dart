@@ -4,7 +4,9 @@ import '../media/media_item.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_source_info.dart';
 import '../mpv/mpv.dart';
+import '../utils/subtitle_forced_semantics.dart';
 import 'playback_initialization_types.dart';
+import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
 
 /// A source-catalog subtitle choice.
@@ -84,53 +86,57 @@ class PlaybackSubtitleSelection {
 class PlaybackSubtitleResolver {
   const PlaybackSubtitleResolver._();
 
-  /// Removes a per-source ID while retaining the semantic identity needed to
-  /// carry a subtitle choice across items or media sources.
-  static SubtitleTrack? preferenceWithoutSourceIdentity(SubtitleTrack? preferred) {
-    if (preferred == null || preferred.id == SubtitleTrack.off.id || !preferred.id.startsWith('source:')) {
-      return preferred;
-    }
-    return SubtitleTrack(
-      id: 'navigation',
-      title: preferred.title,
-      language: preferred.language,
-      codec: preferred.codec,
-      isDefault: preferred.isDefault,
-      isForced: preferred.isForced,
-      isExternal: preferred.isExternal,
-      isContainer: preferred.isContainer,
-    );
-  }
-
-  static SubtitleTrack? _sourceBackedPreference(
-    SubtitleTrack? preferred,
+  static SubtitlePreference? _sourceBackedPreference(
+    SubtitlePreference? preferred,
     MediaSourceInfo? mediaInfo,
     List<_SubtitleCandidate> candidates, {
     required bool preserveSourceIdentity,
   }) {
-    if (preferred == null || preferred.id == SubtitleTrack.off.id) return preferred;
-
-    var semanticPreference = preferred;
-    if (preferred.id.startsWith('source:')) {
-      if (preserveSourceIdentity) {
-        final sourceStreamId = int.tryParse(preferred.id.substring('source:'.length));
-        final exactCandidate = candidates.where((candidate) => candidate.sourceStreamId == sourceStreamId).firstOrNull;
-        if (exactCandidate != null) return exactCandidate.track;
-      } else {
-        semanticPreference = preferenceWithoutSourceIdentity(preferred)!;
+    SubtitlePreference resolveIntent(SubtitleIntentPreference preference) {
+      final row = findSourceTrackForIntent(preference.intent, mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[]);
+      if (row != null) {
+        for (final candidate in candidates) {
+          if (candidate.sourceStreamId == row.id) return SubtitlePreference.track(candidate.track);
+        }
       }
+      // Keep the declined intent: selectSubtitleTrack's intent branch and the
+      // priority ladder decide (falling to the server's own selection).
+      return preference;
     }
 
-    final sourceMatch = findPlexTrackForMpvSubtitle(
-      semanticPreference,
-      mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
-    );
-    if (sourceMatch == null) return semanticPreference;
-
-    for (final candidate in candidates) {
-      if (candidate.sourceStreamId == sourceMatch.id) return candidate.track;
+    // Crossing an item/source boundary strips identity from every reference.
+    final pref = preserveSourceIdentity ? preferred : SubtitlePreference.demoteToIntent(preferred);
+    switch (pref) {
+      case null || SubtitleOffPreference():
+        return pref;
+      case SubtitleIntentPreference():
+        return resolveIntent(pref);
+      case SubtitleTrackPreference(:final track):
+        if (track.id.startsWith('source:')) {
+          final sourceStreamId = int.tryParse(track.id.substring('source:'.length));
+          final exactCandidate = candidates
+              .where((candidate) => candidate.sourceStreamId == sourceStreamId)
+              .firstOrNull;
+          if (exactCandidate != null) return SubtitlePreference.track(exactCandidate.track);
+          // The row vanished from this source: the id is stale, so only its
+          // semantics may carry forward (hard-gated, unlike the old fuzzy
+          // rematch — a class-crossing lookalike must not inherit the id).
+          final demoted = SubtitlePreference.demoteToIntent(pref);
+          return demoted is SubtitleIntentPreference ? resolveIntent(demoted) : demoted;
+        }
+        // Same-item raw native/uri reference: identity-match it back to this
+        // item's own rows so the selection is source-backed where possible.
+        final sourceMatch = findPlexTrackForMpvSubtitle(
+          track,
+          mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
+        );
+        if (sourceMatch != null) {
+          for (final candidate in candidates) {
+            if (candidate.sourceStreamId == sourceMatch.id) return SubtitlePreference.track(candidate.track);
+          }
+        }
+        return pref;
     }
-    return semanticPreference;
   }
 
   static PlaybackSubtitleSelection resolve({
@@ -139,8 +145,8 @@ class PlaybackSubtitleResolver {
     required List<PlaybackSubtitleSidecar> sidecars,
     MediaServerUserProfile? profileSettings,
     AudioTrack? preferredAudioTrack,
-    SubtitleTrack? preferredSubtitleTrack,
-    SubtitleTrack? preferredSecondarySubtitleTrack,
+    SubtitlePreference? preferredSubtitleTrack,
+    SubtitlePreference? preferredSecondarySubtitleTrack,
     bool preserveSourceIdentity = true,
   }) {
     final candidates = <_SubtitleCandidate>[];
@@ -199,8 +205,12 @@ class PlaybackSubtitleResolver {
       candidates,
       preserveSourceIdentity: preserveSourceIdentity,
     );
-    if (secondaryPreference != null && secondaryPreference.id != SubtitleTrack.off.id) {
-      final secondary = service.findBestSubtitleMatch(availableTracks, secondaryPreference);
+    if (secondaryPreference != null && secondaryPreference is! SubtitleOffPreference) {
+      final secondary = switch (secondaryPreference) {
+        SubtitleOffPreference() => null,
+        SubtitleTrackPreference(:final track) => service.findBestSubtitleMatch(availableTracks, track),
+        SubtitleIntentPreference(:final intent) => findNativeTrackForIntent(intent, availableTracks),
+      };
       secondaryCandidate = candidates
           .where((candidate) => candidate.track.id == secondary?.id && candidate.track.id != primary.id)
           .firstOrNull;
@@ -233,7 +243,9 @@ class PlaybackSubtitleResolver {
       language: playable?.language ?? sourceTrack.languageCode ?? sourceTrack.language,
       codec: playable?.codec ?? sourceTrack.codec,
       isDefault: sourceTrack.selected,
-      isForced: sourceTrack.forced,
+      // Effective forced-ness: an intent captured from this committed track
+      // must stay in the same class as the row it came from (#1716).
+      isForced: sourceTrack.effectiveForced,
       isExternal: playable != null,
       isContainer: playable?.isContainer ?? false,
       uri: playable?.uri,

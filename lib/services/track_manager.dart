@@ -8,6 +8,7 @@ import '../media/media_item.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_source_info.dart';
 import '../services/settings_service.dart';
+import '../services/subtitle_preference.dart';
 import '../services/track_selection_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/track_label_builder.dart';
@@ -50,8 +51,8 @@ class TrackManager {
   MediaItem metadata;
   MediaSourceInfo? mediaInfo;
   AudioTrack? preferredAudioTrack;
-  SubtitleTrack? preferredSubtitleTrack;
-  SubtitleTrack? preferredSecondarySubtitleTrack;
+  SubtitlePreference? preferredSubtitleTrack;
+  SubtitlePreference? preferredSecondarySubtitleTrack;
 
   // ── Internal state ─────────────────────────────────────────────────
 
