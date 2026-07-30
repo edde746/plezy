@@ -291,6 +291,8 @@ class VideoPlayerScreen extends StatefulWidget {
 
   bool get isLive => live != null;
 
+  final bool isPreroll;
+
   const VideoPlayerScreen({
     super.key,
     required this.metadata,
@@ -304,6 +306,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.selectedQualityPreset,
     this.selectedAudioStreamId,
     this.live,
+    this.isPreroll = false,
   });
 
   @override
