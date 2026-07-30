@@ -48,6 +48,25 @@ AndroidTvFeatureDetection detectAndroidTvFromSystemFeatures(Iterable<String> fea
   );
 }
 
+/// Whether a floating player may be offered, given the host platform's own
+/// picture-in-picture capability and the detected form factor.
+///
+/// Cars commonly lack `FEATURE_PICTURE_IN_PICTURE`, and a floating player would
+/// keep the app's UI on screen while driving, which `DD-2` forbids. TV form
+/// factors have no windowed surface to float into.
+///
+/// [hostSupportsPictureInPicture] is injected rather than read from [Platform]
+/// so the form-factor vetoes stay observable on hosts that never support PiP:
+/// on the Linux and Windows CI runners every [Platform] branch of the real gate
+/// is false and unmockable, which would otherwise make the vetoes vacuous
+/// exactly where the release is gated.
+bool pictureInPictureAllowed({
+  required bool hostSupportsPictureInPicture,
+  required bool isAppleTv,
+  required bool isTv,
+  required bool isAutomotive,
+}) => hostSupportsPictureInPicture && !isAppleTv && !isTv && !isAutomotive;
+
 /// Service for detecting if the app is running on Android TV or Apple TV.
 class TvDetectionService {
   static final AsyncSingleton<TvDetectionService> _singleton = AsyncSingleton();
@@ -267,11 +286,12 @@ class PlatformDetector {
     return isAppleTV() || isDesktopOS() || (Platform.isAndroid && isTV());
   }
 
-  static bool supportsPictureInPicture() {
-    // Cars commonly lack FEATURE_PICTURE_IN_PICTURE, and a floating player
-    // would keep the app's UI on screen while driving, which `DD-2` forbids.
-    return !isAppleTV() && !isTV() && !isAutomotive() && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
-  }
+  static bool supportsPictureInPicture() => pictureInPictureAllowed(
+    hostSupportsPictureInPicture: Platform.isAndroid || Platform.isIOS || Platform.isMacOS,
+    isAppleTv: isAppleTV(),
+    isTv: isTV(),
+    isAutomotive: isAutomotive(),
+  );
 
   /// Detects if the device is likely a tablet based on screen size
   /// Uses diagonal screen size to determine if device is a tablet

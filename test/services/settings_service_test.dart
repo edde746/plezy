@@ -236,7 +236,13 @@ void main() {
       final settings = await SettingsService.getInstance();
       await settings.write(SettingsService.autoPip, true);
 
-      expect(settings.read(SettingsService.autoPip), isTrue);
+      // The pref can only surface a stored true where the host itself supports
+      // PiP. That term is Platform.isAndroid/isIOS/isMacOS, unmockable and false
+      // on the Linux and Windows CI hosts, where the gate pins the pref off no
+      // matter what is stored. pictureInPictureAllowed covers the automotive
+      // veto itself on every host.
+      final hostSupportsPip = PlatformDetector.supportsPictureInPicture();
+      expect(settings.read(SettingsService.autoPip), hostSupportsPip ? isTrue : isFalse);
 
       TvDetectionService.debugSetAutomotiveOverride(true);
 
