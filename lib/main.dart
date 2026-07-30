@@ -787,6 +787,13 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _memoryCheckTimer?.cancel();
 
     _downloadManager.dispose();
+    // Quitting straight from the player is a real stop: the trackers that own
+    // their own watched semantics need the terminal report before the process
+    // goes away. Bounded — a hung tracker must not hold the app open.
+    await Future.wait([
+      TrackerCoordinator.instance.stopPlayback(),
+      TraktScrobbleService.instance.stopPlayback(),
+    ]).timeout(const Duration(seconds: 3), onTimeout: () => const []);
     TrackerCoordinator.instance.cancelInFlight();
     TraktScrobbleService.instance.cancelInFlight();
     await TraktSyncService.instance.dispose();

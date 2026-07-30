@@ -927,6 +927,19 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void onWindowClose() {
+    unawaited(_exitOnWindowClose());
+  }
+
+  /// `setPreventClose(true)` hands the window's close button to us, so the app
+  /// has to shut itself down. A bare `exit(0)` killed the process before the
+  /// app-level teardown could run — including the terminal playback report that
+  /// trackers owning their own watched semantics depend on.
+  Future<void> _exitOnWindowClose() async {
+    try {
+      await AppExitService.requestGracefulExit().timeout(const Duration(seconds: 5));
+    } catch (e, st) {
+      appLogger.w('Graceful window close failed; exiting immediately', error: e, stackTrace: st);
+    }
     exit(0);
   }
 

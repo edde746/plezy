@@ -41,6 +41,39 @@ abstract interface class TrackerRatingSource {
   Future<void> clearRating(TrackerRatingContext ctx);
 }
 
+/// Playback state reported to trackers that accept real-time progress.
+enum TrackerScrobbleState { start, pause, stop }
+
+/// Trackers that record playback progress as it happens, not just a terminal
+/// watched mark. [TrackerCoordinator] drives these from player lifecycle
+/// events (start/resume, pause, stop) with the current progress percentage.
+///
+/// A real-time tracker owns its own watched semantics for in-player playback:
+/// the coordinator deliberately excludes it from the watched-threshold
+/// [Tracker.markWatched] fan-out so one watch never produces two writes.
+/// Manual, container, offline-replay and external-player marks still go
+/// through [Tracker.markWatched].
+abstract interface class RealtimeScrobbleTracker implements Tracker {
+  /// Identity of the account binding this tracker currently writes through,
+  /// compared only by [identical]. Deferred work captures it and re-checks
+  /// before writing, so a rebind — profile switch, disconnect, reconnect —
+  /// cannot redirect a write to whichever account replaced it.
+  Object? get scrobbleBinding;
+
+  /// Report a playback lifecycle event with the current progress percentage.
+  Future<void> scrobble(TrackerContext ctx, TrackerScrobbleState state, double progressPercent);
+
+  /// Called after a terminal [TrackerScrobbleState.stop] whose progress Plezy
+  /// counts as watched (the media server's threshold was crossed).
+  ///
+  /// Services apply their own completion rule to a stop, which can be stricter
+  /// than a server threshold the user configured lower. Only the tracker knows
+  /// whether its stop already recorded the watch, so it decides here: no-op, or
+  /// record it. [progressPercent] is reported as measured — it doubles as the
+  /// user's resume position and is never inflated to force a watched state.
+  Future<void> reconcileWatchedAfterStop(TrackerContext ctx, double progressPercent);
+}
+
 abstract interface class DisposableTrackerClient {
   void dispose();
 }

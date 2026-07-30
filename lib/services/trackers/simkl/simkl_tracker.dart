@@ -12,14 +12,22 @@ import '../tracker_rating_match.dart';
 import '../tracker_session.dart';
 import 'simkl_client.dart';
 
-/// Simkl scrobble tracker. Fires `POST /sync/history` once playback crosses
-/// the watched threshold (Simkl has no real-time `/scrobble/*` endpoints).
+/// Simkl tracker.
+///
+/// In-player playback is reported in real time through `POST /scrobble/start`,
+/// `/pause` and `/stop` — Simkl's own rules then decide watched state: a `stop`
+/// at >= 80% progress marks the item watched, below that it saves a resumable
+/// playback so partially watched items survive (issue #1719). `POST
+/// /sync/history` stays for the marks that never pass through the player:
+/// manual, container, offline replay and external players.
 ///
 /// General-purpose: accepts any Plex external ID (tvdb/imdb/tmdb) directly,
 /// so it fires for non-anime TV and movies too. Prefers Fribb's simkl_id
 /// when present for stricter anime match, otherwise falls back to whatever
 /// Plex exposes.
-class SimklTracker extends TrackerBase with ClientBackedTracker<SimklClient> implements TrackerRatingSource {
+class SimklTracker extends TrackerBase
+    with ClientBackedTracker<SimklClient>
+    implements TrackerRatingSource, RealtimeScrobbleTracker {
   static SimklTracker? _instance;
   static SimklTracker get instance => _instance ??= SimklTracker._();
   SimklTracker._();
@@ -32,6 +40,15 @@ class SimklTracker extends TrackerBase with ClientBackedTracker<SimklClient> imp
 
   @override
   bool get needsFribb => false;
+
+  /// Simkl counts a `/scrobble/stop` as a watch from this progress upwards and
+  /// files anything below it as resumable playback instead.
+  static const double _scrobbleWatchedPercent = 80.0;
+
+  /// The bound client is replaced on every session rebind, so its identity is
+  /// the account identity.
+  @override
+  Object? get scrobbleBinding => client;
 
   void rebindSession(
     TrackerSession? session, {
@@ -69,6 +86,55 @@ class SimklTracker extends TrackerBase with ClientBackedTracker<SimklClient> imp
 
     await client.removeFromHistory(_historyBody(ctx, ids));
     appLogger.d('Simkl: marked unwatched (ids=$ids, isMovie=${ctx.isMovie})');
+  }
+
+  @override
+  Future<void> scrobble(TrackerContext ctx, TrackerScrobbleState state, double progressPercent) async {
+    final client = this.client;
+    if (client == null) return;
+
+    final ids = _buildIds(external: ctx.external, anime: ctx.anime);
+    if (ids.isEmpty) return;
+
+    final action = switch (state) {
+      TrackerScrobbleState.start => 'start',
+      TrackerScrobbleState.pause => 'pause',
+      TrackerScrobbleState.stop => 'stop',
+    };
+    await client.scrobble(
+      action,
+      _scrobbleBody(ctx, ids, progressPercent),
+      allowConflict: state == TrackerScrobbleState.stop,
+    );
+    appLogger.d('Simkl: scrobble $action @ ${progressPercent.toStringAsFixed(1)}% (ids=$ids)');
+  }
+
+  @override
+  Future<void> reconcileWatchedAfterStop(TrackerContext ctx, double progressPercent) async {
+    // At or above Simkl's own rule the stop already marked it watched; sending
+    // history too would write the same watch twice.
+    if (progressPercent >= _scrobbleWatchedPercent) return;
+    appLogger.d('Simkl: stop below ${_scrobbleWatchedPercent.toStringAsFixed(0)}% — recording watch explicitly');
+    await markWatched(ctx);
+  }
+
+  /// Scrobble takes a single `movie`/`show` object plus a sibling `episode`,
+  /// unlike the plural history/ratings shapes. `show` also covers anime:
+  /// Simkl routes by id and maps TVDB season/episode numbering to AniDB
+  /// itself.
+  Map<String, dynamic> _scrobbleBody(TrackerContext ctx, Map<String, Object> ids, double progressPercent) {
+    // Simkl accepts at most two decimal places on `progress`.
+    final progress = double.parse(progressPercent.toStringAsFixed(2));
+    return ctx.isMovie
+        ? {
+            'progress': progress,
+            'movie': {'ids': ids},
+          }
+        : {
+            'progress': progress,
+            'show': {'ids': ids},
+            'episode': {'season': ctx.season, 'number': ctx.episodeNumber},
+          };
   }
 
   Map<String, dynamic> _historyBody(TrackerContext ctx, Map<String, Object> ids) {

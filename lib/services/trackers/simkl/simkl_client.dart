@@ -46,6 +46,15 @@ class SimklClient implements DisposableTrackerClient {
 
   Future<void> removeFromHistory(Map<String, dynamic> body) => _request('POST', '/sync/history/remove', body: body);
 
+  /// Report real-time playback. [action] is `start`, `pause` or `stop`.
+  ///
+  /// Simkl's own rules, not ours: a `stop` at >= 80% progress marks the item
+  /// watched, below that it saves a resumable playback. Only `stop` documents a
+  /// 409 (the item was already marked watched within the last hour), so it is
+  /// the only action that accepts one as success.
+  Future<void> scrobble(String action, Map<String, dynamic> body, {bool allowConflict = false}) =>
+      _request('POST', '/scrobble/$action', body: body, allowStatuses: allowConflict ? const {409} : const {});
+
   Future<void> addRatings(Map<String, dynamic> body) => _request('POST', '/sync/ratings', body: body);
 
   Future<void> removeRatings(Map<String, dynamic> body) => _request('POST', '/sync/ratings/remove', body: body);
@@ -124,8 +133,16 @@ class SimklClient implements DisposableTrackerClient {
     Map<String, dynamic>? body,
     Map<String, String>? query,
     String? baseOverride,
+    Set<int> allowStatuses = const {},
   }) async {
-    final response = await _requestResponse(method, path, body: body, query: query, baseOverride: baseOverride);
+    final response = await _requestResponse(
+      method,
+      path,
+      body: body,
+      query: query,
+      baseOverride: baseOverride,
+      allowStatuses: allowStatuses,
+    );
     return TrackerHttpClient.decodeJson(response.body);
   }
 
@@ -135,6 +152,7 @@ class SimklClient implements DisposableTrackerClient {
     Map<String, dynamic>? body,
     Map<String, String>? query,
     String? baseOverride,
+    Set<int> allowStatuses = const {},
   }) async {
     final base = baseOverride ?? SimklConstants.apiBase;
     final uri = Uri.parse('$base$path').replace(queryParameters: SimklConstants.queryParameters(query));
@@ -159,6 +177,7 @@ class SimklClient implements DisposableTrackerClient {
         isPermanent: true,
       );
     }
+    if (allowStatuses.contains(response.statusCode)) return response;
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw TrackerApiException(service: TrackerService.simkl, statusCode: response.statusCode);
     }

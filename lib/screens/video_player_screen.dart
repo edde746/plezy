@@ -894,7 +894,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         break;
       case AppLifecycleState.detached:
         _recordLifecycleState('detached');
-        if (widget.isLive) unawaited(_sendStoppedProgressOnce());
+        if (widget.isLive) {
+          unawaited(_sendStoppedProgressOnce());
+        } else {
+          // Last chance for VOD: dispose may never run on a terminate, and the
+          // trackers that own their own watched semantics need the terminal
+          // report.
+          unawaited(TrackerCoordinator.instance.stopPlayback());
+          unawaited(TraktScrobbleService.instance.stopPlayback());
+        }
         break;
     }
   }

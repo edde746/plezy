@@ -645,13 +645,15 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Update OS media controls playback state
     _updateMediaControlsPlaybackState();
 
-    // Update Discord Rich Presence + Trakt scrobble
+    // Update Discord Rich Presence + real-time trackers
     if (isPlaying) {
       DiscordRPCService.instance.resumePlayback();
       TraktScrobbleService.instance.resumePlayback();
+      TrackerCoordinator.instance.resumePlayback();
     } else {
       DiscordRPCService.instance.pausePlayback();
       TraktScrobbleService.instance.pausePlayback();
+      TrackerCoordinator.instance.pausePlayback();
     }
 
     // Update auto-PiP readiness
