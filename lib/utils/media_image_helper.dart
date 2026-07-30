@@ -43,6 +43,8 @@ class MediaImageHelper {
   static const int _widthRoundingFactor = 40;
   static const int _heightRoundingFactor = 60;
 
+  /// 1080p baseline; scaled by [DevicePerformance.displayBudgetFactor] so
+  /// 4K-surface displays can fetch up to 3840×2160 instead of upscaling.
   static const int _maxTranscodedWidth = 1920;
   static const int _maxTranscodedHeight = 1080;
 
@@ -66,9 +68,10 @@ class MediaImageHelper {
 
   /// Rounds dimensions to cache-friendly values to increase cache hit rate
   static (int width, int height) roundDimensions(double width, double height) {
+    final budget = DevicePerformance.displayBudgetFactor();
     return (
-      _bucketUp(width, _widthRoundingFactor).clamp(_minTranscodedWidth, _maxTranscodedWidth),
-      _bucketUp(height, _heightRoundingFactor).clamp(_minTranscodedHeight, _maxTranscodedHeight),
+      _bucketUp(width, _widthRoundingFactor).clamp(_minTranscodedWidth, (_maxTranscodedWidth * budget).round()),
+      _bucketUp(height, _heightRoundingFactor).clamp(_minTranscodedHeight, (_maxTranscodedHeight * budget).round()),
     );
   }
 
@@ -248,23 +251,30 @@ class MediaImageHelper {
     final bucketedWidth = _bucketUp(displayWidth * scaleFactor, _widthRoundingFactor);
     final bucketedHeight = _bucketUp(displayHeight * scaleFactor, _heightRoundingFactor);
 
+    // Full-tier caps are a 1080p baseline scaled to the display, so slots on
+    // a 4K surface decode at the resolution they render at instead of being
+    // GPU-upscaled from phone-sized budgets. Reduced-tier caps stay fixed
+    // (the factor is pinned to 1.0 there, and the explicit pairs keep the
+    // low-RAM budget independent of display probing).
+    final budget = DevicePerformance.displayBudgetFactor();
+    int scaled(int cap) => (cap * budget).round();
     final (int maxW, int maxH) = switch (imageType) {
       // Reduced-tier caps match the smaller fetch sizes so oversized
       // originals (failed transcodes, external images) can't decode past
       // the tile budget on low-RAM hardware.
       ImageType.poster when DevicePerformance.isReduced => (480, 720),
-      ImageType.poster => (720, 1080),
+      ImageType.poster => (scaled(720), scaled(1080)),
       // Square music artwork fills the same grid cells as posters, so both
       // axes cap at the poster width budget.
       ImageType.square when DevicePerformance.isReduced => (480, 480),
-      ImageType.square => (720, 720),
+      ImageType.square => (scaled(720), scaled(720)),
       ImageType.thumb when DevicePerformance.isReduced => (640, 360),
-      ImageType.thumb => (960, 540),
+      ImageType.thumb => (scaled(960), scaled(540)),
       ImageType.art when DevicePerformance.isReduced => (_reducedMaxArtWidth, _reducedMaxArtHeight),
-      ImageType.art => (1920, 1080),
-      ImageType.logo => (600, 300),
-      ImageType.heroLogo => (1000, 500),
-      ImageType.avatar => (300, 300),
+      ImageType.art => (scaled(1920), scaled(1080)),
+      ImageType.logo => (scaled(600), scaled(300)),
+      ImageType.heroLogo => (scaled(1000), scaled(500)),
+      ImageType.avatar => (scaled(300), scaled(300)),
     };
 
     return (bucketedWidth.clamp(120, maxW), bucketedHeight.clamp(180, maxH));

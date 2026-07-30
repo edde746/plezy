@@ -301,6 +301,8 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String minutesUnit({required Object minutes}) => '${minutes} 分鐘';
 	@override String get rememberTrackSelections => '記住每部影集或電影的音訊與字幕選擇';
 	@override String get rememberTrackSelectionsDescription => '記住每部影片的音軌與字幕選擇';
+	@override String get followServerTrackSelections => '使用伺服器為每集選擇的軌道';
+	@override String get followServerTrackSelectionsDescription => '切換劇集時，套用伺服器上為該集選擇的音訊與字幕，而不是沿用目前選擇';
 	@override String get showChapterMarkersOnTimeline => '在進度條上顯示章節標記';
 	@override String get showChapterMarkersOnTimelineDescription => '依章節分段顯示進度條';
 	@override String get clickVideoTogglesPlayback => '點選影片可切換播放或暫停';
@@ -508,8 +510,8 @@ class _Translations$fileInfo$zh_Hant extends Translations$fileInfo$zh {
 	@override String get title => '檔案資訊';
 	@override String get video => '影片';
 	@override String get audio => '音訊';
+	@override String get subtitles => '字幕';
 	@override String get file => '檔案';
-	@override String get advanced => '進階';
 	@override String get codec => '編解碼器';
 	@override String get resolution => '解析度';
 	@override String get bitrate => '位元率';
@@ -522,7 +524,6 @@ class _Translations$fileInfo$zh_Hant extends Translations$fileInfo$zh {
 	@override String get colorPrimaries => '色彩基色';
 	@override String get chromaSubsampling => '色度抽樣';
 	@override String get channels => '聲道數';
-	@override String get subtitles => '字幕';
 	@override String get overallBitrate => '總位元率';
 	@override String get path => '路徑';
 	@override String get size => '大小';
@@ -2354,6 +2355,8 @@ extension on TranslationsZhHant {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} 分鐘',
 			'settings.rememberTrackSelections' => '記住每部影集或電影的音訊與字幕選擇',
 			'settings.rememberTrackSelectionsDescription' => '記住每部影片的音軌與字幕選擇',
+			'settings.followServerTrackSelections' => '使用伺服器為每集選擇的軌道',
+			'settings.followServerTrackSelectionsDescription' => '切換劇集時，套用伺服器上為該集選擇的音訊與字幕，而不是沿用目前選擇',
 			'settings.showChapterMarkersOnTimeline' => '在進度條上顯示章節標記',
 			'settings.showChapterMarkersOnTimelineDescription' => '依章節分段顯示進度條',
 			'settings.clickVideoTogglesPlayback' => '點選影片可切換播放或暫停',
@@ -2558,8 +2561,8 @@ extension on TranslationsZhHant {
 			'fileInfo.title' => '檔案資訊',
 			'fileInfo.video' => '影片',
 			'fileInfo.audio' => '音訊',
+			'fileInfo.subtitles' => '字幕',
 			'fileInfo.file' => '檔案',
-			'fileInfo.advanced' => '進階',
 			'fileInfo.codec' => '編解碼器',
 			'fileInfo.resolution' => '解析度',
 			'fileInfo.bitrate' => '位元率',
@@ -2572,7 +2575,6 @@ extension on TranslationsZhHant {
 			'fileInfo.colorPrimaries' => '色彩基色',
 			'fileInfo.chromaSubsampling' => '色度抽樣',
 			'fileInfo.channels' => '聲道數',
-			'fileInfo.subtitles' => '字幕',
 			'fileInfo.overallBitrate' => '總位元率',
 			'fileInfo.path' => '路徑',
 			'fileInfo.size' => '大小',
@@ -2707,9 +2709,9 @@ extension on TranslationsZhHant {
 			'videoControls.searchSubtitles' => '搜尋字幕',
 			'videoControls.language' => '語言',
 			'videoControls.noSubtitlesFound' => '找不到字幕',
-			'videoControls.subtitleDownloaded' => '字幕下載成功',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => '字幕下載成功',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下載，但無法套用',
 			'videoControls.subtitleDownloadFailed' => '字幕下載失敗',
 			'videoControls.searchLanguages' => '搜尋語言…',
@@ -3221,9 +3223,9 @@ extension on TranslationsZhHant {
 			'watchTogether.failedToCreate' => '建立工作階段失敗',
 			'watchTogether.failedToJoin' => '加入工作階段失敗',
 			'watchTogether.sessionCodeCopied' => '工作階段代碼已複製到剪貼簿',
-			'watchTogether.relayUnreachable' => '無法連線至中繼伺服器。ISP 封鎖可能會導致「一起看」無法使用。',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => '無法連線至中繼伺服器。ISP 封鎖可能會導致「一起看」無法使用。',
 			'watchTogether.reconnectingToHost' => '正在重新連線至主持人…',
 			'watchTogether.currentPlayback' => '目前播放內容',
 			'watchTogether.joinCurrentPlayback' => '加入目前播放點',

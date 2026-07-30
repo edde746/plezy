@@ -300,6 +300,8 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} dakika';
 	@override String get rememberTrackSelections => 'Dizi/film başına ses/altyazı seçimlerini hatırla';
 	@override String get rememberTrackSelectionsDescription => 'İçerik başına ses ve altyazı tercihlerini hatırla';
+	@override String get followServerTrackSelections => 'Sunucunun bölüm başına parça seçimlerini kullan';
+	@override String get followServerTrackSelectionsDescription => 'Bölüm değiştiğinde geçerli seçimi taşımak yerine sunucuda seçilen ses ve altyazıyı uygula';
 	@override String get showChapterMarkersOnTimeline => 'Zaman çubuğunda kısım işaretçilerini göster';
 	@override String get showChapterMarkersOnTimelineDescription => 'Zaman çubuğunu kısım sınırlarına göre böl';
 	@override String get clickVideoTogglesPlayback => 'Oynat/duraklat için videoya tıkla';
@@ -510,8 +512,8 @@ class _Translations$fileInfo$tr extends Translations$fileInfo$en {
 	@override String get title => 'Dosya Bilgisi';
 	@override String get video => 'Video';
 	@override String get audio => 'Ses';
+	@override String get subtitles => 'Altyazılar';
 	@override String get file => 'Dosya';
-	@override String get advanced => 'Gelişmiş';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Çözünürlük';
 	@override String get bitrate => 'Bit Hızı (Bitrate)';
@@ -524,7 +526,6 @@ class _Translations$fileInfo$tr extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Ana Renkler';
 	@override String get chromaSubsampling => 'Renk Alt Örneklemesi';
 	@override String get channels => 'Kanallar';
-	@override String get subtitles => 'Altyazılar';
 	@override String get overallBitrate => 'Genel Bit Hızı';
 	@override String get path => 'Yol';
 	@override String get size => 'Boyut';
@@ -2367,6 +2368,8 @@ extension on TranslationsTr {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} dakika',
 			'settings.rememberTrackSelections' => 'Dizi/film başına ses/altyazı seçimlerini hatırla',
 			'settings.rememberTrackSelectionsDescription' => 'İçerik başına ses ve altyazı tercihlerini hatırla',
+			'settings.followServerTrackSelections' => 'Sunucunun bölüm başına parça seçimlerini kullan',
+			'settings.followServerTrackSelectionsDescription' => 'Bölüm değiştiğinde geçerli seçimi taşımak yerine sunucuda seçilen ses ve altyazıyı uygula',
 			'settings.showChapterMarkersOnTimeline' => 'Zaman çubuğunda kısım işaretçilerini göster',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Zaman çubuğunu kısım sınırlarına göre böl',
 			'settings.clickVideoTogglesPlayback' => 'Oynat/duraklat için videoya tıkla',
@@ -2574,8 +2577,8 @@ extension on TranslationsTr {
 			'fileInfo.title' => 'Dosya Bilgisi',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Ses',
+			'fileInfo.subtitles' => 'Altyazılar',
 			'fileInfo.file' => 'Dosya',
-			'fileInfo.advanced' => 'Gelişmiş',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Çözünürlük',
 			'fileInfo.bitrate' => 'Bit Hızı (Bitrate)',
@@ -2588,7 +2591,6 @@ extension on TranslationsTr {
 			'fileInfo.colorPrimaries' => 'Ana Renkler',
 			'fileInfo.chromaSubsampling' => 'Renk Alt Örneklemesi',
 			'fileInfo.channels' => 'Kanallar',
-			'fileInfo.subtitles' => 'Altyazılar',
 			'fileInfo.overallBitrate' => 'Genel Bit Hızı',
 			'fileInfo.path' => 'Yol',
 			'fileInfo.size' => 'Boyut',
@@ -2720,9 +2722,9 @@ extension on TranslationsTr {
 			'videoControls.noChaptersAvailable' => 'Kısım bulunmuyor',
 			'videoControls.queue' => 'Kuyruk',
 			'videoControls.noQueueItems' => 'Kuyrukta öge yok',
-			'videoControls.searchSubtitles' => 'Altyazı Ara',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.searchSubtitles' => 'Altyazı Ara',
 			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı bulunamadı',
 			'videoControls.subtitleDownloaded' => 'Altyazı indirildi',
@@ -3234,9 +3236,9 @@ extension on TranslationsTr {
 			'watchTogether.enterCodeHint' => '5 karakterlik kodu girin',
 			'watchTogether.pasteFromClipboard' => 'Panodan yapıştır',
 			'watchTogether.pleaseEnterCode' => 'Lütfen bir oturum kodu girin',
-			'watchTogether.codeMustBe5Chars' => 'Oturum kodu 5 karakter olmalıdır',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.codeMustBe5Chars' => 'Oturum kodu 5 karakter olmalıdır',
 			'watchTogether.joinInstructions' => 'Katılmak için kurucunun oturum kodunu girin.',
 			'watchTogether.failedToCreate' => 'Oturum oluşturulamadı',
 			'watchTogether.failedToJoin' => 'Oturuma katılınamadı',

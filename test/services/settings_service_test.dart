@@ -20,6 +20,7 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.debugSetAutomotiveOverride(null);
   });
 
   group('SettingsService.parseMpvConfigText', () {
@@ -227,6 +228,23 @@ void main() {
       await settings.write(SettingsService.autoPip, true);
 
       TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(settings.read(SettingsService.autoPip), isFalse);
+    });
+
+    test('forces auto PiP off on automotive while honoring the stored value elsewhere', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.autoPip, true);
+
+      // The pref can only surface a stored true where the host itself supports
+      // PiP. That term is Platform.isAndroid/isIOS/isMacOS, unmockable and false
+      // on the Linux and Windows CI hosts, where the gate pins the pref off no
+      // matter what is stored. pictureInPictureAllowed covers the automotive
+      // veto itself on every host.
+      final hostSupportsPip = PlatformDetector.supportsPictureInPicture();
+      expect(settings.read(SettingsService.autoPip), hostSupportsPip ? isTrue : isFalse);
+
+      TvDetectionService.debugSetAutomotiveOverride(true);
 
       expect(settings.read(SettingsService.autoPip), isFalse);
     });

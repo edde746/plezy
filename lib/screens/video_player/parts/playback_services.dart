@@ -468,14 +468,18 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _mediaControlsManager = mediaControlsManager;
 
     final mediaControlRouter = MediaControlRouter(
+      // Authority stays Watch Together's. The automotive gate lives in the
+      // playback-intent wrappers below, so `onPause` can never be denied: a
+      // gated `canControlPlayback` would make the router swallow `PauseEvent`.
       canControlPlayback: _canControlPlayback,
-      canNavigateMediaItems: _canNavigateMediaItems,
+      canNavigateMediaItems: () => _canNavigateMediaItems() && automotivePlaybackAllowedNow(),
       onPlay: () {
         final currentPlayer = player;
         if (currentPlayer == null) return;
         unawaited(_seekBackForRewind(currentPlayer));
         unawaited(_playWithPlaybackIntent(currentPlayer));
         _wasPlayingBeforeInactive = false;
+        _announceTransportCommand(willPlay: true);
         _updateMediaControlsPlaybackState();
       },
       onPause: () {
@@ -486,6 +490,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           return;
         }
         unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        _announceTransportCommand(willPlay: false);
         _updateMediaControlsPlaybackState();
       },
       onTogglePlayPause: () {
@@ -493,10 +498,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         if (currentPlayer == null) return;
         if (currentPlayer.state.isActive) {
           unawaited(_pauseWithPlaybackIntent(currentPlayer));
+          _announceTransportCommand(willPlay: false);
         } else {
           unawaited(_seekBackForRewind(currentPlayer));
           unawaited(_playWithPlaybackIntent(currentPlayer));
           _wasPlayingBeforeInactive = false;
+          _announceTransportCommand(willPlay: true);
         }
         _updateMediaControlsPlaybackState();
       },
@@ -590,6 +597,24 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   void _onPlayingStateChanged(bool isPlaying) {
     if (!isPlaying) {
       _lastPlaybackPauseAt = DateTime.now();
+    }
+
+    if (isPlaying && !automotivePlaybackAllowedNow()) {
+      // Native audio-focus regain resumes the platform player directly
+      // (ExoPlayer's AudioFocusManager, mpv's resumeAfterAudioFocusGain), so it
+      // never passes through the Dart playback-intent wrappers. Last line of
+      // defence for `DD-2`: audio must not resume while the vehicle restricts
+      // the app. Also catches any async open that raced the lifecycle pause.
+      appLogger.w('Playback started while Android Automotive UX restrictions are active; pausing');
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'Blocked automotive restricted playback start', category: 'player.driver_distraction'),
+      );
+      final currentPlayer = player;
+      if (currentPlayer != null) {
+        unawaited(_pauseWithPlaybackIntent(currentPlayer));
+      }
+      unawaited(_wakelockController.setEnabled(false));
+      return;
     }
 
     if (isPlaying && _mediaControlsSuspendedForTvBackground) {

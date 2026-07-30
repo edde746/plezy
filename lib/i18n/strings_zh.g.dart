@@ -300,6 +300,8 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} 分钟';
 	@override String get rememberTrackSelections => '记住每部剧集或电影的音轨选择';
 	@override String get rememberTrackSelectionsDescription => '分别记住每部内容的音频和字幕选择';
+	@override String get followServerTrackSelections => '使用服务器为每集选择的轨道';
+	@override String get followServerTrackSelectionsDescription => '切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择';
 	@override String get showChapterMarkersOnTimeline => '在进度条上显示章节标记';
 	@override String get showChapterMarkersOnTimelineDescription => '按章节边界分段显示进度条';
 	@override String get clickVideoTogglesPlayback => '点击视频可切换播放/暂停';
@@ -507,8 +509,8 @@ class Translations$fileInfo$zh extends Translations$fileInfo$en {
 	@override String get title => '文件信息';
 	@override String get video => '视频';
 	@override String get audio => '音频';
+	@override String get subtitles => '字幕';
 	@override String get file => '文件';
-	@override String get advanced => '高级';
 	@override String get codec => '编解码器';
 	@override String get resolution => '分辨率';
 	@override String get bitrate => '比特率';
@@ -521,7 +523,6 @@ class Translations$fileInfo$zh extends Translations$fileInfo$en {
 	@override String get colorPrimaries => '色彩基色';
 	@override String get chromaSubsampling => '色度子采样';
 	@override String get channels => '声道';
-	@override String get subtitles => '字幕';
 	@override String get overallBitrate => '总比特率';
 	@override String get path => '路径';
 	@override String get size => '大小';
@@ -2353,6 +2354,8 @@ extension on TranslationsZh {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} 分钟',
 			'settings.rememberTrackSelections' => '记住每部剧集或电影的音轨选择',
 			'settings.rememberTrackSelectionsDescription' => '分别记住每部内容的音频和字幕选择',
+			'settings.followServerTrackSelections' => '使用服务器为每集选择的轨道',
+			'settings.followServerTrackSelectionsDescription' => '切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择',
 			'settings.showChapterMarkersOnTimeline' => '在进度条上显示章节标记',
 			'settings.showChapterMarkersOnTimelineDescription' => '按章节边界分段显示进度条',
 			'settings.clickVideoTogglesPlayback' => '点击视频可切换播放/暂停',
@@ -2557,8 +2560,8 @@ extension on TranslationsZh {
 			'fileInfo.title' => '文件信息',
 			'fileInfo.video' => '视频',
 			'fileInfo.audio' => '音频',
+			'fileInfo.subtitles' => '字幕',
 			'fileInfo.file' => '文件',
-			'fileInfo.advanced' => '高级',
 			'fileInfo.codec' => '编解码器',
 			'fileInfo.resolution' => '分辨率',
 			'fileInfo.bitrate' => '比特率',
@@ -2571,7 +2574,6 @@ extension on TranslationsZh {
 			'fileInfo.colorPrimaries' => '色彩基色',
 			'fileInfo.chromaSubsampling' => '色度子采样',
 			'fileInfo.channels' => '声道',
-			'fileInfo.subtitles' => '字幕',
 			'fileInfo.overallBitrate' => '总比特率',
 			'fileInfo.path' => '路径',
 			'fileInfo.size' => '大小',
@@ -2706,9 +2708,9 @@ extension on TranslationsZh {
 			'videoControls.searchSubtitles' => '搜索字幕',
 			'videoControls.language' => '语言',
 			'videoControls.noSubtitlesFound' => '未找到字幕',
-			'videoControls.subtitleDownloaded' => '字幕已下载',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => '字幕已下载',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
 			'videoControls.subtitleDownloadFailed' => '字幕下载失败',
 			'videoControls.searchLanguages' => '搜索语言…',
@@ -3220,9 +3222,9 @@ extension on TranslationsZh {
 			'watchTogether.failedToCreate' => '创建会话失败',
 			'watchTogether.failedToJoin' => '加入会话失败',
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
-			'watchTogether.relayUnreachable' => '无法访问中继服务器。网络运营商的屏蔽可能导致“一起看”不可用。',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => '无法访问中继服务器。网络运营商的屏蔽可能导致“一起看”不可用。',
 			'watchTogether.reconnectingToHost' => '正在重新连接到主持人…',
 			'watchTogether.currentPlayback' => '当前播放',
 			'watchTogether.joinCurrentPlayback' => '加入当前播放',

@@ -300,6 +300,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} dəqiqə';
 	@override String get rememberTrackSelections => 'Hər film/serial üçün səs/altyazı seçimlərini xatırla';
 	@override String get rememberTrackSelectionsDescription => 'Hər məzmun üçün səs və altyazı seçimlərini yadda saxla';
+	@override String get followServerTrackSelections => 'Hər epizod üçün serverin trek seçimlərini istifadə et';
+	@override String get followServerTrackSelectionsDescription => 'Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et';
 	@override String get showChapterMarkersOnTimeline => 'Zaman çubuğunda hissə işarələrini göstər';
 	@override String get showChapterMarkersOnTimelineDescription => 'Zaman çubuğunu hissə sərhədlərinə böl';
 	@override String get clickVideoTogglesPlayback => 'Oynat/fasilə üçün videoya toxun';
@@ -510,8 +512,8 @@ class _Translations$fileInfo$az extends Translations$fileInfo$en {
 	@override String get title => 'Fayl məlumatı';
 	@override String get video => 'Video';
 	@override String get audio => 'Səs';
+	@override String get subtitles => 'Altyazılar';
 	@override String get file => 'Fayl';
-	@override String get advanced => 'Təkmilləşdirilmiş';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Ayırdetmə';
 	@override String get bitrate => 'Bit sürəti (Bitrate)';
@@ -524,7 +526,6 @@ class _Translations$fileInfo$az extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Əsas rənglər';
 	@override String get chromaSubsampling => 'Rəng alt-diskretləşdirməsi';
 	@override String get channels => 'Kanallar';
-	@override String get subtitles => 'Altyazılar';
 	@override String get overallBitrate => 'Ümumi bit sürəti';
 	@override String get path => 'Yol';
 	@override String get size => 'Həcm';
@@ -2367,6 +2368,8 @@ extension on TranslationsAz {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} dəqiqə',
 			'settings.rememberTrackSelections' => 'Hər film/serial üçün səs/altyazı seçimlərini xatırla',
 			'settings.rememberTrackSelectionsDescription' => 'Hər məzmun üçün səs və altyazı seçimlərini yadda saxla',
+			'settings.followServerTrackSelections' => 'Hər epizod üçün serverin trek seçimlərini istifadə et',
+			'settings.followServerTrackSelectionsDescription' => 'Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et',
 			'settings.showChapterMarkersOnTimeline' => 'Zaman çubuğunda hissə işarələrini göstər',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Zaman çubuğunu hissə sərhədlərinə böl',
 			'settings.clickVideoTogglesPlayback' => 'Oynat/fasilə üçün videoya toxun',
@@ -2574,8 +2577,8 @@ extension on TranslationsAz {
 			'fileInfo.title' => 'Fayl məlumatı',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Səs',
+			'fileInfo.subtitles' => 'Altyazılar',
 			'fileInfo.file' => 'Fayl',
-			'fileInfo.advanced' => 'Təkmilləşdirilmiş',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Ayırdetmə',
 			'fileInfo.bitrate' => 'Bit sürəti (Bitrate)',
@@ -2588,7 +2591,6 @@ extension on TranslationsAz {
 			'fileInfo.colorPrimaries' => 'Əsas rənglər',
 			'fileInfo.chromaSubsampling' => 'Rəng alt-diskretləşdirməsi',
 			'fileInfo.channels' => 'Kanallar',
-			'fileInfo.subtitles' => 'Altyazılar',
 			'fileInfo.overallBitrate' => 'Ümumi bit sürəti',
 			'fileInfo.path' => 'Yol',
 			'fileInfo.size' => 'Həcm',
@@ -2720,9 +2722,9 @@ extension on TranslationsAz {
 			'videoControls.noChaptersAvailable' => 'Hissələr əlçatan deyil',
 			'videoControls.queue' => 'Növbə',
 			'videoControls.noQueueItems' => 'Növbədə element yoxdur',
-			'videoControls.searchSubtitles' => 'Altyazı axtar',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.searchSubtitles' => 'Altyazı axtar',
 			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı tapılmadı',
 			'videoControls.subtitleDownloaded' => 'Altyazı yükləndi',
@@ -3234,9 +3236,9 @@ extension on TranslationsAz {
 			'watchTogether.enterCodeHint' => '5 rəqəmli/hərfli kodu daxil edin',
 			'watchTogether.pasteFromClipboard' => 'Buferdən yapışdır',
 			'watchTogether.pleaseEnterCode' => 'Lütfən seans kodunu daxil edin',
-			'watchTogether.codeMustBe5Chars' => 'Seans kodu 5 simvol olmalıdır',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.codeMustBe5Chars' => 'Seans kodu 5 simvol olmalıdır',
 			'watchTogether.joinInstructions' => 'Qoşulmaq üçün təşkilatçının seans kodunu daxil edin.',
 			'watchTogether.failedToCreate' => 'Seans yaradıla bilmədi',
 			'watchTogether.failedToJoin' => 'Seansa qoşuluna bilmədi',

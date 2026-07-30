@@ -201,7 +201,13 @@ class WatchNextProvider internal constructor(
           return@whileCurrent false
         }
 
-        grantReadAccess(newUris, newPackages)
+        // The provider is not exported, so an ungranted row publishes artwork no launcher can
+        // open. Refuse to commit that rather than leave a broken tile on the home screen.
+        if (!grantReadAccess(newUris, newPackages)) {
+          reconcileReadAccess(newUris, newPackages, oldUris, oldPackages)
+          artwork.delete(publishedFiles)
+          return@whileCurrent false
+        }
         if (session.isExpired()) {
           reconcileReadAccess(newUris, newPackages, oldUris, oldPackages)
           artwork.delete(publishedFiles)
@@ -455,17 +461,19 @@ class WatchNextProvider internal constructor(
     false
   }
 
+  /**
+   * Every installed launcher, not just the resolved default. `MATCH_DEFAULT_ONLY` names one
+   * package, which is wrong wherever the launcher rendering the shelf is not the system's default
+   * HOME: Fire OS pins its own launcher, and a device with several launchers and no chosen default
+   * resolves to the resolver activity instead. Both cases left the real consumer without a grant.
+   */
   internal fun consumerPackages(): Set<String> {
     val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-    val packageManager = context.packageManager
-    val selectedHome = packageManager.resolveActivity(homeIntent, PackageManager.MATCH_DEFAULT_ONLY)
-      ?.activityInfo ?: return emptySet()
-    val packageName = selectedHome.packageName?.takeIf(String::isNotBlank) ?: return emptySet()
-    val activityName = selectedHome.name?.takeIf(String::isNotBlank) ?: return emptySet()
-    val isHomeHandler = packageManager.queryIntentActivities(homeIntent, PackageManager.MATCH_ALL).any { candidate ->
-      candidate.activityInfo?.let { it.packageName == packageName && it.name == activityName } == true
-    }
-    return if (isHomeHandler) setOf(packageName) else emptySet()
+    return context.packageManager
+      .queryIntentActivities(homeIntent, PackageManager.MATCH_ALL)
+      .mapNotNullTo(LinkedHashSet()) { candidate ->
+        candidate.activityInfo?.packageName?.takeIf(String::isNotBlank)
+      }
   }
 
   private fun reconcileReadAccess(
@@ -489,13 +497,36 @@ class WatchNextProvider internal constructor(
     grantReadAccess(currentUris, currentPackages)
   }
 
-  private fun grantReadAccess(uris: Set<Uri>, packages: Set<String>) {
+  /**
+   * Grants read access and reports whether every poster reached at least one consumer. Losing one
+   * launcher is tolerated, because consumers are discovered per sync and one of them disappearing
+   * mid-sync must not cost the others their shelf. A poster that reached nobody would render as a
+   * broken tile, so it fails the sync instead.
+   */
+  private fun grantReadAccess(uris: Set<Uri>, packages: Set<String>): Boolean {
+    if (uris.isEmpty() || packages.isEmpty()) return true
     val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
-    packages.forEach { packageName ->
-      uris.forEach { uri ->
-        runCatching { context.grantUriPermission(packageName, uri, flags) }
+    var failed = 0
+    var unreadable = 0
+    uris.forEach { uri ->
+      var granted = 0
+      packages.forEach { packageName ->
+        if (runCatching { context.grantUriPermission(packageName, uri, flags) }.isSuccess) {
+          granted++
+        } else {
+          failed++
+        }
       }
+      if (granted == 0) unreadable++
     }
+    if (failed > 0) {
+      Log.w(
+        TAG,
+        "Failed to grant $failed of ${uris.size * packages.size} shelf artwork reads; " +
+          "$unreadable of ${uris.size} posters reached no launcher"
+      )
+    }
+    return unreadable == 0
   }
 
   private fun revokeReadAccess(uris: Set<Uri>) {

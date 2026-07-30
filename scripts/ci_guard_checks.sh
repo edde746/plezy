@@ -18,11 +18,13 @@ for checker in \
   scripts/check_build_workflow.py \
   scripts/check_apple_spm_locks.py \
   scripts/check_tvos_test_wiring.py \
+  scripts/check_shrinker_rules.py \
   scripts/verify_runtime_inputs.py \
   scripts/check_workflow_security.py \
   scripts/check_workflow_action_pins.py \
   scripts/check_container_image_pins.py \
-  scripts/check_update_packages_workflow.py; do
+  scripts/check_update_packages_workflow.py \
+  scripts/check_windows_installer.py; do
   python3 "$checker"
 done
 

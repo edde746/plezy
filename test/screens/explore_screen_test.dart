@@ -2,10 +2,12 @@ import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/explore_provider.dart';
 import 'package:plezy/screens/explore_screen.dart';
@@ -15,12 +17,23 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/catalog_source_logo.dart';
 import 'package:plezy/widgets/search_input_field.dart';
+import 'package:plezy/widgets/fitting_title_text.dart';
+import 'package:plezy/widgets/optimized_media_image.dart' show ClearLogoImage;
+import 'package:plezy/widgets/tv_spotlight_background.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
 
 class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
-  _FakeCatalogSource(this.id, this.displayName, this.itemId, {this.providerHubTitle});
+  _FakeCatalogSource(
+    this.id,
+    this.displayName,
+    this.itemId, {
+    this.providerHubTitle,
+    this.providerHubStyle,
+    this.rowItem,
+    this.rowTotalResults,
+  });
 
   @override
   final CatalogSourceId id;
@@ -30,6 +43,9 @@ class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
 
   final int? itemId;
   final String? providerHubTitle;
+  final CatalogHubStyle? providerHubStyle;
+  final CatalogItem? rowItem;
+  final int? rowTotalResults;
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
 
   /// Search bookkeeping: [searchTitles] overrides the single default hit so a
@@ -49,16 +65,20 @@ class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
 
   @override
   Future<CatalogPage> fetchRow(CatalogRowId row, {int page = 1, int limit = 25}) async {
+    final item =
+        rowItem ??
+        (itemId == null
+            ? null
+            : CatalogItem(
+                source: id,
+                kind: MediaKind.movie,
+                title: '$displayName Movie',
+                ids: CatalogItemIds(tmdb: itemId),
+              ));
     return CatalogPage(
-      items: [
-        if (itemId case final itemId?)
-          CatalogItem(
-            source: id,
-            kind: MediaKind.movie,
-            title: '$displayName Movie',
-            ids: CatalogItemIds(tmdb: itemId),
-          ),
-      ],
+      items: [?item],
+      hasMore: rowTotalResults != null && rowTotalResults! > 1,
+      totalResults: rowTotalResults,
     );
   }
 
@@ -85,6 +105,7 @@ class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
       CatalogHub(
         id: 'plex-recommendation',
         title: title,
+        style: providerHubStyle,
         page: CatalogPage(
           items: [
             CatalogItem(
@@ -139,6 +160,9 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
   int? traktItemId = 1,
   int? malItemId = 2,
   bool? tv,
+  CatalogItem? traktItem,
+  int? traktTotalResults,
+  CatalogHubStyle? plexHubStyle,
 }) async {
   if (tv != null) TvDetectionService.debugSetAppleTVOverride(tv);
   tester.view.devicePixelRatio = 1;
@@ -146,11 +170,23 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
   addTearDown(tester.view.resetDevicePixelRatio);
   addTearDown(tester.view.resetPhysicalSize);
 
-  final trakt = _FakeCatalogSource(CatalogSourceId.trakt, 'Trakt', traktItemId);
+  final trakt = _FakeCatalogSource(
+    CatalogSourceId.trakt,
+    'Trakt',
+    traktItemId,
+    rowItem: traktItem,
+    rowTotalResults: traktTotalResults,
+  );
   final mal = _FakeCatalogSource(CatalogSourceId.mal, 'MyAnimeList', malItemId);
   final anilist = _FakeCatalogSource(CatalogSourceId.anilist, 'AniList', 3);
   final simkl = _FakeCatalogSource(CatalogSourceId.simkl, 'Simkl', 4);
-  final plex = _FakeCatalogSource(CatalogSourceId.plex, 'Plex', 5, providerHubTitle: 'Trending on Plex');
+  final plex = _FakeCatalogSource(
+    CatalogSourceId.plex,
+    'Plex',
+    5,
+    providerHubTitle: 'Trending on Plex',
+    providerHubStyle: plexHubStyle,
+  );
   final seerr = _FakeCatalogSource(CatalogSourceId.seerr, 'Seerr', 6);
   final sources = _FakeCatalogSourcesProvider([trakt, mal, anilist, simkl, plex, seerr]);
   final explore = ExploreProvider(sources);
@@ -184,8 +220,10 @@ _FakeCatalogSource _fakeSource(_FakeCatalogSourcesProvider sources, CatalogSourc
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() {
+  setUpAll(() async {
     LocaleSettings.setLocaleSync(AppLocale.en);
+    // The spotlight countdown formats dates; `main.dart` does this at startup.
+    await initializeDateFormatting('en');
   });
 
   setUp(() async {
@@ -273,7 +311,7 @@ void main() {
     expect(find.text('AniList Movie'), findsAtLeast(1));
   });
 
-  testWidgets('Plex provider-defined hub renders as an Explore shelf', (tester) async {
+  testWidgets('a null-style Plex provider hub keeps the existing Explore shelf', (tester) async {
     final sources = await _pumpExplore(tester);
 
     await sources.setActiveSource(CatalogSourceId.plex);
@@ -282,6 +320,123 @@ void main() {
 
     expect(find.text('Trending on Plex'), findsOneWidget);
     expect(find.text('Plex Recommendation'), findsAtLeast(1));
+  });
+
+  testWidgets('an explicit shelf-style Plex hub keeps the existing Explore shelf', (tester) async {
+    final sources = await _pumpExplore(tester, plexHubStyle: CatalogHubStyle.shelf);
+
+    await sources.setActiveSource(CatalogSourceId.plex);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Trending on Plex'), findsOneWidget);
+    expect(find.text('Plex Recommendation'), findsAtLeast(1));
+  });
+
+  testWidgets('an availability-platforms hub is not rendered as a title shelf', (tester) async {
+    final sources = await _pumpExplore(tester, tv: false, plexHubStyle: CatalogHubStyle.availabilityPlatforms);
+
+    await sources.setActiveSource(CatalogSourceId.plex);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Plex Movie'), findsAtLeast(1));
+    expect(find.text('Trending on Plex'), findsNothing);
+    expect(find.text('Plex Recommendation'), findsNothing);
+  });
+
+  testWidgets('a provider total result count reaches the existing shelf header', (tester) async {
+    await _pumpExplore(tester, tv: false, traktTotalResults: 87);
+
+    expect(find.text(t.explore.totalResults(n: 87)), findsOneWidget);
+  });
+
+  group('TV catalog spotlight', () {
+    testWidgets('prefers logo and banner art, applies the accent tint, and shows the next episode', (tester) async {
+      final item = CatalogItem(
+        source: CatalogSourceId.trakt,
+        kind: MediaKind.show,
+        title: 'Logo Series',
+        ids: const CatalogItemIds(tmdb: 101),
+        logoUrl: 'https://images.example/logo.png',
+        bannerUrl: 'https://images.example/banner.jpg',
+        backdropUrl: 'https://images.example/default.jpg',
+        backdropVariants: const {1920: 'https://images.example/backdrop-1920.jpg'},
+        accentColor: '#336699',
+        nextEpisode: CatalogNextEpisode(episode: 8, airsAt: DateTime.now().add(const Duration(days: 2))),
+      );
+
+      await _pumpExplore(tester, traktItem: item);
+
+      final spotlightFinder = find.byType(TvSpotlightBackground);
+      final spotlight = tester.widget<TvSpotlightBackground>(spotlightFinder);
+      expect(spotlight.item?.clearLogoPath, 'https://images.example/logo.png');
+      expect(spotlight.item?.artPath, 'https://images.example/banner.jpg');
+      expect(find.descendant(of: spotlightFinder, matching: find.byType(ClearLogoImage)), findsOneWidget);
+      // Scoped to the spotlight: the shelf card underneath renders its own
+      // countdown badge from the same item, so an unscoped finder matches two.
+      expect(
+        find.descendant(
+          of: spotlightFinder,
+          matching: find.byWidgetPredicate(
+            (widget) => widget is Text && (widget.data?.startsWith('Ep 8 in ') ?? false),
+          ),
+        ),
+        findsOneWidget,
+      );
+
+      final baseColor = monoTheme(dark: true).scaffoldBackgroundColor;
+      final expectedTint = Color.alphaBlend(const Color(0xff336699).withValues(alpha: 0.18), baseColor);
+      expect(Theme.of(tester.element(spotlightFinder)).scaffoldBackgroundColor, expectedTint);
+    });
+
+    testWidgets('falls back to the plain text title when a catalog logo is absent', (tester) async {
+      final item = CatalogItem(
+        source: CatalogSourceId.trakt,
+        kind: MediaKind.movie,
+        title: 'Plain Title',
+        ids: const CatalogItemIds(tmdb: 102),
+        backdropUrl: 'https://images.example/backdrop.jpg',
+      );
+
+      await _pumpExplore(tester, traktItem: item);
+
+      final spotlightFinder = find.byType(TvSpotlightBackground);
+      final spotlight = tester.widget<TvSpotlightBackground>(spotlightFinder);
+      expect(spotlight.item?.clearLogoPath, isNull);
+      expect(find.descendant(of: spotlightFinder, matching: find.byType(FittingTitleText)), findsOneWidget);
+      expect(find.descendant(of: spotlightFinder, matching: find.text('Plain Title')), findsOneWidget);
+    });
+
+    testWidgets('selects backdrop variants from logical width and device pixel ratio', (tester) async {
+      final item = CatalogItem(
+        source: CatalogSourceId.trakt,
+        kind: MediaKind.movie,
+        title: 'Variant Movie',
+        ids: const CatalogItemIds(tmdb: 103),
+        backdropUrl: 'https://images.example/default.jpg',
+        backdropVariants: const {
+          900: 'https://images.example/backdrop-900.jpg',
+          1500: 'https://images.example/backdrop-1500.jpg',
+          2500: 'https://images.example/backdrop-2500.jpg',
+        },
+      );
+
+      await _pumpExplore(tester, traktItem: item);
+      String? selectedBackdrop() =>
+          tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground)).item?.artPath;
+
+      tester.view.physicalSize = const Size(800, 720);
+      await tester.pump();
+      expect(selectedBackdrop(), 'https://images.example/backdrop-900.jpg');
+
+      tester.view.physicalSize = const Size(1200, 720);
+      await tester.pump();
+      expect(selectedBackdrop(), 'https://images.example/backdrop-1500.jpg');
+
+      tester.view.devicePixelRatio = 2;
+      tester.view.physicalSize = const Size(2400, 1440);
+      await tester.pump();
+      expect(selectedBackdrop(), 'https://images.example/backdrop-2500.jpg');
+    });
   });
 
   testWidgets('TV source switcher remains focused when the active source has no rows', (tester) async {

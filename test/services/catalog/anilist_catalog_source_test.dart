@@ -7,6 +7,8 @@ import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/anilist/anilist_media.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/catalog_metadata.dart';
+import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/trackers/fribb_mapping_row.dart';
 import 'package:plezy/services/catalog/anilist_catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
@@ -57,26 +59,60 @@ Map<String, dynamic> _media({
 }) => {
   'id': id,
   'idMal': ?idMal,
-  'title': {'english': title, 'romaji': 'Shingeki no Kyojin', 'userPreferred': 'Preferred'},
+  'title': {'english': title, 'romaji': 'Shingeki no Kyojin', 'native': '進撃の巨人', 'userPreferred': 'Preferred'},
+  'synonyms': ['The Advancing Giants', 'Preferred'],
   'format': format,
   'status': status,
   'episodes': 25,
   'duration': 24,
   'description': '<b>Humanity</b><br>fights &amp; survives.',
   'averageScore': 84,
+  'meanScore': 82,
+  'popularity': 812345,
+  'favourites': 54321,
+  'trending': 987,
   'season': 'SPRING',
   'seasonYear': 2013,
-  'startDate': {'year': 2013},
+  'startDate': {'year': 2013, 'month': 4, 'day': 7},
+  'endDate': {'year': 2013, 'month': 9, 'day': 29},
   'genres': ['Action', 'Drama'],
   'isAdult': isAdult,
-  'coverImage': {'extraLarge': 'https://img.anilist.co/poster/$id.jpg'},
+  'source': 'MANGA',
+  'countryOfOrigin': 'JP',
+  'coverImage': {'extraLarge': 'https://img.anilist.co/poster/$id.jpg', 'color': '#D88932'},
   'bannerImage': 'https://img.anilist.co/banner/$id.jpg',
   'studios': {
     'nodes': [
       {'name': 'Wit Studio'},
+      {'name': 'Production I.G'},
     ],
   },
   'trailer': {'id': 'abc123', 'site': 'youtube'},
+  'nextAiringEpisode': {'episode': 8, 'airingAt': 2000000000, 'timeUntilAiring': 86400},
+  'rankings': [
+    {'rank': 1, 'type': 'POPULAR', 'format': 'TV', 'allTime': true, 'context': 'Most Popular All Time'},
+    {
+      'rank': 3,
+      'type': 'RATED',
+      'format': 'TV',
+      'year': 2013,
+      'season': 'SPRING',
+      'allTime': false,
+      'context': 'Highest Rated Spring 2013',
+    },
+  ],
+};
+
+Map<String, dynamic> _characters() => {
+  'edges': [
+    {
+      'role': 'MAIN',
+      'node': {
+        'name': {'full': 'Mikasa Ackerman'},
+        'image': {'large': 'https://img.anilist.co/mikasa.jpg'},
+      },
+    },
+  ],
 };
 
 http.Response _data(Map<String, dynamic> data, {int status = 200, Map<String, String>? headers}) =>
@@ -97,6 +133,7 @@ void main() {
     malId: 35760,
     tvdbId: 267440,
     tvdbSeason: 3,
+    tmdbSeason: 2,
     imdbIds: ['tt2560140'],
   );
   const movie = FribbMappingRow(
@@ -108,19 +145,46 @@ void main() {
   );
 
   group('AnilistMedia', () {
-    test('parses requested fields and strips AniList HTML', () {
-      final media = AnilistMedia.fromJson(_media(id: 1, idMal: 16498));
+    test('parses requested fields and honors the user-preferred title', () {
+      final media = AnilistMedia.fromJson(_media(id: 1, idMal: 16498)..['characters'] = _characters());
 
-      expect(media.displayTitle, 'Attack on Titan');
+      expect(media.displayTitle, 'Preferred');
+      expect(media.alternateTitles, ['Attack on Titan', 'Shingeki no Kyojin', 'The Advancing Giants']);
       expect(media.description, 'Humanity\nfights & survives.');
       expect(media.year, 2013);
+      expect(media.releaseDate, DateTime.utc(2013, 4, 7));
+      expect(media.finalEpisodeDate, DateTime.utc(2013, 9, 29));
       expect(media.posterUrl, 'https://img.anilist.co/poster/1.jpg');
       expect(media.backdropUrl, 'https://img.anilist.co/banner/1.jpg');
       expect(media.rating, 8.4);
+      expect(media.meanRating, 8.2);
       expect(media.runtimeMinutes, 24);
       expect(media.network, 'Wit Studio');
+      expect(media.mainStudios, ['Wit Studio', 'Production I.G']);
       expect(media.trailerUrl, 'https://www.youtube.com/watch?v=abc123');
       expect(media.isMovie, isFalse);
+      expect(media.characters?.single.name, 'Mikasa Ackerman');
+      expect(media.characters?.single.role, 'MAIN');
+      expect(media.characters?.single.imageUrl, 'https://img.anilist.co/mikasa.jpg');
+    });
+
+    test('title fallbacks and missing optional metadata remain nullable', () {
+      final media = AnilistMedia.fromJson({
+        'id': 1,
+        'title': {'english': 'English', 'romaji': 'Romaji', 'userPreferred': ' '},
+        'streamingEpisodes': <Map<String, dynamic>>[],
+      });
+
+      expect(media.displayTitle, 'English');
+      expect(media.alternateTitles, ['Romaji']);
+      expect(media.nextAiringEpisode, isNull);
+      expect(media.rankings, isNull);
+      expect(media.mainStudios, isNull);
+      expect(media.coverImageColor, isNull);
+      expect(media.streamingEpisodes, isNull);
+      expect(media.releaseDate, isNull);
+      expect(media.finalEpisodeDate, isNull);
+      expect(media.characters, isNull);
     });
 
     test('stripHtml handles line breaks, tags, entities, and empty input', () {
@@ -187,7 +251,7 @@ void main() {
       client.dispose();
     });
 
-    test('trending query clamps page size and enriches every external id', () async {
+    test('trending row maps rich metadata while clamping the page size', () async {
       responder = (request) {
         final body = _requestBody(request);
         final variables = body['variables'] as Map<String, dynamic>;
@@ -197,7 +261,7 @@ void main() {
         return _data({
           'Page': {
             'pageInfo': {'hasNextPage': true},
-            'media': [_media(id: 16498, idMal: 16498)],
+            'media': [_media(id: 16498, idMal: 16498)..['characters'] = _characters()],
           },
         });
       };
@@ -215,6 +279,69 @@ void main() {
       expect(item.overview, 'Humanity\nfights & survives.');
       expect(item.airStatus, CatalogAirStatus.airing);
       expect(item.episodeCount, 25);
+      expect(item.title, 'Preferred');
+      expect(item.originalTitle, '進撃の巨人');
+      expect(item.altTitles, ['Attack on Titan', 'Shingeki no Kyojin', '進撃の巨人', 'The Advancing Giants']);
+      expect(item.format, CatalogFormat.tv);
+      expect(item.studios, ['Wit Studio', 'Production I.G']);
+      expect(item.network, 'Wit Studio');
+      expect(item.broadcastSeason?.name, CatalogSeasonName.spring);
+      expect(item.broadcastSeason?.year, 2013);
+      expect(item.accentColor, '#d88932');
+      expect(item.releaseDate, DateTime.utc(2013, 4, 7));
+      expect(item.endDate, DateTime.utc(2013, 9, 29));
+      expect(item.sourceMaterial, CatalogSourceMaterial.manga);
+      expect(item.countries, ['JP']);
+      expect(item.ratings?.single.source, 'anilist');
+      expect(item.ratings?.single.value, 8.2);
+      expect(item.audience?.listed, 812345);
+      expect(item.audience?.favorited, 54321);
+      expect(item.audience?.trendingActivity, 987);
+      expect(item.nextEpisode?.episode, 8);
+      expect(item.nextEpisode?.airsAt, DateTime.fromMillisecondsSinceEpoch(2000000000000, isUtc: true));
+      expect(item.ranks, hasLength(2));
+      expect(item.ranks?[0].scope, CatalogRankScope.popular);
+      expect(item.ranks?[0].allTime, isTrue);
+      expect(item.ranks?[0].year, isNull);
+      expect(item.ranks?[1].scope, CatalogRankScope.rated);
+      expect(item.ranks?[1].allTime, isFalse);
+      expect(item.ranks?[1].year, 2013);
+      expect(item.ranks?[1].season, CatalogSeasonName.spring);
+      expect(item.cast, hasLength(1));
+      expect(item.cast?.single.name, 'Mikasa Ackerman');
+      expect(item.cast?.single.secondary, 'MAIN');
+      expect(item.cast?.single.imageUrl, 'https://img.anilist.co/mikasa.jpg');
+    });
+
+    test('sequel entries preserve alternate-title order and both Fribb season numbers', () async {
+      responder = (request) {
+        final query = _requestBody(request)['query'] as String;
+        expect(query, contains('native'));
+        expect(query, contains('synonyms'));
+        final sequel = _media(id: 35760, idMal: 35760, title: 'Attack on Titan Season 3');
+        sequel['title'] = {
+          'english': 'Attack on Titan Season 3',
+          'userPreferred': 'Preferred Season 3',
+          'romaji': 'Shingeki no Kyojin Season 3',
+          'native': '進撃の巨人 Season 3',
+        };
+        sequel['synonyms'] = ['', 'Attack on Titan Season 3', 'AoT 3'];
+        return _data({
+          'Page': {
+            'pageInfo': {'hasNextPage': false},
+            'media': [sequel],
+          },
+        });
+      };
+
+      final item = (await source.fetchRow(CatalogRowId.trendingAnime)).items.single;
+
+      // The display title is now `userPreferred` (AniList honours the viewer's
+      // title-language setting). The English title stays in `altTitles`, so the
+      // reverse library lookup still has it to match on.
+      expect(item.title, 'Preferred Season 3');
+      expect(item.altTitles, ['Attack on Titan Season 3', 'Shingeki no Kyojin Season 3', '進撃の巨人 Season 3', 'AoT 3']);
+      expect(item.season, const ExternalSeasonRef(tvdb: 3, tmdb: 2));
     });
 
     test('seasonal client sends season and year variables', () async {
@@ -293,6 +420,86 @@ void main() {
       expect(query, isNot(contains(r'id\nidMal')));
     });
 
+    test('row and detail documents select metadata on the deliberate request path', () async {
+      responder = (request) {
+        final query = _requestBody(request)['query'] as String;
+        if (query.contains('Page(')) {
+          return _data({
+            'Page': {
+              'pageInfo': {'hasNextPage': false},
+              'media': <Map<String, dynamic>>[],
+            },
+          });
+        }
+        return _data({'Media': <String, dynamic>{}});
+      };
+
+      await client.getTrendingAnime();
+      final rowQuery = _requestBody(requests.single)['query'] as String;
+      expect(rowQuery, contains('nextAiringEpisode {'));
+      expect(rowQuery, contains('rankings {'));
+      expect(rowQuery, contains('episode'));
+      expect(rowQuery, contains('airingAt'));
+      expect(rowQuery, contains('timeUntilAiring'));
+      expect(rowQuery, contains('rank'));
+      expect(rowQuery, contains('type'));
+      expect(rowQuery, contains('format'));
+      expect(rowQuery, contains('year'));
+      expect(rowQuery, contains('season'));
+      expect(rowQuery, contains('allTime'));
+      expect(rowQuery, contains('context'));
+      expect(rowQuery, contains('meanScore'));
+      expect(rowQuery, contains('popularity'));
+      expect(rowQuery, contains('favourites'));
+      expect(rowQuery, contains('trending'));
+      expect(rowQuery, contains('native'));
+      expect(rowQuery, contains('synonyms'));
+      expect(rowQuery, contains('source'));
+      expect(rowQuery, contains('countryOfOrigin'));
+      expect(rowQuery, contains('endDate {'));
+      expect(rowQuery, contains('color'));
+      expect(rowQuery, contains('month'));
+      expect(rowQuery, contains('day'));
+      expect(rowQuery, isNot(contains('externalLinks {')));
+      expect(rowQuery, isNot(contains('streamingEpisodes {')));
+      expect(rowQuery, contains('characters('));
+      expect(rowQuery, contains('perPage: 6'));
+      expect(rowQuery, contains('sort: [ROLE, RELEVANCE]'));
+      expect(rowQuery, contains('role'));
+      expect(rowQuery, contains('full'));
+      expect(rowQuery, contains('large'));
+      expect(rowQuery, contains('medium'));
+      expect(rowQuery, isNot(contains('voiceActors')));
+      expect(rowQuery, isNot(contains('mediaConnection')));
+      expect(rowQuery, isNot(contains('relations(')));
+      expect(rowQuery, isNot(contains('staff(')));
+      expect(rowQuery, isNot(contains('tags {')));
+
+      requests.clear();
+      await client.getAnimeDetail(16498, castLimit: 200, relatedLimit: 0);
+      final detailBody = _requestBody(requests.single);
+      final detailQuery = detailBody['query'] as String;
+      final variables = detailBody['variables'] as Map<String, dynamic>;
+      expect(detailQuery, contains('tags {'));
+      expect(detailQuery, contains('externalLinks {'));
+      expect(detailQuery, contains('streamingEpisodes {'));
+      expect(detailQuery, contains('name'));
+      expect(detailQuery, contains('rank'));
+      expect(detailQuery, contains('isMediaSpoiler'));
+      expect(detailQuery, contains('site'));
+      expect(detailQuery, contains('url'));
+      expect(detailQuery, contains('title'));
+      expect(detailQuery, contains('thumbnail'));
+      expect(detailQuery, contains('staff(page: 1, perPage: \$staffPerPage)'));
+      expect(detailQuery, contains('characters(page: 1, perPage: \$castPerPage, sort: [ROLE, RELEVANCE])'));
+      expect(detailQuery, contains('recommendations(page: 1, perPage: \$relatedPerPage)'));
+      expect(detailQuery, contains('relations(page: 1, perPage: \$relatedPerPage)'));
+      expect(detailQuery, contains('relationType(version: 2)'));
+      expect(variables['castPerPage'], 50);
+      expect(variables['relatedPerPage'], 1);
+      expect(variables['staffPerPage'], 8);
+    });
+
     test('unsupported rows throw instead of silently returning empty', () {
       expect(() => source.fetchRow(CatalogRowId.recommendedMovies), throwsA(isA<ArgumentError>()));
     });
@@ -302,10 +509,13 @@ void main() {
       expect(empty, isEmpty);
       expect(requests, isEmpty);
 
-      await source.search(' a ');
+      final results = await source.search(' a ');
       expect(requests, hasLength(1));
-      final variables = _requestBody(requests.single)['variables'] as Map<String, dynamic>;
+      expect(results.single.cast, isNull);
+      final body = _requestBody(requests.single);
+      final variables = body['variables'] as Map<String, dynamic>;
       expect(variables['search'], 'a');
+      expect(body['query'] as String, isNot(contains('characters(')));
     });
 
     test('watchlist snapshot matches the MAL identity form alone', () async {
@@ -409,34 +619,132 @@ void main() {
       expect(source.isOnWatchlist(MediaKind.show, const CatalogItemIds(anilist: 16498)), isTrue);
     });
 
-    test('cast and related map characters and enriched recommendations', () async {
+    test('fetchDetail without cached cast requests live characters with the consolidated detail', () async {
       responder = (request) {
-        final query = _requestBody(request)['query'] as String;
-        if (query.contains('characters(')) {
-          return _data({
-            'Media': {
-              'characters': {
-                'edges': [
-                  {
-                    'role': 'MAIN',
-                    'node': {
-                      'name': {'full': 'Mikasa Ackerman'},
-                      'image': {'large': 'https://img.anilist.co/mikasa.jpg'},
-                    },
-                  },
-                ],
+        final media = _media(id: 16498, idMal: 16498)
+          ..addAll({
+            'tags': [
+              {'name': 'Military', 'rank': 88, 'isMediaSpoiler': false},
+              {'name': 'Hidden Identity', 'rank': 72, 'isMediaSpoiler': true},
+            ],
+            'externalLinks': [
+              {'site': 'AniList', 'url': 'https://anilist.co/anime/16498'},
+              {'site': 'Unsafe', 'url': 'file:///tmp/not-opened'},
+            ],
+            'streamingEpisodes': [
+              {
+                'title': 'Episode 1',
+                'thumbnail': 'https://img.example/episode-1.jpg',
+                'url': 'https://crunchyroll.example/episode-1',
+                'site': 'Crunchyroll',
               },
+            ],
+            'staff': {
+              'edges': [
+                {
+                  'role': 'Director',
+                  'node': {
+                    'name': {'full': 'Tetsuro Araki'},
+                  },
+                },
+                {
+                  'role': 'Series Composition',
+                  'node': {
+                    'name': {'full': 'Yasuko Kobayashi'},
+                  },
+                },
+                {
+                  'role': 'Music',
+                  'node': {
+                    'name': {'full': 'Hiroyuki Sawano'},
+                  },
+                },
+                {
+                  'role': 'Character Design',
+                  'node': {
+                    'name': {'full': 'Kyoji Asano'},
+                  },
+                },
+              ],
             },
-          });
-        }
-        return _data({
-          'Media': {
+            'characters': {
+              'edges': [
+                {
+                  'role': 'MAIN',
+                  'node': {
+                    'name': {'full': 'Mikasa Ackerman'},
+                    'image': {'large': 'https://img.anilist.co/mikasa.jpg'},
+                  },
+                },
+              ],
+            },
             'recommendations': {
               'nodes': [
                 {'mediaRecommendation': _media(id: 21519, idMal: 32281, title: 'Your Name.', format: 'MOVIE')},
                 {'mediaRecommendation': _media(id: 999, title: 'Adult', isAdult: true)},
               ],
             },
+            'relations': {
+              'edges': [
+                {'relationType': 'SEQUEL', 'node': _media(id: 35760, idMal: 35760, title: 'Attack on Titan Season 3')},
+                {'relationType': 'SOURCE', 'node': _media(id: 1000, title: 'Attack on Titan Manga')},
+              ],
+            },
+          });
+        return _data({'Media': media});
+      };
+      const item = CatalogItem(
+        source: CatalogSourceId.anilist,
+        kind: MediaKind.show,
+        title: 'Row title',
+        ids: CatalogItemIds(anilist: 16498),
+        ranks: [CatalogRank(rank: 99, scope: CatalogRankScope.trending)],
+      );
+
+      final detail = await source.fetchDetail(item);
+
+      expect(requests, hasLength(1));
+      expect(detail.item.title, 'Preferred');
+      expect(detail.item.ranks?.single.rank, 99);
+      expect(detail.cast.single.name, 'Mikasa Ackerman');
+      expect(detail.cast.single.secondary, 'MAIN');
+      final detailBody = _requestBody(requests.single);
+      final detailQuery = detailBody['query'] as String;
+      final detailVariables = detailBody['variables'] as Map<String, dynamic>;
+      expect(detailQuery, contains('characters(page: 1, perPage: \$castPerPage, sort: [ROLE, RELEVANCE])'));
+      expect(detailVariables['castPerPage'], 20);
+      expect(detail.related, hasLength(1));
+      expect(detail.related.single.kind, MediaKind.movie);
+      expect(detail.related.single.ids.tmdb, 372058);
+      expect(detail.relations, hasLength(2));
+      expect(detail.relations[0].type, CatalogRelationType.sequel);
+      expect(detail.relations[0].items.single.ids.anilist, 35760);
+      expect(detail.relations[1].type, CatalogRelationType.other);
+      expect(detail.relations[1].items.single.ids.anilist, 1000);
+      expect(detail.item.credits?.map((credit) => credit.role), [
+        CatalogCreditRole.director,
+        CatalogCreditRole.writer,
+        CatalogCreditRole.composer,
+      ]);
+      expect(detail.item.tags, hasLength(2));
+      expect(detail.item.tags?[1].isSpoiler, isTrue);
+      expect(detail.item.links, hasLength(2));
+      expect(detail.item.links?[0].label, 'AniList');
+      expect(detail.item.links?[0].isStreaming, isFalse);
+      expect(detail.item.links?[1].label, 'Crunchyroll');
+      expect(detail.item.links?[1].isStreaming, isTrue);
+    });
+
+    test('fetchDetail serves cached row cast without selecting characters', () async {
+      responder = (request) {
+        final body = _requestBody(request);
+        expect(body['query'] as String, isNot(contains('characters(')));
+        final variables = body['variables'] as Map<String, dynamic>;
+        expect(variables.containsKey('castPerPage'), isFalse);
+        return _data({
+          'Media': {
+            'id': 16498,
+            'title': {'userPreferred': 'Attack on Titan'},
           },
         });
       };
@@ -445,16 +753,62 @@ void main() {
         kind: MediaKind.show,
         title: 'Attack on Titan',
         ids: CatalogItemIds(anilist: 16498),
+        cast: [
+          CatalogCastMember(name: 'Mikasa Ackerman', secondary: 'MAIN', imageUrl: 'https://img.anilist.co/mikasa.jpg'),
+        ],
       );
 
-      final cast = await source.fetchCast(item);
-      final related = await source.fetchRelated(item);
+      final detail = await source.fetchDetail(item);
 
-      expect(cast.single.name, 'Mikasa Ackerman');
-      expect(cast.single.secondary, 'MAIN');
-      expect(related, hasLength(1));
-      expect(related.single.kind, MediaKind.movie);
-      expect(related.single.ids.tmdb, 372058);
+      expect(requests, hasLength(1));
+      expect(detail.cast, hasLength(1));
+      expect(detail.cast.single.name, 'Mikasa Ackerman');
+      expect(detail.cast.single.secondary, 'MAIN');
+      expect(detail.cast.single.imageUrl, 'https://img.anilist.co/mikasa.jpg');
+    });
+
+    test('fetchDetail treats absent and empty optional collections as normal', () async {
+      responder = (_) => _data({
+        'Media': {
+          'id': 16498,
+          'title': {'userPreferred': 'Attack on Titan'},
+          'externalLinks': <Map<String, dynamic>>[],
+          'streamingEpisodes': <Map<String, dynamic>>[],
+        },
+      });
+      const item = CatalogItem(
+        source: CatalogSourceId.anilist,
+        kind: MediaKind.show,
+        title: 'Attack on Titan',
+        ids: CatalogItemIds(anilist: 16498),
+      );
+
+      final detail = await source.fetchDetail(item);
+
+      expect(detail.item.links, isNull);
+      expect(detail.item.tags, isNull);
+      expect(detail.item.credits, isNull);
+      expect(detail.cast, isEmpty);
+      expect(detail.related, isEmpty);
+      expect(detail.relations, isEmpty);
+      expect(requests, hasLength(1));
+    });
+
+    test('fetchDetail needs no request when the item has no AniList id', () async {
+      const item = CatalogItem(
+        source: CatalogSourceId.anilist,
+        kind: MediaKind.show,
+        title: 'Unmapped',
+        ids: CatalogItemIds(mal: 1),
+      );
+
+      final detail = await source.fetchDetail(item);
+
+      expect(detail.item, same(item));
+      expect(detail.cast, isEmpty);
+      expect(detail.related, isEmpty);
+      expect(detail.relations, isEmpty);
+      expect(requests, isEmpty);
     });
   });
 

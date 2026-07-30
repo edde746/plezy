@@ -96,6 +96,8 @@ class MainActivity : FlutterActivity() {
 
   private fun isAndroidTvDevice(): Boolean = getAndroidTvDetection()["isTv"] as Boolean
 
+  private fun isPipSupportedDevice(): Boolean = !isAndroidTvDevice() && packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+
   private fun isImeVisible(): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
     return window.decorView.rootWindowInsets?.isVisible(WindowInsets.Type.ime()) == true
@@ -168,6 +170,7 @@ class MainActivity : FlutterActivity() {
     val hasFireTvFeature = pm.hasSystemFeature("amazon.hardware.fire_tv")
     val hasTouchscreen = pm.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN)
     val hasFakeTouch = pm.hasSystemFeature(PackageManager.FEATURE_FAKETOUCH)
+    val isAutomotive = pm.hasSystemFeature(PackageManager.FEATURE_AUTOMOTIVE)
 
     val reasons = mutableListOf<String>()
     if (isTelevisionUiMode) reasons.add("ui_mode_television")
@@ -177,7 +180,11 @@ class MainActivity : FlutterActivity() {
     if (!hasTouchscreen) reasons.add("no_touchscreen")
 
     return mapOf(
-      "isTv" to reasons.isNotEmpty(),
+      // A car is never a TV: rotary-only head units report no touchscreen, and
+      // an OEM image can carry a stray leanback flag. Keep the raw reasons for
+      // diagnostics, but never let them promote a vehicle to the TV experience.
+      "isTv" to (!isAutomotive && reasons.isNotEmpty()),
+      "isAutomotive" to isAutomotive,
       "reasons" to reasons,
       "isTelevisionUiMode" to isTelevisionUiMode,
       "hasTelevisionFeature" to hasTelevisionFeature,
@@ -662,7 +669,7 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "isSupported" -> {
-          result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isAndroidTvDevice())
+          result.success(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isPipSupportedDevice())
         }
         "enter" -> {
           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -670,7 +677,7 @@ class MainActivity : FlutterActivity() {
             return@setMethodCallHandler
           }
 
-          if (isAndroidTvDevice()) {
+          if (!isPipSupportedDevice()) {
             result.success(mapOf("success" to false, "errorCode" to "not_supported"))
             return@setMethodCallHandler
           }
@@ -697,7 +704,7 @@ class MainActivity : FlutterActivity() {
           }
         }
         "setAutoPipReady" -> {
-          if (isAndroidTvDevice()) {
+          if (!isPipSupportedDevice()) {
             autoPipReady = false
             result.success(true)
             return@setMethodCallHandler
@@ -821,7 +828,7 @@ class MainActivity : FlutterActivity() {
   override fun onUserLeaveHint() {
     super.onUserLeaveHint()
     // Auto PiP for API 26-30 (API 31+ uses setAutoEnterEnabled)
-    if (!isAndroidTvDevice() &&
+    if (isPipSupportedDevice() &&
       Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
       Build.VERSION.SDK_INT < Build.VERSION_CODES.S &&
       autoPipReady &&

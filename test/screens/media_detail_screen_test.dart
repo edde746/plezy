@@ -38,6 +38,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
+import 'package:plezy/widgets/cycling_media_backdrop.dart';
 import 'package:plezy/widgets/episode_card.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
@@ -941,6 +942,32 @@ void main() {
       expect(find.text('Director'), findsNothing);
     });
 
+    testWidgets('portrait phone hero shows square art instead of the cropped backdrop', (tester) async {
+      final movie = testMediaItem(
+        id: 'square_hero',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Square hero',
+        artPath: '/library/metadata/square_hero/art',
+        backgroundSquarePath: '/library/metadata/square_hero/squareBg',
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      final backdrop = find.byType(CyclingMediaBackdrop);
+      expect(backdrop, findsOneWidget);
+      // A fallback is reached only once every rotating path has failed, so the
+      // square background has to be in the rotation set. Listed behind a
+      // servable wide backdrop it would never be shown at all.
+      final widget = tester.widget<CyclingMediaBackdrop>(backdrop);
+      expect(widget.imagePaths, ['/library/metadata/square_hero/squareBg']);
+      expect(widget.fallbackImagePaths, contains('/library/metadata/square_hero/art'));
+      expect(client.thumbnailPaths.first, '/library/metadata/square_hero/squareBg');
+    });
+
     FocusNode overviewFocusNode(WidgetTester tester) {
       final overviewFocus = find.byWidgetPredicate(
         (widget) => widget is Focus && widget.focusNode?.debugLabel == 'overview',
@@ -1176,6 +1203,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, Object> childrenPageErrors;
   final Future<List<MediaItem>>? pendingPlayableDescendants;
   final childrenPageCalls = <({String parentId, int? start, int? size})>[];
+  final thumbnailPaths = <String?>[];
 
   _FakeMediaServerClient({
     required this.show,
@@ -1246,6 +1274,12 @@ class _FakeMediaServerClient implements MediaServerClient {
 
   @override
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async => const [];
+
+  @override
+  String thumbnailUrl(String? path, {int? width, int? height, bool cover = true}) {
+    thumbnailPaths.add(path);
+    return '';
+  }
 
   @override
   void close() {}

@@ -505,16 +505,44 @@ abstract class MediaServerClient {
   Future<ExternalIds> fetchExternalIds(String itemId);
 
   /// Reverse lookup: find a library movie/show matching any of [ids].
-  /// Both backends search by [title] (narrowed by a ±1 [year] window when
-  /// known, with an unfiltered fallback) and verify candidates against
-  /// their exact external ids. Plex checks its modern `Guid` array first,
-  /// then recognized legacy scalar `guid` formats; its `guid=` field filter
-  /// only matches the primary `plex://` guid. Jellyfin checks the inline
-  /// `ProviderIds`. False negatives remain possible on differing titles,
-  /// but title alone never produces a match. Returns null when this server
-  /// has no match or [kind] is not movie/show. Used to match external catalog
-  /// items (Explore tab) back to the user's libraries.
-  Future<MediaItem?> findByExternalIds(ExternalIds ids, {required MediaKind kind, String? title, int? year});
+  ///
+  /// Neither backend can filter by external id — Plex's `guid=` matches only
+  /// the primary `plex://` guid (verified on PMS 1.43) and Jellyfin dropped
+  /// `anyProviderIdEquals` (silently ignored on 10.11.10) — so both search by
+  /// title and verify candidates against their exact external ids. Title
+  /// alone never produces a match.
+  ///
+  /// [titles] are tried in order until one yields an id-verified candidate;
+  /// pass the entry's own title first and broader forms after (see
+  /// `titleMatchCandidates`). A sequel entry's own title never matches its
+  /// parent show, which is why more than one is needed. [year] applies a ±1
+  /// window to the first attempt only — for a sequel the catalog year is the
+  /// season's, not the show's.
+  ///
+  /// [plexGuid] is a Plex-only escape hatch: a `plex://show/…` guid the caller
+  /// already holds, which the local server *can* filter on exactly, skipping
+  /// the title search. It is never resolved over the network — only Plex
+  /// Discover catalog items carry one, in their own rating key. Other backends
+  /// ignore it.
+  ///
+  /// [season] gates the result: when the entry maps to season 2+ of a longer
+  /// series, a match is only returned if the server actually has that season.
+  /// Implementations MUST gate only on [ExternalSeasonRef.agreedSeason] — the
+  /// provider a library numbers its seasons by is a server-side setting no
+  /// dataset supplies, so a disagreeing ref is left ungated rather than gated
+  /// on a guess.
+  ///
+  /// Returns null when this server has no match or [kind] is not movie/show.
+  /// Used to match external catalog items (Explore tab) back to the user's
+  /// libraries.
+  Future<MediaItem?> findByExternalIds(
+    ExternalIds ids, {
+    required MediaKind kind,
+    List<String> titles = const [],
+    int? year,
+    String? plexGuid,
+    ExternalSeasonRef? season,
+  });
 
   /// Chapters and intro/credits markers for [itemId]. Plex returns both in one
   /// round trip; Jellyfin combines item-level chapters with best-effort native
@@ -743,6 +771,10 @@ mixin MediaServerCacheMixin implements MediaServerClient {
   ///
   /// Returns `null` when offline mode is on and no cached row exists, or
   /// when both network and cache come up empty.
+  ///
+  /// Pass [cacheScope] when the caller already snapshotted a request context
+  /// (see [fetchWithCacheFirst]); otherwise the live profile is sampled, which
+  /// is only safe when nothing has awaited since the call began.
   Future<T?> fetchWithCacheFallback<T>({
     required String cacheKey,
     required Future<MediaServerResponse> Function() networkCall,
@@ -750,10 +782,11 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     required T? Function(MediaServerResponse response) parseResponse,
     bool Function(Object error)? shouldFallback,
     bool cacheResponse = true,
+    ServerId? cacheScope,
   }) async {
-    final cacheScope = ServerId(cacheServerId);
+    final scope = cacheScope ?? ServerId(cacheServerId);
     if (isOfflineMode) {
-      final cached = await cache.get(cacheScope, cacheKey);
+      final cached = await cache.get(scope, cacheKey);
       if (cached != null) return parseCache(cached);
       return null;
     }
@@ -762,13 +795,13 @@ mixin MediaServerCacheMixin implements MediaServerClient {
       throwIfHttpError(response);
       final parsed = parseResponse(response);
       if (cacheResponse) {
-        await _putCacheResponse(cacheScope, cacheKey, response.data);
+        await _putCacheResponse(scope, cacheKey, response.data);
       }
       return parsed;
     } catch (e) {
       if (shouldFallback != null && !shouldFallback(e)) rethrow;
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
-      final cached = await cache.get(cacheScope, cacheKey);
+      final cached = await cache.get(scope, cacheKey);
       if (cached != null) return parseCache(cached);
       rethrow;
     }

@@ -21,6 +21,14 @@ SeerrMedia _$SeerrMediaFromJson(Map<String, dynamic> json) => SeerrMedia(
   mediaInfo: json['mediaInfo'] == null
       ? null
       : SeerrMediaInfo.fromJson(json['mediaInfo'] as Map<String, dynamic>),
+  popularity: (json['popularity'] as num?)?.toDouble(),
+  originalLanguage: json['originalLanguage'] as String?,
+  originalTitle: json['originalTitle'] as String?,
+  originalName: json['originalName'] as String?,
+  adult: json['adult'] as bool?,
+  originCountry: (json['originCountry'] as List<dynamic>?)
+      ?.map((e) => e as String)
+      .toList(),
 );
 
 SeerrMediaInfo _$SeerrMediaInfoFromJson(Map<String, dynamic> json) =>

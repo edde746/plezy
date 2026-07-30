@@ -35,6 +35,12 @@ subprojects {
                 // their dependencies already require current APIs.
                 extension.compileSdk = 36
                 extension.buildToolsVersion = "36.1.0"
+                // The Flutter plugin copies the app's build types into every plugin
+                // module, so `minified` arrives here carrying the app's shrinker flags.
+                // Library-level shrinking then deletes the plugin entry points that only
+                // GeneratedPluginRegistrant references, and the app's R8 fails on the
+                // missing classes. Only the app should shrink.
+                extension.buildTypes.findByName("minified")?.isMinifyEnabled = false
             }
         }
     }

@@ -40,14 +40,29 @@ class SimklAllItemsMedia {
 class SimklAllItemsEntry {
   /// User-list status (`plantowatch`, `watching`, ...), not production state.
   final String? status;
+  @JsonKey(name: 'added_to_watchlist_at')
+  final String? addedAt;
+  @JsonKey(name: 'user_rating', fromJson: flexibleDouble)
+  final double? userRating;
   final SimklAllItemsMedia? show;
   final SimklAllItemsMedia? movie;
   @JsonKey(name: 'anime_type')
   final String? animeType;
   @JsonKey(name: 'total_episodes_count', fromJson: flexibleInt)
   final int? totalEpisodes;
+  @JsonKey(name: 'not_aired_episodes_count', fromJson: flexibleInt)
+  final int? notAiredEpisodes;
 
-  const SimklAllItemsEntry({this.status, this.show, this.movie, this.animeType, this.totalEpisodes});
+  const SimklAllItemsEntry({
+    this.status,
+    this.addedAt,
+    this.userRating,
+    this.show,
+    this.movie,
+    this.animeType,
+    this.totalEpisodes,
+    this.notAiredEpisodes,
+  });
 
   SimklAllItemsMedia? get media => movie ?? show;
 

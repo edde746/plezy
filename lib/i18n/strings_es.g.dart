@@ -300,6 +300,8 @@ class _Translations$settings$es extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutos';
 	@override String get rememberTrackSelections => 'Recordar selección de pistas por serie/película';
 	@override String get rememberTrackSelectionsDescription => 'Recordar opciones de audio y subtítulos por título';
+	@override String get followServerTrackSelections => 'Usar la selección de pistas del servidor por episodio';
+	@override String get followServerTrackSelectionsDescription => 'Al cambiar de episodio, aplicar el audio y los subtítulos seleccionados en el servidor en lugar de mantener la elección actual';
 	@override String get showChapterMarkersOnTimeline => 'Mostrar marcadores de capítulos en la barra de progreso';
 	@override String get showChapterMarkersOnTimelineDescription => 'Dividir la barra de progreso en los límites de capítulos';
 	@override String get clickVideoTogglesPlayback => 'Clic en el video para reproducir/pausar';
@@ -507,8 +509,8 @@ class _Translations$fileInfo$es extends Translations$fileInfo$en {
 	@override String get title => 'Información del archivo';
 	@override String get video => 'Video';
 	@override String get audio => 'Audio';
+	@override String get subtitles => 'Subtítulos';
 	@override String get file => 'Archivo';
-	@override String get advanced => 'Avanzado';
 	@override String get codec => 'Códec';
 	@override String get resolution => 'Resolución';
 	@override String get bitrate => 'Tasa de bits';
@@ -521,7 +523,6 @@ class _Translations$fileInfo$es extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Primarias de color';
 	@override String get chromaSubsampling => 'Submuestreo de croma';
 	@override String get channels => 'Canales';
-	@override String get subtitles => 'Subtítulos';
 	@override String get overallBitrate => 'Tasa de bits total';
 	@override String get path => 'Ruta';
 	@override String get size => 'Tamaño';
@@ -2356,6 +2357,8 @@ extension on TranslationsEs {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutos',
 			'settings.rememberTrackSelections' => 'Recordar selección de pistas por serie/película',
 			'settings.rememberTrackSelectionsDescription' => 'Recordar opciones de audio y subtítulos por título',
+			'settings.followServerTrackSelections' => 'Usar la selección de pistas del servidor por episodio',
+			'settings.followServerTrackSelectionsDescription' => 'Al cambiar de episodio, aplicar el audio y los subtítulos seleccionados en el servidor en lugar de mantener la elección actual',
 			'settings.showChapterMarkersOnTimeline' => 'Mostrar marcadores de capítulos en la barra de progreso',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Dividir la barra de progreso en los límites de capítulos',
 			'settings.clickVideoTogglesPlayback' => 'Clic en el video para reproducir/pausar',
@@ -2560,8 +2563,8 @@ extension on TranslationsEs {
 			'fileInfo.title' => 'Información del archivo',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Subtítulos',
 			'fileInfo.file' => 'Archivo',
-			'fileInfo.advanced' => 'Avanzado',
 			'fileInfo.codec' => 'Códec',
 			'fileInfo.resolution' => 'Resolución',
 			'fileInfo.bitrate' => 'Tasa de bits',
@@ -2574,7 +2577,6 @@ extension on TranslationsEs {
 			'fileInfo.colorPrimaries' => 'Primarias de color',
 			'fileInfo.chromaSubsampling' => 'Submuestreo de croma',
 			'fileInfo.channels' => 'Canales',
-			'fileInfo.subtitles' => 'Subtítulos',
 			'fileInfo.overallBitrate' => 'Tasa de bits total',
 			'fileInfo.path' => 'Ruta',
 			'fileInfo.size' => 'Tamaño',
@@ -2709,9 +2711,9 @@ extension on TranslationsEs {
 			'videoControls.searchSubtitles' => 'Buscar subtítulos',
 			'videoControls.language' => 'Idioma',
 			'videoControls.noSubtitlesFound' => 'No se encontraron subtítulos',
-			'videoControls.subtitleDownloaded' => 'Subtítulo descargado',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Subtítulo descargado',
 			'videoControls.subtitleDownloadedNotApplied' => 'El subtítulo se descargó, pero no se pudo seleccionar',
 			'videoControls.subtitleDownloadFailed' => 'Error al descargar subtítulo',
 			'videoControls.searchLanguages' => 'Buscar idiomas...',
@@ -3223,9 +3225,9 @@ extension on TranslationsEs {
 			'watchTogether.failedToCreate' => 'Error al crear la sesión',
 			'watchTogether.failedToJoin' => 'Error al unirse a la sesión',
 			'watchTogether.sessionCodeCopied' => 'Código de sesión copiado al portapapeles',
-			'watchTogether.relayUnreachable' => 'No se puede acceder al servidor de retransmisión. Es posible que tu proveedor de internet esté bloqueando Ver juntos.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'No se puede acceder al servidor de retransmisión. Es posible que tu proveedor de internet esté bloqueando Ver juntos.',
 			'watchTogether.reconnectingToHost' => 'Reconectando con el anfitrión...',
 			'watchTogether.currentPlayback' => 'Reproducción actual',
 			'watchTogether.joinCurrentPlayback' => 'Unirse a la reproducción actual',

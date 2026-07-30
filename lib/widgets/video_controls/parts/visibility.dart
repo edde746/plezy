@@ -100,6 +100,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// [SettingsService.rotationLocked] via [bindEffect] so any change — from
   /// this toggle or from the settings screen — fires the same SystemChrome call.
   void _applyRotationLock(bool locked) {
+    if (PlatformDetector.isAutomotive()) return;
     unawaited(
       SystemChrome.setPreferredOrientations(
         locked ? const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight] : DeviceOrientation.values,
@@ -217,16 +218,6 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
   }
 
-  /// Show controls and focus timeline on LEFT/RIGHT input (TV/desktop)
-  void _showControlsWithTimelineFocus() {
-    widget.chromeController.show();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _desktopControlsKey.currentState?.requestTimelineFocus();
-    });
-  }
-
   /// Hide controls when navigating up from timeline (keyboard mode)
   /// If skip marker button or Play Next dialog is visible, focus it instead of hiding controls
   void _hideControlsFromKeyboard() {
@@ -261,6 +252,10 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       });
       _reclaimFocusAfterControlsHide();
     } else if (visibilityChanged) {
+      // The timeline is about to take over held-key seeking; commit whatever
+      // the hidden-chrome burst accumulated so it can't rebase from a stale
+      // position once the timeline's own accumulator starts.
+      _flushHiddenDirectionalSeek();
       _setControlsState(() {
         _controlsMounted = true;
         _controlsOpaque = false;

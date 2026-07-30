@@ -300,6 +300,8 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutter';
 	@override String get rememberTrackSelections => 'Husk sporvalg per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Husk lyd- og undertekstvalg per tittel';
+	@override String get followServerTrackSelections => 'Bruk serverens sporvalg per episode';
+	@override String get followServerTrackSelectionsDescription => 'Ved episodebytte brukes lyden og undertekstene som er valgt på serveren, i stedet for å videreføre gjeldende valg';
 	@override String get showChapterMarkersOnTimeline => 'Vis kapittelmarkører på tidslinjen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Del tidslinjen ved kapittelgrenser';
 	@override String get clickVideoTogglesPlayback => 'Klikk på video for å veksle avspilling';
@@ -507,8 +509,8 @@ class _Translations$fileInfo$nb extends Translations$fileInfo$en {
 	@override String get title => 'Filinformasjon';
 	@override String get video => 'Video';
 	@override String get audio => 'Lyd';
+	@override String get subtitles => 'Undertekster';
 	@override String get file => 'Fil';
-	@override String get advanced => 'Avansert';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Oppløsning';
 	@override String get bitrate => 'Bitrate';
@@ -521,7 +523,6 @@ class _Translations$fileInfo$nb extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Fargeprimærer';
 	@override String get chromaSubsampling => 'Krominansnedsampling';
 	@override String get channels => 'Kanaler';
-	@override String get subtitles => 'Undertekster';
 	@override String get overallBitrate => 'Total bitrate';
 	@override String get path => 'Sti';
 	@override String get size => 'Størrelse';
@@ -2356,6 +2357,8 @@ extension on TranslationsNb {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutter',
 			'settings.rememberTrackSelections' => 'Husk sporvalg per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Husk lyd- og undertekstvalg per tittel',
+			'settings.followServerTrackSelections' => 'Bruk serverens sporvalg per episode',
+			'settings.followServerTrackSelectionsDescription' => 'Ved episodebytte brukes lyden og undertekstene som er valgt på serveren, i stedet for å videreføre gjeldende valg',
 			'settings.showChapterMarkersOnTimeline' => 'Vis kapittelmarkører på tidslinjen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Del tidslinjen ved kapittelgrenser',
 			'settings.clickVideoTogglesPlayback' => 'Klikk på video for å veksle avspilling',
@@ -2560,8 +2563,8 @@ extension on TranslationsNb {
 			'fileInfo.title' => 'Filinformasjon',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Lyd',
+			'fileInfo.subtitles' => 'Undertekster',
 			'fileInfo.file' => 'Fil',
-			'fileInfo.advanced' => 'Avansert',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Oppløsning',
 			'fileInfo.bitrate' => 'Bitrate',
@@ -2574,7 +2577,6 @@ extension on TranslationsNb {
 			'fileInfo.colorPrimaries' => 'Fargeprimærer',
 			'fileInfo.chromaSubsampling' => 'Krominansnedsampling',
 			'fileInfo.channels' => 'Kanaler',
-			'fileInfo.subtitles' => 'Undertekster',
 			'fileInfo.overallBitrate' => 'Total bitrate',
 			'fileInfo.path' => 'Sti',
 			'fileInfo.size' => 'Størrelse',
@@ -2709,9 +2711,9 @@ extension on TranslationsNb {
 			'videoControls.searchSubtitles' => 'Søk etter undertekster',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Ingen undertekster funnet',
-			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Undertekst lastet ned',
 			'videoControls.subtitleDownloadedNotApplied' => 'Underteksten ble lastet ned, men kunne ikke velges',
 			'videoControls.subtitleDownloadFailed' => 'Kunne ikke laste ned undertekst',
 			'videoControls.searchLanguages' => 'Søk etter språk...',
@@ -3223,9 +3225,9 @@ extension on TranslationsNb {
 			'watchTogether.failedToCreate' => 'Kunne ikke opprette økt',
 			'watchTogether.failedToJoin' => 'Kunne ikke bli med i økt',
 			'watchTogether.sessionCodeCopied' => 'Øktkode kopiert til utklippstavle',
-			'watchTogether.relayUnreachable' => 'Reléserveren kan ikke nås. Blokkering hos internettleverandøren kan hindre Se sammen.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Reléserveren kan ikke nås. Blokkering hos internettleverandøren kan hindre Se sammen.',
 			'watchTogether.reconnectingToHost' => 'Kobler til verten på nytt...',
 			'watchTogether.currentPlayback' => 'Gjeldende avspilling',
 			'watchTogether.joinCurrentPlayback' => 'Bli med i gjeldende avspilling',

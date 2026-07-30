@@ -1497,7 +1497,7 @@ void main() {
   });
 
   group('shouldStartHiddenDirectionalSeek', () {
-    test('accepts only the initial key-down event', () {
+    test('accepts the initial press and its repeats, so a held key keeps seeking in place', () {
       expect(shouldStartHiddenDirectionalSeek(_keyDown(LogicalKeyboardKey.arrowRight)), isTrue);
       expect(
         shouldStartHiddenDirectionalSeek(
@@ -1507,9 +1507,14 @@ void main() {
             timeStamp: Duration.zero,
           ),
         ),
-        isFalse,
+        isTrue,
+        reason: 'hidden-chrome seeking owns the whole burst instead of escalating to the timeline',
       );
-      expect(shouldStartHiddenDirectionalSeek(_keyUp(LogicalKeyboardKey.arrowRight)), isFalse);
+      expect(
+        shouldStartHiddenDirectionalSeek(_keyUp(LogicalKeyboardKey.arrowRight)),
+        isFalse,
+        reason: 'release commits the burst, it does not add another step',
+      );
     });
   });
 

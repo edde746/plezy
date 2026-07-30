@@ -300,6 +300,8 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} perc';
 	@override String get rememberTrackSelections => 'Sávválasztások megjegyzése sorozatonként/filmenként';
 	@override String get rememberTrackSelectionsDescription => 'Hang- és feliratválasztások megjegyzése címenként';
+	@override String get followServerTrackSelections => 'A szerver epizódonkénti sávválasztásának használata';
+	@override String get followServerTrackSelectionsDescription => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett';
 	@override String get showChapterMarkersOnTimeline => 'Fejezetjelölők megjelenítése az idősávon';
 	@override String get showChapterMarkersOnTimelineDescription => 'Az idősáv felosztása a fejezetek határainál';
 	@override String get clickVideoTogglesPlayback => 'Kattintás a videóra a lejátszás/szünet váltásához';
@@ -507,8 +509,8 @@ class _Translations$fileInfo$hu extends Translations$fileInfo$en {
 	@override String get title => 'Fájlinformáció';
 	@override String get video => 'Videó';
 	@override String get audio => 'Hang';
+	@override String get subtitles => 'Feliratok';
 	@override String get file => 'Fájl';
-	@override String get advanced => 'Haladó';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Felbontás';
 	@override String get bitrate => 'Bitráta';
@@ -521,7 +523,6 @@ class _Translations$fileInfo$hu extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Elsődleges színek';
 	@override String get chromaSubsampling => 'Krominancia-alulmintavételezés';
 	@override String get channels => 'Csatornák';
-	@override String get subtitles => 'Feliratok';
 	@override String get overallBitrate => 'Összesített bitráta';
 	@override String get path => 'Elérési út';
 	@override String get size => 'Méret';
@@ -2356,6 +2357,8 @@ extension on TranslationsHu {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} perc',
 			'settings.rememberTrackSelections' => 'Sávválasztások megjegyzése sorozatonként/filmenként',
 			'settings.rememberTrackSelectionsDescription' => 'Hang- és feliratválasztások megjegyzése címenként',
+			'settings.followServerTrackSelections' => 'A szerver epizódonkénti sávválasztásának használata',
+			'settings.followServerTrackSelectionsDescription' => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett',
 			'settings.showChapterMarkersOnTimeline' => 'Fejezetjelölők megjelenítése az idősávon',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Az idősáv felosztása a fejezetek határainál',
 			'settings.clickVideoTogglesPlayback' => 'Kattintás a videóra a lejátszás/szünet váltásához',
@@ -2560,8 +2563,8 @@ extension on TranslationsHu {
 			'fileInfo.title' => 'Fájlinformáció',
 			'fileInfo.video' => 'Videó',
 			'fileInfo.audio' => 'Hang',
+			'fileInfo.subtitles' => 'Feliratok',
 			'fileInfo.file' => 'Fájl',
-			'fileInfo.advanced' => 'Haladó',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Felbontás',
 			'fileInfo.bitrate' => 'Bitráta',
@@ -2574,7 +2577,6 @@ extension on TranslationsHu {
 			'fileInfo.colorPrimaries' => 'Elsődleges színek',
 			'fileInfo.chromaSubsampling' => 'Krominancia-alulmintavételezés',
 			'fileInfo.channels' => 'Csatornák',
-			'fileInfo.subtitles' => 'Feliratok',
 			'fileInfo.overallBitrate' => 'Összesített bitráta',
 			'fileInfo.path' => 'Elérési út',
 			'fileInfo.size' => 'Méret',
@@ -2709,9 +2711,9 @@ extension on TranslationsHu {
 			'videoControls.searchSubtitles' => 'Feliratok keresése',
 			'videoControls.language' => 'Nyelv',
 			'videoControls.noSubtitlesFound' => 'Nem találhatók feliratok',
-			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
 			'videoControls.subtitleDownloadedNotApplied' => 'Felirat letöltve, de nem sikerült kiválasztani',
 			'videoControls.subtitleDownloadFailed' => 'Nem sikerült a felirat letöltése',
 			'videoControls.searchLanguages' => 'Nyelvek keresése...',
@@ -3223,9 +3225,9 @@ extension on TranslationsHu {
 			'watchTogether.failedToCreate' => 'Nem sikerült a munkamenet létrehozása',
 			'watchTogether.failedToJoin' => 'Nem sikerült csatlakozni a munkamenethez',
 			'watchTogether.sessionCodeCopied' => 'A munkamenetkód a vágólapra másolva',
-			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
 			'watchTogether.reconnectingToHost' => 'Újracsatlakozás a házigazdához...',
 			'watchTogether.currentPlayback' => 'Jelenlegi lejátszás',
 			'watchTogether.joinCurrentPlayback' => 'Csatlakozás a jelenlegi lejátszáshoz',

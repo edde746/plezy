@@ -18,6 +18,7 @@ import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.analytics.PlayerId
 import androidx.media3.exoplayer.audio.AudioOutput
 import androidx.media3.exoplayer.audio.AudioOutputProvider
+import androidx.media3.exoplayer.audio.AudioRendererEventListener
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.AudioTrackAudioOutputProvider
 import androidx.media3.exoplayer.audio.DefaultAudioSink
@@ -112,6 +113,40 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
         .setMaxDroppedFramesToNotify(MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY),
       forceSetOutputSurfaceWorkaround,
       videoDiagnosticsLogger
+    )
+  }
+
+  /**
+   * Records which audio renderers the session actually got. Whether the bundled
+   * FFmpeg renderer loaded decides between decoding TrueHD/DTS-HD in ExoPlayer and
+   * bailing to the mpv fallback, and nothing else in an uploaded log distinguishes
+   * the two (#1703).
+   */
+  override fun buildAudioRenderers(
+    context: Context,
+    extensionRendererMode: Int,
+    mediaCodecSelector: MediaCodecSelector,
+    enableDecoderFallback: Boolean,
+    audioSink: AudioSink,
+    eventHandler: Handler,
+    eventListener: AudioRendererEventListener,
+    out: ArrayList<Renderer>
+  ) {
+    val firstAudioIndex = out.size
+    super.buildAudioRenderers(
+      context,
+      extensionRendererMode,
+      mediaCodecSelector,
+      enableDecoderFallback,
+      audioSink,
+      eventHandler,
+      eventListener,
+      out
+    )
+    audioDiagnosticsLogger?.invoke(
+      "info",
+      "audio",
+      "Audio renderers: " + out.subList(firstAudioIndex, out.size).joinToString { it.name }
     )
   }
 

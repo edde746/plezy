@@ -70,7 +70,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
 
         await currentPlayer.setProperty('force-seekable', 'no');
-        await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
+        await currentPlayer.open(
+          Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+          play: !PlatformDetector.isAutomotive(),
+          isLive: true,
+        );
         if (!attempt.isCurrent) return;
 
         _trackManager?.cacheExternalSubtitles(const []);
@@ -85,6 +89,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             _isPlayerInitialized = true;
           });
           _trackManager?.mediaInfo = null;
+        }
+        if (PlatformDetector.isAutomotive()) {
+          await _playWithPlaybackIntent(currentPlayer);
         }
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
@@ -257,7 +264,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           selectedVersion: result.selectedVersion,
           timing: openTiming,
           headers: streamHeaders,
-          play: shouldAutoPlay,
+          play: shouldAutoPlay && !PlatformDetector.isAutomotive(),
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: () => attempt.isCurrent,
           onMediaAvailabilityChanged: (available) => primaryMediaOpened = available,
@@ -278,6 +285,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           }
           _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
           _notifyWatchTogetherMediaChange();
+        }
+        if (shouldAutoPlay && PlatformDetector.isAutomotive()) {
+          await _playWithPlaybackIntent(currentPlayer);
+          if (!attempt.isCurrent) return;
         }
       } else {
         externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
@@ -335,8 +346,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           plexClient: mediaClient is PlexClient ? mediaClient : null,
           getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
           preferredAudioTrack: _preferredAudioTrack,
-          preferredSubtitleTrack: subtitleSelection.primaryTrack,
-          preferredSecondarySubtitleTrack: subtitleSelection.secondaryTrack,
+          preferredSubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
+          preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
         );
 
         // Store only the active sidecars for re-use after backend fallback.

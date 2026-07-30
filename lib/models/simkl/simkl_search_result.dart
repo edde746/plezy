@@ -9,6 +9,13 @@ part 'simkl_search_result.g.dart';
 @JsonSerializable(createToJson: false)
 class SimklSearchResult {
   final String? title;
+  @JsonKey(name: 'title_en')
+  final String? titleEn;
+  @JsonKey(name: 'title_romaji')
+  final String? titleRomaji;
+  @JsonKey(name: 'all_titles', fromJson: flexibleStringList)
+  final List<String>? allTitles;
+  final String? url;
   @JsonKey(fromJson: flexibleInt)
   final int? year;
 
@@ -25,6 +32,10 @@ class SimklSearchResult {
 
   const SimklSearchResult({
     this.title,
+    this.titleEn,
+    this.titleRomaji,
+    this.allTitles,
+    this.url,
     this.year,
     this.type,
     this.endpointType,

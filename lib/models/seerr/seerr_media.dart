@@ -1,5 +1,7 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../utils/json_utils.dart';
+
 import 'seerr_request.dart';
 
 part 'seerr_media.g.dart';
@@ -40,6 +42,12 @@ class SeerrMedia {
   final double? voteAverage;
   final int? voteCount;
   final SeerrMediaInfo? mediaInfo;
+  final double? popularity;
+  final String? originalLanguage;
+  final String? originalTitle;
+  final String? originalName;
+  final bool? adult;
+  final List<String>? originCountry;
 
   const SeerrMedia({
     required this.id,
@@ -54,13 +62,24 @@ class SeerrMedia {
     this.voteAverage,
     this.voteCount,
     this.mediaInfo,
+    this.popularity,
+    this.originalLanguage,
+    this.originalTitle,
+    this.originalName,
+    this.adult,
+    this.originCountry,
   });
 
   bool get isMovie => mediaType == 'movie';
 
-  String get displayTitle => title ?? name ?? '';
+  /// Localized title, falling back to the original when the requested
+  /// language has no translation. TMDB answers a `language` query with an
+  /// empty string rather than omitting the field, so `??` alone is not enough.
+  String get displayTitle => firstNonBlank([title, name, originalTitle, originalName]) ?? '';
 
   String? get date => releaseDate ?? firstAirDate;
+
+  String? get displayOriginalTitle => originalTitle ?? originalName;
 
   int? get year {
     final d = date;

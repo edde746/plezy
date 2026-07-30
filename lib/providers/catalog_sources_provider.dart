@@ -27,6 +27,7 @@ import '../services/trakt/trakt_client.dart';
 import 'seerr_account_provider.dart';
 import 'trakt_account_provider.dart';
 import 'trackers_provider.dart';
+import '../utils/platform_detector.dart';
 import '../utils/app_logger.dart';
 
 typedef PlexDiscoverSessionSupplier = Future<PlexDiscoverSession?> Function();
@@ -94,7 +95,11 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
 
   final PlexDiscoverSessionSupplier? plexSessionSupplier;
   final _CatalogSourceBinding<PlexDiscoverSession, PlexCatalogSource> _plex = _CatalogSourceBinding(
-    (session) => PlexCatalogSource(PlexDiscoverClient(session)),
+    // Widened hub artwork (`excludeElements=Media` instead of `Media,Image`)
+    // costs +104.95% — 27,287 to 55,925 bytes for 26 items, uncached, with up
+    // to six hubs hydrated concurrently. Its only consumer is the TV
+    // spotlight's logo/banner treatment, so only TV pays for it.
+    (session) => PlexCatalogSource(PlexDiscoverClient(session), includeImageVariants: PlatformDetector.isTV()),
     equals: (previous, next) => previous == next,
   );
   final _CatalogSourceBinding<TraktClient, TraktCatalogSource> _trakt = _CatalogSourceBinding(TraktCatalogSource.new);

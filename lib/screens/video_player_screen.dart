@@ -40,6 +40,7 @@ import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
+import '../services/driver_distraction.dart';
 import '../services/discord_rpc_service.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
@@ -61,6 +62,7 @@ import '../services/display_mode_service.dart';
 import '../services/media_control_router.dart';
 import '../services/settings_service.dart';
 import '../services/sleep_timer_service.dart';
+import '../services/subtitle_preference.dart';
 import '../services/track_manager.dart';
 import '../services/track_selection_service.dart';
 import '../services/ambient_lighting_service.dart';
@@ -136,39 +138,27 @@ bool shouldAutoStartReloadedMedia({
 /// Builds an item-agnostic subtitle preference for an episode replacement.
 ///
 /// Source ids and sidecar URIs belong to the current media item. Only the
-/// committed semantic choice may cross the item boundary; native state is a
-/// fallback for sessions created before source-backed selection was recorded.
-SubtitleTrack? subtitlePreferenceForItemChange({
+/// committed semantic choice — a [SubtitleIntent] — may cross the item
+/// boundary; native state is a fallback for sessions created before
+/// source-backed selection was recorded.
+SubtitlePreference? subtitlePreferenceForItemChange({
   required bool hasCommittedSelection,
   required SubtitleTrack? committedTrack,
   required SubtitleTrack? nativeTrack,
 }) {
-  SubtitleTrack? normalize(SubtitleTrack? track, {required bool preserveOff}) {
+  SubtitlePreference? normalize(SubtitleTrack? track, {required bool preserveOff}) {
     if (track == null) return null;
-    if (track.id == SubtitleTrack.off.id) return preserveOff ? SubtitleTrack.off : null;
+    if (track.id == SubtitleTrack.off.id) return preserveOff ? const SubtitlePreference.off() : null;
 
-    final hasSemanticMetadata =
-        (track.title?.isNotEmpty ?? false) ||
-        (track.language?.isNotEmpty ?? false) ||
-        (track.codec?.isNotEmpty ?? false);
-    if (!hasSemanticMetadata) return null;
-
-    return SubtitleTrack(
-      id: 'navigation',
-      title: track.title,
-      language: track.language,
-      codec: track.codec,
-      isDefault: track.isDefault,
-      isForced: track.isForced,
-      isExternal: track.isExternal,
-    );
+    final intent = SubtitleIntent.fromTrack(track);
+    return intent == null ? null : SubtitlePreference.intent(intent);
   }
 
   if (!hasCommittedSelection) {
     return normalize(nativeTrack, preserveOff: true);
   }
 
-  if (committedTrack == null) return SubtitleTrack.off;
+  if (committedTrack == null) return const SubtitlePreference.off();
 
   final committedPreference = normalize(committedTrack, preserveOff: true);
   if (committedPreference != null) return committedPreference;
@@ -376,8 +366,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late TranscodeQualityPreset _selectedQualityPreset;
   int? _selectedAudioStreamId;
   AudioTrack? _preferredAudioTrack;
-  SubtitleTrack? _preferredSubtitleTrack;
-  SubtitleTrack? _preferredSecondarySubtitleTrack;
+  SubtitlePreference? _preferredSubtitleTrack;
+  SubtitlePreference? _preferredSecondarySubtitleTrack;
   bool _serverSupportsTranscoding = false;
   // Kicked off early in the player initialization attempt for online non-live playback so
   // the metadata fetch (and transcode-decision HTTP, if non-original preset)
@@ -689,6 +679,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _playWithPlaybackIntent(Player currentPlayer) {
+    if (!automotivePlaybackAllowedNow()) {
+      _playbackIntentShouldPlay = false;
+      appLogger.d('Playback blocked while Android Automotive app is not resumed');
+      return Future<void>.value();
+    }
     _playbackIntentShouldPlay = true;
     if (widget.isLive && _live.retryFailed) {
       if (_live.retrying) return Future.value();
@@ -710,6 +705,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _playOrPauseWithPlaybackIntent(Player currentPlayer) {
+    if (!automotivePlaybackAllowedNow()) {
+      appLogger.d('Play/pause requested while Android Automotive app is not resumed; keeping playback paused');
+      return _pauseWithPlaybackIntent(currentPlayer);
+    }
     if (widget.isLive && _live.retryFailed) {
       return _playWithPlaybackIntent(currentPlayer);
     }
@@ -778,8 +777,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playbackTranscodeSessionId = generateSessionIdentifier();
     _selectedAudioStreamId = widget.selectedAudioStreamId;
     _preferredAudioTrack = widget.preferredAudioTrack;
-    _preferredSubtitleTrack = widget.preferredSubtitleTrack;
-    _preferredSecondarySubtitleTrack = widget.preferredSecondarySubtitleTrack;
+    _preferredSubtitleTrack = SubtitlePreference.trackOrNull(widget.preferredSubtitleTrack);
+    _preferredSecondarySubtitleTrack = SubtitlePreference.trackOrNull(widget.preferredSecondarySubtitleTrack);
     _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
 
     _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
@@ -801,10 +800,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       );
     }
     if (_preferredSubtitleTrack != null) {
-      final subtitleDesc = _preferredSubtitleTrack!.id == "no"
-          ? "OFF"
-          : "${_preferredSubtitleTrack!.title ?? _preferredSubtitleTrack!.id} (${_preferredSubtitleTrack!.language ?? "unknown"})";
-      appLogger.d('Preferred subtitle track: $subtitleDesc');
+      appLogger.d('Preferred subtitle track: $_preferredSubtitleTrack');
     }
 
     try {
@@ -867,6 +863,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     switch (state) {
       case AppLifecycleState.inactive:
         _recordLifecycleState('inactive');
+        if (PlatformDetector.isAutomotive()) {
+          _enqueueLifecycleTransition('inactive_automotive', _handleAppHidden);
+        }
         break;
       case AppLifecycleState.hidden:
         _recordLifecycleState('hidden');
@@ -1463,6 +1462,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       appLogger.w('Failed to restore system UI', error: e);
     }
 
+    // Cars are fixed-orientation devices, and a compact head unit can read as a
+    // phone below, which would pin it to portrait on player exit.
+    if (PlatformDetector.isAutomotive()) return;
+
     try {
       if (_isPhone) {
         await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
@@ -1688,13 +1691,30 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       'Apple TV remote play/pause received source=${action.source}'
       '${action.detail == null ? '' : ' detail=${action.detail}'}',
     );
-    await _toggleRemotePlayPause(source: 'Apple TV remote');
+    await _remoteTransport(TransportCommand.toggle, source: 'Apple TV remote');
   }
 
-  /// Toggle play/pause on behalf of a hardware remote (Apple TV bridge or a
-  /// hardware media key). Mirrors the controls path: rewind-on-resume, then
-  /// play/pause with playback intent.
-  Future<void> _toggleRemotePlayPause({required String source}) async {
+  /// Announce an *accepted user transport command* with a centred transient disc.
+  ///
+  /// Deliberately not driven from `player.streams.playing` or the
+  /// `_*WithPlaybackIntent` helpers: those also fire for the sleep timer,
+  /// lifecycle and audio-session changes, frame-rate re-opens, still-watching
+  /// prompts, route exit and episode reloads — none of which are user
+  /// commands. Each accepted command site opts in explicitly instead (#1676).
+  void _announceTransportCommand({required bool willPlay}) {
+    if (!mounted) return;
+    // Visible chrome already renders the play/pause state.
+    if (_chromeController.controlsVisible) return;
+    _toastController.showTransport(
+      willPlay ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
+      willPlay ? t.videoControls.playbackResumed : t.videoControls.playbackPaused,
+    );
+  }
+
+  /// Apply a transport command on behalf of a hardware remote (Apple TV bridge
+  /// or a hardware media key). Mirrors the controls path: rewind-on-resume,
+  /// then play/pause with playback intent, then announce.
+  Future<void> _remoteTransport(TransportCommand command, {required String source}) async {
     if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
 
     final currentPlayer = player;
@@ -1708,23 +1728,43 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       return;
     }
 
+    // Rewind-on-resume follows the resolved intent, never the current state: a
+    // directed pause on an already-paused video must not jump backwards.
+    final resumes = switch (command) {
+      TransportCommand.play => !currentPlayer.state.playing,
+      TransportCommand.pause => false,
+      TransportCommand.toggle => !currentPlayer.state.playing,
+    };
+
     try {
-      if (!currentPlayer.state.playing) {
+      if (resumes) {
         await _seekBackForRewind(currentPlayer);
         if (!mounted || player != currentPlayer) return;
       }
-      await _playOrPauseWithPlaybackIntent(currentPlayer);
+      await switch (command) {
+        TransportCommand.play => _playWithPlaybackIntent(currentPlayer),
+        TransportCommand.pause => _pauseWithPlaybackIntent(currentPlayer),
+        TransportCommand.toggle => _playOrPauseWithPlaybackIntent(currentPlayer),
+      };
+      _announceTransportCommand(willPlay: _playbackIntentShouldPlay);
     } catch (e, st) {
       appLogger.w('$source play/pause failed', error: e, stackTrace: st);
     }
   }
 
-  /// Hardware media play/pause keys (Android TV remotes). Deliberately not
-  /// space/configured hotkeys — text fields must still receive those.
-  static bool _isHardwarePlayPauseKey(LogicalKeyboardKey key) =>
-      key == LogicalKeyboardKey.mediaPlayPause ||
-      key == LogicalKeyboardKey.mediaPlay ||
-      key == LogicalKeyboardKey.mediaPause;
+  /// Transport requested from the player controls (keyboard hotkey, companion
+  /// remote, on-screen button, click-to-toggle, D-pad Select). Authorization
+  /// and rewind-on-resume already ran in the controls layer.
+  Future<void> _handleControlsTransport(TransportCommand command) async {
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
+    await switch (command) {
+      TransportCommand.play => _playWithPlaybackIntent(currentPlayer),
+      TransportCommand.pause => _pauseWithPlaybackIntent(currentPlayer),
+      TransportCommand.toggle => _playOrPauseWithPlaybackIntent(currentPlayer),
+    };
+    _announceTransportCommand(willPlay: _playbackIntentShouldPlay);
+  }
 
   String? _lastLogError;
   bool _sawServer500 = false;
@@ -1906,20 +1946,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             () => _handleScreenPlayerNavigation(navigationKey),
           );
         }
-        // Hardware media play/pause must act even when focus rests on this
+        // Hardware media transport must act even when focus rests on this
         // node or a sibling overlay — otherwise the key only reveals the
         // chrome and leaks to the (possibly stale/suspended) Android
         // MediaSession (#1375). Gated to TV-style nav: on desktop the global
         // HardwareKeyboard handler already acts (handlers don't stop focus
         // dispatch), and Apple TV delivers play/pause via its native bridge.
-        if (_videoPlayerNavigationEnabled &&
-            !PlatformDetector.isAppleTV() &&
-            _isHardwarePlayPauseKey(event.logicalKey)) {
+        // The chrome deliberately stays down; _remoteTransport announces the
+        // accepted command with a centred transient disc instead (#1676).
+        final transportCommand = classifyTransportKey(event.logicalKey);
+        if (_videoPlayerNavigationEnabled && !PlatformDetector.isAppleTV() && transportCommand != null) {
           if (event is KeyDownEvent) {
-            unawaited(_toggleRemotePlayPause(source: 'Hardware media key'));
-            if (node.hasPrimaryFocus) {
-              _chromeController.show(focusTarget: PlayerChromeFocusTarget.playPause);
-            }
+            unawaited(_remoteTransport(transportCommand, source: 'Hardware media key'));
           }
           return KeyEventResult.handled; // consume down, repeat, and up
         }

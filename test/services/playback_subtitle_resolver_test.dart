@@ -5,6 +5,7 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_subtitle_resolver.dart';
+import 'package:plezy/services/subtitle_preference.dart';
 
 import '../test_helpers/media_items.dart';
 
@@ -16,15 +17,20 @@ MediaSubtitleTrack _sourceSubtitle(
   bool selected = false,
   bool external = false,
   bool usesExternalDelivery = false,
+  String? key,
+  String? title,
 }) {
   return MediaSubtitleTrack(
     id: id,
     language: language,
     languageCode: language,
     codec: codec,
-    title: 'Subtitle $id',
+    title: title ?? 'Subtitle $id',
     selected: selected,
     forced: forced,
+    // Mirrors JellyfinFileInfoStreamReader: the server ships a delivery URL
+    // with every row it marks external, and _sidecar's URL contains it.
+    key: key ?? (external || usesExternalDelivery ? '/subtitles/$id.srt' : null),
     external: external,
     usesExternalDelivery: usesExternalDelivery,
   );
@@ -130,8 +136,10 @@ void main() {
       );
     });
 
-    test('fuzzy-matches Jellyfin external-delivery rows that remain embedded in direct play', () {
-      final source = _sourceSubtitle(2, language: 'eng', usesExternalDelivery: true);
+    test('fuzzy-matches a Jellyfin external-delivery row once direct play strips its sidecar identity', () {
+      // JellyfinClient.getPlaybackInitialization normalizes rows it did not
+      // fetch as sidecars, which is what makes the embedded stream reachable.
+      final source = _sourceSubtitle(2, language: 'eng', usesExternalDelivery: true).withoutSidecarIdentity();
       const native = SubtitleTrack(id: '7', language: 'eng', codec: 'srt');
 
       expect(
@@ -145,6 +153,23 @@ void main() {
         native,
       );
     });
+
+    test('a row that kept its sidecar identity never fuzzy-matches a native track', () {
+      final source = _sourceSubtitle(2, language: 'eng', usesExternalDelivery: true);
+      const native = SubtitleTrack(id: '7', language: 'eng', codec: 'srt');
+
+      expect(
+        PlaybackSubtitleResolver.nativeTrackForSource(
+          sourceTrack: source,
+          nativeTracks: const [native],
+          allSourceTracks: [source],
+          isResolvedSidecar: false,
+          isContainerSidecar: false,
+        ),
+        isNull,
+      );
+    });
+
     test('matches a requested source among tracks from one container sidecar', () {
       final sources = [_sourceSubtitle(2, language: 'eng'), _sourceSubtitle(3, language: 'eng')];
       const nativeTracks = [
@@ -206,7 +231,7 @@ void main() {
       metadata: metadata,
       mediaInfo: _mediaInfo([_sourceSubtitle(2, selected: true, usesExternalDelivery: true)]),
       sidecars: [_sidecar(2)],
-      preferredSubtitleTrack: SubtitleTrack.off,
+      preferredSubtitleTrack: const SubtitlePreference.off(),
     );
 
     expect(result.isOff, isTrue);
@@ -221,7 +246,7 @@ void main() {
         _sidecar(2, preload: true, isContainer: true, uri: 'https://example.test/video.mkv'),
         _sidecar(3, preload: true, isContainer: true, uri: 'https://example.test/video.mkv'),
       ],
-      preferredSubtitleTrack: SubtitleTrack.off,
+      preferredSubtitleTrack: const SubtitlePreference.off(),
     );
 
     expect(result.isOff, isTrue);
@@ -243,7 +268,9 @@ void main() {
         _sidecar(2),
         _sidecar(3, language: 'swe'),
       ],
-      preferredSubtitleTrack: PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+      preferredSubtitleTrack: SubtitlePreference.trackOrNull(
+        PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+      ),
     );
 
     expect(result.primarySourceStreamId, 3);
@@ -278,7 +305,9 @@ void main() {
         _sidecar(2, isContainer: true, uri: 'https://example.test/video.mkv'),
         _sidecar(3, isContainer: true, uri: 'https://example.test/video.mkv'),
       ],
-      preferredSubtitleTrack: PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+      preferredSubtitleTrack: SubtitlePreference.trackOrNull(
+        PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+      ),
     );
 
     expect(result.primarySourceStreamId, 3);
@@ -295,13 +324,15 @@ void main() {
         _sidecar(3),
         _sidecar(7, language: 'fra'),
       ],
-      preferredSubtitleTrack: const SubtitleTrack(
-        id: 'source:3',
-        title: 'French from the previous source',
-        language: 'fra',
-        codec: 'srt',
-        isExternal: true,
-        uri: 'https://example.test/previous/3.srt',
+      preferredSubtitleTrack: const SubtitlePreference.track(
+        SubtitleTrack(
+          id: 'source:3',
+          title: 'French from the previous source',
+          language: 'fra',
+          codec: 'srt',
+          isExternal: true,
+          uri: 'https://example.test/previous/3.srt',
+        ),
       ),
       preserveSourceIdentity: false,
     );
@@ -314,11 +345,8 @@ void main() {
       metadata: metadata,
       mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng'), _sourceSubtitle(7, language: 'spa', selected: true)]),
       sidecars: const [],
-      preferredSubtitleTrack: const SubtitleTrack(
-        id: 'source:3',
-        title: 'French from the previous source',
-        language: 'fra',
-        codec: 'srt',
+      preferredSubtitleTrack: const SubtitlePreference.track(
+        SubtitleTrack(id: 'source:3', title: 'French from the previous source', language: 'fra', codec: 'srt'),
       ),
       preserveSourceIdentity: false,
     );
@@ -337,12 +365,14 @@ void main() {
         _sidecar(7),
         _sidecar(9, language: 'fra'),
       ],
-      preferredSubtitleTrack: const SubtitleTrack(
-        id: 'navigation',
-        title: 'English from the previous episode',
-        language: 'eng',
-        codec: 'srt',
-        isExternal: true,
+      preferredSubtitleTrack: const SubtitlePreference.intent(
+        SubtitleIntent(
+          language: 'eng',
+          forced: false,
+          title: 'English from the previous episode',
+          codec: 'srt',
+          isExternal: true,
+        ),
       ),
     );
 
@@ -359,19 +389,96 @@ void main() {
         _sourceSubtitle(8, language: 'eng', forced: true, usesExternalDelivery: true),
       ]),
       sidecars: [_sidecar(7), _sidecar(8)],
-      preferredSubtitleTrack: const SubtitleTrack(
-        id: 'navigation',
-        title: 'English forced from the previous episode',
-        language: 'eng',
-        codec: 'srt',
-        isForced: true,
-        isExternal: true,
+      preferredSubtitleTrack: const SubtitlePreference.intent(
+        SubtitleIntent(
+          language: 'eng',
+          forced: true,
+          title: 'English forced from the previous episode',
+          codec: 'srt',
+          isExternal: true,
+        ),
       ),
     );
 
     expect(result.primarySourceStreamId, 8);
     expect(result.primaryTrack.isForced, isTrue);
     expect(result.primarySidecar?.track.uri, 'https://example.test/subtitles/8.srt');
+  });
+
+  group('issue #1716/#1717 forced-class carry-over', () {
+    const forcedIntent = SubtitlePreference.intent(
+      SubtitleIntent(language: 'fra', forced: true, title: 'FR Forced [ASS]', codec: 'srt', isExternal: true),
+    );
+
+    test("picks the next episode's title-only forced row", () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([
+          _sourceSubtitle(7, language: 'fra', usesExternalDelivery: true),
+          _sourceSubtitle(8, language: 'fra', title: 'FR Forced', usesExternalDelivery: true),
+        ]),
+        sidecars: [_sidecar(7, language: 'fra'), _sidecar(8, language: 'fra')],
+        preferredSubtitleTrack: forcedIntent,
+      );
+
+      expect(result.primarySourceStreamId, 8);
+      expect(result.primaryTrack.isForced, isTrue);
+    });
+
+    test('picks a flag-forced row for a title-forced intent (cross-form)', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([
+          _sourceSubtitle(7, language: 'fra', usesExternalDelivery: true),
+          _sourceSubtitle(8, language: 'fra', forced: true, usesExternalDelivery: true),
+        ]),
+        sidecars: [_sidecar(7, language: 'fra'), _sidecar(8, language: 'fra')],
+        preferredSubtitleTrack: forcedIntent,
+      );
+
+      expect(result.primarySourceStreamId, 8);
+    });
+
+    test('declines to the server-selected full row when no forced row exists', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([
+          _sourceSubtitle(7, language: 'fra', selected: true, usesExternalDelivery: true),
+          _sourceSubtitle(9, language: 'eng', usesExternalDelivery: true),
+        ]),
+        sidecars: [_sidecar(7, language: 'fra'), _sidecar(9)],
+        preferredSubtitleTrack: forcedIntent,
+      );
+
+      expect(result.primarySourceStreamId, 7);
+    });
+
+    test('subtitles stay off when no forced row exists and nothing is selected', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([_sourceSubtitle(7, language: 'fra', usesExternalDelivery: true)]),
+        sidecars: [_sidecar(7, language: 'fra')],
+        preferredSubtitleTrack: forcedIntent,
+      );
+
+      expect(result.isOff, isTrue);
+    });
+
+    test('a full intent does not inherit a forced-only catalog (symmetric)', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([
+          _sourceSubtitle(8, language: 'fra', title: 'FR Forced', usesExternalDelivery: true),
+          _sourceSubtitle(9, language: 'eng', selected: true, usesExternalDelivery: true),
+        ]),
+        sidecars: [_sidecar(8, language: 'fra'), _sidecar(9)],
+        preferredSubtitleTrack: const SubtitlePreference.intent(
+          SubtitleIntent(language: 'fra', forced: false, title: 'French', codec: 'srt', isExternal: true),
+        ),
+      );
+
+      expect(result.primarySourceStreamId, 9);
+    });
   });
 
   test('selected embedded subtitle keeps sidecars out of the open', () {
@@ -410,7 +517,9 @@ void main() {
         _sidecar(2),
         _sidecar(3, language: 'swe'),
       ],
-      preferredSecondarySubtitleTrack: PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+      preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(
+        PlaybackSubtitleResolver.preferredTrackForSource(mediaInfo, 3),
+      ),
     );
 
     expect(result.primarySourceStreamId, 2);

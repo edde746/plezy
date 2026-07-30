@@ -1,3 +1,49 @@
+/// Season of a parent series as numbered by each external provider.
+///
+/// Populated from the Fribb mapping's `season: {tvdb: N, tmdb: M}`.
+class ExternalSeasonRef {
+  final int? tvdb;
+  final int? tmdb;
+
+  const ExternalSeasonRef({this.tvdb, this.tmdb});
+
+  bool get hasAny => tvdb != null || tmdb != null;
+
+  /// True when this entry covers a later season under either provider.
+  ///
+  /// Independent of [agreedSeason]: it answers "is this a sequel at all",
+  /// which stays knowable when the two providers disagree. Callers use it to
+  /// drop the ±1 year window, because a sequel's catalog year is its own
+  /// season's, not the parent show's.
+  bool get isSequel => (tvdb ?? 0) > 1 || (tmdb ?? 0) > 1;
+
+  /// The season number both providers mapped and agree on, else null.
+  ///
+  /// TVDB and TMDB disagree on split-cour / continuation seasons — a season
+  /// the former numbers `2` the latter often folds into `1` at an episode
+  /// offset. Which one a library follows is a server-side setting, not
+  /// anything a dataset can tell us, and it is NOT inferable from which ids an
+  /// item exposes (a Plex show carries all three regardless). So when the two
+  /// disagree the honest answer is "cannot tell" and the caller must not gate.
+  ///
+  /// A missing number is not agreement either: `tvdb: 2, tmdb: null` means
+  /// Fribb has no TMDB season mapping, and a TMDB-ordered server would number
+  /// that season by the mapping we do not have. Holds for 1133 of the 1185
+  /// gate-eligible Fribb rows; the other 52 simply go ungated.
+  int? get agreedSeason => tvdb != null && tvdb == tmdb ? tvdb : null;
+
+  Map<String, Object?> toJson() => {if (tvdb != null) 'tvdb': tvdb, if (tmdb != null) 'tmdb': tmdb};
+
+  factory ExternalSeasonRef.fromJson(Map<String, Object?> json) =>
+      ExternalSeasonRef(tvdb: json['tvdb'] as int?, tmdb: json['tmdb'] as int?);
+
+  @override
+  bool operator ==(Object other) => other is ExternalSeasonRef && other.tvdb == tvdb && other.tmdb == tmdb;
+
+  @override
+  int get hashCode => Object.hash(tvdb, tmdb);
+}
+
 /// External IDs (IMDb / TMDB / TVDB) extracted from a media server's
 /// metadata. Shared by the Trakt and tracker resolvers.
 ///

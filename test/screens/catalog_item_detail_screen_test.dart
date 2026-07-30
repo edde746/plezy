@@ -2,14 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
@@ -18,7 +22,9 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
+import 'package:plezy/widgets/hub_section.dart';
 import 'package:plezy/widgets/media_card.dart';
+import 'package:plezy/widgets/optimized_media_image.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/media_items.dart';
@@ -27,7 +33,7 @@ import '../test_helpers/prefs.dart';
 
 class _FakeCatalogSource implements CatalogSource {
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
-  _FakeCatalogSource({bool watchlistLoading = false})
+  _FakeCatalogSource({bool watchlistLoading = false, this.detail, this.detailError, this.detailCompleter})
     : _watchlistValue = watchlistLoading ? null : false,
       _watchlistLoad = watchlistLoading ? Completer<void>() : null;
 
@@ -35,6 +41,10 @@ class _FakeCatalogSource implements CatalogSource {
   final Completer<void>? _watchlistLoad;
   int addToWatchlistCalls = 0;
 
+  final CatalogDetail? detail;
+  final Object? detailError;
+  final Completer<CatalogDetail>? detailCompleter;
+  int fetchDetailCalls = 0;
   @override
   CatalogSourceId get id => CatalogSourceId.trakt;
 
@@ -48,20 +58,29 @@ class _FakeCatalogSource implements CatalogSource {
   Listenable get watchlistChanges => _watchlistChanges;
 
   @override
-  Future<List<CatalogCastMember>> fetchCast(CatalogItem item, {int limit = 20}) async => const [
-    CatalogCastMember(name: 'First Actor', secondary: 'Lead'),
-    CatalogCastMember(name: 'Second Actor', secondary: 'Support'),
-  ];
-
-  @override
-  Future<List<CatalogItem>> fetchRelated(CatalogItem item, {int limit = 20}) async => const [
-    CatalogItem(
-      source: CatalogSourceId.trakt,
-      kind: MediaKind.movie,
-      title: 'Related Movie',
-      ids: CatalogItemIds(tmdb: 2),
-    ),
-  ];
+  Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async {
+    fetchDetailCalls++;
+    final completer = detailCompleter;
+    if (completer != null) return completer.future;
+    final error = detailError;
+    if (error != null) throw error;
+    return detail ??
+        CatalogDetail(
+          item: item,
+          cast: const [
+            CatalogCastMember(name: 'First Actor', secondary: 'Lead'),
+            CatalogCastMember(name: 'Second Actor', secondary: 'Support'),
+          ],
+          related: const [
+            CatalogItem(
+              source: CatalogSourceId.trakt,
+              kind: MediaKind.movie,
+              title: 'Related Movie',
+              ids: CatalogItemIds(tmdb: 2),
+            ),
+          ],
+        );
+  }
 
   @override
   Future<void> ensureWatchlistLoaded() async {
@@ -110,6 +129,22 @@ class _FakeCatalogLibraryMatcher extends CatalogLibraryMatcher {
   Future<List<MediaItem>> match(CatalogItem item) async => matches;
 }
 
+/// Matches only items that carry an external id, the way a real lookup for a
+/// Plex Discover row does (#1715): the bare rating-key form misses, the
+/// detail-enriched form hits.
+class _ExternalIdGatedMatcher extends CatalogLibraryMatcher {
+  _ExternalIdGatedMatcher(super.multiServer, this.hit);
+
+  final MediaItem hit;
+  final List<CatalogItem> calls = [];
+
+  @override
+  Future<List<MediaItem>> match(CatalogItem item) async {
+    calls.add(item);
+    return item.ids.toExternalIds().hasAny ? [hit] : const [];
+  }
+}
+
 const _item = CatalogItem(
   source: CatalogSourceId.trakt,
   kind: MediaKind.movie,
@@ -123,11 +158,13 @@ Future<void> _pumpDetail(
   _FakeCatalogSource source, {
   List<MediaItem> matches = const [],
   bool pushedRoute = false,
+  CatalogItem item = _item,
+  CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
 }) async {
   final sources = _FakeCatalogSourcesProvider(source);
   final serverManager = MultiServerManager();
   final multiServer = testMultiServerProvider(serverManager);
-  final matcher = _FakeCatalogLibraryMatcher(multiServer, matches);
+  final matcher = matcherBuilder?.call(multiServer) ?? _FakeCatalogLibraryMatcher(multiServer, matches);
   addTearDown(sources.dispose);
   addTearDown(source.dispose);
   addTearDown(serverManager.dispose);
@@ -148,12 +185,12 @@ Future<void> _pumpDetail(
                     body: TextButton(
                       onPressed: () => Navigator.of(
                         context,
-                      ).push(MaterialPageRoute<void>(builder: (_) => const CatalogItemDetailScreen(item: _item))),
+                      ).push(MaterialPageRoute<void>(builder: (_) => CatalogItemDetailScreen(item: item))),
                       child: const Text('Open catalog'),
                     ),
                   ),
                 )
-              : const CatalogItemDetailScreen(item: _item),
+              : CatalogItemDetailScreen(item: item),
         ),
       ),
     ),
@@ -168,8 +205,10 @@ Future<void> _pumpDetail(
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUpAll(() {
+  setUpAll(() async {
     LocaleSettings.setLocaleSync(AppLocale.en);
+    // The facts section formats dates; `main.dart` does this at startup.
+    await initializeDateFormatting('en');
   });
 
   setUp(() async {
@@ -181,6 +220,578 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+  });
+
+  testWidgets('fetchDetail replaces the opening item with its enriched item once loaded', (tester) async {
+    final detailCompleter = Completer<CatalogDetail>();
+    final source = _FakeCatalogSource(detailCompleter: detailCompleter);
+
+    await _pumpDetail(tester, source);
+    expect(find.text('Catalog Movie'), findsOneWidget);
+    expect(find.text('Enriched overview'), findsNothing);
+
+    detailCompleter.complete(
+      const CatalogDetail(
+        item: CatalogItem(
+          source: CatalogSourceId.trakt,
+          kind: MediaKind.movie,
+          title: 'Enriched Catalog Movie',
+          overview: 'Enriched overview',
+          ids: CatalogItemIds(tmdb: 1),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(source.fetchDetailCalls, 1);
+    expect(find.text('Enriched Catalog Movie'), findsOneWidget);
+    expect(find.text('Enriched overview'), findsOneWidget);
+    expect(find.text('Catalog Movie'), findsNothing);
+  });
+
+  testWidgets('detail enrichment that adds external ids re-resolves library matches', (tester) async {
+    // #1715: the row form of a Plex Discover item carries only its rating
+    // key and the first lookup misses; the detail body brings the external
+    // ids, which must trigger a second lookup instead of leaving the screen
+    // on "Not in your library".
+    const bare = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Row-only Movie',
+      ids: CatalogItemIds(trakt: 5),
+    );
+    const enriched = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Row-only Movie',
+      ids: CatalogItemIds(trakt: 5, tmdb: 99),
+    );
+    final hit = testMediaItem(id: 'server-match', libraryTitle: 'Movies', serverName: 'Living Room');
+    late _ExternalIdGatedMatcher matcher;
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: enriched));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: bare,
+      matcherBuilder: (multiServer) => matcher = _ExternalIdGatedMatcher(multiServer, hit),
+    );
+
+    expect(matcher.calls.map((call) => call.ids.tmdb), [null, 99]);
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+    expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
+    expect(find.text('Movies'), findsOneWidget);
+  });
+
+  testWidgets('fetchDetail failure leaves the opening item rendered', (tester) async {
+    final source = _FakeCatalogSource(detailError: StateError('detail unavailable'));
+
+    await _pumpDetail(tester, source);
+
+    expect(source.fetchDetailCalls, 1);
+    expect(find.text('Catalog Movie'), findsOneWidget);
+    expect(find.text('Overview'), findsOneWidget);
+    expect(find.text(t.explore.cast), findsNothing);
+    expect(find.text(t.discover.moreLikeThis), findsNothing);
+  });
+
+  testWidgets('spoiler tags stay hidden until the focusable reveal action is pressed', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Tagged Movie',
+      ids: CatalogItemIds(tmdb: 10),
+      tags: [
+        CatalogTag(name: 'Found family', rank: 80),
+        CatalogTag(name: 'Secret identity', rank: 95, isSpoiler: true),
+      ],
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    expect(find.text('Found family'), findsOneWidget);
+    expect(find.text('Secret identity'), findsNothing);
+    expect(find.text(t.explore.detail.revealSpoilerTags), findsOneWidget);
+
+    await tester.tap(find.text(t.explore.detail.revealSpoilerTags));
+    await tester.pump();
+
+    expect(find.text('Secret identity'), findsOneWidget);
+    expect(find.text(t.explore.detail.revealSpoilerTags), findsNothing);
+  });
+
+  testWidgets('ratings row labels every score source without a brand mark', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Rated Movie',
+      ids: CatalogItemIds(tmdb: 11),
+      ratings: [
+        CatalogRatingSource(source: 'simkl', value: 8.1, votes: 11),
+        CatalogRatingSource(source: 'mal', value: 8.3, votes: 13),
+        CatalogRatingSource(source: 'critic', value: 7.2, votes: 14),
+        CatalogRatingSource(source: 'audience', value: 8.8, votes: 15),
+      ],
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    expect(find.text(t.explore.detail.ratings), findsOneWidget);
+    expect(find.text('Simkl 8.1 (11 votes)'), findsOneWidget);
+    expect(find.text('MyAnimeList 8.3 (13 votes)'), findsOneWidget);
+    expect(find.text('Critics 7.2 (14 votes)'), findsOneWidget);
+    expect(find.text('Audience 8.8 (15 votes)'), findsOneWidget);
+  });
+
+  testWidgets('scores whose source owns a logo render the mark and that source scale', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Attributed Movie',
+      ids: CatalogItemIds(tmdb: 21),
+      ratings: [
+        CatalogRatingSource(source: 'rottenTomatoesCritic', value: 8.4),
+        CatalogRatingSource(source: 'rottenTomatoesAudience', value: 4.1),
+        CatalogRatingSource(source: 'imdb', value: 7.9, votes: 12),
+        CatalogRatingSource(source: 'tmdb', value: 7.5),
+      ],
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    expect(
+      tester
+          .widgetList<SvgPicture>(find.byType(SvgPicture))
+          .map((picture) => picture.bytesLoader)
+          .whereType<SvgAssetLoader>()
+          .map((loader) => loader.assetName),
+      containsAll(const [
+        'assets/rating_icons/rt_fresh.svg',
+        'assets/rating_icons/rt_spilled.svg',
+        'assets/rating_icons/imdb.svg',
+        'assets/rating_icons/tmdb.svg',
+      ]),
+    );
+    // The mark carries the attribution, so the chip keeps only the score, on
+    // the scale that source publishes.
+    expect(find.text('84%'), findsOneWidget);
+    expect(find.text('41%'), findsOneWidget);
+    expect(find.text('7.9 (12 votes)'), findsOneWidget);
+    expect(find.text('75%'), findsOneWidget);
+    expect(find.text('${t.explore.ratingSource.rottenTomatoesCritic} 8.4'), findsNothing);
+  });
+
+  testWidgets('seasonal rank keeps its season window instead of claiming all-time rank', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: 'Seasonal Show',
+      ids: CatalogItemIds(tmdb: 12),
+      ranks: [
+        CatalogRank(
+          rank: 7,
+          scope: CatalogRankScope.popular,
+          allTime: false,
+          year: 2025,
+          season: CatalogSeasonName.fall,
+        ),
+      ],
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    expect(find.text('#7 in Fall 2025'), findsOneWidget);
+    expect(find.text('#7 popular'), findsNothing);
+  });
+
+  testWidgets('windowed viewers render only when their period is present', (tester) async {
+    const missingPeriod = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Missing Period',
+      ids: CatalogItemIds(tmdb: 13),
+      audience: CatalogAudience(listed: 3, viewers: 42),
+    );
+    final firstSource = _FakeCatalogSource(detail: const CatalogDetail(item: missingPeriod));
+    await _pumpDetail(tester, firstSource, item: missingPeriod);
+
+    expect(find.text('3 listed'), findsOneWidget);
+    expect(find.textContaining('42'), findsNothing);
+
+    const weekly = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Weekly Viewers',
+      ids: CatalogItemIds(tmdb: 14),
+      audience: CatalogAudience(viewers: 42, viewersPeriod: CatalogAudiencePeriod.week),
+    );
+    // Unmount first: pumping a second detail screen at the same tree position
+    // would reuse the existing State, so `initState` would never re-run and
+    // the screen would keep the previous item.
+    await tester.pumpWidget(const SizedBox.shrink());
+    final secondSource = _FakeCatalogSource(detail: const CatalogDetail(item: weekly));
+    await _pumpDetail(tester, secondSource, item: weekly);
+
+    expect(find.text('42 watched this week'), findsOneWidget);
+  });
+
+  testWidgets('trailer action appears only after an item supplies a trailer URL', (tester) async {
+    final detailCompleter = Completer<CatalogDetail>();
+    final source = _FakeCatalogSource(detailCompleter: detailCompleter);
+
+    await _pumpDetail(tester, source);
+    expect(find.byTooltip(t.explore.detail.watchTrailer), findsNothing);
+
+    detailCompleter.complete(
+      const CatalogDetail(
+        item: CatalogItem(
+          source: CatalogSourceId.trakt,
+          kind: MediaKind.movie,
+          title: 'Catalog Movie',
+          trailerUrl: 'https://example.com/trailer',
+          ids: CatalogItemIds(tmdb: 1),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip(t.explore.detail.watchTrailer), findsOneWidget);
+  });
+
+  testWidgets('background prose renders as its own section', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Production Movie',
+      ids: CatalogItemIds(tmdb: 15),
+      background: 'Filmed over three winters.',
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    expect(find.text(t.explore.detail.background), findsOneWidget);
+    expect(find.text('Filmed over three winters.'), findsOneWidget);
+  });
+
+  testWidgets('budget and box office pair into columns on a wide window and stack on a narrow one', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1400, 900);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Expensive Movie',
+      ids: CatalogItemIds(tmdb: 22),
+      budget: 165000000,
+      revenue: 675000000,
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    final budget = find.text(t.explore.detail.budget);
+    final revenue = find.text(t.explore.detail.revenue);
+    expect(tester.getTopLeft(revenue).dy, tester.getTopLeft(budget).dy);
+    expect(tester.getTopLeft(revenue).dx, greaterThan(tester.getTopLeft(budget).dx));
+
+    tester.view.physicalSize = const Size(420, 900);
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(revenue).dy, greaterThan(tester.getTopLeft(budget).dy));
+    expect(tester.getTopLeft(revenue).dx, tester.getTopLeft(budget).dx);
+  });
+
+  testWidgets('all-null metadata renders without an empty optional section header', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Bare Movie',
+      ids: CatalogItemIds(tmdb: 15),
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    expect(find.text('Bare Movie'), findsOneWidget);
+    expect(find.text(t.explore.detail.ratings), findsNothing);
+    expect(find.text(t.explore.detail.schedule), findsNothing);
+    expect(find.text(t.explore.detail.crew), findsNothing);
+    expect(find.text(t.explore.detail.tags), findsNothing);
+    expect(find.text(t.explore.detail.links), findsNothing);
+    expect(find.text(t.explore.detail.watchOn), findsNothing);
+    expect(find.text(t.explore.cast), findsNothing);
+    expect(find.text(t.discover.moreLikeThis), findsNothing);
+    expect(find.text(t.explore.detail.relatedTitles), findsNothing);
+    expect(find.text(t.explore.detail.background), findsNothing);
+  });
+
+  testWidgets('single-entry relations share one labelled section instead of a shelf each', (tester) async {
+    const sequel = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'The Sequel',
+      year: 2019,
+      posterUrl: 'https://example.com/sequel.jpg',
+      ids: CatalogItemIds(tmdb: 17),
+    );
+    const spinOff = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'The Spin-off',
+      ids: CatalogItemIds(tmdb: 20),
+    );
+    const recommendation = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'A Similar Movie',
+      ids: CatalogItemIds(tmdb: 18),
+    );
+    final source = _FakeCatalogSource(
+      detail: const CatalogDetail(
+        item: _item,
+        related: [recommendation],
+        relations: [
+          CatalogRelation(type: CatalogRelationType.sequel, items: [sequel]),
+          CatalogRelation(type: CatalogRelationType.spinOff, items: [spinOff]),
+        ],
+      ),
+    );
+
+    await _pumpDetail(tester, source);
+
+    // Recommendations keep their shelf; two one-title relations do not get one
+    // each.
+    expect(find.byType(HubSection), findsOneWidget);
+    expect(find.text(t.discover.moreLikeThis), findsOneWidget);
+    expect(find.text('A Similar Movie'), findsOneWidget);
+
+    expect(find.text(t.explore.detail.relatedTitles), findsOneWidget);
+    expect(find.text(t.explore.relation.sequel), findsOneWidget);
+    expect(find.text(t.explore.relation.spinOff), findsOneWidget);
+    expect(find.text('The Sequel • 2019'), findsOneWidget);
+    expect(find.text('The Spin-off'), findsOneWidget);
+    expect(
+      tester.widgetList<OptimizedMediaImage>(find.byType(OptimizedMediaImage)).map((image) => image.imagePath),
+      contains('https://example.com/sequel.jpg'),
+    );
+  });
+
+  testWidgets('a relation row opens the catalog detail screen of that title', (tester) async {
+    const sequel = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'The Sequel',
+      ids: CatalogItemIds(tmdb: 17),
+    );
+    final source = _FakeCatalogSource(
+      detail: const CatalogDetail(
+        item: _item,
+        relations: [
+          CatalogRelation(type: CatalogRelationType.sequel, items: [sequel]),
+        ],
+      ),
+    );
+
+    await _pumpDetail(tester, source);
+    await tester.tap(find.text('The Sequel'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CatalogItemDetailScreen, skipOffstage: false), findsNWidgets(2));
+    expect(find.text('The Sequel'), findsOneWidget);
+  });
+
+  testWidgets('D-pad walks the relation rows between the cast strip and recommendations', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    const prequel = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'The Prequel',
+      ids: CatalogItemIds(tmdb: 16),
+    );
+    const sequel = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'The Sequel',
+      ids: CatalogItemIds(tmdb: 17),
+    );
+    final source = _FakeCatalogSource(
+      detail: const CatalogDetail(
+        item: _item,
+        cast: [CatalogCastMember(name: 'First Actor', secondary: 'Lead')],
+        related: [
+          CatalogItem(
+            source: CatalogSourceId.trakt,
+            kind: MediaKind.movie,
+            title: 'Related Movie',
+            ids: CatalogItemIds(tmdb: 2),
+          ),
+        ],
+        relations: [
+          CatalogRelation(type: CatalogRelationType.prequel, items: [prequel]),
+          CatalogRelation(type: CatalogRelationType.sequel, items: [sequel]),
+        ],
+      ),
+    );
+
+    await _pumpDetail(tester, source);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_cast_row');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_relation_0');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_relation_1');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, startsWith('hub_catalog-related:'));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_relation_1');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_cast_row');
+  });
+
+  testWidgets('social recommendation keeps its person, reason, and note', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Social Movie',
+      ids: CatalogItemIds(tmdb: 19),
+      recommenders: [
+        CatalogRecommender(
+          username: 'pat',
+          name: 'Pat',
+          note: 'A thoughtful recommendation.',
+          reason: CatalogRecommendationReason.recommended,
+        ),
+      ],
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    expect(find.text('Recommended by Pat'), findsOneWidget);
+    expect(find.text('A thoughtful recommendation.'), findsOneWidget);
+  });
+
+  testWidgets('extended facts render in their labelled sections with localized values', (tester) async {
+    final item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.show,
+      title: 'Fact-rich Show',
+      ids: CatalogItemIds(tmdb: 20),
+      broadcastSeason: CatalogSeasonInfo(name: CatalogSeasonName.fall, year: 2025),
+      format: CatalogFormat.ova,
+      sourceMaterial: CatalogSourceMaterial.lightNovel,
+      studios: ['Studio One'],
+      countries: ['US'],
+      languages: ['ja'],
+      credits: [
+        CatalogCredit(name: 'A. Director', role: CatalogCreditRole.director),
+        CatalogCredit(name: 'W. Writer', role: CatalogCreditRole.writer),
+      ],
+      broadcast: CatalogBroadcast(weekday: DateTime.tuesday, time: '21:00', timezone: 'Asia/Tokyo'),
+      nextEpisode: CatalogNextEpisode(episode: 4, airsAt: DateTime.utc(2100)),
+      serverState: CatalogServerState(
+        availability: CatalogAvailability.available,
+        request: CatalogRequestState.pending,
+        availableSeasons: 2,
+        totalSeasons: 3,
+      ),
+      audience: CatalogAudience(dropRate: 0.25),
+      releaseDate: DateTime.utc(2024, 1, 2),
+      physicalReleaseDate: DateTime.utc(2024, 4, 5),
+      endDate: DateTime.utc(2025, 6, 7),
+      addedAt: DateTime.utc(2024, 2, 3),
+      userRating: 9,
+      originalTitle: 'Original Fact Title',
+      altTitles: ['Alternate Fact Title'],
+      contentAdvisory: 'Suitable for older teens.',
+      budget: 1000000,
+      revenue: 2500000,
+      links: [
+        CatalogLink(label: 'StreamCo', url: 'https://example.com/watch', isStreaming: true),
+        CatalogLink(label: 'Official Site', url: 'https://example.com'),
+      ],
+    );
+    final source = _FakeCatalogSource(detail: CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+
+    expect(find.text('Fall 2025'), findsOneWidget);
+    expect(find.text('OVA'), findsOneWidget);
+    expect(find.text('Light novel'), findsOneWidget);
+    expect(find.text('25% dropped it'), findsOneWidget);
+    expect(find.text('Available'), findsOneWidget);
+    expect(find.text('Pending approval'), findsOneWidget);
+    expect(find.text('2/3 seasons'), findsOneWidget);
+    expect(find.text('Airs Tuesday at 21:00 Asia/Tokyo'), findsOneWidget);
+    expect(find.textContaining('Ep 4 in'), findsOneWidget);
+    expect(find.text('United States'), findsOneWidget);
+    expect(find.text('Japanese'), findsOneWidget);
+    expect(find.text(t.explore.detail.crew), findsOneWidget);
+    expect(find.text('A. Director'), findsOneWidget);
+    expect(find.text('W. Writer'), findsOneWidget);
+    expect(find.text(t.explore.detail.watchOn), findsOneWidget);
+    expect(find.text(t.explore.detail.links), findsOneWidget);
+    expect(find.text('Open on StreamCo'), findsOneWidget);
+    expect(find.text('Open on Official Site'), findsOneWidget);
+    expect(find.text('Original Fact Title'), findsOneWidget);
+    expect(find.text('Alternate Fact Title'), findsOneWidget);
+    expect(find.text('Suitable for older teens.'), findsOneWidget);
+    expect(find.textContaining('1,000,000'), findsOneWidget);
+    expect(find.textContaining('2,500,000'), findsOneWidget);
+  });
+
+  testWidgets('D-pad includes spoiler reveal and outbound links after the main action bar', (tester) async {
+    const item = CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: MediaKind.movie,
+      title: 'Interactive Movie',
+      ids: CatalogItemIds(tmdb: 21),
+      trailerUrl: 'https://example.com/trailer',
+      tags: [CatalogTag(name: 'Spoiler', isSpoiler: true)],
+      links: [
+        CatalogLink(label: 'StreamCo', url: 'https://example.com/watch', isStreaming: true),
+        CatalogLink(label: 'Official Site', url: 'https://example.com'),
+      ],
+    );
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
+
+    await _pumpDetail(tester, source, item: item);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_spoiler_tags');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_external_link_0');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_external_link_1');
   });
 
   testWidgets('D-pad traverses from actions through cast and back from recommendations', (tester) async {

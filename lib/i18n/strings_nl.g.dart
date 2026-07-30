@@ -300,6 +300,8 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuten';
 	@override String get rememberTrackSelections => 'Trackselecties per serie of film onthouden';
 	@override String get rememberTrackSelectionsDescription => 'Onthoud audio- en ondertitelkeuzes per titel';
+	@override String get followServerTrackSelections => 'Trackselecties van de server per aflevering gebruiken';
+	@override String get followServerTrackSelectionsDescription => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen';
 	@override String get showChapterMarkersOnTimeline => 'Hoofdstukmarkeringen op tijdlijn tonen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Verdeel de tijdlijn bij hoofdstukgrenzen';
 	@override String get clickVideoTogglesPlayback => 'Klik op de video om afspelen of pauzeren te wisselen';
@@ -507,8 +509,8 @@ class _Translations$fileInfo$nl extends Translations$fileInfo$en {
 	@override String get title => 'Bestandsinformatie';
 	@override String get video => 'Video';
 	@override String get audio => 'Audio';
+	@override String get subtitles => 'Ondertitels';
 	@override String get file => 'Bestand';
-	@override String get advanced => 'Geavanceerd';
 	@override String get codec => 'Codec';
 	@override String get resolution => 'Resolutie';
 	@override String get bitrate => 'Bitrate';
@@ -521,7 +523,6 @@ class _Translations$fileInfo$nl extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Kleurprimaires';
 	@override String get chromaSubsampling => 'Chroma-subsampling';
 	@override String get channels => 'Kanalen';
-	@override String get subtitles => 'Ondertitels';
 	@override String get overallBitrate => 'Totale bitrate';
 	@override String get path => 'Pad';
 	@override String get size => 'Grootte';
@@ -2356,6 +2357,8 @@ extension on TranslationsNl {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuten',
 			'settings.rememberTrackSelections' => 'Trackselecties per serie of film onthouden',
 			'settings.rememberTrackSelectionsDescription' => 'Onthoud audio- en ondertitelkeuzes per titel',
+			'settings.followServerTrackSelections' => 'Trackselecties van de server per aflevering gebruiken',
+			'settings.followServerTrackSelectionsDescription' => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen',
 			'settings.showChapterMarkersOnTimeline' => 'Hoofdstukmarkeringen op tijdlijn tonen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Verdeel de tijdlijn bij hoofdstukgrenzen',
 			'settings.clickVideoTogglesPlayback' => 'Klik op de video om afspelen of pauzeren te wisselen',
@@ -2560,8 +2563,8 @@ extension on TranslationsNl {
 			'fileInfo.title' => 'Bestandsinformatie',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Ondertitels',
 			'fileInfo.file' => 'Bestand',
-			'fileInfo.advanced' => 'Geavanceerd',
 			'fileInfo.codec' => 'Codec',
 			'fileInfo.resolution' => 'Resolutie',
 			'fileInfo.bitrate' => 'Bitrate',
@@ -2574,7 +2577,6 @@ extension on TranslationsNl {
 			'fileInfo.colorPrimaries' => 'Kleurprimaires',
 			'fileInfo.chromaSubsampling' => 'Chroma-subsampling',
 			'fileInfo.channels' => 'Kanalen',
-			'fileInfo.subtitles' => 'Ondertitels',
 			'fileInfo.overallBitrate' => 'Totale bitrate',
 			'fileInfo.path' => 'Pad',
 			'fileInfo.size' => 'Grootte',
@@ -2709,9 +2711,9 @@ extension on TranslationsNl {
 			'videoControls.searchSubtitles' => 'Ondertitels zoeken',
 			'videoControls.language' => 'Taal',
 			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
-			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
 			'videoControls.subtitleDownloadedNotApplied' => 'De ondertiteling is gedownload, maar kon niet worden geselecteerd',
 			'videoControls.subtitleDownloadFailed' => 'Ondertitel downloaden mislukt',
 			'videoControls.searchLanguages' => 'Talen zoeken...',
@@ -3223,9 +3225,9 @@ extension on TranslationsNl {
 			'watchTogether.failedToCreate' => 'Sessie maken mislukt',
 			'watchTogether.failedToJoin' => 'Deelnemen aan sessie mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode naar het klembord gekopieerd',
-			'watchTogether.relayUnreachable' => 'De relayserver is onbereikbaar. Een blokkering door je internetprovider kan Samen kijken verhinderen.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'De relayserver is onbereikbaar. Een blokkering door je internetprovider kan Samen kijken verhinderen.',
 			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
 			'watchTogether.currentPlayback' => 'Wat nu wordt afgespeeld',
 			'watchTogether.joinCurrentPlayback' => 'Deelnemen aan huidige weergave',

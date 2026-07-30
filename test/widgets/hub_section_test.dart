@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/focus/locked_hub_controller.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
@@ -21,6 +22,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {
+    LocaleSettings.setLocaleSync(AppLocale.en);
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
@@ -131,6 +133,30 @@ void main() {
       find.descendant(of: find.byType(HubSection), matching: find.byType(Padding)).first,
     );
     expect(outerPadding.padding.resolve(TextDirection.ltr).bottom, 0);
+  });
+
+  testWidgets('shows a provider result count in the existing hub header only when supplied', (tester) async {
+    final item = testMediaItem(
+      id: 'counted_item',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Counted Movie',
+    );
+    final hub = MediaHub(id: 'counted_hub', title: 'Popular', type: 'mixed', items: [item], size: 237, more: true);
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: HubSection(hub: hub, focusMemory: HubFocusMemory(), icon: Symbols.movie_rounded),
+      ),
+    );
+    expect(find.text(t.explore.totalResults(n: 237)), findsNothing);
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: HubSection(hub: hub, focusMemory: HubFocusMemory(), icon: Symbols.movie_rounded, totalResults: 237),
+      ),
+    );
+    expect(find.text(t.explore.totalResults(n: 237)), findsOneWidget);
   });
 
   testWidgets('restores within one owner but resets for a fresh owner', (tester) async {

@@ -121,11 +121,34 @@ const _queueFields = 'UserData,PremiereDate';
 /// bounded while still returning the full series queue.
 const _episodeQueuePageSize = 200;
 
-/// How many recently played episodes to scan when stamping `/Shows/NextUp`
-/// rows with their series' last-watched date (see [_attachSeriesLastPlayed]).
-/// Mirrors [_episodeQueuePageSize]; covers far more distinct series than the
-/// Next Up list ever returns, while keeping the response bounded.
-const _continueWatchingSeriesLookback = 200;
+/// How many pending series [_attachSeriesLastPlayed] resolves at once. Each
+/// lookup returns a single row, so the batch exists only to keep a long Next Up
+/// shelf from opening one request per series at the same instant; measured
+/// against a 12.0-rc3 server, 4 is where the wall time for 21 series stops
+/// improving (0.65s at 3, 0.56s at both 4 and 6).
+const _seriesLastPlayedConcurrency = 4;
+
+/// Ceiling on how many series [_attachSeriesLastPlayed] dates in one call. Sits
+/// just above `DiscoverProvider`'s 21-row continue-watching probe so the home
+/// shelf is always fully dated, and caps the uncapped `count: null` shelf, whose
+/// Next Up half is limited only by how many series the user has started.
+const _seriesLastPlayedLookupLimit = 24;
+
+/// Per-phase budget for one [_fetchSeriesLastPlayed] lookup.
+/// [MediaServerHttpClient] applies a per-call `timeout` to connect and receive
+/// independently, so this bounds a single lookup at twice this value — the
+/// shared [_seriesLastPlayedBudget] is what bounds the pass. A `ParentId`-scoped
+/// `Limit=1` row answered in well under half a second even on the pathological
+/// 12.0-rc3 sort, so reaching this means the endpoint is in trouble and the
+/// shelf is better off unstamped than waiting on the 10s/120s shared defaults.
+const _seriesLastPlayedRequestTimeout = Duration(seconds: 3);
+
+/// Hard ceiling on [_attachSeriesLastPlayed]. On expiry it aborts the in-flight
+/// batch, so it bounds the whole pass regardless of how many batches remain or
+/// which request phase a lookup is stuck in. Two orders of magnitude under the
+/// 10s-connect/120s-receive defaults the single unscoped scan ran with, so a
+/// stalled endpoint cannot make the scoped form slower than the query it fixes.
+const _seriesLastPlayedBudget = Duration(seconds: 4);
 
 const _childrenPageSize = 500;
 const _pagedListPageSize = 200;
@@ -1087,47 +1110,65 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _mapItems([...results.first, ...results[1]]);
   }
 
-  /// Jellyfin removed `anyProviderIdEquals`, so the reverse lookup is a
-  /// title search verified against each candidate's inline `ProviderIds` —
-  /// exact-id verification, so localized-title misses are possible but a
-  /// wrong item can never match.
+  /// Jellyfin removed `anyProviderIdEquals` (silently ignored on 10.11.10, so
+  /// it returns the unfiltered page), leaving a title search verified against
+  /// each candidate's inline `ProviderIds`. [plexGuid] is a Plex-only hint and
+  /// has no meaning in Jellyfin's provider-id model, so it is ignored.
   ///
-  /// When [year] is known, a ±1 `years=` window (comma-OR, verified on JF
-  /// 10.11) is applied first so short/common titles keep the true match
-  /// inside the 20-item response; a second unfiltered attempt covers items
-  /// with missing or off-window year metadata.
+  /// Jellyfin cannot report season ordering to a non-admin: on 10.11.10,
+  /// `/Library/VirtualFolders` returns 403 and Series items omit
+  /// `DisplayOrder`. Resolve against an unknown provider rather than guessing
+  /// from `ProviderIds`, so only seasons on which TVDB and TMDB agree are gated.
   @override
-  Future<MediaItem?> findByExternalIds(ExternalIds ids, {required MediaKind kind, String? title, int? year}) async {
+  Future<MediaItem?> findByExternalIds(
+    ExternalIds ids, {
+    required MediaKind kind,
+    List<String> titles = const [],
+    int? year,
+    String? plexGuid,
+    ExternalSeasonRef? season,
+  }) async {
     final itemType = switch (kind) {
       MediaKind.movie => 'Movie',
       MediaKind.show => 'Series',
       _ => null,
     };
-    if (itemType == null || !ids.hasAny || title == null || title.isEmpty) return null;
+    if (itemType == null || !ids.hasAny || titles.isEmpty) return null;
 
-    Future<MediaItem?> attempt(String? years) async {
+    final seasonIndex = season?.agreedSeason;
+    final shouldGateSeason = kind == MediaKind.show && seasonIndex != null && seasonIndex > 1;
+    // Not `seasonIndex`: when the two providers disagree the season number is
+    // unusable but the entry is still a sequel, and the ±1 window around a
+    // sequel's own year excludes the parent show (its year is season one's).
+    final skipYearWindow = season?.isSequel ?? false;
+
+    for (var index = 0; index < titles.length; index++) {
+      final isFirstCandidate = index == 0;
+      final years = isFirstCandidate && year != null && !skipYearWindow ? '${year - 1},$year,${year + 1}' : null;
       final candidates = await _fetchItemsArray('/Items', {
         'userId': connection.userId,
-        'SearchTerm': title,
+        'SearchTerm': titles[index],
         'Recursive': 'true',
-        'Limit': '20',
+        'Limit': isFirstCandidate ? '20' : '50',
         'IncludeItemTypes': itemType,
         'Fields': 'ProviderIds,$_browseFields',
         'years': ?years,
         ...jellyfinImageQueryParameters,
       });
       final match = ExternalIds.jellyfinCandidateMatching(candidates, ids);
-      if (match == null) return null;
+      if (match == null) continue;
       final item = _mapItems([match]).firstOrNull;
-      if (item == null) return null;
+      if (item == null) continue;
+
+      if (shouldGateSeason) {
+        final children = await fetchChildren(item.id);
+        if (!children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex)) {
+          return null;
+        }
+      }
       return _withLibraryFromAncestors(item);
     }
-
-    if (year != null) {
-      final match = await attempt('${year - 1},$year,${year + 1}');
-      if (match != null) return match;
-    }
-    return attempt(null);
+    return null;
   }
 
   /// Best-effort library stamp for items found outside a library context
@@ -1658,7 +1699,39 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// interleave Next Up with resume items by recency, stamp each Next Up episode
   /// with its series' last-watched date, read from the most recently played
   /// episode of that series.
+  ///
+  /// One `ParentId`-scoped lookup per pending series, not a single server-wide
+  /// DatePlayed scan. Jellyfin 12.0-rc3 builds that sort key by OR-ing an item's
+  /// own progress with its alternate versions' (`ItemId == e.Id ||
+  /// Item.PrimaryVersionId == e.Id`, jellyfin/jellyfin#17044), which no index can
+  /// serve, so the user's entire UserData table is scanned per sorted row: an
+  /// unscoped episode sort measured 5.8s on a 6k-episode rc3 library against
+  /// 25ms on 10.10.7, pegging a core for its whole duration. That blew this
+  /// call's request budget and starved every other client of the server (#1699).
+  /// `ParentId` bounds the sort input to one series' episodes — 21 series resolve
+  /// in ~0.6s against the same rc3 server. Upstream fixed the order mapper after
+  /// rc3 (jellyfin/jellyfin#17422); scoping keeps the cost flat on servers that
+  /// still carry the regression.
+  ///
+  /// At most [_seriesLastPlayedLookupLimit] series are enriched. `/Shows/NextUp`
+  /// already returns series in last-played-descending order, so the cap keeps the
+  /// rows whose dates decide the top of the shelf while bounding total work for
+  /// an uncapped `count: null` shelf, which can carry far more series than the
+  /// home preview. Rows past the cap keep a null date and degrade to their
+  /// `addedAt` in the sort — the same degradation the previous 200-row lookback
+  /// window applied to a series whose last play fell outside it.
+  ///
+  /// The batches are sequential and [MediaServerHttpClient] applies a per-call
+  /// `timeout` to the connect and receive phases *separately*, so a per-request
+  /// budget alone would still let a stalled endpoint hold this best-effort
+  /// enrichment for batches × 2 × [_seriesLastPlayedRequestTimeout]. The whole
+  /// pass therefore shares one [_seriesLastPlayedBudget] deadline that aborts
+  /// in-flight lookups rather than merely gating the next batch: whatever phase a
+  /// lookup is stuck in — silent connect, delayed headers, stalled body — the
+  /// pass is done within the budget.
   Future<List<MediaItem>> _attachSeriesLastPlayed(List<MediaItem> nextUp) async {
+    // Set literal over `nextUp` order: insertion-ordered, so `take` below keeps
+    // the most recently played series.
     final pendingSeriesIds = <String>{
       for (final item in nextUp)
         if (item.kind == MediaKind.episode && item.lastViewedAt == null && item.grandparentId != null)
@@ -1666,35 +1739,32 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     };
     if (pendingSeriesIds.isEmpty) return nextUp;
 
-    // One lightweight pass over the most recently played episodes server-wide,
-    // ordered DatePlayed-descending so the first time we see a series is its
-    // newest play. We deliberately do NOT filter on the Played flag: Jellyfin's
-    // own NextUp ranks series by MAX(LastPlayedDate) across every episode, and an
-    // episode can carry a LastPlayedDate while Played==false (started but not
-    // finished, or later marked unwatched). Filtering to IsPlayed would miss
-    // those and leave such series un-dated. Null dates sort last, so the limit
-    // still captures the genuinely-recent episodes; a series whose last play
-    // falls beyond the window keeps a null date and degrades to its addedAt in
-    // the sort — it would rank near the bottom anyway, being least-recent.
-    final rawPlayed = await _safeFetchItemsArray('/Items', {
-      'userId': connection.userId,
-      'IncludeItemTypes': 'Episode',
-      'Recursive': 'true',
-      'SortBy': 'DatePlayed',
-      'SortOrder': 'Descending',
-      'Fields': _queueFields,
-      'Limit': _continueWatchingSeriesLookback.toString(),
-      'EnableImages': 'false',
-      'EnableTotalRecordCount': 'false',
-    });
-
+    final seriesIds = pendingSeriesIds.take(_seriesLastPlayedLookupLimit).toList(growable: false);
     final lastPlayedBySeries = <String, int>{};
-    for (final episode in _mapItems(rawPlayed)) {
-      final seriesId = episode.grandparentId;
-      final playedAt = episode.lastViewedAt;
-      if (seriesId == null || playedAt == null) continue;
-      if (!pendingSeriesIds.contains(seriesId)) continue;
-      lastPlayedBySeries.putIfAbsent(seriesId, () => playedAt);
+    // A timer, not a Stopwatch: fake_async virtualises timers, and the deadline
+    // has to fire *into* the in-flight batch, not just before the next one.
+    final budgetAbort = AbortController();
+    final deadline = Timer(_seriesLastPlayedBudget, budgetAbort.abort);
+    try {
+      for (var start = 0; start < seriesIds.length; start += _seriesLastPlayedConcurrency) {
+        if (budgetAbort.isAborted) break;
+        final batch = seriesIds.skip(start).take(_seriesLastPlayedConcurrency);
+        final lookups = Future.wait(batch.map((id) => _fetchSeriesLastPlayed(id, budgetAbort)));
+        // Aborting only asks the transport to stop, and not every client honours
+        // `abortTrigger`. Racing the same deadline here makes the ceiling ours
+        // rather than the transport's.
+        final played = await Future.any([lookups, budgetAbort.trigger.then((_) => const <(String, int?)>[])]);
+        // No-op once `lookups` has won; suppresses the loser's late completion.
+        lookups.ignore();
+        for (final (seriesId, playedAt) in played) {
+          if (playedAt != null) lastPlayedBySeries[seriesId] = playedAt;
+        }
+      }
+    } finally {
+      deadline.cancel();
+      // Releases any lookup still waiting on the trigger and tells the transport
+      // to drop the socket instead of finishing a response nobody reads.
+      budgetAbort.abort();
     }
     if (lastPlayedBySeries.isEmpty) return nextUp;
 
@@ -1705,6 +1775,49 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         else
           item,
     ];
+  }
+
+  /// Newest `LastPlayedDate` across [seriesId]'s episodes, or null when the
+  /// series has never been played — or when the lookup failed, in which case the
+  /// row keeps a null date and degrades to its `addedAt` in the shelf sort.
+  ///
+  /// Deliberately no `Filters=IsPlayed`: Jellyfin's own NextUp ranks series by
+  /// MAX(LastPlayedDate) across every episode, and an episode can carry a
+  /// LastPlayedDate while Played==false (started but not finished, or later
+  /// marked unwatched). Filtering to IsPlayed would leave those series un-dated.
+  /// Null dates sort last under `Descending`, so the single row returned is the
+  /// series' newest play whenever it has one. Endpoint failover stays off: a slow
+  /// enrichment row must not move the whole client off a working endpoint.
+  ///
+  /// [budgetAbort] fires when the shared deadline expires. `_safeFetchItemsArray`
+  /// rethrows cancellation so paged callers can tell "disrupted" from "empty";
+  /// here disrupted *is* undated, which is the intended degradation, so it is
+  /// swallowed with every other failure instead of sinking the shelf.
+  Future<(String, int?)> _fetchSeriesLastPlayed(String seriesId, AbortController budgetAbort) async {
+    try {
+      final raw = await _safeFetchItemsArray(
+        '/Items',
+        {
+          'userId': connection.userId,
+          'ParentId': seriesId,
+          'IncludeItemTypes': 'Episode',
+          'Recursive': 'true',
+          'SortBy': 'DatePlayed',
+          'SortOrder': 'Descending',
+          // Only `UserData.LastPlayedDate` is read off the row.
+          'Fields': 'UserData',
+          'Limit': '1',
+          'EnableImages': 'false',
+          'EnableTotalRecordCount': 'false',
+        },
+        abort: budgetAbort,
+        timeout: _seriesLastPlayedRequestTimeout,
+        allowEndpointFailover: false,
+      );
+      return (seriesId, _mapItems(raw).firstOrNull?.lastViewedAt);
+    } on MediaServerHttpException {
+      return (seriesId, null);
+    }
   }
 
   /// Merge Jellyfin's two continue-watching sources into one recency-ordered
@@ -1751,14 +1864,26 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// failover** — a slow hub row must not move the whole client off an
   /// otherwise working endpoint (same policy as Plex's three hub fetches;
   /// see [retryTransientMediaServerCall] / [FailoverHttpClient]).
+  ///
+  /// [timeout] and [allowEndpointFailover] configure the un-retried path only; a
+  /// [retry] policy carries its own per-attempt timeouts and always disables
+  /// failover.
   Future<MediaServerResponse> _getItemsResponse(
     String path,
     Map<String, dynamic> queryParameters,
     _HubRetryPolicy? retry, {
     AbortController? abort,
+    Duration? timeout,
+    bool allowEndpointFailover = true,
   }) {
     if (retry == null) {
-      return _http.get(path, queryParameters: queryParameters, abort: abort);
+      return _http.get(
+        path,
+        queryParameters: queryParameters,
+        abort: abort,
+        timeout: timeout,
+        allowEndpointFailover: allowEndpointFailover,
+      );
     }
     abort?.throwIfAborted();
     return retryTransientMediaServerCall(
@@ -1791,9 +1916,18 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     Map<String, dynamic> queryParameters, {
     _HubRetryPolicy? retry,
     AbortController? abort,
+    Duration? timeout,
+    bool allowEndpointFailover = true,
   }) async {
     try {
-      final response = await _getItemsResponse(path, queryParameters, retry, abort: abort);
+      final response = await _getItemsResponse(
+        path,
+        queryParameters,
+        retry,
+        abort: abort,
+        timeout: timeout,
+        allowEndpointFailover: allowEndpointFailover,
+      );
       abort?.throwIfAborted();
       throwIfHttpError(response);
       final data = response.data;

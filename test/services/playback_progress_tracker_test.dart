@@ -1334,6 +1334,40 @@ void main() {
     expect(client.updateProgressCalls.map((call) => call.state), ['stopped', 'playing', 'stopped']);
   });
 
+  test('a stopped report ends the session: a clock that runs past the end reports nothing', () {
+    // #1673: the native clock can keep advancing after the file is over. Once
+    // the completion flow has stopped the item, no later tick may reach the
+    // server — a repeated `playing` at the end is what servers extrapolate into
+    // a ghost session running past the item duration.
+    fakeAsync((async) {
+      final client = _FakePlexClient();
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(),
+        player: player,
+        isOffline: false,
+        updateInterval: const Duration(seconds: 1),
+      );
+
+      tracker.startTracking();
+      async.flushMicrotasks();
+      expect(client.updateProgressCalls.map((call) => call.state), ['playing']);
+
+      unawaited(tracker.sendStoppedProgressOnce(positionOverride: const Duration(seconds: 100)));
+      async.flushMicrotasks();
+
+      player.position = const Duration(seconds: 160);
+      async.elapse(const Duration(seconds: 10));
+      async.flushMicrotasks();
+
+      expect(client.updateProgressCalls.map((call) => call.state), ['playing', 'stopped']);
+      expect(client.updateProgressCalls.last.time, 100000);
+
+      tracker.dispose();
+    });
+  });
+
   // ============================================================
   // startTracking / stopTracking / dispose lifecycle
   // ============================================================

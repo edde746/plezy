@@ -169,14 +169,13 @@ class _AppLocalePref extends Pref<AppLocale> {
   Future<void> writeTo(BaseSharedPreferencesService svc, AppLocale value) => svc.writeString(key, value.name);
 }
 
-/// Mobile-only with a macOS-disabled-by-default rule; forced off on TV and non-mobile platforms.
+/// Uses a macOS-disabled default and is forced off when [PlatformDetector] disables PiP.
 class _AutoPipPref extends Pref<bool> {
   const _AutoPipPref() : super('auto_pip');
 
   @override
   bool readFrom(BaseSharedPreferencesService svc) {
-    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return false;
-    if (PlatformDetector.isTV()) return false;
+    if (!PlatformDetector.supportsPictureInPicture()) return false;
     return svc.prefs.getBool(key) ?? !Platform.isMacOS;
   }
 
@@ -351,6 +350,10 @@ class SettingsService extends BaseSharedPreferencesService {
   static const subtitleItalic = BoolPref('subtitle_italic');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
   static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
+
+  /// Episode advance follows the server's per-episode audio/subtitle
+  /// selections instead of carrying the current choice over (#1717).
+  static const followServerTrackSelections = BoolPref('follow_server_track_selections');
   static const showChapterMarkersOnTimeline = BoolPref('show_chapter_markers_on_timeline', defaultValue: true);
   static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
   static const autoSkipIntro = BoolPref('auto_skip_intro');
@@ -842,6 +845,7 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleBackgroundColor,
     subtitleBackgroundOpacity,
     rememberTrackSelections,
+    followServerTrackSelections,
     downloadOnWifiOnly,
     backgroundDownloadWarningAcknowledged,
     downloadIncludeSpecials,

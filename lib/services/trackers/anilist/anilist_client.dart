@@ -13,7 +13,14 @@ import '../tracker_http_client.dart';
 import '../tracker_session.dart';
 import 'anilist_constants.dart';
 
-typedef AnilistCharacter = ({String name, String? role, String? imageUrl});
+typedef AnilistRelationEdge = ({String? relationType, AnilistMedia item});
+
+typedef AnilistDetailResponse = ({
+  AnilistMedia? item,
+  List<AnilistCharacter> characters,
+  List<AnilistMedia> recommendations,
+  List<AnilistRelationEdge> relations,
+});
 
 /// GraphQL client for AniList.
 ///
@@ -26,7 +33,126 @@ class AnilistClient implements DisposableTrackerClient {
     title {
       english
       romaji
+      native
       userPreferred
+    }
+    synonyms
+    format
+    status
+    episodes
+    duration
+    description
+    averageScore
+    meanScore
+    popularity
+    favourites
+    trending
+    season
+    seasonYear
+    startDate {
+      year
+      month
+      day
+    }
+    endDate {
+      year
+      month
+      day
+    }
+    genres
+    isAdult
+    source
+    countryOfOrigin
+    coverImage {
+      extraLarge
+      large
+      color
+    }
+    bannerImage
+    studios(isMain: true) {
+      nodes {
+        name
+      }
+    }
+    trailer {
+      id
+      site
+    }
+    nextAiringEpisode {
+      episode
+      airingAt
+      timeUntilAiring
+    }
+    rankings {
+      rank
+      type
+      format
+      year
+      season
+      allTime
+      context
+    }
+  ''';
+
+  /// Public unauthenticated A/B on 2026-07-29 used the current trending
+  /// Page query at its real 25-item row size, with identical media ids:
+  /// 65,586 B without cast and 104,260 B with this six-character connection.
+  /// That is +38,674 B (+58.97%, 1.59x total) in uncompressed response bytes.
+  static const String catalogRowCharacterFields =
+      '''
+    characters(
+      page: 1
+      perPage: ${AnilistConstants.catalogRowCastLimit}
+      sort: [ROLE, RELEVANCE]
+    ) {
+      edges {
+        role
+        node {
+          name {
+            full
+          }
+          image {
+            large
+            medium
+          }
+        }
+      }
+    }
+  ''';
+
+  static const String catalogRowMediaFields =
+      '''
+    $catalogMediaFields
+    $catalogRowCharacterFields
+  ''';
+
+  static const String catalogDetailCharacterFields = '''
+    characters(page: 1, perPage: \$castPerPage, sort: [ROLE, RELEVANCE]) {
+      edges {
+        role
+        node {
+          name {
+            full
+          }
+          image {
+            large
+            medium
+          }
+        }
+      }
+    }
+  ''';
+
+  /// Recommendation and relation cards keep the previous compact media shape:
+  /// recursively selecting every row/detail field would multiply nested data.
+  static const String catalogRelatedMediaFields = '''
+    id
+    idMal
+    title {
+      english
+      romaji
+      userPreferred
+      native
     }
     format
     status
@@ -40,6 +166,7 @@ class AnilistClient implements DisposableTrackerClient {
       year
     }
     genres
+    synonyms
     isAdult
     coverImage {
       extraLarge
@@ -54,6 +181,37 @@ class AnilistClient implements DisposableTrackerClient {
     trailer {
       id
       site
+    }
+  ''';
+
+  /// AniList does not offer tag pagination. Keep its selection leaf-only and
+  /// retain at most 20 tags in [AnilistMedia]; the variable response array is
+  /// accepted only on the one-item detail path, never across a 25-50 item row.
+  static const String catalogDetailMediaFields = '''
+    tags {
+      name
+      rank
+      isMediaSpoiler
+    }
+    externalLinks {
+      site
+      url
+    }
+    streamingEpisodes {
+      title
+      thumbnail
+      url
+      site
+    }
+    staff(page: 1, perPage: \$staffPerPage) {
+      edges {
+        role
+        node {
+          name {
+            full
+          }
+        }
+      }
     }
   ''';
 
@@ -165,16 +323,22 @@ class AnilistClient implements DisposableTrackerClient {
   }
 
   Future<AnilistPage> getTrendingAnime({int page = 1, int limit = 25}) =>
-      _getAnimePage(sort: 'TRENDING_DESC', page: page, limit: limit);
+      _getAnimePage(sort: 'TRENDING_DESC', page: page, limit: limit, includeRowCast: true);
 
   Future<AnilistPage> getPopularAnime({int page = 1, int limit = 25}) =>
-      _getAnimePage(sort: 'POPULARITY_DESC', page: page, limit: limit);
+      _getAnimePage(sort: 'POPULARITY_DESC', page: page, limit: limit, includeRowCast: true);
 
-  Future<AnilistPage> getSeasonalAnime(String season, int seasonYear, {int page = 1, int limit = 25}) =>
-      _getAnimePage(sort: 'POPULARITY_DESC', season: season, seasonYear: seasonYear, page: page, limit: limit);
+  Future<AnilistPage> getSeasonalAnime(String season, int seasonYear, {int page = 1, int limit = 25}) => _getAnimePage(
+    sort: 'POPULARITY_DESC',
+    season: season,
+    seasonYear: seasonYear,
+    page: page,
+    limit: limit,
+    includeRowCast: true,
+  );
 
   Future<AnilistPage> searchAnime(String search, {int page = 1, int limit = 30}) =>
-      _getAnimePage(sort: 'SEARCH_MATCH', search: search, page: page, limit: limit);
+      _getAnimePage(sort: 'SEARCH_MATCH', search: search, page: page, limit: limit, includeRowCast: false);
 
   Future<AnilistPage> _getAnimePage({
     required String sort,
@@ -183,7 +347,9 @@ class AnilistClient implements DisposableTrackerClient {
     int? seasonYear,
     required int page,
     required int limit,
+    required bool includeRowCast,
   }) async {
+    final fields = includeRowCast ? catalogRowMediaFields : catalogMediaFields;
     final mediaQuery =
         '''
       query(
@@ -206,7 +372,7 @@ class AnilistClient implements DisposableTrackerClient {
             season: \$season
             seasonYear: \$seasonYear
           ) {
-            $catalogMediaFields
+            $fields
           }
         }
       }
@@ -248,7 +414,7 @@ class AnilistClient implements DisposableTrackerClient {
     required int perChunk,
     required bool idsOnly,
   }) async {
-    final fields = idsOnly ? 'id idMal' : catalogMediaFields;
+    final fields = idsOnly ? 'id idMal' : catalogRowMediaFields;
     final listQuery =
         '''
       query(\$userId: Int!, \$chunk: Int, \$perChunk: Int) {
@@ -321,68 +487,73 @@ class AnilistClient implements DisposableTrackerClient {
     await query(mutation, variables: {'mediaId': mediaId, 'status': status});
   }
 
-  Future<List<AnilistCharacter>> getAnimeCharacters(int id, {int limit = 20}) async {
-    const characterQuery = '''
-      query(\$id: Int!, \$perPage: Int) {
-        Media(id: \$id, type: ANIME) {
-          characters(page: 1, perPage: \$perPage) {
-            edges {
-              role
-              node {
-                name {
-                  full
-                }
-                image {
-                  large
-                  medium
-                }
-              }
-            }
-          }
-        }
-      }
-    ''';
-    final data = await query(characterQuery, variables: {'id': id, 'perPage': limit.clamp(1, 50).toInt()});
-    final media = data['Media'];
-    final characters = media is Map ? media['characters'] : null;
-    final edges = characters is Map ? characters['edges'] : null;
-    if (edges is! List) return const [];
-    return [
-      for (final edge in edges)
-        if (edge is Map)
-          if (edge['node'] case final Map node)
-            if (node['name'] case final Map name)
-              if (name['full'] case final String full)
-                if (full.isNotEmpty)
-                  (
-                    name: full,
-                    role: edge['role'] as String?,
-                    imageUrl: node['image'] is Map
-                        ? ((node['image'] as Map)['large'] as String? ?? (node['image'] as Map)['medium'] as String?)
-                        : null,
-                  ),
-    ];
-  }
-
-  Future<List<AnilistMedia>> getAnimeRecommendations(int id, {int limit = 20}) async {
-    final recommendationQuery =
+  Future<AnilistDetailResponse> getAnimeDetail(
+    int id, {
+    int castLimit = 20,
+    int relatedLimit = 20,
+    bool includeCharacters = true,
+  }) async {
+    final castVariable = includeCharacters ? r'$castPerPage: Int' : '';
+    final characterFields = includeCharacters ? catalogDetailCharacterFields : '';
+    final detailQuery =
         '''
-      query(\$id: Int!, \$perPage: Int) {
+      query(
+        \$id: Int!
+        $castVariable
+        \$relatedPerPage: Int
+        \$staffPerPage: Int
+      ) {
         Media(id: \$id, type: ANIME) {
-          recommendations(page: 1, perPage: \$perPage) {
+          $catalogMediaFields
+          $catalogDetailMediaFields
+          $characterFields
+          recommendations(page: 1, perPage: \$relatedPerPage) {
             nodes {
               mediaRecommendation {
-                $catalogMediaFields
+                $catalogRelatedMediaFields
+              }
+            }
+          }
+          relations(page: 1, perPage: \$relatedPerPage) {
+            edges {
+              relationType(version: 2)
+              node {
+                $catalogRelatedMediaFields
               }
             }
           }
         }
       }
     ''';
-    final data = await query(recommendationQuery, variables: {'id': id, 'perPage': limit.clamp(1, 50).toInt()});
+    final data = await query(
+      detailQuery,
+      variables: {
+        'id': id,
+        if (includeCharacters) 'castPerPage': castLimit.clamp(1, 50).toInt(),
+        'relatedPerPage': relatedLimit.clamp(1, 50).toInt(),
+        'staffPerPage': 8,
+      },
+    );
     final media = data['Media'];
-    final recommendations = media is Map ? media['recommendations'] : null;
-    final nodes = recommendations is Map ? recommendations['nodes'] : null;
+    if (media is! Map<String, dynamic>) {
+      return (
+        item: null,
+        characters: const <AnilistCharacter>[],
+        recommendations: const <AnilistMedia>[],
+        relations: const <AnilistRelationEdge>[],
+      );
+    }
+    final item = AnilistMedia.fromJson(media);
+    return (
+      item: item,
+      characters: item.characters ?? const <AnilistCharacter>[],
+      recommendations: _recommendationsFrom(media['recommendations']),
+      relations: _relationsFrom(media['relations']),
+    );
+  }
+
+  static List<AnilistMedia> _recommendationsFrom(Object? value) {
+    final nodes = value is Map ? value['nodes'] : null;
     if (nodes is! List) return const [];
     final items = <AnilistMedia>[];
     for (final node in nodes) {
@@ -393,6 +564,22 @@ class AnilistClient implements DisposableTrackerClient {
       if (!item.isAdult) items.add(item);
     }
     return items;
+  }
+
+  static List<AnilistRelationEdge> _relationsFrom(Object? value) {
+    final edges = value is Map ? value['edges'] : null;
+    if (edges is! List) return const [];
+    final relations = <AnilistRelationEdge>[];
+    for (final edge in edges) {
+      if (edge is! Map) continue;
+      final node = edge['node'];
+      if (node is! Map<String, dynamic>) continue;
+      final item = AnilistMedia.fromJson(node);
+      if (!item.isAdult) {
+        relations.add((relationType: edge['relationType'] as String?, item: item));
+      }
+    }
+    return relations;
   }
 
   Future<Map<String, dynamic>> query(String query, {Map<String, dynamic>? variables}) async {

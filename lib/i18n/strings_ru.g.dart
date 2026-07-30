@@ -300,6 +300,8 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} мин';
 	@override String get rememberTrackSelections => 'Запоминать выбор дорожек для каждого сериала/фильма';
 	@override String get rememberTrackSelectionsDescription => 'Запоминать выбор аудиодорожки и субтитров для каждого материала';
+	@override String get followServerTrackSelections => 'Использовать выбор дорожек сервера для каждой серии';
+	@override String get followServerTrackSelectionsDescription => 'При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора';
 	@override String get showChapterMarkersOnTimeline => 'Показывать маркеры глав на шкале перемотки';
 	@override String get showChapterMarkersOnTimelineDescription => 'Разделять шкалу перемотки по границам глав';
 	@override String get clickVideoTogglesPlayback => 'Нажатие на видео запускает или приостанавливает воспроизведение';
@@ -507,8 +509,8 @@ class _Translations$fileInfo$ru extends Translations$fileInfo$en {
 	@override String get title => 'Информация о файле';
 	@override String get video => 'Видео';
 	@override String get audio => 'Аудио';
+	@override String get subtitles => 'Субтитры';
 	@override String get file => 'Файл';
-	@override String get advanced => 'Дополнительно';
 	@override String get codec => 'Кодек';
 	@override String get resolution => 'Разрешение';
 	@override String get bitrate => 'Битрейт';
@@ -521,7 +523,6 @@ class _Translations$fileInfo$ru extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Основные цвета';
 	@override String get chromaSubsampling => 'Субдискретизация цветности';
 	@override String get channels => 'Каналы';
-	@override String get subtitles => 'Субтитры';
 	@override String get overallBitrate => 'Общий битрейт';
 	@override String get path => 'Путь';
 	@override String get size => 'Размер';
@@ -2362,6 +2363,8 @@ extension on TranslationsRu {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} мин',
 			'settings.rememberTrackSelections' => 'Запоминать выбор дорожек для каждого сериала/фильма',
 			'settings.rememberTrackSelectionsDescription' => 'Запоминать выбор аудиодорожки и субтитров для каждого материала',
+			'settings.followServerTrackSelections' => 'Использовать выбор дорожек сервера для каждой серии',
+			'settings.followServerTrackSelectionsDescription' => 'При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора',
 			'settings.showChapterMarkersOnTimeline' => 'Показывать маркеры глав на шкале перемотки',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Разделять шкалу перемотки по границам глав',
 			'settings.clickVideoTogglesPlayback' => 'Нажатие на видео запускает или приостанавливает воспроизведение',
@@ -2566,8 +2569,8 @@ extension on TranslationsRu {
 			'fileInfo.title' => 'Информация о файле',
 			'fileInfo.video' => 'Видео',
 			'fileInfo.audio' => 'Аудио',
+			'fileInfo.subtitles' => 'Субтитры',
 			'fileInfo.file' => 'Файл',
-			'fileInfo.advanced' => 'Дополнительно',
 			'fileInfo.codec' => 'Кодек',
 			'fileInfo.resolution' => 'Разрешение',
 			'fileInfo.bitrate' => 'Битрейт',
@@ -2580,7 +2583,6 @@ extension on TranslationsRu {
 			'fileInfo.colorPrimaries' => 'Основные цвета',
 			'fileInfo.chromaSubsampling' => 'Субдискретизация цветности',
 			'fileInfo.channels' => 'Каналы',
-			'fileInfo.subtitles' => 'Субтитры',
 			'fileInfo.overallBitrate' => 'Общий битрейт',
 			'fileInfo.path' => 'Путь',
 			'fileInfo.size' => 'Размер',
@@ -2715,9 +2717,9 @@ extension on TranslationsRu {
 			'videoControls.searchSubtitles' => 'Поиск субтитров',
 			'videoControls.language' => 'Язык',
 			'videoControls.noSubtitlesFound' => 'Субтитры не найдены',
-			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитры загружены, но их не удалось выбрать',
 			'videoControls.subtitleDownloadFailed' => 'Не удалось загрузить субтитры',
 			'videoControls.searchLanguages' => 'Поиск языков...',
@@ -3229,9 +3231,9 @@ extension on TranslationsRu {
 			'watchTogether.failedToCreate' => 'Не удалось создать сессию',
 			'watchTogether.failedToJoin' => 'Не удалось присоединиться к сессии',
 			'watchTogether.sessionCodeCopied' => 'Код сессии скопирован в буфер обмена',
-			'watchTogether.relayUnreachable' => 'Сервер ретрансляции недоступен. Блокировка интернет-провайдером может помешать совместному просмотру.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Сервер ретрансляции недоступен. Блокировка интернет-провайдером может помешать совместному просмотру.',
 			'watchTogether.reconnectingToHost' => 'Повторное подключение к организатору...',
 			'watchTogether.currentPlayback' => 'Текущее воспроизведение',
 			'watchTogether.joinCurrentPlayback' => 'Присоединиться к текущему воспроизведению',

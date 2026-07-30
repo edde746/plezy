@@ -618,6 +618,12 @@ class Translations$settings$en {
 	/// en: 'Remember audio and subtitle choices per title'
 	String get rememberTrackSelectionsDescription => 'Remember audio and subtitle choices per title';
 
+	/// en: 'Use server's per-episode track selections'
+	String get followServerTrackSelections => 'Use server\'s per-episode track selections';
+
+	/// en: 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice'
+	String get followServerTrackSelectionsDescription => 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice';
+
 	/// en: 'Show chapter markers on seek bar'
 	String get showChapterMarkersOnTimeline => 'Show chapter markers on seek bar';
 
@@ -1187,23 +1193,62 @@ class Translations$fileInfo$en {
 	/// en: 'File Info'
 	String get title => 'File Info';
 
+	/// en: 'Overview'
+	String get overview => 'Overview';
+
 	/// en: 'Video'
 	String get video => 'Video';
 
 	/// en: 'Audio'
 	String get audio => 'Audio';
 
+	/// en: 'Subtitles'
+	String get subtitles => 'Subtitles';
+
+	/// en: 'Embedded Images'
+	String get images => 'Embedded Images';
+
+	/// en: 'Data Streams'
+	String get dataStreams => 'Data Streams';
+
+	/// en: 'Lyrics'
+	String get lyrics => 'Lyrics';
+
 	/// en: 'File'
 	String get file => 'File';
 
-	/// en: 'Advanced'
-	String get advanced => 'Advanced';
+	/// en: 'Attachments'
+	String get attachments => 'Attachments';
+
+	/// en: 'Delivery'
+	String get delivery => 'Delivery';
+
+	/// en: 'Version ${index} of ${count}'
+	String versionCounter({required Object index, required Object count}) => 'Version ${index} of ${count}';
+
+	/// en: 'File ${index} of ${count}'
+	String fileCounter({required Object index, required Object count}) => 'File ${index} of ${count}';
+
+	/// en: 'The server reported no streams for this file.'
+	String get noStreams => 'The server reported no streams for this file.';
+
+	/// en: 'Copy path'
+	String get copyPath => 'Copy path';
+
+	/// en: 'File path copied'
+	String get pathCopied => 'File path copied';
 
 	/// en: 'Codec'
 	String get codec => 'Codec';
 
+	/// en: 'Codec Tag'
+	String get codecTag => 'Codec Tag';
+
 	/// en: 'Resolution'
 	String get resolution => 'Resolution';
+
+	/// en: 'Coded Resolution'
+	String get codedResolution => 'Coded Resolution';
 
 	/// en: 'Bitrate'
 	String get bitrate => 'Bitrate';
@@ -1211,14 +1256,50 @@ class Translations$fileInfo$en {
 	/// en: 'Frame Rate'
 	String get frameRate => 'Frame Rate';
 
+	/// en: 'Rotation'
+	String get rotation => 'Rotation';
+
+	/// en: 'Comment'
+	String get comment => 'Comment';
+
+	/// en: 'Audio Description'
+	String get audioDescription => 'Audio Description';
+
+	/// en: 'Header Compression'
+	String get headerCompression => 'Header Compression';
+
+	/// en: 'Sidecar File'
+	String get sidecarFile => 'Sidecar File';
+
+	/// en: 'Transport Timestamp'
+	String get transportTimestamp => 'Transport Timestamp';
+
+	/// en: 'Display Offset'
+	String get displayOffset => 'Display Offset';
+
+	/// en: 'Preview Failure Code'
+	String get previewFailureCode => 'Preview Failure Code';
+
+	/// en: 'Preview Retries'
+	String get previewRetries => 'Preview Retries';
+
 	/// en: 'Aspect Ratio'
 	String get aspectRatio => 'Aspect Ratio';
+
+	/// en: 'Pixel Aspect Ratio'
+	String get pixelAspectRatio => 'Pixel Aspect Ratio';
 
 	/// en: 'Profile'
 	String get profile => 'Profile';
 
+	/// en: 'Level'
+	String get level => 'Level';
+
 	/// en: 'Bit Depth'
 	String get bitDepth => 'Bit Depth';
+
+	/// en: 'Pixel Format'
+	String get pixelFormat => 'Pixel Format';
 
 	/// en: 'Color Space'
 	String get colorSpace => 'Color Space';
@@ -1229,14 +1310,107 @@ class Translations$fileInfo$en {
 	/// en: 'Color Primaries'
 	String get colorPrimaries => 'Color Primaries';
 
+	/// en: 'Color Transfer'
+	String get colorTransfer => 'Color Transfer';
+
 	/// en: 'Chroma Subsampling'
 	String get chromaSubsampling => 'Chroma Subsampling';
+
+	/// en: 'Chroma Location'
+	String get chromaLocation => 'Chroma Location';
+
+	/// en: 'Scan Type'
+	String get scanType => 'Scan Type';
+
+	/// en: 'Interlaced'
+	String get interlaced => 'Interlaced';
+
+	/// en: 'Anamorphic'
+	String get anamorphic => 'Anamorphic';
+
+	/// en: 'Reference Frames'
+	String get referenceFrames => 'Reference Frames';
+
+	/// en: 'Dynamic Range'
+	String get dynamicRange => 'Dynamic Range';
+
+	/// en: 'Dolby Vision'
+	String get dolbyVision => 'Dolby Vision';
+
+	/// en: 'Dolby Vision Level'
+	String get dolbyVisionLevel => 'Dolby Vision Level';
+
+	/// en: 'Dolby Vision Version'
+	String get dolbyVisionVersion => 'Dolby Vision Version';
+
+	/// en: 'Dolby Vision Layers'
+	String get dolbyVisionLayers => 'Dolby Vision Layers';
+
+	/// en: 'Base Layer Compatibility'
+	String get baseLayerCompatibility => 'Base Layer Compatibility';
+
+	/// en: 'AVC Bitstream'
+	String get avcBitstream => 'AVC Bitstream';
+
+	/// en: 'NAL Length Size'
+	String get nalLengthSize => 'NAL Length Size';
+
+	/// en: 'Custom Scaling Matrix'
+	String get scalingMatrix => 'Custom Scaling Matrix';
+
+	/// en: 'Stream Identifier'
+	String get streamIdentifier => 'Stream Identifier';
+
+	/// en: 'Stream Index'
+	String get streamIndex => 'Stream Index';
+
+	/// en: 'Stream ID'
+	String get streamId => 'Stream ID';
+
+	/// en: 'Language'
+	String get language => 'Language';
+
+	/// en: 'Language Code'
+	String get languageCode => 'Language Code';
+
+	/// en: 'Track Title'
+	String get streamTitle => 'Track Title';
 
 	/// en: 'Channels'
 	String get channels => 'Channels';
 
-	/// en: 'Subtitles'
-	String get subtitles => 'Subtitles';
+	/// en: 'Sample Rate'
+	String get sampleRate => 'Sample Rate';
+
+	/// en: 'Spatial Audio'
+	String get spatialAudio => 'Spatial Audio';
+
+	/// en: 'Text Based'
+	String get textBased => 'Text Based';
+
+	/// en: 'Sidecar Format'
+	String get subtitleFormat => 'Sidecar Format';
+
+	/// en: 'Provider'
+	String get provider => 'Provider';
+
+	/// en: 'Match Score'
+	String get matchScore => 'Match Score';
+
+	/// en: 'Can Be Served Separately'
+	String get externalDelivery => 'Can Be Served Separately';
+
+	/// en: 'Sidecar Path'
+	String get sidecarPath => 'Sidecar Path';
+
+	/// en: 'Copied From'
+	String get sourceStream => 'Copied From';
+
+	/// en: 'Temporary'
+	String get temporary => 'Temporary';
+
+	/// en: 'Time Base'
+	String get timeBase => 'Time Base';
 
 	/// en: 'Overall Bitrate'
 	String get overallBitrate => 'Overall Bitrate';
@@ -1244,8 +1418,14 @@ class Translations$fileInfo$en {
 	/// en: 'Path'
 	String get path => 'Path';
 
+	/// en: 'File Name'
+	String get fileName => 'File Name';
+
 	/// en: 'Size'
 	String get size => 'Size';
+
+	/// en: 'Total Size'
+	String get totalSize => 'Total Size';
 
 	/// en: 'Container'
 	String get container => 'Container';
@@ -1253,11 +1433,101 @@ class Translations$fileInfo$en {
 	/// en: 'Duration'
 	String get duration => 'Duration';
 
+	/// en: 'Preview Thumbnails'
+	String get previewThumbnails => 'Preview Thumbnails';
+
+	/// en: 'Preview Index'
+	String get previewIndex => 'Preview Index';
+
+	/// en: 'Packet Length'
+	String get packetLength => 'Packet Length';
+
+	/// en: 'File Present'
+	String get filePresent => 'File Present';
+
+	/// en: 'Readable by Server'
+	String get fileReadable => 'Readable by Server';
+
+	/// en: 'Stream Path'
+	String get streamPath => 'Stream Path';
+
 	/// en: 'Optimized for Streaming'
 	String get optimizedForStreaming => 'Optimized for Streaming';
 
 	/// en: '64-bit Offsets'
 	String get has64bitOffsets => '64-bit Offsets';
+
+	/// en: 'Protocol'
+	String get protocol => 'Protocol';
+
+	/// en: 'Media Type'
+	String get mediaType => 'Media Type';
+
+	/// en: 'Source Kind'
+	String get sourceKind => 'Source Kind';
+
+	/// en: 'Optimized Version'
+	String get optimizedVersion => 'Optimized Version';
+
+	/// en: 'Optimization Target'
+	String get optimizationTarget => 'Optimization Target';
+
+	/// en: 'Deleted'
+	String get deletedAt => 'Deleted';
+
+	/// en: 'Remote Source'
+	String get remoteSource => 'Remote Source';
+
+	/// en: 'Infinite Stream'
+	String get infiniteStream => 'Infinite Stream';
+
+	/// en: 'Direct Play'
+	String get directPlay => 'Direct Play';
+
+	/// en: 'Direct Stream'
+	String get directStream => 'Direct Stream';
+
+	/// en: 'Transcoding'
+	String get transcoding => 'Transcoding';
+
+	/// en: 'ETag'
+	String get etag => 'ETag';
+
+	/// en: 'Version ID'
+	String get versionId => 'Version ID';
+
+	/// en: 'File ID'
+	String get fileId => 'File ID';
+
+	/// en: 'Default Audio Track'
+	String get defaultAudioTrack => 'Default Audio Track';
+
+	/// en: 'Default Subtitle Track'
+	String get defaultSubtitleTrack => 'Default Subtitle Track';
+
+	/// en: 'Off'
+	String get subtitlesOff => 'Off';
+
+	/// en: 'Default'
+	String get flagDefault => 'Default';
+
+	/// en: 'Forced'
+	String get flagForced => 'Forced';
+
+	/// en: 'Selected'
+	String get flagSelected => 'Selected';
+
+	/// en: 'External'
+	String get flagExternal => 'External';
+
+	/// en: 'Hearing impaired'
+	String get flagHearingImpaired => 'Hearing impaired';
+
+	/// en: 'Dub'
+	String get flagDub => 'Dub';
+
+	/// en: 'Original'
+	String get flagOriginal => 'Original';
 }
 
 // Path: mediaMenu
@@ -1540,6 +1810,12 @@ class Translations$videoControls$en {
 
 	/// en: 'Pause'
 	String get pauseButton => 'Pause';
+
+	/// en: 'Paused'
+	String get playbackPaused => 'Paused';
+
+	/// en: 'Playing'
+	String get playbackResumed => 'Playing';
 
 	/// en: 'Show playback controls'
 	String get showPlaybackControls => 'Show playback controls';
@@ -2660,6 +2936,30 @@ class Translations$explore$en {
 
 	/// en: 'Search failed. Check your connection and try again.'
 	String get searchFailed => 'Search failed. Check your connection and try again.';
+
+	late final Translations$explore$badge$en badge = Translations$explore$badge$en.internal(_root);
+	late final Translations$explore$stats$en stats = Translations$explore$stats$en.internal(_root);
+	late final Translations$explore$season$en season = Translations$explore$season$en.internal(_root);
+	late final Translations$explore$format$en format = Translations$explore$format$en.internal(_root);
+	late final Translations$explore$sourceMaterial$en sourceMaterial = Translations$explore$sourceMaterial$en.internal(_root);
+	late final Translations$explore$creditRole$en creditRole = Translations$explore$creditRole$en.internal(_root);
+	late final Translations$explore$ratingSource$en ratingSource = Translations$explore$ratingSource$en.internal(_root);
+
+	/// en: 'Airs ${day} at ${time}'
+	String broadcast({required Object day, required Object time}) => 'Airs ${day} at ${time}';
+
+	/// en: 'Airs ${day} at ${time} ${timezone}'
+	String broadcastWithZone({required Object day, required Object time, required Object timezone}) => 'Airs ${day} at ${time} ${timezone}';
+
+	late final Translations$explore$detail$en detail = Translations$explore$detail$en.internal(_root);
+
+	/// en: '(one) {${n} result} (other) {${n} results}'
+	String totalResults({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} result',
+		other: '${n} results',
+	);
+
+	late final Translations$explore$relation$en relation = Translations$explore$relation$en.internal(_root);
 }
 
 // Path: liveTv
@@ -4768,6 +5068,432 @@ class Translations$explore$status$en {
 	String get upcoming => 'Upcoming';
 }
 
+// Path: explore.badge
+class Translations$explore$badge$en {
+	Translations$explore$badge$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: '#${n} popular'
+	String rankPopular({required Object n}) => '#${n} popular';
+
+	/// en: '#${n} airing'
+	String rankAiring({required Object n}) => '#${n} airing';
+
+	/// en: '#${n} rated'
+	String rankRated({required Object n}) => '#${n} rated';
+
+	/// en: '#${n} favorited'
+	String rankFavorited({required Object n}) => '#${n} favorited';
+
+	/// en: '#${n} trending'
+	String rankTrending({required Object n}) => '#${n} trending';
+
+	/// en: '#${n} in ${season}'
+	String rankSeasonal({required Object n, required Object season}) => '#${n} in ${season}';
+
+	/// en: '${n} watching'
+	String watchingNow({required Object n}) => '${n} watching';
+
+	/// en: 'Available'
+	String get available => 'Available';
+
+	/// en: 'Partly available'
+	String get partiallyAvailable => 'Partly available';
+
+	/// en: '4K available'
+	String get availableIn4k => '4K available';
+
+	/// en: 'Requested'
+	String get requested => 'Requested';
+
+	/// en: 'Pending approval'
+	String get pendingApproval => 'Pending approval';
+
+	/// en: 'Processing'
+	String get processing => 'Processing';
+
+	/// en: 'Declined'
+	String get declined => 'Declined';
+
+	/// en: 'Request failed'
+	String get requestFailed => 'Request failed';
+
+	/// en: '4K requested'
+	String get requested4k => '4K requested';
+
+	/// en: '${available}/${total} seasons'
+	String seasonsAvailable({required Object available, required Object total}) => '${available}/${total} seasons';
+
+	/// en: 'Ep ${episode} in ${duration}'
+	String nextEpisodeIn({required Object episode, required Object duration}) => 'Ep ${episode} in ${duration}';
+
+	/// en: 'Next in ${duration}'
+	String nextAiringIn({required Object duration}) => 'Next in ${duration}';
+
+	/// en: '${n} eps'
+	String episodesShort({required Object n}) => '${n} eps';
+
+	/// en: '${n} min/ep'
+	String minutesPerEpisode({required Object n}) => '${n} min/ep';
+
+	/// en: '18+'
+	String get adult => '18+';
+}
+
+// Path: explore.stats
+class Translations$explore$stats$en {
+	Translations$explore$stats$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: '${n} listed'
+	String listed({required Object n}) => '${n} listed';
+
+	/// en: '${n} watched today'
+	String viewersDay({required Object n}) => '${n} watched today';
+
+	/// en: '${n} watched this week'
+	String viewersWeek({required Object n}) => '${n} watched this week';
+
+	/// en: '${n} watched this month'
+	String viewersMonth({required Object n}) => '${n} watched this month';
+
+	/// en: '${n} watched this year'
+	String viewersYear({required Object n}) => '${n} watched this year';
+
+	/// en: '${n} viewers'
+	String viewersAllTime({required Object n}) => '${n} viewers';
+
+	/// en: '${n} planning to watch'
+	String planning({required Object n}) => '${n} planning to watch';
+
+	/// en: '${n} favorites'
+	String favorited({required Object n}) => '${n} favorites';
+
+	/// en: '${percent} dropped it'
+	String dropRate({required Object percent}) => '${percent} dropped it';
+
+	/// en: '(one) {${n} comment} (other) {${n} comments}'
+	String comments({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} comment',
+		other: '${n} comments',
+	);
+
+	/// en: '${n} votes'
+	String votes({required Object n}) => '${n} votes';
+
+	/// en: '${n} watching it'
+	String watching({required Object n}) => '${n} watching it';
+
+	/// en: '${n} completed'
+	String completed({required Object n}) => '${n} completed';
+
+	/// en: '${n} on hold'
+	String onHold({required Object n}) => '${n} on hold';
+
+	/// en: '${n} dropped'
+	String dropped({required Object n}) => '${n} dropped';
+}
+
+// Path: explore.season
+class Translations$explore$season$en {
+	Translations$explore$season$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Winter'
+	String get winter => 'Winter';
+
+	/// en: 'Spring'
+	String get spring => 'Spring';
+
+	/// en: 'Summer'
+	String get summer => 'Summer';
+
+	/// en: 'Fall'
+	String get fall => 'Fall';
+
+	/// en: '${season} ${year}'
+	String withYear({required Object season, required Object year}) => '${season} ${year}';
+}
+
+// Path: explore.format
+class Translations$explore$format$en {
+	Translations$explore$format$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'TV'
+	String get tv => 'TV';
+
+	/// en: 'TV Short'
+	String get tvShort => 'TV Short';
+
+	/// en: 'Movie'
+	String get movie => 'Movie';
+
+	/// en: 'Special'
+	String get special => 'Special';
+
+	/// en: 'OVA'
+	String get ova => 'OVA';
+
+	/// en: 'ONA'
+	String get ona => 'ONA';
+
+	/// en: 'Music'
+	String get music => 'Music';
+
+	/// en: 'Other'
+	String get other => 'Other';
+}
+
+// Path: explore.sourceMaterial
+class Translations$explore$sourceMaterial$en {
+	Translations$explore$sourceMaterial$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Original'
+	String get original => 'Original';
+
+	/// en: 'Manga'
+	String get manga => 'Manga';
+
+	/// en: 'Light novel'
+	String get lightNovel => 'Light novel';
+
+	/// en: 'Novel'
+	String get novel => 'Novel';
+
+	/// en: 'Visual novel'
+	String get visualNovel => 'Visual novel';
+
+	/// en: 'Game'
+	String get game => 'Game';
+
+	/// en: 'Web comic'
+	String get webComic => 'Web comic';
+
+	/// en: 'Music'
+	String get musicRelease => 'Music';
+
+	/// en: 'Other'
+	String get otherMedia => 'Other';
+}
+
+// Path: explore.creditRole
+class Translations$explore$creditRole$en {
+	Translations$explore$creditRole$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Director'
+	String get director => 'Director';
+
+	/// en: 'Writer'
+	String get writer => 'Writer';
+
+	/// en: 'Producer'
+	String get producer => 'Producer';
+
+	/// en: 'Creator'
+	String get creator => 'Creator';
+
+	/// en: 'Composer'
+	String get composer => 'Composer';
+}
+
+// Path: explore.ratingSource
+class Translations$explore$ratingSource$en {
+	Translations$explore$ratingSource$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Critics'
+	String get critic => 'Critics';
+
+	/// en: 'Audience'
+	String get audience => 'Audience';
+
+	/// en: 'IMDb'
+	String get imdb => 'IMDb';
+
+	/// en: 'TMDB'
+	String get tmdb => 'TMDB';
+
+	/// en: 'Rotten Tomatoes'
+	String get rottenTomatoes => 'Rotten Tomatoes';
+
+	/// en: 'Simkl'
+	String get simkl => 'Simkl';
+
+	/// en: 'MyAnimeList'
+	String get mal => 'MyAnimeList';
+
+	/// en: 'AniList'
+	String get anilist => 'AniList';
+
+	/// en: 'Trakt'
+	String get trakt => 'Trakt';
+
+	/// en: 'Rotten Tomatoes critics'
+	String get rottenTomatoesCritic => 'Rotten Tomatoes critics';
+
+	/// en: 'Rotten Tomatoes audience'
+	String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
+}
+
+// Path: explore.detail
+class Translations$explore$detail$en {
+	Translations$explore$detail$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Original title'
+	String get originalTitle => 'Original title';
+
+	/// en: 'Also known as'
+	String get alsoKnownAs => 'Also known as';
+
+	/// en: 'Studios'
+	String get studios => 'Studios';
+
+	/// en: 'Country'
+	String get country => 'Country';
+
+	/// en: 'Language'
+	String get language => 'Language';
+
+	/// en: 'Released'
+	String get released => 'Released';
+
+	/// en: 'On disc'
+	String get physicalRelease => 'On disc';
+
+	/// en: 'Ended'
+	String get ended => 'Ended';
+
+	/// en: 'Added ${date}'
+	String addedOn({required Object date}) => 'Added ${date}';
+
+	/// en: 'Your rating'
+	String get yourRating => 'Your rating';
+
+	/// en: 'Budget'
+	String get budget => 'Budget';
+
+	/// en: 'Box office'
+	String get revenue => 'Box office';
+
+	/// en: 'Age guidance'
+	String get contentAdvisory => 'Age guidance';
+
+	/// en: 'Tags'
+	String get tags => 'Tags';
+
+	/// en: 'Show spoiler tags'
+	String get revealSpoilerTags => 'Show spoiler tags';
+
+	/// en: 'Links'
+	String get links => 'Links';
+
+	/// en: 'Watch on'
+	String get watchOn => 'Watch on';
+
+	/// en: 'Watch trailer'
+	String get watchTrailer => 'Watch trailer';
+
+	/// en: 'Open on ${site}'
+	String openOn({required Object site}) => 'Open on ${site}';
+
+	/// en: 'Crew'
+	String get crew => 'Crew';
+
+	/// en: 'Ratings'
+	String get ratings => 'Ratings';
+
+	/// en: 'Schedule'
+	String get schedule => 'Schedule';
+
+	/// en: '(one) {Recommended by ${n} user} (other) {Recommended by ${n} users}'
+	String recommendedByUsers({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: 'Recommended by ${n} user',
+		other: 'Recommended by ${n} users',
+	);
+
+	/// en: 'Recommended by ${who}'
+	String recommendedBy({required Object who}) => 'Recommended by ${who}';
+
+	/// en: 'Favorited by ${who}'
+	String favoritedBy({required Object who}) => 'Favorited by ${who}';
+
+	/// en: '${n} not aired yet'
+	String unairedEpisodes({required Object n}) => '${n} not aired yet';
+
+	/// en: 'Recommended by ${percent} of viewers'
+	String recommendedByPercent({required Object percent}) => 'Recommended by ${percent} of viewers';
+
+	/// en: 'Related titles'
+	String get relatedTitles => 'Related titles';
+
+	/// en: 'Background'
+	String get background => 'Background';
+}
+
+// Path: explore.relation
+class Translations$explore$relation$en {
+	Translations$explore$relation$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Prequel'
+	String get prequel => 'Prequel';
+
+	/// en: 'Sequel'
+	String get sequel => 'Sequel';
+
+	/// en: 'Side story'
+	String get sideStory => 'Side story';
+
+	/// en: 'Spin-off'
+	String get spinOff => 'Spin-off';
+
+	/// en: 'Alternative version'
+	String get alternativeVersion => 'Alternative version';
+
+	/// en: 'Summary'
+	String get summary => 'Summary';
+
+	/// en: 'Parent story'
+	String get parentStory => 'Parent story';
+
+	/// en: 'Adaptation'
+	String get adaptation => 'Adaptation';
+
+	/// en: 'Related'
+	String get other => 'Related';
+}
+
 // Path: downloads.backgroundWarning
 class Translations$downloads$backgroundWarning$en {
 	Translations$downloads$backgroundWarning$en.internal(this._root);
@@ -5357,6 +6083,8 @@ extension on Translations {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.rememberTrackSelectionsDescription' => 'Remember audio and subtitle choices per title',
+			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
+			'settings.followServerTrackSelectionsDescription' => 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice',
 			'settings.showChapterMarkersOnTimeline' => 'Show chapter markers on seek bar',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segment the seek bar at chapter boundaries',
 			'settings.clickVideoTogglesPlayback' => 'Click on video to toggle play/pause',
@@ -5562,30 +6290,118 @@ extension on Translations {
 			'hotkeys.actions.skipMarker' => 'Skip Intro/Credits',
 			'hotkeys.actions.screenshot' => 'Take Screenshot',
 			'fileInfo.title' => 'File Info',
+			'fileInfo.overview' => 'Overview',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Audio',
+			'fileInfo.subtitles' => 'Subtitles',
+			'fileInfo.images' => 'Embedded Images',
+			'fileInfo.dataStreams' => 'Data Streams',
+			'fileInfo.lyrics' => 'Lyrics',
 			'fileInfo.file' => 'File',
-			'fileInfo.advanced' => 'Advanced',
+			'fileInfo.attachments' => 'Attachments',
+			'fileInfo.delivery' => 'Delivery',
+			'fileInfo.versionCounter' => ({required Object index, required Object count}) => 'Version ${index} of ${count}',
+			'fileInfo.fileCounter' => ({required Object index, required Object count}) => 'File ${index} of ${count}',
+			'fileInfo.noStreams' => 'The server reported no streams for this file.',
+			'fileInfo.copyPath' => 'Copy path',
+			'fileInfo.pathCopied' => 'File path copied',
 			'fileInfo.codec' => 'Codec',
+			'fileInfo.codecTag' => 'Codec Tag',
 			'fileInfo.resolution' => 'Resolution',
+			'fileInfo.codedResolution' => 'Coded Resolution',
 			'fileInfo.bitrate' => 'Bitrate',
 			'fileInfo.frameRate' => 'Frame Rate',
+			'fileInfo.rotation' => 'Rotation',
+			'fileInfo.comment' => 'Comment',
+			'fileInfo.audioDescription' => 'Audio Description',
+			'fileInfo.headerCompression' => 'Header Compression',
+			'fileInfo.sidecarFile' => 'Sidecar File',
+			'fileInfo.transportTimestamp' => 'Transport Timestamp',
+			'fileInfo.displayOffset' => 'Display Offset',
+			'fileInfo.previewFailureCode' => 'Preview Failure Code',
+			'fileInfo.previewRetries' => 'Preview Retries',
 			'fileInfo.aspectRatio' => 'Aspect Ratio',
+			'fileInfo.pixelAspectRatio' => 'Pixel Aspect Ratio',
 			'fileInfo.profile' => 'Profile',
+			'fileInfo.level' => 'Level',
 			'fileInfo.bitDepth' => 'Bit Depth',
+			'fileInfo.pixelFormat' => 'Pixel Format',
 			'fileInfo.colorSpace' => 'Color Space',
 			'fileInfo.colorRange' => 'Color Range',
 			'fileInfo.colorPrimaries' => 'Color Primaries',
+			'fileInfo.colorTransfer' => 'Color Transfer',
 			'fileInfo.chromaSubsampling' => 'Chroma Subsampling',
+			'fileInfo.chromaLocation' => 'Chroma Location',
+			'fileInfo.scanType' => 'Scan Type',
+			'fileInfo.interlaced' => 'Interlaced',
+			'fileInfo.anamorphic' => 'Anamorphic',
+			'fileInfo.referenceFrames' => 'Reference Frames',
+			'fileInfo.dynamicRange' => 'Dynamic Range',
+			'fileInfo.dolbyVision' => 'Dolby Vision',
+			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
+			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
+			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
+			'fileInfo.baseLayerCompatibility' => 'Base Layer Compatibility',
+			'fileInfo.avcBitstream' => 'AVC Bitstream',
+			'fileInfo.nalLengthSize' => 'NAL Length Size',
+			'fileInfo.scalingMatrix' => 'Custom Scaling Matrix',
+			'fileInfo.streamIdentifier' => 'Stream Identifier',
+			'fileInfo.streamIndex' => 'Stream Index',
+			'fileInfo.streamId' => 'Stream ID',
+			'fileInfo.language' => 'Language',
+			'fileInfo.languageCode' => 'Language Code',
+			'fileInfo.streamTitle' => 'Track Title',
 			'fileInfo.channels' => 'Channels',
-			'fileInfo.subtitles' => 'Subtitles',
+			'fileInfo.sampleRate' => 'Sample Rate',
+			'fileInfo.spatialAudio' => 'Spatial Audio',
+			'fileInfo.textBased' => 'Text Based',
+			'fileInfo.subtitleFormat' => 'Sidecar Format',
+			'fileInfo.provider' => 'Provider',
+			'fileInfo.matchScore' => 'Match Score',
+			'fileInfo.externalDelivery' => 'Can Be Served Separately',
+			'fileInfo.sidecarPath' => 'Sidecar Path',
+			'fileInfo.sourceStream' => 'Copied From',
+			'fileInfo.temporary' => 'Temporary',
+			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
 			'fileInfo.path' => 'Path',
+			'fileInfo.fileName' => 'File Name',
 			'fileInfo.size' => 'Size',
+			'fileInfo.totalSize' => 'Total Size',
 			'fileInfo.container' => 'Container',
 			'fileInfo.duration' => 'Duration',
+			'fileInfo.previewThumbnails' => 'Preview Thumbnails',
+			'fileInfo.previewIndex' => 'Preview Index',
+			'fileInfo.packetLength' => 'Packet Length',
+			'fileInfo.filePresent' => 'File Present',
+			'fileInfo.fileReadable' => 'Readable by Server',
+			'fileInfo.streamPath' => 'Stream Path',
 			'fileInfo.optimizedForStreaming' => 'Optimized for Streaming',
 			'fileInfo.has64bitOffsets' => '64-bit Offsets',
+			'fileInfo.protocol' => 'Protocol',
+			'fileInfo.mediaType' => 'Media Type',
+			'fileInfo.sourceKind' => 'Source Kind',
+			'fileInfo.optimizedVersion' => 'Optimized Version',
+			'fileInfo.optimizationTarget' => 'Optimization Target',
+			'fileInfo.deletedAt' => 'Deleted',
+			'fileInfo.remoteSource' => 'Remote Source',
+			'fileInfo.infiniteStream' => 'Infinite Stream',
+			'fileInfo.directPlay' => 'Direct Play',
+			'fileInfo.directStream' => 'Direct Stream',
+			'fileInfo.transcoding' => 'Transcoding',
+			'fileInfo.etag' => 'ETag',
+			'fileInfo.versionId' => 'Version ID',
+			'fileInfo.fileId' => 'File ID',
+			'fileInfo.defaultAudioTrack' => 'Default Audio Track',
+			'fileInfo.defaultSubtitleTrack' => 'Default Subtitle Track',
+			'fileInfo.subtitlesOff' => 'Off',
+			'fileInfo.flagDefault' => 'Default',
+			'fileInfo.flagForced' => 'Forced',
+			'fileInfo.flagSelected' => 'Selected',
+			'fileInfo.flagExternal' => 'External',
+			'fileInfo.flagHearingImpaired' => 'Hearing impaired',
+			'fileInfo.flagDub' => 'Dub',
+			'fileInfo.flagOriginal' => 'Original',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
@@ -5621,6 +6437,8 @@ extension on Translations {
 			'accessibility.increase' => 'Increase',
 			'accessibility.decreaseValue' => ({required Object label}) => 'Decrease ${label}',
 			'accessibility.increaseValue' => ({required Object label}) => 'Increase ${label}',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.hue' => 'Hue',
 			'accessibility.saturation' => 'Saturation',
 			'accessibility.brightness' => 'Brightness',
@@ -5662,6 +6480,8 @@ extension on Translations {
 			'videoControls.playNext' => 'Play Next',
 			'videoControls.playButton' => 'Play',
 			'videoControls.pauseButton' => 'Pause',
+			'videoControls.playbackPaused' => 'Paused',
+			'videoControls.playbackResumed' => 'Playing',
 			'videoControls.showPlaybackControls' => 'Show playback controls',
 			'videoControls.hidePlaybackControls' => 'Hide playback controls',
 			'videoControls.seekBackwardButton' => ({required Object seconds}) => 'Seek backward ${seconds} seconds',
@@ -5711,8 +6531,6 @@ extension on Translations {
 			'videoControls.queue' => 'Queue',
 			'videoControls.noQueueItems' => 'No items in queue',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
@@ -6050,6 +6868,124 @@ extension on Translations {
 			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Search for movies and shows on ${source}.',
 			'explore.searchFailed' => 'Search failed. Check your connection and try again.',
+			'explore.badge.rankPopular' => ({required Object n}) => '#${n} popular',
+			'explore.badge.rankAiring' => ({required Object n}) => '#${n} airing',
+			'explore.badge.rankRated' => ({required Object n}) => '#${n} rated',
+			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} favorited',
+			'explore.badge.rankTrending' => ({required Object n}) => '#${n} trending',
+			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} in ${season}',
+			'explore.badge.watchingNow' => ({required Object n}) => '${n} watching',
+			'explore.badge.available' => 'Available',
+			'explore.badge.partiallyAvailable' => 'Partly available',
+			'explore.badge.availableIn4k' => '4K available',
+			'explore.badge.requested' => 'Requested',
+			'explore.badge.pendingApproval' => 'Pending approval',
+			'explore.badge.processing' => 'Processing',
+			'explore.badge.declined' => 'Declined',
+			'explore.badge.requestFailed' => 'Request failed',
+			'explore.badge.requested4k' => '4K requested',
+			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} seasons',
+			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => 'Ep ${episode} in ${duration}',
+			'explore.badge.nextAiringIn' => ({required Object duration}) => 'Next in ${duration}',
+			'explore.badge.episodesShort' => ({required Object n}) => '${n} eps',
+			'explore.badge.minutesPerEpisode' => ({required Object n}) => '${n} min/ep',
+			'explore.badge.adult' => '18+',
+			'explore.stats.listed' => ({required Object n}) => '${n} listed',
+			'explore.stats.viewersDay' => ({required Object n}) => '${n} watched today',
+			'explore.stats.viewersWeek' => ({required Object n}) => '${n} watched this week',
+			'explore.stats.viewersMonth' => ({required Object n}) => '${n} watched this month',
+			'explore.stats.viewersYear' => ({required Object n}) => '${n} watched this year',
+			'explore.stats.viewersAllTime' => ({required Object n}) => '${n} viewers',
+			'explore.stats.planning' => ({required Object n}) => '${n} planning to watch',
+			'explore.stats.favorited' => ({required Object n}) => '${n} favorites',
+			'explore.stats.dropRate' => ({required Object percent}) => '${percent} dropped it',
+			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} comment', other: '${n} comments', ), 
+			'explore.stats.votes' => ({required Object n}) => '${n} votes',
+			'explore.stats.watching' => ({required Object n}) => '${n} watching it',
+			'explore.stats.completed' => ({required Object n}) => '${n} completed',
+			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
+			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
+			'explore.season.winter' => 'Winter',
+			'explore.season.spring' => 'Spring',
+			'explore.season.summer' => 'Summer',
+			'explore.season.fall' => 'Fall',
+			'explore.season.withYear' => ({required Object season, required Object year}) => '${season} ${year}',
+			'explore.format.tv' => 'TV',
+			'explore.format.tvShort' => 'TV Short',
+			'explore.format.movie' => 'Movie',
+			'explore.format.special' => 'Special',
+			'explore.format.ova' => 'OVA',
+			'explore.format.ona' => 'ONA',
+			'explore.format.music' => 'Music',
+			'explore.format.other' => 'Other',
+			'explore.sourceMaterial.original' => 'Original',
+			'explore.sourceMaterial.manga' => 'Manga',
+			'explore.sourceMaterial.lightNovel' => 'Light novel',
+			'explore.sourceMaterial.novel' => 'Novel',
+			'explore.sourceMaterial.visualNovel' => 'Visual novel',
+			'explore.sourceMaterial.game' => 'Game',
+			'explore.sourceMaterial.webComic' => 'Web comic',
+			'explore.sourceMaterial.musicRelease' => 'Music',
+			'explore.sourceMaterial.otherMedia' => 'Other',
+			'explore.creditRole.director' => 'Director',
+			'explore.creditRole.writer' => 'Writer',
+			'explore.creditRole.producer' => 'Producer',
+			'explore.creditRole.creator' => 'Creator',
+			'explore.creditRole.composer' => 'Composer',
+			'explore.ratingSource.critic' => 'Critics',
+			'explore.ratingSource.audience' => 'Audience',
+			'explore.ratingSource.imdb' => 'IMDb',
+			'explore.ratingSource.tmdb' => 'TMDB',
+			'explore.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
+			'explore.ratingSource.simkl' => 'Simkl',
+			'explore.ratingSource.mal' => 'MyAnimeList',
+			'explore.ratingSource.anilist' => 'AniList',
+			'explore.ratingSource.trakt' => 'Trakt',
+			'explore.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
+			'explore.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
+			'explore.broadcast' => ({required Object day, required Object time}) => 'Airs ${day} at ${time}',
+			'explore.broadcastWithZone' => ({required Object day, required Object time, required Object timezone}) => 'Airs ${day} at ${time} ${timezone}',
+			'explore.detail.originalTitle' => 'Original title',
+			'explore.detail.alsoKnownAs' => 'Also known as',
+			'explore.detail.studios' => 'Studios',
+			'explore.detail.country' => 'Country',
+			'explore.detail.language' => 'Language',
+			'explore.detail.released' => 'Released',
+			_ => null,
+		} ?? switch (path) {
+			'explore.detail.physicalRelease' => 'On disc',
+			'explore.detail.ended' => 'Ended',
+			'explore.detail.addedOn' => ({required Object date}) => 'Added ${date}',
+			'explore.detail.yourRating' => 'Your rating',
+			'explore.detail.budget' => 'Budget',
+			'explore.detail.revenue' => 'Box office',
+			'explore.detail.contentAdvisory' => 'Age guidance',
+			'explore.detail.tags' => 'Tags',
+			'explore.detail.revealSpoilerTags' => 'Show spoiler tags',
+			'explore.detail.links' => 'Links',
+			'explore.detail.watchOn' => 'Watch on',
+			'explore.detail.watchTrailer' => 'Watch trailer',
+			'explore.detail.openOn' => ({required Object site}) => 'Open on ${site}',
+			'explore.detail.crew' => 'Crew',
+			'explore.detail.ratings' => 'Ratings',
+			'explore.detail.schedule' => 'Schedule',
+			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Recommended by ${n} user', other: 'Recommended by ${n} users', ), 
+			'explore.detail.recommendedBy' => ({required Object who}) => 'Recommended by ${who}',
+			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
+			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
+			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
+			'explore.detail.relatedTitles' => 'Related titles',
+			'explore.detail.background' => 'Background',
+			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
+			'explore.relation.prequel' => 'Prequel',
+			'explore.relation.sequel' => 'Sequel',
+			'explore.relation.sideStory' => 'Side story',
+			'explore.relation.spinOff' => 'Spin-off',
+			'explore.relation.alternativeVersion' => 'Alternative version',
+			'explore.relation.summary' => 'Summary',
+			'explore.relation.parentStory' => 'Parent story',
+			'explore.relation.adaptation' => 'Adaptation',
+			'explore.relation.other' => 'Related',
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'No channels available',
@@ -6225,8 +7161,6 @@ extension on Translations {
 			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
 			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
 			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Enter the host\'s session code to join.',
 			'watchTogether.failedToCreate' => 'Failed to create session',
 			'watchTogether.failedToJoin' => 'Failed to join session',
@@ -6531,6 +7465,8 @@ extension on Translations {
 			'metadataEdit.artworkUpdateFailed' => 'Failed to update artwork',
 			'metadataEdit.noArtworkAvailable' => 'No artwork available',
 			'metadataEdit.artworkOption' => ({required Object index}) => 'Artwork option ${index}',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.selectedArtworkOption' => ({required Object index}) => 'Artwork option ${index}, selected',
 			'metadataEdit.notSet' => 'Not set',
 			'metadataEdit.libraryDefault' => 'Library default',

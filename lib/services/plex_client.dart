@@ -1814,12 +1814,65 @@ class PlexClient
 
   Future<MediaFileInfo?> _fetchFileInfo(String ratingKey) async {
     try {
-      final metadataJson = await _fetchRawMetadataJsonCacheFirst(ratingKey);
+      // One snapshot for both reads: the cache lookup yields before the
+      // refetch decision, and `applyProfileUpdate` may land in between.
+      // Sampling the live profile for the second read would cross identities.
+      final requestContext = _captureCacheFirstRequestContext();
+      var metadataJson = await _fetchRawMetadataJsonCacheFirst(ratingKey, requestContext);
+      // The `/library/metadata/{id}` cache row is shared, and lighter writers
+      // (getPlaybackExtras) fill it from a request without `includeStreams` /
+      // `checkFiles`. Serving that row here would render a file-info sheet
+      // with no stream table and no presence flags, so re-fetch the full
+      // shape once. Offline, or when the refetch fails, the partial row is
+      // still better than nothing.
+      if (!_plexMetadataHasStreamDetail(metadataJson) && !isOfflineMode) {
+        metadataJson = await _refetchRawMetadataJson(ratingKey, requestContext) ?? metadataJson;
+      }
       return parsePlexFileInfoFromJson(metadataJson);
     } catch (e) {
       appLogger.e('Failed to get file info: $e');
       return null;
     }
+  }
+
+  /// Whether a `/library/metadata` row was fetched with the file-info query
+  /// shape.
+  ///
+  /// Checks for the *keys* `includeStreams=1` and `checkFiles=1` add, on every
+  /// part: a fully probed part may legitimately report `Stream: []`, and one
+  /// populated sibling must not make a lean multi-part row look complete. A
+  /// row with no media at all needs no refetch — there is nothing to probe.
+  static bool _plexMetadataHasStreamDetail(Map<String, dynamic>? metadataJson) {
+    for (final media in flexibleMapList(metadataJson?['Media'])) {
+      for (final part in flexibleMapList(media['Part'])) {
+        if (!part.containsKey('Stream') || !part.containsKey('exists') || !part.containsKey('accessible')) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /// Network-first re-read of the full metadata shape, refreshing the shared
+  /// cache row so the next reader gets the complete payload too. Runs under
+  /// the caller's [requestContext] so the token that goes out and the cache
+  /// namespace that comes back belong to the same profile.
+  Future<Map<String, dynamic>?> _refetchRawMetadataJson(
+    String ratingKey,
+    ({ServerId cacheScope, Map<String, String> headers}) requestContext,
+  ) async {
+    final data = await fetchWithCacheFallback<Map<String, dynamic>>(
+      cacheScope: requestContext.cacheScope,
+      cacheKey: '/library/metadata/$ratingKey',
+      networkCall: () => _http.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
+        headers: requestContext.headers,
+      ),
+      parseCache: (cached) => cached as Map<String, dynamic>?,
+      parseResponse: (response) => response.data as Map<String, dynamic>?,
+    );
+    return _getFirstMetadataJsonFromData(data);
   }
 
   /// Cache-first raw metadata JSON for [ratingKey]. Serves the shared
@@ -1828,8 +1881,11 @@ class PlexClient
   /// with the full playback query params so the row it caches stays complete
   /// for the cache-only readers ([fetchPlaybackExtrasFromCacheOnly],
   /// [fetchCachedMediaSourceInfo]).
-  Future<Map<String, dynamic>?> _fetchRawMetadataJsonCacheFirst(String ratingKey) async {
-    final requestContext = _captureCacheFirstRequestContext();
+  Future<Map<String, dynamic>?> _fetchRawMetadataJsonCacheFirst(
+    String ratingKey, [
+    ({ServerId cacheScope, Map<String, String> headers})? context,
+  ]) async {
+    final requestContext = context ?? _captureCacheFirstRequestContext();
     final data = await fetchWithCacheFirst<Map<String, dynamic>>(
       cacheScope: requestContext.cacheScope,
       cacheKey: '/library/metadata/$ratingKey',
@@ -3761,37 +3817,82 @@ class PlexClient
     return ExternalIds.fromGuids(guids);
   }
 
+  /// Drop a sequel match when the server does not actually have that season.
+  ///
+  /// Only an [ExternalSeasonRef.agreedSeason] is gated on. Which provider a
+  /// library numbers its seasons by is a server-side setting no dataset can
+  /// supply, and reading it costs two extra requests per lookup, so a
+  /// disagreeing ref is left ungated rather than gated on a guess.
+  Future<MediaItem?> _applyExternalIdSeasonGate(
+    Map<String, dynamic> metadata, {
+    required MediaKind kind,
+    required ExternalSeasonRef? season,
+  }) async {
+    final item = PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(metadata));
+    if (kind != MediaKind.show) return item;
+
+    final seasonIndex = season?.agreedSeason;
+    if (seasonIndex == null || seasonIndex <= 1) return item;
+
+    final ratingKey = metadata['ratingKey']?.toString();
+    // Cannot ask the question => do not gate.
+    if (ratingKey == null || ratingKey.isEmpty) return item;
+
+    final children = await fetchChildren(ratingKey);
+    return children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex) ? item : null;
+  }
+
   /// Server-wide title filter + client-side external-ID verification. Plex's
   /// `guid=` field filter matches only the item's primary `plex://` guid
-  /// (verified against PMS 1.43) — never the external `imdb://`/`tmdb://`
-  /// ids in the modern `Guid` array — so this mirrors the Jellyfin
-  /// title-search-and-verify approach. Recognized legacy scalar `guid` values
-  /// are checked only after modern verification fails.
-  ///
-  /// When [year] is known, a ±1 window is applied server-side first
-  /// (`year=` takes comma-separated values as OR, verified on PMS 1.43) so
-  /// short/common titles keep the true match inside the 20-item response;
-  /// the year filter drops items with no year metadata, hence the
-  /// unfiltered second attempt.
+  /// (verified against PMS 1.43), so external ids in modern `Guid` arrays are
+  /// verified after title search. A resolved primary [plexGuid] can use the
+  /// exact server-side filter directly.
   @override
-  Future<MediaItem?> findByExternalIds(ExternalIds ids, {required MediaKind kind, String? title, int? year}) async {
+  Future<MediaItem?> findByExternalIds(
+    ExternalIds ids, {
+    required MediaKind kind,
+    List<String> titles = const [],
+    int? year,
+    String? plexGuid,
+    ExternalSeasonRef? season,
+  }) async {
     final plexType = switch (kind) {
       MediaKind.movie => 1,
       MediaKind.show => 2,
       _ => null,
     };
-    if (plexType == null || !ids.hasAny || title == null || title.isEmpty) {
-      return null;
+    if (plexType == null) return null;
+    if (!ids.hasAny && plexGuid == null) return null;
+    if (titles.isEmpty && plexGuid == null) return null;
+
+    if (plexGuid != null) {
+      final response = await _getWithFailover(
+        '/library/all',
+        queryParameters: {'guid': plexGuid, 'type': plexType, 'includeGuids': 1},
+      );
+      final metadata = _getFirstMetadataJson(response);
+      if (metadata != null) {
+        return _applyExternalIdSeasonGate(metadata, kind: kind, season: season);
+      }
     }
 
-    Future<({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})> attempt(String? years) async {
+    // Title attempts confirm candidates by external-id intersection, so
+    // without external ids they cannot match anything — stop at the exact
+    // guid lookup instead of burning requests that always come back empty.
+    if (!ids.hasAny) return null;
+
+    Future<({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})> attempt(
+      String title, {
+      required int size,
+      String? years,
+    }) async {
       final response = await _getWithFailover(
         '/library/all',
         queryParameters: {
           'title': title,
           'type': plexType,
           'includeGuids': 1,
-          'X-Plex-Container-Size': 20,
+          'X-Plex-Container-Size': size,
           'year': ?years,
         },
       );
@@ -3813,18 +3914,29 @@ class PlexClient
       return (modern: null, legacy: legacy);
     }
 
-    ({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})? filtered;
-    if (year != null) {
-      filtered = await attempt('${year - 1},$year,${year + 1}');
-      final modern = filtered.modern;
-      if (modern != null) {
-        return PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(modern));
+    // Not `resolve(null)`: when the two providers disagree the season number is
+    // unresolvable but the entry is still a sequel, and the ±1 window around a
+    // sequel's own year excludes the parent show (its year is season one's).
+    final skipYearWindow = season?.isSequel ?? false;
+    for (var index = 0; index < titles.length; index++) {
+      final title = titles[index];
+      final size = index == 0 ? 20 : 50;
+      ({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})? filtered;
+      if (index == 0 && year != null && !skipYearWindow) {
+        filtered = await attempt(title, size: size, years: '${year - 1},$year,${year + 1}');
+        final modern = filtered.modern;
+        if (modern != null) {
+          return _applyExternalIdSeasonGate(modern, kind: kind, season: season);
+        }
+      }
+
+      final unfiltered = await attempt(title, size: size);
+      final match = unfiltered.modern ?? filtered?.legacy ?? unfiltered.legacy;
+      if (match != null) {
+        return _applyExternalIdSeasonGate(match, kind: kind, season: season);
       }
     }
-
-    final unfiltered = await attempt(null);
-    final match = unfiltered.modern ?? filtered?.legacy ?? unfiltered.legacy;
-    return match == null ? null : PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(match));
+    return null;
   }
 
   @override

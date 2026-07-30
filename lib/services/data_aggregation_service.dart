@@ -597,16 +597,25 @@ class DataAggregationService {
   Future<List<MediaItem>> findByExternalIdsAcrossServers(
     ExternalIds ids, {
     required MediaKind kind,
-    String? title,
+    List<String> titles = const [],
     int? year,
+    String? plexGuid,
+    ExternalSeasonRef? season,
   }) async {
-    if (!ids.hasAny) return [];
+    if (!ids.hasAny && plexGuid == null) return [];
     final clients = _serverManager.onlineClients;
     if (clients.isEmpty) return [];
 
     final futures = clients.entries.map((entry) async {
       try {
-        return await entry.value.findByExternalIds(ids, kind: kind, title: title, year: year);
+        return await entry.value.findByExternalIds(
+          ids,
+          kind: kind,
+          titles: titles,
+          year: year,
+          plexGuid: plexGuid,
+          season: season,
+        );
       } catch (e, st) {
         appLogger.w('External-id lookup failed on ${entry.key}', error: e, stackTrace: st);
         return null;

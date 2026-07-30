@@ -1,9 +1,14 @@
+import '../../i18n/strings.g.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
+import '../../models/catalog/catalog_metadata.dart';
+import '../../models/trakt/trakt_cast_entry.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../models/trakt/trakt_catalog_media.dart';
 import '../../models/trakt/trakt_ids.dart';
+import '../../utils/app_logger.dart';
+import '../../utils/country_codes.dart';
 import '../../utils/external_ids.dart';
 import '../trakt/trakt_client.dart';
 import '../trakt/trakt_constants.dart';
@@ -54,7 +59,7 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     switch (row) {
       case CatalogRowId.watchlist:
         final res = await _client.getWatchlist(page: page, limit: limit);
-        return CatalogPage(items: _fromEntries(res.items), hasMore: res.hasMore);
+        return CatalogPage(items: _fromEntries(res.items), hasMore: res.hasMore, totalResults: res.itemCount);
       case CatalogRowId.recommendedMovies:
         return CatalogPage(
           items: _fromMedia(await _client.getRecommended(TraktCatalogType.movies, limit: limit), MediaKind.movie),
@@ -68,19 +73,29 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
         return CatalogPage(
           items: _fromEntries(res.items, kind: MediaKind.movie),
           hasMore: res.hasMore,
+          totalResults: res.itemCount,
         );
       case CatalogRowId.trendingShows:
         final res = await _client.getTrending(TraktCatalogType.shows, page: page, limit: limit);
         return CatalogPage(
           items: _fromEntries(res.items, kind: MediaKind.show),
           hasMore: res.hasMore,
+          totalResults: res.itemCount,
         );
       case CatalogRowId.popularMovies:
         final res = await _client.getPopular(TraktCatalogType.movies, page: page, limit: limit);
-        return CatalogPage(items: _fromMedia(res.items, MediaKind.movie), hasMore: res.hasMore);
+        return CatalogPage(
+          items: _fromMedia(res.items, MediaKind.movie),
+          hasMore: res.hasMore,
+          totalResults: res.itemCount,
+        );
       case CatalogRowId.popularShows:
         final res = await _client.getPopular(TraktCatalogType.shows, page: page, limit: limit);
-        return CatalogPage(items: _fromMedia(res.items, MediaKind.show), hasMore: res.hasMore);
+        return CatalogPage(
+          items: _fromMedia(res.items, MediaKind.show),
+          hasMore: res.hasMore,
+          totalResults: res.itemCount,
+        );
       case CatalogRowId.trendingAnime:
       case CatalogRowId.suggestedAnime:
       case CatalogRowId.airingAnime:
@@ -105,28 +120,107 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
       external.hasAny ? CatalogItemIds.fromExternal(external) : null;
 
   @override
-  Future<List<CatalogCastMember>> fetchCast(CatalogItem item, {int limit = 20}) async {
+  Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async {
     final id = item.ids.trakt?.toString() ?? item.ids.slug ?? item.ids.imdb;
-    if (id == null) return const [];
+    if (id == null) return CatalogDetail(item: item);
     final type = item.kind == MediaKind.movie ? TraktCatalogType.movies : TraktCatalogType.shows;
-    final cast = await _client.getPeople(type, id);
-    return [
-      for (final entry in cast.take(limit))
-        if (entry.person?.name case final String name when name.isNotEmpty)
-          CatalogCastMember(
-            name: name,
-            secondary: entry.characters?.firstOrNull,
-            imageUrl: entry.person?.images?.primaryHeadshot,
-          ),
-    ];
+
+    // Start both requests before awaiting either. Trakt keeps people and
+    // related titles on separate endpoints, so two calls are the minimum.
+    final peopleFuture = _withoutFailure(_client.getPeople(type, id), 'people', item);
+    final relatedFuture = _withoutFailure(_client.getRelated(type, id, limit: relatedLimit), 'related', item);
+    final people = await peopleFuture;
+    final related = await relatedFuture;
+    final credits = _creditsFrom(people?.crew);
+    final enrichedItem = credits.isEmpty
+        ? item
+        : item.enrichedWith(
+            CatalogItem(
+              source: CatalogSourceId.trakt,
+              kind: item.kind,
+              title: '',
+              ids: const CatalogItemIds(),
+              credits: credits,
+            ),
+          );
+
+    return CatalogDetail(
+      item: enrichedItem,
+      cast: _castFrom(people, castLimit),
+      related: related == null ? const [] : _fromMedia(related, item.kind),
+    );
   }
 
-  @override
-  Future<List<CatalogItem>> fetchRelated(CatalogItem item, {int limit = 20}) async {
-    final id = item.ids.trakt?.toString() ?? item.ids.slug ?? item.ids.imdb;
-    if (id == null) return const [];
-    final type = item.kind == MediaKind.movie ? TraktCatalogType.movies : TraktCatalogType.shows;
-    return _fromMedia(await _client.getRelated(type, id, limit: limit), item.kind);
+  Future<T?> _withoutFailure<T>(Future<T> request, String requestName, CatalogItem item) async {
+    try {
+      return await request;
+    } catch (error, stackTrace) {
+      appLogger.d(
+        'Trakt: catalog $requestName load failed for ${item.identityKey}',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      return null;
+    }
+  }
+
+  List<CatalogCastMember> _castFrom(TraktPeople? people, int limit) {
+    if (people == null || limit <= 0) return const [];
+    final cast = <CatalogCastMember>[];
+    // `guest_stars` can be a very large response. Regular cast stays first and
+    // the combined retained list is bounded even though Trakt sends all rows.
+    for (final entry in people.cast.followedBy(people.guestStars)) {
+      if (cast.length >= limit) break;
+      if (entry.person?.name case final String name when name.isNotEmpty) {
+        cast.add(
+          CatalogCastMember(
+            name: name,
+            secondary: _castSecondary(entry),
+            imageUrl: entry.person?.images?.primaryHeadshot,
+          ),
+        );
+      }
+    }
+    return cast;
+  }
+
+  static String? _castSecondary(TraktCastEntry entry) {
+    final characters = entry.characters?.where((character) => character.isNotEmpty).join(', ');
+    final episodeCount = entry.episodeCount;
+    final parts = [
+      if (characters != null && characters.isNotEmpty) characters,
+      if (episodeCount != null) t.explore.badge.episodesShort(n: episodeCount),
+    ];
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
+  static List<CatalogCredit> _creditsFrom(List<TraktCastEntry>? crew) {
+    if (crew == null || crew.isEmpty) return const [];
+    final credits = <CatalogCredit>[];
+    final seen = <String>{};
+    for (final role in const [CatalogCreditRole.director, CatalogCreditRole.writer, CatalogCreditRole.producer]) {
+      for (final entry in crew) {
+        final name = entry.person?.name;
+        if (name == null || name.isEmpty || !_hasCreditRole(entry, role)) continue;
+        final key = '${role.name}/${name.toLowerCase()}';
+        if (seen.add(key)) credits.add(CatalogCredit(name: name, role: role));
+      }
+    }
+    return credits;
+  }
+
+  static bool _hasCreditRole(TraktCastEntry entry, CatalogCreditRole role) {
+    final job = entry.job;
+    final jobs = <String>[
+      if (job != null) job.toLowerCase(),
+      for (final job in entry.jobs ?? const <String>[]) job.toLowerCase(),
+    ];
+    return switch (role) {
+      CatalogCreditRole.director => jobs.any((job) => job == 'director' || job == 'co-director'),
+      CatalogCreditRole.writer => jobs.any((job) => const {'writer', 'screenplay', 'story', 'teleplay'}.contains(job)),
+      CatalogCreditRole.producer => jobs.any((job) => job == 'producer' || job.endsWith(' producer')),
+      _ => false,
+    };
   }
 
   @override
@@ -156,7 +250,12 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
   List<CatalogItem> _fromEntries(List<TraktCatalogEntry> entries, {MediaKind? kind}) => [
     for (final entry in entries)
       if (entry.media != null && _entryKind(entry, kind) != null && entry.media!.ids.hasAny)
-        _toCatalogItem(entry.media!, _entryKind(entry, kind)!),
+        _toCatalogItem(
+          entry.media!,
+          _entryKind(entry, kind)!,
+          watchers: entry.watchers,
+          addedAt: _parseDate(entry.listedAt),
+        ),
   ];
 
   List<CatalogItem> _fromMedia(List<TraktCatalogMedia> media, MediaKind kind) => [
@@ -191,25 +290,105 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     _ => null,
   };
 
-  CatalogItem _toCatalogItem(TraktCatalogMedia m, MediaKind kind) => CatalogItem(
-    source: CatalogSourceId.trakt,
-    kind: kind,
-    title: m.title ?? '',
-    year: m.year,
-    overview: m.overview,
-    runtimeMinutes: m.runtime,
-    rating: m.rating,
-    votes: m.votes,
-    genres: m.genres,
-    certification: m.certification,
-    trailerUrl: m.trailer,
-    airStatus: airStatusFor(m.status),
-    episodeCount: m.airedEpisodes,
-    network: m.network,
-    ids: CatalogItemIds(trakt: m.ids.trakt, slug: m.ids.slug, imdb: m.ids.imdb, tmdb: m.ids.tmdb, tvdb: m.ids.tvdb),
-    posterUrl: m.images?.primaryPoster,
-    backdropUrl: m.images?.primaryBackdrop,
-  );
+  CatalogItem _toCatalogItem(TraktCatalogMedia media, MediaKind kind, {int? watchers, DateTime? addedAt}) {
+    final audience = CatalogAudience(watchingNow: watchers, comments: media.commentCount);
+    final broadcast = CatalogBroadcast(
+      weekday: weekdayFor(media.airs?.day),
+      time: _broadcastTime(media.airs?.time),
+      timezone: media.airs?.timezone,
+    );
+    return CatalogItem(
+      source: CatalogSourceId.trakt,
+      kind: kind,
+      title: media.title ?? '',
+      year: media.year,
+      overview: media.overview,
+      runtimeMinutes: media.runtime,
+      rating: media.rating,
+      votes: media.votes,
+      genres: media.genres,
+      certification: media.certification,
+      trailerUrl: media.trailer,
+      airStatus: airStatusFor(media.status),
+      episodeCount: media.airedEpisodes,
+      network: media.network,
+      ids: CatalogItemIds(
+        trakt: media.ids.trakt,
+        slug: media.ids.slug,
+        imdb: media.ids.imdb,
+        tmdb: media.ids.tmdb,
+        tvdb: media.ids.tvdb,
+      ),
+      posterUrl: media.images?.primaryPoster,
+      backdropUrl: media.images?.primaryBackdrop,
+      logoUrl: media.images?.primaryLogo,
+      audience: audience.isEmpty ? null : audience,
+      broadcast: broadcast.isEmpty ? null : broadcast,
+      releaseDate: _parseDate(media.released ?? media.firstAired),
+      addedAt: addedAt,
+      originalTitle: media.originalTitle,
+      tagline: media.tagline,
+      countries: media.country == null || media.country!.isEmpty ? null : [CountryCodes.normalizeCode(media.country!)],
+      languages: _languagesFor(media),
+      recommenders: _recommendersFor(media),
+    );
+  }
+
+  static int? weekdayFor(String? day) => switch (day?.toLowerCase()) {
+    'monday' => DateTime.monday,
+    'tuesday' => DateTime.tuesday,
+    'wednesday' => DateTime.wednesday,
+    'thursday' => DateTime.thursday,
+    'friday' => DateTime.friday,
+    'saturday' => DateTime.saturday,
+    'sunday' => DateTime.sunday,
+    _ => null,
+  };
+
+  static String? _broadcastTime(String? time) {
+    if (time == null || time.length < 5 || time[2] != ':') return null;
+    final hour = int.tryParse(time.substring(0, 2));
+    final minute = int.tryParse(time.substring(3, 5));
+    if (hour == null || hour < 0 || hour > 23 || minute == null || minute < 0 || minute > 59) {
+      return null;
+    }
+    return time.substring(0, 5);
+  }
+
+  static DateTime? _parseDate(String? raw) => raw == null ? null : DateTime.tryParse(raw);
+
+  static List<String>? _languagesFor(TraktCatalogMedia media) {
+    final languages = <String>{
+      if (media.language case final String language when language.isNotEmpty) language.toLowerCase(),
+      ...?media.languages?.where((language) => language.isNotEmpty).map((language) => language.toLowerCase()),
+      ...?media.availableTranslations
+          ?.where((language) => language.isNotEmpty)
+          .map((language) => language.toLowerCase()),
+    };
+    return languages.isEmpty ? null : languages.toList(growable: false);
+  }
+
+  static List<CatalogRecommender>? _recommendersFor(TraktCatalogMedia media) {
+    final recommenders = <CatalogRecommender>[
+      for (final user in media.favoritedBy ?? const <TraktRecommendationUser>[])
+        if (user.username case final String username when username.isNotEmpty)
+          CatalogRecommender(
+            username: username,
+            name: user.name,
+            note: user.notes,
+            reason: CatalogRecommendationReason.favorited,
+          ),
+      for (final user in media.recommendedBy ?? const <TraktRecommendationUser>[])
+        if (user.username case final String username when username.isNotEmpty)
+          CatalogRecommender(
+            username: username,
+            name: user.name,
+            note: user.notes,
+            reason: CatalogRecommendationReason.recommended,
+          ),
+    ];
+    return recommenders.isEmpty ? null : recommenders;
+  }
 
   @override
   void dispose() {

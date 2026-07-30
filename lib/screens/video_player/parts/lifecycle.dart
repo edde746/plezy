@@ -1,5 +1,8 @@
 part of '../../video_player_screen.dart';
 
+bool shouldPauseVideoForBackground({required bool isHandheld, required bool isTv, required bool isAutomotive}) =>
+    isHandheld || isTv || isAutomotive;
+
 extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   void _enqueueLifecycleTransition(String label, Future<void> Function() transition) {
     _lifecycleTransition = _lifecycleTransition
@@ -108,16 +111,32 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       return;
     }
 
-    final shouldPauseForBackground = PlatformDetector.isHandheld(context) || isTv;
+    final isAutomotive = PlatformDetector.isAutomotive();
+    final shouldPauseForBackground = shouldPauseVideoForBackground(
+      isHandheld: PlatformDetector.isHandheld(context),
+      isTv: isTv,
+      isAutomotive: isAutomotive,
+    );
 
     // Pause first so Android MPV does not keep decoding against a transient
     // background surface while the app is locking or hiding.
     if (shouldPauseForBackground) {
-      _wasPlayingBeforeInactive = currentPlayer.state.isActive;
-      if (_wasPlayingBeforeInactive) {
+      // Sticky latch: a car with the Automotive compatibility mode delivers
+      // onPause *and* onStop, so this runs twice, and the second pass must not
+      // overwrite the latch with the already-paused state. Cleared on resume.
+      final wasActive = currentPlayer.state.isActive;
+      _wasPlayingBeforeInactive = _wasPlayingBeforeInactive || wasActive;
+      if (wasActive) {
         try {
           await _pauseWithPlaybackIntent(currentPlayer);
-          appLogger.d('Video paused due to app being hidden (${isTv ? 'tv' : 'handheld'})');
+          appLogger.d(
+            'Video paused due to app being hidden '
+            '(${isAutomotive
+                ? 'automotive'
+                : isTv
+                ? 'tv'
+                : 'handheld'})',
+          );
         } catch (e) {
           appLogger.w('Failed to pause video before background transition', error: e);
         }
@@ -300,8 +319,8 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       resumePosition: resumePosition,
       preserveCurrentTrackSelection: true,
       preservedAudioTrack: audioTrack,
-      preservedSubtitleTrack: subtitleTrack,
-      preservedSecondarySubtitleTrack: secondarySubtitleTrack,
+      preservedSubtitleTrack: SubtitlePreference.trackOrNull(subtitleTrack),
+      preservedSecondarySubtitleTrack: SubtitlePreference.trackOrNull(secondarySubtitleTrack),
       startPaused: true,
       reason: 'TV background suspend restore',
     );

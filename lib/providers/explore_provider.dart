@@ -18,11 +18,20 @@ enum ExploreLoadState { initial, loading, loaded, error }
 class ExploreRowHub {
   final CatalogRowId? row;
   final String? providerHubId;
+  final CatalogHubStyle? style;
+  final int? totalResults;
   final MediaHub hub;
 
-  const ExploreRowHub.catalogRow({required CatalogRowId this.row, required this.hub}) : providerHubId = null;
+  const ExploreRowHub.catalogRow({required CatalogRowId this.row, required this.hub, this.totalResults})
+    : providerHubId = null,
+      style = null;
 
-  const ExploreRowHub.providerHub({required String this.providerHubId, required this.hub}) : row = null;
+  const ExploreRowHub.providerHub({
+    required String this.providerHubId,
+    required this.hub,
+    this.style,
+    this.totalResults,
+  }) : row = null;
 }
 
 /// Owns the Explore tab's fixed rows and provider-defined hubs, converted to
@@ -96,27 +105,30 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
           if (page.items.isNotEmpty)
             ExploreRowHub.catalogRow(
               row: row,
+              totalResults: page.totalResults,
               hub: MediaHub(
                 id: 'explore:${source.id.name}:${row.name}',
                 identifier: 'explore.${row.name}',
                 title: rowTitle(row),
                 type: 'mixed',
                 items: [for (final item in page.items) item.toMediaItem()],
-                size: page.items.length,
+                size: page.totalResults ?? page.items.length,
                 more: page.hasMore,
               ),
             ),
       for (final providerHub in _providerHubs)
-        if (providerHub.page.items.isNotEmpty)
+        if (_rendersProviderHub(providerHub) && providerHub.page.items.isNotEmpty)
           ExploreRowHub.providerHub(
             providerHubId: providerHub.id,
+            style: providerHub.style,
+            totalResults: providerHub.page.totalResults,
             hub: MediaHub(
               id: 'explore:${source.id.name}:hub:${providerHub.id}',
               identifier: 'explore.hub.${providerHub.id}',
               title: providerHub.title,
               type: 'mixed',
               items: [for (final item in providerHub.page.items) item.toMediaItem()],
-              size: providerHub.page.items.length,
+              size: providerHub.page.totalResults ?? providerHub.page.items.length,
               more: providerHub.page.hasMore,
             ),
           ),
@@ -124,6 +136,13 @@ class ExploreProvider extends ChangeNotifier with DisposableChangeNotifierMixin 
     _hubsCache = hubs;
     _hubsCacheKey = key;
     return hubs;
+  }
+
+  static bool _rendersProviderHub(CatalogHub hub) {
+    // Plex's availabilityPlatforms entries are streaming services, not
+    // titles. Until Explore has a platform-specific row, skipping the hub is
+    // preferable to presenting service logos as movie posters.
+    return hub.style != CatalogHubStyle.availabilityPlatforms;
   }
 
   static String rowTitle(CatalogRowId row) => switch (row) {

@@ -379,6 +379,7 @@ class ExploreScreenState extends State<ExploreScreen>
             child: HubSection(
               key: _orderedHubKeys[i],
               hub: rowHubs[i].hub,
+              totalResults: rowHubs[i].totalResults,
               focusMemory: _hubFocusMemory,
               icon: _rowIcon(rowHubs[i].row),
               loadMoreItems: rowHubs[i].hub.more ? () => _explore.loadAllForHub(rowHubs[i]) : null,

@@ -121,8 +121,11 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       recover: () => session.recover(directStream: ds, directStreamAudio: dsa),
       lookupStreamUrl: (recovered) => recovered.streamUrlAt(),
       applyPlayerOptions: () => _setLiveStreamOptions(currentPlayer),
-      open: (streamUrl) =>
-          currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true),
+      open: (streamUrl) => currentPlayer.open(
+        Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+        play: automotivePlaybackAllowedNow(),
+        isLive: true,
+      ),
       isCurrent: isCurrent,
       adoptSession: (recovered) {
         _live.adoptSession(recovered);
@@ -198,7 +201,11 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _live.playbackStartTime = DateTime.now();
 
     await _setLiveStreamOptions(currentPlayer);
-    await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
+    await currentPlayer.open(
+      Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+      play: automotivePlaybackAllowedNow(),
+      isLive: true,
+    );
     if (mounted) _setPlayerState(() {});
   }
 
@@ -305,7 +312,11 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         _hasRenderedFirstFrame = false;
       });
       replacementOpenStarted = true;
-      await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
+      await currentPlayer.open(
+        Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+        play: automotivePlaybackAllowedNow(),
+        isLive: true,
+      );
       if (!isCurrentChannelSwitch()) {
         _abandonLiveSession(session);
         return;

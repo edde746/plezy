@@ -300,6 +300,8 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minutos';
 	@override String get rememberTrackSelections => 'Lembrar seleção de faixas por série/filme';
 	@override String get rememberTrackSelectionsDescription => 'Lembrar escolhas de áudio e legendas por título';
+	@override String get followServerTrackSelections => 'Usar a seleção de faixas do servidor por episódio';
+	@override String get followServerTrackSelectionsDescription => 'Ao mudar de episódio, aplicar o áudio e as legendas selecionados no servidor em vez de manter a escolha atual';
 	@override String get showChapterMarkersOnTimeline => 'Mostrar marcadores de capítulos na barra de reprodução';
 	@override String get showChapterMarkersOnTimelineDescription => 'Segmentar a barra de reprodução nos limites dos capítulos';
 	@override String get clickVideoTogglesPlayback => 'Clicar no vídeo para alternar reprodução/pausa';
@@ -507,8 +509,8 @@ class _Translations$fileInfo$pt extends Translations$fileInfo$en {
 	@override String get title => 'Informações do arquivo';
 	@override String get video => 'Vídeo';
 	@override String get audio => 'Áudio';
+	@override String get subtitles => 'Legendas';
 	@override String get file => 'Arquivo';
-	@override String get advanced => 'Avançado';
 	@override String get codec => 'Codec';
 	@override String get resolution => 'Resolução';
 	@override String get bitrate => 'Taxa de bits';
@@ -521,7 +523,6 @@ class _Translations$fileInfo$pt extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Primárias de Cor';
 	@override String get chromaSubsampling => 'Subamostragem de Croma';
 	@override String get channels => 'Canais';
-	@override String get subtitles => 'Legendas';
 	@override String get overallBitrate => 'Taxa de bits total';
 	@override String get path => 'Caminho';
 	@override String get size => 'Tamanho';
@@ -2356,6 +2357,8 @@ extension on TranslationsPt {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutos',
 			'settings.rememberTrackSelections' => 'Lembrar seleção de faixas por série/filme',
 			'settings.rememberTrackSelectionsDescription' => 'Lembrar escolhas de áudio e legendas por título',
+			'settings.followServerTrackSelections' => 'Usar a seleção de faixas do servidor por episódio',
+			'settings.followServerTrackSelectionsDescription' => 'Ao mudar de episódio, aplicar o áudio e as legendas selecionados no servidor em vez de manter a escolha atual',
 			'settings.showChapterMarkersOnTimeline' => 'Mostrar marcadores de capítulos na barra de reprodução',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segmentar a barra de reprodução nos limites dos capítulos',
 			'settings.clickVideoTogglesPlayback' => 'Clicar no vídeo para alternar reprodução/pausa',
@@ -2560,8 +2563,8 @@ extension on TranslationsPt {
 			'fileInfo.title' => 'Informações do arquivo',
 			'fileInfo.video' => 'Vídeo',
 			'fileInfo.audio' => 'Áudio',
+			'fileInfo.subtitles' => 'Legendas',
 			'fileInfo.file' => 'Arquivo',
-			'fileInfo.advanced' => 'Avançado',
 			'fileInfo.codec' => 'Codec',
 			'fileInfo.resolution' => 'Resolução',
 			'fileInfo.bitrate' => 'Taxa de bits',
@@ -2574,7 +2577,6 @@ extension on TranslationsPt {
 			'fileInfo.colorPrimaries' => 'Primárias de Cor',
 			'fileInfo.chromaSubsampling' => 'Subamostragem de Croma',
 			'fileInfo.channels' => 'Canais',
-			'fileInfo.subtitles' => 'Legendas',
 			'fileInfo.overallBitrate' => 'Taxa de bits total',
 			'fileInfo.path' => 'Caminho',
 			'fileInfo.size' => 'Tamanho',
@@ -2709,9 +2711,9 @@ extension on TranslationsPt {
 			'videoControls.searchSubtitles' => 'Pesquisar legendas',
 			'videoControls.language' => 'Idioma',
 			'videoControls.noSubtitlesFound' => 'Nenhuma legenda encontrada',
-			'videoControls.subtitleDownloaded' => 'Legenda baixada',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Legenda baixada',
 			'videoControls.subtitleDownloadedNotApplied' => 'A legenda foi baixada, mas não foi possível selecioná-la',
 			'videoControls.subtitleDownloadFailed' => 'Falha ao baixar legenda',
 			'videoControls.searchLanguages' => 'Pesquisar idiomas...',
@@ -3223,9 +3225,9 @@ extension on TranslationsPt {
 			'watchTogether.failedToCreate' => 'Falha ao criar sessão',
 			'watchTogether.failedToJoin' => 'Falha ao entrar na sessão',
 			'watchTogether.sessionCodeCopied' => 'Código da sessão copiado para a área de transferência',
-			'watchTogether.relayUnreachable' => 'Servidor de retransmissão inacessível. O bloqueio pelo provedor de internet pode impedir o uso do Assistir Juntos.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Servidor de retransmissão inacessível. O bloqueio pelo provedor de internet pode impedir o uso do Assistir Juntos.',
 			'watchTogether.reconnectingToHost' => 'Reconectando ao anfitrião...',
 			'watchTogether.currentPlayback' => 'Reprodução atual',
 			'watchTogether.joinCurrentPlayback' => 'Entrar na reprodução atual',

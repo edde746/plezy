@@ -207,6 +207,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         subtitle: t.settings.rememberTrackSelectionsDescription,
       ),
       SettingSwitchTile(
+        pref: SettingsService.followServerTrackSelections,
+        icon: Symbols.dns_rounded,
+        title: t.settings.followServerTrackSelections,
+        subtitle: t.settings.followServerTrackSelectionsDescription,
+      ),
+      SettingSwitchTile(
         pref: SettingsService.showChapterMarkersOnTimeline,
         icon: Symbols.bookmarks_rounded,
         title: t.settings.showChapterMarkersOnTimeline,

@@ -14,6 +14,11 @@ import 'media_version.dart';
 part 'media_item.freezed.dart';
 part 'media_item.g.dart';
 
+/// Container aspect ratio below which a hero prefers square background art.
+/// A 16:9 backdrop only cover-fits a taller box by discarding most of the
+/// frame, so portrait phone/tablet heroes read better with the square image.
+const double _squareHeroAspectRatio = 1.39;
+
 /// Backend-neutral media item shape used by UI, providers, persistence, and
 /// playback. Concrete variants retain backend-only fields without forcing the
 /// rest of the app to traffic in Plex/Jellyfin DTOs.
@@ -676,14 +681,33 @@ sealed class MediaItem with _$MediaItem {
     return resolvedBackdropPaths;
   }
 
+  /// The backdrops a hero may rotate through in a container of
+  /// [containerAspectRatio].
+  ///
+  /// `CyclingMediaBackdrop` cycles its rotation set indefinitely and reaches a
+  /// fallback path only once every rotating path has failed to load, so the
+  /// rotation set must hold whatever [heroArtCandidates] prefers — otherwise
+  /// one servable wide backdrop hides the square background for good and a
+  /// near-square hero is stuck with a cropped 16:9 frame. Such containers
+  /// therefore rotate the square background alone, which is to say they hold
+  /// still.
+  List<String> heroRotationPaths({required double containerAspectRatio}) {
+    if (containerAspectRatio < _squareHeroAspectRatio) {
+      final square = backgroundSquarePath;
+      if (square != null && square.isNotEmpty) return [square];
+    }
+    return heroBackdropPaths;
+  }
+
   /// Returns hero art candidates in display-preference order.
   List<String> heroArtCandidates({required double containerAspectRatio}) {
     final own = resolvedBackdropPaths;
     final inherited = resolvedGrandparentBackdropPaths;
+    final isNearSquare = containerAspectRatio < _squareHeroAspectRatio;
     final preferred = switch (kind) {
-      MediaKind.episode when containerAspectRatio < 1.39 => <String?>[backgroundSquarePath, ...inherited, ...own],
+      MediaKind.episode when isNearSquare => <String?>[backgroundSquarePath, ...inherited, ...own],
       MediaKind.episode => <String?>[...inherited, ...own, backgroundSquarePath],
-      _ when containerAspectRatio < 1.39 => <String?>[backgroundSquarePath, ...own],
+      _ when isNearSquare => <String?>[backgroundSquarePath, ...own],
       _ => <String?>[...own, backgroundSquarePath],
     };
 

@@ -9,6 +9,10 @@ part of 'simkl_search_result.dart';
 SimklSearchResult _$SimklSearchResultFromJson(Map<String, dynamic> json) =>
     SimklSearchResult(
       title: json['title'] as String?,
+      titleEn: json['title_en'] as String?,
+      titleRomaji: json['title_romaji'] as String?,
+      allTitles: flexibleStringList(json['all_titles']),
+      url: json['url'] as String?,
       year: flexibleInt(json['year']),
       type: json['type'] as String?,
       endpointType: json['endpoint_type'] as String?,

@@ -6,6 +6,7 @@ import '../media/media_version.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
 import '../mpv/mpv.dart';
+import 'subtitle_preference.dart';
 
 /// Inputs for [MediaServerClient.getPlaybackInitialization]. Most fields
 /// are backend-specific knobs (transcode preset, audio stream, session ids).
@@ -44,7 +45,7 @@ class PlaybackInitializationOptions {
   /// Preferred subtitle carried across navigation/reloads. Backends that put
   /// embedded subtitles in the rendition can use this during negotiation;
   /// sidecar-capable backends keep subtitle delivery independent.
-  final SubtitleTrack? preferredSubtitleTrack;
+  final SubtitlePreference? preferredSubtitleTrack;
 
   /// Plex transcode `X-Plex-Session-Identifier`. Required for Plex transcode.
   final String? sessionIdentifier;

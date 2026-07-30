@@ -12,12 +12,20 @@ const _androidFeatureTelevision = 'android.hardware.type.television';
 const _androidFeatureLeanback = 'android.software.leanback';
 const _androidFeatureFireTv = 'amazon.hardware.fire_tv';
 const _androidFeatureTouchscreen = 'android.hardware.touchscreen';
+const _androidFeatureAutomotive = 'android.hardware.type.automotive';
 
 class AndroidTvFeatureDetection {
   final bool isTv;
+
+  /// True on Android Automotive OS head units. Never true together with
+  /// [isTv]: `FEATURE_AUTOMOTIVE` is authoritative for the car form factor.
+  final bool isAutomotive;
+
+  /// Diagnostic TV signals, surfaced in the log export only while TV mode is
+  /// active. Non-empty with [isTv] false when automotive vetoed the verdict.
   final List<String> reasons;
 
-  const AndroidTvFeatureDetection({required this.isTv, required this.reasons});
+  const AndroidTvFeatureDetection({required this.isTv, required this.isAutomotive, required this.reasons});
 }
 
 AndroidTvFeatureDetection detectAndroidTvFromSystemFeatures(Iterable<String> features) {
@@ -28,8 +36,36 @@ AndroidTvFeatureDetection detectAndroidTvFromSystemFeatures(Iterable<String> fea
   if (featureSet.contains(_androidFeatureFireTv)) reasons.add('fire_tv');
   if (featureSet.isNotEmpty && !featureSet.contains(_androidFeatureTouchscreen)) reasons.add('no_touchscreen');
 
-  return AndroidTvFeatureDetection(isTv: reasons.isNotEmpty, reasons: reasons);
+  // A car is never a TV. Rotary-only head units report no touchscreen, and OEM
+  // images derived from other AOSP variants can carry a stray leanback flag;
+  // either would otherwise route a vehicle through the leanback experience.
+  final isAutomotive = featureSet.contains(_androidFeatureAutomotive);
+
+  return AndroidTvFeatureDetection(
+    isTv: !isAutomotive && reasons.isNotEmpty,
+    isAutomotive: isAutomotive,
+    reasons: reasons,
+  );
 }
+
+/// Whether a floating player may be offered, given the host platform's own
+/// picture-in-picture capability and the detected form factor.
+///
+/// Cars commonly lack `FEATURE_PICTURE_IN_PICTURE`, and a floating player would
+/// keep the app's UI on screen while driving, which `DD-2` forbids. TV form
+/// factors have no windowed surface to float into.
+///
+/// [hostSupportsPictureInPicture] is injected rather than read from [Platform]
+/// so the form-factor vetoes stay observable on hosts that never support PiP:
+/// on the Linux and Windows CI runners every [Platform] branch of the real gate
+/// is false and unmockable, which would otherwise make the vetoes vacuous
+/// exactly where the release is gated.
+bool pictureInPictureAllowed({
+  required bool hostSupportsPictureInPicture,
+  required bool isAppleTv,
+  required bool isTv,
+  required bool isAutomotive,
+}) => hostSupportsPictureInPicture && !isAppleTv && !isTv && !isAutomotive;
 
 /// Service for detecting if the app is running on Android TV or Apple TV.
 class TvDetectionService {
@@ -37,10 +73,12 @@ class TvDetectionService {
   @visibleForTesting
   static set debugDetectionGate(Future<void>? value) => _singleton.debugGate = value;
   static bool? _debugAppleTVOverride;
+  static bool? _debugAutomotiveOverride;
   bool _detected = false;
   bool _forceTv = false;
   bool _isTV = false;
   bool _isAppleTV = false;
+  bool _isAutomotive = false;
   bool _initialized = false;
   List<String> _detectionReasons = const [];
 
@@ -62,6 +100,7 @@ class TvDetectionService {
       final detection =
           nativeDetection ?? detectAndroidTvFromSystemFeatures((await deviceInfo.androidInfo).systemFeatures);
       _detected = detection.isTv;
+      _isAutomotive = detection.isAutomotive;
       _detectionReasons = detection.reasons;
     } else if (Platform.isIOS) {
       if (_tvosBuild) {
@@ -91,6 +130,10 @@ class TvDetectionService {
 
   bool get isTV => _isTV;
 
+  /// True on Android Automotive OS. Independent of the force-TV override so
+  /// driver-distraction gating cannot be switched off from settings.
+  bool get isAutomotive => _isAutomotive;
+
   List<String> get _effectiveDetectionReasons {
     final reasons = <String>[..._detectionReasons];
     if (_forceTv && !reasons.contains('force_tv')) reasons.add('force_tv');
@@ -104,8 +147,9 @@ class TvDetectionService {
       final reasonsValue = result['reasons'];
       final reasons = reasonsValue is Iterable ? reasonsValue.whereType<String>().toList() : <String>[];
       final isTv = result['isTv'] == true;
+      final isAutomotive = result['isAutomotive'] == true;
       if (isTv && reasons.isEmpty) reasons.add('native');
-      return AndroidTvFeatureDetection(isTv: isTv, reasons: reasons);
+      return AndroidTvFeatureDetection(isTv: isTv && !isAutomotive, isAutomotive: isAutomotive, reasons: reasons);
     } on MissingPluginException {
       return null;
     } on PlatformException {
@@ -139,15 +183,24 @@ class TvDetectionService {
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
   static bool isAppleTVSync() => _debugAppleTVOverride ?? (_tvosBuild || _singleton.instance?._isAppleTV == true);
 
+  /// Synchronous Android Automotive OS check (false before initialization).
+  static bool isAutomotiveSync() => _debugAutomotiveOverride ?? _singleton.instance?._isAutomotive ?? false;
+
   @visibleForTesting
   static void debugSetAppleTVOverride(bool? value) {
     _debugAppleTVOverride = value;
   }
 
   @visibleForTesting
+  static void debugSetAutomotiveOverride(bool? value) {
+    _debugAutomotiveOverride = value;
+  }
+
+  @visibleForTesting
   static void debugReset() {
     _singleton.debugReset();
     _debugAppleTVOverride = null;
+    _debugAutomotiveOverride = null;
   }
 
   static List<String> tvDetectionReasonsSync() => _singleton.instance?._effectiveDetectionReasons ?? const [];
@@ -163,6 +216,11 @@ class PlatformDetector {
 
   static bool isAppleTV() {
     return TvDetectionService.isAppleTVSync();
+  }
+
+  /// True on Android Automotive OS head units.
+  static bool isAutomotive() {
+    return TvDetectionService.isAutomotiveSync();
   }
 
   /// Detects if the app should use side navigation (Desktop or TV)
@@ -228,9 +286,12 @@ class PlatformDetector {
     return isAppleTV() || isDesktopOS() || (Platform.isAndroid && isTV());
   }
 
-  static bool supportsPictureInPicture() {
-    return !isAppleTV() && !isTV() && (Platform.isAndroid || Platform.isIOS || Platform.isMacOS);
-  }
+  static bool supportsPictureInPicture() => pictureInPictureAllowed(
+    hostSupportsPictureInPicture: Platform.isAndroid || Platform.isIOS || Platform.isMacOS,
+    isAppleTv: isAppleTV(),
+    isTv: isTV(),
+    isAutomotive: isAutomotive(),
+  );
 
   /// Detects if the device is likely a tablet based on screen size
   /// Uses diagonal screen size to determine if device is a tablet

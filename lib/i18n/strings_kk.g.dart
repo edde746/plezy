@@ -300,6 +300,8 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} минут';
 	@override String get rememberTrackSelections => 'Әр фильм/сериал үшін дыбыс/субтитр таңдауын есте сақтау';
 	@override String get rememberTrackSelectionsDescription => 'Әр медиа үшін дыбыс пен субтитр таңдауын сақтау';
+	@override String get followServerTrackSelections => 'Әр бөлім үшін сервердегі жолдар таңдауын қолдану';
+	@override String get followServerTrackSelectionsDescription => 'Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану';
 	@override String get showChapterMarkersOnTimeline => 'Уақыт шкаласында бөлім белгілерін көрсету';
 	@override String get showChapterMarkersOnTimelineDescription => 'Уақыт шкаласын бөлімдерге бөлу';
 	@override String get clickVideoTogglesPlayback => 'Ойнату/кідірту үшін видеоны басу';
@@ -510,8 +512,8 @@ class _Translations$fileInfo$kk extends Translations$fileInfo$en {
 	@override String get title => 'Файл туралы ақпарат';
 	@override String get video => 'Видео';
 	@override String get audio => 'Аудио';
+	@override String get subtitles => 'Субтитрлер';
 	@override String get file => 'Файл';
-	@override String get advanced => 'Кеңейтілген';
 	@override String get codec => 'Кодек';
 	@override String get resolution => 'Ажыратымдылық';
 	@override String get bitrate => 'Биттік жылдамдық (Bitrate)';
@@ -524,7 +526,6 @@ class _Translations$fileInfo$kk extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Негізгі түстер';
 	@override String get chromaSubsampling => 'Түстік субдискретизация';
 	@override String get channels => 'Арналар';
-	@override String get subtitles => 'Субтитрлер';
 	@override String get overallBitrate => 'Жалпы биттік жылдамдық';
 	@override String get path => 'Жол';
 	@override String get size => 'Көлемі';
@@ -2367,6 +2368,8 @@ extension on TranslationsKk {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} минут',
 			'settings.rememberTrackSelections' => 'Әр фильм/сериал үшін дыбыс/субтитр таңдауын есте сақтау',
 			'settings.rememberTrackSelectionsDescription' => 'Әр медиа үшін дыбыс пен субтитр таңдауын сақтау',
+			'settings.followServerTrackSelections' => 'Әр бөлім үшін сервердегі жолдар таңдауын қолдану',
+			'settings.followServerTrackSelectionsDescription' => 'Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану',
 			'settings.showChapterMarkersOnTimeline' => 'Уақыт шкаласында бөлім белгілерін көрсету',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Уақыт шкаласын бөлімдерге бөлу',
 			'settings.clickVideoTogglesPlayback' => 'Ойнату/кідірту үшін видеоны басу',
@@ -2574,8 +2577,8 @@ extension on TranslationsKk {
 			'fileInfo.title' => 'Файл туралы ақпарат',
 			'fileInfo.video' => 'Видео',
 			'fileInfo.audio' => 'Аудио',
+			'fileInfo.subtitles' => 'Субтитрлер',
 			'fileInfo.file' => 'Файл',
-			'fileInfo.advanced' => 'Кеңейтілген',
 			'fileInfo.codec' => 'Кодек',
 			'fileInfo.resolution' => 'Ажыратымдылық',
 			'fileInfo.bitrate' => 'Биттік жылдамдық (Bitrate)',
@@ -2588,7 +2591,6 @@ extension on TranslationsKk {
 			'fileInfo.colorPrimaries' => 'Негізгі түстер',
 			'fileInfo.chromaSubsampling' => 'Түстік субдискретизация',
 			'fileInfo.channels' => 'Арналар',
-			'fileInfo.subtitles' => 'Субтитрлер',
 			'fileInfo.overallBitrate' => 'Жалпы биттік жылдамдық',
 			'fileInfo.path' => 'Жол',
 			'fileInfo.size' => 'Көлемі',
@@ -2720,9 +2722,9 @@ extension on TranslationsKk {
 			'videoControls.noChaptersAvailable' => 'Бөлімдер қолжетімсіз',
 			'videoControls.queue' => 'Кезек',
 			'videoControls.noQueueItems' => 'Кезекте элементтер жоқ',
-			'videoControls.searchSubtitles' => 'Субтитр іздеу',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.searchSubtitles' => 'Субтитр іздеу',
 			'videoControls.language' => 'Тіл',
 			'videoControls.noSubtitlesFound' => 'Субтитр табылмады',
 			'videoControls.subtitleDownloaded' => 'Субтитр жүктелді',
@@ -3234,9 +3236,9 @@ extension on TranslationsKk {
 			'watchTogether.enterCodeHint' => '5 таңбалы кодты енгізіңіз',
 			'watchTogether.pasteFromClipboard' => 'Алмасу буферінен қою',
 			'watchTogether.pleaseEnterCode' => 'Сеанс кодын енгізіңіз',
-			'watchTogether.codeMustBe5Chars' => 'Сеанс коды 5 таңбадан тұруы керек',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.codeMustBe5Chars' => 'Сеанс коды 5 таңбадан тұруы керек',
 			'watchTogether.joinInstructions' => 'Ұйымдастырушының сеанс кодын енгізіңіз.',
 			'watchTogether.failedToCreate' => 'Сеансты жасау мүмкін болмады',
 			'watchTogether.failedToJoin' => 'Сеансқа қосылу мүмкін болмады',

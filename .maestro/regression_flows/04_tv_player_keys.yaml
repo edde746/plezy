@@ -23,17 +23,40 @@ tags:
 - extendedWaitUntil:
     notVisible: "Pause"
     timeout: 10000
+# Hardware transport keys drive playback without raising the chrome (#1676):
+# the player answers with a centred disc (pause) or a side readout (seek), never the
+# full chrome, so subtitles stay readable.
+# Pause first — it also freezes the clip, so the seek assertions below cannot
+# race the end of a short fixture item.
 - pressKey: "Remote Media Play Pause"
 - extendedWaitUntil:
-    visible: "Play"
+    visible: "Paused"
+    timeout: 10000
+- assertNotVisible: "(?s)^Play$"
+# D-pad seeking reports through the skip badge, never the scrub bar, and
+# consecutive presses in one direction stack into a running total.
+- pressKey: "Remote Dpad Right"
+- extendedWaitUntil:
+    visible: "(?s)^Seek forward 10 seconds$"
+    timeout: 10000
+- assertNotVisible: "(?s)^Play$"
+- pressKey: "Remote Dpad Right"
+- extendedWaitUntil:
+    visible: "(?s)^Seek forward 20 seconds$"
     timeout: 10000
 - pressKey: "Remote Media Play Pause"
 - extendedWaitUntil:
-    visible: "Pause"
+    visible: "Playing"
+    timeout: 10000
+- assertNotVisible: "(?s)^Pause$"
+# Select stays the deliberate way to bring the chrome back.
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "(?s)^(Play|Pause)$"
     timeout: 10000
 - pressKey: "back"
 - extendedWaitUntil:
-    notVisible: "Pause"
+    notVisible: "(?s)^Pause$"
     timeout: 10000
 - assertNotVisible: "Overview"
 - pressKey: "back"

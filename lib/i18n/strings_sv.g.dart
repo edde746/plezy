@@ -300,6 +300,8 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String minutesUnit({required Object minutes}) => '${minutes} minuter';
 	@override String get rememberTrackSelections => 'Kom ihåg spårval per serie/film';
 	@override String get rememberTrackSelectionsDescription => 'Kom ihåg ljud- och undertextval per titel';
+	@override String get followServerTrackSelections => 'Använd serverns spårval per avsnitt';
+	@override String get followServerTrackSelectionsDescription => 'Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet';
 	@override String get showChapterMarkersOnTimeline => 'Visa kapitelmarkörer på tidslinjen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Dela upp tidslinjen vid kapitelgränser';
 	@override String get clickVideoTogglesPlayback => 'Klicka på videon för att spela upp eller pausa';
@@ -507,8 +509,8 @@ class _Translations$fileInfo$sv extends Translations$fileInfo$en {
 	@override String get title => 'Filinformation';
 	@override String get video => 'Video';
 	@override String get audio => 'Ljud';
+	@override String get subtitles => 'Undertexter';
 	@override String get file => 'Fil';
-	@override String get advanced => 'Avancerat';
 	@override String get codec => 'Kodek';
 	@override String get resolution => 'Upplösning';
 	@override String get bitrate => 'Bithastighet';
@@ -521,7 +523,6 @@ class _Translations$fileInfo$sv extends Translations$fileInfo$en {
 	@override String get colorPrimaries => 'Färgprimärer';
 	@override String get chromaSubsampling => 'Krominansnedsampling';
 	@override String get channels => 'Kanaler';
-	@override String get subtitles => 'Undertexter';
 	@override String get overallBitrate => 'Total bithastighet';
 	@override String get path => 'Sökväg';
 	@override String get size => 'Storlek';
@@ -2356,6 +2357,8 @@ extension on TranslationsSv {
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minuter',
 			'settings.rememberTrackSelections' => 'Kom ihåg spårval per serie/film',
 			'settings.rememberTrackSelectionsDescription' => 'Kom ihåg ljud- och undertextval per titel',
+			'settings.followServerTrackSelections' => 'Använd serverns spårval per avsnitt',
+			'settings.followServerTrackSelectionsDescription' => 'Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet',
 			'settings.showChapterMarkersOnTimeline' => 'Visa kapitelmarkörer på tidslinjen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Dela upp tidslinjen vid kapitelgränser',
 			'settings.clickVideoTogglesPlayback' => 'Klicka på videon för att spela upp eller pausa',
@@ -2560,8 +2563,8 @@ extension on TranslationsSv {
 			'fileInfo.title' => 'Filinformation',
 			'fileInfo.video' => 'Video',
 			'fileInfo.audio' => 'Ljud',
+			'fileInfo.subtitles' => 'Undertexter',
 			'fileInfo.file' => 'Fil',
-			'fileInfo.advanced' => 'Avancerat',
 			'fileInfo.codec' => 'Kodek',
 			'fileInfo.resolution' => 'Upplösning',
 			'fileInfo.bitrate' => 'Bithastighet',
@@ -2574,7 +2577,6 @@ extension on TranslationsSv {
 			'fileInfo.colorPrimaries' => 'Färgprimärer',
 			'fileInfo.chromaSubsampling' => 'Krominansnedsampling',
 			'fileInfo.channels' => 'Kanaler',
-			'fileInfo.subtitles' => 'Undertexter',
 			'fileInfo.overallBitrate' => 'Total bithastighet',
 			'fileInfo.path' => 'Sökväg',
 			'fileInfo.size' => 'Storlek',
@@ -2709,9 +2711,9 @@ extension on TranslationsSv {
 			'videoControls.searchSubtitles' => 'Sök undertexter',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
-			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
 			_ => null,
 		} ?? switch (path) {
+			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
 			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
 			'videoControls.subtitleDownloadFailed' => 'Det gick inte att ladda ned undertexten',
 			'videoControls.searchLanguages' => 'Sök språk...',
@@ -3223,9 +3225,9 @@ extension on TranslationsSv {
 			'watchTogether.failedToCreate' => 'Det gick inte att skapa sessionen',
 			'watchTogether.failedToJoin' => 'Det gick inte att gå med i sessionen',
 			'watchTogether.sessionCodeCopied' => 'Sessionskoden har kopierats till urklipp',
-			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Din internetleverantör kan blockera Titta tillsammans.',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Din internetleverantör kan blockera Titta tillsammans.',
 			'watchTogether.reconnectingToHost' => 'Återansluter till värden...',
 			'watchTogether.currentPlayback' => 'Aktuell uppspelning',
 			'watchTogether.joinCurrentPlayback' => 'Gå med i aktuell uppspelning',
