@@ -586,7 +586,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Every successful open passes through here (never live TV), making it
     // the chokepoint for the local last-played history. Offline plays are
     // excluded — like version prefs, the history describes online intent.
-    if (!session.isOffline) {
+    if (!session.isOffline && !widget.isPreroll) {
       unawaited(LocalPlaybackHistory.recordPlayback(session.metadata));
     }
   }
