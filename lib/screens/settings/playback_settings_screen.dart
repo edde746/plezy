@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -7,11 +8,14 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
 import '../../media/media_library.dart';
 import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../mpv/player/platform/player_android.dart';
 import '../../providers/libraries_provider.dart';
+import '../../utils/app_logger.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/companion_remote/companion_remote_host_controller.dart';
@@ -20,6 +24,8 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../widgets/dialog_action_button.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
@@ -54,6 +60,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context);
 
+    // Visibility of several Player tiles is pref-reactive; hoisted here so
+    // group children can use plain `if`s (a SizedBox.shrink() child would
+    // corrupt the SettingsGroup corner shapes).
     return SettingsBuilder(
       prefs: const [
         SettingsService.useExoPlayer,
@@ -276,101 +285,84 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     ],
   );
 
-  Widget _prerollGroup(BuildContext context) => SettingsGroup(
-    title: 'Prerolls',
-    children: [
-      SettingSwitchTile(
-        pref: SettingsService.playPrerollsBeforeMovies,
-        icon: Symbols.movie_rounded,
-        title: 'Play prerolls before movies',
-        subtitle: 'Plays a random clip from your selection below before each movie. Press back to skip.',
-      ),
-      Builder(
-        builder: (context) {
-          final libraries = context.watch<LibrariesProvider>().libraries;
-          final svc = SettingsService.instance;
-          return ValueListenableBuilder<String>(
-            valueListenable: svc.listenable(SettingsService.prerollLibraryGlobalKey),
-            builder: (_, globalKey, _) {
-              MediaLibrary? selected;
-              for (final library in libraries) {
-                if (library.globalKey == globalKey) {
-                  selected = library;
-                  break;
-                }
-              }
-              return SettingNavigationTile(
-                icon: Symbols.video_library_rounded,
-                title: 'Preroll library',
-                subtitle: selected?.title ?? 'Not set',
-                onTap: () => _showPrerollLibraryPicker(context, libraries),
-              );
-            },
-          );
-        },
-      ),
-      Builder(
-        builder: (context) {
-          final libraries = context.watch<LibrariesProvider>().libraries;
-          final svc = SettingsService.instance;
-          return SettingsBuilder(
-            prefs: const [SettingsService.prerollLibraryGlobalKey, SettingsService.prerollSelectedItemKeys],
-            builder: (_) {
-              final globalKey = svc.read(SettingsService.prerollLibraryGlobalKey);
-              MediaLibrary? library;
-              for (final candidate in libraries) {
-                if (candidate.globalKey == globalKey) {
-                  library = candidate;
-                  break;
-                }
-              }
-              final selectedCount = svc.read(SettingsService.prerollSelectedItemKeys).length;
-              final subtitle = library == null
-                  ? 'Pick a library first'
-                  : selectedCount == 0
-                  ? 'All clips in the library'
-                  : '$selectedCount selected';
-              return SettingNavigationTile(
-                icon: Symbols.checklist_rounded,
-                title: 'Selected prerolls',
-                subtitle: subtitle,
-                onTap: library == null ? () {} : () => _showPrerollItemPicker(context, library!),
-              );
-            },
-          );
-        },
-      ),
-    ],
-  );
+  bool _isPrerollCapable(MediaLibrary library) => library.kind == MediaKind.movie || library.kind == MediaKind.clip;
 
-  Future<void> _showPrerollLibraryPicker(BuildContext context, List<MediaLibrary> libraries) async {
-    final svc = SettingsService.instance;
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: const Text('Preroll library'),
-        children: [
-          for (final library in libraries)
-            SimpleDialogOption(
-              onPressed: () async {
-                await svc.write(SettingsService.prerollLibraryGlobalKey, library.globalKey);
-                await svc.write(SettingsService.prerollSelectedItemKeys, const []);
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              },
-              child: Text(library.title),
+  Widget _prerollGroup(BuildContext context) {
+    final libraries = context.watch<LibrariesProvider>().libraries.where(_isPrerollCapable).toList();
+    return SettingsBuilder(
+      prefs: const [
+        SettingsService.playPrerollsBeforeMovies,
+        SettingsService.prerollLibraryGlobalKey,
+        SettingsService.prerollSelectedItemKeys,
+      ],
+      builder: (_) {
+        final svc = SettingsService.instance;
+        final enabled = svc.read(SettingsService.playPrerollsBeforeMovies);
+        final globalKey = svc.read(SettingsService.prerollLibraryGlobalKey);
+        MediaLibrary? library;
+        for (final candidate in libraries) {
+          if (candidate.globalKey == globalKey) {
+            library = candidate;
+            break;
+          }
+        }
+        final selectedCount = svc.read(SettingsService.prerollSelectedItemKeys).length;
+        final selectionSubtitle = library == null
+            ? t.settings.prerollSelectionPickLibraryFirst
+            : selectedCount == 0
+            ? t.settings.prerollSelectionNoneSelected
+            : t.settings.prerollSelectionCount(count: selectedCount.toString());
+
+        return SettingsGroup(
+          title: t.settings.prerolls,
+          children: [
+            SettingSwitchTile(
+              pref: SettingsService.playPrerollsBeforeMovies,
+              icon: Symbols.movie_rounded,
+              title: t.settings.playPrerollsBeforeMovies,
+              subtitle: t.settings.playPrerollsBeforeMoviesDescription,
             ),
-          if (libraries.isEmpty)
-            const Padding(padding: EdgeInsets.all(16), child: Text('No libraries found on your servers.')),
-        ],
-      ),
+            if (enabled)
+              SettingNavigationTile(
+                icon: Symbols.video_library_rounded,
+                title: t.settings.prerollLibrary,
+                subtitle: library?.title ?? t.settings.prerollLibraryNotSet,
+                onTap: () => _showPrerollLibraryPicker(context, libraries),
+              ),
+            if (enabled && library != null)
+              SettingNavigationTile(
+                icon: Symbols.checklist_rounded,
+                title: t.settings.prerollSelection,
+                subtitle: selectionSubtitle,
+                onTap: () => _showPrerollItemPicker(context, library!),
+              ),
+          ],
+        );
+      },
     );
   }
 
-  Future<void> _showPrerollItemPicker(BuildContext context, MediaLibrary library) async {
-    await showDialog<void>(context: context, builder: (_) => _PrerollItemPickerDialog(library: library));
+  Future<void> _showPrerollLibraryPicker(BuildContext context, List<MediaLibrary> libraries) async {
+    if (libraries.isEmpty) {
+      showAppSnackBar(context, t.settings.prerollLibraryNoneFound);
+      return;
+    }
+    final picked = await showOptionPickerDialog<MediaLibrary>(
+      context: context,
+      title: t.settings.prerollLibrary,
+      options: [for (final library in libraries) (icon: null, label: library.title, value: library)],
+    );
+    if (picked == null) return;
+    final svc = SettingsService.instance;
+    await svc.write(SettingsService.prerollLibraryGlobalKey, picked.globalKey);
+    await svc.write(SettingsService.prerollSelectedItemKeys, const []);
   }
 
-  Widget _playerBackendSelector() => SettingSegmentedTile<bool, bool>(
+  Future<void> _showPrerollItemPicker(BuildContext context, MediaLibrary library) async {
+    await showScopedDialog<void>(context: context, builder: (_) => _PrerollItemPickerDialog(library: library));
+  }
+
+  Widget _playerBackendSelector() => SettingSegmentedTile<bool>(
     pref: SettingsService.useExoPlayer,
     icon: Symbols.play_circle_rounded,
     title: t.settings.playerBackend,
@@ -378,8 +370,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       ButtonSegment(value: true, label: Text(t.settings.exoPlayer)),
       ButtonSegment(value: false, label: Text(t.settings.mpv)),
     ],
-    decode: (s) => s,
-    encode: (s) => s,
   );
 
   Widget _externalPlayerTile() => SettingsBuilder(
@@ -475,6 +465,8 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     destinationBuilder: (_) => const AtmosDiagnosticsScreen(),
   );
 
+  // Visibility for this and the three tiles below is decided by the hoisted
+  // SettingsBuilder in build().
   Widget _displaySwitchDelayTile() => SettingNumberTile(
     pref: SettingsService.displaySwitchDelay,
     icon: Symbols.timer_rounded,
@@ -493,7 +485,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     subtitle: t.settings.tunneledPlaybackDescription,
   );
 
-  Widget _dvConversionModeTile() => SettingSelectionTile<DvConversionModePreference, DvConversionModePreference>(
+  Widget _dvConversionModeTile() => SettingSelectionTile<DvConversionModePreference>(
     pref: SettingsService.dvConversionMode,
     icon: Symbols.hdr_strong_rounded,
     title: t.settings.dvConversionMode,
@@ -501,8 +493,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     options: DvConversionModePreference.values
         .map((m) => DialogOption(value: m, title: _dvConversionModeLabel(m)))
         .toList(),
-    decode: (m) => m,
-    encode: (m) => m,
   );
 
   String _dvConversionModeLabel(DvConversionModePreference mode) => switch (mode) {
@@ -514,7 +504,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
 
   Widget _bufferSizeTile() {
     final bufferOptions = const [0, 64, 128, 256, 512, 1024];
-    return SettingSelectionTile<int, int>(
+    return SettingSelectionTile<int>(
       pref: SettingsService.bufferSize,
       icon: Symbols.memory_rounded,
       title: t.settings.bufferSize,
@@ -522,8 +512,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       options: bufferOptions
           .map((s) => DialogOption(value: s, title: s == 0 ? t.settings.bufferSizeAuto : '${s}MB'))
           .toList(),
-      decode: (s) => s,
-      encode: (s) => s,
       onAfterWrite: (value) async {
         if (Platform.isAndroid && value > 0) {
           final heapMB = await PlayerAndroid.getHeapSize();
@@ -535,7 +523,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     );
   }
 
-  Widget _defaultQualityTile() => SettingSelectionTile<TranscodeQualityPreset, TranscodeQualityPreset>(
+  Widget _defaultQualityTile() => SettingSelectionTile<TranscodeQualityPreset>(
     pref: SettingsService.defaultQualityPreset,
     icon: Symbols.high_quality_rounded,
     title: t.settings.defaultQualityTitle,
@@ -543,18 +531,14 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     options: TranscodeQualityPreset.displayOrder
         .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
         .toList(),
-    decode: (p) => p,
-    encode: (p) => p,
   );
 
-  Widget _musicQualityTile() => SettingSelectionTile<AudioQualityPreset, AudioQualityPreset>(
+  Widget _musicQualityTile() => SettingSelectionTile<AudioQualityPreset>(
     pref: SettingsService.musicQualityPreset,
     icon: Symbols.music_note_rounded,
     title: t.settings.musicQualityTitle,
     subtitleBuilder: _musicQualityLabel,
     options: AudioQualityPreset.values.map((p) => DialogOption(value: p, title: _musicQualityLabel(p))).toList(),
-    decode: (p) => p,
-    encode: (p) => p,
   );
 
   String _musicQualityLabel(AudioQualityPreset preset) =>
@@ -590,10 +574,15 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
   Future<void> _load() async {
     try {
       final client = context.getMediaClientForLibrary(widget.library);
-      final page = await client.fetchLibraryContent(widget.library.id, LibraryQuery(limit: 200));
-      if (mounted) setState(() => _items = page.items);
-    } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      final items = await drainPages<MediaItem>(
+        (start, size) => client.fetchLibraryContent(widget.library.id, LibraryQuery(offset: start, limit: size)),
+        pageSize: 200,
+        stopOnShortPage: true,
+      );
+      if (mounted) setState(() => _items = items);
+    } catch (e, st) {
+      appLogger.w('Preroll item picker load failed', error: e, stackTrace: st);
+      if (mounted) setState(() => _error = t.settings.prerollItemPickerLoadFailed);
     }
   }
 
@@ -601,7 +590,7 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
   Widget build(BuildContext context) {
     final svc = SettingsService.instance;
     return AlertDialog(
-      title: const Text('Select prerolls'),
+      title: Text(t.settings.prerollItemPicker),
       content: SizedBox(
         width: double.maxFinite,
         height: 400,
@@ -611,29 +600,30 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
                 valueListenable: svc.listenable(SettingsService.prerollSelectedItemKeys),
                 builder: (_, selected, _) {
                   final selectedSet = selected.toSet();
-                  return ListView(
-                    shrinkWrap: true,
-                    children: [
-                      for (final item in _items!)
-                        CheckboxListTile(
-                          title: Text(item.title ?? item.id),
-                          value: selectedSet.contains(item.globalKey),
-                          onChanged: (checked) {
-                            final updated = selectedSet.toSet();
-                            if (checked ?? false) {
-                              updated.add(item.globalKey);
-                            } else {
-                              updated.remove(item.globalKey);
-                            }
-                            svc.write(SettingsService.prerollSelectedItemKeys, updated.toList());
-                          },
-                        ),
-                    ],
+                  final items = _items!;
+                  return ListView.builder(
+                    itemCount: items.length,
+                    itemBuilder: (_, index) {
+                      final item = items[index];
+                      return FocusableCheckboxListTile(
+                        title: Text(item.title ?? item.id),
+                        value: selectedSet.contains(item.globalKey),
+                        onChanged: (checked) {
+                          final updated = selectedSet.toSet();
+                          if (checked ?? false) {
+                            updated.add(item.globalKey);
+                          } else {
+                            updated.remove(item.globalKey);
+                          }
+                          unawaited(svc.write(SettingsService.prerollSelectedItemKeys, updated.toList()));
+                        },
+                      );
+                    },
                   );
                 },
               ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Done'))],
+      actions: [DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(context), label: t.common.close)],
     );
   }
 }
