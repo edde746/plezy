@@ -135,7 +135,7 @@ void main() {
       _MigratedRow(
         title: t.settings.checkForUpdates,
         focusLabel: 'settings_check_for_updates',
-        isVisible: UpdateService.isUpdateCheckEnabled && UpdateService.useNativeUpdater,
+        isVisible: UpdateService.isUpdateCheckAvailable && UpdateService.useNativeUpdater,
         hasSubtitle: false,
       ),
     ];
@@ -237,7 +237,7 @@ void main() {
       await _pumpUi(tester);
     }
 
-    if (!UpdateService.isUpdateCheckEnabled) {
+    if (!UpdateService.isUpdateCheckAvailable) {
       expect(find.text(t.settings.checkForUpdates), findsNothing);
       return;
     }

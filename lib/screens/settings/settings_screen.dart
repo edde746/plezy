@@ -203,7 +203,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
                 _buildAdvancedSection(),
 
-                if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
+                if (UpdateService.isUpdateCheckAvailable) ...[_buildUpdateSection()],
 
                 // Hidden on Android TV / tvOS (no document picker); desktop in
                 // force-TV mode keeps it — FilePickerService works there.
