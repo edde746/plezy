@@ -580,6 +580,7 @@ class _PrerollItemPickerDialog extends StatefulWidget {
 class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
   List<MediaItem>? _items;
   String? _error;
+  Set<String> _selected = {};
 
   @override
   void initState() {
@@ -589,22 +590,39 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
 
   Future<void> _load() async {
     try {
+      final storage = await StorageService.getInstance();
       final client = context.getMediaClientForLibrary(widget.library);
       final items = await drainPages<MediaItem>(
         (start, size) => client.fetchLibraryContent(widget.library.id, LibraryQuery(offset: start, limit: size)),
         pageSize: 200,
         stopOnShortPage: true,
       );
-      if (mounted) setState(() => _items = items);
+      if (mounted) {
+        setState(() {
+          _items = items;
+          _selected = storage.getPrerollSelectedItemKeys();
+        });
+      }
     } catch (e, st) {
       appLogger.w('Preroll item picker load failed', error: e, stackTrace: st);
       if (mounted) setState(() => _error = t.settings.prerollItemPickerLoadFailed);
     }
   }
 
+  Future<void> _toggle(String globalKey, bool checked) async {
+    final updated = _selected.toSet();
+    if (checked) {
+      updated.add(globalKey);
+    } else {
+      updated.remove(globalKey);
+    }
+    setState(() => _selected = updated);
+    final storage = await StorageService.getInstance();
+    await storage.savePrerollSelectedItemKeys(updated);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final svc = SettingsService.instance;
     return AlertDialog(
       title: Text(t.settings.prerollItemPicker),
       content: SizedBox(
@@ -612,29 +630,14 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
         height: 400,
         child: _items == null
             ? Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator())
-            : ValueListenableBuilder<List<String>>(
-                valueListenable: svc.listenable(SettingsService.prerollSelectedItemKeys),
-                builder: (_, selected, _) {
-                  final selectedSet = selected.toSet();
-                  final items = _items!;
-                  return ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (_, index) {
-                      final item = items[index];
-                      return FocusableCheckboxListTile(
-                        title: Text(item.title ?? item.id),
-                        value: selectedSet.contains(item.globalKey),
-                        onChanged: (checked) {
-                          final updated = selectedSet.toSet();
-                          if (checked ?? false) {
-                            updated.add(item.globalKey);
-                          } else {
-                            updated.remove(item.globalKey);
-                          }
-                          unawaited(svc.write(SettingsService.prerollSelectedItemKeys, updated.toList()));
-                        },
-                      );
-                    },
+            : ListView.builder(
+                itemCount: _items!.length,
+                itemBuilder: (_, index) {
+                  final item = _items![index];
+                  return FocusableCheckboxListTile(
+                    title: Text(item.title ?? item.id),
+                    value: _selected.contains(item.globalKey),
+                    onChanged: (checked) => unawaited(_toggle(item.globalKey, checked ?? false)),
                   );
                 },
               ),
