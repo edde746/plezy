@@ -5,7 +5,13 @@
   import AmazonIcon from "~icons/cib/amazon";
   import ChevronDownIcon from "~icons/heroicons/chevron-down-solid";
   import WindowsIcon from "./WindowsIcon.svelte";
-  import { AMAZON_URL, linuxArchitectures, releaseAsset, storeOptions } from "$lib/content/downloads";
+  import {
+    AMAZON_URL,
+    linuxArchitectures,
+    MICROSOFT_STORE_URL,
+    releaseAsset,
+    storeOptions,
+  } from "$lib/content/downloads";
 
   const componentId = $props.id();
   const linuxPanelId = `${componentId}-linux-downloads`;
@@ -67,7 +73,9 @@
   <!-- Desktop row -->
   <div class="desktop-buttons">
     <a
-      href={releaseAsset("plezy-windows-installer.exe")}
+      href={MICROSOFT_STORE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
       class="desktop-button"
     >
       <WindowsIcon />

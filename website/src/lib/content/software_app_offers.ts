@@ -1,4 +1,8 @@
-import { AMAZON_URL, storeOptions } from './downloads';
+import {
+  AMAZON_URL,
+  APP_STORE_CANONICAL_URL,
+  PLAY_STORE_CANONICAL_URL,
+} from './downloads';
 
 export type StorePrices = {
   appStorePrice: string | null;
@@ -25,7 +29,7 @@ export function buildSoftwareApplicationOffers({
   return [
     {
       '@type': 'Offer',
-      url: storeOptions.ios.url,
+      url: APP_STORE_CANONICAL_URL,
       category: 'App Store',
       ...(appStorePrice === null
         ? {}
@@ -36,7 +40,7 @@ export function buildSoftwareApplicationOffers({
     },
     {
       '@type': 'Offer',
-      url: storeOptions.android.url,
+      url: PLAY_STORE_CANONICAL_URL,
       category: 'Google Play',
       ...(playStorePrice === null
         ? {}
