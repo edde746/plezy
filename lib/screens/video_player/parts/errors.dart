@@ -14,51 +14,46 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     appLogger.e('[Player ERROR] ${err.message}');
     if (!mounted || _isExiting.value) return;
 
-    // Fatal, unrecoverable until server-side fix — show modal instead of a snackbar.
-    //
     // A sidecar subtitle fetch can also log a status, but it never raises the
-    // end-file error this handler is wired to, so the status observed here
-    // belongs to the primary media open.
-    if (err.cause == PlayerError.serverHttp500 || _fatalHttpStatuses.contains(500)) {
-      _hasFatalPlaybackError = true;
-      _progressTracker?.stopTracking();
-      unawaited(_showServerLimitDialog());
-      return;
-    }
+    // end-file error this handler is wired to, so a latched status belongs to
+    // the primary media open.
+    final action = resolvePlaybackFailureAction(
+      cause: err.cause,
+      fatalHttpStatuses: _fatalHttpStatuses,
+      isLive: widget.isLive,
+      liveRetrying: _live.retrying,
+      liveFallbackLevel: _live.fallbackLevel,
+      liveRetryFailed: _live.retryFailed,
+    );
 
-    // The server resolved the item but could not read the file behind it. No
-    // retry, quality change, or backend switch recovers that, and the raw mpv
-    // line ("Failed to open <redacted url>") tells the user nothing actionable.
-    if (err.cause == PlayerError.serverHttp404 || _fatalHttpStatuses.contains(404)) {
-      _hasFatalPlaybackError = true;
-      _progressTracker?.stopTracking();
-      unawaited(_showMediaUnreadableDialog());
-      return;
-    }
-
-    // Live TV: retry with progressively degraded stream settings
-    // (mirrors Plex web client fallback chain).
-    if (widget.isLive) {
+    switch (action) {
+      // Both dialogs are unrecoverable until the server side changes, so they
+      // replace the snackbar rather than joining it.
+      case PlaybackFailureAction.serverLimitDialog:
+        _hasFatalPlaybackError = true;
+        _progressTracker?.stopTracking();
+        unawaited(_showServerLimitDialog());
+      case PlaybackFailureAction.mediaUnreadableDialog:
+        _hasFatalPlaybackError = true;
+        _progressTracker?.stopTracking();
+        unawaited(_showMediaUnreadableDialog());
       // The bounded retry operation owns errors raised while applying/opening
       // its replacement stream. Do not let the same error close the route.
-      if (_live.retrying) return;
-      if (_live.fallbackLevel < 2) {
+      case PlaybackFailureAction.ignore:
+        return;
+      case PlaybackFailureAction.liveRetry:
         _live.fallbackLevel++;
         _live.retrying = true;
         appLogger.w('Live stream failed, retrying with fallback level ${_live.fallbackLevel}');
         unawaited(_retryLiveStream());
-        return;
-      }
-      if (_live.retryFailed) {
+      case PlaybackFailureAction.liveInterrupted:
         showGlobalErrorSnackBar(t.messages.liveStreamInterrupted);
-        return;
-      }
+      case PlaybackFailureAction.fatal:
+        _hasFatalPlaybackError = true;
+        _progressTracker?.stopTracking();
+        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? err.message));
+        unawaited(_handleBackButton());
     }
-
-    _hasFatalPlaybackError = true;
-    _progressTracker?.stopTracking();
-    showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? err.message));
-    unawaited(_handleBackButton());
   }
 
   void _onPlayerLog(PlayerLog log) {
