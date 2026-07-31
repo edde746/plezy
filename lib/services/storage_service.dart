@@ -16,7 +16,7 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _keyCurrentUserUUID = 'current_user_uuid';
   static const String _keyHiddenLibraries = 'hidden_libraries';
   static const String _keyPrerollLibraryGlobalKey = 'preroll_library_global_key';
-  static const String _keyPrerollSelectedItemKeys = 'preroll_selected_item_keys';
+  static const String _keyPrerollSelectedItemKeys = 'preroll_selected_item_keys_v2';
   static const String _keyServersList = 'servers_list';
   static const String _keyServerOrder = 'server_order';
   static const String _keyActiveProfileId = 'active_app_profile_id';
