@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../providers/libraries_provider.dart';
 import '../services/settings_service.dart';
@@ -13,6 +14,19 @@ import 'global_key_utils.dart';
 import 'provider_extensions.dart';
 
 bool prerollsEnabled() => (SettingsService.instanceOrNull?.read(SettingsService.playPrerollsBeforeMovies)) ?? false;
+
+bool prerollShouldPlayFor(
+  MediaItem metadata, {
+  required bool skipPreroll,
+  required bool isOffline,
+  required bool usePushReplacement,
+}) =>
+    !skipPreroll &&
+    !isOffline &&
+    !usePushReplacement &&
+    metadata.kind == MediaKind.movie &&
+    !metadata.hasActiveProgress &&
+    prerollsEnabled();
 
 Future<MediaItem?> pickRandomPreroll(BuildContext context) async {
   final settingsService = await SettingsService.getInstance();
