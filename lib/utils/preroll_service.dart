@@ -7,6 +7,7 @@ import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../providers/libraries_provider.dart';
 import '../services/settings_service.dart';
+import '../services/storage_service.dart';
 import 'app_logger.dart';
 import 'global_key_utils.dart';
 import 'provider_extensions.dart';
@@ -17,10 +18,11 @@ Future<MediaItem?> pickRandomPreroll(BuildContext context) async {
   final settingsService = await SettingsService.getInstance();
   if (!settingsService.read(SettingsService.playPrerollsBeforeMovies)) return null;
 
-  final globalKey = settingsService.read(SettingsService.prerollLibraryGlobalKey);
-  if (globalKey.isEmpty) return null;
+  final storage = await StorageService.getInstance();
+  final globalKey = storage.getPrerollLibraryGlobalKey();
+  if (globalKey == null || globalKey.isEmpty) return null;
 
-  final selectedKeys = settingsService.read(SettingsService.prerollSelectedItemKeys);
+  final selectedKeys = storage.getPrerollSelectedItemKeys();
   if (selectedKeys.isEmpty) return null;
   if (!context.mounted) return null;
 
@@ -36,7 +38,7 @@ Future<MediaItem?> pickRandomPreroll(BuildContext context) async {
 
   try {
     final client = context.getMediaClientForLibrary(library);
-    final shuffledKeys = [...selectedKeys]..shuffle(Random());
+    final shuffledKeys = selectedKeys.toList()..shuffle(Random());
     for (final key in shuffledKeys) {
       final parsed = parseGlobalKey(key);
       if (parsed == null) continue;
