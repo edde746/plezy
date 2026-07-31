@@ -243,12 +243,18 @@ Future<_StartupDependencies> _initializeApplication() async {
         options.beforeSend = _beforeSend;
         options.beforeBreadcrumb = _beforeBreadcrumb;
       });
+      // Only reached when init really completed; the phase above swallows a
+      // failure or a timeout and would otherwise leave a no-op hub that
+      // accepts events and drops them.
+      _crashReporterReady = true;
     });
-    // Settings are loaded and the reporter is up, so the crash-reporting
-    // opt-out in `_beforeSend` now applies. This is the first moment a failure
-    // from an earlier attempt can actually be sent.
-    unawaited(flushPendingStartupFailure());
   }
+
+  // Registered rather than awaited: sending must not sit on the critical path,
+  // but it must finish before the success path consumes the record off disk.
+  // Runs even without Sentry so a build that can never report still resolves
+  // the record instead of carrying it forever.
+  StartupDiagnosticsStore.holdForFlush(flushPendingStartupFailure());
 
   AndroidExitDiagnostics.markTelemetryReady();
   return _initializeStartup(settings);
@@ -314,25 +320,75 @@ StartupFailureRecord describeStartupFailure(Object error, StackTrace stackTrace)
   repairable: _isRepairable(error),
 );
 
+/// Whether `SentryFlutter.init` actually completed this launch.
+///
+/// The crash-reporting phase is best-effort, so init can fail or time out and
+/// leave a no-op hub behind. A no-op hub accepts `captureMessage` and returns
+/// an empty id *without throwing*, so "the send did not throw" is not evidence
+/// that anything was sent.
+var _crashReporterReady = false;
+
+@visibleForTesting
+void debugSetCrashReporterReady(bool ready) => _crashReporterReady = ready;
+
 /// Sends a persisted startup failure to the crash reporter, once.
 ///
 /// Reporting cannot happen where the failure is caught. The gate opens
 /// preferences — the likeliest thing to fail, and the whole reason #1732 has
-/// no telemetry — before crash reporting exists, so a `captureException`
-/// there goes to a no-op hub and is silently dropped. Initialising the
-/// reporter first is not an option either: `_beforeSend` reads the
-/// crash-reporting opt-out from settings, which are not loaded yet, so early
-/// events would bypass a user's choice.
+/// no telemetry — before crash reporting exists, so a capture there goes to a
+/// no-op hub and is silently dropped. Initialising the reporter first is not
+/// an option either: `_beforeSend` reads the crash-reporting opt-out from
+/// settings, which are not loaded yet, so early events would bypass a user's
+/// choice.
 ///
 /// So every failure is persisted first and flushed here, immediately after
 /// the reporter comes up with settings loaded. In practice that is the user's
 /// own retry, seconds later, in the same process.
+///
+/// The record is only marked reported on proof of delivery — a non-empty
+/// Sentry id — or when the user has opted out, which is a deliberate
+/// suppression rather than a failure to retry. Anything else leaves it
+/// pending for the next launch.
 @visibleForTesting
-Future<void> flushPendingStartupFailure({Future<void> Function(StartupFailureRecord record)? send}) async {
+Future<void> flushPendingStartupFailure({
+  Future<SentryId> Function(StartupFailureRecord record)? send,
+  bool? reporterReady,
+  bool? crashReportingEnabled,
+  bool? reportingCompiledIn,
+}) async {
   final record = await StartupDiagnosticsStore.peekPersisted();
   if (record == null || record.reported) return;
+
+  final optedIn = crashReportingEnabled ?? SettingsService.instanceOrNull?.read(SettingsService.crashReporting) ?? true;
+  final canEverReport = reportingCompiledIn ?? _enableSentry;
+  if (!optedIn || !canEverReport) {
+    // Deliberate suppression, not a delivery failure. Marking it reported is
+    // what lets `consumePrevious` eventually drop the file; without this a
+    // fork build with no DSN, or an opted-out user, would carry the record
+    // forever.
+    appLogger.d(
+      optedIn
+          ? 'Startup failure not reported: crash reporting is not available in this build'
+          : 'Startup failure not reported: crash reporting is disabled',
+    );
+    await StartupDiagnosticsStore.markReported(record);
+    return;
+  }
+
+  if (!(reporterReady ?? _crashReporterReady)) {
+    // Kept on disk deliberately: `consumePrevious` retains an unreported
+    // record so the next launch can try again.
+    appLogger.d('Startup failure kept for the next launch: crash reporting is not initialised');
+    return;
+  }
+
   try {
-    await (send ?? _captureStartupFailure)(record);
+    final id = await (send ?? _captureStartupFailure)(record);
+    if (id == const SentryId.empty()) {
+      // A no-op hub, a disabled client, or an event dropped in `beforeSend`.
+      appLogger.d('Startup failure was not accepted by the crash reporter; keeping it for the next launch');
+      return;
+    }
     await StartupDiagnosticsStore.markReported(record);
   } catch (error, stackTrace) {
     // Leave it unreported so the next launch tries again.
@@ -340,10 +396,10 @@ Future<void> flushPendingStartupFailure({Future<void> Function(StartupFailureRec
   }
 }
 
-Future<void> _captureStartupFailure(StartupFailureRecord record) async {
+Future<SentryId> _captureStartupFailure(StartupFailureRecord record) {
   // The original error object is long gone by now; the record is the
   // allowlisted, already-redacted rendering of it.
-  await Sentry.captureMessage(
+  return Sentry.captureMessage(
     'Startup failed: ${record.headline}',
     level: SentryLevel.fatal,
     withScope: (scope) {

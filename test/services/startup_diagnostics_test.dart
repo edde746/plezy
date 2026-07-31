@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:plezy/main.dart';
 import 'package:plezy/services/sensitive_prefs.dart';
 import 'package:plezy/services/startup_diagnostics.dart';
@@ -139,16 +141,30 @@ void main() {
       expect(restored.stackTrace, contains('#0 frame'));
     });
 
-    test('consuming deletes the file but keeps the record available in-session', () async {
-      await StartupDiagnosticsStore.record(_record());
+    test('consuming a reported record deletes it but keeps it in-session', () async {
+      final record = _record();
+      await StartupDiagnosticsStore.record(record);
+      await StartupDiagnosticsStore.markReported(record);
       StartupDiagnosticsStore.resetForTesting();
       StartupDiagnosticsStore.debugDirectoryOverride = tempDir;
 
       await StartupDiagnosticsStore.consumePrevious();
 
-      // Deleted so one stale failure cannot follow the user forever, but held
-      // in memory so Settings > Logs can still show and upload it.
       expect(await File('${tempDir.path}/${StartupDiagnosticsStore.fileName}').exists(), isFalse);
+      expect(StartupDiagnosticsStore.pending, isNotNull);
+    });
+
+    test('consuming an unreported record keeps it on disk for the next launch', () async {
+      // The crash reporter may have been offline, opted out, or backed by a
+      // no-op hub. Deleting here would silently end the only retry there is.
+      await StartupDiagnosticsStore.record(_record());
+      StartupDiagnosticsStore.resetForTesting();
+      StartupDiagnosticsStore.debugDirectoryOverride = tempDir;
+
+      final consumed = await StartupDiagnosticsStore.consumePrevious();
+
+      expect(consumed, isNotNull);
+      expect(await File('${tempDir.path}/${StartupDiagnosticsStore.fileName}').exists(), isTrue);
       expect(StartupDiagnosticsStore.pending, isNotNull);
     });
 
@@ -196,35 +212,301 @@ void main() {
     // inline capture goes to a no-op hub and is silently discarded — the
     // likeliest failure phase producing no telemetry at all (#1732).
 
+    final delivered = SentryId.newId();
+
     test('flushes a persisted record once and marks it reported', () async {
       await StartupDiagnosticsStore.record(_record(phase: StartupPhase.preferences));
 
       final sent = <StartupFailureRecord>[];
-      await flushPendingStartupFailure(send: (record) async => sent.add(record));
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: true,
+        send: (record) async {
+          sent.add(record);
+          return delivered;
+        },
+      );
 
       expect(sent.single.phase, StartupPhase.preferences);
       expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isTrue);
 
       // A later launch must not resend it.
-      await flushPendingStartupFailure(send: (record) async => sent.add(record));
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: true,
+        send: (record) async {
+          sent.add(record);
+          return delivered;
+        },
+      );
       expect(sent, hasLength(1));
     });
 
-    test('leaves the record unreported when the send fails', () async {
+    test('leaves the record unreported when the send throws', () async {
       await StartupDiagnosticsStore.record(_record());
 
-      await flushPendingStartupFailure(send: (_) async => throw StateError('offline'));
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: true,
+        send: (_) async => throw StateError('offline'),
+      );
 
       // Still pending, so the next launch retries rather than losing it.
       expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isFalse);
     });
 
+    test('an empty Sentry id is not proof of delivery', () async {
+      // A no-op hub — which is what a failed or timed-out init leaves behind —
+      // accepts the event and returns an empty id without throwing. Treating
+      // that as success would suppress the record permanently.
+      await StartupDiagnosticsStore.record(_record());
+
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: true,
+        send: (_) async => const SentryId.empty(),
+      );
+
+      expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isFalse);
+    });
+
+    test('does not send while the reporter is uninitialised', () async {
+      await StartupDiagnosticsStore.record(_record());
+      final sent = <StartupFailureRecord>[];
+
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: false,
+        crashReportingEnabled: true,
+        send: (record) async {
+          sent.add(record);
+          return delivered;
+        },
+      );
+
+      expect(sent, isEmpty);
+      expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isFalse);
+    });
+
+    test('an opted-out user is never sent, and never retried', () async {
+      await StartupDiagnosticsStore.record(_record());
+      final sent = <StartupFailureRecord>[];
+
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: false,
+        send: (record) async {
+          sent.add(record);
+          return delivered;
+        },
+      );
+
+      expect(sent, isEmpty);
+      // Suppressed deliberately, so it must not be rediscovered every launch.
+      expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isTrue);
+    });
+
     test('does nothing when no launch has failed', () async {
       final sent = <StartupFailureRecord>[];
 
-      await flushPendingStartupFailure(send: (record) async => sent.add(record));
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: true,
+        send: (record) async {
+          sent.add(record);
+          return delivered;
+        },
+      );
 
       expect(sent, isEmpty);
+    });
+
+    test('consumption waits for a registered flush', () async {
+      await StartupDiagnosticsStore.record(_record());
+      final started = Completer<void>();
+      final release = Completer<void>();
+      final seen = <StartupFailureRecord>[];
+
+      StartupDiagnosticsStore.holdForFlush(
+        flushPendingStartupFailure(
+          reportingCompiledIn: true,
+          reporterReady: true,
+          crashReportingEnabled: true,
+          send: (record) async {
+            seen.add(record);
+            started.complete();
+            await release.future;
+            return delivered;
+          },
+        ),
+      );
+      await started.future;
+
+      // The success path would otherwise delete the file mid-send.
+      final consumed = StartupDiagnosticsStore.consumePrevious();
+      var finished = false;
+      unawaited(consumed.then((_) => finished = true));
+      await Future<void>.delayed(Duration.zero);
+      expect(finished, isFalse, reason: 'consumption must not race the flush');
+
+      release.complete();
+      expect((await consumed)!.reported, isTrue);
+      expect(seen, hasLength(1));
+    });
+
+    test('a slow flush never clobbers a newer retry failure', () async {
+      // Retry also fails while flush A is still sending: marking A reported
+      // must not write A back over B.
+      final first = _record(phase: StartupPhase.preferences);
+      await StartupDiagnosticsStore.record(first);
+
+      final sending = Completer<void>();
+      final release = Completer<void>();
+      final flush = flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: true,
+        send: (_) async {
+          sending.complete();
+          await release.future;
+          return SentryId.newId();
+        },
+      );
+      await sending.future;
+
+      final second = _record(phase: StartupPhase.database, error: StateError('retry also failed'));
+      await StartupDiagnosticsStore.record(second);
+
+      release.complete();
+      await flush;
+
+      final persisted = await StartupDiagnosticsStore.peekPersisted();
+      expect(persisted!.id, second.id, reason: 'the newer failure must survive');
+      expect(persisted.phase, StartupPhase.database);
+      expect(persisted.reported, isFalse, reason: 'B was never sent');
+    });
+
+    test('records are individually identifiable', () {
+      expect(_record().id, isNot(_record().id));
+      // copyWith preserves identity, or the compare-and-set above cannot work.
+      final record = _record();
+      expect(record.copyWith(reported: true).id, record.id);
+    });
+
+    test('a peek settles an unawaited write first', () async {
+      // The failure path launches `record()` unawaited, so a fast retry can
+      // reach the flush before the file exists.
+      unawaited(StartupDiagnosticsStore.record(_record(phase: StartupPhase.preferences)));
+
+      final peeked = await StartupDiagnosticsStore.peekPersisted();
+
+      expect(peeked?.phase, StartupPhase.preferences);
+    });
+
+    test('a consume settles an unawaited write first', () async {
+      final record = _record();
+      unawaited(StartupDiagnosticsStore.record(record));
+      await StartupDiagnosticsStore.markReported(record);
+
+      expect(await StartupDiagnosticsStore.consumePrevious(), isNotNull);
+      // No stale file left behind by a late write.
+      expect(await StartupDiagnosticsStore.peekPersisted(), isNull);
+    });
+
+    test('concurrent writes land in record order', () async {
+      // Two unawaited writes to one file: without a queue the older one can
+      // finish last and overwrite the newer failure.
+      final first = _record(phase: StartupPhase.preferences);
+      final second = _record(phase: StartupPhase.database);
+      unawaited(StartupDiagnosticsStore.record(first));
+      unawaited(StartupDiagnosticsStore.record(second));
+
+      expect((await StartupDiagnosticsStore.peekPersisted())!.id, second.id);
+    });
+
+    test('marking reported never resurrects a record a retry superseded', () async {
+      // Deterministic interleave: pause the compare-and-set between its read
+      // and its write, let a retry record a newer failure, then release it.
+      // Outside the write queue the mark would land last and overwrite B.
+      final first = _record(phase: StartupPhase.preferences);
+      await StartupDiagnosticsStore.record(first);
+
+      final reading = Completer<void>();
+      final release = Completer<void>();
+      StartupDiagnosticsStore.debugAfterReportedRead = () {
+        if (!reading.isCompleted) reading.complete();
+        return release.future;
+      };
+      addTearDown(() => StartupDiagnosticsStore.debugAfterReportedRead = null);
+
+      final marking = StartupDiagnosticsStore.markReported(first);
+      await reading.future;
+
+      final second = _record(phase: StartupPhase.database);
+      final writingSecond = StartupDiagnosticsStore.record(second);
+
+      release.complete();
+      await marking;
+      await writingSecond;
+
+      final persisted = await StartupDiagnosticsStore.peekPersisted();
+      expect(persisted!.id, second.id, reason: 'the newer failure must survive');
+      expect(persisted.reported, isFalse, reason: 'the newer failure was never sent');
+    });
+
+    test('a build without crash reporting resolves the record instead of hoarding it', () async {
+      // No DSN compiled in: nothing will ever send this, so it must not be
+      // rediscovered on every launch forever.
+      await StartupDiagnosticsStore.record(_record());
+      final sent = <StartupFailureRecord>[];
+
+      await flushPendingStartupFailure(
+        reportingCompiledIn: false,
+        reporterReady: false,
+        crashReportingEnabled: true,
+        send: (record) async {
+          sent.add(record);
+          return SentryId.newId();
+        },
+      );
+
+      expect(sent, isEmpty);
+      expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isTrue);
+    });
+
+    test('an undeliverable record survives a successful launch and retries', () async {
+      // End to end: no-op hub, the gate then succeeds and consumes, and the
+      // record is still there for the next launch to send.
+      await StartupDiagnosticsStore.record(_record());
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: true,
+        send: (_) async => const SentryId.empty(),
+      );
+      await StartupDiagnosticsStore.consumePrevious();
+
+      StartupDiagnosticsStore.resetForTesting();
+      StartupDiagnosticsStore.debugDirectoryOverride = tempDir;
+      final sent = <StartupFailureRecord>[];
+      await flushPendingStartupFailure(
+        reportingCompiledIn: true,
+        reporterReady: true,
+        crashReportingEnabled: true,
+        send: (record) async {
+          sent.add(record);
+          return SentryId.newId();
+        },
+      );
+
+      expect(sent, hasLength(1), reason: 'the next launch must retry it');
+      expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isTrue);
     });
 
     test('peeking leaves the record on disk for the display path', () async {
