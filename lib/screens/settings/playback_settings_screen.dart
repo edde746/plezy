@@ -361,7 +361,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       return;
     }
     final picked = await showOptionPickerDialog<MediaLibrary>(
-      context: context,
+      context,
       title: t.settings.prerollLibrary,
       options: [for (final library in libraries) (icon: null, label: library.title, value: library)],
     );
