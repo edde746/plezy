@@ -46,6 +46,8 @@ class PlaybackSettingsScreen extends StatefulWidget {
 
 class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   KeyboardShortcutsService? _keyboardService;
+  String? _prerollLibraryGlobalKey;
+  Set<String> _prerollSelectedItemKeys = {};
 
   @override
   void initState() {
@@ -55,6 +57,16 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         if (mounted) _keyboardService = s;
       });
     }
+    _loadPrerollStorage();
+  }
+
+  Future<void> _loadPrerollStorage() async {
+    final storage = await StorageService.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _prerollLibraryGlobalKey = storage.getPrerollLibraryGlobalKey();
+      _prerollSelectedItemKeys = storage.getPrerollSelectedItemKeys();
+    });
   }
 
   @override
