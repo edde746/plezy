@@ -303,23 +303,17 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   Widget _prerollGroup(BuildContext context) {
     final libraries = context.watch<LibrariesProvider>().libraries.where(_isPrerollCapable).toList();
     return SettingsBuilder(
-      prefs: const [
-        SettingsService.playPrerollsBeforeMovies,
-        SettingsService.prerollLibraryGlobalKey,
-        SettingsService.prerollSelectedItemKeys,
-      ],
+      prefs: const [SettingsService.playPrerollsBeforeMovies],
       builder: (_) {
-        final svc = SettingsService.instance;
-        final enabled = svc.read(SettingsService.playPrerollsBeforeMovies);
-        final globalKey = svc.read(SettingsService.prerollLibraryGlobalKey);
+        final enabled = SettingsService.instance.read(SettingsService.playPrerollsBeforeMovies);
         MediaLibrary? library;
         for (final candidate in libraries) {
-          if (candidate.globalKey == globalKey) {
+          if (candidate.globalKey == _prerollLibraryGlobalKey) {
             library = candidate;
             break;
           }
         }
-        final selectedCount = svc.read(SettingsService.prerollSelectedItemKeys).length;
+        final selectedCount = _prerollSelectedItemKeys.length;
         final selectionSubtitle = library == null
             ? t.settings.prerollSelectionPickLibraryFirst
             : selectedCount == 0
