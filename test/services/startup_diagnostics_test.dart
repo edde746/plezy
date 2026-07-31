@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/main.dart';
 import 'package:plezy/services/sensitive_prefs.dart';
 import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
@@ -187,6 +188,51 @@ void main() {
       }
       expect(StartupPhase.fromId('nonexistent'), isNull);
       expect(StartupPhase.fromId(null), isNull);
+    });
+  });
+
+  group('deferred crash reporting', () {
+    // The preferences phase runs before crash reporting is initialised, so an
+    // inline capture goes to a no-op hub and is silently discarded — the
+    // likeliest failure phase producing no telemetry at all (#1732).
+
+    test('flushes a persisted record once and marks it reported', () async {
+      await StartupDiagnosticsStore.record(_record(phase: StartupPhase.preferences));
+
+      final sent = <StartupFailureRecord>[];
+      await flushPendingStartupFailure(send: (record) async => sent.add(record));
+
+      expect(sent.single.phase, StartupPhase.preferences);
+      expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isTrue);
+
+      // A later launch must not resend it.
+      await flushPendingStartupFailure(send: (record) async => sent.add(record));
+      expect(sent, hasLength(1));
+    });
+
+    test('leaves the record unreported when the send fails', () async {
+      await StartupDiagnosticsStore.record(_record());
+
+      await flushPendingStartupFailure(send: (_) async => throw StateError('offline'));
+
+      // Still pending, so the next launch retries rather than losing it.
+      expect((await StartupDiagnosticsStore.peekPersisted())!.reported, isFalse);
+    });
+
+    test('does nothing when no launch has failed', () async {
+      final sent = <StartupFailureRecord>[];
+
+      await flushPendingStartupFailure(send: (record) async => sent.add(record));
+
+      expect(sent, isEmpty);
+    });
+
+    test('peeking leaves the record on disk for the display path', () async {
+      await StartupDiagnosticsStore.record(_record());
+
+      await StartupDiagnosticsStore.peekPersisted();
+
+      expect(await StartupDiagnosticsStore.consumePrevious(), isNotNull);
     });
   });
 }

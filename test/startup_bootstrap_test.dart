@@ -97,7 +97,6 @@ void main() {
       StartupBootstrap<int>(
         initialize: () async => throw const StartupPhaseException(StartupPhase.database, FormatException('boom')),
         buildApp: (_, value) => Text('ready $value'),
-        reportFailure: (_, _, _) async {},
       ),
     );
     await tester.pump();
@@ -115,7 +114,6 @@ void main() {
       StartupBootstrap<int>(
         initialize: () async => throw StateError('database unavailable'),
         buildApp: (_, value) => Text('ready $value'),
-        reportFailure: (_, _, _) async {},
       ),
     );
     await tester.pump();
@@ -133,7 +131,6 @@ void main() {
       StartupBootstrap<int>(
         initialize: () async => throw StateError('unrelated'),
         buildApp: (_, value) => Text('ready $value'),
-        reportFailure: (_, _, _) async {},
       ),
     );
     await tester.pump();
@@ -144,7 +141,6 @@ void main() {
         key: const Key('repairable'),
         initialize: () async => throw CorruptPreferenceStoreException(const FormatException('bad'), StackTrace.current),
         buildApp: (_, value) => Text('ready $value'),
-        reportFailure: (_, _, _) async {},
       ),
     );
     await tester.pump();
@@ -165,7 +161,6 @@ void main() {
           return 7;
         },
         buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-        reportFailure: (_, _, _) async {},
         repair: (_, _, _) async {
           repairCalls++;
           return true;
@@ -193,7 +188,6 @@ void main() {
           throw CorruptPreferenceStoreException(const FormatException('bad'), StackTrace.current);
         },
         buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-        reportFailure: (_, _, _) async {},
         repair: (_, _, _) async => false,
       ),
     );
@@ -207,20 +201,23 @@ void main() {
     expect(find.byKey(startupBootstrapFailureKey), findsOneWidget);
   });
 
-  testWidgets('reports the failure to the crash reporter', (tester) async {
-    StartupFailureRecord? reported;
+  testWidgets('persists the failure so it can be reported once the reporter is up', (tester) async {
+    // Not reported inline: the earliest gate phases run before crash
+    // reporting exists, so an inline capture would reach a no-op hub and be
+    // discarded. The record is held for `flushPendingStartupFailure` (#1732).
+    StartupDiagnosticsStore.resetForTesting();
+    addTearDown(StartupDiagnosticsStore.resetForTesting);
 
     await tester.pumpWidget(
       StartupBootstrap<int>(
         initialize: () async => throw const StartupPhaseException(StartupPhase.storage, 'nope'),
         buildApp: (_, value) => Text('ready $value'),
-        reportFailure: (record, _, _) async => reported = record,
       ),
     );
     await tester.pump();
 
-    // The gate catches the error, so nothing else would ever see it.
-    expect(reported?.phase, StartupPhase.storage);
+    expect(StartupDiagnosticsStore.pending?.phase, StartupPhase.storage);
+    expect(StartupDiagnosticsStore.pending?.reported, isFalse);
   });
 
   testWidgets('retry clears the failed generation and can commit a later success', (tester) async {

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../utils/app_logger.dart';
+import '../services/base_shared_preferences_service.dart';
 
 /// Startup result after reconciling the purgeable tvOS database with its
 /// bounded standard-domain recovery image.
@@ -98,7 +99,14 @@ final class TvosDatabaseRecoveryStore {
   }) async {
     if (!isTvos) return TvosDatabaseRecoveryOutcome.notApplicable;
 
-    final recoveryRequired = _preferences.getBool(recoveryRequiredKey) ?? false;
+    // Tolerant read: `reconcile` runs inside `AppDatabase.open`, a fatal
+    // startup step, so a wrong-typed marker would veto the launch outright on
+    // a first-class TV target. An unreadable marker tells us nothing, which is
+    // the same position as an absent one — default false and drop the key
+    // (#1732). The manifest reads below are already inside catch-alls.
+    final recoveryRequired =
+        readPreferenceTolerantly(_preferences, recoveryRequiredKey, () => _preferences.getBool(recoveryRequiredKey)) ??
+        false;
     if (recoveryRequired) {
       await _reloadManifestCacheIfNeeded();
       final snapshot = _readCommittedSnapshot();

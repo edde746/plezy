@@ -244,6 +244,10 @@ Future<_StartupDependencies> _initializeApplication() async {
         options.beforeBreadcrumb = _beforeBreadcrumb;
       });
     });
+    // Settings are loaded and the reporter is up, so the crash-reporting
+    // opt-out in `_beforeSend` now applies. This is the first moment a failure
+    // from an earlier attempt can actually be sent.
+    unawaited(flushPendingStartupFailure());
   }
 
   AndroidExitDiagnostics.markTelemetryReady();
@@ -310,22 +314,49 @@ StartupFailureRecord describeStartupFailure(Object error, StackTrace stackTrace)
   repairable: _isRepairable(error),
 );
 
-/// Default [StartupBootstrap.reportFailure].
+/// Sends a persisted startup failure to the crash reporter, once.
+///
+/// Reporting cannot happen where the failure is caught. The gate opens
+/// preferences — the likeliest thing to fail, and the whole reason #1732 has
+/// no telemetry — before crash reporting exists, so a `captureException`
+/// there goes to a no-op hub and is silently dropped. Initialising the
+/// reporter first is not an option either: `_beforeSend` reads the
+/// crash-reporting opt-out from settings, which are not loaded yet, so early
+/// events would bypass a user's choice.
+///
+/// So every failure is persisted first and flushed here, immediately after
+/// the reporter comes up with settings loaded. In practice that is the user's
+/// own retry, seconds later, in the same process.
 @visibleForTesting
-Future<void> reportStartupFailure(StartupFailureRecord record, Object error, StackTrace stackTrace) async {
-  if (!_enableSentry) return;
+Future<void> flushPendingStartupFailure({Future<void> Function(StartupFailureRecord record)? send}) async {
+  final record = await StartupDiagnosticsStore.peekPersisted();
+  if (record == null || record.reported) return;
   try {
-    await Sentry.captureException(
-      error,
-      stackTrace: stackTrace,
-      withScope: (scope) {
-        scope.setTag('startup.phase', record.phaseId);
-        scope.level = SentryLevel.fatal;
-      },
-    );
-  } catch (reportError, reportStack) {
-    appLogger.d('Could not report the startup failure', error: reportError, stackTrace: reportStack);
+    await (send ?? _captureStartupFailure)(record);
+    await StartupDiagnosticsStore.markReported(record);
+  } catch (error, stackTrace) {
+    // Leave it unreported so the next launch tries again.
+    appLogger.d('Could not report the startup failure', error: error, stackTrace: stackTrace);
   }
+}
+
+Future<void> _captureStartupFailure(StartupFailureRecord record) async {
+  // The original error object is long gone by now; the record is the
+  // allowlisted, already-redacted rendering of it.
+  await Sentry.captureMessage(
+    'Startup failed: ${record.headline}',
+    level: SentryLevel.fatal,
+    withScope: (scope) {
+      scope.setTag('startup.phase', record.phaseId);
+      scope.setContexts('startup', {
+        'phase': record.phaseId,
+        'errorType': record.errorType,
+        'repairable': record.repairable,
+        'when': record.timestamp.toUtc().toIso8601String(),
+        'stackTrace': ?record.stackTrace,
+      });
+    },
+  );
 }
 
 /// Default [StartupBootstrap.repair]: states the cost, runs the repair that
@@ -440,7 +471,6 @@ class StartupBootstrap<T> extends StatefulWidget {
     this.discard,
     this.onCommitted,
     this.describeFailure = describeStartupFailure,
-    this.reportFailure = reportStartupFailure,
     this.repair = repairStartupStorage,
     this.lightTheme,
     this.darkTheme,
@@ -455,10 +485,6 @@ class StartupBootstrap<T> extends StatefulWidget {
   /// Reduces a thrown error to the allowlisted record the failure screen,
   /// the persisted diagnostic and the crash report all share.
   final StartupFailureRecord Function(Object error, StackTrace stackTrace) describeFailure;
-
-  /// Sends the failure to the crash reporter. The gate catches the error, so
-  /// nothing else will.
-  final Future<void> Function(StartupFailureRecord record, Object error, StackTrace stackTrace) reportFailure;
 
   /// Offers the user a consented repair for a recoverable failure and reports
   /// whether one ran. Returning true re-runs [initialize].
@@ -530,10 +556,10 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
       // process. On Windows there is no log file and no console for a
       // double-clicked release build.
       unawaited(StartupDiagnosticsStore.record(failure));
-      // The gate catches this error, so it is a *handled* Dart error that
-      // never reaches PlatformDispatcher.onError. Report it explicitly or the
-      // crash dashboard stays empty for the one failure that hides the app.
-      unawaited(widget.reportFailure(failure, error, stackTrace));
+      // Not reported from here: the earliest phases run before the crash
+      // reporter exists, so the record is persisted and flushed by
+      // `flushPendingStartupFailure` once it is up — on the retry below, or on
+      // the next launch.
       if (!mounted || generation != _generation) return;
       setState(() {
         _failure = failure;

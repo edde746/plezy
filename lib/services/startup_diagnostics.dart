@@ -80,6 +80,7 @@ class StartupFailureRecord {
     required this.appVersion,
     required this.platform,
     this.repairable = false,
+    this.reported = false,
   }) : message = LogRedactionManager.redact(message),
        stackTrace = stackTrace == null ? null : LogRedactionManager.redact(stackTrace);
 
@@ -144,6 +145,26 @@ class StartupFailureRecord {
   /// Whether the gate can offer an in-app repair for this failure.
   final bool repairable;
 
+  /// Whether this record has already reached the crash reporter.
+  ///
+  /// The earliest gate phases run before crash reporting is initialised, so a
+  /// failure there is captured by a no-op hub and silently discarded. Records
+  /// are therefore always persisted first and sent once the reporter is up —
+  /// on the in-app retry, or on the next launch (#1732).
+  final bool reported;
+
+  StartupFailureRecord copyWith({bool? reported}) => StartupFailureRecord(
+    phase: phase,
+    errorType: errorType,
+    message: message,
+    stackTrace: stackTrace,
+    timestamp: timestamp,
+    appVersion: appVersion,
+    platform: platform,
+    repairable: repairable,
+    reported: reported ?? this.reported,
+  );
+
   String get phaseId => phase?.id ?? 'unknown';
 
   /// One-line summary for the failure screen and the log.
@@ -177,6 +198,7 @@ class StartupFailureRecord {
     'appVersion': appVersion,
     'platform': platform,
     'repairable': repairable,
+    'reported': reported,
   };
 
   static StartupFailureRecord? fromJson(Map<String, Object?> json) {
@@ -193,6 +215,7 @@ class StartupFailureRecord {
       appVersion: json['appVersion'] as String? ?? 'unknown',
       platform: json['platform'] as String? ?? 'unknown',
       repairable: json['repairable'] as bool? ?? false,
+      reported: json['reported'] as bool? ?? false,
     );
   }
 }
@@ -240,6 +263,37 @@ abstract final class StartupDiagnosticsStore {
       await file.writeAsString(jsonEncode(failure.toJson()), flush: true);
     } catch (error, stackTrace) {
       appLogger.d('Could not persist the startup failure record', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// Reads a persisted record without consuming it.
+  ///
+  /// Used by the crash-report flush, which has to run before the record is
+  /// consumed for display and must not remove it if the send fails.
+  static Future<StartupFailureRecord?> peekPersisted() async {
+    try {
+      final file = await _file();
+      if (file == null || !await file.exists()) return null;
+      final decoded = jsonDecode(await file.readAsString());
+      if (decoded is! Map) return null;
+      return StartupFailureRecord.fromJson(decoded.cast<String, Object?>());
+    } catch (error, stackTrace) {
+      appLogger.d('Could not peek at the startup failure record', error: error, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  /// Rewrites the persisted record as already reported, so a later launch does
+  /// not send it a second time. It stays on disk for Settings > Logs.
+  static Future<void> markReported(StartupFailureRecord failure) async {
+    final updated = failure.copyWith(reported: true);
+    if (_pending != null) _pending = updated;
+    try {
+      final file = await _file();
+      if (file == null || !await file.exists()) return;
+      await file.writeAsString(jsonEncode(updated.toJson()), flush: true);
+    } catch (error, stackTrace) {
+      appLogger.d('Could not mark the startup failure record as reported', error: error, stackTrace: stackTrace);
     }
   }
 
