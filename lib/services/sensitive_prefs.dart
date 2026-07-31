@@ -67,9 +67,6 @@ String? profileScopedCredentialBaseKey(String key) {
   return null;
 }
 
-/// Whether [key] is a profile-scoped or global tracker session slot.
-bool isTrackerSessionPrefKey(String key) => trackerSessionBaseKeys.contains(profileScopedCredentialBaseKey(key));
-
 /// Whether [key] is a profile-scoped or global Seerr session slot.
 bool isSeerrSessionPrefKey(String key) => profileScopedCredentialBaseKey(key) == seerrSessionBaseKey;
 

@@ -18,7 +18,9 @@ class SeerrSessionStore {
 
   Future<SeerrSession?> load(String userUuid) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final raw = prefs.getString(_scopedKey(userUuid));
+    // Outside the try below on purpose: an unreadable credential must
+    // reach the repair prompt, not be swallowed as 'no session'.
+    final raw = readTolerantString(prefs, _scopedKey(userUuid));
     if (raw == null) return null;
     try {
       final session = SeerrSession.decode(raw);

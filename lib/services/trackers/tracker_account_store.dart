@@ -30,7 +30,7 @@ class TrackerAccountStore {
 
   Future<TrackerSession?> load(String userUuid) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    final raw = prefs.getString(_scopedKey(userUuid));
+    final raw = readTolerantString(prefs, _scopedKey(userUuid));
     if (raw == null) return null;
     try {
       return TrackerSession.decode(raw, service: service);

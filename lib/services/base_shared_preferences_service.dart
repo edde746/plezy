@@ -244,27 +244,15 @@ abstract class BaseSharedPreferencesService {
   /// [UnreadableSensitivePreferenceException], which the startup gate
   /// classifies as repairable so the user gets the same consented repair as an
   /// unparseable store.
-  T? _readTolerant<T>(String key, T? Function() read) {
-    try {
-      return read();
-    } on TypeError catch (error, stackTrace) {
-      if (isSensitivePrefKey(key)) {
-        appLogger.e('Credential preference "$key" is unreadable', error: error, stackTrace: stackTrace);
-        Error.throwWithStackTrace(UnreadableSensitivePreferenceException(key, error), stackTrace);
-      }
-      appLogger.w('Dropping preference "$key" with an unreadable stored type', error: error, stackTrace: stackTrace);
-      unawaited(
-        _cache.remove(key).catchError((Object e, StackTrace s) {
-          appLogger.d('Could not drop unreadable preference "$key"', error: e, stackTrace: s);
-        }),
-      );
-      return null;
-    }
-  }
+  T? _readTolerant<T>(String key, T? Function() read) => readPreferenceTolerantly(_cache, key, read);
 
-  /// Nullable string read routed through [_readTolerant]. Use instead of
-  /// `prefs.getString(...)` wherever a mistyped stored value must not throw.
-  String? readNullableString(String key) => _readTolerant(key, () => _cache.getString(key));
+  /// Nullable reads routed through [readPreferenceTolerantly]. Use these
+  /// instead of `prefs.getX(...)` wherever a mistyped stored value must not
+  /// throw — which is everywhere except a call site that deliberately probes
+  /// two types to migrate between them.
+  String? readNullableString(String key) => readTolerantString(_cache, key);
+  bool? readNullableBool(String key) => _readTolerant(key, () => _cache.getBool(key));
+  int? readNullableInt(String key) => _readTolerant(key, () => _cache.getInt(key));
 
   /// Typed read helpers — return the stored value or [defaultValue] when missing.
   bool readBool(String key, {bool defaultValue = false}) =>
@@ -504,3 +492,43 @@ class JsonPref<T> extends Pref<T> {
   @override
   Future<void> writeTo(BaseSharedPreferencesService svc, T value) => svc.writeString(key, encode(value));
 }
+
+/// Reads a preference, tolerating a stored value whose type no longer matches
+/// the declaration.
+///
+/// `SharedPreferencesWithCache.getX` is an `as T?` cast, so a value written by
+/// an older build, hand-edited, or partially recovered throws `TypeError`
+/// rather than returning null. A value we cannot read is indistinguishable
+/// from one that was never written, so drop the key and fall back to the
+/// declared default instead of letting it propagate — before #1732 a single
+/// mistyped preference could fail the entire startup gate.
+///
+/// Credential slots are exempt: silently dropping one would sign the user out
+/// with no explanation. Those raise [UnreadableSensitivePreferenceException],
+/// which the startup gate classifies as repairable so the user gets the same
+/// consented repair as an unparseable store.
+///
+/// Takes the cache directly so the credential stores — which hold a
+/// [SharedPreferencesWithCache] rather than a [BaseSharedPreferencesService] —
+/// get the same treatment as the settings layer.
+T? readPreferenceTolerantly<T>(SharedPreferencesWithCache cache, String key, T? Function() read) {
+  try {
+    return read();
+  } on TypeError catch (error, stackTrace) {
+    if (isSensitivePrefKey(key)) {
+      appLogger.e('Credential preference "$key" is unreadable', error: error, stackTrace: stackTrace);
+      Error.throwWithStackTrace(UnreadableSensitivePreferenceException(key, error), stackTrace);
+    }
+    appLogger.w('Dropping preference "$key" with an unreadable stored type', error: error, stackTrace: stackTrace);
+    unawaited(
+      cache.remove(key).catchError((Object e, StackTrace s) {
+        appLogger.d('Could not drop unreadable preference "$key"', error: e, stackTrace: s);
+      }),
+    );
+    return null;
+  }
+}
+
+/// Tolerant string read for a bare [SharedPreferencesWithCache].
+String? readTolerantString(SharedPreferencesWithCache cache, String key) =>
+    readPreferenceTolerantly(cache, key, () => cache.getString(key));
