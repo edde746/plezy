@@ -929,19 +929,22 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   }
 
   /// Injects the log + error events that would fire when the server rejects the
-  /// stream with HTTP 500 (shared-user bandwidth / transcoding limit). Used by
-  /// the in-player debug button to preview the end-to-end detection path
-  /// without needing a real misbehaving server.
-  void debugSimulateServer500() {
+  /// stream with [status]. Used by the in-player debug buttons to preview the
+  /// end-to-end detection path without needing a real misbehaving server: 500
+  /// is a shared-user bandwidth/transcoding limit, 404 a file the server can no
+  /// longer read. The warn-level log mirrors ffmpeg's real wording, which is
+  /// what [PlayerError.httpStatusFromLog] parses.
+  void debugSimulateServerHttpError(int status) {
     if (_disposed) return;
     logController.add(
-      const PlayerLog(
-        level: PlayerLogLevel.warn,
-        prefix: 'ffmpeg',
-        text: 'https: HTTP error 500 Internal Server Error',
-      ),
+      PlayerLog(level: PlayerLogLevel.warn, prefix: 'ffmpeg', text: 'https: HTTP error $status Simulated'),
     );
-    errorController.add(const PlayerError('HTTP 500', cause: PlayerError.serverHttp500));
+    final cause = switch (status) {
+      500 => PlayerError.serverHttp500,
+      404 => PlayerError.serverHttp404,
+      _ => null,
+    };
+    errorController.add(PlayerError('HTTP $status', cause: cause));
   }
 
   Future<bool> _waitForNativeOwnershipForDispose() async {

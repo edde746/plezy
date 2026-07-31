@@ -120,6 +120,10 @@ class ExoPlayerCore(private val activity: Activity) :
     private const val FPS_SAMPLE_COUNT = 8
     private const val AUDIO_BOUNCE_TIMEOUT_MS = 1000L
 
+    /** Fallback for stacks that only stringify the status instead of raising
+     *  [HttpDataSource.InvalidResponseCodeException]. */
+    private val RESPONSE_CODE_PATTERN = Regex("""\bResponse code: (\d{3})\b""")
+
     /** Per-frame "video is at X" logcat stream (tag AssFrameCb) for diagnosing
      *  ASS subtitle lag against the libass pipeline's render/swap lines. */
     private const val ASS_FRAME_LOGS = false
@@ -1204,18 +1208,24 @@ class ExoPlayerCore(private val activity: Activity) :
     // If native DV7 failed, retry with conversion before falling to MPV
     if (error.errorCode in 4001..4005 && retryWithDvConversion("decoder error ${error.errorCode}")) return
 
-    // Server returned HTTP 500 — typically a shared-user bandwidth/transcoding limit
-    // set by the server owner. MPV will hit the same rejection, so skip the fallback.
-    // Keep the "server-http-500" tag in sync with PlayerError.serverHttp500 in Dart.
-    val isHttp500 =
-      causeChain.contains("Response code: 500") ||
-        (error.message?.contains("Response code: 500") == true)
-    if (isHttp500) {
-      Log.w(TAG, "Server returned HTTP 500 - skipping MPV fallback (unrecoverable until server-side change)")
+    // A server-side HTTP status is not a codec problem: MPV would replay the
+    // same request and fail identically, so skip the fallback (and its
+    // "switching to compatible player" toast) and report the status instead.
+    // Keep these tags in sync with PlayerError.serverHttp500/404 in Dart.
+    val httpStatus = resolveHttpStatus(error, causeChain)
+    val statusCause = when (httpStatus) {
+      // Shared-user bandwidth/transcoding limit rejection set by the server owner.
+      500 -> "server-http-500"
+      // The server resolved the item but cannot read the file behind it.
+      404 -> "server-http-404"
+      else -> null
+    }
+    if (statusCause != null) {
+      Log.w(TAG, "Server returned HTTP $httpStatus - skipping MPV fallback (unrecoverable until server-side change)")
       emitPlaybackErrorOnce(
         mediaGeneration,
-        error.message ?: "HTTP 500",
-        cause = "server-http-500"
+        error.message ?: "HTTP $httpStatus",
+        cause = statusCause
       )
       return
     }
@@ -1247,6 +1257,22 @@ class ExoPlayerCore(private val activity: Activity) :
     }
 
     emitPlaybackErrorOnce(mediaGeneration, error.message ?: "Unknown error")
+  }
+
+  /**
+   * HTTP status the failed request came back with, or null when this is not an
+   * HTTP failure. [HttpDataSource.InvalidResponseCodeException] carries the
+   * real code (both DefaultHttpDataSource and CronetDataSource raise it);
+   * [causeChain] is the already-built string fallback.
+   */
+  private fun resolveHttpStatus(error: PlaybackException, causeChain: String): Int? {
+    var cause: Throwable? = error
+    while (cause != null) {
+      if (cause is HttpDataSource.InvalidResponseCodeException) return cause.responseCode
+      cause = cause.cause
+    }
+    return RESPONSE_CODE_PATTERN.find(causeChain)?.groupValues?.get(1)?.toIntOrNull()
+      ?: error.message?.let { RESPONSE_CODE_PATTERN.find(it)?.groupValues?.get(1)?.toIntOrNull() }
   }
 
   /**

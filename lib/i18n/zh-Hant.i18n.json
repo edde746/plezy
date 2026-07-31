@@ -694,6 +694,8 @@
     "switchingToCompatiblePlayer": "正在切換至相容的播放器…",
     "serverLimitTitle": "播放失敗",
     "serverLimitBody": "伺服器錯誤（HTTP 500）。伺服器的頻寬或轉碼限制可能拒絕此播放要求。請聯絡伺服器擁有者調整設定。",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "日誌已上傳",
     "logsUploadFailed": "上傳日誌失敗",
     "logId": "日誌 ID"

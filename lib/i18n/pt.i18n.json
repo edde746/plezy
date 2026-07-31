@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Alternando para um reprodutor compatível...",
     "serverLimitTitle": "Falha na reprodução",
     "serverLimitBody": "Erro do servidor (HTTP 500). Um limite de largura de banda ou transcodificação provavelmente rejeitou esta sessão. Peça ao proprietário do servidor para ajustá-lo.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Logs enviados",
     "logsUploadFailed": "Falha ao enviar logs",
     "logId": "ID do log"

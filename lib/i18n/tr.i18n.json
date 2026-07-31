@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Uyumlu oynatıcıya geçiliyor...",
     "serverLimitTitle": "Oynatma başarısız oldu",
     "serverLimitBody": "Sunucu hatası (HTTP 500). Muhtemelen bir bant genişliği/kod dönüştürme sınırı bu oturumu reddetti. Sunucu sahibinden bunu ayarlamasını isteyin.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Günlükler yüklendi",
     "logsUploadFailed": "Günlükler yüklenemedi",
     "logId": "Günlük Kimliği (ID)"

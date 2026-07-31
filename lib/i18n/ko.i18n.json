@@ -694,6 +694,8 @@
     "switchingToCompatiblePlayer": "호환되는 플레이어로 전환 중...",
     "serverLimitTitle": "재생 실패",
     "serverLimitBody": "서버 오류(HTTP 500). 대역폭/트랜스코딩 제한으로 세션이 거부된 것 같습니다. 소유자에게 조정을 요청하세요.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "로그 업로드 완료",
     "logsUploadFailed": "로그 업로드 실패",
     "logId": "로그 ID"

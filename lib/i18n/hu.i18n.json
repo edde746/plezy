@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Váltás kompatibilis lejátszóra...",
     "serverLimitTitle": "A lejátszás nem sikerült",
     "serverLimitBody": "Szerverhiba (HTTP 500). A munkamenetet valószínűleg egy sávszélességi vagy átkódolási korlát utasította el. Kérd meg a tulajdonost a korlát módosítására.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Naplók feltöltve",
     "logsUploadFailed": "Nem sikerült a naplók feltöltése",
     "logId": "Naplóazonosító"

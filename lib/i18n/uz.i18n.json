@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Mos keluvchi pleyerga oʻtilmoqda...",
     "serverLimitTitle": "Ijro etishda xatolik",
     "serverLimitBody": "Server xatoligi (HTTP 500). Cheklov ushbu seansni rad etdi.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Jurnallar yuklandi",
     "logsUploadFailed": "Jurnallarni yuklab boʻlmadi",
     "logId": "Jurnal ID-si"

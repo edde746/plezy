@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Үйлесімді ойнатқышқа ауысуда...",
     "serverLimitTitle": "Ойнату қатесі",
     "serverLimitBody": "Сервер қатесі (HTTP 500). Шектеу бұл сеансты қабылдамады.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Журналдар жүктелді",
     "logsUploadFailed": "Журналдарды жүктеу мүмкін болмады",
     "logId": "Журнал ID-сі"

@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Overschakelen naar compatibele speler...",
     "serverLimitTitle": "Afspelen mislukt",
     "serverLimitBody": "Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Logbestanden geüpload",
     "logsUploadFailed": "Uploaden van logbestanden mislukt",
     "logId": "Logboek-ID"

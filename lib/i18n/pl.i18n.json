@@ -697,6 +697,8 @@
     "switchingToCompatiblePlayer": "Przełączanie na kompatybilny odtwarzacz...",
     "serverLimitTitle": "Odtwarzanie nie powiodło się",
     "serverLimitBody": "Błąd serwera (HTTP 500). Limit przepustowości/transkodowania prawdopodobnie odrzucił tę sesję. Poproś właściciela o zmianę.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
     "logId": "ID logu"

@@ -532,7 +532,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       // that gets an HTTP error and the truncated body surfaces as a clean
       // mid-file EOF (#1520 — PMS answers 503 while restarting/maintenance).
       // Deliberately 503 only: a persistent 500 must keep failing fast so the
-      // server-limit dialog (_server500Pattern) appears promptly, and a
+      // server-limit dialog (_httpStatusPattern) appears promptly, and a
       // multi-code list would need mpv's %len% quoting to survive the
       // comma-separated option string. While ffmpeg retries, mpv reports
       // buffering, which also makes the server-online reconnect hook in

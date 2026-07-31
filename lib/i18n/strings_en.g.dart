@@ -2117,6 +2117,12 @@ class Translations$messages$en {
 	/// en: 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.'
 	String get serverLimitBody => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.';
 
+	/// en: 'File unavailable'
+	String get mediaUnreadableTitle => 'File unavailable';
+
+	/// en: 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.'
+	String get mediaUnreadableBody => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.';
+
 	/// en: 'Logs uploaded'
 	String get logsUploaded => 'Logs uploaded';
 
@@ -6669,6 +6675,8 @@ extension on Translations {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
+			'messages.mediaUnreadableTitle' => 'File unavailable',
+			'messages.mediaUnreadableBody' => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -7034,10 +7042,10 @@ extension on Translations {
 			'explore.sourceMaterial.novel' => 'Novel',
 			'explore.sourceMaterial.visualNovel' => 'Visual novel',
 			'explore.sourceMaterial.game' => 'Game',
-			'explore.sourceMaterial.webComic' => 'Web comic',
-			'explore.sourceMaterial.musicRelease' => 'Music',
 			_ => null,
 		} ?? switch (path) {
+			'explore.sourceMaterial.webComic' => 'Web comic',
+			'explore.sourceMaterial.musicRelease' => 'Music',
 			'explore.sourceMaterial.otherMedia' => 'Other',
 			'explore.creditRole.director' => 'Director',
 			'explore.creditRole.writer' => 'Writer',
@@ -7548,10 +7556,10 @@ extension on Translations {
 			'metadataEdit.screenTitle' => 'Edit Metadata',
 			'metadataEdit.basicInfo' => 'Basic Info',
 			'metadataEdit.artwork' => 'Artwork',
-			'metadataEdit.advancedSettings' => 'Advanced Settings',
-			'metadataEdit.title' => 'Title',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.advancedSettings' => 'Advanced Settings',
+			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',
 			'metadataEdit.releaseDate' => 'Release Date',

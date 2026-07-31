@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Превключване към съвместим плейър...",
     "serverLimitTitle": "Възпроизвеждането е неуспешно",
     "serverLimitBody": "Грешка на сървъра (HTTP 500). Вероятно лимит за пропускателна способност/транскодиране е отхвърлил тази сесия. Помолете собственика да го коригира.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Логовете са качени",
     "logsUploadFailed": "Неуспешно качване на логовете",
     "logId": "ID на лога"

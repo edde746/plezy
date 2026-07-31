@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Byter till kompatibel spelare...",
     "serverLimitTitle": "Uppspelningen misslyckades",
     "serverLimitBody": "Serverfel (HTTP 500). En bandbredds-/transkodningsgräns avvisade troligen sessionen. Be ägaren justera den.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Loggarna har laddats upp",
     "logsUploadFailed": "Det gick inte att ladda upp loggarna",
     "logId": "Logg-ID"

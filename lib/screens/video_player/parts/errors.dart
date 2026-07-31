@@ -15,10 +15,24 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     if (!mounted || _isExiting.value) return;
 
     // Fatal, unrecoverable until server-side fix — show modal instead of a snackbar.
-    if (err.cause == PlayerError.serverHttp500 || _sawServer500) {
+    //
+    // A sidecar subtitle fetch can also log a status, but it never raises the
+    // end-file error this handler is wired to, so the status observed here
+    // belongs to the primary media open.
+    if (err.cause == PlayerError.serverHttp500 || _fatalHttpStatuses.contains(500)) {
       _hasFatalPlaybackError = true;
       _progressTracker?.stopTracking();
       unawaited(_showServerLimitDialog());
+      return;
+    }
+
+    // The server resolved the item but could not read the file behind it. No
+    // retry, quality change, or backend switch recovers that, and the raw mpv
+    // line ("Failed to open <redacted url>") tells the user nothing actionable.
+    if (err.cause == PlayerError.serverHttp404 || _fatalHttpStatuses.contains(404)) {
+      _hasFatalPlaybackError = true;
+      _progressTracker?.stopTracking();
+      unawaited(_showMediaUnreadableDialog());
       return;
     }
 
@@ -48,9 +62,8 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   }
 
   void _onPlayerLog(PlayerLog log) {
-    if (!_sawServer500 && VideoPlayerScreenState._server500Pattern.hasMatch(log.text)) {
-      _sawServer500 = true;
-    }
+    final status = PlayerError.httpStatusFromLog(log.text);
+    if (status != null && fatalPlaybackHttpStatuses.contains(status)) _fatalHttpStatuses.add(status);
     if (log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal) {
       appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
       _lastLogError = _redactPlayerError(log.text.trim());
@@ -62,6 +75,12 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   Future<void> _showServerLimitDialog() async {
     if (!mounted) return;
     await showServerLimitDialog(context);
+    if (mounted) unawaited(_handleBackButton());
+  }
+
+  Future<void> _showMediaUnreadableDialog() async {
+    if (!mounted) return;
+    await showMediaUnreadableDialog(context);
     if (mounted) unawaited(_handleBackButton());
   }
 

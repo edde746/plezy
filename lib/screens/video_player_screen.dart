@@ -1772,9 +1772,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   String? _lastLogError;
-  bool _sawServer500 = false;
 
-  static final RegExp _server500Pattern = RegExp(r'\b(?:HTTP error |Response code: )500\b');
+  /// Statuses in [fatalPlaybackHttpStatuses] the player's own log stream
+  /// reported for this open. Each latches independently: the reconnect path
+  /// deliberately retries a 503 (see `_applyNetworkStreamTuning`), and a
+  /// transient status must never mask the fatal one that follows.
+  final Set<int> _fatalHttpStatuses = <int>{};
 
   // OS Media Controls Integration
 

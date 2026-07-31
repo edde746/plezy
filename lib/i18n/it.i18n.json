@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Passaggio al lettore compatibile...",
     "serverLimitTitle": "Riproduzione non riuscita",
     "serverLimitBody": "Errore del server (HTTP 500). È probabile che un limite di banda o transcodifica abbia impedito questa sessione. Chiedi al proprietario di modificare il limite.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Log caricati",
     "logsUploadFailed": "Impossibile caricare i log",
     "logId": "ID log"

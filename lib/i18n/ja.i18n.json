@@ -694,6 +694,8 @@
     "switchingToCompatiblePlayer": "互換性のあるプレーヤーに切り替え中…",
     "serverLimitTitle": "再生に失敗しました",
     "serverLimitBody": "サーバーエラー（HTTP 500）。帯域幅/トランスコード制限により拒否された可能性があります。所有者に調整を依頼してください。",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "ログをアップロードしました",
     "logsUploadFailed": "ログのアップロードに失敗しました",
     "logId": "ログID"

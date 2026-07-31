@@ -697,6 +697,8 @@
     "switchingToCompatiblePlayer": "Переключение на совместимый плеер...",
     "serverLimitTitle": "Ошибка воспроизведения",
     "serverLimitBody": "Ошибка сервера (HTTP 500). Лимит пропускной способности/транскодирования, вероятно, отклонил сессию. Попросите владельца изменить настройки.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Логи загружены",
     "logsUploadFailed": "Не удалось загрузить логи",
     "logId": "ID лога"

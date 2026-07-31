@@ -730,17 +730,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
 
         if (kDebugMode)
-          FocusableListTile(
-            leading: AppIcon(Symbols.bug_report_rounded, fill: 1, color: tokens(context).textMuted),
-            title: const Text('Simulate HTTP 500 from server'),
-            onTap: () {
-              final player = widget.player;
-              OverlaySheetController.of(context).close();
-              if (player is PlayerBase) {
-                player.debugSimulateServer500();
-              }
-            },
-          ),
+          for (final status in const [500, 404])
+            FocusableListTile(
+              leading: AppIcon(Symbols.bug_report_rounded, fill: 1, color: tokens(context).textMuted),
+              title: Text('Simulate HTTP $status from server'),
+              onTap: () {
+                final player = widget.player;
+                OverlaySheetController.of(context).close();
+                if (player is PlayerBase) {
+                  player.debugSimulateServerHttpError(status);
+                }
+              },
+            ),
       ],
     );
   }

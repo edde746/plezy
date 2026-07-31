@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Bytter til kompatibel spiller...",
     "serverLimitTitle": "Avspilling mislyktes",
     "serverLimitBody": "Serverfeil (HTTP 500). En båndbredde-/transkodingsgrense avviste trolig økten. Be eieren justere den.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Logger lastet opp",
     "logsUploadFailed": "Kunne ikke laste opp logger",
     "logId": "Logg-ID"

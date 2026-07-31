@@ -105,7 +105,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     _errorSubscription = currentPlayer.streams.error.listen(_onPlayerError);
 
-    // warn is included so we can catch ffmpeg's "HTTP error 500" line in
+    // warn is included so we can catch ffmpeg's "HTTP error 4xx/5xx" line in
     // _onPlayerLog — the error-level log that follows omits the status code.
     _logSubscription = currentPlayer.streams.log
         .where((log) => const {PlayerLogLevel.fatal, PlayerLogLevel.error, PlayerLogLevel.warn}.contains(log.level))
@@ -147,7 +147,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _playbackRestartSubscription = currentPlayer.streams.playbackRestart.listen((_) async {
       if (!mounted || player != currentPlayer) return;
       _lastLogError = null;
-      _sawServer500 = false;
+      _fatalHttpStatuses.clear();
       _live.fallbackLevel = 0;
       _live.retryFailed = false;
       final markFirstFrameReady = _markFirstFrameReady(currentPlayer, settingsService);

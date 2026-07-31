@@ -695,6 +695,8 @@
     "switchingToCompatiblePlayer": "Uyğun oynadıcıya keçilir...",
     "serverLimitTitle": "Oynatma uğursuz oldu",
     "serverLimitBody": "Server xətası (HTTP 500). Məhdudiyyət bu seansı rədd etdi.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Jurnallar yükləndi",
     "logsUploadFailed": "Jurnallar yüklənə bilmədi",
     "logId": "Jurnal ID-si"

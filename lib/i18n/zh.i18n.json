@@ -694,6 +694,8 @@
     "switchingToCompatiblePlayer": "正在切换到兼容的播放器…",
     "serverLimitTitle": "播放失败",
     "serverLimitBody": "服务器错误（HTTP 500）。此次会话可能因带宽或转码限制而被拒绝。请联系服务器所有者调整限制。",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "日志已上传",
     "logsUploadFailed": "上传日志失败",
     "logId": "日志 ID"
