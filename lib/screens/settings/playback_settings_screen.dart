@@ -360,13 +360,22 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       options: [for (final library in libraries) (icon: null, label: library.title, value: library)],
     );
     if (picked == null) return;
-    final svc = SettingsService.instance;
-    await svc.write(SettingsService.prerollLibraryGlobalKey, picked.globalKey);
-    await svc.write(SettingsService.prerollSelectedItemKeys, const []);
+    final storage = await StorageService.getInstance();
+    await storage.savePrerollLibraryGlobalKey(picked.globalKey);
+    await storage.savePrerollSelectedItemKeys(const {});
+    if (!mounted) return;
+    setState(() {
+      _prerollLibraryGlobalKey = picked.globalKey;
+      _prerollSelectedItemKeys = {};
+    });
   }
 
   Future<void> _showPrerollItemPicker(BuildContext context, MediaLibrary library) async {
     await showScopedDialog<void>(context: context, builder: (_) => _PrerollItemPickerDialog(library: library));
+    if (!mounted) return;
+    final storage = await StorageService.getInstance();
+    if (!mounted) return;
+    setState(() => _prerollSelectedItemKeys = storage.getPrerollSelectedItemKeys());
   }
 
   Widget _playerBackendSelector() => SettingSegmentedTile<bool>(
