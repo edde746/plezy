@@ -599,7 +599,7 @@ class SettingsService extends BaseSharedPreferencesService {
     const legacyRecentRoomsKey = 'watch_together_recent_rooms';
     await prefs.remove(legacyRecentRoomsKey);
 
-    final storedRelay = prefs.getString(customRelayUrl.key);
+    final storedRelay = readNullableString(customRelayUrl.key);
     if (storedRelay == null) return;
     final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(storedRelay);
     if (endpoint == null) {

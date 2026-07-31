@@ -7,9 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/screens/settings/logs_screen.dart';
+import 'package:plezy/services/log_upload_service.dart';
+import 'package:plezy/services/startup_diagnostics.dart';
 import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
@@ -156,5 +159,71 @@ void main() {
     await tester.pump();
     expect(clipboardText, capability);
     expect(tester.takeException(), isNull);
+  });
+
+  group('previous startup failure', () {
+    late StartupFailureRecord record;
+
+    Future<void> pumpLogs(WidgetTester tester) async {
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.plezy.test',
+        version: '2.11.0',
+        buildNumber: '124',
+        buildSignature: '',
+      );
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: InputModeTracker(child: MaterialApp(home: const LogsScreen())),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    setUp(() {
+      StartupDiagnosticsStore.resetForTesting();
+      record = StartupFailureRecord.fromError(
+        phase: StartupPhase.database,
+        error: StateError('sqlite could not open'),
+        stackTrace: StackTrace.empty,
+        appVersion: '2.11.0+124',
+        platform: 'windows 11',
+      );
+    });
+
+    tearDown(StartupDiagnosticsStore.resetForTesting);
+
+    testWidgets('renders nothing when no launch has failed', (tester) async {
+      await pumpLogs(tester);
+
+      expect(find.byKey(previousStartupFailureKey), findsNothing);
+    });
+
+    testWidgets('shows the recorded failure so the user can see and act on it', (tester) async {
+      // The failing process left no in-memory log at all; this banner is the
+      // only surface that failure ever reaches (#1732).
+      StartupDiagnosticsStore.setPendingForTesting(record);
+
+      await pumpLogs(tester);
+
+      expect(find.byKey(previousStartupFailureKey), findsOneWidget);
+      expect(find.textContaining('sqlite could not open'), findsOneWidget);
+      expect(find.textContaining('Phase: database'), findsOneWidget);
+    });
+
+    testWidgets('enables upload and copy with a record but an empty log buffer', (tester) async {
+      MemoryLogOutput.clearLogs();
+      StartupDiagnosticsStore.setPendingForTesting(record);
+
+      await pumpLogs(tester);
+
+      // Gating these on the log buffer alone would show the record and then
+      // refuse to let the user do anything with it.
+      final bar = tester.widget<FocusableActionBar>(find.byType(FocusableActionBar));
+      for (final tooltip in [t.logs.uploadLogs, t.logs.copyLogs, t.logs.clearLogs]) {
+        final action = bar.actions.singleWhere((candidate) => candidate.tooltip == tooltip);
+        expect(action.onPressed, isNotNull, reason: tooltip);
+      }
+    });
   });
 }

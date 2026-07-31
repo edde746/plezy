@@ -466,6 +466,63 @@ jobs:
         shell: pwsh
         run: flutter build windows --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-windows-${{ matrix.arch }} --split-debug-info=debug-info/windows-${{ matrix.arch }}
 
+      - name: Verify Windows bundle contents
+        shell: pwsh
+        run: |
+          $bundleDir = "build/windows/${{ matrix.arch }}/runner/Release"
+          if (-not (Test-Path -LiteralPath $bundleDir -PathType Container)) {
+            throw "Windows bundle directory does not exist: $bundleDir"
+          }
+
+          $bundlePath = (Resolve-Path -LiteralPath $bundleDir).Path
+          $foundFiles = @(
+            Get-ChildItem -LiteralPath $bundlePath -File -Recurse |
+              ForEach-Object {
+                $_.FullName.Substring($bundlePath.Length + 1).Replace('\', '/')
+              } |
+              Sort-Object
+          )
+
+          Write-Host "Files found in ${bundleDir}:"
+          $foundFiles | ForEach-Object { Write-Host "  $_" }
+
+          $requiredFiles = @(
+            "plezy.exe"
+            "flutter_windows.dll"
+            "sqlite3.dll"
+            "libmpv-2.dll"
+            "data/app.so"
+            "data/icudtl.dat"
+            "data/flutter_assets/NativeAssetsManifest.json"
+          )
+          $forbiddenFiles = @(
+            "plezy.lib"
+            "plezy.exp"
+            "simdutf.lib"
+          )
+
+          $bundleErrors = @()
+          foreach ($file in $requiredFiles) {
+            if ($foundFiles -notcontains $file) {
+              Write-Output "::error::Required Windows bundle file is missing: $file"
+              $bundleErrors += "missing $file"
+            }
+          }
+          foreach ($file in $forbiddenFiles) {
+            if ($foundFiles -contains $file) {
+              Write-Output "::error::Forbidden link by-product is present in the Windows bundle: $file"
+              $bundleErrors += "present $file"
+            }
+          }
+
+          # sentry.dll is the inproc-backend native SDK; crashpad_handler.exe is
+          # intentionally absent (windows/CMakeLists.txt sets
+          # SENTRY_NATIVE_BACKEND=inproc), so do not assert on it here.
+
+          if ($bundleErrors.Count -gt 0) {
+            throw "Windows bundle verification failed: $($bundleErrors -join '; ')"
+          }
+
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
         shell: pwsh

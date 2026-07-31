@@ -141,7 +141,7 @@ class StorageService extends BaseSharedPreferencesService {
   String? _getScopedString(String baseKey) => _readScopedWithLegacyMigration<String>(
     baseKey,
     prefix: _userPrefix,
-    read: prefs.getString,
+    read: readNullableString,
     write: prefs.setString,
   );
 
@@ -167,7 +167,7 @@ class StorageService extends BaseSharedPreferencesService {
     'Only ConnectionBootstrap.migrateLegacyPlexAccount may use this.',
   )
   String? getPlexToken() {
-    return prefs.getString(_keyPlexToken);
+    return readNullableString(_keyPlexToken);
   }
 
   /// Drop the legacy `plex_token` slot. Called by
@@ -257,14 +257,9 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   String? getLibraryTab(String sectionId) {
-    final key = '$_userPrefix$_prefixLibraryTab$sectionId';
-    // Handle migration from old int storage: try string first, fall back to removing stale int
-    try {
-      return prefs.getString(key);
-    } catch (_) {
-      prefs.remove(key);
-      return null;
-    }
+    // Older builds stored this as an int; `readNullableString` drops a value it
+    // cannot read and falls back to null, which is the correct behaviour here.
+    return readNullableString('$_userPrefix$_prefixLibraryTab$sectionId');
   }
 
   // Hidden Libraries (stored as JSON array of library section IDs)
@@ -285,7 +280,7 @@ class StorageService extends BaseSharedPreferencesService {
     _readScopedWithLegacyMigration<String>(
       _keyHiddenLibraries,
       prefix: _userPrefixForProfileId(profileId),
-      read: prefs.getString,
+      read: readNullableString,
       write: prefs.setString,
       // Only the active profile may adopt the legacy unscoped value. Otherwise
       // merely opening another profile's scoped provider could steal legacy

@@ -111,6 +111,16 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
+# Keep MSVC link by-products out of the runnable bundle directory. CI uploads
+# the executable output directory directly, so import and static libraries
+# emitted there would otherwise be packaged with the application.
+set_target_properties(
+  ${BINARY_NAME}
+  simdutf
+  PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/link-artifacts/$<CONFIG>"
+)
+
 
 # Sentry native crash capture: use the in-process handler instead of
 # crashpad. Crashpad uploads minidumps straight to the DSN's /minidump
