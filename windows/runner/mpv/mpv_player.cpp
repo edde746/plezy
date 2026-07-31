@@ -570,6 +570,12 @@ bool MpvPlayer::Initialize(HWND view) {
   // mpv's default handling would double-handle Play/Pause.
   mpv_set_option_string(mpv_, "input-media-keys", "no");
   mpv_set_option_string(mpv_, "osc", "no");
+  // Never resolve URLs through mpv's bundled ytdl_hook: Plezy only ever opens
+  // media-server streams and local files, the hook adds a per-open on_load
+  // round trip, and on a failed open it spawns yt-dlp with the access token in
+  // its argv. mpv decides whether to load the builtin script during
+  // mpv_initialize, so this must be an option, not a Dart setProperty.
+  mpv_set_option_string(mpv_, "ytdl", "no");
 
   if (!audio_only_) {
     // Let mpv use display/context detection instead of forcing HDR signaling.

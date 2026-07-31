@@ -346,6 +346,13 @@ bool MpvPlayer::Initialize() {
   mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
   mpv_set_option_string(mpv_, "osc", "no");
   mpv_set_option_string(mpv_, "terminal", "no");
+  // Every URL Plezy opens is a media-server stream or a local file, never a
+  // site mpv's bundled ytdl_hook could resolve. Loading it costs an on_load
+  // hook per open and, on a failed open, spawns yt-dlp with the full stream
+  // URL — access token included — in its argv, where /proc exposes it. mpv
+  // gates loading the builtin script on this option at mpv_initialize time,
+  // so it has to be set here rather than from Dart.
+  mpv_set_option_string(mpv_, "ytdl", "no");
 
   // Default to warn-level logging
   mpv_request_log_messages(mpv_, "warn");
