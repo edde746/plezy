@@ -477,8 +477,6 @@ class SettingsService extends BaseSharedPreferencesService {
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
   static const playPrerollsBeforeMovies = BoolPref('play_prerolls_before_movies');
-  static const prerollLibraryGlobalKey = StringPref('preroll_library_global_key', defaultValue: '');
-  static const prerollSelectedItemKeys = StringListPref('preroll_selected_item_keys');
 
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();
