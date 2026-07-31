@@ -22,6 +22,7 @@ import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/discord_rpc_service.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart';
+import '../../services/storage_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
