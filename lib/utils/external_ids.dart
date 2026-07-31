@@ -69,6 +69,20 @@ class ExternalIds {
       (tmdb != null && tmdb == other.tmdb) ||
       (tvdb != null && tvdb == other.tvdb);
 
+  /// Round-trips through the persisted tracker write queue. Absent ids stay
+  /// absent so a re-read yields the same [hasAny]/[intersects] answers.
+  Map<String, Object?> toJson() => {
+    if (imdb != null) 'imdb': imdb,
+    if (tmdb != null) 'tmdb': tmdb,
+    if (tvdb != null) 'tvdb': tvdb,
+  };
+
+  factory ExternalIds.fromJson(Map<String, Object?> json) => ExternalIds(
+    imdb: json['imdb'] as String?,
+    tmdb: (json['tmdb'] as num?)?.toInt(),
+    tvdb: (json['tvdb'] as num?)?.toInt(),
+  );
+
   factory ExternalIds.fromGuids(List<dynamic> guids) {
     String? imdb;
     int? tmdb;

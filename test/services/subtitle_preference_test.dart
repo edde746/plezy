@@ -20,9 +20,7 @@ void main() {
     });
 
     test('captures effective forced-ness from the flag', () {
-      final intent = SubtitleIntent.fromTrack(
-        const SubtitleTrack(id: '4', language: 'fre', isForced: true),
-      );
+      final intent = SubtitleIntent.fromTrack(const SubtitleTrack(id: '4', language: 'fre', isForced: true));
       expect(intent!.forced, isTrue);
     });
 
@@ -54,7 +52,9 @@ void main() {
 
     test('track references become intents with effective forced-ness', () {
       final demoted = SubtitlePreference.demoteToIntent(
-        const SubtitlePreference.track(SubtitleTrack(id: 'source:8', title: 'FR Forced', language: 'fre', codec: 'ass')),
+        const SubtitlePreference.track(
+          SubtitleTrack(id: 'source:8', title: 'FR Forced', language: 'fre', codec: 'ass'),
+        ),
       );
       expect(
         demoted,
@@ -75,10 +75,7 @@ void main() {
     });
 
     test('metadata-less track references demote to null', () {
-      expect(
-        SubtitlePreference.demoteToIntent(const SubtitlePreference.track(SubtitleTrack(id: '2'))),
-        isNull,
-      );
+      expect(SubtitlePreference.demoteToIntent(const SubtitlePreference.track(SubtitleTrack(id: '2'))), isNull);
     });
   });
 }

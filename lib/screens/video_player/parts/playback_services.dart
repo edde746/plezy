@@ -311,7 +311,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       try {
         await Future.wait<void>([
           DiscordRPCService.instance.stopPlayback(),
-          TraktScrobbleService.instance.stopPlayback(),
           TrackerCoordinator.instance.stopPlayback(),
         ]);
       } catch (e, st) {
@@ -375,7 +374,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // neutral [MediaServerClient]; null short-circuits cleanly.
     if (mediaClient != null && !widget.isPreroll) {
       unawaited(DiscordRPCService.instance.startPlayback(metadata, mediaClient));
-      unawaited(TraktScrobbleService.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
       unawaited(TrackerCoordinator.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
     }
   }
@@ -424,11 +422,14 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           // Other episodes of a Plex multi-episode file share this item's
           // part — watching the file watched them too (#1500). Reusing
           // markWatchedFromPlaybackStop keeps the local watched-event
-          // emission and the Jellyfin double-scrobble guard (#1287).
+          // emission and the Jellyfin double-scrobble guard (#1287); the
+          // trackers hear about a sibling the same way any other watched mark
+          // reaches them, since no playback session was ever opened for it.
           final siblings = playbackState.sameFileSiblings(metadata, playedPartId: mediaInfo?.partId?.toString());
           for (final sibling in siblings) {
             if (sibling.isWatched) continue;
             await mediaClient.markWatchedFromPlaybackStop(sibling);
+            await TrackerCoordinator.instance.markWatched(sibling, mediaClient);
             appLogger.d('Scrobbled same-file sibling ${sibling.id} of ${metadata.id}');
           }
         },
@@ -578,11 +579,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         speed: currentPlayer.state.rate,
       );
       DiscordRPCService.instance.updatePosition(position);
-      TraktScrobbleService.instance.updatePosition(position);
       TrackerCoordinator.instance.updatePosition(position);
-      // Keep Trakt's known duration current — mpv only emits on the duration
-      // stream once per load, but this is cheap and avoids an extra listener.
-      TraktScrobbleService.instance.updateDuration(currentPlayer.state.duration);
+      // Keep the trackers' known duration current — mpv only emits on the
+      // duration stream once per load, but this is cheap and avoids an extra
+      // listener.
       TrackerCoordinator.instance.updateDuration(currentPlayer.state.duration);
     });
 
@@ -647,13 +647,13 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Update OS media controls playback state
     _updateMediaControlsPlaybackState();
 
-    // Update Discord Rich Presence + Trakt scrobble
+    // Update Discord Rich Presence + real-time trackers
     if (isPlaying) {
       DiscordRPCService.instance.resumePlayback();
-      TraktScrobbleService.instance.resumePlayback();
+      TrackerCoordinator.instance.resumePlayback();
     } else {
       DiscordRPCService.instance.pausePlayback();
-      TraktScrobbleService.instance.pausePlayback();
+      TrackerCoordinator.instance.pausePlayback();
     }
 
     // Update auto-PiP readiness

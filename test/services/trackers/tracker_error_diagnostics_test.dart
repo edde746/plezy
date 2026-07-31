@@ -14,8 +14,8 @@ import 'package:plezy/services/trackers/tracker_connect_runner.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
-import 'package:plezy/services/trakt/trakt_auth_service.dart';
-import 'package:plezy/services/trakt/trakt_client.dart';
+import 'package:plezy/services/trackers/trakt/trakt_auth_service.dart';
+import 'package:plezy/services/trackers/trakt/trakt_client.dart';
 import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
 

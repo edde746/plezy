@@ -74,21 +74,13 @@ void main() {
     });
 
     test('mid-RAM hardware holds a 4K budget at 1.5x', () {
-      DevicePerformance.debugReset(
-        autoReduced: false,
-        override: VisualEffectsSetting.auto,
-        totalMemBytes: 2400 << 20,
-      );
+      DevicePerformance.debugReset(autoReduced: false, override: VisualEffectsSetting.auto, totalMemBytes: 2400 << 20);
       detectAt(2160);
       expect(DevicePerformance.displayBudgetFactor(), 1.5);
     });
 
     test('high-RAM hardware keeps the full 4K budget', () {
-      DevicePerformance.debugReset(
-        autoReduced: false,
-        override: VisualEffectsSetting.auto,
-        totalMemBytes: 2870 << 20,
-      );
+      DevicePerformance.debugReset(autoReduced: false, override: VisualEffectsSetting.auto, totalMemBytes: 2870 << 20);
       detectAt(2160);
       expect(DevicePerformance.displayBudgetFactor(), 2.0);
     });

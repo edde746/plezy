@@ -93,7 +93,10 @@ class PlaybackSubtitleResolver {
     required bool preserveSourceIdentity,
   }) {
     SubtitlePreference resolveIntent(SubtitleIntentPreference preference) {
-      final row = findSourceTrackForIntent(preference.intent, mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[]);
+      final row = findSourceTrackForIntent(
+        preference.intent,
+        mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
+      );
       if (row != null) {
         for (final candidate in candidates) {
           if (candidate.sourceStreamId == row.id) return SubtitlePreference.track(candidate.track);

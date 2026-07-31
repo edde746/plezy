@@ -4,11 +4,10 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../models/trackers/device_code.dart';
-import '../../providers/trakt_account_provider.dart';
+import '../../providers/trackers_provider.dart';
 import '../../services/settings_service.dart';
 import '../../services/trackers/tracker_constants.dart';
-import '../../services/trakt/trakt_scrobble_service.dart';
-import '../../services/trakt/trakt_sync_service.dart';
+import '../../services/trackers/trakt/trakt_tracker.dart';
 import '../../utils/dialogs.dart';
 import '../../widgets/device_code_dialog.dart';
 import '../../widgets/settings_page.dart';
@@ -16,13 +15,13 @@ import 'tracker_account_settings_body.dart';
 import 'tracker_connect_launcher.dart';
 
 Future<void> startTraktConnection(BuildContext context) {
-  final account = context.read<TraktAccountProvider>();
+  final account = context.read<TrackersProvider>();
   final name = t.trakt.title;
   return launchTrackerConnect<DeviceCode>(
     context,
-    isBusyOrConnected: account.isConnecting || account.isConnected,
+    isBusyOrConnected: account.isConnecting(TrackerService.trakt) || account.isTraktConnected,
     serviceName: name,
-    connect: (cb) => account.connect(onCodeReady: cb),
+    connect: (cb) => account.connectTrakt(onCodeReady: cb),
     onCancel: account.cancelConnect,
     buildDialog: (code, cancel) => DeviceCodeDialog(code: code, serviceName: name, onCancel: cancel),
     urlFor: (code) => code.verificationUrlComplete ?? code.verificationUrl,
@@ -32,7 +31,7 @@ Future<void> startTraktConnection(BuildContext context) {
 class TraktSettingsScreen extends StatelessWidget {
   const TraktSettingsScreen({super.key});
 
-  Future<void> _disconnect(BuildContext context, TraktAccountProvider account) async {
+  Future<void> _disconnect(BuildContext context, TrackersProvider account) async {
     final confirmed = await showConfirmDialog(
       context,
       title: t.trakt.disconnectConfirm,
@@ -41,19 +40,19 @@ class TraktSettingsScreen extends StatelessWidget {
       isDestructive: true,
     );
     if (!confirmed) return;
-    await account.disconnect();
+    await account.disconnectTrakt();
     // build()'s post-frame handler pops the screen once the provider rebuilds
     // with isConnected == false — don't pop here too.
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TraktAccountProvider>(
+    return Consumer<TrackersProvider>(
       builder: (context, account, _) {
         // Safety net: if we end up here while not connected (e.g. refresh failed
         // in the background and cleared the session), bail out. The settings
         // tile is the only supported entry point for the unauthed flow.
-        if (!account.isConnected) {
+        if (!account.isTraktConnected) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) Navigator.of(context).pop();
           });
@@ -63,7 +62,7 @@ class TraktSettingsScreen extends StatelessWidget {
           );
         }
 
-        final username = account.username;
+        final username = account.traktUsername;
         return TrackerAccountSettingsBody(
           title: Text(t.trakt.title),
           accountTitle: username != null ? t.trakt.connectedAs(username: username) : t.trakt.connected,
@@ -75,14 +74,14 @@ class TraktSettingsScreen extends StatelessWidget {
               icon: Symbols.auto_timer_rounded,
               title: t.trakt.scrobble,
               subtitle: t.trakt.scrobbleDescription,
-              onAfterWrite: TraktScrobbleService.instance.setEnabled,
+              onAfterWrite: TraktTracker.instance.setEnabled,
             ),
             TrackerSettingsToggle(
               pref: SettingsService.enableTraktWatchedSync,
               icon: Symbols.check_circle_rounded,
               title: t.trakt.watchedSync,
               subtitle: t.trakt.watchedSyncDescription,
-              onAfterWrite: TraktSyncService.instance.setEnabled,
+              onAfterWrite: TraktTracker.instance.setWatchedSyncEnabled,
             ),
           ],
           onDisconnect: () => _disconnect(context, account),

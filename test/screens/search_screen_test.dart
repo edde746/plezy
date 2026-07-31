@@ -144,8 +144,15 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
     expect(client.queries, ['movie']);
 
-    // A deliberate return to the input starts a fresh native session.
+    // Returning to the input is the D-pad-up path from the first result
+    // (search_screen.dart onNavigateUp), so it must not re-raise the system
+    // keyboard; Select does. The field's first focus already opened it once.
     searchInput.focusSearchInput();
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);

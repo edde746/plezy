@@ -539,9 +539,11 @@ void main() {
       final plexTracks = [_plexSub(50, codec: 'ass', selected: true), _plexSub(51, codec: 'ass')];
       final nativeTracks = [_sub('native-first', codec: 'ass'), _sub('native-default', codec: 'ass', isDefault: true)];
 
-      final result = _svc(
-        info: _info(subs: plexTracks),
-      ).selectSubtitleTrack(nativeTracks, const SubtitlePreference.track(SubtitleTrack(id: 'source:50', codec: 'ass')), null)!;
+      final result = _svc(info: _info(subs: plexTracks)).selectSubtitleTrack(
+        nativeTracks,
+        const SubtitlePreference.track(SubtitleTrack(id: 'source:50', codec: 'ass')),
+        null,
+      )!;
 
       expect(result.priority, TrackSelectionPriority.defaultTrack);
       expect(result.track.id, 'native-default');
@@ -766,10 +768,15 @@ void main() {
       test('an unmatched source preference stops waiting once the catalog is complete', () {
         // Both source rows are present natively, so nothing more can arrive:
         // the unresolvable preference must fall through, not defer forever.
-        final result = _svc(
-          metadata: _meta(backend: MediaBackend.jellyfin),
-          info: directPlayInfo(),
-        ).selectSubtitleTrack(nativeTracks, SubtitlePreference.track(_sub('source:9', lang: 'kor', codec: 'srt')), null);
+        final result =
+            _svc(
+              metadata: _meta(backend: MediaBackend.jellyfin),
+              info: directPlayInfo(),
+            ).selectSubtitleTrack(
+              nativeTracks,
+              SubtitlePreference.track(_sub('source:9', lang: 'kor', codec: 'srt')),
+              null,
+            );
 
         expect(result, isNotNull);
         expect(result!.track.id, '1');
@@ -1176,7 +1183,9 @@ void main() {
 
     test('a declined forced intent falls to the server-selected full track', () {
       final tracks = [_sub('1', lang: 'fre', codec: 'ass')];
-      final info = _info(subs: [_plexSub(10, languageCode: 'fre', codec: 'ass', selected: true)]);
+      final info = _info(
+        subs: [_plexSub(10, languageCode: 'fre', codec: 'ass', selected: true)],
+      );
       final result = _svc(info: info).selectSubtitleTrack(tracks, forcedIntent, null)!;
       expect(result.priority, TrackSelectionPriority.serverSelected);
       expect(result.track.id, '1');
@@ -1186,7 +1195,9 @@ void main() {
       // #1717 headline: the next episode has no forced track and no selected
       // stream — the server's own decision (off) wins over the full track.
       final tracks = [_sub('1', lang: 'fre', codec: 'ass')];
-      final info = _info(subs: [_plexSub(10, languageCode: 'fre', codec: 'ass')]);
+      final info = _info(
+        subs: [_plexSub(10, languageCode: 'fre', codec: 'ass')],
+      );
       final result = _svc(info: info).selectSubtitleTrack(tracks, forcedIntent, null)!;
       expect(result.priority, TrackSelectionPriority.serverSelected);
       expect(result.track.id, 'no');

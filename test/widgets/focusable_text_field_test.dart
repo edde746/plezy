@@ -256,6 +256,7 @@ void main() {
 
     fieldFocusNode.requestFocus();
     await tester.pumpAndSettle();
+    await _raiseNativeInput(tester);
 
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
@@ -292,6 +293,7 @@ void main() {
 
     fieldFocusNode.requestFocus();
     await tester.pumpAndSettle();
+    await _raiseNativeInput(tester);
     await tester.showKeyboard(find.byType(TextField));
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
@@ -331,6 +333,7 @@ void main() {
 
     fieldFocusNode.requestFocus();
     await tester.pumpAndSettle();
+    await _raiseNativeInput(tester);
     await tester.showKeyboard(find.byType(TextField));
     await tester.testTextInput.receiveAction(TextInputAction.go);
     await tester.pump();
@@ -342,6 +345,192 @@ void main() {
     tester.testTextInput.closeConnection();
     await tester.pump();
     expect(submissions, ['https://jellyfin.example.com']);
+  });
+
+  testWidgets('Apple TV native submit fires both onEditingComplete and onSubmitted', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController(text: 'https://jellyfin.example.com');
+    final fieldFocusNode = FocusNode(debugLabel: 'native_url_field');
+    final submissions = <String>[];
+    var completed = 0;
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTextFormField(
+            controller: controller,
+            focusNode: fieldFocusNode,
+            tvTextInputPresentation: TvTextInputPresentation.platform,
+            textInputAction: TextInputAction.go,
+            onEditingComplete: () => completed++,
+            onFieldSubmitted: submissions.add,
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    await _raiseNativeInput(tester);
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pump();
+
+    // EditableText calls the two independently; withholding onSubmitted from
+    // the widget on the native path must not collapse them into an either/or.
+    expect(completed, 1);
+    expect(submissions, ['https://jellyfin.example.com']);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+  });
+
+  testWidgets('Apple TV keeps field focus when the platform dismisses the keyboard', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'native_url_field');
+    final nextFocusNode = FocusNode(debugLabel: 'save_button');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(nextFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextField(
+                controller: controller,
+                focusNode: fieldFocusNode,
+                onNavigateDown: nextFocusNode.requestFocus,
+              ),
+              FilledButton(focusNode: nextFocusNode, onPressed: () {}, child: const Text('Save')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    await _raiseNativeInput(tester);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+    // UIKit dismissing the tvOS keyboard closes the connection with no
+    // performAction; EditableText.connectionClosed then unfocuses the field.
+    tester.testTextInput.log.clear();
+    tester.testTextInput.closeConnection();
+    await tester.pumpAndSettle();
+
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue, reason: 'dismissal must not strand focus');
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+    final afterDismissal = tester.testTextInput.log.map((call) => call.method);
+    expect(afterDismissal, isNot(contains('TextInput.setClient')));
+    expect(afterDismissal, isNot(contains('TextInput.show')));
+
+    // The field is still usable: Select raises input again, D-pad still leaves.
+    await _raiseNativeInput(tester);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(nextFocusNode.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('Apple TV dismissal does not steal focus from a scope claimed meanwhile', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'native_url_field');
+    final rivalScope = FocusScopeNode(debugLabel: 'rival_sheet_scope');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(rivalScope.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextField(controller: controller, focusNode: fieldFocusNode),
+              FocusScope(node: rivalScope, child: const SizedBox.shrink()),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+    // The connection closes and another scope — a sheet or dialog — becomes
+    // primary before the restore callback runs. `primaryFocus is FocusScopeNode`
+    // would be satisfied by that rival scope; only identity with the field's
+    // own enclosing scope may trigger a restore.
+    tester.testTextInput.closeConnection();
+    rivalScope.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(rivalScope.hasFocus, isTrue);
+    expect(fieldFocusNode.hasPrimaryFocus, isFalse, reason: 'must not steal focus from the rival scope');
+  });
+
+  testWidgets('Apple TV first focus opens once, dismissal and refocus stay closed, Select reopens', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'native_field');
+    final otherFocusNode = FocusNode(debugLabel: 'next_button');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(otherFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              // Defaulted: exercises `automatic` resolving to onFirstFocus.
+              FocusableTextField(controller: controller, focusNode: fieldFocusNode),
+              Focus(focusNode: otherFocusNode, child: const SizedBox.shrink()),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    bool readOnly() => tester.widget<TextField>(find.byType(TextField)).readOnly;
+    List<String> drain() {
+      final methods = tester.testTextInput.log.map((call) => call.method).toList();
+      tester.testTextInput.log.clear();
+      return methods;
+    }
+
+    // 1. First focus raises input once.
+    drain();
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    expect(readOnly(), isFalse, reason: 'first focus should open');
+    expect(drain().where((m) => m == 'TextInput.show'), hasLength(1));
+
+    // 2. UIKit dismissal keeps focus and does not reopen.
+    tester.testTextInput.closeConnection();
+    await tester.pumpAndSettle();
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue, reason: 'dismissal must not strand focus');
+    expect(readOnly(), isTrue);
+    expect(drain(), isNot(contains('TextInput.show')));
+
+    // 3. Navigating away and back stays closed.
+    otherFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    drain();
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    expect(readOnly(), isTrue, reason: 'refocus must not reopen');
+    expect(drain(), isNot(contains('TextInput.show')));
+
+    // 4. Select always reopens.
+    await _raiseNativeInput(tester);
+    expect(readOnly(), isFalse);
   });
 
   testWidgets('Apple TV controller closes native input without losing field focus', (tester) async {
@@ -366,6 +555,7 @@ void main() {
 
     fieldFocusNode.requestFocus();
     await tester.pumpAndSettle();
+    await _raiseNativeInput(tester);
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
 
     textInputController.closeTextInput();
@@ -403,6 +593,7 @@ void main() {
 
     fieldFocusNode.requestFocus();
     await tester.pumpAndSettle();
+    await _raiseNativeInput(tester);
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
 
     final result = fieldFocusNode.onKeyEvent!(fieldFocusNode, _remoteKey(LogicalKeyboardKey.arrowDown));
@@ -431,6 +622,7 @@ void main() {
 
     fieldFocusNode.requestFocus();
     await tester.pumpAndSettle();
+    await _raiseNativeInput(tester);
 
     final result = fieldFocusNode.onKeyEvent!(fieldFocusNode, _remoteKey(LogicalKeyboardKey.goBack));
     await tester.pumpAndSettle();
@@ -464,6 +656,9 @@ void main() {
 
     fieldFocusNode.requestFocus();
     await tester.pumpAndSettle();
+    // Raise input first; the Select below is the one that reproduces a UIKit
+    // dismissal arriving while Flutter still believes input is active.
+    await _raiseNativeInput(tester);
 
     final result = fieldFocusNode.onKeyEvent!(fieldFocusNode, _remoteKey(LogicalKeyboardKey.select));
     await tester.pump();
@@ -541,6 +736,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+  });
+
+  testWidgets('Apple TV automatic auto-open fires once, then stays closed on every refocus', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'native_field');
+    final otherFocusNode = FocusNode(debugLabel: 'next_button');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(otherFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              // No tvTextInputAutoOpenBehavior: exercises the `automatic`
+              // default, which resolves to `onFirstFocus` on native tvOS.
+              FocusableTextField(controller: controller, focusNode: fieldFocusNode),
+              Focus(focusNode: otherFocusNode, child: const SizedBox.shrink()),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    bool readOnly() => tester.widget<TextField>(find.byType(TextField)).readOnly;
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+    expect(readOnly(), isFalse, reason: 'first focus should raise input');
+
+    // Every later entry stays closed. `onFocus` reopened on all of them, which
+    // is what made D-pad traversal of a form unusable; `afterFirstFocus` would
+    // also reopen from entry 2 onwards.
+    for (var entry = 2; entry <= 4; entry++) {
+      otherFocusNode.requestFocus();
+      await tester.pumpAndSettle();
+      fieldFocusNode.requestFocus();
+      await tester.pumpAndSettle();
+      expect(readOnly(), isTrue, reason: 'focus entry $entry must not raise the system keyboard');
+    }
+
+    await _raiseNativeInput(tester);
+    expect(readOnly(), isFalse);
   });
 
   testWidgets('Android TV native keyboard done uses D-pad navigation', (tester) async {
@@ -1298,6 +1538,14 @@ Future<void> _setTvSurfaceSize(WidgetTester tester) async {
 
 Finder _tvKeyboardDoneKey(IconData icon) {
   return find.descendant(of: find.byKey(const Key('tv_virtual_keyboard_panel')), matching: find.byIcon(icon));
+}
+
+/// Native tvOS input no longer auto-opens on focus — `automatic` resolves to
+/// `never` there, because the system keyboard is modal and would make D-pad
+/// traversal of a form impossible. An explicit Select raises it, as on device.
+Future<void> _raiseNativeInput(WidgetTester tester) async {
+  await tester.sendKeyEvent(LogicalKeyboardKey.select);
+  await tester.pumpAndSettle();
 }
 
 KeyDownEvent _remoteKey(LogicalKeyboardKey key) {

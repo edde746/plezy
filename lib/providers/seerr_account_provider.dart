@@ -38,8 +38,8 @@ SeerrPlexTokenSupplier buildSeerrPlexTokenSupplier({
 }
 
 /// Owns the active Seerr session for the currently-selected profile,
-/// mirroring [TraktAccountProvider]'s rebind shape: `onActiveProfileChanged`
-/// loads the profile's stored session and rebuilds the catalog client.
+/// mirroring [TrackersProvider]'s rebind shape: `onActiveProfileChanged` loads
+/// the profile's stored session and rebuilds the catalog client.
 ///
 /// Unlike the OAuth trackers there is no in-provider connect flow — the
 /// connect screen drives [SeerrAuthService] itself and hands the finished

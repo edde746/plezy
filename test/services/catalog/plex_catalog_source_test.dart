@@ -525,8 +525,10 @@ void main() {
       // the caller's offset math survives the cap drift.
       expect(
         requests.map(
-          (request) =>
-              (request.url.queryParameters['X-Plex-Container-Start'], request.url.queryParameters['X-Plex-Container-Size']),
+          (request) => (
+            request.url.queryParameters['X-Plex-Container-Start'],
+            request.url.queryParameters['X-Plex-Container-Size'],
+          ),
         ),
         [('100', '100'), ('100', '25'), ('125', '25'), ('150', '25'), ('175', '25')],
       );

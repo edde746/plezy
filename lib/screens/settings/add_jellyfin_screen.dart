@@ -488,7 +488,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             ? TvTextInputPresentation.platform
             : TvTextInputPresentation.automatic,
         autofocus: true,
-        tvTextInputAutoOpenBehavior: TvTextInputAutoOpenBehavior.afterFirstFocus,
+        tvTextInputAutoOpenBehavior: deferredUrlFieldAutoOpen,
         keyboardType: TextInputType.url,
         minLines: 1,
         maxLines: 4,

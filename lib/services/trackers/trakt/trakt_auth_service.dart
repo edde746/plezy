@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../models/trackers/device_code.dart';
-import '../../utils/abortable_http_request.dart';
-import '../../utils/app_logger.dart';
-import '../trackers/device_code_auth_service.dart';
-import '../trackers/tracker_constants.dart';
-import '../trackers/tracker_session.dart';
+import '../../../models/trackers/device_code.dart';
+import '../../../utils/abortable_http_request.dart';
+import '../../../utils/app_logger.dart';
+import '../device_code_auth_service.dart';
+import '../tracker_constants.dart';
+import '../tracker_session.dart';
 import 'trakt_constants.dart';
 
 /// Trakt OAuth Device Authorization Grant flow (RFC 8628).

@@ -5,6 +5,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'app_logger.dart';
 import 'async_singleton.dart';
 import 'device_channel.dart';
 
@@ -273,6 +274,29 @@ class PlatformDetector {
   @visibleForTesting
   static void debugSetIsDesktopOSOverride(bool? value) {
     _debugIsDesktopOSOverride = value;
+  }
+
+  /// Whether an executable path belongs to a packaged (MSIX/Store) install.
+  /// Packaged apps run from C:\Program Files\WindowsApps\<package>\, matched
+  /// case-insensitively because a casing difference would silently re-enable
+  /// the paths a read-only package cannot support.
+  @visibleForTesting
+  static bool isPackagedExecutablePath(String exePath) {
+    return exePath.toLowerCase().contains('\\windowsapps\\');
+  }
+
+  /// True inside a packaged (MSIX/Microsoft Store) install. The Store owns
+  /// updates and the package directory is read-only, and Store policy treats an
+  /// external donation link as a commerce mechanism, so both of those
+  /// affordances are suppressed there.
+  static bool isPackagedInstall() {
+    try {
+      if (!Platform.isWindows) return false;
+      return isPackagedExecutablePath(Platform.resolvedExecutable);
+    } catch (error, stackTrace) {
+      appLogger.e('Failed to determine packaged install status', error: error, stackTrace: stackTrace);
+      return false;
+    }
   }
 
   static bool supportsExternalPlayers() {

@@ -4,23 +4,21 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/trackers_provider.dart';
-import '../../providers/trakt_account_provider.dart';
 import '../../services/trackers/anilist/anilist_tracker.dart';
 import '../../services/trackers/mal/mal_tracker.dart';
 import '../../services/trackers/simkl/simkl_tracker.dart';
 import '../../services/trackers/tracker.dart';
 import '../../services/trackers/tracker_constants.dart';
-import '../../services/trakt/trakt_scrobble_service.dart';
+import '../../services/trackers/trakt/trakt_tracker.dart';
 import 'tracker_settings_screen.dart';
 import 'trakt_settings_screen.dart';
 
 /// One watch tracker, described once for every place that lists services: the
 /// services hub, the rating sheet, and the settings summary line.
 ///
-/// [isConnected] and [username] take a [BuildContext] because each service
-/// keeps its account state on a different provider; they read it with `watch`,
-/// so the calling element rebuilds exactly like the per-service `Consumer`
-/// these entries replaced.
+/// [isConnected] and [username] take a [BuildContext] and read the account
+/// state with `watch`, so the calling element rebuilds exactly like the
+/// per-service `Consumer` these entries replaced.
 class TrackerServiceInfo {
   final TrackerService service;
   final String displayName;
@@ -66,9 +64,9 @@ class TrackerServiceInfo {
       service: TrackerService.trakt,
       displayName: t.trakt.title,
       logoSource: CatalogSourceId.trakt,
-      ratingSource: TraktScrobbleService.instance,
-      isConnected: (context) => context.watch<TraktAccountProvider>().isConnected,
-      username: (context) => context.watch<TraktAccountProvider>().username,
+      ratingSource: TraktTracker.instance,
+      isConnected: (context) => context.watch<TrackersProvider>().isTraktConnected,
+      username: (context) => context.watch<TrackersProvider>().traktUsername,
       startConnection: startTraktConnection,
       buildSettingsScreen: () => const TraktSettingsScreen(),
     ),

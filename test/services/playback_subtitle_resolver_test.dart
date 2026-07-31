@@ -417,7 +417,10 @@ void main() {
           _sourceSubtitle(7, language: 'fra', usesExternalDelivery: true),
           _sourceSubtitle(8, language: 'fra', title: 'FR Forced', usesExternalDelivery: true),
         ]),
-        sidecars: [_sidecar(7, language: 'fra'), _sidecar(8, language: 'fra')],
+        sidecars: [
+          _sidecar(7, language: 'fra'),
+          _sidecar(8, language: 'fra'),
+        ],
         preferredSubtitleTrack: forcedIntent,
       );
 
@@ -432,7 +435,10 @@ void main() {
           _sourceSubtitle(7, language: 'fra', usesExternalDelivery: true),
           _sourceSubtitle(8, language: 'fra', forced: true, usesExternalDelivery: true),
         ]),
-        sidecars: [_sidecar(7, language: 'fra'), _sidecar(8, language: 'fra')],
+        sidecars: [
+          _sidecar(7, language: 'fra'),
+          _sidecar(8, language: 'fra'),
+        ],
         preferredSubtitleTrack: forcedIntent,
       );
 
@@ -446,7 +452,10 @@ void main() {
           _sourceSubtitle(7, language: 'fra', selected: true, usesExternalDelivery: true),
           _sourceSubtitle(9, language: 'eng', usesExternalDelivery: true),
         ]),
-        sidecars: [_sidecar(7, language: 'fra'), _sidecar(9)],
+        sidecars: [
+          _sidecar(7, language: 'fra'),
+          _sidecar(9),
+        ],
         preferredSubtitleTrack: forcedIntent,
       );
 
@@ -471,7 +480,10 @@ void main() {
           _sourceSubtitle(8, language: 'fra', title: 'FR Forced', usesExternalDelivery: true),
           _sourceSubtitle(9, language: 'eng', selected: true, usesExternalDelivery: true),
         ]),
-        sidecars: [_sidecar(8, language: 'fra'), _sidecar(9)],
+        sidecars: [
+          _sidecar(8, language: 'fra'),
+          _sidecar(9),
+        ],
         preferredSubtitleTrack: const SubtitlePreference.intent(
           SubtitleIntent(language: 'fra', forced: false, title: 'French', codec: 'srt', isExternal: true),
         ),

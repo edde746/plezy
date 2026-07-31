@@ -23,7 +23,6 @@ import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/providers/trackers_provider.dart';
-import 'package:plezy/providers/trakt_account_provider.dart';
 import 'package:plezy/screens/settings/settings_screen.dart';
 import 'package:plezy/services/background_work_diagnostics_service.dart';
 import 'package:plezy/services/donation_service.dart';
@@ -136,7 +135,7 @@ void main() {
       _MigratedRow(
         title: t.settings.checkForUpdates,
         focusLabel: 'settings_check_for_updates',
-        isVisible: UpdateService.isUpdateCheckEnabled && UpdateService.useNativeUpdater,
+        isVisible: UpdateService.isUpdateCheckAvailable && UpdateService.useNativeUpdater,
         hasSubtitle: false,
       ),
     ];
@@ -238,7 +237,7 @@ void main() {
       await _pumpUi(tester);
     }
 
-    if (!UpdateService.isUpdateCheckEnabled) {
+    if (!UpdateService.isUpdateCheckAvailable) {
       expect(find.text(t.settings.checkForUpdates), findsNothing);
       return;
     }
@@ -579,7 +578,6 @@ class _SettingsHarness {
     required this.libraries,
     required this.hiddenLibraries,
     required this.theme,
-    required this.trakt,
     required this.trackers,
     required this.trackerHttpClients,
     required this.seerr,
@@ -594,7 +592,6 @@ class _SettingsHarness {
   final LibrariesProvider libraries;
   final HiddenLibrariesProvider hiddenLibraries;
   final ThemeProvider theme;
-  final TraktAccountProvider trakt;
   final TrackersProvider trackers;
   final List<FakeHttpClient> trackerHttpClients;
   final SeerrAccountProvider seerr;
@@ -610,7 +607,6 @@ class _SettingsHarness {
     hiddenLibraries.dispose();
     libraries.dispose();
     theme.dispose();
-    trakt.dispose();
     trackers.dispose();
     seerr.dispose();
     activeProfile.dispose();
@@ -658,7 +654,6 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     return client;
   }
 
-  final trakt = TraktAccountProvider(httpClientFactory: trackerHttpClientFactory);
   final trackers = TrackersProvider(httpClientFactory: trackerHttpClientFactory);
   final seerr = SeerrAccountProvider();
   final settingsService = SettingsService.instance;
@@ -694,7 +689,6 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     libraries: libraries,
     hiddenLibraries: hiddenLibraries,
     theme: theme,
-    trakt: trakt,
     trackers: trackers,
     trackerHttpClients: trackerHttpClients,
     seerr: seerr,
@@ -711,7 +705,6 @@ Future<_SettingsHarness> _pumpSettingsScreen(
           ChangeNotifierProvider<LibrariesProvider>.value(value: libraries),
           ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibraries),
           ChangeNotifierProvider<ThemeProvider>.value(value: theme),
-          ChangeNotifierProvider<TraktAccountProvider>.value(value: trakt),
           ChangeNotifierProvider<TrackersProvider>.value(value: trackers),
           ChangeNotifierProvider<SeerrAccountProvider>.value(value: seerr),
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),

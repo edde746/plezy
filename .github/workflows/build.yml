@@ -528,6 +528,11 @@ jobs:
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
 
+      # Unsigned on purpose: the Store re-signs the bundle during
+      # certification. See windows/build-msix.ps1.
+      - name: Build Store package (MSIX)
+        run: .\windows\build-msix.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
+
       - name: Sign installer for WinSparkle (EdDSA)
         if: env.SPARKLE_PRIVATE_KEY != ''
         env:
@@ -558,6 +563,7 @@ jobs:
             plezy-windows-x64-portable.7z
             plezy-windows-arm64-portable.7z
             plezy-windows-installer.exe
+            plezy-windows.msixbundle
 
       - name: Upload x64 portable
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -579,6 +585,15 @@ jobs:
             plezy-windows-installer.exe
             win-ed-signature.txt
             win-installer-size.txt
+
+      # Deliberately not attached to the GitHub release in create-release: a
+      # Store-identity package cannot be installed without the Store's
+      # certificate, so it is only useful as a Partner Center upload.
+      - name: Upload Store package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: windows-msix
+          path: plezy-windows.msixbundle
 
   build-linux:
     needs: validate-trusted-ref

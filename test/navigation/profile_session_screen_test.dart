@@ -62,9 +62,9 @@ void main() {
     final companionProviders = <CompanionRemoteProvider>[];
     final disposedActiveIds = <String>[];
     final trackerHttpClients = <FakeHttpClient>[];
-    // The probe instantiates TrackersProvider (four eager auth owners); the
-    // separate Trakt provider remains lazy in this reduced shell.
-    const trackerAuthClientsPerProfile = 4;
+    // TrackersProvider owns five eager auth HTTP clients across the four
+    // services (MAL's proxy and token exchange use separate clients).
+    const trackerAuthClientsPerProfile = 5;
     FakeHttpClient trackerHttpClientFactory() {
       final client = FakeHttpClient(200, const <int>[]);
       trackerHttpClients.add(client);

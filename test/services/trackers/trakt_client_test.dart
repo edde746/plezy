@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
-import 'package:plezy/services/trakt/trakt_client.dart';
+import 'package:plezy/services/trackers/trakt/trakt_client.dart';
 
 int _now() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 

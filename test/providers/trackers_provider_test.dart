@@ -6,9 +6,11 @@ import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/trackers/anilist/anilist_tracker.dart';
 import 'package:plezy/services/trackers/tracker_account_store.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
+import 'package:plezy/services/trackers/tracker_coordinator.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/trackers/mal/mal_tracker.dart';
 import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
+import 'package:plezy/services/trackers/trakt/trakt_tracker.dart';
 
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
@@ -16,6 +18,7 @@ import '../test_helpers/prefs.dart';
 final _malStore = trackerAccountStore(TrackerService.mal);
 final _anilistStore = trackerAccountStore(TrackerService.anilist);
 final _simklStore = trackerAccountStore(TrackerService.simkl);
+final _traktStore = trackerAccountStore(TrackerService.trakt);
 
 TrackerSession _mal({String? username}) => TrackerSession(
   accessToken: 'mal-at',
@@ -38,6 +41,19 @@ TrackerSession _simkl({String? username}) => TrackerSession(
   username: username,
 );
 
+TrackerSession _trakt({String? username}) => TrackerSession(
+  accessToken: 'trakt-at',
+  refreshToken: 'trakt-rt',
+  expiresAt: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 3600,
+  createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+  username: username,
+);
+
+Future<void> _bindProfile(TrackersProvider provider, String? userUuid) async {
+  await provider.onActiveProfileChanged(userUuid);
+  await TrackerCoordinator.instance.flushWriteQueue();
+}
+
 void main() {
   setUp(() {
     resetSharedPreferencesForTest();
@@ -51,15 +67,19 @@ void main() {
       expect(p.mal, isNull);
       expect(p.anilist, isNull);
       expect(p.simkl, isNull);
+      expect(p.trakt, isNull);
       expect(p.isMalConnected, isFalse);
       expect(p.isAnilistConnected, isFalse);
       expect(p.isSimklConnected, isFalse);
+      expect(p.isTraktConnected, isFalse);
       expect(p.malUsername, isNull);
       expect(p.anilistUsername, isNull);
       expect(p.simklUsername, isNull);
+      expect(p.traktUsername, isNull);
       expect(p.isConnecting(TrackerService.mal), isFalse);
       expect(p.isConnecting(TrackerService.anilist), isFalse);
       expect(p.isConnecting(TrackerService.simkl), isFalse);
+      expect(p.isConnecting(TrackerService.trakt), isFalse);
       p.dispose();
     });
 
@@ -74,8 +94,8 @@ void main() {
         },
       );
 
-      expect(clients, hasLength(4));
-      expect(clients.toSet(), hasLength(4));
+      expect(clients, hasLength(5));
+      expect(clients.toSet(), hasLength(5));
       for (final client in clients) {
         expect(client.closeCount, 0);
       }
@@ -93,6 +113,7 @@ void main() {
       await _malStore.save(uuid, _mal(username: 'alice'));
       await _anilistStore.save(uuid, _anilist(username: 'bob'));
       await _simklStore.save(uuid, _simkl(username: 'carol'));
+      await _traktStore.save(uuid, _trakt(username: 'dave'));
 
       // Reset cached singletons so the provider reads fresh prefs state.
       BaseSharedPreferencesService.resetForTesting();
@@ -101,13 +122,15 @@ void main() {
       var notified = 0;
       p.addListener(() => notified++);
 
-      await p.onActiveProfileChanged(uuid);
+      await _bindProfile(p, uuid);
       expect(p.isMalConnected, isTrue);
       expect(p.isAnilistConnected, isTrue);
       expect(p.isSimklConnected, isTrue);
+      expect(p.isTraktConnected, isTrue);
       expect(p.malUsername, 'alice');
       expect(p.anilistUsername, 'bob');
       expect(p.simklUsername, 'carol');
+      expect(p.traktUsername, 'dave');
       expect(notified, greaterThanOrEqualTo(1));
 
       p.dispose();
@@ -118,32 +141,35 @@ void main() {
       await _malStore.save(uuid, _mal(username: 'alice'));
       await _anilistStore.save(uuid, _anilist(username: 'bob'));
       await _simklStore.save(uuid, _simkl(username: 'carol'));
+      await _traktStore.save(uuid, _trakt(username: 'dave'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
-      await p.onActiveProfileChanged(uuid);
+      await _bindProfile(p, uuid);
       expect(p.isMalConnected, isTrue);
 
-      await p.onActiveProfileChanged('other-profile');
+      await _bindProfile(p, 'other-profile');
       expect(p.isMalConnected, isFalse);
       expect(p.isAnilistConnected, isFalse);
       expect(p.isSimklConnected, isFalse);
+      expect(p.isTraktConnected, isFalse);
 
       p.dispose();
     });
 
     test('onActiveProfileChanged loads only the populated stores', () async {
       const uuid = 'profile-2';
-      // Only AniList is set up — MAL and Simkl remain absent.
+      // Only AniList is set up — MAL, Simkl, and Trakt remain absent.
       await _anilistStore.save(uuid, _anilist(username: 'bob'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
-      await p.onActiveProfileChanged(uuid);
+      await _bindProfile(p, uuid);
       expect(p.isAnilistConnected, isTrue);
       expect(p.anilistUsername, 'bob');
       expect(p.isMalConnected, isFalse);
       expect(p.isSimklConnected, isFalse);
+      expect(p.isTraktConnected, isFalse);
       p.dispose();
     });
 
@@ -153,7 +179,7 @@ void main() {
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
-      await p.onActiveProfileChanged(uuid);
+      await _bindProfile(p, uuid);
       expect(p.isMalConnected, isTrue);
 
       var notified = 0;
@@ -178,7 +204,7 @@ void main() {
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
-      await p.onActiveProfileChanged(uuid);
+      await _bindProfile(p, uuid);
 
       await p.disconnectAnilist();
       expect(p.isAnilistConnected, isFalse);
@@ -193,22 +219,25 @@ void main() {
       await _malStore.save(uuid, _mal(username: 'alice'));
       await _anilistStore.save(uuid, _anilist(username: 'bob'));
       await _simklStore.save(uuid, _simkl(username: 'carol'));
+      await _traktStore.save(uuid, _trakt(username: 'dave'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
       // Start the load, then disconnect MAL before it resolves.
-      final load = p.onActiveProfileChanged(uuid);
+      final load = _bindProfile(p, uuid);
       await p.disconnectMal();
       await load;
 
       // MAL stays disconnected (and cleared) — the racing load must not
-      // resurrect it — but it also must not drop AniList/Simkl.
+      // resurrect it — but it also must not drop AniList/Simkl/Trakt.
       expect(p.isMalConnected, isFalse);
       expect(await _malStore.load(uuid), isNull);
       expect(p.isAnilistConnected, isTrue);
       expect(p.anilistUsername, 'bob');
       expect(p.isSimklConnected, isTrue);
       expect(p.simklUsername, 'carol');
+      expect(p.isTraktConnected, isTrue);
+      expect(p.traktUsername, 'dave');
 
       p.dispose();
     });
@@ -233,9 +262,9 @@ void main() {
       final p = TrackersProvider();
       p.dispose();
       // Post-dispose rebind should not throw.
-      await p.onActiveProfileChanged('any-uuid');
+      await _bindProfile(p, 'any-uuid');
     });
-    for (final service in [TrackerService.mal, TrackerService.anilist, TrackerService.simkl]) {
+    for (final service in [TrackerService.mal, TrackerService.anilist, TrackerService.simkl, TrackerService.trakt]) {
       test('$service stale connect cannot save or replace a newer binding after dispose', () async {
         const oldUuid = 'profile-old';
         const newUuid = 'profile-new';
@@ -246,13 +275,13 @@ void main() {
 
         final pipeline = _ControlledConnectPipeline(oldSession);
         final oldProvider = TrackersProvider.forTesting(connectPipeline: pipeline.call);
-        await oldProvider.onActiveProfileChanged(oldUuid);
+        await _bindProfile(oldProvider, oldUuid);
         final connect = _connect(oldProvider, service);
         await pipeline.beforeSave.future;
 
         oldProvider.dispose();
         final newProvider = TrackersProvider();
-        await newProvider.onActiveProfileChanged(newUuid);
+        await _bindProfile(newProvider, newUuid);
         final newBinding = _boundClient(service);
         expect(newBinding, isNotNull);
         expect(_providerSession(newProvider, service)?.accessToken, newSession.accessToken);
@@ -273,7 +302,7 @@ void main() {
       const uuid = 'profile-cancel';
       final pipeline = _ControlledConnectPipeline(_session(TrackerService.mal, 'cancelled'));
       final p = TrackersProvider.forTesting(connectPipeline: pipeline.call);
-      await p.onActiveProfileChanged(uuid);
+      await _bindProfile(p, uuid);
 
       final connect = _connect(p, TrackerService.mal);
       await pipeline.beforeSave.future;
@@ -298,11 +327,11 @@ void main() {
 
       final pipeline = _ControlledConnectPipeline(oldSession);
       final p = TrackersProvider.forTesting(connectPipeline: pipeline.call);
-      await p.onActiveProfileChanged(oldUuid);
+      await _bindProfile(p, oldUuid);
       final connect = _connect(p, TrackerService.anilist);
       await pipeline.beforeSave.future;
 
-      await p.onActiveProfileChanged(newUuid);
+      await _bindProfile(p, newUuid);
       final newBinding = AnilistTracker.instance.client;
       pipeline.releaseBeforeSave.complete();
 
@@ -319,7 +348,7 @@ void main() {
       const uuid = 'profile-same-disconnect';
       final pipeline = _ControlledConnectPipeline(_session(TrackerService.simkl, 'late'));
       final p = TrackersProvider.forTesting(connectPipeline: pipeline.call);
-      await p.onActiveProfileChanged(uuid);
+      await _bindProfile(p, uuid);
       final connect = _connect(p, TrackerService.simkl);
       await pipeline.beforeSave.future;
 
@@ -342,7 +371,7 @@ void main() {
 
       final pipeline = _ControlledConnectPipeline(connectedMal);
       final p = TrackersProvider.forTesting(connectPipeline: pipeline.call);
-      await p.onActiveProfileChanged(uuid);
+      await _bindProfile(p, uuid);
       final connect = _connect(p, TrackerService.mal);
       await pipeline.beforeSave.future;
 
@@ -350,6 +379,7 @@ void main() {
       pipeline.releaseBeforeSave.complete();
 
       expect(await connect, isTrue);
+      await TrackerCoordinator.instance.flushWriteQueue();
       expect(p.anilist, isNull);
       expect(p.mal?.accessToken, connectedMal.accessToken);
       expect((await _malStore.load(uuid))?.accessToken, connectedMal.accessToken);
@@ -363,7 +393,7 @@ void main() {
       final freshSession = _session(TrackerService.mal, 'fresh');
       final pipeline = _ControlledConnectPipeline(staleSession, pauseAfterSave: true);
       final staleProvider = TrackersProvider.forTesting(connectPipeline: pipeline.call);
-      await staleProvider.onActiveProfileChanged(uuid);
+      await _bindProfile(staleProvider, uuid);
       final connect = _connect(staleProvider, TrackerService.mal);
       await pipeline.beforeSave.future;
       pipeline.releaseBeforeSave.complete();
@@ -373,7 +403,7 @@ void main() {
       await _malStore.save(uuid, freshSession);
       BaseSharedPreferencesService.resetForTesting();
       final freshProvider = TrackersProvider();
-      await freshProvider.onActiveProfileChanged(uuid);
+      await _bindProfile(freshProvider, uuid);
       final freshBinding = MalTracker.instance.client;
       pipeline.releaseAfterSave.complete();
 
@@ -391,13 +421,14 @@ void _resetTrackerBindings() {
   MalTracker.instance.rebindSession(null, onSessionInvalidated: () {});
   AnilistTracker.instance.rebindSession(null, onSessionInvalidated: () {});
   SimklTracker.instance.rebindSession(null, onSessionInvalidated: () {});
+  TraktTracker.instance.rebindSession(null, onSessionInvalidated: () {});
 }
 
 TrackerAccountStore _store(TrackerService service) => switch (service) {
   TrackerService.mal => _malStore,
   TrackerService.anilist => _anilistStore,
   TrackerService.simkl => _simklStore,
-  _ => throw ArgumentError.value(service),
+  TrackerService.trakt => _traktStore,
 };
 
 TrackerSession _session(TrackerService service, String owner) => switch (service) {
@@ -415,35 +446,41 @@ TrackerSession _session(TrackerService service, String owner) => switch (service
     username: owner,
   ),
   TrackerService.simkl => TrackerSession(accessToken: '$owner-simkl-at', createdAt: 1900000000, username: owner),
-  _ => throw ArgumentError.value(service),
+  TrackerService.trakt => TrackerSession(
+    accessToken: '$owner-trakt-at',
+    refreshToken: '$owner-trakt-rt',
+    expiresAt: 2000000000,
+    createdAt: 1900000000,
+    username: owner,
+  ),
 };
 
 Future<bool> _connect(TrackersProvider provider, TrackerService service) => switch (service) {
   TrackerService.mal => provider.connectMal(onCodeReady: (_) {}),
   TrackerService.anilist => provider.connectAnilist(onCodeReady: (_) {}),
   TrackerService.simkl => provider.connectSimkl(onCodeReady: (_) {}),
-  _ => throw ArgumentError.value(service),
+  TrackerService.trakt => provider.connectTrakt(onCodeReady: (_) {}),
 };
 
 TrackerSession? _providerSession(TrackersProvider provider, TrackerService service) => switch (service) {
   TrackerService.mal => provider.mal,
   TrackerService.anilist => provider.anilist,
   TrackerService.simkl => provider.simkl,
-  _ => throw ArgumentError.value(service),
+  TrackerService.trakt => provider.trakt,
 };
 
 Object? _boundClient(TrackerService service) => switch (service) {
   TrackerService.mal => MalTracker.instance.client,
   TrackerService.anilist => AnilistTracker.instance.client,
   TrackerService.simkl => SimklTracker.instance.client,
-  _ => throw ArgumentError.value(service),
+  TrackerService.trakt => TraktTracker.instance.client,
 };
 
 TrackerSession? _boundSession(TrackerService service) => switch (service) {
   TrackerService.mal => MalTracker.instance.client?.session,
   TrackerService.anilist => AnilistTracker.instance.client?.session,
   TrackerService.simkl => SimklTracker.instance.client?.session,
-  _ => throw ArgumentError.value(service),
+  TrackerService.trakt => TraktTracker.instance.client?.session,
 };
 
 class _ControlledConnectPipeline {

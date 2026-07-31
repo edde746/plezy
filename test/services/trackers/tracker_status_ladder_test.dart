@@ -9,7 +9,7 @@ import 'package:plezy/services/trackers/simkl/simkl_client.dart';
 import 'package:plezy/services/trackers/simkl/simkl_constants.dart';
 import 'package:plezy/services/trackers/tracker_exceptions.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
-import 'package:plezy/services/trakt/trakt_client.dart';
+import 'package:plezy/services/trackers/trakt/trakt_client.dart';
 
 TrackerSession _session({String refreshToken = 'refresh-old'}) {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -101,6 +101,25 @@ void main() {
           ),
         ),
       );
+    });
+
+    // Simkl documents 409 for /scrobble/stop only: the item was already marked
+    // watched within the last hour, which is a success for our purposes. Every
+    // other endpoint, scrobble or not, still treats it as a failure.
+    test('accepts 409 on a scrobble stop but not on start, pause or anything else', () async {
+      final client = SimklClient(
+        _session(),
+        onSessionInvalidated: () => fail('409 should not invalidate the session'),
+        httpClient: MockClient((_) async => http.Response('{"watched_at":"2026-07-30T10:30:00.000Z"}', 409)),
+      );
+      addTearDown(client.dispose);
+
+      await client.scrobble('stop', const {'progress': 90}, allowConflict: true);
+
+      final conflict = isA<TrackerApiException>().having((e) => e.statusCode, 'statusCode', 409);
+      await expectLater(client.scrobble('start', const {'progress': 0}), throwsA(conflict));
+      await expectLater(client.scrobble('pause', const {'progress': 50}), throwsA(conflict));
+      await expectLater(client.addToHistory(const {}), throwsA(conflict));
     });
   });
 }

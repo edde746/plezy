@@ -524,51 +524,85 @@ void main() {
     final anilist = AnilistTracker.instance;
 
     setUp(() async {
-      await mal.setEnabled(false);
+      // MAL is a threshold tracker: the crossing owns its watched write. Simkl
+      // is excluded from that fan-out (it reports playback in real time), so it
+      // stays off here — see simkl_scrobble_test.dart.
+      await simkl.setEnabled(false);
       await anilist.setEnabled(false);
-      await simkl.setEnabled(true);
+      await mal.setEnabled(true);
     });
 
     tearDown(() async {
       coordinator.cancelInFlight();
       coordinator.debugUseResolverDependencies();
-      simkl.rebindSession(null, onSessionInvalidated: () {});
-      await simkl.setEnabled(false);
+      mal.rebindSession(null, onSessionInvalidated: () {});
+      await mal.setEnabled(false);
     });
 
     test('marks watched at the server threshold, not the tracker default', () async {
-      final posts = <Map<String, dynamic>>[];
+      coordinator.debugUseResolverDependencies(
+        store: const _FakeFribbLookup([FribbMappingRow(tvdbId: 12345, malId: 101, tvdbSeason: 1, type: 'TV')]),
+        animeLists: const _FakeAnimeListsLookup(),
+      );
+
+      final updates = <Map<String, String>>[];
       final httpClient = MockClient((request) async {
-        expect(request.method, 'POST');
-        expect(request.url.path, '/sync/history');
-        posts.add((json.decode(request.body) as Map).cast<String, dynamic>());
+        if (request.method == 'GET') return http.Response(json.encode({'num_episodes': 1}), 200);
+        expect(request.method, 'PUT');
+        updates.add(Uri.splitQueryString(request.body));
         return http.Response('{}', 200);
       });
-      simkl.rebindSession(_simklSession(), onSessionInvalidated: () {}, httpClient: httpClient);
+      mal.rebindSession(_malSession(), onSessionInvalidated: () {}, httpClient: httpClient);
 
       final client = _FakeMediaServerClient(
-        externalIdsByItem: {'movie-1': const ExternalIds(tmdb: 603)},
+        externalIdsByItem: {'show-1': const ExternalIds(tvdb: 12345)},
         descendantsByParent: const {},
         watchedThreshold: 0.95,
       );
 
-      await coordinator.startPlayback(_movie(), client);
+      // The player always hands the coordinator an episode carrying its show
+      // link; container paths fill it in from the parent instead.
+      await coordinator.startPlayback(_episode(1).copyWith(grandparentId: 'show-1'), client);
       coordinator.updateDuration(const Duration(seconds: 100));
 
       // 90% — past the old hardcoded 80% tracker default but below the server's 95%.
       coordinator.updatePosition(const Duration(seconds: 90));
       await pumpEventQueue();
-      expect(posts, isEmpty);
+      expect(updates, isEmpty);
 
       // 95% — crosses the server threshold; fires exactly once.
       coordinator.updatePosition(const Duration(seconds: 95));
       await pumpEventQueue();
-      expect(posts, hasLength(1));
-      expect(posts.single['movies'], [
-        {
-          'ids': {'tmdb': 603},
-        },
-      ]);
+      expect(updates, hasLength(1));
+      expect(updates.single['num_watched_episodes'], '1');
+    });
+
+    test('leaves real-time trackers out of the threshold watched write', () async {
+      final requests = <String>[];
+      final httpClient = MockClient((request) async {
+        requests.add(request.url.path);
+        return http.Response('{}', 200);
+      });
+      await mal.setEnabled(false);
+      await simkl.setEnabled(true);
+      simkl.rebindSession(_simklSession(), onSessionInvalidated: () {}, httpClient: httpClient);
+      addTearDown(() async {
+        simkl.rebindSession(null, onSessionInvalidated: () {});
+        await simkl.setEnabled(false);
+      });
+
+      final client = _FakeMediaServerClient(
+        externalIdsByItem: {'movie-1': const ExternalIds(tmdb: 603)},
+        descendantsByParent: const {},
+        watchedThreshold: 0.9,
+      );
+
+      await coordinator.startPlayback(_movie(), client);
+      coordinator.updateDuration(const Duration(seconds: 100));
+      coordinator.updatePosition(const Duration(seconds: 95));
+      await pumpEventQueue();
+
+      expect(requests, isNot(contains('/sync/history')));
     });
   });
 }

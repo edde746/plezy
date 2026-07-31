@@ -37,28 +37,6 @@ class TraktConstants {
   }
 }
 
-/// Scrobble lifecycle state sent to Trakt's `/scrobble/{name}` endpoints.
-enum TraktScrobbleState { start, pause, stop }
-
 /// Catalog list flavor for Trakt's discover/watchlist endpoints, named after
 /// the URL path segment (`/movies/trending`, `/sync/watchlist/shows/...`).
 enum TraktCatalogType { movies, shows }
-
-/// Direction of a watched-status sync push.
-enum TraktSyncOp {
-  add,
-  remove;
-
-  static TraktSyncOp fromName(String name) =>
-      values.firstWhere((v) => v.name == name, orElse: () => throw ArgumentError('Unknown TraktSyncOp: $name'));
-}
-
-/// Trakt-relevant media types. Accepts the neutral [MediaKind.id] string
-/// (`'movie'`, `'episode'`) used across both Plex and Jellyfin watch events.
-enum TraktMediaKind {
-  movie,
-  episode;
-
-  static TraktMediaKind fromName(String name) =>
-      values.firstWhere((v) => v.name == name, orElse: () => throw ArgumentError('Unknown TraktMediaKind: $name'));
-}

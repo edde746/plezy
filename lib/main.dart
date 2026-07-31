@@ -44,8 +44,6 @@ import 'services/discord_rpc_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
-import 'services/trakt/trakt_scrobble_service.dart';
-import 'services/trakt/trakt_sync_service.dart';
 import 'services/trackers/tracker_coordinator.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
@@ -497,7 +495,6 @@ void _startNonessentialInitialization(SettingsService settings) {
     unawaited(AndroidExitDiagnostics.logPreviousExit());
   }
 
-  bestEffort('Trakt scrobble', TraktScrobbleService.instance.initialize);
   bestEffort('Shader licenses', _registerShaderLicenses);
   // The startup-gate application can precede the engine's first metrics
   // report, which reads as a 1.0 display budget; re-derive it now that the
@@ -726,6 +723,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   final Set<String> _pendingSyncKeys = <String>{};
   bool _isAutoDeleteRunning = false;
   bool _lastConnectivityWasWifi = false;
+  bool _lastConnectivityHadNetwork = true;
   bool _shutdownStarted = false;
 
   /// Last time server health probes ran from a resume event (cooldown for desktop)
@@ -762,9 +760,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
 
-    // Trakt sync service (subscribes to WatchStateNotifier, requires serverManager
-    // to resolve PlexClients for GUID lookups).
-    TraktSyncService.instance.initialize(serverManager: _serverManager);
     // Tracker singletons init once per app; per-profile hydration happens in
     // the profile-scoped provider subtree's create callbacks.
     unawaited(TrackerCoordinator.instance.initialize());
@@ -787,9 +782,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _memoryCheckTimer?.cancel();
 
     _downloadManager.dispose();
+    // Quitting straight from the player is a real stop: the trackers that own
+    // their own watched semantics need the terminal report before the process
+    // goes away. Bounded — a hung tracker must not hold the app open.
+    await TrackerCoordinator.instance.stopPlayback().timeout(const Duration(seconds: 3), onTimeout: () {});
     TrackerCoordinator.instance.cancelInFlight();
-    TraktScrobbleService.instance.cancelInFlight();
-    await TraktSyncService.instance.dispose();
 
     await _serverManager.disconnectAllGracefully();
     await Future.wait([
@@ -869,20 +866,34 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     PaintingBinding.instance.imageCache.clearLiveImages();
   }
 
-  /// Fires [_autoDeleteAndSync] on each WiFi/Ethernet reconnect so rules run
-  /// as soon as the device is back online. Listens on [OfflineModeProvider],
-  /// which owns the app's single connectivity subscription and notifies on
-  /// connection-type changes. Rapid flapping is bounded by the executor's
-  /// cooldown.
+  /// Two connectivity-driven triggers, both listening on [OfflineModeProvider],
+  /// which owns the app's single connectivity subscription:
+  ///
+  /// * [_autoDeleteAndSync] on each WiFi/Ethernet reconnect, so download rules
+  ///   run as soon as the device is back on an unmetered link. Rapid flapping is
+  ///   bounded by the executor's cooldown.
+  /// * A tracker write-queue flush whenever the network comes back at all,
+  ///   metered included: tracker history writes are internet calls, so they can
+  ///   land while media servers are still unreachable and the app stays offline.
   void _startConnectivitySyncTrigger(DownloadProvider downloadProvider, OfflineModeProvider offlineModeProvider) {
     _removeConnectivitySyncListener();
     _lastConnectivityWasWifi = offlineModeProvider.hasWifiOrEthernet;
+    _lastConnectivityHadNetwork = offlineModeProvider.hasNetworkConnection;
     _connectivitySyncProvider = offlineModeProvider;
     _connectivitySyncListener = () {
       final hasWifi = offlineModeProvider.hasWifiOrEthernet;
-      final transitioned = hasWifi && !_lastConnectivityWasWifi;
+      final movedOntoWifi = hasWifi && !_lastConnectivityWasWifi;
       _lastConnectivityWasWifi = hasWifi;
-      if (transitioned) {
+
+      final hasNetwork = offlineModeProvider.hasNetworkConnection;
+      final networkRestored = hasNetwork && !_lastConnectivityHadNetwork;
+      _lastConnectivityHadNetwork = hasNetwork;
+
+      if (networkRestored) {
+        appLogger.d('Network restored — replaying queued tracker writes');
+        unawaited(TrackerCoordinator.instance.flushWriteQueue());
+      }
+      if (movedOntoWifi) {
         appLogger.d('Connectivity moved onto WiFi/Ethernet — triggering sync pass');
         _autoDeleteAndSync(downloadProvider);
       }
@@ -959,7 +970,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         // App came back to foreground - trigger sync check
         _offlineWatchSyncService.onAppResumed();
-        TraktSyncService.instance.flushQueue();
+        unawaited(TrackerCoordinator.instance.flushWriteQueue());
         // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep.
         // On desktop, resumed fires on every window focus (alt-tab), so apply a cooldown
         // to avoid piling up network probes from rapid alt-tabbing.

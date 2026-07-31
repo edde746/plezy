@@ -41,4 +41,20 @@ class AppExitService {
     await SystemNavigator.pop();
     return true;
   }
+
+  /// Requests a *cancelable* exit so registered `onExitRequested` handlers run
+  /// before the process goes away — app-level teardown depends on it, including
+  /// the terminal playback report for trackers that own their own watched
+  /// semantics.
+  ///
+  /// Desktop only; returns false elsewhere, and when the platform declined, so
+  /// the caller can fall back to a hard exit.
+  static Future<bool> requestGracefulExit({AppExitApplication? exitApplicationForTesting}) async {
+    if (!PlatformDetector.isDesktopOS()) return false;
+    final exitApplication =
+        exitApplicationForTesting ??
+        (exitType, exitCode) => ServicesBinding.instance.exitApplication(exitType, exitCode);
+    final response = await exitApplication(ui.AppExitType.cancelable, 0);
+    return response == ui.AppExitResponse.exit;
+  }
 }
