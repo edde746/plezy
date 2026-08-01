@@ -93,12 +93,19 @@ abstract class BaseSharedPreferencesService {
     try {
       return await _openSharedCache();
     } catch (error, stackTrace) {
-      if (!PrefsRecovery.isCorruptStoreError(error)) rethrow;
-      // The preflight accepted this document and the plugin still rejected it,
-      // so it has now cached something we cannot reason about. Repair can
+      // The preflight accepted this document and the plugin still rejected it.
+      // Classify by re-reading the bytes, never by the error's type: the
+      // desktop backends surface a UTF-8 decode failure as a
+      // `FileSystemException`, which is indistinguishable from a denied or
+      // locked file, and a permission error must never be offered a
+      // destructive repair. A null result means the document on disk is fine,
+      // so whatever went wrong keeps its own type and its own path.
+      final damage = await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: false);
+      if (damage == null) rethrow;
+      // The plugin has now cached something we cannot reason about. Repair can
       // still quarantine the file, but the process has to restart afterwards.
       appLogger.e('Preference store could not be parsed', error: error, stackTrace: stackTrace);
-      throw CorruptPreferenceStoreException(error, stackTrace, reopenSafe: false);
+      throw damage;
     }
   }
 
@@ -159,14 +166,25 @@ abstract class BaseSharedPreferencesService {
     }
 
     _cacheFuture = null;
-    final repaired = _cacheLoader().then((cache) async {
-      final vaultKey = salvaged.vaultKey;
-      if (vaultKey != null) await cache.setString(credentialVaultKeyPref, vaultKey);
-      for (final entry in salvaged.sessions.entries) {
-        await cache.setString(entry.key, entry.value);
-      }
-      return cache;
-    });
+    late final Future<SharedPreferencesWithCache> repaired;
+    repaired = _cacheLoader()
+        .then((cache) async {
+          final vaultKey = salvaged.vaultKey;
+          if (vaultKey != null) await cache.setString(credentialVaultKeyPref, vaultKey);
+          for (final entry in salvaged.sessions.entries) {
+            await cache.setString(entry.key, entry.value);
+          }
+          return cache;
+        })
+        .onError<Object>((error, stackTrace) {
+          // The same self-healing reset `sharedCache` installs, for the same
+          // reason. Without it a reopen that fails *after* the store was
+          // already quarantined would leave a permanently rejected future in
+          // `_cacheFuture`, and every later retry would replay that stale error
+          // for the rest of the process — with the on-disk cause already gone.
+          if (identical(_cacheFuture, repaired)) _cacheFuture = null;
+          Error.throwWithStackTrace(error, stackTrace);
+        });
     _cacheFuture = repaired;
     await repaired;
 

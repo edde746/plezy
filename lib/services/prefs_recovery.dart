@@ -25,6 +25,39 @@ const String prefsStoreFileName = 'shared_preferences.json';
 /// spelling until the legacy-to-async migration has copied them across.
 const String legacyKeyPrefix = 'flutter.';
 
+/// Derived, content-free description of a damaged store's bytes.
+///
+/// Every field is a measurement, never a quotation: a length, and two
+/// booleans. Together they separate the shapes that all surface as
+/// "FormatException at offset 0" — an all-zero file, a document with a
+/// non-JSON first character, bytes that are not UTF-8 at all — which the
+/// message alone cannot (#1732).
+class PrefsStoreShape {
+  const PrefsStoreShape({required this.length, required this.validUtf8, required this.allZero});
+
+  factory PrefsStoreShape.of(List<int> bytes) => PrefsStoreShape(
+    length: bytes.length,
+    validUtf8: _decodesAsUtf8(bytes),
+    allZero: bytes.isNotEmpty && bytes.every((byte) => byte == 0),
+  );
+
+  final int length;
+  final bool validUtf8;
+  final bool allZero;
+
+  static bool _decodesAsUtf8(List<int> bytes) {
+    try {
+      utf8.decode(bytes);
+      return true;
+    } on FormatException {
+      return false;
+    }
+  }
+
+  @override
+  String toString() => '$length bytes, ${validUtf8 ? 'valid' : 'invalid'} UTF-8${allZero ? ', every byte zero' : ''}';
+}
+
 /// Raised when the preference store exists but cannot be parsed.
 ///
 /// `BaseSharedPreferencesService` converts the platform's raw
@@ -38,10 +71,10 @@ const String legacyKeyPrefix = 'flutter.';
 /// offset. Anything holding that object could persist, render or upload raw
 /// credential material — `credential_vault_key_v1`, a tracker refresh token, a
 /// Seerr cookie — and at this point in startup `LogRedactionManager` has no
-/// registered values to catch it. Only the cause's type and offset survive,
-/// both of which are safe by construction.
+/// registered values to catch it. Only the cause's type, offset and the
+/// derived [PrefsStoreShape] survive, all of which are safe by construction.
 class CorruptPreferenceStoreException implements Exception {
-  CorruptPreferenceStoreException(Object cause, this.causeStackTrace, {this.reopenSafe = true})
+  CorruptPreferenceStoreException(Object cause, this.causeStackTrace, {this.reopenSafe = true, this.shape})
     : causeType = cause.runtimeType.toString(),
       offset = cause is FormatException ? cause.offset : null;
 
@@ -64,10 +97,14 @@ class CorruptPreferenceStoreException implements Exception {
   /// A repair in that state must be followed by a restart.
   final bool reopenSafe;
 
+  /// Measurements of the rejected bytes, when they were available.
+  final PrefsStoreShape? shape;
+
   @override
   String toString() =>
       'CorruptPreferenceStoreException: the preference store could not be parsed'
-      ' ($causeType${offset == null ? '' : ' at offset $offset'})';
+      ' ($causeType${offset == null ? '' : ' at offset $offset'};'
+      ' ${shape ?? 'shape unavailable'}; reopenSafe: $reopenSafe)';
 }
 
 /// Raised when a credential preference exists but its stored type no longer
@@ -160,18 +197,18 @@ class SalvagedPrefsCredentials {
 /// user an explicit choice that names the real cost, and only an accepted
 /// choice reaches `BaseSharedPreferencesService.repairCorruptStore`.
 abstract final class PrefsRecovery {
-  /// Whether [error] means the store is present but unparseable, as opposed to
-  /// missing, inaccessible, or a plugin failure.
-  ///
-  /// `shared_preferences_windows` throws `FormatException` from `json.decode`
-  /// on a truncated file and `TypeError` from `Map<String, Object>.from` when
-  /// a decoded value is null.
-  static bool isCorruptStoreError(Object error) => error is FormatException || error is TypeError;
-
   /// Whether a repair can be attempted on this platform. Only the desktop
   /// implementations use a single JSON file we can salvage and quarantine;
   /// Android, iOS and macOS delegate to platform-native stores.
-  static bool get isSupportedPlatform => Platform.isWindows || Platform.isLinux;
+  static bool get isSupportedPlatform => _supportedPlatformOverride ?? (Platform.isWindows || Platform.isLinux);
+
+  static bool? _supportedPlatformOverride;
+
+  /// Test seam. The desktop store path is Windows/Linux only, so a host suite
+  /// running anywhere else cannot reach the production preflight at all — and
+  /// that preflight is precisely where #1732 is decided.
+  @visibleForTesting
+  static void debugSetSupportedPlatformOverride(bool? value) => _supportedPlatformOverride = value;
 
   static Future<File> storeFile() async {
     final directory = await getApplicationSupportDirectory();
@@ -194,51 +231,94 @@ abstract final class PrefsRecovery {
   /// No-op on the platforms that use a native store, and on a missing store —
   /// a first launch has nothing to validate.
   static Future<void> assertStoreReadable({File? storeFileOverride}) async {
-    if (storeFileOverride == null && !isSupportedPlatform) return;
+    final damage = await describeCurrentStoreDamage(reopenSafe: true, storeFileOverride: storeFileOverride);
+    if (damage != null) throw damage;
+  }
+
+  /// Re-reads the live store and classifies it, without throwing.
+  ///
+  /// Returns null when the bytes on disk are ones the desktop backends can
+  /// hold — including a missing or unreadable file, neither of which a repair
+  /// addresses. A non-null result means the *document* is damaged, which is
+  /// the only thing that justifies offering the user a destructive repair.
+  ///
+  /// Used both as the preflight and, with `reopenSafe: false`, to classify a
+  /// failure that surfaced after the preflight already passed.
+  static Future<CorruptPreferenceStoreException?> describeCurrentStoreDamage({
+    required bool reopenSafe,
+    File? storeFileOverride,
+  }) async {
+    if (storeFileOverride == null && !isSupportedPlatform) return null;
 
     final File file;
     try {
       file = storeFileOverride ?? await storeFile();
-      if (!await file.exists()) return;
+      if (!await file.exists()) return null;
     } on Object {
       // Locating or stat-ing the directory is a different failure entirely
       // (missing/denied application support); let the plugin report it.
-      return;
+      return null;
     }
+
+    final List<int> bytes;
+    try {
+      bytes = await file.readAsBytes();
+    } on FileSystemException {
+      return null; // Unreadable rather than invalid; not something a repair fixes.
+    }
+
+    return describeStoreDamage(bytes, reopenSafe: reopenSafe);
+  }
+
+  /// Classifies raw store bytes, returning the failure to surface or null when
+  /// the document is one the desktop backends can hold.
+  ///
+  /// Byte-level on purpose. `File.readAsString` reports a UTF-8 decode failure
+  /// as a `FileSystemException`, indistinguishable by type from a denied or
+  /// locked file, so decoding explicitly here is the only way to tell a damaged
+  /// document apart from a file we simply cannot read (#1732).
+  @visibleForTesting
+  static CorruptPreferenceStoreException? describeStoreDamage(List<int> bytes, {bool reopenSafe = true}) {
+    final shape = PrefsStoreShape.of(bytes);
 
     final String raw;
     try {
-      raw = await file.readAsString();
-    } on FileSystemException {
-      return; // Unreadable rather than invalid; not something a repair fixes.
+      raw = utf8.decode(bytes);
     } on FormatException catch (error, stackTrace) {
-      throw CorruptPreferenceStoreException(error, stackTrace); // Not UTF-8.
+      return CorruptPreferenceStoreException(error, stackTrace, reopenSafe: reopenSafe, shape: shape);
     }
-    if (raw.isEmpty) return;
+    // Both desktop backends skip `json.decode` for an empty document and start
+    // from `{}`, so an empty store is a first launch, not damage.
+    if (raw.isEmpty) return null;
 
     final Object? decoded;
     try {
       decoded = jsonDecode(raw);
     } on FormatException catch (error, stackTrace) {
-      throw CorruptPreferenceStoreException(error, stackTrace);
+      return CorruptPreferenceStoreException(error, stackTrace, reopenSafe: reopenSafe, shape: shape);
     }
 
     if (decoded is! Map) {
-      throw CorruptPreferenceStoreException(
+      return CorruptPreferenceStoreException(
         const FormatException('Preference store is not a JSON object'),
         StackTrace.current,
+        reopenSafe: reopenSafe,
+        shape: shape,
       );
     }
     for (final entry in decoded.entries) {
       if (entry.key is! String || !_isStorableValue(entry.value)) {
         // The key name is safe to omit and the value must never be quoted, so
         // the exception deliberately carries neither.
-        throw CorruptPreferenceStoreException(
+        return CorruptPreferenceStoreException(
           const FormatException('Preference store holds a value of an unsupported type'),
           StackTrace.current,
+          reopenSafe: reopenSafe,
+          shape: shape,
         );
       }
     }
+    return null;
   }
 
   /// Mirrors what the desktop backends can hold: the JSON scalars plus a
@@ -381,16 +461,13 @@ abstract final class PrefsRecovery {
       return (salvaged: SalvagedPrefsCredentials.empty, backupPath: null);
     }
 
-    String raw;
-    try {
-      raw = await file.readAsString();
-    } on FileSystemException {
-      rethrow;
-    } on FormatException {
-      // Not valid UTF-8 either; a lossy read still exposes the ASCII-only
-      // credential entries to the salvage pass.
-      raw = const Utf8Decoder(allowMalformed: true).convert(await file.readAsBytes());
-    }
+    // Read bytes and decode lossily rather than calling `readAsString`, which
+    // surfaces a UTF-8 decode failure as a `FileSystemException` and would
+    // abort the repair on exactly the damaged store it exists to rescue. For a
+    // well-formed document this is identical to a strict decode; for a damaged
+    // one it still exposes the ASCII credential entries to the salvage pass.
+    // A genuine read failure propagates — that is not something a repair fixes.
+    final raw = const Utf8Decoder(allowMalformed: true).convert(await file.readAsBytes());
 
     final salvaged = salvage(raw);
 

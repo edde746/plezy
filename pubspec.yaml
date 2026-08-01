@@ -99,6 +99,11 @@ dev_dependencies:
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
   path_provider_platform_interface: ^2.1.0
+  # Drives the real desktop preference backend against a temp file in tests, so
+  # the #1732 corrupt-store repair loop is covered on any host and not only on
+  # a Windows/Linux runner. Both classes expose `fs`/`pathProvider` for this.
+  shared_preferences_linux: ^2.4.1
+  path_provider_linux: ^2.2.1
   plugin_platform_interface: ^2.1.0
   freezed: ^3.2.5
   analyzer: 10.2.0
