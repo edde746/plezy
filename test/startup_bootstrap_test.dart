@@ -163,7 +163,7 @@ void main() {
         buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
         repair: (_, _, _) async {
           repairCalls++;
-          return true;
+          return StartupRepairResult.retry;
         },
       ),
     );
@@ -188,7 +188,7 @@ void main() {
           throw CorruptPreferenceStoreException(const FormatException('bad'), StackTrace.current);
         },
         buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
-        repair: (_, _, _) async => false,
+        repair: (_, _, _) async => StartupRepairResult.none,
       ),
     );
     await tester.pump();
@@ -199,6 +199,57 @@ void main() {
 
     expect(attempts, 1);
     expect(find.byKey(startupBootstrapFailureKey), findsOneWidget);
+  });
+
+  testWidgets('a repair that needs a restart parks the app instead of retrying', (tester) async {
+    // The repair seeds the salvaged credentials straight to disk and leaves
+    // this process's store closed, because the plugin still holds the bad
+    // document. Re-running the gate would reopen onto that stale map and the
+    // first write would flush it over the seed, destroying the vault key and
+    // orphaning every ciphertext token in the database (#1732).
+    var attempts = 0;
+
+    await tester.pumpWidget(
+      StartupBootstrap<int>(
+        initialize: () async {
+          attempts++;
+          throw CorruptPreferenceStoreException(const FormatException('bad'), StackTrace.current);
+        },
+        buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+        repair: (_, _, _) async => StartupRepairResult.restart,
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(startupFailureRepairKey));
+    await tester.pump();
+    await tester.pump();
+
+    expect(attempts, 1);
+    // Withdrawn, not disabled: both are the actions that would touch the store.
+    expect(find.byKey(startupBootstrapRetryKey), findsNothing);
+    expect(find.byKey(startupFailureRepairKey), findsNothing);
+    // And the user is actually told what to do about it.
+    expect(find.byKey(startupFailureRestartKey), findsOneWidget);
+  });
+
+  testWidgets('the restart state survives and still allows uploading the diagnostic', (tester) async {
+    await tester.pumpWidget(
+      StartupBootstrap<int>(
+        initialize: () async => throw CorruptPreferenceStoreException(const FormatException('bad'), StackTrace.current),
+        buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+        repair: (_, _, _) async => StartupRepairResult.restart,
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(startupFailureRepairKey));
+    await tester.pump();
+    await tester.pump();
+
+    // Copy and Upload stay live — the whole point of the failure screen is
+    // that a stuck user can still get the diagnostic out.
+    expect(find.byKey(startupFailureCopyKey), findsOneWidget);
+    expect(find.byKey(startupFailureUploadKey), findsOneWidget);
   });
 
   testWidgets('persists the failure so it can be reported once the reporter is up', (tester) async {

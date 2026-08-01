@@ -418,9 +418,16 @@ Future<SentryId> _captureStartupFailure(StartupFailureRecord record) {
 /// Default [StartupBootstrap.repair]: states the cost, runs the repair that
 /// matches the failure, then reports what was kept and what was lost.
 ///
-/// Returns whether initialization should be retried.
+/// The result tells the bootstrap what it may do next; see
+/// [StartupRepairResult]. Never returns [StartupRepairResult.retry] for a
+/// repair that requires a restart — re-running initialization in that state
+/// would destroy the salvage.
 @visibleForTesting
-Future<bool> repairStartupStorage(BuildContext context, StartupFailureRecord record, Object error) async {
+Future<StartupRepairResult> repairStartupStorage(
+  BuildContext context,
+  StartupFailureRecord record,
+  Object error,
+) async {
   final cause = StartupPhaseException.unwrap(error);
   final unreadableKey = cause is UnreadableSensitivePreferenceException ? cause.key : null;
   final reopenSafe = cause is! CorruptPreferenceStoreException || cause.reopenSafe;
@@ -438,15 +445,16 @@ Future<bool> repairStartupStorage(BuildContext context, StartupFailureRecord rec
     confirmText: t.startup.repairConfirm,
     isDestructive: true,
   );
-  if (!confirmed || !context.mounted) return false;
+  if (!confirmed || !context.mounted) return StartupRepairResult.none;
 
   final outcome = unreadableKey != null
       ? await BaseSharedPreferencesService.dropUnreadableCredential(unreadableKey)
       : await BaseSharedPreferencesService.repairCorruptStore(reopenSafe: reopenSafe);
-  if (!context.mounted) return !outcome.requiresRestart;
+  final result = outcome.requiresRestart ? StartupRepairResult.restart : StartupRepairResult.retry;
+  if (!context.mounted) return result;
 
   await showRepairOutcomeDialog(context, outcome);
-  return context.mounted && !outcome.requiresRestart;
+  return result;
 }
 
 /// Reports a completed repair, including the credential-bearing backup.
@@ -543,8 +551,10 @@ class StartupBootstrap<T> extends StatefulWidget {
   final StartupFailureRecord Function(Object error, StackTrace stackTrace) describeFailure;
 
   /// Offers the user a consented repair for a recoverable failure and reports
-  /// whether one ran. Returning true re-runs [initialize].
-  final Future<bool> Function(BuildContext context, StartupFailureRecord record, Object error)? repair;
+  /// what the gate may do next. [StartupRepairResult.retry] re-runs
+  /// [initialize]; [StartupRepairResult.restart] parks the app on the failure
+  /// screen, because nothing may touch preferences until the process restarts.
+  final Future<StartupRepairResult> Function(BuildContext context, StartupFailureRecord record, Object error)? repair;
 
   final ThemeData? lightTheme;
   final ThemeData? darkTheme;
@@ -564,6 +574,11 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
   bool _completed = false;
   bool _initializing = false;
   bool _repairing = false;
+
+  /// Terminal: the store was repaired but the plugin still holds the bad
+  /// document, so this process can never open it. Latched, never cleared —
+  /// re-running the gate from here would flush the stale map over the seed.
+  bool _restartRequired = false;
   int _generation = 0;
 
   @override
@@ -628,18 +643,21 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
   Future<void> _repair(StartupFailureRecord failure) async {
     final repair = widget.repair;
     final error = _failureError;
-    if (repair == null || error == null || _repairing) return;
+    if (repair == null || error == null || _repairing || _restartRequired) return;
     setState(() => _repairing = true);
-    var repaired = false;
+    var result = StartupRepairResult.none;
     try {
-      repaired = await repair(context, failure, error);
+      result = await repair(context, failure, error);
     } catch (error, stackTrace) {
       appLogger.e('Startup storage repair failed', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.startup.repairFailed);
     }
     if (!mounted) return;
-    setState(() => _repairing = false);
-    if (repaired) unawaited(_initialize());
+    setState(() {
+      _repairing = false;
+      if (result == StartupRepairResult.restart) _restartRequired = true;
+    });
+    if (result == StartupRepairResult.retry) unawaited(_initialize());
   }
 
   Future<void> _discard(T value) async {
@@ -683,6 +701,7 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
           : StartupFailureView(
               failure: failure,
               busy: _initializing || _repairing,
+              restartRequired: _restartRequired,
               onRetry: () => unawaited(_initialize()),
               onRepair: failure.repairable && widget.repair != null ? () => _repair(failure) : null,
             ),
