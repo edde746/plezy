@@ -735,7 +735,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             ),
           const Spacer(),
 
-          // --- digital clock ---
+          // --- Digital Clock ---
           StreamBuilder<DateTime>(
             stream: Stream.periodic(const Duration(seconds: 15), (_) => DateTime.now()),
             initialData: DateTime.now(),
@@ -746,17 +746,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 padding: const EdgeInsets.only(right: 16.0),
                 child: Text(
                   timeString,
-                  style: TextStyle(
-                    color: foregroundColor,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold, // Asegúrate de que la W de Weight sea mayúscula
-                  ),
+                  style: TextStyle(color: foregroundColor, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               );
             },
           ),
 
-          // --- end digial clock ---
+          // --- End Digital Clock ---
           Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
             builder: (context, watchTogether, companionRemote, _) {
               final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
