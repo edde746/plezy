@@ -11,6 +11,7 @@ import '../../media/media_playlist.dart';
 import '../../services/media_list_playback_launcher.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../services/playlist_items_loader.dart';
+import '../../services/repeating_playlist_launcher.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/content_utils.dart';
 import '../../utils/error_message_utils.dart';
@@ -25,6 +26,7 @@ import 'package:provider/provider.dart';
 import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/download_provider.dart';
+import '../../providers/playback_state_provider.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
@@ -71,18 +73,30 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// filter rules, not direct edits). Jellyfin has no equivalent concept.
   bool get _isReadOnly => widget.playlist.smart;
 
+  String get _normalizedPlaylistType => widget.playlist.playlistType.trim().toLowerCase();
+
   /// Audio playlists play through the music session (mini-player /
   /// now-playing) instead of the video play-queue launcher.
-  bool get _isAudioPlaylist => widget.playlist.playlistType == 'audio';
+  bool get _isAudioPlaylist => _normalizedPlaylistType == 'audio';
+
+  bool get _supportsVideoRepeat {
+    if (_normalizedPlaylistType == 'video') return true;
+    if (_normalizedPlaylistType == 'audio' || _normalizedPlaylistType == 'photo') {
+      return false;
+    }
+    return items.any((item) => item.kind.isVideo);
+  }
 
   MusicPlayContext get _musicPlayContext =>
       MusicPlayContext(id: widget.playlist.id, title: widget.playlist.title, kind: MusicPlayContextKind.playlist);
 
   @override
-  Future<void> playItems() => _isAudioPlaylist ? _playAudioPlaylist(shuffle: false) : super.playItems();
+  Future<void> playItems() =>
+      _isAudioPlaylist ? _playAudioPlaylist(shuffle: false) : _playVideoPlaylist(shuffle: false);
 
   @override
-  Future<void> shufflePlayItems() => _isAudioPlaylist ? _playAudioPlaylist(shuffle: true) : super.shufflePlayItems();
+  Future<void> shufflePlayItems() =>
+      _isAudioPlaylist ? _playAudioPlaylist(shuffle: true) : _playVideoPlaylist(shuffle: true);
 
   /// Uses the already-loaded items when the playlist is fully paged in;
   /// otherwise fetches the full item list (one loader round-trip) so the
@@ -103,20 +117,106 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     );
   }
 
+  /// Starts a video playlist. Repeat-enabled playback uses a fully resident
+  /// client-side queue on both Plex and Jellyfin. This makes the final-item to
+  /// first-item transition index-based instead of depending on a Plex server
+  /// window and opaque playQueueItemID values.
+  Future<void> _playVideoPlaylist({required bool shuffle, int? startIndex}) async {
+    if (items.isEmpty) {
+      showAppSnackBar(context, emptyMessage);
+      return;
+    }
+
+    final playbackState = context.read<PlaybackStateProvider>();
+    final repeatEnabled = playbackState.isRepeatEnabledFor(widget.playlist.globalKey);
+
+    if (!repeatEnabled) {
+      if (startIndex == null) {
+        if (shuffle) {
+          await super.shufflePlayItems();
+        } else {
+          await super.playItems();
+        }
+        return;
+      }
+
+      if (startIndex < 0 || startIndex >= items.length) return;
+      final launcher = MediaListPlaybackLauncher.forItem(context, widget.playlist);
+      await launcher.launchFromCollectionOrPlaylist(
+        item: widget.playlist,
+        shuffle: false,
+        startItem: items[startIndex],
+        showLoadingIndicator: true,
+      );
+      return;
+    }
+
+    try {
+      final allItems = _isPlaylistFullyLoaded
+          ? List<MediaItem>.of(items)
+          : await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
+      if (!mounted) return;
+      if (allItems.isEmpty) {
+        showAppSnackBar(context, emptyMessage);
+        return;
+      }
+
+      await launchRepeatingVideoPlaylist(
+        context: context,
+        playlistContextKey: widget.playlist.globalKey,
+        items: allItems,
+        shuffle: shuffle,
+        startIndex: startIndex,
+      );
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to launch repeating video playlist', error: e, stackTrace: stackTrace);
+      if (mounted) {
+        showErrorSnackBar(context, localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title));
+      }
+    }
+  }
+
+  void _toggleVideoPlaylistRepeat() {
+    final playbackState = context.read<PlaybackStateProvider>();
+    final playlistContextKey = widget.playlist.globalKey;
+    playbackState.setRepeatForContext(playlistContextKey, !playbackState.isRepeatEnabledFor(playlistContextKey));
+  }
+
   @override
   List<FocusableAction> getAppBarActions() {
     // Video AND audio playlists download (tracks queue through the same list
     // pipeline); photo/mixed playlists keep the affordance hidden.
-    final isDownloadablePlaylist = widget.playlist.playlistType == 'video' || _isAudioPlaylist;
+    final isDownloadablePlaylist = _normalizedPlaylistType == 'video' || _isAudioPlaylist;
     final ruleKey = syncRuleKey;
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the app bar.
     final hasRule = isDownloadablePlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
 
+    final repeatEnabled = context.select<PlaybackStateProvider, bool>(
+      (provider) => provider.isRepeatEnabledFor(widget.playlist.globalKey),
+    );
     return [
       if (items.isNotEmpty) ...[
-        FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
-        FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
+        FocusableAction(
+          debugLabel: 'playlist_play',
+          icon: Symbols.play_arrow_rounded,
+          tooltip: t.common.play,
+          onPressed: playItems,
+        ),
+        FocusableAction(
+          debugLabel: 'playlist_shuffle',
+          icon: Symbols.shuffle_rounded,
+          tooltip: t.common.shuffle,
+          onPressed: shufflePlayItems,
+        ),
+        if (_supportsVideoRepeat)
+          FocusableAction(
+            debugLabel: 'playlist_repeat',
+            icon: repeatEnabled ? Symbols.repeat_on_rounded : Symbols.repeat_rounded,
+            tooltip: repeatEnabled ? t.music.repeatAll : t.music.repeat,
+            onPressed: _toggleVideoPlaylistRepeat,
+            iconColor: repeatEnabled ? Theme.of(context).colorScheme.primary : null,
+          ),
       ],
       ...buildSyncRuleActions(
         context,
@@ -491,13 +591,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       await _playAudioPlaylist(shuffle: false, startTrack: selectedItem);
       return;
     }
-    final launcher = MediaListPlaybackLauncher.forItem(context, widget.playlist);
-    await launcher.launchFromCollectionOrPlaylist(
-      item: widget.playlist,
-      shuffle: false,
-      startItem: selectedItem,
-      showLoadingIndicator: true,
-    );
+    await _playVideoPlaylist(shuffle: false, startIndex: index);
   }
 
   /// Ensure the focused item is visible in the list using scroll arithmetic.
