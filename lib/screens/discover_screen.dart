@@ -734,6 +734,29 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
             ),
           const Spacer(),
+
+          // --- digital clock ---
+          StreamBuilder<DateTime>(
+            stream: Stream.periodic(const Duration(seconds: 15), (_) => DateTime.now()),
+            initialData: DateTime.now(),
+            builder: (context, snapshot) {
+              final time = snapshot.data!;
+              final timeString = '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+              return Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Text(
+                  timeString,
+                  style: TextStyle(
+                    color: foregroundColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold, // Asegúrate de que la W de Weight sea mayúscula
+                  ),
+                ),
+              );
+            },
+          ),
+
+          // --- end digial clock ---
           Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
             builder: (context, watchTogether, companionRemote, _) {
               final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
