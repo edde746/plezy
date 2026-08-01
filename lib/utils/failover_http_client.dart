@@ -16,11 +16,12 @@ import '../exceptions/media_server_exceptions.dart';
 /// - **Trigger:** a transient transport failure
 ///   ([MediaServerHttpException.isTransient]) or a 5xx — whether thrown or
 ///   returned as a response. 4xx answers never trigger failover.
-/// - **One alternative per cascade.** A failed retry (transport error *or*
+/// - **One authenticated retry per cascade.** Candidate validation may skip
+///   rejected endpoints before that retry. A failed retry (transport error or
 ///   error status) resets the list to the preferred endpoint and fires
-///   [onAllEndpointsExhausted]; the next cascade starts from the best
-///   candidate again. Concurrent requests are generation-stamped so a request
-///   raced by a switch doesn't cascade a second time.
+///   [onAllEndpointsExhausted]; the next cascade starts from the best candidate
+///   again. Concurrent requests are generation-stamped so a request raced by a
+///   switch doesn't cascade a second time.
 /// - **Persistence is two-phase:** the switch is applied with
 ///   `persist: false` for the retry, and only a successful retry persists the
 ///   winner (`persist: true`).
@@ -29,6 +30,10 @@ import '../exceptions/media_server_exceptions.dart';
 ///   that wrap it pass `allowEndpointFailover: false` so a slow row doesn't
 ///   move the whole client off an otherwise working endpoint. Failover is for
 ///   *dead* endpoints.
+///
+/// Endpoint orchestration diagnostics never contain raw endpoint literals.
+/// Backends still register configured endpoints before construction to protect
+/// unavoidable lower-level HTTP diagnostics.
 class FailoverHttpClient extends MediaServerHttpClient {
   /// [prioritizedEndpoints] may be empty (failover disabled — plain client
   /// behavior). A single-entry list still arms [onAllEndpointsExhausted]:
@@ -45,6 +50,7 @@ class FailoverHttpClient extends MediaServerHttpClient {
     required List<String> prioritizedEndpoints,
     required this.onEndpointSwitch,
     this.onAllEndpointsExhausted,
+    this.validateCandidate,
   }) : _endpointManager = prioritizedEndpoints.isNotEmpty ? EndpointFailoverManager(prioritizedEndpoints) : null;
 
   /// Backend name for log lines ('Plex' / 'Jellyfin') — keeps failover logs
@@ -58,6 +64,11 @@ class FailoverHttpClient extends MediaServerHttpClient {
   /// and `persist: true` only after a success — persistence must not be gated
   /// on the URL having changed, since the second call sees it already applied).
   final Future<void> Function(String newBaseUrl, {required bool persist}) onEndpointSwitch;
+
+  /// Optional trust gate run after a fallback is selected but before any
+  /// switch callback, base-URL mutation, or authenticated retry. The active
+  /// request's abort controller must cancel validation as well as the retry.
+  final Future<bool> Function(String candidateBaseUrl, AbortController? abort)? validateCandidate;
 
   /// Fired when a cascade ends without a working endpoint (or the retry
   /// itself fails). The owning manager debounces this into a server-offline
@@ -87,7 +98,13 @@ class FailoverHttpClient extends MediaServerHttpClient {
     final generation = _endpointManager?.generation;
     final MediaServerResponse response;
     try {
-      response = await super.get(path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
+      response = await super.get(
+        path,
+        queryParameters: queryParameters,
+        headers: headers,
+        timeout: timeout,
+        abort: abort,
+      );
     } on MediaServerHttpException catch (e) {
       if (!allowEndpointFailover || !_shouldAttemptFailover(exception: e) || !_canFailover(generation)) {
         rethrow;
@@ -102,7 +119,9 @@ class FailoverHttpClient extends MediaServerHttpClient {
       if (retried == null) rethrow;
       return retried;
     }
-    if (!allowEndpointFailover || !_shouldAttemptFailover(statusCode: response.statusCode) || !_canFailover(generation)) {
+    if (!allowEndpointFailover ||
+        !_shouldAttemptFailover(statusCode: response.statusCode) ||
+        !_canFailover(generation)) {
       return response;
     }
     return await _failoverOnce(
@@ -128,14 +147,15 @@ class FailoverHttpClient extends MediaServerHttpClient {
     return statusCode != null && statusCode >= 500 && statusCode <= 599;
   }
 
-  /// One step of the cascade: move to the next endpoint and retry once.
+  /// One step of the cascade: validate candidates in priority order, move to
+  /// the first accepted endpoint, and retry the authenticated request once.
   ///
-  /// Returns the retry's response on success. Returns `null` when no fallback
-  /// exists (after resetting and firing [onAllEndpointsExhausted]) — the
-  /// caller surfaces its original failure. A retry that answers with an error
-  /// status is returned as-is (the caller's status handling applies), and a
-  /// retry that throws rethrows; both count as exhaustion: the list resets to
-  /// the preferred endpoint so the next cascade starts from the best candidate.
+  /// Returns the retry's response on success. Returns `null` when no accepted
+  /// fallback exists (after firing [onAllEndpointsExhausted]) — the caller
+  /// surfaces its original failure. A retry that answers with an error status
+  /// is returned as-is (the caller's status handling applies), and a retry that
+  /// throws rethrows; both count as exhaustion: the list resets to the
+  /// preferred endpoint so the next cascade starts from the best candidate.
   Future<MediaServerResponse?> _failoverOnce(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -150,17 +170,49 @@ class FailoverHttpClient extends MediaServerHttpClient {
       return null;
     }
 
-    final failedEndpoint = manager.current;
-    final nextBaseUrl = manager.moveToNext();
-    if (nextBaseUrl == null) return null;
+    final endpoints = manager.endpoints;
+    final currentIndex = endpoints.indexOf(manager.current);
+    if (currentIndex < 0 || currentIndex >= endpoints.length - 1) return null;
+    final candidateGeneration = manager.generation;
 
     _failoverSwitching = true;
     try {
-      appLogger.i(
-        'Switching $logLabel endpoint after GET failure',
-        error: {'from': failedEndpoint, 'to': nextBaseUrl, 'path': path},
-      );
-      await onEndpointSwitch(nextBaseUrl, persist: false);
+      final validator = validateCandidate;
+      String? selectedBaseUrl;
+      for (var candidateIndex = currentIndex + 1; candidateIndex < endpoints.length; candidateIndex++) {
+        final candidateBaseUrl = endpoints[candidateIndex];
+        var accepted = validator == null;
+        if (validator != null) {
+          try {
+            accepted = await validator(candidateBaseUrl, abort);
+          } catch (error) {
+            if (error is MediaServerHttpException && error.isCancellation) rethrow;
+            accepted = false;
+          }
+        }
+        if (accepted) {
+          selectedBaseUrl = candidateBaseUrl;
+          break;
+        }
+      }
+      if (selectedBaseUrl == null) {
+        // Validation happens before moving the cursor, so the last accepted
+        // endpoint remains authoritative for both the manager and live client.
+        onAllEndpointsExhausted?.call();
+        return null;
+      }
+      abort?.throwIfAborted();
+
+      if (manager.generation != candidateGeneration || manager.current != endpoints[currentIndex]) {
+        return null;
+      }
+      String? movedBaseUrl;
+      do {
+        movedBaseUrl = manager.moveToNext();
+      } while (movedBaseUrl != null && movedBaseUrl != selectedBaseUrl);
+      if (movedBaseUrl != selectedBaseUrl) return null;
+      appLogger.i('Switching $logLabel endpoint after GET failure');
+      await onEndpointSwitch(selectedBaseUrl, persist: false);
       final response = await super.get(
         path,
         queryParameters: queryParameters,
@@ -169,16 +221,18 @@ class FailoverHttpClient extends MediaServerHttpClient {
         abort: abort,
       );
       if (response.statusCode < 400) {
-        appLogger.i('$logLabel endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
-        await onEndpointSwitch(nextBaseUrl, persist: true);
+        appLogger.i('$logLabel endpoint failover retry succeeded');
+        await onEndpointSwitch(selectedBaseUrl, persist: true);
         return response;
       }
       await _resetToPreferred(manager);
       onAllEndpointsExhausted?.call();
       return response;
-    } catch (_) {
+    } catch (error) {
       await _resetToPreferred(manager);
-      onAllEndpointsExhausted?.call();
+      if (error is! MediaServerHttpException || !error.isCancellation) {
+        onAllEndpointsExhausted?.call();
+      }
       rethrow;
     } finally {
       _failoverSwitching = false;

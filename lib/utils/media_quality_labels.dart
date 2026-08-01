@@ -3,6 +3,7 @@ import '../media/media_stream.dart';
 import '../media/media_version.dart';
 import 'codec_utils.dart';
 import 'resolution_label.dart';
+import 'formatters.dart';
 
 List<String> buildMediaQualityLabels(MediaItem item, {int versionIndex = 0}) {
   final version = _selectedVersion(item.mediaVersions, versionIndex);
@@ -26,6 +27,20 @@ List<String> buildMediaQualityLabels(MediaItem item, {int versionIndex = 0}) {
   return labels;
 }
 
+String? buildMediaSizeLabel(MediaItem item, {int versionIndex = 0}) {
+  final version = _selectedVersion(item.mediaVersions, versionIndex);
+  if (version == null || version.parts.isEmpty) return null;
+
+  var totalBytes = 0;
+  for (final part in version.parts) {
+    final sizeBytes = part.sizeBytes;
+    if (sizeBytes == null || sizeBytes <= 0) return null;
+    totalBytes += sizeBytes;
+  }
+
+  return ByteFormatter.formatBytes(totalBytes);
+}
+
 String _formatDolbyVision(MediaStream stream) {
   final profile = stream.dolbyVisionProfile;
   return profile == null || profile <= 0 ? 'DV' : 'DV P$profile';
@@ -33,7 +48,9 @@ String _formatDolbyVision(MediaStream stream) {
 
 MediaVersion? _selectedVersion(List<MediaVersion>? versions, int versionIndex) {
   if (versions == null || versions.isEmpty) return null;
-  if (versionIndex >= 0 && versionIndex < versions.length) return versions[versionIndex];
+  if (versionIndex >= 0 && versionIndex < versions.length) {
+    return versions[versionIndex];
+  }
   return versions.first;
 }
 

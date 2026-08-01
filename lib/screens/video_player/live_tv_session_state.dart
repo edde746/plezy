@@ -43,10 +43,15 @@ class LiveTvSessionState {
   /// 2 = no DS + no DS audio.
   int fallbackLevel = 0;
   bool retrying = false;
+  bool retryFailed = false;
 
   /// Whether the timeline heartbeat should restart when the app resumes
   /// from the background (it is suspended on hide).
   bool resumeTimelineOnResume = false;
+
+  /// A non-resumable live session was stopped while the TV app was hidden.
+  /// The player route is closed instead of attempting to reuse that session.
+  bool exitOnResume = false;
 
   /// Make [newSession] current and seed the seekable window from its tune
   /// snapshot. Every flow that produces a session (start, retry, channel

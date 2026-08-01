@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import '../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
 import '../media/library_query.dart';
 import '../media/media_item.dart';
 import '../mixins/paginated_item_loader.dart';
+import '../mixins/standard_paginated_view.dart';
 import '../providers/download_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/content_utils.dart';
 import '../utils/dialogs.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/download_utils.dart';
-import '../utils/platform_detector.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -34,14 +35,13 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     with
         GridFocusNodeMixin<CollectionDetailScreen>,
         FocusableDetailScreenMixin<CollectionDetailScreen>,
-        PaginatedItemLoader<MediaItem, CollectionDetailScreen> {
+        PaginatedItemLoader<MediaItem, CollectionDetailScreen>,
+        PaginatedItemUpdatable<CollectionDetailScreen>,
+        StandardPaginatedView<MediaItem, CollectionDetailScreen> {
   static const int _pageSize = 200;
 
   @override
   MediaItem get mediaItem => widget.collection;
-
-  @override
-  String? get itemServerId => widget.collection.serverId;
 
   @override
   String get title => widget.collection.title!;
@@ -51,6 +51,11 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   bool get hasItems => totalSize > 0;
+
+  CardShape? get _contentShape {
+    final loaded = loadedItems.values;
+    return loaded.isNotEmpty && loaded.every((item) => item.kind.isMusic) ? CardShape.square : null;
+  }
 
   @override
   void dispose() {
@@ -72,51 +77,21 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
-    // Search [loadedItems] (not the flat [items] snapshot, which only has
-    // the first page) so refreshing an item at a scrolled-in position updates
-    // the grid in place.
-    for (final entry in loadedItems.entries) {
-      if (entry.value.id == itemId) {
-        loadedItems[entry.key] = updatedItem;
-        return;
-      }
-    }
-  }
-
-  @override
-  Future<void> loadItems() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      items = [];
-      resetPaginationState();
-    });
-    try {
-      final initialPage = await loadInitialPageWithStatus(_pageSize);
-      if (!initialPage.applied || !mounted) return;
-      // Mirror loadedItems into base-class [items] once so state-sliver checks
-      // (items.isEmpty vs items.isEmpty && isLoading) pick the right branch.
-      // Further pages only update loadedItems; items.isEmpty stays false.
-      setState(() {
-        items = loadedItems.values.toList();
-        isLoading = false;
-      });
-      appLogger.d('Loaded ${loadedItems.length} of $totalSize items for collection: ${widget.collection.title}');
-      autoFocusFirstItemAfterLoad();
-    } catch (e) {
-      appLogger.e('Failed to load collection items', error: e);
-      if (!mounted) return;
-      setState(() {
-        errorMessage = t.collections.failedToLoadItems(error: e.toString());
-        isLoading = false;
-      });
-    }
+  Future<void> loadItems() {
+    return loadStandardPaginatedItems(
+      pageSize: _pageSize,
+      errorMessageFor: (error, stackTrace) =>
+          localizedLoadErrorMessage(error, stackTrace, context: t.collections.collection),
+      onLoaded: (loadedCount, totalCount) {
+        appLogger.d('Loaded $loadedCount of $totalCount items for collection: ${widget.collection.title}');
+        autoFocusFirstItemAfterLoad();
+      },
+    );
   }
 
   @override
   List<FocusableAction> getAppBarActions() {
-    final ruleKey = _collectionSyncRuleKey();
+    final ruleKey = syncRuleKey;
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the app bar.
     final hasRule = context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
@@ -126,19 +101,16 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      if (!PlatformDetector.isAppleTV())
-        FocusableAction(
-          icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
-          tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
-          onPressed: hasRule ? _manageCollectionSyncRule : _downloadCollection,
-          iconColor: hasRule ? Colors.teal : null,
-        ),
-      if (!PlatformDetector.isAppleTV() && hasRule)
-        FocusableAction(
-          icon: Symbols.sync_disabled_rounded,
-          tooltip: t.downloads.removeSyncRule,
-          onPressed: _removeCollectionSyncRule,
-        ),
+      // Emptiness is handled inside [_downloadCollection], so the download
+      // entry stays visible for empty collections.
+      ...buildSyncRuleActions(
+        context,
+        ruleKey: ruleKey,
+        displayTitle: widget.collection.displayTitle,
+        hasRule: hasRule,
+        showDownload: true,
+        onDownload: _downloadCollection,
+      ),
       FocusableAction(
         icon: Symbols.delete_rounded,
         tooltip: t.common.delete,
@@ -163,9 +135,10 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         libraryTitle: widget.collection.libraryTitle,
       );
       if (!mounted) return;
-      final result = await showCollectionDownloadOptionsAndQueue(
+      final result = await showListDownloadOptionsAndQueue(
         context,
-        collectionMetadata: widget.collection,
+        rootMetadata: widget.collection,
+        targetType: ContentTypes.collection,
         items: allItems,
         client: mediaClient,
         downloadProvider: downloadProvider,
@@ -178,25 +151,6 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }
-  }
-
-  Future<void> _manageCollectionSyncRule() =>
-      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _collectionSyncRuleKey());
-
-  Future<void> _removeCollectionSyncRule() => removeSyncRuleAndSnack(
-    context,
-    downloadProvider: context.read<DownloadProvider>(),
-    globalKey: _collectionSyncRuleKey(),
-    displayTitle: widget.collection.displayTitle,
-  );
-
-  String _collectionSyncRuleKey() {
-    final serverId = widget.collection.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(
-      mediaClient,
-      widget.collection.id,
-      serverId: ServerId(serverId),
-    );
   }
 
   Future<void> _deleteCollection() async {
@@ -244,6 +198,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
             onSkeletonVisible: (index) => ensureIndexLoaded(index, pageSize: _pageSize),
             collectionId: widget.collection.id,
             onListRefresh: loadItems,
+            shape: _contentShape,
           ),
       ],
     );

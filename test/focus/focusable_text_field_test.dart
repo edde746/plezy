@@ -19,8 +19,16 @@ void main() {
         home: Scaffold(
           body: Column(
             children: [
-              FocusableTextField(controller: c1, focusNode: first, enableTvKeyboard: false),
-              FocusableTextField(controller: c2, focusNode: second, enableTvKeyboard: false),
+              FocusableTextField(
+                controller: c1,
+                focusNode: first,
+                tvTextInputPresentation: TvTextInputPresentation.platform,
+              ),
+              FocusableTextField(
+                controller: c2,
+                focusNode: second,
+                tvTextInputPresentation: TvTextInputPresentation.platform,
+              ),
             ],
           ),
         ),
@@ -56,8 +64,17 @@ void main() {
         home: Scaffold(
           body: Column(
             children: [
-              FocusableTextField(controller: c1, focusNode: first, maxLines: 4, enableTvKeyboard: false),
-              FocusableTextField(controller: c2, focusNode: second, enableTvKeyboard: false),
+              FocusableTextField(
+                controller: c1,
+                focusNode: first,
+                maxLines: 4,
+                tvTextInputPresentation: TvTextInputPresentation.platform,
+              ),
+              FocusableTextField(
+                controller: c2,
+                focusNode: second,
+                tvTextInputPresentation: TvTextInputPresentation.platform,
+              ),
             ],
           ),
         ),

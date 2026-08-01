@@ -14,34 +14,48 @@ import '../utils/app_logger.dart';
 
 /// Result of loading adjacent episodes
 class AdjacentEpisodes {
+  const AdjacentEpisodes({this.next, this.previous, required this.nextStatus, required this.previousStatus});
+
+  const AdjacentEpisodes.unavailable()
+    : next = null,
+      previous = null,
+      nextStatus = QueueNavigationStatus.unavailable,
+      previousStatus = QueueNavigationStatus.unavailable;
+
+  const AdjacentEpisodes.failed()
+    : next = null,
+      previous = null,
+      nextStatus = QueueNavigationStatus.failed,
+      previousStatus = QueueNavigationStatus.failed;
+
   final MediaItem? next;
   final MediaItem? previous;
-
-  AdjacentEpisodes({this.next, this.previous});
+  final QueueNavigationStatus nextStatus;
+  final QueueNavigationStatus previousStatus;
 
   bool get hasNext => next != null;
   bool get hasPrevious => previous != null;
+  bool get isEndConfirmed => nextStatus == QueueNavigationStatus.boundary;
 }
 
-/// Manages episode navigation for TV show playback.
+enum _EpisodeQueueAvailability { active, unavailable, failed }
+
+/// Manages queue-based adjacency for video playback.
 ///
 /// Handles:
-/// - Loading next/previous episodes from play queues
+/// - Loading next/previous items from verified play queues
+/// - Building episode-series fallback queues when needed
 /// - Navigating between episodes while preserving track selections
 /// - Supporting both sequential and shuffle playback modes
 ///
-/// Plex episodes navigate through the server-side `/playQueues` queue;
-/// Jellyfin (and any other backend whose
-/// [MediaServerClient.fetchClientSideEpisodeQueue] returns rows) builds
-/// a centred 21-item local queue here and publishes it through
-/// [PlaybackStateProvider] so the rest of the player reads prev/next from
-/// the same source.
+/// Plex normally enters with its server-side `/playQueues` queue. If that
+/// setup failed for an episode, the same client-side full-series path used by
+/// Jellyfin is used as a fallback. Playlist and collection queues may contain
+/// movies; once membership is verified, they use the same adjacency path.
 class EpisodeNavigationService {
-  /// Cached client-side episode lists, keyed by `seriesId`. Populated by
-  /// backends without server-side play queues (Jellyfin); Plex skips this
-  /// path entirely. Fetched once per series; subsequent navigation within
-  /// the show re-uses the cache so jumping anywhere doesn't trigger a
-  /// refetch.
+  /// Cached client-side episode lists, keyed by `seriesId`. Populated for
+  /// Jellyfin and when Plex's server-side queue is unavailable. Fetched once
+  /// per series; subsequent navigation within the show reuses the cache.
   ///
   /// Bounded by [_seriesCacheCapacity] LRU-style: each entry holds up to
   /// 200 episodes (~50–80 KB each at typical metadata sizes), so an
@@ -55,13 +69,20 @@ class EpisodeNavigationService {
   /// holding ~5–10 MB of metadata when the user wanders the library.
   static const int _seriesCacheCapacity = 5;
 
-  /// Load the next and previous episodes for the current episode
+  /// Load the next and previous items for the current video.
   ///
-  /// Returns null for episodes if:
-  /// - Not applicable (e.g., movie content)
-  /// - Next episode doesn't exist (end of season/series)
-  /// - Previous episode doesn't exist (first episode)
-  Future<AdjacentEpisodes> loadAdjacentEpisodes({required BuildContext context, required MediaItem metadata}) async {
+  /// Series queue construction is episode-only. Movies can still resolve
+  /// adjacency when they are proven members of the active playlist or
+  /// collection queue.
+  ///
+  /// [playedPartId] is the backend part id actually being played, when
+  /// known — it lets the queue skip sibling entries of a Plex
+  /// multi-episode file (#1500).
+  Future<AdjacentEpisodes> loadAdjacentEpisodes({
+    required BuildContext context,
+    required MediaItem metadata,
+    String? playedPartId,
+  }) async {
     try {
       // Resolve providers up-front so we don't reach for `context` after
       // any of the awaits below — avoids the
@@ -70,69 +91,106 @@ class EpisodeNavigationService {
       final serverManager = context.read<MultiServerProvider>().serverManager;
       final playbackState = context.read<PlaybackStateProvider>();
 
-      // For Jellyfin, build (or refresh) the centered 21-item window and
-      // publish it into PlaybackStateProvider so the rest of this method —
-      // and the queue button/sheet — can read prev/next from the same
-      // place Plex does. Plex playback comes in here with its server-side
-      // queue already populated by `_ensurePlayQueue` so this branch is
-      // a no-op (Plex's `fetchClientSideEpisodeQueue` returns null).
-      await _ensureLocalEpisodeQueue(serverManager, playbackState, metadata);
+      // Preserve a server-side Plex queue when available. Otherwise build a
+      // full-series local queue for Plex or Jellyfin before resolving
+      // adjacency.
+      final availability = await _ensureLocalEpisodeQueue(serverManager, playbackState, metadata);
 
-      // Both backends now read prev/next off PlaybackStateProvider.
-      if (!playbackState.isQueueActive) {
-        return AdjacentEpisodes();
+      if (availability == _EpisodeQueueAvailability.unavailable) {
+        return const AdjacentEpisodes.unavailable();
       }
-      final next = await playbackState.getNextEpisode(metadata.id, loopQueue: false);
-      final previous = await playbackState.getPreviousEpisode(metadata.id);
+      if (availability == _EpisodeQueueAvailability.failed || !playbackState.isQueueActive) {
+        return const AdjacentEpisodes.failed();
+      }
+
+      final nextResult = await playbackState.getNextEpisode(metadata.id, playedPartId: playedPartId);
+      final previousResult = await playbackState.getPreviousEpisode(metadata.id, playedPartId: playedPartId);
+      final nextStatus = nextResult.status == QueueNavigationStatus.unavailable
+          ? QueueNavigationStatus.failed
+          : nextResult.status;
+      final previousStatus = previousResult.status == QueueNavigationStatus.unavailable
+          ? QueueNavigationStatus.failed
+          : previousResult.status;
       final mode = playbackState.isShuffleActive ? 'Shuffle' : 'Sequential';
-      appLogger.d('$mode mode - Next: ${next?.title}, Previous: ${previous?.title}');
-      return AdjacentEpisodes(next: next, previous: previous);
-    } catch (e) {
-      // Non-critical: Failed to load next/previous episode metadata
-      appLogger.d('Could not load adjacent episodes', error: e);
-      return AdjacentEpisodes();
+      appLogger.d(
+        '$mode mode - Next: ${nextResult.item?.title} ($nextStatus), '
+        'Previous: ${previousResult.item?.title} ($previousStatus)',
+      );
+      return AdjacentEpisodes(
+        next: nextResult.item,
+        previous: previousResult.item,
+        nextStatus: nextStatus,
+        previousStatus: previousStatus,
+      );
+    } catch (e, st) {
+      appLogger.w('Could not load adjacent episodes', error: e, stackTrace: st);
+      return const AdjacentEpisodes.failed();
     }
   }
 
-  /// Ensure [PlaybackStateProvider] holds a centered 21-item window of
-  /// the current series. Cached per-series, so jumping anywhere in the
-  /// show only triggers one wire fetch per session. No-op for movies,
-  /// items without a series anchor, or backends whose
-  /// [MediaServerClient.fetchClientSideEpisodeQueue] returns null (Plex's
-  /// queue lives server-side and is populated elsewhere).
-  Future<void> _ensureLocalEpisodeQueue(
+  /// Ensure [PlaybackStateProvider] holds a queue covering the current item.
+  /// A queue the item already belongs to (launcher-seeded shuffle, playlist,
+  /// collection, or an earlier series build) is preserved for both movies and
+  /// episodes. Otherwise an episode's full backend series list is published,
+  /// anchored at the current episode. For Plex this series build is the
+  /// fallback when `/playQueues` was unavailable; for Jellyfin it is the
+  /// normal episode path.
+  Future<_EpisodeQueueAvailability> _ensureLocalEpisodeQueue(
     MultiServerManager serverManager,
     PlaybackStateProvider playbackState,
     MediaItem metadata,
   ) async {
+    // Queue membership and current-cursor identity are media-kind agnostic.
+    // Prove them before applying the episode-only series-build prerequisites
+    // so playlist and collection movies retain their launcher-seeded queue.
+    // Preserve any queue this item already belongs to — a launcher-seeded
+    // shuffled show queue (contextKey == seriesId), a playlist/collection
+    // queue, or a series queue this method built earlier. setCurrentItem
+    // re-anchors the cursor, replacing the re-anchor the rebuild used to
+    // provide. Without this gate a shuffled show queue was clobbered by a
+    // sequential rebuild after the first episode (#1466).
+    if (playbackState.isItemInActiveQueue(metadata)) {
+      playbackState.setCurrentItem(metadata);
+      return _EpisodeQueueAvailability.active;
+    }
+    // Same-item reload with a fresh object: a source/quality switch hands
+    // _reloadMediaInPlace a copyWith clone of the playing item, and MediaItem
+    // compares by identity, so the membership gate above misses. The cursor
+    // already points at this item — the queue (and any shuffled order) must
+    // survive.
+    if (playbackState.isQueueActive && playbackState.currentQueueItem?.globalKey == metadata.globalKey) {
+      return _EpisodeQueueAvailability.active;
+    }
     if (metadata.serverId == null || !metadata.isEpisode || metadata.grandparentId == null) {
-      return;
+      return playbackState.isQueueActive ? _EpisodeQueueAvailability.failed : _EpisodeQueueAvailability.unavailable;
     }
     final seriesId = metadata.grandparentId!;
-    // Don't replace a playlist/collection queue with a series queue.
-    // The launcher (e.g. [JellyfinSequentialLauncher]) sets contextKey to
-    // the playlist/collection id; a series rebuild here would clobber it
-    // and prev/next would walk the show instead of the user's list.
+    // The playing item isn't in the active queue. Still don't replace a
+    // playlist/collection queue with a series queue: the launcher (e.g.
+    // [JellyfinSequentialLauncher]) sets contextKey to the playlist or
+    // collection id; a series rebuild here would clobber it and prev/next
+    // would walk the show instead of the user's list.
     final activeKey = playbackState.shuffleContextKey;
     if (playbackState.isQueueActive && activeKey != null && activeKey != seriesId) {
-      return;
+      return _EpisodeQueueAvailability.failed;
     }
     var allEpisodes = _readSeriesCache(seriesId);
     if (allEpisodes == null) {
       final client = serverManager.getClient(ServerId(metadata.serverId!));
-      if (client == null) return;
+      if (client == null) return _EpisodeQueueAvailability.failed;
       try {
         allEpisodes = await client.fetchClientSideEpisodeQueue(seriesId);
       } catch (e, st) {
         appLogger.w('Failed series-episodes fetch for queue', error: e, stackTrace: st);
-        return;
+        return _EpisodeQueueAvailability.failed;
       }
-      if (allEpisodes == null) return; // backend uses a server-side queue (Plex)
-      if (allEpisodes.isEmpty) return; // empty series
+      if (allEpisodes == null || allEpisodes.isEmpty) {
+        return _EpisodeQueueAvailability.failed;
+      }
       _writeSeriesCache(seriesId, allEpisodes);
     }
     final anchorIdx = allEpisodes.indexWhere((m) => m.id == metadata.id);
-    if (anchorIdx < 0) return;
+    if (anchorIdx < 0) return _EpisodeQueueAvailability.failed;
 
     final queue = LocalPlayQueue(
       id: '${metadata.backend.id}:$seriesId',
@@ -142,6 +200,7 @@ class EpisodeNavigationService {
     );
     playbackState.setPlaybackFromLocalQueue(queue, contextKey: seriesId);
     appLogger.d('Local episode queue (${allEpisodes.length} episodes, anchor: $anchorIdx)');
+    return _EpisodeQueueAvailability.active;
   }
 
   /// LRU-touching read: re-inserts the entry so it becomes the most recent.

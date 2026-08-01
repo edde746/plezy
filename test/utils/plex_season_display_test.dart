@@ -3,6 +3,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/utils/plex_season_display.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   group('shouldShowPlexEpisodesDirectly', () {
@@ -57,9 +58,9 @@ void main() {
 }
 
 MediaItem _show({Map<String, Object?>? raw}) {
-  return MediaItem(id: 'show', backend: MediaBackend.plex, kind: MediaKind.show, raw: raw);
+  return testMediaItem(id: 'show', backend: MediaBackend.plex, kind: MediaKind.show, raw: raw);
 }
 
 MediaItem _season(String id) {
-  return MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.season);
+  return testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.season);
 }

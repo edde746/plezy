@@ -52,11 +52,7 @@ class DesktopAppBarSections {
       final canPop = parentRoute?.canPop ?? false;
 
       if (canPop) {
-        effectiveLeading = AppBarBackButton(
-          style: BackButtonStyle.plain,
-          onPressed: () => Navigator.of(context).pop(),
-          semanticLabel: MaterialLocalizations.of(context).backButtonTooltip,
-        );
+        effectiveLeading = AppBarBackButton(style: BackButtonStyle.plain, onPressed: () => Navigator.of(context).pop());
       }
     }
 

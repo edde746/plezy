@@ -350,7 +350,8 @@ extension MpvPlayerPlugin: MpvPipDelegate {
 
   func pipSetPlaying(_ playing: Bool) {
     guard let playerCore else { return }
-    playerCore.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] _ in
+    playerCore.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] propertyResult in
+      guard case .success = propertyResult else { return }
       self?.pipController?.setPlaying(playing)
       playerCore.setPaused(!playing)
     }

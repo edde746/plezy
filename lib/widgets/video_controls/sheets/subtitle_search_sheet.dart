@@ -10,7 +10,6 @@ import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../mixins/controller_disposer_mixin.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
-import '../../../services/plex_client.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/language_codes.dart';
 import '../../../utils/provider_extensions.dart';
@@ -21,6 +20,7 @@ import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/pill_input_decoration.dart';
 import 'base_video_control_sheet.dart';
 import '../../loading_indicator_box.dart';
+import '../models/track_controls_state.dart';
 
 @visibleForTesting
 String resolveSubtitleSearchLanguageCode({String? savedLanguageCode, required Locale systemLocale}) {
@@ -33,7 +33,8 @@ class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
   final String serverId;
   final String? mediaTitle;
-  final Future<void> Function()? onSubtitleDownloaded;
+  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
+  onSubtitleDownloaded;
 
   const SubtitleSearchSheet({
     super.key,
@@ -60,6 +61,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   bool _isSearching = false;
   String? _error;
   String? _downloadingKey;
+  int _searchGeneration = 0;
 
   bool _showLanguagePicker = false;
 
@@ -83,6 +85,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   @override
   void dispose() {
+    ++_searchGeneration;
     _debounceTimer?.cancel();
     _languageFocusNode.dispose();
     _titleFocusNode.dispose();
@@ -92,37 +95,33 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
   Future<void> _search() async {
     if (!mounted) return;
+    final generation = ++_searchGeneration;
     setState(() {
       _isSearching = true;
       _error = null;
     });
 
     try {
-      // Defense-in-depth: searchSubtitles is Plex-only. The UI gates this
-      // sheet on `subtitleSearchSupported` upstream, but if a future caller
-      // reaches us with a Jellyfin server, fail soft instead of throwing.
-      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
-      final client = neutral is PlexClient ? neutral : null;
+      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
       if (client == null) {
-        if (!mounted) return;
-        setState(() {
-          _isSearching = false;
-        });
+        if (!mounted || generation != _searchGeneration) return;
+        setState(() => _isSearching = false);
         return;
       }
       final title = _titleController.text.trim();
+      final language = _languageCode;
       final results = await client.searchSubtitles(
         widget.ratingKey,
-        language: _languageCode,
+        language: language,
         title: title.isEmpty ? null : title,
       );
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _results = results;
         _isSearching = false;
       });
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _searchGeneration) return;
       setState(() {
         _error = e.toString();
         _isSearching = false;
@@ -140,6 +139,13 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     OverlaySheetController.of(context).refocus();
   }
 
+  void _hideLanguagePickerView() {
+    setState(() => _showLanguagePicker = false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _languageFocusNode.requestFocus();
+    });
+  }
+
   void _focusFirstResult() {
     if (_results != null && _results!.isNotEmpty && !_isSearching && _error == null) {
       _firstResultFocusNode.requestFocus();
@@ -149,7 +155,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   Future<void> _submitSearchAndFocusFirstResult() async {
     _debounceTimer?.cancel();
     await _search();
-    if (!mounted || !InputModeTracker.isKeyboardMode(context)) return;
+    if (!mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -158,6 +164,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
   }
 
   void _onLanguageSelected(String code, String name) {
+    _debounceTimer?.cancel();
     setState(() {
       _languageCode = code;
       _languageName = name;
@@ -176,10 +183,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     setState(() => _downloadingKey = result.key);
 
     try {
-      // Same Plex-only guard as in [_search]. Don't throw if a Jellyfin
-      // server somehow reaches the download path.
-      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
-      final client = neutral is PlexClient ? neutral : null;
+      final client = context.tryGetPlexClientForServer(ServerId(widget.serverId));
       if (client == null) {
         if (!mounted) return;
         setState(() => _downloadingKey = null);
@@ -198,10 +202,17 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       if (!mounted) return;
 
       if (success) {
-        await widget.onSubtitleDownloaded?.call();
+        final outcome =
+            await widget.onSubtitleDownloaded?.call(serverId: widget.serverId, ratingKey: widget.ratingKey) ??
+            SubtitleDownloadApplyOutcome.unavailable;
         if (!mounted) return;
-        showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
-        OverlaySheetController.of(context).close();
+        if (outcome == SubtitleDownloadApplyOutcome.applied) {
+          showSuccessSnackBar(context, t.videoControls.subtitleDownloaded);
+          OverlaySheetController.of(context).close();
+        } else {
+          showErrorSnackBar(context, t.videoControls.subtitleDownloadedNotApplied);
+          setState(() => _downloadingKey = null);
+        }
       } else {
         showErrorSnackBar(context, t.videoControls.subtitleDownloadFailed);
         setState(() => _downloadingKey = null);
@@ -219,7 +230,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       return _LanguagePickerView(
         currentCode: _languageCode,
         onSelected: _onLanguageSelected,
-        onBack: () => setState(() => _showLanguagePicker = false),
+        onBack: _hideLanguagePickerView,
       );
     }
 
@@ -268,10 +279,11 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                   child: FocusableTextField(
                     controller: _titleController,
                     focusNode: _titleFocusNode,
+                    tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
                     decoration: pillInputDecoration(
                       context,
                       hintText: widget.mediaTitle ?? t.metadataEdit.title,
-                      prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                      prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
                     ),
                     onChanged: _onTitleChanged,
                     textInputAction: TextInputAction.search,
@@ -435,11 +447,12 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> with Controlle
             child: FocusableTextField(
               controller: _filterController,
               focusNode: _filterFocusNode,
+              tvTextInputPresentation: TvTextInputPresentation.flutterOverlay,
               autofocus: true,
               decoration: pillInputDecoration(
                 context,
                 hintText: t.videoControls.searchLanguages,
-                prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+                prefixIcon: const AppIcon(Symbols.search_rounded, size: 20),
               ),
               onChanged: _onFilterChanged,
               onSubmitted: (_) => _focusFirstLanguageAfterSubmit(),

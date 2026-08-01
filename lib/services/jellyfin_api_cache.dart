@@ -6,10 +6,12 @@ import 'package:drift/drift.dart';
 import '../database/app_database.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/isolate_helper.dart';
 import 'api_cache.dart';
 import 'credential_vault.dart';
+import 'jellyfin_cache_resolver.dart';
 import 'jellyfin_mappers.dart';
 
 /// Jellyfin-shape helpers on top of the shared [ApiCache] substrate.
@@ -20,27 +22,17 @@ import 'jellyfin_mappers.dart';
 /// the bare machine id; the compound prefix only isolates local user-scoped
 /// state such as `UserData`.
 class JellyfinApiCache extends ApiCache {
-  static JellyfinApiCache? _instance;
-  static JellyfinApiCache get instance {
-    if (_instance == null) {
-      throw StateError('JellyfinApiCache not initialized. Call JellyfinApiCache.initialize() first.');
-    }
-    return _instance!;
-  }
+  static final _singleton = ApiCacheSingleton<JellyfinApiCache>(MediaBackend.jellyfin, 'JellyfinApiCache');
+  static JellyfinApiCache get instance => _singleton.instance;
 
   JellyfinApiCache._(super.db);
 
   /// Initialize the singleton with an [AppDatabase] instance. Also registers
   /// this instance with the [ApiCache] backend dispatch so callers using
   /// `ApiCache.forBackend(MediaBackend.jellyfin)` resolve here.
-  static void initialize(AppDatabase db) {
-    _instance = JellyfinApiCache._(db);
-    ApiCache.registerInstance(MediaBackend.jellyfin, _instance!);
-  }
+  static void initialize(AppDatabase db) => _singleton.install(JellyfinApiCache._(db));
 
-  static final RegExp _itemKeyPattern = RegExp(r'/Users/[^/]+/Items/([^/?]+)$');
-
-  String _itemPattern(ServerId serverId, String itemId) => '$serverId:/Users/%/Items/$itemId';
+  JellyfinCacheResolver get _resolver => JellyfinCacheResolver(database);
 
   static String mediaSegmentsEndpoint(String itemId) => '/MediaSegments/${Uri.encodeComponent(itemId)}';
 
@@ -50,30 +42,44 @@ class JellyfinApiCache extends ApiCache {
   @override
   Future<void> deleteForItem(ServerId serverId, String itemId) async {
     final endpoint = mediaSegmentsEndpoint(itemId);
-    await (database.delete(
-      database.apiCache,
-    )..where((t) => t.cacheKey.like(_itemPattern(serverId, itemId)) | t.cacheKey.equals('$serverId:$endpoint'))).go();
+    await (database.delete(database.apiCache)..where(
+          (t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId) | t.cacheKey.equals('$serverId:$endpoint'),
+        ))
+        .go();
   }
 
   /// Pin the metadata row(s) for [itemId] so they survive cache eviction.
   @override
   Future<void> pinForOffline(ServerId serverId, String itemId) async {
     final endpoint = mediaSegmentsEndpoint(itemId);
-    await Future.wait([pinByKeyPattern(_itemPattern(serverId, itemId)), pin(serverId, endpoint)]);
+    await Future.wait([
+      (database.update(database.apiCache)..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId)))
+          .write(const ApiCacheCompanion(pinned: Value(true))),
+      pin(serverId, endpoint),
+    ]);
   }
 
   Future<void> unpinForOffline(ServerId serverId, String itemId) async {
     final endpoint = mediaSegmentsEndpoint(itemId);
-    await Future.wait([unpinByKeyPattern(_itemPattern(serverId, itemId)), unpin(serverId, endpoint)]);
+    await Future.wait([
+      (database.update(database.apiCache)..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId)))
+          .write(const ApiCacheCompanion(pinned: Value(false))),
+      unpin(serverId, endpoint),
+    ]);
   }
 
   /// Whether the metadata for [itemId] is pinned for offline.
   ///
   /// Named `isPinnedItemId` to avoid colliding with the inherited
   /// [ApiCache.isPinned]'s identical Dart signature.
-  Future<bool> isPinnedItemId(ServerId serverId, String itemId) => hasPinnedMatching(_itemPattern(serverId, itemId));
-
-  Future<Set<String>> getPinnedItemIds(ServerId serverId) => extractPinnedIds(serverId, _itemKeyPattern);
+  Future<bool> isPinnedItemId(ServerId serverId, String itemId) async {
+    final row =
+        await (database.select(database.apiCache)
+              ..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId) & t.pinned.equals(true))
+              ..limit(1))
+            .getSingleOrNull();
+    return row != null;
+  }
 
   /// Fetch and parse a [MediaItem] from cache.
   ///
@@ -92,16 +98,13 @@ class JellyfinApiCache extends ApiCache {
   /// callers go through [getAllPinnedMetadata] which still parallelises.
   @override
   Future<MediaItem?> getMetadata(ServerId serverId, String itemId) async {
-    final row = await (database.select(
-      database.apiCache,
-    )..where((t) => t.cacheKey.like(_itemPattern(serverId, itemId)))).get();
-    if (row.isEmpty) return null;
-
-    final ctx = await _serverContext(serverId);
+    final resolved = await _resolver.findResolvedItem(serverId, itemId);
+    if (resolved == null) return null;
+    final ctx = await _serverContext(resolved.connection, machineId: resolved.key.machineId);
     if (ctx == null) return null;
 
     try {
-      final data = jsonDecode(row.first.data) as Map<String, dynamic>;
+      final data = jsonDecode(resolved.cacheRow.data) as Map<String, dynamic>;
       final absolutizer = JellyfinImageAbsolutizer(baseUrl: ctx.baseUrl, accessToken: ctx.accessToken);
       return JellyfinMappers.mediaItem(
         data,
@@ -114,10 +117,11 @@ class JellyfinApiCache extends ApiCache {
     }
   }
 
-  /// Persist a watched/unwatched flip into every cached `BaseItemDto` row
-  /// for [itemId] (one per cached userId). Mirrors what the server returns
-  /// after the flip so a later cache reload reflects the current watched
-  /// state without a network roundtrip.
+  /// Persist a watched/unwatched flip into cached `BaseItemDto` rows for
+  /// [itemId]. Compound Jellyfin scope ids update only their user. A legacy
+  /// bare machine id is accepted only when its matching rows belong to one
+  /// user; ambiguous multi-user writes are skipped rather than bleeding watch
+  /// state across profiles.
   ///
   /// [viewOffsetMs] is converted to Jellyfin's 100-ns ticks for
   /// `UserData.PlaybackPositionTicks`. [lastViewedAt] is treated as Plex's
@@ -136,9 +140,22 @@ class JellyfinApiCache extends ApiCache {
     int? viewedLeafCount,
   }) async {
     final query = database.select(database.apiCache)
-      ..where((t) => t.cacheKey.like(_itemPattern(ServerId(serverId), itemId)));
+      ..where((t) => _resolver.itemKeyPredicate(t.cacheKey, serverId, itemId));
     final rows = await query.get();
     if (rows.isEmpty) return;
+    if (!serverId.contains('/')) {
+      final userIds = <String>{
+        for (final row in rows)
+          if (JellyfinCacheResolver.parseItemKey(row.cacheKey) case final key?) key.userId,
+      };
+      if (userIds.length > 1) {
+        appLogger.w(
+          'Skipping ambiguous bare-scope Jellyfin watch-state cache write',
+          error: {'serverId': serverId, 'itemId': itemId, 'userCount': userIds.length},
+        );
+        return;
+      }
+    }
     for (final row in rows) {
       try {
         final data = jsonDecode(row.data) as Map<String, dynamic>;
@@ -181,8 +198,17 @@ class JellyfinApiCache extends ApiCache {
   /// lookups, mirroring [PlexApiCache.getAllPinnedMetadata] so callers can
   /// spread-merge the two results.
   @override
-  Future<Map<String, MediaItem>> getAllPinnedMetadata() async {
-    final entries = await listPinnedRowsByPattern(_itemKeyPattern);
+  Future<Map<String, MediaItem>> getAllPinnedMetadata({Set<ServerId>? cacheServerIds}) async {
+    final allEntries = await _resolver.findPinnedItems();
+    final entries = cacheServerIds == null
+        ? allEntries
+        : allEntries
+              .where(
+                (entry) =>
+                    cacheServerIds.contains(ServerId(entry.key.scopeId)) ||
+                    cacheServerIds.contains(ServerId('${entry.key.machineId}/${entry.key.userId}')),
+              )
+              .toList(growable: false);
     if (entries.isEmpty) return {};
 
     // Resolve the connection context per serverId once on the main thread
@@ -191,37 +217,35 @@ class JellyfinApiCache extends ApiCache {
     // required to absolutize image paths.
     final contexts = <String, ({String machineId, String name, String baseUrl, String accessToken})>{};
     final absolutizers = <String, JellyfinImageAbsolutizer>{};
-    for (final id in entries.map((e) => e.serverId).toSet()) {
-      final ctx = await _serverContext(id);
+    for (final entry in entries) {
+      final id = entry.connection.id;
+      if (contexts.containsKey(id)) continue;
+      final ctx = await _serverContext(entry.connection, machineId: entry.key.machineId);
       if (ctx != null) {
         contexts[id] = ctx;
         absolutizers[id] = JellyfinImageAbsolutizer(baseUrl: ctx.baseUrl, accessToken: ctx.accessToken);
       }
     }
 
-    return await tryIsolateRun(() {
-      final result = <String, MediaItem>{};
-      for (final entry in entries) {
-        final ctx = contexts[entry.serverId];
-        final absolutizer = absolutizers[entry.serverId];
-        if (ctx == null || absolutizer == null) continue;
-        try {
-          final data = jsonDecode(entry.data) as Map<String, dynamic>;
+    return await tryIsolateRun(
+      () => decodeCachedMediaRows(
+        entries,
+        serializedData: (entry) => entry.cacheRow.data,
+        decode: (entry, data) {
+          final ctx = contexts[entry.connection.id];
+          final absolutizer = absolutizers[entry.connection.id];
+          if (ctx == null || absolutizer == null) return null;
           final mapped = JellyfinMappers.mediaItem(
             data,
             serverId: ServerId(ctx.machineId),
             serverName: ctx.name,
             absolutizer: absolutizer,
           );
-          if (mapped != null) {
-            result[buildGlobalKey(ServerId(entry.serverId), entry.id)] = mapped;
-          }
-        } catch (_) {
-          // Skip malformed entries
-        }
-      }
-      return result;
-    });
+          if (mapped == null) return null;
+          return MapEntry(buildGlobalKey(ServerId(entry.key.scopeId), entry.key.itemId), mapped);
+        },
+      ),
+    );
   }
 
   /// Resolve the connection context (server name + base URL + access token)
@@ -238,37 +262,26 @@ class JellyfinApiCache extends ApiCache {
   /// Returns `null` when no row matches or the row carries an empty
   /// `baseUrl` (no honest URL we can build).
   Future<({String machineId, String name, String baseUrl, String accessToken})?> _serverContext(
-    ServerId serverId,
-  ) async {
-    // Match either the bare machineId (Plex) or the compound
-    // `{machineId}/{userId}` (Jellyfin). The compound match uses a
-    // [substr]-based prefix check so any `_` / `%` in the runtime
-    // [serverId] is treated literally — `LIKE '$serverId/%'` would
-    // interpret those chars as wildcards.
-    final prefix = '$serverId/';
-    final row =
-        await (database.select(database.connections)
-              ..where((t) => t.id.equals(serverId) | t.id.substr(1, prefix.length).equals(prefix))
-              ..limit(1))
-            .getSingleOrNull();
-    if (row == null) return null;
+    ConnectionRow row, {
+    required String machineId,
+  }) async {
     String? configName;
-    String? machineId;
+    String? configMachineId;
     String baseUrl = '';
     String accessToken = '';
     try {
       final rawConfig = jsonDecode(row.configJson) as Map<String, dynamic>;
       final config = (await CredentialVault.revealConnectionConfig(row.kind, rawConfig)).config;
       configName = config['serverName'] as String?;
-      machineId = config['serverMachineId'] as String?;
+      configMachineId = config['serverMachineId'] as String?;
       baseUrl = config['baseUrl'] as String? ?? '';
       accessToken = config['accessToken'] as String? ?? '';
     } catch (_) {
       // Fall through with the values defaulted above.
     }
     if (baseUrl.isEmpty) return null;
-    machineId ??= row.id.contains('/') ? row.id.substring(0, row.id.indexOf('/')) : row.id;
+    configMachineId ??= machineId;
     final name = (configName != null && configName.isNotEmpty) ? configName : row.displayName;
-    return (machineId: machineId, name: name, baseUrl: baseUrl, accessToken: accessToken);
+    return (machineId: configMachineId, name: name, baseUrl: baseUrl, accessToken: accessToken);
   }
 }

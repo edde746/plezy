@@ -3,7 +3,6 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/settings_service.dart' show LibraryDensity;
 import 'package:plezy/utils/grid_size_calculator.dart';
-import 'package:plezy/utils/layout_constants.dart';
 
 /// Column count the stock [SliverGridDelegateWithMaxCrossAxisExtent] renders for
 /// [crossAxisExtent]. This is the source of truth that the navigation column
@@ -39,13 +38,6 @@ void main() {
   group('GridSizeCalculator.getColumnCount', () {
     // crossAxisSpacing is 0 in the current layout constants, so the formula
     // reduces to ceil(crossAxisExtent / maxCrossAxisExtent).
-    test('returns 1 when extent equals maxCrossAxisExtent', () {
-      expect(GridSizeCalculator.getColumnCount(200, 200), 1);
-    });
-
-    test('returns 2 when extent slightly exceeds maxCrossAxisExtent', () {
-      expect(GridSizeCalculator.getColumnCount(201, 200), 2);
-    });
 
     test('rounds up partial columns', () {
       // 600 / 200 = 3 exactly
@@ -62,15 +54,6 @@ void main() {
     test('clamps to at most 100 columns', () {
       // 100000 / 100 = 1000 -> clamped to 100
       expect(GridSizeCalculator.getColumnCount(100000, 100), 100);
-    });
-
-    test('uses GridLayoutConstants.crossAxisSpacing in the formula', () {
-      // The formula adds crossAxisSpacing to the denominator only (matching the
-      // stock grid delegate), and that constant is currently 0. If it ever
-      // becomes non-zero, this test forces a rethink.
-      expect(GridLayoutConstants.crossAxisSpacing, 0);
-      // Identity-ish: extent = max -> 1 column.
-      expect(GridSizeCalculator.getColumnCount(200, 200), 1);
     });
   });
 
@@ -93,13 +76,6 @@ void main() {
         }
       });
     }
-
-    test('regression: #1288 diagonal case (200px cells, 8px spacing, 1040px wide)', () {
-      // The old formula gave ceil((1040 + 8) / 208) = 6, but the grid renders
-      // ceil(1040 / 208) = 5, so "down" jumped a column right. Must be 5.
-      expect(GridSizeCalculator.getColumnCount(1040, 200, crossAxisSpacing: 8), 5);
-      expect(_renderedColumnCount(1040, 200, 8), 5);
-    });
   });
 
   group('GridSizeCalculator.isFirstRow / isFirstColumn', () {

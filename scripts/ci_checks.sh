@@ -59,23 +59,42 @@ else
   rm -f "$out"
 fi
 
-# 2. Codegen freshness (build_runner outputs newer than their sources)
+# 2. Codegen freshness
 section "codegen freshness"
-stale=()
-while IFS= read -r -d '' src; do
-  for gen in "${src%.dart}.g.dart" "${src%.dart}.freezed.dart"; do
-    if [ -f "$gen" ] && [ "$src" -nt "$gen" ]; then
-      stale+=("${src#./}")
-      break
-    fi
-  done
-done < <(find lib -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f -print0 2>/dev/null)
-if [ ${#stale[@]} -eq 0 ]; then
-  ok "no stale generated files"
+out="$(mktemp)"
+if scripts/codegen.sh --check >"$out" 2>&1; then
+  ok "generated files are current"
 else
-  fail "${#stale[@]} dart source(s) newer than their generated .g/.freezed:"
-  printf '    %s\n' "${stale[@]}"
-  echo "    Run: scripts/codegen.sh"
+  fail "generated files are stale"
+  sed 's/^/    /' "$out"
+  FAILED=1
+fi
+rm -f "$out"
+
+# 3. Translation hygiene
+section "translation hygiene"
+if python3 scripts/clean_translations.py --check --strict; then
+  ok "locale files normalized and no unused keys found"
+else
+  fail "translation files need cleanup or contain unused keys"
+  FAILED=1
+fi
+
+# 4. Workflow and script regression guards
+section "workflow and script guards"
+if bash scripts/ci_guard_checks.sh; then
+  ok "workflow and script guards passed"
+else
+  fail "workflow or script guard failed"
+  FAILED=1
+fi
+
+# 5. Icon consistency
+section "icon consistency"
+if dart run scripts/check_icon_consistency.dart; then
+  ok "production icons use AppIcon and rounded Symbols"
+else
+  fail "icon consistency violations found"
   FAILED=1
 fi
 
@@ -85,28 +104,20 @@ out="$(mktemp)"
 if scripts/format_native.sh --check >"$out" 2>&1; then
   ok "native files correctly formatted"
 else
-  fail "native formatting issues"
+  fail "native formatting check failed"
   sed 's/^/    /' "$out"
   FAILED=1
 fi
 rm -f "$out"
 
-# 3. flutter analyze (mirrors ci.yml "Analyze code")
-section "flutter analyze"
-out="$(mktemp)"
-flutter analyze >"$out" 2>&1 || true
-if grep -q "error •" "$out"; then
-  fail "errors"
-  grep -E "error •|warning •" "$out" | sed 's/^/    /'
-  FAILED=1
-elif grep -q "warning •" "$out"; then
-  fail "warnings (treated as failure, matching CI)"
-  grep "warning •" "$out" | sed 's/^/    /'
-  FAILED=1
+# 3. Dart analyzer (mirrors ci.yml "Analyze code")
+section "Dart analyzer"
+if dart run scripts/check_analyzer.dart; then
+  ok "no unapproved diagnostics"
 else
-  ok "no errors or warnings"
+  fail "analyzer errors, warnings, unexpected infos, or tool failure"
+  FAILED=1
 fi
-rm -f "$out"
 
 # 4. Unused code (mirrors ci.yml "Check for unused code")
 section "dart_code_linter: unused code"

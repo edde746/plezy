@@ -1,0 +1,73 @@
+appId: com.edde746.plezy
+name: TV hardware media and back keys follow player chrome state
+
+tags:
+  - e2e
+  - regression
+  - tv
+  - playback
+---
+- runFlow: ../subflows/onboard_jellyfin_tv.yaml
+- pressKey: "Remote Dpad Center"
+- waitForAnimationToEnd:
+    timeout: 5000
+- runFlow:
+    when:
+      visible: "(?s)^(Play|Resume).*$"
+    commands:
+      - pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 30000
+- pressKey: "back"
+- extendedWaitUntil:
+    notVisible: "Pause"
+    timeout: 10000
+# Hardware transport keys drive playback without raising the chrome (#1676):
+# the player answers with a centred disc (pause) or a side readout (seek), never the
+# full chrome, so subtitles stay readable.
+# Pause first — it also freezes the clip, so the seek assertions below cannot
+# race the end of a short fixture item.
+- pressKey: "Remote Media Play Pause"
+- extendedWaitUntil:
+    visible: "Paused"
+    timeout: 10000
+- assertNotVisible: "(?s)^Play$"
+# D-pad seeking reports through the skip badge, never the scrub bar, and
+# consecutive presses in one direction stack into a running total.
+- pressKey: "Remote Dpad Right"
+- extendedWaitUntil:
+    visible: "(?s)^Seek forward 10 seconds$"
+    timeout: 10000
+- assertNotVisible: "(?s)^Play$"
+- pressKey: "Remote Dpad Right"
+- extendedWaitUntil:
+    visible: "(?s)^Seek forward 20 seconds$"
+    timeout: 10000
+- pressKey: "Remote Media Play Pause"
+- extendedWaitUntil:
+    visible: "Playing"
+    timeout: 10000
+- assertNotVisible: "(?s)^Pause$"
+# Select stays the deliberate way to bring the chrome back.
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "(?s)^(Play|Pause)$"
+    timeout: 10000
+- pressKey: "back"
+- extendedWaitUntil:
+    notVisible: "(?s)^Pause$"
+    timeout: 10000
+- assertNotVisible: "Overview"
+- pressKey: "back"
+- waitForAnimationToEnd:
+    timeout: 5000
+- runFlow:
+    when:
+      visible: "Overview"
+    commands:
+      - pressKey: "back"
+- extendedWaitUntil:
+    visible:
+      id: "tv_browse_rail_selection"
+    timeout: 15000

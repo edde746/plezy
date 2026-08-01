@@ -1,9 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../utils/scroll_utils.dart';
+import 'owned_focus_node_binding.dart';
 import 'dpad_navigator.dart';
+import 'dpad_select_long_press_controller.dart';
 import 'key_event_utils.dart';
 
 class ChipKeyCallbacks {
@@ -31,23 +32,18 @@ class ChipKeyCallbacks {
 /// This mixin handles:
 /// - Internal/external FocusNode pattern
 /// - `_isFocused` state tracking
-/// - Listener setup in `initState`
-/// - Listener handoff in `didUpdateWidget`
-/// - Cleanup in `dispose`
+/// - Listener setup, handoff and cleanup across the State lifecycle
 ///
 /// To use this mixin:
 /// 1. Add `with FocusableChipStateMixin<YourWidget>` to your State class
 /// 2. Implement [widgetFocusNode] to return the widget's optional focusNode
 /// 3. Implement [debugLabel] to return a debug label for the internal node
-/// 4. Call [initFocusNode] in your `initState`
-/// 5. Call [updateFocusNode] in your `didUpdateWidget`
-/// 6. Call [disposeFocusNode] in your `dispose`
-/// 7. Use [focusNode] and [isFocused] in your build method
+/// 4. Use [focusNode] and [isFocused] in your build method
 mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
-  FocusNode? _internalFocusNode;
+  final _focusNodeBinding = OwnedFocusNodeBinding();
   bool _isFocused = false;
-  Timer? _longPressTimer;
-  bool _isSelectKeyDown = false;
+  final _selectLongPress = DpadSelectLongPressController();
+  FocusNode? _boundExternalNode;
 
   /// Override to return the widget's optional external focus node.
   FocusNode? get widgetFocusNode;
@@ -56,36 +52,48 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   String get debugLabel;
 
   /// The active focus node (external if provided, otherwise internal).
-  FocusNode get focusNode {
-    return widgetFocusNode ?? (_internalFocusNode ??= FocusNode(debugLabel: debugLabel));
-  }
+  FocusNode get focusNode => _focusNodeBinding.node;
 
   /// Whether this widget is currently focused.
   bool get isFocused => _isFocused;
 
-  /// Call this in your `initState` to set up the focus listener.
-  void initFocusNode() {
-    focusNode.addListener(_onFocusChange);
+  @override
+  void initState() {
+    super.initState();
+    _bindFocusNode();
   }
 
-  /// Call this in your `didUpdateWidget` with the old widget's focusNode.
-  void updateFocusNode(FocusNode? oldFocusNode) {
-    if (oldFocusNode != widgetFocusNode) {
-      oldFocusNode?.removeListener(_onFocusChange);
-      focusNode.addListener(_onFocusChange);
+  @override
+  void didUpdateWidget(T oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_boundExternalNode != widgetFocusNode) {
+      _bindFocusNode();
     }
   }
 
-  /// Call this in your `dispose` to clean up the focus listener.
-  void disposeFocusNode() {
-    focusNode.removeListener(_onFocusChange);
-    _internalFocusNode?.dispose();
-    _longPressTimer?.cancel();
+  @override
+  void dispose() {
+    _focusNodeBinding.dispose();
+    _selectLongPress.dispose();
+    super.dispose();
+  }
+
+  void _bindFocusNode() {
+    _boundExternalNode = widgetFocusNode;
+    _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange, debugLabel: debugLabel);
   }
 
   void _onFocusChange() {
     if (mounted) {
-      setState(() => _isFocused = focusNode.hasFocus);
+      final hasFocus = focusNode.hasFocus;
+      setState(() => _isFocused = hasFocus);
+      if (!hasFocus) {
+        _selectLongPress.reset();
+      }
+      // Same convention as FocusableTileStateMixin: a chip inside a
+      // scrollable strip (TabChipStrip, filter bars) reveals itself on
+      // focus; a no-op when no ancestor scrollable exists.
+      if (focusNode.hasFocus) scrollContextToCenter(context);
     }
   }
 
@@ -98,6 +106,12 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   ///
   /// Returns [KeyEventResult.handled] if the event was consumed,
   /// [KeyEventResult.ignored] otherwise.
+  ///
+  /// Runs the same activation sequence as `_FocusableWrapperState._handleKeyEvent`
+  /// but is deliberately kept separate: a chip leaves the context-menu key
+  /// unconsumed when [ChipKeyCallbacks.onLongPress] is null and traps RIGHT/DOWN
+  /// so focus cannot escape the strip, where a wrapper does the opposite on both
+  /// counts.
   KeyEventResult handleChipKeyEvent(FocusNode _, KeyEvent event, ChipKeyCallbacks callbacks) {
     final key = event.logicalKey;
 
@@ -109,35 +123,21 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
     }
 
     if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      if (event is KeyUpEvent && key.isSelectKey) {
+        _selectLongPress.reset();
+      }
       return KeyEventResult.handled;
     }
 
     // SELECT key with long press support
     if (key.isSelectKey) {
       if (callbacks.onLongPress != null) {
-        if (event is KeyDownEvent) {
-          if (!_isSelectKeyDown) {
-            _isSelectKeyDown = true;
-            _longPressTimer?.cancel();
-            _longPressTimer = Timer(const Duration(milliseconds: 500), () {
-              if (mounted) {
-                SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
-                callbacks.onLongPress?.call();
-              }
-            });
-          }
-          return KeyEventResult.handled;
-        } else if (event is KeyRepeatEvent) {
-          return KeyEventResult.handled;
-        } else if (event is KeyUpEvent) {
-          final timerWasActive = _longPressTimer?.isActive ?? false;
-          _longPressTimer?.cancel();
-          if (timerWasActive && _isSelectKeyDown) {
-            callbacks.onSelect?.call();
-          }
-          _isSelectKeyDown = false;
-          return KeyEventResult.handled;
-        }
+        return _selectLongPress.handleKeyEvent(
+          event,
+          isOwnerActive: () => mounted,
+          onShortPress: () => callbacks.onSelect?.call(),
+          onLongPress: callbacks.onLongPress!,
+        );
       } else if (callbacks.onSelect != null) {
         return handleOneShotSelect(event, callbacks.onSelect!);
       }
@@ -145,7 +145,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
 
     // Context menu key triggers long press directly
     if (event.isActionable && key.isContextMenuKey && callbacks.onLongPress != null) {
-      SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+      _selectLongPress.reset();
       callbacks.onLongPress!();
       return KeyEventResult.handled;
     }

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../mpv/mpv.dart';
 import '../../utils/app_logger.dart';
+import '../primitives.dart';
 
 enum _ExpectationKind { playing, rate }
 
@@ -44,7 +45,7 @@ class _Expectation {
 class AttachedPlayer {
   AttachedPlayer({required Player player, required this._onLost, this._remoteSeek, int Function()? nowMs})
     : _player = player,
-      _nowMs = nowMs ?? _systemNowMs {
+      _nowMs = nowMs ?? watchTogetherSystemNowMs {
     _lastPlaying = player.state.playing;
     _lastBuffering = player.state.buffering;
     _lastRate = player.state.rate;
@@ -58,8 +59,6 @@ class AttachedPlayer {
       }),
     );
   }
-
-  static int _systemNowMs() => DateTime.now().millisecondsSinceEpoch;
 
   /// How long an issued command may wait for its property event before the
   /// expectation is considered dead (covers silently-swallowed commands).

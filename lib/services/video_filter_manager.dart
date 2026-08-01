@@ -103,10 +103,6 @@ class VideoFilterManager {
     return _zoomScale;
   }
 
-  double adjustZoom(double delta) => setZoomScale(_zoomScale + delta);
-
-  double resetZoom() => setZoomScale(1.0);
-
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void cycleBoxFitMode() {
     _boxFitMode = (_boxFitMode + 1) % 3;

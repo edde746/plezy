@@ -7,7 +7,11 @@ import '../utils/app_logger.dart';
 class SleepTimerService extends ChangeNotifier {
   static final SleepTimerService _instance = SleepTimerService._internal();
   factory SleepTimerService() => _instance;
-  SleepTimerService._internal();
+  SleepTimerService._internal() : _now = DateTime.now;
+
+  @visibleForTesting
+  SleepTimerService.withClock(DateTime Function() now) : _now = now;
+  final DateTime Function() _now;
 
   Timer? _timer;
   DateTime? _endTime;
@@ -44,7 +48,7 @@ class SleepTimerService extends ChangeNotifier {
   /// Remaining time on the timer
   Duration? get remainingTime {
     if (_endTime == null) return null;
-    final remaining = _endTime!.difference(DateTime.now());
+    final remaining = _endTime!.difference(_now());
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
@@ -53,7 +57,7 @@ class SleepTimerService extends ChangeNotifier {
 
     _originalDuration = duration;
     _duration = duration;
-    _endTime = DateTime.now().add(duration);
+    _endTime = _now().add(duration);
     _onTimerComplete = onComplete;
 
     appLogger.d('Sleep timer started: ${duration.inMinutes} minutes');
@@ -123,6 +127,7 @@ class SleepTimerService extends ChangeNotifier {
   }
 
   /// Execute the completion callback directly (fallback path)
+  @visibleForTesting
   void executeCompletion() {
     _executeCallback();
   }

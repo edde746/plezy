@@ -17,6 +17,7 @@ import '../main_screen.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mixins/refreshable.dart';
 import '../../providers/hidden_libraries_provider.dart';
+import '../../providers/download_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/donation_service.dart';
 import '../../services/download_storage_service.dart';
@@ -24,10 +25,11 @@ import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/theme_provider.dart';
-import '../../providers/trackers_provider.dart';
-import '../../providers/trakt_account_provider.dart';
+import '../../providers/seerr_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
+import '../../widgets/background_download_warning_banner.dart';
 import '../../services/update_service.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
@@ -35,12 +37,15 @@ import '../../utils/platform_detector.dart';
 import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/focusable_list_tile.dart';
+import '../../widgets/library_management_sheet.dart';
+import '../../widgets/overlay_sheet.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
-import '../../profiles/profile_registry.dart';
+import '../../watch_together/services/watch_together_relay_endpoint.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'appearance_settings_screen.dart';
@@ -48,33 +53,56 @@ import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
 import '../profile/profile_switch_screen.dart';
-import 'trackers_settings_screen.dart';
+import 'services_settings_screen.dart';
+import 'settings_utils.dart';
+import 'tracker_service_info.dart';
 import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen({
+    super.key,
+    this.downloadDirectoryWritableChecker,
+    this.settingsExporter,
+    this.settingsImporter,
+    this.backgroundWorkDiagnosticsService,
+  });
+
+  @visibleForTesting
+  final Future<bool> Function(Directory directory)? downloadDirectoryWritableChecker;
+
+  @visibleForTesting
+  final Future<String?> Function()? settingsExporter;
+
+  @visibleForTesting
+  final Future<ImportResult?> Function()? settingsImporter;
+  @visibleForTesting
+  final BackgroundWorkDiagnosticsService? backgroundWorkDiagnosticsService;
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
 class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, MountedSetStateMixin {
+  BackgroundWorkDiagnosticsService get _backgroundWorkDiagnostics =>
+      widget.backgroundWorkDiagnosticsService ?? BackgroundWorkDiagnosticsService.instance;
   late final FocusMemoryTracker _focusTracker;
 
   // Focus tracking keys
   static const _kDonate = 'donate';
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
-  static const _kTrackers = 'trackers';
+  static const _kManageLibraries = 'manage_libraries';
+  static const _kServices = 'services';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
+  static const _kBackgroundDownloads = 'background_downloads';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
   static const _kCrashReporting = 'crash_reporting';
   static const _kDebugLogging = 'debug_logging';
   static const _kViewLogs = 'view_logs';
-  static const _kClearCache = 'clear_cache';
+  static const _kClearImageCache = 'clear_image_cache';
   static const _kResetSettings = 'reset_settings';
   static const _kCheckForUpdates = 'check_for_updates';
   static const _kAutoCheckUpdatesOnStartup = 'auto_check_updates_on_startup';
@@ -93,13 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   @override
   void initState() {
     super.initState();
-    _focusTracker = FocusMemoryTracker(
-      onFocusChanged: () {
-        // ignore: no-empty-block - setState triggers rebuild to update focus styling
-        setStateIfMounted(() {});
-      },
-      debugLabelPrefix: 'settings',
-    );
+    _focusTracker = FocusMemoryTracker(debugLabelPrefix: 'settings');
     if (_keyboardShortcutsSupported) {
       KeyboardShortcutsService.getInstance().then((s) {
         setStateIfMounted(() => _keyboardService = s);
@@ -115,13 +137,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   @override
   void focusActiveTabIfReady() {
-    if (InputModeTracker.isKeyboardMode(context)) {
+    if (InputModeTracker.isKeyboardMode(context, listen: false)) {
       _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kAppearance);
     }
   }
 
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
@@ -136,6 +158,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   @override
   Widget build(BuildContext context) {
+    final hasLibraries = context.select<LibrariesProvider, bool>((p) => p.libraries.isNotEmpty);
+
+    if (OverlaySheetController.maybeOf(context) != null) {
+      return _buildContent(context, hasLibraries: hasLibraries);
+    }
+
+    // Settings is hosted by MainScreen on side-navigation layouts, but it is a
+    // separate pushed route on phones. Add a route-local host only for the
+    // latter, and build its content from below the host so adaptive sheets do
+    // not fall back to modal routes with a competing Android back path.
+    return OverlaySheetHost(
+      canPop: true,
+      child: Builder(builder: (hostContext) => _buildContent(hostContext, hasLibraries: hasLibraries)),
+    );
+  }
+
+  Widget _buildContent(BuildContext sheetContext, {required bool hasLibraries}) {
     return Scaffold(
       body: Focus(
         onKeyEvent: _handleKeyEvent,
@@ -145,17 +184,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
             SliverList(
               delegate: SliverChildListDelegate([
-                if (DonationService.isEnabled) _buildDonateTile(),
+                const SizedBox(height: 8),
+                SettingsGroup(
+                  children: [
+                    if (DonationService.isEnabled) _buildDonateTile(),
+                    _buildAppearanceTile(),
+                    _buildPlaybackTile(),
+                    if (hasLibraries) _buildManageLibrariesTile(sheetContext),
+                    _buildServicesTile(),
+                  ],
+                ),
 
-                _buildAppearanceTile(),
-
-                _buildPlaybackTile(),
-
-                _buildTrackersTile(),
-
-                _buildConnectionsSection(),
-
-                _buildProfilesSection(),
+                _buildConnectionsSection(sheetContext),
 
                 if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
@@ -163,16 +203,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
                 _buildAdvancedSection(),
 
-                if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
+                if (UpdateService.isUpdateCheckAvailable) ...[_buildUpdateSection()],
 
-                if (!PlatformDetector.isTV()) _buildBackupSection(),
+                // Hidden on Android TV / tvOS (no document picker); desktop in
+                // force-TV mode keeps it — FilePickerService works there.
+                if (!PlatformDetector.isTV() || PlatformDetector.isDesktopOS()) _buildBackupSection(),
 
-                SettingNavigationTile(
-                  focusNode: _focusTracker.get(_kAbout),
-                  icon: Symbols.info_rounded,
-                  title: t.settings.about,
-                  subtitle: t.settings.aboutDescription,
-                  destinationBuilder: (context) => const AboutScreen(),
+                const SizedBox(height: 24),
+                SettingsGroup(
+                  children: [
+                    SettingNavigationTile(
+                      focusNode: _focusTracker.get(_kAbout),
+                      icon: Symbols.info_rounded,
+                      title: t.settings.about,
+                      subtitle: t.settings.aboutDescription,
+                      destinationBuilder: (context) => const AboutScreen(),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 24),
               ]),
@@ -184,12 +231,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildDonateTile() {
-    return ListTile(
+    return SettingNavigationTile(
       focusNode: _focusTracker.get(_kDonate),
-      leading: const AppIcon(Symbols.favorite_rounded, fill: 1),
-      title: Text(t.settings.supportDeveloper),
-      subtitle: Text(t.settings.supportDeveloperDescription),
-      trailing: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
+      icon: Symbols.favorite_rounded,
+      title: t.settings.supportDeveloper,
+      subtitle: t.settings.supportDeveloperDescription,
+      trailingIcon: Symbols.open_in_new_rounded,
       onTap: () async {
         final url = Uri.parse(DonationService.donationUrl);
         if (await canLaunchUrl(url)) {
@@ -204,7 +251,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       builder: (context, themeProvider, _) => SettingValueBuilder<int>(
         pref: settings.SettingsService.libraryDensity,
         builder: (context, libraryDensity, _) {
-          final summary = '${themeProvider.themeModeDisplayName} · ${t.settings.libraryDensity} $libraryDensity';
+          final summary = '${themeModeLabel(themeProvider.themeMode)} · ${t.settings.libraryDensity} $libraryDensity';
           return SettingNavigationTile(
             focusNode: _focusTracker.get(_kAppearance),
             icon: Symbols.palette_rounded,
@@ -227,37 +274,46 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Widget _buildTrackersTile() {
-    return Consumer2<TraktAccountProvider, TrackersProvider>(
-      builder: (context, trakt, trackers, _) {
+  Widget _buildManageLibrariesTile(BuildContext context) {
+    return SettingNavigationTile(
+      focusNode: _focusTracker.get(_kManageLibraries),
+      icon: Symbols.video_library_rounded,
+      title: t.libraries.manageLibraries,
+      subtitle: t.settings.manageLibrariesDescription,
+      onTap: () => showLibraryManagementSheet(context),
+    );
+  }
+
+  Widget _buildServicesTile() {
+    // The tracker account providers are watched through [TrackerServiceInfo].
+    return Consumer<SeerrAccountProvider>(
+      builder: (context, seerr, _) {
         final connectedNames = <String>[
-          if (trakt.isConnected) t.trakt.title,
-          if (trackers.isMalConnected) t.trackers.services.mal,
-          if (trackers.isAnilistConnected) t.trackers.services.anilist,
-          if (trackers.isSimklConnected) t.trackers.services.simkl,
+          for (final info in TrackerServiceInfo.all)
+            if (info.isConnected(context)) info.displayName,
+          if (seerr.isConnected) t.services.names.seerr,
         ];
-        final subtitle = connectedNames.isEmpty ? t.settings.trackersDescription : connectedNames.join(' · ');
+        final subtitle = connectedNames.isEmpty ? t.settings.servicesDescription : connectedNames.join(' · ');
         return SettingNavigationTile(
-          focusNode: _focusTracker.get(_kTrackers),
+          focusNode: _focusTracker.get(_kServices),
           icon: Symbols.sync_rounded,
-          title: t.settings.trackers,
+          title: t.settings.services,
           subtitle: subtitle,
-          destinationBuilder: (_) => const TrackersSettingsScreen(),
+          destinationBuilder: (_) => const ServicesSettingsScreen(),
         );
       },
     );
   }
 
-  Widget _buildConnectionsSection() {
+  Widget _buildConnectionsSection(BuildContext context) {
     final active = context.select<ActiveProfileProvider, Profile?>((p) => p.active);
     final subtitle = active == null
         ? t.connections.addConnectionSubtitleNoProfile
         : t.connections.addConnectionSubtitleScoped(displayName: active.displayName);
 
-    return Column(
-      crossAxisAlignment: .start,
+    return SettingsGroup(
+      title: t.connections.sectionTitle,
       children: [
-        SettingsSectionHeader(t.connections.sectionTitle),
         // Connections are managed per-profile (via the Profiles section
         // and each profile's detail screen). The shortcut here just opens
         // the picker scoped to the active profile so users can add a Plex
@@ -271,31 +327,32 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
             Navigator.push(context, MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: active)));
           },
         ),
+        _buildProfilesTile(context),
       ],
     );
   }
 
-  Widget _buildProfilesSection() {
-    return StreamBuilder<List<Profile>>(
-      stream: context.read<ProfileRegistry>().watchProfiles(),
-      builder: (context, snapshot) {
-        final count = snapshot.data?.length ?? 0;
-        // `context.select` so this StreamBuilder doesn't rebuild on every
-        // ActiveProfileProvider notification — only when the active
-        // profile's display name actually changes.
-        final activeName = context.select<ActiveProfileProvider, String?>((p) => p.active?.displayName);
-        final subtitle = count <= 1
-            ? t.profiles.summarySingle
-            : (activeName != null
-                  ? t.profiles.summaryMultipleWithActive(count: count, activeName: activeName)
-                  : t.profiles.summaryMultiple(count: count));
-        return SettingNavigationTile(
-          icon: Symbols.group_rounded,
-          title: t.profiles.sectionTitle,
-          subtitle: subtitle,
-          destinationBuilder: (_) => const ProfileSwitchScreen(),
-        );
-      },
+  Widget _buildProfilesTile(BuildContext context) {
+    // ActiveProfileProvider already merges local rows with virtual Plex
+    // Home profiles — counting only the local DB rows made every Plex Home
+    // household read as a single profile here. `context.select` keeps
+    // rebuilds scoped to actual count/name changes (a StreamBuilder here
+    // was also re-created on every settings rebuild).
+    final count = context.select<ActiveProfileProvider, int>((p) => p.profiles.length);
+    final activeName = context.select<ActiveProfileProvider, String?>((p) => p.active?.displayName);
+    final subtitle = count <= 1
+        ? t.profiles.summarySingle
+        : (activeName != null
+              ? t.profiles.summaryMultipleWithActive(count: count, activeName: activeName)
+              : t.profiles.summaryMultiple(count: count));
+    return SettingNavigationTile(
+      icon: Symbols.group_rounded,
+      title: t.profiles.sectionTitle,
+      subtitle: subtitle,
+      onTap: () => Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen())),
     );
   }
 
@@ -303,16 +360,15 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final storageService = DownloadStorageService.instance;
     final isCustom = storageService.isUsingCustomPath();
 
-    return Column(
-      crossAxisAlignment: .start,
+    return SettingsGroup(
+      title: t.settings.downloads,
       children: [
-        SettingsSectionHeader(t.settings.downloads),
         if (!Platform.isIOS)
           FutureBuilder<String>(
             future: storageService.getCurrentDownloadPathDisplay(),
             builder: (context, snapshot) {
               final currentPath = snapshot.data ?? '...';
-              return ListTile(
+              return FocusableListTile(
                 focusNode: _focusTracker.get(_kDownloadLocation),
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                 title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
@@ -336,17 +392,60 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           title: t.settings.autoRemoveWatchedDownloads,
           subtitle: t.settings.autoRemoveWatchedDownloadsDescription,
         ),
+        if (_backgroundWorkDiagnostics.isSupported) _buildBackgroundDownloadsTile(),
       ],
+    );
+  }
+
+  /// Standing answer to "why do my downloads stop when I leave the app" — also
+  /// what support can ask a user to read out without needing a log upload.
+  Widget _buildBackgroundDownloadsTile() {
+    final diagnostics = _backgroundWorkDiagnostics;
+    return ListenableBuilder(
+      listenable: diagnostics,
+      builder: (context, _) {
+        final status = diagnostics.status;
+        final scheme = Theme.of(context).colorScheme;
+        final (icon, color, summary) = switch (status) {
+          _ when !status.probed => (Symbols.help_rounded, null, t.downloads.backgroundWarning.statusUnknown),
+          _ when status.isBlocked => (
+            Symbols.battery_alert_rounded,
+            scheme.error,
+            t.downloads.backgroundWarning.statusBlocked,
+          ),
+          _ when !status.isHealthy => (
+            Symbols.info_rounded,
+            scheme.tertiary,
+            t.downloads.backgroundWarning.statusDegraded,
+          ),
+          _ => (Symbols.check_circle_rounded, null, t.downloads.backgroundWarning.statusOk),
+        };
+        return FocusableListTile(
+          focusNode: _focusTracker.get(_kBackgroundDownloads),
+          leading: AppIcon(icon, fill: 1, color: color),
+          title: Text(t.downloads.backgroundWarning.statusTile),
+          subtitle: Text(summary),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          onTap: () async {
+            await diagnostics.refresh();
+            if (!context.mounted) return;
+            if (diagnostics.status.isHealthy) {
+              showAppSnackBar(context, t.downloads.backgroundWarning.statusOk);
+              return;
+            }
+            await showBackgroundDownloadWarningDialog(context, service: diagnostics);
+          },
+        );
+      },
     );
   }
 
   Widget _buildKeyboardShortcutsSection() {
     if (_keyboardService == null) return const SizedBox.shrink();
 
-    return Column(
-      crossAxisAlignment: .start,
+    return SettingsGroup(
+      title: t.settings.keyboardShortcuts,
       children: [
-        SettingsSectionHeader(t.settings.keyboardShortcuts),
         SettingNavigationTile(
           focusNode: _focusTracker.get(_kVideoPlayerControls),
           icon: Symbols.keyboard_rounded,
@@ -371,16 +470,14 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildAdvancedSection() {
-    return Column(
-      crossAxisAlignment: .start,
+    return SettingsGroup(
+      title: t.settings.advanced,
       children: [
-        SettingsSectionHeader(t.settings.advanced),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kWatchTogetherRelay),
-          leading: const AppIcon(Symbols.dns_rounded, fill: 1),
-          title: Text(t.settings.watchTogetherRelay),
-          subtitle: Text(t.settings.watchTogetherRelayDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.dns_rounded,
+          title: t.settings.watchTogetherRelay,
+          subtitle: t.settings.watchTogetherRelayDescription,
           onTap: () => _showRelayUrlDialog(),
         ),
         SettingSwitchTile(
@@ -404,38 +501,34 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.viewLogsDescription,
           destinationBuilder: (context) => const LogsScreen(),
         ),
-        ListTile(
-          focusNode: _focusTracker.get(_kClearCache),
-          leading: const AppIcon(Symbols.cleaning_services_rounded, fill: 1),
-          title: Text(t.settings.clearCache),
-          subtitle: Text(t.settings.clearCacheDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          onTap: () => _showClearCacheDialog(),
+        SettingNavigationTile(
+          focusNode: _focusTracker.get(_kClearImageCache),
+          icon: Symbols.cleaning_services_rounded,
+          title: t.settings.clearImageCache,
+          subtitle: t.settings.clearImageCacheDescription,
+          onTap: () => _showClearImageCacheDialog(),
         ),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kResetSettings),
-          leading: const AppIcon(Symbols.restore_rounded, fill: 1),
-          title: Text(t.settings.resetSettings),
-          subtitle: Text(t.settings.resetSettingsDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.restore_rounded,
+          title: t.settings.resetSettings,
+          subtitle: t.settings.resetSettingsDescription,
           onTap: () => _showResetSettingsDialog(),
         ),
         if (kDebugMode)
-          ListTile(
-            leading: const AppIcon(Symbols.error_rounded, fill: 1),
-            title: const Text('Test Sentry'),
-            subtitle: const Text('Send a test error'),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          SettingNavigationTile(
+            icon: Symbols.error_rounded,
+            title: 'Test Sentry',
+            subtitle: 'Send a test error',
             onTap: () {
               throw Exception("Example exception");
             },
           ),
         if (kDebugMode)
-          ListTile(
-            leading: const AppIcon(Symbols.timer_rounded, fill: 1),
-            title: const Text('Test ANR'),
-            subtitle: const Text('Block the main thread for 10 seconds'),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          SettingNavigationTile(
+            icon: Symbols.timer_rounded,
+            title: 'Test ANR',
+            subtitle: 'Block the main thread for 10 seconds',
             onTap: () {
               showSnackBar(context, 'Blocking main thread...');
               final end = DateTime.now().add(const Duration(seconds: 10));
@@ -447,24 +540,21 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Widget _buildBackupSection() {
-    return Column(
-      crossAxisAlignment: .start,
+    return SettingsGroup(
+      title: t.settings.backup,
       children: [
-        SettingsSectionHeader(t.settings.backup),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kExportSettings),
-          leading: const AppIcon(Symbols.upload_rounded, fill: 1),
-          title: Text(t.settings.exportSettings),
-          subtitle: Text(t.settings.exportSettingsDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.upload_rounded,
+          title: t.settings.exportSettings,
+          subtitle: t.settings.exportSettingsDescription,
           onTap: _handleExportSettings,
         ),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kImportSettings),
-          leading: const AppIcon(Symbols.download_rounded, fill: 1),
-          title: Text(t.settings.importSettings),
-          subtitle: Text(t.settings.importSettingsDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.download_rounded,
+          title: t.settings.importSettings,
+          subtitle: t.settings.importSettingsDescription,
           onTap: _showImportSettingsDialog,
         ),
       ],
@@ -481,15 +571,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   Widget _buildUpdateSection() {
     if (UpdateService.useNativeUpdater) {
-      return Column(
-        crossAxisAlignment: .start,
+      return SettingsGroup(
+        title: t.settings.updates,
         children: [
-          SettingsSectionHeader(t.settings.updates),
-          ListTile(
+          SettingNavigationTile(
             focusNode: _focusTracker.get(_kCheckForUpdates),
-            leading: const AppIcon(Symbols.system_update_rounded, fill: 1),
-            title: Text(t.settings.checkForUpdates),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            icon: Symbols.system_update_rounded,
+            title: t.settings.checkForUpdates,
             onTap: () => UpdateService.checkForUpdatesNative(inBackground: false),
           ),
           _buildAutoCheckUpdatesOnStartupTile(),
@@ -499,11 +587,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
     final hasUpdate = _updateInfo != null && _updateInfo!['hasUpdate'] == true;
 
-    return Column(
-      crossAxisAlignment: .start,
+    return SettingsGroup(
+      title: t.settings.updates,
       children: [
-        SettingsSectionHeader(t.settings.updates),
-        ListTile(
+        FocusableListTile(
           focusNode: _focusTracker.get(_kCheckForUpdates),
           leading: AppIcon(
             hasUpdate ? Symbols.system_update_rounded : Symbols.check_circle_rounded,
@@ -534,7 +621,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final storageService = DownloadStorageService.instance;
     final isCustom = storageService.isUsingCustomPath();
 
-    await showDialog<void>(
+    await showScopedDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.settings.downloads),
@@ -570,8 +657,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
           DialogActionButton(
             onPressed: () async {
-              await _selectDownloadLocation();
-              if (dialogContext.mounted) Navigator.pop(dialogContext);
+              final changed = await _selectDownloadLocation();
+              if (changed && dialogContext.mounted) Navigator.pop(dialogContext);
             },
             label: t.settings.selectFolder,
             isPrimary: true,
@@ -581,60 +668,55 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     );
   }
 
-  Future<void> _selectDownloadLocation() async {
-    try {
-      String? selectedPath;
-      String pathType = 'file';
+  Future<bool> _selectDownloadLocation() async {
+    final changed = await guardSettingsOperation<bool, DownloadStorageException>(
+      context,
+      operation: 'Download directory selection',
+      body: () async {
+        String? selectedPath;
+        String pathType = 'file';
 
-      if (Platform.isAndroid) {
-        final safService = SafStorageService.instance;
-        selectedPath = await safService.pickDirectory();
-        if (selectedPath != null) {
-          pathType = 'saf';
-        } else if (PlatformDetector.isTV()) {
-          if (mounted) {
-            showErrorSnackBar(context, t.settings.downloadLocationSelectError);
+        if (Platform.isAndroid) {
+          final safStorage = SafStorageService.instance;
+          if (!safStorage.supportsDirectoryPicker) {
+            showErrorSnackBar(context, t.settings.downloadLocationPickerUnavailable);
+            return false;
           }
-          return;
+          selectedPath = await safStorage.pickDirectory();
+          if (!mounted) return false;
+          if (selectedPath != null) pathType = 'saf';
+        } else {
+          selectedPath = await FilePickerService.instance.getDirectoryPath(dialogTitle: t.settings.selectFolder);
+          if (!mounted) return false;
         }
-      } else {
-        final result = await FilePickerService.instance.getDirectoryPath(dialogTitle: t.settings.selectFolder);
-        selectedPath = result;
-      }
+        if (selectedPath == null) return false;
 
-      if (selectedPath != null) {
         if (pathType == 'file') {
           final dir = Directory(selectedPath);
-          final isWritable = await DownloadStorageService.instance.isDirectoryWritable(dir);
+          final writableChecker =
+              widget.downloadDirectoryWritableChecker ?? DownloadStorageService.instance.isDirectoryWritable;
+          final isWritable = await writableChecker(dir);
+          if (!mounted) return false;
           if (!isWritable) {
-            if (mounted) {
-              showErrorSnackBar(context, t.settings.downloadLocationInvalid);
-            }
-            return;
+            showErrorSnackBar(context, t.settings.downloadLocationInvalid);
+            return false;
           }
         }
 
-        await _settingsService.write(settings.SettingsService.customDownloadPath, selectedPath);
-        await _settingsService.write(settings.SettingsService.customDownloadPathType, pathType);
-        await DownloadStorageService.instance.refreshCustomPath();
+        await context.read<DownloadProvider>().setDownloadLocation(path: selectedPath, pathType: pathType);
+        if (!mounted) return false;
 
-        if (mounted) {
-          // ignore: no-empty-block - setState triggers rebuild to reflect new download path
-          setState(() {});
-          showSuccessSnackBar(context, t.settings.downloadLocationChanged);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        showErrorSnackBar(context, t.settings.downloadLocationSelectError);
-      }
-    }
+        // ignore: no-empty-block - setState triggers rebuild to reflect new download path
+        setState(() {});
+        showSuccessSnackBar(context, t.settings.downloadLocationChanged);
+        return true;
+      },
+    );
+    return changed ?? false;
   }
 
   Future<void> _resetDownloadLocation() async {
-    await _settingsService.write(settings.SettingsService.customDownloadPath, null);
-    await _settingsService.write(settings.SettingsService.customDownloadPathType, null);
-    await DownloadStorageService.instance.refreshCustomPath();
+    await context.read<DownloadProvider>().resetDownloadLocation();
 
     if (mounted) {
       // ignore: no-empty-block - setState triggers rebuild to reflect reset path
@@ -644,22 +726,22 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _showRelayUrlDialog() async {
-    await showDialog<void>(
+    await showScopedDialog<void>(
       context: context,
       builder: (_) => _RelayUrlDialog(settingsService: _settingsService),
     );
   }
 
-  Future<void> _showClearCacheDialog() async {
+  Future<void> _showClearImageCacheDialog() async {
     final confirmed = await showConfirmDialog(
       context,
-      title: t.settings.clearCache,
-      message: t.settings.clearCacheDescription,
+      title: t.settings.clearImageCache,
+      message: t.settings.clearImageCacheDescription,
       confirmText: t.common.clear,
     );
     if (!confirmed) return;
-    await _settingsService.clearCache();
-    if (mounted) showSuccessSnackBar(context, t.settings.clearCacheSuccess);
+    await _settingsService.clearImageCache();
+    if (mounted) showSuccessSnackBar(context, t.settings.clearImageCacheSuccess);
   }
 
   Future<void> _showResetSettingsDialog() async {
@@ -670,23 +752,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       confirmText: t.common.reset,
       isDestructive: true,
     );
-    if (!confirmed) return;
+    if (!mounted || !confirmed) return;
+    await context.read<DownloadProvider>().resetDownloadLocation();
     await _settingsService.resetAllSettings();
     await _keyboardService?.resetToDefaults();
     if (mounted) showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
   }
 
   Future<void> _handleExportSettings() async {
-    try {
-      final path = await SettingsExportService.exportToFile();
-      if (!mounted) return;
-      if (path == null) return; // user cancelled
-      showSuccessSnackBar(context, t.settings.exportSettingsSuccess);
-    } on SettingsExportException {
-      if (mounted) showErrorSnackBar(context, t.settings.exportSettingsFailed);
-    } catch (_) {
-      if (mounted) showErrorSnackBar(context, t.settings.exportSettingsFailed);
-    }
+    await guardSettingsOperation<void, SettingsExportException>(
+      context,
+      operation: 'Settings export',
+      body: () async {
+        final path = await (widget.settingsExporter ?? SettingsExportService.exportToFile)();
+        if (!mounted || path == null) return;
+        showSuccessSnackBar(context, t.settings.exportSettingsSuccess);
+      },
+    );
   }
 
   Future<void> _showImportSettingsDialog() async {
@@ -696,44 +778,46 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       message: t.settings.importSettingsConfirm,
       confirmText: t.settings.importSettings,
     );
-    if (!confirmed) return;
+    if (!mounted || !confirmed) return;
     await _handleImportSettings();
   }
 
   Future<void> _handleImportSettings() async {
-    // Capture providers before any awaits so we don't reach through `context`
-    // after the widget may have been unmounted.
-    final themeProvider = context.read<ThemeProvider>();
-    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
-    final librariesProvider = context.read<LibrariesProvider>();
+    await guardSettingsOperation<void, SettingsExportException>(
+      context,
+      operation: 'Settings import',
+      body: () async {
+        // The two typed import failures carry their own message, so they are
+        // handled here instead of falling through to the generic guard.
+        try {
+          final result = await (widget.settingsImporter ?? SettingsExportService.importFromFile)();
+          if (!mounted) return;
+          if (result == null) return; // user cancelled file picker
 
-    try {
-      final result = await SettingsExportService.importFromFile();
-      if (!mounted) return;
-      if (result == null) return; // user cancelled file picker
+          final themeProvider = context.read<ThemeProvider>();
+          final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+          final librariesProvider = context.read<LibrariesProvider>();
 
-      // Import wrote directly to SharedPreferences, bypassing `write`. Push
-      // fresh values into active listenables before providers re-read settings.
-      _settingsService.refreshListenables();
-      unawaited(LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale)));
-      await Future.wait([
-        themeProvider.reload(),
-        hiddenLibrariesProvider.refresh(),
-        if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
-      ]);
-      unawaited(librariesProvider.refresh());
+          // Import wrote directly to SharedPreferences, bypassing `write`. Push
+          // fresh values into active listenables before providers re-read settings.
+          _settingsService.refreshListenables();
+          unawaited(LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale)));
+          await Future.wait([
+            themeProvider.reload(),
+            hiddenLibrariesProvider.refresh(),
+            if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
+          ]);
+          unawaited(librariesProvider.refresh());
 
-      if (!mounted) return;
-      showSuccessSnackBar(context, t.settings.importSettingsSuccess);
-    } on NoUserSignedInException {
-      if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);
-    } on InvalidExportFileException {
-      if (mounted) showErrorSnackBar(context, t.settings.importSettingsInvalidFile);
-    } on SettingsExportException {
-      if (mounted) showErrorSnackBar(context, t.settings.importSettingsFailed);
-    } catch (_) {
-      if (mounted) showErrorSnackBar(context, t.settings.importSettingsFailed);
-    }
+          if (!mounted) return;
+          showSuccessSnackBar(context, t.settings.importSettingsSuccess);
+        } on NoUserSignedInException {
+          if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);
+        } on InvalidExportFileException {
+          if (mounted) showErrorSnackBar(context, t.settings.importSettingsInvalidFile);
+        }
+      },
+    );
   }
 
   Future<void> _checkForUpdates() async {
@@ -781,6 +865,7 @@ class _RelayUrlDialog extends StatefulWidget {
 class _RelayUrlDialogState extends State<_RelayUrlDialog> {
   late final TextEditingController _controller;
   final _saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRelaySave');
+  bool _relayUrlInvalid = false;
 
   @override
   void initState() {
@@ -804,8 +889,19 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
   }
 
   Future<void> _save() async {
-    final trimmed = _controller.text.trim();
-    await widget.settingsService.write(settings.SettingsService.customRelayUrl, trimmed.isEmpty ? null : trimmed);
+    final value = _controller.text;
+    if (value.trim().isEmpty) {
+      await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+      if (mounted) Navigator.pop(context);
+      return;
+    }
+
+    final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(value);
+    if (endpoint == null) {
+      setState(() => _relayUrlInvalid = true);
+      return;
+    }
+    await widget.settingsService.write(settings.SettingsService.customRelayUrl, endpoint.canonicalBaseUrl);
     if (mounted) Navigator.pop(context);
   }
 
@@ -815,10 +911,20 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
       title: Text(t.settings.watchTogetherRelay),
       content: FocusableTextField(
         controller: _controller,
-        decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
+        decoration: InputDecoration(
+          labelText: 'URL',
+          hintText: t.settings.watchTogetherRelayHint,
+          errorText: _relayUrlInvalid ? t.settings.watchTogetherRelayInvalid : null,
+        ),
         autofocus: true,
         textInputAction: TextInputAction.done,
+        onChanged: (_) {
+          if (_relayUrlInvalid) {
+            setState(() => _relayUrlInvalid = false);
+          }
+        },
         onEditingComplete: () => _saveFocusNode.requestFocus(),
+        onNavigateDown: _saveFocusNode.requestFocus,
       ),
       actions: [
         DialogActionButton(onPressed: _reset, label: t.settings.resetToDefault),

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import '../media/ids.dart';
-import 'package:plezy/widgets/app_icon.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
+import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../services/media_list_playback_launcher.dart';
+import '../services/jellyfin_sequential_launcher.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../utils/app_logger.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/snackbar_helper.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/item_updatable.dart';
@@ -41,19 +42,34 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// Optional icon to show when list is empty
   IconData? get emptyIcon => null;
 
+  /// Server the displayed item was tagged with, if any.
+  String? get _mediaItemServerId => switch (mediaItem) {
+    MediaItem(:final serverId) => serverId,
+    MediaPlaylist(:final serverId) => serverId,
+    _ => null,
+  };
+
+  /// Sync-rule global key for the displayed collection/playlist, keyed to the
+  /// item's own server when it has one and to the resolved client's otherwise.
+  String get syncRuleKey {
+    final client = mediaClient;
+    final id = switch (mediaItem) {
+      MediaItem(:final id) => id,
+      MediaPlaylist(:final id) => id,
+      _ => '',
+    };
+    return context.read<DownloadProvider>().syncRuleKeyForClient(
+      client,
+      id,
+      serverId: ServerId(_mediaItemServerId ?? client.serverId),
+    );
+  }
+
   String? _resolveMediaItemServerId() {
-    final item = mediaItem;
-    String? serverId;
-    if (item is MediaItem) {
-      serverId = item.serverId;
-    } else if (item is MediaPlaylist) {
-      serverId = item.serverId;
-    }
-    if (serverId == null) {
-      final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-      serverId = multiServerProvider.onlineServerIds.firstOrNull;
-    }
-    return serverId;
+    final serverId = _mediaItemServerId;
+    if (serverId != null) return serverId;
+    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
+    return multiServerProvider.onlineServerIds.firstOrNull;
   }
 
   MediaServerClient _getMediaClientForMediaItem() {
@@ -94,12 +110,16 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
 
     final item = mediaItem;
     final launcher = MediaListPlaybackLauncher.forItem(context, item);
-    await launcher.launchFromCollectionOrPlaylist(item: item, shuffle: shuffle, showLoadingIndicator: false);
+    await launcher.launchFromCollectionOrPlaylist(
+      item: item,
+      shuffle: shuffle,
+      showLoadingIndicator: launcher is JellyfinSequentialLauncher,
+    );
   }
 
   @override
-  void updateItemInLists(String itemId, MediaItem updatedItem) {
-    final index = items.indexWhere((it) => it.id == itemId);
+  void updateItemInLists(String sourceGlobalKey, MediaItem updatedItem) {
+    final index = items.indexWhere((item) => item.globalKey == sourceGlobalKey);
     if (index != -1) {
       items[index] = updatedItem;
     }
@@ -127,40 +147,6 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
 
     return [];
   }
-
-  /// Build standard app bar actions (play, shuffle, delete)
-  /// Subclasses can override to customize actions
-  List<Widget> buildAppBarActions({
-    VoidCallback? onDelete,
-    String? deleteTooltip,
-    Color? deleteColor,
-    bool showDelete = true,
-  }) {
-    return [
-      // Play button
-      if (items.isNotEmpty)
-        IconButton(
-          icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
-          tooltip: t.common.play,
-          onPressed: playItems,
-        ),
-      // Shuffle button
-      if (items.isNotEmpty)
-        IconButton(
-          icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
-          tooltip: t.common.shuffle,
-          onPressed: shufflePlayItems,
-        ),
-      // Delete button
-      if (showDelete && onDelete != null)
-        IconButton(
-          icon: const AppIcon(Symbols.delete_rounded, fill: 1),
-          tooltip: deleteTooltip ?? t.common.delete,
-          onPressed: onDelete,
-          color: deleteColor ?? Colors.red,
-        ),
-    ];
-  }
 }
 
 /// Mixin that provides standard loadItems implementation for media lists
@@ -168,11 +154,6 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
 mixin StandardItemLoader<T extends StatefulWidget> on BaseMediaListDetailScreen<T> {
   /// Fetch items from the API (must be implemented by subclass)
   Future<List<MediaItem>> fetchItems();
-
-  /// Get error message for failed load (can be overridden)
-  String getLoadErrorMessage(Object error) {
-    return 'Failed to load items: ${error.toString()}';
-  }
 
   /// Get log message for successful load (can be overridden)
   String getLoadSuccessMessage(int itemCount) {
@@ -200,11 +181,11 @@ mixin StandardItemLoader<T extends StatefulWidget> on BaseMediaListDetailScreen<
       }
 
       appLogger.d(getLoadSuccessMessage(newItems.length));
-    } catch (e) {
-      appLogger.e('Failed to load items', error: e);
+    } catch (e, stackTrace) {
+      final message = localizedLoadErrorMessage(e, stackTrace, context: title);
       if (mounted) {
         setState(() {
-          errorMessage = getLoadErrorMessage(e);
+          errorMessage = message;
           isLoading = false;
         });
       }

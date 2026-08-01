@@ -1,7 +1,9 @@
 import 'dart:io' show Platform;
 
 import '../../media/media_display_criteria.dart';
+import '../../media/playback_rate.dart';
 import '../models.dart';
+import 'audio_rendering_mode.dart';
 import 'platform/player_android.dart';
 import 'player_native.dart';
 import 'player_state.dart';
@@ -77,7 +79,6 @@ abstract class Player {
     bool play = true,
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
-    Duration timelineOffset = Duration.zero,
     Duration? timelineDuration,
   });
 
@@ -95,6 +96,16 @@ abstract class Player {
 
   /// Seek to a specific position.
   Future<void> seek(Duration position);
+
+  /// Arm (or replace/clear) the item the backend should auto-advance into
+  /// when the current one plays out — the gapless-audio primitive.
+  ///
+  /// Audio players keep a native playlist of `[current, next?]`: ExoPlayer
+  /// via `addMediaItem`, mpv via `loadfile append` with `gapless-audio`.
+  /// When the advance happens the backend emits
+  /// [PlayerStreams.trackTransition] with the armed [Media.uri] instead of
+  /// `completed`. Pass `null` to clear. No-op on video backends.
+  Future<void> setNext(Media? media);
 
   /// Select an audio track.
   Future<void> selectAudioTrack(AudioTrack track);
@@ -150,7 +161,7 @@ abstract class Player {
 
   /// Set the playback rate/speed.
   ///
-  /// [rate] - Playback rate from 0.25 to 4.0 (1.0 = normal speed).
+  /// [rate] - Playback rate from [minimumPlaybackRate] to [maximumPlaybackRate] (1.0 = normal speed).
   Future<void> setRate(double rate);
 
   /// Set the audio output device.
@@ -209,6 +220,9 @@ abstract class Player {
   /// passed through to the audio device without decoding.
   Future<void> setAudioPassthrough(bool enabled);
 
+  /// The system's resolved audio rendering mode (Apple only); null elsewhere.
+  Future<AudioRenderingMode?> getAudioRenderingMode();
+
   /// Enable or disable loudness normalization.
   ///
   /// mpv backends insert/remove the `loudnorm` audio filter. Android
@@ -216,6 +230,17 @@ abstract class Player {
   /// API 28+, LoudnessEnhancer otherwise) and forces decoded non-tunneled
   /// PCM output while enabled so the effects can process the stream.
   Future<void> setAudioNormalization(bool enabled);
+
+  /// Force a stereo downmix with a Kodi-style center channel boost.
+  ///
+  /// [centerBoostDb] (0-12) raises the center channel above its standard
+  /// -3 dB downmix coefficient to improve dialogue clarity. [normalize]
+  /// attenuates the mix so it cannot clip; off keeps the original level
+  /// (Kodi's "maintain original volume"). mpv backends rebuild the audio
+  /// chain via `audio-channels`; Android ExoPlayer routes a
+  /// ChannelMixingAudioProcessor in the audio sink and force-decodes
+  /// encoded audio while enabled.
+  Future<void> setAudioDownmix({required bool enabled, required int centerBoostDb, required bool normalize});
 
   /// Show or hide the video rendering layer.
   ///
@@ -254,7 +279,13 @@ abstract class Player {
   /// the caller is responsible for starting playback itself.
   ///
   /// On other platforms, this is a no-op that returns `false`.
-  Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0});
+  Future<bool> setVideoFrameRate(
+    double fps,
+    int durationMs, {
+    int extraDelayMs = 0,
+    int videoWidth = 0,
+    int videoHeight = 0,
+  });
 
   /// Clear the video frame rate hint and restore default display mode.
   ///
@@ -359,6 +390,24 @@ abstract class Player {
     }
     if (Platform.isLinux) {
       return PlayerLinux();
+    }
+    throw UnsupportedError('Player is not supported on this platform');
+  }
+
+  /// Creates the dedicated audio-only player used for music playback.
+  ///
+  /// An mpv audio-only core on every platform — regardless of the Android
+  /// video backend setting — running on its own native core and channels
+  /// (`com.plezy/mpv_audio_player`), so it never contends with the video
+  /// pipeline. Desktop and Android need none of the video plumbing (display
+  /// modes, GL textures, surfaces) — the plain mpv wrapper suffices. Only
+  /// one native player is kept alive at a time: the music service disposes
+  /// this instance when video playback claims the session (see
+  /// `PlaybackCoordinator`), and the video core only exists while the video
+  /// player screen is open.
+  factory Player.audio() {
+    if (Platform.isAndroid || Platform.isMacOS || Platform.isIOS || Platform.isWindows || Platform.isLinux) {
+      return PlayerNative.audio();
     }
     throw UnsupportedError('Player is not supported on this platform');
   }

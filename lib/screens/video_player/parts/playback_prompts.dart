@@ -2,17 +2,18 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _onVideoCompleted(bool completed, {bool skipAutoPlayCountdown = false}) async {
-    // Live TV streams are continuous — ignore spurious EOF events caused by
-    // inter-segment gaps in the chunked MKV transcode stream.
+    // Live TV streams are continuous — ignore transient EOF events while an
+    // HLS playlist refreshes or crosses a discontinuity.
     if (widget.isLive) return;
     if (!completed) return;
     // Ignore spurious EOF from the old file during an in-place media-source
     // transition (episode swap, transcode restart, channel switch).
     if (_playbackTransition != _PlaybackTransition.idle) return;
+    if (_isResolvingCompletionAdjacency) return;
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
-    unawaited(_setWakelock(false));
+    unawaited(_wakelockController.setEnabled(false));
     final duration = player?.state.duration;
     unawaited(
       duration != null && duration.inMilliseconds > 0
@@ -21,9 +22,18 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     );
     _updateMediaControlsPlaybackState();
     unawaited(DiscordRPCService.instance.pausePlayback());
-    unawaited(TraktScrobbleService.instance.pausePlayback());
+    // The item finished, so real-time trackers get a terminal report now rather
+    // than whenever the screen happens to tear down: a completion prompt or
+    // end-of-video sleep timer can leave it open for minutes, and until then
+    // the service would still show the item as playing. Seed the known duration
+    // first — the position stream can stop a beat short of it on EOF. A later
+    // dispose or in-place reload finds no context and does nothing.
+    if (duration != null && duration.inMilliseconds > 0) {
+      TrackerCoordinator.instance.updatePosition(duration);
+    }
+    unawaited(TrackerCoordinator.instance.stopPlayback());
     if (_autoPipEnabled) {
-      unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: false));
+      unawaited(_updateAutoPipState(isPlaying: false));
     }
 
     // End-of-video sleep timer takes precedence over autoplay / next-episode
@@ -34,8 +44,35 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       sleepTimerService.notifyVideoCompleted();
       return;
     }
+    if (!_canNavigateMediaItems()) {
+      if (!_completionLatch.triggered) _completionLatch.latch();
+      return;
+    }
 
-    if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionLatch.triggered) {
+    var navigationAction = completionNavigationAction(
+      hasNext: _nextEpisode != null,
+      adjacentStatus: _nextEpisodeStatus,
+    );
+    if (navigationAction == CompletionNavigationAction.retryAdjacent) {
+      _isResolvingCompletionAdjacency = true;
+      try {
+        await _loadAdjacentEpisodes();
+      } finally {
+        _isResolvingCompletionAdjacency = false;
+      }
+      if (!mounted) return;
+      navigationAction = completionNavigationAction(hasNext: _nextEpisode != null, adjacentStatus: _nextEpisodeStatus);
+      if (navigationAction == CompletionNavigationAction.retryAdjacent) {
+        _completionLatch.latch();
+        showGlobalErrorSnackBar(t.messages.errorLoadingSeries);
+        return;
+      }
+    }
+
+    if (navigationAction == CompletionNavigationAction.presentNext &&
+        !_showPlayNextDialog &&
+        !_showStillWatchingPrompt &&
+        !_completionLatch.triggered) {
       _completionLatch.latch();
 
       // PiP: skip dialog (user can't interact), auto-play immediately
@@ -73,13 +110,14 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (_nextEpisode == null && !_completionLatch.triggered) {
+    } else if (navigationAction == CompletionNavigationAction.exit && !_completionLatch.triggered) {
       _completionLatch.latch();
       unawaited(_handleBackButton());
     }
   }
 
   void _startAutoPlayTimer() {
+    if (!_canNavigateMediaItems()) return;
     _autoPlayTimer?.cancel();
     _autoPlayTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
@@ -100,13 +138,22 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     _autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
     _progressTracker?.resumeAfterStoppedReport();
-    // Keep _completionTriggered set: playback is still parked inside the
-    // end-of-video window, so clearing it here would let the position listener
-    // re-fire this prompt on the next tick. It is re-armed once playback seeks
-    // back clear of the end region (see the position listener) or new media loads.
+    // Keep the latch set while playback is still parked at EOF, so duplicate
+    // completed signals cannot re-open this prompt. It is re-armed once playback
+    // seeks back clear of the end region (see the position listener) or new media loads.
     _setPlayerState(() {
       _showPlayNextDialog = false;
     });
+  }
+
+  void _dismissPlaybackPromptForBack() {
+    if (_showPlayNextDialog) {
+      _cancelAutoPlay();
+      return;
+    }
+    if (_showStillWatchingPrompt) {
+      _dismissStillWatching();
+    }
   }
 
   /// Re-arm the end-of-video latch so Play Next can fire again. Callers

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
@@ -10,12 +9,17 @@ import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../focus/focusable_action_bar.dart';
-import '../../focus/focusable_button.dart';
+import '../../widgets/dialog_action_button.dart';
+import '../../widgets/app_icon.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../utils/dialogs.dart';
 import '../../main.dart' show gitCommit;
+import '../../services/background_work_diagnostics_service.dart';
+import '../../services/device_performance.dart';
+import '../../services/log_upload_service.dart';
+import '../../services/startup_diagnostics.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
@@ -23,8 +27,13 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 
+const previousStartupFailureKey = Key('logs-previous-startup-failure');
+
 class LogsScreen extends StatefulWidget {
-  const LogsScreen({super.key});
+  const LogsScreen({super.key, this.httpClient, this.deviceInfoPlugin});
+
+  final MediaServerHttpClient? httpClient;
+  final DeviceInfoPlugin? deviceInfoPlugin;
 
   @override
   State<LogsScreen> createState() => _LogsScreenState();
@@ -35,6 +44,8 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   String _deviceInfo = '';
   final ScrollController _scrollController = ScrollController();
 
+  MediaServerHttpClient get _httpClient => widget.httpClient ?? httpClient;
+
   @override
   void initState() {
     super.initState();
@@ -44,7 +55,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
 
   Future<void> _loadDeviceInfo() async {
     final packageInfo = await PackageInfo.fromPlatform();
-    final deviceInfo = DeviceInfoPlugin();
+    final deviceInfo = widget.deviceInfoPlugin ?? DeviceInfoPlugin();
     final buffer = StringBuffer();
     final commitSuffix = gitCommit.isNotEmpty ? ' ${gitCommit.substring(0, 7)}' : '';
     buffer.writeln('${t.app.title} v${packageInfo.version} (${packageInfo.buildNumber})$commitSuffix');
@@ -58,6 +69,21 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
         final suffix = reasons.isEmpty ? '' : ' (${reasons.join(', ')})';
         buffer.writeln('TV mode: yes$suffix');
       }
+      // Renderer + effects tier turn "did the reduced tier engage on this
+      // device" into something answerable from any uploaded log (#1349).
+      String renderer;
+      try {
+        renderer = await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer') ?? 'unknown';
+      } catch (_) {
+        renderer = 'unknown';
+      }
+      buffer.writeln('Renderer: $renderer');
+      // "Are downloads allowed to run in the background" is the single most
+      // asked support question; answering it from the uploaded log turns a
+      // four-message thread into one reply.
+      final backgroundWork = BackgroundWorkDiagnosticsService.instance;
+      await backgroundWork.refresh();
+      buffer.writeln('Background: ${backgroundWork.describeSync()}');
     } else if (Platform.isIOS) {
       final info = await deviceInfo.iosInfo;
       buffer.writeln('iOS ${info.systemVersion}');
@@ -70,6 +96,9 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       final info = await deviceInfo.linuxInfo;
       buffer.writeln('Linux ${info.versionId ?? info.id}');
     }
+
+    buffer.writeln('Effects: ${DevicePerformance.describeSync()}');
+    buffer.writeln('Display: ${DevicePerformance.describeDisplay()}');
 
     setStateIfMounted(() => _deviceInfo = buffer.toString().trimRight());
   }
@@ -94,7 +123,20 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     return '$hour:$minute:$second.$millisecond';
   }
 
-  void _clearLogs() {
+  /// Whether there is anything worth copying, uploading or clearing.
+  ///
+  /// A launch that failed the startup gate leaves an empty in-memory buffer —
+  /// that process is gone — but does leave a persisted record. Gating the
+  /// actions on the buffer alone would show that record and then refuse to let
+  /// the user do anything with it, which is the whole point of #1732.
+  bool get _hasDiagnostics => _logs.isNotEmpty || StartupDiagnosticsStore.pending != null;
+
+  Future<void> _clearLogs() async {
+    // The startup record is part of the same diagnostic payload, so clearing
+    // logs drops it too, or it would silently reappear in the next upload.
+    // Awaited before rebuilding so the banner cannot survive the clear.
+    await StartupDiagnosticsStore.clear();
+    if (!mounted) return;
     setState(() {
       MemoryLogOutput.clearLogs();
       _logs = [];
@@ -102,28 +144,35 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     showSuccessSnackBar(context, t.messages.logsCleared);
   }
 
-  String _formatAllLogs() {
-    final buffer = StringBuffer();
-    if (_deviceInfo.isNotEmpty) {
-      buffer.writeln(_deviceInfo);
-      buffer.writeln('---');
-    }
-    bool isFirst = true;
+  String _formatAllLogs({int? maxBytes}) {
+    final sections = <String>[
+      if (_deviceInfo.isNotEmpty) _deviceInfo,
+      // A launch that failed the startup gate leaves no in-memory log at all —
+      // the buffer died with that process. This is the only place its record
+      // can reach a maintainer (#1732).
+      ?StartupDiagnosticsStore.pending?.describe(),
+    ];
+    final header = sections.isEmpty ? '' : '${sections.join('\n\n')}\n---\n';
+    final logs = StringBuffer();
+    var isFirst = true;
     for (final log in _logs.reversed) {
       if (!isFirst) {
-        buffer.write('\n');
+        logs.write('\n');
       }
       isFirst = false;
 
-      buffer.write('[${_formatTime(log.timestamp)}] [${log.level.name.toUpperCase()}] ${log.message}');
+      logs.write('[${_formatTime(log.timestamp)}] [${log.level.name.toUpperCase()}] ${log.message}');
       if (log.error != null) {
-        buffer.write('\nError: ${log.error}');
+        logs.write('\nError: ${log.error}');
       }
       if (log.stackTrace != null) {
-        buffer.write('\nStack trace:\n${log.stackTrace}');
+        logs.write('\nStack trace:\n${log.stackTrace}');
       }
     }
-    return buffer.toString();
+    final logText = logs.toString();
+    return maxBytes == null
+        ? '$header$logText'
+        : constrainLogUploadPayload(header: header, logs: logText, maxBytes: maxBytes);
   }
 
   void _copyAllLogs() {
@@ -132,51 +181,49 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
   }
 
   Future<void> _uploadLogs() async {
-    final logText = _formatAllLogs();
+    final logText = _formatAllLogs(maxBytes: maxLogUploadBytes);
 
     showLoadingDialog(context);
 
     try {
-      final response = await httpClient.post(
-        'https://ice.plezy.app/logs',
-        body: logText,
-        headers: {'Content-Type': 'text/plain'},
-      );
+      final id = await uploadDiagnosticText(logText, client: _httpClient);
 
       if (!mounted) return;
       Navigator.of(context).pop(); // dismiss loading
 
-      final data = response.data is String ? jsonDecode(response.data) : response.data;
-      final id = (data as Map<String, dynamic>)['id'] as String;
-
       unawaited(
-        showDialog(
+        showScopedDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
             title: Text(t.messages.logsUploaded),
-            content: Row(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${t.messages.logId}: '),
-                SelectableText(
-                  id,
-                  style: const TextStyle(fontWeight: .bold, fontFamily: 'monospace', fontSize: 18),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 20),
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: id));
-                    showSuccessSnackBar(context, t.messages.logsCopied);
-                  },
+                Text('${t.messages.logId}:'),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SelectableText(
+                        id,
+                        style: const TextStyle(fontWeight: .bold, fontFamily: 'monospace', fontSize: 18),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const AppIcon(Symbols.content_copy_rounded, size: 20),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: id));
+                        showSuccessSnackBar(context, t.messages.logsCopied);
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
             actions: [
-              FocusableButton(
-                autofocus: true,
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(t.common.close)),
-              ),
+              DialogActionButton(autofocus: true, onPressed: () => Navigator.of(ctx).pop(), label: t.common.close),
             ],
           ),
         ),
@@ -267,6 +314,50 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     return spans;
   }
 
+  /// Banner for a startup failure recorded by an earlier launch.
+  ///
+  /// Returns null when there is none, so the caller can splice it in with a
+  /// null-aware element.
+  Widget? _buildPreviousFailureBanner(ThemeData theme) {
+    final failure = StartupDiagnosticsStore.pending;
+    if (failure == null) return null;
+
+    return SliverToBoxAdapter(
+      key: previousStartupFailureKey,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: theme.colorScheme.errorContainer, borderRadius: BorderRadius.circular(8)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                AppIcon(Symbols.error_rounded, size: 18, color: theme.colorScheme.onErrorContainer),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    t.startup.previousFailureTitle,
+                    style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onErrorContainer),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            SelectableText(
+              failure.describe(),
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontFamily: 'monospace',
+                fontSize: 12,
+                color: theme.colorScheme.onErrorContainer,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -306,22 +397,26 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
                         FocusableAction(
                           icon: Symbols.upload_rounded,
                           tooltip: t.logs.uploadLogs,
-                          onPressed: _logs.isNotEmpty ? _uploadLogs : null,
+                          onPressed: _hasDiagnostics ? _uploadLogs : null,
                         ),
                         FocusableAction(
                           icon: Symbols.content_copy_rounded,
                           tooltip: t.logs.copyLogs,
-                          onPressed: _logs.isNotEmpty ? _copyAllLogs : null,
+                          onPressed: _hasDiagnostics ? _copyAllLogs : null,
                         ),
                         FocusableAction(
                           icon: Symbols.delete_outline_rounded,
                           tooltip: t.logs.clearLogs,
-                          onPressed: _logs.isNotEmpty ? _clearLogs : null,
+                          onPressed: _hasDiagnostics ? _clearLogs : null,
                         ),
                       ],
                     ),
                   ],
                 ),
+                // A launch that failed the startup gate leaves nothing in the
+                // in-memory buffer — that process is gone. Show its record
+                // here, where the user can actually act on it (#1732).
+                ?_buildPreviousFailureBanner(theme),
                 if (_logs.isEmpty)
                   SliverFillRemaining(child: Center(child: Text(t.messages.noLogsAvailable)))
                 else

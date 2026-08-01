@@ -1,7 +1,15 @@
+import 'dart:convert';
 import 'dart:math';
+
+import 'package:cached_network_image_ce/cached_network_image.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/widgets.dart';
+
+import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../services/device_performance.dart';
+import '../services/image_cache_service.dart';
+import '../services/settings_service.dart' show EpisodePosterMode;
 import 'platform_detector.dart';
 
 /// Image types for different transcoding strategies
@@ -10,7 +18,9 @@ enum ImageType {
   art, // Wide background art
   thumb, // 16:9 episode thumbnails
   logo, // Variable ratio clear logos
-  avatar, // Square-ish user avatars
+  heroLogo, // Large hero clear logos
+  avatar, // Small square-ish avatars (user profiles, inline person headers)
+  square, // 1:1 grid-cell artwork (albums, artists, tracks, cast cards)
 }
 
 /// Backend-neutral image URL helper.
@@ -33,6 +43,8 @@ class MediaImageHelper {
   static const int _widthRoundingFactor = 40;
   static const int _heightRoundingFactor = 60;
 
+  /// 1080p baseline; scaled by [DevicePerformance.displayBudgetFactor] so
+  /// 4K-surface displays can fetch up to 3840×2160 instead of upscaling.
   static const int _maxTranscodedWidth = 1920;
   static const int _maxTranscodedHeight = 1080;
 
@@ -56,9 +68,10 @@ class MediaImageHelper {
 
   /// Rounds dimensions to cache-friendly values to increase cache hit rate
   static (int width, int height) roundDimensions(double width, double height) {
+    final budget = DevicePerformance.displayBudgetFactor();
     return (
-      _bucketUp(width, _widthRoundingFactor).clamp(_minTranscodedWidth, _maxTranscodedWidth),
-      _bucketUp(height, _heightRoundingFactor).clamp(_minTranscodedHeight, _maxTranscodedHeight),
+      _bucketUp(width, _widthRoundingFactor).clamp(_minTranscodedWidth, (_maxTranscodedWidth * budget).round()),
+      _bucketUp(height, _heightRoundingFactor).clamp(_minTranscodedHeight, (_maxTranscodedHeight * budget).round()),
     );
   }
 
@@ -106,6 +119,7 @@ class MediaImageHelper {
         return roundDimensions(coverWidth, coverHeight);
 
       case ImageType.logo:
+      case ImageType.heroLogo:
         final logoWidth = targetWidth;
         final logoHeight = targetHeight;
         return roundDimensions(logoWidth, logoHeight);
@@ -116,6 +130,7 @@ class MediaImageHelper {
         return roundDimensions(thumbWidth, thumbHeight);
 
       case ImageType.avatar:
+      case ImageType.square:
         final size = min(targetWidth, targetHeight);
         return roundDimensions(size, size);
 
@@ -125,6 +140,16 @@ class MediaImageHelper {
         return roundDimensions(calculatedWidth, calculatedHeight);
     }
   }
+
+  /// Whether [type] fills its slot ([BoxFit.cover]) or sits inside it
+  /// ([BoxFit.contain]), which is what [MediaServerClient.thumbnailUrl]'s
+  /// `cover` flag selects. Logos are the contain case: asking Plex to cover
+  /// their slot overshoots the long axis by 20-30% in bytes, and the decode
+  /// bounds throw those pixels away again.
+  static bool _coversSlot(ImageType type) => switch (type) {
+    ImageType.logo || ImageType.heroLogo => false,
+    ImageType.art || ImageType.thumb || ImageType.poster || ImageType.avatar || ImageType.square => true,
+  };
 
   /// Creates an optimized image URL.
   ///
@@ -178,7 +203,7 @@ class MediaImageHelper {
         devicePixelRatio: devicePixelRatio,
         imageType: imageType,
       );
-      return client.externalImageUrl(basePath, width: width, height: height);
+      return client.externalImageUrl(basePath, width: width, height: height, cover: _coversSlot(imageType));
     }
 
     // Relative path — let the client build the sized URL using its native
@@ -201,16 +226,11 @@ class MediaImageHelper {
       imageType: imageType,
     );
 
-    // For very small targets, skip server-side resizing — the cost of the
-    // transcode round-trip outweighs the savings.
-    if (maxWidth < 80 || maxHeight < 120) {
-      return client.thumbnailUrl(basePath);
-    }
-    if (width <= _minTranscodedWidth * 1.2 && height <= _minTranscodedHeight * 1.2) {
-      return client.thumbnailUrl(basePath);
-    }
-
-    return client.thumbnailUrl(basePath, width: width, height: height);
+    // Always request a sized transcode — even tiny slots. An unsized URL
+    // hands the full original to the decoder, and a multi-megapixel
+    // original behind a 40px avatar is exactly the decode spike that OOMs
+    // low-RAM devices. The floor is 160×240 via [roundDimensions].
+    return client.thumbnailUrl(basePath, width: width, height: height, cover: _coversSlot(imageType));
   }
 
   /// Generates cache-friendly dimensions for memory caching.
@@ -231,18 +251,95 @@ class MediaImageHelper {
     final bucketedWidth = _bucketUp(displayWidth * scaleFactor, _widthRoundingFactor);
     final bucketedHeight = _bucketUp(displayHeight * scaleFactor, _heightRoundingFactor);
 
+    // Full-tier caps are a 1080p baseline scaled to the display, so slots on
+    // a 4K surface decode at the resolution they render at instead of being
+    // GPU-upscaled from phone-sized budgets. Reduced-tier caps stay fixed
+    // (the factor is pinned to 1.0 there, and the explicit pairs keep the
+    // low-RAM budget independent of display probing).
+    final budget = DevicePerformance.displayBudgetFactor();
+    int scaled(int cap) => (cap * budget).round();
     final (int maxW, int maxH) = switch (imageType) {
-      ImageType.poster => (720, 1080),
-      ImageType.thumb => (960, 540),
-      // Match the reduced-tier fetch cap so oversized originals (failed
-      // transcodes, external images) can't decode past the art budget.
+      // Reduced-tier caps match the smaller fetch sizes so oversized
+      // originals (failed transcodes, external images) can't decode past
+      // the tile budget on low-RAM hardware.
+      ImageType.poster when DevicePerformance.isReduced => (480, 720),
+      ImageType.poster => (scaled(720), scaled(1080)),
+      // Square music artwork fills the same grid cells as posters, so both
+      // axes cap at the poster width budget.
+      ImageType.square when DevicePerformance.isReduced => (480, 480),
+      ImageType.square => (scaled(720), scaled(720)),
+      ImageType.thumb when DevicePerformance.isReduced => (640, 360),
+      ImageType.thumb => (scaled(960), scaled(540)),
       ImageType.art when DevicePerformance.isReduced => (_reducedMaxArtWidth, _reducedMaxArtHeight),
-      ImageType.art => (1920, 1080),
-      ImageType.logo => (600, 300),
-      ImageType.avatar => (300, 300),
+      ImageType.art => (scaled(1920), scaled(1080)),
+      ImageType.logo => (scaled(600), scaled(300)),
+      ImageType.heroLogo => (scaled(1000), scaled(500)),
+      ImageType.avatar => (scaled(300), scaled(300)),
     };
 
     return (bucketedWidth.clamp(120, maxW), bucketedHeight.clamp(180, maxH));
+  }
+
+  /// Wraps [provider] so the decode is bounded on **both** axes.
+  ///
+  /// `fit` policy keeps aspect ratio and never upscales, so an over-generous
+  /// bound is harmless — but an oversized original (failed server transcode,
+  /// local artwork file, ultra-wide banner) can no longer decode past the
+  /// display budget the way a single-axis bound allows.
+  static ImageProvider boundedDecode(ImageProvider provider, {required int memWidth, required int memHeight}) {
+    final width = memWidth > 0 ? memWidth : null;
+    final height = memHeight > 0 ? memHeight : null;
+    if (width == null && height == null) return provider;
+    return ResizeImage(provider, width: width, height: height, policy: ResizeImagePolicy.fit);
+  }
+
+  /// Selects the decode/transcode shape used by media cards and their
+  /// prefetchers. Keeping this derived from [MediaItem.cardShape] prevents the
+  /// renderer and prefetch pipeline from assigning different cache budgets.
+  static ImageType cardImageType(MediaItem item, EpisodePosterMode episodePosterMode, {bool mixedHubContext = false}) {
+    return switch (item.cardShape(episodePosterMode, mixedHubContext: mixedHubContext)) {
+      CardShape.square => ImageType.square,
+      CardShape.wide => ImageType.thumb,
+      CardShape.poster => ImageType.poster,
+    };
+  }
+
+  /// Creates the final provider for server-hosted artwork.
+  ///
+  /// The disk key deliberately depends only on the fully bucketed URL. Decode
+  /// dimensions belong to Flutter's memory-cache key and must not fragment the
+  /// shared disk cache during small layout changes.
+  static ImageProvider serverArtworkProvider({
+    required String imageUrl,
+    required int memWidth,
+    required int memHeight,
+    String? cacheKey,
+  }) {
+    final provider = CachedNetworkImageProvider(
+      imageUrl,
+      cacheKey: cacheKey ?? _serverArtworkCacheKey(imageUrl),
+      cacheManager: PlexImageCacheManager.instance,
+      headers: const {'User-Agent': 'Plezy'},
+    );
+    return boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
+  }
+
+  static final _serverArtworkCacheKeys = <String, String>{};
+  static const _serverArtworkCacheKeyLimit = 512;
+
+  static String _serverArtworkCacheKey(String imageUrl) {
+    final cached = _serverArtworkCacheKeys.remove(imageUrl);
+    if (cached != null) {
+      _serverArtworkCacheKeys[imageUrl] = cached;
+      return cached;
+    }
+
+    final key = 'plex_optimized_${sha1.convert(utf8.encode(imageUrl))}';
+    if (_serverArtworkCacheKeys.length >= _serverArtworkCacheKeyLimit) {
+      _serverArtworkCacheKeys.remove(_serverArtworkCacheKeys.keys.first);
+    }
+    _serverArtworkCacheKeys[imageUrl] = key;
+    return key;
   }
 
   /// Determines if an image path is suitable for transcoding
@@ -256,41 +353,5 @@ class MediaImageHelper {
     }
 
     return true;
-  }
-
-  /// Optimized URL for hero/background art ([ImageType.art]).
-  static String heroArtUrl({
-    required MediaServerClient? client,
-    required String? thumbPath,
-    required BuildContext context,
-    required double containerWidth,
-    required double containerHeight,
-  }) => _typedUrl(client, thumbPath, context, containerWidth, containerHeight, ImageType.art);
-
-  /// Optimized URL for clear-logo overlays ([ImageType.logo]).
-  static String logoUrl({
-    required MediaServerClient? client,
-    required String? thumbPath,
-    required BuildContext context,
-    required double containerWidth,
-    required double containerHeight,
-  }) => _typedUrl(client, thumbPath, context, containerWidth, containerHeight, ImageType.logo);
-
-  static String _typedUrl(
-    MediaServerClient? client,
-    String? thumbPath,
-    BuildContext context,
-    double containerWidth,
-    double containerHeight,
-    ImageType type,
-  ) {
-    return getOptimizedImageUrl(
-      client: client,
-      thumbPath: thumbPath,
-      maxWidth: containerWidth,
-      maxHeight: containerHeight,
-      devicePixelRatio: effectiveDevicePixelRatio(context),
-      imageType: type,
-    );
   }
 }

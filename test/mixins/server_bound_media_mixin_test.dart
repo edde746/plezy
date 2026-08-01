@@ -5,6 +5,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mixins/server_bound_media_mixin.dart';
+import '../test_helpers/media_items.dart';
 
 /// Probe widget exposing the mixin's surface so tests can read its getters
 /// and call its helpers against a real BuildContext.
@@ -38,7 +39,7 @@ class _ProbeState extends State<_Probe> with ServerBoundMediaMixin<_Probe> {
 }
 
 MediaItem _meta({ServerId? serverId, String ratingKey = 'rk1'}) =>
-    MediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.movie, serverId: serverId);
+    testMediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.movie, serverId: serverId);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -62,30 +63,6 @@ void main() {
       await tester.pumpWidget(_Probe(metadata: _meta(), offline: false, onState: (s, _) => state = s));
       await tester.pump();
       expect(state.serverBoundServerId, isNull);
-    });
-
-    testWidgets('isServerBoundOffline reflects the host state override', (tester) async {
-      late _ProbeState onState;
-      late _ProbeState offState;
-      await tester.pumpWidget(
-        _Probe(
-          metadata: _meta(serverId: ServerId('s1')),
-          offline: false,
-          onState: (s, _) => offState = s,
-        ),
-      );
-      await tester.pump();
-      expect(offState.isServerBoundOffline, isFalse);
-
-      await tester.pumpWidget(
-        _Probe(
-          metadata: _meta(serverId: ServerId('s1')),
-          offline: true,
-          onState: (s, _) => onState = s,
-        ),
-      );
-      await tester.pump();
-      expect(onState.isServerBoundOffline, isTrue);
     });
 
     testWidgets('toServerBoundGlobalKey uses the metadata serverId by default', (tester) async {

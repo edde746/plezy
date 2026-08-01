@@ -9,7 +9,6 @@ import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
-import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
@@ -21,9 +20,7 @@ import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
 import '../../services/app_exit_service.dart';
 import '../../services/storage_service.dart';
-import '../../utils/app_logger.dart';
-import '../../utils/dialogs.dart';
-import '../../utils/snackbar_helper.dart';
+import '../../theme/mono_tokens.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
@@ -31,9 +28,8 @@ import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/profile_switching_overlay.dart';
 import '../libraries/state_messages.dart';
-import '../auth_screen.dart';
 import 'add_local_profile_screen.dart';
-import 'profile_delete_flow.dart';
+import 'profile_teardown.dart';
 import 'profile_detail_screen.dart';
 
 /// Flat picker showing every [Profile] in the system — Plex Home users
@@ -111,8 +107,11 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
       },
       child: StreamBuilder<ProfilesView>(
         stream: _viewStream,
-        initialData: ProfilesView.empty,
         builder: (context, snapshot) {
+          // No initialData: rendering ProfilesView.empty while the first
+          // combine is in flight flashes the "No profiles available" error
+          // state on every open.
+          final loading = snapshot.data == null;
           final view = snapshot.data ?? ProfilesView.empty;
           _pruneProfileFocusResources(view.profiles.map((p) => p.id).toSet());
           // `context.select` only rebuilds when `activeId` actually
@@ -129,11 +128,13 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                 slivers: [
                   if (view.profiles.isEmpty)
                     SliverFillRemaining(
-                      child: EmptyStateWidget(
-                        message: t.messages.noProfilesAvailable,
-                        subtitle: t.messages.contactAdminForProfiles,
-                        icon: Symbols.person_off_rounded,
-                      ),
+                      child: loading
+                          ? const Center(child: CircularProgressIndicator())
+                          : EmptyStateWidget(
+                              message: t.messages.noProfilesAvailable,
+                              subtitle: t.messages.contactAdminForProfiles,
+                              icon: Symbols.person_off_rounded,
+                            ),
                     )
                   else
                     ..._buildSections(view, activeId),
@@ -177,20 +178,36 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   }
 
   void _pruneProfileFocusResources(Set<String> activeIds) {
+    // Runs during build (from the StreamBuilder). Detach the map entries
+    // synchronously so tiles never receive a stale node, but defer the
+    // actual dispose to after the frame: on TV the pruned tile's node is
+    // often the one holding primary focus (the profile just signed out /
+    // deleted), and disposing the focused node mid-build wedges the focus
+    // system on DPAD-only devices.
+    final removed = <FocusNode>[];
     for (final id in _profileFocusNodes.keys.toList()) {
       if (!activeIds.contains(id)) {
-        _profileFocusNodes.remove(id)?.dispose();
+        final node = _profileFocusNodes.remove(id);
+        if (node != null) removed.add(node);
       }
     }
     for (final id in _profileMenuFocusNodes.keys.toList()) {
       if (!activeIds.contains(id)) {
-        _profileMenuFocusNodes.remove(id)?.dispose();
+        final node = _profileMenuFocusNodes.remove(id);
+        if (node != null) removed.add(node);
       }
     }
     for (final id in _profileMenuKeys.keys.toList()) {
       if (!activeIds.contains(id)) {
         _profileMenuKeys.remove(id);
       }
+    }
+    if (removed.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        for (final node in removed) {
+          node.dispose();
+        }
+      });
     }
   }
 
@@ -207,13 +224,20 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
       delegate: SliverChildBuilderDelegate((context, index) {
         final profile = profiles[index];
         final isActive = profile.id == activeId;
+        final tokensRef = tokens(context);
+        final tileRadii = groupItemRadii(context, index, profiles.length);
         final isFirstSelectable = autofocusFirst && index == 0;
         final profileFocusNode = _profileFocusNode(profile);
         final menuFocusNode = _profileMenuFocusNode(profile);
         final menuKey = _profileMenuKey(profile);
-        final onManage = !widget.requireSelection ? () => _manageProfile(profile) : null;
-        final onDelete = profile.isLocal && !widget.requireSelection ? () => _deleteProfile(profile) : null;
-        final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && !widget.requireSelection
+        // All tile actions are disabled while a switch is binding: the
+        // overlay's barrier blocks pointers but not DPAD key events, and a
+        // Manage/Delete flow racing the in-flight switch corrupts state
+        // (e.g. a delete confirmation left open when the switch settles).
+        final actionsEnabled = !widget.requireSelection && !_switching;
+        final onManage = actionsEnabled ? () => _manageProfile(profile) : null;
+        final onDelete = profile.isLocal && actionsEnabled ? () => _deleteProfile(profile) : null;
+        final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && actionsEnabled
             ? () => _signOutPlexAccount(profile)
             : null;
         final hasMenu = onManage != null || onDelete != null || onSignOut != null;
@@ -226,21 +250,26 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
         }
 
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
           child: FocusableWrapper(
             autofocus: isFirstSelectable,
             focusNode: profileFocusNode,
             disableScale: true,
+            borderRadii: tileRadii,
             enableLongPress: hasMenu,
             onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
             onNavigateRight: hasMenu ? () => menuFocusNode.requestFocus() : null,
             onSelect: _switching || (isActive && !widget.requireSelection) ? null : () => _switchTo(profile),
             child: Card(
+              shape: RoundedRectangleBorder(borderRadius: tileRadii),
+              clipBehavior: Clip.antiAlias,
               child: _ProfileTile(
+                borderRadius: tileRadii,
                 profile: profile,
                 isActive: isActive && !widget.requireSelection,
                 chips: _chipsFor(profile, view),
                 onTap: () => _switchTo(profile),
+                onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
                 // Manage available for any profile — adding/removing
                 // borrowed connections is supported on plex_home too. Delete
                 // stays local-only (Plex Home users are owned by Plex).
@@ -263,70 +292,14 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   }
 
   /// Drop the parent Plex account [profile] hangs off — same effect as
-  /// "Forget account" elsewhere in Plex apps. The connection's join rows
-  /// cascade away (FK on connection_id), [PlexHomeService]'s
-  /// `_onChange` listener evicts the cached home users + shadow profile
-  /// rows, and a binder rebind clears the runtime client. Plex doesn't
-  /// expose a single-session revoke endpoint we can rely on, so we don't
-  /// touch the server side — the user can revoke via plex.tv if they want.
+  /// "Forget account" elsewhere in Plex apps. The shared teardown flow
+  /// removes the account, its virtual Plex Home profiles, and their
+  /// borrowed connections, then routes to auth when nothing selectable
+  /// remains (#1423).
   Future<void> _signOutPlexAccount(Profile profile) async {
     final parentId = profile.parentConnectionId;
     if (parentId == null) return;
-    final connRegistry = context.read<ConnectionRegistry>();
-    final parent = await connRegistry.getPlexAccount(parentId);
-    if (parent == null || !mounted) return;
-
-    final confirmed = await showDeleteConfirmation(
-      context,
-      title: t.profiles.signOutPlexTitle,
-      message: t.profiles.signOutPlexMessage(displayName: parent.displayLabel),
-      confirmText: t.profiles.signOut,
-    );
-    if (!confirmed || !mounted) return;
-
-    final active = context.read<ActiveProfileProvider>();
-    final activeProfile = active.active;
-    final wasActiveAccount = activeProfile?.parentConnectionId == parentId;
-    final remainingProfiles = active.profiles
-        .where((p) => p.id != activeProfile?.id && p.parentConnectionId != parentId)
-        .toList();
-    final binder = context.read<ActiveProfileBinder>();
-    final navigator = Navigator.of(context, rootNavigator: true);
-
-    try {
-      await connRegistry.remove(parentId);
-      final noConnectionsLeft = (await connRegistry.list()).isEmpty;
-      if (noConnectionsLeft) {
-        await active.clearActiveProfile();
-        unawaited(binder.rebindActive());
-        if (navigator.mounted) {
-          unawaited(navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const AuthScreen()), (_) => false));
-        }
-        return;
-      }
-      if (!mounted) return;
-      // If the active virtual profile belonged to the removed account, make
-      // the storage state explicit instead of relying on provider fallback.
-      if (wasActiveAccount) {
-        if (remainingProfiles.isNotEmpty) {
-          await active.activate(remainingProfiles.first);
-        } else {
-          await active.clearActiveProfile();
-          unawaited(binder.rebindActive());
-        }
-      } else {
-        // Active profile stayed the same, but borrowed rows for this account
-        // may have cascaded away.
-        unawaited(binder.rebindActive());
-      }
-      if (!mounted) return;
-      showSuccessSnackBar(context, t.profiles.signedOutPlex);
-    } catch (e, st) {
-      appLogger.w('Plex sign-out failed for $parentId', error: e, stackTrace: st);
-      if (mounted) {
-        showErrorSnackBar(context, t.profiles.signOutFailed);
-      }
-    }
+    await confirmAndSignOutPlexAccount(context, accountConnectionId: parentId);
   }
 
   Future<void> _deleteProfile(Profile profile) async {
@@ -368,13 +341,20 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     if (_switching) return;
     setState(() => _switching = true);
     try {
-      final navigator = Navigator.of(context);
+      final route = ModalRoute.of(context);
+      final navigator = Navigator.of(context, rootNavigator: true);
       final switched = await switchProfileFromUi(context, profile);
       if (!mounted || !switched) return;
       if (widget.requireSelection) {
         setState(() => _allowPop = true);
       }
-      navigator.pop(true);
+      // Pop only when this screen is still the top route. A blind
+      // `navigator.pop(true)` after the unbounded switch-await pops
+      // whatever is topmost — it can dismiss a confirmation dialog WITH
+      // `true` (auto-confirming a delete) or close the wrong screen.
+      if (route != null && route.isCurrent) {
+        navigator.pop(true);
+      }
     } finally {
       setStateIfMounted(() => _switching = false);
     }
@@ -384,8 +364,10 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
 class _ProfileTile extends StatelessWidget {
   final Profile profile;
   final bool isActive;
+  final BorderRadius borderRadius;
   final List<_ChipData> chips;
   final VoidCallback onTap;
+  final VoidCallback? onLongPress;
   final VoidCallback? onManage;
   final VoidCallback? onDelete;
   final VoidCallback? onSignOut;
@@ -396,8 +378,10 @@ class _ProfileTile extends StatelessWidget {
   const _ProfileTile({
     required this.profile,
     required this.isActive,
+    required this.borderRadius,
     required this.chips,
     required this.onTap,
+    this.onLongPress,
     this.onManage,
     this.onDelete,
     this.onSignOut,
@@ -411,8 +395,10 @@ class _ProfileTile extends StatelessWidget {
     final theme = Theme.of(context);
     final hasMenu = onManage != null || onDelete != null || onSignOut != null;
     return InkWell(
+      canRequestFocus: false,
       onTap: isActive ? null : onTap,
-      borderRadius: BorderRadius.circular(12),
+      onLongPress: onLongPress,
+      borderRadius: borderRadius,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(

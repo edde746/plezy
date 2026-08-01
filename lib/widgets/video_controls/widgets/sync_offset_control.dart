@@ -1,17 +1,18 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../focus/dpad_navigator.dart';
+import '../../../focus/focusable_slider.dart';
 import '../../../focus/focusable_button.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
+import '../../../utils/app_logger.dart';
+import '../../../utils/latest_async_write.dart';
 
 /// Reusable widget for adjusting sync offsets (audio or subtitle)
 class SyncOffsetControl extends StatefulWidget {
@@ -53,6 +54,8 @@ class SyncOffsetControl extends StatefulWidget {
   State<SyncOffsetControl> createState() => _SyncOffsetControlState();
 }
 
+final Expando<LatestAsyncWrite<String>> _syncOffsetWrites = Expando<LatestAsyncWrite<String>>();
+
 class _SyncOffsetControlState extends State<SyncOffsetControl> {
   // Range constants
   static const double _sliderMin = -60_000; // ±60s for slider
@@ -64,37 +67,86 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   static const int _sliderDivisions = 1200; // 100ms steps for ±60s range
 
   late double _currentOffset;
+  late double _confirmedOffset;
+  int _writeGeneration = 0;
+  int _bindingGeneration = 0;
   Timer? _longPressTimer;
 
   @override
   void initState() {
     super.initState();
     _currentOffset = widget.initialOffset.toDouble();
+    _confirmedOffset = _currentOffset;
   }
 
   @override
   void didUpdateWidget(SyncOffsetControl oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialOffset != oldWidget.initialOffset) {
+    if (widget.initialOffset != oldWidget.initialOffset ||
+        widget.player != oldWidget.player ||
+        widget.propertyName != oldWidget.propertyName) {
+      ++_writeGeneration;
+      ++_bindingGeneration;
       _currentOffset = widget.initialOffset.toDouble();
+      _confirmedOffset = _currentOffset;
     }
   }
 
   @override
   void dispose() {
+    ++_writeGeneration;
+    ++_bindingGeneration;
     _longPressTimer?.cancel();
     super.dispose();
   }
 
-  Future<void> _applyOffset(double offsetMs) async {
-    // Convert milliseconds to seconds for mpv
-    final offsetSeconds = offsetMs / 1000.0;
-
-    // Apply to player using setProperty
-    await widget.player.setProperty(widget.propertyName, offsetSeconds.toString());
-
-    // Notify parent and save to settings
-    await widget.onOffsetChanged(offsetMs.round());
+  void _applyOffset(double offsetMs) {
+    final targetPlayer = widget.player;
+    final propertyName = widget.propertyName;
+    final persistOffset = widget.onOffsetChanged;
+    final coordinator = _syncOffsetWrites[targetPlayer] ??= LatestAsyncWrite<String>();
+    final writeToken = coordinator.begin(propertyName);
+    final generation = ++_writeGeneration;
+    final bindingGeneration = _bindingGeneration;
+    unawaited(() async {
+      try {
+        final committed = await coordinator.commitIfLatest(propertyName, writeToken, () async {
+          // Convert milliseconds to seconds for mpv. Keep the native write and
+          // persistence on the same per-player/property queue so an older
+          // native write can never complete after a newer one.
+          final offsetSeconds = offsetMs / 1000.0;
+          await targetPlayer.setProperty(propertyName, offsetSeconds.toString());
+          await persistOffset(offsetMs.round());
+          if (mounted &&
+              bindingGeneration == _bindingGeneration &&
+              targetPlayer == widget.player &&
+              propertyName == widget.propertyName) {
+            // A write may finish successfully after a newer intent was queued.
+            // Keep it as the rollback baseline without replacing the newer
+            // optimistic value currently shown by the control.
+            _confirmedOffset = offsetMs;
+          }
+        });
+        if (!committed ||
+            !mounted ||
+            generation != _writeGeneration ||
+            targetPlayer != widget.player ||
+            propertyName != widget.propertyName) {
+          return;
+        }
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to update playback sync offset', error: error, stackTrace: stackTrace);
+        if (!mounted ||
+            generation != _writeGeneration ||
+            targetPlayer != widget.player ||
+            propertyName != widget.propertyName) {
+          return;
+        }
+        setState(() {
+          _currentOffset = _confirmedOffset;
+        });
+      }
+    }());
   }
 
   void _resetOffset() {
@@ -181,7 +233,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
-          child: Icon(icon, color: tokens(context).text, size: iconSize),
+          child: AppIcon(icon, color: tokens(context).text, size: iconSize),
         ),
       ),
     );
@@ -214,7 +266,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: const BorderRadius.all(Radius.circular(8)),
           ),
-          child: Icon(icon, color: tokens(context).text, size: 22),
+          child: AppIcon(icon, color: tokens(context).text, size: 22),
         ),
       ),
     );
@@ -233,35 +285,19 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             onLongPressStart: _startLongPressDecrement,
           ),
           Expanded(
-            child: Focus(
-              onKeyEvent: (node, event) {
-                // Select/enter on the slider jumps focus to the close button
-                if (event.logicalKey.isSelectKey && event is KeyDownEvent) {
-                  widget.closeFocusNode?.requestFocus();
-                  return KeyEventResult.handled;
-                }
-                return KeyEventResult.ignored;
-              },
-              canRequestFocus: false,
-              child: SliderTheme(
-                data: SliderTheme.of(context).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
-                child: Slider(
-                  focusNode: widget.sliderFocusNode,
-                  value: sliderValue,
-                  min: _sliderMin,
-                  max: _sliderMax,
-                  divisions: _sliderDivisions,
-                  activeColor: Theme.of(context).colorScheme.primary,
-                  inactiveColor: Theme.of(context).colorScheme.outlineVariant,
-                  onChanged: (value) {
-                    setState(() {
-                      _currentOffset = value;
-                    });
-                  },
-                  onChangeEnd: (value) {
-                    _applyOffset(value);
-                  },
-                ),
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
+              child: FocusableSlider(
+                focusNode: widget.sliderFocusNode,
+                value: sliderValue,
+                min: _sliderMin,
+                max: _sliderMax,
+                divisions: _sliderDivisions,
+                activeColor: Theme.of(context).colorScheme.primary,
+                inactiveColor: Theme.of(context).colorScheme.outlineVariant,
+                onSelect: widget.closeFocusNode?.requestFocus,
+                onChanged: (value) => setState(() => _currentOffset = value),
+                onChangeEnd: _applyOffset,
               ),
             ),
           ),
@@ -373,6 +409,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Reset button
           FocusableButton(
             onPressed: _currentOffset != 0 ? _resetOffset : null,
+            useBackgroundFocus: true,
             child: ElevatedButton.icon(
               onPressed: _currentOffset != 0 ? _resetOffset : null,
               icon: const AppIcon(Symbols.restart_alt_rounded, fill: 1),

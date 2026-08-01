@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/dpad_navigator.dart';
@@ -120,6 +119,42 @@ Future<T?> showAppMenu<T>(
   );
 }
 
+Future<T?> showAdaptiveAppMenu<T>(
+  BuildContext context, {
+  required List<AppMenuEntry<T>> entries,
+  String? title,
+  Offset? position,
+  Rect? anchorRect,
+  AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
+  bool focusFirstItem = false,
+  double minWidth = 220,
+  double? maxWidth,
+  bool isScrollControlled = false,
+}) {
+  // ThemeData.platform follows the real target platform by default, including
+  // Android TV and tvOS, while remaining overrideable in widget tests.
+  final platform = Theme.of(context).platform;
+  if (platform == TargetPlatform.iOS || platform == TargetPlatform.android) {
+    return OverlaySheetController.showAdaptive<T>(
+      context,
+      showDragHandle: true,
+      isScrollControlled: isScrollControlled,
+      builder: (context) => AppMenuSheet<T>(title: title, entries: entries, focusFirstItem: focusFirstItem),
+    );
+  }
+
+  return showAppMenu<T>(
+    context,
+    entries: entries,
+    position: position,
+    anchorRect: anchorRect,
+    anchorAlignment: anchorAlignment,
+    focusFirstItem: focusFirstItem,
+    minWidth: minWidth,
+    maxWidth: maxWidth,
+  );
+}
+
 Alignment _transitionAlignment(BuildContext context, {Offset? position, Rect? anchorRect}) {
   final size = MediaQuery.sizeOf(context);
   final origin = position ?? anchorRect?.center ?? Offset(size.width / 2, size.height / 2);
@@ -185,7 +220,7 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
   }
 
   Future<void> _handlePressed() async {
-    await showButtonMenu(focusFirstItem: InputModeTracker.isKeyboardMode(context));
+    await showButtonMenu(focusFirstItem: InputModeTracker.isKeyboardMode(context, listen: false));
   }
 
   @override
@@ -355,16 +390,15 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
   @override
   void initState() {
     super.initState();
-    initFocusNode();
     effectiveFocusNode.addListener(_updateFocusedState);
   }
 
   @override
   void didUpdateWidget(AppMenuItemTile<T> oldWidget) {
+    final rebinds = oldWidget.focusNode != widget.focusNode;
+    if (rebinds) effectiveFocusNode.removeListener(_updateFocusedState);
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      effectiveFocusNode.removeListener(_updateFocusedState);
-      updateFocusNode(oldWidget.focusNode);
+    if (rebinds) {
       effectiveFocusNode.addListener(_updateFocusedState);
       _isFocused = effectiveFocusNode.hasFocus;
     }
@@ -373,7 +407,6 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
   @override
   void dispose() {
     effectiveFocusNode.removeListener(_updateFocusedState);
-    disposeFocusNode();
     super.dispose();
   }
 
@@ -388,7 +421,7 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final enabled = item.enabled && widget.onPressed != null;
-    final active = enabled && (_isFocused || _isHovered);
+    final active = enabled && ((_isFocused && InputModeTracker.isKeyboardMode(context)) || _isHovered);
     final foreground = _foregroundColor(context, active: active);
     final subtitleColor = foreground.withValues(alpha: active && item.stateLayerColor != null ? 0.86 : 0.68);
     final background = _backgroundColor(context, active: active);

@@ -27,5 +27,4 @@ class PlaybackContext {
 
   bool get usesLocalMedia => sourceKind == PlaybackSourceKind.localFile;
   bool get shouldQueueOnReportFailure => reportingMode == PlaybackReportingMode.onlineWithOfflineFallback;
-  bool get shouldQueueOnly => reportingMode == PlaybackReportingMode.offlineQueue;
 }

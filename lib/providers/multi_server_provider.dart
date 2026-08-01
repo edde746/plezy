@@ -40,6 +40,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Previously-seen set of online server IDs, used to detect new servers
   Set<String> _previousOnlineServerIds = {};
+  int _liveTvCheckGeneration = 0;
 
   /// Invoked with the current visibility-filtered online server ids whenever
   /// the manager's status stream fires (a server connects, reconnects, drops,
@@ -49,7 +50,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// the providers by type. Each consumer registers in its constructor and
   /// removes itself in dispose (this provider outlives the profile-scoped
   /// consumers).
-  final List<void Function(Set<String> onlineServerIds)> _onlineServersListeners = [];
+  final Set<void Function(Set<String> onlineServerIds)> _onlineServersListeners = {};
 
   void addOnlineServersListener(void Function(Set<String> onlineServerIds) listener) {
     _onlineServersListeners.add(listener);
@@ -83,13 +84,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// to clear the filter (all servers visible). Idempotent — does nothing
   /// when [ids] equals the current filter.
   void setVisibleServerIds(Set<String>? ids) {
-    if (_visibleServerIds == null && ids == null) return;
-    if (_visibleServerIds != null &&
-        ids != null &&
-        _visibleServerIds!.length == ids.length &&
-        _visibleServerIds!.containsAll(ids)) {
-      return;
-    }
+    if (setEquals(_visibleServerIds, ids)) return;
     _serverManager.setVisibleServerIds(ids);
     _pruneLiveTvServersForVisibility();
     safeNotifyListeners();
@@ -99,14 +94,11 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Replace the expected active-profile server ids. Pass `null` to fall back
   /// to the live visible ids when no profile-scoped expectation is known.
   void setExpectedVisibleServerIds(Set<String>? ids) {
-    if (_expectedVisibleServerIds == null && ids == null) return;
-    if (_expectedVisibleServerIds != null &&
-        ids != null &&
-        _expectedVisibleServerIds!.length == ids.length &&
-        _expectedVisibleServerIds!.containsAll(ids)) {
-      return;
-    }
-    _expectedVisibleServerIds = ids;
+    if (setEquals(_expectedVisibleServerIds, ids)) return;
+    // Defensive copy: callers (the binder) keep mutating their set after
+    // handing it over, which would silently edit provider state and defeat
+    // the idempotence check above.
+    _expectedVisibleServerIds = ids == null ? null : Set.of(ids);
     safeNotifyListeners();
   }
 
@@ -116,24 +108,19 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// filter to a one-element set when no filter is currently set.
   void addToVisibleServerIds(ServerId serverId) {
     final current = _visibleServerIds;
-    if (current == null) {
-      _serverManager.setVisibleServerIds({serverId});
-      _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
-      safeNotifyListeners();
-      _refreshLiveTvAvailabilitySoon();
-      return;
-    }
-    if (current.contains(serverId)) return;
-    _serverManager.setVisibleServerIds({...current, serverId});
+    if (current != null && current.contains(serverId)) return;
+    _serverManager.setVisibleServerIds({...?current, serverId});
     _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
     safeNotifyListeners();
     _refreshLiveTvAvailabilitySoon();
   }
 
+  /// Keep only ids the manager considers visible under the active filter.
+  List<String> _visible(List<String> ids) => ids.where((id) => _serverManager.isServerVisible(ServerId(id))).toList();
+
   void _pruneLiveTvServersForVisibility() {
-    final filter = _visibleServerIds;
-    if (filter == null) return;
-    _liveTvServers.removeWhere((s) => !filter.contains(s.serverId));
+    if (_visibleServerIds == null) return;
+    _liveTvServers.removeWhere((s) => !_serverManager.isServerVisible(ServerId(s.serverId)));
     _hasLiveTv = _liveTvServers.isNotEmpty;
   }
 
@@ -165,8 +152,9 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
       // the "is anything actually new to me?" decision (their loaded sets can
       // differ from _previousOnlineServerIds after a load error or a profile
       // switch that cleared them), so notify unconditionally and let them decide.
+      final immutableOnline = Set<String>.unmodifiable(currentOnline);
       for (final listener in List.of(_onlineServersListeners)) {
-        listener(currentOnline);
+        listener(immutableOnline);
       }
 
       // Only re-check live TV when a new server came online
@@ -206,20 +194,10 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   }
 
   /// Get all online server IDs (visibility-filtered).
-  List<String> get onlineServerIds {
-    final all = _serverManager.onlineServerIds;
-    final filter = _visibleServerIds;
-    if (filter == null) return all;
-    return all.where(filter.contains).toList();
-  }
+  List<String> get onlineServerIds => _visible(_serverManager.onlineServerIds);
 
   /// Get all server IDs (visibility-filtered).
-  List<String> get serverIds {
-    final all = _serverManager.serverIds;
-    final filter = _visibleServerIds;
-    if (filter == null) return all;
-    return all.where(filter.contains).toList();
-  }
+  List<String> get serverIds => _visible(_serverManager.serverIds);
 
   /// Server ids the active profile is expected to have, including unreachable
   /// Plex servers that have no live client yet.
@@ -230,11 +208,8 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   }
 
   /// Check if a server is online (and visible under the active profile).
-  bool isServerOnline(ServerId serverId) {
-    final filter = _visibleServerIds;
-    if (filter != null && !filter.contains(serverId)) return false;
-    return _serverManager.isServerOnline(serverId);
-  }
+  bool isServerOnline(ServerId serverId) =>
+      _serverManager.isServerVisible(serverId) && _serverManager.isServerOnline(serverId);
 
   /// Get number of online servers
   int get onlineServerCount => onlineServerIds.length;
@@ -294,15 +269,16 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// uniformly).
   Future<void> checkLiveTvAvailability() async {
     if (isDisposed) return;
+    final generation = ++_liveTvCheckGeneration;
     final newLiveTvServers = <LiveTvServerInfo>[];
-
     for (final serverId in onlineServerIds) {
       final genericClient = _serverManager.getClient(ServerId(serverId));
       if (genericClient == null) continue;
 
       try {
         final liveTv = genericClient.liveTv;
-        final dvrs = await liveTv.fetchDvrs();
+        final dvr = genericClient.liveTvDvr;
+        final dvrs = dvr == null ? const <LiveTvDvr>[] : await dvr.fetchDvrs();
         if (dvrs.isNotEmpty) {
           // Plex: one entry per DVR with its own lineup.
           for (final dvr in dvrs) {
@@ -318,15 +294,14 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
       }
     }
 
-    final filter = _visibleServerIds;
-    final visibleLiveTvServers = filter == null
-        ? newLiveTvServers
-        : newLiveTvServers.where((s) => filter.contains(s.serverId)).toList();
+    final visibleLiveTvServers = newLiveTvServers
+        .where((s) => _serverManager.isServerVisible(ServerId(s.serverId)))
+        .toList();
 
     final hadLiveTv = _hasLiveTv;
     final oldServerIds = _liveTvServers.map((s) => '${s.serverId}\u0000${s.dvrKey}').toSet();
     final newServerIds = visibleLiveTvServers.map((s) => '${s.serverId}\u0000${s.dvrKey}').toSet();
-    if (isDisposed) return;
+    if (isDisposed || generation != _liveTvCheckGeneration) return;
     _liveTvServers
       ..clear()
       ..addAll(visibleLiveTvServers);
@@ -340,6 +315,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   @override
   void dispose() {
+    ++_liveTvCheckGeneration;
     _statusSubscription?.cancel();
     super.dispose();
   }

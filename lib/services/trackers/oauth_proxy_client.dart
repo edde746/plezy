@@ -8,7 +8,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
     as platform;
-import '../../watch_together/services/watch_together_peer_service.dart';
+import '../../watch_together/services/watch_together_relay_endpoint.dart';
 import 'tracker_constants.dart';
 
 /// Client for the Plezy relay's `/auth/*` OAuth proxy.
@@ -19,7 +19,7 @@ import 'tracker_constants.dart';
 /// scheme is required — works identically on TVs without a browser.
 class OAuthProxyClient {
   /// Public base URL of the Plezy relay; colocated with Watch Together.
-  static String get baseUrl => WatchTogetherPeerService.defaultBaseUrl;
+  static String get baseUrl => WatchTogetherRelayEndpoint.defaultEndpoint.canonicalBaseUrl;
 
   final http.Client _http;
 
@@ -40,7 +40,7 @@ class OAuthProxyClient {
       operation: 'OAuth proxy start',
     );
     if (res.statusCode != 200) {
-      throw OAuthProxyException('start failed: HTTP ${res.statusCode}: ${res.body}');
+      throw OAuthProxyException('OAuth proxy start failed: HTTP ${res.statusCode}');
     }
     final body = json.decode(res.body) as Map<String, dynamic>;
     return OAuthProxyStart(
@@ -94,13 +94,18 @@ class OAuthProxyClient {
         throw const OAuthProxyException('Session expired or already used');
       }
       if (res.statusCode != 200) {
-        throw OAuthProxyException('poll failed: HTTP ${res.statusCode}: ${res.body}');
+        throw OAuthProxyException('OAuth proxy poll failed: HTTP ${res.statusCode}');
       }
       final body = json.decode(res.body) as Map<String, dynamic>;
       if (body['error'] != null) {
-        final err = body['error'] as String;
+        final err = body['error'];
         if (err == 'access_denied') return null; // user cancelled in browser
-        throw OAuthProxyException('Upstream auth failed: $err');
+        final category = switch (err) {
+          'missing_code' => 'missing authorization code',
+          'exchange_failed' => 'token exchange failed',
+          _ => 'upstream authorization failed',
+        };
+        throw OAuthProxyException('OAuth proxy failed: $category');
       }
       return OAuthProxyResult(
         accessToken: body['accessToken'] as String,

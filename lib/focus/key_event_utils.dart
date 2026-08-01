@@ -32,24 +32,35 @@ import 'dpad_navigator.dart';
 class BackKeyCoordinator {
   static bool _handledThisFrame = false;
   static bool _clearScheduled = false;
+  static int _clearGeneration = 0;
 
   static void markHandled() {
     _handledThisFrame = true;
     if (_clearScheduled) return;
+
     _clearScheduled = true;
-    // Clear on next frame to avoid blocking unrelated future back presses.
+    final clearGeneration = _clearGeneration;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (clearGeneration != _clearGeneration) return;
       _handledThisFrame = false;
       _clearScheduled = false;
     });
+    // addPostFrameCallback does not request a frame. Ensure the one-shot
+    // marker cannot leak when handling Back does not otherwise schedule one.
+    WidgetsBinding.instance.scheduleFrame();
+  }
+
+  static void clear() {
+    _handledThisFrame = false;
+    _clearScheduled = false;
+    // Invalidate a pending callback so it cannot clear a newer marker.
+    _clearGeneration++;
   }
 
   static bool consumeIfHandled() {
-    if (_handledThisFrame) {
-      _handledThisFrame = false;
-      return true;
-    }
-    return false;
+    if (!_handledThisFrame) return false;
+    clear();
+    return true;
   }
 }
 
@@ -62,14 +73,15 @@ KeyEventResult handleBackKeyAction(KeyEvent event, VoidCallback onBack) {
     return KeyEventResult.handled;
   }
 
-  // AppleTV physical-keyboard back (Siri Remote Menu via engine-synthesized
-  // escape): run onBack on KeyDown only; consume KeyUp silently. The
-  // suppressor-based "arm-on-KeyDown, clear-on-KeyUp" pattern leaks here
+  // AppleTV back (Siri Remote Menu via engine-synthesized escape): run onBack
+  // on KeyDown only; consume KeyUp silently. Some engine paths report Menu as
+  // a non-keyboard device, but the same down-only handling is still required.
+  // The suppressor-based "arm-on-KeyDown, clear-on-KeyUp" pattern leaks here
   // because onBack typically calls Navigator.pop, swapping the focus tree
   // before the matching KeyUp is dispatched — the orphaned KeyUp then never
   // reaches a consumeIfSuppressed call, pinning the suppressor armed and
   // silently swallowing the next press's KeyDown.
-  if (PlatformDetector.isAppleTV() && event.isPhysicalKeyboardEvent) {
+  if (PlatformDetector.isAppleTV()) {
     if (event is KeyDownEvent) {
       BackKeyCoordinator.markHandled();
       onBack();
@@ -109,6 +121,28 @@ KeyEventResult handleOneShotSelect(KeyEvent event, VoidCallback onActivate) {
   if (!event.logicalKey.isSelectKey) return KeyEventResult.ignored;
   if (event is KeyDownEvent) onActivate();
   return KeyEventResult.handled;
+}
+
+/// Expands a UTF-16 [range] to whole extended grapheme clusters in [text].
+///
+/// Flutter selections use UTF-16 code-unit offsets. Custom editors must pass a
+/// non-empty range containing the code units they intend to replace; the
+/// returned range is normalized, clamped, and safe to use with
+/// [String.replaceRange] without splitting a user-perceived character.
+TextRange expandToGraphemeRange(String text, TextRange range) {
+  if (text.isEmpty) return TextRange.empty;
+
+  final first = range.start.clamp(0, text.length);
+  final second = range.end.clamp(0, text.length);
+  final start = first <= second ? first : second;
+  final end = first <= second ? second : first;
+  if (start == end) return TextRange.collapsed(start);
+
+  final boundary = CharacterBoundary(text);
+  return TextRange(
+    start: boundary.getLeadingTextBoundaryAt(start) ?? 0,
+    end: boundary.getTrailingTextBoundaryAt(end - 1) ?? text.length,
+  );
 }
 
 /// Creates a [FocusOnKeyEventCallback] that dispatches d-pad / arrow keys to

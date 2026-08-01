@@ -29,22 +29,25 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderSt
   /// Number of tabs — derived from [tabChipFocusNodes].
   int get tabCount => tabChipFocusNodes.length;
 
-  /// Initialise the [TabController] and register gamepad callbacks.
+  /// Initialise the [TabController] and register owner-scoped gamepad callbacks.
   /// Call from [initState].
   void initTabNavigation() {
     tabController = TabController(length: tabCount, vsync: this);
     tabController.addListener(onTabChanged);
-    GamepadService.onL1Pressed = goToPreviousTab;
-    GamepadService.onR1Pressed = goToNextTab;
+    GamepadService.registerTabNavigation(
+      this,
+      previous: goToPreviousTab,
+      next: goToNextTab,
+      isActive: () => mounted && TickerMode.getValuesNotifier(context).value.enabled,
+    );
   }
 
-  /// Dispose the [TabController] and clear gamepad callbacks.
+  /// Dispose the [TabController] and remove only this screen's callbacks.
   /// Call from [dispose].
   void disposeTabNavigation() {
+    GamepadService.unregisterTabNavigation(this);
     tabController.removeListener(onTabChanged);
     tabController.dispose();
-    GamepadService.onL1Pressed = null;
-    GamepadService.onR1Pressed = null;
   }
 
   void goToPreviousTab() {
@@ -84,7 +87,7 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderSt
   }
 
   void onTabBarBack() {
-    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
+    MainScreenFocusScope.focusSidebarOf(context);
   }
 
   /// Shared tab chip builder — eliminates duplication between screens.

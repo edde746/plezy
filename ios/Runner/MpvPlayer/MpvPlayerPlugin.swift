@@ -48,7 +48,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     registrar.addMethodCallDelegate(instance, channel: methodChannel)
     eventChannel.setStreamHandler(instance)
-    pipChannel.setMethodCallHandler(instance.handlePipCall)
+    pipChannel.setMethodCallHandler { [weak instance] call, result in
+      guard let instance else {
+        result(nil)
+        return
+      }
+      instance.handlePipCall(call, result: result)
+    }
   }
 
   // MARK: - FlutterStreamHandler
@@ -91,9 +97,42 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleUpdateFrame(result: result)
     case "setLogLevel":
       handleSetLogLevel(call: call, result: result)
+    case "getAudioRenderingMode":
+      result(Self.audioRenderingMode())
     default:
       result(FlutterMethodNotImplemented)
     }
+  }
+
+  /// The system's resolved audio rendering mode, for the Dolby-prescribed
+  /// playback badge. `AVAudioSession.renderingMode` is tvOS/iOS 17.2+ and is
+  /// documented as populated for CarPlay and AirPlay routes, so an HDMI route
+  /// is expected to report `notApplicable`; callers must treat that as
+  /// "unknown", never as "not Dolby".
+  private static func audioRenderingMode() -> [String: Any] {
+    var out: [String: Any] = [:]
+    let session = AVAudioSession.sharedInstance()
+    out["maxOutputChannels"] = session.maximumOutputNumberOfChannels
+    out["outputChannels"] = session.outputNumberOfChannels
+    out["route"] = session.currentRoute.outputs.first?.portType.rawValue ?? "none"
+    if #available(tvOS 17.2, iOS 17.2, *) {
+      let mode = session.renderingMode
+      out["rawValue"] = mode.rawValue
+      out["name"] =
+        switch mode {
+        case .notApplicable: "notApplicable"
+        case .monoStereo: "monoStereo"
+        case .surround: "surround"
+        case .spatialAudio: "spatialAudio"
+        case .dolbyAudio: "dolbyAudio"
+        case .dolbyAtmos: "dolbyAtmos"
+        @unknown default: "unknown"
+        }
+    } else {
+      out["rawValue"] = 0
+      out["name"] = "unavailable"
+    }
+    return out
   }
 
   // MARK: - PiP
@@ -210,6 +249,13 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       ])
       return
     }
+    if manual && isManualPipRequest {
+      result?([
+        "success": false, "errorCode": "failed",
+        "errorMessage": "A PiP start request is already pending",
+      ])
+      return
+    }
     guard let pip = preparePip() else {
       result?([
         "success": false, "errorCode": "pip_prepare_failed",
@@ -220,10 +266,18 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     isManualPipRequest = manual
     pip.startPip(waitForFrame: manual) { [weak self] started in
+      guard let self else {
+        result?([
+          "success": false, "errorCode": "failed", "errorMessage": "Player disposed",
+        ])
+        return
+      }
       if started {
         result?(["success": true])
       } else {
-        self?.cleanupPip(notify: false)
+        if self.playerCore?.isPipStarting == true {
+          self.cleanupPip(notify: false)
+        }
         result?([
           "success": false, "errorCode": "failed", "errorMessage": "PiP failed to start",
         ])
@@ -239,7 +293,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     isManualPipRequest = false
     stopPipTimebaseSync()
     if pause {
-      playerCore?.setPropertyAsync("pause", value: "yes") { [weak self] _ in
+      playerCore?.setPropertyAsync("pause", value: "yes") { [weak self] propertyResult in
+        guard case .success = propertyResult else { return }
         self?.pipController?.invalidatePlaybackState()
         self?.syncPipTimebase()
       }
@@ -308,6 +363,14 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
             code: "NO_WINDOW", message: "Could not find key window", details: nil))
         return
       }
+
+      // A partially torn-down core must not survive a rapid route replacement.
+      self.pipController?.teardown()
+      self.pipController = nil
+      self.pendingInlineRestoreAfterPip = false
+      self.stopPipTimebaseSync()
+      self.playerCore?.dispose()
+      self.playerCore = nil
 
       let core = MpvPlayerCore()
       core.delegate = self
@@ -485,7 +548,8 @@ extension MpvPlayerPlugin: MpvPipDelegate {
   }
 
   func pipSetPlaying(_ playing: Bool) {
-    playerCore?.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] _ in
+    playerCore?.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] propertyResult in
+      guard case .success = propertyResult else { return }
       self?.pipController?.invalidatePlaybackState()
       self?.syncPipTimebase()
     }

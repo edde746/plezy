@@ -1,10 +1,15 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:plezy/media/ids.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as path;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
 import 'package:plezy/models/download_models.dart';
+
+import '../test_helpers/download_fixtures.dart';
 
 void main() {
   late AppDatabase db;
@@ -17,75 +22,314 @@ void main() {
     await db.close();
   });
 
-  // ============================================================
-  // insertDownload
-  // ============================================================
+  group('insertQueuedDownload', () {
+    test('atomically persists media identity, scope, policy, and queue state', () async {
+      await db.close();
+      final tempDir = await Directory.systemTemp.createTemp('plezy_atomic_queue_');
+      final databaseFile = File(path.join(tempDir.path, 'downloads.sqlite'));
+      try {
+        db = AppDatabase.forTesting(NativeDatabase(databaseFile));
+        final outcome = await db.insertQueuedDownload(
+          serverId: ServerId('srv'),
+          clientScopeId: 'srv/user-a',
+          ratingKey: 'episode-1',
+          globalKey: 'srv:episode-1',
+          type: 'episode',
+          parentRatingKey: 'season-1',
+          grandparentRatingKey: 'show-1',
+          mediaIndex: 3,
+          mediaSourceId: 'source-3',
+          priority: 7,
+          downloadSubtitles: false,
+          downloadArtwork: true,
+        );
+        expect(outcome, QueueDownloadOutcome.admitted);
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase(databaseFile));
 
-  group('insertDownload', () {
-    test('inserts a movie row with defaults', () async {
-      await db.insertDownload(
-        serverId: ServerId('srv'),
-        ratingKey: '100',
-        globalKey: 'srv:100',
-        type: 'movie',
-        status: DownloadStatus.queued.index,
-      );
-
-      final rows = await db.select(db.downloadedMedia).get();
-      expect(rows, hasLength(1));
-      final r = rows.first;
-      expect(r.serverId, 'srv');
-      expect(r.ratingKey, '100');
-      expect(r.globalKey, 'srv:100');
-      expect(r.type, 'movie');
-      expect(r.status, DownloadStatus.queued.index);
-      expect(r.parentRatingKey, isNull);
-      expect(r.grandparentRatingKey, isNull);
-      expect(r.mediaIndex, 0);
+        final media = (await db.select(db.downloadedMedia).get()).single;
+        final queued = (await db.select(db.downloadQueue).get()).single;
+        expect(media.serverId, 'srv');
+        expect(media.clientScopeId, 'srv/user-a');
+        expect(media.ratingKey, 'episode-1');
+        expect(media.parentRatingKey, 'season-1');
+        expect(media.grandparentRatingKey, 'show-1');
+        expect(media.status, DownloadStatus.queued.index);
+        expect(media.mediaIndex, 3);
+        expect(media.mediaSourceId, 'source-3');
+        expect(queued.mediaGlobalKey, media.globalKey);
+        expect(queued.priority, 7);
+        expect(queued.downloadSubtitles, isFalse);
+        expect(queued.downloadArtwork, isTrue);
+      } finally {
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase.memory());
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      }
     });
 
-    test('inserts an episode with parent and grandparent keys', () async {
+    test('requeues retryable rows without replacing identity or physical fields', () async {
       await db.insertDownload(
         serverId: ServerId('srv'),
-        ratingKey: 'ep1',
-        globalKey: 'srv:ep1',
+        clientScopeId: 'scope-original',
+        ratingKey: 'existing',
+        globalKey: 'srv:existing',
+        type: 'movie',
+        parentRatingKey: 'season-original',
+        grandparentRatingKey: 'show-original',
+        status: DownloadStatus.failed.index,
+        mediaIndex: 2,
+        mediaSourceId: 'source-original',
+      );
+      final original = (await db.getDownloadedMedia('srv:existing'))!;
+      await (db.update(db.downloadedMedia)..where((row) => row.globalKey.equals('srv:existing'))).write(
+        const DownloadedMediaCompanion(
+          progress: Value(41),
+          downloadedBytes: Value(410),
+          totalBytes: Value(1000),
+          videoFilePath: Value('downloads/video.mkv'),
+          safRootUri: Value('content://downloads'),
+          thumbPath: Value('downloads/thumb.jpg'),
+          downloadedAt: Value(1234),
+          errorMessage: Value('network error'),
+          retryCount: Value(3),
+          bgTaskId: Value('stale-task'),
+        ),
+      );
+
+      final outcome = await db.insertQueuedDownload(
+        serverId: ServerId('different-server'),
+        clientScopeId: 'scope-new',
+        ratingKey: 'different-rating-key',
+        globalKey: 'srv:existing',
         type: 'episode',
-        parentRatingKey: 'season1',
-        grandparentRatingKey: 'show1',
-        status: DownloadStatus.queued.index,
-        mediaIndex: 7,
+        parentRatingKey: 'season-new',
+        grandparentRatingKey: 'show-new',
+        mediaIndex: 9,
+        mediaSourceId: 'source-new',
+        priority: 4,
+        downloadSubtitles: false,
+        downloadArtwork: false,
       );
 
-      final row = (await db.select(db.downloadedMedia).get()).single;
-      expect(row.parentRatingKey, 'season1');
-      expect(row.grandparentRatingKey, 'show1');
-      expect(row.mediaIndex, 7);
+      expect(outcome, QueueDownloadOutcome.admitted);
+      final requeued = (await db.getDownloadedMedia('srv:existing'))!;
+      expect(requeued.id, original.id);
+      expect(requeued.serverId, 'different-server');
+      expect(requeued.clientScopeId, 'scope-new');
+      expect(requeued.ratingKey, 'different-rating-key');
+      expect(requeued.type, 'episode');
+      expect(requeued.parentRatingKey, 'season-new');
+      expect(requeued.grandparentRatingKey, 'show-new');
+      expect(requeued.mediaIndex, 9);
+      expect(requeued.mediaSourceId, 'source-new');
+      expect(requeued.status, DownloadStatus.queued.index);
+      expect(requeued.progress, 0);
+      expect(requeued.downloadedBytes, 0);
+      expect(requeued.totalBytes, isNull);
+      expect(requeued.errorMessage, isNull);
+      expect(requeued.retryCount, 0);
+      expect(requeued.bgTaskId, isNull);
+      expect(requeued.videoFilePath, 'downloads/video.mkv');
+      expect(requeued.safRootUri, 'content://downloads');
+      expect(requeued.thumbPath, 'downloads/thumb.jpg');
+      expect(requeued.downloadedAt, 1234);
+      final queue = (await db.select(db.downloadQueue).get()).single;
+      expect(queue.priority, 4);
+      expect(queue.downloadSubtitles, isFalse);
+      expect(queue.downloadArtwork, isFalse);
     });
 
-    test('insertDownload uses InsertMode.insertOrReplace (re-insert overwrites)', () async {
+    test('admits cancelled and partial rows for a fresh attempt', () async {
+      for (final status in [DownloadStatus.cancelled, DownloadStatus.partial]) {
+        final key = 'srv:${status.name}';
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: status.name,
+          globalKey: key,
+          type: 'movie',
+          status: status.index,
+        );
+        await db.updateDownloadProgress(key, 75, 750, 1000);
+        await db.updateDownloadError(key, 'old failure');
+
+        expect(
+          await db.insertQueuedDownload(
+            serverId: ServerId('srv'),
+            ratingKey: status.name,
+            globalKey: key,
+            type: 'movie',
+          ),
+          QueueDownloadOutcome.admitted,
+        );
+        final row = (await db.getDownloadedMedia(key))!;
+        expect(row.status, DownloadStatus.queued.index);
+        expect(row.progress, 0);
+        expect(row.downloadedBytes, 0);
+        expect(row.totalBytes, isNull);
+        expect(row.errorMessage, isNull);
+        expect(row.retryCount, 0);
+      }
+      expect(await db.select(db.downloadQueue).get(), hasLength(2));
+    });
+
+    test('preserves active, paused, and completed rows without creating queue work', () async {
+      for (final status in [DownloadStatus.downloading, DownloadStatus.paused, DownloadStatus.completed]) {
+        final key = 'srv:${status.name}';
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: status.name,
+          globalKey: key,
+          type: 'movie',
+          status: status.index,
+        );
+        await db.updateDownloadProgress(key, 63, 630, 1000);
+        final before = (await db.getDownloadedMedia(key))!;
+
+        expect(
+          await db.insertQueuedDownload(
+            serverId: ServerId('other'),
+            ratingKey: 'replacement',
+            globalKey: key,
+            type: 'episode',
+            priority: 9,
+          ),
+          QueueDownloadOutcome.unchanged,
+        );
+        expect(await db.getDownloadedMedia(key), before);
+      }
+      expect(await db.select(db.downloadQueue).get(), isEmpty);
+    });
+
+    test('refreshes policy for an already queued row without rewriting media', () async {
       await db.insertDownload(
         serverId: ServerId('srv'),
-        ratingKey: '100',
-        globalKey: 'srv:100',
+        ratingKey: 'queued',
+        globalKey: 'srv:queued',
         type: 'movie',
         status: DownloadStatus.queued.index,
       );
-      // Mark progress so we can detect a replace.
-      await db.updateDownloadProgress('srv:100', 50, 500, 1000);
+      await db.updateDownloadProgress('srv:queued', 12, 120, 1000);
+      await db.addToQueue(mediaGlobalKey: 'srv:queued', priority: 1);
+      final before = (await db.getDownloadedMedia('srv:queued'))!;
 
-      // Re-insert with the same globalKey — should replace, resetting progress to default 0.
+      final outcome = await db.insertQueuedDownload(
+        serverId: ServerId('other'),
+        ratingKey: 'replacement',
+        globalKey: 'srv:queued',
+        type: 'episode',
+        priority: 8,
+        downloadSubtitles: false,
+        downloadArtwork: false,
+      );
+
+      expect(outcome, QueueDownloadOutcome.alreadyQueued);
+      expect(await db.getDownloadedMedia('srv:queued'), before);
+      final queue = (await db.select(db.downloadQueue).get()).single;
+      expect(queue.priority, 8);
+      expect(queue.downloadSubtitles, isFalse);
+      expect(queue.downloadArtwork, isFalse);
+    });
+
+    test('a state advance during retry admission wins over the stale requeue', () async {
       await db.insertDownload(
         serverId: ServerId('srv'),
-        ratingKey: '100',
-        globalKey: 'srv:100',
+        ratingKey: 'race',
+        globalKey: 'srv:race',
         type: 'movie',
         status: DownloadStatus.failed.index,
       );
+      await db.customStatement('''
+        CREATE TRIGGER advance_retry_state
+        BEFORE UPDATE OF status ON downloaded_media
+        WHEN OLD.global_key = 'srv:race'
+          AND OLD.status = ${DownloadStatus.failed.index}
+          AND NEW.status = ${DownloadStatus.queued.index}
+        BEGIN
+          UPDATE downloaded_media
+          SET status = ${DownloadStatus.downloading.index}
+          WHERE id = OLD.id;
+          SELECT RAISE(IGNORE);
+        END
+      ''');
 
-      final row = (await db.select(db.downloadedMedia).get()).single;
-      expect(row.status, DownloadStatus.failed.index);
-      expect(row.progress, 0);
-      expect(row.downloadedBytes, 0);
+      final outcome = await db.insertQueuedDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'race',
+        globalKey: 'srv:race',
+        type: 'movie',
+      );
+
+      expect(outcome, QueueDownloadOutcome.unchanged);
+      expect((await db.getDownloadedMedia('srv:race'))?.status, DownloadStatus.downloading.index);
+      expect(await db.select(db.downloadQueue).get(), isEmpty);
+    });
+
+    test('rolls back both new and replacement media rows when queue insertion fails', () async {
+      await db.close();
+      final tempDir = await Directory.systemTemp.createTemp('plezy_atomic_rollback_');
+      final databaseFile = File(path.join(tempDir.path, 'downloads.sqlite'));
+      try {
+        db = AppDatabase.forTesting(NativeDatabase(databaseFile));
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: 'existing',
+          globalKey: 'srv:existing',
+          type: 'movie',
+          status: DownloadStatus.failed.index,
+        );
+        await db.updateDownloadProgress('srv:existing', 41, 410, 1000);
+        await db.customStatement('''
+          CREATE TRIGGER reject_download_queue_insert
+          BEFORE INSERT ON download_queue
+          BEGIN
+            SELECT RAISE(ABORT, 'queue insert rejected');
+          END
+        ''');
+
+        await expectLater(
+          db.insertQueuedDownload(serverId: ServerId('srv'), ratingKey: 'new', globalKey: 'srv:new', type: 'movie'),
+          throwsA(anything),
+        );
+        expect(await db.getDownloadedMedia('srv:new'), isNull);
+        expect(
+          await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:new'))).get(),
+          isEmpty,
+        );
+
+        await expectLater(
+          db.insertQueuedDownload(
+            serverId: ServerId('srv'),
+            ratingKey: 'existing',
+            globalKey: 'srv:existing',
+            type: 'movie',
+          ),
+          throwsA(anything),
+        );
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase(databaseFile));
+        expect(await db.getDownloadedMedia('srv:new'), isNull);
+        expect(
+          await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:new'))).get(),
+          isEmpty,
+        );
+        final preserved = await db.getDownloadedMedia('srv:existing');
+        expect(preserved?.status, DownloadStatus.failed.index);
+        expect(preserved?.progress, 41);
+        expect(preserved?.downloadedBytes, 410);
+        expect(
+          await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:existing'))).get(),
+          isEmpty,
+        );
+      } finally {
+        await db.close();
+        db = AppDatabase.forTesting(NativeDatabase.memory());
+        if (await tempDir.exists()) {
+          await tempDir.delete(recursive: true);
+        }
+      }
     });
   });
 
@@ -204,6 +448,93 @@ void main() {
       // priority 5 wins; srv:3 added before srv:2.
       expect(next!.mediaGlobalKey, 'srv:3');
     });
+
+    test('repairs only missing queued rows and preserves existing queue policy', () async {
+      Future<void> seedMedia(String key, DownloadStatus status) {
+        return db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: key.substring('srv:'.length),
+          globalKey: key,
+          type: 'movie',
+          status: status.index,
+        );
+      }
+
+      await seedMedia('srv:missing', DownloadStatus.queued);
+      await seedMedia('srv:custom', DownloadStatus.queued);
+      await seedMedia('srv:downloading', DownloadStatus.downloading);
+      const customAddedAt = 123456;
+      await db
+          .into(db.downloadQueue)
+          .insert(
+            DownloadQueueCompanion.insert(
+              mediaGlobalKey: 'srv:custom',
+              priority: const Value(-1),
+              addedAt: customAddedAt,
+              downloadSubtitles: const Value(false),
+              downloadArtwork: const Value(false),
+            ),
+          );
+      await db.addToQueue(mediaGlobalKey: 'srv:orphan', priority: 9);
+
+      expect(await db.repairMissingQueuedDownloadEntries(), 1);
+      expect(await db.repairMissingQueuedDownloadEntries(), 0);
+
+      final queueRows = {for (final row in await db.select(db.downloadQueue).get()) row.mediaGlobalKey: row};
+      expect(queueRows.keys, {'srv:missing', 'srv:custom', 'srv:orphan'});
+      final repaired = queueRows['srv:missing']!;
+      expect(repaired.priority, 0);
+      expect(repaired.downloadSubtitles, isTrue);
+      expect(repaired.downloadArtwork, isTrue);
+      final custom = queueRows['srv:custom']!;
+      expect(custom.priority, -1);
+      expect(custom.addedAt, customAddedAt);
+      expect(custom.downloadSubtitles, isFalse);
+      expect(custom.downloadArtwork, isFalse);
+      expect(queueRows['srv:orphan']?.priority, 9);
+      expect(await db.getNextQueueItem(), isNotNull);
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:missing');
+    });
+
+    test('supplementary query returns only completed videos without making them primary work', () async {
+      Future<void> seedMedia(String key, DownloadStatus status, {bool video = false}) async {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: key.substring('srv:'.length),
+          globalKey: key,
+          type: 'movie',
+          status: status.index,
+        );
+        if (video) await db.updateVideoFilePath(key, 'downloads/${key.substring(4)}/video.mkv');
+        await db.addToQueue(
+          mediaGlobalKey: key,
+          priority: key == 'srv:queued' ? 5 : 0,
+          downloadSubtitles: key == 'srv:completed-video',
+          downloadArtwork: false,
+        );
+      }
+
+      await seedMedia('srv:queued', DownloadStatus.queued);
+      await seedMedia('srv:downloading', DownloadStatus.downloading);
+      await seedMedia('srv:completed-video', DownloadStatus.completed, video: true);
+      await seedMedia('srv:completed-no-video', DownloadStatus.completed);
+
+      final pending = await db.getPendingSupplementaryQueueItems();
+      expect(pending, hasLength(1));
+      expect(pending.single.mediaGlobalKey, 'srv:completed-video');
+      expect(pending.single.downloadSubtitles, isTrue);
+      expect(pending.single.downloadArtwork, isFalse);
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:queued');
+
+      await db.removeFromQueue('srv:completed-video');
+      expect(await db.getPendingSupplementaryQueueItems(), isEmpty);
+      await db.addToQueue(mediaGlobalKey: 'srv:completed-video');
+      await db.deleteDownload('srv:completed-video');
+      expect(
+        await (db.select(db.downloadQueue)..where((row) => row.mediaGlobalKey.equals('srv:completed-video'))).get(),
+        isEmpty,
+      );
+    });
   });
 
   // ============================================================
@@ -251,6 +582,25 @@ void main() {
       expect(r.downloadedAt, isNotNull);
       expect(r.downloadedAt! >= before, isTrue);
       expect(r.downloadedAt! <= after, isTrue);
+    });
+
+    test('SAF root assignment and reference queries track physical rows', () async {
+      await seed(key: 'srv:100');
+      await seed(key: 'srv:200');
+
+      await db.updateDownloadSafRoot('srv:100', 'content://root-a');
+      await db.updateDownloadSafRoot('srv:200', 'content://root-a');
+      expect(await db.countDownloadsReferencingSafRoot('content://root-a'), 2);
+      expect(await db.getReferencedDownloadSafRoots(), {'content://root-a'});
+
+      await db.updateDownloadSafRoot('srv:200', 'content://root-b');
+      expect(await db.countDownloadsReferencingSafRoot('content://root-a'), 1);
+      expect(await db.countDownloadsReferencingSafRoot('content://root-b'), 1);
+      expect(await db.getReferencedDownloadSafRoots(), {'content://root-a', 'content://root-b'});
+
+      await db.updateDownloadSafRoot('srv:100', null);
+      expect(await db.countDownloadsReferencingSafRoot('content://root-a'), 0);
+      expect(await db.getReferencedDownloadSafRoots(), {'content://root-b'});
     });
 
     test('updateArtworkPaths sets thumbPath; null clears it', () async {
@@ -450,6 +800,78 @@ void main() {
       expect(userB.map((e) => e.ratingKey), ['ep-b']);
     });
 
+    Future<void> seedMusic() async {
+      await db.insertDownload(
+        serverId: ServerId('srvA'),
+        ratingKey: 'track1',
+        globalKey: 'srvA:track1',
+        type: 'track',
+        parentRatingKey: 'album1',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+      await db.insertDownload(
+        serverId: ServerId('srvA'),
+        ratingKey: 'track2',
+        globalKey: 'srvA:track2',
+        type: 'track',
+        parentRatingKey: 'album1',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+      await db.insertDownload(
+        serverId: ServerId('srvA'),
+        ratingKey: 'track3',
+        globalKey: 'srvA:track3',
+        type: 'track',
+        parentRatingKey: 'album2',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+      // Episode sharing the album's parent key must not leak into track
+      // queries (type filter).
+      await db.insertDownload(
+        serverId: ServerId('srvA'),
+        ratingKey: 'ep-collide',
+        globalKey: 'srvA:ep-collide',
+        type: 'episode',
+        parentRatingKey: 'album1',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+      // Same album key on another server.
+      await db.insertDownload(
+        serverId: ServerId('srvB'),
+        ratingKey: 'track-b',
+        globalKey: 'srvB:track-b',
+        type: 'track',
+        parentRatingKey: 'album1',
+        grandparentRatingKey: 'artist1',
+        status: DownloadStatus.completed.index,
+      );
+    }
+
+    test('getTracksByAlbum filters by parentRatingKey and type', () async {
+      await seedMusic();
+
+      final album1 = await db.getTracksByAlbum('album1');
+      expect(album1.map((e) => e.globalKey).toSet(), {'srvA:track1', 'srvA:track2', 'srvB:track-b'});
+
+      final album1SrvA = await db.getTracksByAlbum('album1', serverId: ServerId('srvA'));
+      expect(album1SrvA.map((e) => e.ratingKey).toSet(), {'track1', 'track2'});
+
+      expect(await db.getTracksByAlbum('albumZ'), isEmpty);
+    });
+
+    test('getTracksByArtist filters by grandparentRatingKey and type', () async {
+      await seedMusic();
+
+      final artist = await db.getTracksByArtist('artist1', serverId: ServerId('srvA'));
+      expect(artist.map((e) => e.ratingKey).toSet(), {'track1', 'track2', 'track3'});
+
+      expect(await db.getTracksByArtist('artist-missing'), isEmpty);
+    });
+
     test('getDownloadsByServerId filters by serverId', () async {
       await seedTree();
 
@@ -479,6 +901,41 @@ void main() {
           .into(db.connections)
           .insert(ConnectionsCompanion.insert(id: id, kind: 'plex', displayName: id, configJson: '{}', createdAt: 0));
     }
+
+    test('repeated claims preserve creation time and omitted metadata', () async {
+      await db
+          .into(db.downloadOwners)
+          .insert(
+            DownloadOwnersCompanion.insert(
+              profileId: 'profile-a',
+              globalKey: 'srv:100',
+              backend: const Value('plex'),
+              clientScopeId: const Value('scope-a'),
+              createdAt: 1234,
+            ),
+          );
+
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100');
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100');
+
+      final owner = (await db.select(db.downloadOwners).get()).single;
+      expect(owner.createdAt, 1234);
+      expect(owner.backend, 'plex');
+      expect(owner.clientScopeId, 'scope-a');
+    });
+
+    test('repeated claims upgrade each supplied non-null metadata field', () async {
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100');
+      final createdAt = (await db.select(db.downloadOwners).get()).single.createdAt;
+
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100', backendId: 'jellyfin');
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100', clientScopeId: 'srv/user-a');
+
+      final owner = (await db.select(db.downloadOwners).get()).single;
+      expect(owner.createdAt, createdAt);
+      expect(owner.backend, 'jellyfin');
+      expect(owner.clientScopeId, 'srv/user-a');
+    });
 
     test('owner counts ignore orphan local profiles', () async {
       await insertProfile('profile-a');
@@ -530,7 +987,9 @@ void main() {
       );
       await db.addToQueue(mediaGlobalKey: 'srv:200');
 
-      await db.deleteDownload('srv:100');
+      await db.updateDownloadSafRoot('srv:100', 'content://root-a');
+      final removedRoot = await db.deleteDownload('srv:100');
+      expect(removedRoot, 'content://root-a');
 
       final media = await db.select(db.downloadedMedia).get();
       expect(media.map((m) => m.globalKey).toList(), ['srv:200']);
@@ -541,7 +1000,7 @@ void main() {
 
     test('deleteDownload on a missing globalKey is a no-op', () async {
       // Should not throw.
-      await db.deleteDownload('nope:nope');
+      expect(await db.deleteDownload('nope:nope'), isNull);
       expect(await db.select(db.downloadedMedia).get(), isEmpty);
       expect(await db.select(db.downloadQueue).get(), isEmpty);
     });

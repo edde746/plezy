@@ -118,12 +118,24 @@ import wakelock_plus
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Dolby's sequence diagram prescribes exactly this at app launch: the
+    // long-form playback profile, then activation, so the session is eligible
+    // for the system's Dolby decode/render path and its rendering capabilities
+    // can be read before any content is chosen. The mpv AVFoundation audio
+    // output reconfigures and re-activates the same shared session at playback
+    // start; this establishes the launch-time state the guide expects.
     do {
       let session = AVAudioSession.sharedInstance()
-      try session.setCategory(.playback, mode: .default)
+      try session.setCategory(
+        .playback, mode: .default, policy: .longFormAudio, options: [])
       try session.setActive(true)
     } catch {
-      print("Failed to configure audio session: \(error)")
+      print("Failed to configure long-form audio session: \(error)")
+      do {
+        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+      } catch {
+        print("Failed to configure audio session: \(error)")
+      }
     }
 
     application.beginReceivingRemoteControlEvents()
@@ -137,6 +149,12 @@ import wakelock_plus
     }
     if let r = self.registrar(forPlugin: "MpvPlayerPlugin") {
       MpvPlayerPlugin.register(with: r)
+    }
+    if let r = self.registrar(forPlugin: "MpvAudioPlayerPlugin") {
+      MpvAudioPlayerPlugin.register(with: r)
+    }
+    if let r = self.registrar(forPlugin: "AtmosProbePlugin") {
+      AtmosProbePlugin.register(with: r)
     }
     if let r = self.registrar(forPlugin: "PackageInfoPlusPlugin") {
       PackageInfoPlusPlugin.register(with: r)

@@ -33,6 +33,21 @@ void main() {
     });
   });
 
+  test('flexibleIntOrZero defaults unsupported values to zero', () {
+    expect(flexibleIntOrZero(3.9), 3);
+    expect(flexibleIntOrZero('42'), 42);
+    expect(flexibleIntOrZero(null), 0);
+    expect(flexibleIntOrZero('bad'), 0);
+    expect(flexibleIntOrZero(true), 0);
+  });
+
+  test('stringOrEmpty stringifies values and defaults null', () {
+    expect(stringOrEmpty('value'), 'value');
+    expect(stringOrEmpty(42), '42');
+    expect(stringOrEmpty(true), 'true');
+    expect(stringOrEmpty(null), '');
+  });
+
   group('flexibleBool', () {
     test('returns bool as-is', () {
       expect(flexibleBool(true), isTrue);
@@ -46,10 +61,12 @@ void main() {
       expect(flexibleBool(-1), isFalse);
     });
 
-    test("maps '1' string to true, other strings to false", () {
+    test("maps '1' and true strings to true, other strings to false", () {
       expect(flexibleBool('1'), isTrue);
+      expect(flexibleBool('true'), isTrue);
+      expect(flexibleBool('TRUE'), isTrue);
       expect(flexibleBool('0'), isFalse);
-      expect(flexibleBool('true'), isFalse);
+      expect(flexibleBool('false'), isFalse);
       expect(flexibleBool(''), isFalse);
     });
 
@@ -72,10 +89,13 @@ void main() {
       expect(flexibleBoolNullable(2), isFalse);
     });
 
-    test("maps '1' string to true, other strings to false", () {
+    test("maps '1' and true strings to true, false strings to false", () {
       expect(flexibleBoolNullable('1'), isTrue);
+      expect(flexibleBoolNullable('true'), isTrue);
+      expect(flexibleBoolNullable('TRUE'), isTrue);
       expect(flexibleBoolNullable('0'), isFalse);
-      expect(flexibleBoolNullable('true'), isFalse);
+      expect(flexibleBoolNullable('false'), isFalse);
+      expect(flexibleBoolNullable('FALSE'), isFalse);
     });
 
     test('returns null for null and unsupported types', () {
@@ -153,6 +173,85 @@ void main() {
 
     test('handles empty list', () {
       expect(flexibleList(<dynamic>[]), <dynamic>[]);
+    });
+  });
+
+  group('flexibleStringList', () {
+    test('passes a list of strings through, dropping non-strings', () {
+      expect(flexibleStringList(<dynamic>['tt1', 2, 'tt3', null]), ['tt1', 'tt3']);
+    });
+
+    test('wraps a single string in a list', () {
+      expect(flexibleStringList('tt1'), ['tt1']);
+    });
+
+    test('returns null for null input', () {
+      expect(flexibleStringList(null), isNull);
+    });
+
+    test('returns null for an empty list', () {
+      expect(flexibleStringList(<dynamic>[]), isNull);
+    });
+
+    test('returns null when no element is a string', () {
+      expect(flexibleStringList(<dynamic>[1, 2, 3]), isNull);
+    });
+  });
+
+  group('flexibleCsvStringList', () {
+    test('passes a list of strings through', () {
+      expect(flexibleCsvStringList(<dynamic>['en', 'sv']), ['en', 'sv']);
+    });
+
+    test('wraps a bare string in a list', () {
+      expect(flexibleCsvStringList('en'), ['en']);
+    });
+
+    test('splits a CSV string', () {
+      expect(flexibleCsvStringList('en,sv'), ['en', 'sv']);
+    });
+
+    test('trims parts and drops empties', () {
+      expect(flexibleCsvStringList('en, sv , ,fr'), ['en', 'sv', 'fr']);
+      expect(flexibleCsvStringList(','), isNull);
+      expect(flexibleCsvStringList(''), isNull);
+    });
+
+    test('splits CSV inside list elements and drops non-strings', () {
+      expect(flexibleCsvStringList(<dynamic>['en,sv', 'fr']), ['en', 'sv', 'fr']);
+      expect(flexibleCsvStringList(<dynamic>[1, 'en']), ['en']);
+    });
+
+    test('returns null for null and empty input', () {
+      expect(flexibleCsvStringList(null), isNull);
+      expect(flexibleCsvStringList(<dynamic>[]), isNull);
+    });
+  });
+
+  group('flexible JSON objects', () {
+    String parseId(Map<String, dynamic> json) => json['id'] as String;
+
+    test('list parser keeps valid siblings around malformed entries', () {
+      final parsed = parseFlexibleJsonList([
+        {'id': 'first'},
+        {'id': 2},
+        'not-a-map',
+        {'id': 'last'},
+      ], parseId);
+
+      expect(parsed, ['first', 'last']);
+    });
+
+    test('object parser finds the first map and contains parse failures', () {
+      expect(
+        parseFlexibleJsonObject([
+          'not-a-map',
+          {'id': 'value'},
+        ], parseId),
+        'value',
+      );
+      expect(parseFlexibleJsonObject({'id': 2}, parseId), isNull);
+      expect(parseFlexibleJsonObject(null, parseId), isNull);
     });
   });
 }

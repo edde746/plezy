@@ -5,6 +5,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
+import '../test_helpers/media_items.dart';
 
 /// Backend-agnostic [MediaItem] tests. Existing coverage is split between
 /// `plex_mappers_test` and `jellyfin_mappers_test` — those exercise the
@@ -14,25 +15,29 @@ import 'package:plezy/media/media_version.dart';
 MediaItem _movie({
   String id = 'm1',
   String? title = 'Movie',
+  int? year,
   int? viewCount,
   int? leafCount,
   int? viewedLeafCount,
   int? durationMs,
   int? viewOffsetMs,
   String? artPath,
+  List<String>? backdropPaths,
   String? backgroundSquarePath,
   MediaBackend backend = MediaBackend.plex,
-}) => MediaItem(
+}) => testMediaItem(
   id: id,
   backend: backend,
   kind: MediaKind.movie,
   title: title,
+  year: year,
   viewCount: viewCount,
   leafCount: leafCount,
   viewedLeafCount: viewedLeafCount,
   durationMs: durationMs,
   viewOffsetMs: viewOffsetMs,
   artPath: artPath,
+  backdropPaths: backdropPaths,
   backgroundSquarePath: backgroundSquarePath,
   serverId: 's1',
 );
@@ -50,7 +55,7 @@ void main() {
     });
 
     test('show with all leaves watched is watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -62,7 +67,7 @@ void main() {
     });
 
     test('show with viewedLeafCount > leafCount is still watched (defensive)', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -71,10 +76,77 @@ void main() {
         serverId: 's1',
       );
       expect(show.isWatched, isTrue);
+      expect(show.unwatchedCount, 0);
     });
 
     test('show with no leaf info falls back to viewCount', () {
-      final show = MediaItem(id: 's', backend: MediaBackend.plex, kind: MediaKind.show, viewCount: 1, serverId: 's1');
+      final show = testMediaItem(
+        id: 's',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        viewCount: 1,
+        serverId: 's1',
+      );
+      expect(show.isWatched, isTrue);
+    });
+
+    test('leaf media ignores aggregate leaf counts', () {
+      expect(_movie(viewCount: 0, leafCount: 1, viewedLeafCount: 1).isWatched, isFalse);
+      expect(_movie(viewCount: 1, leafCount: 1, viewedLeafCount: 0).isWatched, isTrue);
+    });
+
+    test('container media uses aggregate leaf counts', () {
+      final album = testMediaItem(
+        id: 'a',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        viewCount: 0,
+        leafCount: 8,
+        viewedLeafCount: 8,
+        serverId: 's1',
+      );
+      expect(album.isWatched, isTrue);
+    });
+
+    test('every media kind has explicit leaf or container watch semantics', () {
+      const containerKinds = [
+        MediaKind.show,
+        MediaKind.season,
+        MediaKind.artist,
+        MediaKind.album,
+        MediaKind.collection,
+        MediaKind.playlist,
+        MediaKind.folder,
+      ];
+      expect(MediaKind.values.where((kind) => kind.usesLeafWatchCounts), containerKinds);
+
+      for (final kind in MediaKind.values) {
+        final item = testMediaItem(
+          id: kind.id,
+          backend: MediaBackend.plex,
+          kind: kind,
+          viewCount: 0,
+          leafCount: 2,
+          viewedLeafCount: 2,
+          serverId: 's1',
+        );
+        final usesLeaves = containerKinds.contains(kind);
+        expect(item.isWatched, usesLeaves, reason: '${kind.id} watched semantics');
+        expect(item.isPartiallyWatched, isFalse, reason: '${kind.id} partial semantics');
+        expect(item.unwatchedCount, usesLeaves ? 0 : null, reason: '${kind.id} unwatched count semantics');
+      }
+    });
+
+    test('zero container leaf total falls back to viewCount', () {
+      final show = testMediaItem(
+        id: 's',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        viewCount: 1,
+        leafCount: 0,
+        viewedLeafCount: 0,
+        serverId: 's1',
+      );
       expect(show.isWatched, isTrue);
     });
   });
@@ -84,25 +156,22 @@ void main() {
       final movie = _movie(artPath: '/art', backgroundSquarePath: '/square');
 
       expect(movie.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/art']);
-      expect(movie.heroArt(containerAspectRatio: 1.0), '/square');
     });
 
     test('near-square containers fall back to wide cover art when square art is missing', () {
       final movie = _movie(artPath: '/art');
 
       expect(movie.heroArtCandidates(containerAspectRatio: 1.0), ['/art']);
-      expect(movie.heroArt(containerAspectRatio: 1.0), '/art');
     });
 
     test('wide containers prefer wide cover art before square art', () {
       final movie = _movie(artPath: '/art', backgroundSquarePath: '/square');
 
       expect(movie.heroArtCandidates(containerAspectRatio: 16 / 9), ['/art', '/square']);
-      expect(movie.heroArt(containerAspectRatio: 16 / 9), '/art');
     });
 
     test('episodes prefer show art before episode art for wide hero containers', () {
-      final episode = MediaItem(
+      final episode = testMediaItem(
         id: 'e1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -115,14 +184,114 @@ void main() {
       );
 
       expect(episode.heroArtCandidates(containerAspectRatio: 16 / 9), ['/show-art', '/episode-art', '/square']);
-      expect(episode.heroArt(containerAspectRatio: 16 / 9), '/show-art');
       expect(episode.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/show-art', '/episode-art']);
+    });
+
+    test('Jellyfin movies expose every backdrop in display order', () {
+      final movie = _movie(
+        backend: MediaBackend.jellyfin,
+        artPath: '/art-0',
+        backdropPaths: ['/art-0', '/art-1', '/art-2'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(movie.heroBackdropPaths, ['/art-0', '/art-1', '/art-2']);
+      expect(movie.heroArtCandidates(containerAspectRatio: 16 / 9), ['/art-0', '/art-1', '/art-2', '/square']);
+    });
+
+    test('episodes prefer inherited backdrops over their own art', () {
+      final episode = testMediaItem(
+        id: 'e-multi',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        artPath: '/episode-0',
+        backdropPaths: ['/episode-0', '/episode-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1', '/show-2'],
+      );
+
+      expect(episode.heroBackdropPaths, ['/show-0', '/show-1', '/show-2']);
+      expect(episode.heroArtCandidates(containerAspectRatio: 16 / 9), [
+        '/show-0',
+        '/show-1',
+        '/show-2',
+        '/episode-0',
+        '/episode-1',
+      ]);
+    });
+
+    test('legacy scalar art remains a single static backdrop', () {
+      final movie = _movie(artPath: '/legacy-art');
+
+      expect(movie.resolvedBackdropPaths, ['/legacy-art']);
+      expect(movie.heroBackdropPaths, ['/legacy-art']);
+    });
+  });
+
+  group('MediaItem.heroRotationPaths', () {
+    /// The order `CyclingMediaBackdrop` attempts paths as each one fails:
+    /// every rotating path, then the fallbacks it is not already rotating.
+    /// Only the head of this list is ever displayed by a healthy server.
+    List<String> displayOrder(MediaItem item, double aspect) {
+      final rotation = item.heroRotationPaths(containerAspectRatio: aspect);
+      final candidates = item.heroArtCandidates(containerAspectRatio: aspect);
+      return [...rotation, ...candidates.where((path) => !rotation.contains(path))];
+    }
+
+    test('near-square containers hold on square art instead of rotating backdrops', () {
+      final movie = _movie(
+        backend: MediaBackend.jellyfin,
+        artPath: '/art-0',
+        backdropPaths: ['/art-0', '/art-1'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(movie.heroRotationPaths(containerAspectRatio: 1.0), ['/square']);
+    });
+
+    test('near-square containers rotate backdrops when there is no square art', () {
+      final movie = _movie(backend: MediaBackend.jellyfin, artPath: '/art-0', backdropPaths: ['/art-0', '/art-1']);
+
+      expect(movie.heroRotationPaths(containerAspectRatio: 1.0), ['/art-0', '/art-1']);
+    });
+
+    test('wide containers rotate backdrops and leave square art behind them', () {
+      final movie = _movie(
+        backend: MediaBackend.jellyfin,
+        artPath: '/art-0',
+        backdropPaths: ['/art-0', '/art-1'],
+        backgroundSquarePath: '/square',
+      );
+
+      expect(movie.heroRotationPaths(containerAspectRatio: 16 / 9), ['/art-0', '/art-1']);
+    });
+
+    test('rotation before fallback reproduces the candidate order at every aspect', () {
+      final episode = testMediaItem(
+        id: 'e-order',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        artPath: '/episode-0',
+        backdropPaths: ['/episode-0', '/episode-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1'],
+        backgroundSquarePath: '/square',
+        serverId: 's1',
+      );
+
+      for (final aspect in [0.75, 1.0, 1.38, 1.39, 16 / 9, 2.4]) {
+        expect(
+          displayOrder(episode, aspect),
+          episode.heroArtCandidates(containerAspectRatio: aspect),
+          reason: 'aspect $aspect',
+        );
+      }
     });
   });
 
   group('MediaItem.isPartiallyWatched', () {
     test('show with some leaves watched is partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -133,8 +302,22 @@ void main() {
       expect(show.isPartiallyWatched, isTrue);
     });
 
+    test('season progress uses direct episode count only when the leaf total is absent', () {
+      final season = testMediaItem(
+        id: 'season',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.season,
+        childCount: 8,
+        viewedLeafCount: 3,
+      );
+
+      expect(season.leafWatchTotal, 8);
+      expect(season.leafWatchFraction, 3 / 8);
+      expect(season.isPartiallyWatched, isTrue);
+    });
+
     test('show with zero leaves watched is NOT partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -146,7 +329,7 @@ void main() {
     });
 
     test('show with all leaves watched is NOT partially watched', () {
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 's',
         backend: MediaBackend.plex,
         kind: MediaKind.show,
@@ -157,9 +340,87 @@ void main() {
       expect(show.isPartiallyWatched, isFalse);
     });
 
+    test('aggregate progress clamps contradictory counts', () {
+      final overReported = testMediaItem(
+        id: 'show',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        leafCount: 10,
+        viewedLeafCount: 11,
+      );
+      final negative = overReported.copyWith(viewedLeafCount: -1);
+
+      expect(overReported.leafWatchFraction, 1);
+      expect(negative.leafWatchFraction, 0);
+    });
+
     test('movie without leaf info is NOT partially watched (concept doesn\'t apply)', () {
       expect(_movie(viewCount: 0).isPartiallyWatched, isFalse);
       expect(_movie(viewCount: 1).isPartiallyWatched, isFalse);
+    });
+  });
+
+  group('MediaItem watch-state normalization', () {
+    test('leaf state ignores and clears stale aggregate fields', () {
+      final movie = testMediaItem(
+        id: 'm',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        viewCount: 0,
+        leafCount: 3,
+        viewedLeafCount: 3,
+        raw: {
+          'UserData': {'UnplayedItemCount': '0'},
+        },
+      );
+
+      expect(movie.isWatched, isFalse);
+      expect(movie.isPartiallyWatched, isFalse);
+      expect(movie.unwatchedCount, isNull);
+      expect(movie.withWatchedFlag(false).viewedLeafCount, isNull);
+      expect(movie.withWatchedFlag(true).isWatched, isTrue);
+    });
+
+    test('container mutations update the aggregate and item flags together', () {
+      final album = testMediaItem(
+        id: 'a',
+        backend: MediaBackend.plex,
+        kind: MediaKind.album,
+        viewCount: 0,
+        leafCount: 8,
+        viewedLeafCount: 3,
+      );
+
+      final watched = album.withWatchedFlag(true);
+      expect(watched.viewCount, 1);
+      expect(watched.viewedLeafCount, 8);
+      expect(watched.isWatched, isTrue);
+
+      final unwatched = watched.withWatchedFlag(false);
+      expect(unwatched.viewCount, 0);
+      expect(unwatched.viewedLeafCount, 0);
+      expect(unwatched.isWatched, isFalse);
+    });
+
+    test('container unwatched counts are clamped and tolerate string API values', () {
+      final overReported = testMediaItem(
+        id: 's1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.show,
+        leafCount: 10,
+        viewedLeafCount: 11,
+      );
+      final slimJellyfin = testMediaItem(
+        id: 's2',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.show,
+        raw: {
+          'UserData': {'UnplayedItemCount': '4'},
+        },
+      );
+
+      expect(overReported.unwatchedCount, 0);
+      expect(slimJellyfin.unwatchedCount, 4);
     });
   });
 
@@ -331,6 +592,43 @@ void main() {
       expect((decoded as JellyfinMediaItem).playlistItemId, 'entry-1');
     });
 
+    test('round-trips Jellyfin backdrop lists', () {
+      const original = JellyfinMediaItem(
+        id: 'j-backdrops',
+        kind: MediaKind.episode,
+        artPath: '/episode-0',
+        backdropPaths: ['/episode-0', '/episode-1'],
+        grandparentArtPath: '/show-0',
+        grandparentBackdropPaths: ['/show-0', '/show-1'],
+      );
+
+      final decoded = MediaItem.fromJson(original.toJson());
+
+      expect(decoded.backdropPaths, ['/episode-0', '/episode-1']);
+      expect(decoded.grandparentBackdropPaths, ['/show-0', '/show-1']);
+      expect(decoded.heroBackdropPaths, ['/show-0', '/show-1']);
+    });
+
+    test('cached leaf items ignore stale aggregate watch fields', () {
+      const original = JellyfinMediaItem(
+        id: 'cached-music-video',
+        kind: MediaKind.clip,
+        viewCount: 0,
+        leafCount: 1,
+        viewedLeafCount: 1,
+        raw: {
+          'UserData': {'UnplayedItemCount': 0},
+        },
+      );
+
+      final decoded = MediaItem.fromJson(original.toJson());
+
+      expect(decoded.viewedLeafCount, 1);
+      expect(decoded.isWatched, isFalse);
+      expect(decoded.isPartiallyWatched, isFalse);
+      expect(decoded.unwatchedCount, isNull);
+    });
+
     test('missing backend keeps legacy Plex fallback', () {
       final decoded = MediaItem.fromJson({'id': 'legacy', 'kind': 'movie'});
 
@@ -343,7 +641,7 @@ void main() {
 
   group('MediaItem.displayTitle', () {
     test('episode prefers grandparent (show) title', () {
-      final ep = MediaItem(
+      final ep = testMediaItem(
         id: 'e1',
         backend: MediaBackend.plex,
         kind: MediaKind.episode,
@@ -357,7 +655,7 @@ void main() {
     });
 
     test('season prefers grandparent over parent (when both present)', () {
-      final season = MediaItem(
+      final season = testMediaItem(
         id: 'sn1',
         backend: MediaBackend.plex,
         kind: MediaKind.season,
@@ -378,6 +676,18 @@ void main() {
     test('null title degrades to empty string (no NPE)', () {
       final movie = _movie(title: null);
       expect(movie.displayTitle, '');
+    });
+  });
+
+  group('MediaItem music metadata', () {
+    test('album year is exposed only for tracks and albums', () {
+      final track = testMediaItem(kind: MediaKind.track, parentTitle: 'Album', year: 2001);
+      final album = testMediaItem(kind: MediaKind.album, title: 'Album', year: 2001);
+
+      expect(track.albumTitle, 'Album');
+      expect(track.albumYear, 2001);
+      expect(album.albumYear, 2001);
+      expect(_movie(year: 2001).albumYear, isNull);
     });
   });
 }

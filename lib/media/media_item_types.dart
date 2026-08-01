@@ -15,14 +15,11 @@ extension MediaItemTypes on MediaItem {
       kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.season || kind == MediaKind.episode;
 
   /// Whether this episode should have spoiler protection applied.
-  /// True when the item is an unwatched episode watched less than 50%.
+  /// True for any episode that has not yet been marked watched, regardless of
+  /// in-progress playback position (#1397).
   bool get shouldHideSpoiler {
     if (!isEpisode) return false;
-    if (isWatched) return false;
-    if (viewOffsetMs != null && viewOffsetMs! > 0 && durationMs != null && durationMs! > 0) {
-      return viewOffsetMs! / durationMs! < 0.5;
-    }
-    return true;
+    return !isWatched;
   }
 
   /// Non-spoiler art path for episodes (show/season background).

@@ -1,9 +1,6 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-
+mixin _JellyfinMetadataEditMethods on _JellyfinClientInternals {
   Future<Map<String, dynamic>?> fetchEditableMetadataItem(String itemId) async {
     if (isOfflineMode) return null;
     final response = await _http.get('/Users/${_segment(connection.userId)}/Items/${_segment(itemId)}');
@@ -41,13 +38,6 @@ mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
     throwIfHttpError(response);
     final data = response.data;
     return data is Map<String, dynamic> ? data : const <String, dynamic>{};
-  }
-
-  Future<List<Map<String, dynamic>>> getItemImageInfos(String itemId) async {
-    final response = await _http.get('/Items/${_segment(itemId)}/Images');
-    throwIfHttpError(response);
-    final data = response.data;
-    return data is List ? data.whereType<Map<String, dynamic>>().toList() : const <Map<String, dynamic>>[];
   }
 
   Future<bool> downloadRemoteImage(String itemId, {required String imageType, required String imageUrl}) async {

@@ -1,22 +1,16 @@
 PODS:
-  - cupertino_http (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - Flutter (1.0.0)
   - os_media_controls (0.2.4):
     - Flutter
-  - universal_gamepad (0.1.0):
+  - universal_gamepad (1.5.8):
     - Flutter
 
 DEPENDENCIES:
-  - cupertino_http (from `.symlinks/plugins/cupertino_http/darwin`)
   - Flutter (from `Flutter`)
   - os_media_controls (from `.symlinks/plugins/os_media_controls/ios`)
   - universal_gamepad (from `.symlinks/plugins/universal_gamepad/ios`)
 
 EXTERNAL SOURCES:
-  cupertino_http:
-    :path: ".symlinks/plugins/cupertino_http/darwin"
   Flutter:
     :path: Flutter
   os_media_controls:
@@ -25,11 +19,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/universal_gamepad/ios"
 
 SPEC CHECKSUMS:
-  cupertino_http: 94ac07f5ff090b8effa6c5e2c47871d48ab7c86c
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   os_media_controls: 048eb9a75974191b2496d85575b6edcefc572d4e
-  universal_gamepad: 838bbb70d37d8c7c719038aa397214f2c4c4f866
+  universal_gamepad: 7c0cc0c2e3909dfb803d325387e42963b3ed842c
 
 PODFILE CHECKSUM: 16bb7f67e16d8aaa2bfb97666803fbfb291b6559
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.17.0

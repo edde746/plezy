@@ -6,6 +6,8 @@ public class PathMonitorConnectivityProvider: NSObject, ConnectivityProvider {
   // Use .utility, as it is intended for tasks that the user does not track actively.
   // See: https://developer.apple.com/documentation/dispatch/dispatchqos
   private let queue = DispatchQueue.global(qos: .utility)
+  private let handlerLock = NSLock()
+  private var updateHandler: ConnectivityUpdateHandler?
 
   private var pathMonitor: NWPathMonitor?
 
@@ -36,7 +38,18 @@ public class PathMonitorConnectivityProvider: NSObject, ConnectivityProvider {
     return connectivityFrom(path: path)
   }
 
-  public var connectivityUpdateHandler: ConnectivityUpdateHandler?
+  public var connectivityUpdateHandler: ConnectivityUpdateHandler? {
+    get {
+      handlerLock.lock()
+      defer { handlerLock.unlock() }
+      return updateHandler
+    }
+    set {
+      handlerLock.lock()
+      updateHandler = newValue
+      handlerLock.unlock()
+    }
+  }
 
   override init() {
     super.init()
@@ -64,6 +77,13 @@ public class PathMonitorConnectivityProvider: NSObject, ConnectivityProvider {
   }
 
   private func pathUpdateHandler(path: NWPath) {
-    connectivityUpdateHandler?(connectivityFrom(path: path))
+    deliver(connectivityFrom(path: path))
+  }
+
+  func deliver(_ connectivityTypes: [ConnectivityType]) {
+    handlerLock.lock()
+    let handler = updateHandler
+    handlerLock.unlock()
+    handler?(connectivityTypes)
   }
 }

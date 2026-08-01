@@ -70,82 +70,84 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
         );
 
         appLogger.d('Sequential play queue created with ${playQueue.items!.length} items');
+      } else {
+        appLogger.w('Plex returned no usable sequential play queue; falling back to a local series queue');
       }
-    } catch (e) {
-      // Non-critical: Sequential playback will fall back to non-queue navigation
-      appLogger.d('Could not create play queue for sequential playback', error: e);
+    } catch (e, st) {
+      appLogger.w('Could not create Plex play queue; falling back to a local series queue', error: e, stackTrace: st);
     }
   }
 
-  Future<void> _loadAdjacentEpisodes({MediaItem? metadata, _PlaybackAttempt? attempt}) async {
-    if (!mounted || widget.isLive) return;
+  Future<AdjacentEpisodes> _loadAdjacentEpisodes({MediaItem? metadata, _PlaybackAttempt? attempt}) async {
+    if (!mounted || widget.isLive) return const AdjacentEpisodes.unavailable();
 
     final targetMetadata = metadata ?? _currentMetadata;
-
-    if (_offlineLibraryMode) {
-      // Offline mode: find next/previous from downloaded episodes
-      _loadAdjacentEpisodesOffline();
-      return;
-    }
-
     try {
-      final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
-        context: context,
-        metadata: targetMetadata,
-      );
-
-      if (mounted && _currentMetadata.globalKey == targetMetadata.globalKey && (attempt == null || attempt.isCurrent)) {
-        _setPlayerState(() {
-          _nextEpisode = adjacentEpisodes.next;
-          _previousEpisode = adjacentEpisodes.previous;
-        });
-      }
-    } catch (e) {
-      // Non-critical: Failed to load next/previous episode metadata
-      appLogger.d('Could not load adjacent episodes', error: e);
+      final adjacentEpisodes = _offlineLibraryMode
+          ? _loadAdjacentEpisodesOffline(targetMetadata)
+          : await _episodeNavigation.loadAdjacentEpisodes(
+              context: context,
+              metadata: targetMetadata,
+              // The part actually being played, so the queue can skip sibling
+              // entries of a Plex multi-episode file (#1500). MediaSourceInfo
+              // carries the Plex numeric part id; MediaPart.id is its string form.
+              playedPartId: _currentMediaInfo?.partId?.toString(),
+            );
+      _commitAdjacentEpisodes(targetMetadata, adjacentEpisodes, attempt);
+      return adjacentEpisodes;
+    } catch (e, st) {
+      appLogger.w('Could not load adjacent episodes', error: e, stackTrace: st);
+      const failed = AdjacentEpisodes.failed();
+      _commitAdjacentEpisodes(targetMetadata, failed, attempt);
+      return failed;
     }
   }
 
-  /// Load next/previous episodes from locally downloaded content
-  void _loadAdjacentEpisodesOffline() {
-    if (!_currentMetadata.isEpisode) return;
+  /// Load next/previous episodes from locally downloaded content.
+  AdjacentEpisodes _loadAdjacentEpisodesOffline(MediaItem metadata) {
+    if (!metadata.isEpisode) return const AdjacentEpisodes.unavailable();
 
-    final showKey = _currentMetadata.grandparentId;
-    if (showKey == null) return;
+    final showKey = metadata.grandparentId;
+    if (showKey == null) return const AdjacentEpisodes.unavailable();
 
     try {
       final downloadProvider = context.read<DownloadProvider>();
       final episodes = downloadProvider.getDownloadedEpisodesForShow(showKey);
+      if (episodes.isEmpty) return const AdjacentEpisodes.failed();
 
-      if (episodes.isEmpty) return;
+      // Aired watch order (Specials interleaved by air date) — the shared
+      // episode order, so offline next/prev matches streaming, what "download
+      // next N" selects, and the offline OnDeck list (#1416/#1414). Copy first
+      // so the provider's cached list isn't reordered.
+      final sorted = List<MediaItem>.from(episodes)..sort(compareEpisodesByWatchOrder);
+      final currentIdx = sorted.indexWhere((ep) => ep.id == metadata.id);
+      if (currentIdx == -1) return const AdjacentEpisodes.failed();
 
-      // Sort by aired date, falling back to season/episode number
-      final sorted = List<MediaItem>.from(episodes)
-        ..sort((a, b) {
-          final aDate = a.originallyAvailableAt ?? '';
-          final bDate = b.originallyAvailableAt ?? '';
-          if (aDate.isEmpty && bDate.isEmpty) {
-            final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-            if (seasonCmp != 0) return seasonCmp;
-            return (a.index ?? 0).compareTo(b.index ?? 0);
-          }
-          if (aDate.isEmpty) return 1;
-          if (bDate.isEmpty) return -1;
-          return aDate.compareTo(bDate);
-        });
-
-      final currentIdx = sorted.indexWhere((ep) => ep.id == _currentMetadata.id);
-
-      if (currentIdx == -1) return;
-
-      if (mounted) {
-        _setPlayerState(() {
-          _previousEpisode = currentIdx > 0 ? sorted[currentIdx - 1] : null;
-          _nextEpisode = currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
-        });
-      }
-    } catch (e) {
-      appLogger.d('Could not load offline adjacent episodes', error: e);
+      // Same-file siblings are skipped by file-path intersection of the
+      // stored metadata (#1500) — offline media info doesn't carry the
+      // server part id, so the helpers compare the items' own parts.
+      final previous = previousEpisodeSkippingSameFile(sorted, currentIdx);
+      final next = nextEpisodeSkippingSameFile(sorted, currentIdx);
+      return AdjacentEpisodes(
+        next: next,
+        previous: previous,
+        nextStatus: next == null ? QueueNavigationStatus.boundary : QueueNavigationStatus.found,
+        previousStatus: previous == null ? QueueNavigationStatus.boundary : QueueNavigationStatus.found,
+      );
+    } catch (e, st) {
+      appLogger.w('Could not load offline adjacent episodes', error: e, stackTrace: st);
+      return const AdjacentEpisodes.failed();
     }
+  }
+
+  void _commitAdjacentEpisodes(MediaItem targetMetadata, AdjacentEpisodes adjacentEpisodes, _PlaybackAttempt? attempt) {
+    if (!mounted || _currentMetadata.globalKey != targetMetadata.globalKey || (attempt != null && !attempt.isCurrent)) {
+      return;
+    }
+    _setPlayerState(() {
+      _nextEpisode = adjacentEpisodes.next;
+      _previousEpisode = adjacentEpisodes.previous;
+      _nextEpisodeStatus = adjacentEpisodes.nextStatus;
+    });
   }
 }

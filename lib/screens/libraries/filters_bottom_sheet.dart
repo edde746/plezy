@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import '../../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../media/media_filter.dart';
-import '../../services/plex_client.dart';
+import 'state_messages.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/scroll_utils.dart';
 import '../../widgets/bottom_sheet_page_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
-import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
+
+typedef FilterValuesLoader = Future<List<MediaFilterValue>> Function(MediaFilter filter);
 
 class FiltersBottomSheet extends StatefulWidget {
   final List<MediaFilter> filters;
@@ -19,6 +20,7 @@ class FiltersBottomSheet extends StatefulWidget {
   final Function(Map<String, String>) onFiltersChanged;
   final String serverId;
   final String libraryKey;
+  final FilterValuesLoader loadFilterValues;
   final VoidCallback? onBack;
 
   /// Optional pre-fetched values per filter name. When non-null the sheet
@@ -34,6 +36,7 @@ class FiltersBottomSheet extends StatefulWidget {
     required this.onFiltersChanged,
     required this.serverId,
     required this.libraryKey,
+    required this.loadFilterValues,
     this.onBack,
     this.cachedValues,
   });
@@ -46,6 +49,8 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   MediaFilter? _currentFilter;
   List<MediaFilterValue> _filterValues = [];
   bool _isLoadingValues = false;
+  String? _filterValuesError;
+  int _filterValuesLoadGeneration = 0;
   final Map<String, String> _tempSelectedFilters = {};
   static final Map<String, String> _filterDisplayNames = {}; // Cache for display names
   static const int _maxCachedDisplayNames = 1000;
@@ -65,7 +70,27 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   }
 
   @override
+  void didUpdateWidget(covariant FiltersBottomSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final ownerChanged = oldWidget.serverId != widget.serverId || oldWidget.libraryKey != widget.libraryKey;
+    if (ownerChanged) {
+      _filterValuesLoadGeneration++;
+      _currentFilter = null;
+      _filterValues = [];
+      _isLoadingValues = false;
+      _filterValuesError = null;
+      _tempSelectedFilters
+        ..clear()
+        ..addAll(widget.selectedFilters);
+    }
+    if (ownerChanged || !identical(oldWidget.filters, widget.filters)) {
+      _sortFilters();
+    }
+  }
+
+  @override
   void dispose() {
+    _filterValuesLoadGeneration++;
     _valuesScrollController.dispose();
     _initialFocusNode.dispose();
     super.dispose();
@@ -85,67 +110,80 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   }
 
   Future<void> _loadFilterValues(MediaFilter filter) async {
+    final generation = ++_filterValuesLoadGeneration;
+    final filterKey = filter.filter;
+    final serverId = widget.serverId;
+    final libraryKey = widget.libraryKey;
+    final cachedValues = widget.cachedValues;
+    final loader = widget.loadFilterValues;
     setState(() {
       _currentFilter = filter;
+      _filterValues = [];
       _isLoadingValues = true;
+      _filterValuesError = null;
     });
 
     try {
-      // Cached path (Jellyfin) — `/Items/Filters` returned values inline.
-      final cached = widget.cachedValues?[filter.filter];
-      // Backend-neutral lookup so a Jellyfin server with an empty/missing
-      // cache row doesn't throw from `getPlexClientForServer`. Jellyfin's
-      // canonical filter values come from the cached `/Items/Filters`
-      // payload; if that's unavailable, an empty list is the honest answer
-      // until a `getFilterValues` lands on [MediaServerClient].
-      final List<MediaFilterValue> values;
-      if (cached != null) {
-        values = cached;
-      } else {
-        final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
-        if (client is PlexClient) {
-          values = await client.getFilterValues(filter.key);
-        } else {
-          values = const [];
-        }
-      }
-      if (!mounted) return;
+      // Cached path (Jellyfin) - `/Items/Filters` returned values inline.
+      final cached = cachedValues?[filterKey];
+      final values = cached ?? await loader(filter);
+      if (!_isCurrentFilterValuesLoad(generation, serverId, libraryKey, filterKey)) return;
+
+      final selectedValue = _tempSelectedFilters[filterKey];
+      final selectedIndex = selectedValue == null
+          ? -1
+          : values.indexWhere((value) => _extractFilterValue(value.key, filterKey) == selectedValue);
       setState(() {
         _filterValues = values;
         _isLoadingValues = false;
       });
-      _requestInitialFocus();
-      // Scroll to selected value if any
-      final selectedValue = _tempSelectedFilters[filter.filter];
-      if (selectedValue != null) {
-        // +1 because index 0 is the "All" row
-        final idx = values.indexWhere((v) => _extractFilterValue(v.key, filter.filter) == selectedValue) + 1;
-        if (idx > 0) {
-          scrollToCurrentItem(_valuesScrollController, _valuesFirstItemKey, idx);
-        }
+      _requestInitialFocus(generation, serverId, libraryKey, filterKey);
+      if (selectedIndex >= 0) {
+        // +1 because index 0 is the "All" row.
+        scrollToCurrentItem(
+          _valuesScrollController,
+          _valuesFirstItemKey,
+          selectedIndex + 1,
+          isCurrent: () => _isCurrentFilterValuesLoad(generation, serverId, libraryKey, filterKey),
+        );
       }
-    } catch (e) {
-      if (!mounted) return;
+    } catch (e, stackTrace) {
+      if (!_isCurrentFilterValuesLoad(generation, serverId, libraryKey, filterKey)) return;
+      appLogger.w('Failed to load values for filter $filterKey', error: e, stackTrace: stackTrace);
       setState(() {
         _filterValues = [];
         _isLoadingValues = false;
+        _filterValuesError = t.errors.unableToLoad(context: filter.title);
       });
-      _requestInitialFocus();
+      _requestInitialFocus(generation, serverId, libraryKey, filterKey);
     }
   }
 
+  bool _isCurrentFilterValuesLoad(int generation, String serverId, String libraryKey, String? filterKey) {
+    return mounted &&
+        generation == _filterValuesLoadGeneration &&
+        widget.serverId == serverId &&
+        widget.libraryKey == libraryKey &&
+        _currentFilter?.filter == filterKey;
+  }
+
   void _goBack() {
+    final generation = ++_filterValuesLoadGeneration;
+    final serverId = widget.serverId;
+    final libraryKey = widget.libraryKey;
     setState(() {
       _currentFilter = null;
       _filterValues = [];
+      _isLoadingValues = false;
+      _filterValuesError = null;
     });
-    _requestInitialFocus();
+    _requestInitialFocus(generation, serverId, libraryKey, null);
   }
 
-  void _requestInitialFocus() {
+  void _requestInitialFocus(int generation, String serverId, String libraryKey, String? filterKey) {
     if (!InputModeTracker.isKeyboardMode(context)) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+      if (!_isCurrentFilterValuesLoad(generation, serverId, libraryKey, filterKey)) return;
       if (_initialFocusNode.context != null) {
         _initialFocusNode.requestFocus();
       } else {
@@ -155,6 +193,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   }
 
   void _clearFilters() {
+    _filterValuesLoadGeneration++;
     setState(() {
       _tempSelectedFilters.clear();
     });
@@ -162,7 +201,8 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   }
 
   void _applyFilters() {
-    widget.onFiltersChanged(_tempSelectedFilters);
+    _filterValuesLoadGeneration++;
+    widget.onFiltersChanged(Map<String, String>.of(_tempSelectedFilters));
     OverlaySheetController.of(context).close();
   }
 
@@ -200,6 +240,17 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   }
 
   Widget _buildFilterValuesView(MediaFilter filter) {
+    final error = _filterValuesError;
+    if (error != null) {
+      return ErrorStateWidget(
+        message: error,
+        onRetry: () => _loadFilterValues(filter),
+        actionFocusNode: _initialFocusNode,
+        onActionBack: _goBack,
+        actionAutofocus: InputModeTracker.isKeyboardMode(context),
+        actionUseBackgroundFocus: true,
+      );
+    }
     if (_isLoadingValues) {
       return Focus(
         autofocus: InputModeTracker.isKeyboardMode(context),

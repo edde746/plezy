@@ -44,6 +44,10 @@ class MediaServerTimeouts {
 
   static const plexTvReceive = Duration(seconds: 10);
 
+  /// Authenticated health probe timeout. Health sweeps await every server, so
+  /// a stale Plex endpoint must not hold the whole sweep for [receive].
+  static const plexProbe = Duration(seconds: 8);
+
   /// Probe + token-validate timeout — Jellyfin servers respond fast on
   /// `/System/Info/Public` and `/Users/Me`.
   static const jellyfinProbe = Duration(seconds: 8);

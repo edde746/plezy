@@ -1,31 +1,13 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  String? _absolutizeImagePath(String? path);
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
+mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
   static const int _playlistsPageSize = 200;
 
   @override
-  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) async {
-    final all = <MediaPlaylist>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchPlaylistsPage(
-        playlistType: playlistType,
-        smart: smart,
-        start: start,
-        size: _playlistsPageSize,
-      );
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
-  }
+  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) => drainPages<MediaPlaylist>(
+    (start, size) => fetchPlaylistsPage(playlistType: playlistType, smart: smart, start: start, size: size),
+    pageSize: _playlistsPageSize,
+  );
 
   @override
   Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
@@ -42,49 +24,40 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     final offset = start ?? 0;
     final pageSize = size ?? _playlistsPageSize;
     final requestedType = playlistType.toLowerCase();
-    final items = <MediaPlaylist>[];
-    var rawOffset = 0;
-    var filteredSeen = 0;
-    int? rawTotal;
-    var rawFinished = false;
-
-    while (items.length < pageSize && !rawFinished) {
-      final response = await _http.get(
-        '/Items',
-        queryParameters: {
-          'userId': connection.userId,
-          'IncludeItemTypes': 'Playlist',
-          'Recursive': 'true',
-          'StartIndex': rawOffset.toString(),
-          'Limit': pageSize.toString(),
-          'Fields': 'Overview,DateCreated,DateLastSaved,ChildCount,Tags',
-          ...jellyfinImageQueryParameters,
-        },
-        abort: abort,
-      );
-      throwIfHttpError(response);
-      final rawItems = _itemsArray(response.data);
-      final rawTotalValue = response.data is Map<String, dynamic>
-          ? (response.data as Map<String, dynamic>)['TotalRecordCount']
-          : null;
-      if (rawTotalValue is int) rawTotal = rawTotalValue;
-
-      for (final item in rawItems.map(_playlistFromJson)) {
-        if (!_matchesPlaylistFilters(item, requestedType: requestedType, smart: smart)) continue;
-        if (filteredSeen >= offset && items.length < pageSize) {
-          items.add(item);
-        }
-        filteredSeen++;
-      }
-
-      rawOffset += rawItems.length;
-      rawFinished = rawItems.isEmpty || rawItems.length < pageSize || (rawTotal != null && rawOffset >= rawTotal);
+    final mediaType = switch (requestedType) {
+      '' => null,
+      'video' => 'Video',
+      'audio' => 'Audio',
+      'photo' => 'Photo',
+      'book' => 'Book',
+      'unknown' => 'Unknown',
+      _ => '',
+    };
+    if (mediaType == '') {
+      return LibraryPage<MediaPlaylist>(items: const [], totalCount: 0, offset: offset);
     }
 
-    final fallbackTotal = rawFinished
-        ? filteredSeen
-        : _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
-    return LibraryPage<MediaPlaylist>(items: items, totalCount: fallbackTotal, offset: offset);
+    final response = await _http.get(
+      '/Items',
+      queryParameters: {
+        'userId': connection.userId,
+        'IncludeItemTypes': 'Playlist',
+        'Recursive': 'true',
+        'MediaTypes': ?mediaType,
+        'StartIndex': offset.toString(),
+        'Limit': pageSize.toString(),
+        'Fields': 'Overview,DateCreated,DateLastSaved,ChildCount,Tags',
+        ...jellyfinImageQueryParameters,
+      },
+      abort: abort,
+    );
+    throwIfHttpError(response);
+    return _pagedItems(
+      response.data,
+      offset: offset,
+      requestedSize: pageSize,
+      map: (raw) => raw.map(_playlistFromJson).toList(),
+    );
   }
 
   @override
@@ -130,27 +103,22 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    final items = _itemsArray(response.data);
-    final rawTotal = response.data is Map<String, dynamic>
-        ? (response.data as Map<String, dynamic>)['TotalRecordCount']
-        : null;
-    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
-    return LibraryPage<MediaItem>(
-      items: _mapItems(items),
-      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
-      offset: offset,
-    );
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   @override
   Future<MediaPlaylist?> createPlaylist({required String title, required List<MediaItem> items}) async {
+    // MediaType stamps the playlist's kind server-side; derive it from the
+    // seed items so music selections create Audio playlists (which is what
+    // fetchPlaylistsPage filters on). Empty seeds keep the Video default.
+    final isMusic = items.isNotEmpty && items.first.kind.isMusic;
     final response = await _http.post(
       '/Playlists',
       queryParameters: {
         'Name': title,
         'Ids': items.map((i) => i.id).join(','),
         'UserId': connection.userId,
-        'MediaType': 'Video',
+        'MediaType': isMusic ? 'Audio' : 'Video',
       },
     );
     throwIfHttpError(response);
@@ -197,7 +165,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       return false;
     }
     if (item.playlistItemId == null) {
-      appLogger.e('movePlaylistItem: item ${item.id} ("${item.title}") has no playlistItemId');
+      appLogger.e('Jellyfin movePlaylistItem failed: missing playlist entry ID');
       return false;
     }
     final response = await _http.post(
@@ -214,7 +182,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       return false;
     }
     if (item.playlistItemId == null) {
-      appLogger.e('removeFromPlaylist: item ${item.id} ("${item.title}") has no playlistItemId');
+      appLogger.e('Jellyfin removeFromPlaylist failed: missing playlist entry ID');
       return false;
     }
     final response = await _http.delete(
@@ -235,8 +203,8 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       smart: false,
       playlistType: (json['MediaType'] as String?)?.toLowerCase() ?? 'video',
       leafCount: json['ChildCount'] as int?,
-      addedAt: _epochSecondsFromJson(json['DateCreated'] as String?),
-      updatedAt: _epochSecondsFromJson(json['DateLastSaved'] as String?),
+      addedAt: jellyfinIsoToEpochSeconds(json['DateCreated'] as String?),
+      updatedAt: jellyfinIsoToEpochSeconds(json['DateLastSaved'] as String?),
       thumbPath: _absolutizeImagePath(_imageTagPath(id, json['ImageTags'])),
       serverId: serverId,
       serverName: serverName,
@@ -247,18 +215,6 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     if (item.kind == MediaKind.track || item.kind == MediaKind.album) return 'audio';
     if (item.kind == MediaKind.photo) return 'photo';
     return 'video';
-  }
-
-  bool _matchesPlaylistFilters(MediaPlaylist playlist, {required String requestedType, required bool? smart}) {
-    if (requestedType.isNotEmpty && playlist.playlistType.toLowerCase() != requestedType) return false;
-    if (smart != null && playlist.smart != smart) return false;
-    return true;
-  }
-
-  int? _epochSecondsFromJson(String? iso) {
-    if (iso == null || iso.isEmpty) return null;
-    final dt = DateTime.tryParse(iso);
-    return dt == null ? null : dt.millisecondsSinceEpoch ~/ 1000;
   }
 
   String? _imageTagPath(String id, Object? tags) {

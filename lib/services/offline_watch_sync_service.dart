@@ -13,6 +13,7 @@ import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/watch_progress.dart';
 import '../utils/app_logger.dart';
+import '../utils/active_client_scope.dart';
 import '../utils/global_key_utils.dart';
 import 'offline_mode_source.dart';
 import '../utils/watch_state_notifier.dart';
@@ -372,9 +373,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
     try {
       await _adoptLegacyWatchActionsForActiveProfile();
       final profileId = _activeProfileId;
-      final pendingActions = profileId == null || profileId.isEmpty
-          ? await _database.getPendingWatchActions()
-          : await _database.getPendingWatchActions(profileId: profileId);
+      if (profileId == null || profileId.isEmpty) {
+        // No active profile: dropping the filter would replay EVERY
+        // profile's queued actions through whatever clients happen to be
+        // bound — the wrong user's account. Actions stay queued.
+        appLogger.d('No active profile — deferring pending watch sync');
+        return;
+      }
+      final pendingActions = await _database.getPendingWatchActions(profileId: profileId);
 
       if (pendingActions.isEmpty) {
         appLogger.d('No pending watch actions to sync');
@@ -384,6 +390,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
       appLogger.i('Syncing ${pendingActions.length} pending watch actions');
 
       for (final action in pendingActions) {
+        if (_activeProfileId != profileId) {
+          // A profile switch mid-loop rebinds server clients to the NEW
+          // user's tokens under the same server ids — replaying the rest
+          // would write this profile's watch history to another account.
+          // Remaining actions stay queued for the next sync.
+          appLogger.i('Active profile changed mid-sync — requeueing remaining watch actions');
+          return;
+        }
         if (action.syncAttempts >= maxSyncAttempts) {
           appLogger.w(
             'Skipping action ${action.id} - exceeded retry limit '
@@ -416,24 +430,28 @@ class OfflineWatchSyncService extends ChangeNotifier {
   Future<String?> _clientScopeIdForItem(ServerId serverId, String itemId) async {
     // A downloaded row's clientScopeId is a cache/source hint, not an owner.
     // Offline watch actions are user-owned, so a new local action follows the
-    // currently active scoped Jellyfin client. Once queued, _clientForAction
-    // replays that exact scope even if the active user changes later.
+    // currently active scoped client. Once queued, _clientForAction replays
+    // that exact scope even if the active user changes later.
     final client = _serverManager.getClient(serverId);
-    if (client != null) {
-      final scopeId = client.cacheServerId;
-      if (scopeId != serverId) return scopeId;
-    }
+    final activeScopeId = resolveActiveClientScopeId(serverId: serverId, cacheServerId: client?.cacheServerId);
+    if (activeScopeId != null) return activeScopeId;
     final download = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), itemId));
-    final downloadedScopeId = download?.clientScopeId;
-    if (downloadedScopeId != null && downloadedScopeId.isNotEmpty) return downloadedScopeId;
-    return null;
+    final downloadedScope = resolveActiveClientScopeId(serverId: serverId, cacheServerId: download?.clientScopeId);
+    final profileId = _activeProfileId;
+    if (downloadedScope != null && isPlexProfileScopeId(downloadedScope) && profileId != null && profileId.isNotEmpty) {
+      return buildPlexProfileScopeId(serverId: serverId, profileId: profileId);
+    }
+    return downloadedScope;
   }
 
   Future<({MediaServerClient client, String? clientScopeId})?> _clientForAction(OfflineWatchProgressItem action) async {
-    final scopeId = action.clientScopeId;
-    if (scopeId != null && scopeId.isNotEmpty) {
-      final scoped = _serverManager.getJellyfinClientByCompoundId(scopeId);
-      if (scoped != null) return (client: scoped, clientScopeId: scopeId);
+    final scopeId = resolveActiveClientScopeId(
+      serverId: ServerId(action.serverId),
+      cacheServerId: action.clientScopeId,
+    );
+    if (scopeId != null) {
+      final scoped = _serverManager.getClientByScope(scopeId);
+      return scoped == null ? null : (client: scoped, clientScopeId: scopeId);
     }
     final client = _serverManager.getClient(ServerId(action.serverId));
     if (client == null) return null;
@@ -483,15 +501,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   String? _activeClientScopeIdForServer(ServerId serverId) {
     final client = _serverManager.getClient(serverId);
-    if (client == null) return null;
-    final scopeId = client.cacheServerId;
-    return scopeId == serverId ? null : scopeId;
+    return resolveActiveClientScopeId(serverId: serverId, cacheServerId: client?.cacheServerId);
   }
 
   Future<MediaServerClient?> _clientForDownloadScope(ServerId serverId, String? clientScopeId) async {
     if (clientScopeId != null && clientScopeId.isNotEmpty) {
-      final scoped = _serverManager.getJellyfinClientByCompoundId(clientScopeId);
-      if (scoped != null) return scoped;
+      return _serverManager.getClientByScope(clientScopeId);
     }
     return _serverManager.getClient(serverId);
   }
@@ -599,6 +614,18 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
   }
 
+  /// Push a watch-state change Plezy observed on the server to the trackers.
+  ///
+  /// Only for genuine transitions detected during a download sync: the item was
+  /// watched (or un-watched) somewhere else, so no playback, manual mark or
+  /// offline replay has reported it. Best-effort by construction — the
+  /// coordinator swallows per-tracker errors and queues what it can retry.
+  Future<void> _mirrorWatchStateToTrackers(MediaItem item, MediaServerClient client, {required bool isWatched}) async {
+    await (isWatched
+        ? TrackerCoordinator.instance.markWatched(item, client)
+        : TrackerCoordinator.instance.markUnwatched(item, client));
+  }
+
   /// Sync watch states for all episodes in a single season.
   ///
   /// Returns the number of episodes synced, or -1 on failure.
@@ -637,6 +664,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
               isNowWatched: isWatched,
               cacheServerId: client.cacheServerId,
             );
+            // The change came from the server (watched on another client), so no
+            // playback or manual path has told the trackers about it.
+            await _mirrorWatchStateToTrackers(episode, client, isWatched: isWatched);
           }
         } else {
           // No cached row yet — populate the canonical row via fetchItem
@@ -772,6 +802,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
                     isNowWatched: isWatched,
                     cacheServerId: client.cacheServerId,
                   );
+                  await _mirrorWatchStateToTrackers(metadata, client, isWatched: isWatched);
                 }
               }
             } catch (e) {

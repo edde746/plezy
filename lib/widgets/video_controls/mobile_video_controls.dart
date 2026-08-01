@@ -11,6 +11,7 @@ import '../../i18n/strings.g.dart';
 import 'player_chrome_controller.dart';
 import 'widgets/circular_control_button.dart';
 import 'widgets/content_strip.dart';
+import 'widgets/content_strip_panel.dart';
 import 'widgets/first_frame_guard.dart';
 import 'widgets/play_pause_stream_builder.dart';
 import 'widgets/live_timeline_bar.dart';
@@ -177,9 +178,14 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
   }
 
   void _onChromeVisibilityChanged() {
-    final controlsVisible = widget.chromeController?.controlsVisible ?? true;
+    final chromeController = widget.chromeController;
+    final controlsVisible = chromeController?.controlsVisible ?? true;
     final wasControlsVisible = _lastControlsVisible;
     _lastControlsVisible = controlsVisible;
+
+    if (chromeController?.contentStripVisible == false && _stripAnim.value > 0) {
+      _stripAnim.reverse();
+    }
 
     if (!controlsVisible && wasControlsVisible && _stripVisible) {
       // Just notify parent that strip is no longer active — don't animate,
@@ -264,12 +270,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                                   _buildBottomBar(context),
                                 ],
                               ),
-                              const Positioned(
-                                left: 0,
-                                right: 0,
-                                bottom: 12,
-                                child: Icon(Symbols.keyboard_arrow_up_rounded, color: Colors.white24, size: 24),
-                              ),
+                              const ContentStripHint(Symbols.keyboard_arrow_up_rounded),
                             ],
                           ),
                         ),
@@ -284,36 +285,19 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                           ignoring: t < 0.5,
                           child: Opacity(
                             opacity: (t * 2).clamp(0.0, 1.0),
-                            child: Container(
+                            child: ContentStripPanel(
                               padding: const EdgeInsets.only(top: 32),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withValues(alpha: 0.65),
-                                    Colors.black.withValues(alpha: 0.7),
-                                  ],
-                                  stops: const [0.0, 0.42, 1.0],
-                                ),
-                              ),
-                              child: Column(
-                                mainAxisSize: .min,
-                                children: [
-                                  const Icon(Symbols.keyboard_arrow_down_rounded, color: Colors.white38, size: 20),
-                                  const SizedBox(height: 4),
-                                  ContentStrip(
-                                    player: widget.player,
-                                    chapters: widget.chapters,
-                                    chaptersLoaded: widget.chaptersLoaded,
-                                    serverId: widget.serverId,
-                                    showQueueTab: widget.showQueueTab,
-                                    onQueueItemSelected: widget.onQueueItemSelected,
-                                    onSeekRequested: widget.onSeekRequested,
-                                    onSeekCompleted: widget.onSeekCompleted,
-                                  ),
-                                ],
+                              chevron: Symbols.keyboard_arrow_down_rounded,
+                              child: ContentStrip(
+                                player: widget.player,
+                                chapters: widget.chapters,
+                                chaptersLoaded: widget.chaptersLoaded,
+                                canControl: widget.canControl,
+                                serverId: widget.serverId,
+                                showQueueTab: widget.showQueueTab,
+                                onQueueItemSelected: widget.onQueueItemSelected,
+                                onSeekRequested: widget.onSeekRequested,
+                                onSeekCompleted: widget.onSeekCompleted,
                               ),
                             ),
                           ),
@@ -339,6 +323,8 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
         child: VideoControlsHeader(
           metadata: widget.metadata,
           style: VideoHeaderStyle.multiLine,
+          onCancelAutoHide: widget.onCancelAutoHide,
+          onStartAutoHide: widget.onStartAutoHide,
           trailing: widget.trackChapterControls,
           onBack: widget.onBack,
         ),
@@ -382,12 +368,11 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
               icon: isPlaying ? Symbols.pause_rounded : Symbols.play_arrow_rounded,
               iconSize: 72,
               onPressed: () {
+                widget.onPlayPause();
                 if (isPlaying) {
-                  widget.player.pause();
-                  widget.onCancelAutoHide?.call(); // Cancel auto-hide when paused
+                  widget.onCancelAutoHide?.call();
                 } else {
-                  widget.player.play();
-                  widget.onStartAutoHide?.call(); // Start auto-hide when playing
+                  widget.onStartAutoHide?.call();
                 }
               },
             ),

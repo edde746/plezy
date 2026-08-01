@@ -1,24 +1,46 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../connection/connection_registry.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
-import '../../models/plex/plex_home.dart';
-import '../../profiles/active_plex_identity.dart';
-import '../../profiles/active_profile_provider.dart';
-import '../../profiles/plex_home_service.dart';
-import '../../profiles/profile_connection_registry.dart';
 import '../../providers/companion_remote_provider.dart';
+import '../../services/base_peer_service.dart';
+import '../../services/companion_remote/companion_remote_host_controller.dart';
 import '../../services/settings_service.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
+
 import '../loading_indicator_box.dart';
+import '../app_icon.dart';
+
+@visibleForTesting
+String companionRemotePairingErrorMessage(Object error) {
+  if (error is PeerError) {
+    return switch (error.type) {
+      PeerErrorType.timeout => t.companionRemote.pairing.connectionTimedOut,
+      PeerErrorType.connectionFailed || PeerErrorType.invalidSession => t.companionRemote.pairing.sessionNotFound,
+      PeerErrorType.authFailed => t.companionRemote.pairing.authFailed,
+      _ => error.message,
+    };
+  }
+
+  final message = error.toString().replaceFirst('Exception: ', '');
+  if (message.contains('timeout') || message.contains('Timed out')) {
+    return t.companionRemote.pairing.connectionTimedOut;
+  } else if (message.contains('Failed to connect')) {
+    return t.companionRemote.pairing.sessionNotFound;
+  } else if (message.contains('Authentication failed')) {
+    return t.companionRemote.pairing.authFailed;
+  }
+  return t.companionRemote.pairing.failedToConnect(error: message);
+}
 
 /// Discovers LAN hosts and provides UI to connect to them.
 class DiscoveryView extends StatefulWidget {
@@ -38,6 +60,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
   String? _errorMessage;
   bool _showManualEntry = false;
   bool _cryptoReady = false;
+  bool _initializing = true;
 
   late final CompanionRemoteProvider _provider;
   StreamSubscription<List<DiscoveredHost>>? _discoverySubscription;
@@ -64,43 +87,30 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
   }
 
   Future<void> _initCryptoAndDiscover() async {
-    final connections = context.read<ConnectionRegistry>();
-    final activeProfile = context.read<ActiveProfileProvider>();
-    final profileConnections = context.read<ProfileConnectionRegistry>();
-    final plexHome = context.read<PlexHomeService>();
-    final identity = await resolveActivePlexIdentity(
-      activeProfile: activeProfile,
-      connections: connections,
-      profileConnections: profileConnections,
-    );
-    if (!mounted) return;
-    final home = await _resolveHome(identity?.account.id);
-    if (!mounted) return;
-    await _provider.ensureCryptoReady(
-      home,
-      connections: connections,
-      activeProfile: activeProfile,
-      profileConnections: profileConnections,
-      identity: identity,
-      plexHomeForConnection: plexHome.materializePlexHomeForConnection,
-    );
+    try {
+      await ensureCompanionRemoteCryptoFromContext(context);
+    } catch (e) {
+      appLogger.e('CompanionRemote: crypto init failed', error: e);
+    }
     if (!mounted) return;
 
+    // The "crypto init failed" card only surfaces once init has actually
+    // finished — while it's running the section shows a loading state so we
+    // don't flash an error at open, and a thrown init still resolves to a
+    // stable (non-stuck) failure card.
     if (_provider.isCryptoReady) {
-      setState(() => _cryptoReady = true);
+      setState(() {
+        _cryptoReady = true;
+        _initializing = false;
+      });
       _startDiscovery();
     } else {
       setState(() {
         _cryptoReady = false;
+        _initializing = false;
         _isSearching = false;
-        _errorMessage = t.companionRemote.pairing.cryptoInitFailed;
       });
     }
-  }
-
-  Future<PlexHome?> _resolveHome(String? connectionId) {
-    if (connectionId == null) return Future<PlexHome?>.value();
-    return context.read<PlexHomeService>().materializePlexHomeForConnection(connectionId);
   }
 
   void _startDiscovery() {
@@ -146,7 +156,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     } catch (e) {
       appLogger.e('Failed to connect', error: e);
       if (!mounted) return;
-      setState(() => _errorMessage = _parseErrorMessage(e.toString()));
+      setState(() => _errorMessage = companionRemotePairingErrorMessage(e));
     } finally {
       setStateIfMounted(() => _isConnecting = false);
     }
@@ -172,27 +182,16 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     );
   }
 
-  String _parseErrorMessage(String error) {
-    if (error.contains('timeout') || error.contains('Timed out')) {
-      return t.companionRemote.pairing.connectionTimedOut;
-    } else if (error.contains('Failed to connect')) {
-      return t.companionRemote.pairing.sessionNotFound;
-    } else if (error.contains('Authentication failed')) {
-      return t.companionRemote.pairing.authFailed;
-    }
-    return t.companionRemote.pairing.failedToConnect(error: error.replaceAll('Exception: ', ''));
-  }
-
   IconData _platformIcon(String platform) {
     switch (platform.toLowerCase()) {
       case 'macos':
-        return Icons.desktop_mac;
+        return Symbols.desktop_mac_rounded;
       case 'windows':
-        return Icons.desktop_windows;
+        return Symbols.desktop_windows_rounded;
       case 'linux':
-        return Icons.computer;
+        return Symbols.computer_rounded;
       default:
-        return Icons.devices;
+        return Symbols.devices_rounded;
     }
   }
 
@@ -217,7 +216,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   children: [
-                    Icon(Icons.error_outline, color: Theme.of(context).colorScheme.onErrorContainer),
+                    AppIcon(Symbols.error_outline_rounded, color: Theme.of(context).colorScheme.onErrorContainer),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -245,13 +244,28 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
   }
 
   Widget _buildDiscoverySection() {
+    if (_initializing) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              const SizedBox(width: 32, height: 32, child: CircularProgressIndicator(strokeWidth: 3)),
+              const SizedBox(height: 16),
+              Text(t.companionRemote.pairing.searchingForDevices, style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      );
+    }
+
     if (!_cryptoReady) {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              const Icon(Icons.warning_amber, size: 48, color: Colors.orange),
+              const AppIcon(Symbols.warning_amber_rounded, size: 48, color: Colors.orange),
               const SizedBox(height: 12),
               Text(t.companionRemote.pairing.cryptoInitFailed, textAlign: TextAlign.center),
             ],
@@ -281,7 +295,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
           padding: const EdgeInsets.all(24.0),
           child: Column(
             children: [
-              const Icon(Icons.devices_other, size: 48, color: Colors.grey),
+              AppIcon(Symbols.devices_other_rounded, size: 48, color: tokens(context).textMuted),
               const SizedBox(height: 12),
               Text(
                 t.companionRemote.pairing.noDevicesFound,
@@ -291,7 +305,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
               const SizedBox(height: 8),
               Text(
                 t.companionRemote.pairing.noDevicesHint,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                style: Theme.of(context).textTheme.bodySmall,
                 textAlign: TextAlign.center,
               ),
             ],
@@ -308,10 +322,12 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
         ..._hosts.map(
           (host) => Card(
             child: ListTile(
-              leading: Icon(_platformIcon(host.platform), size: 32),
+              leading: AppIcon(_platformIcon(host.platform), size: 32),
               title: Text(host.name),
               subtitle: Text(host.platform),
-              trailing: _isConnecting ? const LoadingIndicatorBox(size: 24) : const Icon(Icons.arrow_forward),
+              trailing: _isConnecting
+                  ? const LoadingIndicatorBox(size: 24)
+                  : const AppIcon(Symbols.arrow_forward_rounded),
               onTap: _isConnecting ? null : () => _connect(() => _provider.connectToDiscoveredHost(host)),
             ),
           ),
@@ -338,8 +354,8 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
                 children: [
-                  Icon(
-                    _showManualEntry ? Icons.expand_less : Icons.expand_more,
+                  AppIcon(
+                    _showManualEntry ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   const SizedBox(width: 8),
@@ -368,7 +384,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                     labelText: t.companionRemote.session.hostAddress,
                     hintText: t.companionRemote.pairing.hostAddressHint,
                     border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.computer),
+                    prefixIcon: const AppIcon(Symbols.computer_rounded),
                   ),
                   validator: (value) {
                     final hostAddress = value?.trim() ?? '';
@@ -388,7 +404,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                   onPressed: _isConnecting ? null : _submitManualHost,
                   child: FilledButton.icon(
                     onPressed: _isConnecting ? null : _submitManualHost,
-                    icon: _isConnecting ? const LoadingIndicatorBox(size: 16) : const Icon(Icons.link),
+                    icon: _isConnecting ? const LoadingIndicatorBox(size: 16) : const AppIcon(Symbols.link_rounded),
                     label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
                   ),
                 ),

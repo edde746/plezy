@@ -10,6 +10,7 @@ import 'package:plezy/screens/video_player/widgets/player_prompt_overlays.dart';
 import 'package:plezy/services/pip_service.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:provider/provider.dart';
+import '../../test_helpers/media_items.dart';
 
 void main() {
   testWidgets('play next prompt tracks chrome visibility for vertical position', (tester) async {
@@ -163,7 +164,7 @@ AnimatedPositioned _promptPosition(WidgetTester tester) {
 }
 
 MediaItem _episode() {
-  return MediaItem(
+  return testMediaItem(
     id: 'episode-2',
     backend: MediaBackend.plex,
     kind: MediaKind.episode,

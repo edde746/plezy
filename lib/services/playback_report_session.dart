@@ -58,12 +58,19 @@ class PlaybackReportSnapshot {
 /// fire reports concurrently, but state changes are recorded synchronously
 /// before any async work such as settings lookup, track mapping, or HTTP calls.
 class PlaybackReportSession {
-  PlaybackReportSession({required this.client, required this.itemId, this.playSessionId, this.playMethod});
+  PlaybackReportSession({
+    required this.client,
+    required this.itemId,
+    this.playSessionId,
+    this.playMethod,
+    this.liveStreamId,
+  });
 
   final MediaServerClient client;
   final String itemId;
   final String? playSessionId;
   final String? playMethod;
+  final String? liveStreamId;
 
   _PlaybackReportState _state = _PlaybackReportState.idle;
   PlaybackReportSnapshot? _startSnapshot;
@@ -244,6 +251,7 @@ class PlaybackReportSession {
       duration: snapshot.duration,
       playSessionId: playSessionId,
       playMethod: playMethod,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
       audioStreamIndex: selection.audioStreamIndex,
       subtitleStreamIndex: selection.subtitleStreamIndex,
@@ -260,6 +268,7 @@ class PlaybackReportSession {
       isPaused: snapshot.state == 'paused',
       playSessionId: playSessionId,
       playMethod: playMethod,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
       audioStreamIndex: selection.audioStreamIndex,
       subtitleStreamIndex: selection.subtitleStreamIndex,
@@ -274,6 +283,7 @@ class PlaybackReportSession {
       position: snapshot.position,
       duration: snapshot.duration,
       playSessionId: playSessionId,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
       report: snapshot.report,
     );

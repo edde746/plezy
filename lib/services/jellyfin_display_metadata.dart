@@ -14,14 +14,16 @@ MediaDisplayCriteria? jellyfinDisplayCriteriaFromStream(
   final transfer = _stringOrNull(videoStream['ColorTransfer']);
   final primaries = _stringOrNull(videoStream['ColorPrimaries']);
   final matrix = _stringOrNull(videoStream['ColorSpace']);
-  final defaults = _jellyfinDefaultDisplayColorTags(
-    videoRangeType: videoRangeType,
-    videoRange: videoRange,
+  final range = '${videoRangeType ?? ''} ${videoRange ?? ''}';
+  final defaults = classifyMediaDisplayColor(
+    isDolbyVision: (doviProfile ?? 0) > 0,
     doviCompatibilityId: doviCompatibilityId,
+    range: range,
     transfer: transfer,
     primaries: primaries,
     matrix: matrix,
-  );
+    assumeSdr: range.trim().isEmpty,
+  ).defaultTags;
   final criteria = MediaDisplayCriteria.fromRaw(
     fps: videoStream['RealFrameRate'] ?? videoStream['AverageFrameRate'],
     width: videoStream['Width'] ?? source['Width'],
@@ -64,38 +66,7 @@ bool jellyfinVideoStreamIsHdr(Map<String, dynamic> source, Map<String, dynamic> 
   return range.contains('hdr') || range.contains('hlg');
 }
 
-({String? transfer, String? primaries, String? matrix}) _jellyfinDefaultDisplayColorTags({
-  required String? videoRangeType,
-  required String? videoRange,
-  int? doviCompatibilityId,
-  String? transfer,
-  String? primaries,
-  String? matrix,
-}) {
-  final range = '${videoRangeType ?? ''} ${videoRange ?? ''}';
-  final colorTags = _normalizedDisplayColorTags(transfer, primaries, matrix);
-  if (doviCompatibilityId == 4 || range.contains('hlg') || colorTags.contains('hlg') || colorTags.contains('arib')) {
-    return (transfer: 'arib-std-b67', primaries: 'bt2020', matrix: 'bt2020nc');
-  }
-  if (doviCompatibilityId == 1 ||
-      doviCompatibilityId == 6 ||
-      range.contains('hdr') ||
-      colorTags.contains('smpte2084') ||
-      colorTags.contains('st2084') ||
-      colorTags.contains('pq') ||
-      colorTags.contains('bt2020')) {
-    return (transfer: 'smpte2084', primaries: 'bt2020', matrix: 'bt2020nc');
-  }
-  if (doviCompatibilityId == 2 || range.trim().isEmpty || range.contains('sdr')) {
-    return (transfer: 'bt709', primaries: 'bt709', matrix: 'bt709');
-  }
-  return (transfer: null, primaries: null, matrix: null);
-}
-
 String? _stringOrNull(Object? value) {
   final string = value?.toString().trim();
   return string == null || string.isEmpty ? null : string;
 }
-
-String _normalizedDisplayColorTags(String? transfer, String? primaries, String? matrix) =>
-    [transfer, primaries, matrix].whereType<String>().join(' ').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');

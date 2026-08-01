@@ -9,6 +9,7 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/plex_mappers.dart';
 import 'package:plezy/utils/media_quality_labels.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   group('buildMediaQualityLabels', () {
@@ -213,10 +214,63 @@ void main() {
       expect(buildMediaQualityLabels(_episodeWithVersion(null)), isEmpty);
     });
   });
+  group('buildMediaSizeLabel', () {
+    test('formats the complete size of a multi-part version', () {
+      final item = _episodeWithVersion(
+        const MediaVersion(
+          id: '1',
+          parts: [
+            MediaPart(id: 'part-1', sizeBytes: 512 * 1024 * 1024),
+            MediaPart(id: 'part-2', sizeBytes: 1024 * 1024 * 1024),
+          ],
+        ),
+      );
+
+      expect(buildMediaSizeLabel(item), '1.50 GB');
+    });
+
+    test('omits the size when any part is missing a valid size', () {
+      for (final invalidSize in <int?>[null, 0, -1]) {
+        final item = _episodeWithVersion(
+          MediaVersion(
+            id: '1',
+            parts: [
+              const MediaPart(id: 'known', sizeBytes: 1024),
+              MediaPart(id: 'unknown', sizeBytes: invalidSize),
+            ],
+          ),
+        );
+
+        expect(buildMediaSizeLabel(item), isNull);
+      }
+    });
+
+    test('uses the same requested version index as quality labels', () {
+      final item = testMediaItem(
+        id: 'episode-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode',
+        mediaVersions: const [
+          MediaVersion(
+            id: 'small',
+            parts: [MediaPart(id: 'small-part', sizeBytes: 1024 * 1024 * 1024)],
+          ),
+          MediaVersion(
+            id: 'large',
+            parts: [MediaPart(id: 'large-part', sizeBytes: 2 * 1024 * 1024 * 1024)],
+          ),
+        ],
+      );
+
+      expect(buildMediaSizeLabel(item), '1.00 GB');
+      expect(buildMediaSizeLabel(item, versionIndex: 1), '2.00 GB');
+    });
+  });
 }
 
 MediaItem _episodeWithVersion(MediaVersion? version) {
-  return MediaItem(
+  return testMediaItem(
     id: 'episode-1',
     backend: MediaBackend.plex,
     kind: MediaKind.episode,

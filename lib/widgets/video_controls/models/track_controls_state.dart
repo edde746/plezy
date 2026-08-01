@@ -5,8 +5,12 @@ import '../../../media/media_version.dart';
 import '../../../media/media_source_info.dart';
 import '../../../models/transcode_quality_preset.dart';
 import '../../../mpv/mpv.dart';
+import '../../../services/playback_initialization_types.dart';
+import '../../../services/playback_subtitle_resolver.dart';
 import '../../../services/shader_service.dart';
 import '../helpers/track_filter_helper.dart';
+
+enum SubtitleDownloadApplyOutcome { applied, timedOut, busy, superseded, unavailable, failed }
 
 /// Immutable configuration for track/chapter control widgets.
 class TrackControlsState {
@@ -18,7 +22,9 @@ class TrackControlsState {
   final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
   final List<MediaSubtitleTrack> sourceSubtitleTracks;
-  final int? selectedSubtitleStreamId;
+  final PlaybackSourceSubtitleChoice? selectedSubtitleChoice;
+  final int? selectedSecondarySubtitleStreamId;
+  final List<PlaybackSubtitleSidecar> sourceSubtitleSidecars;
   final int? sourcePartId;
 
   /// Total media duration in milliseconds. Used by the version/quality sheet
@@ -29,7 +35,6 @@ class TrackControlsState {
   final int audioSyncOffset;
   final int subtitleSyncOffset;
   final bool isRotationLocked;
-  final bool isScreenLocked;
   final bool isFullscreen;
   final bool isAlwaysOnTop;
   final VoidCallback? onTogglePIPMode;
@@ -42,8 +47,8 @@ class TrackControlsState {
   final VoidCallback? onToggleAlwaysOnTop;
   final Function(int)? onSwitchVersion;
   final ValueChanged<TranscodeQualityPreset>? onSwitchQualityPreset;
-  final ValueChanged<int>? onSwitchAudioStreamId;
-  final ValueChanged<int>? onSwitchSubtitleStreamId;
+  final Future<void> Function(int)? onSwitchAudioStreamId;
+  final Future<void> Function(PlaybackSourceSubtitleChoice)? onSwitchSubtitle;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
@@ -63,7 +68,8 @@ class TrackControlsState {
   final Function(MediaItem)? onQueueItemSelected;
   final String ratingKey;
   final String? mediaTitle;
-  final Future<void> Function()? onSubtitleDownloaded;
+  final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
+  onSubtitleDownloaded;
 
   /// Whether OpenSubtitles search is reachable for this server. The Plex
   /// server proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
@@ -80,7 +86,9 @@ class TrackControlsState {
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,
     this.sourceSubtitleTracks = const [],
-    this.selectedSubtitleStreamId,
+    this.selectedSubtitleChoice,
+    this.selectedSecondarySubtitleStreamId,
+    this.sourceSubtitleSidecars = const <PlaybackSubtitleSidecar>[],
     this.sourcePartId,
     this.sourceDurationMs,
     this.boxFitMode = 0,
@@ -88,7 +96,6 @@ class TrackControlsState {
     this.audioSyncOffset = 0,
     this.subtitleSyncOffset = 0,
     this.isRotationLocked = false,
-    this.isScreenLocked = false,
     this.isFullscreen = false,
     this.isAlwaysOnTop = false,
     this.onTogglePIPMode,
@@ -102,7 +109,7 @@ class TrackControlsState {
     this.onSwitchVersion,
     this.onSwitchQualityPreset,
     this.onSwitchAudioStreamId,
-    this.onSwitchSubtitleStreamId,
+    this.onSwitchSubtitle,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
@@ -126,10 +133,21 @@ class TrackControlsState {
     this.subtitleSearchSupported = true,
   });
 
-  /// Source subtitles can only be selected when playback can be re-opened with
-  /// a Plex source subtitle stream id.
-  bool get canUseSourceSubtitles =>
-      isTranscoding && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitleStreamId != null;
+  /// Transcoded subtitle choices must be negotiated with the server and
+  /// therefore replace the native rendition track list.
+  bool get canUseSourceSubtitles => isTranscoding && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitle != null;
+
+  /// Direct play keeps embedded/native switching instant while still exposing
+  /// unloaded server sidecars that require one source reopen when selected.
+  List<MediaSubtitleTrack> get directPlaySourceSidecars => !isTranscoding && onSwitchSubtitle != null
+      ? sourceSubtitleTracks
+            .where(
+              (track) => sourceSubtitleSidecars.any(
+                (sidecar) => sidecar.sourceStreamId != null && sidecar.sourceStreamId == track.id,
+              ),
+            )
+            .toList(growable: false)
+      : const <MediaSubtitleTrack>[];
 
   /// External subtitle search needs both a searchable media item and a server
   /// that can proxy the OpenSubtitles request.
@@ -140,6 +158,9 @@ class TrackControlsState {
   /// the single source of truth shared by the toolbar icon and the sheet layout.
   bool hasSubtitleControls(Tracks? tracks) {
     final playerSubtitles = tracks?.subtitle ?? const <SubtitleTrack>[];
-    return canUseSourceSubtitles || TrackFilterHelper.hasTracks<SubtitleTrack>(playerSubtitles) || canSearchSubtitles;
+    return canUseSourceSubtitles ||
+        directPlaySourceSidecars.isNotEmpty ||
+        TrackFilterHelper.hasTracks<SubtitleTrack>(playerSubtitles) ||
+        canSearchSubtitles;
   }
 }

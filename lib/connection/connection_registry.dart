@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
@@ -41,71 +40,66 @@ class ConnectionRegistry {
     return _rowToConnection(row);
   }
 
-  /// Returns the user's preferred connection — either the row marked
-  /// [Connections.isDefault], or the only row if exactly one exists, or
-  /// null when no connections are stored.
-  Future<Connection?> getDefault() async {
-    final rows = await _db.select(_db.connections).get();
-    if (rows.isEmpty) return null;
-    final flagged = rows.firstWhereOrNull((r) => r.isDefault);
-    final picked = flagged ?? (rows.length == 1 ? rows.single : null);
-    return picked == null ? null : _rowToConnection(picked);
-  }
-
   /// Insert or replace [connection]. If this is the first stored connection
   /// it is automatically marked default; re-upserting an existing row keeps
   /// the row's current `isDefault` (so token/metadata refreshes don't clear
   /// the default flag).
   Future<void> upsert(Connection connection) async {
-    final existing = await (_db.select(_db.connections)..where((t) => t.id.equals(connection.id))).getSingleOrNull();
-    final bool isDefault;
-    if (existing != null) {
-      isDefault = existing.isDefault;
-    } else {
-      final any =
-          await (_db.selectOnly(_db.connections)
-                ..addColumns([_db.connections.id])
-                ..limit(1))
-              .getSingleOrNull();
-      isDefault = any == null;
-    }
-    final protectedConfig = await CredentialVault.protectConnectionConfig(
-      connection.kind.id,
-      connection.toConfigJson(),
-    );
-    final row = ConnectionsCompanion(
-      id: Value(connection.id),
-      kind: Value(connection.kind.id),
-      displayName: Value(connection.displayName),
-      configJson: Value(jsonEncode(protectedConfig)),
-      isDefault: Value(isDefault),
-      createdAt: Value(connection.createdAt.millisecondsSinceEpoch),
-      lastAuthenticatedAt: Value(connection.lastAuthenticatedAt?.millisecondsSinceEpoch),
-    );
-    await _db.into(_db.connections).insertOnConflictUpdate(row);
+    await _db.runIdentityMutation(() async {
+      final existing = await (_db.select(_db.connections)..where((t) => t.id.equals(connection.id))).getSingleOrNull();
+      final bool isDefault;
+      if (existing != null) {
+        isDefault = existing.isDefault;
+      } else {
+        final any =
+            await (_db.selectOnly(_db.connections)
+                  ..addColumns([_db.connections.id])
+                  ..limit(1))
+                .getSingleOrNull();
+        isDefault = any == null;
+      }
+      final protectedConfig = await CredentialVault.protectConnectionConfig(
+        connection.kind.id,
+        connection.toConfigJson(),
+      );
+      final row = ConnectionsCompanion(
+        id: Value(connection.id),
+        kind: Value(connection.kind.id),
+        displayName: Value(connection.displayName),
+        configJson: Value(jsonEncode(protectedConfig)),
+        isDefault: Value(isDefault),
+        createdAt: Value(connection.createdAt.millisecondsSinceEpoch),
+        lastAuthenticatedAt: Value(connection.lastAuthenticatedAt?.millisecondsSinceEpoch),
+      );
+      await _db.into(_db.connections).insertOnConflictUpdate(row);
+    });
     appLogger.d('ConnectionRegistry: upserted ${connection.kind.id}/${connection.id}');
   }
 
   /// Remove a stored connection. If the removed row was the default, the
   /// oldest remaining connection (if any) becomes default.
   Future<void> remove(String id) async {
-    await (_db.delete(_db.connections)..where((t) => t.id.equals(id))).go();
-    final remaining = await (_db.select(_db.connections)..orderBy([(t) => OrderingTerm.asc(t.createdAt)])).get();
-    if (remaining.isNotEmpty && !remaining.any((r) => r.isDefault)) {
-      await (_db.update(
-        _db.connections,
-      )..where((t) => t.id.equals(remaining.first.id))).write(const ConnectionsCompanion(isDefault: Value(true)));
-    }
+    await _db.runIdentityMutation(() async {
+      await (_db.delete(_db.connections)..where((t) => t.id.equals(id))).go();
+      final remaining = await (_db.select(_db.connections)..orderBy([(t) => OrderingTerm.asc(t.createdAt)])).get();
+      if (remaining.isNotEmpty && !remaining.any((r) => r.isDefault)) {
+        await (_db.update(
+          _db.connections,
+        )..where((t) => t.id.equals(remaining.first.id))).write(const ConnectionsCompanion(isDefault: Value(true)));
+      }
+    });
     appLogger.d('ConnectionRegistry: removed $id');
   }
 
   /// Set [id] as the default connection. Clears the flag on all others.
   Future<void> setDefault(String id) async {
-    await _db.transaction(() async {
-      await _db.update(_db.connections).write(const ConnectionsCompanion(isDefault: Value(false)));
-      await (_db.update(
-        _db.connections,
-      )..where((t) => t.id.equals(id))).write(const ConnectionsCompanion(isDefault: Value(true)));
+    await _db.runIdentityMutation(() async {
+      await _db.transaction(() async {
+        await _db.update(_db.connections).write(const ConnectionsCompanion(isDefault: Value(false)));
+        await (_db.update(
+          _db.connections,
+        )..where((t) => t.id.equals(id))).write(const ConnectionsCompanion(isDefault: Value(true)));
+      });
     });
   }
 
@@ -113,13 +107,17 @@ class ConnectionRegistry {
   /// `lastAuthenticatedAt`). Used by the auth flow after a successful
   /// silent refresh without touching the rest of the config.
   Future<void> recordAuthSuccess(String id, DateTime at) async {
-    await (_db.update(_db.connections)..where((t) => t.id.equals(id))).write(
-      ConnectionsCompanion(lastAuthenticatedAt: Value(at.millisecondsSinceEpoch)),
-    );
+    await _db.runIdentityMutation(() async {
+      await (_db.update(_db.connections)..where((t) => t.id.equals(id))).write(
+        ConnectionsCompanion(lastAuthenticatedAt: Value(at.millisecondsSinceEpoch)),
+      );
+    });
   }
 
   Future<void> clear() async {
-    await _db.delete(_db.connections).go();
+    await _db.runIdentityMutation(() async {
+      await _db.delete(_db.connections).go();
+    });
   }
 
   /// All Plex accounts in insertion order. Convenience over
@@ -130,25 +128,11 @@ class ConnectionRegistry {
     return all.whereType<PlexAccountConnection>().toList();
   }
 
-  /// All Jellyfin connections in insertion order. Symmetric helper to
-  /// [listPlexAccounts].
-  Future<List<JellyfinConnection>> listJellyfin() async {
-    final all = await list();
-    return all.whereType<JellyfinConnection>().toList();
-  }
-
   /// Lookup a [PlexAccountConnection] by id. Returns `null` if no row
   /// matches OR the row exists but isn't a Plex account.
   Future<PlexAccountConnection?> getPlexAccount(String id) async {
     final c = await get(id);
     return c is PlexAccountConnection ? c : null;
-  }
-
-  /// Lookup a [JellyfinConnection] by id. Returns `null` if no row matches
-  /// OR the row exists but isn't a Jellyfin connection.
-  Future<JellyfinConnection?> getJellyfin(String id) async {
-    final c = await get(id);
-    return c is JellyfinConnection ? c : null;
   }
 
   Future<Connection?> _rowToConnection(ConnectionRow row) async {

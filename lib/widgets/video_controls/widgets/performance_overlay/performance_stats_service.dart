@@ -41,6 +41,7 @@ class PerformanceStatsService {
   String _runtimePlayerType = 'unknown';
   StreamSubscription<void>? _backendSwitchedSubscription;
   bool _fetchInProgress = false;
+  bool _disposed = false;
 
   PerformanceStatsService(this.player);
 
@@ -78,14 +79,15 @@ class PerformanceStatsService {
     _fpsTrackingActive = true;
     if (!_fpsCallbackRegistered) {
       _fpsCallbackRegistered = true;
-      SchedulerBinding.instance.addPersistentFrameCallback(_onFrame);
+      SchedulerBinding.instance.addTimingsCallback(_onFrameTimings);
     }
   }
 
-  /// Called every frame to count FPS.
-  void _onFrame(Duration timestamp) {
+  /// Called with completed frame timings to count FPS without retaining an
+  /// app-lifetime persistent callback.
+  void _onFrameTimings(List<FrameTiming> timings) {
     if (!_fpsTrackingActive) return;
-    _frameCount++;
+    _frameCount += timings.length;
     final now = DateTime.now();
     final elapsed = now.difference(_lastFpsUpdate);
     if (elapsed.inMilliseconds >= 1000) {
@@ -101,11 +103,15 @@ class PerformanceStatsService {
     _pollingTimer = null;
     _fpsTrackingActive = false;
     _currentUiFps = null;
+    if (_fpsCallbackRegistered) {
+      SchedulerBinding.instance.removeTimingsCallback(_onFrameTimings);
+      _fpsCallbackRegistered = false;
+    }
   }
 
   /// Fetch all performance stats from the player.
   Future<void> _fetchStats() async {
-    if (_fetchInProgress) return;
+    if (_disposed || _fetchInProgress) return;
     _fetchInProgress = true;
     try {
       // Ensure we know the runtime type on first fetch
@@ -122,7 +128,7 @@ class PerformanceStatsService {
         await _fetchMpvStats();
       }
     } catch (e) {
-      appLogger.w('Failed to fetch performance stats', error: e);
+      if (!_disposed) appLogger.w('Failed to fetch performance stats', error: e);
     } finally {
       _fetchInProgress = false;
     }
@@ -180,7 +186,7 @@ class PerformanceStatsService {
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,
       );
-      _statsController.add(stats);
+      _emit(stats);
     } else {
       // Parse ExoPlayer stats format
       final stats = PerformanceStats(
@@ -220,7 +226,7 @@ class PerformanceStatsService {
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,
       );
-      _statsController.add(stats);
+      _emit(stats);
     }
   }
 
@@ -318,7 +324,11 @@ class PerformanceStatsService {
       uiFps: _currentUiFps,
     );
 
-    _statsController.add(stats);
+    _emit(stats);
+  }
+
+  void _emit(PerformanceStats stats) {
+    if (!_disposed && !_statsController.isClosed) _statsController.add(stats);
   }
 
   /// Parse a string to int, returning null if parsing fails.
@@ -356,6 +366,8 @@ class PerformanceStatsService {
 
   /// Dispose of the service and release resources.
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     _backendSwitchedSubscription?.cancel();
     _backendSwitchedSubscription = null;
     stopPolling();

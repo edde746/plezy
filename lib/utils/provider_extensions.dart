@@ -54,11 +54,15 @@ extension ProviderExtensions on BuildContext {
 
   PlexClient? tryGetPlexClientForServer(ServerId? serverId) {
     if (serverId == null) return null;
-    final provider = Provider.of<MultiServerProvider>(this, listen: false);
-    return provider.getPlexClientForServer(serverId);
+    final provider = Provider.of<MultiServerProvider?>(this, listen: false);
+    return provider?.getPlexClientForServer(serverId);
   }
 
-  PlexClient getPlexClientForLibrary(MediaLibrary library) => _requireClient(serverIdOrNull(library.serverId));
+  PlexClient getPlexClientForLibrary(MediaLibrary library) {
+    final serverId = serverIdOrNull(library.serverId);
+    if (serverId == null) throw Exception(t.errors.noClientAvailable);
+    return getPlexClientForServer(serverId);
+  }
 
   PlexClient getPlexClientWithFallback(ServerId? serverId) => _requireClient(serverId);
 
@@ -76,23 +80,24 @@ extension ProviderExtensions on BuildContext {
 
   MediaServerClient? tryGetMediaClientForServer(ServerId? serverId) {
     if (serverId == null) return null;
-    final provider = Provider.of<MultiServerProvider>(this, listen: false);
-    return provider.getClientForServer(serverId);
+    final provider = Provider.of<MultiServerProvider?>(this, listen: false);
+    return provider?.getClientForServer(serverId);
   }
 
   /// Get a [MediaServerClient] for the given serverId. Throws when the
   /// server isn't registered or is offline. Mirrors the throwing variant of
   /// the Plex-typed [getPlexClientForServer] helpers.
   MediaServerClient getMediaClientForServer(ServerId serverId) {
-    final c = tryGetMediaClientForServer(serverId);
+    final provider = Provider.of<MultiServerProvider>(this, listen: false);
+    final c = provider.getClientForServer(serverId);
     if (c == null) throw Exception(t.errors.noClientAvailable);
     return c;
   }
 
   MediaServerClient getMediaClientForLibrary(MediaLibrary library) {
-    final c = _resolveMediaClient(serverIdOrNull(library.serverId));
-    if (c == null) throw Exception(t.errors.noClientAvailable);
-    return c;
+    final serverId = serverIdOrNull(library.serverId);
+    if (serverId == null) throw Exception(t.errors.noClientAvailable);
+    return getMediaClientForServer(serverId);
   }
 
   /// Get a [MediaServerClient] for a [MediaItem], or null in offline mode /
@@ -114,7 +119,11 @@ extension ProviderExtensions on BuildContext {
   /// when no client is registered. Use this for non-critical surfaces (image
   /// loaders, list cards) that can render a fallback when the client isn't
   /// available — throwing during `build` would crash the widget instead.
-  MediaServerClient? tryGetMediaClientWithFallback(ServerId? serverId) => _resolveMediaClient(serverId);
+  MediaServerClient? tryGetMediaClientWithFallback(ServerId? serverId) {
+    final provider = Provider.of<MultiServerProvider?>(this, listen: false);
+    if (provider == null) return null;
+    return _resolvePrioritized(serverId, provider.onlineServerIds, provider.getClientForServer);
+  }
 }
 
 /// Try [preferred] first, then fall back through [fallbacks] in order. Returns

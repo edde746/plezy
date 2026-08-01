@@ -3,6 +3,7 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "mpv/display_mode_manager.h"
 #include "mpv/mpv_plugin.h"
 
 // Registry key for window placement persistence
@@ -98,9 +99,11 @@ bool FlutterWindow::OnCreate() {
   }
   RegisterPlugins(flutter_controller_->engine());
 
-  // Register mpv player plugin.
+  // Register mpv player plugins (video + dedicated audio-only music core).
   OutputDebugStringA("FlutterWindow: About to register MpvPlayerPlugin\n");
   MpvPlayerPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
+  MpvAudioPlayerPluginRegisterWithRegistrar(
+      flutter_controller_->engine()->GetRegistrarForPlugin("MpvAudioPlayerPlugin"));
   OutputDebugStringA("FlutterWindow: MpvPlayerPlugin registered\n");
 
   RegisterWindowChannel();
@@ -156,6 +159,10 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
   }
 
   switch (message) {
+    case WM_DISPLAYCHANGE:
+      // One bounded, serialized retry for a display that may have reconnected.
+      mpv::DisplayModeManager::RecoverIfNeeded();
+      break;
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;

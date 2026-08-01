@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:math';
 
+import '../../media/playback_rate.dart';
 import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/watch_session.dart';
+import '../primitives.dart';
 import 'attached_player.dart';
 
 /// Callbacks the coordinator surfaces to the provider/UI layer.
@@ -45,9 +47,7 @@ class HostPlaybackCoordinator {
     required this._sendState,
     this._callbacks = const HostCoordinatorCallbacks(),
     int Function()? nowMs,
-  }) : _nowMs = nowMs ?? _systemNowMs;
-
-  static int _systemNowMs() => DateTime.now().millisecondsSinceEpoch;
+  }) : _nowMs = nowMs ?? watchTogetherSystemNowMs;
 
   // Tuning constants.
   static const int stallGraceMs = 500;
@@ -61,6 +61,8 @@ class HostPlaybackCoordinator {
   static const int seekDebounceMs = 200;
   static const int implicitJumpThresholdMs = 1500;
   static const int selfRecoveryMinBufferAheadMs = 2000;
+  static const double _minimumRemoteRate = minimumPlaybackRate;
+  static const double _maximumRemoteRate = maximumPlaybackRate;
 
   final String myPeerId;
   final void Function(PlaybackState state, {String? toPeerId}) _sendState;
@@ -116,7 +118,6 @@ class HostPlaybackCoordinator {
   bool _disposed = false;
 
   PlaybackPhase get phase => _phase;
-  Set<String> get incompatiblePeers => Set.unmodifiable(_incompatiblePeers);
 
   // ---------------------------------------------------------------------
   // Public inputs
@@ -497,7 +498,9 @@ class HostPlaybackCoordinator {
 
   void _applyRemoteSeek(int targetMs, {required String actor}) {
     final player = _player;
-    if (player == null) return;
+    if (player == null || !player.seekable) return;
+    final durationMs = player.duration.inMilliseconds;
+    if (durationMs <= 0 || targetMs < 0 || targetMs > durationMs) return;
     _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.seek);
     unawaited(
       player.seek(Duration(milliseconds: targetMs)).then((didSeek) {
@@ -517,7 +520,7 @@ class HostPlaybackCoordinator {
 
   void _applyRemoteRate(double rate, {required String actor}) {
     final player = _player;
-    if (player == null) return;
+    if (player == null || !rate.isFinite || rate < _minimumRemoteRate || rate > _maximumRemoteRate) return;
     _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.rate);
     unawaited(
       player.setRate(rate).then((didSet) {
@@ -785,18 +788,10 @@ class HostPlaybackCoordinator {
     if (toPeerId == null) {
       final previousWaiting = _lastBroadcast?.waitingOn ?? const [];
       _lastBroadcast = state;
-      if (!_listEquals(previousWaiting, waitingOn)) {
+      if (!orderedStringListsEqual(previousWaiting, waitingOn)) {
         _callbacks.onWaitingOnChanged?.call(waitingOn);
       }
     }
     _sendState(state, toPeerId: toPeerId);
-  }
-
-  static bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 }

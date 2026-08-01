@@ -34,9 +34,14 @@ void main() {
       await tester.pumpWidget(_Probe(onState: (s) => state = s));
 
       final initialBuilds = state.builds;
-      state.setStateIfMounted(() => state.counter = 5);
+      var callbackCalls = 0;
+      state.setStateIfMounted(() {
+        callbackCalls++;
+        state.counter = 5;
+      });
       await tester.pump();
 
+      expect(callbackCalls, 1);
       expect(state.counter, 5);
       expect(state.builds, greaterThan(initialBuilds));
       expect(find.text('count=5'), findsOneWidget);
@@ -60,17 +65,6 @@ void main() {
       // counter stays at its previous value because the callback was skipped.
       expect(state.counter, 0);
       expect(state.builds, buildsBefore);
-    });
-
-    testWidgets('setStateIfMounted callback is invoked exactly once per call when mounted', (tester) async {
-      late _ProbeState state;
-      await tester.pumpWidget(_Probe(onState: (s) => state = s));
-
-      var calls = 0;
-      state.setStateIfMounted(() => calls++);
-      await tester.pump();
-
-      expect(calls, 1);
     });
   });
 }

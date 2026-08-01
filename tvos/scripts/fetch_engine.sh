@@ -3,8 +3,8 @@
 # extract it into a shared cache, and write tvos/Flutter/Generated.xcconfig
 # so Xcode picks it up via FLUTTER_LOCAL_ENGINE.
 #
-# Reads the engine version from tvos/engine.version. Re-runs are cheap —
-# skips download if the cache already has the matching version.
+# Reads the engine version and reviewed SHA-256 from tvos/engine.version and
+# tvos/engine.sha256. Re-runs are cheap —
 #
 # Usage:
 #   tvos/scripts/fetch_engine.sh
@@ -19,36 +19,54 @@ TVOS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "${TVOS_DIR}/.." && pwd)"
 
 VERSION_FILE="${TVOS_DIR}/engine.version"
-if [[ ! -f "$VERSION_FILE" ]]; then
-  echo "error: $VERSION_FILE missing" >&2
+SHA256_FILE="${TVOS_DIR}/engine.sha256"
+if [[ ! -f "$VERSION_FILE" || ! -f "$SHA256_FILE" ]]; then
+  echo "error: tvOS engine version/checksum metadata is missing" >&2
   exit 1
 fi
 VERSION="$(tr -d '[:space:]' < "$VERSION_FILE")"
+EXPECTED_SHA256="$(tr -d '[:space:]' < "$SHA256_FILE")"
 if [[ -z "$VERSION" ]]; then
   echo "error: tvos/engine.version is empty" >&2
   exit 1
 fi
+if [[ ! "$EXPECTED_SHA256" =~ ^[0-9a-f]{64}$ ]]; then
+  echo "error: tvos/engine.sha256 must contain one lowercase SHA-256 digest" >&2
+  exit 1
+fi
 
 CACHE_ROOT="${FLUTTER_TVOS_ENGINE_CACHE:-$HOME/.cache/flutter-tvos-engine}"
-RELEASES_URL="${FLUTTER_TVOS_RELEASES_URL:-https://github.com/edde746/flutter-tvos}"
+RELEASES_URL="${FLUTTER_TVOS_RELEASES_URL:-https://github.com/edde746/flutter-plezy}"
 
 ENGINE_DIR="${CACHE_ROOT}/v${VERSION}"
 TARBALL_URL="${RELEASES_URL}/releases/download/v${VERSION}/flutter-tvos-${VERSION}.tar.gz"
-STAMP="${ENGINE_DIR}/.installed-${VERSION}"
+STAMP="${ENGINE_DIR}/.installed"
+INSTALL_ID="${VERSION} ${EXPECTED_SHA256}"
 
-if [[ ! -f "$STAMP" ]]; then
+if [[ ! -f "$STAMP" || "$(<"$STAMP")" != "$INSTALL_ID" ]]; then
   echo "[fetch_engine] downloading ${TARBALL_URL}"
-  mkdir -p "$ENGINE_DIR"
+  mkdir -p "$CACHE_ROOT"
   TMP_TAR="$(mktemp -t flutter-tvos-engine.XXXXXX.tar.gz)"
-  trap 'rm -f "$TMP_TAR"' EXIT
+  TMP_ENGINE="$(mktemp -d "${CACHE_ROOT}/.engine.XXXXXX")"
+  cleanup() {
+    rm -f "${TMP_TAR:-}"
+    if [[ -n "${TMP_ENGINE:-}" ]]; then
+      rm -rf "$TMP_ENGINE"
+    fi
+  }
+  trap cleanup EXIT
   curl -fL --progress-bar -o "$TMP_TAR" "$TARBALL_URL"
-  echo "[fetch_engine] extracting to $ENGINE_DIR"
-  tar -xzf "$TMP_TAR" -C "$ENGINE_DIR"
-  touch "$STAMP"
+  printf '%s  %s\n' "$EXPECTED_SHA256" "$TMP_TAR" | shasum -a 256 -c -
+  echo "[fetch_engine] extracting verified archive to $ENGINE_DIR"
+  tar -xzf "$TMP_TAR" -C "$TMP_ENGINE"
+  printf '%s\n' "$INSTALL_ID" > "$TMP_ENGINE/.installed"
+  rm -rf "$ENGINE_DIR"
+  mv "$TMP_ENGINE" "$ENGINE_DIR"
+  TMP_ENGINE=""
   rm -f "$TMP_TAR"
   trap - EXIT
 else
-  echo "[fetch_engine] using cached engine at $ENGINE_DIR"
+  echo "[fetch_engine] using verified cached engine at $ENGINE_DIR"
 fi
 
 # Locate a host Flutter SDK for flutter CLI invocation during the build.

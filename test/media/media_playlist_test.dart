@@ -126,16 +126,6 @@ void main() {
     });
   });
 
-  group('MediaPlaylist.isEditable', () {
-    test('smart playlists are read-only (Plex semantics)', () {
-      expect(_playlist(smart: true).isEditable, isFalse);
-    });
-
-    test('manual playlists are editable', () {
-      expect(_playlist(smart: false).isEditable, isTrue);
-    });
-  });
-
   group('MediaPlaylist.globalKey', () {
     test('uses "<serverId>:<id>" when serverId is set', () {
       final pl = _playlist(id: 'pl-42', serverId: 'srv-9');
@@ -166,7 +156,6 @@ void main() {
       expect(minimal.serverName, isNull);
       expect(minimal.displayImagePath, isNull);
       expect(minimal.displayTitle, 'Min');
-      expect(minimal.isEditable, isTrue);
       // Without a serverId, globalKey reduces to the bare id.
       expect(minimal.globalKey, 'pl');
     });

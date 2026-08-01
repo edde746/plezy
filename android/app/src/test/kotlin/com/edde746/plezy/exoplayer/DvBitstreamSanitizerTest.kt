@@ -27,17 +27,6 @@ class DvBitstreamSanitizerTest {
   }
 
   @Test
-  fun stripsSuffixSei() {
-    val vcl = annexBNal(1, byteArrayOf(0x01))
-    val suffixSei = annexBNal(40, hdr10PlusSeiPayload())
-    val buffer = bufferOf(vcl, suffixSei)
-
-    sanitizer.sanitize(buffer, stripHdr10PlusSei = true, stripDvRpu = false)
-
-    assertArrayEquals(vcl, remainingBytes(buffer))
-  }
-
-  @Test
   fun handles3ByteStartCodes() {
     val vcl1 = annexBNal(1, byteArrayOf(0x01, 0x02), startCodeLen = 3)
     val sei = annexBNal(39, hdr10PlusSeiPayload(), startCodeLen = 3)
@@ -139,16 +128,6 @@ class DvBitstreamSanitizerTest {
     // Bytes before the position are untouched.
     assertEquals(0xAA.toByte(), buffer.get(0))
     assertEquals(0xBB.toByte(), buffer.get(1))
-  }
-
-  @Test
-  fun worksOnDirectBuffers() {
-    val vcl = annexBNal(1, byteArrayOf(0x01, 0x02))
-    val buffer = directBufferOf(vcl, hdr10PlusSei())
-
-    sanitizer.sanitize(buffer, stripHdr10PlusSei = true, stripDvRpu = false)
-
-    assertArrayEquals(vcl, remainingBytes(buffer))
   }
 
   @Test

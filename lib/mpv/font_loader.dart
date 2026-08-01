@@ -45,6 +45,4 @@ class SubtitleFontLoader {
   }
 
   static String get fontName => _fontName;
-
-  static String get fontAssetPath => _fontAssetPath;
 }

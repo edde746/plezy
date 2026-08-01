@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../focus/dpad_navigator.dart';
-import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
+import '../focus/focusable_wrapper.dart';
+import '../i18n/strings.g.dart';
 import 'clickable_cursor.dart';
 
 class CollapsibleText extends StatefulWidget {
@@ -18,6 +17,10 @@ class CollapsibleText extends StatefulWidget {
   final ValueChanged<bool>? onOverflowChanged;
   final bool skipTraversal;
 
+  /// Hides this widget's expand/collapse label and semantic tap action while
+  /// preserving the semantics of the text itself.
+  final bool suppressExpandSemantics;
+
   const CollapsibleText({
     super.key,
     required this.text,
@@ -31,6 +34,7 @@ class CollapsibleText extends StatefulWidget {
     this.onNavigateRight,
     this.onOverflowChanged,
     this.skipTraversal = true,
+    this.suppressExpandSemantics = false,
   });
 
   @override
@@ -54,33 +58,6 @@ class _CollapsibleTextState extends State<CollapsibleText> {
     });
   }
 
-  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
-    final selectResult = handleOneShotSelect(event, _toggleExpanded);
-    if (selectResult != KeyEventResult.ignored) return selectResult;
-
-    if (!event.isActionable) return KeyEventResult.ignored;
-
-    final key = event.logicalKey;
-    if (key.isUpKey && widget.onNavigateUp != null) {
-      widget.onNavigateUp!();
-      return KeyEventResult.handled;
-    }
-    if (key.isDownKey && widget.onNavigateDown != null) {
-      widget.onNavigateDown!();
-      return KeyEventResult.handled;
-    }
-    if (key.isLeftKey && widget.onNavigateLeft != null) {
-      widget.onNavigateLeft!();
-      return KeyEventResult.handled;
-    }
-    if (key.isRightKey && widget.onNavigateRight != null) {
-      widget.onNavigateRight!();
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
-
   @override
   Widget build(BuildContext context) {
     final style = widget.style ?? DefaultTextStyle.of(context).style;
@@ -98,7 +75,31 @@ class _CollapsibleTextState extends State<CollapsibleText> {
 
         if (!overflows) {
           textPainter.dispose();
-          return Text(widget.text, style: style);
+          Widget result = Text(widget.text, style: style);
+          final hasFocusBehavior =
+              widget.focusNode != null ||
+              widget.onNavigateUp != null ||
+              widget.onNavigateDown != null ||
+              widget.onNavigateLeft != null ||
+              widget.onNavigateRight != null;
+          if (!hasFocusBehavior) return result;
+
+          result = FocusableWrapper(
+            focusNode: widget.focusNode,
+            onNavigateUp: widget.onNavigateUp,
+            onNavigateDown: widget.onNavigateDown,
+            onNavigateLeft: widget.onNavigateLeft,
+            onNavigateRight: widget.onNavigateRight,
+            descendantsAreFocusable: false,
+            disableScale: true,
+            useBackgroundFocus: true,
+            borderRadius: 8,
+            child: result,
+          );
+          if (widget.skipTraversal) {
+            result = ExcludeFocusTraversal(child: result);
+          }
+          return result;
         }
 
         String displayText = widget.text;
@@ -123,35 +124,31 @@ class _CollapsibleTextState extends State<CollapsibleText> {
           ),
         );
 
-        final focusNode = widget.focusNode;
-        if (focusNode != null) {
-          result = Focus(
-            focusNode: focusNode,
-            skipTraversal: widget.skipTraversal,
-            onKeyEvent: _handleKeyEvent,
-            child: ListenableBuilder(
-              listenable: focusNode,
-              builder: (context, child) {
-                final showFocus = focusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: showFocus
-                        ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.12)
-                        : Colors.transparent,
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
-                  ),
-                  child: child,
-                );
-              },
-              child: result,
-            ),
-          );
+        result = FocusableWrapper(
+          focusNode: widget.focusNode,
+          onSelect: _toggleExpanded,
+          onNavigateUp: widget.onNavigateUp,
+          onNavigateDown: widget.onNavigateDown,
+          onNavigateLeft: widget.onNavigateLeft,
+          onNavigateRight: widget.onNavigateRight,
+          semanticLabel: widget.suppressExpandSemantics
+              ? null
+              : _expanded
+              ? t.accessibility.collapseText
+              : t.accessibility.expandText,
+          excludeChildSemantics: false,
+          descendantsAreFocusable: false,
+          disableScale: true,
+          useBackgroundFocus: true,
+          borderRadius: 8,
+          child: result,
+        );
+        if (widget.skipTraversal) {
+          result = ExcludeFocusTraversal(child: result);
         }
 
         return ClickableCursor(
-          child: GestureDetector(onTap: _toggleExpanded, child: result),
+          child: GestureDetector(onTap: _toggleExpanded, excludeFromSemantics: true, child: result),
         );
       },
     );

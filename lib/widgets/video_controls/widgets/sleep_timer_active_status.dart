@@ -70,6 +70,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
                   sleepTimer.cancelTimer();
                   onCancel?.call();
                 },
+                useBackgroundFocus: true,
                 child: FilledButton.icon(
                   icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
                   label: Text(t.common.cancel),

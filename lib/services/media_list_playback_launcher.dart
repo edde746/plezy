@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
@@ -10,10 +11,13 @@ import '../media/media_playlist.dart';
 import '../media/play_queue.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/dialogs.dart';
+import '../utils/media_server_http_client.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import 'jellyfin_sequential_launcher.dart';
 import 'play_queue_launcher.dart';
+import '../widgets/dialog_action_button.dart';
 
 /// Result type for play queue launches. Same shape as the previous
 /// [PlexPlayQueueLauncher] result so existing call sites can keep their
@@ -28,6 +32,10 @@ class PlayQueueSuccess extends PlayQueueResult {
 
 class PlayQueueEmpty extends PlayQueueResult {
   const PlayQueueEmpty();
+}
+
+class PlayQueueCancelled extends PlayQueueResult {
+  const PlayQueueCancelled();
 }
 
 class PlayQueueError extends PlayQueueResult {
@@ -64,6 +72,17 @@ abstract class MediaListPlaybackLauncher {
   /// through `setPlaybackFromLocalQueue` (same path as the sequential
   /// queue from `EpisodeNavigationService`).
   Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true});
+
+  /// Launch playback from a folder row of the library tree. Everything each
+  /// backend needs is stamped onto [folder]: Plex builds a server-side
+  /// `/playQueues` from [MediaItem.backendFolderKey] (returning a
+  /// [PlayQueueError] when the row carries none), Jellyfin fetches the
+  /// folder's playable descendants and publishes a local queue.
+  Future<PlayQueueResult> launchFromFolder({
+    required MediaItem folder,
+    required bool shuffle,
+    bool showLoadingIndicator = true,
+  });
 
   /// Pick the right implementation for [item]. Reads
   /// [MediaItem.backend] / [MediaPlaylist.backend].
@@ -109,45 +128,72 @@ abstract class MediaListPlaybackLauncher {
   }
 
   /// Show a loading dialog (when [showLoading] is true), invoke [execute],
-  /// dismiss the dialog, and translate exceptions into a localized snackbar
-  /// + [PlayQueueError]. [actionLabel] feeds the failure-snackbar copy.
+  /// dismiss the dialog, and translate exceptions into typed launch results.
+  /// [actionLabel] feeds the failure-snackbar copy.
+  ///
+  /// When [abort] is supplied, the loading route owns its lifecycle: Cancel,
+  /// back, or scoped route disposal aborts the operation. Programmatic
+  /// dismissal marks completed work before popping so success is not aborted.
   ///
   /// `dismissLoading` is passed into [execute] so the callback can hide the
   /// dialog before navigating to the player; the wrapper dismisses
   /// idempotently afterwards as a safety net.
   ///
   /// A [PlayQueueEmpty] result auto-emits the "no items" snackbar so each
-  /// backend doesn't have to remember.
+  /// backend doesn't have to remember. Cancellation is never logged or shown
+  /// as an empty/error result.
   @protected
   Future<PlayQueueResult> executeWithLoading({
     required BuildContext context,
     required bool showLoading,
     required String actionLabel,
+    AbortController? abort,
     required Future<PlayQueueResult> Function(Future<void> Function() dismissLoading) execute,
   }) async {
     BuildContext? loadingDialogContext;
     var loadingVisible = false;
+    Completer<void>? loadingDialogReady;
+    final loadingOwner = abort == null ? null : _LoadingCancellationOwner(abort);
 
-    if (showLoading && context.mounted) {
-      loadingVisible = true;
-      unawaited(
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) {
-            loadingDialogContext = dialogContext;
-            return const Center(child: CircularProgressIndicator());
-          },
-        ),
-      );
+    if (showLoading) {
+      if (!context.mounted) {
+        abort?.abort();
+      } else {
+        loadingVisible = true;
+        loadingDialogReady = Completer<void>();
+        unawaited(
+          showScopedDialog<void>(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) {
+              loadingDialogContext = dialogContext;
+              if (!loadingDialogReady!.isCompleted) loadingDialogReady.complete();
+              return loadingOwner == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : _CancellableLoadingDialog(owner: loadingOwner, actionLabel: actionLabel);
+            },
+          ).whenComplete(() {
+            loadingVisible = false;
+            if (!loadingDialogReady!.isCompleted) loadingDialogReady.complete();
+            loadingOwner?.cancel();
+          }),
+        );
+      }
     }
 
     Future<void> dismissLoading() async {
       if (!showLoading || !loadingVisible) return;
+      // Complete before any early return: work can finish before the first
+      // dialog frame, and its eventual disposal must remain a success path.
+      loadingOwner?.complete();
       final dialogContext = loadingDialogContext;
       if (dialogContext == null) return;
+      if (!dialogContext.mounted) {
+        loadingVisible = false;
+        return;
+      }
       // Only dismiss if the dialog is still the current route to avoid
-      // accidentally popping the player after navigation.
+      // accidentally popping the player or the initiating screen.
       final route = ModalRoute.of(dialogContext);
       if (route?.isCurrent ?? false) {
         Navigator.of(dialogContext).pop();
@@ -156,20 +202,31 @@ abstract class MediaListPlaybackLauncher {
     }
 
     try {
+      await loadingDialogReady?.future;
+      abort?.throwIfAborted();
       final result = await execute(dismissLoading);
+      if (abort?.isAborted ?? false) return const PlayQueueCancelled();
 
       if (result is PlayQueueEmpty && context.mounted) {
         showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
       }
 
-      await dismissLoading();
       return result;
-    } catch (e) {
+    } on MediaServerHttpException catch (e) {
+      if (e.isCancellation || (abort?.isAborted ?? false)) {
+        return const PlayQueueCancelled();
+      }
       appLogger.e('Failed to $actionLabel', error: e);
       if (context.mounted) {
         showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
       }
-      await dismissLoading();
+      return PlayQueueError(e);
+    } catch (e) {
+      if (abort?.isAborted ?? false) return const PlayQueueCancelled();
+      appLogger.e('Failed to $actionLabel', error: e);
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.failedPlayback(action: actionLabel, error: e.toString()));
+      }
       return PlayQueueError(e);
     } finally {
       await dismissLoading();
@@ -201,7 +258,12 @@ abstract class MediaListPlaybackLauncher {
       await navigateForTesting(itemToPlay);
     } else {
       if (!context.mounted) return const PlayQueueError('Context not mounted');
-      await navigateToVideoPlayer(context, metadata: itemToPlay);
+      // The queue holds these exact instances and the player's initState gate
+      // matches by identity — a WatchStateStore clone here would wipe the
+      // launcher-set queue on entry. The items were fetched from the server
+      // in this same user action, so session watch patches are already
+      // reflected.
+      await navigateToVideoPlayer(context, metadata: itemToPlay, resolveWatchState: false);
     }
     return const PlayQueueSuccess();
   }
@@ -223,4 +285,64 @@ class MediaListItemFacts {
     required this.serverId,
     required this.serverName,
   });
+}
+
+class _LoadingCancellationOwner {
+  final AbortController abort;
+  bool _completed = false;
+
+  _LoadingCancellationOwner(this.abort);
+
+  void complete() {
+    if (!abort.isAborted) _completed = true;
+  }
+
+  void cancel() {
+    if (!_completed) abort.abort();
+  }
+}
+
+class _CancellableLoadingDialog extends StatefulWidget {
+  final _LoadingCancellationOwner? owner;
+  final String actionLabel;
+
+  const _CancellableLoadingDialog({required this.owner, required this.actionLabel});
+
+  @override
+  State<_CancellableLoadingDialog> createState() => _CancellableLoadingDialogState();
+}
+
+class _CancellableLoadingDialogState extends State<_CancellableLoadingDialog> {
+  bool _dismissed = false;
+
+  void _cancelAndDismiss() {
+    if (_dismissed) return;
+    _dismissed = true;
+    widget.owner?.cancel();
+    final route = ModalRoute.of(context);
+    if ((route?.isCurrent ?? false) && context.mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.owner?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _cancelAndDismiss();
+      },
+      child: AlertDialog(
+        title: Text(widget.actionLabel),
+        content: const Center(widthFactor: 1, heightFactor: 1, child: CircularProgressIndicator()),
+        actions: [DialogActionButton(onPressed: _cancelAndDismiss, label: t.common.cancel)],
+      ),
+    );
+  }
 }

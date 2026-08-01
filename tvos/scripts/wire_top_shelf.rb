@@ -4,6 +4,7 @@
 require 'xcodeproj'
 
 PROJECT_PATH = File.expand_path('../Runner.xcodeproj', __dir__)
+SCHEME_PATH = File.expand_path('../Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme', __dir__)
 project = Xcodeproj::Project.open(PROJECT_PATH)
 runner = project.targets.find { |t| t.name == 'Runner' }
 raise 'Runner target not found' unless runner
@@ -65,6 +66,55 @@ end
 system_shelf_ref = ensure_file(runner_group, 'SystemShelfPlugin.swift')
 ensure_source(runner, system_shelf_ref)
 ensure_file(runner_group, 'Runner.entitlements')
+
+tests_group = main_group['RunnerTests'] || main_group.new_group('RunnerTests', 'RunnerTests')
+test_target = project.targets.find { |target| target.name == 'RunnerTests' }
+unless test_target
+  test_target = project.new_target(:unit_test_bundle, 'RunnerTests', :tvos, '14.0')
+end
+test_target.product_type = 'com.apple.product-type.bundle.unit-test'
+test_target.frameworks_build_phase.files.delete_if do |build_file|
+  build_file.file_ref&.display_name == 'Foundation.framework'
+end
+project.files.select { |file| file.display_name == 'Foundation.framework' }.each do |file_ref|
+  still_used = project.targets.any? do |target|
+    target.frameworks_build_phase.files_references.include?(file_ref)
+  end
+  file_ref.remove_from_project unless still_used
+end
+RUNNER_TESTS_DIR = File.expand_path('../RunnerTests', __dir__)
+COMPILED_TEST_EXTENSIONS = %w[.swift .m .mm].freeze
+runner_test_files = Dir.children(RUNNER_TESTS_DIR).reject { |name| name.start_with?('.') }.sort
+runner_test_sources = runner_test_files.select { |name| COMPILED_TEST_EXTENSIONS.include?(File.extname(name)) }
+raise "No RunnerTests sources found in #{RUNNER_TESTS_DIR}" if runner_test_sources.empty?
+test_target.source_build_phase.files.delete_if do |build_file|
+  file_ref = build_file.file_ref
+  file_ref && !runner_test_sources.include?(file_ref.display_name)
+end
+tests_group.files.reject { |file_ref| runner_test_files.include?(file_ref.display_name) }.each do |file_ref|
+  file_ref.remove_from_project
+end
+runner_test_sources.each do |filename|
+  ensure_source(test_target, ensure_file(tests_group, filename))
+end
+test_target.add_dependency(runner) unless test_target.dependencies.any? { |dependency| dependency.target == runner }
+
+test_target.build_configurations.each do |config|
+  settings = config.build_settings
+  settings['BUNDLE_LOADER'] = '$(TEST_HOST)'
+  settings.delete('CODE_SIGNING_ALLOWED')
+  settings['GENERATE_INFOPLIST_FILE'] = 'YES'
+  settings['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.edde746.plezy.RunnerTests'
+  settings['SDKROOT'] = 'appletvos'
+  settings['SUPPORTED_PLATFORMS'] = 'appletvos appletvsimulator'
+  settings['SWIFT_VERSION'] = '5.0'
+  settings['TARGETED_DEVICE_FAMILY'] = '3'
+  settings['TEST_HOST'] = '$(BUILT_PRODUCTS_DIR)/Runner.app/Runner'
+  settings['TVOS_DEPLOYMENT_TARGET'] = '14.0'
+end
+
+event_delivery_ref = ensure_file(runner_group, 'TvosEventDeliveryCoordinator.swift')
+ensure_source(runner, event_delivery_ref)
 
 extension_group = main_group['TopShelfExtension'] || main_group.new_group('TopShelfExtension', 'TopShelfExtension')
 top_shelf_ref = ensure_file(extension_group, 'TopShelfProvider.swift')
@@ -157,6 +207,14 @@ ensure_shell_script(
   'Sync Version',
   '/bin/bash "$SOURCE_ROOT/scripts/xcode_appletv.sh" sync_version' + "\n"
 )
+
+scheme = Xcodeproj::XCScheme.new(SCHEME_PATH)
+unless scheme.test_action.testables.any? do |testable|
+  testable.buildable_references.any? { |reference| reference.target_name == test_target.name }
+end
+  scheme.add_test_target(test_target)
+end
+scheme.save!
 
 project.save
 puts 'Saved Top Shelf wiring'

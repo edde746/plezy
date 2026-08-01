@@ -2,10 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/watch_state_resolver.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
+import '../test_helpers/media_items.dart';
 
 OfflineWatchProgressItem _action({
   required String actionType,
@@ -86,7 +87,7 @@ void main() {
 
   test('applying a watched snapshot patches container leaf counts so isWatched flips', () {
     const snapshot = WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0);
-    final season = MediaItem(
+    final season = testMediaItem(
       id: 'season-1',
       backend: MediaBackend.plex,
       kind: MediaKind.season,

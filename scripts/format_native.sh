@@ -20,9 +20,22 @@ case "${1:---check}" in
     ;;
 esac
 
-KTLINT_VERSION="${KTLINT_VERSION:-1.5.0}"
+KTLINT_VERSION="1.5.0"
+KTLINT_SHA256="a16be01dcc480aab2f55f444b620142152f66e31564b3b9376506d624c28a2ad"
+KTLINT_URL="https://github.com/ktlint/ktlint/releases/download/$KTLINT_VERSION/ktlint"
 KTLINT_BIN="$ROOT/.dart_tool/native-format/ktlint-$KTLINT_VERSION"
+KTLINT_TMP=""
+JAVA_BIN_DIR=""
 
+cleanup() {
+  if [ -n "$KTLINT_TMP" ]; then
+    rm -f -- "$KTLINT_TMP"
+  fi
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 has_command() {
   command -v "$1" >/dev/null 2>&1
 }
@@ -51,22 +64,118 @@ run_swift_format() {
   fi
 }
 
+java_diagnostic() {
+  echo "A working JDK 17+ is required for Kotlin formatting. Set JAVA_HOME to a JDK 17+ installation or put java on PATH." >&2
+}
+
+resolve_java() {
+  local candidate output version major
+  if [ -n "${JAVA_HOME:-}" ]; then
+    candidate="$JAVA_HOME/bin/java"
+  else
+    candidate="$(command -v java 2>/dev/null || true)"
+  fi
+  if [ -z "$candidate" ] || [ ! -x "$candidate" ]; then
+    java_diagnostic
+    return 127
+  fi
+  if [[ "$candidate" != /* ]]; then
+    candidate="$PWD/$candidate"
+  fi
+  if ! output="$("$candidate" -version 2>&1)"; then
+    java_diagnostic
+    return 127
+  fi
+  if [[ "$output" =~ version[[:space:]]+\"([^\"]+)\" ]]; then
+    version="${BASH_REMATCH[1]}"
+  else
+    java_diagnostic
+    return 127
+  fi
+  if [[ "$version" =~ ^1\.([0-9]+)([._-]|$) ]]; then
+    major="${BASH_REMATCH[1]}"
+  elif [[ "$version" =~ ^([0-9]+)([._-]|$) ]]; then
+    major="${BASH_REMATCH[1]}"
+  else
+    java_diagnostic
+    return 127
+  fi
+  if ((major < 17)); then
+    java_diagnostic
+    return 127
+  fi
+  JAVA_BIN_DIR="${candidate%/*}"
+}
+
+sha256_file() {
+  local output
+  if has_command shasum; then
+    output="$(shasum -a 256 "$1")" || {
+      echo "Failed to calculate the ktlint SHA-256 digest with shasum." >&2
+      return 2
+    }
+  elif has_command sha256sum; then
+    output="$(sha256sum "$1")" || {
+      echo "Failed to calculate the ktlint SHA-256 digest with sha256sum." >&2
+      return 2
+    }
+  else
+    echo "A SHA-256 tool is required to verify ktlint (shasum or sha256sum)." >&2
+    return 127
+  fi
+  printf '%s\n' "${output%%[[:space:]]*}"
+}
+
+verify_ktlint() {
+  local digest
+  digest="$(sha256_file "$1")" || return $?
+  [[ "$digest" =~ ^[0-9a-f]{64}$ ]] && [ "$digest" = "$KTLINT_SHA256" ]
+}
+
 ensure_ktlint() {
-  if [ -x "$KTLINT_BIN" ]; then
-    return 0
+  local status
+  if ! has_command shasum && ! has_command sha256sum; then
+    echo "A SHA-256 tool is required to verify ktlint (shasum or sha256sum)." >&2
+    return 127
+  fi
+  if [ -f "$KTLINT_BIN" ]; then
+    if verify_ktlint "$KTLINT_BIN"; then
+      chmod +x "$KTLINT_BIN"
+      return 0
+    else
+      status=$?
+      if [ "$status" -ne 1 ]; then
+        return "$status"
+      fi
+    fi
   fi
   if ! has_command curl; then
     echo "curl not found. Install curl to download ktlint." >&2
     return 127
   fi
-  if ! has_command java; then
-    echo "java not found. Install JDK 17+ to run ktlint." >&2
-    return 127
-  fi
 
   mkdir -p "$(dirname "$KTLINT_BIN")"
-  curl -fsSL "https://github.com/pinterest/ktlint/releases/download/$KTLINT_VERSION/ktlint" -o "$KTLINT_BIN"
-  chmod +x "$KTLINT_BIN"
+  KTLINT_TMP="$(mktemp "$(dirname "$KTLINT_BIN")/.ktlint-$KTLINT_VERSION.XXXXXX")"
+  if ! curl -fsSL "$KTLINT_URL" -o "$KTLINT_TMP"; then
+    echo "Failed to download ktlint $KTLINT_VERSION." >&2
+    return 1
+  fi
+  if verify_ktlint "$KTLINT_TMP"; then
+    :
+  else
+    status=$?
+    if [ "$status" -eq 1 ]; then
+      echo "Downloaded ktlint $KTLINT_VERSION failed SHA-256 verification." >&2
+    fi
+    return "$status"
+  fi
+  chmod +x "$KTLINT_TMP"
+  mv -f "$KTLINT_TMP" "$KTLINT_BIN"
+  KTLINT_TMP=""
+}
+
+run_ktlint() {
+  PATH="$JAVA_BIN_DIR:$PATH" "$KTLINT_BIN" "$@"
 }
 
 append_native_files() {
@@ -106,11 +215,12 @@ append_native_files \
 FAILED=0
 
 if [ "${#ktlint_files[@]}" -gt 0 ]; then
+  resolve_java
   ensure_ktlint
   if [ "$MODE" = "fix" ]; then
-    "$KTLINT_BIN" -F "${ktlint_files[@]}"
+    run_ktlint -F "${ktlint_files[@]}"
   else
-    "$KTLINT_BIN" "${ktlint_files[@]}" || FAILED=1
+    run_ktlint "${ktlint_files[@]}" || FAILED=1
   fi
 else
   echo "No Kotlin files found."

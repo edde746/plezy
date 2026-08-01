@@ -44,6 +44,9 @@ class PlexPinAuthFlow extends StatefulWidget {
   /// the user doesn't have to navigate to the QR button with the remote.
   final bool autoStartQrOnTV;
 
+  /// Test seam for rendering the initial actions without platform services.
+  final bool initializeService;
+
   /// Override the QR-vs-browser default before any user interaction. Useful
   /// for callers that want to force one mode (the add-account screen
   /// auto-starts QR on TV; the legacy login screen offers both).
@@ -62,6 +65,7 @@ class PlexPinAuthFlow extends StatefulWidget {
     this.mobileQrSize = 200,
     this.desktopQrSize = 300,
     this.autoStartQrOnTV = true,
+    this.initializeService = true,
     this.initialUseQr,
     this.initialButtonsBuilder,
   });
@@ -82,7 +86,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
   void initState() {
     super.initState();
     _useQr = widget.initialUseQr ?? PlatformDetector.isTV();
-    unawaited(_initService());
+    if (widget.initializeService) unawaited(_initService());
   }
 
   Future<void> _initService() async {

@@ -73,6 +73,13 @@ class MediaRatingBadge extends StatelessWidget {
     );
   }
 
+  /// The text exposed by the rendered badge, without building its icon row.
+  static String? semanticLabelForMedia(MediaItem item, {MediaItem? fallbackItem}) {
+    final data = _ratingDataFor(item) ?? (fallbackItem == null ? null : _ratingDataFor(fallbackItem));
+    if (data == null) return null;
+    return parseRatingImage(data.imageUri, data.value)?.formattedValue ?? data.fallbackText;
+  }
+
   static _MediaRatingBadgeData? _ratingDataFor(MediaItem item) {
     final plex = item is PlexMediaItem ? item : null;
     final rating = item.rating;

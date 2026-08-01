@@ -1,27 +1,28 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
+import 'package:plezy/services/jellyfin_endpoint_discovery.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
+import 'package:plezy/utils/media_server_timeouts.dart';
+
+import '../test_helpers/backend_client_fixtures.dart';
 
 /// Helpers for stubbing http responses keyed by request path.
-typedef _Handler = http.Response Function(http.BaseRequest req);
+typedef _Handler = FutureOr<http.Response> Function(http.BaseRequest req);
 
 http.Response _ok(Object json) => http.Response(jsonEncode(json), 200, headers: {'content-type': 'application/json'});
 http.Response _bareOk(String body) => http.Response(body, 200, headers: {'content-type': 'application/json'});
 http.Response _status(int code, [Object? json]) =>
     http.Response(json == null ? '' : jsonEncode(json), code, headers: {'content-type': 'application/json'});
 
-JellyfinConnection _existingConn({String accessToken = 'tok-old'}) => JellyfinConnection(
-  id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
+JellyfinConnection _existingConn({String accessToken = 'tok-old'}) => testJellyfinConnection(
   userName: 'edde',
   accessToken: accessToken,
   deviceId: 'dev-xyz',
@@ -36,6 +37,17 @@ JellyfinConnectionAuthService _service({required _Handler handler}) {
     testHttpClientFactory: () => MockClient((req) async => handler(req)),
   );
 }
+
+Future<Object> _captureError(Future<dynamic> future) async {
+  try {
+    await future;
+  } catch (error) {
+    return error;
+  }
+  throw StateError('Expected future to fail');
+}
+
+const _serverInfo = JellyfinServerInfo(serverName: 'Home', machineId: 'srv-1', version: '10.9.0');
 
 void main() {
   setUp(LogRedactionManager.clearTrackedValues);
@@ -76,6 +88,25 @@ void main() {
     test('throws MediaServerUrlException on transport HTTP error', () async {
       final svc = _service(handler: (_) => _status(500, {'error': 'oops'}));
       await expectLater(svc.probe('https://jf.example.com'), throwsA(isA<MediaServerUrlException>()));
+    });
+
+    test('applies the shared jellyfinProbe timeout to the injected auth client', () {
+      fakeAsync((async) {
+        final response = Completer<http.Response>();
+        final svc = _service(handler: (_) => response.future);
+        Object? probeError;
+
+        unawaited(_captureError(svc.probe('https://jf.example.com')).then((error) => probeError = error));
+        async.flushMicrotasks();
+
+        async.elapse(MediaServerTimeouts.jellyfinProbe - const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+        expect(probeError, isNull);
+
+        async.elapse(const Duration(milliseconds: 2));
+        async.flushMicrotasks();
+        expect(probeError, isA<MediaServerUrlException>());
+      });
     });
 
     test('registers base URL redaction before the first probe request', () async {
@@ -451,6 +482,95 @@ void main() {
     });
   });
 
+  group('Jellyfin authentication response parity', () {
+    test('password and Quick Connect exchange use the same timeout', () {
+      fakeAsync((async) {
+        final passwordResponse = Completer<http.Response>();
+        final quickConnectResponse = Completer<http.Response>();
+        final passwordService = _service(handler: (_) => passwordResponse.future);
+        final quickConnectService = _service(
+          handler: (req) {
+            if (req.url.path == '/QuickConnect/Connect') return _ok({'Authenticated': true});
+            return quickConnectResponse.future;
+          },
+        );
+
+        Object? passwordError;
+        Object? quickConnectError;
+        unawaited(
+          _captureError(
+            passwordService.authenticateByName(
+              baseUrl: 'https://jf.example.com',
+              username: 'edde',
+              password: 'pw',
+              deviceId: 'dev-xyz',
+              serverInfo: _serverInfo,
+            ),
+          ).then((error) => passwordError = error),
+        );
+        unawaited(
+          _captureError(
+            quickConnectService.authenticateByQuickConnect(
+              baseUrl: 'https://jf.example.com',
+              secret: 'sec',
+              deviceId: 'dev-xyz',
+              serverInfo: _serverInfo,
+            ),
+          ).then((error) => quickConnectError = error),
+        );
+
+        async.flushMicrotasks();
+        expect(passwordError, isNull);
+        expect(quickConnectError, isNull);
+
+        async.elapse(MediaServerTimeouts.jellyfinProbe + const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+
+        for (final error in [passwordError, quickConnectError]) {
+          expect(
+            error,
+            isA<MediaServerHttpException>().having(
+              (exception) => exception.type,
+              'type',
+              MediaServerHttpErrorType.connectionTimeout,
+            ),
+          );
+        }
+      });
+    });
+
+    test('password and Quick Connect exchange preserve non-auth HTTP errors', () async {
+      final passwordService = _service(handler: (_) => _status(500));
+      final quickConnectService = _service(
+        handler: (req) => req.url.path == '/QuickConnect/Connect' ? _ok({'Authenticated': true}) : _status(500),
+      );
+
+      final errors = [
+        await _captureError(
+          passwordService.authenticateByName(
+            baseUrl: 'https://jf.example.com',
+            username: 'edde',
+            password: 'pw',
+            deviceId: 'dev-xyz',
+            serverInfo: _serverInfo,
+          ),
+        ),
+        await _captureError(
+          quickConnectService.authenticateByQuickConnect(
+            baseUrl: 'https://jf.example.com',
+            secret: 'sec',
+            deviceId: 'dev-xyz',
+            serverInfo: _serverInfo,
+          ),
+        ),
+      ];
+
+      for (final error in errors) {
+        expect(error, isA<MediaServerHttpException>().having((exception) => exception.statusCode, 'statusCode', 500));
+      }
+    });
+  });
+
   group('JellyfinConnectionAuthService.validate', () {
     test('returns true when /Users/Me responds 200', () async {
       final svc = _service(
@@ -551,6 +671,76 @@ void main() {
       );
       await svc.signOut(plex);
       expect(fired, isFalse);
+    });
+  });
+
+  group('Jellyfin authentication request identity', () {
+    test('password login sends the complete MediaBrowser header', () async {
+      late http.BaseRequest request;
+      final svc = _service(
+        handler: (captured) {
+          request = captured;
+          return _ok({
+            'AccessToken': 'tok-new',
+            'User': {'Id': 'user-7', 'Name': 'edde'},
+          });
+        },
+      );
+
+      await svc.authenticateByName(
+        baseUrl: 'https://jf.example.com',
+        username: 'edde',
+        password: 'pw',
+        deviceId: 'dev-xyz',
+        serverInfo: _serverInfo,
+      );
+
+      expect(request.method, 'POST');
+      expect(
+        request.headers['authorization'],
+        'MediaBrowser Client="Plezy", Device="TestDevice", DeviceId="dev-xyz", Version="test"',
+      );
+      expect(request.headers['content-type'], 'application/json');
+    });
+
+    test('Quick Connect sends the same complete MediaBrowser header', () async {
+      late http.BaseRequest request;
+      final svc = _service(
+        handler: (captured) {
+          request = captured;
+          return _ok({'Code': 'ABCDE', 'Secret': 'sec-xyz'});
+        },
+      );
+
+      await svc.initiateQuickConnect(baseUrl: 'https://jf.example.com', deviceId: 'dev-xyz');
+
+      expect(request.method, 'GET');
+      expect(
+        request.headers['authorization'],
+        'MediaBrowser Client="Plezy", Device="TestDevice", DeviceId="dev-xyz", Version="test"',
+      );
+    });
+
+    test('rejects an empty device ID before sending a request', () async {
+      var requests = 0;
+      final svc = _service(
+        handler: (_) {
+          requests++;
+          return _status(500);
+        },
+      );
+
+      await expectLater(
+        svc.authenticateByName(
+          baseUrl: 'https://jf.example.com',
+          username: 'edde',
+          password: 'pw',
+          deviceId: '',
+          serverInfo: _serverInfo,
+        ),
+        throwsArgumentError,
+      );
+      expect(requests, 0);
     });
   });
 }

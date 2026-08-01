@@ -12,9 +12,10 @@ enum PlayerChromeFocusTarget { playPause, timeline }
 
 /// Owns video-player chrome visibility and auto-hide policy for one player route.
 class PlayerChromeController extends ChangeNotifier implements ValueListenable<bool> {
-  PlayerChromeController({bool controlsVisible = true}) : _controlsVisible = controlsVisible;
+  PlayerChromeController({this._controlsVisible = true});
 
   bool _controlsVisible;
+  bool _controlsPresented = true;
   bool _contentStripVisible = false;
   bool _playing = false;
   bool _hasFirstFrame = true;
@@ -29,8 +30,10 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   bool get value => _controlsVisible;
 
   bool get controlsVisible => _controlsVisible;
+
+  /// Whether controls may still be visibly rendered during their fade-out.
+  bool get controlsPresented => _controlsPresented;
   bool get contentStripVisible => _contentStripVisible;
-  bool get hasVisibleHold => _holds.isNotEmpty;
   bool isHeld(PlayerChromeHold hold) => _holds.contains(hold);
   PlayerChromeFocusTarget? get pendingFocusTarget => _pendingFocusTarget;
 
@@ -79,6 +82,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   }
 
   void show({bool restartAutoHide = true, PlayerChromeFocusTarget? focusTarget}) {
+    _controlsPresented = true;
     var shouldNotify = false;
     if (focusTarget != null) {
       _pendingFocusTarget = focusTarget;
@@ -89,7 +93,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
       shouldNotify = true;
     }
     if (shouldNotify) notifyListeners();
-    if (restartAutoHide) startAutoHide();
+    if (restartAutoHide) _startAutoHideForCurrentPlaybackState();
   }
 
   PlayerChromeFocusTarget? takeFocusTarget() {
@@ -111,6 +115,12 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     return true;
   }
 
+  /// Called when the controls opacity animation reaches its hidden target.
+  void markControlsHidden() {
+    if (_controlsVisible) return;
+    _controlsPresented = false;
+  }
+
   void toggle() {
     if (_controlsVisible) {
       hide();
@@ -126,7 +136,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     _lastPointerActivityMs = nowMs;
 
     show(restartAutoHide: false);
-    restartAutoHideIfPlaying();
+    _startAutoHideForCurrentPlaybackState();
     return true;
   }
 
@@ -156,9 +166,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     }
   }
 
-  void restartAutoHideIfPlaying() {
-    if (_playing) startAutoHide();
-  }
+  void restartAutoHideForCurrentPlaybackState() => _startAutoHideForCurrentPlaybackState();
 
   void hideForPointerExit() {
     if (_holds.contains(PlayerChromeHold.pip)) return;
@@ -176,6 +184,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     if (!_controlsVisible) {
       _controlsVisible = true;
     }
+    _controlsPresented = true;
     notifyListeners();
   }
 

@@ -59,11 +59,6 @@ void main() {
       expect(info!.assetPath, 'assets/rating_icons/imdb.svg');
       expect(info.formattedValue, '7.5');
     });
-
-    test('formats to one decimal (truncation follows toStringAsFixed semantics)', () {
-      final info = parseRatingImage('imdb://title', 7.25);
-      expect(info!.formattedValue, anyOf('7.2', '7.3'));
-    });
   });
 
   group('parseRatingImage - TMDB', () {

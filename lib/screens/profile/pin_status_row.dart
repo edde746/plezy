@@ -11,7 +11,11 @@ class PinStatusRow extends StatelessWidget {
   final VoidCallback onChange;
   final VoidCallback onRemove;
 
-  const PinStatusRow({super.key, required this.onChange, required this.onRemove});
+  /// Owned by the parent so it can restore DPAD focus when this row swaps
+  /// in for the Set PIN button (whose node leaves the tree with it).
+  final FocusNode? changeFocusNode;
+
+  const PinStatusRow({super.key, required this.onChange, required this.onRemove, this.changeFocusNode});
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,7 @@ class PinStatusRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         FocusableButton(
+          focusNode: changeFocusNode,
           onPressed: onChange,
           child: TextButton(onPressed: onChange, child: Text(t.profiles.changePin)),
         ),

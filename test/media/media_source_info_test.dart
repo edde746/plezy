@@ -3,6 +3,40 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/utils/track_label_builder.dart';
 
 void main() {
+  group('MediaChapter traversal', () {
+    final chapters = [
+      MediaChapter(id: 1, startTimeOffset: 0, title: 'One'),
+      MediaChapter(id: 2, startTimeOffset: 10000, title: 'Two'),
+      MediaChapter(id: 3, startTimeOffset: 20000, title: 'Three'),
+    ];
+
+    test('forward traversal uses the first strictly later chapter', () {
+      expect(MediaChapter.seekTargetIndex(const Duration(milliseconds: 9999), chapters, forward: true), 1);
+      expect(MediaChapter.seekTargetIndex(const Duration(milliseconds: 10000), chapters, forward: true), 2);
+      expect(MediaChapter.seekTargetIndex(const Duration(milliseconds: 20000), chapters, forward: true), isNull);
+    });
+
+    test('previous traversal preserves the strict three-second restart threshold', () {
+      expect(MediaChapter.seekTargetIndex(const Duration(milliseconds: 13000), chapters, forward: false), 0);
+      expect(MediaChapter.seekTargetIndex(const Duration(milliseconds: 13001), chapters, forward: false), 1);
+      expect(MediaChapter.seekTargetIndex(const Duration(milliseconds: 3000), chapters, forward: false), isNull);
+    });
+
+    test('handles empty chapters and null starts', () {
+      expect(MediaChapter.seekTargetIndex(Duration.zero, const [], forward: true), isNull);
+      final missingStart = [MediaChapter(id: 1), MediaChapter(id: 2, startTimeOffset: 5000)];
+      expect(MediaChapter.seekTargetIndex(Duration.zero, missingStart, forward: true), 1);
+      expect(MediaChapter.seekTargetIndex(const Duration(milliseconds: 3001), missingStart, forward: false), 0);
+    });
+
+    test('indexAtPosition uses start-inclusive and end-exclusive ranges', () {
+      expect(MediaChapter.indexAtPosition(Duration.zero, chapters), 0);
+      expect(MediaChapter.indexAtPosition(const Duration(milliseconds: 9999), chapters), 0);
+      expect(MediaChapter.indexAtPosition(const Duration(milliseconds: 10000), chapters), 1);
+      expect(MediaChapter.indexAtPosition(const Duration(hours: 1), chapters), 2);
+    });
+  });
+
   group('MediaSubtitleTrack label', () {
     test('language leads; a bare "Forced" title folds into the suffix', () {
       final track = MediaSubtitleTrack(

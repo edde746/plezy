@@ -2,63 +2,36 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/services/playback_report_session.dart';
 
-class _RecordingClient implements MediaServerClient {
+import '../test_helpers/playback_report_fakes.dart';
+
+class _RecordingClient with PlaybackReportRecorder implements MediaServerClient {
   final calls = <String>[];
   Completer<void>? startGate;
   Completer<void>? stopGate;
   bool failNextStop = false;
 
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    final gate = startGate;
-    if (gate != null) await gate.future;
-    calls.add('started:${position.inMilliseconds}:$mediaSourceId:$audioStreamIndex:$subtitleStreamIndex');
-  }
-
-  @override
-  Future<void> reportPlaybackProgress({
-    required String itemId,
-    required Duration position,
-    required Duration duration,
-    bool isPaused = false,
-    String? playSessionId,
-    String? playMethod,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    calls.add('${isPaused ? 'paused' : 'playing'}:${position.inMilliseconds}');
-  }
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) async {
-    calls.add('stopped-attempt:${position.inMilliseconds}:$mediaSourceId');
-    final gate = stopGate;
-    if (gate != null) await gate.future;
-    if (failNextStop) {
-      failNextStop = false;
-      throw StateError('stop failed');
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    final positionMs = call.position.inMilliseconds;
+    switch (call.kind) {
+      case PlaybackReportKind.started:
+        final start = startGate;
+        if (start != null) await start.future;
+        calls.add('started:$positionMs:${call.mediaSourceId}:${call.audioStreamIndex}:${call.subtitleStreamIndex}');
+      case PlaybackReportKind.progress:
+        calls.add('${call.isPaused ? 'paused' : 'playing'}:$positionMs');
+      case PlaybackReportKind.stopped:
+        calls.add('stopped-attempt:$positionMs:${call.mediaSourceId}');
+        final stop = stopGate;
+        if (stop != null) await stop.future;
+        if (failNextStop) {
+          failNextStop = false;
+          throw StateError('stop failed');
+        }
+        calls.add('stopped:$positionMs:${call.mediaSourceId}');
     }
-    calls.add('stopped:${position.inMilliseconds}:$mediaSourceId');
   }
 
   @override

@@ -1,12 +1,60 @@
+import 'dart:math' as math;
+import '../../providers/playback_state_provider.dart';
+
+/// Position must be within this many ms of the best-known duration for a
+/// player EOF signal to count as the real end of the media.
+///
+/// Wide enough that a transcode container ending a couple of seconds short
+/// of the server metadata duration still classifies as genuine, yet a
+/// spurious EOF that slips through inside the window lands where servers
+/// already mark the item watched (~90%), so the user outcome is unchanged.
+/// The failure this guards against (#1520) parks playback minutes short.
+const int spuriousEofToleranceMs = 10000;
+
+/// How a player EOF signal should be interpreted.
+enum EofSignalClass { genuine, spurious, unknown }
+
+/// End-of-media action after considering queue adjacency discovery.
+enum CompletionNavigationAction { presentNext, retryAdjacent, exit }
+
+CompletionNavigationAction completionNavigationAction({
+  required bool hasNext,
+  required QueueNavigationStatus adjacentStatus,
+}) {
+  if (hasNext) return CompletionNavigationAction.presentNext;
+  if (adjacentStatus == QueueNavigationStatus.failed) {
+    return CompletionNavigationAction.retryAdjacent;
+  }
+  return CompletionNavigationAction.exit;
+}
+
+/// Classify a player EOF signal against the best-known media duration.
+///
+/// mpv reports a clean EOF when a network stream dies mid-file (a reaped
+/// transcode session or an idle connection closed during a long pause), so
+/// the signal alone cannot be trusted — position is the only discriminator.
+///
+/// [playerDurationMs] alone is not trustworthy either: on chunked transcode
+/// streams the player's duration can be unknown or track the growing demuxer
+/// cache (i.e. equal the parked position), making every spurious EOF look
+/// genuine. [metadataDurationMs] (the server's item duration) anchors the
+/// comparison; max() of the two also covers the opposite failure — server
+/// metadata understating the real file length.
+EofSignalClass classifyEofSignal({
+  required int positionMs,
+  required int playerDurationMs,
+  required int? metadataDurationMs,
+  int toleranceMs = spuriousEofToleranceMs,
+}) {
+  final effectiveDurationMs = math.max(playerDurationMs, metadataDurationMs ?? 0);
+  if (effectiveDurationMs <= 0) return EofSignalClass.unknown;
+  return positionMs >= effectiveDurationMs - toleranceMs ? EofSignalClass.genuine : EofSignalClass.spurious;
+}
+
 /// What a position tick means for the end-of-video prompt flow.
 enum CompletionLatchSignal {
   /// Nothing to do.
   none,
-
-  /// Playback just entered the end-of-video window and the latch is clear —
-  /// the caller should run its completion handling (which latches on
-  /// success via [CompletionLatch.latch]).
-  completed,
 
   /// Playback moved back out of the end region and the latch re-armed.
   rearmed,
@@ -15,22 +63,17 @@ enum CompletionLatchSignal {
 /// End-of-video latch with rearm hysteresis for the Play Next / completion
 /// prompts.
 ///
-/// The prompt fires when playback enters the last [triggerWindowMs] of the
-/// item and must not re-fire on every subsequent position tick — the latch
-/// stays set while playback is parked inside the end region. It re-arms only
-/// once playback moves back out past [rearmWindowMs] (a larger window, so a
-/// position oscillating at the boundary can't flap), and never while a
-/// prompt is visible or an auto-play countdown owns the screen.
+/// Completion itself comes from the player's EOF signal. The latch prevents
+/// that handling from re-running while playback is parked at EOF, and re-arms
+/// only once playback moves back out past [rearmWindowMs] from the end. It
+/// never re-arms while a prompt is visible or an auto-play countdown owns the
+/// screen.
 ///
-/// Latching is the *caller's* move ([latch]), not [classifyPosition]'s: the
-/// completion handler has its own bail-outs (live TV, in-flight media swap)
-/// and a tick that bails must stay un-latched so the next tick retries.
+/// Latching is the *caller's* move ([latch]), not [classifyPosition]'s: the EOF
+/// handler has its own bail-outs (live TV, in-flight media swap) and a signal
+/// that bails must stay un-latched so the next EOF signal retries.
 class CompletionLatch {
-  CompletionLatch({required this.triggerWindowMs, required this.rearmWindowMs})
-    : assert(rearmWindowMs > triggerWindowMs, 'rearm window must exceed trigger window for hysteresis');
-
-  /// Fire when within this many ms of the end.
-  final int triggerWindowMs;
+  CompletionLatch({required this.rearmWindowMs});
 
   /// Re-arm only after moving back out past this many ms from the end.
   final int rearmWindowMs;
@@ -63,10 +106,6 @@ class CompletionLatch {
     required bool countdownActive,
   }) {
     if (durationMs <= 0) return CompletionLatchSignal.none;
-    if (positionMs >= durationMs - triggerWindowMs) {
-      if (!promptVisible && !_triggered) return CompletionLatchSignal.completed;
-      return CompletionLatchSignal.none;
-    }
     if (positionMs < durationMs - rearmWindowMs) {
       final wasLatched = _triggered;
       rearmIfClear(promptVisible: promptVisible, countdownActive: countdownActive);

@@ -1,5 +1,3 @@
-import 'package:collection/collection.dart';
-
 import '../media/media_version.dart';
 import '../media/media_source_info.dart';
 import '../utils/jellyfin_time.dart';
@@ -69,39 +67,14 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
 
 List<MediaAudioTrack> _withDefaultAudioSelection(List<MediaAudioTrack> tracks, int? defaultStreamIndex) {
   if (defaultStreamIndex == null) return tracks;
-  return [
-    for (final track in tracks)
-      MediaAudioTrack(
-        id: track.id,
-        index: track.index,
-        codec: track.codec,
-        language: track.language,
-        languageCode: track.languageCode,
-        title: track.title,
-        displayTitle: track.displayTitle,
-        channels: track.channels,
-        selected: track.index == defaultStreamIndex,
-        external: track.external,
-      ),
-  ];
+  return [for (final track in tracks) track.withSelected(track.index == defaultStreamIndex)];
 }
 
 List<MediaSubtitleTrack> _withDefaultSubtitleSelection(List<MediaSubtitleTrack> tracks, int? defaultStreamIndex) {
   return [
     for (final track in tracks)
-      MediaSubtitleTrack(
-        id: track.id,
-        index: track.index,
-        codec: track.codec,
-        language: track.language,
-        languageCode: track.languageCode,
-        title: track.title,
-        displayTitle: track.displayTitle,
-        selected: defaultStreamIndex != null ? track.index == defaultStreamIndex : track.selected || track.forced,
-        forced: track.forced,
-        key: track.key,
-        external: track.external,
-        usesExternalDelivery: track.usesExternalDelivery,
+      track.withSelected(
+        defaultStreamIndex != null ? track.index == defaultStreamIndex : track.selected || track.forced,
       ),
   ];
 }
@@ -178,10 +151,12 @@ String? _jellyfinSegmentMarkerType(String? value) {
 
 /// Coerce a Jellyfin trickplay manifest to `Map<int width, TrickplayInfo>`,
 /// tolerating both the flat OpenAPI shape (`{ "320": {...} }`) and the nested
-/// Streamyfin shape (`{ "<sourceId>": { "320": {...} } }`).
+/// Streamyfin shape (`{ "<sourceId>": { "320": {...} } }`). Nested manifests
+/// require an exact selected-source match. A source-less caller may use a
+/// nested manifest only when it contains exactly one map-valued candidate.
 ///
-/// Returns `null` when [raw] is missing, malformed, or contains no usable
-/// entries — callers treat that as "no scrub thumbnails".
+/// Returns `null` when [raw] is missing, malformed, ambiguous, or contains no
+/// usable entries — callers treat that as "no scrub thumbnails".
 Map<int, TrickplayInfo>? _parseTrickplayManifest(Object? raw, String? sourceId) {
   if (raw is! Map) return null;
   if (raw.isEmpty) return null;
@@ -195,16 +170,19 @@ Map<int, TrickplayInfo>? _parseTrickplayManifest(Object? raw, String? sourceId) 
   if (raw.values.any(_looksLikeTrickplayInfo)) {
     resolutionMap = raw;
   } else {
-    final byId = sourceId != null ? raw[sourceId] : null;
-    if (byId is Map) {
+    if (sourceId != null) {
+      final byId = raw[sourceId];
+      if (byId is! Map) return null;
       resolutionMap = byId;
     } else {
-      // Source id not in the manifest — fall back to the first nested
-      // entry so the user still gets *something*. The caller already
-      // chose the right source; this is best-effort recovery.
-      final first = raw.values.firstWhereOrNull((v) => v is Map);
-      if (first is! Map) return null;
-      resolutionMap = first;
+      Map? soleCandidate;
+      for (final candidate in raw.values) {
+        if (candidate is! Map) continue;
+        if (soleCandidate != null) return null;
+        soleCandidate = candidate;
+      }
+      if (soleCandidate == null) return null;
+      resolutionMap = soleCandidate;
     }
   }
 

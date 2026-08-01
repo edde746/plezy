@@ -12,8 +12,71 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
+import 'package:shared_preferences_platform_interface/types.dart';
 
 import '../test_helpers/prefs.dart';
+
+final class _RecordingPreferencesPlatform extends SharedPreferencesAsyncPlatform {
+  _RecordingPreferencesPlatform(this.delegate);
+
+  final SharedPreferencesAsyncPlatform delegate;
+  final List<String> writes = [];
+  String? failIntKey;
+
+  @override
+  Future<void> setString(String key, String value, SharedPreferencesOptions options) async {
+    writes.add('string:$key');
+    await delegate.setString(key, value, options);
+  }
+
+  @override
+  Future<void> setInt(String key, int value, SharedPreferencesOptions options) async {
+    writes.add('int:$key');
+    if (key == failIntKey) throw StateError('injected recency failure');
+    await delegate.setInt(key, value, options);
+  }
+
+  @override
+  Future<void> setBool(String key, bool value, SharedPreferencesOptions options) =>
+      delegate.setBool(key, value, options);
+
+  @override
+  Future<void> setDouble(String key, double value, SharedPreferencesOptions options) =>
+      delegate.setDouble(key, value, options);
+
+  @override
+  Future<void> setStringList(String key, List<String> value, SharedPreferencesOptions options) =>
+      delegate.setStringList(key, value, options);
+
+  @override
+  Future<String?> getString(String key, SharedPreferencesOptions options) => delegate.getString(key, options);
+
+  @override
+  Future<bool?> getBool(String key, SharedPreferencesOptions options) => delegate.getBool(key, options);
+
+  @override
+  Future<double?> getDouble(String key, SharedPreferencesOptions options) => delegate.getDouble(key, options);
+
+  @override
+  Future<int?> getInt(String key, SharedPreferencesOptions options) => delegate.getInt(key, options);
+
+  @override
+  Future<List<String>?> getStringList(String key, SharedPreferencesOptions options) =>
+      delegate.getStringList(key, options);
+
+  @override
+  Future<void> clear(ClearPreferencesParameters parameters, SharedPreferencesOptions options) =>
+      delegate.clear(parameters, options);
+
+  @override
+  Future<Map<String, Object>> getPreferences(GetPreferencesParameters parameters, SharedPreferencesOptions options) =>
+      delegate.getPreferences(parameters, options);
+
+  @override
+  Future<Set<String>> getKeys(GetPreferencesParameters parameters, SharedPreferencesOptions options) =>
+      delegate.getKeys(parameters, options);
+}
 
 PlexHomeUser _homeUser(String uuid, {String name = 'Home User'}) {
   return PlexHomeUser(
@@ -47,10 +110,13 @@ void main() {
   late PlexHomeService plexHome;
   late ActiveProfileProvider provider;
   late StorageService storage;
+  late _RecordingPreferencesPlatform preferencesPlatform;
   late List<PlexHomeUser> fetchedHomeUsers;
 
   setUp(() async {
     resetSharedPreferencesForTest();
+    preferencesPlatform = _RecordingPreferencesPlatform(SharedPreferencesAsyncPlatform.instance!);
+    SharedPreferencesAsyncPlatform.instance = preferencesPlatform;
     db = AppDatabase.forTesting(NativeDatabase.memory());
     registry = ProfileRegistry(db);
     connections = ConnectionRegistry(db);
@@ -122,15 +188,35 @@ void main() {
       expect(provider.active?.displayName, 'Migrated User');
     });
 
-    test('initialize clears storage when stored id is stale', () async {
-      // A previously-active profile that was deleted should not keep
-      // storage-scoped settings under the removed profile id.
+    test('initialize keeps a stored id it cannot resolve (transient snapshots must not wipe it)', () async {
+      // Early snapshots can legitimately miss state (boot before migration,
+      // Plex Home cache not hydrated yet) — resolution goes inactive but the
+      // persisted selection survives for a later snapshot to resolve.
+      // Genuinely unresolvable ids are cleared by the boot guard and the
+      // post-removal settle flow, not here.
       await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
       await storage.setActiveProfileId('ghost-id-no-longer-exists');
       await provider.initialize();
       await Future<void>.delayed(Duration.zero);
       expect(provider.activeId, isNull);
-      expect(storage.getActiveProfileId(), isNull);
+      expect(storage.getActiveProfileId(), 'ghost-id-no-longer-exists');
+    });
+
+    test('re-upserting an identical connection does not notify listeners', () async {
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+      final account = _account('plex.acct');
+      await connections.upsert(account);
+      await provider.initialize();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      var notifications = 0;
+      provider.addListener(() => notifications++);
+      // Same row content — the binder does this on every successful bind
+      // (persisting refreshed-but-identical server metadata).
+      await connections.upsert(account);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+
+      expect(notifications, 0);
     });
 
     test('initialize resolves the stored active profile id', () async {
@@ -149,6 +235,51 @@ void main() {
       final ok = await provider.activate(p2);
       expect(ok, isTrue);
       expect(provider.activeId, 'p2');
+    });
+
+    test('recency failure leaves stored and in-memory active identity unchanged', () async {
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+      await registry.upsert(Profile.local(id: 'p2', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)));
+      await storage.setActiveProfileId('p1');
+      await provider.initialize();
+      preferencesPlatform.writes.clear();
+      preferencesPlatform.failIntKey = 'profile_last_used_p2';
+
+      final p2 = provider.profiles.firstWhere((profile) => profile.id == 'p2');
+      await expectLater(provider.activate(p2), throwsA(isA<StateError>()));
+      await storage.prefs.reloadCache();
+
+      expect(preferencesPlatform.writes, ['int:profile_last_used_p2']);
+      expect(storage.getProfileLastUsed('p2'), isNull);
+      expect(storage.getActiveProfileId(), 'p1');
+      expect(provider.activeId, 'p1');
+    });
+
+    test('activation persists recency then marker before notifying listeners', () async {
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+      await registry.upsert(Profile.local(id: 'p2', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)));
+      await storage.setActiveProfileId('p1');
+      await provider.initialize();
+      preferencesPlatform.writes.clear();
+      var notifiedAfterCommit = false;
+      void listener() {
+        if (provider.activeId != 'p2') return;
+        notifiedAfterCommit =
+            storage.getProfileLastUsed('p2') != null &&
+            storage.getActiveProfileId() == 'p2' &&
+            preferencesPlatform.writes.length >= 2 &&
+            preferencesPlatform.writes[0] == 'int:profile_last_used_p2' &&
+            preferencesPlatform.writes[1] == 'string:active_app_profile_id';
+      }
+
+      provider.addListener(listener);
+      addTearDown(() => provider.removeListener(listener));
+      final p2 = provider.profiles.firstWhere((profile) => profile.id == 'p2');
+
+      expect(await provider.activate(p2), isTrue);
+
+      expect(preferencesPlatform.writes.take(2), ['int:profile_last_used_p2', 'string:active_app_profile_id']);
+      expect(notifiedAfterCommit, isTrue);
     });
 
     test('activate moves the selected profile to the front by recent usage', () async {

@@ -5,10 +5,13 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/metadata_edit/jellyfin_metadata_edit_adapter.dart';
+import 'package:plezy/metadata_edit/metadata_edit_models.dart';
 import 'package:plezy/services/jellyfin_client.dart';
+import 'package:plezy/utils/media_image_helper.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   test('load fails when the full editable Jellyfin DTO is unavailable', () async {
@@ -19,7 +22,7 @@ void main() {
     addTearDown(client.close);
 
     final adapter = JellyfinMetadataEditAdapter(client);
-    final item = MediaItem(
+    final item = testMediaItem(
       id: 'item-1',
       backend: MediaBackend.jellyfin,
       kind: MediaKind.movie,
@@ -27,6 +30,31 @@ void main() {
     );
 
     expect(adapter.load(item), throwsA(isA<StateError>()));
+  });
+
+  test('episode poster artwork uses 16:9 thumbnail geometry', () async {
+    final client = JellyfinClient.forTesting(
+      connection: _connection(),
+      httpClient: MockClient((request) async => http.Response('', 500)),
+    );
+    addTearDown(client.close);
+    final adapter = JellyfinMetadataEditAdapter(client);
+
+    MetadataArtworkConfig posterConfig(MediaKind kind) {
+      final item = testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: kind);
+      final draft = MetadataEditDraft(sourceItem: item, currentItem: item, values: {});
+      final artwork = adapter.buildSchema(draft).singleWhere((section) => section.id == 'artwork');
+      return artwork.fields.singleWhere((field) => field.id == 'artwork:Primary').artwork!;
+    }
+
+    final episode = posterConfig(MediaKind.episode);
+    expect(episode.gridAspectRatio, 16 / 9);
+    expect(episode.imageType, ImageType.thumb);
+    expect(episode.gridColumns, 2);
+
+    final movie = posterConfig(MediaKind.movie);
+    expect(movie.gridAspectRatio, 2 / 3);
+    expect(movie.imageType, ImageType.poster);
   });
 
   test('save preserves unchanged Jellyfin people and studio identity data', () async {
@@ -47,7 +75,7 @@ void main() {
     addTearDown(client.close);
 
     final adapter = JellyfinMetadataEditAdapter(client);
-    final item = MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
+    final item = testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
     final draft = await adapter.load(item);
 
     draft.setValue('director', ['Alice', 'Charlie']);

@@ -5,6 +5,7 @@ import 'app_logger.dart';
 import 'base_notifier.dart';
 import 'global_key_utils.dart';
 import 'hierarchical_event_mixin.dart';
+import 'media_event_keys.dart';
 
 enum WatchStateChangeType { watched, unwatched, progressUpdate, removedFromContinueWatching }
 
@@ -98,11 +99,8 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
 
   /// Helper to emit a watched/unwatched event from a [MediaItem].
   void notifyWatched({required MediaItem item, bool isNowWatched = true, String? cacheServerId}) {
-    final serverId = serverIdOrNull(item.serverId);
-    if (serverId == null) {
-      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping watched event');
-      return;
-    }
+    final serverId = serverIdForEvent(item, notifier: 'WatchStateNotifier', event: 'watched');
+    if (serverId == null) return;
     notify(
       WatchStateEvent(
         itemId: item.id,
@@ -124,19 +122,18 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
     required MediaItem item,
     required int viewOffset,
     required int duration,
+    String? cacheServerId,
     double watchedThreshold = 0.9,
   }) {
-    final serverId = serverIdOrNull(item.serverId);
-    if (serverId == null) {
-      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping progress event');
-      return;
-    }
+    final serverId = serverIdForEvent(item, notifier: 'WatchStateNotifier', event: 'progress');
+    if (serverId == null) return;
     final isNowWatched = isWatchedProgress(positionMs: viewOffset, durationMs: duration, threshold: watchedThreshold);
 
     notify(
       WatchStateEvent(
         itemId: item.id,
         serverId: serverId,
+        cacheServerId: cacheServerId,
         changeType: WatchStateChangeType.progressUpdate,
         parentChain: item.parentChain,
         mediaType: item.kind.id,
@@ -149,11 +146,8 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
 
   /// Helper to emit a Continue Watching removal event.
   void notifyRemovedFromContinueWatching({required MediaItem item}) {
-    final serverId = serverIdOrNull(item.serverId);
-    if (serverId == null) {
-      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping continue-watching removal event');
-      return;
-    }
+    final serverId = serverIdForEvent(item, notifier: 'WatchStateNotifier', event: 'continue-watching removal');
+    if (serverId == null) return;
     notify(
       WatchStateEvent(
         itemId: item.id,

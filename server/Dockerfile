@@ -1,4 +1,6 @@
-FROM golang:1.22-alpine AS build
+# Update the readable tag, index digest, and platforms together using the controlled process in CONTRIBUTING.md.
+# Platforms: linux/amd64, linux/arm64
+FROM golang:1.26.5-alpine3.23@sha256:622e56dbc11a8cfe87cafa2331e9a201877271cbff918af53d3be315f3da88cc AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download

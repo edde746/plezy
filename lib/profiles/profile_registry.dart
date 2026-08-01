@@ -42,49 +42,49 @@ class ProfileRegistry {
   }
 
   Future<void> upsert(Profile profile) async {
-    final row = ProfilesCompanion(
-      id: Value(profile.id),
-      kind: Value(profile.kind.id),
-      displayName: Value(profile.displayName),
-      avatarThumbUrl: Value(profile.avatarThumbUrl),
-      configJson: Value(jsonEncode(profile.toConfigJson())),
-      sortOrder: Value(profile.sortOrder),
-      createdAt: Value(profile.createdAt.millisecondsSinceEpoch),
-      lastUsedAt: Value(profile.lastUsedAt?.millisecondsSinceEpoch),
-    );
-    await _db.into(_db.profiles).insertOnConflictUpdate(row);
+    await _db.runIdentityMutation(() async {
+      final row = ProfilesCompanion(
+        id: Value(profile.id),
+        kind: Value(profile.kind.id),
+        displayName: Value(profile.displayName),
+        avatarThumbUrl: Value(profile.avatarThumbUrl),
+        configJson: Value(jsonEncode(profile.toConfigJson())),
+        sortOrder: Value(profile.sortOrder),
+        createdAt: Value(profile.createdAt.millisecondsSinceEpoch),
+        lastUsedAt: Value(profile.lastUsedAt?.millisecondsSinceEpoch),
+      );
+      await _db.into(_db.profiles).insertOnConflictUpdate(row);
+    });
     appLogger.d('ProfileRegistry: upserted ${profile.kind.id}/${profile.id}');
   }
 
   Future<void> remove(String id) async {
-    await (_db.delete(_db.profiles)..where((t) => t.id.equals(id))).go();
+    await _db.runIdentityMutation(() async {
+      await (_db.delete(_db.profiles)..where((t) => t.id.equals(id))).go();
+    });
     appLogger.d('ProfileRegistry: removed $id');
   }
 
   Future<void> markUsed(String id, DateTime at) async {
-    await (_db.update(
-      _db.profiles,
-    )..where((t) => t.id.equals(id))).write(ProfilesCompanion(lastUsedAt: Value(at.millisecondsSinceEpoch)));
+    await _db.runIdentityMutation(() async {
+      await (_db.update(
+        _db.profiles,
+      )..where((t) => t.id.equals(id))).write(ProfilesCompanion(lastUsedAt: Value(at.millisecondsSinceEpoch)));
+    });
   }
 
   /// One-shot cleanup: drop any `kind='plex_home'` rows left over from the
   /// pre-refactor data model. Plex Home users are no longer persisted.
   Future<int> dropAllPlexHomeRows() async {
-    return (_db.delete(_db.profiles)..where((t) => t.kind.equals(ProfileKind.plexHome.id))).go();
-  }
-
-  Future<void> reorder(List<String> idsInOrder) async {
-    await _db.transaction(() async {
-      for (var i = 0; i < idsInOrder.length; i++) {
-        await (_db.update(
-          _db.profiles,
-        )..where((t) => t.id.equals(idsInOrder[i]))).write(ProfilesCompanion(sortOrder: Value(i)));
-      }
-    });
+    return _db.runIdentityMutation(
+      () => (_db.delete(_db.profiles)..where((t) => t.kind.equals(ProfileKind.plexHome.id))).go(),
+    );
   }
 
   Future<void> clear() async {
-    await _db.delete(_db.profiles).go();
+    await _db.runIdentityMutation(() async {
+      await _db.delete(_db.profiles).go();
+    });
   }
 
   Profile? _rowToProfile(ProfileRow row) {

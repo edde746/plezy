@@ -5,6 +5,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
+    _hasRenderedFirstFrame = false;
+    _hasFatalPlaybackError = false;
 
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {
@@ -54,7 +56,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         // Build the stream URL (with optional offset for time-shift)
         final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
-        if (streamUrl == null || !mounted) throw Exception('Failed to build stream path');
+        if (streamUrl == null || !mounted) {
+          throw Exception('Failed to build stream path');
+        }
 
         // Track stream start epoch for position calculations
         if (offsetSeconds != null) {
@@ -66,7 +70,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
 
         await currentPlayer.setProperty('force-seekable', 'no');
-        await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
+        await currentPlayer.open(
+          Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+          play: !PlatformDetector.isAutomotive(),
+          isLive: true,
+        );
         if (!attempt.isCurrent) return;
 
         _trackManager?.cacheExternalSubtitles(const []);
@@ -82,6 +90,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           });
           _trackManager?.mediaInfo = null;
         }
+        if (PlatformDetector.isAutomotive()) {
+          await _playWithPlaybackIntent(currentPlayer);
+        }
       } catch (e, st) {
         appLogger.e('Failed to start live TV playback', error: e, stackTrace: st);
         unawaited(_sendLiveTimeline('stopped'));
@@ -95,6 +106,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
     // Capture providers before async gaps
     final offlineWatchService = context.read<OfflineWatchSyncService>();
+    var primaryMediaOpened = false;
 
     try {
       PlaybackContext playbackContext;
@@ -105,14 +117,17 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           database: context.read<AppDatabase>(),
         );
         playbackContext = await playbackResolver.resolve(
-          metadata: _currentMetadata,
-          selectedMediaIndex: _effectiveSelectedMediaIndex,
-          selectedMediaSourceId: _requestedMediaSourceId,
+          PlaybackInitializationOptions(
+            metadata: _currentMetadata,
+            selectedMediaIndex: _effectiveSelectedMediaIndex,
+            selectedMediaSourceId: _requestedMediaSourceId,
+            qualityPreset: _selectedQualityPreset,
+            selectedAudioStreamId: _selectedAudioStreamId,
+            preferredSubtitleTrack: _preferredSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+          ),
           offlineLibraryMode: true,
-          qualityPreset: _selectedQualityPreset,
-          selectedAudioStreamId: _selectedAudioStreamId,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
         );
         if (playbackContext.result.videoUrl == null) {
           throw PlaybackException(t.messages.fileInfoNotAvailable);
@@ -136,16 +151,24 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
       final result = playbackContext.result;
       final streamHeaders = playbackContext.streamHeaders;
+      var subtitleSelection = await _resolveSubtitleSelectionForOpen(
+        metadata: _currentMetadata,
+        result: result,
+        preferredAudioTrack: _preferredAudioTrack,
+        preferredSubtitleTrack: _preferredSubtitleTrack,
+        preferredSecondarySubtitleTrack: _preferredSecondarySubtitleTrack,
+      );
+      if (!attempt.isCurrent) return;
       // Initial start has no previous session to protect, so commit as soon
       // as the resolve lands (reload-style flows commit at the open
       // boundary instead).
-      _commitPlaybackSession(
-        PlaybackSession.fromContext(
-          playbackContext,
-          requestedQualityPreset: _selectedQualityPreset,
-          requestedMediaSourceId: _requestedMediaSourceId,
-        ),
+      var session = PlaybackSession.fromContext(
+        playbackContext,
+        requestedQualityPreset: _selectedQualityPreset,
+        requestedMediaSourceId: _requestedMediaSourceId,
+        subtitleSelection: subtitleSelection,
       );
+      _commitPlaybackSession(session);
 
       // Primary refresh-rate path: when metadata provides FPS, Android players
       // can switch before creating decoders. MPV still needs a startup refresh
@@ -171,6 +194,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         currentPlayer: currentPlayer,
         settingsService: settingsService,
         preKnownFps: displayCriteria?.fps,
+        preKnownWidth: displayCriteria?.width ?? 0,
+        preKnownHeight: displayCriteria?.height ?? 0,
         hasVideoUrl: result.videoUrl != null,
         ensureAudioFocus: ensureAudioFocus,
       );
@@ -217,7 +242,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         frameRatePlan.armStartupRefreshGate(currentPlayer);
         externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
           player: currentPlayer,
-          externalSubtitles: result.externalSubtitles,
+          externalSubtitles: subtitleSelection.sidecarsAtOpen,
         );
         final shouldAutoPlay =
             !shouldHoldPlaybackStart && !wtOwnsStart && externalSubtitlePlan.canStartBeforeTrackSetup;
@@ -226,12 +251,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // so tracks are discovered in a single prepare/loadfile cycle. Any
         // backend that cannot do that still uses the post-open sub-add path.
         final openTiming = _playbackOpenTiming(
-          backend: _currentMetadata.backend,
           isTranscoding: result.isTranscoding,
           resumePosition: resumePosition,
           durationMs: _currentMetadata.durationMs,
         );
-        final didOpen = await _openMediaOnPlayer(
+        final openResult = await _openMediaOnPlayer(
           player: currentPlayer,
           settingsService: settingsService,
           videoUrl: result.videoUrl!,
@@ -240,11 +264,17 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           selectedVersion: result.selectedVersion,
           timing: openTiming,
           headers: streamHeaders,
-          play: shouldAutoPlay,
+          play: shouldAutoPlay && !PlatformDetector.isAutomotive(),
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: () => attempt.isCurrent,
+          onMediaAvailabilityChanged: (available) => primaryMediaOpened = available,
         );
-        if (!didOpen || !attempt.isCurrent) return;
+        if (!openResult.didOpen || !attempt.isCurrent) return;
+        if (openResult.sidecarFallbackUsed) {
+          session = _commitSidecarFallbackSession(session);
+          subtitleSelection = session.subtitleSelection;
+          externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(player: currentPlayer, externalSubtitles: const []);
+        }
 
         // Attach player to Watch Together session for sync (if in session).
         // With a frame-rate startup gate pending, sync readiness waits for
@@ -256,10 +286,14 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
           _notifyWatchTogetherMediaChange();
         }
+        if (shouldAutoPlay && PlatformDetector.isAutomotive()) {
+          await _playWithPlaybackIntent(currentPlayer);
+          if (!attempt.isCurrent) return;
+        }
       } else {
         externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
           player: currentPlayer,
-          externalSubtitles: result.externalSubtitles,
+          externalSubtitles: subtitleSelection.sidecarsAtOpen,
           waitForFileLoaded: false,
         );
       }
@@ -284,9 +318,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
             _autoPipEnteringCallback = autoPipEnteringCallback;
             PipService.onAutoPipEntering = autoPipEnteringCallback;
-            final pipManager = _videoPIPManager;
-            if (currentPlayer.state.playing && pipManager != null) {
-              unawaited(pipManager.updateAutoPipState(isPlaying: true));
+            if (currentPlayer.state.playing) {
+              unawaited(_updateAutoPipState(isPlaying: true));
             }
           }
 
@@ -313,12 +346,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           plexClient: mediaClient is PlexClient ? mediaClient : null,
           getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
           preferredAudioTrack: _preferredAudioTrack,
-          preferredSubtitleTrack: _preferredSubtitleTrack,
-          preferredSecondarySubtitleTrack: _preferredSecondarySubtitleTrack,
+          preferredSubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
+          preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
         );
 
-        // Store external subtitles for re-use after backend fallback
-        _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
+        // Store only the active sidecars for re-use after backend fallback.
+        _trackManager!.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);
 
         final resumeForStartupFrame =
             frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart;
@@ -341,11 +374,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           plan: frameRatePlan,
-          resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
+          resumeAfterStartupGate: (reason) => _finishPlaybackAfterStartupGate(
             currentPlayer: currentPlayer,
             externalSubtitlePlan: externalSubtitlePlan,
             reason: reason,
-            wtOwnsStart: wtOwnsStart,
+            shouldResume: !wtOwnsStart,
+            watchTogetherOwnsStart: wtOwnsStart,
             wtStartupHold: wtStartupHold,
           ),
           playbackResumedForStartupFrame: resumeForStartupFrame,
@@ -358,14 +392,20 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
     } on PlaybackException catch (e, st) {
       appLogger.w('Playback initialization failed', error: e, stackTrace: st);
-      if (mounted) {
-        _hasFirstFrame.value = true; // Hide spinner on error
+      if (attempt.isCurrent && mounted) {
+        if (!primaryMediaOpened) {
+          _hasFatalPlaybackError = true;
+        }
+        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
         showErrorSnackBar(context, e.message);
       }
     } catch (e, st) {
       appLogger.e('Failed to start playback', error: e, stackTrace: st);
-      if (mounted) {
-        _hasFirstFrame.value = true; // Hide spinner on error
+      if (attempt.isCurrent && mounted) {
+        if (!primaryMediaOpened) {
+          _hasFatalPlaybackError = true;
+        }
+        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }

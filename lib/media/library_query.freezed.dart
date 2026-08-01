@@ -532,11 +532,15 @@ as List<String>,
 mixin _$LibraryQuery {
 
 /// Restrict to a single kind (e.g. `MediaKind.movie`). Null = library default.
- MediaKind? get kind;/// Pagination — zero-based offset.
+ MediaKind? get kind;/// Restrict to multiple kinds when no single [kind] represents the browse
+/// surface. When non-empty, translators prefer this over [kind].
+ List<MediaKind> get includeKinds;/// Pagination — zero-based offset.
  int get offset; int get limit; LibrarySort? get sort; List<LibraryFilter> get filters;/// Free-text search restricted to this library. Distinct from the global
 /// search endpoint.
  String? get search;/// Whether to include items the active user has already watched.
- bool get includeWatched;/// Restrict the result to items whose sort name starts with this string —
+ bool get includeWatched;/// Restrict to items the user marked favorite (Jellyfin `Filters=IsFavorite`).
+/// Plex has no equivalent; its translator ignores the flag.
+ bool get favoritesOnly;/// Restrict the result to items whose sort name starts with this string —
 /// the alpha-jump bar's filter UX. The literal `#` is a sentinel for
 /// "non-alphabetic" and translates to a `NameLessThan=A` query for backends
 /// that support it.
@@ -554,16 +558,16 @@ $LibraryQueryCopyWith<LibraryQuery> get copyWith => _$LibraryQueryCopyWithImpl<L
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is LibraryQuery&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.offset, offset) || other.offset == offset)&&(identical(other.limit, limit) || other.limit == limit)&&(identical(other.sort, sort) || other.sort == sort)&&const DeepCollectionEquality().equals(other.filters, filters)&&(identical(other.search, search) || other.search == search)&&(identical(other.includeWatched, includeWatched) || other.includeWatched == includeWatched)&&(identical(other.nameStartsWith, nameStartsWith) || other.nameStartsWith == nameStartsWith)&&const DeepCollectionEquality().equals(other.genres, genres)&&const DeepCollectionEquality().equals(other.officialRatings, officialRatings)&&const DeepCollectionEquality().equals(other.years, years)&&const DeepCollectionEquality().equals(other.tags, tags));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is LibraryQuery&&(identical(other.kind, kind) || other.kind == kind)&&const DeepCollectionEquality().equals(other.includeKinds, includeKinds)&&(identical(other.offset, offset) || other.offset == offset)&&(identical(other.limit, limit) || other.limit == limit)&&(identical(other.sort, sort) || other.sort == sort)&&const DeepCollectionEquality().equals(other.filters, filters)&&(identical(other.search, search) || other.search == search)&&(identical(other.includeWatched, includeWatched) || other.includeWatched == includeWatched)&&(identical(other.favoritesOnly, favoritesOnly) || other.favoritesOnly == favoritesOnly)&&(identical(other.nameStartsWith, nameStartsWith) || other.nameStartsWith == nameStartsWith)&&const DeepCollectionEquality().equals(other.genres, genres)&&const DeepCollectionEquality().equals(other.officialRatings, officialRatings)&&const DeepCollectionEquality().equals(other.years, years)&&const DeepCollectionEquality().equals(other.tags, tags));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,kind,offset,limit,sort,const DeepCollectionEquality().hash(filters),search,includeWatched,nameStartsWith,const DeepCollectionEquality().hash(genres),const DeepCollectionEquality().hash(officialRatings),const DeepCollectionEquality().hash(years),const DeepCollectionEquality().hash(tags));
+int get hashCode => Object.hash(runtimeType,kind,const DeepCollectionEquality().hash(includeKinds),offset,limit,sort,const DeepCollectionEquality().hash(filters),search,includeWatched,favoritesOnly,nameStartsWith,const DeepCollectionEquality().hash(genres),const DeepCollectionEquality().hash(officialRatings),const DeepCollectionEquality().hash(years),const DeepCollectionEquality().hash(tags));
 
 @override
 String toString() {
-  return 'LibraryQuery(kind: $kind, offset: $offset, limit: $limit, sort: $sort, filters: $filters, search: $search, includeWatched: $includeWatched, nameStartsWith: $nameStartsWith, genres: $genres, officialRatings: $officialRatings, years: $years, tags: $tags)';
+  return 'LibraryQuery(kind: $kind, includeKinds: $includeKinds, offset: $offset, limit: $limit, sort: $sort, filters: $filters, search: $search, includeWatched: $includeWatched, favoritesOnly: $favoritesOnly, nameStartsWith: $nameStartsWith, genres: $genres, officialRatings: $officialRatings, years: $years, tags: $tags)';
 }
 
 
@@ -574,7 +578,7 @@ abstract mixin class $LibraryQueryCopyWith<$Res>  {
   factory $LibraryQueryCopyWith(LibraryQuery value, $Res Function(LibraryQuery) _then) = _$LibraryQueryCopyWithImpl;
 @useResult
 $Res call({
- MediaKind? kind, int offset, int limit, LibrarySort? sort, List<LibraryFilter> filters, String? search, bool includeWatched, String? nameStartsWith, List<String>? genres, List<String>? officialRatings, List<int>? years, List<String>? tags
+ MediaKind? kind, List<MediaKind> includeKinds, int offset, int limit, LibrarySort? sort, List<LibraryFilter> filters, String? search, bool includeWatched, bool favoritesOnly, String? nameStartsWith, List<String>? genres, List<String>? officialRatings, List<int>? years, List<String>? tags
 });
 
 
@@ -591,15 +595,17 @@ class _$LibraryQueryCopyWithImpl<$Res>
 
 /// Create a copy of LibraryQuery
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? kind = freezed,Object? offset = null,Object? limit = null,Object? sort = freezed,Object? filters = null,Object? search = freezed,Object? includeWatched = null,Object? nameStartsWith = freezed,Object? genres = freezed,Object? officialRatings = freezed,Object? years = freezed,Object? tags = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? kind = freezed,Object? includeKinds = null,Object? offset = null,Object? limit = null,Object? sort = freezed,Object? filters = null,Object? search = freezed,Object? includeWatched = null,Object? favoritesOnly = null,Object? nameStartsWith = freezed,Object? genres = freezed,Object? officialRatings = freezed,Object? years = freezed,Object? tags = freezed,}) {
   return _then(_self.copyWith(
 kind: freezed == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
-as MediaKind?,offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
+as MediaKind?,includeKinds: null == includeKinds ? _self.includeKinds : includeKinds // ignore: cast_nullable_to_non_nullable
+as List<MediaKind>,offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
 as int,limit: null == limit ? _self.limit : limit // ignore: cast_nullable_to_non_nullable
 as int,sort: freezed == sort ? _self.sort : sort // ignore: cast_nullable_to_non_nullable
 as LibrarySort?,filters: null == filters ? _self.filters : filters // ignore: cast_nullable_to_non_nullable
 as List<LibraryFilter>,search: freezed == search ? _self.search : search // ignore: cast_nullable_to_non_nullable
 as String?,includeWatched: null == includeWatched ? _self.includeWatched : includeWatched // ignore: cast_nullable_to_non_nullable
+as bool,favoritesOnly: null == favoritesOnly ? _self.favoritesOnly : favoritesOnly // ignore: cast_nullable_to_non_nullable
 as bool,nameStartsWith: freezed == nameStartsWith ? _self.nameStartsWith : nameStartsWith // ignore: cast_nullable_to_non_nullable
 as String?,genres: freezed == genres ? _self.genres : genres // ignore: cast_nullable_to_non_nullable
 as List<String>?,officialRatings: freezed == officialRatings ? _self.officialRatings : officialRatings // ignore: cast_nullable_to_non_nullable
@@ -699,10 +705,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( MediaKind? kind,  int offset,  int limit,  LibrarySort? sort,  List<LibraryFilter> filters,  String? search,  bool includeWatched,  String? nameStartsWith,  List<String>? genres,  List<String>? officialRatings,  List<int>? years,  List<String>? tags)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( MediaKind? kind,  List<MediaKind> includeKinds,  int offset,  int limit,  LibrarySort? sort,  List<LibraryFilter> filters,  String? search,  bool includeWatched,  bool favoritesOnly,  String? nameStartsWith,  List<String>? genres,  List<String>? officialRatings,  List<int>? years,  List<String>? tags)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _LibraryQuery() when $default != null:
-return $default(_that.kind,_that.offset,_that.limit,_that.sort,_that.filters,_that.search,_that.includeWatched,_that.nameStartsWith,_that.genres,_that.officialRatings,_that.years,_that.tags);case _:
+return $default(_that.kind,_that.includeKinds,_that.offset,_that.limit,_that.sort,_that.filters,_that.search,_that.includeWatched,_that.favoritesOnly,_that.nameStartsWith,_that.genres,_that.officialRatings,_that.years,_that.tags);case _:
   return orElse();
 
 }
@@ -720,10 +726,10 @@ return $default(_that.kind,_that.offset,_that.limit,_that.sort,_that.filters,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( MediaKind? kind,  int offset,  int limit,  LibrarySort? sort,  List<LibraryFilter> filters,  String? search,  bool includeWatched,  String? nameStartsWith,  List<String>? genres,  List<String>? officialRatings,  List<int>? years,  List<String>? tags)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( MediaKind? kind,  List<MediaKind> includeKinds,  int offset,  int limit,  LibrarySort? sort,  List<LibraryFilter> filters,  String? search,  bool includeWatched,  bool favoritesOnly,  String? nameStartsWith,  List<String>? genres,  List<String>? officialRatings,  List<int>? years,  List<String>? tags)  $default,) {final _that = this;
 switch (_that) {
 case _LibraryQuery():
-return $default(_that.kind,_that.offset,_that.limit,_that.sort,_that.filters,_that.search,_that.includeWatched,_that.nameStartsWith,_that.genres,_that.officialRatings,_that.years,_that.tags);}
+return $default(_that.kind,_that.includeKinds,_that.offset,_that.limit,_that.sort,_that.filters,_that.search,_that.includeWatched,_that.favoritesOnly,_that.nameStartsWith,_that.genres,_that.officialRatings,_that.years,_that.tags);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -737,10 +743,10 @@ return $default(_that.kind,_that.offset,_that.limit,_that.sort,_that.filters,_th
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( MediaKind? kind,  int offset,  int limit,  LibrarySort? sort,  List<LibraryFilter> filters,  String? search,  bool includeWatched,  String? nameStartsWith,  List<String>? genres,  List<String>? officialRatings,  List<int>? years,  List<String>? tags)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( MediaKind? kind,  List<MediaKind> includeKinds,  int offset,  int limit,  LibrarySort? sort,  List<LibraryFilter> filters,  String? search,  bool includeWatched,  bool favoritesOnly,  String? nameStartsWith,  List<String>? genres,  List<String>? officialRatings,  List<int>? years,  List<String>? tags)?  $default,) {final _that = this;
 switch (_that) {
 case _LibraryQuery() when $default != null:
-return $default(_that.kind,_that.offset,_that.limit,_that.sort,_that.filters,_that.search,_that.includeWatched,_that.nameStartsWith,_that.genres,_that.officialRatings,_that.years,_that.tags);case _:
+return $default(_that.kind,_that.includeKinds,_that.offset,_that.limit,_that.sort,_that.filters,_that.search,_that.includeWatched,_that.favoritesOnly,_that.nameStartsWith,_that.genres,_that.officialRatings,_that.years,_that.tags);case _:
   return null;
 
 }
@@ -752,11 +758,22 @@ return $default(_that.kind,_that.offset,_that.limit,_that.sort,_that.filters,_th
 
 
 class _LibraryQuery implements LibraryQuery {
-  const _LibraryQuery({this.kind, this.offset = 0, this.limit = 50, this.sort, final  List<LibraryFilter> filters = const <LibraryFilter>[], this.search, this.includeWatched = true, this.nameStartsWith, final  List<String>? genres, final  List<String>? officialRatings, final  List<int>? years, final  List<String>? tags}): _filters = filters,_genres = genres,_officialRatings = officialRatings,_years = years,_tags = tags;
+  const _LibraryQuery({this.kind, final  List<MediaKind> includeKinds = const <MediaKind>[], this.offset = 0, this.limit = 50, this.sort, final  List<LibraryFilter> filters = const <LibraryFilter>[], this.search, this.includeWatched = true, this.favoritesOnly = false, this.nameStartsWith, final  List<String>? genres, final  List<String>? officialRatings, final  List<int>? years, final  List<String>? tags}): _includeKinds = includeKinds,_filters = filters,_genres = genres,_officialRatings = officialRatings,_years = years,_tags = tags;
   
 
 /// Restrict to a single kind (e.g. `MediaKind.movie`). Null = library default.
 @override final  MediaKind? kind;
+/// Restrict to multiple kinds when no single [kind] represents the browse
+/// surface. When non-empty, translators prefer this over [kind].
+ final  List<MediaKind> _includeKinds;
+/// Restrict to multiple kinds when no single [kind] represents the browse
+/// surface. When non-empty, translators prefer this over [kind].
+@override@JsonKey() List<MediaKind> get includeKinds {
+  if (_includeKinds is EqualUnmodifiableListView) return _includeKinds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_includeKinds);
+}
+
 /// Pagination — zero-based offset.
 @override@JsonKey() final  int offset;
 @override@JsonKey() final  int limit;
@@ -773,6 +790,9 @@ class _LibraryQuery implements LibraryQuery {
 @override final  String? search;
 /// Whether to include items the active user has already watched.
 @override@JsonKey() final  bool includeWatched;
+/// Restrict to items the user marked favorite (Jellyfin `Filters=IsFavorite`).
+/// Plex has no equivalent; its translator ignores the flag.
+@override@JsonKey() final  bool favoritesOnly;
 /// Restrict the result to items whose sort name starts with this string —
 /// the alpha-jump bar's filter UX. The literal `#` is a sentinel for
 /// "non-alphabetic" and translates to a `NameLessThan=A` query for backends
@@ -831,16 +851,16 @@ _$LibraryQueryCopyWith<_LibraryQuery> get copyWith => __$LibraryQueryCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LibraryQuery&&(identical(other.kind, kind) || other.kind == kind)&&(identical(other.offset, offset) || other.offset == offset)&&(identical(other.limit, limit) || other.limit == limit)&&(identical(other.sort, sort) || other.sort == sort)&&const DeepCollectionEquality().equals(other._filters, _filters)&&(identical(other.search, search) || other.search == search)&&(identical(other.includeWatched, includeWatched) || other.includeWatched == includeWatched)&&(identical(other.nameStartsWith, nameStartsWith) || other.nameStartsWith == nameStartsWith)&&const DeepCollectionEquality().equals(other._genres, _genres)&&const DeepCollectionEquality().equals(other._officialRatings, _officialRatings)&&const DeepCollectionEquality().equals(other._years, _years)&&const DeepCollectionEquality().equals(other._tags, _tags));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _LibraryQuery&&(identical(other.kind, kind) || other.kind == kind)&&const DeepCollectionEquality().equals(other._includeKinds, _includeKinds)&&(identical(other.offset, offset) || other.offset == offset)&&(identical(other.limit, limit) || other.limit == limit)&&(identical(other.sort, sort) || other.sort == sort)&&const DeepCollectionEquality().equals(other._filters, _filters)&&(identical(other.search, search) || other.search == search)&&(identical(other.includeWatched, includeWatched) || other.includeWatched == includeWatched)&&(identical(other.favoritesOnly, favoritesOnly) || other.favoritesOnly == favoritesOnly)&&(identical(other.nameStartsWith, nameStartsWith) || other.nameStartsWith == nameStartsWith)&&const DeepCollectionEquality().equals(other._genres, _genres)&&const DeepCollectionEquality().equals(other._officialRatings, _officialRatings)&&const DeepCollectionEquality().equals(other._years, _years)&&const DeepCollectionEquality().equals(other._tags, _tags));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,kind,offset,limit,sort,const DeepCollectionEquality().hash(_filters),search,includeWatched,nameStartsWith,const DeepCollectionEquality().hash(_genres),const DeepCollectionEquality().hash(_officialRatings),const DeepCollectionEquality().hash(_years),const DeepCollectionEquality().hash(_tags));
+int get hashCode => Object.hash(runtimeType,kind,const DeepCollectionEquality().hash(_includeKinds),offset,limit,sort,const DeepCollectionEquality().hash(_filters),search,includeWatched,favoritesOnly,nameStartsWith,const DeepCollectionEquality().hash(_genres),const DeepCollectionEquality().hash(_officialRatings),const DeepCollectionEquality().hash(_years),const DeepCollectionEquality().hash(_tags));
 
 @override
 String toString() {
-  return 'LibraryQuery(kind: $kind, offset: $offset, limit: $limit, sort: $sort, filters: $filters, search: $search, includeWatched: $includeWatched, nameStartsWith: $nameStartsWith, genres: $genres, officialRatings: $officialRatings, years: $years, tags: $tags)';
+  return 'LibraryQuery(kind: $kind, includeKinds: $includeKinds, offset: $offset, limit: $limit, sort: $sort, filters: $filters, search: $search, includeWatched: $includeWatched, favoritesOnly: $favoritesOnly, nameStartsWith: $nameStartsWith, genres: $genres, officialRatings: $officialRatings, years: $years, tags: $tags)';
 }
 
 
@@ -851,7 +871,7 @@ abstract mixin class _$LibraryQueryCopyWith<$Res> implements $LibraryQueryCopyWi
   factory _$LibraryQueryCopyWith(_LibraryQuery value, $Res Function(_LibraryQuery) _then) = __$LibraryQueryCopyWithImpl;
 @override @useResult
 $Res call({
- MediaKind? kind, int offset, int limit, LibrarySort? sort, List<LibraryFilter> filters, String? search, bool includeWatched, String? nameStartsWith, List<String>? genres, List<String>? officialRatings, List<int>? years, List<String>? tags
+ MediaKind? kind, List<MediaKind> includeKinds, int offset, int limit, LibrarySort? sort, List<LibraryFilter> filters, String? search, bool includeWatched, bool favoritesOnly, String? nameStartsWith, List<String>? genres, List<String>? officialRatings, List<int>? years, List<String>? tags
 });
 
 
@@ -868,15 +888,17 @@ class __$LibraryQueryCopyWithImpl<$Res>
 
 /// Create a copy of LibraryQuery
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? kind = freezed,Object? offset = null,Object? limit = null,Object? sort = freezed,Object? filters = null,Object? search = freezed,Object? includeWatched = null,Object? nameStartsWith = freezed,Object? genres = freezed,Object? officialRatings = freezed,Object? years = freezed,Object? tags = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? kind = freezed,Object? includeKinds = null,Object? offset = null,Object? limit = null,Object? sort = freezed,Object? filters = null,Object? search = freezed,Object? includeWatched = null,Object? favoritesOnly = null,Object? nameStartsWith = freezed,Object? genres = freezed,Object? officialRatings = freezed,Object? years = freezed,Object? tags = freezed,}) {
   return _then(_LibraryQuery(
 kind: freezed == kind ? _self.kind : kind // ignore: cast_nullable_to_non_nullable
-as MediaKind?,offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
+as MediaKind?,includeKinds: null == includeKinds ? _self._includeKinds : includeKinds // ignore: cast_nullable_to_non_nullable
+as List<MediaKind>,offset: null == offset ? _self.offset : offset // ignore: cast_nullable_to_non_nullable
 as int,limit: null == limit ? _self.limit : limit // ignore: cast_nullable_to_non_nullable
 as int,sort: freezed == sort ? _self.sort : sort // ignore: cast_nullable_to_non_nullable
 as LibrarySort?,filters: null == filters ? _self._filters : filters // ignore: cast_nullable_to_non_nullable
 as List<LibraryFilter>,search: freezed == search ? _self.search : search // ignore: cast_nullable_to_non_nullable
 as String?,includeWatched: null == includeWatched ? _self.includeWatched : includeWatched // ignore: cast_nullable_to_non_nullable
+as bool,favoritesOnly: null == favoritesOnly ? _self.favoritesOnly : favoritesOnly // ignore: cast_nullable_to_non_nullable
 as bool,nameStartsWith: freezed == nameStartsWith ? _self.nameStartsWith : nameStartsWith // ignore: cast_nullable_to_non_nullable
 as String?,genres: freezed == genres ? _self._genres : genres // ignore: cast_nullable_to_non_nullable
 as List<String>?,officialRatings: freezed == officialRatings ? _self._officialRatings : officialRatings // ignore: cast_nullable_to_non_nullable

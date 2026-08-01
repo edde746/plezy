@@ -12,6 +12,7 @@ void main() {
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     BackKeyUpSuppressor.clearSuppression();
+    BackKeyCoordinator.clear();
   });
 
   testWidgets('tvOS physical keyboard back runs on key down and suppresses key up', (tester) async {
@@ -41,6 +42,91 @@ void main() {
     expect(downResult, KeyEventResult.handled);
     expect(upResult, KeyEventResult.handled);
     expect(backs, 1);
+    await tester.pump();
+  });
+
+  testWidgets('tvOS remote back runs on key down for non-keyboard device types', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    var backs = 0;
+
+    final downResult = handleBackKeyAction(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.escape,
+        logicalKey: LogicalKeyboardKey.escape,
+        timeStamp: Duration.zero,
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+      () => backs++,
+    );
+
+    final upResult = handleBackKeyAction(
+      const KeyUpEvent(
+        physicalKey: PhysicalKeyboardKey.escape,
+        logicalKey: LogicalKeyboardKey.escape,
+        timeStamp: Duration.zero,
+        deviceType: ui.KeyEventDeviceType.directionalPad,
+      ),
+      () => backs++,
+    );
+
+    expect(downResult, KeyEventResult.handled);
+    expect(upResult, KeyEventResult.handled);
+    expect(backs, 1);
+    await tester.pump();
+  });
+
+  test('one-shot select consumes every phase and activates only on key down', () {
+    var activations = 0;
+    const down = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration.zero,
+    );
+    const repeat = KeyRepeatEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 100),
+    );
+    const up = KeyUpEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 200),
+    );
+    const unrelated = KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.f12,
+      logicalKey: LogicalKeyboardKey.f12,
+      timeStamp: Duration.zero,
+    );
+
+    expect(handleOneShotSelect(down, () => activations++), KeyEventResult.handled);
+    expect(handleOneShotSelect(repeat, () => activations++), KeyEventResult.handled);
+    expect(handleOneShotSelect(up, () => activations++), KeyEventResult.handled);
+    expect(handleOneShotSelect(unrelated, () => activations++), KeyEventResult.ignored);
+    expect(activations, 1);
+  });
+  group('BackKeyCoordinator', () {
+    testWidgets('suppresses one parallel back dispatch in the current frame', (tester) async {
+      BackKeyCoordinator.markHandled();
+
+      expect(BackKeyCoordinator.consumeIfHandled(), isTrue);
+      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
+      await tester.pump();
+    });
+
+    testWidgets('does not suppress an independent system back in a later frame', (tester) async {
+      BackKeyCoordinator.markHandled();
+      await tester.pump();
+
+      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
+    });
+
+    testWidgets('clear discards a pending duplicate marker', (tester) async {
+      BackKeyCoordinator.markHandled();
+      BackKeyCoordinator.clear();
+
+      expect(BackKeyCoordinator.consumeIfHandled(), isFalse);
+      await tester.pump();
+    });
   });
 
   group('dpadKeyHandler trapHorizontalEdges', () {
@@ -157,6 +243,77 @@ void main() {
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
     });
 
+    testWidgets('skips disabled actions for entry and horizontal traversal', (tester) async {
+      final key = GlobalKey<FocusableActionBarState>();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FocusableActionBar(
+              key: key,
+              actions: [
+                const FocusableAction(icon: Icons.block),
+                FocusableAction(icon: Icons.add, onPressed: () {}),
+                const FocusableAction(icon: Icons.block),
+                FocusableAction(icon: Icons.remove, onPressed: () {}),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      key.currentState!.requestFocusOnFirst();
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[3]');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
+    });
+
+    testWidgets('dynamic callback changes remove a disabled action from focus', (tester) async {
+      final key = GlobalKey<FocusableActionBarState>();
+      late StateSetter rebuild;
+      var firstEnabled = true;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: StatefulBuilder(
+              builder: (context, setState) {
+                rebuild = setState;
+                return FocusableActionBar(
+                  key: key,
+                  actions: [
+                    FocusableAction(icon: Icons.add, onPressed: firstEnabled ? () {} : null),
+                    FocusableAction(icon: Icons.remove, onPressed: () {}),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      key.currentState!.requestFocusOnFirst();
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+
+      rebuild(() => firstEnabled = false);
+      await tester.pump();
+      expect(key.currentState!.getFocusNode(0)!.canRequestFocus, isFalse);
+      expect(key.currentState!.getFocusNode(0)!.hasFocus, isFalse);
+
+      key.currentState!.requestFocusOnFirst();
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[1]');
+    });
     testWidgets('still invokes onNavigateLeft at the left edge when wired', (tester) async {
       final key = GlobalKey<FocusableActionBarState>();
       final leftTarget = FocusNode(debugLabel: 'left-target');
@@ -221,68 +378,26 @@ void main() {
 
       expect(activations, 1);
     });
+  });
 
-    testWidgets('moves through detail actions when trailer is inserted before shuffle', (tester) async {
-      final play = FocusNode(debugLabel: 'detail_play');
-      final outside = FocusNode(debugLabel: 'outside');
-      addTearDown(play.dispose);
-      addTearDown(outside.dispose);
+  group('expandToGraphemeRange', () {
+    for (final grapheme in ['😀', 'e\u0301', '🇯🇵', '👨‍👩‍👧‍👦']) {
+      test('expands partial ${grapheme.runes.length}-scalar ranges', () {
+        final text = 'A${grapheme}B';
+        final graphemeEnd = 1 + grapheme.length;
+        final expected = TextRange(start: 1, end: graphemeEnd);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: Row(
-              children: [
-                FocusableActionBar(
-                  actions: [
-                    FocusableAction(
-                      debugLabel: 'unused_play_label',
-                      focusNode: play,
-                      icon: Icons.play_arrow,
-                      onPressed: () {},
-                    ),
-                    FocusableAction(debugLabel: 'detail_trailer', icon: Icons.theaters, onPressed: () {}),
-                    FocusableAction(debugLabel: 'detail_shuffle', icon: Icons.shuffle, onPressed: () {}),
-                    FocusableAction(debugLabel: 'detail_download', icon: Icons.download, onPressed: () {}),
-                    FocusableAction(debugLabel: 'detail_watched', icon: Icons.check, onPressed: () {}),
-                    FocusableAction(debugLabel: 'detail_more', icon: Icons.more_vert, onPressed: () {}),
-                  ],
-                ),
-                Focus(focusNode: outside, child: const SizedBox(width: 50, height: 50)),
-              ],
-            ),
-          ),
-        ),
-      );
-      await tester.pump();
+        expect(expandToGraphemeRange(text, const TextRange(start: 1, end: 2)), expected);
+        expect(expandToGraphemeRange(text, TextRange(start: graphemeEnd - 1, end: graphemeEnd)), expected);
+        expect(expandToGraphemeRange(text, TextSelection(baseOffset: graphemeEnd - 1, extentOffset: 1)), expected);
+        expect(expandToGraphemeRange(text, TextRange(start: graphemeEnd - 1, end: 1)), expected);
+      });
+    }
 
-      play.requestFocus();
-      await tester.pump();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_play');
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_trailer');
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_shuffle');
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_download');
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_watched');
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_more');
-
-      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
-      await tester.pump();
-      expect(FocusManager.instance.primaryFocus?.debugLabel, 'detail_more');
+    test('preserves document edges and empty ranges', () {
+      expect(expandToGraphemeRange('abc', const TextRange(start: 0, end: 1)), const TextRange(start: 0, end: 1));
+      expect(expandToGraphemeRange('abc', const TextRange(start: 3, end: 3)), const TextRange.collapsed(3));
+      expect(expandToGraphemeRange('', const TextRange(start: 0, end: 1)), TextRange.empty);
     });
   });
 }

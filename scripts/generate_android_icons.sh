@@ -23,8 +23,17 @@ if ! command -v rsvg-convert &> /dev/null; then
     exit 1
 fi
 
-if ! command -v magick &> /dev/null && ! command -v convert &> /dev/null; then
+if command -v magick &> /dev/null; then
+    IMAGEMAGICK=magick
+elif command -v convert &> /dev/null; then
+    IMAGEMAGICK=convert
+else
     echo "Error: ImageMagick not found. Install with: brew install imagemagick"
+    exit 1
+fi
+
+if ! command -v bc &> /dev/null; then
+    echo "Error: bc not found. Install with: brew install bc"
     exit 1
 fi
 
@@ -49,7 +58,7 @@ generate_white_icon() {
         rsvg-convert --keep-aspect-ratio --background-color=transparent "$SVG_SOURCE" -o "$TEMP_DIR/temp_unpadded.png"
 
         # Center the image in a square canvas with transparent padding
-        magick "$TEMP_DIR/temp_unpadded.png" \
+        "$IMAGEMAGICK" "$TEMP_DIR/temp_unpadded.png" \
             -resize "${size}x${size}" \
             -gravity center \
             -background transparent \
@@ -61,11 +70,11 @@ generate_white_icon() {
     fi
 
     # Convert to white silhouette: extract alpha, fill with white, apply alpha
-    magick "$TEMP_DIR/temp.png" \
+    "$IMAGEMAGICK" "$TEMP_DIR/temp.png" \
         -alpha extract \
         "$TEMP_DIR/alpha_mask.png"
 
-    magick -size "${size}x${size}" xc:white \
+    "$IMAGEMAGICK" -size "${size}x${size}" xc:white \
         "$TEMP_DIR/alpha_mask.png" \
         -alpha off \
         -compose copy-opacity \

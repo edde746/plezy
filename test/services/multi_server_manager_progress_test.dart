@@ -10,6 +10,7 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import '../test_helpers/backend_client_fixtures.dart';
 
 void main() {
   // refreshTokensForProfile starts connectivity monitoring after a successful
@@ -24,7 +25,7 @@ void main() {
     final manager = MultiServerManager();
     addTearDown(manager.dispose);
 
-    PlexClient buildClient(String serverId) => PlexClient.forTesting(
+    PlexClient buildClient(String serverId) => testPlexClient(
       config: PlexConfig(
         baseUrl: 'http://$serverId:32400',
         token: 'old-token',
@@ -34,7 +35,13 @@ void main() {
       ),
       serverId: ServerId(serverId),
       serverName: serverId,
-      httpClient: MockClient((_) async => http.Response('{}', 200, headers: {'content-type': 'application/json'})),
+      httpClient: MockClient(
+        (_) async => http.Response(
+          '{"MediaContainer":{"machineIdentifier":"$serverId"}}',
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      ),
     );
 
     // Both servers already registered and online — refreshTokensForProfile
@@ -58,7 +65,7 @@ void main() {
       createdAt: DateTime(2026, 1, 1),
     );
 
-    final bound = await manager.refreshTokensForProfile(connection);
+    final bound = await manager.refreshTokensForProfile(connection, profileId: 'profile-a');
     // Let the broadcast stream deliver its pending events.
     await Future<void>.delayed(Duration.zero);
 

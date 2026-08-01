@@ -8,7 +8,12 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private weak var window: NSWindow?
   private var playbackActivity: NSObjectProtocol?
   private var layerHiddenForOcclusion = false
-  private var isDisposed = false
+  private var layerHiddenForScreenSleep = false
+
+  /// True while any reason (occlusion, screen sleep) requires the layer hidden.
+  private var hasLayerHideReason: Bool {
+    layerHiddenForOcclusion || layerHiddenForScreenSleep
+  }
 
   func initialize(in window: NSWindow) -> Bool {
     guard !isInitialized else {
@@ -73,14 +78,45 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       object: window
     )
 
+    // Display/system sleep does not reliably change occlusionState, so observe
+    // NSWorkspace screen sleep/wake directly to gate presentation (prevents a
+    // pinned CPU core after long display sleep). This is a DIFFERENT
+    // notification center than NotificationCenter.default used above.
+    let workspaceCenter = NSWorkspace.shared.notificationCenter
+    workspaceCenter.addObserver(
+      self,
+      selector: #selector(screensDidSleep),
+      name: NSWorkspace.screensDidSleepNotification,
+      object: nil
+    )
+    workspaceCenter.addObserver(
+      self,
+      selector: #selector(screensDidWake),
+      name: NSWorkspace.screensDidWakeNotification,
+      object: nil
+    )
+
     isInitialized = true
     print("[MpvPlayerCore] Initialized successfully with MPV")
     return true
   }
 
-  override func configurePlatformMpvOptions() {
-    guard let mpv else { return }
+  override func configurePlatformMpvOptions(mpv: OpaquePointer) {
+    // AVFoundation stays the macOS output. Spatialization is only reachable
+    // through the AVFoundation renderer — allowedAudioSpatializationFormats is a
+    // property of AVSampleBufferAudioRenderer (macOS 12+), and the AO opts
+    // compressed playback into the multichannel format — and the E-AC3 JOC sink
+    // lives there too. CoreAudio writes straight to the HAL device and exposes no
+    // spatialization control at all, so it is a fallback, not an alternative.
     checkError(mpv_set_option_string(mpv, "ao", "avfoundation,coreaudio"))
+    // Unbound the AO's PCM lookahead, restoring the renderer-owned queue depth
+    // 2.9.1 shipped (#1711). The macOS-only 0.5s bound MPVKit 1.0.15 added is the
+    // only change to this path between 2.9.1 and 2.10, and 2.10 skips audio at
+    // roughly that cadence. Its purpose was making mpv's software --volume, which
+    // is baked into the samples handed to the AO, audible before the queue
+    // drains; that latency is back, and belongs to the AO's gain domain rather
+    // than to how far ahead it may buffer.
+    checkError(mpv_set_option_string(mpv, "ao-avfoundation-max-lookahead", "0"))
   }
 
   func reattachMetalLayer() {
@@ -106,9 +142,10 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     guard metalLayer != nil, !isPipActive else { return }
 
     if visible && isVisible && !shouldRestoreOnWindowVisible {
-      isBackgrounded = false
-      if metalLayer?.isHidden == true {
+      setBackgrounded(false)
+      if metalLayer?.isHidden == true && !hasLayerHideReason {
         setMetalLayerHidden(false)
+        redrawIfPausedAndVisible()
       }
       beginPlaybackActivity()
       print("[MpvPlayerCore] setVisible(true) skipped - already visible")
@@ -117,7 +154,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     isVisible = visible
     shouldRestoreOnWindowVisible = !visible && restoreOnWindowVisible
-    isBackgrounded = !visible
+    setBackgrounded(!visible)
 
     if visible {
       shouldRestoreOnWindowVisible = false
@@ -132,7 +169,10 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       endPlaybackActivity()
     }
 
-    setMetalLayerHidden(!visible)
+    setMetalLayerHidden(!visible || hasLayerHideReason)
+    if visible {
+      redrawIfPausedAndVisible()
+    }
     print("[MpvPlayerCore] setVisible(\(visible), restoreOnWindowVisible: \(restoreOnWindowVisible))")
   }
 
@@ -184,11 +224,10 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   func dispose() {
-    if isDisposed { return }
-    isDisposed = true
-
+    guard beginDisposal() else { return }
     endPlaybackActivity()
     NotificationCenter.default.removeObserver(self)
+    NSWorkspace.shared.notificationCenter.removeObserver(self)
     disposeSharedState(destroySynchronously: false)
 
     metalLayer?.removeFromSuperlayer()
@@ -212,28 +251,79 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func windowOcclusionDidChange(_ notification: Notification) {
-    guard metalLayer != nil, mpv != nil, !isPipActive else { return }
+    guard metalLayer != nil, hasActiveMpv, !isPipActive else { return }
 
     let windowVisible = window?.occlusionState.contains(.visible) ?? true
     if !windowVisible && !layerHiddenForOcclusion {
       print("[MpvPlayerCore] Window occluded - hiding Metal layer")
       setMetalLayerHidden(true)
       layerHiddenForOcclusion = true
-      isBackgrounded = true
+      setBackgrounded(true)
       endPlaybackActivity()
     } else if windowVisible && layerHiddenForOcclusion {
       print("[MpvPlayerCore] Window visible - showing Metal layer")
       layerHiddenForOcclusion = false
+      if !layerHiddenForScreenSleep {
+        if shouldRestoreOnWindowVisible {
+          restoreMetalLayerAfterOcclusion()
+        } else {
+          setMetalLayerHidden(!isVisible)
+        }
+        redrawIfPausedAndVisible()
+      }
+      setBackgrounded(false)
+      if !pausedState {
+        beginPlaybackActivity()
+      }
+    }
+  }
+
+  @objc private func screensDidSleep(_ notification: Notification) {
+    guard metalLayer != nil, hasActiveMpv, !layerHiddenForScreenSleep else { return }
+    print("[MpvPlayerCore] Screens did sleep - hiding Metal layer")
+    layerHiddenForScreenSleep = true
+    // Hide even during PiP: nothing is visible while the displays are dark, and
+    // the hidden layer is what gates libmpv presentation (MPVKit >= 1.0.10).
+    setMetalLayerHidden(true)
+    setBackgrounded(true)
+    endPlaybackActivity()
+  }
+
+  @objc private func screensDidWake(_ notification: Notification) {
+    guard metalLayer != nil, hasActiveMpv, layerHiddenForScreenSleep else { return }
+    print("[MpvPlayerCore] Screens did wake - restoring Metal layer")
+    layerHiddenForScreenSleep = false
+
+    if isPipActive {
+      // Layer is hosted by the PiP window; just unhide it there. Attach/frame
+      // logic is owned by the PiP controller.
+      setMetalLayerHidden(false)
+      setBackgrounded(false)
+    } else if !layerHiddenForOcclusion {
       if shouldRestoreOnWindowVisible {
         restoreMetalLayerAfterOcclusion()
       } else {
         setMetalLayerHidden(!isVisible)
       }
-      isBackgrounded = false
-      if !pausedState {
-        beginPlaybackActivity()
-      }
+      setBackgrounded(!isVisible)
     }
+    // else: window still occluded; windowOcclusionDidChange owns the restore.
+
+    if !layerHiddenForOcclusion && !pausedState {
+      beginPlaybackActivity()
+    }
+    redrawIfPausedAndVisible()
+  }
+
+  /// With MPVKit >= 1.0.10, frames produced while the layer was hidden are
+  /// skipped at the swapchain, so a paused video would otherwise show a stale
+  /// frame after unhiding (upstream regression mpv#16693). Playing video
+  /// repaints itself on the next frame; only paused needs a forced draw. The
+  /// isHidden guard makes multi-path wake ordering safe — only the path that
+  /// actually unhides the layer triggers the single redraw.
+  private func redrawIfPausedAndVisible() {
+    guard pausedState, metalLayer?.isHidden == false else { return }
+    forceDraw()
   }
 
   private func beginPlaybackActivity() {
@@ -267,7 +357,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
     isVisible = true
     shouldRestoreOnWindowVisible = false
-    setMetalLayerHidden(false)
+    setMetalLayerHidden(hasLayerHideReason)
   }
 
   private func attachMetalLayer(to superlayer: CALayer, frame: CGRect) {

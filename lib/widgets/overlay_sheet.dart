@@ -46,6 +46,12 @@ class OverlaySheetController {
     return context.dependOnInheritedWidgetOfExactType<_OverlaySheetScope>()?.controller;
   }
 
+  /// Number of sheets currently open across all hosts (and [showAdaptive]
+  /// modal fallbacks). Sheets render inside their host's subtree, so chrome
+  /// mounted above the navigator (the music mini-player) can never sit under
+  /// them — such chrome listens here and hides itself while this is nonzero.
+  static final ValueNotifier<int> openSheetCount = ValueNotifier<int>(0);
+
   /// Whether a sheet is currently showing (including while animating closed).
   bool get isOpen => _state._isOpen;
 
@@ -93,7 +99,15 @@ class OverlaySheetController {
   /// Re-focus the first focusable descendant within the sheet.
   /// Useful after internal page changes via setState.
   void refocus() {
-    _state._refocus();
+    _state._autoFocus(clearSelectSuppression: false);
+  }
+
+  /// Sizing applied when a caller supplies no explicit constraints: capped
+  /// width on desktop, three quarters of the screen height everywhere.
+  static BoxConstraints _defaultSheetConstraints(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isDesktop = size.width > 600;
+    return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
   }
 
   /// Show a sheet using the overlay system if available, otherwise fall back
@@ -108,7 +122,7 @@ class OverlaySheetController {
     FocusNode? initialFocusNode,
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
-  }) {
+  }) async {
     final controller = maybeOf(context);
     if (controller != null) {
       return controller.show<T>(
@@ -123,38 +137,70 @@ class OverlaySheetController {
     }
     // Apply the same default constraints the overlay system uses so sheets
     // shown without an OverlaySheetHost still have sensible sizing on desktop.
-    final effectiveConstraints =
-        constraints ??
-        () {
-          final size = MediaQuery.sizeOf(context);
-          final isDesktop = size.width > 600;
-          return BoxConstraints(
-            maxWidth: isDesktop ? 700 : double.infinity,
-            maxHeight: isDesktop ? 400 : size.height * 0.75,
-          );
-        }();
-    return showModalBottomSheet<T>(
-      context: context,
-      builder: builder,
-      constraints: effectiveConstraints,
-      backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
-      barrierColor: Colors.black54,
-      isScrollControlled: isScrollControlled,
-    );
+    final effectiveConstraints = constraints ?? _defaultSheetConstraints(context);
+    openSheetCount.value++;
+    try {
+      return await showModalBottomSheet<T>(
+        context: context,
+        // The host path insets its sheet by the bottom safe area; mirror that
+        // here so the last row clears the home indicator / gesture nav bar.
+        builder: (context) => SafeArea(top: false, child: builder(context)),
+        constraints: effectiveConstraints,
+        backgroundColor: backgroundColor ?? Theme.of(context).colorScheme.surface,
+        barrierColor: Colors.black54,
+        isDismissible: barrierDismissible,
+        isScrollControlled: isScrollControlled,
+        showDragHandle: showDragHandle,
+      );
+    } finally {
+      openSheetCount.value--;
+    }
   }
 
   /// Push a sub-page using the overlay system if available, otherwise fall
   /// back to [showModalBottomSheet]. Returns the result from the page.
+  ///
+  /// When a hosted sheet is already open, this pushes a nested page and
+  /// retains the root sheet's presentation. When a host is available but
+  /// idle, this opens [builder] as its root sheet using the supplied hosted
+  /// presentation options. Without a host, the modal fallback is used.
+  ///
+  /// [isScrollControlled] applies only to the modal fallback; hosted sheets
+  /// use their explicit or default constraints.
   static Future<T?> pushAdaptive<T>(
     BuildContext context, {
     required WidgetBuilder builder,
     FocusNode? initialFocusNode,
-  }) {
+    BoxConstraints? constraints,
+    Color? backgroundColor,
+    bool barrierDismissible = true,
+    bool isScrollControlled = false,
+    bool showDragHandle = false,
+  }) async {
     final controller = maybeOf(context);
     if (controller != null) {
-      return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
+      if (controller.isOpen) {
+        return controller.push<T>(builder: builder, initialFocusNode: initialFocusNode);
+      }
+      return controller.show<T>(
+        builder: builder,
+        constraints: constraints,
+        backgroundColor: backgroundColor,
+        barrierDismissible: barrierDismissible,
+        initialFocusNode: initialFocusNode,
+        showDragHandle: showDragHandle,
+      );
     }
-    return showModalBottomSheet<T>(context: context, builder: builder);
+    BackKeyCoordinator.clear();
+    return showAdaptive<T>(
+      context,
+      builder: builder,
+      constraints: constraints,
+      backgroundColor: backgroundColor,
+      barrierDismissible: barrierDismissible,
+      isScrollControlled: isScrollControlled,
+      showDragHandle: showDragHandle,
+    );
   }
 
   /// Close the sheet entirely. Uses overlay controller if available,
@@ -273,6 +319,9 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         entry.completer.complete(null);
       }
     }
+    // A host torn down mid-sheet (or mid-close animation) never reaches the
+    // close completion below — release its slot in the global count here.
+    if (_isOpen) OverlaySheetController.openSheetCount.value--;
     _sheetFocusScopeNode.dispose();
     _slideCurve.dispose();
     _animationController.dispose();
@@ -288,6 +337,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
   }) {
+    BackKeyCoordinator.clear();
     // If already open, close first (instant)
     final wasOpen = _isOpen;
     if (_isOpen) {
@@ -317,7 +367,10 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       _dragOffset = 0;
       _isDragging = false;
     });
-    if (!wasOpen) widget.onOpenChanged?.call(true);
+    if (!wasOpen) {
+      widget.onOpenChanged?.call(true);
+      OverlaySheetController.openSheetCount.value++;
+    }
 
     BackKeyUpSuppressor.clearSuppression();
     _animationController.forward(from: 0);
@@ -379,6 +432,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         _sheetHorizontalAnchor = null;
       });
       widget.onOpenChanged?.call(false);
+      OverlaySheetController.openSheetCount.value--;
     });
   }
 
@@ -389,21 +443,22 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
   double? _resolveSheetHorizontalAnchor(Alignment alignment) {
     if (!PlatformDetector.isDesktopOS() || PlatformDetector.isTV()) return null;
-    if (InputModeTracker.isKeyboardMode(context)) return null;
+    if (InputModeTracker.isKeyboardMode(context, listen: false)) return null;
     if (alignment.x != 0 || alignment.y <= 0) return null;
     return _lastPointerPosition?.dx;
   }
 
-  void _autoFocus() {
-    if (!InputModeTracker.isKeyboardMode(context)) return;
+  void _autoFocus({bool clearSelectSuppression = true}) {
+    final focusDescendant = InputModeTracker.isKeyboardMode(context, listen: false);
 
     // First post-frame: the FocusScope is now built and the node is attached.
-    // Grab scope focus immediately so key events (especially back) are trapped.
-    // Second post-frame: ListView.builder items are laid out and their
-    // FocusNodes are registered — focus the first descendant for dpad nav.
+    // Always grab scope focus so key events (especially back) are trapped, even
+    // when a pointer opened the sheet. In keyboard mode, a second post-frame
+    // callback focuses the first descendant for dpad navigation.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_isOpen) return;
       _sheetFocusScopeNode.requestFocus();
+      if (!focusDescendant) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_isOpen) return;
         // If the current top entry has an initialFocusNode that is attached,
@@ -422,27 +477,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         //   select inside the sheet from being eaten).
         // - Long press: key still held → keep flag so KeyRepeat/KeyUp events
         //   from the long press are correctly suppressed.
-        if (!HardwareKeyboard.instance.logicalKeysPressed.any((k) => k.isSelectKey)) {
+        if (clearSelectSuppression && !HardwareKeyboard.instance.logicalKeysPressed.any((k) => k.isSelectKey)) {
           SelectKeyUpSuppressor.clearSuppression();
-        }
-      });
-    });
-  }
-
-  void _refocus() {
-    if (!InputModeTracker.isKeyboardMode(context)) return;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !_isOpen) return;
-      _sheetFocusScopeNode.requestFocus();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_isOpen) return;
-        final topEntry = _pageStack.isNotEmpty ? _pageStack.last : null;
-        final initialNode = topEntry?.initialFocusNode;
-        if (initialNode != null && initialNode.context != null) {
-          initialNode.requestFocus();
-        } else {
-          _focusFirstDescendant();
         }
       });
     });
@@ -478,6 +514,9 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     // Back key: pop sub-page or close sheet
     if (event.logicalKey.isBackKey) {
+      if (PlatformDetector.isTV() && event is KeyDownEvent) {
+        BackKeyCoordinator.markHandled();
+      }
       return handleBackKeyAction(event, _handleBack);
     }
 
@@ -501,14 +540,22 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
           // Barrier + sheet only when open
           if (_isOpen) ...[
             Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _barrierAnimation,
-                builder: (context, child) {
-                  return GestureDetector(
-                    onTap: _barrierDismissible ? () => _close() : null,
-                    child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
-                  );
-                },
+              // The barrier swallows every pointer event behind it, so the
+              // screen underneath must leave the semantics tree too. Without
+              // this, assistive tech (and UI automation) still reads rows that
+              // cannot be activated — including through the ~250ms close, where
+              // a tap on a "visible" row lands on the barrier instead. Flutter's
+              // own ModalBarrier blocks semantics for the same reason.
+              child: BlockSemantics(
+                child: AnimatedBuilder(
+                  animation: _barrierAnimation,
+                  builder: (context, child) {
+                    return GestureDetector(
+                      onTap: _barrierDismissible ? () => _close() : null,
+                      child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
+                    );
+                  },
+                ),
               ),
             ),
             _buildSheet(context),
@@ -530,6 +577,14 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
           if (_isOpen && !_isClosing) {
+            // Only TV routes one Back through both the focused key path and
+            // the platform pop, so only TV needs to dedup them. Touch
+            // platforms never deliver Back to [_handleKeyEvent], so consulting
+            // the global marker here could only ever consume some unrelated
+            // widget's mark and swallow the one signal that closes the sheet.
+            // The marker is global and one-shot, so anything left set by
+            // another handler would strand the sheet open with no way out.
+            if (PlatformDetector.isTV() && BackKeyCoordinator.consumeIfHandled()) return;
             _handleBack();
             return;
           }
@@ -565,9 +620,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final isTV = PlatformDetector.isTV();
     final showHandle = _showDragHandle && !isTV && !isTop;
 
-    final effectiveConstraints =
-        _constraints ??
-        BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: isDesktop ? 400 : size.height * 0.75);
+    final effectiveConstraints = _constraints ?? OverlaySheetController._defaultSheetConstraints(context);
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker

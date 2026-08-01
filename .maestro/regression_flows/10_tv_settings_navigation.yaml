@@ -1,0 +1,142 @@
+appId: com.edde746.plezy
+name: TV settings stay navigable and dismiss their overlays
+
+tags:
+  - e2e
+  - regression
+  - tv
+  - settings
+---
+# Guards ef310459 and the Apple-only gates touched by 6c14049e, and pins TV
+# settings navigation generally.
+#
+# It deliberately does NOT guard the 15b54e2e density change. That commit took
+# every settings row from ~80dp to ~61dp, but the rows below the fold stay in
+# the semantics tree either way, so this flow passes identically on both sides
+# of it — measured, not assumed. A real guard would need a pixel `height`
+# assertion, and Maestro has no DPR-relative form, so pinning one here would
+# only hold for the box it was written on. Row geometry belongs to
+# test/widgets/setting_tile_test.dart.
+#
+# Every step uses D-pad keys, never taps. InputModeTracker flips to pointer
+# mode on the first touch event and the TV number spinner only builds in
+# keyboard mode, so a single tapOn anywhere above would silently swap the
+# spinner for a plain text field.
+- runFlow: ../subflows/onboard_jellyfin_tv_device.yaml
+- pressKey: "Remote Dpad Left"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 15000
+- repeat:
+    times: 12
+    while:
+      notVisible:
+        text: "Settings"
+        focused: true
+    commands:
+      - pressKey: "Remote Dpad Down"
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "(?s)^Appearance.*"
+    timeout: 15000
+- assertVisible: "(?s)^Video Playback.*"
+- assertVisible: "(?s)^Manage Libraries.*"
+- assertVisible: "(?s)^Services.*"
+# The Connections card sits below the first card, so reaching it also proves
+# the list scrolled or fits — not that any particular row height applies.
+- assertVisible: "(?s)^Add connection.*"
+- assertVisible: "(?s)^Profiles.*"
+# Manage Libraries takes the TV dialog path, not the overlay-sheet path, and
+# one Back has to return to Settings rather than leave it.
+- repeat:
+    times: 6
+    while:
+      notVisible:
+        text: "(?s)^Manage Libraries.*"
+        focused: true
+    commands:
+      - pressKey: "Remote Dpad Down"
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "Maestro Movies"
+    timeout: 15000
+- assertVisible: "Maestro Shows"
+- assertNotVisible: "(?s)^Services.*"
+- assertNotVisible: "(?s)^Video Playback.*"
+- pressKey: "back"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible: "Maestro Movies"
+- extendedWaitUntil:
+    visible: "(?s)^Services.*"
+    timeout: 15000
+- assertVisible: "(?s)^Manage Libraries.*"
+# Services keeps every hub row after losing its own density overrides.
+- repeat:
+    times: 6
+    while:
+      notVisible:
+        text: "(?s)^Services.*"
+        focused: true
+    commands:
+      - pressKey: "Remote Dpad Down"
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "(?s)^Trakt.*"
+    timeout: 15000
+- assertVisible: "(?s)^MyAnimeList.*"
+- assertVisible: "(?s)^AniList.*"
+- assertVisible: "(?s)^Simkl.*"
+- assertVisible: "(?s)^Seerr.*"
+- pressKey: "back"
+- extendedWaitUntil:
+    visible: "(?s)^Manage Libraries.*"
+    timeout: 15000
+# Video Playback: the Atmos test screen is gated to Apple TV, and the D-pad
+# numeric dialog must expose the spinner's restored accessibility labels.
+- repeat:
+    times: 8
+    while:
+      notVisible:
+        text: "(?s)^Video Playback.*"
+        focused: true
+    commands:
+      - pressKey: "Remote Dpad Up"
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "(?s)^Player.*"
+    timeout: 15000
+- assertNotVisible: "(?s)^Atmos Output Test.*"
+- repeat:
+    times: 30
+    while:
+      notVisible:
+        text: "(?s)^Small Skip Duration.*"
+        focused: true
+    commands:
+      - pressKey: "Remote Dpad Down"
+- pressKey: "Remote Dpad Center"
+- extendedWaitUntil:
+    visible: "Decrease"
+    timeout: 15000
+- assertVisible: "Increase"
+- assertVisible: "(?s)^Enter duration.*"
+- pressKey: "back"
+- extendedWaitUntil:
+    visible: "(?s)^Small Skip Duration.*"
+    timeout: 15000
+- pressKey: "back"
+- extendedWaitUntil:
+    visible: "(?s)^Manage Libraries.*"
+    timeout: 15000
+# Settings is a rail tab on TV rather than a pushed route, so Back hands focus
+# back to the rail and expands it instead of leaving the screen.
+- pressKey: "back"
+- extendedWaitUntil:
+    visible:
+      text: "Settings"
+      focused: true
+    timeout: 20000
+- assertVisible: "Home"
+- assertVisible: "Libraries"
+- assertVisible: "Downloads"

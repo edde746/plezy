@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../focus/card_focus_scope.dart';
-import '../focus/focus_glow_overlay.dart';
+import '../focus/focus_chrome.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import 'clickable_cursor.dart';
@@ -29,6 +28,8 @@ class FocusBuilders {
     required FocusNode focusNode,
     required KeyEventResult Function(FocusNode, KeyEvent) onKeyEvent,
     required VoidCallback onTap,
+    required String semanticLabel,
+    bool? selected,
     required EdgeInsetsGeometry padding,
     required Color backgroundColor,
     double borderRadius = 20,
@@ -39,111 +40,35 @@ class FocusBuilders {
     return Focus(
       focusNode: focusNode,
       onKeyEvent: onKeyEvent,
-      child: ClickableCursor(
-        child: GestureDetector(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: duration,
-            curve: Curves.easeOutCubic,
-            padding: padding,
-            decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(borderRadius)),
-            child: child,
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        selected: selected,
+        onTap: onTap,
+        excludeSemantics: true,
+        child: ClickableCursor(
+          child: GestureDetector(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: duration,
+              curve: Curves.easeOutCubic,
+              padding: padding,
+              decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(borderRadius)),
+              child: child,
+            ),
           ),
         ),
       ),
     );
   }
 
-  /// Builds a card-style focusable widget with scale and border decoration.
+  /// Builds a card-style wrapper with scale and border decoration but no [Focus]
+  /// node — focus lives on an enclosing rail or screen that passes [isFocused]
+  /// down.
   ///
-  /// Used by FocusableMediaCard and _LockedHubItemWrapper.
-  ///
-  /// Parameters:
-  /// - [context]: Build context for theming
-  /// - [focusNode]: The focus node for this widget (optional for locked wrappers)
-  /// - [isFocused]: Whether this widget currently has focus
-  /// - [onKeyEvent]: Callback for handling key events (optional for locked wrappers)
-  /// - [onTap]: Callback for tap/click events
-  /// - [onLongPress]: Callback for long press events
-  /// - [borderRadius]: Border radius for the focus decoration
-  /// - [child]: The content to display inside the card
-  static Widget buildFocusableCard({
-    required BuildContext context,
-    FocusNode? focusNode,
-    required bool isFocused,
-    KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent,
-    VoidCallback? onTap,
-    VoidCallback? onLongPress,
-    double borderRadius = FocusTheme.defaultBorderRadius,
-    double focusScale = FocusTheme.focusScale,
-    bool useFocusGlow = false,
-    bool delegateFocusBorder = false,
-    Size? glowSize,
-    required Widget child,
-  }) {
-    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-
-    // In touch mode, no item ever shows focus effects — skip animated wrappers
-    // entirely. This saves ~2 element levels per card on ARM32 Android phones.
-    if (!isKeyboardMode) {
-      final gestureWidget = (onTap != null || onLongPress != null)
-          ? ClickableCursor(
-              child: GestureDetector(onTap: onTap, onLongPress: onLongPress, child: child),
-            )
-          : child;
-      if (focusNode != null && onKeyEvent != null) {
-        return Focus(focusNode: focusNode, onKeyEvent: onKeyEvent, child: gestureWidget);
-      }
-      return gestureWidget;
-    }
-
-    final duration = FocusTheme.getAnimationDuration(context);
-    final showFocus = isFocused && isKeyboardMode;
-    // Glow (full-bleed cards) renders in an overlay above siblings so it stays
-    // symmetric; the in-card decoration only carries the border.
-    Widget card = delegateFocusBorder
-        ? CardFocusScope(showFocus: showFocus, child: child)
-        : AnimatedContainer(
-            duration: duration,
-            curve: Curves.easeOutCubic,
-            decoration: FocusTheme.focusDecoration(context, isFocused: showFocus, borderRadius: borderRadius),
-            child: child,
-          );
-    if (useFocusGlow) {
-      card = FocusGlowOverlay(
-        isFocused: showFocus,
-        borderRadius: borderRadius,
-        color: FocusTheme.getFocusBorderColor(context),
-        glowSize: glowSize,
-        child: card,
-      );
-    }
-
-    final focusedWidget = AnimatedScale(
-      scale: showFocus ? focusScale : 1.0,
-      duration: duration,
-      curve: Curves.easeOutCubic,
-      child: card,
-    );
-
-    // Wrap in GestureDetector if tap/long press handlers provided
-    final gestureWidget = (onTap != null || onLongPress != null)
-        ? ClickableCursor(
-            child: GestureDetector(onTap: onTap, onLongPress: onLongPress, child: focusedWidget),
-          )
-        : focusedWidget;
-
-    // Wrap in Focus if focus node and key event handler provided
-    if (focusNode != null && onKeyEvent != null) {
-      return Focus(focusNode: focusNode, onKeyEvent: onKeyEvent, child: gestureWidget);
-    }
-
-    return gestureWidget;
-  }
-
-  /// Builds a simple locked wrapper (no Focus widget) with scale and border decoration.
-  ///
-  /// Used by _LockedHubItemWrapper where focus is managed at a higher level.
+  /// Used by the hub row, the TV browse rail, the cast strip and the extras row.
+  /// Cards that own their focus node use [FocusableWrapper] instead; both share
+  /// the same chrome through [buildFocusChrome].
   ///
   /// Parameters:
   /// - [context]: Build context for theming
@@ -164,19 +89,40 @@ class FocusBuilders {
     Size? glowSize,
     required Widget child,
   }) {
-    return buildFocusableCard(
-      context: context,
-      focusNode: null,
-      isFocused: isFocused,
-      onKeyEvent: null,
-      onTap: onTap,
-      onLongPress: onLongPress,
-      borderRadius: borderRadius,
-      focusScale: focusScale,
-      useFocusGlow: useFocusGlow,
-      delegateFocusBorder: delegateFocusBorder,
-      glowSize: glowSize,
-      child: child,
+    final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
+
+    // In touch mode, no item ever shows focus effects — skip animated wrappers
+    // entirely. This saves ~2 element levels per card on ARM32 Android phones.
+    if (!isKeyboardMode) {
+      return (onTap != null || onLongPress != null)
+          ? ClickableCursor(
+              child: GestureDetector(onTap: onTap, onLongPress: onLongPress, child: child),
+            )
+          : child;
+    }
+
+    final duration = FocusTheme.getAnimationDuration(context);
+    final focusedWidget = AnimatedScale(
+      scale: isFocused ? focusScale : 1.0,
+      duration: duration,
+      curve: Curves.easeOutCubic,
+      child: buildFocusChrome(
+        context,
+        showFocus: isFocused,
+        duration: duration,
+        borderRadius: borderRadius,
+        useFocusGlow: useFocusGlow,
+        delegateFocusBorder: delegateFocusBorder,
+        glowSize: glowSize,
+        child: child,
+      ),
     );
+
+    // Wrap in GestureDetector if tap/long press handlers provided
+    return (onTap != null || onLongPress != null)
+        ? ClickableCursor(
+            child: GestureDetector(onTap: onTap, onLongPress: onLongPress, child: focusedWidget),
+          )
+        : focusedWidget;
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_display_criteria.dart';
 import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 
 /// Field-mapping pin for the Jellyfin → Plex `MediaInfo` translator. The
@@ -138,6 +139,56 @@ void main() {
       expect(criteria.matrix, 'bt2020nc');
     });
 
+    test('maps each Jellyfin color metadata class', () {
+      final cases = <({Map<String, dynamic> stream, MediaDisplayColorType type, MediaDisplayColorTags tags})>[
+        (
+          stream: {'VideoRangeType': 'DOVI', 'DvProfile': 5},
+          type: MediaDisplayColorType.dolbyVision,
+          tags: (transfer: null, primaries: null, matrix: null),
+        ),
+        (
+          stream: {'VideoRangeType': 'HLG'},
+          type: MediaDisplayColorType.hlg,
+          tags: (transfer: 'arib-std-b67', primaries: 'bt2020', matrix: 'bt2020nc'),
+        ),
+        (
+          stream: {'VideoRangeType': 'HDR10'},
+          type: MediaDisplayColorType.pq,
+          tags: (transfer: 'smpte2084', primaries: 'bt2020', matrix: 'bt2020nc'),
+        ),
+        (
+          stream: {'VideoRange': 'SDR'},
+          type: MediaDisplayColorType.sdr,
+          tags: (transfer: 'bt709', primaries: 'bt709', matrix: 'bt709'),
+        ),
+        (
+          stream: {'VideoRangeType': 'Unknown'},
+          type: MediaDisplayColorType.unknown,
+          tags: (transfer: null, primaries: null, matrix: null),
+        ),
+      ];
+
+      for (final testCase in cases) {
+        final info = jellyfinMediaSourceToMediaSourceInfo({
+          'Id': 'src-1',
+          'Width': 1920,
+          'Height': 1080,
+          'MediaStreams': [
+            {'Index': 0, 'Type': 'Video', 'RealFrameRate': 24, ...testCase.stream},
+          ],
+        });
+        final criteria = info.displayCriteria;
+
+        expect(criteria, isNotNull);
+        expect(criteria!.colorType, testCase.type);
+        expect(
+          (transfer: criteria.transfer, primaries: criteria.primaries, matrix: criteria.matrix),
+          testCase.tags,
+          reason: testCase.type.name,
+        );
+      }
+    });
+
     test('handles missing MediaStreams gracefully', () {
       final info = jellyfinMediaSourceToMediaSourceInfo({'Id': 'x'});
       expect(info.audioTracks, isEmpty);
@@ -176,6 +227,26 @@ void main() {
 
       expect(info.subtitleTracks.map((track) => track.selected), [false, true]);
       expect(info.defaultSubtitleStreamIndex, 4);
+    });
+
+    test('coerces Jellyfin string and numeric stream scalars', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'Id': 'src-flexible',
+        'DefaultAudioStreamIndex': '2',
+        'DefaultSubtitleStreamIndex': 3.0,
+        'MediaStreams': [
+          {'Index': '2', 'Type': 'Audio', 'Channels': '6'},
+          {'Index': 3.0, 'Type': 'Subtitle'},
+        ],
+      });
+
+      expect(info.defaultAudioStreamIndex, 2);
+      expect(info.defaultSubtitleStreamIndex, 3);
+      expect(info.audioTracks.single.id, 2);
+      expect(info.audioTracks.single.channels, 6);
+      expect(info.audioTracks.single.selected, isTrue);
+      expect(info.subtitleTracks.single.id, 3);
+      expect(info.subtitleTracks.single.selected, isTrue);
     });
 
     test('falls back to Language when DisplayLanguage absent', () {
@@ -303,14 +374,37 @@ void main() {
       expect(info.trickplayByWidth![320]!.width, 320);
     });
 
-    test('falls back to first nested entry when source id not present as key', () {
+    test('does not attach another source trickplay when selected source is absent', () {
       final info = jellyfinMediaSourceToMediaSourceInfo(
         {'Id': 'unknown', 'MediaStreams': []},
         trickplay: {
           'src-1': {'160': _info(width: 160, height: 90, tw: 4, th: 4, count: 16, interval: 10000)},
         },
       );
+      expect(info.mediaSourceId, 'unknown');
+      expect(info.trickplayByWidth, isNull);
+    });
+
+    test('source-less media accepts exactly one nested trickplay candidate', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo(
+        {'MediaStreams': []},
+        trickplay: {
+          'src-1': {'160': _info(width: 160, height: 90, tw: 4, th: 4, count: 16, interval: 10000)},
+        },
+      );
       expect(info.trickplayByWidth?.keys.single, 160);
+      expect(info.trickplayByWidth?[160]?.interval, 10000);
+    });
+
+    test('source-less media rejects ambiguous nested trickplay candidates', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo(
+        {'MediaStreams': []},
+        trickplay: {
+          'src-1': {'160': _info(width: 160, height: 90, tw: 4, th: 4, count: 16, interval: 10000)},
+          'src-2': {'320': _info(width: 320, height: 180, tw: 4, th: 4, count: 16, interval: 10000)},
+        },
+      );
+      expect(info.trickplayByWidth, isNull);
     });
 
     test('returns null trickplayByWidth when manifest missing', () {
@@ -453,6 +547,30 @@ void main() {
 
       expect(versions[0].videoResolution, '4k');
       expect(versions[1].videoResolution, '1080');
+    });
+
+    test('coerces source scalars and rounds bps to kbps without zero sentinels', () {
+      final versions = jellyfinSourcesToVersions([
+        {
+          'Id': 'rounded',
+          'Width': '1920',
+          'Height': 1080.9,
+          'Bitrate': '1500',
+          'Size': '987654321',
+          'MediaStreams': [
+            {'Type': 'Video', 'Codec': 'h264'},
+          ],
+        },
+        {'Id': 'missing-bitrate'},
+        {'Id': 'zero-bitrate', 'Bitrate': 0},
+        {'Id': 'negative-bitrate', 'Bitrate': -1000},
+      ]);
+
+      expect(versions.first.width, 1920);
+      expect(versions.first.height, 1080);
+      expect(versions.first.bitrate, 2);
+      expect(versions.first.parts.single.sizeBytes, 987654321);
+      expect(versions.skip(1).map((version) => version.bitrate), everyElement(isNull));
     });
 
     test('handles missing MediaStreams + missing Height gracefully', () {

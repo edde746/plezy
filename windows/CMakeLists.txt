@@ -111,6 +111,25 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 # Application build; see runner/CMakeLists.txt.
 add_subdirectory("runner")
 
+# Keep MSVC link by-products out of the runnable bundle directory. CI uploads
+# the executable output directory directly, so import and static libraries
+# emitted there would otherwise be packaged with the application.
+set_target_properties(
+  ${BINARY_NAME}
+  simdutf
+  PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/link-artifacts/$<CONFIG>"
+)
+
+
+# Sentry native crash capture: use the in-process handler instead of
+# crashpad. Crashpad uploads minidumps straight to the DSN's /minidump
+# endpoint, which our self-hosted tracker does not implement — every native
+# Windows crash (e.g. faults inside libmpv threads) was silently dropped.
+# The inproc handler stackwalks at crash time and reports through the
+# regular envelope endpoint on next launch. sentry-native.cmake gives this
+# environment variable highest precedence over the plugin's forced default.
+set(ENV{SENTRY_NATIVE_BACKEND} "inproc")
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.

@@ -25,7 +25,11 @@ void main() {
     serverManager = MultiServerManager();
     syncService = OfflineWatchSyncService(database: db, serverManager: serverManager);
 
-    downloadManager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance, clientResolver: (serverId, {clientScopeId}) => null);
+    downloadManager = DownloadManagerService(
+      database: db,
+      storageService: DownloadStorageService.instance,
+      clientResolver: (serverId, {clientScopeId}) => null,
+    );
     downloadManager.recoveryFuture = Future<void>.value();
     downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
     await downloadProvider.ensureInitialized();

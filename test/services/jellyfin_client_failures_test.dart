@@ -8,23 +8,47 @@ import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
+import 'package:plezy/utils/log_redaction_manager.dart';
 
-JellyfinConnection _conn({String baseUrl = 'https://jf.example.com', List<String>? baseUrls}) => JellyfinConnection(
-  id: 'srv-1/user-1',
+import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/media_items.dart';
+
+JellyfinConnection _conn({String baseUrl = 'https://jf.example.com', List<String>? baseUrls}) => testJellyfinConnection(
   baseUrl: baseUrl,
   baseUrls: baseUrls,
-  serverName: 'Home',
-  serverMachineId: 'srv-1',
-  userId: 'user-1',
   userName: 'edde',
   accessToken: 'tok-abc',
   deviceId: 'dev-xyz',
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );
 
-JellyfinClient _withMock(MockClient mock) => JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+JellyfinClient _withMock(MockClient mock) => testJellyfinClient(connection: _conn(), httpClient: mock);
+
+class _AbortAwareClient extends http.BaseClient {
+  final requestStarted = Completer<void>();
+  final _response = Completer<http.StreamedResponse>();
+  Uri? _requestUri;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    _requestUri = request.url;
+    if (!requestStarted.isCompleted) requestStarted.complete();
+    return _response.future;
+  }
+
+  @override
+  void close() {
+    if (!_response.isCompleted) {
+      _response.completeError(http.RequestAbortedException(_requestUri));
+    }
+  }
+}
 
 /// Failure-path coverage for the Jellyfin HTTP layer.
 ///
@@ -42,9 +66,15 @@ void main() {
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
     JellyfinApiCache.initialize(db);
+    MemoryLogOutput.clearLogs();
+    LogRedactionManager.clearTrackedValues();
+    setLoggerLevel(false);
   });
   tearDown(() async {
     await db.close();
+    MemoryLogOutput.clearLogs();
+    LogRedactionManager.clearTrackedValues();
+    setLoggerLevel(true);
   });
 
   group('JellyfinClient.fetchItem failure modes', () {
@@ -142,27 +172,143 @@ void main() {
   });
 
   group('JellyfinClient endpoint failover', () {
-    test('switches to the fallback URL after a transient GET failure', () async {
-      final requests = <Uri>[];
+    http.Response publicInfo([String id = 'srv-1']) => http.Response(
+      jsonEncode({'Id': id, 'ServerName': 'Home', 'Version': '10.9.0'}),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+
+    test('validates publicly before authenticated fallback and persists one promotion', () async {
+      const primary = 'https://primary-client-canary.invalid/primary-private-base';
+      const fallback = 'https://fallback-client-canary.invalid/fallback-private-base';
+      final events = <String>[];
+      final applicationRequests = <http.Request>[];
+      final probeRequests = <http.Request>[];
+      final persisted = <JellyfinConnection>[];
       final client = JellyfinClient.forTesting(
-        connection: _conn(
-          baseUrl: 'https://primary.example.com',
-          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
-        ),
-        httpClient: MockClient((req) async {
-          requests.add(req.url);
-          if (req.url.host == 'primary.example.com') {
+        connection: _conn(baseUrl: primary, baseUrls: const [primary, fallback]),
+        httpClient: MockClient((request) async {
+          applicationRequests.add(request);
+          events.add('application:${request.url.host}');
+          expect(request.headers['X-Emby-Token'], 'tok-abc');
+          if (request.url.host == 'primary-client-canary.invalid') {
             throw TimeoutException('primary down');
           }
           return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
         }),
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          probeRequests.add(request);
+          events.add('probe:${request.url.host}');
+          return publicInfo();
+        }),
       );
+      client.onConnectionUpdated = persisted.add;
       addTearDown(client.close);
 
       expect(await client.getMachineIdentifier(), 'srv-1');
-      expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com']);
-      expect(client.connection.baseUrl, 'https://fallback.example.com');
-      expect(client.connection.baseUrls, ['https://fallback.example.com', 'https://primary.example.com']);
+
+      expect(events, [
+        'application:primary-client-canary.invalid',
+        'probe:fallback-client-canary.invalid',
+        'application:fallback-client-canary.invalid',
+      ]);
+      expect(applicationRequests, hasLength(2));
+      expect(probeRequests, hasLength(1));
+      expect(probeRequests.single.headers.keys.map((name) => name.toLowerCase()), isNot(contains('authorization')));
+      expect(probeRequests.single.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-emby-token')));
+      expect(client.connection.baseUrl, fallback);
+      expect(client.connection.baseUrls, [fallback, primary]);
+      expect(persisted, hasLength(1));
+      expect(persisted.single.baseUrl, fallback);
+
+      final storedFields = MemoryLogOutput.getLogs().expand<String>(
+        (entry) => [entry.message, if (entry.error != null) entry.error.toString()],
+      );
+      for (final field in storedFields) {
+        expect(field, isNot(contains('primary-client-canary.invalid')));
+        expect(field, isNot(contains('primary-private-base')));
+        expect(field, isNot(contains('fallback-client-canary.invalid')));
+        expect(field, isNot(contains('fallback-private-base')));
+      }
+    });
+
+    test('wrong-machine fallback is skipped before one authenticated retry to a valid fallback', () async {
+      final events = <String>[];
+      final applicationRequests = <http.Request>[];
+      final persisted = <JellyfinConnection>[];
+      var exhausted = 0;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const [
+            'https://primary.example.com',
+            'https://wrong-machine.example.com',
+            'https://valid.example.com',
+          ],
+        ),
+        httpClient: MockClient((request) async {
+          applicationRequests.add(request);
+          events.add('application:${request.url.host}');
+          if (request.url.host == 'primary.example.com') {
+            throw TimeoutException('primary down');
+          }
+          expect(request.url.host, 'valid.example.com');
+          return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
+        }),
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          events.add('probe:${request.url.host}');
+          expect(request.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-emby-token')));
+          return publicInfo(request.url.host == 'wrong-machine.example.com' ? 'srv-other' : 'srv-1');
+        }),
+        onAllEndpointsExhausted: () => exhausted++,
+      );
+      client.onConnectionUpdated = persisted.add;
+      addTearDown(client.close);
+
+      expect(await client.getMachineIdentifier(), 'srv-1');
+
+      expect(events, [
+        'application:primary.example.com',
+        'probe:wrong-machine.example.com',
+        'probe:valid.example.com',
+        'application:valid.example.com',
+      ]);
+      expect(applicationRequests, hasLength(2));
+      expect(exhausted, 0);
+      expect(persisted, hasLength(1));
+      expect(persisted.single.baseUrl, 'https://valid.example.com');
+      expect(client.connection.baseUrl, 'https://valid.example.com');
+    });
+
+    test('unreachable fallback receives no authenticated application request', () async {
+      final events = <String>[];
+      final persisted = <JellyfinConnection>[];
+      var exhausted = 0;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://unreachable.example.com'],
+        ),
+        httpClient: MockClient((request) async {
+          events.add('application:${request.url.host}');
+          throw TimeoutException('primary down');
+        }),
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          events.add('probe:${request.url.host}');
+          expect(request.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-emby-token')));
+          throw TimeoutException('probe unavailable');
+        }),
+        onAllEndpointsExhausted: () => exhausted++,
+      );
+      client.onConnectionUpdated = persisted.add;
+      addTearDown(client.close);
+
+      expect(await client.getMachineIdentifier(), 'srv-1');
+
+      expect(events, ['application:primary.example.com', 'probe:unreachable.example.com']);
+      expect(exhausted, 1);
+      expect(persisted, isEmpty);
+      expect(client.connection.baseUrl, 'https://primary.example.com');
     });
 
     test('hub surfaces retry transient failures without hopping endpoints', () async {
@@ -196,6 +342,7 @@ void main() {
           baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
         ),
         httpClient: MockClient((req) async => throw TimeoutException('endpoint down')),
+        endpointProbeHttpClientFactory: () => MockClient((_) async => publicInfo()),
         onAllEndpointsExhausted: () => exhausted++,
       );
       addTearDown(client.close);
@@ -219,6 +366,7 @@ void main() {
           }
           return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
         }),
+        endpointProbeHttpClientFactory: () => MockClient((_) async => publicInfo()),
       );
       addTearDown(client.close);
 
@@ -229,6 +377,328 @@ void main() {
 
       expect(await client.getMachineIdentifier(), 'srv-1');
       expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com', 'primary.example.com']);
+    });
+  });
+
+  group('cancellation vs treat-as-empty', () {
+    // The hub/next-up fetch helpers swallow per-endpoint failures into empty
+    // lists so one broken endpoint doesn't sink a whole row. A *cancelled*
+    // request is different: it means our own client was torn down mid-fetch
+    // and says nothing about the server's content, so it must propagate —
+    // otherwise a disrupted server counts as "succeeded with partial data"
+    // and aborted sign-in fetches flash an empty home screen.
+    MediaServerHttpException cancelled() =>
+        MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'HTTP client is closing');
+
+    test('fetchContinueWatching propagates a cancelled NextUp sub-fetch', () async {
+      final client = _withMock(
+        MockClient((req) async {
+          if (req.url.path == '/Shows/NextUp') throw cancelled();
+          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      await expectLater(
+        client.fetchContinueWatching(),
+        throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
+      );
+    });
+
+    test('fetchContinueWatching still treats a NextUp server error as empty', () async {
+      final client = _withMock(
+        MockClient((req) async {
+          if (req.url.path == '/Shows/NextUp') return http.Response('Internal error', 500);
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'ep-1', 'Type': 'Episode', 'Name': 'Resume Me'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching();
+
+      expect(items.map((i) => i.id), ['ep-1']);
+    });
+
+    test('fetchMoreHubItems propagates a cancellation and swallows server errors', () async {
+      final cancelledClient = _withMock(MockClient((_) async => throw cancelled()));
+      addTearDown(cancelledClient.close);
+      await expectLater(
+        cancelledClient.fetchMoreHubItems('home.nextup'),
+        throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
+      );
+
+      final failingClient = _withMock(MockClient((_) async => http.Response('Internal error', 500)));
+      addTearDown(failingClient.close);
+      expect(await failingClient.fetchMoreHubItems('home.nextup'), isEmpty);
+    });
+  });
+
+  group('JellyfinClient.getPlaybackInfo failure contract', () {
+    test('preserves 401, 403, and 500 status failures', () async {
+      for (final status in [401, 403, 500]) {
+        final client = _withMock(
+          MockClient(
+            (_) async =>
+                http.Response(jsonEncode({'error': 'redacted'}), status, headers: {'content-type': 'application/json'}),
+          ),
+        );
+        addTearDown(client.close);
+
+        await expectLater(
+          client.getPlaybackInfo('item-1'),
+          throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', status)),
+        );
+      }
+    });
+
+    test('preserves timeout classifications', () async {
+      final timeoutClient = _withMock(MockClient((_) async => throw TimeoutException('timed out')));
+      addTearDown(timeoutClient.close);
+      await expectLater(
+        timeoutClient.getPlaybackInfo('item-1'),
+        throwsA(
+          isA<MediaServerHttpException>().having(
+            (error) => error.type,
+            'type',
+            MediaServerHttpErrorType.connectionTimeout,
+          ),
+        ),
+      );
+
+      final receiveTimeoutClient = _withMock(
+        MockClient(
+          (_) async =>
+              throw MediaServerHttpException(type: MediaServerHttpErrorType.receiveTimeout, message: 'timed out'),
+        ),
+      );
+      addTearDown(receiveTimeoutClient.close);
+      await expectLater(
+        receiveTimeoutClient.getPlaybackInfo('item-1'),
+        throwsA(
+          isA<MediaServerHttpException>().having(
+            (error) => error.type,
+            'type',
+            MediaServerHttpErrorType.receiveTimeout,
+          ),
+        ),
+      );
+    });
+
+    test('client close preserves real in-flight cancellation', () async {
+      final transport = _AbortAwareClient();
+      final client = testJellyfinClient(connection: _conn(), httpClient: transport);
+
+      final playbackInfo = client.getPlaybackInfo('item-1');
+      await transport.requestStarted.future;
+      client.close();
+
+      await expectLater(
+        playbackInfo,
+        throwsA(isA<MediaServerHttpException>().having((error) => error.isCancellation, 'isCancellation', isTrue)),
+      );
+    });
+
+    test('rejects invalid JSON and malformed successful shapes without retaining payload', () async {
+      final responses = <http.Response>[
+        http.Response('{', 200, headers: {'content-type': 'application/json'}),
+        http.Response(jsonEncode([]), 200, headers: {'content-type': 'application/json'}),
+        http.Response(jsonEncode({'unrelated': 'payload-canary'}), 200, headers: {'content-type': 'application/json'}),
+        http.Response(
+          jsonEncode({'MediaSources': 'payload-canary'}),
+          200,
+          headers: {'content-type': 'application/json'},
+        ),
+      ];
+
+      for (final response in responses) {
+        final client = _withMock(MockClient((_) async => response));
+        addTearDown(client.close);
+        await expectLater(client.getPlaybackInfo('item-1'), throwsA(isA<MediaServerHttpException>()));
+      }
+
+      for (final body in [
+        <String, dynamic>{'unrelated': 'payload-canary'},
+        <String, dynamic>{'MediaSources': 'payload-canary'},
+      ]) {
+        final client = _withMock(
+          MockClient((_) async => http.Response(jsonEncode(body), 200, headers: {'content-type': 'application/json'})),
+        );
+        addTearDown(client.close);
+        try {
+          await client.getPlaybackInfo('item-1');
+          fail('Malformed PlaybackInfo must throw');
+        } on MediaServerHttpException catch (error) {
+          expect(error.statusCode, 200);
+          expect(error.responseData, isNull);
+          expect(error.requestUri, isNull);
+          expect(error.toString(), isNot(contains('payload-canary')));
+        }
+      }
+    });
+
+    test('accepts a successful empty source list', () async {
+      final client = _withMock(
+        MockClient(
+          (_) async =>
+              http.Response(jsonEncode({'MediaSources': []}), 200, headers: {'content-type': 'application/json'}),
+        ),
+      );
+      addTearDown(client.close);
+
+      expect(await client.getPlaybackInfo('item-1'), {'MediaSources': []});
+    });
+  });
+
+  group('Jellyfin mutation result families', () {
+    final item = testMediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1');
+
+    test('void mutation completes on success and preserves status/transport failures', () async {
+      final success = _withMock(MockClient((_) async => http.Response('', 204)));
+      addTearDown(success.close);
+      await success.markWatched(item);
+
+      for (final status in [400, 500]) {
+        final failing = _withMock(MockClient((_) async => http.Response('{}', status)));
+        addTearDown(failing.close);
+        await expectLater(
+          failing.markWatched(item),
+          throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', status)),
+        );
+      }
+
+      final timeout = _withMock(MockClient((_) async => throw TimeoutException('timed out')));
+      addTearDown(timeout.close);
+      await expectLater(
+        timeout.markWatched(item),
+        throwsA(
+          isA<MediaServerHttpException>().having(
+            (error) => error.type,
+            'type',
+            MediaServerHttpErrorType.connectionTimeout,
+          ),
+        ),
+      );
+    });
+
+    test('nullable playlist creation returns entity/null and throws request failures', () async {
+      final valid = _withMock(
+        MockClient((request) async {
+          if (request.url.path == '/Playlists') {
+            return http.Response(jsonEncode({'Id': 'playlist-1'}), 200, headers: {'content-type': 'application/json'});
+          }
+          if (request.url.path == '/Users/user-1/Items/playlist-1') {
+            return http.Response(
+              jsonEncode({'Id': 'playlist-1', 'Name': 'Playlist', 'Type': 'Playlist', 'MediaType': 'Video'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(valid.close);
+      expect((await valid.createPlaylist(title: 'Playlist', items: const []))?.id, 'playlist-1');
+
+      final unusable = _withMock(
+        MockClient((_) async => http.Response(jsonEncode({}), 200, headers: {'content-type': 'application/json'})),
+      );
+      addTearDown(unusable.close);
+      expect(await unusable.createPlaylist(title: 'Playlist', items: const []), isNull);
+
+      for (final status in [400, 500]) {
+        final failing = _withMock(MockClient((_) async => http.Response('{}', status)));
+        addTearDown(failing.close);
+        await expectLater(
+          failing.createPlaylist(title: 'Playlist', items: const []),
+          throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', status)),
+        );
+      }
+      final timeout = _withMock(MockClient((_) async => throw TimeoutException('timed out')));
+      addTearDown(timeout.close);
+      await expectLater(
+        timeout.createPlaylist(title: 'Playlist', items: const []),
+        throwsA(isA<MediaServerHttpException>()),
+      );
+    });
+
+    test('nullable collection creation returns id/null and throws request failures', () async {
+      final valid = _withMock(
+        MockClient(
+          (_) async =>
+              http.Response(jsonEncode({'Id': 'collection-1'}), 200, headers: {'content-type': 'application/json'}),
+        ),
+      );
+      addTearDown(valid.close);
+      expect(
+        await valid.createCollection(libraryId: 'library-1', title: 'Collection', items: const []),
+        'collection-1',
+      );
+
+      final unusable = _withMock(
+        MockClient((_) async => http.Response(jsonEncode({}), 200, headers: {'content-type': 'application/json'})),
+      );
+      addTearDown(unusable.close);
+      expect(await unusable.createCollection(libraryId: 'library-1', title: 'Collection', items: const []), isNull);
+
+      for (final status in [400, 500]) {
+        final failing = _withMock(MockClient((_) async => http.Response('{}', status)));
+        addTearDown(failing.close);
+        await expectLater(
+          failing.createCollection(libraryId: 'library-1', title: 'Collection', items: const []),
+          throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', status)),
+        );
+      }
+      final timeout = _withMock(MockClient((_) async => throw TimeoutException('timed out')));
+      addTearDown(timeout.close);
+      await expectLater(
+        timeout.createCollection(libraryId: 'library-1', title: 'Collection', items: const []),
+        throwsA(isA<MediaServerHttpException>()),
+      );
+    });
+
+    test('playlist move returns false only for local preconditions and throws request failures', () async {
+      var requests = 0;
+      final localOnly = _withMock(
+        MockClient((_) async {
+          requests++;
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(localOnly.close);
+      const wrongBackend = PlexMediaItem(id: 'item-1', kind: MediaKind.movie);
+      const missingEntry = JellyfinMediaItem(id: 'item-1', kind: MediaKind.movie);
+      expect(
+        await localOnly.movePlaylistItem(playlistId: 'playlist', item: wrongBackend, newIndex: 0, afterItem: null),
+        isFalse,
+      );
+      expect(
+        await localOnly.movePlaylistItem(playlistId: 'playlist', item: missingEntry, newIndex: 0, afterItem: null),
+        isFalse,
+      );
+      expect(requests, 0);
+
+      const validEntry = JellyfinMediaItem(id: 'item-1', kind: MediaKind.movie, playlistItemId: 'entry-1');
+      final success = _withMock(MockClient((_) async => http.Response('', 204)));
+      addTearDown(success.close);
+      expect(
+        await success.movePlaylistItem(playlistId: 'playlist', item: validEntry, newIndex: 0, afterItem: null),
+        isTrue,
+      );
+
+      final failing = _withMock(MockClient((_) async => http.Response('{}', 500)));
+      addTearDown(failing.close);
+      await expectLater(
+        failing.movePlaylistItem(playlistId: 'playlist', item: validEntry, newIndex: 0, afterItem: null),
+        throwsA(isA<MediaServerHttpException>()),
+      );
     });
   });
 }

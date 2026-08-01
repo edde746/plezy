@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -111,15 +113,36 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       ]),
     ];
 
-    return Container(
-      constraints: const BoxConstraints(maxWidth: 400),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.8),
-        borderRadius: const BorderRadius.all(Radius.circular(8)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-      ),
-      child: Wrap(spacing: 24, runSpacing: 12, children: sections),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // On height-limited screens (landscape phones) widen the card so the Wrap
+        // packs sections side by side instead of stacking into an off-screen column.
+        final compactHeight = constraints.hasBoundedHeight && constraints.maxHeight < 500;
+        final cardMaxWidth = compactHeight && constraints.hasBoundedWidth
+            ? math.min(constraints.maxWidth, 560.0)
+            : 400.0;
+
+        // Text scaling only inflates the intrinsic size that FittedBox scales right
+        // back down, trading layout sharpness for nothing on this diagnostics card.
+        return MediaQuery.withNoTextScaling(
+          // scaleDown is a no-op when the content fits; it only shrinks the card when
+          // it would otherwise be clipped by the bounds set at the embed site.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.topLeft,
+            child: Container(
+              constraints: BoxConstraints(maxWidth: cardMaxWidth),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.8),
+                borderRadius: const BorderRadius.all(Radius.circular(8)),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
+              ),
+              child: Wrap(spacing: 24, runSpacing: 12, children: sections),
+            ),
+          ),
+        );
+      },
     );
   }
 

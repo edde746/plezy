@@ -1,0 +1,48 @@
+appId: com.edde746.plezy
+---
+- runFlow: ensure_onboarded.yaml
+- tapOn: "(?s)^Search.*"
+- extendedWaitUntil:
+    visible: "Search movies, shows, music..."
+    timeout: 10000
+- tapOn: "Search movies, shows, music..."
+- inputText: "${SAMPLE_TITLE}"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - pressKey: ENTER
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - hideKeyboard
+# A card announces its watch state three ways, and the codec samples keep a
+# resume position on the server once any earlier flow has played them, so the
+# partial form has to be accepted for this subflow to be re-runnable against a
+# fixture container that is not thrown away between suites.
+- extendedWaitUntil:
+    visible: "(?s)^${SAMPLE_TITLE}, movie, (?:watched|unwatched|[0-9]+ percent watched)$"
+    timeout: 15000
+- tapOn: "(?s)^${SAMPLE_TITLE}, movie, (?:watched|unwatched|[0-9]+ percent watched)$"
+- extendedWaitUntil:
+    visible: "Overview"
+    timeout: 15000
+- assertVisible: "${SAMPLE_OVERVIEW}"
+- tapOn:
+    text: "Play"
+    waitToSettleTimeoutMs: 1000
+- extendedWaitUntil:
+    notVisible: "Overview"
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "Pause"
+    timeout: 30000
+- tapOn: "Pause"
+- extendedWaitUntil:
+    visible: "Play"
+    timeout: 5000
+- extendedWaitUntil:
+    visible: "(?s)^.*Audio & Subtitles$"
+    timeout: 30000
+- tapOn: "(?s)^.*Audio & Subtitles$"

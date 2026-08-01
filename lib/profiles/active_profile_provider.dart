@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -26,13 +27,15 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     required this._registry,
     required this._plexHome,
     required this._connections,
-    StorageService? storage,
-  }) : _storage = storage;
+    this._storage,
+    this._activeProfileIdWriter,
+  });
 
   final ProfileRegistry _registry;
   final PlexHomeService _plexHome;
   final ConnectionRegistry _connections;
   StorageService? _storage;
+  final Future<void> Function(String profileId)? _activeProfileIdWriter;
 
   Profile? _active;
   List<Profile> _profiles = const [];
@@ -49,12 +52,24 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   bool _isBinding = false;
   bool _lastBindingSucceeded = true;
   final List<Completer<bool>> _bindingSettleWaiters = [];
+  Future<void>? _identityMutationQueue;
+  int _identityMutationGeneration = 0;
+  int _committedIdentityGeneration = 0;
+  int _pendingIdentityMutations = 0;
+  final Map<int, Completer<void>> _identityMutationReservations = {};
 
   Profile? get active => _active;
   String? get activeId => _active?.id;
   List<Profile> get profiles => _profiles;
   bool get hasMultipleProfiles => _profiles.length > 1;
   bool get isInitialized => _initialized;
+
+  /// Monotonically identifies the last active-profile identity that
+  /// successfully committed. Failed and cancelled activation attempts do not
+  /// advance it.
+  int get committedIdentityGeneration => _committedIdentityGeneration;
+
+  int get identityMutationGeneration => _identityMutationGeneration;
 
   /// True while [ActiveProfileBinder] is wiring servers/tokens for the
   /// active profile. The picker reads this so it can stay open (and stay
@@ -136,19 +151,27 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   Future<void> _initialize() async {
     await _reloadSnapshot();
 
+    // Every listener diffs its snapshot first: drift re-emits on any table
+    // write (including no-op upserts like the binder's server refresh), and
+    // each unchecked pass rebuilds every Profile and notifies the whole
+    // listener tree (binder, MainScreen, pickers).
     _localSub = _registry.watchProfiles().listen((list) {
+      if (listEquals(list, _localProfiles)) return;
       _localProfiles = list;
       _recomputeProfiles();
       _resolveActive();
       safeNotifyListeners();
     });
     _connSub = _connections.watchConnections().listen((list) {
-      _connectionsById = {for (final c in list) c.id: c};
+      final byId = {for (final c in list) c.id: c};
+      if (_sameConnections(byId, _connectionsById)) return;
+      _connectionsById = byId;
       _recomputeProfiles();
       _resolveActive();
       safeNotifyListeners();
     });
     _plexHomeSub = _plexHome.stream.listen((cache) {
+      if (_samePlexHomeUsers(cache, _plexHomeUsers)) return;
       _plexHomeUsers = cache;
       _recomputeProfiles();
       _resolveActive();
@@ -173,6 +196,28 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     _resolveActive();
   }
 
+  /// [Connection] has no value equality; its persisted config is the
+  /// cheapest faithful comparison key for the handful of rows involved.
+  static bool _sameConnections(Map<String, Connection> a, Map<String, Connection> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null) return false;
+      if (identical(entry.value, other)) continue;
+      if (jsonEncode(entry.value.toConfigJson()) != jsonEncode(other.toConfigJson())) return false;
+    }
+    return true;
+  }
+
+  static bool _samePlexHomeUsers(Map<String, List<PlexHomeUser>> a, Map<String, List<PlexHomeUser>> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || !listEquals(entry.value, other)) return false;
+    }
+    return true;
+  }
+
   void _recomputeProfiles() {
     _profiles = mergeLocalWithPlexHome(
       locals: _localProfiles,
@@ -183,6 +228,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   }
 
   void _resolveActive() {
+    if (_pendingIdentityMutations > 0) return;
     if (_profiles.isEmpty) {
       _active = null;
       return;
@@ -202,15 +248,32 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
         return;
       }
     }
-    // Saved id no longer matches anything (e.g. Plex admin removed the
-    // home user). Clear it so storage-scoped settings do not keep reading
-    // and writing under the removed profile's user scope, and let the UI
-    // force an explicit profile choice.
+    // Saved id no longer matches anything. Keep the persisted id: this
+    // resolver runs on every stream emission, and early/partial snapshots
+    // (boot before migration, a Plex Home cache that hasn't hydrated yet)
+    // must not irreversibly wipe the user's selection. Genuinely
+    // unresolvable states clear the id at their decision points — the boot
+    // guard and the post-removal settle flow.
     _active = null;
-    final storage = _storage;
-    if (storage != null) {
-      unawaited(storage.clearActiveProfileId());
-    }
+  }
+
+  /// Claims ownership for an identity change that must perform asynchronous
+  /// preparation before it can enter the serialized mutation queue.
+  ///
+  /// The claim is synchronous so a newer user request can invalidate older
+  /// preparation immediately. Callers must always pair this with
+  /// [finishIdentityMutationRequest].
+  int beginIdentityMutationRequest() {
+    final generation = ++_identityMutationGeneration;
+    _identityMutationReservations[generation] = Completer<void>();
+    return generation;
+  }
+
+  bool isIdentityMutationRequestCurrent(int generation) => generation == _identityMutationGeneration;
+
+  void finishIdentityMutationRequest(int generation) {
+    final reservation = _identityMutationReservations.remove(generation);
+    if (reservation != null && !reservation.isCompleted) reservation.complete();
   }
 
   /// Activate [profile]. PIN-protected local profiles must supply a matching
@@ -225,33 +288,198 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     }
     final storage = _storage;
     if (storage == null) return false;
-    await storage.setActiveProfileId(profile.id);
-    final now = DateTime.now();
-    await storage.markProfileUsed(profile.id, now);
-    final activated = profile.copyWith(lastUsedAt: now);
-    _active = activated;
-    _profiles = sortProfilesByLastUsed([for (final p in _profiles) p.id == profile.id ? activated : p]);
-    safeNotifyListeners();
-    appLogger.i('ActiveProfileProvider: activated ${profile.displayName} (${profile.id})');
-    if (profile.isLocal) {
-      // Local rows also bump the DB's lastUsedAt so the in-DB sortable column
-      // stays accurate — the in-memory mark above keeps the picker snappy.
-      unawaited(
-        _registry.markUsed(profile.id, now).catchError((Object e, StackTrace s) {
-          appLogger.w('markUsed failed for ${profile.id}', error: e, stackTrace: s);
-        }),
-      );
+    return _serializeIdentityMutation<bool>((generation) async {
+      if (generation != _identityMutationGeneration) return false;
+      final now = DateTime.now();
+      await storage.markProfileUsed(profile.id, now);
+      if (generation != _identityMutationGeneration) return false;
+      final previousActiveProfileId = storage.getActiveProfileId();
+      try {
+        await _writeActiveProfileId(storage, profile.id);
+      } catch (_) {
+        await _restoreActiveProfileId(storage, previousActiveProfileId);
+        rethrow;
+      }
+      if (generation != _identityMutationGeneration) {
+        await _restoreActiveProfileId(storage, previousActiveProfileId);
+        return false;
+      }
+
+      final activated = profile.copyWith(lastUsedAt: now);
+      _active = activated;
+      _committedIdentityGeneration = generation;
+      _profiles = sortProfilesByLastUsed([for (final p in _profiles) p.id == profile.id ? activated : p]);
+      safeNotifyListeners();
+      appLogger.i('ActiveProfileProvider: activated ${profile.displayName} (${profile.id})');
+      if (profile.isLocal) {
+        // Local rows also bump the DB's lastUsedAt so the in-DB sortable column
+        // stays accurate — the in-memory mark above keeps the picker snappy.
+        unawaited(
+          _registry.markUsed(profile.id, now).catchError((Object e, StackTrace s) {
+            appLogger.w('markUsed failed for ${profile.id}', error: e, stackTrace: s);
+          }),
+        );
+      }
+      return true;
+    });
+  }
+
+  /// Restore the profile that owned the current authenticated session when a
+  /// later activation fails. The caller must supply the profile captured
+  /// before that activation; no PIN prompt is repeated for the session that
+  /// was already unlocked.
+  Future<int?> restoreAfterFailedActivation(
+    Profile profile, {
+    required String expectedActiveId,
+    required int expectedCommittedGeneration,
+    int? requestGeneration,
+  }) async {
+    final storage = _storage;
+    if (storage == null) {
+      throw StateError('ActiveProfileProvider is not initialized');
     }
-    return true;
+
+    var generation = requestGeneration;
+    while (_active?.id == expectedActiveId && _committedIdentityGeneration == expectedCommittedGeneration) {
+      if (generation != null && generation != _identityMutationGeneration) {
+        // A newer request may still be preparing before it enters the queue
+        // (for example, clearing its former shelf owner). Do not reclaim
+        // ownership until that request has finished. If it fails without
+        // committing, the genuinely current failed identity can still be
+        // restored on the next pass.
+        await _awaitIdentityWorkAfter(generation);
+        if (_active?.id != expectedActiveId || _committedIdentityGeneration != expectedCommittedGeneration) {
+          return null;
+        }
+        generation = null;
+      }
+
+      late int attemptedGeneration;
+      Future<int?> restore(int ownedGeneration) {
+        attemptedGeneration = ownedGeneration;
+        return _restoreFailedActivation(
+          storage,
+          profile,
+          expectedActiveId,
+          expectedCommittedGeneration,
+          ownedGeneration,
+        );
+      }
+
+      final restoredGeneration = generation == null
+          ? await _serializeIdentityMutation<int?>(restore)
+          : await _queueIdentityMutation<int?>(generation, restore);
+      if (restoredGeneration != null) return restoredGeneration;
+      if (_active?.id != expectedActiveId || _committedIdentityGeneration != expectedCommittedGeneration) {
+        return null;
+      }
+
+      await _awaitIdentityWorkAfter(attemptedGeneration);
+      generation = null;
+    }
+    return null;
+  }
+
+  Future<int?> _restoreFailedActivation(
+    StorageService storage,
+    Profile profile,
+    String expectedActiveId,
+    int expectedCommittedGeneration,
+    int generation,
+  ) async {
+    if (_active?.id != expectedActiveId ||
+        _committedIdentityGeneration != expectedCommittedGeneration ||
+        generation != _identityMutationGeneration) {
+      return null;
+    }
+    final previousActiveProfileId = storage.getActiveProfileId();
+    try {
+      await _writeActiveProfileId(storage, profile.id);
+    } catch (_) {
+      await _restoreActiveProfileId(storage, previousActiveProfileId);
+      rethrow;
+    }
+    if (generation != _identityMutationGeneration) {
+      await _restoreActiveProfileId(storage, previousActiveProfileId);
+      return null;
+    }
+
+    _committedIdentityGeneration = generation;
+    _active = profile;
+    _profiles = sortProfilesByLastUsed([
+      for (final candidate in _profiles) candidate.id == profile.id ? profile : candidate,
+    ]);
+    safeNotifyListeners();
+    appLogger.i('ActiveProfileProvider: restored ${profile.displayName} (${profile.id}) after failed activation');
+    return generation;
   }
 
   /// Clear the selected profile in both storage and memory so the picker
   /// can force an explicit choice on the next screen.
   Future<void> clearActiveProfile() async {
-    final storage = _storage ??= await StorageService.getInstance();
-    await storage.clearActiveProfileId();
-    _active = null;
-    safeNotifyListeners();
+    final generation = beginIdentityMutationRequest();
+    try {
+      final storage = _storage ??= await StorageService.getInstance();
+      if (!isIdentityMutationRequestCurrent(generation)) return;
+      await _queueIdentityMutation<void>(generation, (ownedGeneration) async {
+        if (ownedGeneration != _identityMutationGeneration) return;
+        final previousActiveProfileId = storage.getActiveProfileId();
+        await storage.clearActiveProfileId();
+        if (ownedGeneration != _identityMutationGeneration) {
+          await _restoreActiveProfileId(storage, previousActiveProfileId);
+          return;
+        }
+        _committedIdentityGeneration = ownedGeneration;
+        _active = null;
+        safeNotifyListeners();
+      });
+    } finally {
+      finishIdentityMutationRequest(generation);
+    }
+  }
+
+  Future<void> _writeActiveProfileId(StorageService storage, String profileId) {
+    return _activeProfileIdWriter?.call(profileId) ?? storage.setActiveProfileId(profileId);
+  }
+
+  Future<void> _restoreActiveProfileId(StorageService storage, String? profileId) {
+    if (profileId == null) return storage.clearActiveProfileId();
+    return _writeActiveProfileId(storage, profileId);
+  }
+
+  Future<T> _serializeIdentityMutation<T>(Future<T> Function(int generation) mutation) {
+    final generation = ++_identityMutationGeneration;
+    return _queueIdentityMutation(generation, mutation);
+  }
+
+  Future<T> _queueIdentityMutation<T>(int generation, Future<T> Function(int generation) mutation) {
+    final previous = _identityMutationQueue;
+    _pendingIdentityMutations++;
+    final operation = () async {
+      if (previous != null) await previous;
+      try {
+        return await mutation(generation);
+      } finally {
+        _pendingIdentityMutations--;
+      }
+    }();
+    _identityMutationQueue = operation.then<void>((_) {}).catchError((Object _, StackTrace _) {});
+    return operation;
+  }
+
+  Future<void> _awaitIdentityWorkAfter(int generation) async {
+    while (true) {
+      final reservations = [
+        for (final entry in _identityMutationReservations.entries)
+          if (entry.key > generation) entry.value.future,
+      ];
+      final queue = _identityMutationQueue;
+      if (reservations.isNotEmpty) await Future.wait(reservations);
+      if (queue != null) await queue;
+
+      final hasNewerReservation = _identityMutationReservations.keys.any((candidate) => candidate > generation);
+      if (!hasNewerReservation && identical(queue, _identityMutationQueue)) return;
+    }
   }
 
   @visibleForTesting
@@ -275,6 +503,10 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       if (!c.isCompleted) c.complete(_lastBindingSucceeded);
     }
     _bindingSettleWaiters.clear();
+    for (final reservation in _identityMutationReservations.values) {
+      if (!reservation.isCompleted) reservation.complete();
+    }
+    _identityMutationReservations.clear();
   }
 
   @override
@@ -285,6 +517,10 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       if (!c.isCompleted) c.complete(_lastBindingSucceeded);
     }
     _bindingSettleWaiters.clear();
+    for (final reservation in _identityMutationReservations.values) {
+      if (!reservation.isCompleted) reservation.complete();
+    }
+    _identityMutationReservations.clear();
     _initializeFuture = null;
     _localSub?.cancel();
     _connSub?.cancel();

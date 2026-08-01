@@ -4,10 +4,11 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/metadata_edit/metadata_edit_models.dart';
+import '../test_helpers/media_items.dart';
 
 void main() {
   test('adapter dirty tracking ignores immediate fields', () {
-    final item = MediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie);
+    final item = testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie);
     final adapter = _TestMetadataEditAdapter();
     final draft = MetadataEditDraft(
       sourceItem: item,
@@ -23,7 +24,7 @@ void main() {
   });
 
   test('adapter dirty tracking compares string lists as sets', () {
-    final item = MediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie);
+    final item = testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie);
     final adapter = _TestMetadataEditAdapter();
     final draft = MetadataEditDraft(
       sourceItem: item,

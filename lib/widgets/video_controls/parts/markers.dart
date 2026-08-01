@@ -86,6 +86,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
   }
 
   Future<void> _skipMarker({bool skipAutoPlayCountdown = false}) async {
+    if (!widget.canControl) return;
     if (_currentMarker == null || !_hasRenderedFirstFrame) return;
 
     final marker = _currentMarker!;
@@ -188,6 +189,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
 
   /// Perform the appropriate skip action based on marker type and next episode availability
   void _performAutoSkip({bool skipAutoPlayCountdown = false}) {
+    if (!widget.canControl) return;
     if (_currentMarker == null || !_hasRenderedFirstFrame) return;
     unawaited(_skipMarker(skipAutoPlayCountdown: skipAutoPlayCountdown));
   }
@@ -201,6 +203,20 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     return _shouldAutoSkipForMarker(_currentMarker!);
   }
 
+  bool get _isSkipMarkerButtonVisible => shouldShowSkipMarkerButton(
+    hasFirstFrame: _hasRenderedFirstFrame,
+    hasMarker: _currentMarker != null,
+    hasPlayNextPrompt: widget.playNextFocusNode != null,
+    skipButtonDismissed: _skipButtonDismissed,
+    controlsVisible: _showControls,
+  );
+
+  void _activateSkipMarker() {
+    if (!_isSkipMarkerButtonVisible) return;
+    _cancelAutoSkipTimer();
+    _performAutoSkip();
+  }
+
   Widget _buildSkipMarkerButton() {
     final isAutoSkipActive = _autoSkipTimer?.isActive ?? false;
     return SkipMarkerButton(
@@ -212,8 +228,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
       autoSkipDelay: _autoSkipDelay,
       autoSkipProgress: _autoSkipProgress,
       focusNode: _skipMarkerFocusNode,
-      onCancelAutoSkip: _cancelAutoSkipTimer,
-      onPerformAutoSkip: _performAutoSkip,
+      onActivate: _activateSkipMarker,
       onFocusDown: () => _desktopControlsKey.currentState?.requestPlayPauseFocus(),
     );
   }

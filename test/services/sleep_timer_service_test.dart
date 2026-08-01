@@ -1,23 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:plezy/services/sleep_timer_service.dart';
 
-// IMPORTANT: [SleepTimerService] uses raw `DateTime.now()` (not
-// `clock.now()` from package:clock), so `fake_async` cannot virtualize the
-// service's wall-clock arithmetic. Specifically, `remainingTime` computes
-// `endTime.difference(DateTime.now())` against the real system clock, while
-// the periodic Timer ticks every 1s in fake time but always sees a near-zero
-// elapsed wall clock — so the prompt never fires under `fakeAsync`.
-//
-// Strategy:
-//   - State assertions (start/cancel/extend/restart bookkeeping) use the real
-//     clock with sub-second resolution.
-//   - We do NOT exercise the prompt-fires-when-elapsed branch because the
-//     periodic tick is hard-coded at 1s and waiting that long in tests is
-//     flaky. That branch is documented as uncovered at the bottom of this file.
-//
-// The service is a process-global singleton, so each test calls `cancelTimer`
-// in setUp/tearDown to reset bookkeeping. We never call `dispose()` (it would
-// close shared StreamControllers and break subsequent tests).
+// Duration-based transitions use an injected clock with fake_async so timer
+// ticks and wall-clock arithmetic advance together. The production singleton
+// remains covered separately for its shared-instance contract.
 
 void main() {
   late SleepTimerService timer;
@@ -68,16 +55,14 @@ void main() {
       }
     });
 
-    test('endTime is approximately now + duration (real clock)', () {
-      final before = DateTime.now();
-      timer.startTimer(const Duration(minutes: 10), () {});
-      try {
-        final delta = timer.endTime!.difference(before).inSeconds;
-        // Generous bounds for any millisecond-scale slop between sample points.
-        expect(delta, inInclusiveRange(599, 601));
-      } finally {
-        timer.cancelTimer();
-      }
+    test('endTime is based on the injected clock', () {
+      final now = DateTime.utc(2026, 7, 20, 12);
+      final service = SleepTimerService.withClock(() => now);
+
+      service.startTimer(const Duration(minutes: 10), () {});
+
+      expect(service.endTime, now.add(const Duration(minutes: 10)));
+      service.dispose();
     });
 
     test('starting a new timer cancels the previous one', () {
@@ -101,26 +86,102 @@ void main() {
   // ============================================================
 
   group('cancelTimer', () {
-    test('clears all state and stops the periodic ticker', () async {
-      var fired = false;
-      timer.startTimer(const Duration(minutes: 5), () => fired = true);
+    test('clears all state and prevents a later prompt', () {
+      fakeAsync((async) {
+        final epoch = DateTime.utc(2026, 7, 20, 12);
+        final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+        var prompts = 0;
+        service.onPrompt.listen((_) => prompts++);
+        service.startTimer(const Duration(seconds: 2), () {});
 
-      timer.cancelTimer();
-      expect(timer.isActive, isFalse);
-      expect(timer.endTime, isNull);
-      expect(timer.duration, isNull);
-      expect(timer.originalDuration, isNull);
+        async.elapse(const Duration(seconds: 1));
+        service.cancelTimer();
+        async.elapse(const Duration(minutes: 1));
+        async.flushMicrotasks();
 
-      // Pump the event queue briefly to confirm the periodic Timer is dead —
-      // even in real time we can be sure the user callback never fires for a
-      // 5-minute timer that we cancel immediately.
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(fired, isFalse);
+        expect(service.isActive, isFalse);
+        expect(service.endTime, isNull);
+        expect(service.duration, isNull);
+        expect(service.originalDuration, isNull);
+        expect(prompts, 0);
+        service.dispose();
+        async.flushMicrotasks();
+      });
     });
 
     test('cancelTimer on idle service is a no-op', () {
       timer.cancelTimer();
       expect(timer.isActive, isFalse);
+    });
+  });
+
+  group('duration transitions', () {
+    test('remaining time elapses and emits one prompt on the first due tick', () {
+      fakeAsync((async) {
+        final epoch = DateTime.utc(2026, 7, 20, 12);
+        final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+        var prompts = 0;
+        var completions = 0;
+        service.onPrompt.listen((_) => prompts++);
+
+        service.startTimer(const Duration(seconds: 3), () => completions++);
+        expect(service.remainingTime, const Duration(seconds: 3));
+
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(service.remainingTime, const Duration(seconds: 1));
+        expect(prompts, 0);
+
+        async.elapse(const Duration(milliseconds: 999));
+        async.flushMicrotasks();
+        expect(service.remainingTime, const Duration(milliseconds: 1));
+        expect(prompts, 0);
+
+        async.elapse(const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+        expect(prompts, 1);
+        expect(completions, 0);
+        expect(service.isActive, isFalse);
+        expect(service.remainingTime, isNull);
+
+        async.elapse(const Duration(minutes: 1));
+        async.flushMicrotasks();
+        expect(prompts, 1);
+        service.dispose();
+        async.flushMicrotasks();
+      });
+    });
+
+    test('restartTimer after a prompt restarts the original duration and callback', () {
+      fakeAsync((async) {
+        final epoch = DateTime.utc(2026, 7, 20, 12);
+        final service = SleepTimerService.withClock(() => epoch.add(async.elapsed));
+        var prompts = 0;
+        var completions = 0;
+        service.onPrompt.listen((_) => prompts++);
+
+        service.startTimer(const Duration(seconds: 2), () => completions++);
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(prompts, 1);
+        expect(service.isActive, isFalse);
+
+        service.restartTimer();
+        expect(service.isActive, isTrue);
+        expect(service.endTime, epoch.add(const Duration(seconds: 4)));
+        expect(service.remainingTime, const Duration(seconds: 2));
+
+        async.elapse(const Duration(seconds: 2));
+        async.flushMicrotasks();
+        expect(prompts, 2);
+        expect(completions, 0);
+
+        service.executeCompletion();
+        async.flushMicrotasks();
+        expect(completions, 1);
+        service.dispose();
+        async.flushMicrotasks();
+      });
     });
   });
 
@@ -400,20 +461,4 @@ void main() {
       timer.cancelTimer();
     });
   });
-
-  // ============================================================
-  // What's NOT covered (and why)
-  // ============================================================
-  //
-  // - The prompt-fires-when-duration-elapses branch in `startTimer`:
-  //   The periodic Timer fires every 1s, and the production code uses raw
-  //   `DateTime.now()` for end/elapsed math, so neither `fake_async` nor
-  //   `package:clock` substitutes can virtualize it without touching the
-  //   service. Verifying it would require a wall-clock wait of >1s, which
-  //   is flaky for unit tests.
-  //
-  // - `restartTimer` after `_stopTimerOnly` (the post-prompt path):
-  //   `_stopTimerOnly` is private and only reached by the periodic-tick
-  //   completion above, so the post-prompt restart flow is also not
-  //   verifiable here without injecting a clock dependency.
 }

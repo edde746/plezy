@@ -1,14 +1,17 @@
+import '../test_helpers/paged_fakes.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/utils/download_version_utils.dart';
 import 'package:plezy/media/episode_collection.dart';
+import '../test_helpers/media_items.dart';
 
-MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCount}) => MediaItem(
+MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCount, int? childCount}) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.season,
@@ -16,6 +19,7 @@ MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCoun
   index: index,
   leafCount: leafCount,
   viewedLeafCount: viewedLeafCount,
+  childCount: childCount,
 );
 
 MediaItem _episode(
@@ -28,7 +32,8 @@ MediaItem _episode(
   int? viewCount,
   int? viewOffsetMs,
   int? durationMs,
-}) => MediaItem(
+  String? originallyAvailableAt,
+}) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.episode,
@@ -41,9 +46,10 @@ MediaItem _episode(
   viewCount: viewCount,
   viewOffsetMs: viewOffsetMs,
   durationMs: durationMs,
+  originallyAvailableAt: originallyAvailableAt,
 );
 
-MediaItem _clip(String id) => MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.clip, title: 'Clip');
+MediaItem _clip(String id) => testMediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.clip, title: 'Clip');
 
 class _RecordingClient implements MediaServerClient {
   _RecordingClient({this.childrenByParent = const {}, this.childrenPageByParent = const {}, this.itemsById = const {}});
@@ -64,11 +70,7 @@ class _RecordingClient implements MediaServerClient {
   Future<LibraryPage<MediaItem>> fetchChildrenPage(String parentId, {int? start, int? size, abort}) async {
     childrenPageCalls.add((parentId: parentId, start: start, size: size));
     final all = childrenPageByParent[parentId] ?? const <MediaItem>[];
-    final offset = start ?? 0;
-    final limit = size ?? all.length;
-    final end = (offset + limit).clamp(0, all.length).toInt();
-    final items = offset >= all.length ? const <MediaItem>[] : all.sublist(offset, end);
-    return LibraryPage(items: items, totalCount: all.length, offset: offset);
+    return fakeLibraryPage(all, start: start, size: size);
   }
 
   @override
@@ -94,15 +96,40 @@ class _SeasonPagingRecordingClient extends _RecordingClient implements SeasonEpi
   }) async {
     seasonEpisodePageCalls.add((seriesId: seriesId, seasonId: seasonId, start: start, size: size));
     final all = seasonPageBySeason[(seriesId: seriesId, seasonId: seasonId)] ?? const <MediaItem>[];
-    final offset = start ?? 0;
-    final limit = size ?? all.length;
-    final end = (offset + limit).clamp(0, all.length).toInt();
-    final items = offset >= all.length ? const <MediaItem>[] : all.sublist(offset, end);
-    return LibraryPage(items: items, totalCount: all.length, offset: offset);
+    return fakeLibraryPage(all, start: start, size: size);
   }
 }
 
+class _LeavesClient implements MediaServerClient {
+  _LeavesClient(this.leaves);
+
+  final List<MediaItem> leaves;
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => leaves;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 void main() {
+  test('collectEpisodes drops Specials when includeSpecials is false', () async {
+    final client = _LeavesClient([
+      _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05'),
+      _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27'),
+      _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-11-02'),
+    ]);
+
+    final withoutSpecials = <MediaItem>[];
+    await collectEpisodes(client, 'show-1', unwatchedOnly: false, out: withoutSpecials, includeSpecials: false);
+    expect(withoutSpecials.map((e) => e.id), ['s1e1', 's1e2']);
+
+    // Default keeps Specials, interleaved into aired order.
+    final withSpecials = <MediaItem>[];
+    await collectEpisodes(client, 'show-1', unwatchedOnly: false, out: withSpecials);
+    expect(withSpecials.map((e) => e.id), ['s1e1', 's0e1', 's1e2']);
+  });
+
   test('defaultPlaybackSeason skips specials when a regular season exists', () {
     final special = _season('specials', index: 0);
     final season1 = _season('season-1');
@@ -134,6 +161,12 @@ void main() {
     final season3 = _season('season-3', index: 3, leafCount: 5, viewedLeafCount: 0);
 
     expect(firstUnwatchedSeasonIndex([special, season1, season2, season3]), 2);
+  });
+
+  test('firstUnwatchedSeasonIndex uses direct episode count when the leaf total is missing', () {
+    final season = _season('season-1', childCount: 5, viewedLeafCount: 2);
+
+    expect(firstUnwatchedSeasonIndex([season]), 0);
   });
 
   test('firstUnwatchedSeasonIndex falls back to specials only when no regular season qualifies', () {
@@ -191,6 +224,76 @@ void main() {
     );
   });
 
+  test('sortEpisodesByWatchOrder interleaves Specials into aired order by air date', () {
+    // Mirrors a real interleaved-Specials show (e.g. The Eminence in Shadow):
+    // S00E01 aired between S01E02 and S01E05, so it plays there — not after the
+    // whole season. This is what Plex's own play queue returns (#1416).
+    final s1e1 = _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05');
+    final s1e2 = _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-10-12');
+    final s0e1 = _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2022-10-27');
+    final s1e5 = _episode('s1e5', parentIndex: 1, index: 5, originallyAvailableAt: '2022-11-02');
+    final s0e2 = _episode('s0e2', parentIndex: 0, index: 2, originallyAvailableAt: '2022-11-03');
+
+    // Raw container order would clump the Specials folder first.
+    final episodes = [s0e1, s0e2, s1e1, s1e2, s1e5];
+    sortEpisodesByWatchOrder(episodes);
+
+    expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's0e1', 's1e5', 's0e2']);
+  });
+
+  test('sortEpisodesByWatchOrder falls back to Specials-last when episodes have no air dates', () {
+    final s0e1 = _episode('s0e1', parentIndex: 0, index: 1);
+    final s0e2 = _episode('s0e2', parentIndex: 0, index: 2);
+    final s1e1 = _episode('s1e1', parentIndex: 1, index: 1);
+    final s1e2 = _episode('s1e2', parentIndex: 1, index: 2);
+    final s2e1 = _episode('s2e1', parentIndex: 2, index: 1);
+
+    // Raw /grandchildren order would lead with the Specials folder.
+    final episodes = [s0e1, s0e2, s1e1, s1e2, s2e1];
+    sortEpisodesByWatchOrder(episodes);
+
+    // With no air dates, a "next 2 unwatched" cut still takes S01E01/S01E02.
+    expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's2e1', 's0e1', 's0e2']);
+  });
+
+  test('sortEpisodesByWatchOrder trails undated Specials after dated episodes', () {
+    // A dated regular run with an undated Special: the Special can't be placed
+    // in the aired timeline, so it sorts last rather than wedging into the run.
+    final s1e1 = _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05');
+    final s1e2 = _episode('s1e2', parentIndex: 1, index: 2, originallyAvailableAt: '2022-10-12');
+    final s0e1 = _episode('s0e1', parentIndex: 0, index: 1);
+
+    final episodes = [s0e1, s1e2, s1e1];
+    sortEpisodesByWatchOrder(episodes);
+
+    expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's0e1']);
+  });
+
+  test('compareEpisodesByWatchOrder breaks index ties on id for deterministic cuts', () {
+    final a = _episode('a', parentIndex: 1, index: 1);
+    final b = _episode('b', parentIndex: 1, index: 1);
+
+    expect(compareEpisodesByWatchOrder(a, b), lessThan(0));
+    expect(compareEpisodesByWatchOrder(b, a), greaterThan(0));
+    expect(compareEpisodesByWatchOrder(a, a), 0);
+  });
+
+  test('isSpecialSeasonNumber treats season 0 and missing numbers as Specials', () {
+    expect(isSpecialSeasonNumber(0), isTrue);
+    expect(isSpecialSeasonNumber(null), isTrue);
+    expect(isSpecialSeasonNumber(1), isFalse);
+    expect(isSpecialSeasonNumber(2), isFalse);
+  });
+
+  test('isUnwatchedOrInProgress keeps unwatched and resumable episodes', () {
+    // Unwatched.
+    expect(_episode('a', viewCount: 0).isUnwatchedOrInProgress, isTrue);
+    // Watched with no resume point — counts as done.
+    expect(_episode('b', viewCount: 1).isUnwatchedOrInProgress, isFalse);
+    // Watched but still resumable (re-watching) — counts as to-watch.
+    expect(_episode('c', viewCount: 1, viewOffsetMs: 500, durationMs: 1000).isUnwatchedOrInProgress, isTrue);
+  });
+
   test('fetchFirstEpisodeForSeason requests only the first children page', () async {
     final episode = _episode('episode-1');
     final client = _RecordingClient(
@@ -222,7 +325,7 @@ void main() {
   });
 
   test('fetchSeasonEpisodePage normalizes show and season identity', () async {
-    final show = MediaItem(
+    final show = testMediaItem(
       id: 'show-1',
       backend: MediaBackend.plex,
       kind: MediaKind.show,
@@ -255,7 +358,7 @@ void main() {
   });
 
   test('fetchSeasonEpisodePage uses season episode paging when available', () async {
-    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
     final season = _season('season-1');
     final row = _episode('episode-1');
     final client = _SeasonPagingRecordingClient(
@@ -272,7 +375,7 @@ void main() {
   });
 
   test('normalizeSeasonEpisodes ignores non-episode rows', () {
-    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
     final season = _season('season-1');
 
     final normalized = normalizeSeasonEpisodes([_clip('extra-1'), _episode('episode-1')], show: show, season: season);
@@ -300,7 +403,7 @@ void main() {
 
   test('fetchRepresentativeVersions keeps full season lookup but pages selected season episodes', () async {
     final versions = [const MediaVersion(id: '1080', videoResolution: '1080')];
-    final show = MediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
+    final show = testMediaItem(id: 'show-1', backend: MediaBackend.plex, kind: MediaKind.show, title: 'Show');
     final special = _season('specials', index: 0);
     final firstRegularSeason = _season('season-1');
     final episodeRow = _episode('episode-1');
@@ -320,5 +423,42 @@ void main() {
     expect(result, same(versions));
     expect(client.childrenCalls, ['show-1']);
     expect(client.childrenPageCalls, [(parentId: 'season-1', start: 0, size: 1)]);
+  });
+
+  group('same-file adjacency (#1500)', () {
+    // Episodes of a Plex multi-episode file (S02E24-E25.mkv) are distinct
+    // items with distinct part ids but the same Part.file: e24/e25 here.
+    // e23 and e26 are their own files.
+    MediaVersion version(String key, String file) => MediaVersion(
+      id: 'v-$key',
+      parts: [MediaPart(id: 'part-$key', file: file)],
+    );
+    late final episodes = [
+      _episode('e23', versions: [version('e23', '/tv/S02E23.mkv')]),
+      _episode('e24', versions: [version('e24', '/tv/S02E24-E25.mkv')]),
+      _episode('e25', versions: [version('e25', '/tv/S02E24-E25.mkv')]),
+      _episode('e26', versions: [version('e26', '/tv/S02E26-E27.mkv')]),
+    ];
+
+    test('nextEpisodeSkippingSameFile skips same-file siblings', () {
+      expect(nextEpisodeSkippingSameFile(episodes, 1)!.id, 'e26');
+      expect(nextEpisodeSkippingSameFile(episodes, 0)!.id, 'e24');
+      expect(nextEpisodeSkippingSameFile(episodes, 3), isNull);
+      // No same-file sibling left before the end → null.
+      expect(nextEpisodeSkippingSameFile(episodes.sublist(0, 3), 1), isNull);
+    });
+
+    test('nextEpisodeSkippingSameFile degrades to plain adjacency without part data', () {
+      final plain = [_episode('a'), _episode('b')];
+      expect(nextEpisodeSkippingSameFile(plain, 0)!.id, 'b');
+    });
+
+    test('previousEpisodeSkippingSameFile collapses to the group head', () {
+      // From e26, previous is the e24-e25 file, entered at e24.
+      expect(previousEpisodeSkippingSameFile(episodes, 3)!.id, 'e24');
+      // From inside the group (e25), previous skips the same file entirely.
+      expect(previousEpisodeSkippingSameFile(episodes, 2)!.id, 'e23');
+      expect(previousEpisodeSkippingSameFile(episodes, 0), isNull);
+    });
   });
 }

@@ -115,6 +115,11 @@ Set<String> _subtitleCodecAliases(String? codec) {
 
 String _metadataToken(String value) => value.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]+'), '_');
 
+/// Whether a track title declares the stream forced ("FR Forced [ASS]",
+/// "French (Forced)"). Whole-token match, so "unforced" does not qualify.
+/// Plex itself treats such streams as forced even when the API flag is false.
+bool titleSaysForced(String? value) => _metadataToken(value ?? '').split('_').contains('FORCED');
+
 class TrackLabelBuilder {
   TrackLabelBuilder._();
 
@@ -161,7 +166,7 @@ class TrackLabelBuilder {
       techParts: [if (codec != null && codec.isNotEmpty) CodecUtils.formatSubtitleCodec(codec)],
       fallbackPrefix: 'Track',
       index: index,
-      forced: forced || _saysForced(cleanedTitle),
+      forced: forced || titleSaysForced(cleanedTitle),
     );
   }
 
@@ -195,15 +200,13 @@ class TrackLabelBuilder {
       primary = '$fallbackPrefix ${index + 1}';
     }
 
-    if (forced && !_saysForced(primary)) {
+    if (forced && !titleSaysForced(primary)) {
       primary = '$primary (Forced)';
     }
 
     final secondaryParts = [?secondaryTitle, ...techParts];
     return TrackLabel(primary, secondaryParts.isEmpty ? null : secondaryParts.join(' · '));
   }
-
-  static bool _saysForced(String? value) => _metadataToken(value ?? '').split('_').contains('FORCED');
 
   static bool _restatesLanguage(String title, String languageDisplay, List<String?> rawLanguageValues) {
     final normalized = title.trim().toLowerCase();

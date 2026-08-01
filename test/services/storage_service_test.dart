@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
@@ -7,6 +8,19 @@ import 'package:plezy/services/storage_service.dart';
 
 import '../test_helpers/prefs.dart';
 
+class _GatedPreferencesService extends BaseSharedPreferencesService {
+  _GatedPreferencesService(this.started, this.release);
+
+  final Completer<void> started;
+  final Future<void> release;
+
+  @override
+  Future<void> onInit() async {
+    started.complete();
+    await release;
+  }
+}
+
 void main() {
   setUp(resetSharedPreferencesForTest);
 
@@ -15,6 +29,33 @@ void main() {
       final a = await StorageService.getInstance();
       final b = await StorageService.getInstance();
       expect(identical(a, b), isTrue);
+    });
+
+    test('coalesces callers until asynchronous initialization completes', () async {
+      final started = Completer<void>();
+      final release = Completer<void>();
+      var constructorCalls = 0;
+
+      Future<_GatedPreferencesService> acquire() => BaseSharedPreferencesService.initializeInstance(() {
+        constructorCalls++;
+        return _GatedPreferencesService(started, release.future);
+      });
+
+      final first = acquire();
+      await started.future;
+      var secondCompleted = false;
+      final second = acquire().then((instance) {
+        secondCompleted = true;
+        return instance;
+      });
+      await Future<void>.delayed(Duration.zero);
+
+      expect(secondCompleted, isFalse);
+      expect(constructorCalls, 1);
+
+      release.complete();
+      final instances = await Future.wait([first, second]);
+      expect(identical(instances.first, instances.last), isTrue);
     });
 
     test('reset rebuilds against current SharedPreferences', () async {
@@ -151,6 +192,19 @@ void main() {
       final s = await StorageService.getInstance();
       await s.saveHiddenLibraries({'lib-a', 'lib-b'});
       expect(s.getHiddenLibraries(), equals({'lib-a', 'lib-b'}));
+    });
+
+    test('explicit profile helpers isolate hidden libraries from active profile changes', () async {
+      final s = await StorageService.getInstance();
+
+      await s.setActiveProfileId('owner');
+      await s.saveHiddenLibrariesForProfile('owner', {'srv:movies'});
+      await s.setActiveProfileId('kids');
+      await s.saveHiddenLibrariesForProfile('kids', {'srv:kids'});
+
+      expect(s.getHiddenLibrariesForProfile('owner'), {'srv:movies'});
+      expect(s.getHiddenLibrariesForProfile('kids'), {'srv:kids'});
+      expect(s.getHiddenLibraries(), {'srv:kids'});
     });
 
     test('overwrite replaces previous set', () async {
@@ -357,6 +411,55 @@ void main() {
   });
 
   // ============================================================
+  // Plex Home user-scope migration (full profile id → home-user uuid)
+  // ============================================================
+
+  group('migratePlexHomeUserScopes (onInit)', () {
+    const fullId = 'plex-home-plex.e443d57860076fc3-379704d0c6601309';
+    const uuid = '379704d0c6601309';
+
+    Future<StorageService> reinitialize(StorageService s) async {
+      BaseSharedPreferencesService.resetForTesting();
+      return StorageService.getInstance();
+    }
+
+    test('moves full-profile-id-scoped keys onto the uuid scope', () async {
+      var s = await StorageService.getInstance();
+      await s.prefs.setString('user_${fullId}_selected_library_key', 'lib-1');
+      await s.prefs.setBool('user_${fullId}_some_flag', true);
+      await s.prefs.setStringList('user_${fullId}_hidden_libraries', ['a', 'b']);
+
+      s = await reinitialize(s);
+
+      expect(s.prefs.getString('user_${uuid}_selected_library_key'), 'lib-1');
+      expect(s.prefs.getBool('user_${uuid}_some_flag'), isTrue);
+      expect(s.prefs.getStringList('user_${uuid}_hidden_libraries'), ['a', 'b']);
+      expect(s.prefs.keys.where((k) => k.contains('plex-home-')), isEmpty);
+    });
+
+    test('full-id value wins over a stale pre-migration uuid-scoped value', () async {
+      var s = await StorageService.getInstance();
+      await s.prefs.setString('user_${uuid}_selected_library_key', 'stale');
+      await s.prefs.setString('user_${fullId}_selected_library_key', 'fresh');
+
+      s = await reinitialize(s);
+
+      expect(s.prefs.getString('user_${uuid}_selected_library_key'), 'fresh');
+    });
+
+    test('leaves local-profile scopes and unparseable plex-home scopes untouched', () async {
+      var s = await StorageService.getInstance();
+      await s.prefs.setString('user_local-1_selected_library_key', 'keep');
+      await s.prefs.setString('user_plex-home-acct-not-a-uuid_key', 'keep-too');
+
+      s = await reinitialize(s);
+
+      expect(s.prefs.getString('user_local-1_selected_library_key'), 'keep');
+      expect(s.prefs.getString('user_plex-home-acct-not-a-uuid_key'), 'keep-too');
+    });
+  });
+
+  // ============================================================
   // clearCredentials
   // ============================================================
 
@@ -460,6 +563,84 @@ void main() {
       expect(s.getLibraryFilters(sectionId: 'sec-1'), isEmpty);
       expect(s.prefs.getString('library_order'), isNull);
       expect(s.prefs.getString('library_filters_sec-1'), isNull);
+    });
+
+    test('clearLibraryPreferencesForServer clears only the target profile server keys', () async {
+      final s = await StorageService.getInstance();
+      final serverA = ServerId('srv-a');
+      final serverB = ServerId('srv-b');
+
+      await s.setActiveProfileId('local-user-1');
+      await s.saveLibraryOrder(['srv-a:movies', 'srv-b:shows']);
+      await s.saveSelectedLibraryKey('srv-a:movies');
+      await s.saveHiddenLibraries({'srv-a:movies', 'srv-b:shows'});
+      await s.saveLibraryFilters({'genre': 'sci-fi'}, sectionId: 'srv-a:movies');
+      await s.saveLibraryFilters({'genre': 'drama'}, sectionId: 'srv-b:shows');
+      await s.saveLibrarySort('srv-a:movies', 'titleSort');
+      await s.saveLibraryGrouping('srv-a:movies', 'movies');
+      await s.saveLibraryTab('srv-a:movies', 'recommended');
+
+      await s.setActiveProfileId('local-user-2');
+      await s.saveLibraryOrder(['srv-a:movies']);
+      await s.saveHiddenLibraries({'srv-a:movies'});
+
+      await s.clearLibraryPreferencesForServer(serverA, profileId: 'local-user-1');
+
+      await s.setActiveProfileId('local-user-1');
+      expect(s.getLibraryOrder(), ['srv-b:shows']);
+      expect(s.getSelectedLibraryKey(), isNull);
+      expect(s.getHiddenLibraries(), {'srv-b:shows'});
+      expect(s.getLibraryFilters(sectionId: 'srv-a:movies'), isEmpty);
+      expect(s.getLibraryFilters(sectionId: 'srv-b:shows'), {'genre': 'drama'});
+      expect(s.getLibrarySort('srv-a:movies'), isNull);
+      expect(s.getLibraryGrouping('srv-a:movies'), isNull);
+      expect(s.getLibraryTab('srv-a:movies'), isNull);
+
+      await s.setActiveProfileId('local-user-2');
+      expect(s.getLibraryOrder(), ['srv-a:movies']);
+      expect(s.getHiddenLibraries(), {'srv-a:movies'});
+
+      await s.clearLibraryPreferencesForServer(serverB, profileId: 'local-user-1');
+      await s.setActiveProfileId('local-user-1');
+      expect(s.getLibraryOrder(), isNull);
+      expect(s.getHiddenLibraries(), isEmpty);
+    });
+
+    test('clearLibraryPreferencesForServerEverywhere clears server keys from all scopes', () async {
+      final s = await StorageService.getInstance();
+      final serverA = ServerId('srv-a');
+
+      await s.prefs.setString('library_order', json.encode(['srv-a:legacy', 'srv-b:legacy']));
+      await s.prefs.setString('hidden_libraries', json.encode(['srv-a:legacy', 'srv-b:legacy']));
+      await s.prefs.setString('selected_library_key', 'srv-a:legacy');
+      await s.prefs.setString('library_sort_srv-a:legacy', json.encode({'key': 'titleSort', 'descending': false}));
+      await s.prefs.setString('library_grouping_srv-a:legacy', 'movies');
+
+      await s.setActiveProfileId('local-user-1');
+      await s.saveLibraryOrder(['srv-a:movies', 'srv-b:shows']);
+      await s.saveHiddenLibraries({'srv-a:movies', 'srv-b:shows'});
+      await s.saveLibrarySort('srv-a:movies', 'titleSort');
+
+      await s.setActiveProfileId('local-user-2');
+      await s.saveLibraryOrder(['srv-a:movies']);
+      await s.saveHiddenLibraries({'srv-a:movies'});
+
+      await s.clearLibraryPreferencesForServerEverywhere(serverA);
+
+      expect(s.prefs.getString('library_order'), json.encode(['srv-b:legacy']));
+      expect(s.prefs.getString('hidden_libraries'), json.encode(['srv-b:legacy']));
+      expect(s.prefs.getString('selected_library_key'), isNull);
+      expect(s.prefs.getString('library_sort_srv-a:legacy'), isNull);
+      expect(s.prefs.getString('library_grouping_srv-a:legacy'), isNull);
+
+      await s.setActiveProfileId('local-user-1');
+      expect(s.getLibraryOrder(), ['srv-b:shows']);
+      expect(s.getHiddenLibraries(), {'srv-b:shows'});
+      expect(s.getLibrarySort('srv-a:movies'), isNull);
+
+      await s.setActiveProfileId('local-user-2');
+      expect(s.getLibraryOrder(), ['srv-b:legacy']);
+      expect(s.getHiddenLibraries(), {'srv-b:legacy'});
     });
   });
 

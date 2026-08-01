@@ -1,4 +1,4 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import '../../utils/app_logger.dart';
 
@@ -33,6 +33,19 @@ mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
     if (!mounted || _busy == value) return;
     setState(() => _busy = value);
   }
+
+  /// Inline error text under a form. Spread into a children list:
+  /// `...buildInlineError(theme)`.
+  List<Widget> buildInlineError(ThemeData theme, {double gap = 12, bool center = false}) => [
+    if (errorText != null) ...[
+      SizedBox(height: gap),
+      Text(
+        errorText!,
+        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+        textAlign: center ? TextAlign.center : null,
+      ),
+    ],
+  ];
 
   /// Set the error text directly (e.g. for synchronous validation failures
   /// or post-success rejections like a duplicate-account guard).

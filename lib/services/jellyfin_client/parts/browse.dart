@@ -30,6 +30,27 @@ List<Map<String, dynamic>> _itemsArray(Object? data) {
   return const [];
 }
 
+/// Builds a [LibraryPage] from an `/Items`-shaped response: the `Items` array
+/// run through [map], plus the server's `TotalRecordCount` when it reports one.
+/// Responses that omit it (or return a non-int) fall back to
+/// [fallbackPageTotal], whose full-page sentinel keeps pagination enabled;
+/// [singlePage] endpoints return everything at once, so a full page there means
+/// the end of the list, not "there may be more".
+LibraryPage<T> _pagedItems<T>(
+  Object? data, {
+  required int offset,
+  required List<T> Function(List<Map<String, dynamic>>) map,
+  int? requestedSize,
+  bool singlePage = false,
+}) {
+  final rawItems = _itemsArray(data);
+  final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
+  final fallbackTotal = singlePage
+      ? offset + rawItems.length
+      : fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
+  return LibraryPage<T>(items: map(rawItems), totalCount: rawTotal is int ? rawTotal : fallbackTotal, offset: offset);
+}
+
 /// Slim field set for grid/list browsing — what the card UI actually
 /// renders (title, year, watched badge, episode count for series).
 ///
@@ -68,27 +89,70 @@ const _folderBrowseFields = 'UserData,PremiereDate,OriginalTitle,SortName';
 /// dominant cost of folder browsing (see [_fetchFolderChildren]).
 const _folderRowFields = 'SortName';
 
+/// Latest Albums hub row. `/Users/{id}/Items/Latest` on a music library
+/// returns MusicAlbum FOLDER dtos, so [_browseFields] would trigger the same
+/// per-folder recursive COUNT queries described on [_folderBrowseFields] —
+/// with music libraries in the home fan-out that load helped peg small remote
+/// servers (#1552). The album card renders artwork + title + album artist
+/// (`AlbumArtist`/`AlbumArtists` are unconditional dto properties), so no
+/// count fields are needed; queried with `EnableUserData=false` like the
+/// filesystem folder rows. Trade-off: fully played albums lose the watched
+/// checkmark on this row (Jellyfin web's latest-albums row shows no play
+/// state either).
+const _musicAlbumRowFields = 'PremiereDate,OriginalTitle,SortName';
+
+/// Played-track hub rows (Recently Played / Most Played): Audio LEAF dtos.
+/// Keeps `UserData` — a cheap direct lookup on leaves that drives the
+/// play-state overlay — and drops the folder count fields (meaningless on
+/// Audio) and `Overview` (never rendered on track cards).
+const _musicTrackRowFields = 'UserData,PremiereDate,OriginalTitle,SortName';
+
 /// Even slimmer set used by [fetchClientSideEpisodeQueue]. Queue rows
 /// only need title, thumbnail (`ImageTags['Primary']`), season/episode
-/// index, and watched state. Title + indices come back without any
-/// `Fields` request; we only need to ask for `UserData` for the
-/// watched indicator. Drops `Overview` etc. so that even a thousand-
-/// episode shounen show fits comfortably in one response.
-const _queueFields = 'UserData';
+/// index, watched state, and the air date that drives the watch order.
+/// Title + indices come back without any `Fields` request; we ask for
+/// `UserData` (watched indicator) and `PremiereDate` (air-date sort, so
+/// Specials interleave — see [compareEpisodesByWatchOrder]). Drops
+/// `Overview` etc. so even a thousand-episode shounen show fits in one
+/// response.
+const _queueFields = 'UserData,PremiereDate';
 
 /// Page size for [fetchClientSideEpisodeQueue]. Keeps each server response
 /// bounded while still returning the full series queue.
 const _episodeQueuePageSize = 200;
 
-/// How many recently played episodes to scan when stamping `/Shows/NextUp`
-/// rows with their series' last-watched date (see [_attachSeriesLastPlayed]).
-/// Mirrors [_episodeQueuePageSize]; covers far more distinct series than the
-/// Next Up list ever returns, while keeping the response bounded.
-const _continueWatchingSeriesLookback = 200;
+/// How many pending series [_attachSeriesLastPlayed] resolves at once. Each
+/// lookup returns a single row, so the batch exists only to keep a long Next Up
+/// shelf from opening one request per series at the same instant; measured
+/// against a 12.0-rc3 server, 4 is where the wall time for 21 series stops
+/// improving (0.65s at 3, 0.56s at both 4 and 6).
+const _seriesLastPlayedConcurrency = 4;
+
+/// Ceiling on how many series [_attachSeriesLastPlayed] dates in one call. Sits
+/// just above `DiscoverProvider`'s 21-row continue-watching probe so the home
+/// shelf is always fully dated, and caps the uncapped `count: null` shelf, whose
+/// Next Up half is limited only by how many series the user has started.
+const _seriesLastPlayedLookupLimit = 24;
+
+/// Per-phase budget for one [_fetchSeriesLastPlayed] lookup.
+/// [MediaServerHttpClient] applies a per-call `timeout` to connect and receive
+/// independently, so this bounds a single lookup at twice this value — the
+/// shared [_seriesLastPlayedBudget] is what bounds the pass. A `ParentId`-scoped
+/// `Limit=1` row answered in well under half a second even on the pathological
+/// 12.0-rc3 sort, so reaching this means the endpoint is in trouble and the
+/// shelf is better off unstamped than waiting on the 10s/120s shared defaults.
+const _seriesLastPlayedRequestTimeout = Duration(seconds: 3);
+
+/// Hard ceiling on [_attachSeriesLastPlayed]. On expiry it aborts the in-flight
+/// batch, so it bounds the whole pass regardless of how many batches remain or
+/// which request phase a lookup is stuck in. Two orders of magnitude under the
+/// 10s-connect/120s-receive defaults the single unscoped scan ran with, so a
+/// stalled endpoint cannot make the scoped form slower than the query it fixes.
+const _seriesLastPlayedBudget = Duration(seconds: 4);
 
 const _childrenPageSize = 500;
 const _pagedListPageSize = 200;
-const _playableDescendantTypes = 'Movie,Episode';
+const _playableDescendantTypes = 'Movie,Episode,Audio';
 const _playableFolderDescendantTypes = 'Movie,Episode,Video,MusicVideo';
 const _episodeOrderQueryParameters = {
   'SortBy': 'ParentIndexNumber,IndexNumber,SortName',
@@ -103,13 +167,6 @@ bool _isJellyfinFolderDto(Map<String, dynamic> item) {
 String _jellyfinFolderSortName(Map<String, dynamic> item) {
   final raw = item['SortName'] as String? ?? item['Name'] as String? ?? '';
   return raw.toLowerCase();
-}
-
-int _fallbackPageTotal({required int offset, required int itemCount, int? requestedSize}) {
-  if (requestedSize == null || requestedSize <= 0 || itemCount < requestedSize) {
-    return offset + itemCount;
-  }
-  return offset + itemCount + 1;
 }
 
 /// `/Items/Filters` is a legacy unpaged endpoint; keep failures isolated from
@@ -132,12 +189,7 @@ const _detailFields =
     // any extra round-trip.
     'ProviderIds';
 
-mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  MediaItem? _mapItem(Map<String, dynamic> json);
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
+mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   // Endpoint conventions follow what the official Jellyfin Kotlin SDK
   // generates (cross-checked against the Findroid client). The SDK mixes
   // `/Users/{userId}/...` for "user library" / "views" / "latest" / "single
@@ -170,40 +222,80 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     LibraryQuery query, {
     AbortController? abort,
   }) async {
-    final translator = JellyfinLibraryQueryTranslator(
-      userId: connection.userId,
-      parentId: libraryId,
-      fields: _browseFields,
-    );
+    final fields = switch (query.kind) {
+      MediaKind.album => _musicAlbumRowFields,
+      MediaKind.track => _musicTrackRowFields,
+      _ => _browseFields,
+    };
+    final translator = JellyfinLibraryQueryTranslator(userId: connection.userId, parentId: libraryId, fields: fields);
     final params = translator.toQueryParameters(query);
+    // MusicAlbum is a folder-like DTO. Asking for UserData makes Jellyfin
+    // compute recursive play state for every album, which is prohibitively
+    // expensive on large music libraries. The IsUnplayed query filter still
+    // works server-side when result DTO user data is disabled.
+    if (query.kind == MediaKind.album) {
+      params['EnableUserData'] = 'false';
+    }
 
-    final response = await _http.get('/Items', queryParameters: params, abort: abort);
+    // Artist browsing routes to `/Artists/AlbumArtists` instead of
+    // `/Items?IncludeItemTypes=MusicArtist`: the /Items query only returns
+    // folder-derived artists under their folder names, missing tag-only
+    // per-track artists entirely (and folder names can differ from the tag
+    // names shown everywhere else). AlbumArtists matches Plex's "album
+    // artists" library semantic. The branch lives here rather than in the
+    // translator because the translator's contract is query *parameters*
+    // only — the endpoint choice is client routing, like the seasons vs
+    // generic-children split in [fetchChildrenPage]. The artists endpoint
+    // accepts the same paging/sort/filter/prefix params /Items does
+    // (ParentId, StartIndex, Limit, SortBy/SortOrder, NameStartsWith/
+    // NameLessThan, Filters, Fields) and ignores the /Items-only keys.
+    final isArtistQuery = query.kind == MediaKind.artist;
+    final endpoint = isArtistQuery ? '/Artists/AlbumArtists' : '/Items';
+    if (isArtistQuery) {
+      params.remove('IncludeItemTypes');
+      params.remove('Recursive');
+    }
+
+    final response = await _http.get(endpoint, queryParameters: params, abort: abort);
     throwIfHttpError(response);
     final data = response.data;
     final items = _itemsArray(data);
     final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-    final total = rawTotal is int
+    // /Artists/AlbumArtists reports TotalRecordCount=0 when NameStartsWith /
+    // NameLessThan are set (server-side counting quirk, observed on 10.11);
+    // treat that as "unknown" so the alpha-prefix filter can still page.
+    final totalUnreliable = isArtistQuery && rawTotal == 0 && items.isNotEmpty;
+    final total = rawTotal is int && !totalUnreliable
         ? rawTotal
-        : _fallbackPageTotal(offset: query.offset, itemCount: items.length, requestedSize: query.limit);
+        : fallbackPageTotal(offset: query.offset, itemCount: items.length, requestedSize: query.limit);
     return LibraryPage<MediaItem>(items: _mapItems(items), totalCount: total, offset: query.offset);
   }
 
   /// Jellyfin's `/Items/Filters` returns Genres / OfficialRatings / Tags /
-  /// Categories + values from `/Items/Filters` in a single call. The unwatched
-  /// boolean is synthetic because Jellyfin exposes it as an `/Items` query
-  /// filter, not a filter-listing category. Keys are translated to Plex's
-  /// filter naming so the existing filter-param map round-trips through
-  /// `_buildFilterParams` unchanged; the synthesised `MediaFilter.key` is
-  /// prefixed `jellyfin:` so FiltersBottomSheet can recognise it as cached and
-  /// skip the per-category value fetch.
+  /// Categories + values from `/Items/Filters` in a single call. The
+  /// unwatched/unplayed boolean is synthetic because Jellyfin exposes it as
+  /// an `/Items` query filter, not a filter-listing category. Keys are
+  /// translated to Plex's filter naming so the existing filter-param map
+  /// round-trips through `_buildFilterParams` unchanged; the synthesised
+  /// `MediaFilter.key` is prefixed `jellyfin:` so FiltersBottomSheet can
+  /// recognise it as cached and skip the per-category value fetch.
   @override
-  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId) async {
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {MediaKind? libraryKind}) async {
     final filters = <MediaFilter>[
       MediaFilter(
         filter: 'unwatched',
         filterType: 'boolean',
         key: 'jellyfin:unwatched',
-        title: t.libraries.filterCategories.unwatched,
+        title: libraryKind?.isMusic == true
+            ? t.libraries.filterCategories.unplayed
+            : t.libraries.filterCategories.unwatched,
+        type: 'filter',
+      ),
+      MediaFilter(
+        filter: 'favorite',
+        filterType: 'boolean',
+        key: 'jellyfin:favorite',
+        title: t.libraries.filterCategories.favorites,
         type: 'filter',
       ),
     ];
@@ -272,7 +364,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// Jellyfin's `SortBy`/`SortOrder` at request time.
   @override
   Future<List<MediaSort>> fetchSortOptions(String libraryId, {String? libraryType}) async {
-    return [
+    final sorts = [
       MediaSort(key: 'title', descKey: 'title:desc', title: t.libraries.sortLabels.title, defaultDirection: 'asc'),
       MediaSort(
         key: 'rating',
@@ -343,6 +435,20 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       MediaSort(key: 'studio', descKey: 'studio:desc', title: t.libraries.sortLabels.studio, defaultDirection: 'asc'),
       MediaSort(key: 'random', title: t.libraries.sortLabels.random, defaultDirection: 'asc'),
     ];
+
+    if (libraryType?.toLowerCase() == 'show') {
+      sorts.insert(
+        4,
+        MediaSort(
+          key: 'episode.addedAt',
+          descKey: 'episode.addedAt:desc',
+          title: t.libraries.sortLabels.lastEpisodeDateAdded,
+          defaultDirection: 'desc',
+        ),
+      );
+    }
+
+    return sorts;
   }
 
   /// Jellyfin internalisation of the Plex-style filter map → [LibraryQuery]
@@ -361,7 +467,8 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }) async {
     // [libraryKind] is only a fallback for library-default browsing. Explicit
     // grouping types on [query] (seasons/episodes) must keep priority.
-    final effective = (query.kind == null && libraryKind != null && libraryKind != MediaKind.unknown)
+    final effective =
+        (query.kind == null && query.includeKinds.isEmpty && libraryKind != null && libraryKind != MediaKind.unknown)
         ? query.copyWith(kind: libraryKind)
         : query;
     return fetchLibraryContent(libraryId, effective, abort: abort);
@@ -633,7 +740,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         final items = _itemsArray(data);
         final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
         if (items.isNotEmpty || (rawTotal is int && rawTotal > 0)) {
-          return _pagedMediaItems(data, offset: offset, requestedSize: pageSize);
+          return _pagedItems(data, offset: offset, requestedSize: pageSize, map: _mapItems);
         }
       }
     } on MediaServerHttpException {
@@ -655,10 +762,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
-  @override
   Future<LibraryPage<MediaItem>> fetchSeasonEpisodesPage(
     String seriesId,
     String seasonId, {
@@ -688,7 +794,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   /// Jellyfin folder browsing mirrors Jellyfin Web/Findroid/Swiftfin: query
@@ -822,41 +928,56 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return _mapItems(allRaw);
   }
 
-  /// All directly-playable descendants of [parentId] (Movies + Episodes),
-  /// recursively expanded. Used by the playback launcher so a collection
-  /// containing a Series plays its episodes instead of the unplayable
-  /// Series entry, and a playlist mixing both comes through the same path.
+  /// All directly-playable descendants of [parentId] (Movies + Episodes +
+  /// Audio tracks), recursively expanded. Used by the playback launcher so a
+  /// collection containing a Series plays its episodes instead of the
+  /// unplayable Series entry, a playlist mixing both comes through the same
+  /// path, and an album/artist/audio-playlist expands to its tracks.
   /// Direct browsing keeps using [fetchChildren] / [fetchPlaylistItems]
   /// since those preserve the container shape (Series rows, PlaylistItemId).
   ///
   @override
-  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) {
-    return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableDescendantTypes);
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId, {AbortController? abort}) async {
+    final items = await _fetchAllPlayableDescendants(
+      parentId,
+      includeItemTypes: _playableDescendantTypes,
+      abort: abort,
+    );
+    abort?.throwIfAborted();
+    if (items.isNotEmpty) return items;
+    // Jellyfin links music to artists via *tags*, not the folder tree — a
+    // MusicArtist is usually not its tracks' ancestor, so the recursive
+    // `ParentId` query above comes back empty for tag-only artists (folder-
+    // backed artists resolve on the first query and never reach this).
+    // Retry once by album-artist credit, tracks only.
+    return _fetchAllPlayableDescendants(parentId, includeItemTypes: 'Audio', byAlbumArtist: true, abort: abort);
   }
 
   /// Playable video descendants for a folder browse row. This includes
   /// Jellyfin's generic `Video` / `MusicVideo` kinds for home-video libraries,
   /// but deliberately excludes `Audio` so folder playback never starts music.
-  Future<List<MediaItem>> fetchPlayableFolderDescendants(String parentId) {
-    return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableFolderDescendantTypes);
+  Future<List<MediaItem>> fetchPlayableFolderDescendants(String parentId, {AbortController? abort}) {
+    return _fetchAllPlayableDescendants(parentId, includeItemTypes: _playableFolderDescendantTypes, abort: abort);
   }
 
-  Future<List<MediaItem>> _fetchAllPlayableDescendants(String parentId, {required String includeItemTypes}) async {
-    final all = <MediaItem>[];
-    var start = 0;
-    while (true) {
-      final page = await _fetchPlayableDescendantsPage(
+  Future<List<MediaItem>> _fetchAllPlayableDescendants(
+    String parentId, {
+    required String includeItemTypes,
+    bool byAlbumArtist = false,
+    AbortController? abort,
+  }) {
+    return drainPages<MediaItem>(
+      (start, size) => _fetchPlayableDescendantsPage(
         parentId,
         start: start,
-        size: _pagedListPageSize,
+        size: size,
+        abort: abort,
         includeItemTypes: includeItemTypes,
-      );
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
+        byAlbumArtist: byAlbumArtist,
+      ),
+      pageSize: _pagedListPageSize,
+      abort: abort,
+    );
   }
 
   @override
@@ -881,6 +1002,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     int? size,
     AbortController? abort,
     required String includeItemTypes,
+    bool byAlbumArtist = false,
   }) async {
     final offset = start ?? 0;
     final pageSize = size ?? _pagedListPageSize;
@@ -888,7 +1010,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       '/Items',
       queryParameters: {
         'userId': connection.userId,
-        'ParentId': parentId,
+        // Tag-linked music artists have no folder descendants; the retry in
+        // [fetchPlayableDescendants] expands them by album-artist credit.
+        if (byAlbumArtist) 'AlbumArtistIds': parentId else 'ParentId': parentId,
         'Recursive': 'true',
         'IncludeItemTypes': includeItemTypes,
         'StartIndex': offset.toString(),
@@ -899,23 +1023,31 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
-  /// All episodes of a series in air order, optimised for queue-building.
-  /// Uses [_queueFields] (only `UserData`) instead of the browse field
-  /// set so the response stays small even for shows with thousands of
-  /// episodes.
+  /// All episodes of a series in the app's **aired watch order** — primarily by
+  /// air date, so Specials interleave between regular episodes the way Plex's
+  /// own play queue does — so the client-side next/previous queue matches
+  /// streaming, downloads, and offline playback (#1416/#1414). The server sort
+  /// ([_episodeOrderQueryParameters]) only keeps paging stable;
+  /// [sortEpisodesByWatchOrder] then orders the assembled list, leaving a single
+  /// definition of "episode order".
+  ///
+  /// Uses [_queueFields] (`UserData` + `PremiereDate`) instead of the full
+  /// browse field set so the response stays small even for shows with thousands
+  /// of episodes.
   ///
   /// Paged in [_episodeQueuePageSize] chunks so long-running shows still get
   /// a complete client-side next/previous queue without one huge response.
   @override
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {AbortController? abort}) async {
     final all = <MediaItem>[];
     var startIndex = 0;
     int? totalRecordCount;
 
     while (totalRecordCount == null || startIndex < totalRecordCount) {
+      abort?.throwIfAborted();
       final response = await _http.get(
         '/Shows/${_segment(seriesId)}/Episodes',
         queryParameters: {
@@ -928,10 +1060,13 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           ..._episodeOrderQueryParameters,
           ...jellyfinImageQueryParameters,
         },
+        abort: abort,
       );
+      abort?.throwIfAborted();
       throwIfHttpError(response);
       final data = response.data;
       final page = _mapItems(_itemsArray(data));
+      abort?.throwIfAborted();
       all.addAll(page);
       if (data is Map<String, dynamic>) {
         final rawTotal = data['TotalRecordCount'];
@@ -941,40 +1076,131 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       startIndex += page.length;
     }
 
+    abort?.throwIfAborted();
+    // Server lists Specials first (ParentIndexNumber asc); reorder into the
+    // shared aired watch order so online next/prev matches offline + downloads.
+    sortEpisodesByWatchOrder(all);
     return all;
   }
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
-    final response = await _http.get(
-      '/Items',
-      queryParameters: {
+  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort}) async {
+    // Artists come from the dedicated /Artists endpoint: `/Items?SearchTerm=`
+    // only matches folder-derived MusicArtist rows (under folder names), so
+    // tag-only artists would never appear in search. The artists leg is
+    // best-effort — a music-endpoint hiccup shouldn't sink video search.
+    final results = await Future.wait([
+      _fetchItemsArray('/Items', {
         'userId': connection.userId,
         'SearchTerm': query,
         'Recursive': 'true',
         'Limit': limit.toString(),
-        'IncludeItemTypes': 'Movie,Series,Episode',
+        'IncludeItemTypes': 'Movie,Series,Episode,MusicAlbum,Audio',
         'Fields': _browseFields,
         ...jellyfinImageQueryParameters,
-      },
-    );
-    throwIfHttpError(response);
-    return _mapItems(_itemsArray(response.data));
+      }, abort: abort),
+      _safeFetchItemsArray('/Artists', {
+        'userId': connection.userId,
+        'searchTerm': query,
+        'Limit': limit.toString(),
+        ...jellyfinImageQueryParameters,
+      }, abort: abort),
+    ]);
+    abort?.throwIfAborted();
+    return _mapItems([...results.first, ...results[1]]);
+  }
+
+  /// Jellyfin removed `anyProviderIdEquals` (silently ignored on 10.11.10, so
+  /// it returns the unfiltered page), leaving a title search verified against
+  /// each candidate's inline `ProviderIds`. [plexGuid] is a Plex-only hint and
+  /// has no meaning in Jellyfin's provider-id model, so it is ignored.
+  ///
+  /// Jellyfin cannot report season ordering to a non-admin: on 10.11.10,
+  /// `/Library/VirtualFolders` returns 403 and Series items omit
+  /// `DisplayOrder`. Resolve against an unknown provider rather than guessing
+  /// from `ProviderIds`, so only seasons on which TVDB and TMDB agree are gated.
+  @override
+  Future<MediaItem?> findByExternalIds(
+    ExternalIds ids, {
+    required MediaKind kind,
+    List<String> titles = const [],
+    int? year,
+    String? plexGuid,
+    ExternalSeasonRef? season,
+  }) async {
+    final itemType = switch (kind) {
+      MediaKind.movie => 'Movie',
+      MediaKind.show => 'Series',
+      _ => null,
+    };
+    if (itemType == null || !ids.hasAny || titles.isEmpty) return null;
+
+    final seasonIndex = season?.agreedSeason;
+    final shouldGateSeason = kind == MediaKind.show && seasonIndex != null && seasonIndex > 1;
+    // Not `seasonIndex`: when the two providers disagree the season number is
+    // unusable but the entry is still a sequel, and the ±1 window around a
+    // sequel's own year excludes the parent show (its year is season one's).
+    final skipYearWindow = season?.isSequel ?? false;
+
+    for (var index = 0; index < titles.length; index++) {
+      final isFirstCandidate = index == 0;
+      final years = isFirstCandidate && year != null && !skipYearWindow ? '${year - 1},$year,${year + 1}' : null;
+      final candidates = await _fetchItemsArray('/Items', {
+        'userId': connection.userId,
+        'SearchTerm': titles[index],
+        'Recursive': 'true',
+        'Limit': isFirstCandidate ? '20' : '50',
+        'IncludeItemTypes': itemType,
+        'Fields': 'ProviderIds,$_browseFields',
+        'years': ?years,
+        ...jellyfinImageQueryParameters,
+      });
+      final match = ExternalIds.jellyfinCandidateMatching(candidates, ids);
+      if (match == null) continue;
+      final item = _mapItems([match]).firstOrNull;
+      if (item == null) continue;
+
+      if (shouldGateSeason) {
+        final children = await fetchChildren(item.id);
+        if (!children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex)) {
+          return null;
+        }
+      }
+      return _withLibraryFromAncestors(item);
+    }
+    return null;
+  }
+
+  /// Best-effort library stamp for items found outside a library context
+  /// (the search-based reverse lookup): `/Items/{id}/Ancestors` names the
+  /// owning CollectionFolder. One extra request per match (memoized with the
+  /// match by the session-level matcher cache); failures return the item
+  /// unstamped.
+  Future<MediaItem> _withLibraryFromAncestors(MediaItem item) async {
+    try {
+      final response = await _http.get(
+        '/Items/${_segment(item.id)}/Ancestors',
+        queryParameters: {'userId': connection.userId},
+      );
+      throwIfHttpError(response);
+      final data = response.data;
+      if (data is! List) return item;
+      for (final ancestor in data.whereType<Map<String, dynamic>>()) {
+        if (ancestor['Type'] == 'CollectionFolder') {
+          return item.copyWith(libraryId: ancestor['Id'] as String?, libraryTitle: ancestor['Name'] as String?);
+        }
+      }
+    } catch (e) {
+      appLogger.d('Jellyfin ancestors lookup failed for ${item.id}', error: e);
+    }
+    return item;
   }
 
   @override
-  Future<List<MediaItem>> fetchPersonMedia(String personId) async {
-    final all = <MediaItem>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchPersonMediaPage(personId, start: start, size: _pagedListPageSize);
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
-  }
+  Future<List<MediaItem>> fetchPersonMedia(String personId) => drainPages<MediaItem>(
+    (start, size) => fetchPersonMediaPage(personId, start: start, size: size),
+    pageSize: _pagedListPageSize,
+  );
 
   @override
   Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
@@ -1003,28 +1229,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
-  }
-
-  @override
-  Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50}) async {
-    // Matches userLibraryApi.getLatestMedia in the Jellyfin SDK.
-    final response = await _http.get(
-      '/Users/${_segment(connection.userId)}/Items/Latest',
-      queryParameters: {
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'IncludeItemTypes': 'Movie,Series,Episode',
-        ...jellyfinImageQueryParameters,
-      },
-    );
-    throwIfHttpError(response);
-    final data = response.data;
-    // Latest returns a bare array, not an Items wrapper.
-    if (data is List) {
-      return _mapItems(data.whereType<Map<String, dynamic>>());
-    }
-    return _mapItems(_itemsArray(data));
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   @override
@@ -1061,82 +1266,17 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     // Jellyfin doesn't expose a single "hubs" endpoint, so we synthesise the
     // home rows from Latest plus optional playback rows. The richer Plex Discover surface
     // is intentionally left untranslated — see ServerCapabilities.richHubs.
-    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
-      'Limit': limit.toString(),
-      'Fields': _browseFields,
-      'IncludeItemTypes': 'Movie,Series,Episode',
-      ...jellyfinImageQueryParameters,
-    }, retry: _homeHubRetry);
-
-    if (!includePlaybackHubs) {
-      final latest = await latestFuture;
-      return [
-        JellyfinMappers.syntheticHub(
-          mapItem: _mapItem,
-          identifier: 'home.recent',
-          title: t.discover.recentlyAdded,
-          type: 'mixed',
-          items: latest,
-          previewLimit: limit,
-          serverId: serverId,
-          serverName: serverName,
-        ),
-      ].where((h) => h.items.isNotEmpty).toList();
-    }
-
-    final results = await Future.wait([
-      latestFuture,
-      _safeFetchItemsArray('/UserItems/Resume', {
-        'userId': connection.userId,
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'MediaTypes': 'Video',
-        'Recursive': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _homeHubRetry),
-      _safeFetchItemsArray('/Shows/NextUp', {
-        'userId': connection.userId,
-        'Limit': limit.toString(),
-        'Fields': _browseFields,
-        'EnableResumable': 'false',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: _homeHubRetry),
-    ]);
-
-    return [
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.continue',
-        title: t.discover.continueWatching,
-        type: 'mixed',
-        items: results[1],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.nextup',
-        title: t.discover.nextUp,
-        type: 'episode',
-        items: results[2],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'home.recent',
-        title: t.discover.recentlyAdded,
-        type: 'mixed',
-        items: results.first,
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-    ].where((h) => h.items.isNotEmpty).toList();
+    return _playbackHubSet(
+      idPrefix: 'home',
+      limit: limit,
+      includePlaybackHubs: includePlaybackHubs,
+      includeNextUp: true,
+      retry: _homeHubRetry,
+      latestItemTypes: 'Movie,Series,Episode',
+      continueTitle: t.discover.continueWatching,
+      nextUpTitle: t.discover.nextUp,
+      recentTitle: t.discover.recentlyAdded,
+    );
   }
 
   @override
@@ -1147,67 +1287,175 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
   }) async {
+    // Music libraries get their own hub set. Home passes
+    // includePlaybackHubs=false because it already renders the app-level
+    // playback shelf; in that mode only fetch Latest Albums. Recently Played
+    // and Most Played remain available on the library's Recommended tab.
+    // Branched before the Latest request below fires (futures are eager):
+    // music needs the slim [_musicAlbumRowFields], not [_browseFields].
+    if (libraryKind == MediaKind.artist) {
+      return _fetchMusicLibraryHubs(
+        libraryId,
+        libraryName: libraryName,
+        limit: limit,
+        includePlaybackHubs: includePlaybackHubs,
+      );
+    }
+
     // Mirror the Jellyfin web client's per-library "Suggestions" tab:
     // Continue Watching + Next Up (TV libraries) + Recently Added.
     //
     // Issued in parallel so the recommended tab loads in one round-trip.
     // When the caller knows the library kind, skip NextUp for movie libraries;
     // Jellyfin can otherwise spend time scanning TV state only to return [].
+    return _playbackHubSet(
+      parentId: libraryId,
+      idPrefix: 'library.$libraryId',
+      limit: limit,
+      includePlaybackHubs: includePlaybackHubs,
+      includeNextUp: libraryKind == null || libraryKind == MediaKind.show,
+      retry: _libraryHubRetry,
+      continueTitle: t.discover.continueWatchingIn(library: libraryName),
+      nextUpTitle: t.discover.nextUpIn(library: libraryName),
+      recentTitle: t.discover.recentlyAddedIn(library: libraryName),
+    );
+  }
+
+  /// Latest + Continue Watching + Next Up row set shared by the home and
+  /// per-library surfaces. Both scopes issue the same three requests in the
+  /// same order and synthesise the same three rows; they differ only in
+  /// [parentId], the row identifier prefix, the titles, and the transport
+  /// policy. The Latest request fires before the [includePlaybackHubs]
+  /// short-circuit so callers that only want Recently Added still get it in
+  /// one round-trip.
+  Future<List<MediaHub>> _playbackHubSet({
+    required String idPrefix,
+    required int limit,
+    required bool includePlaybackHubs,
+    required bool includeNextUp,
+    required _HubRetryPolicy retry,
+    required String continueTitle,
+    required String nextUpTitle,
+    required String recentTitle,
+    String? parentId,
+    String? latestItemTypes,
+  }) async {
     final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
       'Limit': limit.toString(),
-      'ParentId': libraryId,
+      'ParentId': ?parentId,
       'Fields': _browseFields,
+      'IncludeItemTypes': ?latestItemTypes,
       ...jellyfinImageQueryParameters,
-    }, retry: _libraryHubRetry);
+    }, retry: retry);
 
-    if (!includePlaybackHubs) {
-      final latest = await latestFuture;
-      return [
+    MediaHub hub(String suffix, String title, String type, List<Map<String, dynamic>> items) =>
         JellyfinMappers.syntheticHub(
           mapItem: _mapItem,
-          identifier: 'library.$libraryId.recent',
-          title: t.discover.recentlyAddedIn(library: libraryName),
-          type: 'mixed',
-          items: latest,
+          identifier: '$idPrefix.$suffix',
+          title: title,
+          type: type,
+          items: items,
           previewLimit: limit,
           serverId: serverId,
           serverName: serverName,
-        ),
-      ].where((h) => h.items.isNotEmpty).toList();
+        );
+
+    if (!includePlaybackHubs) {
+      final latest = await latestFuture;
+      return [hub('recent', recentTitle, 'mixed', latest)].where((h) => h.items.isNotEmpty).toList();
     }
 
-    final includeNextUp = libraryKind == null || libraryKind == MediaKind.show;
     final results = await Future.wait([
       latestFuture,
       _safeFetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
-        'ParentId': libraryId,
+        'ParentId': ?parentId,
         'Limit': limit.toString(),
         'Fields': _browseFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
-      }, retry: _libraryHubRetry),
+      }, retry: retry),
       includeNextUp
           ? _safeFetchItemsArray('/Shows/NextUp', {
               'userId': connection.userId,
-              'ParentId': libraryId,
+              'ParentId': ?parentId,
               'Limit': limit.toString(),
               'Fields': _browseFields,
               'EnableResumable': 'false',
               'EnableTotalRecordCount': 'false',
               ...jellyfinImageQueryParameters,
-            }, retry: _libraryHubRetry)
+            }, retry: retry)
           : Future.value(const <Map<String, dynamic>>[]),
     ]);
 
     return [
+      hub('continue', continueTitle, 'mixed', results[1]),
+      hub('nextup', nextUpTitle, 'episode', results[2]),
+      hub('recent', recentTitle, 'mixed', results.first),
+    ].where((h) => h.items.isNotEmpty).toList();
+  }
+
+  /// Music-library hub set, mirroring the Jellyfin web client's music
+  /// "Suggestions" tab. `/Users/{userId}/Items/Latest` natively groups a
+  /// music library's new items into albums; the row carries the
+  /// `latestalbums` identifier so [fetchMoreHubItemsPage] expands it with
+  /// the same slim album fields. The played rows filter `IsPlayed` so
+  /// unplayed tracks (PlayCount 0) never pad them.
+  Future<List<MediaHub>> _fetchMusicLibraryHubs(
+    String libraryId, {
+    required String libraryName,
+    required int limit,
+    required bool includePlaybackHubs,
+  }) async {
+    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
+      'Limit': limit.toString(),
+      'ParentId': libraryId,
+      'Fields': _musicAlbumRowFields,
+      'EnableUserData': 'false',
+      ...jellyfinImageQueryParameters,
+    }, retry: _libraryHubRetry);
+
+    MediaHub latestAlbumsHub(List<Map<String, dynamic>> items) => JellyfinMappers.syntheticHub(
+      mapItem: _mapItem,
+      identifier: 'library.$libraryId.latestalbums',
+      title: t.discover.latestAlbumsIn(library: libraryName),
+      type: 'album',
+      items: items,
+      previewLimit: limit,
+      serverId: serverId,
+      serverName: serverName,
+    );
+
+    if (!includePlaybackHubs) {
+      return [latestAlbumsHub(await latestFuture)].where((hub) => hub.items.isNotEmpty).toList();
+    }
+    final playedParams = <String, String>{
+      'userId': connection.userId,
+      'ParentId': libraryId,
+      'IncludeItemTypes': 'Audio',
+      'Recursive': 'true',
+      'Filters': 'IsPlayed',
+      'SortOrder': 'Descending',
+      'Limit': limit.toString(),
+      'Fields': _musicTrackRowFields,
+      'EnableTotalRecordCount': 'false',
+      ...jellyfinImageQueryParameters,
+    };
+    final results = await Future.wait([
+      latestFuture,
+      _safeFetchItemsArray('/Items', {...playedParams, 'SortBy': 'DatePlayed'}, retry: _libraryHubRetry),
+      _safeFetchItemsArray('/Items', {...playedParams, 'SortBy': 'PlayCount'}, retry: _libraryHubRetry),
+    ]);
+
+    return [
+      latestAlbumsHub(results.first),
       JellyfinMappers.syntheticHub(
         mapItem: _mapItem,
-        identifier: 'library.$libraryId.continue',
-        title: t.discover.continueWatchingIn(library: libraryName),
-        type: 'mixed',
+        identifier: 'library.$libraryId.recentlyplayed',
+        title: t.discover.recentlyPlayedIn(library: libraryName),
+        type: 'track',
         items: results[1],
         previewLimit: limit,
         serverId: serverId,
@@ -1215,20 +1463,10 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       ),
       JellyfinMappers.syntheticHub(
         mapItem: _mapItem,
-        identifier: 'library.$libraryId.nextup',
-        title: t.discover.nextUpIn(library: libraryName),
-        type: 'episode',
+        identifier: 'library.$libraryId.mostplayed',
+        title: t.discover.mostPlayedIn(library: libraryName),
+        type: 'track',
         items: results[2],
-        previewLimit: limit,
-        serverId: serverId,
-        serverName: serverName,
-      ),
-      JellyfinMappers.syntheticHub(
-        mapItem: _mapItem,
-        identifier: 'library.$libraryId.recent',
-        title: t.discover.recentlyAddedIn(library: libraryName),
-        type: 'mixed',
-        items: results.first,
         previewLimit: limit,
         serverId: serverId,
         serverName: serverName,
@@ -1236,17 +1474,21 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     ].where((h) => h.items.isNotEmpty).toList();
   }
 
-  /// Re-run the synthetic hub query without the preview limit so the
-  /// hub-detail screen can render the full list. Branches on the
-  /// identifier emitted by [fetchGlobalHubs] / [fetchLibraryHubs]:
-  /// `home.recent` / `library.{id}.recent` → Latest, `*.continue` → Resume,
-  /// `*.nextup` → NextUp. Unknown ids return an empty list.
+  /// Expand a synthetic hub so the detail screen can render beyond its
+  /// preview. Recently Added uses the pageable Items endpoint with the same
+  /// date-created ordering and media types as Jellyfin's Latest query.
+  /// Latest Albums retains the grouped, single-page Latest endpoint.
+  /// Continue Watching, Next Up, Recently Played, and Most Played use their
+  /// native pageable endpoints. Unknown ids return an empty list.
   @override
   Future<List<MediaItem>> fetchMoreHubItems(String hubId, {int? limit}) async {
     try {
       final page = await fetchMoreHubItemsPage(hubId, start: 0, size: limit ?? 50);
       return page.items;
     } catch (e, st) {
+      // A cancelled request says nothing about the hub's contents — let it
+      // propagate so the caller classifies the fetch as disrupted, not empty.
+      if (e is MediaServerHttpException && e.isCancellation) rethrow;
       appLogger.w('JellyfinClient: failed to fetch hub items for $hubId (treating as empty)', error: e, stackTrace: st);
       return const [];
     }
@@ -1271,15 +1513,35 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     final tail = hubId.split('.').last;
     switch (tail) {
       case 'recent':
-        // Jellyfin's Latest endpoint has a Limit but no StartIndex. Expose it
-        // as one bounded page so callers don't infer endless fake pages.
+        return _safeFetchMediaPage(
+          '/Items',
+          {
+            'userId': connection.userId,
+            'ParentId': ?parentId,
+            'Recursive': 'true',
+            'StartIndex': offset.toString(),
+            'Limit': effectiveLimit,
+            'EnableTotalRecordCount': 'true',
+            'IncludeItemTypes': 'Movie,Series,Episode,Video,MusicVideo,Photo',
+            'SortBy': 'DateCreated,SortName,ProductionYear',
+            'SortOrder': 'Descending,Descending,Descending',
+            'Fields': _browseFields,
+            ...jellyfinImageQueryParameters,
+          },
+          offset: offset,
+          requestedSize: pageSize,
+          abort: abort,
+        );
+      case 'latestalbums':
+        // Latest groups music into albums but does not expose StartIndex.
         if (offset > 0) return LibraryPage<MediaItem>(items: const [], totalCount: offset, offset: offset);
         return _safeFetchMediaPage(
           '/Users/${_segment(connection.userId)}/Items/Latest',
           {
             'Limit': effectiveLimit,
-            'Fields': _browseFields,
-            if (parentId != null) 'ParentId': parentId else 'IncludeItemTypes': 'Movie,Series,Episode',
+            'Fields': _musicAlbumRowFields,
+            'EnableUserData': 'false',
+            'ParentId': ?parentId,
             ...jellyfinImageQueryParameters,
           },
           offset: offset,
@@ -1321,6 +1583,28 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           requestedSize: pageSize,
           abort: abort,
         );
+      case 'recentlyplayed':
+      case 'mostplayed':
+        return _safeFetchMediaPage(
+          '/Items',
+          {
+            'userId': connection.userId,
+            'ParentId': ?parentId,
+            'IncludeItemTypes': 'Audio',
+            'Recursive': 'true',
+            'Filters': 'IsPlayed',
+            'SortBy': tail == 'mostplayed' ? 'PlayCount' : 'DatePlayed',
+            'SortOrder': 'Descending',
+            'StartIndex': offset.toString(),
+            'Limit': effectiveLimit,
+            'Fields': _musicTrackRowFields,
+            'EnableTotalRecordCount': 'true',
+            ...jellyfinImageQueryParameters,
+          },
+          offset: offset,
+          requestedSize: pageSize,
+          abort: abort,
+        );
       default:
         return LibraryPage<MediaItem>(items: const [], totalCount: 0, offset: offset);
     }
@@ -1337,32 +1621,17 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     try {
       final response = await _http.get(path, queryParameters: queryParameters, abort: abort);
       throwIfHttpError(response);
-      final data = response.data;
-      final rawItems = data is List ? data.whereType<Map<String, dynamic>>().toList() : _itemsArray(data);
-      final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-      final fallbackTotal = singlePage
-          ? offset + rawItems.length
-          : _fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
-      return LibraryPage<MediaItem>(
-        items: _mapItems(rawItems),
-        totalCount: rawTotal is int ? rawTotal : fallbackTotal,
+      return _pagedItems(
+        response.data,
         offset: offset,
+        requestedSize: requestedSize,
+        singlePage: singlePage,
+        map: _mapItems,
       );
     } catch (e, st) {
       appLogger.w('JellyfinClient: $path failed', error: e, stackTrace: st);
       rethrow;
     }
-  }
-
-  LibraryPage<MediaItem> _pagedMediaItems(Object? data, {required int offset, required int requestedSize}) {
-    final rawItems = _itemsArray(data);
-    final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
-    return LibraryPage<MediaItem>(
-      items: _mapItems(rawItems),
-      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
-      offset: offset,
-    );
   }
 
   @override
@@ -1430,7 +1699,39 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// interleave Next Up with resume items by recency, stamp each Next Up episode
   /// with its series' last-watched date, read from the most recently played
   /// episode of that series.
+  ///
+  /// One `ParentId`-scoped lookup per pending series, not a single server-wide
+  /// DatePlayed scan. Jellyfin 12.0-rc3 builds that sort key by OR-ing an item's
+  /// own progress with its alternate versions' (`ItemId == e.Id ||
+  /// Item.PrimaryVersionId == e.Id`, jellyfin/jellyfin#17044), which no index can
+  /// serve, so the user's entire UserData table is scanned per sorted row: an
+  /// unscoped episode sort measured 5.8s on a 6k-episode rc3 library against
+  /// 25ms on 10.10.7, pegging a core for its whole duration. That blew this
+  /// call's request budget and starved every other client of the server (#1699).
+  /// `ParentId` bounds the sort input to one series' episodes — 21 series resolve
+  /// in ~0.6s against the same rc3 server. Upstream fixed the order mapper after
+  /// rc3 (jellyfin/jellyfin#17422); scoping keeps the cost flat on servers that
+  /// still carry the regression.
+  ///
+  /// At most [_seriesLastPlayedLookupLimit] series are enriched. `/Shows/NextUp`
+  /// already returns series in last-played-descending order, so the cap keeps the
+  /// rows whose dates decide the top of the shelf while bounding total work for
+  /// an uncapped `count: null` shelf, which can carry far more series than the
+  /// home preview. Rows past the cap keep a null date and degrade to their
+  /// `addedAt` in the sort — the same degradation the previous 200-row lookback
+  /// window applied to a series whose last play fell outside it.
+  ///
+  /// The batches are sequential and [MediaServerHttpClient] applies a per-call
+  /// `timeout` to the connect and receive phases *separately*, so a per-request
+  /// budget alone would still let a stalled endpoint hold this best-effort
+  /// enrichment for batches × 2 × [_seriesLastPlayedRequestTimeout]. The whole
+  /// pass therefore shares one [_seriesLastPlayedBudget] deadline that aborts
+  /// in-flight lookups rather than merely gating the next batch: whatever phase a
+  /// lookup is stuck in — silent connect, delayed headers, stalled body — the
+  /// pass is done within the budget.
   Future<List<MediaItem>> _attachSeriesLastPlayed(List<MediaItem> nextUp) async {
+    // Set literal over `nextUp` order: insertion-ordered, so `take` below keeps
+    // the most recently played series.
     final pendingSeriesIds = <String>{
       for (final item in nextUp)
         if (item.kind == MediaKind.episode && item.lastViewedAt == null && item.grandparentId != null)
@@ -1438,35 +1739,32 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     };
     if (pendingSeriesIds.isEmpty) return nextUp;
 
-    // One lightweight pass over the most recently played episodes server-wide,
-    // ordered DatePlayed-descending so the first time we see a series is its
-    // newest play. We deliberately do NOT filter on the Played flag: Jellyfin's
-    // own NextUp ranks series by MAX(LastPlayedDate) across every episode, and an
-    // episode can carry a LastPlayedDate while Played==false (started but not
-    // finished, or later marked unwatched). Filtering to IsPlayed would miss
-    // those and leave such series un-dated. Null dates sort last, so the limit
-    // still captures the genuinely-recent episodes; a series whose last play
-    // falls beyond the window keeps a null date and degrades to its addedAt in
-    // the sort — it would rank near the bottom anyway, being least-recent.
-    final rawPlayed = await _safeFetchItemsArray('/Items', {
-      'userId': connection.userId,
-      'IncludeItemTypes': 'Episode',
-      'Recursive': 'true',
-      'SortBy': 'DatePlayed',
-      'SortOrder': 'Descending',
-      'Fields': _queueFields,
-      'Limit': _continueWatchingSeriesLookback.toString(),
-      'EnableImages': 'false',
-      'EnableTotalRecordCount': 'false',
-    });
-
+    final seriesIds = pendingSeriesIds.take(_seriesLastPlayedLookupLimit).toList(growable: false);
     final lastPlayedBySeries = <String, int>{};
-    for (final episode in _mapItems(rawPlayed)) {
-      final seriesId = episode.grandparentId;
-      final playedAt = episode.lastViewedAt;
-      if (seriesId == null || playedAt == null) continue;
-      if (!pendingSeriesIds.contains(seriesId)) continue;
-      lastPlayedBySeries.putIfAbsent(seriesId, () => playedAt);
+    // A timer, not a Stopwatch: fake_async virtualises timers, and the deadline
+    // has to fire *into* the in-flight batch, not just before the next one.
+    final budgetAbort = AbortController();
+    final deadline = Timer(_seriesLastPlayedBudget, budgetAbort.abort);
+    try {
+      for (var start = 0; start < seriesIds.length; start += _seriesLastPlayedConcurrency) {
+        if (budgetAbort.isAborted) break;
+        final batch = seriesIds.skip(start).take(_seriesLastPlayedConcurrency);
+        final lookups = Future.wait(batch.map((id) => _fetchSeriesLastPlayed(id, budgetAbort)));
+        // Aborting only asks the transport to stop, and not every client honours
+        // `abortTrigger`. Racing the same deadline here makes the ceiling ours
+        // rather than the transport's.
+        final played = await Future.any([lookups, budgetAbort.trigger.then((_) => const <(String, int?)>[])]);
+        // No-op once `lookups` has won; suppresses the loser's late completion.
+        lookups.ignore();
+        for (final (seriesId, playedAt) in played) {
+          if (playedAt != null) lastPlayedBySeries[seriesId] = playedAt;
+        }
+      }
+    } finally {
+      deadline.cancel();
+      // Releases any lookup still waiting on the trigger and tells the transport
+      // to drop the socket instead of finishing a response nobody reads.
+      budgetAbort.abort();
     }
     if (lastPlayedBySeries.isEmpty) return nextUp;
 
@@ -1477,6 +1775,49 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         else
           item,
     ];
+  }
+
+  /// Newest `LastPlayedDate` across [seriesId]'s episodes, or null when the
+  /// series has never been played — or when the lookup failed, in which case the
+  /// row keeps a null date and degrades to its `addedAt` in the shelf sort.
+  ///
+  /// Deliberately no `Filters=IsPlayed`: Jellyfin's own NextUp ranks series by
+  /// MAX(LastPlayedDate) across every episode, and an episode can carry a
+  /// LastPlayedDate while Played==false (started but not finished, or later
+  /// marked unwatched). Filtering to IsPlayed would leave those series un-dated.
+  /// Null dates sort last under `Descending`, so the single row returned is the
+  /// series' newest play whenever it has one. Endpoint failover stays off: a slow
+  /// enrichment row must not move the whole client off a working endpoint.
+  ///
+  /// [budgetAbort] fires when the shared deadline expires. `_safeFetchItemsArray`
+  /// rethrows cancellation so paged callers can tell "disrupted" from "empty";
+  /// here disrupted *is* undated, which is the intended degradation, so it is
+  /// swallowed with every other failure instead of sinking the shelf.
+  Future<(String, int?)> _fetchSeriesLastPlayed(String seriesId, AbortController budgetAbort) async {
+    try {
+      final raw = await _safeFetchItemsArray(
+        '/Items',
+        {
+          'userId': connection.userId,
+          'ParentId': seriesId,
+          'IncludeItemTypes': 'Episode',
+          'Recursive': 'true',
+          'SortBy': 'DatePlayed',
+          'SortOrder': 'Descending',
+          // Only `UserData.LastPlayedDate` is read off the row.
+          'Fields': 'UserData',
+          'Limit': '1',
+          'EnableImages': 'false',
+          'EnableTotalRecordCount': 'false',
+        },
+        abort: budgetAbort,
+        timeout: _seriesLastPlayedRequestTimeout,
+        allowEndpointFailover: false,
+      );
+      return (seriesId, _mapItems(raw).firstOrNull?.lastViewedAt);
+    } on MediaServerHttpException {
+      return (seriesId, null);
+    }
   }
 
   /// Merge Jellyfin's two continue-watching sources into one recency-ordered
@@ -1523,20 +1864,36 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// failover** — a slow hub row must not move the whole client off an
   /// otherwise working endpoint (same policy as Plex's three hub fetches;
   /// see [retryTransientMediaServerCall] / [FailoverHttpClient]).
+  ///
+  /// [timeout] and [allowEndpointFailover] configure the un-retried path only; a
+  /// [retry] policy carries its own per-attempt timeouts and always disables
+  /// failover.
   Future<MediaServerResponse> _getItemsResponse(
     String path,
     Map<String, dynamic> queryParameters,
-    _HubRetryPolicy? retry,
-  ) {
-    if (retry == null) return _http.get(path, queryParameters: queryParameters);
+    _HubRetryPolicy? retry, {
+    AbortController? abort,
+    Duration? timeout,
+    bool allowEndpointFailover = true,
+  }) {
+    if (retry == null) {
+      return _http.get(
+        path,
+        queryParameters: queryParameters,
+        abort: abort,
+        timeout: timeout,
+        allowEndpointFailover: allowEndpointFailover,
+      );
+    }
+    abort?.throwIfAborted();
     return retryTransientMediaServerCall(
       operation: retry.operation,
       attemptTimeouts: retry.attemptTimeouts,
-      call: (timeout, abort) => _http.get(
+      call: (timeout, attemptAbort) => _http.get(
         path,
         queryParameters: queryParameters,
         timeout: timeout,
-        abort: abort,
+        abort: attemptAbort,
         allowEndpointFailover: false,
       ),
     );
@@ -1546,8 +1903,10 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     String path,
     Map<String, dynamic> queryParameters, {
     _HubRetryPolicy? retry,
+    AbortController? abort,
   }) async {
-    final response = await _getItemsResponse(path, queryParameters, retry);
+    final response = await _getItemsResponse(path, queryParameters, retry, abort: abort);
+    abort?.throwIfAborted();
     throwIfHttpError(response);
     return _itemsArray(response.data);
   }
@@ -1556,9 +1915,20 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     String path,
     Map<String, dynamic> queryParameters, {
     _HubRetryPolicy? retry,
+    AbortController? abort,
+    Duration? timeout,
+    bool allowEndpointFailover = true,
   }) async {
     try {
-      final response = await _getItemsResponse(path, queryParameters, retry);
+      final response = await _getItemsResponse(
+        path,
+        queryParameters,
+        retry,
+        abort: abort,
+        timeout: timeout,
+        allowEndpointFailover: allowEndpointFailover,
+      );
+      abort?.throwIfAborted();
       throwIfHttpError(response);
       final data = response.data;
       if (data is List) {
@@ -1566,6 +1936,10 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       }
       return _itemsArray(data);
     } catch (e, st) {
+      // A cancelled request says nothing about the endpoint's contents — let
+      // it propagate so the caller classifies the fetch as disrupted, not
+      // empty.
+      if (e is MediaServerHttpException && e.isCancellation) rethrow;
       appLogger.w('JellyfinClient: $path failed (treating as empty)', error: e, stackTrace: st);
       return const [];
     }

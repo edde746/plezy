@@ -9,77 +9,44 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
-
-/// In-test fake PathProviderPlatform that points all directories at a real
-/// on-disk temp folder. Required because the production service calls
-/// [getApplicationDocumentsDirectory] / [getApplicationSupportDirectory] —
-/// both of which fail outside an app context unless the platform interface
-/// is mocked.
-class _FakePathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
-  _FakePathProvider(this.root);
-
-  final Directory root;
-  String get _docs => p.join(root.path, 'documents');
-  String get _support => p.join(root.path, 'support');
-  String get _cache => p.join(root.path, 'cache');
-  String get _temp => p.join(root.path, 'temp');
-
-  @override
-  Future<String?> getApplicationDocumentsPath() async => _ensure(_docs);
-
-  @override
-  Future<String?> getApplicationSupportPath() async => _ensure(_support);
-
-  @override
-  Future<String?> getApplicationCachePath() async => _ensure(_cache);
-
-  @override
-  Future<String?> getTemporaryPath() async => _ensure(_temp);
-
-  String _ensure(String dir) {
-    Directory(dir).createSync(recursive: true);
-    return dir;
-  }
-}
+import '../test_helpers/media_items.dart';
 
 void main() {
   late Directory tmpRoot;
+  late PathProviderPlatform previousPathProvider;
 
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
     tmpRoot = await Directory.systemTemp.createTemp('dss_test_');
-    PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+    previousPathProvider = PathProviderPlatform.instance;
+    PathProviderPlatform.instance = FakePathProvider(tmpRoot);
   });
 
   tearDown(() async {
     DownloadStorageService.resetForTesting();
     SettingsService.resetForTesting();
+    PathProviderPlatform.instance = previousPathProvider;
+    expect(PathProviderPlatform.instance, same(previousPathProvider));
     if (await tmpRoot.exists()) {
       await tmpRoot.delete(recursive: true);
     }
   });
 
-  // ============================================================
-  // Singleton + reset
-  // ============================================================
-
-  group('singleton', () {
-    test('instance returns same object across calls', () {
-      final a = DownloadStorageService.instance;
-      final b = DownloadStorageService.instance;
-      expect(identical(a, b), isTrue);
-    });
-
-    test('resetForTesting yields a fresh instance', () {
+  group('singleton lifecycle', () {
+    test('reacquiring the instance preserves initialized state', () async {
+      final settings = await SettingsService.getInstance();
       final first = DownloadStorageService.instance;
-      DownloadStorageService.resetForTesting();
+      await first.initialize(settings);
+
       final second = DownloadStorageService.instance;
-      expect(identical(first, second), isFalse);
+      expect(identical(first, second), isTrue);
+      expect(second.artworkDirectoryPath, isNotNull);
+      expect(second.artworkDirectoryPath, first.artworkDirectoryPath);
     });
   });
 
@@ -150,35 +117,44 @@ void main() {
 
     test('falls back to default when custom path is non-writable', () async {
       final settings = await SettingsService.getInstance();
+      final regularFile = File(p.join(tmpRoot.path, 'not-a-directory'))..writeAsStringSync('blocking ancestor');
+      final blocked = p.join(regularFile.path, 'downloads');
+      await settings.write(SettingsService.customDownloadPathType, 'file');
+      await settings.write(SettingsService.customDownloadPath, blocked);
 
-      // Point the custom path to a path inside a read-only parent.
-      final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
-      try {
-        // Make parent unwritable so writing inside fails. Skip if the OS
-        // ignores the chmod (e.g. when running as root).
-        await Process.run('chmod', ['000', readOnlyParent.path]);
-        final blocked = p.join(readOnlyParent.path, 'forbidden');
-        await settings.write(SettingsService.customDownloadPathType, 'file');
-        await settings.write(SettingsService.customDownloadPath, blocked);
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
 
-        final dss = DownloadStorageService.instance;
-        await dss.initialize(settings);
-
-        final dir = await dss.getDownloadsDirectory();
-        // Either the chmod worked → we fall back to default,
-        // or it didn't → we used the custom path. Both are valid; the
-        // important contract is that the call doesn't throw.
-        expect(dir.existsSync(), isTrue);
-        if (dir.path == blocked) {
-          // chmod was a no-op (root or a filesystem that ignores it). Skip the
-          // strict assertion — the fallback branch only runs when writes fail.
-          return;
-        }
-        expect(dir.path, p.join(p.join(tmpRoot.path, 'support'), 'downloads'));
-      } finally {
-        await Process.run('chmod', ['755', readOnlyParent.path]);
-      }
+      final dir = await dss.getDownloadsDirectory();
+      expect(dir.existsSync(), isTrue);
+      expect(dir.path, p.join(tmpRoot.path, 'support', 'downloads'));
     });
+
+    test(
+      'resolves under POSIX chmod restrictions (environment-dependent smoke)',
+      () async {
+        final settings = await SettingsService.getInstance();
+        final readOnlyParent = Directory(p.join(tmpRoot.path, 'readonly'))..createSync(recursive: true);
+        try {
+          await Process.run('chmod', ['000', readOnlyParent.path]);
+          final blocked = p.join(readOnlyParent.path, 'forbidden');
+          await settings.write(SettingsService.customDownloadPathType, 'file');
+          await settings.write(SettingsService.customDownloadPath, blocked);
+
+          final dss = DownloadStorageService.instance;
+          await dss.initialize(settings);
+
+          final dir = await dss.getDownloadsDirectory();
+          // The host may honor or ignore mode bits; either resolved root is
+          // valid for this smoke test as long as it exists.
+          expect(dir.existsSync(), isTrue);
+          expect(dir.path, anyOf(blocked, p.join(tmpRoot.path, 'support', 'downloads')));
+        } finally {
+          await Process.run('chmod', ['755', readOnlyParent.path]);
+        }
+      },
+      skip: Platform.isWindows ? 'Windows does not provide chmod permission semantics' : false,
+    );
 
     test('refreshCustomPath picks up settings changes', () async {
       final settings = await SettingsService.getInstance();
@@ -302,15 +278,6 @@ void main() {
       expect(await dss.toRelativePath(uri), uri);
     });
 
-    test('returns the input unchanged when not under the base dir', () async {
-      final settings = await SettingsService.getInstance();
-      final dss = DownloadStorageService.instance;
-      await dss.initialize(settings);
-
-      const foreign = '/some/other/place/file.mkv';
-      expect(await dss.toRelativePath(foreign), foreign);
-    });
-
     test('toAbsolutePath joins relative paths against the base dir', () async {
       final settings = await SettingsService.getInstance();
       final dss = DownloadStorageService.instance;
@@ -401,7 +368,7 @@ void main() {
       // returns the toAbsolutePath() candidate (joined under the base dir).
       const stored = 'downloads/missing/never.mkv';
       final resolved = await dss.ensureAbsolutePath(stored);
-      final expected = p.join(tmpRoot.path, 'support', stored);
+      final expected = p.normalize(p.join(tmpRoot.path, 'support', stored));
       expect(resolved, expected);
     });
 
@@ -417,7 +384,7 @@ void main() {
       final resolved = await dss.ensureAbsolutePath(stored);
       // Falls back to the original absolute path (it doesn't exist on disk,
       // and no other candidate could be derived from it).
-      expect(resolved, stored);
+      expect(resolved, p.normalize(stored));
     });
   });
 
@@ -586,7 +553,7 @@ void main() {
 // ============================================================
 
 MediaItem _movie({required String title, int? year}) {
-  return MediaItem(
+  return testMediaItem(
     id: 'm-${title.hashCode}',
     backend: MediaBackend.plex,
     kind: MediaKind.movie,
@@ -596,7 +563,7 @@ MediaItem _movie({required String title, int? year}) {
 }
 
 MediaItem _show({required String title, int? year}) {
-  return MediaItem(
+  return testMediaItem(
     id: 's-${title.hashCode}',
     backend: MediaBackend.plex,
     kind: MediaKind.show,
@@ -606,7 +573,7 @@ MediaItem _show({required String title, int? year}) {
 }
 
 MediaItem _season({required String showTitle, int? showYear, required int seasonNumber}) {
-  return MediaItem(
+  return testMediaItem(
     id: 'season-$showTitle-$seasonNumber',
     backend: MediaBackend.plex,
     kind: MediaKind.season,
@@ -624,7 +591,7 @@ MediaItem _episode({
   required int episodeNumber,
   required String episodeTitle,
 }) {
-  return MediaItem(
+  return testMediaItem(
     id: 'ep-$showTitle-$seasonNumber-$episodeNumber',
     backend: MediaBackend.plex,
     kind: MediaKind.episode,

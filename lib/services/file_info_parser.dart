@@ -1,4 +1,6 @@
+import '../media/media_file_info.dart';
 import '../media/media_source_info.dart';
+import '../media/media_version.dart' show bitrateKbpsFromBps;
 import '../utils/json_utils.dart';
 import 'plex_constants.dart';
 
@@ -144,8 +146,7 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
 
   @override
   FileInfoStreamType? typeOf(Map<String, dynamic> stream) {
-    final t = stream['streamType'];
-    if (t is! int) return null;
+    final t = flexibleInt(stream['streamType']);
     return switch (t) {
       PlexStreamType.video => FileInfoStreamType.video,
       PlexStreamType.audio => FileInfoStreamType.audio,
@@ -157,14 +158,14 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
   @override
   MediaAudioTrack toAudioTrack(Map<String, dynamic> stream, int _) {
     return MediaAudioTrack(
-      id: stream['id'] as int,
-      index: stream['index'] as int?,
+      id: flexibleInt(stream['id']) ?? (throw const FormatException('Plex audio stream is missing a numeric id')),
+      index: flexibleInt(stream['index']),
       codec: stream['codec'] as String?,
       language: stream['language'] as String?,
       languageCode: stream['languageCode'] as String?,
       title: stream['title'] as String?,
       displayTitle: stream['displayTitle'] as String?,
-      channels: stream['channels'] as int?,
+      channels: flexibleInt(stream['channels']),
       selected: flexibleBool(stream['selected']),
     );
   }
@@ -172,8 +173,8 @@ class PlexFileInfoStreamReader implements FileInfoStreamReader {
   @override
   MediaSubtitleTrack toSubtitleTrack(Map<String, dynamic> stream, int _) {
     return MediaSubtitleTrack(
-      id: stream['id'] as int,
-      index: stream['index'] as int?,
+      id: flexibleInt(stream['id']) ?? (throw const FormatException('Plex subtitle stream is missing a numeric id')),
+      index: flexibleInt(stream['index']),
       codec: stream['codec'] as String?,
       language: stream['language'] as String?,
       languageCode: stream['languageCode'] as String?,
@@ -240,4 +241,261 @@ class JellyfinFileInfoStreamReader implements FileInfoStreamReader {
       usesExternalDelivery: f.usesExternalDelivery,
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// Full per-stream detail extraction for the file-info sheet.
+//
+// [walkStreams] above deliberately keeps only what playback needs. The sheet
+// needs every probed property, so these builders read the raw stream maps a
+// second time and project them onto the neutral [MediaStreamDetails]. Both
+// backends' field-name maps live side by side here for the same reason the
+// readers above do: one place to compare when a server adds a key.
+// ---------------------------------------------------------------------------
+
+/// Classify a Plex `Part.Stream[]` entry. Plex numbers stream types 1–5;
+/// lyrics/other types beyond that map to [MediaStreamKind.unknown].
+MediaStreamKind plexStreamKind(Map<String, dynamic> s) => switch (flexibleInt(s['streamType'])) {
+  PlexStreamType.video => MediaStreamKind.video,
+  PlexStreamType.audio => MediaStreamKind.audio,
+  PlexStreamType.subtitle => MediaStreamKind.subtitle,
+  4 => MediaStreamKind.image,
+  5 => MediaStreamKind.data,
+  _ => MediaStreamKind.unknown,
+};
+
+/// Classify a Jellyfin `MediaStreams[]` entry.
+MediaStreamKind jellyfinStreamKind(Map<String, dynamic> s) => switch ((s['Type'] as String?)?.toLowerCase()) {
+  'video' => MediaStreamKind.video,
+  'audio' => MediaStreamKind.audio,
+  'subtitle' => MediaStreamKind.subtitle,
+  'embeddedimage' => MediaStreamKind.image,
+  'lyric' => MediaStreamKind.lyric,
+  'data' => MediaStreamKind.data,
+  _ => MediaStreamKind.unknown,
+};
+
+/// Project a Plex `Part.Stream[]` entry. [ordinal] is the 1-based position
+/// among streams of the same kind.
+MediaStreamDetails plexStreamDetails(Map<String, dynamic> s, int ordinal) {
+  final kind = plexStreamKind(s);
+  final dolbyVision = _plexDolbyVision(s);
+  return MediaStreamDetails(
+    kind: kind,
+    ordinal: ordinal,
+    id: s['id']?.toString(),
+    index: flexibleInt(s['index']),
+    title: _text(s['title']),
+    displayTitle: _text(s['extendedDisplayTitle']) ?? _text(s['displayTitle']),
+    codec: _text(s['codec']),
+    codecTag: _text(s['codecID']),
+    profile: _text(s['profile']),
+    level: flexibleInt(s['level']),
+    language: _text(s['language']),
+    languageCode: _text(s['languageCode']) ?? _text(s['languageTag']),
+    // Plex already reports stream bitrates in kbps.
+    bitrateKbps: flexibleInt(s['bitrate']),
+    isDefault: flexibleBoolNullable(s['default']),
+    isForced: flexibleBoolNullable(s['forced']),
+    isSelected: flexibleBoolNullable(s['selected']),
+    isExternal: _plexIsExternal(s),
+    isHearingImpaired: flexibleBoolNullable(s['hearingImpaired']),
+    isDub: flexibleBoolNullable(s['dub']),
+    isOriginal: flexibleBoolNullable(s['original']),
+    width: flexibleInt(s['width']),
+    height: flexibleInt(s['height']),
+    codedWidth: flexibleInt(s['codedWidth']),
+    codedHeight: flexibleInt(s['codedHeight']),
+    frameRate: flexibleDouble(s['frameRate']),
+    scanType: _text(s['scanType']),
+    isInterlaced: _plexInterlaced(s),
+    bitDepth: flexibleInt(s['bitDepth']),
+    refFrames: flexibleInt(s['refFrames']),
+    colorSpace: _text(s['colorSpace']),
+    colorRange: _text(s['colorRange']),
+    colorPrimaries: _text(s['colorPrimaries']),
+    colorTransfer: _text(s['colorTrc']),
+    chromaSubsampling: _text(s['chromaSubsampling']),
+    chromaLocation: _text(s['chromaLocation']),
+    pixelAspectRatio: _text(s['pixelAspectRatio']),
+    isAnamorphic: flexibleBoolNullable(s['anamorphic']),
+    videoRange: kind == MediaStreamKind.video ? _plexVideoRange(s, dolbyVision) : MediaVideoRange.unknown,
+    dolbyVision: dolbyVision,
+    hasScalingMatrix: flexibleBoolNullable(s['hasScalingMatrix']),
+    streamIdentifier: _text(s['streamIdentifier']),
+    channels: flexibleInt(s['channels']),
+    channelLayout: _text(s['audioChannelLayout']),
+    sampleRate: flexibleInt(s['samplingRate']),
+    subtitleFormat: _text(s['format']),
+    providerTitle: _text(s['providerTitle']),
+    score: flexibleInt(s['score']),
+    externalKey: _text(s['key']),
+    isTransient: flexibleBoolNullable(s['transient']),
+    sourceKey: _text(s['sourceKey']),
+    comment: _text(s['comment']),
+    hasDescriptions: flexibleBoolNullable(s['descriptions']),
+    headerCompression: flexibleBoolNullable(s['headerCompression']),
+  );
+}
+
+/// Project a Jellyfin `MediaSources[].MediaStreams[]` entry.
+MediaStreamDetails jellyfinStreamDetails(Map<String, dynamic> s, int ordinal) {
+  final kind = jellyfinStreamKind(s);
+  final interlaced = flexibleBoolNullable(s['IsInterlaced']);
+  return MediaStreamDetails(
+    kind: kind,
+    ordinal: ordinal,
+    index: flexibleInt(s['Index']),
+    title: _text(s['Title']),
+    displayTitle: _text(s['DisplayTitle']),
+    codec: _text(s['Codec']),
+    codecTag: _text(s['CodecTag']),
+    profile: _text(s['Profile']),
+    level: flexibleInt(s['Level']),
+    language: _text(s['DisplayLanguage']) ?? _text(s['Language']),
+    languageCode: _text(s['Language']),
+    bitrateKbps: bitrateKbpsFromBps(flexibleInt(s['BitRate'])),
+    isDefault: flexibleBoolNullable(s['IsDefault']),
+    isForced: flexibleBoolNullable(s['IsForced']),
+    isExternal: flexibleBoolNullable(s['IsExternal']),
+    isHearingImpaired: flexibleBoolNullable(s['IsHearingImpaired']),
+    width: flexibleInt(s['Width']),
+    height: flexibleInt(s['Height']),
+    frameRate: flexibleDouble(s['RealFrameRate']) ?? flexibleDouble(s['AverageFrameRate']),
+    scanType: interlaced == null ? null : (interlaced ? 'interlaced' : 'progressive'),
+    isInterlaced: interlaced,
+    bitDepth: flexibleInt(s['BitDepth']),
+    refFrames: flexibleInt(s['RefFrames']),
+    pixelFormat: _text(s['PixelFormat']),
+    colorSpace: _text(s['ColorSpace']),
+    colorRange: _text(s['ColorRange']),
+    colorPrimaries: _text(s['ColorPrimaries']),
+    colorTransfer: _text(s['ColorTransfer']),
+    aspectRatio: _text(s['AspectRatio']),
+    isAnamorphic: flexibleBoolNullable(s['IsAnamorphic']),
+    videoRange: kind == MediaStreamKind.video ? _jellyfinVideoRange(s) : MediaVideoRange.unknown,
+    hasHdr10Plus: flexibleBoolNullable(s['Hdr10PlusPresentFlag']),
+    dolbyVision: _jellyfinDolbyVision(s),
+    isAvc: flexibleBoolNullable(s['IsAVC']),
+    nalLengthSize: flexibleInt(s['NalLengthSize']),
+    channels: flexibleInt(s['Channels']),
+    channelLayout: _text(s['ChannelLayout']),
+    sampleRate: flexibleInt(s['SampleRate']),
+    spatialFormat: _text(s['AudioSpatialFormat']),
+    isTextSubtitle: flexibleBoolNullable(s['IsTextSubtitleStream']),
+    supportsExternalStream: flexibleBoolNullable(s['SupportsExternalStream']),
+    score: flexibleInt(s['Score']),
+    timeBase: _text(s['TimeBase']),
+    externalKey: _text(s['DeliveryUrl']),
+    comment: _text(s['Comment']),
+    rotation: flexibleInt(s['Rotation']),
+    filePath: _text(s['Path']),
+  );
+}
+
+/// Project a Jellyfin `MediaSources[].MediaAttachments[]` entry. Plex does not
+/// expose attachments on `/library/metadata`, so this has no Plex sibling.
+MediaFileAttachment jellyfinAttachment(Map<String, dynamic> a) {
+  return MediaFileAttachment(
+    index: flexibleInt(a['Index']),
+    fileName: _text(a['FileName']),
+    mimeType: _text(a['MimeType']),
+    // Live servers populate `CodecTag`; `Codec` is in the DTO but usually null.
+    codec: _text(a['Codec']) ?? _text(a['CodecTag']),
+  );
+}
+
+/// Trim and drop empties — both servers emit `""` for "not probed", and an
+/// empty row is worse than an absent one.
+String? _text(Object? value) {
+  if (value == null) return null;
+  final text = value.toString().trim();
+  return text.isEmpty ? null : text;
+}
+
+/// Plex marks sidecar subtitles with a `/library/streams/...` key rather than
+/// an explicit flag.
+bool? _plexIsExternal(Map<String, dynamic> s) {
+  if (flexibleInt(s['streamType']) != PlexStreamType.subtitle) return null;
+  final key = s['key'];
+  return key is String && key.isNotEmpty;
+}
+
+bool? _plexInterlaced(Map<String, dynamic> s) {
+  final scanType = _text(s['scanType'])?.toLowerCase();
+  return scanType == null ? null : scanType != 'progressive';
+}
+
+MediaDolbyVisionInfo? _plexDolbyVision(Map<String, dynamic> s) {
+  if (!flexibleBool(s['DOVIPresent'])) return null;
+  return MediaDolbyVisionInfo(
+    profile: flexibleInt(s['DOVIProfile']),
+    level: flexibleInt(s['DOVILevel']),
+    version: _text(s['DOVIVersion']),
+    blCompatibilityId: flexibleInt(s['DOVIBLCompatID']),
+    blPresent: flexibleBoolNullable(s['DOVIBLPresent']),
+    elPresent: flexibleBoolNullable(s['DOVIELPresent']),
+    rpuPresent: flexibleBoolNullable(s['DOVIRPUPresent']),
+  );
+}
+
+MediaDolbyVisionInfo? _jellyfinDolbyVision(Map<String, dynamic> s) {
+  final major = flexibleInt(s['DvVersionMajor']);
+  final minor = flexibleInt(s['DvVersionMinor']);
+  final info = MediaDolbyVisionInfo(
+    profile: flexibleInt(s['DvProfile']),
+    level: flexibleInt(s['DvLevel']),
+    version: major == null ? null : '$major.${minor ?? 0}',
+    blCompatibilityId: flexibleInt(s['DvBlSignalCompatibilityId']),
+    blPresent: flexibleBoolNullable(s['BlPresentFlag']),
+    elPresent: flexibleBoolNullable(s['ElPresentFlag']),
+    rpuPresent: flexibleBoolNullable(s['RpuPresentFlag']),
+    title: _text(s['VideoDoViTitle']),
+  );
+  return info.isEmpty ? null : info;
+}
+
+/// Plex reports no dynamic-range field, so classify from the Dolby Vision
+/// block first and fall back to the transfer characteristics.
+MediaVideoRange _plexVideoRange(Map<String, dynamic> s, MediaDolbyVisionInfo? dolbyVision) {
+  if (dolbyVision != null) {
+    // `dv_bl_signal_compatibility_id`: 1 = HDR10, 2 = SDR/BT.709, 4 = HLG,
+    // 6 = Blu-ray HDR10. Profile 7 always carries an HDR10 base layer, and
+    // profile 5 carries none (0), so it stays plain Dolby Vision.
+    final compatibility = dolbyVision.blCompatibilityId;
+    if (compatibility == 4) return MediaVideoRange.dolbyVisionHlg;
+    if (dolbyVision.profile == 7 || compatibility == 1 || compatibility == 6) {
+      return MediaVideoRange.dolbyVisionHdr10;
+    }
+    return MediaVideoRange.dolbyVision;
+  }
+  return switch (_text(s['colorTrc'])?.toLowerCase()) {
+    'smpte2084' => MediaVideoRange.hdr10,
+    'arib-std-b67' => MediaVideoRange.hlg,
+    null => MediaVideoRange.unknown,
+    _ => MediaVideoRange.sdr,
+  };
+}
+
+MediaVideoRange _jellyfinVideoRange(Map<String, dynamic> s) {
+  final type = _text(s['VideoRangeType'])?.toLowerCase();
+  if (type != null && type != 'unknown') {
+    if (type.startsWith('dovi')) {
+      if (type.contains('hlg')) return MediaVideoRange.dolbyVisionHlg;
+      if (type.contains('hdr10')) return MediaVideoRange.dolbyVisionHdr10;
+      return MediaVideoRange.dolbyVision;
+    }
+    return switch (type) {
+      'sdr' => MediaVideoRange.sdr,
+      'hdr10' => MediaVideoRange.hdr10,
+      'hdr10plus' => MediaVideoRange.hdr10Plus,
+      'hlg' => MediaVideoRange.hlg,
+      _ => MediaVideoRange.hdr,
+    };
+  }
+  return switch (_text(s['VideoRange'])?.toLowerCase()) {
+    'sdr' => MediaVideoRange.sdr,
+    'hdr' => MediaVideoRange.hdr,
+    _ => MediaVideoRange.unknown,
+  };
 }

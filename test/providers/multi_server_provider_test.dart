@@ -15,8 +15,7 @@ void main() {
     aggregation = DataAggregationService(manager);
   });
 
-  // The provider's dispose() also disposes the manager — only call manager.dispose
-  // here in tests where the provider is *not* constructed.
+  tearDown(() => manager.dispose());
 
   group('MultiServerProvider', () {
     test('starts with empty server lists and no live TV', () {
@@ -28,13 +27,6 @@ void main() {
       expect(p.hasConnectedServers, isFalse);
       expect(p.hasLiveTv, isFalse);
       expect(p.liveTvServers, isEmpty);
-      p.dispose();
-    });
-
-    test('exposes the injected manager and aggregation service', () {
-      final p = MultiServerProvider(manager, aggregation);
-      expect(identical(p.serverManager, manager), isTrue);
-      expect(identical(p.aggregationService, aggregation), isTrue);
       p.dispose();
     });
 
@@ -99,7 +91,23 @@ void main() {
       manager.updateServerStatus(ServerId('srv-2'), true);
       await Future<void>.delayed(Duration.zero);
       expect(calls.last, {'srv-1'}, reason: 'srv-2 is online but filtered out');
+      expect(() => calls.last.clear(), throwsUnsupportedError);
 
+      p.dispose();
+    });
+
+    test('online-server listener registration is idempotent', () async {
+      final p = MultiServerProvider(manager, aggregation);
+      var calls = 0;
+      void listener(Set<String> _) => calls++;
+      p.addOnlineServersListener(listener);
+      p.addOnlineServersListener(listener);
+
+      manager.updateServerStatus(ServerId('srv-1'), true);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(calls, 1);
+      expect(p.onlineServersListenerCount, 1);
       p.dispose();
     });
 
@@ -138,6 +146,22 @@ void main() {
         expect(notified, 3);
         expect(p.hasExplicitVisibleServerFilter, isFalse);
 
+        p.dispose();
+      });
+
+      test('expected visibility is copied and set-equal updates are ignored', () {
+        final p = MultiServerProvider(manager, aggregation);
+        var notified = 0;
+        p.addListener(() => notified++);
+        final expected = {'a', 'b'};
+
+        p.setExpectedVisibleServerIds(expected);
+        expected.add('c');
+        p.setExpectedVisibleServerIds({'b', 'a'});
+
+        expect(notified, 1);
+        expect(p.expectedServerIds, containsAll({'a', 'b'}));
+        expect(p.expectedServerIds, isNot(contains('c')));
         p.dispose();
       });
 
@@ -249,11 +273,9 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(notifyCount, greaterThanOrEqualTo(1));
 
-      // After dispose, no further notifications can be observed because the
-      // provider has been disposed AND its subscription is cancelled. We
-      // can't even push to the manager (disposed), so we just verify that
-      // disposing once doesn't throw.
+      // The provider owns only its subscription; the app root owns the manager.
       expect(p.dispose, returnsNormally);
+      expect(() => manager.updateServerStatus(ServerId('b'), true), returnsNormally);
     });
   });
 }

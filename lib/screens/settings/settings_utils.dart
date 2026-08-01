@@ -1,13 +1,29 @@
+import 'dart:io';
+
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../services/settings_service.dart' as settings;
+import '../../utils/dialogs.dart';
+import '../../utils/app_logger.dart';
+import '../../utils/snackbar_helper.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
+
+String themeModeLabel(settings.ThemeMode mode) => switch (mode) {
+  settings.ThemeMode.system => t.settings.systemTheme,
+  settings.ThemeMode.light => t.settings.lightTheme,
+  settings.ThemeMode.dark => t.settings.darkTheme,
+  settings.ThemeMode.oled => t.settings.oledTheme,
+};
 
 /// Model for option selection dialogs.
 class DialogOption<T> {
@@ -28,6 +44,44 @@ typedef _SettingsDialogContentBuilder =
 
 typedef _SettingsDialogActionsBuilder = List<Widget> Function(BuildContext dialogContext, StateSetter setDialogState);
 
+/// Reports a recoverable settings persistence failure without swallowing
+/// programming errors or other unexpected exception types.
+void showSettingsFailure(
+  BuildContext context, {
+  required String operation,
+  required Object error,
+  required StackTrace stackTrace,
+}) {
+  appLogger.e('$operation failed', error: error, stackTrace: stackTrace);
+  if (context.mounted) showErrorSnackBar(context, t.settings.saveFailed);
+}
+
+/// Runs [body] and reports the recoverable failures that every settings
+/// file/platform operation shares — [PlatformException], [FileSystemException]
+/// and the site-specific domain exception [E] — through [showSettingsFailure].
+/// Any other exception type is rethrown so programming errors are not swallowed.
+///
+/// [context] is resolved before [body] starts, so a failure that lands after the
+/// caller was disposed is still logged; only the snackbar is skipped. Returns
+/// `null` when the operation failed.
+Future<T?> guardSettingsOperation<T, E extends Object>(
+  BuildContext context, {
+  required String operation,
+  required Future<T> Function() body,
+}) async {
+  try {
+    return await body();
+  } on Object catch (error, stackTrace) {
+    if (error is! E && error is! PlatformException && error is! FileSystemException) rethrow;
+    if (context.mounted) {
+      showSettingsFailure(context, operation: operation, error: error, stackTrace: stackTrace);
+    } else {
+      appLogger.e('$operation failed', error: error, stackTrace: stackTrace);
+    }
+    return null;
+  }
+}
+
 void _showSettingsInputDialog({
   required BuildContext context,
   required String title,
@@ -36,7 +90,7 @@ void _showSettingsInputDialog({
   _SettingsDialogActionsBuilder? leadingActionsBuilder,
   VoidCallback? onDispose,
 }) {
-  showDialog<void>(
+  showScopedDialog<void>(
     context: context,
     builder: (_) => _SettingsInputDialog(
       title: title,
@@ -78,8 +132,16 @@ class _SettingsInputDialogState extends State<_SettingsInputDialog> {
   }
 
   Future<void> _save() async {
-    final shouldClose = await widget.onSave(context);
-    if (shouldClose && mounted) Navigator.pop(context);
+    try {
+      final shouldClose = await widget.onSave(context);
+      if (shouldClose && mounted) Navigator.pop(context);
+    } on PlatformException catch (error, stackTrace) {
+      if (!mounted) return;
+      showSettingsFailure(context, operation: 'Settings input save', error: error, stackTrace: stackTrace);
+    } on FileSystemException catch (error, stackTrace) {
+      if (!mounted) return;
+      showSettingsFailure(context, operation: 'Settings input save', error: error, stackTrace: stackTrace);
+    }
   }
 
   @override
@@ -104,8 +166,8 @@ Future<T?> showSelectionDialog<T>({
   required List<DialogOption<T>> options,
   required T currentValue,
 }) {
-  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
-  return showDialog<T>(
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
+  return showScopedDialog<T>(
     context: context,
     builder: (dialogContext) => AlertDialog(
       title: Text(title),
@@ -117,8 +179,8 @@ Future<T?> showSelectionDialog<T>({
             final selected = option.value == currentValue;
             return FocusableListTile(
               key: ValueKey(option.value),
-              leading: Icon(
-                selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              leading: AppIcon(
+                selected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded,
                 color: selected ? Theme.of(dialogContext).colorScheme.primary : null,
               ),
               title: Text(option.title),
@@ -147,7 +209,7 @@ void showNumericInputDialog({
   required int currentValue,
   required Future<void> Function(int value) onSave,
 }) {
-  final useDpadControls = InputModeTracker.isKeyboardMode(context);
+  final useDpadControls = InputModeTracker.isKeyboardMode(context, listen: false);
 
   if (useDpadControls) {
     _showNumericInputDialogTV(
@@ -299,7 +361,7 @@ void showColorInputDialog({
   required String currentHex,
   required Future<void> Function(String hex) onSave,
 }) {
-  if (InputModeTracker.isKeyboardMode(context)) {
+  if (InputModeTracker.isKeyboardMode(context, listen: false)) {
     _showColorInputDialogTV(context: context, title: title, currentHex: currentHex, onSave: onSave);
   } else {
     _showColorInputDialogStandard(context: context, title: title, currentHex: currentHex, onSave: onSave);
@@ -336,7 +398,16 @@ Future<void> _showColorInputDialogStandard({
     },
     actionButtons: const ColorPickerActionButtons(okButton: true, closeButton: true, dialogActionButtons: false),
   );
-  if (selected != initial) await onSave(colorToHex(selected));
+  if (selected == initial || !context.mounted) return;
+  try {
+    await onSave(colorToHex(selected));
+  } on PlatformException catch (error, stackTrace) {
+    if (!context.mounted) return;
+    showSettingsFailure(context, operation: 'Color setting save', error: error, stackTrace: stackTrace);
+  } on FileSystemException catch (error, stackTrace) {
+    if (!context.mounted) return;
+    showSettingsFailure(context, operation: 'Color setting save', error: error, stackTrace: stackTrace);
+  }
 }
 
 void _showColorInputDialogTV({
@@ -363,7 +434,6 @@ void _showColorInputDialogTV({
   );
 }
 
-/// Shows a text input dialog with regex validation and reset-to-default support.
 void showRegexInputDialog({
   required BuildContext context,
   required String title,
@@ -380,7 +450,7 @@ void showRegexInputDialog({
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
       return FocusableTextField(
         controller: controller,
-        decoration: InputDecoration(labelText: 'Regex', errorText: errorText),
+        decoration: InputDecoration(labelText: t.settings.regex, errorText: errorText),
         autofocus: true,
         textInputAction: TextInputAction.done,
         onEditingComplete: () => saveFocusNode.requestFocus(),

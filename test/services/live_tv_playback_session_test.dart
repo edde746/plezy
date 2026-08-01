@@ -8,10 +8,13 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/live_tv_support.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
+import '../test_helpers/backend_client_fixtures.dart';
 
 /// Pins the [LiveTvPlaybackSession] lifecycle on both backends — the
 /// per-backend protocol that used to be hand-rolled (3×) inside the player's
@@ -62,7 +65,7 @@ void main() {
     PlexClient makeClient(
       Future<http.Response> Function(http.Request request) handler, {
       List<String>? prioritizedEndpoints,
-    }) => PlexClient.forTesting(
+    }) => testPlexClient(
       config: PlexConfig(
         baseUrl: 'https://plex.example.com',
         token: 'tok',
@@ -87,7 +90,9 @@ void main() {
       final requests = <String>[];
       final client = makeClient((request) async {
         requests.add(request.url.path);
-        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
         return jsonResponse(const {});
       });
       addTearDown(client.close);
@@ -105,10 +110,14 @@ void main() {
       expect(requests, ['/livetv/dvrs/dvr-1/channels/ch-1/tune']);
     });
 
-    test('streamUrlAt builds live-edge and offset URLs against one transcode session', () async {
+    test('streamUrlAt builds live-edge and offset HLS URLs against one transcode session', () async {
       final client = makeClient((request) async {
-        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
-        if (request.url.path == '/video/:/transcode/universal/decision') return http.Response('ok', 200);
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          return http.Response('ok', 200);
+        }
         return jsonResponse(const {});
       });
       addTearDown(client.close);
@@ -120,8 +129,15 @@ void main() {
 
       expect(liveEdge, isNotNull);
       final liveEdgeUri = Uri.parse(liveEdge!);
-      expect(liveEdgeUri.path, '/video/:/transcode/universal/start');
+      expect(liveEdgeUri.path, '/video/:/transcode/universal/start.m3u8');
       expect(liveEdgeUri.queryParameters['path'], '/livetv/sessions/session-abc');
+      expect(liveEdgeUri.queryParameters['protocol'], 'hls');
+      expect(liveEdgeUri.queryParameters['X-Plex-Incomplete-Segments'], '1');
+      expect(liveEdgeUri.queryParameters.containsKey('X-Plex-Chunked'), isFalse);
+      expect(liveEdgeUri.queryParameters['X-Plex-Client-Profile-Extra'], contains('protocol=hls&container=mpegts'));
+      expect(liveEdgeUri.queryParameters['subtitles'], 'none');
+      expect(liveEdgeUri.queryParameters.containsKey('subtitleStreamID'), isFalse);
+      expect(liveEdgeUri.queryParameters.containsKey('advancedSubtitles'), isFalse);
       expect(liveEdgeUri.queryParameters['X-Plex-Token'], 'tok');
       expect(liveEdgeUri.queryParameters.containsKey('offset'), isFalse);
 
@@ -135,7 +151,9 @@ void main() {
     test('reportTimeline targets the tuned program and grows duration to the position', () async {
       Map<String, String>? timelineQuery;
       final client = makeClient((request) async {
-        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
         if (request.url.path == '/:/timeline') {
           timelineQuery = request.url.queryParameters;
           return jsonResponse({
@@ -168,7 +186,9 @@ void main() {
       final requests = <Uri>[];
       final client = makeClient((request) async {
         requests.add(request.url);
-        if (request.url.path.endsWith('/tune')) return jsonResponse(tuneResponse());
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
         if (request.url.path == '/:/timeline') {
           throw http.ClientException('temporary timeline DNS failure', request.url);
         }
@@ -193,7 +213,9 @@ void main() {
           tunes++;
           return jsonResponse(tuneResponse());
         }
-        if (request.url.path == '/video/:/transcode/universal/decision') return http.Response('ok', 200);
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          return http.Response('ok', 200);
+        }
         return jsonResponse(const {});
       });
       addTearDown(client.close);
@@ -222,7 +244,7 @@ void main() {
       createdAt: DateTime.fromMillisecondsSinceEpoch(0),
     );
 
-    test('startPlayback negotiates one direct URL; no time-shift; recover reuses it', () async {
+    test('startPlayback negotiates one HLS URL; no time-shift; recover reuses it', () async {
       final client = JellyfinClient.forTesting(
         connection: conn(),
         httpClient: MockClient((request) async {
@@ -230,7 +252,12 @@ void main() {
             return jsonResponse({
               'PlaySessionId': 'play-1',
               'MediaSources': [
-                {'Id': 'source-1', 'Container': 'ts', 'LiveStreamId': 'live-1'},
+                {
+                  'Id': 'source-1',
+                  'Container': 'ts',
+                  'LiveStreamId': 'live-1',
+                  'TranscodingUrl': '/Videos/channel-1/live.m3u8?PlaySessionId=play-1',
+                },
               ],
             });
           }
@@ -245,17 +272,78 @@ void main() {
       expect(session!.program.id, isNull);
       expect(session.captureBuffer, isNull);
       expect(session.canTimeShift, isFalse);
+      expect(session.backgroundPolicy, LiveTvBackgroundPolicy.stopAndExit);
 
       final url = await session.streamUrlAt();
       expect(url, isNotNull);
-      expect(Uri.parse(url!).path, contains('/Videos/channel-1'));
+      expect(Uri.parse(url!).path, '/Videos/channel-1/live.m3u8');
       expect(Uri.parse(url).queryParameters['PlaySessionId'], 'play-1');
 
       // Time-shift unsupported — an offset request must not silently play live.
       expect(await session.streamUrlAt(offsetSeconds: 60), isNull);
 
-      // Session-less URL: recovery is just re-opening it.
+      // Recovery re-opens the negotiated HLS URL.
       expect(await session.recover(directStream: false, directStreamAudio: false), same(session));
+    });
+
+    test('startPlayback propagates status and cancellation failures', () async {
+      final handlers = <(String, Future<http.Response> Function(http.Request))>[
+        ('401', (_) async => http.Response('{}', 401, headers: {'content-type': 'application/json'})),
+        ('500', (_) async => http.Response('{}', 500, headers: {'content-type': 'application/json'})),
+        ('cancelled', (request) async => throw http.RequestAbortedException(request.url)),
+      ];
+
+      for (final (name, handler) in handlers) {
+        final client = JellyfinClient.forTesting(connection: conn(), httpClient: MockClient(handler));
+        addTearDown(client.close);
+        await expectLater(
+          client.liveTv.startPlayback('channel-1'),
+          throwsA(isA<MediaServerHttpException>()),
+          reason: name,
+        );
+      }
+    });
+
+    test('malformed successful playback data throws distinctly', () async {
+      final missingSources = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((_) async => jsonResponse({'PlaySessionId': 'play-1'})),
+      );
+      addTearDown(missingSources.close);
+      await expectLater(
+        missingSources.liveTv.startPlayback('channel-1'),
+        throwsA(
+          isA<MediaServerHttpException>()
+              .having((error) => error.statusCode, 'statusCode', 200)
+              .having((error) => error.responseData, 'responseData', isNull),
+        ),
+      );
+
+      final malformedSource = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient(
+          (_) async => jsonResponse({
+            'MediaSources': ['invalid'],
+          }),
+        ),
+      );
+      addTearDown(malformedSource.close);
+      await expectLater(
+        malformedSource.liveTv.startPlayback('channel-1'),
+        throwsA(
+          isA<PlaybackException>().having((error) => error.reason, 'reason', PlaybackFailureReason.invalidPlaybackData),
+        ),
+      );
+    });
+
+    test('only a valid empty source list returns no live stream', () async {
+      final client = JellyfinClient.forTesting(
+        connection: conn(),
+        httpClient: MockClient((_) async => jsonResponse({'MediaSources': []})),
+      );
+      addTearDown(client.close);
+
+      expect(await client.liveTv.startPlayback('channel-1'), isNull);
     });
   });
 }

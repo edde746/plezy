@@ -44,6 +44,10 @@ class FocusableListTile extends StatefulWidget {
 
   final VisualDensity? visualDensity;
 
+  final double? horizontalTitleGap;
+
+  final double? minLeadingWidth;
+
   const FocusableListTile({
     super.key,
     this.title,
@@ -63,6 +67,8 @@ class FocusableListTile extends StatefulWidget {
     this.textColor,
     this.iconColor,
     this.visualDensity = const VisualDensity(vertical: -3),
+    this.horizontalTitleGap,
+    this.minLeadingWidth,
   });
 
   @override
@@ -75,24 +81,6 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
 
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableListTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,6 +113,8 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
         hoverColor: widget.hoverColor,
         textColor: textColor,
         iconColor: iconColor,
+        horizontalTitleGap: widget.horizontalTitleGap,
+        minLeadingWidth: widget.minLeadingWidth,
       ),
     );
 
@@ -205,24 +195,6 @@ class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>>
   FocusNode? get widgetFocusNode => widget.focusNode;
 
   @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableRadioListTile<T> oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return ClickableCursor(
       enabled: widget.enabled ?? true,
@@ -273,6 +245,16 @@ class FocusableSwitchListTile extends StatefulWidget {
   /// Visual density for the list tile.
   final VisualDensity? visualDensity;
 
+  /// Content padding, e.g. to align with sibling rows. Null uses the
+  /// SwitchListTile default.
+  final EdgeInsetsGeometry? contentPadding;
+
+  /// Horizontal gap between the leading/secondary widget and title.
+  final double? horizontalTitleGap;
+
+  /// Minimum width reserved for the leading/secondary widget.
+  final double? minLeadingWidth;
+
   const FocusableSwitchListTile({
     super.key,
     this.title,
@@ -284,6 +266,9 @@ class FocusableSwitchListTile extends StatefulWidget {
     this.focusNode,
     this.autofocus = false,
     this.visualDensity = const VisualDensity(vertical: -3),
+    this.contentPadding,
+    this.horizontalTitleGap,
+    this.minLeadingWidth,
   });
 
   @override
@@ -294,24 +279,6 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
     with FocusableTileStateMixin<FocusableSwitchListTile> {
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableSwitchListTile oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -325,8 +292,75 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
         onChanged: widget.onChanged,
         dense: widget.dense,
         visualDensity: widget.visualDensity,
+        contentPadding: widget.contentPadding,
         focusNode: effectiveFocusNode,
         autofocus: widget.autofocus,
+        horizontalTitleGap: widget.horizontalTitleGap,
+        minLeadingWidth: widget.minLeadingWidth,
+      ),
+    );
+  }
+}
+
+/// A CheckboxListTile that accepts a FocusNode for keyboard/controller navigation.
+///
+/// Uses Flutter's native CheckboxListTile focus support - no custom styling wrapper.
+class FocusableCheckboxListTile extends StatefulWidget {
+  final Widget? title;
+  final Widget? subtitle;
+  final Widget? secondary;
+  final bool? value;
+  final ValueChanged<bool?>? onChanged;
+  final bool tristate;
+  final bool dense;
+  final FocusNode? focusNode;
+  final bool autofocus;
+  final VisualDensity? visualDensity;
+  final EdgeInsetsGeometry? contentPadding;
+  final ListTileControlAffinity controlAffinity;
+
+  const FocusableCheckboxListTile({
+    super.key,
+    this.title,
+    this.subtitle,
+    this.secondary,
+    required this.value,
+    required this.onChanged,
+    this.tristate = false,
+    this.dense = true,
+    this.focusNode,
+    this.autofocus = false,
+    this.visualDensity = const VisualDensity(vertical: -3),
+    this.contentPadding,
+    this.controlAffinity = ListTileControlAffinity.platform,
+  });
+
+  @override
+  State<FocusableCheckboxListTile> createState() => _FocusableCheckboxListTileState();
+}
+
+class _FocusableCheckboxListTileState extends State<FocusableCheckboxListTile>
+    with FocusableTileStateMixin<FocusableCheckboxListTile> {
+  @override
+  FocusNode? get widgetFocusNode => widget.focusNode;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClickableCursor(
+      enabled: widget.onChanged != null,
+      child: CheckboxListTile(
+        title: widget.title,
+        subtitle: widget.subtitle,
+        secondary: widget.secondary,
+        value: widget.value,
+        onChanged: widget.onChanged,
+        tristate: widget.tristate,
+        dense: widget.dense,
+        visualDensity: widget.visualDensity,
+        contentPadding: widget.contentPadding,
+        focusNode: effectiveFocusNode,
+        autofocus: widget.autofocus,
+        controlAffinity: widget.controlAffinity,
       ),
     );
   }

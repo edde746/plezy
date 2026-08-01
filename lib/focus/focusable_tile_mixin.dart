@@ -1,42 +1,45 @@
 import 'package:flutter/material.dart';
 
 import '../utils/scroll_utils.dart';
+import 'owned_focus_node_binding.dart';
 
 /// Manages the internal/external FocusNode lifecycle for list-tile widgets and
 /// auto-scrolls the tile into view when it gains focus.
 mixin FocusableTileStateMixin<T extends StatefulWidget> on State<T> {
-  late FocusNode _effectiveFocusNode;
-  bool _ownsNode = false;
+  final _focusNodeBinding = OwnedFocusNodeBinding();
+  FocusNode? _boundExternalNode;
 
   FocusNode? get widgetFocusNode;
 
-  FocusNode get effectiveFocusNode => _effectiveFocusNode;
+  FocusNode get effectiveFocusNode => _focusNodeBinding.node;
 
-  void initFocusNode() {
-    if (widgetFocusNode != null) {
-      _effectiveFocusNode = widgetFocusNode!;
-      _ownsNode = false;
-    } else {
-      _effectiveFocusNode = FocusNode();
-      _ownsNode = true;
-    }
-    _effectiveFocusNode.addListener(_onFocusChange);
+  @override
+  void initState() {
+    super.initState();
+    _bindFocusNode();
   }
 
-  void updateFocusNode(FocusNode? oldFocusNode) {
-    if (oldFocusNode != widgetFocusNode) {
-      disposeFocusNode();
-      initFocusNode();
+  @override
+  void didUpdateWidget(T oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_boundExternalNode != widgetFocusNode) {
+      _bindFocusNode();
     }
   }
 
-  void disposeFocusNode() {
-    _effectiveFocusNode.removeListener(_onFocusChange);
-    if (_ownsNode) _effectiveFocusNode.dispose();
+  @override
+  void dispose() {
+    _focusNodeBinding.dispose();
+    super.dispose();
+  }
+
+  void _bindFocusNode() {
+    _boundExternalNode = widgetFocusNode;
+    _focusNodeBinding.bind(externalNode: widgetFocusNode, listener: _onFocusChange);
   }
 
   void _onFocusChange() {
-    if (_effectiveFocusNode.hasFocus) {
+    if (effectiveFocusNode.hasFocus) {
       scrollContextToCenter(context);
     }
   }

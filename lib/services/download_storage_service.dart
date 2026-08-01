@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import 'settings_service.dart';
@@ -27,7 +28,15 @@ class DownloadStorageException implements Exception {
 class DownloadStorageService {
   static DownloadStorageService? _instance;
   static DownloadStorageService get instance => _instance ??= DownloadStorageService._();
-  DownloadStorageService._();
+  DownloadStorageService._() : _safAvailableOverride = false;
+
+  @visibleForTesting
+  DownloadStorageService.forTestingSaf(String baseUri) : _safAvailableOverride = true {
+    _customDownloadPath = baseUri;
+    _customPathType = 'saf';
+  }
+
+  final bool _safAvailableOverride;
 
   /// Drop the cached singleton so the next [instance] call returns a fresh
   /// service. Test-only.
@@ -43,7 +52,8 @@ class DownloadStorageService {
   String? _customDownloadPath;
   String _customPathType = 'file';
 
-  bool get isUsingSaf => Platform.isAndroid && _customPathType == 'saf' && _customDownloadPath != null;
+  bool get isUsingSaf =>
+      (Platform.isAndroid || _safAvailableOverride) && _customPathType == 'saf' && _customDownloadPath != null;
 
   String? get safBaseUri => isUsingSaf ? _customDownloadPath : null;
 
@@ -467,6 +477,28 @@ class DownloadStorageService {
 
   /// Get the extension-less episode filename used for SAF lookups.
   String getEpisodeSafBaseName(MediaItem episode) => _formatEpisodeFileName(episode);
+
+  /// Directory components and file name of a SAF download target. Used by both
+  /// the enqueue path that writes the file and the completion path that looks
+  /// it back up, so the two stay on the same layout. [serverId] is only read
+  /// for kinds without a dedicated folder scheme.
+  ({List<String> components, String fileName}) safTarget(
+    MediaItem metadata,
+    String extension, {
+    int? showYear,
+    required String? serverId,
+  }) {
+    if (metadata.isMovie) {
+      return (components: getMovieSafPathComponents(metadata), fileName: getMovieSafFileName(metadata, extension));
+    }
+    if (metadata.isEpisode) {
+      return (
+        components: getEpisodeSafPathComponents(metadata, showYear: showYear),
+        fileName: getEpisodeSafFileName(metadata, extension),
+      );
+    }
+    return (components: [serverId!, metadata.id], fileName: 'video.$extension');
+  }
 
   bool isSafUri(String storedPath) {
     return storedPath.startsWith('content://');

@@ -37,6 +37,8 @@ class FrameRateManager(
   )
 
   private var currentVideoFps: Float = 0f
+  private var currentVideoWidth: Int = 0
+  private var currentVideoHeight: Int = 0
   private var displayListener: DisplayManager.DisplayListener? = null
   private var pendingSettleRunnable: Runnable? = null
   private var watchdogRunnable: Runnable? = null
@@ -57,9 +59,13 @@ class FrameRateManager(
     fps: Float,
     videoDurationMs: Long,
     extraDelayMs: Long,
+    videoWidth: Int = 0,
+    videoHeight: Int = 0,
     onComplete: (switched: Boolean) -> Unit
   ) {
     currentVideoFps = fps
+    currentVideoWidth = videoWidth
+    currentVideoHeight = videoHeight
     if (fps <= 0f) {
       Log.d(TAG, "setVideoFrameRate: Invalid fps ($fps), skipping")
       onComplete(false)
@@ -68,7 +74,7 @@ class FrameRateManager(
 
     log(
       "request fps=$fps, duration=${videoDurationMs}ms, extraDelayMs=$extraDelayMs, " +
-        "API=${Build.VERSION.SDK_INT}, currentMode=${currentModeDescription()}"
+        "video=${videoWidth}x$videoHeight, API=${Build.VERSION.SDK_INT}, currentMode=${currentModeDescription()}"
     )
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -208,17 +214,42 @@ class FrameRateManager(
   private fun describeSupportedModes(modes: Array<Display.Mode>): String = modes.joinToString(prefix = "[", postfix = "]") { describeMode(it) }
 
   @RequiresApi(Build.VERSION_CODES.M)
-  private fun findBestModeMatch(fps: Float, currentMode: Display.Mode, supportedModes: Array<Display.Mode>): DisplayModeCandidate? = supportedModes.asSequence()
-    .filter { mode ->
-      mode.physicalHeight == currentMode.physicalHeight &&
-        mode.physicalWidth == currentMode.physicalWidth
-    }
-    .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { DisplayModeCandidate(mode, it) } }
-    .minWithOrNull(
-      compareBy<DisplayModeCandidate> { it.match.priority }
-        .thenBy { it.match.error }
-        .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
-    )
+  private fun findBestModeMatch(
+    fps: Float,
+    currentMode: Display.Mode,
+    supportedModes: Array<Display.Mode>,
+    videoWidth: Int,
+    videoHeight: Int
+  ): DisplayModeCandidate? {
+    // Tier 1 — a matching-refresh mode at the CURRENT resolution: a refresh-only
+    // switch, the least disruptive (no resolution/HDMI renegotiation).
+    supportedModes.asSequence()
+      .filter { it.physicalHeight == currentMode.physicalHeight && it.physicalWidth == currentMode.physicalWidth }
+      .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { DisplayModeCandidate(mode, it) } }
+      .minWithOrNull(
+        compareBy<DisplayModeCandidate> { it.match.priority }
+          .thenBy { it.match.error }
+          .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
+      )
+      ?.let { return it }
+
+    // Tier 2 — no same-resolution match (e.g. a 4K panel with no 4K@24 mode, but a
+    // 1080p@23.976 mode for 1080p content). Allow a resolution change, but never one
+    // that downscales the video below its native size (trading detail for cadence).
+    // Requires known video dimensions; without them keep Tier-1-only behaviour.
+    if (videoWidth <= 0 || videoHeight <= 0) return null
+    val currentArea = currentMode.physicalWidth.toLong() * currentMode.physicalHeight
+    return supportedModes.asSequence()
+      .filter { it.physicalWidth >= videoWidth && it.physicalHeight >= videoHeight }
+      .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { DisplayModeCandidate(mode, it) } }
+      .minWithOrNull(
+        // Prefer the resolution closest to the panel's current one (least change,
+        // keeps panel-native res when a high-res match exists), then refresh match.
+        compareBy<DisplayModeCandidate> { abs(it.mode.physicalWidth.toLong() * it.mode.physicalHeight - currentArea) }
+          .thenBy { it.match.priority }
+          .thenBy { it.match.error }
+      )
+  }
 
   @RequiresApi(Build.VERSION_CODES.M)
   private fun setDisplayMode(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
@@ -239,9 +270,12 @@ class FrameRateManager(
     val currentMode = display.mode
     log("supported modes=${describeSupportedModes(supportedModes)}")
 
-    val modeMatch = findBestModeMatch(fps, currentMode, supportedModes)
+    val modeMatch = findBestModeMatch(fps, currentMode, supportedModes, currentVideoWidth, currentVideoHeight)
     if (modeMatch == null) {
-      log("no matching display mode for ${fps}fps at ${currentMode.physicalWidth}x${currentMode.physicalHeight}")
+      log(
+        "no matching display mode for ${fps}fps at ${currentMode.physicalWidth}x${currentMode.physicalHeight} " +
+          "(video=${currentVideoWidth}x$currentVideoHeight)"
+      )
       onComplete(false)
       return
     }

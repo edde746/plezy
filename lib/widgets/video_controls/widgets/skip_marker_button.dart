@@ -16,8 +16,7 @@ class SkipMarkerButton extends StatelessWidget {
   final int autoSkipDelay;
   final double autoSkipProgress;
   final FocusNode focusNode;
-  final VoidCallback onCancelAutoSkip;
-  final VoidCallback onPerformAutoSkip;
+  final VoidCallback onActivate;
   final VoidCallback onFocusDown;
 
   const SkipMarkerButton({
@@ -30,8 +29,7 @@ class SkipMarkerButton extends StatelessWidget {
     required this.autoSkipDelay,
     required this.autoSkipProgress,
     required this.focusNode,
-    required this.onCancelAutoSkip,
-    required this.onPerformAutoSkip,
+    required this.onActivate,
     required this.onFocusDown,
   });
 
@@ -131,10 +129,5 @@ class SkipMarkerButton extends StatelessWidget {
     );
   }
 
-  void _activate() {
-    if (isAutoSkipActive) {
-      onCancelAutoSkip();
-    }
-    onPerformAutoSkip();
-  }
+  void _activate() => onActivate();
 }

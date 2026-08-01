@@ -18,7 +18,7 @@ PlexRoleDto _$PlexRoleDtoFromJson(Map<String, dynamic> json) => PlexRoleDto(
 
 PlexMediaVersionDto _$PlexMediaVersionDtoFromJson(Map<String, dynamic> json) =>
     PlexMediaVersionDto(
-      id: _flexibleIntOrZero(json['id']),
+      id: flexibleIntOrZero(json['id']),
       videoResolution: readStringField(json, 'videoResolution') as String?,
       videoCodec: readStringField(json, 'videoCodec') as String?,
       bitrate: flexibleInt(json['bitrate']),
@@ -73,7 +73,7 @@ PlexHubDto _$PlexHubDtoFromJson(Map<String, dynamic> json) => PlexHubDto(
   title: _hubTitleFromJson(json['title']),
   type: json['type'] as String? ?? 'hub',
   hubIdentifier: json['hubIdentifier'] as String?,
-  size: _flexibleIntOrZero(json['size']),
+  size: flexibleIntOrZero(json['size']),
   more: flexibleBool(json['more']),
   items: _hubItemsFromJson(_readHubItems(json, 'items')),
 );
@@ -89,10 +89,11 @@ PlexMetadataDto _$PlexMetadataDtoFromJson(Map<String, dynamic> json) =>
       titleSort: json['titleSort'] as String?,
       contentRating: json['contentRating'] as String?,
       summary: json['summary'] as String?,
-      rating: (json['rating'] as num?)?.toDouble(),
-      audienceRating: (json['audienceRating'] as num?)?.toDouble(),
-      userRating: (json['userRating'] as num?)?.toDouble(),
+      rating: flexibleDouble(json['rating']),
+      audienceRating: flexibleDouble(json['audienceRating']),
+      userRating: flexibleDouble(json['userRating']),
       year: flexibleInt(json['year']),
+      parentYear: flexibleInt(json['parentYear']),
       originallyAvailableAt: json['originallyAvailableAt'] as String?,
       thumb: json['thumb'] as String?,
       art: json['art'] as String?,
@@ -167,6 +168,7 @@ Map<String, dynamic> _$PlexMetadataDtoToJson(PlexMetadataDto instance) =>
       'audienceRating': ?instance.audienceRating,
       'userRating': ?instance.userRating,
       'year': ?instance.year,
+      'parentYear': ?instance.parentYear,
       'originallyAvailableAt': ?instance.originallyAvailableAt,
       'thumb': ?instance.thumb,
       'art': ?instance.art,

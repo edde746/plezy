@@ -14,8 +14,24 @@ import 'unwatched_count_badge.dart';
 /// [compact] for dense surfaces (folder tree rows, episode thumbnails).
 /// Add a preset here instead of hand-rolling a new overlay variant.
 enum WatchedIndicatorSize {
-  standard(checkInset: 4, checkPadding: 4, checkIconSize: 16, badgeSize: 24, badgeFontSize: 12, barRadius: 8, barMinHeight: 4),
-  compact(checkInset: 3, checkPadding: 2, checkIconSize: 12, badgeSize: 20, badgeFontSize: 10, barRadius: 6, barMinHeight: 3);
+  standard(
+    checkInset: 4,
+    checkPadding: 4,
+    checkIconSize: 16,
+    badgeSize: 24,
+    badgeFontSize: 12,
+    barRadius: 8,
+    barMinHeight: 4,
+  ),
+  compact(
+    checkInset: 3,
+    checkPadding: 2,
+    checkIconSize: 12,
+    badgeSize: 20,
+    badgeFontSize: 10,
+    barRadius: 6,
+    barMinHeight: 3,
+  );
 
   const WatchedIndicatorSize({
     required this.checkInset,
@@ -114,7 +130,7 @@ class WatchedIndicator extends StatelessWidget {
               ),
             ),
           ),
-        // Progress bar for seasons (viewedLeafCount / leafCount)
+        // Progress bar for seasons (viewed leaves / total leaves).
         if (item.isSeason && item.isPartiallyWatched)
           Positioned(
             bottom: 0,
@@ -123,7 +139,7 @@ class WatchedIndicator extends StatelessWidget {
             child: ClipRRect(
               borderRadius: barRadius,
               child: LinearProgressIndicator(
-                value: item.viewedLeafCount! / item.leafCount!,
+                value: item.leafWatchFraction,
                 backgroundColor: tokens(context).outline,
                 valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                 minHeight: size.barMinHeight,

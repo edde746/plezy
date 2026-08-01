@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 
 import '../connection/connection.dart';
-import '../connection/connection_auth_service.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
@@ -24,6 +23,20 @@ class JellyfinQuickConnectInitiation {
   const JellyfinQuickConnectInitiation({required this.code, required this.secret});
 }
 
+class _JellyfinAuthenticationResponse {
+  final String accessToken;
+  final String userId;
+  final String userName;
+  final bool isAdministrator;
+
+  const _JellyfinAuthenticationResponse({
+    required this.accessToken,
+    required this.userId,
+    required this.userName,
+    required this.isAdministrator,
+  });
+}
+
 /// Auth flow for adding or refreshing a [JellyfinConnection].
 ///
 /// Lifecycle for adding a server:
@@ -31,9 +44,9 @@ class JellyfinQuickConnectInitiation {
 ///   2. [authenticateByName] (or future Quick Connect equivalent) — exchanges
 ///      credentials for a long-lived access token and returns a built
 ///      [JellyfinConnection] ready to insert into [ConnectionRegistry].
-///   3. (later) [validate] / [refresh] / [signOut] for the [ConnectionAuthService]
-///      contract.
-class JellyfinConnectionAuthService implements ConnectionAuthService {
+///   3. (later) [validate] / [refresh] / [signOut] to keep the stored
+///      connection current.
+class JellyfinConnectionAuthService {
   JellyfinConnectionAuthService({
     required this.clientName,
     required this.clientVersion,
@@ -100,6 +113,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     required String deviceId,
     JellyfinServerInfo? serverInfo,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final info = serverInfo ?? await probe(normalised);
 
@@ -107,60 +121,35 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     final client = _buildHttpClient(
       baseUrl: normalised,
       headers: {'Authorization': authHeader, 'Content-Type': 'application/json'},
     );
     try {
-      final response = await client.post(
-        '/Users/AuthenticateByName',
-        body: jsonEncode({'Username': username, 'Pw': password}),
-        // Bound the auth POST so a hanging server can't freeze the auth
-        // screen indefinitely; mirrors the timeout on [probe].
-        timeout: MediaServerTimeouts.jellyfinProbe,
+      final auth = await _readAuthenticationResponse(
+        client.post(
+          '/Users/AuthenticateByName',
+          body: jsonEncode({'Username': username, 'Pw': password}),
+          timeout: MediaServerTimeouts.jellyfinProbe,
+        ),
+        rejectedStatusCodes: const {401, 403},
+        rejectionMessage: 'Invalid username or password',
+        responseLabel: 'Authentication response',
+        notJsonMessage: 'Authentication response was not JSON',
       );
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        throw MediaServerAuthException('Invalid username or password', statusCode: response.statusCode);
-      }
-      throwIfHttpError(response);
-      final data = response.data;
-      if (data is! Map<String, dynamic>) {
-        throw MediaServerAuthException('Authentication response was not JSON');
-      }
-      final accessToken = data['AccessToken'] as String?;
-      final user = data['User'] as Map<String, dynamic>?;
-      if (accessToken == null || user == null) {
-        throw MediaServerAuthException('Authentication response missing AccessToken or User');
-      }
-      final userId = user['Id'] as String?;
-      final userName = user['Name'] as String?;
-      if (userId == null || userName == null) {
-        throw MediaServerAuthException('Authentication response missing User.Id or User.Name');
-      }
-      final policy = user['Policy'] as Map<String, dynamic>?;
-      final isAdmin = policy?['IsAdministrator'] as bool? ?? false;
 
       return _buildConnection(
         info: info,
         normalisedBaseUrl: normalised,
         baseUrls: baseUrls,
-        userId: userId,
-        userName: userName,
-        accessToken: accessToken,
-        deviceId: deviceId,
-        isAdministrator: isAdmin,
+        userId: auth.userId,
+        userName: auth.userName,
+        accessToken: auth.accessToken,
+        deviceId: validDeviceId,
+        isAdministrator: auth.isAdministrator,
       );
-    } on TimeoutException {
-      // Defensive: most request timeouts are wrapped by MediaServerHttpClient.
-      // Surface raw timeouts as a URL-level error if one escapes.
-      throw MediaServerUrlException('Server did not respond in time');
-    } on MediaServerHttpException catch (e) {
-      if (e.statusCode == 401 || e.statusCode == 403) {
-        throw MediaServerAuthException('Invalid username or password', statusCode: e.statusCode);
-      }
-      rethrow;
     } finally {
       client.close();
     }
@@ -192,12 +181,13 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     required String baseUrl,
     required String deviceId,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final authHeader = buildJellyfinAuthHeader(
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     final client = _buildHttpClient(baseUrl: normalised, headers: {'Authorization': authHeader});
     try {
@@ -245,6 +235,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     Duration timeout = const Duration(minutes: 5),
     bool Function()? shouldCancel,
   }) async {
+    final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final info = serverInfo ?? await probe(normalised);
     LogRedactionManager.registerCustomValue(secret);
@@ -253,7 +244,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       clientName: clientName,
       clientVersion: clientVersion,
       deviceName: deviceName,
-      deviceId: deviceId,
+      deviceId: validDeviceId,
     );
     // Reuse a single client across the polling loop — opening one per tick
     // would churn TCP connections needlessly on a 5-minute window.
@@ -304,55 +295,35 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       headers: {'Authorization': authHeader, 'Content-Type': 'application/json'},
     );
     try {
-      final response = await exchangeClient.post(
-        '/Users/AuthenticateWithQuickConnect',
-        body: jsonEncode({'Secret': secret}),
+      final auth = await _readAuthenticationResponse(
+        exchangeClient.post(
+          '/Users/AuthenticateWithQuickConnect',
+          body: jsonEncode({'Secret': secret}),
+          timeout: MediaServerTimeouts.jellyfinProbe,
+        ),
+        rejectedStatusCodes: const {400, 401, 403},
+        rejectionMessage: 'Quick Connect exchange rejected by server',
+        responseLabel: 'Quick Connect exchange',
+        notJsonMessage: 'Quick Connect exchange response was not JSON',
       );
-      if (response.statusCode == 400) {
-        throw MediaServerAuthException('Quick Connect exchange rejected by server', statusCode: response.statusCode);
-      }
-      if (response.statusCode == 401 || response.statusCode == 403) {
-        throw MediaServerAuthException('Quick Connect exchange rejected by server', statusCode: response.statusCode);
-      }
-      throwIfHttpError(response);
-      final data = response.data;
-      if (data is! Map<String, dynamic>) {
-        throw MediaServerAuthException('Quick Connect exchange response was not JSON');
-      }
-      final accessToken = data['AccessToken'] as String?;
-      final user = data['User'] as Map<String, dynamic>?;
-      if (accessToken == null || user == null) {
-        throw MediaServerAuthException('Quick Connect exchange missing AccessToken or User');
-      }
-      final userId = user['Id'] as String?;
-      final userName = user['Name'] as String?;
-      if (userId == null || userName == null) {
-        throw MediaServerAuthException('Quick Connect exchange missing User.Id or User.Name');
-      }
-      final policy = user['Policy'] as Map<String, dynamic>?;
-      final isAdmin = policy?['IsAdministrator'] as bool? ?? false;
 
       return _buildConnection(
         info: info,
         normalisedBaseUrl: normalised,
         baseUrls: baseUrls,
-        userId: userId,
-        userName: userName,
-        accessToken: accessToken,
-        deviceId: deviceId,
-        isAdministrator: isAdmin,
+        userId: auth.userId,
+        userName: auth.userName,
+        accessToken: auth.accessToken,
+        deviceId: validDeviceId,
+        isAdministrator: auth.isAdministrator,
       );
-    } on MediaServerHttpException catch (e) {
-      if (e.statusCode == 400 || e.statusCode == 401 || e.statusCode == 403) {
-        throw MediaServerAuthException('Quick Connect exchange rejected by server', statusCode: e.statusCode);
-      }
-      rethrow;
     } finally {
       exchangeClient.close();
     }
   }
 
-  @override
+  /// Best-effort check that an existing token still works. Returns false on
+  /// 401/403; throws on transport failures the caller should retry.
   Future<bool> validate(Connection connection) async {
     if (connection is! JellyfinConnection) return false;
     final client = _authenticatedClient(connection);
@@ -367,7 +338,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     }
   }
 
-  @override
+  /// Re-check the stored token and return the connection with its status
+  /// updated accordingly.
   Future<Connection> refresh(Connection connection) async {
     if (connection is! JellyfinConnection) return connection;
     final ok = await validate(connection);
@@ -377,7 +349,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     return connection.copyWith(status: ConnectionStatus.online, lastAuthenticatedAt: DateTime.now());
   }
 
-  @override
+  /// Revoke the token server-side and forget local credentials. The caller
+  /// is responsible for removing the row from [ConnectionRegistry].
   Future<void> signOut(Connection connection) async {
     if (connection is! JellyfinConnection) return;
     final client = _authenticatedClient(connection);
@@ -411,6 +384,54 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
   /// Strip any trailing slash so subsequent path joins (`/Users/...`) don't
   /// produce double slashes. Delegates to the shared [stripTrailingSlash].
   static String _normaliseBaseUrl(String input) => JellyfinEndpointDiscovery.normalizeBaseUrl(input);
+
+  static Future<_JellyfinAuthenticationResponse> _readAuthenticationResponse(
+    Future<MediaServerResponse> responseFuture, {
+    required Set<int> rejectedStatusCodes,
+    required String rejectionMessage,
+    required String responseLabel,
+    required String notJsonMessage,
+  }) async {
+    try {
+      final response = await responseFuture;
+      if (rejectedStatusCodes.contains(response.statusCode)) {
+        throw MediaServerAuthException(rejectionMessage, statusCode: response.statusCode);
+      }
+      throwIfHttpError(response);
+
+      final data = response.data;
+      if (data is! Map<String, dynamic>) {
+        throw MediaServerAuthException(notJsonMessage);
+      }
+      final accessToken = data['AccessToken'] as String?;
+      final user = data['User'] as Map<String, dynamic>?;
+      if (accessToken == null || user == null) {
+        throw MediaServerAuthException('$responseLabel missing AccessToken or User');
+      }
+      final userId = user['Id'] as String?;
+      final userName = user['Name'] as String?;
+      if (userId == null || userName == null) {
+        throw MediaServerAuthException('$responseLabel missing User.Id or User.Name');
+      }
+      final policy = user['Policy'] as Map<String, dynamic>?;
+      return _JellyfinAuthenticationResponse(
+        accessToken: accessToken,
+        userId: userId,
+        userName: userName,
+        isAdministrator: policy?['IsAdministrator'] as bool? ?? false,
+      );
+    } on TimeoutException {
+      // MediaServerHttpClient normally wraps timeouts, but keep raw client
+      // implementations aligned with the same auth policy.
+      throw MediaServerUrlException('Server did not respond in time');
+    } on MediaServerHttpException catch (e) {
+      final status = e.statusCode;
+      if (status != null && rejectedStatusCodes.contains(status)) {
+        throw MediaServerAuthException(rejectionMessage, statusCode: status);
+      }
+      rethrow;
+    }
+  }
 
   /// Build a [JellyfinConnection] from a successful auth/exchange response.
   /// Connection id is derived from `(machineId, userId)` so each user on a

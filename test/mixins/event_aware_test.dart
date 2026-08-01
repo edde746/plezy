@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:plezy/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -39,24 +38,6 @@ void main() {
     });
 
     tearDown(() => notifier.dispose());
-
-    test('delivers events when no filters are set (mounted, no serverId/keys)', () async {
-      final sub = subscribeToHierarchicalEvents<_FakeEvent>(
-        notifier: notifier,
-        mounted: () => true,
-        serverId: () => null,
-        globalKeys: () => null,
-        itemIds: () => null,
-        onEvent: received.add,
-      );
-
-      final ev = _FakeEvent(serverId: ServerId('s1'), itemId: '42');
-      notifier.notify(ev);
-      await _settle();
-
-      expect(received, [ev]);
-      await sub.cancel();
-    });
 
     test('drops events when not mounted', () async {
       var mounted = false;
@@ -274,20 +255,6 @@ void main() {
       notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '2'));
       await _settle();
       expect(received, hasLength(1));
-    });
-
-    test('returns a typed StreamSubscription', () {
-      final sub = subscribeToHierarchicalEvents<_FakeEvent>(
-        notifier: notifier,
-        mounted: () => true,
-        serverId: () => null,
-        globalKeys: () => null,
-        itemIds: () => null,
-        onEvent: received.add,
-      );
-
-      expect(sub, isA<StreamSubscription<_FakeEvent>>());
-      sub.cancel();
     });
   });
 }

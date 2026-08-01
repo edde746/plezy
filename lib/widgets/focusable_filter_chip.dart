@@ -56,24 +56,6 @@ class _FocusableFilterChipState extends State<FocusableFilterChip> with Focusabl
   @override
   String get debugLabel => 'filter_chip_${widget.label}';
 
-  @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableFilterChip oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
-
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     return handleChipKeyEvent(
       node,
@@ -104,6 +86,7 @@ class _FocusableFilterChipState extends State<FocusableFilterChip> with Focusabl
       focusNode: focusNode,
       onKeyEvent: _handleKeyEvent,
       onTap: widget.onPressed,
+      semanticLabel: widget.label,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       backgroundColor: backgroundColor,
       child: Row(

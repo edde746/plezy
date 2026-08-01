@@ -71,6 +71,40 @@ void main() {
       expect(controller.controlsVisible, isFalse);
     });
 
+    testWidgets('show while paused restarts paused auto-hide timer', (tester) async {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.configure(hideDelay: const Duration(milliseconds: 100));
+      controller.setPlaying(true);
+      controller.setPlaying(false);
+
+      await tester.pump(const Duration(milliseconds: 50));
+      controller.show();
+
+      await tester.pump(const Duration(milliseconds: 99));
+      expect(controller.controlsVisible, isTrue);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(controller.controlsVisible, isFalse);
+    });
+
+    testWidgets('pointer activity while paused restarts paused auto-hide timer', (tester) async {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.configure(hideDelay: const Duration(milliseconds: 100));
+      controller.setPlaying(true);
+      controller.setPlaying(false);
+
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(controller.recordPointerActivity(), isTrue);
+
+      await tester.pump(const Duration(milliseconds: 99));
+      expect(controller.controlsVisible, isTrue);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(controller.controlsVisible, isFalse);
+    });
+
     test('show stores focus target and notifies even when already visible', () {
       final controller = PlayerChromeController();
       addTearDown(controller.dispose);
@@ -83,6 +117,32 @@ void main() {
       expect(controller.pendingFocusTarget, PlayerChromeFocusTarget.playPause);
       expect(controller.takeFocusTarget(), PlayerChromeFocusTarget.playPause);
       expect(controller.takeFocusTarget(), isNull);
+    });
+
+    test('hide keeps controls presented until the opacity animation completes', () {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.hide();
+
+      expect(controller.controlsVisible, isFalse);
+      expect(controller.controlsPresented, isTrue);
+
+      controller.markControlsHidden();
+
+      expect(controller.controlsPresented, isFalse);
+    });
+
+    test('a stale fade-out completion cannot hide controls that were shown again', () {
+      final controller = PlayerChromeController();
+      addTearDown(controller.dispose);
+
+      controller.hide();
+      controller.show();
+      controller.markControlsHidden();
+
+      expect(controller.controlsVisible, isTrue);
+      expect(controller.controlsPresented, isTrue);
     });
 
     test('silent release removes hold without notifying listeners', () {

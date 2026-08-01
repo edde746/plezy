@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../focus/key_event_utils.dart';
+import '../../i18n/strings.g.dart';
 import '../../media/library_first_character.dart';
 import '../../widgets/clickable_cursor.dart';
 import 'alpha_jump_helper.dart';
@@ -159,6 +160,10 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
       }
     });
     if (selectResult != KeyEventResult.ignored) return selectResult;
+    if (widget.onBack != null) {
+      final backResult = handleBackKeyAction(event, widget.onBack!);
+      if (backResult != KeyEventResult.ignored) return backResult;
+    }
 
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
@@ -180,12 +185,6 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     }
     if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
       widget.onNavigateLeft?.call();
-      return KeyEventResult.handled;
-    }
-    if (event.logicalKey == LogicalKeyboardKey.escape ||
-        event.logicalKey == LogicalKeyboardKey.goBack ||
-        event.logicalKey == LogicalKeyboardKey.gameButtonB) {
-      widget.onBack?.call();
       return KeyEventResult.handled;
     }
     return KeyEventResult.ignored;
@@ -219,73 +218,89 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
           final markerSize = (letterSlotHeight - 2).clamp(10.0, 18.0).toDouble();
           final fontSize = (letterSlotHeight * 0.58).clamp(7.0, 10.0).toDouble();
 
-          return ClickableCursor(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTapDown: (details) {
-                final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
-                setState(() => _highlightedIndex = idx);
-                _jumpToLetter(_displayed[idx]);
-              },
-              onVerticalDragUpdate: (details) {
-                final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
-                if (idx != _highlightedIndex) {
+          return Semantics(
+            container: true,
+            explicitChildNodes: true,
+            label: t.accessibility.alphabetNavigation,
+            child: ClickableCursor(
+              child: GestureDetector(
+                excludeFromSemantics: true,
+                behavior: HitTestBehavior.opaque,
+                onTapDown: (details) {
+                  final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
                   setState(() => _highlightedIndex = idx);
                   _jumpToLetter(_displayed[idx]);
-                }
-              },
-              child: Container(
-                width: 20,
-                decoration: BoxDecoration(
-                  color: colorScheme.surface.withValues(alpha: 0.7),
-                  borderRadius: const BorderRadius.all(Radius.circular(10)),
-                ),
-                child: Column(
-                  mainAxisAlignment: .spaceEvenly,
-                  children: List.generate(_displayed.length, (i) {
-                    final letter = _displayed[i];
-                    final isCurrent = letter == currentLetter && !_hasFocus;
-                    final isHighlighted = _hasFocus && i == _highlightedIndex;
+                },
+                onVerticalDragUpdate: (details) {
+                  final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
+                  if (idx != _highlightedIndex) {
+                    setState(() => _highlightedIndex = idx);
+                    _jumpToLetter(_displayed[idx]);
+                  }
+                },
+                child: Container(
+                  width: 20,
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface.withValues(alpha: 0.7),
+                    borderRadius: const BorderRadius.all(Radius.circular(10)),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: .spaceEvenly,
+                    children: List.generate(_displayed.length, (i) {
+                      final letter = _displayed[i];
+                      final isCurrent = letter == currentLetter && !_hasFocus;
+                      final isHighlighted = _hasFocus && i == _highlightedIndex;
 
-                    BoxDecoration? decoration;
-                    if (isHighlighted) {
-                      decoration = BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle);
-                    } else if (isCurrent) {
-                      decoration = BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                      );
-                    }
+                      BoxDecoration? decoration;
+                      if (isHighlighted) {
+                        decoration = BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle);
+                      } else if (isCurrent) {
+                        decoration = BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.3),
+                          shape: BoxShape.circle,
+                        );
+                      }
 
-                    Color letterColor;
-                    if (isHighlighted) {
-                      letterColor = colorScheme.onPrimary;
-                    } else if (isCurrent) {
-                      letterColor = colorScheme.primary;
-                    } else {
-                      letterColor = colorScheme.onSurface;
-                    }
+                      Color letterColor;
+                      if (isHighlighted) {
+                        letterColor = colorScheme.onPrimary;
+                      } else if (isCurrent) {
+                        letterColor = colorScheme.primary;
+                      } else {
+                        letterColor = colorScheme.onSurface;
+                      }
 
-                    return SizedBox(
-                      height: letterSlotHeight,
-                      child: Center(
-                        child: Container(
-                          width: markerSize,
-                          height: markerSize,
-                          decoration: decoration,
-                          alignment: .center,
-                          child: Text(
-                            letter,
-                            style: TextStyle(
-                              fontSize: fontSize,
-                              fontWeight: (isCurrent || isHighlighted) ? FontWeight.bold : FontWeight.normal,
-                              color: letterColor,
+                      return Semantics(
+                        button: true,
+                        selected: isCurrent || isHighlighted,
+                        label: letter,
+                        excludeSemantics: true,
+                        onTap: () {
+                          setState(() => _highlightedIndex = i);
+                          _jumpToLetter(letter);
+                        },
+                        child: SizedBox(
+                          height: letterSlotHeight,
+                          child: Center(
+                            child: Container(
+                              width: markerSize,
+                              height: markerSize,
+                              decoration: decoration,
+                              alignment: .center,
+                              child: Text(
+                                letter,
+                                style: TextStyle(
+                                  fontSize: fontSize,
+                                  fontWeight: (isCurrent || isHighlighted) ? FontWeight.bold : FontWeight.normal,
+                                  color: letterColor,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    );
-                  }),
+                      );
+                    }),
+                  ),
                 ),
               ),
             ),

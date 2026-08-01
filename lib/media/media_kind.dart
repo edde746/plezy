@@ -26,11 +26,15 @@ enum MediaKind {
 
   bool get isVideo => this == movie || this == episode || this == clip;
 
-  bool get isShowRelated => this == show || this == season || this == episode;
-
   bool get isMusic => this == artist || this == album || this == track;
 
   bool get isPlayable => isVideo || this == track;
+
+  /// Whether this container kind derives watched state from aggregate leaves.
+  bool get usesLeafWatchCounts => switch (this) {
+    show || season || artist || album || collection || playlist || folder => true,
+    movie || episode || track || clip || photo || unknown => false,
+  };
 
   /// Lowercase string id used when persisting or comparing legacy code paths
   /// that still hold raw type strings.

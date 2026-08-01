@@ -5,11 +5,36 @@ import 'package:dart_discord_presence/dart_discord_presence.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+import '../media/playback_timeline.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/media_server_http_client.dart';
 import 'settings_service.dart';
+
+const Duration _defaultPosterCacheTtl = Duration(hours: 3);
+const Duration _maxPosterCacheTtl = Duration(days: 365);
+
+DateTime posterCacheExpiryFromResponse(Object? responseData, {required DateTime receivedAt}) {
+  final expiresIn = switch (responseData) {
+    {'expiresIn': final int seconds} => seconds,
+    _ => null,
+  };
+  if (expiresIn == null) {
+    return receivedAt.add(_defaultPosterCacheTtl);
+  }
+  if (expiresIn <= 0) {
+    return receivedAt;
+  }
+  if (expiresIn > _maxPosterCacheTtl.inSeconds) {
+    return receivedAt.add(_defaultPosterCacheTtl);
+  }
+  try {
+    return receivedAt.add(Duration(seconds: expiresIn));
+  } on RangeError {
+    return receivedAt.add(_defaultPosterCacheTtl);
+  }
+}
 
 /// Cached poster URL with expiry timestamp.
 class _CachedUrl {
@@ -28,7 +53,6 @@ class _CachedUrl {
 class DiscordRPCService {
   static const String _applicationId = '1453773470306402439';
   static const String _posterUploadUrl = 'https://ice.plezy.app/posters';
-  static const Duration _posterCacheTtl = Duration(hours: 3);
   static const int _maxPosterUploadBytes = 5 * 1024 * 1024;
 
   /// Cache of thumbnail paths to hosted poster URLs. Keyed by
@@ -50,9 +74,9 @@ class DiscordRPCService {
   MediaServerClient? _currentClient;
   String? _cachedThumbnailUrl;
   DateTime? _playbackStartTime;
-  Duration? _mediaDuration;
-  Duration? _currentPosition;
+  final PlaybackTimeline _timeline = PlaybackTimeline();
   double _playbackSpeed = 1.0;
+  int _playbackRevision = 0;
   Timer? _reconnectTimer;
   DateTime? _lastPresenceUpdate;
   StreamSubscription<void>? _readySubscription;
@@ -106,36 +130,31 @@ class DiscordRPCService {
   /// thumbnail upload uses the neutral [MediaServerClient.thumbnailUrl] /
   /// [MediaServerClient.streamHeaders] surface.
   Future<void> startPlayback(MediaItem metadata, MediaServerClient client) async {
+    final revision = ++_playbackRevision;
     _currentMetadata = metadata;
     _currentClient = client;
     _playbackStartTime = DateTime.now();
-    _mediaDuration = metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null;
-    _currentPosition = Duration.zero;
+    _timeline.reset(duration: metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : null);
     _cachedThumbnailUrl = null;
     _playbackSpeed = 1.0;
 
     if (_isEnabled && _isConnected) {
       // Upload thumbnail in background, don't block playback
-      unawaited(_uploadThumbnailAndUpdatePresence());
+      unawaited(_uploadThumbnailAndUpdatePresence(revision, metadata, client));
     }
   }
 
   /// Update current playback position (for progress bar)
   void updatePosition(Duration position) {
-    final previousPosition = _currentPosition;
-    _currentPosition = position;
+    final isSeek = _timeline.updatePosition(position);
 
     // Update presence if position jumped significantly (seek detected)
-    if (_isEnabled && _isConnected && _playbackStartTime != null && previousPosition != null) {
-      final drift = (position - previousPosition).abs();
-      // If position changed by more than 5 seconds, likely a seek
-      if (drift > const Duration(seconds: 5)) {
-        // Throttle updates to max once per second
-        final now = DateTime.now();
-        if (_lastPresenceUpdate == null || now.difference(_lastPresenceUpdate!) > const Duration(seconds: 1)) {
-          _lastPresenceUpdate = now;
-          _updatePresence();
-        }
+    if (_isEnabled && _isConnected && _playbackStartTime != null && isSeek) {
+      // Throttle updates to max once per second
+      final now = DateTime.now();
+      if (_lastPresenceUpdate == null || now.difference(_lastPresenceUpdate!) > const Duration(seconds: 1)) {
+        _lastPresenceUpdate = now;
+        _updatePresence();
       }
     }
   }
@@ -172,6 +191,7 @@ class DiscordRPCService {
   }
 
   Future<void> stopPlayback() async {
+    _playbackRevision++;
     _currentMetadata = null;
     _currentClient = null;
     _playbackStartTime = null;
@@ -211,8 +231,10 @@ class DiscordRPCService {
         await Future.delayed(const Duration(milliseconds: 200));
 
         // Update presence if we have active playback
-        if (_currentMetadata != null) {
-          await _uploadThumbnailAndUpdatePresence();
+        final metadata = _currentMetadata;
+        final client = _currentClient;
+        if (metadata != null && client != null) {
+          await _uploadThumbnailAndUpdatePresence(_playbackRevision, metadata, client);
         }
       });
 
@@ -276,11 +298,12 @@ class DiscordRPCService {
     });
   }
 
-  Future<void> _uploadThumbnailAndUpdatePresence() async {
-    // Try to upload thumbnail, but don't block on failure
-    if (_cachedThumbnailUrl == null && _currentMetadata != null && _currentClient != null) {
-      _cachedThumbnailUrl = await _uploadThumbnail(_currentMetadata!, _currentClient!);
+  Future<void> _uploadThumbnailAndUpdatePresence(int revision, MediaItem metadata, MediaServerClient client) async {
+    final thumbnailUrl = await _uploadThumbnail(metadata, client);
+    if (revision != _playbackRevision || !identical(_currentMetadata, metadata) || !identical(_currentClient, client)) {
+      return;
     }
+    _cachedThumbnailUrl = thumbnailUrl;
     await _updatePresence();
   }
 
@@ -320,14 +343,21 @@ class DiscordRPCService {
         timeout: const Duration(seconds: 15),
       );
 
-      final uploadedUrl = switch (uploadResponse.data) {
+      final responseData = uploadResponse.data;
+      final uploadedUrl = switch (responseData) {
         {'url': final String url} when uploadResponse.statusCode >= 200 && uploadResponse.statusCode < 300 => url,
         _ => null,
       };
       final hostedUrl = _absolutePosterUrl(uploadedUrl);
       if (hostedUrl != null) {
-        _posterUrlCache[cacheKey] = _CachedUrl(hostedUrl, DateTime.now().add(_posterCacheTtl));
-        appLogger.d('Uploaded and cached thumbnail: $hostedUrl');
+        final receivedAt = DateTime.now();
+        final expiresAt = posterCacheExpiryFromResponse(responseData, receivedAt: receivedAt);
+        if (expiresAt.isAfter(receivedAt)) {
+          _posterUrlCache[cacheKey] = _CachedUrl(hostedUrl, expiresAt);
+          appLogger.d('Uploaded and cached thumbnail until $expiresAt: $hostedUrl');
+        } else {
+          appLogger.d('Uploaded thumbnail without caching expired URL: $hostedUrl');
+        }
         return hostedUrl;
       }
     } catch (e) {
@@ -391,17 +421,16 @@ class DiscordRPCService {
     // When paused, don't show timestamps (progress bar would be inaccurate)
     if (_playbackStartTime == null) return null;
 
-    // If we have duration, show progress bar
-    if (_mediaDuration != null) {
+    final duration = _timeline.duration;
+    if (duration != null) {
       final now = DateTime.now();
-      final position = _currentPosition ?? Duration.zero;
 
       // Calculate remaining time accounting for playback speed
-      final remainingDuration = _mediaDuration! - position;
+      final remainingDuration = duration - _timeline.position;
       final adjustedRemaining = Duration(microseconds: (remainingDuration.inMicroseconds / _playbackSpeed).round());
 
       // Calculate total adjusted duration for progress bar
-      final adjustedTotal = Duration(microseconds: (_mediaDuration!.inMicroseconds / _playbackSpeed).round());
+      final adjustedTotal = Duration(microseconds: (duration.inMicroseconds / _playbackSpeed).round());
 
       final effectiveEnd = now.add(adjustedRemaining);
       final effectiveStart = effectiveEnd.subtract(adjustedTotal);

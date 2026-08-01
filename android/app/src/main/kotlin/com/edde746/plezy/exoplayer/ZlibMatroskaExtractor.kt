@@ -5,19 +5,23 @@ import androidx.media3.extractor.ExtractorInput
 import androidx.media3.extractor.ExtractorOutput
 import androidx.media3.extractor.SeekMap
 import androidx.media3.extractor.TrackOutput
-import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.text.SubtitleParser
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.libass.media.extractor.AssMatroskaExtractor
 
 /**
- * Extends AssMatroskaExtractor to add support for MKV ContentCompAlgo 0 (zlib).
+ * Extends AssMatroskaExtractor to add support for MKV quirks media3 rejects:
  *
- * Media3's MatroskaExtractor only supports ContentCompAlgo 3 (header stripping).
- * This subclass intercepts the compression algorithm during track header parsing:
+ * ContentCompAlgo 0 (zlib) — media3 only supports ContentCompAlgo 3 (header
+ * stripping). This subclass intercepts the compression algorithm during track
+ * header parsing:
  * - Tells the parent it's header stripping (algo 3) to avoid the ParserException
  * - Wraps TrackOutputs with ZlibInflatingTrackOutput to decompress per-sample data
  * - Skips ContentCompSettings for zlib tracks (not applicable)
+ *
+ * LOAS/LATM AAC as A_MS/ACM — media3 sets audio/x-unknown for non-PCM ACM
+ * tracks (silent playback). Detected tracks are wrapped with LatmTrackOutput,
+ * which unwraps LOAS frames to raw AAC for direct-playing Matroska files.
  */
 class ZlibMatroskaExtractor(
   subtitleParserFactory: SubtitleParser.Factory,
@@ -32,27 +36,25 @@ class ZlibMatroskaExtractor(
     private const val ID_TRACK_ENTRY = 0xAE
     private const val ID_CONTENT_COMPRESSION_ALGORITHM = 0x4254
     private const val ID_CONTENT_COMPRESSION_SETTINGS = 0x4255
-
-    private val extractorOutputField by lazy {
-      MatroskaExtractor::class.java.getDeclaredField("extractorOutput").apply {
-        isAccessible = true
-      }
-    }
   }
 
   private var zlibOutput: ZlibExtractorOutputWrapper? = null
+  private var latmOutput: LatmExtractorOutputWrapper? = null
   private var currentTrackUsesZlib = false
 
   override fun startMasterElement(id: Int, contentPosition: Long, contentSize: Long) {
     super.startMasterElement(id, contentPosition, contentSize)
 
-    // After super installs AssSubtitleExtractorOutput, wrap it with our zlib layer
+    // After super installs AssSubtitleExtractorOutput, wrap it with our zlib +
+    // LATM layers (zlib outermost so inflation runs before LATM parsing).
     if (id == ID_SEGMENT && zlibOutput == null) {
-      val currentOutput = extractorOutputField.get(this) as ExtractorOutput
-      val wrapper = ZlibExtractorOutputWrapper(currentOutput)
+      val currentOutput = matroskaExtractorOutputField.get(this) as ExtractorOutput
+      val latmWrapper = LatmExtractorOutputWrapper(currentOutput)
+      latmOutput = latmWrapper
+      val wrapper = ZlibExtractorOutputWrapper(latmWrapper)
       zlibOutput = wrapper
-      extractorOutputField.set(this, wrapper)
-      Log.d(TAG, "Installed zlib ExtractorOutput wrapper")
+      matroskaExtractorOutputField.set(this, wrapper)
+      Log.d(TAG, "Installed zlib+LATM ExtractorOutput wrapper")
     }
   }
 
@@ -78,6 +80,16 @@ class ZlibMatroskaExtractor(
   }
 
   override fun endMasterElement(id: Int) {
+    if (id == ID_TRACK_ENTRY) {
+      // Must mark before super — the track output is created inside super's
+      // endMasterElement, and the x-unknown format must never reach the queue.
+      val track = getCurrentTrack(id)
+      if (isLoasAcmTrack(track.codecId, track.codecPrivate)) {
+        Log.i(TAG, "Track ${track.number} is LOAS/LATM AAC, unwrapping to raw AAC")
+        latmOutput?.markNextTrackLatm()
+      }
+    }
+
     val wasZlib = currentTrackUsesZlib
     super.endMasterElement(id)
 
@@ -86,6 +98,12 @@ class ZlibMatroskaExtractor(
       currentTrackUsesZlib = false
       Log.i(TAG, "Activated zlib inflation for track")
     }
+  }
+
+  override fun seek(position: Long, timeUs: Long) {
+    latmOutput?.resetTracks()
+    zlibOutput?.resetTracks()
+    super.seek(position, timeUs)
   }
 
   /**
@@ -98,16 +116,22 @@ class ZlibMatroskaExtractor(
   ) : ExtractorOutput {
 
     private var lastCreatedWrapper: ZlibInflatingTrackOutput? = null
+    private val trackOutputs = mutableListOf<ZlibInflatingTrackOutput>()
 
     override fun track(id: Int, type: Int): TrackOutput {
       val original = delegate.track(id, type)
-      val wrapper = ZlibInflatingTrackOutput(original)
-      lastCreatedWrapper = wrapper
-      return wrapper
+      return ZlibInflatingTrackOutput(original).also {
+        trackOutputs.add(it)
+        lastCreatedWrapper = it
+      }
     }
 
     fun activateLast() {
       lastCreatedWrapper?.active = true
+    }
+
+    fun resetTracks() {
+      trackOutputs.forEach { it.resetBufferedData() }
     }
 
     override fun endTracks() = delegate.endTracks()

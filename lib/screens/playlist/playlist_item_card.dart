@@ -6,11 +6,13 @@ import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
 import '../../providers/watch_state_store.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
+import '../../utils/media_image_helper.dart';
 import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/media_context_menu.dart';
-import '../../widgets/media_progress_bar.dart';
+import '../../widgets/watched_indicator.dart';
 import '../../widgets/optimized_media_image.dart';
 
 /// Custom list item widget for playlist items
@@ -18,9 +20,9 @@ import '../../widgets/optimized_media_image.dart';
 class PlaylistItemCard extends StatefulWidget {
   final MediaItem item;
   final int index;
-  final VoidCallback onRemove;
+  final VoidCallback? onRemove;
   final VoidCallback? onTap;
-  final void Function(String itemId)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final bool canReorder; // Whether drag handle should be shown
 
   // Focus state for keyboard/D-pad navigation
@@ -52,6 +54,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
   Widget build(BuildContext context) {
     final item = _effectiveItem(context);
     final colorScheme = Theme.of(context).colorScheme;
+    final textMuted = tokens(context).textMuted;
 
     // Determine if row is focused (main content area)
     final isRowFocused = widget.isFocused && widget.focusedColumn == 0;
@@ -116,7 +119,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                           child: AppIcon(
                             widget.isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
                             fill: 1,
-                            color: (widget.isMoving || isDragHandleFocused) ? colorScheme.primary : Colors.grey,
+                            color: (widget.isMoving || isDragHandleFocused) ? colorScheme.primary : textMuted,
                           ),
                         ),
                       ),
@@ -147,21 +150,10 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                       // Subtitle (episode info or type)
                       Text(
                         _buildSubtitle(item),
-                        style: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                        style: TextStyle(fontSize: 13, color: textMuted),
                         maxLines: 1,
                         overflow: .ellipsis,
                       ),
-
-                      // Progress indicator if partially watched
-                      if (item.viewOffsetMs != null && item.durationMs != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 6),
-                          child: MediaProgressBar(
-                            viewOffset: item.viewOffsetMs!,
-                            duration: item.durationMs!,
-                            minHeight: 3,
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -170,10 +162,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
 
                 // Duration
                 if (item.durationMs != null)
-                  Text(
-                    formatDurationTextual(item.durationMs!),
-                    style: TextStyle(fontSize: 13, color: Colors.grey[400]),
-                  ),
+                  Text(formatDurationTextual(item.durationMs!), style: TextStyle(fontSize: 13, color: textMuted)),
 
                 const SizedBox(width: 8),
 
@@ -189,7 +178,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                     icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
                     onPressed: widget.onRemove,
                     tooltip: t.playlists.removeItem,
-                    color: isRemoveButtonFocused ? colorScheme.primary : Colors.grey[400],
+                    color: isRemoveButtonFocused ? colorScheme.primary : textMuted,
                   ),
                 ),
               ],
@@ -202,30 +191,56 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
 
   Widget _buildPosterImage(BuildContext context, MediaItem item) {
     final posterUrl = item.posterThumb();
-    return ClipRRect(
-      borderRadius: const BorderRadius.all(Radius.circular(6)),
-      child: OptimizedMediaImage.poster(
-        // Backend-neutral lookup so Jellyfin items render via their own
-        // image transcoder; null falls through to the placeholder below.
-        client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
-        imagePath: posterUrl,
-        width: 60,
-        height: 90,
-        fit: BoxFit.cover,
-        placeholder: (context, url) => _buildPlaceholder(),
-        errorWidget: (context, url, error) => _buildPlaceholder(),
+    final isSquare = item.kind.isMusic;
+    final imageSize = isSquare ? const Size.square(60) : const Size(60, 90);
+    return SizedBox(
+      width: 60,
+      height: 90,
+      child: Center(
+        child: SizedBox.fromSize(
+          size: imageSize,
+          child: Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.all(Radius.circular(6)),
+                child: OptimizedMediaImage(
+                  // Backend-neutral lookup so Jellyfin items render via their own
+                  // image transcoder; null falls through to the placeholder below.
+                  client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
+                  imagePath: posterUrl,
+                  width: imageSize.width,
+                  height: imageSize.height,
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => _buildPlaceholder(imageSize, item),
+                  errorWidget: (context, url, error) => _buildPlaceholder(imageSize, item),
+                  fallbackIcon: _fallbackIcon(item),
+                  imageType: isSquare ? ImageType.square : ImageType.poster,
+                ),
+              ),
+              WatchedIndicator(item: item, size: WatchedIndicatorSize.compact),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(Size size, MediaItem item) {
     return Container(
-      width: 60,
-      height: 90,
+      width: size.width,
+      height: size.height,
       decoration: BoxDecoration(color: Colors.grey[850], borderRadius: const BorderRadius.all(Radius.circular(6))),
-      child: const AppIcon(Symbols.movie_rounded, fill: 1, color: Colors.grey, size: 24),
+      child: AppIcon(_fallbackIcon(item), fill: 1, color: Colors.grey, size: 24),
     );
   }
+
+  IconData _fallbackIcon(MediaItem item) => switch (item.kind) {
+    MediaKind.artist => Symbols.artist_rounded,
+    MediaKind.album => Symbols.album_rounded,
+    MediaKind.track => Symbols.music_note_rounded,
+    MediaKind.show || MediaKind.season || MediaKind.episode => Symbols.tv_rounded,
+    _ => Symbols.movie_rounded,
+  };
 
   String _buildSubtitle(MediaItem item) {
     final kind = item.kind;
@@ -246,6 +261,10 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
         return '$year · $edition';
       }
       return year ?? t.discover.movie;
+    } else if (kind == MediaKind.track) {
+      // Music: "Artist · Album" (either half may be missing).
+      final parts = [item.trackArtistTitle, item.albumTitle].nonNulls.where((part) => part.isNotEmpty).toList();
+      if (parts.isNotEmpty) return parts.join(' · ');
     }
 
     // Default to type

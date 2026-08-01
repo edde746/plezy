@@ -19,12 +19,19 @@ class DoviExtractorOutputWrapper(
   private val emitLog: ((String, String, String) -> Unit)?,
   private val onVideoTrackWrapped: (DoviConvertingTrackOutput) -> Unit
 ) : ExtractorOutput {
+  private val trackOutputs = mutableListOf<DoviConvertingTrackOutput>()
+
+  fun resetTracks() {
+    trackOutputs.forEach { it.resetBufferedData() }
+  }
+
   override fun track(id: Int, type: Int): TrackOutput {
     val original = delegate.track(id, type)
     if (type == C.TRACK_TYPE_VIDEO) {
-      val wrapper = DoviConvertingTrackOutput(original, dvMode, emitLog)
-      onVideoTrackWrapped(wrapper)
-      return wrapper
+      return DoviConvertingTrackOutput(original, dvMode, emitLog).also {
+        trackOutputs.add(it)
+        onVideoTrackWrapped(it)
+      }
     }
     return original
   }
@@ -46,16 +53,22 @@ class DoviExtractorWrapper(
 
   @Volatile var doviTrackOutput: DoviConvertingTrackOutput? = null
     private set
+  private var outputWrapper: DoviExtractorOutputWrapper? = null
 
   override fun sniff(input: ExtractorInput): Boolean = delegate.sniff(input)
 
   override fun init(output: ExtractorOutput) {
-    delegate.init(DoviExtractorOutputWrapper(output, dvMode, emitLog) { doviTrackOutput = it })
+    val wrapper = DoviExtractorOutputWrapper(output, dvMode, emitLog) { doviTrackOutput = it }
+    outputWrapper = wrapper
+    delegate.init(wrapper)
   }
 
   override fun read(input: ExtractorInput, seekPosition: PositionHolder): Int = delegate.read(input, seekPosition)
 
-  override fun seek(position: Long, timeUs: Long) = delegate.seek(position, timeUs)
+  override fun seek(position: Long, timeUs: Long) {
+    outputWrapper?.resetTracks()
+    delegate.seek(position, timeUs)
+  }
 
   override fun release() = delegate.release()
 }

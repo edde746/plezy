@@ -48,8 +48,6 @@ Map<String, dynamic> _obfuscatePlaylistJson(Map<String, dynamic> json) {
   return copy;
 }
 
-int _flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
-
 Map? _firstPartMap(Object? raw) {
   final parts = _partMaps(raw);
   return parts.isEmpty ? null : parts.first;
@@ -79,6 +77,7 @@ MediaPart _mediaPartFromMap(
   return MediaPart(
     id: (json['id'] ?? fallbackId).toString(),
     streamPath: json['key']?.toString(),
+    file: json['file']?.toString(),
     sizeBytes: flexibleInt(json['size']),
     container: json['container']?.toString() ?? fallbackContainer,
     durationMs: flexibleInt(json['duration']),
@@ -284,9 +283,6 @@ String? _stringOrNull(Object? value) {
   return string == null || string.isEmpty ? null : string;
 }
 
-String _normalizedDisplayColorTags(String? transfer, String? primaries, String? matrix) =>
-    [transfer, primaries, matrix].whereType<String>().join(' ').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-
 @JsonSerializable(createToJson: false)
 class PlexRoleDto {
   @JsonKey(fromJson: flexibleInt)
@@ -306,7 +302,7 @@ class PlexRoleDto {
 
 @JsonSerializable(createToJson: false)
 class PlexMediaVersionDto {
-  @JsonKey(fromJson: _flexibleIntOrZero)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int id;
   @JsonKey(readValue: readStringField)
   final String? videoResolution;
@@ -505,7 +501,7 @@ class PlexHubDto {
   @JsonKey(defaultValue: 'hub')
   final String type;
   final String? hubIdentifier;
-  @JsonKey(fromJson: _flexibleIntOrZero)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int size;
   @JsonKey(fromJson: flexibleBool)
   final bool more;
@@ -560,11 +556,16 @@ class PlexMetadataDto {
   final String? titleSort;
   final String? contentRating;
   final String? summary;
+  @JsonKey(fromJson: flexibleDouble)
   final double? rating;
+  @JsonKey(fromJson: flexibleDouble)
   final double? audienceRating;
+  @JsonKey(fromJson: flexibleDouble)
   final double? userRating;
   @JsonKey(fromJson: flexibleInt)
   final int? year;
+  @JsonKey(fromJson: flexibleInt)
+  final int? parentYear;
   final String? originallyAvailableAt;
   final String? thumb;
   final String? art;
@@ -667,6 +668,7 @@ class PlexMetadataDto {
     this.audienceRating,
     this.userRating,
     this.year,
+    this.parentYear,
     this.originallyAvailableAt,
     this.thumb,
     this.art,
@@ -732,7 +734,11 @@ class PlexMetadataDto {
         e,
         stackTrace: st,
         withScope: (scope) {
-          scope.setContexts('json', json);
+          scope.setContexts('plex_mapper', {
+            'backend': 'plex',
+            'dto': 'PlexMetadataDto',
+            'topLevelFieldCount': json.length,
+          });
         },
       );
       rethrow;
@@ -773,8 +779,6 @@ class PlexMetadataDto {
 
   String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), ratingKey) : ratingKey;
 
-  bool get isLibrarySection => key != null && key!.startsWith('/library/sections/');
-
   bool get isUnmatched => guid == null || guid!.isEmpty || guid!.contains(_unmatchedAgentMarker);
 
   /// Top-level scalar fields surface as a plain Plex JSON map. Used by the
@@ -796,6 +800,7 @@ class PlexMetadataDto {
     double? audienceRating,
     double? userRating,
     int? year,
+    int? parentYear,
     String? originallyAvailableAt,
     String? thumb,
     String? art,
@@ -865,6 +870,7 @@ class PlexMetadataDto {
       audienceRating: audienceRating ?? this.audienceRating,
       userRating: userRating ?? this.userRating,
       year: year ?? this.year,
+      parentYear: parentYear ?? this.parentYear,
       originallyAvailableAt: originallyAvailableAt ?? this.originallyAvailableAt,
       thumb: thumb ?? this.thumb,
       art: art ?? this.art,
@@ -964,9 +970,10 @@ class PlexMappers {
 
   /// Map a parsed [PlexMetadataDto] into a [PlexMediaItem].
   static PlexMediaItem mediaItem(PlexMetadataDto dto) {
+    final kind = MediaKind.fromString(dto.type);
     return PlexMediaItem(
       id: dto.ratingKey,
-      kind: MediaKind.fromString(dto.type),
+      kind: kind,
       guid: dto.guid,
       title: dto.title,
       titleSort: dto.titleSort,
@@ -975,7 +982,10 @@ class PlexMappers {
       originalTitle: dto.originalTitle,
       editionTitle: dto.editionTitle,
       studio: dto.studio,
-      year: dto.year,
+      // Plex stores an ordinary track's release year on the parent album.
+      // Normalize it into the neutral item's year, matching Jellyfin Audio
+      // rows, while leaving episode/season hierarchy semantics unchanged.
+      year: kind == MediaKind.track ? dto.year ?? dto.parentYear : dto.year,
       originallyAvailableAt: dto.originallyAvailableAt,
       contentRating: dto.contentRating,
       parentId: dto.parentRatingKey,
@@ -996,7 +1006,7 @@ class PlexMappers {
       viewCount: dto.viewCount,
       lastViewedAt: dto.lastViewedAt,
       leafCount: dto.leafCount,
-      viewedLeafCount: dto.viewedLeafCount,
+      viewedLeafCount: kind.usesLeafWatchCounts ? dto.viewedLeafCount : null,
       childCount: dto.childCount,
       addedAt: dto.addedAt,
       updatedAt: dto.updatedAt,
@@ -1090,13 +1100,14 @@ class PlexMappers {
     final transfer = _stringOrNull(videoStream['colorTrc']);
     final primaries = _stringOrNull(videoStream['colorPrimaries']);
     final matrix = _stringOrNull(videoStream['colorSpace']);
-    final defaults = _defaultDisplayColorTags(
+    final defaults = classifyMediaDisplayColor(
       isDolbyVision: hasDolbyVision,
       doviCompatibilityId: doviCompatibilityId,
       transfer: transfer,
       primaries: primaries,
       matrix: matrix,
-    );
+      assumeSdr: !hasDolbyVision,
+    ).defaultTags;
     final criteria = MediaDisplayCriteria.fromRaw(
       fps: videoStream['frameRate'],
       width: videoStream['width'] ?? media?['width'],
@@ -1109,31 +1120,6 @@ class PlexMappers {
       matrix: matrix ?? defaults.matrix,
     );
     return criteria.isUsable ? criteria : null;
-  }
-
-  static ({String? transfer, String? primaries, String? matrix}) _defaultDisplayColorTags({
-    required bool isDolbyVision,
-    int? doviCompatibilityId,
-    String? transfer,
-    String? primaries,
-    String? matrix,
-  }) {
-    final colorTags = _normalizedDisplayColorTags(transfer, primaries, matrix);
-    if (doviCompatibilityId == 4 || colorTags.contains('hlg') || colorTags.contains('arib')) {
-      return (transfer: 'arib-std-b67', primaries: 'bt2020', matrix: 'bt2020nc');
-    }
-    if (doviCompatibilityId == 1 ||
-        doviCompatibilityId == 6 ||
-        colorTags.contains('smpte2084') ||
-        colorTags.contains('st2084') ||
-        colorTags.contains('pq') ||
-        colorTags.contains('bt2020')) {
-      return (transfer: 'smpte2084', primaries: 'bt2020', matrix: 'bt2020nc');
-    }
-    if (doviCompatibilityId == 2 || !isDolbyVision) {
-      return (transfer: 'bt709', primaries: 'bt709', matrix: 'bt709');
-    }
-    return (transfer: null, primaries: null, matrix: null);
   }
 
   /// Map a parsed [PlexLibraryDto] into a [MediaLibrary].

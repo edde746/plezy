@@ -45,12 +45,15 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
   /// Open the program-details bottom sheet. The poster is resolved from
   /// [posterThumb] on the server identified by [posterServerId].
   void showProgramDetails({
+    BuildContext? sheetContext,
     required LiveTvProgram program,
     required LiveTvChannel? channel,
     required String? posterThumb,
     required String? posterServerId,
+    ValueChanged<bool>? onRecordingStateChanged,
   }) {
-    final multiServer = context.read<MultiServerProvider>();
+    final effectiveContext = sheetContext ?? context;
+    final multiServer = effectiveContext.read<MultiServerProvider>();
     final serverId = serverIdOrNull(posterServerId);
     final client = serverId == null ? null : multiServer.getClientForServer(serverId);
     String? posterUrl;
@@ -60,18 +63,19 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
         thumbPath: posterThumb,
         maxWidth: 80,
         maxHeight: 120,
-        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(context),
+        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(effectiveContext),
         imageType: ImageType.poster,
       );
     }
 
     showProgramDetailsSheet(
-      context,
+      effectiveContext,
       program: program,
       channel: channel,
       posterUrl: posterUrl,
       onTuneChannel: channel != null ? () => tuneChannel(channel) : null,
       client: client,
+      onRecordingStateChanged: onRecordingStateChanged,
     );
   }
 }

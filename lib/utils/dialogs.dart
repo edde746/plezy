@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
@@ -13,6 +12,22 @@ import 'focus_utils.dart';
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
 const _buttonShape = StadiumBorder();
 
+/// Shows a dialog on the nearest navigator instead of Flutter's default root
+/// navigator. Use this for profile/session-owned modal routes so they are
+/// disposed when the active profile session is replaced.
+Future<T?> showScopedDialog<T>({
+  required BuildContext context,
+  required WidgetBuilder builder,
+  bool barrierDismissible = true,
+}) {
+  return showDialog<T>(
+    context: context,
+    builder: builder,
+    barrierDismissible: barrierDismissible,
+    useRootNavigator: false,
+  );
+}
+
 /// Shows a confirmation dialog with consistent button sizing and autofocus.
 /// Returns true if user confirmed, false if cancelled.
 Future<bool> showConfirmDialog(
@@ -23,7 +38,7 @@ Future<bool> showConfirmDialog(
   String? cancelText,
   bool isDestructive = false,
 }) async {
-  final confirmed = await showDialog<bool>(
+  final confirmed = await showScopedDialog<bool>(
     context: context,
     builder: (dialogContext) {
       final colorScheme = Theme.of(dialogContext).colorScheme;
@@ -31,24 +46,24 @@ Future<bool> showConfirmDialog(
         title: Text(title),
         content: Text(message),
         actions: [
-          FocusableButton(
+          DialogActionButton(
             autofocus: true,
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-              child: Text(cancelText ?? t.common.cancel),
-            ),
+            label: cancelText ?? t.common.cancel,
+            style: TextButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
           ),
-          FocusableButton(
+          DialogActionButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              style: isDestructive
-                  ? FilledButton.styleFrom(backgroundColor: colorScheme.error, foregroundColor: colorScheme.onError)
-                  : null,
-              child: Text(confirmText),
-            ),
+            label: confirmText,
+            isPrimary: true,
+            style: isDestructive
+                ? FilledButton.styleFrom(
+                    padding: _buttonPadding,
+                    shape: _buttonShape,
+                    backgroundColor: colorScheme.error,
+                    foregroundColor: colorScheme.onError,
+                  )
+                : FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
           ),
         ],
       );
@@ -61,7 +76,7 @@ Future<bool> showConfirmDialog(
 /// Shows a non-dismissible loading-spinner dialog. Caller is responsible for
 /// closing it via `Navigator.pop(context)` when the work completes.
 void showLoadingDialog(BuildContext context) {
-  showDialog<void>(
+  showScopedDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (_) => const Center(child: CircularProgressIndicator()),
@@ -70,21 +85,41 @@ void showLoadingDialog(BuildContext context) {
 
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
 Future<void> showServerLimitDialog(BuildContext context) async {
-  await showDialog<void>(
+  await showScopedDialog<void>(
     context: context,
     barrierDismissible: false,
     builder: (ctx) => AlertDialog(
       title: Text(t.messages.serverLimitTitle),
       content: Text(t.messages.serverLimitBody),
       actions: [
-        FocusableButton(
+        DialogActionButton(
           autofocus: true,
           onPressed: () => Navigator.of(ctx).pop(),
-          child: FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
-            child: Text(t.common.close),
-          ),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Shows the server-side 404 modal: the item exists but the server cannot read
+/// the file behind it, so nothing client-side can recover the playback.
+Future<void> showMediaUnreadableDialog(BuildContext context) async {
+  await showScopedDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: Text(t.messages.mediaUnreadableTitle),
+      content: Text(t.messages.mediaUnreadableBody),
+      actions: [
+        DialogActionButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(ctx).pop(),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
         ),
       ],
     ),
@@ -108,21 +143,26 @@ Future<bool> showDeleteConfirmation(
   );
 }
 
-/// Shows a text input dialog for creating/naming items
-/// Returns the entered text, or null if cancelled
+/// Shows a text input dialog and returns validated submitted text.
+///
+/// Returns `null` when the dialog is cancelled or dismissed. Validation errors
+/// are shown in the field and keep the dialog open, so a non-null result always
+/// represents an explicit, valid submission.
 Future<String?> showTextInputDialog(
   BuildContext context, {
   required String title,
   required String labelText,
-  required String hintText,
+  String? hintText,
   String? initialValue,
   String? confirmText,
   TextInputType? keyboardType,
   List<TextInputFormatter>? inputFormatters,
   String? Function(String)? validator,
   bool allowEmpty = false,
+  bool multiline = false,
+  bool obscureText = false,
 }) {
-  return showDialog<String>(
+  return showScopedDialog<String>(
     context: context,
     builder: (context) => _TextInputDialog(
       title: title,
@@ -134,112 +174,24 @@ Future<String?> showTextInputDialog(
       inputFormatters: inputFormatters,
       validator: validator,
       allowEmpty: allowEmpty,
+      multiline: multiline,
+      obscureText: obscureText,
     ),
   );
-}
-
-/// Shows a multiline text input dialog for editing longer text like summaries.
-/// Returns the entered text, or null if cancelled.
-/// Allows empty text to be submitted (for clearing fields).
-Future<String?> showMultilineTextInputDialog(
-  BuildContext context, {
-  required String title,
-  required String labelText,
-  String? initialValue,
-}) {
-  return showDialog<String>(
-    context: context,
-    builder: (context) => _MultilineTextInputDialog(title: title, labelText: labelText, initialValue: initialValue),
-  );
-}
-
-/// Shared lifecycle for the two private text-input dialogs below: a single
-/// [TextEditingController] seeded from [initialValue], plus a focus node for
-/// the save button.
-mixin _TextInputDialogStateMixin<T extends StatefulWidget> on State<T>, ControllerDisposerMixin<T> {
-  late final TextEditingController _controller;
-  final _fieldFocusNode = FocusNode();
-  final _cancelFocusNode = FocusNode();
-  final _saveFocusNode = FocusNode();
-
-  String? get initialValue;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = createTextEditingController(text: initialValue);
-  }
-
-  @override
-  void dispose() {
-    _fieldFocusNode.dispose();
-    _cancelFocusNode.dispose();
-    _saveFocusNode.dispose();
-    super.dispose();
-  }
-}
-
-class _MultilineTextInputDialog extends StatefulWidget {
-  final String title;
-  final String labelText;
-  final String? initialValue;
-
-  const _MultilineTextInputDialog({required this.title, required this.labelText, this.initialValue});
-
-  @override
-  State<_MultilineTextInputDialog> createState() => _MultilineTextInputDialogState();
-}
-
-class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
-    with ControllerDisposerMixin, _TextInputDialogStateMixin<_MultilineTextInputDialog> {
-  @override
-  String? get initialValue => widget.initialValue;
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.title),
-      content: SizedBox(
-        width: 400,
-        child: FocusableTextField(
-          controller: _controller,
-          focusNode: _fieldFocusNode,
-          autofocus: true,
-          decoration: InputDecoration(labelText: widget.labelText),
-          keyboardType: TextInputType.multiline,
-          maxLines: 8,
-          minLines: 3,
-          onNavigateDown: _saveFocusNode.requestFocus,
-        ),
-      ),
-      actions: [
-        DialogActionButton(
-          focusNode: _cancelFocusNode,
-          onPressed: () => Navigator.pop(context),
-          onNavigateRight: _saveFocusNode.requestFocus,
-          label: t.common.cancel,
-        ),
-        DialogActionButton(
-          onPressed: () => Navigator.pop(context, _controller.text),
-          label: t.common.save,
-          focusNode: _saveFocusNode,
-          onNavigateLeft: _cancelFocusNode.requestFocus,
-        ),
-      ],
-    );
-  }
 }
 
 class _TextInputDialog extends StatefulWidget {
   final String title;
   final String labelText;
-  final String hintText;
+  final String? hintText;
   final String? initialValue;
   final String? confirmText;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final String? Function(String)? validator;
   final bool allowEmpty;
+  final bool multiline;
+  final bool obscureText;
 
   const _TextInputDialog({
     required this.title,
@@ -251,39 +203,60 @@ class _TextInputDialog extends StatefulWidget {
     this.inputFormatters,
     this.validator,
     this.allowEmpty = false,
-  });
+    this.multiline = false,
+    this.obscureText = false,
+  }) : assert(!multiline || !obscureText, 'A text input dialog cannot be both multiline and obscure.');
 
   @override
   State<_TextInputDialog> createState() => _TextInputDialogState();
 }
 
-class _TextInputDialogState extends State<_TextInputDialog>
-    with ControllerDisposerMixin, _TextInputDialogStateMixin<_TextInputDialog> {
+class _TextInputDialogState extends State<_TextInputDialog> with ControllerDisposerMixin {
+  late final TextEditingController _controller;
+  final _fieldFocusNode = FocusNode(debugLabel: 'TextInputField');
+  final _cancelFocusNode = FocusNode(debugLabel: 'TextInputCancel');
+  final _saveFocusNode = FocusNode(debugLabel: 'TextInputSave');
+  String? _errorText;
+
   @override
-  String? get initialValue => widget.initialValue;
+  void initState() {
+    super.initState();
+    _controller = createTextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _fieldFocusNode.dispose();
+    _cancelFocusNode.dispose();
+    _saveFocusNode.dispose();
+    super.dispose();
+  }
+
+  String? _validate(String text) {
+    if (text.isEmpty && !widget.allowEmpty) return t.addServer.required;
+    return widget.validator?.call(text);
+  }
 
   void _submit() {
     final text = _controller.text;
-    if (text.isEmpty && !widget.allowEmpty) return;
-    if (widget.validator != null && widget.validator!(text) != null) return;
+    final errorText = _validate(text);
+    if (errorText != null) {
+      setState(() => _errorText = errorText);
+      return;
+    }
     Navigator.pop(context, text);
+  }
+
+  void _handleChanged(String text) {
+    if (_errorText == null) return;
+    setState(() => _errorText = _validate(text));
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.title),
-      content: FocusableTextField(
-        controller: _controller,
-        focusNode: _fieldFocusNode,
-        autofocus: true,
-        decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText),
-        keyboardType: widget.keyboardType,
-        inputFormatters: widget.inputFormatters,
-        textInputAction: TextInputAction.done,
-        onNavigateDown: _saveFocusNode.requestFocus,
-        onSubmitted: (_) => _saveFocusNode.requestFocus(),
-      ),
+      content: widget.multiline ? SizedBox(width: 400, child: textField) : textField,
       actions: [
         DialogActionButton(
           focusNode: _cancelFocusNode,
@@ -300,34 +273,54 @@ class _TextInputDialogState extends State<_TextInputDialog>
       ],
     );
   }
+
+  Widget get textField {
+    return FocusableTextField(
+      controller: _controller,
+      focusNode: _fieldFocusNode,
+      autofocus: true,
+      tvTextInputPresentation: widget.multiline
+          ? TvTextInputPresentation.flutterOverlay
+          : TvTextInputPresentation.automatic,
+      decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText, errorText: _errorText),
+      keyboardType: widget.keyboardType ?? (widget.multiline ? TextInputType.multiline : null),
+      inputFormatters: widget.inputFormatters,
+      textInputAction: widget.multiline ? TextInputAction.newline : TextInputAction.done,
+      obscureText: widget.obscureText,
+      maxLines: widget.multiline ? 8 : 1,
+      minLines: widget.multiline ? 3 : 1,
+      onChanged: _handleChanged,
+      onNavigateDown: _saveFocusNode.requestFocus,
+      onSubmitted: widget.multiline ? null : (_) => _saveFocusNode.requestFocus(),
+    );
+  }
 }
 
 /// Shows a simple option picker dialog with focusable items for TV/keyboard navigation.
 /// Returns the selected value, or null if cancelled. Each option's [icon] may
 /// be `null` to render a label-only row (useful when the choices are variants
 /// of the same thing and a repeated icon would just be noise).
-/// When [toggle] is supplied, a switch row is pinned above the options (and
-/// separated by a divider). Flipping it does NOT close the dialog; the latest
-/// state is reported via [onToggleChanged] so the caller can read it when an
-/// option is finally tapped.
+/// Optional persistent toggle rendered above the option rows. Its state is held
+/// by the dialog (toggling does not pop), and [onChanged] mirrors the new value
+/// out so the caller can read it once an option row is picked.
+typedef OptionPickerToggle = ({String label, IconData? icon, bool value, ValueChanged<bool> onChanged});
+
 Future<T?> showOptionPickerDialog<T>(
   BuildContext context, {
   required String title,
   required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
-  ({IconData? icon, String label, bool initialValue})? toggle,
-  ValueChanged<bool>? onToggleChanged,
+  List<OptionPickerToggle> toggles = const [],
 }) {
-  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
-  return showDialog<T>(
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
+  return showScopedDialog<T>(
     context: context,
     builder: (context) => _OptionPickerDialog<T>(
       title: title,
       options: options,
       focusFirstItem: focusFirstItem,
       onBeforeClose: onBeforeClose,
-      toggle: toggle,
-      onToggleChanged: onToggleChanged,
+      toggles: toggles,
     ),
   );
 }
@@ -337,16 +330,14 @@ class _OptionPickerDialog<T> extends StatefulWidget {
   final List<({IconData? icon, String label, T value})> options;
   final bool focusFirstItem;
   final Future<T?> Function(T value)? onBeforeClose;
-  final ({IconData? icon, String label, bool initialValue})? toggle;
-  final ValueChanged<bool>? onToggleChanged;
+  final List<OptionPickerToggle> toggles;
 
   const _OptionPickerDialog({
     required this.title,
     required this.options,
     this.focusFirstItem = false,
     this.onBeforeClose,
-    this.toggle,
-    this.onToggleChanged,
+    this.toggles = const [],
   });
 
   @override
@@ -355,13 +346,13 @@ class _OptionPickerDialog<T> extends StatefulWidget {
 
 class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
   late final FocusNode _initialFocusNode;
-  late bool _toggleValue;
+  late List<bool> _toggleValues;
 
   @override
   void initState() {
     super.initState();
-    _toggleValue = widget.toggle?.initialValue ?? false;
     _initialFocusNode = FocusNode(debugLabel: 'OptionPickerInitialFocus');
+    _toggleValues = [for (final toggle in widget.toggles) toggle.value];
     if (widget.focusFirstItem) {
       FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
     }
@@ -373,47 +364,71 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
     super.dispose();
   }
 
-  void _setToggle(bool value) {
-    if (_toggleValue == value) return;
-    setState(() => _toggleValue = value);
-    widget.onToggleChanged?.call(value);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final toggle = widget.toggle;
+    const rowPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 4);
+    const rowHorizontalTitleGap = 8.0;
+    const rowMinLeadingWidth = 24.0;
+    void updateToggle(int index, bool value) {
+      setState(() => _toggleValues[index] = value);
+      widget.toggles[index].onChanged(value);
+    }
+
     return SimpleDialog(
       title: Text(widget.title),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
+      constraints: const BoxConstraints(minWidth: 304),
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
       children: [
-        if (toggle != null) ...[
-          FocusableListTile(
-            leading: toggle.icon != null ? AppIcon(toggle.icon!, fill: 1, size: 24) : null,
-            title: Text(toggle.label, style: Theme.of(context).textTheme.bodyLarge),
-            trailing: Switch(value: _toggleValue, onChanged: _setToggle),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-            onTap: () => _setToggle(!_toggleValue),
-          ),
-          const Divider(height: 8),
-        ],
-        for (var index = 0; index < widget.options.length; index++)
-          FocusableListTile(
+        ...List.generate(widget.toggles.length, (index) {
+          final toggle = widget.toggles[index];
+          return MergeSemantics(
+            child: FocusableListTile(
+              title: Row(
+                children: [
+                  if (toggle.icon != null) ...[
+                    AppIcon(toggle.icon!, fill: 1, size: 24),
+                    const SizedBox(width: rowHorizontalTitleGap),
+                  ],
+                  Expanded(
+                    child: Text(
+                      toggle.label,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: rowHorizontalTitleGap),
+                  ExcludeFocus(
+                    child: Switch(value: _toggleValues[index], onChanged: (value) => updateToggle(index, value)),
+                  ),
+                ],
+              ),
+              contentPadding: rowPadding,
+              onTap: () => updateToggle(index, !_toggleValues[index]),
+            ),
+          );
+        }),
+        ...List.generate(widget.options.length, (index) {
+          final option = widget.options[index];
+          final icon = option.icon;
+          return FocusableListTile(
             focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-            leading: widget.options[index].icon != null
-                ? AppIcon(widget.options[index].icon!, fill: 1, size: 24)
-                : null,
-            title: Text(widget.options[index].label, style: Theme.of(context).textTheme.bodyLarge),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+            leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
+            title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
+            contentPadding: rowPadding,
+            horizontalTitleGap: rowHorizontalTitleGap,
+            minLeadingWidth: rowMinLeadingWidth,
             onTap: () async {
-              final value = widget.options[index].value;
               if (widget.onBeforeClose != null) {
-                final result = await widget.onBeforeClose!(value);
+                final result = await widget.onBeforeClose!(option.value);
                 if (context.mounted) Navigator.pop(context, result);
               } else {
-                Navigator.pop(context, value);
+                Navigator.pop(context, option.value);
               }
             },
-          ),
+          );
+        }),
       ],
     );
   }

@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../models/hotkey_model.dart';
 import '../../services/keyboard_shortcuts_service.dart';
-import '../../services/shader_service.dart';
+import '../../utils/app_logger.dart';
+import '../../services/shortcut_action.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
+import '../../theme/mono_tokens.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/focusable_list_tile.dart';
+import '../../widgets/settings_section.dart';
 import 'hotkey_recorder_widget.dart';
 
 class KeyboardShortcutsScreen extends StatelessWidget {
@@ -20,9 +26,7 @@ class KeyboardShortcutsScreen extends StatelessWidget {
       listenable: keyboardService,
       builder: (context, _) {
         final hotkeys = keyboardService.hotkeys;
-        final actions = hotkeys.keys
-            .where((action) => action != 'shader_toggle' || ShaderService.isPlatformSupported)
-            .toList();
+        final actions = hotkeys.keys.where((action) => ShortcutAction.fromId(action)?.isSupported ?? true).toList();
         return FocusedScrollScaffold(
           title: Text(t.settings.keyboardShortcuts),
           slivers: [
@@ -38,33 +42,30 @@ class KeyboardShortcutsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              sliver: SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final action = actions[index];
-                  final hotkey = hotkeys[action]!;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: ListTile(
-                      title: Text(keyboardService.getActionDisplayName(action)),
-                      subtitle: Text(action),
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
-                          borderRadius: const BorderRadius.all(Radius.circular(6)),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 16),
+                child: SettingsGroup(
+                  children: [
+                    for (final action in actions)
+                      FocusableListTile(
+                        title: Text(keyboardService.getActionDisplayName(action)),
+                        subtitle: Text(action),
+                        trailing: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            border: Border.fromBorderSide(BorderSide(color: Theme.of(context).dividerColor)),
+                            borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                          ),
+                          child: Text(
+                            keyboardService.formatHotkey(hotkeys[action]),
+                            style: const TextStyle(fontFamily: 'monospace'),
+                          ),
                         ),
-                        child: Text(
-                          keyboardService.formatHotkey(hotkey),
-                          style: const TextStyle(fontFamily: 'monospace'),
-                        ),
+                        onTap: () => _editHotkey(context, action, hotkeys[action]),
                       ),
-                      onTap: () => _editHotkey(context, action, hotkey),
-                    ),
-                  );
-                }, childCount: actions.length),
+                  ],
+                ),
               ),
             ),
           ],
@@ -78,37 +79,42 @@ class KeyboardShortcutsScreen extends StatelessWidget {
     if (context.mounted) showSuccessSnackBar(context, t.settings.shortcutsReset);
   }
 
-  void _editHotkey(BuildContext screenContext, String action, HotKey currentHotkey) {
-    showDialog(
+  void _editHotkey(BuildContext screenContext, String action, HotKey? currentHotkey) {
+    final actionId = action;
+    final actionName = keyboardService.getActionDisplayName(actionId);
+    showScopedDialog<void>(
       context: screenContext,
       builder: (BuildContext context) {
         return HotKeyRecorderWidget(
-          actionName: keyboardService.getActionDisplayName(action),
+          actionName: actionName,
           currentHotKey: currentHotkey,
           onHotKeyRecorded: (newHotkey) async {
             final navigator = Navigator.of(context);
 
-            // Check for conflicts
-            final existingAction = keyboardService.getActionForHotkey(newHotkey);
-            if (existingAction != null && existingAction != action) {
-              navigator.pop();
-              showErrorSnackBar(
-                context,
-                t.settings.shortcutAlreadyAssigned(action: keyboardService.getActionDisplayName(existingAction)),
-              );
+            if (newHotkey != null) {
+              final existingAction = keyboardService.getActionForHotkey(newHotkey);
+              if (existingAction != null && existingAction != actionId) {
+                navigator.pop();
+                showErrorSnackBar(
+                  screenContext,
+                  t.settings.shortcutAlreadyAssigned(action: keyboardService.getActionDisplayName(existingAction)),
+                );
+                return;
+              }
+            }
+
+            try {
+              await keyboardService.setHotkey(actionId, newHotkey);
+            } on PlatformException catch (error, stackTrace) {
+              appLogger.e('Failed to update keyboard shortcut', error: error, stackTrace: stackTrace);
+              if (screenContext.mounted) showErrorSnackBar(screenContext, t.common.error);
               return;
             }
 
-            // Save the new hotkey
-            await keyboardService.setHotkey(action, newHotkey);
-
+            if (!context.mounted) return;
             navigator.pop();
-
             if (screenContext.mounted) {
-              showSuccessSnackBar(
-                screenContext,
-                t.settings.shortcutUpdated(action: keyboardService.getActionDisplayName(action)),
-              );
+              showSuccessSnackBar(screenContext, t.settings.shortcutUpdated(action: actionName));
             }
           },
           onCancel: () => Navigator.pop(context),

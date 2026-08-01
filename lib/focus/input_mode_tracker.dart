@@ -32,14 +32,20 @@ class InputModeTracker extends StatefulWidget {
   const InputModeTracker({super.key, required this.child});
 
   /// Get the current input mode.
-  static InputMode of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<_InputModeProvider>();
+  ///
+  /// Set [listen] to false for event handlers and post-frame callbacks that
+  /// only need a one-shot value. Those reads must not subscribe their owning
+  /// screen to future input-mode changes.
+  static InputMode of(BuildContext context, {bool listen = true}) {
+    final provider = listen
+        ? context.dependOnInheritedWidgetOfExactType<_InputModeProvider>()
+        : context.getInheritedWidgetOfExactType<_InputModeProvider>();
     return provider?.mode ?? InputMode.pointer;
   }
 
   /// Convenience method to check if we're in keyboard mode.
-  static bool isKeyboardMode(BuildContext context) {
-    return of(context) == InputMode.keyboard;
+  static bool isKeyboardMode(BuildContext context, {bool listen = true}) {
+    return of(context, listen: listen) == InputMode.keyboard;
   }
 
   /// Whether system back must be blocked because the dpad key handler owns
@@ -115,24 +121,32 @@ class _InputModeTrackerState extends State<InputModeTracker> {
 
   @override
   Widget build(BuildContext context) {
-    // On Android TV, don't switch to pointer mode from pointer events
-    // as D-pad can generate synthetic pointer events that would incorrectly
-    // trigger pointer mode and show a cursor instead of D-pad focus navigation
-    if (TvDetectionService.isTVSync()) {
+    // Non-desktop TVs keep keyboard mode across synthetic pointer events, but
+    // their controls remain pointer-reachable for engine-generated taps.
+    if (TvDetectionService.isTVSync() && !PlatformDetector.isDesktopOS()) {
       return _InputModeProvider(mode: _mode, child: widget.child);
     }
 
     return Listener(
-      // Switch to pointer mode on mouse activity
       onPointerDown: (_) => _setMode(InputMode.pointer),
       onPointerHover: (_) => _setMode(InputMode.pointer),
       behavior: HitTestBehavior.translucent,
-      child: MouseRegion(
-        cursor: _mode == InputMode.keyboard ? SystemMouseCursors.none : MouseCursor.defer,
-        child: IgnorePointer(
-          ignoring: _mode == InputMode.keyboard,
-          child: _InputModeProvider(mode: _mode, child: widget.child),
-        ),
+      child: Stack(
+        alignment: Alignment.topLeft,
+        fit: StackFit.passthrough,
+        children: [
+          _InputModeProvider(mode: _mode, child: widget.child),
+          // Hide the desktop cursor in keyboard mode without excluding the
+          // application subtree from the current pointer hit test.
+          if (_mode == InputMode.keyboard)
+            const Positioned.fill(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.none,
+                opaque: false,
+                hitTestBehavior: HitTestBehavior.translucent,
+              ),
+            ),
+        ],
       ),
     );
   }

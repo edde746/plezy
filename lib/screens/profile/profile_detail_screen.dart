@@ -17,7 +17,6 @@ import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
-import '../../providers/download_provider.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
@@ -25,12 +24,13 @@ import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/settings_section.dart';
 import '../../utils/dialogs.dart';
 import '../settings/add_connection_screen.dart';
 import '../settings/edit_jellyfin_connection_screen.dart';
 import 'pin_entry_dialog.dart';
 import 'pin_status_row.dart';
-import 'profile_delete_flow.dart';
+import 'profile_teardown.dart';
 import 'profile_name_field.dart';
 
 /// Manage one [Profile] — rename, change PIN, list/add/remove
@@ -53,21 +53,45 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
   final _nameFocusNode = FocusNode(debugLabel: 'ProfileDetail:Name');
   final _saveNameFocusNode = FocusNode(debugLabel: 'ProfileDetail:SaveName');
   final _setPinFocusNode = FocusNode(debugLabel: 'ProfileDetail:SetPin');
+  final _changePinFocusNode = FocusNode(debugLabel: 'ProfileDetail:ChangePin');
   final _addConnectionFocusNode = FocusNode(debugLabel: 'ProfileDetail:AddConnection');
   final _deleteProfileFocusNode = FocusNode(debugLabel: 'ProfileDetail:DeleteProfile');
   late Profile _profile;
+  StreamSubscription<List<Profile>>? _profileSub;
 
   @override
   void initState() {
     super.initState();
     _profile = widget.profile;
+    // Keep the snapshot live: the registry row can change underneath this
+    // screen (rename from another surface, PIN cleared elsewhere) and the
+    // header/PIN section would otherwise show stale state until reopened.
+    if (_profile.isLocal) {
+      _profileSub = context.read<ProfileRegistry>().watchProfiles().listen((locals) {
+        Profile? updated;
+        for (final p in locals) {
+          if (p.id == _profile.id) {
+            updated = p;
+            break;
+          }
+        }
+        if (updated == null || updated == _profile || !mounted) return;
+        final namePristine = _nameController.text.trim() == _profile.displayName;
+        setState(() {
+          _profile = updated!;
+          if (namePristine) _nameController.text = updated.displayName;
+        });
+      });
+    }
   }
 
   @override
   void dispose() {
+    _profileSub?.cancel();
     _nameFocusNode.dispose();
     _saveNameFocusNode.dispose();
     _setPinFocusNode.dispose();
+    _changePinFocusNode.dispose();
     _addConnectionFocusNode.dispose();
     _deleteProfileFocusNode.dispose();
     super.dispose();
@@ -91,10 +115,18 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     if (pin == null || !mounted) return;
     final profile = _profile;
     if (profile is! LocalProfile) return;
+    final hadPin = profile.pinHash != null;
     final updated = profile.copyWith(pinHash: computePinHash(pin));
     await context.read<ProfileRegistry>().upsert(updated);
     if (!mounted) return;
     setState(() => _profile = updated);
+    if (!hadPin) {
+      // The Set PIN button (and its focus node) just left the tree — hand
+      // DPAD focus to the replacing row instead of dropping it.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _changePinFocusNode.requestFocus();
+      });
+    }
   }
 
   Future<void> _clearPin() async {
@@ -104,6 +136,11 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     await context.read<ProfileRegistry>().upsert(updated);
     if (!mounted) return;
     setState(() => _profile = updated);
+    // Reverse swap of _setPin: the row (and the focused Remove button)
+    // just left the tree.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _setPinFocusNode.requestFocus();
+    });
   }
 
   Future<void> _addConnection() async {
@@ -122,14 +159,69 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       isDestructive: true,
     );
     if (!confirmed || !mounted) return;
-    await context.read<DownloadProvider>().releaseDownloadsForProfileServers(
-      _profile.id,
-      _serverIdsForConnection(conn),
-    );
-    if (!mounted) return;
-    await context.read<ProfileConnectionRegistry>().remove(_profile.id, pc.connectionId);
-    if (!mounted) return;
-    unawaited(context.read<ActiveProfileBinder>().rebindIfActive(_profile.id));
+    final scope = SessionTeardownScope.of(context);
+    final endedOwner = scope.active.activeId == _profile.id ? _profile.id : null;
+
+    if (endedOwner != null) {
+      await scope.shelf.endProfileSession(endedOwner);
+    }
+
+    try {
+      // Release downloads only for servers the profile actually loses — the
+      // same server can stay reachable through another connection (a second
+      // Plex account sharing the server, another Jellyfin user).
+      final retainedServerIds = await _retainedServerIds(
+        excludingConnectionId: conn.id,
+        profileConnections: scope.profileConnections,
+        connections: scope.connections,
+      );
+      await scope.downloads.releaseDownloadsForProfileServers(
+        _profile.id,
+        _serverIdsForConnection(conn).difference(retainedServerIds),
+      );
+      await scope.cleanup.removeProfileConnection(profileId: _profile.id, connection: conn);
+      await scope.hiddenLibraries?.refresh();
+      // Deliberately not `resumeFreshSystemShelf`: a rebind failure on the
+      // success path must reach the catch below so the recovery attempt —
+      // and the rethrow — still run.
+      await scope.binder.rebindIfActive(_profile.id);
+      if (endedOwner != null && scope.active.activeId == endedOwner) {
+        scope.shelf.beginProfileSession(endedOwner);
+        if (scope.multiServer.hasConnectedServers) await scope.discover?.load();
+      }
+    } catch (_) {
+      if (endedOwner != null) {
+        await resumeFreshSystemShelf(scope, endedOwner);
+      }
+      rethrow;
+    }
+  }
+
+  /// Server ids the profile keeps after removing [excludingConnectionId]:
+  /// its other join rows plus, for Plex Home profiles, the implicit parent
+  /// account. Raw ids, matching the download keys this is differenced
+  /// against; `_serverIdsForProfile` in profile_connection_cleanup.dart is
+  /// ServerId-typed and ignores the parent, so the two are not the same
+  /// projection.
+  Future<Set<String>> _retainedServerIds({
+    required String excludingConnectionId,
+    required ProfileConnectionRegistry profileConnections,
+    required ConnectionRegistry connections,
+  }) async {
+    final rows = await profileConnections.listForProfile(_profile.id);
+    final byId = {for (final c in await connections.list()) c.id: c};
+    final retained = <String>{};
+    for (final row in rows) {
+      if (row.connectionId == excludingConnectionId) continue;
+      final other = byId[row.connectionId];
+      if (other != null) retained.addAll(_serverIdsForConnection(other));
+    }
+    final parentId = _profile.isPlexHome ? _profile.parentConnectionId : null;
+    if (parentId != null && parentId != excludingConnectionId) {
+      final parent = byId[parentId];
+      if (parent != null) retained.addAll(_serverIdsForConnection(parent));
+    }
+    return retained;
   }
 
   Future<void> _editConnection(Connection conn) async {
@@ -142,11 +234,23 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     unawaited(context.read<ActiveProfileBinder>().rebindIfActive(_profile.id));
   }
 
+  // Raw machine ids rather than the ServerId-typed twin in
+  // profile_connection_cleanup.dart: these are differenced against retained
+  // ids and matched to download global keys, which carry the unparsed id.
   Set<String> _serverIdsForConnection(Connection conn) {
     return switch (conn) {
       PlexAccountConnection(:final servers) => servers.map((s) => s.clientIdentifier).toSet(),
       JellyfinConnection(:final serverMachineId) => {serverMachineId},
     };
+  }
+
+  /// Sign out of this virtual profile's parent Plex account. The profile
+  /// ceases to exist with the account, so pop the detail screen — unless
+  /// the teardown already reset the stack to AuthScreen (unmounted here).
+  Future<void> _signOutParentAccount(Connection parentConn) async {
+    final signedOut = await confirmAndSignOutPlexAccount(context, accountConnectionId: parentConn.id);
+    if (!signedOut || !mounted) return;
+    Navigator.of(context).pop(true);
   }
 
   Future<void> _deleteProfile() async {
@@ -223,7 +327,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                   ),
                 )
               else
-                PinStatusRow(onChange: _setPin, onRemove: _clearPin),
+                PinStatusRow(onChange: _setPin, onRemove: _clearPin, changeFocusNode: _changePinFocusNode),
               const SizedBox(height: 32),
               Row(
                 children: [
@@ -240,7 +344,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                 ],
               ),
               const SizedBox(height: 8),
-              _ConnectionsList(profile: _profile, onRemove: _removeConnection, onEdit: _editConnection),
+              _ConnectionsList(
+                profile: _profile,
+                onRemove: _removeConnection,
+                onEdit: _editConnection,
+                onSignOutParent: _signOutParentAccount,
+              ),
               const SizedBox(height: 24),
               if (isLocal)
                 FocusableButton(
@@ -260,22 +369,50 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
   }
 }
 
-class _ConnectionsList extends StatelessWidget {
+class _ConnectionsList extends StatefulWidget {
   final Profile profile;
   final Future<void> Function(ProfileConnection pc, Connection conn) onRemove;
   final Future<void> Function(Connection conn) onEdit;
+  final Future<void> Function(Connection conn) onSignOutParent;
 
-  const _ConnectionsList({required this.profile, required this.onRemove, required this.onEdit});
+  const _ConnectionsList({
+    required this.profile,
+    required this.onRemove,
+    required this.onEdit,
+    required this.onSignOutParent,
+  });
+
+  @override
+  State<_ConnectionsList> createState() => _ConnectionsListState();
+}
+
+class _ConnectionsListState extends State<_ConnectionsList> {
+  // Created once: building streams/futures inside build re-subscribes and
+  // refetches on every parent rebuild (each keystroke in the name field),
+  // flashing the spinner and hammering the DB.
+  Stream<List<ProfileConnection>>? _pcsStream;
+  Stream<Map<String, List<PlexHomeUser>>>? _homeStream;
+  Map<String, List<PlexHomeUser>>? _homeInitial;
+  Stream<List<Connection>>? _connectionsStream;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _pcsStream ??= context.read<ProfileConnectionRegistry>().watchForProfile(widget.profile.id);
+    final plexHome = context.read<PlexHomeService>();
+    _homeStream ??= plexHome.stream;
+    _homeInitial ??= plexHome.current;
+    _connectionsStream ??= context.read<ConnectionRegistry>().watchConnections();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final profile = widget.profile;
     final pcRegistry = context.read<ProfileConnectionRegistry>();
-    final connRegistry = context.read<ConnectionRegistry>();
-    final plexHome = context.read<PlexHomeService>();
 
     return StreamBuilder<List<ProfileConnection>>(
-      stream: pcRegistry.watchForProfile(profile.id),
+      stream: _pcsStream,
       builder: (context, snapshot) {
         final pcs = snapshot.data ?? const <ProfileConnection>[];
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -285,19 +422,20 @@ class _ConnectionsList extends StatelessWidget {
           );
         }
         return StreamBuilder<Map<String, List<PlexHomeUser>>>(
-          stream: plexHome.stream,
-          initialData: plexHome.current,
+          stream: _homeStream,
+          initialData: _homeInitial,
           builder: (context, homeSnap) {
             final homeCache = homeSnap.data ?? const <String, List<PlexHomeUser>>{};
-            return FutureBuilder<List<Connection>>(
-              future: connRegistry.list(),
+            return StreamBuilder<List<Connection>>(
+              stream: _connectionsStream,
               builder: (context, snap) {
                 final all = snap.data ?? const <Connection>[];
                 final byId = {for (final c in all) c.id: c};
                 // Plex Home profiles have an implicit parent connection that
                 // isn't in the join table — list it first so the user sees the
-                // full picture. It can't be removed (the profile *is* a home
-                // user of that account) and isn't shown for locals.
+                // full picture. The profile *is* a home user of that account,
+                // so the only removal is signing out of the whole account;
+                // it isn't shown for locals.
                 final parentConn = profile.isPlexHome ? byId[profile.parentConnectionId] : null;
                 final visiblePcs = visibleProfileConnections(profile, pcs);
                 if (visiblePcs.isEmpty && parentConn == null) {
@@ -309,41 +447,50 @@ class _ConnectionsList extends StatelessWidget {
                     ),
                   );
                 }
-                return Column(
+                // The screen already pads its content; SettingsGroup supplies
+                // the M3E connected-group card geometry.
+                return SettingsGroup(
+                  margin: EdgeInsets.zero,
                   children: [
                     if (parentConn != null)
-                      Card(
-                        child: ListTile(
-                          leading: BackendBadge(backend: parentConn.backend, size: 24),
-                          title: Text(parentConn.displayLabel),
-                          subtitle: Text(t.profiles.plexHomeAccount),
+                      ListTile(
+                        leading: BackendBadge(backend: parentConn.backend, size: 24),
+                        title: Text(parentConn.displayLabel),
+                        subtitle: Text(t.profiles.plexHomeAccount),
+                        trailing: FocusablePopupMenuButton<String>(
+                          icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                          tooltip: t.profiles.manage,
+                          onSelected: (value) {
+                            if (value == 'sign_out') {
+                              unawaited(widget.onSignOutParent(parentConn));
+                            }
+                          },
+                          itemBuilder: (_) => [AppMenuItem(value: 'sign_out', label: t.profiles.signOut)],
                         ),
                       ),
                     for (final pc in visiblePcs)
                       if (byId[pc.connectionId] case final conn?)
-                        Card(
-                          child: ListTile(
-                            leading: BackendBadge(backend: conn.backend, size: 24),
-                            title: Text(conn.displayLabel),
-                            subtitle: _ConnectionSubtitle.build(conn: conn, pc: pc, homeCache: homeCache, theme: theme),
-                            trailing: FocusablePopupMenuButton<String>(
-                              icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                              tooltip: t.profiles.manage,
-                              onSelected: (value) {
-                                if (value == 'default') {
-                                  unawaited(pcRegistry.setDefault(profile.id, pc.connectionId));
-                                } else if (value == 'edit') {
-                                  unawaited(onEdit(conn));
-                                } else if (value == 'remove') {
-                                  unawaited(onRemove(pc, conn));
-                                }
-                              },
-                              itemBuilder: (_) => [
-                                if (!pc.isDefault) AppMenuItem(value: 'default', label: t.profiles.makeDefault),
-                                if (conn is JellyfinConnection) AppMenuItem(value: 'edit', label: t.common.edit),
-                                AppMenuItem(value: 'remove', label: t.profiles.removeConnection),
-                              ],
-                            ),
+                        ListTile(
+                          leading: BackendBadge(backend: conn.backend, size: 24),
+                          title: Text(conn.displayLabel),
+                          subtitle: _ConnectionSubtitle.build(conn: conn, pc: pc, homeCache: homeCache, theme: theme),
+                          trailing: FocusablePopupMenuButton<String>(
+                            icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                            tooltip: t.profiles.manage,
+                            onSelected: (value) {
+                              if (value == 'default') {
+                                unawaited(pcRegistry.setDefault(profile.id, pc.connectionId));
+                              } else if (value == 'edit') {
+                                unawaited(widget.onEdit(conn));
+                              } else if (value == 'remove') {
+                                unawaited(widget.onRemove(pc, conn));
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              if (!pc.isDefault) AppMenuItem(value: 'default', label: t.profiles.makeDefault),
+                              if (conn is JellyfinConnection) AppMenuItem(value: 'edit', label: t.common.edit),
+                              AppMenuItem(value: 'remove', label: t.profiles.removeConnection),
+                            ],
                           ),
                         ),
                   ],

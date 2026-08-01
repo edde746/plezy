@@ -52,6 +52,12 @@ static void my_application_activate(GApplication* application) {
       fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvPlugin");
   mpv_plugin_register_with_registrar(registrar);
 
+  // Register the dedicated audio-only MPV core for music playback (no
+  // texture/GL work at all).
+  FlPluginRegistrar* audio_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvAudioPlugin");
+  mpv_audio_plugin_register_with_registrar(audio_registrar);
+
   gtk_widget_show(GTK_WIDGET(window));
   gtk_widget_grab_focus(GTK_WIDGET(self->flutter_view));
 }

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/settings_service.dart' show EpisodePosterMode;
@@ -41,7 +42,7 @@ void main() {
         'DateCreated': '2025-01-15T10:00:00.0000000Z',
         'DateLastSaved': '2026-03-01T10:00:00.0000000Z',
         'ImageTags': {'Primary': 'thumbtag', 'Logo': 'logotag'},
-        'BackdropImageTags': ['backtag'],
+        'BackdropImageTags': ['backtag', 'backtag-2', 'backtag-3'],
       };
 
       final item = JellyfinMappers.mediaItem(
@@ -79,11 +80,35 @@ void main() {
       // Image paths.
       expect(item.thumbPath, '/Items/abc123/Images/Primary?tag=thumbtag');
       expect(item.artPath, '/Items/abc123/Images/Backdrop/0?tag=backtag');
+      expect(item.backdropPaths, [
+        '/Items/abc123/Images/Backdrop/0?tag=backtag',
+        '/Items/abc123/Images/Backdrop/1?tag=backtag-2',
+        '/Items/abc123/Images/Backdrop/2?tag=backtag-3',
+      ]);
       expect(item.clearLogoPath, '/Items/abc123/Images/Logo?tag=logotag');
 
       // Multi-server fields.
       expect(item.serverId, _serverId);
       expect(item.serverName, 'Home');
+    });
+
+    test('preserves backdrop indices, deduplicates tags, and absolutizes every valid path', () {
+      const absolutizer = JellyfinImageAbsolutizer(baseUrl: 'https://jellyfin.example', accessToken: 'secret');
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'movie-1',
+          'Type': 'Movie',
+          'BackdropImageTags': ['first', 42, '', 'first', 'fifth'],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: absolutizer,
+      )!;
+
+      expect(item.artPath, 'https://jellyfin.example/Items/movie-1/Images/Backdrop/0?tag=first&api_key=secret');
+      expect(item.backdropPaths, [
+        'https://jellyfin.example/Items/movie-1/Images/Backdrop/0?tag=first&api_key=secret',
+        'https://jellyfin.example/Items/movie-1/Images/Backdrop/4?tag=fifth&api_key=secret',
+      ]);
     });
 
     test('does not treat Jellyfin PlayCount as watched when Played is false', () {
@@ -98,6 +123,32 @@ void main() {
 
       expect(item.viewCount, 0);
       expect(item.isWatched, isFalse);
+    });
+
+    test('maps UserData.IsFavorite and ignores the legacy Likes flag', () {
+      final json = {
+        'Id': 'fav-1',
+        'Name': 'Favorited Movie',
+        'Type': 'Movie',
+        'UserData': {'IsFavorite': true, 'Likes': true},
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
+
+      expect(item.isFavorite, isTrue);
+      // Likes used to map to userRating 10.0/0.0; the rate sheet now uses
+      // IsFavorite for Jellyfin, so Likes must no longer surface anywhere.
+      expect(item.userRating, isNull);
+    });
+
+    test('missing UserData leaves isFavorite null', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'no-userdata', 'Name': 'No UserData', 'Type': 'Movie'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.isFavorite, isNull);
     });
 
     test('maps generic Jellyfin video types to playable clips', () {
@@ -116,6 +167,28 @@ void main() {
       expect(musicVideo.kind, MediaKind.clip);
       expect(video.kind.isVideo, isTrue);
       expect(musicVideo.kind.isVideo, isTrue);
+    });
+
+    test('music video watch state ignores recursive and child counts', () {
+      MediaItem mapMusicVideo(bool played) => JellyfinMappers.mediaItem(
+        {
+          'Id': 'music-video',
+          'Name': 'Music Video',
+          'Type': 'MusicVideo',
+          'RecursiveItemCount': '1',
+          'ChildCount': 1,
+          'UserData': {'Played': played, 'PlayCount': played ? '1' : '0', 'UnplayedItemCount': '0'},
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      final unplayed = mapMusicVideo(false);
+      final played = mapMusicVideo(true);
+      expect(unplayed.leafCount, 1);
+      expect(unplayed.viewedLeafCount, isNull);
+      expect(unplayed.isWatched, isFalse);
+      expect(played.isWatched, isTrue);
     });
 
     test('episode preserves series/season hierarchy', () {
@@ -146,6 +219,28 @@ void main() {
       expect(item.grandparentTitle, 'Breaking Bad');
       expect(item.grandparentThumbPath, '/Items/series-1/Images/Primary?tag=seriesPrimary');
       expect(item.grandparentArtPath, '/Items/series-1/Images/Backdrop/0');
+    });
+
+    test('episode maps every inherited series backdrop', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'ep-parent-art',
+          'Type': 'Episode',
+          'SeriesId': 'series-fallback',
+          'ParentBackdropItemId': 'series-parent',
+          'ParentBackdropImageTags': ['parent-0', 'parent-1', 'parent-2'],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.grandparentArtPath, '/Items/series-parent/Images/Backdrop/0?tag=parent-0');
+      expect(item.grandparentBackdropPaths, [
+        '/Items/series-parent/Images/Backdrop/0?tag=parent-0',
+        '/Items/series-parent/Images/Backdrop/1?tag=parent-1',
+        '/Items/series-parent/Images/Backdrop/2?tag=parent-2',
+      ]);
+      expect(item.heroBackdropPaths, item.grandparentBackdropPaths);
     });
 
     test('episode season poster falls back to series poster when season image tag is absent', () {
@@ -186,6 +281,27 @@ void main() {
       expect(item.leafCount, 12);
       expect(item.viewedLeafCount, 8);
       expect(item.isPartiallyWatched, isTrue);
+      expect(item.isWatched, isFalse);
+    });
+
+    test('container leaf counts tolerate scalar drift and clamp invalid unplayed totals', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 's-invalid-counts',
+          'Name': 'Show',
+          'Type': 'Series',
+          'RecursiveItemCount': '5',
+          'ChildCount': 2.0,
+          'UserData': {'UnplayedItemCount': '8'},
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.leafCount, 5);
+      expect(item.childCount, 2);
+      expect(item.viewedLeafCount, 0);
+      expect(item.unwatchedCount, 5);
       expect(item.isWatched, isFalse);
     });
 
@@ -402,13 +518,24 @@ void main() {
       }
     });
 
-    test('falls back to MediaKind.unknown for unrecognised collections', () {
-      final lib = JellyfinMappers.library({
-        'Id': 'view-x',
-        'Name': 'Mixed',
-        'CollectionType': 'mixed',
+    test('maps content-type-less collection folders to a movie and show root browse', () {
+      for (final view in [
+        {'Id': 'view-missing-type', 'Name': 'Mixed', 'Type': 'CollectionFolder', 'IsFolder': true},
+        {'Id': 'view-empty-type', 'Name': 'Mixed', 'Type': 'CollectionFolder', 'CollectionType': '', 'IsFolder': true},
+      ]) {
+        final mixed = JellyfinMappers.library(view, serverId: ServerId(_serverId))!;
+        expect(mixed.kind, MediaKind.folder);
+        expect(mixed.defaultBrowseKinds, const [MediaKind.movie, MediaKind.show]);
+      }
+
+      final unrecognised = JellyfinMappers.library({
+        'Id': 'view-books',
+        'Name': 'Books',
+        'Type': 'CollectionFolder',
+        'CollectionType': 'books',
       }, serverId: ServerId(_serverId))!;
-      expect(lib.kind, MediaKind.unknown);
+      expect(unrecognised.kind, MediaKind.unknown);
+      expect(unrecognised.defaultBrowseKinds, isEmpty);
     });
   });
 

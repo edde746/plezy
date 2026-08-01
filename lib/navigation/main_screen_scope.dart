@@ -56,6 +56,11 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
     return context.getElementForInheritedWidgetOfExactType<MainScreenFocusScope>()?.widget as MainScreenFocusScope?;
   }
 
+  /// Focuses the sidebar without registering an inherited dependency.
+  static void focusSidebarOf(BuildContext context) {
+    of(context, listen: false)?.focusSidebar();
+  }
+
   static MainScreenFocusScope? _dependOn(BuildContext context, MainScreenScopeAspect aspect) {
     return InheritedModel.inheritFrom<MainScreenFocusScope>(context, aspect: aspect);
   }

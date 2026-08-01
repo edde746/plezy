@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../utils/deletion_notifier.dart';
 import 'event_aware.dart';
+import 'watch_state_aware.dart';
 
 /// Mixin for screens that need to react to deletion events.
 ///
@@ -73,4 +74,22 @@ mixin DeletionAware<T extends StatefulWidget> on State<T> {
     _deletionSubscription = null;
     super.dispose();
   }
+}
+
+/// Points [DeletionAware]'s filters at the [WatchStateAware] ones.
+///
+/// The usual case: a screen shows the same rows for both event families, so a
+/// deleted show and a watched show affect exactly the same items. Mix this in
+/// after both aware mixins instead of re-typing the three getters. A screen
+/// that genuinely needs a different scope overrides the getter it cares about
+/// (or skips this mixin entirely).
+mixin DeletionMirrorsWatchState<T extends StatefulWidget> on WatchStateAware<T>, DeletionAware<T> {
+  @override
+  String? get deletionServerId => watchStateServerId;
+
+  @override
+  Set<String>? get deletionGlobalKeys => watchedGlobalKeys;
+
+  @override
+  Set<String>? get deletionIds => watchedIds;
 }

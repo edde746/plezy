@@ -1,14 +1,13 @@
 import 'dart:convert';
 import '../media/ids.dart';
 
-import 'package:drift/drift.dart';
-
 import '../media/media_backend.dart';
 import '../media/media_source_info.dart';
 import '../utils/app_logger.dart';
 import '../utils/plex_cache_parser.dart';
 import 'api_cache.dart';
 import 'jellyfin_api_cache.dart';
+import 'jellyfin_cache_resolver.dart';
 import 'jellyfin_media_info_mapper.dart';
 import 'plex_mappers.dart';
 
@@ -99,7 +98,8 @@ class CachedPlaybackMetadataService {
     String itemId, {
     required int mediaIndex,
   }) async {
-    final raw = await _jellyfinRawItem(cacheServerId, itemId);
+    final resolved = await _jellyfinRawItem(cacheServerId, itemId);
+    final raw = resolved.raw;
     final sources = raw['MediaSources'];
     if (sources is! List || sources.isEmpty) return null;
     final selected = mediaIndex >= 0 && mediaIndex < sources.length ? sources[mediaIndex] : sources.first;
@@ -114,8 +114,9 @@ class CachedPlaybackMetadataService {
     String? creditsPattern,
     bool forceChapterFallback = false,
   }) async {
-    final raw = await _jellyfinRawItem(cacheServerId, itemId);
-    final markers = await _jellyfinMediaSegmentMarkers(cacheServerId, itemId);
+    final resolved = await _jellyfinRawItem(cacheServerId, itemId);
+    final raw = resolved.raw;
+    final markers = await _jellyfinMediaSegmentMarkers(resolved.scopeId, itemId);
     return jellyfinPlaybackExtrasFromRaw(
       raw,
       itemId,
@@ -138,17 +139,13 @@ class CachedPlaybackMetadataService {
     }
   }
 
-  static Future<Map<String, dynamic>> _jellyfinRawItem(String cacheServerId, String itemId) async {
+  static Future<({Map<String, dynamic> raw, String scopeId})> _jellyfinRawItem(
+    String cacheServerId,
+    String itemId,
+  ) async {
     final cache = ApiCache.forBackend(MediaBackend.jellyfin);
-    final scopedPrefix = cacheServerId.contains('/') ? null : '$cacheServerId/%:/Users/%/Items/$itemId';
-    final rows =
-        await (cache.database.select(cache.database.apiCache)..where(
-              (t) =>
-                  t.cacheKey.like('$cacheServerId:/Users/%/Items/$itemId') |
-                  (scopedPrefix == null ? const Constant(false) : t.cacheKey.like(scopedPrefix)),
-            ))
-            .get();
-    if (rows.isEmpty) throw StateError('No Jellyfin cache row for $cacheServerId:$itemId');
-    return jsonDecode(rows.first.data) as Map<String, dynamic>;
+    final resolved = await JellyfinCacheResolver(cache.database).findItem(cacheServerId, itemId);
+    if (resolved == null) throw StateError('No Jellyfin cache row for $cacheServerId:$itemId');
+    return (raw: jsonDecode(resolved.cacheRow.data) as Map<String, dynamic>, scopeId: resolved.key.scopeId);
   }
 }

@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
 import '../media/media_server_client.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
+import '../media/media_kind.dart';
 import '../utils/app_logger.dart';
 
 /// Manages OS media controls integration for video playback.
@@ -21,9 +24,13 @@ class MediaControlsManager {
   late final Throttle _throttledUpdate;
 
   /// Cached control enabled state to avoid redundant platform calls
+  bool? _lastCanPlayPause;
   bool? _lastCanGoNext;
   bool? _lastCanGoPrevious;
   bool? _lastCanSeek;
+  bool? _lastCanStop;
+  bool? _lastCanSkip;
+  bool? _lastCanSetSpeed;
   bool _updatesSuspended = false;
 
   MediaControlsManager() {
@@ -59,6 +66,8 @@ class MediaControlsManager {
         MediaMetadata(
           title: metadata.title ?? '',
           artist: _buildArtist(metadata),
+          // Music-only: null for video content, so video behavior is untouched.
+          album: metadata.kind == MediaKind.track ? metadata.albumTitle : null,
           artworkUrl: artworkUrl,
           duration: duration,
         ),
@@ -107,20 +116,42 @@ class MediaControlsManager {
     }
   }
 
-  /// Enable or disable next/previous track controls
+  /// Enable or disable transport controls in the OS media session.
   ///
-  /// This should be called based on content type and playback mode.
-  /// For example:
-  /// - Episodes: Enable both if there are adjacent episodes
-  /// - Playlist items: Enable based on playlist position
-  /// - Movies: Usually disabled
-  Future<void> setControlsEnabled({bool canGoNext = false, bool canGoPrevious = false, bool canSeek = false}) async {
+  /// next/previous/seek reflect the content (adjacent episodes, playlist
+  /// position, seekability). stop/skip/speed reflect what the active surface
+  /// actually handles — the platform sides enable several commands by
+  /// default, so anything the caller leaves disabled here is explicitly
+  /// un-advertised rather than shown as a dead button.
+  ///
+  /// [canSkip] is never honored on iOS/macOS: enabling the
+  /// MPRemoteCommandCenter skip commands displaces the next/previous track
+  /// buttons on the lock screen / Control Center, and next/previous are the
+  /// primary transport there. Android's fast-forward/rewind actions are
+  /// independent of next/previous, so skip is safe to advertise.
+  Future<void> setControlsEnabled({
+    bool canPlayPause = false,
+    bool canGoNext = false,
+    bool canGoPrevious = false,
+    bool canSeek = false,
+    bool canStop = false,
+    bool canSkip = false,
+    bool canSetSpeed = false,
+  }) async {
     if (_updatesSuspended) return;
+
+    final effectiveCanSkip =
+        canSkip && defaultTargetPlatform != TargetPlatform.iOS && defaultTargetPlatform != TargetPlatform.macOS;
 
     try {
       final controlsToEnable = <MediaControl>[];
       final controlsToDisable = <MediaControl>[];
 
+      if (canPlayPause != _lastCanPlayPause) {
+        (canPlayPause ? controlsToEnable : controlsToDisable)
+          ..add(MediaControl.play)
+          ..add(MediaControl.pause);
+      }
       if (canGoPrevious != _lastCanGoPrevious) {
         (canGoPrevious ? controlsToEnable : controlsToDisable).add(MediaControl.previous);
       }
@@ -129,6 +160,17 @@ class MediaControlsManager {
       }
       if (canSeek != _lastCanSeek) {
         (canSeek ? controlsToEnable : controlsToDisable).add(MediaControl.seek);
+      }
+      if (canStop != _lastCanStop) {
+        (canStop ? controlsToEnable : controlsToDisable).add(MediaControl.stop);
+      }
+      if (effectiveCanSkip != _lastCanSkip) {
+        (effectiveCanSkip ? controlsToEnable : controlsToDisable)
+          ..add(MediaControl.skipForward)
+          ..add(MediaControl.skipBackward);
+      }
+      if (canSetSpeed != _lastCanSetSpeed) {
+        (canSetSpeed ? controlsToEnable : controlsToDisable).add(MediaControl.changeSpeed);
       }
 
       if (controlsToEnable.isEmpty && controlsToDisable.isEmpty) return;
@@ -140,12 +182,32 @@ class MediaControlsManager {
         await OsMediaControls.disableControls(controlsToDisable);
       }
 
+      _lastCanPlayPause = canPlayPause;
       _lastCanGoNext = canGoNext;
       _lastCanGoPrevious = canGoPrevious;
       _lastCanSeek = canSeek;
-      appLogger.d('Media controls updated - Previous: $canGoPrevious, Next: $canGoNext, Seek: $canSeek');
+      _lastCanStop = canStop;
+      _lastCanSkip = effectiveCanSkip;
+      _lastCanSetSpeed = canSetSpeed;
+      appLogger.d(
+        'Media controls updated - Play/Pause: $canPlayPause, Previous: $canGoPrevious, '
+        'Next: $canGoNext, Seek: $canSeek, Stop: $canStop, Skip: $effectiveCanSkip, '
+        'Speed: $canSetSpeed',
+      );
     } catch (e) {
       appLogger.w('Failed to set media controls enabled state', error: e);
+    }
+  }
+
+  /// Enable/disable Android background playback: while enabled, the plugin
+  /// keeps audio alive with a `mediaPlayback` foreground service and shows a
+  /// MediaStyle notification for the session. No-op on other platforms.
+  Future<void> setBackgroundMode(bool enabled) async {
+    try {
+      await OsMediaControls.setBackgroundMode(enabled);
+      appLogger.d('Media controls background mode: $enabled');
+    } catch (e) {
+      appLogger.w('Failed to set media controls background mode', error: e);
     }
   }
 
@@ -156,9 +218,13 @@ class MediaControlsManager {
     try {
       await OsMediaControls.clear();
       _throttledUpdate.cancel();
+      _lastCanPlayPause = null;
       _lastCanGoNext = null;
       _lastCanGoPrevious = null;
       _lastCanSeek = null;
+      _lastCanStop = null;
+      _lastCanSkip = null;
+      _lastCanSetSpeed = null;
       appLogger.d('Media controls cleared');
     } catch (e) {
       appLogger.w('Failed to clear media controls', error: e);
@@ -185,10 +251,16 @@ class MediaControlsManager {
 
   /// Build artist string from metadata
   ///
+  /// For music tracks: the performing artist
   /// For episodes: "Show Name - Season X Episode Y"
   /// For movies: Director or studio
   /// For other content: Fallback to year or empty
   String _buildArtist(MediaItem metadata) {
+    if (metadata.kind == MediaKind.track) {
+      // Performing artist with album-artist fallback (compilations store the
+      // track's own artist separately).
+      return metadata.trackArtistTitle ?? '';
+    }
     if (metadata.isEpisode) {
       final parts = <String>[];
 

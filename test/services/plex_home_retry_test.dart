@@ -9,6 +9,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/utils/active_client_scope.dart';
 
 typedef _RequestHandler = Future<http.StreamedResponse> Function(http.BaseRequest request);
 
@@ -79,6 +80,7 @@ void main() {
           version: 'test',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -110,6 +112,7 @@ void main() {
           languageCode: 'fr',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -140,6 +143,7 @@ void main() {
           languageCode: 'en',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -175,6 +179,7 @@ void main() {
           version: 'test',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
@@ -207,6 +212,7 @@ void main() {
           version: 'test',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
@@ -240,6 +246,7 @@ void main() {
           version: 'test',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -272,6 +279,7 @@ void main() {
           version: 'test',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -303,6 +311,7 @@ void main() {
           version: 'test',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -338,6 +347,7 @@ void main() {
           version: 'test',
         ),
         serverId: ServerId('server-id'),
+        profileScopeId: buildPlexProfileScopeId(serverId: ServerId('server-id'), profileId: 'test-profile'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],

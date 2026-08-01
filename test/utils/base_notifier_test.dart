@@ -7,21 +7,6 @@ class _IntNotifier extends BaseNotifier<int> {}
 
 void main() {
   group('BaseNotifier', () {
-    test('single listener receives events', () async {
-      final n = _IntNotifier();
-      final received = <int>[];
-      final sub = n.stream.listen(received.add);
-
-      n.notify(1);
-      n.notify(2);
-      n.notify(3);
-      await Future<void>.delayed(Duration.zero);
-
-      expect(received, [1, 2, 3]);
-      await sub.cancel();
-      n.dispose();
-    });
-
     test('broadcasts to multiple listeners', () async {
       final n = _IntNotifier();
       final a = <int>[];

@@ -18,7 +18,7 @@ class BottomSheetHeader extends StatelessWidget {
   final Widget? action;
 
   /// Optional callback when close button is pressed
-  /// Defaults to Navigator.pop(context)
+  /// Defaults to closing the nearest hosted sheet, with modal-route fallback.
   final VoidCallback? onClose;
 
   /// Optional icon to display as leading widget

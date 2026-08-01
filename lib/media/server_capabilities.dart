@@ -1,17 +1,3 @@
-/// How the alpha-jump bar behaves for libraries on this backend.
-enum AlphaBarMode {
-  /// No alpha bar — hide entirely.
-  none,
-
-  /// Plex: server reports per-letter cumulative offsets via `/firstCharacter`,
-  /// taps scroll the grid to the offset.
-  scrollSnap,
-
-  /// Jellyfin: bar acts as a filter button — taps set `NameStartsWith` query
-  /// param, results re-fetch.
-  nameStartsWithFilter,
-}
-
 /// Static capability flags advertised by a [MediaServerClient]. UI consults
 /// these to gate feature affordances per server (e.g. hide Live TV when no
 /// connected server supports it).
@@ -21,14 +7,6 @@ enum AlphaBarMode {
 /// Jellyfin features are wired in over time, the corresponding flags flip
 /// without changing call sites.
 class ServerCapabilities {
-  /// Server-side `PlayQueue` resource (Plex `/playQueues`) — enables shared
-  /// queue state across devices and Watch Together coordination.
-  final bool serverSidePlayQueue;
-
-  /// Server-side editable playlists (Plex `/playlists`, Jellyfin
-  /// `/Playlists`).
-  final bool serverSidePlaylists;
-
   /// This backend kind has a Live TV / DVR API the app can talk to. Whether
   /// a *specific* server has Live TV configured is a runtime concern —
   /// [MultiServerProvider.checkLiveTvAvailability] probes each server and
@@ -41,24 +19,20 @@ class ServerCapabilities {
   /// when [liveTv] is true.
   final bool liveTvDvr;
 
-  /// Server proxies subtitle search (e.g. OpenSubtitles).
-  final bool subtitleSearch;
-
   /// Server can transcode video.
   final bool videoTranscoding;
-
-  /// Server supports server-side downloads / "sync" (the queued-from-server
-  /// model). Both Plex and Jellyfin support client-driven downloads, which
-  /// is a separate concept.
-  final bool serverSideSync;
 
   /// Server provides curated recommendation hubs (Plex Discover). Jellyfin
   /// returns synthesized hubs but with sparser categorisation.
   final bool richHubs;
 
-  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Jellyfin offers
-  /// only a binary like/dislike, so star sliders should be hidden.
+  /// Numeric ratings (Plex 0–10 via [Item.userRating]). Jellyfin has no
+  /// numeric user rating, so star sliders should be hidden.
   final bool numericUserRating;
+
+  /// Per-user favorite flag ("heart") on media items. Jellyfin exposes it via
+  /// `/UserFavoriteItems/{itemId}?userId=...`; Plex has no equivalent.
+  final bool userFavorites;
 
   /// Hide an item from Continue Watching without changing watch state or
   /// playback progress. Plex exposes this directly; Jellyfin does not.
@@ -68,31 +42,8 @@ class ServerCapabilities {
   /// Hides the "Search subtitles" affordance when false.
   final bool externalSubtitleSearch;
 
-  /// Persisting per-track audio/subtitle preferences server-side. Plex uses
-  /// `/library/metadata/{id}/prefs` + `selectStream`; Jellyfin saves selected
-  /// stream indexes from `/Sessions/Playing/Progress` when the user's Jellyfin
-  /// remember-selection settings are enabled. When false, in-player switching
-  /// still works but choices don't follow the user across devices.
-  final bool trackPreferencePersistence;
-
-  /// Multi-endpoint connection model with endpoint racing/failover. Plex gets
-  /// local/remote/relay candidates from plex.tv; Jellyfin uses user-entered
-  /// URLs for the same server.
-  final bool endpointFailover;
-
-  /// Watch progress can be queued offline and replayed when reconnected
-  /// ([OfflineWatchSyncService]). Jellyfin reports inline only today.
-  final bool offlineWatchQueue;
-
-  /// Discord rich-presence integration. Plex-only because the RPC payload
-  /// uses Plex-shaped session/metadata.
-  final bool discordRpc;
-
   /// Server exposes metadata edit endpoints. Hides edit affordances when false.
   final bool richMetadataEdit;
-
-  /// How the alpha-jump bar should behave for this backend's libraries.
-  final AlphaBarMode alphaBar;
 
   /// Server can supply thumbnails for the player's seek-bar scrub preview.
   /// Plex serves them as a `.bif` asset; Jellyfin uses `/Trickplay` sprite
@@ -105,49 +56,40 @@ class ServerCapabilities {
   /// `/Items?ParentId=...&Recursive=false` queries.
   final bool folderGrouping;
 
+  /// Server can build an "instant mix" / radio track list from a seed item.
+  /// Jellyfin: `/Items/{id}/InstantMix`; Plex: station play queues
+  /// (`POST /playQueues?type=audio&uri=...station...`).
+  final bool instantMix;
+
   const ServerCapabilities({
-    this.serverSidePlayQueue = false,
-    this.serverSidePlaylists = false,
     this.liveTv = false,
     this.liveTvDvr = false,
-    this.subtitleSearch = false,
     this.videoTranscoding = true,
-    this.serverSideSync = false,
     this.richHubs = false,
     this.numericUserRating = false,
+    this.userFavorites = false,
     this.continueWatchingRemoval = false,
     this.externalSubtitleSearch = false,
-    this.trackPreferencePersistence = false,
-    this.endpointFailover = false,
-    this.offlineWatchQueue = false,
-    this.discordRpc = false,
     this.richMetadataEdit = false,
-    this.alphaBar = AlphaBarMode.none,
     this.scrubThumbnails = false,
     this.folderGrouping = false,
+    this.instantMix = false,
   });
 
   /// Defaults for a fully-featured Plex server.
   static const ServerCapabilities plex = ServerCapabilities(
-    serverSidePlayQueue: true,
-    serverSidePlaylists: true,
     liveTv: true,
     liveTvDvr: true,
-    subtitleSearch: true,
     videoTranscoding: true,
-    serverSideSync: true,
     richHubs: true,
     numericUserRating: true,
+    userFavorites: false,
     continueWatchingRemoval: true,
     externalSubtitleSearch: true,
-    trackPreferencePersistence: true,
-    endpointFailover: true,
-    offlineWatchQueue: true,
-    discordRpc: true,
     richMetadataEdit: true,
-    alphaBar: AlphaBarMode.scrollSnap,
     scrubThumbnails: true,
     folderGrouping: true,
+    instantMix: true,
   );
 
   /// Defaults for a Jellyfin server.
@@ -160,67 +102,37 @@ class ServerCapabilities {
   /// `/LiveTv/Programs`. Detection + channel listing are wired today;
   /// EPG and tuning are follow-ups.
   static const ServerCapabilities jellyfin = ServerCapabilities(
-    serverSidePlayQueue: false,
-    serverSidePlaylists: true,
     liveTv: true,
     liveTvDvr: false,
-    subtitleSearch: false,
     videoTranscoding: true,
-    serverSideSync: false,
     richHubs: false,
     numericUserRating: false,
+    userFavorites: true,
     externalSubtitleSearch: false,
-    trackPreferencePersistence: true,
-    endpointFailover: true,
-    offlineWatchQueue: false,
-    discordRpc: false,
     richMetadataEdit: true,
-    alphaBar: AlphaBarMode.nameStartsWithFilter,
     scrubThumbnails: true,
     folderGrouping: true,
+    instantMix: true,
   );
 
-  ServerCapabilities copyWith({
-    bool? serverSidePlayQueue,
-    bool? serverSidePlaylists,
-    bool? liveTv,
-    bool? liveTvDvr,
-    bool? subtitleSearch,
-    bool? videoTranscoding,
-    bool? serverSideSync,
-    bool? richHubs,
-    bool? numericUserRating,
-    bool? continueWatchingRemoval,
-    bool? externalSubtitleSearch,
-    bool? trackPreferencePersistence,
-    bool? endpointFailover,
-    bool? offlineWatchQueue,
-    bool? discordRpc,
-    bool? richMetadataEdit,
-    AlphaBarMode? alphaBar,
-    bool? scrubThumbnails,
-    bool? folderGrouping,
-  }) {
+  /// Every flag here is fixed per backend *kind* except [videoTranscoding],
+  /// which Plex probes per server (`PlexClient.capabilities`) — so that is the
+  /// only override this type needs. Widen the parameter list if another flag
+  /// ever becomes a runtime probe.
+  ServerCapabilities copyWith({bool? videoTranscoding}) {
     return ServerCapabilities(
-      serverSidePlayQueue: serverSidePlayQueue ?? this.serverSidePlayQueue,
-      serverSidePlaylists: serverSidePlaylists ?? this.serverSidePlaylists,
-      liveTv: liveTv ?? this.liveTv,
-      liveTvDvr: liveTvDvr ?? this.liveTvDvr,
-      subtitleSearch: subtitleSearch ?? this.subtitleSearch,
+      liveTv: liveTv,
+      liveTvDvr: liveTvDvr,
       videoTranscoding: videoTranscoding ?? this.videoTranscoding,
-      serverSideSync: serverSideSync ?? this.serverSideSync,
-      richHubs: richHubs ?? this.richHubs,
-      numericUserRating: numericUserRating ?? this.numericUserRating,
-      continueWatchingRemoval: continueWatchingRemoval ?? this.continueWatchingRemoval,
-      externalSubtitleSearch: externalSubtitleSearch ?? this.externalSubtitleSearch,
-      trackPreferencePersistence: trackPreferencePersistence ?? this.trackPreferencePersistence,
-      endpointFailover: endpointFailover ?? this.endpointFailover,
-      offlineWatchQueue: offlineWatchQueue ?? this.offlineWatchQueue,
-      discordRpc: discordRpc ?? this.discordRpc,
-      richMetadataEdit: richMetadataEdit ?? this.richMetadataEdit,
-      alphaBar: alphaBar ?? this.alphaBar,
-      scrubThumbnails: scrubThumbnails ?? this.scrubThumbnails,
-      folderGrouping: folderGrouping ?? this.folderGrouping,
+      richHubs: richHubs,
+      numericUserRating: numericUserRating,
+      userFavorites: userFavorites,
+      continueWatchingRemoval: continueWatchingRemoval,
+      externalSubtitleSearch: externalSubtitleSearch,
+      richMetadataEdit: richMetadataEdit,
+      scrubThumbnails: scrubThumbnails,
+      folderGrouping: folderGrouping,
+      instantMix: instantMix,
     );
   }
 }
