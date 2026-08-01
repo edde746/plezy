@@ -99,11 +99,14 @@ dev_dependencies:
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
   path_provider_platform_interface: ^2.1.0
-  # Drives the real desktop preference backend against a temp file in tests, so
-  # the #1732 corrupt-store repair loop is covered on any host and not only on
-  # a Windows/Linux runner. Both classes expose `fs`/`pathProvider` for this.
+  # Drive the real desktop preference backends against a temp file in tests, so
+  # the #1732 corrupt-store repair loop and the vendored atomic write are both
+  # covered against genuine file I/O. All four expose `fs`/`pathProvider`.
+  # The two shared_preferences packages resolve to the vendored copies below.
   shared_preferences_linux: ^2.4.1
+  shared_preferences_windows: ^2.4.1
   path_provider_linux: ^2.2.1
+  path_provider_windows: ^2.3.0
   plugin_platform_interface: ^2.1.0
   freezed: ^3.2.5
   analyzer: 10.2.0
@@ -124,6 +127,13 @@ dependency_overrides:
       url: https://github.com/edde746/auto_updater
       ref: 9e150f7
       path: packages/auto_updater_windows
+  # Vendored 2.4.1 with an atomic store replacement (CHANGELOG, provenance.json)
+  # — upstream truncates the live preference document on every write, which is
+  # the corruption behind #1732.
+  shared_preferences_windows:
+    path: packages/shared_preferences_windows
+  shared_preferences_linux:
+    path: packages/shared_preferences_linux
 sentry:
   org: plezy
   project: plezy

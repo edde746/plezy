@@ -147,6 +147,14 @@ jobs:
         working-directory: packages/wakelock_plus
         run: flutter test --platform chrome --dart-define=WEB_PLUGIN_TESTS=true test/wakelock_plus_web_plugin_test.dart
 
+      # The vendored atomic-write patch has to keep the upstream contract, not
+      # just the new behaviour. Upstream's own suites are the check for that.
+      - name: Run the vendored desktop preference store tests
+        run: |
+          for pkg in shared_preferences_linux shared_preferences_windows; do
+            (cd "packages/$pkg" && flutter pub get --enforce-lockfile && flutter test)
+          done
+
   android-test:
     name: Android JVM and Native Tests
     runs-on: ubuntu-latest
@@ -470,6 +478,15 @@ jobs:
       - name: Install locked Dart dependencies
         shell: pwsh
         run: flutter pub get --enforce-lockfile --no-example
+
+      # Windows replacement semantics (`MoveFileExW` with
+      # MOVEFILE_REPLACE_EXISTING) cannot be proven on the POSIX runners, and a
+      # memory file system proves nothing about either. The vendored
+      # shared_preferences_windows store write is the fix for #1732, so exercise
+      # it here, on a real NTFS volume, against the real backend.
+      - name: Run the vendored Windows preference store tests
+        shell: pwsh
+        run: flutter test test/services/prefs_store_atomic_write_windows_test.dart
 
       - name: Install patched Flutter engine
         shell: pwsh
