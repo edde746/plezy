@@ -285,6 +285,10 @@ class ExoPlayerPlugin :
     }
 
     val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
+    // Auto sizing is decided natively (LoadControlPolicy). `bufferSizeBytes` still arrives
+    // on Auto because Dart derives one for mpv's demuxer, which shares the property, and
+    // the fallback replay below needs it.
+    val bufferSizeAuto = call.argument<Boolean>("bufferSizeAuto") ?: false
     val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: true
     val dvConversionMode = call.argument<String>("dvConversionMode") ?: "auto"
     val audioPassthroughEnabled = call.argument<Boolean>("audioPassthroughEnabled") ?: false
@@ -323,6 +327,7 @@ class ExoPlayerPlugin :
         playerCore = core
         val success = core.initialize(
           bufferSizeBytes = bufferSizeBytes,
+          bufferSizeAuto = bufferSizeAuto,
           tunnelingEnabled = tunnelingEnabled,
           audioPassthroughEnabled = audioPassthroughEnabled
         )

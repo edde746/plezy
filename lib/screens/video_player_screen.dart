@@ -1135,6 +1135,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             }
             await currentPlayer.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
             await currentPlayer.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
+            // These tiers size mpv's demuxer. ExoPlayer's LoadControl allocator is a
+            // different consumer — a flat byte cap there collapses to a few seconds of
+            // read-ahead on a 100 Mbps remux — so let the native side derive its own
+            // target on Auto (#1618).
+            await currentPlayer.setProperty('demuxer-max-bytes-auto', 'yes');
           } else {
             // Manual mode: cap back-buffer relative to heap if 1/4 ratio is too high
             final maxBackBytes = min(bufferSizeMB * 1024 * 1024 ~/ 4, autoBackMB * 1024 * 1024);

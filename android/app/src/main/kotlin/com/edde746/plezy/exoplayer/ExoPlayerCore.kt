@@ -523,6 +523,7 @@ class ExoPlayerCore(private val activity: Activity) :
 
   fun initialize(
     bufferSizeBytes: Int? = null,
+    bufferSizeAuto: Boolean = false,
     tunnelingEnabled: Boolean = true,
     audioPassthroughEnabled: Boolean = false
   ): Boolean {
@@ -731,23 +732,20 @@ class ExoPlayerCore(private val activity: Activity) :
           .toTypedArray()
       }
 
-      // Compute memory-aware buffer limits to prevent CCodec OOM crashes
+      // Buffer budget. `bufferSizeBytes` carries the user's explicit Buffer Size choice; on
+      // Auto it still arrives (Dart derives it for mpv's demuxer, which shares the property)
+      // but `bufferSizeAuto` says to ignore it here, because mpv's demuxer and ExoPlayer's
+      // sample allocator have different shapes and different failure modes.
       val activityManager = activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
       val memoryInfo = ActivityManager.MemoryInfo()
       activityManager.getMemoryInfo(memoryInfo)
-      val availableMB = memoryInfo.availMem / (1024 * 1024)
+      val availableMB = (memoryInfo.availMem / (1024 * 1024)).toInt()
+      val largeHeapMB = activityManager.largeMemoryClass
 
-      val targetBufferBytes = if (bufferSizeBytes != null && bufferSizeBytes > 0) {
+      val targetBufferBytes = if (!bufferSizeAuto && bufferSizeBytes != null && bufferSizeBytes > 0) {
         bufferSizeBytes
       } else {
-        // Scale buffer to available memory to reduce hardware decoder pressure.
-        // Larger buffers reduce oscillation frequency at high bitrates (50-100Mbps).
-        when {
-          availableMB <= 512 -> 30 * 1024 * 1024
-          availableMB <= 1024 -> 80 * 1024 * 1024
-          availableMB <= 2048 -> 120 * 1024 * 1024
-          else -> 200 * 1024 * 1024
-        }
+        LoadControlPolicy.autoTargetBufferBytes(largeHeapMB, availableMB)
       }
 
       val loadControl = DefaultLoadControl.Builder().apply {
@@ -759,7 +757,12 @@ class ExoPlayerCore(private val activity: Activity) :
           setBufferDurationsMs(30_000, 60_000, 1_000, 5_000)
         }
       }.build()
-      emitLog("info", "init", "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit, available=${availableMB}MB, tunneling=$tunnelingUserEnabled, dataSource=$dataSourceLabel")
+      emitLog(
+        "info",
+        "init",
+        "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit (${if (bufferSizeAuto) "auto" else "manual"}, " +
+          "heap=${largeHeapMB}MB, available=${availableMB}MB), tunneling=$tunnelingUserEnabled, dataSource=$dataSourceLabel"
+      )
 
       exoPlayer = ExoPlayer.Builder(activity)
         .setTrackSelector(trackSelector!!)

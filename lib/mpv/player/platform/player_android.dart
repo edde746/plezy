@@ -12,6 +12,7 @@ class PlayerAndroid extends PlayerBase {
   static const _eventChannel = EventChannel('com.plezy/exo_player/events');
 
   int? _bufferSizeBytes;
+  bool _bufferSizeIsAuto = false;
   bool _tunnelingEnabled = true;
   String _dvConversionMode = 'auto';
   bool _audioNormalizationEnabled = false;
@@ -100,6 +101,7 @@ class PlayerAndroid extends PlayerBase {
     try {
       final result = await invoke<bool>('initialize', {
         'bufferSizeBytes': _bufferSizeBytes,
+        'bufferSizeAuto': _bufferSizeIsAuto,
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,
         'audioPassthroughEnabled': _audioPassthroughEnabled,
@@ -286,6 +288,12 @@ class PlayerAndroid extends PlayerBase {
         break;
       case 'demuxer-max-bytes':
         _bufferSizeBytes = int.tryParse(value);
+        break;
+      // Not an mpv property. The heap tiers Dart derives for mpv's demuxer are the wrong
+      // shape for ExoPlayer's sample allocator, so on Auto the native side sizes its own
+      // LoadControl target instead of reusing `demuxer-max-bytes` (#1618).
+      case 'demuxer-max-bytes-auto':
+        _bufferSizeIsAuto = value != 'no';
         break;
       case 'tunneled-playback':
         _tunnelingEnabled = value != 'no';
