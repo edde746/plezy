@@ -3839,9 +3839,18 @@ class PlexClient
   @override
   double get watchedThreshold => watchedThresholdPercent / 100.0;
 
-  /// Plex's `/:/timeline?state=stopped` doesn't reliably mark watched without
-  /// an active play session, so the in-player auto-scrobble still issues the
-  /// explicit `markWatched` (`/:/scrobble`). See [marksWatchedOnPlaybackStopped].
+  /// A single `/:/timeline?state=stopped` does not mark watched: PMS only acts
+  /// on a threshold crossing it observes inside one session — a report below
+  /// `LibraryVideoPlayedThreshold` followed by one at or above it. Verified
+  /// against PMS 1.43: consecutive above-threshold reports mark nothing (it
+  /// won't even store an above-threshold `viewOffset`), and a resume point left
+  /// by an earlier session does not arm a new one.
+  ///
+  /// So paths with no observable crossing — queued offline replay, external
+  /// players, same-file siblings — still need the explicit `markWatched`
+  /// (`/:/scrobble`). In-player sessions that did produce a crossing must not
+  /// send it: PMS has already recorded the watch, and the extra call inflates
+  /// `viewCount` and (before PMS 1.40) adds a second Play History row (#1740).
   @override
   bool get marksWatchedOnPlaybackStopped => false;
 

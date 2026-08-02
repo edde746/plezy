@@ -20,9 +20,14 @@ import '../utils/watch_state_notifier.dart';
 /// Both Plex and Jellyfin go through the unified
 /// [MediaServerClient.reportPlayback*] surface — Plex maps the three signals
 /// onto `/:/timeline` updates with appropriate `state`, Jellyfin uses the
-/// three `/Sessions/Playing*` endpoints. Scrobble fires once the position
-/// crosses the client's [watchedThreshold] (per-server pref on Plex, fixed
-/// 90% on Jellyfin).
+/// three `/Sessions/Playing*` endpoints.
+///
+/// Local watched state flips as soon as the position crosses the client's
+/// [MediaServerClient.watchedThreshold] (per-server pref on Plex, fixed 90% on
+/// Jellyfin). The *server-side* mark is a separate decision: both backends
+/// already mark an item played from a threshold crossing they observe in the
+/// reports this tracker sends, so an explicit mark is issued only for sessions
+/// that gave them no such crossing (#1287, #1740).
 class PlaybackProgressTracker {
   /// Server client for online progress updates (null when offline). Pinned
   /// for the tracker's lifetime — one playback session against the server
@@ -96,8 +101,43 @@ class PlaybackProgressTracker {
   /// Timer ticks to skip before retrying after failures (exponential backoff).
   int _ticksToSkip = 0;
 
-  /// Whether we've already scrobbled (marked as watched) for this playback session.
+  /// Whether this playback session considers the item watched locally. Latched
+  /// on the first observed threshold crossing, delivered to the server or not.
   bool _scrobbled = false;
+
+  /// The backend has received a report from this session at a position that is
+  /// both strictly positive and below [MediaServerClient.watchedThreshold], so
+  /// a later at-or-above report reads as a crossing.
+  ///
+  /// Position zero does not count. Verified against PMS 1.43: a session
+  /// reporting `time=0` and then the full duration is not marked played, while
+  /// the same session starting at `time=1000` is. Plex treats a zero position
+  /// as session initialisation rather than progress, so it has nothing to
+  /// cross from. (Retention of a resume point is a separate, higher bar —
+  /// reports at 5s and 30s arm the crossing without persisting an offset.)
+  bool _deliveredBelow = false;
+
+  /// The backend has received an at-or-above-threshold report while already
+  /// holding a sub-threshold offset — it observed the crossing and marked the
+  /// item itself, so an explicit mark would record the same watch twice
+  /// (#1287 Jellyfin, #1740 Plex).
+  bool _serverObservedCrossing = false;
+
+  /// The terminal stopped report has been delivered; no further report can
+  /// change what the backend saw.
+  bool _sessionEnded = false;
+
+  /// The in-flight [_settleServerMark], so the terminal stopped report can wait
+  /// for the explicit mark it triggers instead of leaving it racing teardown.
+  Future<void>? _pendingSettle;
+
+  /// The server-side mark is resolved: either the backend marked the item from
+  /// its own crossing, or we issued the explicit mark. Reset on failure so the
+  /// next delivered report retries.
+  bool _serverMarkSettled = false;
+
+  /// The post-watch hook has run; it fires at most once per tracker.
+  bool _scrobbledHookRan = false;
 
   /// Whether the final stopped progress event was already emitted locally.
   bool _stopProgressNotified = false;
@@ -109,7 +149,8 @@ class PlaybackProgressTracker {
 
   static const Duration _progressNotifyDelta = Duration(seconds: 30);
 
-  final PlaybackReportSession? _reportSession;
+  /// Built in the constructor body so the delivery callback can bind `this`.
+  late final PlaybackReportSession? _reportSession;
 
   PlaybackProgressTracker({
     required this.client,
@@ -127,15 +168,18 @@ class PlaybackProgressTracker {
     this.hasRenderedPlayback,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
-       assert(isOffline || client != null, 'client is required when isOffline is false'),
-       _reportSession = isOffline || client == null
-           ? null
-           : PlaybackReportSession(
-               client: client,
-               itemId: metadata.id,
-               playSessionId: playSessionId,
-               playMethod: playMethod,
-             );
+       assert(isOffline || client != null, 'client is required when isOffline is false') {
+    final reportingClient = client;
+    _reportSession = isOffline || reportingClient == null
+        ? null
+        : PlaybackReportSession(
+            client: reportingClient,
+            itemId: metadata.id,
+            playSessionId: playSessionId,
+            playMethod: playMethod,
+            onDelivered: _onReportDelivered,
+          );
+  }
 
   void startTracking() {
     if (_progressTimer != null) {
@@ -203,6 +247,12 @@ class PlaybackProgressTracker {
   void resumeAfterStoppedReport() {
     _stoppedProgressFuture = null;
     _reportSession?.resetAfterStop();
+    // A re-armed session is a new server-side session: backends only act on a
+    // threshold crossing observed within one, so it must earn its own
+    // below-threshold report before we can rely on it again.
+    _deliveredBelow = false;
+    _serverObservedCrossing = false;
+    _sessionEnded = false;
   }
 
   Future<void> _sendProgress(String state, {Duration? positionOverride}) async {
@@ -240,6 +290,10 @@ class PlaybackProgressTracker {
         // by a fatal error, use the last position captured while output was
         // healthy rather than the still-advancing native media clock.
         final accepted = await _sendOnlineProgress(state, position, duration, allowScrobble: canCommitStoppedProgress);
+        // The explicit mark is resolved at session end, so it has to ride the
+        // terminal report's future — callers that await the stop before tearing
+        // the player down would otherwise drop it.
+        await _pendingSettle;
         _resetBackoff();
         if (accepted && canCommitStoppedProgress) {
           _notifyProgressIfNeeded(position, duration, force: true);
@@ -363,44 +417,128 @@ class PlaybackProgressTracker {
     return info == null ? PlaybackStreamSelection.none : PlaybackStreamSelection(mediaSourceId: info.mediaSourceId);
   }
 
+  /// Records what the backend actually received, then re-evaluates whether the
+  /// explicit mark is still needed.
+  ///
+  /// Both backends mark an item played from a watched-threshold *crossing*
+  /// observed inside a single reporting session — a report below the threshold
+  /// followed by one at or above it. Absolute position is not enough: a session
+  /// whose every report sits above the threshold, or one resuming past it, is
+  /// never marked server-side.
+  void _onReportDelivered(PlaybackReportSnapshot snapshot) {
+    final threshold = client?.watchedThreshold;
+    // isWatchedProgress reports false for an unknown duration; treating that as
+    // a below-threshold report would wrongly arm the crossing.
+    if (threshold == null || snapshot.duration.inMilliseconds <= 0) return;
+    if (snapshot.isStopped) _sessionEnded = true;
+    if (isWatchedProgress(
+      positionMs: snapshot.position.inMilliseconds,
+      durationMs: snapshot.duration.inMilliseconds,
+      threshold: threshold,
+    )) {
+      if (_deliveredBelow) _serverObservedCrossing = true;
+    } else if (snapshot.position > Duration.zero) {
+      // Zero is session initialisation, not progress: the backend has nothing
+      // to cross from, so it will never mark the item off such a session.
+      _deliveredBelow = true;
+    }
+    // _settleServerMark swallows its own failures, so this never escapes.
+    final settle = _settleServerMark(client);
+    _pendingSettle = settle;
+    unawaited(settle);
+  }
+
+  /// Issues the explicit server-side mark, but only once it is clear the
+  /// backend will not record the watch itself.
+  ///
+  /// Called after the local crossing latches and again on every delivered
+  /// report — between them those cover every transition that can change the
+  /// answer.
+  Future<void> _settleServerMark(MediaServerClient? c) async {
+    if (c == null || !_scrobbled || _serverMarkSettled) return;
+    // Backends that mark played from the playback-stopped report do it there,
+    // and the terminal stop is always sent. An explicit mark on top would
+    // double-scrobble through the Jellyfin Trakt plugin (#1287).
+    if (c.marksWatchedOnPlaybackStopped) {
+      _serverMarkSettled = true;
+      await _runScrobbledHook();
+      return;
+    }
+    // The backend observed the crossing and marked the item itself. Marking
+    // again records the same watch twice (#1740).
+    if (_serverObservedCrossing) {
+      _serverMarkSettled = true;
+      await _runScrobbledHook();
+      return;
+    }
+    // Never mark while the session is still live. A crossing can appear at any
+    // point until the stop: even a session that began past the threshold can
+    // seek back below it and cross again, and the backend records that crossing
+    // itself. No eager decision can know a future rewind won't create one.
+    // Marking eagerly and then hitting that path reproduces the very
+    // double-count this guards against — verified against PMS 1.43, where an
+    // explicit mark followed by an in-session crossing leaves viewCount at 2
+    // with a Play History row (#1740).
+    //
+    // A session that only ever sent its stop reaches this already ended, so the
+    // common crossing-less case is still resolved immediately.
+    if (!_sessionEnded) return;
+    // The session is over and the backend never saw a crossing: a resume that
+    // stayed past the threshold, one that only sent its stop, or one whose
+    // crossing was coalesced away and never re-delivered. It will not mark this
+    // itself.
+    _serverMarkSettled = true;
+    try {
+      await c.markWatched(metadata);
+    } catch (e) {
+      appLogger.w('Failed to mark ${metadata.id} watched', error: e);
+      _serverMarkSettled = false; // Retry on the next delivered report.
+      return;
+    }
+    await _runScrobbledHook();
+  }
+
+  /// Runs the post-watch hook once, after the item's own watched state is
+  /// accounted for server-side.
+  ///
+  /// Its production caller marks same-file sibling episodes (#1500) with real
+  /// server writes, so it must never run ahead of the primary: a resumed
+  /// session whose explicit mark is still pending — or has just failed — would
+  /// otherwise leave the siblings watched and the episode actually played
+  /// unwatched. Hook failures are logged and never un-settle the mark.
+  Future<void> _runScrobbledHook() async {
+    final hook = onScrobbled;
+    if (hook == null || _scrobbledHookRan) return;
+    _scrobbledHookRan = true;
+    try {
+      await hook();
+    } catch (e) {
+      appLogger.w('Post-scrobble hook failed for ${metadata.id}', error: e);
+    }
+  }
+
   Future<void> _maybeScrobble(MediaServerClient c, Duration position, Duration duration) async {
-    // Explicitly scrobble once progress crosses the watched threshold.
-    // Some servers (Plex with no active play session, Jellyfin always)
-    // don't auto-mark from progress updates alone.
-    if (!_scrobbled &&
-        isWatchedProgress(
+    if (_scrobbled ||
+        !isWatchedProgress(
           positionMs: position.inMilliseconds,
           durationMs: duration.inMilliseconds,
           threshold: c.watchedThreshold,
         )) {
-      final percent = position.inMilliseconds / duration.inMilliseconds;
-      final threshold = c.watchedThreshold;
-      _scrobbled = true;
-      try {
-        // Backends that mark the item played from the playback-stopped report
-        // (Jellyfin) only emit the local watch event here — an explicit
-        // markWatched would double-scrobble via the Trakt plugin (#1287).
-        // Plex still issues the server call. Either path emits the watched
-        // event through WatchStateNotifier, so no extra notify is needed.
-        await c.markWatchedFromPlaybackStop(metadata);
-        appLogger.d(
-          'Scrobbled ${metadata.id} (${(percent * 100).toStringAsFixed(0)}% >= ${(threshold * 100).toStringAsFixed(0)}%)',
-        );
-      } catch (e) {
-        appLogger.w('Failed to scrobble ${metadata.id}', error: e);
-        _scrobbled = false; // Retry on next tick
-      }
-      // After (and only after) the primary mark succeeded. A failure here
-      // must not reset _scrobbled — that would re-scrobble the primary
-      // item and inflate its view count.
-      if (_scrobbled && onScrobbled != null) {
-        try {
-          await onScrobbled!();
-        } catch (e) {
-          appLogger.w('Post-scrobble hook failed for ${metadata.id}', error: e);
-        }
-      }
+      return;
     }
+    final percent = position.inMilliseconds / duration.inMilliseconds;
+    final threshold = c.watchedThreshold;
+    _scrobbled = true;
+    // Local state flips on the observed crossing, whether or not the backend
+    // received that particular report. The server-side mark is a separate
+    // question, answered by _settleServerMark once delivery is known.
+    c.notifyWatchedFromPlaybackSession(metadata);
+    appLogger.d(
+      'Watched ${metadata.id} (${(percent * 100).toStringAsFixed(0)}% >= ${(threshold * 100).toStringAsFixed(0)}%)',
+    );
+    // The #1500 sibling hook runs from _settleServerMark, once this item's own
+    // watched state is accounted for server-side.
+    await _settleServerMark(c);
   }
 
   Future<PlaybackStreamSelection> _currentStreamSelectionForProgress() async {

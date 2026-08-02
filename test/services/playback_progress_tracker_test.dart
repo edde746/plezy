@@ -759,8 +759,9 @@ void main() {
       expect(client.markWatchedCalls, isEmpty);
     });
 
-    test('scrobbles when percent >= watchedThresholdPercent', () async {
-      // 95% >= 90% threshold.
+    test('a session with no observable crossing still issues the explicit mark', () async {
+      // A lone stopped report at 95%: Plex never held a sub-threshold offset
+      // for this session, so it will not mark the item itself (#1740).
       final client = _FakePlexClient(thresholdPercent: 90);
       final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
       final tracker = PlaybackProgressTracker(
@@ -835,39 +836,28 @@ void main() {
       expect(client.markWatchedCalls, hasLength(1));
     });
 
-    test('a failed scrobble is retried on the next call (resets _scrobbled)', () async {
-      final client = _FakePlexClient(thresholdPercent: 90);
+    test('a failed explicit mark is retried on the next session end', () async {
+      // The mark is only attempted once a session ends with no crossing the
+      // backend could see. A failure must leave it unsettled so the next
+      // terminal report tries again.
       final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
-      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
-      addTearDown(tracker.dispose);
-
-      // First call: updateProgress succeeds, then markAsWatched throws.
-      // To make the *second* method (markAsWatched) throw, we need a flag that
-      // only triggers on the 2nd call. The fake's `throwOnNextCall` consumes
-      // on the first call, which is updateProgress. Workaround: arm the throw
-      // immediately before sendProgress, so updateProgress fails. The catch
-      // branch in PlaybackProgressTracker still bumps the failure counter for
-      // online stopped calls (and skips scrobble). Then arm again — updateProgress
-      // succeeds (because the throw was consumed) — and assert markAsWatched
-      // succeeds and scrobbles.
-      //
-      // To target ONLY markAsWatched, we instead use a custom client.
       final precise = _ScrobblePreciseClient(thresholdPercent: 90, failScrobbleFirstTime: true);
-      final tracker2 = PlaybackProgressTracker(
+      final tracker = PlaybackProgressTracker(
         client: precise,
         metadata: _meta(ratingKey: '42'),
         player: player,
         isOffline: false,
       );
-      addTearDown(tracker2.dispose);
+      addTearDown(tracker.dispose);
 
-      await tracker2.sendProgress('playing');
-      await Future<void>.delayed(Duration.zero);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
       expect(precise.markWatchedAttempts, 1);
+      expect(precise.markWatchedSuccesses, 0);
 
-      // Retry — markAsWatched now succeeds.
-      await tracker2.sendProgress('playing');
-      await Future<void>.delayed(Duration.zero);
+      tracker.resumeAfterStoppedReport();
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
       expect(precise.markWatchedAttempts, 2);
       expect(precise.markWatchedSuccesses, 1);
     });
@@ -909,8 +899,12 @@ void main() {
       expect(hookCalls, 0);
     });
 
-    test('onScrobbled waits for a successful scrobble when the first attempt fails', () async {
-      final precise = _ScrobblePreciseClient(thresholdPercent: 90, failScrobbleFirstTime: true);
+    test('onScrobbled waits for the explicit mark and never runs ahead of it (#1500)', () async {
+      // The hook marks same-file siblings with real server writes, so it must
+      // not run while this item's own mark is still pending: a hard kill in
+      // between would leave the siblings watched and the episode actually
+      // played unwatched.
+      final precise = _ScrobblePreciseClient(thresholdPercent: 90);
       final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
       var hookCalls = 0;
       final tracker = PlaybackProgressTracker(
@@ -923,12 +917,40 @@ void main() {
       addTearDown(tracker.dispose);
 
       await tracker.sendProgress('playing');
-      await Future<void>.delayed(Duration.zero);
-      expect(precise.markWatchedAttempts, 1);
-      expect(hookCalls, 0);
+      await pumpEventQueue();
+      expect(precise.markWatchedAttempts, 0, reason: 'the mark waits for the session to end');
+      expect(hookCalls, 0, reason: 'and the siblings wait for the mark');
 
-      await tracker.sendProgress('playing');
-      await Future<void>.delayed(Duration.zero);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+      expect(precise.markWatchedSuccesses, 1);
+      expect(hookCalls, 1);
+    });
+
+    test('onScrobbled does not run when the explicit mark fails, and runs on the retry', () async {
+      // The exact inconsistency to avoid: siblings marked watched while the
+      // primary episode is still unmarked on the server.
+      final precise = _ScrobblePreciseClient(thresholdPercent: 90, failScrobbleFirstTime: true);
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      var hookCalls = 0;
+      final tracker = PlaybackProgressTracker(
+        client: precise,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        onScrobbled: () async => hookCalls++,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+      expect(precise.markWatchedAttempts, 1);
+      expect(precise.markWatchedSuccesses, 0);
+      expect(hookCalls, 0, reason: 'siblings must not be marked while the primary is not');
+
+      tracker.resumeAfterStoppedReport();
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
       expect(precise.markWatchedSuccesses, 1);
       expect(hookCalls, 1);
     });
@@ -952,12 +974,377 @@ void main() {
       addTearDown(tracker.dispose);
 
       await tracker.sendProgress('playing');
-      await Future<void>.delayed(Duration.zero);
-      await tracker.sendProgress('playing');
-      await Future<void>.delayed(Duration.zero);
+      await pumpEventQueue();
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
 
       expect(client.markWatchedCalls, hasLength(1));
       expect(hookCalls, 1);
+    });
+
+    // ----------------------------------------------------------
+    // Server-side crossing detection (#1740)
+    //
+    // Both backends mark an item played from a watched-threshold crossing they
+    // observe inside one reporting session: a report below the threshold
+    // followed by one at or above it. Verified against PMS 1.43 — consecutive
+    // above-threshold reports mark nothing, and a resume point from an earlier
+    // session does not arm a new one. The explicit mark must therefore be sent
+    // only when the backend had no crossing to observe.
+    // ----------------------------------------------------------
+
+    test('a delivered crossing marks watched locally and never issues the explicit mark (#1740)', () async {
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      final watched = <WatchStateEvent>[];
+      final sub = WatchStateNotifier()
+          .forItem('42')
+          .where((e) => e.changeType == WatchStateChangeType.watched)
+          .listen(watched.add);
+      addTearDown(sub.cancel);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 95);
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, isEmpty, reason: 'the server saw the crossing and marked it itself');
+      expect(watched, hasLength(1), reason: 'local watched state still flips exactly once');
+    });
+
+    test('a session that begins past the threshold marks explicitly, but only once it ends', () async {
+      // Resume at 95%: the server never holds a sub-threshold offset for this
+      // session, so no crossing is observable and it will not mark the item.
+      // The mark still waits for the stop — until then the session could seek
+      // back and create a crossing of its own.
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      expect(client.markWatchedCalls, isEmpty, reason: 'still live — a rewind could yet create a crossing');
+
+      player.position = const Duration(seconds: 100);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, ['42']);
+    });
+
+    test('the explicit mark completes with the stopped report future', () async {
+      // The mark is resolved at session end, so it must ride the terminal
+      // report rather than race teardown: callers await the stop and then
+      // dispose the tracker.
+      final client = _ScrobblePreciseClient(thresholdPercent: 90)..markGate = Completer<void>();
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+
+      var stopDone = false;
+      final stop = tracker.sendStoppedProgressOnce().then((_) => stopDone = true);
+      await pumpEventQueue();
+      expect(client.markWatchedAttempts, 1);
+      expect(stopDone, isFalse, reason: 'the stopped future must wait for the mark it triggered');
+
+      client.markGate!.complete();
+      await stop;
+      expect(client.markWatchedSuccesses, 1);
+    });
+
+    test('a session that begins past the threshold then rewinds and re-crosses never marks explicitly', () async {
+      // Verified against PMS 1.43: an explicit mark followed by an in-session
+      // crossing leaves viewCount at 2 with a Play History row. Marking eagerly
+      // at the start of a resumed-past-threshold session would recreate #1740
+      // for anyone who rewinds and watches the end again.
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 50);
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 92);
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 100);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, isEmpty, reason: 'the server observed the 50% -> 92% crossing itself');
+    });
+
+    test('a crossing landing on the stopped report suppresses the explicit mark', () async {
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 100);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, isEmpty);
+    });
+
+    test('a crossing landing on a paused report suppresses the explicit mark', () async {
+      // The shape in the issue log: the threshold is crossed on a paused
+      // heartbeat, ~2 minutes before playback actually ends.
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 92);
+      await tracker.sendProgress('paused');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, isEmpty);
+    });
+
+    test('onScrobbled still fires when the explicit mark is suppressed (#1500)', () async {
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      var hookCalls = 0;
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        onScrobbled: () async => hookCalls++,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 95);
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, isEmpty);
+      expect(hookCalls, 1, reason: 'same-file siblings are still marked');
+    });
+
+    test('resumeAfterStoppedReport clears the crossing state for the next session', () async {
+      // Session 1 only ever reports below the threshold. If its sub-threshold
+      // offset leaked into session 2, the first above-threshold report there
+      // would look like a crossing and the explicit mark would be skipped —
+      // but the server treats them as separate sessions and marks nothing.
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 40), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+      expect(client.markWatchedCalls, isEmpty, reason: 'never crossed the threshold');
+
+      tracker.resumeAfterStoppedReport();
+      player.position = const Duration(seconds: 95);
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, ['42']);
+    });
+
+    test('a below-threshold report dropped during startup does not arm the crossing', () async {
+      // The start report (95%) is in flight; a same-state 50% heartbeat arriving
+      // meanwhile is coalesced away by PlaybackReportSession even though its
+      // future resolves true. The server only ever saw 95%, so there is no
+      // crossing and the explicit mark must still go out.
+      final client = _DelayedStartClient();
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      final crossing = tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 50);
+      final dropped = tracker.sendProgress('playing');
+      await pumpEventQueue();
+
+      client.startCompleter.complete();
+      await Future.wait([crossing, dropped]);
+      await pumpEventQueue();
+
+      expect(client.updateProgressCalls.map((c) => c.time), [95000], reason: 'the 50% snapshot was never sent');
+
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+      expect(client.markWatchedCalls, ['42']);
+    });
+
+    test('a dropped crossing followed by a seek back below the threshold marks explicitly', () async {
+      // The crossing snapshot is coalesced away, so the server never sees an
+      // at-or-above report; playback then seeks back and the terminal stop
+      // carries a sub-threshold position. Deciding at the crossing would have
+      // lost this watch entirely.
+      final client = _DelayedStartClient();
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      final below = tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 95);
+      final dropped = tracker.sendProgress('playing');
+      await pumpEventQueue();
+
+      client.startCompleter.complete();
+      await Future.wait([below, dropped]);
+      await pumpEventQueue();
+
+      expect(client.updateProgressCalls.map((c) => c.time), [50000], reason: 'the crossing snapshot was dropped');
+      expect(client.markWatchedCalls, isEmpty, reason: 'the decision is deferred, not made');
+
+      player.position = const Duration(seconds: 50);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, ['42'], reason: 'the session ended with no crossing the server could see');
+    });
+
+    test('a dropped crossing settles as server-marked once a later report is delivered', () async {
+      final client = _DelayedStartClient();
+      final player = _FakePlayer(position: const Duration(seconds: 50), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      final below = tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 95);
+      final dropped = tracker.sendProgress('playing');
+      await pumpEventQueue();
+
+      client.startCompleter.complete();
+      await Future.wait([below, dropped]);
+      await pumpEventQueue();
+      expect(client.markWatchedCalls, isEmpty);
+
+      player.position = const Duration(seconds: 96);
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 100);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, isEmpty, reason: 'the later delivery completed the crossing server-side');
+    });
+
+    test('a report at position zero does not arm the crossing', () async {
+      // Verified against PMS 1.43: a session reporting time=0 and then the full
+      // duration is NOT marked played, while the same session starting at
+      // time=1000 is. Plex treats zero as session initialisation, so it has
+      // nothing to cross from. Short music tracks hit this — the initial report
+      // fires at 0 and the next one is the terminal stop at duration.
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: Duration.zero, duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 100);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, ['42']);
+    });
+
+    test('a report one second in does arm the crossing', () async {
+      // The boundary is strictly positive, not some larger minimum: PMS marks
+      // a 1s -> 100% session played even though it persists no resume point.
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 1), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await pumpEventQueue();
+      player.position = const Duration(seconds: 100);
+      await tracker.sendProgress('stopped');
+      await pumpEventQueue();
+
+      expect(client.markWatchedCalls, isEmpty);
     });
   });
 
@@ -1453,6 +1840,9 @@ class _ScrobblePreciseClient with PlaybackReportRecorder implements PlexClient {
   int markWatchedAttempts = 0;
   int markWatchedSuccesses = 0;
 
+  /// When set, [markWatched] blocks on this so a test can observe whether the
+  /// caller awaits the mark.
+  Completer<void>? markGate;
   @override
   Future<void> updateProgress(
     String ratingKey, {
@@ -1469,6 +1859,8 @@ class _ScrobblePreciseClient with PlaybackReportRecorder implements PlexClient {
   @override
   Future<void> markWatched(MediaItem item) async {
     markWatchedAttempts++;
+    final gate = markGate;
+    if (gate != null) await gate.future;
     if (failScrobbleFirstTime) {
       failScrobbleFirstTime = false;
       throw StateError('simulated scrobble failure');

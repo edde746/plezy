@@ -735,18 +735,39 @@ extension MediaServerClientScope on MediaServerClient {
     _ => serverId,
   };
 
-  /// Mark [item] watched because it crossed [watchedThreshold] during playback,
-  /// when a playback-stopped report is/was also sent for the same playback.
+  /// Mark [item] watched because playback crossed [watchedThreshold], for paths
+  /// where the backend cannot mark it from the playback reports themselves:
+  /// queued offline replay, external players, Plex same-file siblings, and
+  /// in-player sessions whose crossing the backend never observed.
+  ///
   /// Backends that mark played from the stop report
   /// ([marksWatchedOnPlaybackStopped]) skip the server call — issuing
   /// [markWatched] too would double-scrobble via the Jellyfin Trakt plugin
   /// (#1287). The single local event emitted here keeps the UI and Plezy's
   /// own Trakt sync (which key on `watched` events, not progress) in sync;
   /// the stop report syncs the server.
+  ///
+  /// In-player sessions that *did* give the backend an observable crossing use
+  /// [notifyWatchedFromPlaybackSession] instead.
   Future<void> markWatchedFromPlaybackStop(MediaItem item) async {
     if (!marksWatchedOnPlaybackStopped) {
       await markWatched(item);
     }
+    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
+  }
+
+  /// Emit the local watched event for [item] without touching the server.
+  ///
+  /// Used when a live playback-reporting session has already given the backend
+  /// everything it needs to mark the item itself — a report below
+  /// [watchedThreshold] followed by one at or above it. Both backends act on
+  /// that crossing: Jellyfin through `/Sessions/Playing/Stopped`
+  /// (`MaxResumePct`), Plex through `/:/timeline` past
+  /// `LibraryVideoPlayedThreshold`. Adding an explicit [markWatched] on top
+  /// records the same watch twice — a second Trakt-plugin scrobble on Jellyfin
+  /// (#1287), a second Play History row and an inflated `viewCount` on Plex
+  /// (#1740).
+  void notifyWatchedFromPlaybackSession(MediaItem item) {
     WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
   }
 }
