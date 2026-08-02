@@ -143,7 +143,7 @@ class StorageService extends BaseSharedPreferencesService {
   String? _getScopedString(String baseKey) => _readScopedWithLegacyMigration<String>(
     baseKey,
     prefix: _userPrefix,
-    read: prefs.getString,
+    read: readNullableString,
     write: prefs.setString,
   );
 
@@ -154,7 +154,7 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   String? getServerEndpoint(ServerId serverId) {
-    return prefs.getString('$_prefixServerEndpoint$serverId');
+    return readNullableString('$_prefixServerEndpoint$serverId');
   }
 
   Future<void> clearServerEndpoint(ServerId serverId) async {
@@ -169,7 +169,7 @@ class StorageService extends BaseSharedPreferencesService {
     'Only ConnectionBootstrap.migrateLegacyPlexAccount may use this.',
   )
   String? getPlexToken() {
-    return prefs.getString(_keyPlexToken);
+    return readNullableString(_keyPlexToken);
   }
 
   /// Drop the legacy `plex_token` slot. Called by
@@ -186,7 +186,7 @@ class StorageService extends BaseSharedPreferencesService {
   /// sees the same device across launches; not Plex-specific in itself —
   /// Jellyfin's `DeviceId` header reuses the same value too.
   Future<String> getOrCreateClientIdentifier() async {
-    final existing = prefs.getString(_keyClientId);
+    final existing = readNullableString(_keyClientId);
     if (existing != null && existing.isNotEmpty) return existing;
     final generated = const Uuid().v4();
     await prefs.setString(_keyClientId, generated);
@@ -275,14 +275,9 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   String? getLibraryTab(String sectionId) {
-    final key = '$_userPrefix$_prefixLibraryTab$sectionId';
-    // Handle migration from old int storage: try string first, fall back to removing stale int
-    try {
-      return prefs.getString(key);
-    } catch (_) {
-      prefs.remove(key);
-      return null;
-    }
+    // Older builds stored this as an int; `readNullableString` drops a value it
+    // cannot read and falls back to null, which is the correct behaviour here.
+    return readNullableString('$_userPrefix$_prefixLibraryTab$sectionId');
   }
 
   // Hidden Libraries (stored as JSON array of library section IDs)
@@ -303,7 +298,7 @@ class StorageService extends BaseSharedPreferencesService {
     _readScopedWithLegacyMigration<String>(
       _keyHiddenLibraries,
       prefix: _userPrefixForProfileId(profileId),
-      read: prefs.getString,
+      read: readNullableString,
       write: prefs.setString,
       // Only the active profile may adopt the legacy unscoped value. Otherwise
       // merely opening another profile's scoped provider could steal legacy
@@ -406,7 +401,7 @@ class StorageService extends BaseSharedPreferencesService {
     'Only ConnectionBootstrap._promoteActiveProfileFromLegacy may read this.',
   )
   String? getCurrentUserUUID() {
-    return prefs.getString(_keyCurrentUserUUID);
+    return readNullableString(_keyCurrentUserUUID);
   }
 
   /// Clears the legacy `currentUserUUID` slot. Used by the upgrade migration.
@@ -432,7 +427,7 @@ class StorageService extends BaseSharedPreferencesService {
     'Only ConnectionBootstrap.migrateLegacyPlexAccount may use this.',
   )
   String? getServersListJson() {
-    return prefs.getString(_keyServersList);
+    return readNullableString(_keyServersList);
   }
 
   /// Clear the legacy servers list.
@@ -452,7 +447,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   // Active app-level profile (kids mode / multi-user gating)
 
-  String? getActiveProfileId() => prefs.getString(_keyActiveProfileId);
+  String? getActiveProfileId() => readNullableString(_keyActiveProfileId);
 
   Future<void> setActiveProfileId(String id) async {
     await prefs.setString(_keyActiveProfileId, id);
@@ -472,7 +467,7 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   String? getPlexHomeUsersCacheJson(String connectionId) {
-    return prefs.getString('$_prefixPlexHomeUsers$connectionId');
+    return readNullableString('$_prefixPlexHomeUsers$connectionId');
   }
 
   Future<void> clearPlexHomeUsersCache(String connectionId) async {
@@ -492,7 +487,7 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   DateTime? getProfileLastUsed(String profileId) {
-    final ms = prefs.getInt('$_prefixProfileLastUsed$profileId');
+    final ms = readNullableInt('$_prefixProfileLastUsed$profileId');
     return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
   }
 
@@ -521,7 +516,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   /// Helper to read and decode JSON `List<String>` from preferences
   List<String>? _getStringList(String key) {
-    final jsonString = prefs.getString(key);
+    final jsonString = readNullableString(key);
     if (jsonString == null) return null;
 
     try {
@@ -538,7 +533,7 @@ class StorageService extends BaseSharedPreferencesService {
   /// [legacyStringOk] - If true, returns {'key': value, 'descending': false}
   ///                    when value is a plain string (for legacy library sort)
   Map<String, dynamic>? _readJsonMap(String key, {bool legacyStringOk = false}) {
-    final jsonString = prefs.getString(key);
+    final jsonString = readNullableString(key);
     if (jsonString == null) return null;
 
     return decodeJsonStringToMap(jsonString, legacyStringOk: legacyStringOk);
@@ -577,7 +572,7 @@ class StorageService extends BaseSharedPreferencesService {
       _forEachScopedKey(baseKey, (key) => _filterServerEntriesFromStringList(key, serverId));
 
   Future<void> _clearSelectedLibraryForServer(String key, ServerId serverId) async {
-    final selected = prefs.getString(key);
+    final selected = readNullableString(key);
     if (selected != null && _belongsToServer(selected, serverId)) {
       await prefs.remove(key);
     }

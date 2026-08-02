@@ -64,7 +64,20 @@
     "loading": "Зареждане...",
     "fullscreen": "На цял екран",
     "exitFullscreen": "Изход от цял екран",
-    "pressBackAgainToExit": "Натиснете Назад отново, за да излезете"
+    "pressBackAgainToExit": "Натиснете Назад отново, за да излезете",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "Лицензи",
@@ -695,6 +708,8 @@
     "switchingToCompatiblePlayer": "Превключване към съвместим плейър...",
     "serverLimitTitle": "Възпроизвеждането е неуспешно",
     "serverLimitBody": "Грешка на сървъра (HTTP 500). Вероятно лимит за пропускателна способност/транскодиране е отхвърлил тази сесия. Помолете собственика да го коригира.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Логовете са качени",
     "logsUploadFailed": "Неуспешно качване на логовете",
     "logId": "ID на лога"
@@ -969,6 +984,38 @@
     "copyLogs": "Копирай логовете",
     "uploadLogs": "Качи логовете"
   },
+  "startup": {
+    "failedTitle": "",
+    "failedBody": "",
+    "failedBodyRepairable": "",
+    "phaseLabel": "",
+    "showDetails": "",
+    "hideDetails": "",
+    "copyDetails": "",
+    "detailsCopied": "",
+    "uploadDetails": "",
+    "repairStorage": "",
+    "repairTitle": "",
+    "repairBodyCommon": "",
+    "repairBodyOneCredential": "",
+    "repairBodySignInsKept": "",
+    "repairBodySignInsLost": "",
+    "repairBodySessionsUncertain": "",
+    "repairConfirm": "",
+    "repairSucceeded": "",
+    "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
+    "repairFailed": "",
+    "repairKeptSignIns": "",
+    "repairLostSignIns": "",
+    "repairLostSessions": "",
+    "backupTitle": "",
+    "backupWarning": "",
+    "deleteBackup": "",
+    "backupDeleted": "",
+    "previousFailureTitle": ""
+  },
   "licenses": {
     "relatedPackages": "Свързани пакети",
     "license": "Лиценз",
@@ -1103,18 +1150,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1154,17 +1199,6 @@
     },
     "totalResults": {
       "one": "",
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

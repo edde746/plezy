@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -56,5 +60,57 @@ void main() {
     final cache = await BaseSharedPreferencesService.sharedCache();
     await cache.setString('loader', 'production');
     expect(cache.getString('loader'), 'production');
+  });
+
+  _poisonedCacheRegression();
+}
+
+/// A repair that quarantines the store and then cannot reopen it must not
+/// leave the process permanently unable to try again.
+///
+/// Before #1732's fix the repaired future was built straight from the cache
+/// loader, bypassing the self-healing `onError` reset that `sharedCache`
+/// installs. A reopen failure therefore parked a rejected future in
+/// `_cacheFuture`, and every later attempt replayed that stale error for the
+/// rest of the process — with the damaged file already moved aside, so a
+/// restart would have booted cleanly.
+void _poisonedCacheRegression() {
+  group('repairCorruptStore', () {
+    late Directory root;
+    late PathProviderPlatform previousPathProvider;
+
+    setUp(() async {
+      resetSharedPreferencesForTest();
+      root = await Directory.systemTemp.createTemp('plezy_repair_reopen_');
+      previousPathProvider = PathProviderPlatform.instance;
+      PathProviderPlatform.instance = FakePathProvider(root);
+    });
+
+    tearDown(() async {
+      BaseSharedPreferencesService.resetForTesting();
+      PathProviderPlatform.instance = previousPathProvider;
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
+    test('a reopen failure does not poison the shared cache', () async {
+      final support = Directory(p.join(root.path, 'support'))..createSync(recursive: true);
+      File(p.join(support.path, 'shared_preferences.json')).writeAsStringSync('{"theme":"dark"');
+
+      var loadCount = 0;
+      BaseSharedPreferencesService.setCacheLoaderForTesting(() {
+        loadCount++;
+        if (loadCount == 1) return Future<SharedPreferencesWithCache>.error(StateError('reopen failed'));
+        return SharedPreferencesWithCache.create(cacheOptions: const SharedPreferencesWithCacheOptions());
+      });
+
+      await expectLater(BaseSharedPreferencesService.repairCorruptStore(), throwsA(isA<StateError>()));
+
+      // The damaged file is already quarantined, so the next attempt has a
+      // clean slate and must actually be allowed to use it.
+      final recovered = await BaseSharedPreferencesService.sharedCache();
+      expect(loadCount, 2);
+      await recovered.setBool('recovered', true);
+      expect(recovered.getBool('recovered'), isTrue);
+    });
   });
 }

@@ -64,7 +64,20 @@
     "loading": "Ładowanie...",
     "fullscreen": "Pełny ekran",
     "exitFullscreen": "Wyjdź z pełnego ekranu",
-    "pressBackAgainToExit": "Naciśnij ponownie przycisk Wstecz, aby wyjść"
+    "pressBackAgainToExit": "Naciśnij ponownie przycisk Wstecz, aby wyjść",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "Licencje",
@@ -697,6 +710,8 @@
     "switchingToCompatiblePlayer": "Przełączanie na kompatybilny odtwarzacz...",
     "serverLimitTitle": "Odtwarzanie nie powiodło się",
     "serverLimitBody": "Błąd serwera (HTTP 500). Limit przepustowości/transkodowania prawdopodobnie odrzucił tę sesję. Poproś właściciela o zmianę.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
     "logId": "ID logu"
@@ -971,6 +986,38 @@
     "copyLogs": "Kopiuj logi",
     "uploadLogs": "Prześlij logi"
   },
+  "startup": {
+    "failedTitle": "",
+    "failedBody": "",
+    "failedBodyRepairable": "",
+    "phaseLabel": "",
+    "showDetails": "",
+    "hideDetails": "",
+    "copyDetails": "",
+    "detailsCopied": "",
+    "uploadDetails": "",
+    "repairStorage": "",
+    "repairTitle": "",
+    "repairBodyCommon": "",
+    "repairBodyOneCredential": "",
+    "repairBodySignInsKept": "",
+    "repairBodySignInsLost": "",
+    "repairBodySessionsUncertain": "",
+    "repairConfirm": "",
+    "repairSucceeded": "",
+    "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
+    "repairFailed": "",
+    "repairKeptSignIns": "",
+    "repairLostSignIns": "",
+    "repairLostSessions": "",
+    "backupTitle": "",
+    "backupWarning": "",
+    "deleteBackup": "",
+    "backupDeleted": "",
+    "previousFailureTitle": ""
+  },
   "licenses": {
     "relatedPackages": "Powiązane pakiety",
     "license": "Licencja",
@@ -1109,18 +1156,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1164,17 +1209,6 @@
       "one": "",
       "few": "",
       "many": "",
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

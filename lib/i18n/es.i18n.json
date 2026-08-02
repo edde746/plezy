@@ -64,7 +64,20 @@
     "loading": "Cargando...",
     "fullscreen": "Pantalla completa",
     "exitFullscreen": "Salir de pantalla completa",
-    "pressBackAgainToExit": "Pulsa Atrás de nuevo para salir"
+    "pressBackAgainToExit": "Pulsa Atrás de nuevo para salir",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "Licencias",
@@ -695,6 +708,8 @@
     "switchingToCompatiblePlayer": "Cambiando a reproductor compatible...",
     "serverLimitTitle": "Error de reproducción",
     "serverLimitBody": "Error del servidor (HTTP 500). Un límite de ancho de banda/transcodificación probablemente rechazó esta sesión. Pide al propietario que lo ajuste.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Registros subidos",
     "logsUploadFailed": "Error al subir registros",
     "logId": "ID de registro"
@@ -969,6 +984,38 @@
     "copyLogs": "Copiar registros",
     "uploadLogs": "Subir registros"
   },
+  "startup": {
+    "failedTitle": "",
+    "failedBody": "",
+    "failedBodyRepairable": "",
+    "phaseLabel": "",
+    "showDetails": "",
+    "hideDetails": "",
+    "copyDetails": "",
+    "detailsCopied": "",
+    "uploadDetails": "",
+    "repairStorage": "",
+    "repairTitle": "",
+    "repairBodyCommon": "",
+    "repairBodyOneCredential": "",
+    "repairBodySignInsKept": "",
+    "repairBodySignInsLost": "",
+    "repairBodySessionsUncertain": "",
+    "repairConfirm": "",
+    "repairSucceeded": "",
+    "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
+    "repairFailed": "",
+    "repairKeptSignIns": "",
+    "repairLostSignIns": "",
+    "repairLostSessions": "",
+    "backupTitle": "",
+    "backupWarning": "",
+    "deleteBackup": "",
+    "backupDeleted": "",
+    "previousFailureTitle": ""
+  },
   "licenses": {
     "relatedPackages": "Paquetes relacionados",
     "license": "Licencia",
@@ -1103,18 +1150,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1154,17 +1199,6 @@
     },
     "totalResults": {
       "one": "",
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

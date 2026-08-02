@@ -64,7 +64,20 @@
     "loading": "Carregando...",
     "fullscreen": "Tela cheia",
     "exitFullscreen": "Sair da tela cheia",
-    "pressBackAgainToExit": "Pressione voltar novamente para sair"
+    "pressBackAgainToExit": "Pressione voltar novamente para sair",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "Licenças",
@@ -695,6 +708,8 @@
     "switchingToCompatiblePlayer": "Alternando para um reprodutor compatível...",
     "serverLimitTitle": "Falha na reprodução",
     "serverLimitBody": "Erro do servidor (HTTP 500). Um limite de largura de banda ou transcodificação provavelmente rejeitou esta sessão. Peça ao proprietário do servidor para ajustá-lo.",
+    "mediaUnreadableTitle": "",
+    "mediaUnreadableBody": "",
     "logsUploaded": "Logs enviados",
     "logsUploadFailed": "Falha ao enviar logs",
     "logId": "ID do log"
@@ -969,6 +984,38 @@
     "copyLogs": "Copiar Logs",
     "uploadLogs": "Enviar Logs"
   },
+  "startup": {
+    "failedTitle": "",
+    "failedBody": "",
+    "failedBodyRepairable": "",
+    "phaseLabel": "",
+    "showDetails": "",
+    "hideDetails": "",
+    "copyDetails": "",
+    "detailsCopied": "",
+    "uploadDetails": "",
+    "repairStorage": "",
+    "repairTitle": "",
+    "repairBodyCommon": "",
+    "repairBodyOneCredential": "",
+    "repairBodySignInsKept": "",
+    "repairBodySignInsLost": "",
+    "repairBodySessionsUncertain": "",
+    "repairConfirm": "",
+    "repairSucceeded": "",
+    "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
+    "repairFailed": "",
+    "repairKeptSignIns": "",
+    "repairLostSignIns": "",
+    "repairLostSessions": "",
+    "backupTitle": "",
+    "backupWarning": "",
+    "deleteBackup": "",
+    "backupDeleted": "",
+    "previousFailureTitle": ""
+  },
   "licenses": {
     "relatedPackages": "Pacotes Relacionados",
     "license": "Licença",
@@ -1103,18 +1150,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1154,17 +1199,6 @@
     },
     "totalResults": {
       "one": "",
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

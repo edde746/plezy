@@ -76,7 +76,6 @@ import 'i18n/app_locale_utils.dart';
 import 'i18n/strings.g.dart';
 import 'widgets/app_icon.dart';
 import 'focus/input_mode_tracker.dart';
-import 'focus/focusable_button.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'utils/navigation_transitions.dart';
@@ -84,6 +83,13 @@ import 'utils/log_redaction_manager.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'utils/android_exit_diagnostics.dart';
 import 'utils/storage_failure.dart';
+import 'services/base_shared_preferences_service.dart';
+import 'services/prefs_recovery.dart';
+import 'services/sensitive_prefs.dart';
+import 'services/startup_diagnostics.dart';
+import 'utils/dialogs.dart';
+import 'widgets/dialog_action_button.dart';
+import 'widgets/startup_failure_view.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
 const String _sentryDsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
@@ -142,6 +148,9 @@ void _bootstrapApp() {
     return const ColoredBox(color: Color(0xFF000000));
   };
 
+  // Off the critical path: the version label only decorates a diagnostic.
+  unawaited(_primeDiagnosticsVersion());
+
   AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.runApp);
   runApp(
     StartupBootstrap<_StartupDependencies>(
@@ -160,44 +169,397 @@ void _bootstrapApp() {
   );
 }
 
+/// Wraps [step] so a failure names the gate phase it came from.
+///
+/// `Future.wait` keeps only the first error and discards the rest, and the old
+/// catch-all reported a bare `error.runtimeType`, so a startup failure could
+/// not even be attributed to one of four concurrent steps (#1732).
+Future<T> _gatePhase<T>(StartupPhase phase, Future<T> Function() step) async {
+  try {
+    return await step();
+  } catch (error, stackTrace) {
+    Error.throwWithStackTrace(StartupPhaseException(phase, error), stackTrace);
+  }
+}
+
+/// How long a degradable startup step may block the launch before it is
+/// abandoned. Generous next to the sub-second these normally take, but bounded:
+/// `windowManager.ensureInitialized()` is a platform-channel round trip and the
+/// Windows runner puts the UI on its own thread, so a stalled platform thread
+/// would otherwise hold the splash forever with no error to report.
+const Duration _optionalPhaseTimeout = Duration(seconds: 10);
+
+/// Runs a startup step that the app can survive without.
+///
+/// Window chrome, locale selection, crash reporting and the artwork cache are
+/// all degradable; before #1732 any one of them could veto the whole boot —
+/// by throwing, or by never completing.
+Future<void> _optionalGatePhase(
+  StartupPhase phase,
+  Future<void> Function() step, {
+  Duration timeout = _optionalPhaseTimeout,
+}) async {
+  // Keep a handler on the original future. `timeout` abandons the work rather
+  // than cancelling it, so a late failure would otherwise land as an unhandled
+  // async error long after the gate moved on.
+  final work = Future<void>.sync(step).catchError((Object error, StackTrace stackTrace) {
+    appLogger.w('Optional startup phase "${phase.id}" failed', error: error, stackTrace: stackTrace);
+  });
+  try {
+    await work.timeout(timeout);
+  } on TimeoutException {
+    appLogger.w('Optional startup phase "${phase.id}" did not finish in ${timeout.inSeconds}s; continuing without it');
+  }
+}
+
 Future<_StartupDependencies> _initializeApplication() async {
-  final settings = await SettingsService.getInstance();
+  final settings = await _gatePhase(StartupPhase.preferences, SettingsService.getInstance);
   setLoggerLevel(settings.read(SettingsService.enableDebugLogging));
 
-  _StartupDependencies? dependencies;
-  Future<void> initializeStartup() async {
-    AndroidExitDiagnostics.markTelemetryReady();
-    dependencies = await _initializeStartup(settings);
+  if (_enableSentry) {
+    // Crash reporting is observability: it must never veto the launch it
+    // exists to report on. `Sentry.init` runs its integrations eagerly, so an
+    // integration throwing used to fail the gate before any Plezy code ran.
+    //
+    // Deliberately no `appRunner`. On every non-web platform `Sentry.init`
+    // reduces it to `await appRunner()` after the integrations — error capture
+    // comes from `OnErrorIntegration`/`PlatformDispatcher.onError`, installed
+    // during init either way. Passing the startup work in would make a startup
+    // failure indistinguishable from a Sentry failure, and this guard would
+    // then run the whole gate — migrations, native recovery, database open —
+    // a second time.
+    await _optionalGatePhase(StartupPhase.crashReporting, () async {
+      await SentryFlutter.init((options) {
+        options.dsn = _sentryDsn;
+        options.release = _sentryRelease();
+        if (_sentryEnvironment.isNotEmpty) options.environment = _sentryEnvironment;
+        if (_sentryDist.isNotEmpty) options.dist = _sentryDist;
+        options.tracesSampleRate = 0;
+        options.attachStacktrace = true;
+        options.enableAutoSessionTracking = false;
+        options.recordHttpBreadcrumbs = false;
+        options.captureNativeFailedRequests = false;
+        options.enableAppHangTracking = !kDebugMode;
+        options.appHangTimeoutInterval = const Duration(seconds: 3);
+        options.beforeSend = _beforeSend;
+        options.beforeBreadcrumb = _beforeBreadcrumb;
+      });
+      // Only reached when init really completed; the phase above swallows a
+      // failure or a timeout and would otherwise leave a no-op hub that
+      // accepts events and drops them.
+      _crashReporterReady = true;
+    });
   }
 
-  if (_enableSentry) {
-    final packageInfo = await PackageInfo.fromPlatform();
-    await SentryFlutter.init((options) {
-      options.dsn = _sentryDsn;
-      options.release = gitCommit.isNotEmpty
-          ? 'plezy@${gitCommit.substring(0, 7)}'
-          : 'plezy@${packageInfo.version}+${packageInfo.buildNumber}';
-      if (_sentryEnvironment.isNotEmpty) options.environment = _sentryEnvironment;
-      if (_sentryDist.isNotEmpty) options.dist = _sentryDist;
-      options.tracesSampleRate = 0;
-      options.attachStacktrace = true;
-      options.enableAutoSessionTracking = false;
-      options.recordHttpBreadcrumbs = false;
-      options.captureNativeFailedRequests = false;
-      options.enableAppHangTracking = !kDebugMode;
-      options.appHangTimeoutInterval = const Duration(seconds: 3);
-      options.beforeSend = _beforeSend;
-      options.beforeBreadcrumb = _beforeBreadcrumb;
-    }, appRunner: initializeStartup);
-  } else {
-    await initializeStartup();
-  }
-  return dependencies!;
+  // Registered rather than awaited: sending must not sit on the critical path,
+  // but it must finish before the success path consumes the record off disk.
+  // Runs even without Sentry so a build that can never report still resolves
+  // the record instead of carrying it forever.
+  StartupDiagnosticsStore.holdForFlush(flushPendingStartupFailure());
+
+  AndroidExitDiagnostics.markTelemetryReady();
+  return _initializeStartup(settings);
+}
+
+/// Release identifier for Sentry.
+///
+/// `PackageInfo.fromPlatform()` reads the executable's Win32 version resource
+/// and throws `WindowsException`/`ArgumentError` when that read fails (UNC
+/// launch, antivirus interception). Official builds always define
+/// `GIT_COMMIT`, so resolve that first and only pay the platform read — inside
+/// a guard — when there is no commit to use.
+String _sentryRelease() {
+  if (gitCommit.length >= 7) return 'plezy@${gitCommit.substring(0, 7)}';
+  if (gitCommit.isNotEmpty) return 'plezy@$gitCommit';
+  return 'plezy@unknown';
 }
 
 const startupBootstrapProgressKey = Key('startup-bootstrap-progress');
-const startupBootstrapFailureKey = Key('startup-bootstrap-failure');
-const startupBootstrapRetryKey = Key('startup-bootstrap-retry');
+
+/// Human-readable build label for a failure record, primed off the critical
+/// path by [_primeDiagnosticsVersion].
+String _diagnosticsVersion = gitCommit.isEmpty ? 'unknown' : gitCommit.substring(0, gitCommit.length.clamp(0, 7));
+
+/// Resolves the package version for diagnostics without putting it in the gate.
+///
+/// `PackageInfo.fromPlatform()` reads the executable's Win32 version resource
+/// and throws `WindowsException`/`ArgumentError` when that read fails (a UNC
+/// launch, antivirus interception). It used to run inside the startup gate for
+/// a value only Sentry consumed; here a failure just leaves the commit label.
+Future<void> _primeDiagnosticsVersion() async {
+  try {
+    final info = await PackageInfo.fromPlatform();
+    final commit = gitCommit.isEmpty ? '' : ' (${gitCommit.substring(0, gitCommit.length.clamp(0, 7))})';
+    _diagnosticsVersion = '${info.version}+${info.buildNumber}$commit';
+  } catch (error, stackTrace) {
+    appLogger.d('Could not resolve the package version for diagnostics', error: error, stackTrace: stackTrace);
+  }
+}
+
+/// Platform label for a failure record. Deliberately coarse — enough to
+/// triage a report, never enough to identify a machine.
+String _diagnosticsPlatform() => '${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
+
+/// Whether an in-app repair can address [error].
+///
+/// Only preference-store damage qualifies. Everything else — a denied
+/// directory, a locked database, a native library that will not load — needs
+/// the environment to change, and offering a destructive repair for it would
+/// be worse than offering nothing.
+bool _isRepairable(Object error) {
+  final cause = StartupPhaseException.unwrap(error);
+  return cause is CorruptPreferenceStoreException || cause is UnreadableSensitivePreferenceException;
+}
+
+/// Default [StartupBootstrap.describeFailure].
+@visibleForTesting
+StartupFailureRecord describeStartupFailure(Object error, StackTrace stackTrace) => StartupFailureRecord.fromError(
+  error: error,
+  stackTrace: stackTrace,
+  appVersion: _diagnosticsVersion,
+  platform: _diagnosticsPlatform(),
+  repairable: _isRepairable(error),
+);
+
+/// Whether `SentryFlutter.init` actually completed this launch.
+///
+/// The crash-reporting phase is best-effort, so init can fail or time out and
+/// leave a no-op hub behind. A no-op hub accepts `captureMessage` and returns
+/// an empty id *without throwing*, so "the send did not throw" is not evidence
+/// that anything was sent.
+var _crashReporterReady = false;
+
+@visibleForTesting
+void debugSetCrashReporterReady(bool ready) => _crashReporterReady = ready;
+
+/// Sends a persisted startup failure to the crash reporter, once.
+///
+/// Reporting cannot happen where the failure is caught. The gate opens
+/// preferences — the likeliest thing to fail, and the whole reason #1732 has
+/// no telemetry — before crash reporting exists, so a capture there goes to a
+/// no-op hub and is silently dropped. Initialising the reporter first is not
+/// an option either: `_beforeSend` reads the crash-reporting opt-out from
+/// settings, which are not loaded yet, so early events would bypass a user's
+/// choice.
+///
+/// So every failure is persisted first and flushed here, immediately after
+/// the reporter comes up with settings loaded. In practice that is the user's
+/// own retry, seconds later, in the same process.
+///
+/// The record is only marked reported on proof of delivery — a non-empty
+/// Sentry id — or when the user has opted out, which is a deliberate
+/// suppression rather than a failure to retry. Anything else leaves it
+/// pending for the next launch.
+@visibleForTesting
+Future<void> flushPendingStartupFailure({
+  Future<SentryId> Function(StartupFailureRecord record)? send,
+  bool? reporterReady,
+  bool? crashReportingEnabled,
+  bool? reportingCompiledIn,
+}) async {
+  final record = await StartupDiagnosticsStore.peekPersisted();
+  if (record == null || record.reported) return;
+
+  final optedIn = crashReportingEnabled ?? SettingsService.instanceOrNull?.read(SettingsService.crashReporting) ?? true;
+  final canEverReport = reportingCompiledIn ?? _enableSentry;
+  if (!optedIn || !canEverReport) {
+    // Deliberate suppression, not a delivery failure. Marking it reported is
+    // what lets `consumePrevious` eventually drop the file; without this a
+    // fork build with no DSN, or an opted-out user, would carry the record
+    // forever.
+    appLogger.d(
+      optedIn
+          ? 'Startup failure not reported: crash reporting is not available in this build'
+          : 'Startup failure not reported: crash reporting is disabled',
+    );
+    await StartupDiagnosticsStore.markReported(record);
+    return;
+  }
+
+  if (!(reporterReady ?? _crashReporterReady)) {
+    // Kept on disk deliberately: `consumePrevious` retains an unreported
+    // record so the next launch can try again.
+    appLogger.d('Startup failure kept for the next launch: crash reporting is not initialised');
+    return;
+  }
+
+  try {
+    final id = await (send ?? _captureStartupFailure)(record);
+    if (id == const SentryId.empty()) {
+      // A no-op hub, a disabled client, or an event dropped in `beforeSend`.
+      appLogger.d('Startup failure was not accepted by the crash reporter; keeping it for the next launch');
+      return;
+    }
+    await StartupDiagnosticsStore.markReported(record);
+  } catch (error, stackTrace) {
+    // Leave it unreported so the next launch tries again.
+    appLogger.d('Could not report the startup failure', error: error, stackTrace: stackTrace);
+  }
+}
+
+Future<SentryId> _captureStartupFailure(StartupFailureRecord record) {
+  // The original error object is long gone by now; the record is the
+  // allowlisted, already-redacted rendering of it.
+  return Sentry.captureMessage(
+    'Startup failed: ${record.headline}',
+    level: SentryLevel.fatal,
+    withScope: (scope) {
+      scope.setTag('startup.phase', record.phaseId);
+      scope.setContexts('startup', {
+        'phase': record.phaseId,
+        'errorType': record.errorType,
+        'repairable': record.repairable,
+        'when': record.timestamp.toUtc().toIso8601String(),
+        'stackTrace': ?record.stackTrace,
+      });
+    },
+  );
+}
+
+/// Default [StartupBootstrap.repair]: states the cost, runs the repair that
+/// matches the failure, then reports what was kept and what was lost.
+///
+/// The result tells the bootstrap what it may do next; see
+/// [StartupRepairResult]. Never returns [StartupRepairResult.retry] for a
+/// repair that requires a restart — re-running initialization in that state
+/// would destroy the salvage.
+@visibleForTesting
+Future<StartupRepairResult> repairStartupStorage(
+  BuildContext context,
+  StartupFailureRecord record,
+  Object error,
+) async {
+  final cause = StartupPhaseException.unwrap(error);
+  final unreadableKey = cause is UnreadableSensitivePreferenceException ? cause.key : null;
+  final reopenSafe = cause is! CorruptPreferenceStoreException || cause.reopenSafe;
+
+  // Name the real cost before touching anything, not the usual one. Servers
+  // and profiles survive a repair only because their tokens are ciphertext in
+  // the database and the key that decrypts them lives in the store — so a
+  // store the key cannot be read out of signs the user out of everything. An
+  // all-zero file is exactly that case (#1732), and telling them their
+  // sign-ins are safe would be a promise the outcome dialog then contradicts.
+  final signInsSurvive = unreadableKey != null
+      ? unreadableKey != credentialVaultKeyPref
+      : (await PrefsRecovery.previewSalvage()).vaultKey != null;
+  if (!context.mounted) return StartupRepairResult.none;
+
+  final confirmed = await showConfirmDialog(
+    context,
+    title: t.startup.repairTitle,
+    message: repairConsentMessage(oneCredential: unreadableKey != null, signInsSurvive: signInsSurvive),
+    confirmText: t.startup.repairConfirm,
+    isDestructive: true,
+  );
+  if (!confirmed || !context.mounted) return StartupRepairResult.none;
+
+  final outcome = unreadableKey != null
+      ? await BaseSharedPreferencesService.dropUnreadableCredential(unreadableKey)
+      : await BaseSharedPreferencesService.repairCorruptStore(reopenSafe: reopenSafe);
+  final result = outcome.requiresRestart ? StartupRepairResult.restart : StartupRepairResult.retry;
+  if (!context.mounted) return result;
+
+  await showRepairOutcomeDialog(context, outcome);
+  return result;
+}
+
+/// The consent dialog's body: what is being repaired, then what it costs.
+///
+/// Separated from [repairStartupStorage] because the two halves fail
+/// differently. Deciding whether the sign-ins survive is I/O against a
+/// damaged file; deciding what to *tell* the user about it is a promise, and
+/// #1732 is what happens when the promise is written once, optimistically,
+/// for a case that does not always hold.
+///
+/// [signInsSurvive] covers servers and profiles only. Their tokens are
+/// ciphertext in the database, so they live or die with the vault key —
+/// which is exactly why that one value decides this sentence.
+///
+/// Tracker and Seerr sessions are plaintext preference entries, salvaged and
+/// reseeded one by one and untouched entirely by the single-credential
+/// repair. They therefore do not follow the vault key in either direction,
+/// and get one cautious sentence in both branches rather than a promise
+/// borrowed from a value that does not govern them.
+@visibleForTesting
+String repairConsentMessage({required bool oneCredential, required bool signInsSurvive}) => [
+  oneCredential ? t.startup.repairBodyOneCredential : t.startup.repairBodyCommon,
+  signInsSurvive ? t.startup.repairBodySignInsKept : t.startup.repairBodySignInsLost,
+  t.startup.repairBodySessionsUncertain,
+].join('\n\n');
+
+/// Reports a completed repair, including the retained copy of the damaged
+/// store.
+///
+/// The backup path is shown so the user can find and delete it, never so it
+/// can be attached to a report: it can hold the credential-vault key, tracker
+/// refresh tokens and Seerr cookies in plaintext. The warning is suppressed
+/// only when the quarantined *bytes* prove there is nothing in them — an
+/// all-zero file (#1732) — never on the strength of what the salvage managed
+/// to recover, which says nothing about what is still in the file. A warning
+/// on a file of zeros is the one that teaches users to ignore the warning
+/// that matters.
+@visibleForTesting
+Future<void> showRepairOutcomeDialog(
+  BuildContext context,
+  PrefsRepairOutcome outcome, {
+  // Test seam: the widget-test binding's fake-async zone never completes a
+  // `dart:io` future, so a real delete cannot be driven from a widget test.
+  Future<void> Function(String path) deleteBackup = PrefsRecovery.deleteBackup,
+}) {
+  final backupPath = outcome.backupPath;
+  // Outside the builder: a `StatefulBuilder` re-runs its closure on every
+  // rebuild, so state declared inside it would reset the moment the rebuild it
+  // triggered arrives — leaving the sensitive path on screen after deletion.
+  var deleted = false;
+  return showScopedDialog<void>(
+    context: context,
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) {
+        return AlertDialog(
+          title: Text(outcome.requiresRestart ? t.startup.repairNeedsRestart : t.startup.repairSucceeded),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(outcome.vaultKeySalvaged ? t.startup.repairKeptSignIns : t.startup.repairLostSignIns),
+              if (outcome.sessionsAffected) ...[const SizedBox(height: 8), Text(t.startup.repairLostSessions)],
+              if (backupPath != null && !deleted) ...[
+                const SizedBox(height: 16),
+                Text(t.startup.backupTitle, style: Theme.of(dialogContext).textTheme.titleSmall),
+                const SizedBox(height: 4),
+                SelectableText(backupPath, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+                if (outcome.backupHoldsCredentials) ...[
+                  const SizedBox(height: 4),
+                  Text(t.startup.backupWarning, style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+                ],
+                const SizedBox(height: 8),
+                DialogActionButton(
+                  label: t.startup.deleteBackup,
+                  onPressed: () async {
+                    await deleteBackup(backupPath);
+                    // The barrier can dismiss this dialog while the delete is
+                    // in flight; the file is gone either way.
+                    if (!dialogContext.mounted) return;
+                    setDialogState(() => deleted = true);
+                  },
+                ),
+              ],
+              if (deleted) ...[const SizedBox(height: 8), Text(t.startup.backupDeleted)],
+            ],
+          ),
+          actions: [
+            DialogActionButton(
+              autofocus: true,
+              isPrimary: true,
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              label: t.common.close,
+            ),
+          ],
+        );
+      },
+    ),
+  );
+}
 
 /// Mounts a Flutter-owned startup frame before invoking the asynchronous
 /// initialization gate. The generic seam keeps frame ordering, failure, and
@@ -210,6 +572,8 @@ class StartupBootstrap<T> extends StatefulWidget {
     required this.buildApp,
     this.discard,
     this.onCommitted,
+    this.describeFailure = describeStartupFailure,
+    this.repair = repairStartupStorage,
     this.lightTheme,
     this.darkTheme,
     this.themeMode = material.ThemeMode.system,
@@ -219,6 +583,17 @@ class StartupBootstrap<T> extends StatefulWidget {
   final Widget Function(BuildContext context, T value) buildApp;
   final FutureOr<void> Function(T value)? discard;
   final FutureOr<void> Function(T value)? onCommitted;
+
+  /// Reduces a thrown error to the allowlisted record the failure screen,
+  /// the persisted diagnostic and the crash report all share.
+  final StartupFailureRecord Function(Object error, StackTrace stackTrace) describeFailure;
+
+  /// Offers the user a consented repair for a recoverable failure and reports
+  /// what the gate may do next. [StartupRepairResult.retry] re-runs
+  /// [initialize]; [StartupRepairResult.restart] parks the app on the failure
+  /// screen, because nothing may touch preferences until the process restarts.
+  final Future<StartupRepairResult> Function(BuildContext context, StartupFailureRecord record, Object error)? repair;
+
   final ThemeData? lightTheme;
   final ThemeData? darkTheme;
   final material.ThemeMode themeMode;
@@ -229,9 +604,19 @@ class StartupBootstrap<T> extends StatefulWidget {
 
 class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
   T? _value;
-  Object? _error;
+  StartupFailureRecord? _failure;
+
+  /// Retained alongside [_failure] so the repair hook can classify the real
+  /// cause; the record is a redacted allowlist and deliberately cannot.
+  Object? _failureError;
   bool _completed = false;
   bool _initializing = false;
+  bool _repairing = false;
+
+  /// Terminal: the store was repaired but the plugin still holds the bad
+  /// document, so this process can never open it. Latched, never cleared —
+  /// re-running the gate from here would flush the stale map over the seed.
+  bool _restartRequired = false;
   int _generation = 0;
 
   @override
@@ -248,7 +633,7 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
 
     final generation = ++_generation;
     setState(() {
-      _error = null;
+      _failure = null;
       _initializing = true;
     });
 
@@ -264,15 +649,53 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
         _completed = true;
         _initializing = false;
       });
+      // A launch that got through is the first chance to surface a record
+      // written by one that did not. Consuming it takes the file off disk and
+      // holds the contents in memory for Settings › Logs, so the user can
+      // upload the failure that had no other way out (#1732).
+      unawaited(StartupDiagnosticsStore.consumePrevious());
       unawaited(Future.sync(() => widget.onCommitted?.call(value)));
     } catch (error, stackTrace) {
+      final failure = widget.describeFailure(error, stackTrace);
+      // `headline` is the sanitised rendering; the raw error is deliberately
+      // not passed, because `FormatException.toString()` embeds an excerpt of
+      // whatever document failed to parse.
+      appLogger.e('Startup initialization failed: ${failure.headline}', stackTrace: stackTrace);
+      // Persist first: this record is the only thing that survives the
+      // process. On Windows there is no log file and no console for a
+      // double-clicked release build.
+      unawaited(StartupDiagnosticsStore.record(failure));
+      // Not reported from here: the earliest phases run before the crash
+      // reporter exists, so the record is persisted and flushed by
+      // `flushPendingStartupFailure` once it is up — on the retry below, or on
+      // the next launch.
       if (!mounted || generation != _generation) return;
-      appLogger.e('Startup initialization failed (${error.runtimeType})', stackTrace: stackTrace);
       setState(() {
-        _error = error;
+        _failure = failure;
+        _failureError = error;
         _initializing = false;
       });
     }
+  }
+
+  Future<void> _repair(StartupFailureRecord failure) async {
+    final repair = widget.repair;
+    final error = _failureError;
+    if (repair == null || error == null || _repairing || _restartRequired) return;
+    setState(() => _repairing = true);
+    var result = StartupRepairResult.none;
+    try {
+      result = await repair(context, failure, error);
+    } catch (error, stackTrace) {
+      appLogger.e('Startup storage repair failed', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.startup.repairFailed);
+    }
+    if (!mounted) return;
+    setState(() {
+      _repairing = false;
+      if (result == StartupRepairResult.restart) _restartRequired = true;
+    });
+    if (result == StartupRepairResult.retry) unawaited(_initialize());
   }
 
   Future<void> _discard(T value) async {
@@ -309,30 +732,17 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
   }
 
   Widget _buildBootstrapHome(BuildContext context) {
+    final failure = _failure;
     return Scaffold(
-      body: Center(
-        child: _error == null
-            ? const CircularProgressIndicator(key: startupBootstrapProgressKey)
-            : Column(
-                key: startupBootstrapFailureKey,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const AppIcon(Symbols.error_rounded, size: 48),
-                  const SizedBox(height: 16),
-                  Text(t.common.error, style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: 16),
-                  FocusableButton(
-                    autofocus: true,
-                    onPressed: _initializing ? null : () => unawaited(_initialize()),
-                    child: FilledButton(
-                      key: startupBootstrapRetryKey,
-                      onPressed: _initializing ? null : () => unawaited(_initialize()),
-                      child: Text(t.common.retry),
-                    ),
-                  ),
-                ],
-              ),
-      ),
+      body: failure == null
+          ? const Center(child: CircularProgressIndicator(key: startupBootstrapProgressKey))
+          : StartupFailureView(
+              failure: failure,
+              busy: _initializing || _repairing,
+              restartRequired: _restartRequired,
+              onRetry: () => unawaited(_initialize()),
+              onRepair: failure.repairable && widget.repair != null ? () => _repair(failure) : null,
+            ),
     );
   }
 }
@@ -394,45 +804,58 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
 
   AppDatabase? openedDatabase;
   try {
-    final savedLocale = settings.read(SettingsService.appLocale);
-    await LocaleSettings.setLocale(savedLocale);
-    await initializeDateFormatting(savedLocale.intlLocaleName, null);
+    // Slang builds the base locale eagerly, so `t` already resolves before
+    // this runs; a failure here degrades to English rather than no app.
+    await _optionalGatePhase(StartupPhase.locale, () async {
+      final savedLocale = settings.read(SettingsService.appLocale);
+      await LocaleSettings.setLocale(savedLocale);
+      await initializeDateFormatting(savedLocale.intlLocaleName, null);
+    });
     markStartupPhase('locale');
 
-    final futures = <Future<void>>[];
+    // Window chrome is cosmetic; losing it costs the custom titlebar and the
+    // remembered size, not the app. It is also the step most exposed to a
+    // stalled platform thread, so it must not sit in the same combined future
+    // as the services the first build genuinely needs.
     if (PlatformDetector.isDesktopOS()) {
-      if (Platform.isMacOS) {
-        futures.add(windowManager.ensureInitialized().then((_) => MacOSWindowService.setupCustomTitlebar()));
-      } else {
-        futures.add(windowManager.ensureInitialized());
-      }
+      await _optionalGatePhase(StartupPhase.windowManager, () async {
+        await windowManager.ensureInitialized();
+        if (Platform.isMacOS) await MacOSWindowService.setupCustomTitlebar();
+      });
     }
 
-    // MainApp reads both synchronous facades during its first build.
-    futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
-    futures.add(DevicePerformance.getInstance(override: settings.read(SettingsService.visualEffects)));
+    // MainApp reads both synchronous facades during its first build, and both
+    // have a working sync fallback, so a detection failure is not fatal.
+    await _optionalGatePhase(StartupPhase.deviceCapabilities, () async {
+      await (
+        TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)),
+        DevicePerformance.getInstance(override: settings.read(SettingsService.visualEffects)),
+      ).wait;
+    });
 
-    final storageFuture = StorageService.getInstance();
-    futures.add(storageFuture);
-    await Future.wait(futures);
-    final storage = await storageFuture;
+    final storage = await _gatePhase(StartupPhase.storage, StorageService.getInstance);
     markStartupPhase('platform-services');
 
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.databaseOpenStarted);
-    final databaseBootstrap = await openAppDatabaseWithDownloadRecovery(
-      openDatabase: () => AppDatabase.open(isTvos: PlatformDetector.isAppleTV()),
-      recoverNativeDownloads: DownloadManagerService.discardInterruptedNativeDownloadsAfterStorageFailure,
-      storageFullMessage: t.downloads.storageFull,
+    final databaseBootstrap = await _gatePhase(
+      StartupPhase.database,
+      () => openAppDatabaseWithDownloadRecovery(
+        openDatabase: () => AppDatabase.open(isTvos: PlatformDetector.isAppleTV()),
+        recoverNativeDownloads: DownloadManagerService.discardInterruptedNativeDownloadsAfterStorageFailure,
+        storageFullMessage: t.downloads.storageFull,
+      ),
     );
     openedDatabase = databaseBootstrap.database;
     AndroidExitDiagnostics.markStartupPhase(AndroidStartupPhase.databaseReady);
     markStartupPhase('database-recovery');
 
-    DevicePerformance.applyImageCacheBudget();
+    await _optionalGatePhase(StartupPhase.imageCache, () async => DevicePerformance.applyImageCacheBudget());
 
     // DownloadManagerService reads this singleton synchronously in MainApp's
-    // initState, so its recoverable storage check remains in the explicit gate.
-    await DownloadStorageService.instance.initialize(settings);
+    // initState, but `getArtworkPathSync` already models "not ready" by
+    // returning null and the path re-resolves lazily, so offline artwork is
+    // not a launch requirement.
+    await _optionalGatePhase(StartupPhase.downloadStorage, () => DownloadStorageService.instance.initialize(settings));
     markStartupPhase('download-storage');
 
     return _StartupDependencies(

@@ -1,3 +1,4 @@
+import '../../media/media_rating.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_cast_member.dart';
 import '../../models/catalog/catalog_item.dart';
@@ -7,6 +8,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/country_codes.dart';
 import '../../utils/json_utils.dart';
 import '../plex_discover_client.dart';
+import '../plex_mappers.dart';
 import 'catalog_source.dart';
 import 'catalog_watchlist_machinery.dart';
 
@@ -259,8 +261,8 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
       }
     }
 
-    final headlineRating = _normalizedRating(metadata['rating']);
-    final audienceRating = _normalizedRating(metadata['audienceRating']);
+    final headlineRating = normalizedPlexRating(metadata['rating']);
+    final audienceRating = normalizedPlexRating(metadata['audienceRating']);
     return CatalogItem(
       source: CatalogSourceId.plex,
       kind: kind,
@@ -343,46 +345,17 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
     return credits.isEmpty ? null : credits;
   }
 
-  static List<CatalogRatingSource>? _ratingsFor(Map<String, dynamic> metadata) {
-    final ratings = <CatalogRatingSource>[];
-    final imdbVotes = flexibleInt(metadata['imdbRatingCount']);
-
-    void add(Object? rawValue, {required String fallbackSource, Object? image, Object? type}) {
-      final value = _normalizedRating(rawValue);
-      if (value == null) return;
-      final source = _ratingSource(image: image, type: type, fallback: fallbackSource);
-      if (ratings.any((rating) => rating.source == source && rating.value == value)) return;
-      ratings.add(CatalogRatingSource(source: source, value: value, votes: source == 'imdb' ? imdbVotes : null));
-    }
-
-    add(metadata['rating'], fallbackSource: 'critic', image: metadata['ratingImage']);
-    add(metadata['audienceRating'], fallbackSource: 'audience', image: metadata['audienceRatingImage']);
-    for (final rating in flexibleMapList(metadata['Rating'])) {
-      add(rating['value'], fallbackSource: 'audience', image: rating['image'], type: rating['type']);
-    }
-    return ratings.isEmpty ? null : ratings;
-  }
-
-  static String _ratingSource({Object? image, Object? type, required String fallback}) {
-    final scheme = Uri.tryParse(_nonEmptyString(image) ?? '')?.scheme.toLowerCase();
-    if (scheme == 'imdb') return 'imdb';
-    if (scheme == 'themoviedb' || scheme == 'tmdb') return 'tmdb';
-    final ratingType = _nonEmptyString(type)?.toLowerCase() ?? fallback;
-    if (scheme == 'rottentomatoes') {
-      return ratingType == 'critic' ? 'rottenTomatoesCritic' : 'rottenTomatoesAudience';
-    }
-    return switch (ratingType) {
-      'critic' => 'critic',
-      'audience' => 'audience',
-      _ => fallback,
-    };
-  }
-
-  static double? _normalizedRating(Object? value) {
-    final rating = flexibleDouble(value);
-    if (rating == null || !rating.isFinite || rating < 0 || rating > 100) return null;
-    return rating > 10 ? rating / 10 : rating;
-  }
+  static List<MediaRatingSource>? _ratingsFor(Map<String, dynamic> metadata) => plexRatingSources(
+    rating: metadata['rating'],
+    ratingImage: metadata['ratingImage'],
+    audienceRating: metadata['audienceRating'],
+    audienceRatingImage: metadata['audienceRatingImage'],
+    ratingSources: [
+      for (final rating in flexibleMapList(metadata['Rating']))
+        (image: rating['image'], type: rating['type'], value: rating['value']),
+    ],
+    imdbVotes: flexibleInt(metadata['imdbRatingCount']),
+  );
 
   static String? _overviewFor(Map<String, dynamic> metadata) {
     var overview = _nonEmptyString(metadata['summary']);

@@ -1,5 +1,6 @@
 import 'package:collection/collection.dart';
 
+import '../../media/media_rating.dart';
 import '../../media/media_kind.dart';
 import '../../models/anilist/anilist_media.dart';
 import '../../models/catalog/catalog_cast_member.dart';
@@ -218,8 +219,8 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
             CatalogCastMember(name: character.name, secondary: character.role, imageUrl: character.imageUrl),
         ];
 
-  static List<CatalogRatingSource>? _ratingsFor(double? meanRating) =>
-      meanRating == null ? null : [CatalogRatingSource(source: 'anilist', value: meanRating)];
+  static List<MediaRatingSource>? _ratingsFor(double? meanRating) =>
+      meanRating == null ? null : [MediaRatingSource(source: 'anilist', value: meanRating)];
 
   static CatalogNextEpisode? _nextEpisodeFor(AnilistNextAiringEpisode? airing) => airing == null
       ? null

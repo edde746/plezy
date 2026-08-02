@@ -68,6 +68,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$serverSelection$en serverSelection = Translations$serverSelection$en.internal(_root);
 	late final Translations$hubDetail$en hubDetail = Translations$hubDetail$en.internal(_root);
 	late final Translations$logs$en logs = Translations$logs$en.internal(_root);
+	late final Translations$startup$en startup = Translations$startup$en.internal(_root);
 	late final Translations$licenses$en licenses = Translations$licenses$en.internal(_root);
 	late final Translations$navigation$en navigation = Translations$navigation$en.internal(_root);
 	late final Translations$explore$en explore = Translations$explore$en.internal(_root);
@@ -299,6 +300,8 @@ class Translations$common$en {
 
 	/// en: 'Press back again to exit'
 	String get pressBackAgainToExit => 'Press back again to exit';
+
+	late final Translations$common$ratingSource$en ratingSource = Translations$common$ratingSource$en.internal(_root);
 }
 
 // Path: screens
@@ -2152,6 +2155,12 @@ class Translations$messages$en {
 	/// en: 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.'
 	String get serverLimitBody => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.';
 
+	/// en: 'File unavailable'
+	String get mediaUnreadableTitle => 'File unavailable';
+
+	/// en: 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.'
+	String get mediaUnreadableBody => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.';
+
 	/// en: 'Logs uploaded'
 	String get logsUploaded => 'Logs uploaded';
 
@@ -2866,6 +2875,105 @@ class Translations$logs$en {
 	String get uploadLogs => 'Upload Logs';
 }
 
+// Path: startup
+class Translations$startup$en {
+	Translations$startup$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Plezy could not start'
+	String get failedTitle => 'Plezy could not start';
+
+	/// en: 'Something went wrong during startup. The details below identify what failed.'
+	String get failedBody => 'Something went wrong during startup. The details below identify what failed.';
+
+	/// en: 'Plezy's saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.'
+	String get failedBodyRepairable => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.';
+
+	/// en: 'Step'
+	String get phaseLabel => 'Step';
+
+	/// en: 'Show details'
+	String get showDetails => 'Show details';
+
+	/// en: 'Hide details'
+	String get hideDetails => 'Hide details';
+
+	/// en: 'Copy details'
+	String get copyDetails => 'Copy details';
+
+	/// en: 'Details copied to clipboard'
+	String get detailsCopied => 'Details copied to clipboard';
+
+	/// en: 'Upload details'
+	String get uploadDetails => 'Upload details';
+
+	/// en: 'Repair storage'
+	String get repairStorage => 'Repair storage';
+
+	/// en: 'Repair stored data?'
+	String get repairTitle => 'Repair stored data?';
+
+	/// en: 'Plezy's settings file is damaged and cannot be read. Repairing resets every setting to its default.'
+	String get repairBodyCommon => 'Plezy\'s settings file is damaged and cannot be read. Repairing resets every setting to its default.';
+
+	/// en: 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.'
+	String get repairBodyOneCredential => 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.';
+
+	/// en: 'Your servers and profiles should stay signed in.'
+	String get repairBodySignInsKept => 'Your servers and profiles should stay signed in.';
+
+	/// en: 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.'
+	String get repairBodySignInsLost => 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.';
+
+	/// en: 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.'
+	String get repairBodySessionsUncertain => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.';
+
+	/// en: 'Repair'
+	String get repairConfirm => 'Repair';
+
+	/// en: 'Storage repaired'
+	String get repairSucceeded => 'Storage repaired';
+
+	/// en: 'Storage repaired — restart required'
+	String get repairNeedsRestart => 'Storage repaired — restart required';
+
+	/// en: 'Your data was repaired, but Plezy has to start fresh before it can use it. Close Plezy and open it again.'
+	String get restartRequiredBody => 'Your data was repaired, but Plezy has to start fresh before it can use it. Close Plezy and open it again.';
+
+	/// en: 'Quit Plezy'
+	String get quitPlezy => 'Quit Plezy';
+
+	/// en: 'Repair failed'
+	String get repairFailed => 'Repair failed';
+
+	/// en: 'Your servers and profiles are still signed in.'
+	String get repairKeptSignIns => 'Your servers and profiles are still signed in.';
+
+	/// en: 'The key protecting your saved sign-ins could not be recovered. You will have to sign in to every server and profile again.'
+	String get repairLostSignIns => 'The key protecting your saved sign-ins could not be recovered. You will have to sign in to every server and profile again.';
+
+	/// en: 'At least one tracker or Seerr connection was lost and has to be reconnected.'
+	String get repairLostSessions => 'At least one tracker or Seerr connection was lost and has to be reconnected.';
+
+	/// en: 'A copy of the damaged file was kept'
+	String get backupTitle => 'A copy of the damaged file was kept';
+
+	/// en: 'It contains your sign-in credentials. Do not upload or share it.'
+	String get backupWarning => 'It contains your sign-in credentials. Do not upload or share it.';
+
+	/// en: 'Delete copy'
+	String get deleteBackup => 'Delete copy';
+
+	/// en: 'Copy deleted.'
+	String get backupDeleted => 'Copy deleted.';
+
+	/// en: 'Plezy failed to start last time'
+	String get previousFailureTitle => 'Plezy failed to start last time';
+}
+
 // Path: licenses
 class Translations$licenses$en {
 	Translations$licenses$en.internal(this._root);
@@ -2979,7 +3087,7 @@ class Translations$explore$en {
 	late final Translations$explore$format$en format = Translations$explore$format$en.internal(_root);
 	late final Translations$explore$sourceMaterial$en sourceMaterial = Translations$explore$sourceMaterial$en.internal(_root);
 	late final Translations$explore$creditRole$en creditRole = Translations$explore$creditRole$en.internal(_root);
-	late final Translations$explore$ratingSource$en ratingSource = Translations$explore$ratingSource$en.internal(_root);
+	late final Translations$explore$relation$en relation = Translations$explore$relation$en.internal(_root);
 
 	/// en: 'Airs ${day} at ${time}'
 	String broadcast({required Object day, required Object time}) => 'Airs ${day} at ${time}';
@@ -2994,8 +3102,6 @@ class Translations$explore$en {
 		one: '${n} result',
 		other: '${n} results',
 	);
-
-	late final Translations$explore$relation$en relation = Translations$explore$relation$en.internal(_root);
 }
 
 // Path: liveTv
@@ -4759,6 +4865,48 @@ class Translations$addServer$en {
 	String get borrowFromAnotherProfileSubtitle => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.';
 }
 
+// Path: common.ratingSource
+class Translations$common$ratingSource$en {
+	Translations$common$ratingSource$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Critics'
+	String get critic => 'Critics';
+
+	/// en: 'Audience'
+	String get audience => 'Audience';
+
+	/// en: 'IMDb'
+	String get imdb => 'IMDb';
+
+	/// en: 'TMDB'
+	String get tmdb => 'TMDB';
+
+	/// en: 'Rotten Tomatoes'
+	String get rottenTomatoes => 'Rotten Tomatoes';
+
+	/// en: 'Simkl'
+	String get simkl => 'Simkl';
+
+	/// en: 'MyAnimeList'
+	String get mal => 'MyAnimeList';
+
+	/// en: 'AniList'
+	String get anilist => 'AniList';
+
+	/// en: 'Trakt'
+	String get trakt => 'Trakt';
+
+	/// en: 'Rotten Tomatoes critics'
+	String get rottenTomatoesCritic => 'Rotten Tomatoes critics';
+
+	/// en: 'Rotten Tomatoes audience'
+	String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
+}
+
 // Path: hotkeys.actions
 class Translations$hotkeys$actions$en {
 	Translations$hotkeys$actions$en.internal(this._root);
@@ -5353,46 +5501,40 @@ class Translations$explore$creditRole$en {
 	String get composer => 'Composer';
 }
 
-// Path: explore.ratingSource
-class Translations$explore$ratingSource$en {
-	Translations$explore$ratingSource$en.internal(this._root);
+// Path: explore.relation
+class Translations$explore$relation$en {
+	Translations$explore$relation$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
 	// Translations
 
-	/// en: 'Critics'
-	String get critic => 'Critics';
+	/// en: 'Prequel'
+	String get prequel => 'Prequel';
 
-	/// en: 'Audience'
-	String get audience => 'Audience';
+	/// en: 'Sequel'
+	String get sequel => 'Sequel';
 
-	/// en: 'IMDb'
-	String get imdb => 'IMDb';
+	/// en: 'Side story'
+	String get sideStory => 'Side story';
 
-	/// en: 'TMDB'
-	String get tmdb => 'TMDB';
+	/// en: 'Spin-off'
+	String get spinOff => 'Spin-off';
 
-	/// en: 'Rotten Tomatoes'
-	String get rottenTomatoes => 'Rotten Tomatoes';
+	/// en: 'Alternative version'
+	String get alternativeVersion => 'Alternative version';
 
-	/// en: 'Simkl'
-	String get simkl => 'Simkl';
+	/// en: 'Summary'
+	String get summary => 'Summary';
 
-	/// en: 'MyAnimeList'
-	String get mal => 'MyAnimeList';
+	/// en: 'Parent story'
+	String get parentStory => 'Parent story';
 
-	/// en: 'AniList'
-	String get anilist => 'AniList';
+	/// en: 'Adaptation'
+	String get adaptation => 'Adaptation';
 
-	/// en: 'Trakt'
-	String get trakt => 'Trakt';
-
-	/// en: 'Rotten Tomatoes critics'
-	String get rottenTomatoesCritic => 'Rotten Tomatoes critics';
-
-	/// en: 'Rotten Tomatoes audience'
-	String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
+	/// en: 'Related'
+	String get other => 'Related';
 }
 
 // Path: explore.detail
@@ -5492,42 +5634,6 @@ class Translations$explore$detail$en {
 
 	/// en: 'Background'
 	String get background => 'Background';
-}
-
-// Path: explore.relation
-class Translations$explore$relation$en {
-	Translations$explore$relation$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Prequel'
-	String get prequel => 'Prequel';
-
-	/// en: 'Sequel'
-	String get sequel => 'Sequel';
-
-	/// en: 'Side story'
-	String get sideStory => 'Side story';
-
-	/// en: 'Spin-off'
-	String get spinOff => 'Spin-off';
-
-	/// en: 'Alternative version'
-	String get alternativeVersion => 'Alternative version';
-
-	/// en: 'Summary'
-	String get summary => 'Summary';
-
-	/// en: 'Parent story'
-	String get parentStory => 'Parent story';
-
-	/// en: 'Adaptation'
-	String get adaptation => 'Adaptation';
-
-	/// en: 'Related'
-	String get other => 'Related';
 }
 
 // Path: downloads.backgroundWarning
@@ -6022,6 +6128,17 @@ extension on Translations {
 			'common.fullscreen' => 'Fullscreen',
 			'common.exitFullscreen' => 'Exit fullscreen',
 			'common.pressBackAgainToExit' => 'Press back again to exit',
+			'common.ratingSource.critic' => 'Critics',
+			'common.ratingSource.audience' => 'Audience',
+			'common.ratingSource.imdb' => 'IMDb',
+			'common.ratingSource.tmdb' => 'TMDB',
+			'common.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
+			'common.ratingSource.simkl' => 'Simkl',
+			'common.ratingSource.mal' => 'MyAnimeList',
+			'common.ratingSource.anilist' => 'AniList',
+			'common.ratingSource.trakt' => 'Trakt',
+			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
+			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -6476,6 +6593,8 @@ extension on Translations {
 			_ => null,
 		} ?? switch (path) {
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
@@ -6632,6 +6751,8 @@ extension on Translations {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
+			'messages.mediaUnreadableTitle' => 'File unavailable',
+			'messages.mediaUnreadableBody' => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -6873,6 +6994,36 @@ extension on Translations {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
+			'startup.failedTitle' => 'Plezy could not start',
+			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
+			'startup.failedBodyRepairable' => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.',
+			'startup.phaseLabel' => 'Step',
+			'startup.showDetails' => 'Show details',
+			'startup.hideDetails' => 'Hide details',
+			'startup.copyDetails' => 'Copy details',
+			'startup.detailsCopied' => 'Details copied to clipboard',
+			'startup.uploadDetails' => 'Upload details',
+			'startup.repairStorage' => 'Repair storage',
+			'startup.repairTitle' => 'Repair stored data?',
+			'startup.repairBodyCommon' => 'Plezy\'s settings file is damaged and cannot be read. Repairing resets every setting to its default.',
+			'startup.repairBodyOneCredential' => 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.',
+			'startup.repairBodySignInsKept' => 'Your servers and profiles should stay signed in.',
+			'startup.repairBodySignInsLost' => 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.',
+			'startup.repairBodySessionsUncertain' => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.',
+			'startup.repairConfirm' => 'Repair',
+			'startup.repairSucceeded' => 'Storage repaired',
+			'startup.repairNeedsRestart' => 'Storage repaired — restart required',
+			'startup.restartRequiredBody' => 'Your data was repaired, but Plezy has to start fresh before it can use it. Close Plezy and open it again.',
+			'startup.quitPlezy' => 'Quit Plezy',
+			'startup.repairFailed' => 'Repair failed',
+			'startup.repairKeptSignIns' => 'Your servers and profiles are still signed in.',
+			'startup.repairLostSignIns' => 'The key protecting your saved sign-ins could not be recovered. You will have to sign in to every server and profile again.',
+			'startup.repairLostSessions' => 'At least one tracker or Seerr connection was lost and has to be reconnected.',
+			'startup.backupTitle' => 'A copy of the damaged file was kept',
+			'startup.backupWarning' => 'It contains your sign-in credentials. Do not upload or share it.',
+			'startup.deleteBackup' => 'Delete copy',
+			'startup.backupDeleted' => 'Copy deleted.',
+			'startup.previousFailureTitle' => 'Plezy failed to start last time',
 			'licenses.relatedPackages' => 'Related Packages',
 			'licenses.license' => 'License',
 			'licenses.licenseNumber' => ({required Object number}) => 'License ${number}',
@@ -6956,6 +7107,8 @@ extension on Translations {
 			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.fall' => 'Fall',
 			'explore.season.withYear' => ({required Object season, required Object year}) => '${season} ${year}',
 			'explore.format.tv' => 'TV',
@@ -6993,6 +7146,15 @@ extension on Translations {
 			'explore.ratingSource.trakt' => 'Trakt',
 			'explore.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
 			'explore.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
+			'explore.relation.prequel' => 'Prequel',
+			'explore.relation.sequel' => 'Sequel',
+			'explore.relation.sideStory' => 'Side story',
+			'explore.relation.spinOff' => 'Spin-off',
+			'explore.relation.alternativeVersion' => 'Alternative version',
+			'explore.relation.summary' => 'Summary',
+			'explore.relation.parentStory' => 'Parent story',
+			'explore.relation.adaptation' => 'Adaptation',
+			'explore.relation.other' => 'Related',
 			'explore.broadcast' => ({required Object day, required Object time}) => 'Airs ${day} at ${time}',
 			'explore.broadcastWithZone' => ({required Object day, required Object time, required Object timezone}) => 'Airs ${day} at ${time} ${timezone}',
 			'explore.detail.originalTitle' => 'Original title',
@@ -7025,15 +7187,6 @@ extension on Translations {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
-			'explore.relation.prequel' => 'Prequel',
-			'explore.relation.sequel' => 'Sequel',
-			'explore.relation.sideStory' => 'Side story',
-			'explore.relation.spinOff' => 'Spin-off',
-			'explore.relation.alternativeVersion' => 'Alternative version',
-			'explore.relation.summary' => 'Summary',
-			'explore.relation.parentStory' => 'Parent story',
-			'explore.relation.adaptation' => 'Adaptation',
-			'explore.relation.other' => 'Related',
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'No channels available',
@@ -7481,6 +7634,8 @@ extension on Translations {
 			'externalPlayer.off' => 'Off',
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',

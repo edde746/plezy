@@ -10,6 +10,7 @@ import 'media_backend.dart';
 import 'media_kind.dart';
 import 'media_role.dart';
 import 'media_version.dart';
+import 'media_rating.dart';
 
 part 'media_item.freezed.dart';
 part 'media_item.g.dart';
@@ -66,6 +67,7 @@ sealed class MediaItem with _$MediaItem {
     int? addedAt,
     int? updatedAt,
     double? rating,
+    List<MediaRatingSource>? ratings,
     double? userRating,
     bool? isFavorite,
     List<String>? genres,
@@ -128,6 +130,7 @@ sealed class MediaItem with _$MediaItem {
         addedAt: addedAt,
         updatedAt: updatedAt,
         rating: rating,
+        ratings: ratings,
         userRating: userRating,
         isFavorite: isFavorite,
         genres: genres,
@@ -189,6 +192,7 @@ sealed class MediaItem with _$MediaItem {
         addedAt: addedAt,
         updatedAt: updatedAt,
         rating: rating,
+        ratings: ratings,
         userRating: userRating,
         isFavorite: isFavorite,
         genres: genres,
@@ -257,11 +261,14 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: flexibleInt) int? addedAt,
     @JsonKey(fromJson: flexibleInt) int? updatedAt,
     @JsonKey(fromJson: flexibleDouble) double? rating,
-    @JsonKey(fromJson: flexibleDouble) double? audienceRating,
     @JsonKey(fromJson: flexibleDouble) double? userRating,
+
+    /// Every attributed score the response carried, headline first. Plex
+    /// listings yield one or two (the `rating`/`audienceRating` pair with
+    /// their source images); `/library/metadata/{id}` adds the `Rating[]`
+    /// array, so IMDb and TMDB join Rotten Tomatoes on detail screens.
+    @JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? ratings,
     bool? isFavorite,
-    String? ratingImage,
-    String? audienceRatingImage,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? writers,
@@ -335,6 +342,10 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: flexibleInt) int? updatedAt,
     @JsonKey(fromJson: flexibleDouble) double? rating,
     @JsonKey(fromJson: flexibleDouble) double? userRating,
+
+    /// `CommunityRating` and the `CriticRating` Tomatometer, in that order.
+    /// Jellyfin exposes no per-source array, so this is at most two entries.
+    @JsonKey(fromJson: _mediaItemRatingsFromJson) List<MediaRatingSource>? ratings,
     bool? isFavorite,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? genres,
     @JsonKey(fromJson: _mediaItemStringList) List<String>? directors,
@@ -745,6 +756,15 @@ List<MediaVersion>? _mediaItemVersionsFromJson(Object? raw) {
       ? [
           for (final version in raw)
             if (version is Map<String, dynamic>) MediaVersion.fromJson(version),
+        ]
+      : null;
+}
+
+List<MediaRatingSource>? _mediaItemRatingsFromJson(Object? raw) {
+  return raw is List
+      ? [
+          for (final rating in raw)
+            if (rating is Map<String, Object?>) ?MediaRatingSource.fromJson(rating),
         ]
       : null;
 }

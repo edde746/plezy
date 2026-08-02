@@ -14,6 +14,7 @@ import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
+import 'sensitive_prefs.dart';
 import 'device_performance.dart';
 import 'shortcut_action.dart';
 export 'base_shared_preferences_service.dart'
@@ -94,7 +95,7 @@ class _BufferSizePref extends IntPref {
   int readFrom(BaseSharedPreferencesService svc) {
     // SharedPreferences updates in-memory cache synchronously, so the
     // unawaited disk-flush futures are safe here (idempotent if re-run).
-    if (svc.prefs.getBool(_bufferSizeMigratedKey) != true) {
+    if (svc.readNullableBool(_bufferSizeMigratedKey) != true) {
       svc.prefs.remove(key);
       svc.prefs.setBool(_bufferSizeMigratedKey, true);
     }
@@ -141,7 +142,7 @@ class _EpisodePosterModePref extends EnumPref<EpisodePosterMode> {
 
   @override
   EpisodePosterMode readFrom(BaseSharedPreferencesService svc) {
-    final legacyValue = svc.prefs.getBool(_legacyUseSeasonPosterKey);
+    final legacyValue = svc.readNullableBool(_legacyUseSeasonPosterKey);
     if (legacyValue != null) {
       final migrated = legacyValue ? EpisodePosterMode.seasonPoster : EpisodePosterMode.seriesPoster;
       svc.prefs.remove(_legacyUseSeasonPosterKey);
@@ -158,7 +159,7 @@ class _AppLocalePref extends Pref<AppLocale> {
 
   @override
   AppLocale readFrom(BaseSharedPreferencesService svc) {
-    final code = svc.prefs.getString(key);
+    final code = svc.readNullableString(key);
     if (code == null || code.isEmpty) {
       return resolvePreferredAppLocale(PlatformDispatcher.instance.locales);
     }
@@ -176,7 +177,7 @@ class _AutoPipPref extends Pref<bool> {
   @override
   bool readFrom(BaseSharedPreferencesService svc) {
     if (!PlatformDetector.supportsPictureInPicture()) return false;
-    return svc.prefs.getBool(key) ?? !Platform.isMacOS;
+    return svc.readNullableBool(key) ?? !Platform.isMacOS;
   }
 
   @override
@@ -189,7 +190,7 @@ class _UseExternalPlayerPref extends Pref<bool> {
   @override
   bool readFrom(BaseSharedPreferencesService svc) {
     if (!PlatformDetector.supportsExternalPlayers()) return false;
-    return svc.prefs.getBool(key) ?? false;
+    return svc.readNullableBool(key) ?? false;
   }
 
   @override
@@ -203,7 +204,7 @@ class _AudioPassthroughPref extends Pref<bool> {
 
   @override
   bool readFrom(BaseSharedPreferencesService svc) {
-    final stored = svc.prefs.getBool(key);
+    final stored = svc.readNullableBool(key);
     if (stored != null) return stored;
     // Android TV on ExoPlayer defaults to bitstreaming AC3/EAC3/DTS to the TV/AVR
     // (Media3 picks bitstream vs PCM via AudioCapabilities), preserving surround.
@@ -251,10 +252,10 @@ class _MpvConfigTextPref extends StringPref {
 
   @override
   String readFrom(BaseSharedPreferencesService svc) {
-    final text = svc.prefs.getString(key);
+    final text = svc.readNullableString(key);
     if (text != null) return text;
 
-    final legacyJson = svc.prefs.getString(_legacyMpvConfigEntriesKey);
+    final legacyJson = svc.readNullableString(_legacyMpvConfigEntriesKey);
     if (legacyJson == null) return '';
 
     try {
@@ -597,16 +598,35 @@ class SettingsService extends BaseSharedPreferencesService {
 
   @override
   Future<void> onInit() async {
+    _assertCredentialsReadable();
+
     const legacyRecentRoomsKey = 'watch_together_recent_rooms';
     await prefs.remove(legacyRecentRoomsKey);
 
-    final storedRelay = prefs.getString(customRelayUrl.key);
+    final storedRelay = readNullableString(customRelayUrl.key);
     if (storedRelay == null) return;
     final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(storedRelay);
     if (endpoint == null) {
       await prefs.remove(customRelayUrl.key);
     } else if (endpoint.canonicalBaseUrl != storedRelay) {
       await prefs.setString(customRelayUrl.key, endpoint.canonicalBaseUrl);
+    }
+  }
+
+  /// Raises [UnreadableSensitivePreferenceException] if any stored credential
+  /// has a type we cannot read.
+  ///
+  /// The credential stores themselves — `CredentialVault`, `TrackerAccountStore`,
+  /// `SeerrSessionStore` — are consulted long after startup, where a throw
+  /// would surface as an unhandled provider error rather than the repair
+  /// prompt. Checking here puts the failure inside a fatal gate step, while
+  /// the store is open and a surgical single-key repair is still possible
+  /// (#1732).
+  ///
+  /// One pass over the already-cached key set; no I/O.
+  void _assertCredentialsReadable() {
+    for (final key in prefs.keys) {
+      if (isSensitivePrefKey(key)) readTolerantString(prefs, key);
     }
   }
 

@@ -1,0 +1,20 @@
+{
+  "formatVersion": 1,
+  "upstream": {
+    "repository": "https://github.com/flutter/packages/tree/main/packages/shared_preferences/shared_preferences_linux",
+    "packageVersion": "2.4.1",
+    "source": "pub.dev"
+  },
+  "plezyDeltas": [
+    "atomic store replacement: stage to a sibling .tmp, flush, then rename over the target",
+    "stale staging files are swept once the canonical document has been read cleanly",
+    "the published example app is not vendored"
+  ],
+  "refreshContract": [
+    "Diff against the new upstream version and reapply every PLEZY DELTA block in lib/shared_preferences_linux.dart verbatim.",
+    "Never reintroduce a bare writeAsStringSync onto the live document: it truncates before writing, which is the corruption in issue #1732.",
+    "Keep the staging name fixed and single. The file is a plaintext copy of the credential-vault key, tracker refresh tokens and Seerr cookies; stamped names would accumulate them.",
+    "Keep the flush before the rename. A rename can otherwise publish contents that were never committed.",
+    "Run flutter test test/services/prefs_store_atomic_write_test.dart from the repository root, and the real-Windows step in .github/workflows/ci.yml."
+  ]
+}

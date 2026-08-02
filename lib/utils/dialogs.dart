@@ -104,6 +104,28 @@ Future<void> showServerLimitDialog(BuildContext context) async {
   );
 }
 
+/// Shows the server-side 404 modal: the item exists but the server cannot read
+/// the file behind it, so nothing client-side can recover the playback.
+Future<void> showMediaUnreadableDialog(BuildContext context) async {
+  await showScopedDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: Text(t.messages.mediaUnreadableTitle),
+      content: Text(t.messages.mediaUnreadableBody),
+      actions: [
+        DialogActionButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(ctx).pop(),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Shows a delete confirmation dialog.
 /// Convenience wrapper around [showConfirmDialog] with destructive styling.
 Future<bool> showDeleteConfirmation(

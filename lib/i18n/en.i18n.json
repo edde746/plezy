@@ -64,7 +64,20 @@
     "loading": "Loading...",
     "fullscreen": "Fullscreen",
     "exitFullscreen": "Exit fullscreen",
-    "pressBackAgainToExit": "Press back again to exit"
+    "pressBackAgainToExit": "Press back again to exit",
+    "ratingSource": {
+      "critic": "Critics",
+      "audience": "Audience",
+      "imdb": "IMDb",
+      "tmdb": "TMDB",
+      "rottenTomatoes": "Rotten Tomatoes",
+      "simkl": "Simkl",
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "trakt": "Trakt",
+      "rottenTomatoesCritic": "Rotten Tomatoes critics",
+      "rottenTomatoesAudience": "Rotten Tomatoes audience"
+    }
   },
   "screens": {
     "licenses": "Licenses",
@@ -707,6 +720,8 @@
     "switchingToCompatiblePlayer": "Switching to compatible player...",
     "serverLimitTitle": "Playback failed",
     "serverLimitBody": "Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.",
+    "mediaUnreadableTitle": "File unavailable",
+    "mediaUnreadableBody": "The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
     "logId": "Log ID"
@@ -981,6 +996,38 @@
     "copyLogs": "Copy Logs",
     "uploadLogs": "Upload Logs"
   },
+  "startup": {
+    "failedTitle": "Plezy could not start",
+    "failedBody": "Something went wrong during startup. The details below identify what failed.",
+    "failedBodyRepairable": "Plezy's saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.",
+    "phaseLabel": "Step",
+    "showDetails": "Show details",
+    "hideDetails": "Hide details",
+    "copyDetails": "Copy details",
+    "detailsCopied": "Details copied to clipboard",
+    "uploadDetails": "Upload details",
+    "repairStorage": "Repair storage",
+    "repairTitle": "Repair stored data?",
+    "repairBodyCommon": "Plezy's settings file is damaged and cannot be read. Repairing resets every setting to its default.",
+    "repairBodyOneCredential": "One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.",
+    "repairBodySignInsKept": "Your servers and profiles should stay signed in.",
+    "repairBodySignInsLost": "The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.",
+    "repairBodySessionsUncertain": "Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.",
+    "repairConfirm": "Repair",
+    "repairSucceeded": "Storage repaired",
+    "repairNeedsRestart": "Storage repaired — restart required",
+    "restartRequiredBody": "Your data was repaired, but Plezy has to start fresh before it can use it. Close Plezy and open it again.",
+    "quitPlezy": "Quit Plezy",
+    "repairFailed": "Repair failed",
+    "repairKeptSignIns": "Your servers and profiles are still signed in.",
+    "repairLostSignIns": "The key protecting your saved sign-ins could not be recovered. You will have to sign in to every server and profile again.",
+    "repairLostSessions": "At least one tracker or Seerr connection was lost and has to be reconnected.",
+    "backupTitle": "A copy of the damaged file was kept",
+    "backupWarning": "It contains your sign-in credentials. Do not upload or share it.",
+    "deleteBackup": "Delete copy",
+    "backupDeleted": "Copy deleted.",
+    "previousFailureTitle": "Plezy failed to start last time"
+  },
   "licenses": {
     "relatedPackages": "Related Packages",
     "license": "License",
@@ -1115,18 +1162,16 @@
       "creator": "Creator",
       "composer": "Composer"
     },
-    "ratingSource": {
-      "critic": "Critics",
-      "audience": "Audience",
-      "imdb": "IMDb",
-      "tmdb": "TMDB",
-      "rottenTomatoes": "Rotten Tomatoes",
-      "simkl": "Simkl",
-      "mal": "MyAnimeList",
-      "anilist": "AniList",
-      "trakt": "Trakt",
-      "rottenTomatoesCritic": "Rotten Tomatoes critics",
-      "rottenTomatoesAudience": "Rotten Tomatoes audience"
+    "relation": {
+      "prequel": "Prequel",
+      "sequel": "Sequel",
+      "sideStory": "Side story",
+      "spinOff": "Spin-off",
+      "alternativeVersion": "Alternative version",
+      "summary": "Summary",
+      "parentStory": "Parent story",
+      "adaptation": "Adaptation",
+      "other": "Related"
     },
     "broadcast": "Airs ${day} at ${time}",
     "broadcastWithZone": "Airs ${day} at ${time} ${timezone}",
@@ -1167,17 +1212,6 @@
     "totalResults": {
       "one": "${n} result",
       "other": "${n} results"
-    },
-    "relation": {
-      "prequel": "Prequel",
-      "sequel": "Sequel",
-      "sideStory": "Side story",
-      "spinOff": "Spin-off",
-      "alternativeVersion": "Alternative version",
-      "summary": "Summary",
-      "parentStory": "Parent story",
-      "adaptation": "Adaptation",
-      "other": "Related"
     }
   },
   "liveTv": {

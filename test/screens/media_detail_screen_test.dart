@@ -16,6 +16,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/download_provider.dart';
@@ -175,7 +176,7 @@ void main() {
     expect(tester.widget<AnimatedOpacity>(revealGate).opacity, 1);
   });
 
-  testWidgets('TV detail shows Rotten Tomatoes rating badge in metadata line', (tester) async {
+  testWidgets('TV detail metadata line shows every rating source the item carries', (tester) async {
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1;
@@ -185,10 +186,14 @@ void main() {
     const movie = MediaItem.plex(
       id: 'movie_1',
       kind: MediaKind.movie,
-      title: 'Rotten Tomatoes Movie',
-      summary: 'The TV detail metadata line should use the rating source badge.',
+      title: 'Multi Source Movie',
+      summary: 'The TV detail metadata line should badge each attributed score.',
       rating: 6.2,
-      ratingImage: 'rottentomatoes://image.rating.ripe',
+      ratings: [
+        MediaRatingSource(source: 'rottenTomatoesCritic', value: 6.2),
+        MediaRatingSource(source: 'rottenTomatoesAudience', value: 8.7),
+        MediaRatingSource(source: 'imdb', value: 7.4),
+      ],
     );
 
     await tester.pumpWidget(
@@ -205,24 +210,26 @@ void main() {
     await tester.pump(const Duration(milliseconds: 200));
 
     expect(find.text('62%'), findsOneWidget);
-    expect(find.byType(SvgPicture), findsOneWidget);
+    expect(find.text('87%'), findsOneWidget);
+    expect(find.text('7.4'), findsOneWidget);
+    expect(find.byType(SvgPicture), findsNWidgets(3));
     expect(find.textContaining('★ 6.2', findRichText: true), findsNothing);
   });
 
-  testWidgets('TV detail falls back to Rotten Tomatoes audience rating in metadata line', (tester) async {
+  testWidgets('TV detail metadata line still renders a single available rating', (tester) async {
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
+    // What a hub listing yields when the server sent only the audience scalar.
     const movie = MediaItem.plex(
       id: 'movie_1',
       kind: MediaKind.movie,
       title: 'Audience Rating Movie',
       summary: 'The TV detail metadata line should use the available audience source badge.',
-      audienceRating: 8.7,
-      audienceRatingImage: 'rottentomatoes://image.rating.upright',
+      ratings: [MediaRatingSource(source: 'rottenTomatoesAudience', value: 8.7)],
     );
 
     await tester.pumpWidget(

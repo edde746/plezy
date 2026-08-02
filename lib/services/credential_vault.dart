@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../utils/app_logger.dart';
 import 'base_shared_preferences_service.dart';
+import 'sensitive_prefs.dart';
 
 /// Encrypts credentials before they are persisted in Drift config/token
 /// columns. The database no longer stores raw server tokens; registries
@@ -18,7 +19,7 @@ import 'base_shared_preferences_service.dart';
 class CredentialVault {
   CredentialVault._();
 
-  static const String _keyPref = 'credential_vault_key_v1';
+  static const String _keyPref = credentialVaultKeyPref;
   static const String _prefix = 'enc:v1:';
   static final AesGcm _algorithm = AesGcm.with256bits();
   static Future<SecretKey>? _secretKey;
@@ -152,7 +153,10 @@ class CredentialVault {
       } catch (e) {
         appLogger.d('CredentialVault: prefs reload before key check failed', error: e);
       }
-      final stored = prefs.getString(_keyPref);
+      // Tolerant read: a wrong-typed key must surface as a repairable
+      // failure, not be mistaken for 'no key yet' and silently replaced —
+      // that would orphan every ciphertext in the database (#1732).
+      final stored = readTolerantString(prefs, _keyPref);
       if (stored != null && stored.isNotEmpty) {
         return SecretKey(base64Decode(stored));
       }
@@ -160,12 +164,16 @@ class CredentialVault {
       await prefs.setString(_keyPref, base64Encode(bytes));
       try {
         await prefs.reloadCache();
-        final settled = prefs.getString(_keyPref);
-        if (settled != null && settled.isNotEmpty) {
-          return SecretKey(base64Decode(settled));
-        }
       } catch (e) {
         appLogger.d('CredentialVault: prefs re-read after key write failed', error: e);
+      }
+      // Outside the catch: if another isolate raced us and left a wrong-typed
+      // value, swallowing it here would return a key that never durably
+      // landed, and every ciphertext written under it would be unreadable on
+      // the next launch. Surface it for repair instead (#1732).
+      final settled = readTolerantString(prefs, _keyPref);
+      if (settled != null && settled.isNotEmpty) {
+        return SecretKey(base64Decode(settled));
       }
       return SecretKey(bytes);
     }();

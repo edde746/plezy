@@ -74,7 +74,6 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   List<MediaVersion> availableVersions = [];
   var selectedMediaIndex = 0;
   var selectedPartIndex = 0;
-  final markers = plexMarkersFromCacheJson(metadataJson);
 
   if (metadataJson != null) {
     final mediaList = _mapList(metadataJson['Media']);
@@ -148,7 +147,6 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
     videoUrl: videoUrl,
     mediaInfo: mediaInfo,
     availableVersions: availableVersions,
-    markers: markers,
     selectedMediaIndex: selectedMediaIndex,
     selectedPartIndex: selectedPartIndex,
   );

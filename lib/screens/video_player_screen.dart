@@ -89,6 +89,7 @@ import 'video_player/frame_rate_matcher.dart';
 import 'video_player/live_stream_retry.dart';
 import 'video_player/live_timeline_report.dart';
 import 'video_player/wakelock_controller.dart';
+import 'video_player/playback_failure_action.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
 import 'video_player/tv_background_suspend_policy.dart';
@@ -1137,6 +1138,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             }
             await currentPlayer.setProperty('demuxer-max-bytes', '${autoForwardMB * 1024 * 1024}');
             await currentPlayer.setProperty('demuxer-max-back-bytes', '${autoBackMB * 1024 * 1024}');
+            // These tiers size mpv's demuxer. ExoPlayer's LoadControl allocator is a
+            // different consumer — a flat byte cap there collapses to a few seconds of
+            // read-ahead on a 100 Mbps remux — so let the native side derive its own
+            // target on Auto (#1618).
+            await currentPlayer.setProperty('demuxer-max-bytes-auto', 'yes');
           } else {
             // Manual mode: cap back-buffer relative to heap if 1/4 ratio is too high
             final maxBackBytes = min(bufferSizeMB * 1024 * 1024 ~/ 4, autoBackMB * 1024 * 1024);
@@ -1775,9 +1781,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   String? _lastLogError;
-  bool _sawServer500 = false;
 
-  static final RegExp _server500Pattern = RegExp(r'\b(?:HTTP error |Response code: )500\b');
+  /// Statuses in [fatalPlaybackHttpStatuses] the player's own log stream
+  /// reported for this open. Each latches independently: the reconnect path
+  /// deliberately retries a 503 (see `_applyNetworkStreamTuning`), and a
+  /// transient status must never mask the fatal one that follows.
+  final Set<int> _fatalHttpStatuses = <int>{};
 
   // OS Media Controls Integration
 

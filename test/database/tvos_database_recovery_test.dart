@@ -467,6 +467,26 @@ void main() {
       expect(prefs.getString(TvosDatabaseRecoveryStore.manifestKey), contains('committed'));
     });
 
+    test('a wrong-typed recovery marker behaves like a missing one', () async {
+      // `reconcile` runs inside `AppDatabase.open`, a fatal startup step, so
+      // a mistyped marker used to throw a raw TypeError and veto the launch
+      // outright on a first-class TV target (#1732). An unreadable marker
+      // tells us nothing, which is the same position as an absent one.
+      await prefs.setString(TvosDatabaseRecoveryStore.recoveryRequiredKey, 'yes');
+
+      final result = await open();
+
+      expect(result.recoveryOutcome, TvosDatabaseRecoveryOutcome.fresh);
+      expect(prefs.getString(TvosDatabaseRecoveryStore.manifestKey), contains('committed'));
+
+      // The unreadable value is dropped so the next launch starts clean. The
+      // removal is fire-and-forget, so give it a turn to land.
+      for (var i = 0; i < 20 && prefs.keys.contains(TvosDatabaseRecoveryStore.recoveryRequiredKey); i++) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(prefs.keys, isNot(contains(TvosDatabaseRecoveryStore.recoveryRequiredKey)));
+    });
+
     test('missing database with prior-install evidence requires recovery', () async {
       await prefs.setString('active_app_profile_id', 'surviving-profile');
       final result = await open();

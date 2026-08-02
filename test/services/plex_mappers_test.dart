@@ -210,6 +210,14 @@ void main() {
         'librarySectionTitle': 'Movies',
         'ratingImage': 'rottentomatoes://image.rating.ripe',
         'audienceRatingImage': 'rottentomatoes://image.rating.upright',
+        'imdbRatingCount': 250858,
+        // The detail endpoint adds the multi-source array; the TMDB entry
+        // duplicates the audienceRating scalar and must not appear twice.
+        'Rating': [
+          {'image': 'imdb://image.rating', 'type': 'audience', 'value': 8.4},
+          {'image': 'rottentomatoes://image.rating.ripe', 'type': 'critic', 'value': 8.8},
+          {'image': 'themoviedb://image.rating', 'type': 'audience', 'value': 9.1},
+        ],
         'Genre': [
           {'tag': 'Action'},
           {'tag': 'Sci-Fi'},
@@ -248,10 +256,20 @@ void main() {
       expect(item.originallyAvailableAt, '2010-07-16');
       expect(item.contentRating, 'PG-13');
       expect(item.rating, 8.8);
-      expect(item.audienceRating, 9.1);
       expect(item.userRating, 9.5);
-      expect(item.ratingImage, 'rottentomatoes://image.rating.ripe');
-      expect(item.audienceRatingImage, 'rottentomatoes://image.rating.upright');
+
+      // Headline scalar first, then the array, deduped on (source, value):
+      // the RT critic entry repeats `rating`/`ratingImage`, and the TMDB entry
+      // is a distinct source so it survives alongside the RT audience scalar.
+      expect(item.ratings?.map((rating) => rating.source).toList(), [
+        'rottenTomatoesCritic',
+        'rottenTomatoesAudience',
+        'imdb',
+        'tmdb',
+      ]);
+      expect(item.ratings?.map((rating) => rating.value).toList(), [8.8, 9.1, 8.4, 9.1]);
+      // Vote counts are IMDb-only; Plex reports none for the other sources.
+      expect(item.ratings?.map((rating) => rating.votes).toList(), [null, null, 250858, null]);
 
       // Plex stores all temporal fields in milliseconds — pass-through.
       expect(item.durationMs, 8880000);
@@ -288,6 +306,48 @@ void main() {
       // Server-tagging.
       expect(item.serverId, _serverId);
       expect(item.serverName, _serverName);
+    });
+
+    test('a section listing yields the scalar pair alone', () {
+      // Plex sends no `Rating[]` outside /library/metadata/{id}, and no query
+      // parameter adds it, so listing-backed cards get one or two scores.
+      final item = PlexMappers.mediaItemFromJson({
+        'ratingKey': 'listing-1',
+        'type': 'movie',
+        'rating': 9.4,
+        'ratingImage': 'rottentomatoes://image.rating.ripe',
+        'audienceRating': 8.3,
+        'audienceRatingImage': 'themoviedb://image.rating',
+      }, serverId: ServerId(_serverId));
+
+      expect(item.ratings?.map((rating) => rating.source).toList(), ['rottenTomatoesCritic', 'tmdb']);
+      expect(item.ratings?.map((rating) => rating.value).toList(), [9.4, 8.3]);
+    });
+
+    test('an unrated item reports no ratings rather than an empty list', () {
+      final item = PlexMappers.mediaItemFromJson({
+        'ratingKey': 'unrated-1',
+        'type': 'movie',
+      }, serverId: ServerId(_serverId));
+
+      expect(item.rating, isNull);
+      expect(item.ratings, isNull);
+    });
+
+    test('scores outside the reportable range are dropped, not folded', () {
+      final item = PlexMappers.mediaItemFromJson({
+        'ratingKey': 'noisy-1',
+        'type': 'movie',
+        'rating': 140,
+        'audienceRating': -1,
+        'Rating': [
+          {'image': 'imdb://image.rating', 'type': 'audience', 'value': '8.5'},
+        ],
+      }, serverId: ServerId(_serverId));
+
+      // Only the IMDb entry survives, and its string value still parses.
+      expect(item.ratings?.single.source, 'imdb');
+      expect(item.ratings?.single.value, 8.5);
     });
 
     test('normalizes aggregate watch counts off leaf items', () {

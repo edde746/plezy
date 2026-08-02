@@ -67,7 +67,7 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
       return isTrack ? buildAudioDirectStreamUrl(item.id) : buildDirectStreamUrl(item.id);
     }
     final container = bundle.container;
-    final pinnedSourceId = bundle.pinnedSourceIdForItem(item.id);
+    final pinnedSourceId = bundle.pinnedSourceId;
     return isTrack
         ? buildAudioDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId)
         : buildDirectStreamUrl(item.id, container: container, mediaSourceId: pinnedSourceId);
@@ -90,18 +90,14 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
       final audioUrl = buildAudioDirectStreamUrl(
         item.id,
         container: bundle?.container,
-        mediaSourceId: bundle?.pinnedSourceIdForItem(item.id),
+        mediaSourceId: bundle?.pinnedSourceId,
       );
       return DownloadResolution(videoUrl: audioUrl, mediaSourceId: selectedSourceId, externalSubtitles: const []);
     }
 
     // Direct-stream the selected original file. Jellyfin's `Static=true`
     // skips the transcoder so the byte-for-byte source lands on disk.
-    final videoUrl = buildDirectStreamUrl(
-      item.id,
-      container: bundle?.container,
-      mediaSourceId: bundle?.pinnedSourceIdForItem(item.id),
-    );
+    final videoUrl = buildDirectStreamUrl(item.id, container: bundle?.container, mediaSourceId: bundle?.pinnedSourceId);
 
     // External subtitle sidecars are listed in the per-source MediaStreams.
     // PlaybackInfo gives us the canonical view including DeliveryUrl when

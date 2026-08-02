@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/utils/dialogs.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
@@ -110,6 +111,44 @@ void main() {
     await tester.pumpAndSettle();
     await expectLater(result, completion(isNull));
     expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('media-unreadable dialog names the server-side cause and cannot be dismissed by the barrier', (
+    tester,
+  ) async {
+    final hostContext = await _pumpHost(tester);
+    final result = showMediaUnreadableDialog(hostContext);
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.messages.mediaUnreadableTitle), findsOneWidget);
+    // The body has to say what a 404 on the stream actually means, because the
+    // only recovery is on the server (#1750).
+    expect(find.textContaining('HTTP 404'), findsOneWidget);
+    expect(find.textContaining('could not read'), findsOneWidget);
+
+    // Barrier taps must not strand the caller's future.
+    await tester.tapAt(const Offset(10, 10));
+    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+
+    await tester.tap(find.text(t.common.close));
+    await tester.pumpAndSettle();
+    await expectLater(result, completes);
+    expect(find.byType(AlertDialog), findsNothing);
+  });
+
+  testWidgets('server-limit dialog stays distinct from the media-unreadable one', (tester) async {
+    final hostContext = await _pumpHost(tester);
+    final result = showServerLimitDialog(hostContext);
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.messages.serverLimitTitle), findsOneWidget);
+    expect(find.textContaining('HTTP 500'), findsOneWidget);
+    expect(find.text(t.messages.mediaUnreadableTitle), findsNothing);
+
+    await tester.tap(find.text(t.common.close));
+    await tester.pumpAndSettle();
+    await expectLater(result, completes);
   });
 }
 

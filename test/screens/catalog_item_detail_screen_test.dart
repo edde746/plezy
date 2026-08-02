@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
@@ -328,10 +329,10 @@ void main() {
       title: 'Rated Movie',
       ids: CatalogItemIds(tmdb: 11),
       ratings: [
-        CatalogRatingSource(source: 'simkl', value: 8.1, votes: 11),
-        CatalogRatingSource(source: 'mal', value: 8.3, votes: 13),
-        CatalogRatingSource(source: 'critic', value: 7.2, votes: 14),
-        CatalogRatingSource(source: 'audience', value: 8.8, votes: 15),
+        MediaRatingSource(source: 'simkl', value: 8.1, votes: 11),
+        MediaRatingSource(source: 'mal', value: 8.3, votes: 13),
+        MediaRatingSource(source: 'critic', value: 7.2, votes: 14),
+        MediaRatingSource(source: 'audience', value: 8.8, votes: 15),
       ],
     );
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
@@ -352,10 +353,10 @@ void main() {
       title: 'Attributed Movie',
       ids: CatalogItemIds(tmdb: 21),
       ratings: [
-        CatalogRatingSource(source: 'rottenTomatoesCritic', value: 8.4),
-        CatalogRatingSource(source: 'rottenTomatoesAudience', value: 4.1),
-        CatalogRatingSource(source: 'imdb', value: 7.9, votes: 12),
-        CatalogRatingSource(source: 'tmdb', value: 7.5),
+        MediaRatingSource(source: 'rottenTomatoesCritic', value: 8.4),
+        MediaRatingSource(source: 'rottenTomatoesAudience', value: 4.1),
+        MediaRatingSource(source: 'imdb', value: 7.9, votes: 12),
+        MediaRatingSource(source: 'tmdb', value: 7.5),
       ],
     );
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
@@ -381,7 +382,7 @@ void main() {
     expect(find.text('41%'), findsOneWidget);
     expect(find.text('7.9 (12 votes)'), findsOneWidget);
     expect(find.text('75%'), findsOneWidget);
-    expect(find.text('${t.explore.ratingSource.rottenTomatoesCritic} 8.4'), findsNothing);
+    expect(find.text('${t.common.ratingSource.rottenTomatoesCritic} 8.4'), findsNothing);
   });
 
   testWidgets('seasonal rank keeps its season window instead of claiming all-time rank', (tester) async {

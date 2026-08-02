@@ -1,6 +1,7 @@
 import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
+import '../../media/media_rating.dart';
 import '../../utils/external_ids.dart';
 import 'catalog_cast_member.dart';
 import 'catalog_metadata.dart';
@@ -213,7 +214,7 @@ class CatalogItem {
   final String? accentColor;
 
   /// Scores beyond [rating], each with its own source label.
-  final List<CatalogRatingSource>? ratings;
+  final List<MediaRatingSource>? ratings;
 
   /// Leaderboard positions. A list because providers return several windows
   /// at once (all-time and seasonal).
@@ -493,6 +494,7 @@ class CatalogItem {
     contentRating: certification,
     durationMs: runtimeMinutes == null ? null : Duration(minutes: runtimeMinutes!).inMilliseconds,
     rating: rating,
+    ratings: ratings,
     genres: genres,
     thumbPath: posterUrl,
     artPath: backdropUrl,
@@ -594,7 +596,7 @@ class CatalogItem {
     logoUrl: json['logoUrl'] as String?,
     bannerUrl: json['bannerUrl'] as String?,
     accentColor: json['accentColor'] as String?,
-    ratings: decodeCatalogList(json['ratings'], CatalogRatingSource.fromJson),
+    ratings: decodeCatalogList(json['ratings'], MediaRatingSource.fromJson),
     ranks: decodeCatalogList(json['ranks'], CatalogRank.fromJson),
     audience: _decodeObject(json['audience'], CatalogAudience.fromJson),
     broadcast: _decodeObject(json['broadcast'], CatalogBroadcast.fromJson),
