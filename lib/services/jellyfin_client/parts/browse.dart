@@ -1115,12 +1115,16 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// each candidate's inline `ProviderIds`. [plexGuid] is a Plex-only hint and
   /// has no meaning in Jellyfin's provider-id model, so it is ignored.
   ///
+  /// Every id-verified candidate of the first matching title is returned, not
+  /// just the first: one movie can sit in both a 4K library and an HD library
+  /// as two separate items, and the caller shows the user each copy (#1754).
+  ///
   /// Jellyfin cannot report season ordering to a non-admin: on 10.11.10,
   /// `/Library/VirtualFolders` returns 403 and Series items omit
   /// `DisplayOrder`. Resolve against an unknown provider rather than guessing
   /// from `ProviderIds`, so only seasons on which TVDB and TMDB agree are gated.
   @override
-  Future<MediaItem?> findByExternalIds(
+  Future<List<MediaItem>> findByExternalIds(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -1133,7 +1137,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       MediaKind.show => 'Series',
       _ => null,
     };
-    if (itemType == null || !ids.hasAny || titles.isEmpty) return null;
+    if (itemType == null || !ids.hasAny || titles.isEmpty) return const [];
 
     final seasonIndex = season?.agreedSeason;
     final shouldGateSeason = kind == MediaKind.show && seasonIndex != null && seasonIndex > 1;
@@ -1155,20 +1159,34 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'years': ?years,
         ...jellyfinImageQueryParameters,
       });
-      final match = ExternalIds.jellyfinCandidateMatching(candidates, ids);
-      if (match == null) continue;
-      final item = _mapItems([match]).firstOrNull;
-      if (item == null) continue;
+      final matches = _mapItems(ExternalIds.jellyfinCandidatesMatching(candidates, ids));
+      if (matches.isEmpty) continue;
 
-      if (shouldGateSeason) {
-        final children = await fetchChildren(item.id);
-        if (!children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex)) {
-          return null;
-        }
-      }
-      return _withLibraryFromAncestors(item);
+      final kept = shouldGateSeason ? await _keepMatchesWithSeason(matches, seasonIndex) : matches;
+      // A title that verified but has no season-gated survivor is a definitive
+      // "this server has the show, just not that season"; broader title forms
+      // would only reach other shows.
+      if (kept.isEmpty) return const [];
+      return Future.wait([for (final item in kept) _withLibraryFromAncestors(item)]);
     }
-    return null;
+    return const [];
+  }
+
+  /// Keep only the series that actually have [seasonIndex]. One
+  /// `fetchChildren` per candidate, issued concurrently because the match list
+  /// is deliberately never truncated (see
+  /// [MediaServerClient.findByExternalIds]).
+  Future<List<MediaItem>> _keepMatchesWithSeason(List<MediaItem> items, int seasonIndex) async {
+    final kept = await Future.wait([
+      for (final item in items)
+        fetchChildren(
+          item.id,
+        ).then((children) => children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex)),
+    ]);
+    return [
+      for (var index = 0; index < items.length; index++)
+        if (kept[index]) items[index],
+    ];
   }
 
   /// Best-effort library stamp for items found outside a library context

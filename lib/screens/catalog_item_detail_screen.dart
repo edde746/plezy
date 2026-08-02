@@ -19,7 +19,9 @@ import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_merge.dart';
 import '../media/media_rating.dart';
+import '../media/media_version.dart';
 import '../models/catalog/catalog_cast_member.dart';
 import '../models/catalog/catalog_item.dart';
 import '../models/catalog/catalog_metadata.dart';
@@ -77,6 +79,12 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   List<CatalogLink> _streamingLinks = const [];
   List<CatalogLink> _otherLinks = const [];
   bool _showSpoilerTags = false;
+
+  /// Focus node per library copy, keyed by [MediaItem.globalKey] so a later
+  /// resolution pass that adds a copy keeps the nodes — and therefore the
+  /// focus — of the rows already on screen. [_libraryMatchFocusNodes] is the
+  /// same nodes in display order, for index-based dpad traversal.
+  final Map<String, FocusNode> _libraryMatchNodesByKey = {};
   List<FocusNode> _libraryMatchFocusNodes = const [];
   CatalogSource? _watchlistSource;
   SeerrCatalogSource? _requestSource;
@@ -135,7 +143,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       node.dispose();
     }
     _watchlistSource?.watchlistChanges.removeListener(_onWatchlistChanged);
-    for (final node in _libraryMatchFocusNodes) {
+    for (final node in _libraryMatchNodesByKey.values) {
       node.dispose();
     }
     for (final node in _relationFocusNodes) {
@@ -150,37 +158,60 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     setState(() {});
   }
 
-  /// Monotonic guard for match resolution: the bare row item and its
-  /// detail-enriched form resolve concurrently, and only the latest-issued
-  /// resolution may publish (a slow bare lookup must not overwrite the
-  /// enriched verdict with its own).
-  int _matchGeneration = 0;
-
   Future<void> _resolveMatches(CatalogItem item) async {
-    final generation = ++_matchGeneration;
     List<MediaItem> matches;
     try {
       matches = await context.read<CatalogLibraryMatcher>().match(item);
     } catch (e) {
       appLogger.w('Catalog library match failed for ${item.identityKey}', error: e);
-      matches = const [];
+      // A failed pass is no evidence about copies an earlier pass already
+      // found; only claim "not in your library" when nothing has resolved.
+      if (_matches == null) _mergeMatches(const []);
+      return;
     }
-    if (generation == _matchGeneration) _setMatches(matches);
+    _mergeMatches(matches);
   }
 
-  void _setMatches(List<MediaItem> matches) {
+  /// Fold a resolution pass into the visible copies.
+  ///
+  /// Union, never replace. The bare row item and its detail-enriched form
+  /// resolve concurrently, and `findByExternalIdsAcrossServers` logs and skips
+  /// per-server failures — so a later pass can legitimately come back short a
+  /// server that answered the first one. Replacing would drop rows for copies
+  /// that are still there.
+  void _mergeMatches(List<MediaItem> matches) {
     if (!mounted) return;
-    for (final node in _libraryMatchFocusNodes) {
-      node.dispose();
+    final focused = _libraryMatchNodesByKey.values.firstWhereOrNull((node) => node.hasPrimaryFocus);
+    final merged = mergeLibraryCopies(_matches ?? const [], matches);
+    final keys = {for (final match in merged) match.globalKey};
+    for (final key in _libraryMatchNodesByKey.keys.toList()) {
+      if (!keys.contains(key)) _libraryMatchNodesByKey.remove(key)!.dispose();
     }
     _libraryMatchFocusNodes = [
-      for (var index = 0; index < matches.length; index++)
-        FocusNode(
-          debugLabel: 'catalog_library_match_$index',
-          onKeyEvent: (node, event) => _handleLibraryMatchKey(index, event),
+      for (final match in merged)
+        _libraryMatchNodesByKey.putIfAbsent(
+          match.globalKey,
+          () => FocusNode(
+            debugLabel: 'catalog_library_match_${match.globalKey}',
+            // Resolved live: merging a pass can reorder the rows, so a
+            // captured index would steer the wrong copy.
+            onKeyEvent: (node, event) {
+              final index = _libraryMatchFocusNodes.indexOf(node);
+              return index < 0 ? KeyEventResult.ignored : _handleLibraryMatchKey(index, event);
+            },
+          ),
         ),
     ];
-    setState(() => _matches = matches);
+    setState(() => _matches = merged);
+    // A merge re-sorts, and SettingsGroup shapes its cards by list index, so
+    // the tile holding the focused node can be rebuilt from scratch and drop
+    // it. Reclaim it rather than dumping a dpad user on another copy.
+    if (focused != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || focused.hasPrimaryFocus || focused.context == null) return;
+        focused.requestFocus();
+      });
+    }
   }
 
   CatalogSource? get _ownSource =>
@@ -232,11 +263,14 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
         _relationEntries = relationEntries;
       });
       // The row form of a Plex Discover item carries only its rating key;
-      // the detail body brings the external ids (#1715). When enrichment
-      // added id forms and the bare lookup found nothing, ask again with
-      // the full set.
+      // the detail body brings the external ids (#1715). Ask again with the
+      // full set whenever enrichment added id forms — not just when the bare
+      // lookup came back empty: the exact `plex://` guid finds only copies in
+      // libraries on the modern agent, while a legacy-agent sibling is
+      // reachable solely through the imdb/tmdb forms (#1754). The result
+      // merges, so a re-ask can only add copies.
       final gainedIds = !widget.item.ids.allKeys.toSet().containsAll(detail.item.ids.allKeys);
-      if (gainedIds && (_matches?.isEmpty ?? true)) {
+      if (gainedIds) {
         unawaited(_resolveMatches(detail.item));
       }
     } catch (e) {
@@ -500,14 +534,30 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
   }
 
+  /// The technical label of a copy's best version, e.g. "4K HEVC MKV
+  /// (45.0 Mbps)". Library names are user-chosen and need not mention
+  /// resolution, which is exactly the question two copies of one movie pose
+  /// (#1754), so the row states it outright. Omitted when the backend
+  /// reported no resolution at all, rather than showing "Unknown".
+  static String? _libraryMatchQuality(MediaItem match) {
+    MediaVersion? best;
+    for (final version in match.mediaVersions ?? const <MediaVersion>[]) {
+      if (version.resolutionHeight == null) continue;
+      if (best == null || version.resolutionHeight! > best.resolutionHeight!) best = version;
+    }
+    return best?.displayLabel;
+  }
+
   Widget _buildLibraryMatchTile(MediaItem match, int index) {
+    // Plex matches carry their library title; Jellyfin's search-based lookup
+    // only does when the ancestors call succeeded, so fall back to the server
+    // name alone. The subtitle carries whatever else tells two copies apart.
+    final details = [?_libraryMatchQuality(match), ?(match.libraryTitle == null ? null : match.serverName)];
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],
       leading: BackendBadge(backend: match.backend, size: 24),
-      // Plex matches carry their library title; Jellyfin's search-based
-      // lookup doesn't, so fall back to the server name alone.
       title: Text(match.libraryTitle ?? match.serverName ?? match.backend.name),
-      subtitle: match.libraryTitle != null && match.serverName != null ? Text(match.serverName!) : null,
+      subtitle: details.isEmpty ? null : Text(details.join(' • ')),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () => unawaited(navigateToMediaItemDetails(context, match)),
     );

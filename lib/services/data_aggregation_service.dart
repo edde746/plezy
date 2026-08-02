@@ -3,6 +3,7 @@ import '../media/ids.dart';
 
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_merge.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
@@ -594,6 +595,15 @@ class DataAggregationService {
   /// Reverse external-id lookup fanned out to every online server (see
   /// [MediaServerClient.findByExternalIds]). One request wave per tap on an
   /// Explore catalog item; per-server failures are logged and skipped.
+  ///
+  /// Every server contributes every copy it holds, not one apiece: the same
+  /// movie routinely sits in a 4K library and an HD library on one server
+  /// (#1754). Results are deduped by global key and ordered best-first with
+  /// [compareLibraryCopies] so the chooser is stable across repeated passes.
+  ///
+  /// Because per-server failures are dropped here, a caller holding earlier
+  /// results must merge rather than replace (see [mergeLibraryCopies]) — a
+  /// degraded wave is not evidence that a copy went away.
   Future<List<MediaItem>> findByExternalIdsAcrossServers(
     ExternalIds ids, {
     required MediaKind kind,
@@ -618,11 +628,11 @@ class DataAggregationService {
         );
       } catch (e, st) {
         appLogger.w('External-id lookup failed on ${entry.key}', error: e, stackTrace: st);
-        return null;
+        return const <MediaItem>[];
       }
     });
 
-    return (await Future.wait(futures)).nonNulls.toList();
+    return mergeLibraryCopies(const [], (await Future.wait(futures)).expand((items) => items));
   }
 
   /// Group libraries by server (internal aggregation helper).

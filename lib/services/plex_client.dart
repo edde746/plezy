@@ -844,6 +844,16 @@ class PlexClient
     return null;
   }
 
+  /// Every raw `Metadata` entry of a container, for callers that must inspect
+  /// each sibling rather than assume the first is the only one (the
+  /// external-id reverse lookup: `/library/all` is server-wide, so one movie
+  /// held by two libraries answers with two entries).
+  List<Map<String, dynamic>> _getMetadataJsonList(MediaServerResponse response) {
+    final metadata = _getMediaContainer(response)?['Metadata'];
+    if (metadata is! List) return const [];
+    return metadata.whereType<Map<String, dynamic>>().toList();
+  }
+
   List<T> _extractDirectoryList<T>(MediaServerResponse response, T Function(Map<String, dynamic>) fromJson) {
     final container = _getMediaContainer(response);
     if (container != null && container['Directory'] != null) {
@@ -3832,38 +3842,67 @@ class PlexClient
     return ExternalIds.fromGuids(guids);
   }
 
-  /// Drop a sequel match when the server does not actually have that season.
+  /// Map id-verified candidates to items, dropping any sequel the server does
+  /// not actually have that season of.
   ///
   /// Only an [ExternalSeasonRef.agreedSeason] is gated on. Which provider a
   /// library numbers its seasons by is a server-side setting no dataset can
   /// supply, and reading it costs two extra requests per lookup, so a
   /// disagreeing ref is left ungated rather than gated on a guess.
-  Future<MediaItem?> _applyExternalIdSeasonGate(
-    Map<String, dynamic> metadata, {
+  ///
+  /// Gating costs one `fetchChildren` per show candidate. The candidate list
+  /// is deliberately never truncated (see
+  /// [MediaServerClient.findByExternalIds]), so the gates run concurrently
+  /// rather than letting latency grow with the number of library copies.
+  Future<List<MediaItem>> _gateExternalIdMatches(
+    Iterable<Map<String, dynamic>> candidates, {
     required MediaKind kind,
     required ExternalSeasonRef? season,
   }) async {
-    final item = PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(metadata));
-    if (kind != MediaKind.show) return item;
-
+    final entries = [
+      for (final metadata in candidates)
+        (metadata: metadata, item: PlexMappers.mediaItem(_createTaggedMetadataWithLibrary(metadata))),
+    ];
     final seasonIndex = season?.agreedSeason;
-    if (seasonIndex == null || seasonIndex <= 1) return item;
+    if (kind != MediaKind.show || seasonIndex == null || seasonIndex <= 1) {
+      return [for (final entry in entries) entry.item];
+    }
 
-    final ratingKey = metadata['ratingKey']?.toString();
-    // Cannot ask the question => do not gate.
-    if (ratingKey == null || ratingKey.isEmpty) return item;
-
-    final children = await fetchChildren(ratingKey);
-    return children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex) ? item : null;
+    final kept = await Future.wait([for (final entry in entries) _hasSeason(entry.metadata, seasonIndex)]);
+    return [
+      for (var index = 0; index < entries.length; index++)
+        if (kept[index]) entries[index].item,
+    ];
   }
 
-  /// Server-wide title filter + client-side external-ID verification. Plex's
-  /// `guid=` field filter matches only the item's primary `plex://` guid
-  /// (verified against PMS 1.43), so external ids in modern `Guid` arrays are
-  /// verified after title search. A resolved primary [plexGuid] can use the
-  /// exact server-side filter directly.
+  Future<bool> _hasSeason(Map<String, dynamic> metadata, int seasonIndex) async {
+    final ratingKey = metadata['ratingKey']?.toString();
+    // Cannot ask the question => do not gate.
+    if (ratingKey == null || ratingKey.isEmpty) return true;
+    final children = await fetchChildren(ratingKey);
+    return children.any((child) => child.kind == MediaKind.season && child.index == seasonIndex);
+  }
+
+  /// Server-wide external-id reverse lookup. Plex's `guid=` field filter
+  /// matches only the item's primary `plex://` guid (verified against PMS
+  /// 1.43), so a resolved [plexGuid] uses that exact filter while ids in
+  /// modern `Guid` arrays are verified client-side after a title search.
+  ///
+  /// `/library/all` is server-wide — it is not scoped to a section — so a
+  /// movie held by both a 4K and an HD library answers as two sibling
+  /// `Metadata` entries, each carrying its own `librarySectionID`. Every
+  /// id-verified entry is kept (#1754).
+  ///
+  /// An exact-guid hit does not short-circuit the title ladder: a library
+  /// still on a legacy agent carries `com.plexapp.agents.*` as its primary
+  /// guid, so that copy is invisible to the `guid=` filter and only the
+  /// id-verified title search finds it. Likewise the year-filtered page can
+  /// surface a copy the unfiltered page cut off at the container size, so
+  /// both contribute. The extra requests are spent once per uncached lookup,
+  /// off the render path and memoized for the session by
+  /// `CatalogLibraryMatcher`.
   @override
-  Future<MediaItem?> findByExternalIds(
+  Future<List<MediaItem>> findByExternalIds(
     ExternalIds ids, {
     required MediaKind kind,
     List<String> titles = const [],
@@ -3876,82 +3915,88 @@ class PlexClient
       MediaKind.show => 2,
       _ => null,
     };
-    if (plexType == null) return null;
-    if (!ids.hasAny && plexGuid == null) return null;
-    if (titles.isEmpty && plexGuid == null) return null;
+    if (plexType == null) return const [];
+    if (!ids.hasAny && plexGuid == null) return const [];
+    if (titles.isEmpty && plexGuid == null) return const [];
+
+    // Rating-key keyed so the guid filter and the title ladder can both
+    // contribute without doubling a copy they agree on. Kept in three buckets
+    // because the result order is exact-guid hits, then modern `Guid`
+    // matches, then legacy-agent ones.
+    final exact = <String, Map<String, dynamic>>{};
+    final modern = <String, Map<String, dynamic>>{};
+    final legacy = <String, Map<String, dynamic>>{};
+
+    void collect(Map<String, Map<String, dynamic>> into, Map<String, dynamic> item) {
+      final ratingKey = item['ratingKey']?.toString();
+      if (ratingKey == null || ratingKey.isEmpty) return;
+      into.putIfAbsent(ratingKey, () => item);
+    }
 
     if (plexGuid != null) {
       final response = await _getWithFailover(
         '/library/all',
         queryParameters: {'guid': plexGuid, 'type': plexType, 'includeGuids': 1},
       );
-      final metadata = _getFirstMetadataJson(response);
-      if (metadata != null) {
-        return _applyExternalIdSeasonGate(metadata, kind: kind, season: season);
+      for (final item in _getMetadataJsonList(response)) {
+        collect(exact, item);
       }
     }
 
     // Title attempts confirm candidates by external-id intersection, so
     // without external ids they cannot match anything — stop at the exact
     // guid lookup instead of burning requests that always come back empty.
-    if (!ids.hasAny) return null;
-
-    Future<({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})> attempt(
-      String title, {
-      required int size,
-      String? years,
-    }) async {
-      final response = await _getWithFailover(
-        '/library/all',
-        queryParameters: {
-          'title': title,
-          'type': plexType,
-          'includeGuids': 1,
-          'X-Plex-Container-Size': size,
-          'year': ?years,
-        },
-      );
-      final container = _getMediaContainer(response);
-      final metadata = container?['Metadata'];
-      if (metadata is! List) return (modern: null, legacy: null);
-
-      Map<String, dynamic>? legacy;
-      for (final item in metadata) {
-        if (item is! Map<String, dynamic>) continue;
-        final guids = item['Guid'];
-        if (guids is List && ids.intersects(ExternalIds.fromGuids(guids))) {
-          return (modern: item, legacy: legacy);
+    if (ids.hasAny) {
+      Future<bool> attempt(String title, {required int size, String? years}) async {
+        final response = await _getWithFailover(
+          '/library/all',
+          queryParameters: {
+            'title': title,
+            'type': plexType,
+            'includeGuids': 1,
+            'X-Plex-Container-Size': size,
+            'year': ?years,
+          },
+        );
+        var matched = false;
+        for (final item in _getMetadataJsonList(response)) {
+          final guids = item['Guid'];
+          if (guids is List && ids.intersects(ExternalIds.fromGuids(guids))) {
+            collect(modern, item);
+            matched = true;
+          } else if (ids.intersects(ExternalIds.fromLegacyPlexGuid(item['guid']))) {
+            collect(legacy, item);
+            matched = true;
+          }
         }
-        if (legacy == null && ids.intersects(ExternalIds.fromLegacyPlexGuid(item['guid']))) {
-          legacy = item;
-        }
-      }
-      return (modern: null, legacy: legacy);
-    }
-
-    // Not `resolve(null)`: when the two providers disagree the season number is
-    // unresolvable but the entry is still a sequel, and the ±1 window around a
-    // sequel's own year excludes the parent show (its year is season one's).
-    final skipYearWindow = season?.isSequel ?? false;
-    for (var index = 0; index < titles.length; index++) {
-      final title = titles[index];
-      final size = index == 0 ? 20 : 50;
-      ({Map<String, dynamic>? modern, Map<String, dynamic>? legacy})? filtered;
-      if (index == 0 && year != null && !skipYearWindow) {
-        filtered = await attempt(title, size: size, years: '${year - 1},$year,${year + 1}');
-        final modern = filtered.modern;
-        if (modern != null) {
-          return _applyExternalIdSeasonGate(modern, kind: kind, season: season);
-        }
+        return matched;
       }
 
-      final unfiltered = await attempt(title, size: size);
-      final match = unfiltered.modern ?? filtered?.legacy ?? unfiltered.legacy;
-      if (match != null) {
-        return _applyExternalIdSeasonGate(match, kind: kind, season: season);
+      // Not `resolve(null)`: when the two providers disagree the season number is
+      // unresolvable but the entry is still a sequel, and the ±1 window around a
+      // sequel's own year excludes the parent show (its year is season one's).
+      final skipYearWindow = season?.isSequel ?? false;
+      for (var index = 0; index < titles.length; index++) {
+        final title = titles[index];
+        final size = index == 0 ? 20 : 50;
+        final filteredMatched = index == 0 && year != null && !skipYearWindow
+            ? await attempt(title, size: size, years: '${year - 1},$year,${year + 1}')
+            : false;
+        final unfilteredMatched = await attempt(title, size: size);
+        // The ladder exists to widen a title that matched nothing; once a
+        // title has produced copies, broader forms would only add other shows.
+        if (filteredMatched || unfilteredMatched) break;
       }
     }
-    return null;
+
+    final ordered = <String, Map<String, dynamic>>{...exact};
+    for (final bucket in [modern, legacy]) {
+      for (final entry in bucket.entries) {
+        ordered.putIfAbsent(entry.key, () => entry.value);
+      }
+    }
+    if (ordered.isEmpty) return const [];
+    return _gateExternalIdMatches(ordered.values, kind: kind, season: season);
   }
 
   @override

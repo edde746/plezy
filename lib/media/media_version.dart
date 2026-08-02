@@ -68,6 +68,25 @@ class MediaVersion {
   /// them when metadata is fetched with `checkFiles=1`.
   bool get isPlayable => parts.isEmpty || parts.any((part) => part.isPlayable);
 
+  /// Approximate vertical resolution, for ordering versions best-first.
+  ///
+  /// Plex reports either a numeric height (`"1080"`) or a named tier
+  /// (`"sd"`, `"4k"`) and usually both; Jellyfin reports [height] directly.
+  /// Null when the backend gave neither.
+  int? get resolutionHeight {
+    final reported = height;
+    if (reported != null && reported > 0) return reported;
+    final named = (videoResolution ?? '').trim().toLowerCase();
+    return switch (named) {
+      '' => null,
+      'sd' => 480,
+      'hd' => 720,
+      '4k' => 2160,
+      '8k' => 4320,
+      _ => int.tryParse(named),
+    };
+  }
+
   /// Display label with detailed information: "1080p H.264 MKV (8.5 Mbps)".
   /// When [name] is set, it prefixes the technical label so a user can tell
   /// "Director's Cut · 1080p H.264 MKV" apart from "Theatrical Cut · 1080p

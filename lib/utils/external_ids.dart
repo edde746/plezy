@@ -153,17 +153,19 @@ class ExternalIds {
     return allowBareDigits && _decimalId.hasMatch(normalized) ? 'tt$normalized' : null;
   }
 
-  /// Pick the first raw Jellyfin item whose inline `ProviderIds` intersect
-  /// [ids]. Pure helper so the reverse-lookup verification stays
+  /// Every raw Jellyfin item whose inline `ProviderIds` intersect [ids], in
+  /// response order. Pure helper so the reverse-lookup verification stays
   /// unit-testable (its call site lives in a part file).
-  static Map<String, dynamic>? jellyfinCandidateMatching(List<Map<String, dynamic>> candidates, ExternalIds ids) {
-    for (final item in candidates) {
-      final providerIds = item['ProviderIds'];
-      if (providerIds is! Map) continue;
-      final candidate = ExternalIds.fromJellyfinProviderIds(providerIds.cast<String, Object?>());
-      if (ids.intersects(candidate)) return item;
-    }
-    return null;
+  ///
+  /// Plural because one title can own several library items — a 4K library
+  /// and an HD library hold separate items for the same movie (#1754) — and
+  /// the caller shows the user every copy.
+  static List<Map<String, dynamic>> jellyfinCandidatesMatching(List<Map<String, dynamic>> candidates, ExternalIds ids) {
+    return [
+      for (final item in candidates)
+        if (item['ProviderIds'] case final Map<dynamic, dynamic> providerIds)
+          if (ids.intersects(ExternalIds.fromJellyfinProviderIds(providerIds.cast<String, Object?>()))) item,
+    ];
   }
 
   /// Build from a Jellyfin `ProviderIds` map. Jellyfin stores external IDs
