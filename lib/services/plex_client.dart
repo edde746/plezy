@@ -1665,8 +1665,23 @@ class PlexClient
     }
   }
 
-  /// Get chapters and markers from cached metadata or fetch if needed
-  /// Uses same cache key as other metadata methods for consistency
+  /// Chapters and markers for [ratingKey], from the shared
+  /// `/library/metadata/{id}` cache row.
+  ///
+  /// Cache-first is safe here because of an ordering contract, not because
+  /// markers are static: in the normal online player flow
+  /// [getPlaybackInitialization] runs [getVideoPlaybackData] — a
+  /// network-first read of this same cache key with a superset of the query
+  /// params — before the controls mount and load extras, so the row this
+  /// serves was refreshed seconds earlier. Offline, and when that read fell
+  /// back to cache, the row is as old as the cache; a caller that needs the
+  /// current server state (e.g. after a PMS intro-detection pass finished)
+  /// must pass [forceRefresh].
+  ///
+  /// The network call here deliberately stays lean (no `checkFiles` /
+  /// `includeStreams`) and runs only on a cache miss or [forceRefresh], so it
+  /// rarely overwrites the shared row with a payload thin enough to force the
+  /// re-fetch in [_fetchFileInfo].
   Future<PlaybackExtras> getPlaybackExtras(
     String ratingKey, {
     String? introPattern,
