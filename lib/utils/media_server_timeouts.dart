@@ -52,6 +52,15 @@ class MediaServerTimeouts {
   /// `/System/Info/Public` and `/Users/Me`.
   static const jellyfinProbe = Duration(seconds: 8);
 
+  /// Per-item delete-permission probe. Shorter than [jellyfinProbe] because it
+  /// blocks a context menu from opening: a server that is nominally online but
+  /// hung must not hold the menu for a health-sweep budget. Unlike the other
+  /// values here it is also applied as a whole-request deadline by the caller
+  /// (the per-request budget covers the connect and receive phases
+  /// individually), and expiry fails closed — no delete entry — so the ceiling
+  /// only ever costs an entry, never safety.
+  static const jellyfinDeletePermission = Duration(seconds: 3);
+
   /// Best-effort `/Sessions/Logout` timeout — short because the call is
   /// fire-and-forget; the token is removed locally regardless.
   static const jellyfinSignOut = Duration(seconds: 5);

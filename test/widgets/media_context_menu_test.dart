@@ -27,6 +27,7 @@ import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/offline_mode_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/music/album_detail_screen.dart';
 import 'package:plezy/screens/music/artist_detail_screen.dart';
@@ -40,12 +41,14 @@ import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/media_server_timeouts.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
+import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
 import '../test_helpers/stub_music_playback_service.dart';
@@ -83,6 +86,173 @@ void main() {
         isAdminActionAllowedForMediaItem(isOwnerOrAdmin: true, itemBackend: MediaBackend.plex, activeProfile: profile),
         isTrue,
       );
+    });
+  });
+
+  group('isMediaDeletionAllowed', () {
+    test('Jellyfin follows the server answer, not the admin bit', () {
+      // Jellyfin's own check (`BaseItem.IsAuthorizedToDelete`) never consults
+      // `IsAdministrator` for library items, and only the first user created on
+      // a server gets `EnableContentDeletion` for free.
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.jellyfin,
+          resolvedItemPermission: false,
+          isAdminActionAllowed: true,
+        ),
+        isFalse,
+      );
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.jellyfin,
+          resolvedItemPermission: true,
+          isAdminActionAllowed: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('Jellyfin fails closed when the permission is unknown', () {
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.jellyfin,
+          resolvedItemPermission: null,
+          isAdminActionAllowed: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('Plex keeps its account-level gate', () {
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.plex,
+          resolvedItemPermission: null,
+          isAdminActionAllowed: true,
+        ),
+        isTrue,
+      );
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.plex,
+          resolvedItemPermission: null,
+          isAdminActionAllowed: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('an item with no backend marker is never deletable', () {
+      expect(
+        isMediaDeletionAllowed(itemBackend: null, resolvedItemPermission: true, isAdminActionAllowed: true),
+        isFalse,
+      );
+    });
+  });
+
+  group('MediaContextMenu delete gate', () {
+    testWidgets('hides delete for an administrator the server refuses (issue #1749)', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: true,
+        handler: (_) async => _canDeleteResponse('movie-1', false),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+    });
+
+    testWidgets('shows delete for a non-admin the server permits', (tester) async {
+      final requests = <Uri>[];
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: false,
+        requests: requests,
+        handler: (_) async => _canDeleteResponse('movie-1', true),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteFromServer), findsOneWidget);
+      final probes = requests.where((uri) => uri.queryParameters['Fields'] == 'CanDelete').toList();
+      expect(probes, hasLength(1));
+      expect(probes.single.queryParameters['ids'], 'movie-1');
+    });
+
+    testWidgets('shows delete for a library-granted user inside the grant', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: false,
+        itemId: 'movie-in-grant',
+        handler: _libraryGrantedToOneMovie,
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteFromServer), findsOneWidget);
+    });
+
+    testWidgets('hides delete for a library-granted user outside the grant', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: false,
+        itemId: 'movie-outside-grant',
+        handler: _libraryGrantedToOneMovie,
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+    });
+
+    testWidgets('hides delete when the permission probe fails', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: true,
+        handler: (_) async => http.Response('boom', 500),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+      expect(tester.takeException(), isNull);
+      // The menu itself still opened; only the destructive entry is missing.
+      expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
+    });
+
+    testWidgets('hides delete without probing while the item server is offline', (tester) async {
+      final requests = <Uri>[];
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: true,
+        serverOnline: false,
+        requests: requests,
+        handler: (_) async => _canDeleteResponse('movie-1', true),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+      expect(requests.where((uri) => uri.queryParameters['Fields'] == 'CanDelete'), isEmpty);
+    });
+
+    testWidgets('still opens the menu, without delete, when the probe hangs', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: true,
+        handler: (_) => Completer<http.Response>().future,
+      );
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('delete target')));
+      await tester.pump();
+      expect(find.text(t.mediaMenu.fileInfo), findsNothing, reason: 'the menu waits for the permission answer');
+
+      await tester.pump(MediaServerTimeouts.jellyfinDeletePermission + const Duration(milliseconds: 1));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
     });
   });
 
@@ -610,6 +780,89 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
     ),
   );
   return menuKey;
+}
+
+/// Jellyfin answer for the per-item delete-permission probe.
+http.Response _canDeleteResponse(String id, bool canDelete) => jsonResponse({
+  'Items': [
+    {'Id': id, 'CanDelete': canDelete},
+  ],
+});
+
+/// A user holding `EnableContentDeletionFromFolders` for one library only: the
+/// server answers per item, which is the only way that grant reaches a client.
+Future<http.Response> _libraryGrantedToOneMovie(http.Request request) async {
+  final id = request.url.queryParameters['ids'] ?? '';
+  return _canDeleteResponse(id, id == 'movie-in-grant');
+}
+
+Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinMovieMenu(
+  WidgetTester tester, {
+  required bool isAdministrator,
+  required Future<http.Response> Function(http.Request request) handler,
+  String itemId = 'movie-1',
+  bool serverOnline = true,
+  List<Uri>? requests,
+}) async {
+  LocaleSettings.setLocaleSync(AppLocale.en);
+  TvDetectionService.debugSetAppleTVOverride(true);
+  addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  final client = JellyfinClient.forTesting(
+    connection: testJellyfinConnection(isAdministrator: isAdministrator),
+    httpClient: MockClient((request) async {
+      requests?.add(request.url);
+      return handler(request);
+    }),
+  );
+  final manager = MultiServerManager()..debugRegisterJellyfinClientForTesting(client, online: serverOnline);
+  final multiServerProvider = testMultiServerProvider(manager);
+  final offlineMode = OfflineModeProvider(manager);
+  final stack = await ProfileStack.create(withStorage: false);
+  addTearDown(() async {
+    await stack.dispose();
+    offlineMode.dispose();
+    multiServerProvider.dispose();
+    manager.dispose();
+  });
+
+  final menuKey = GlobalKey<MediaContextMenuState>();
+  final item = testMediaItem(
+    id: itemId,
+    backend: MediaBackend.jellyfin,
+    kind: MediaKind.movie,
+    title: 'Movie',
+    serverId: 'srv-1',
+  );
+  await tester.pumpWidget(
+    TranslationProvider(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+          ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
+        ],
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: Center(
+              child: MediaContextMenu(
+                key: menuKey,
+                item: item,
+                child: const SizedBox(width: 120, height: 80, child: Text('delete target')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  return menuKey;
+}
+
+Future<void> _openMenu(WidgetTester tester, GlobalKey<MediaContextMenuState> menuKey) async {
+  menuKey.currentState!.showContextMenu(tester.element(find.text('delete target')));
+  await tester.pumpAndSettle();
 }
 
 Future<void> _openPlaylistPicker(WidgetTester tester, GlobalKey<MediaContextMenuState> menuKey) async {

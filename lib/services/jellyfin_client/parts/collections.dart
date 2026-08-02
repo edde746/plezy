@@ -144,4 +144,54 @@ mixin _JellyfinCollectionMethods on _JellyfinClientInternals {
     throwIfHttpError(response);
     return true;
   }
+
+  /// `/Items?ids=` rather than `/Users/{id}/Items/{id}`: the single-item route
+  /// ignores `Fields` and returns the whole dto (measured 33 KB / ~150 ms on a
+  /// remote server), while the list route honours it and answers with a ~0.5 KB
+  /// body in ~40 ms. Images and user data are switched off for the same reason.
+  ///
+  /// An id the user cannot see comes back as an empty `Items` array, which is
+  /// the same answer as "not allowed" for gating purposes.
+  ///
+  /// A context menu waits on this, so the probe carries a real wall-clock
+  /// ceiling: [MediaServerHttpClient] applies its `timeout` to the connect and
+  /// receive phases separately (so it alone would allow roughly double), and
+  /// `allowEndpointFailover: false` keeps a dead endpoint from walking the
+  /// candidate list while the user holds a long-press. On expiry the request is
+  /// aborted rather than left running, and the timeout propagates so the caller
+  /// fails closed.
+  // No `@override`: like [fetchSeasonEpisodesPage], this satisfies an optional
+  // capability interface that the concrete client implements, not a member of
+  // the mixin's superclass constraint.
+  Future<bool?> fetchDeletePermission(MediaItem item) async {
+    final abort = AbortController();
+    try {
+      final response = await _http
+          .get(
+            '/Items',
+            queryParameters: {
+              'ids': item.id,
+              'userId': connection.userId,
+              'Fields': 'CanDelete',
+              'EnableImages': 'false',
+              'EnableUserData': 'false',
+              'EnableTotalRecordCount': 'false',
+            },
+            timeout: MediaServerTimeouts.jellyfinDeletePermission,
+            abort: abort,
+            allowEndpointFailover: false,
+          )
+          .namedTimeout(MediaServerTimeouts.jellyfinDeletePermission, operation: 'jellyfin delete permission');
+      throwIfHttpError(response);
+      final items = _itemsArray(response.data);
+      if (items.isEmpty) return false;
+      return items.first['CanDelete'] as bool?;
+    } on TimeoutException catch (e) {
+      // Stop the request rather than leave it running, and hand the caller the
+      // same exception shape `MediaServerHttpClient` raises for its own
+      // per-phase expiries.
+      abort.abort();
+      throw MediaServerHttpException.from(e);
+    }
+  }
 }

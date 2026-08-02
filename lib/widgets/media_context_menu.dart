@@ -82,6 +82,30 @@ bool isAdminActionAllowedForMediaItem({
   return isOwnerOrAdmin && !blockedByPlexHomeRole;
 }
 
+/// Whether "Delete from server" may be offered for an item.
+///
+/// Deliberately not folded into [isAdminActionAllowedForMediaItem]: on Jellyfin
+/// the admin bit says nothing about deletion. `BaseItem.IsAuthorizedToDelete`
+/// consults `EnableContentDeletion` and the per-library grant only, and only
+/// the auto-created first user gets the former for free — so an administrator
+/// can lack the right (issue #1749) and a plain user can hold it. The server's
+/// per-item answer ([resolvedItemPermission], from
+/// [MediaDeletionPermissionClient]) is therefore the sole Jellyfin condition,
+/// and anything unknown — offline, request failed, timed out, item invisible —
+/// stays hidden rather than offering a button that 401s.
+///
+/// Plex has no per-item permission on the wire, so it keeps the account-level
+/// owner/admin gate.
+bool isMediaDeletionAllowed({
+  required MediaBackend? itemBackend,
+  required bool? resolvedItemPermission,
+  required bool isAdminActionAllowed,
+}) => switch (itemBackend) {
+  null => false,
+  MediaBackend.jellyfin => resolvedItemPermission == true,
+  MediaBackend.plex => isAdminActionAllowed,
+};
+
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
 /// Caller-supplied entry appended to a [MediaContextMenu] (e.g. the
@@ -207,6 +231,35 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// that work for Jellyfin too (downloads, basic browse).
   MediaServerClient _getMediaClientForItem() => context.getMediaClientWithFallback(serverIdOrNull(_itemServerId));
 
+  /// Ask the server whether the signed-in user may delete [item] right now.
+  ///
+  /// Returns `null` when the backend exposes no per-item permission (Plex),
+  /// which leaves the account-level gate in charge, and `false` for every
+  /// unknown on a backend that does expose one — offline, server down, request
+  /// failed or timed out. The probe blocks the menu opening, so it is bounded
+  /// by `MediaServerTimeouts.jellyfinDeletePermission` and does not chase
+  /// failover endpoints: a stalled endpoint hunt would be felt as a frozen
+  /// long-press, and hiding one entry is the cheaper failure.
+  ///
+  /// Backend detection comes first so a menu on a backend without the
+  /// capability neither probes nor touches offline state — the read would
+  /// otherwise be a new dependency for every screen that shows a movie row.
+  Future<bool?> _resolveDeletePermission({
+    required MediaServerClient? client,
+    required MediaItem? item,
+    required bool serverOnline,
+  }) async {
+    final permissionClient = client is MediaDeletionPermissionClient ? client as MediaDeletionPermissionClient : null;
+    if (item == null || permissionClient == null) return null;
+    if (!serverOnline || context.read<OfflineModeProvider>().isOffline) return false;
+    try {
+      return await permissionClient.fetchDeletePermission(item);
+    } catch (e, st) {
+      appLogger.w('Delete permission probe failed', error: e, stackTrace: st);
+      return false;
+    }
+  }
+
   void _showContextMenu(BuildContext context) async {
     if (_isContextMenuOpen) return;
     _isContextMenuOpen = true;
@@ -259,6 +312,32 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
     final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
+
+    // Deletion is the one gate that asks the server per item; see
+    // [isMediaDeletionAllowed]. Only kinds that can actually be deleted pay
+    // for the round trip, and only on a backend that answers it.
+    final isDeletableKind =
+        mediaKind == MediaKind.episode ||
+        mediaKind == MediaKind.movie ||
+        mediaKind == MediaKind.show ||
+        mediaKind == MediaKind.season;
+    final canDeleteFromServer =
+        isDeletableKind &&
+        isMediaDeletionAllowed(
+          itemBackend: itemBackend,
+          resolvedItemPermission: await _resolveDeletePermission(
+            client: mediaClient,
+            item: mediaItem,
+            serverOnline: itemServerOnline,
+          ),
+          isAdminActionAllowed: isAdmin,
+        );
+    if (!mounted || !context.mounted) {
+      // The awaited probe outlived the widget; the try/finally that normally
+      // clears this flag only starts once the menu is on screen.
+      _isContextMenuOpen = false;
+      return;
+    }
 
     final menuActions = <_MenuAction>[];
 
@@ -547,15 +626,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo));
       }
 
-      // Delete media item (for episodes, movies, shows, and seasons) — admin
-      // only. Backend-neutral: routed through `MediaServerClient.deleteMediaItem`,
-      // which both Plex and Jellyfin implement (DELETE /library/metadata/{id}
-      // and DELETE /Items/{id} respectively).
-      if (isAdmin &&
-          (mediaKind == MediaKind.episode ||
-              mediaKind == MediaKind.movie ||
-              mediaKind == MediaKind.show ||
-              mediaKind == MediaKind.season)) {
+      // Delete media item (for episodes, movies, shows, and seasons). Routed
+      // through `MediaServerClient.deleteMediaItem`, which both Plex and
+      // Jellyfin implement (DELETE /library/metadata/{id} and
+      // DELETE /Items/{id} respectively); the kind and permission checks were
+      // resolved together above.
+      if (canDeleteFromServer) {
         menuActions.add(
           _MenuAction(
             value: 'delete_media',
