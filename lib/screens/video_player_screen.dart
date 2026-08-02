@@ -262,8 +262,7 @@ _PlaybackOpenTiming _playbackOpenTiming({
 /// change should not silently rewrite the whole series' Plex prefs. The
 /// explicit path for that lives in the metadata-edit UI.
 TrackPreferencePersister _plexTrackPersister(PlexClient? Function() resolve) {
-  return ({required int partId, required String trackType, int? streamID}) async {
-    if (streamID == null) return;
+  return ({required int partId, required String trackType, required int streamID}) async {
     final client = resolve();
     if (client == null) return;
     await (trackType == 'audio'

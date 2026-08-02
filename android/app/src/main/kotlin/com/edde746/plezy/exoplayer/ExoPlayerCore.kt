@@ -1877,14 +1877,15 @@ class ExoPlayerCore(private val activity: Activity) :
       subtitleTrackGroupMap[trackId] = trackGroup
       val isSelected = group.isSelected
 
-      // Detect external (side-loaded) subtitle by the ID prefix set in open()
-      val isExternal = format.id?.startsWith("external_") == true
-      val externalIndex = if (isExternal) format.id?.removePrefix("external_")?.toIntOrNull() else null
+      // Detect external (side-loaded) subtitle by the ID set in open(). media3
+      // rewrites merged child ids, so the tag is not the whole id.
+      val isExternal = ExternalSubtitleIds.isExternal(format.id)
+      val externalIndex = ExternalSubtitleIds.indexOf(format.id)
       val externalUri = externalIndex?.takeIf { it in externalSubtitleUris.indices }?.let { externalSubtitleUris[it] }
       val isContainer = !isExternal && externalSubtitleContainerUris.isNotEmpty()
       val containerUri = if (isContainer) externalSubtitleContainerUris.first() else null
 
-      Log.d(TAG, "Subtitle track $groupIndex: codec=${format.codecs}, lang=${format.language}, selected=$isSelected, external=$isExternal")
+      Log.d(TAG, "Subtitle track $groupIndex: formatId=${format.id}, codec=${format.codecs}, lang=${format.language}, selected=$isSelected, external=$isExternal")
 
       val track = mutableMapOf<String, Any?>(
         "type" to "sub",
@@ -3222,7 +3223,7 @@ class ExoPlayerCore(private val activity: Activity) :
         (if (isDefault) C.SELECTION_FLAG_DEFAULT else 0) or
           (if (isForced) C.SELECTION_FLAG_FORCED else 0)
       val config = MediaItem.SubtitleConfiguration.Builder(Uri.parse(subUri))
-        .setId("external_$index")
+        .setId(ExternalSubtitleIds.idFor(index))
         .setLabel(title ?: "External")
         .setLanguage(language)
         .setMimeType(mimeType ?: subtitleMimeTypeForCodec(codec) ?: detectSubtitleMimeType(subUri))
@@ -3585,7 +3586,7 @@ class ExoPlayerCore(private val activity: Activity) :
     val existingIndex = externalSubtitleUris.indexOf(uri)
     val isNew = existingIndex < 0
     val index = if (isNew) externalSubtitles.size else existingIndex
-    val formatId = "external_$index"
+    val formatId = ExternalSubtitleIds.idFor(index)
 
     if (isNew) {
       // SELECTION_FLAG_DEFAULT marks this as the preferred text track so ExoPlayer's
@@ -3632,9 +3633,10 @@ class ExoPlayerCore(private val activity: Activity) :
         player.prepare()
         player.playWhenReady = savedPlayWhenReady
       } else {
-        // Already attached — select the existing track via override.
+        // Already attached — select the existing track via override. The
+        // reported id carries media3's merge prefixes, so compare the tag.
         val trackId = subtitleTrackGroupMap.entries
-          .firstOrNull { (_, group) -> group.getFormat(0).id == formatId }
+          .firstOrNull { (_, group) -> ExternalSubtitleIds.indexOf(group.getFormat(0).id) == index }
           ?.key
         if (trackId != null) {
           selectSubtitleTrack(trackId)

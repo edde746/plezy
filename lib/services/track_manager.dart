@@ -18,7 +18,7 @@ import '../utils/track_label_builder.dart';
 /// stream indexes) or lack server-side stream selection leave this null.
 /// [trackType] is `'audio'` or `'subtitle'`.
 typedef TrackPreferencePersister =
-    Future<void> Function({required int partId, required String trackType, int? streamID});
+    Future<void> Function({required int partId, required String trackType, required int streamID});
 
 /// Manages track (audio + subtitle) lifecycle: external subtitle loading,
 /// automatic track selection, server preference sync, and cycling.
@@ -530,7 +530,15 @@ class TrackManager {
   }
 
   /// Save the stream selection for the current part to the server.
+  ///
+  /// A null [streamID] means no server stream could be identified for the
+  /// chosen track. There is no local fallback store, so the choice is simply
+  /// lost — say so instead of reporting a save that never happened.
   Future<void> _saveTrackPreferences({required int partId, required String trackType, int? streamID}) async {
+    if (streamID == null) {
+      appLogger.w('Not saving $trackType stream selection: no server stream matched the selected track');
+      return;
+    }
     try {
       if (!isActive()) return;
       final persist = persistTrackPreference;
