@@ -59,6 +59,71 @@ void main() {
     expect(find.text(backup.path), findsOneWidget);
   });
 
+  testWidgets('a backup with nothing in it still offers deletion but claims no secrets', (tester) async {
+    // The #1732 store was 10336 zero bytes. Telling the user that copy holds
+    // their sign-ins is false, and a warning that cries wolf is the one they
+    // will ignore on the launch where the file really is sensitive.
+    await _openDialog(
+      tester,
+      PrefsRepairOutcome(
+        backupPath: backup.path,
+        backupHoldsCredentials: false,
+        vaultKeySalvaged: false,
+        sessionsSalvaged: 0,
+        sessionsLost: 0,
+      ),
+    );
+
+    expect(find.text(t.startup.backupTitle), findsOneWidget);
+    expect(find.text(backup.path), findsOneWidget);
+    expect(find.text(t.startup.backupWarning), findsNothing);
+    expect(find.text(t.startup.deleteBackup), findsOneWidget);
+  });
+
+  group('consent copy', () {
+    test('a store with no recoverable vault key promises nothing it cannot keep', () {
+      final message = repairConsentMessage(oneCredential: false, signInsSurvive: false);
+
+      // The #1732 store salvaged nothing. Saying "servers and profiles
+      // normally stay signed in" here would be contradicted by the outcome
+      // dialog moments later.
+      expect(message, contains(t.startup.repairBodyCommon));
+      expect(message, contains(t.startup.repairBodySignInsLost));
+      expect(message, isNot(contains(t.startup.repairBodySignInsKept)));
+    });
+
+    test('a salvageable store keeps the cheaper promise', () {
+      final message = repairConsentMessage(oneCredential: false, signInsSurvive: true);
+
+      expect(message, contains(t.startup.repairBodySignInsKept));
+      expect(message, isNot(contains(t.startup.repairBodySignInsLost)));
+    });
+
+    test('the single-credential repair names its own narrower scope', () {
+      final message = repairConsentMessage(oneCredential: true, signInsSurvive: true);
+
+      expect(message, contains(t.startup.repairBodyOneCredential));
+      expect(message, isNot(contains(t.startup.repairBodyCommon)));
+    });
+
+    test('trackers and Seerr get the same cautious sentence either way', () {
+      // Their sessions are plaintext preference entries, salvaged one by one
+      // and left untouched by the single-credential repair, so they neither
+      // survive nor die with the vault key. Neither branch may borrow that
+      // value's verdict for them.
+      for (final signInsSurvive in [true, false]) {
+        expect(
+          repairConsentMessage(oneCredential: false, signInsSurvive: signInsSurvive),
+          contains(t.startup.repairBodySessionsUncertain),
+        );
+      }
+      expect(
+        repairConsentMessage(oneCredential: true, signInsSurvive: false),
+        contains(t.startup.repairBodySessionsUncertain),
+      );
+    });
+  });
+
   testWidgets('deleting the backup removes the file and stops showing its path', (tester) async {
     final deleted = <String>[];
     await _openDialog(

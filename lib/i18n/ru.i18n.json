@@ -989,6 +989,7 @@
   "startup": {
     "failedTitle": "",
     "failedBody": "",
+    "failedBodyRepairable": "",
     "phaseLabel": "",
     "showDetails": "",
     "hideDetails": "",
@@ -999,7 +1000,9 @@
     "repairTitle": "",
     "repairBodyCommon": "",
     "repairBodyOneCredential": "",
-    "repairBodySessionsAtRisk": "",
+    "repairBodySignInsKept": "",
+    "repairBodySignInsLost": "",
+    "repairBodySessionsUncertain": "",
     "repairConfirm": "",
     "repairSucceeded": "",
     "repairNeedsRestart": "",

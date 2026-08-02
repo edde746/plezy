@@ -139,7 +139,12 @@ abstract class BaseSharedPreferencesService {
   /// unreadable value — quarantining that one would reopen onto the stale
   /// in-memory map and write the bad value straight back.
   static Future<PrefsRepairOutcome> repairCorruptStore({bool reopenSafe = true}) async {
-    final (:salvaged, :backupPath) = await PrefsRecovery.quarantine();
+    final (:salvaged, :backupPath, :shape) = await PrefsRecovery.quarantine();
+    // Conservative by construction: the warning is dropped only for bytes
+    // proven to contain nothing. What the salvage recovered cannot stand in
+    // for that — a store truncated mid-value matches no entry at all while
+    // still holding most of a vault key in plaintext.
+    final backupHoldsCredentials = !(shape?.allZero ?? false);
 
     _resetGeneration++;
     _initializations.clear();
@@ -158,6 +163,7 @@ abstract class BaseSharedPreferencesService {
       appLogger.w('Preference store quarantined; a restart is required before it can be reopened');
       return PrefsRepairOutcome(
         backupPath: backupPath,
+        backupHoldsCredentials: backupHoldsCredentials,
         vaultKeySalvaged: seeded && salvaged.vaultKey != null,
         sessionsSalvaged: seeded ? salvaged.sessions.length : 0,
         sessionsLost: seeded ? salvaged.losses : salvaged.losses + salvaged.sessions.length,
@@ -190,6 +196,7 @@ abstract class BaseSharedPreferencesService {
 
     return PrefsRepairOutcome(
       backupPath: backupPath,
+      backupHoldsCredentials: backupHoldsCredentials,
       vaultKeySalvaged: salvaged.vaultKey != null,
       sessionsSalvaged: salvaged.sessions.length,
       sessionsLost: salvaged.losses,

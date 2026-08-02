@@ -2853,6 +2853,9 @@ class Translations$startup$en {
 	/// en: 'Something went wrong during startup. The details below identify what failed.'
 	String get failedBody => 'Something went wrong during startup. The details below identify what failed.';
 
+	/// en: 'Plezy's saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.'
+	String get failedBodyRepairable => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.';
+
 	/// en: 'Step'
 	String get phaseLabel => 'Step';
 
@@ -2883,8 +2886,14 @@ class Translations$startup$en {
 	/// en: 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.'
 	String get repairBodyOneCredential => 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.';
 
-	/// en: 'Servers and profiles normally stay signed in, but trackers (MAL, AniList, Simkl, Trakt) and Seerr may need to be reconnected. Plezy will tell you exactly what it kept.'
-	String get repairBodySessionsAtRisk => 'Servers and profiles normally stay signed in, but trackers (MAL, AniList, Simkl, Trakt) and Seerr may need to be reconnected. Plezy will tell you exactly what it kept.';
+	/// en: 'Your servers and profiles should stay signed in.'
+	String get repairBodySignInsKept => 'Your servers and profiles should stay signed in.';
+
+	/// en: 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.'
+	String get repairBodySignInsLost => 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.';
+
+	/// en: 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.'
+	String get repairBodySessionsUncertain => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.';
 
 	/// en: 'Repair'
 	String get repairConfirm => 'Repair';
@@ -6937,6 +6946,7 @@ extension on Translations {
 			'logs.uploadLogs' => 'Upload Logs',
 			'startup.failedTitle' => 'Plezy could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
+			'startup.failedBodyRepairable' => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.',
 			'startup.phaseLabel' => 'Step',
 			'startup.showDetails' => 'Show details',
 			'startup.hideDetails' => 'Hide details',
@@ -6947,7 +6957,9 @@ extension on Translations {
 			'startup.repairTitle' => 'Repair stored data?',
 			'startup.repairBodyCommon' => 'Plezy\'s settings file is damaged and cannot be read. Repairing resets every setting to its default.',
 			'startup.repairBodyOneCredential' => 'One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.',
-			'startup.repairBodySessionsAtRisk' => 'Servers and profiles normally stay signed in, but trackers (MAL, AniList, Simkl, Trakt) and Seerr may need to be reconnected. Plezy will tell you exactly what it kept.',
+			'startup.repairBodySignInsKept' => 'Your servers and profiles should stay signed in.',
+			'startup.repairBodySignInsLost' => 'The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.',
+			'startup.repairBodySessionsUncertain' => 'Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.',
 			'startup.repairConfirm' => 'Repair',
 			'startup.repairSucceeded' => 'Storage repaired',
 			'startup.repairNeedsRestart' => 'Storage repaired — restart required',
@@ -7045,11 +7057,11 @@ extension on Translations {
 			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.fall' => 'Fall',
 			'explore.season.withYear' => ({required Object season, required Object year}) => '${season} ${year}',
 			'explore.format.tv' => 'TV',
-			_ => null,
-		} ?? switch (path) {
 			'explore.format.tvShort' => 'TV Short',
 			'explore.format.movie' => 'Movie',
 			'explore.format.special' => 'Special',
@@ -7559,11 +7571,11 @@ extension on Translations {
 			'externalPlayer.off' => 'Off',
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.basicInfo' => 'Basic Info',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Advanced Settings',

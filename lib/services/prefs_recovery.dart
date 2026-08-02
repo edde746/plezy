@@ -142,13 +142,25 @@ class PrefsRepairOutcome {
     required this.vaultKeySalvaged,
     required this.sessionsSalvaged,
     required this.sessionsLost,
+    this.backupHoldsCredentials = true,
     this.settingsReset = true,
     this.requiresRestart = false,
   });
 
-  /// Absolute path of the quarantined store. It contains credentials in
-  /// plaintext: never upload it, attach it to a report, or log its contents.
+  /// Absolute path of the quarantined store. When [backupHoldsCredentials] it
+  /// contains credentials in plaintext: never upload it, attach it to a
+  /// report, or log its contents.
   final String? backupPath;
+
+  /// Whether the quarantined file may still hold credential material.
+  ///
+  /// Derived from the bytes, never from what the salvage recovered: a store
+  /// truncated mid-value keeps most of a vault key or an entire refresh token
+  /// in plaintext while matching no entry at all, because the salvage pattern
+  /// requires the value's closing quote. Only a file proven to contain
+  /// nothing — every byte zero (#1732) — drops the warning, because a warning
+  /// attached to a file of zeros is the one that teaches users to ignore it.
+  final bool backupHoldsCredentials;
 
   /// Whether [credentialVaultKeyPref] was recovered. When false every stored
   /// server and profile token becomes undecryptable and must be re-acquired.
@@ -187,6 +199,11 @@ class SalvagedPrefsCredentials {
 
   /// Credential slots that were present but could not be decoded.
   final int losses;
+
+  /// Deliberately no "does this hold credentials" helper. What [salvage]
+  /// recovered says nothing about what the file still contains: a store
+  /// truncated mid-value keeps most of a vault key in plaintext and matches
+  /// nothing. Ask [PrefsStoreShape] about the bytes instead.
 }
 
 /// Recovers a damaged desktop preference store without silently destroying
@@ -448,28 +465,73 @@ abstract final class PrefsRecovery {
 
   static String _stamp() => DateTime.now().toUtc().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
 
-  /// Quarantines the damaged store and returns what was salvaged.
+  /// Reports what a repair would recover, without touching the store.
+  ///
+  /// The consent dialog has to name a cost before anything is destroyed, and
+  /// the cost is not uniform: a store that still holds a readable vault key
+  /// keeps every server and profile signed in, while one that does not — an
+  /// all-zero file being the canonical case (#1732) — signs the user out of
+  /// everything. Promising the cheap outcome for the expensive case is worse
+  /// than saying nothing, so the dialog runs this first and branches on it.
+  ///
+  /// Pure with respect to the filesystem. [salvage] does register every secret
+  /// it decodes with `LogRedactionManager`, which is idempotent and wanted
+  /// early regardless of whether the user goes on to accept the repair.
+  static Future<SalvagedPrefsCredentials> previewSalvage({File? storeFileOverride}) async {
+    final File file;
+    try {
+      file = storeFileOverride ?? await storeFile();
+      if (!await file.exists()) return SalvagedPrefsCredentials.empty;
+    } on Object {
+      return SalvagedPrefsCredentials.empty;
+    }
+
+    try {
+      return salvage(_decodeForSalvage(await file.readAsBytes()));
+    } on FileSystemException catch (error, stackTrace) {
+      // Only a preview; an unreadable file is the repair's problem to report,
+      // not a reason to fail before the user has even been asked.
+      appLogger.w('Could not preview the damaged preference store', error: error, stackTrace: stackTrace);
+      return SalvagedPrefsCredentials.empty;
+    }
+  }
+
+  /// Decodes damaged store bytes as text for the salvage pass.
+  ///
+  /// Lossy rather than strict, because `File.readAsString` surfaces a UTF-8
+  /// decode failure as a `FileSystemException` and would abort on exactly the
+  /// damaged store this exists to rescue. For a well-formed document this is
+  /// identical to a strict decode; for a damaged one it still exposes the
+  /// ASCII credential entries.
+  static String _decodeForSalvage(List<int> bytes) => const Utf8Decoder(allowMalformed: true).convert(bytes);
+
+  /// Quarantines the damaged store and returns what was salvaged, alongside
+  /// the measured shape of the bytes that were moved aside.
   ///
   /// The caller opens a fresh store afterwards and reseeds it; see
   /// `BaseSharedPreferencesService.repairCorruptStore`.
   ///
   /// The damaged file is *moved*, never deleted: it is the only remaining copy
   /// of any credential that could not be salvaged.
-  static Future<({SalvagedPrefsCredentials salvaged, String? backupPath})> quarantine({File? storeFileOverride}) async {
+  ///
+  /// [shape] is returned rather than inferred from [salvage] because the two
+  /// answer different questions. Salvage reports what could be *recovered*;
+  /// only the bytes can say whether anything sensitive is still *in there*.
+  /// A store truncated mid-value — the ordinary damage shape — holds most of a
+  /// vault key or an entire refresh token in plaintext while
+  /// [_stringEntryPattern] matches nothing at all, because it requires the
+  /// value's closing quote.
+  static Future<({SalvagedPrefsCredentials salvaged, String? backupPath, PrefsStoreShape? shape})> quarantine({
+    File? storeFileOverride,
+  }) async {
     final file = storeFileOverride ?? await storeFile();
     if (!await file.exists()) {
-      return (salvaged: SalvagedPrefsCredentials.empty, backupPath: null);
+      return (salvaged: SalvagedPrefsCredentials.empty, backupPath: null, shape: null);
     }
 
-    // Read bytes and decode lossily rather than calling `readAsString`, which
-    // surfaces a UTF-8 decode failure as a `FileSystemException` and would
-    // abort the repair on exactly the damaged store it exists to rescue. For a
-    // well-formed document this is identical to a strict decode; for a damaged
-    // one it still exposes the ASCII credential entries to the salvage pass.
-    // A genuine read failure propagates — that is not something a repair fixes.
-    final raw = const Utf8Decoder(allowMalformed: true).convert(await file.readAsBytes());
-
-    final salvaged = salvage(raw);
+    final bytes = await file.readAsBytes();
+    final shape = PrefsStoreShape.of(bytes);
+    final salvaged = salvage(_decodeForSalvage(bytes));
 
     final stamp = _stamp();
     final backup = File(p.join(file.parent.path, 'shared_preferences.corrupt-$stamp.json'));
@@ -489,10 +551,10 @@ abstract final class PrefsRecovery {
 
     appLogger.w(
       'Quarantined a corrupt preference store'
-      ' (vault key salvaged: ${salvaged.vaultKey != null},'
+      ' ($shape; vault key salvaged: ${salvaged.vaultKey != null},'
       ' sessions salvaged: ${salvaged.sessions.length}, lost: ${salvaged.losses})',
     );
-    return (salvaged: salvaged, backupPath: backup.path);
+    return (salvaged: salvaged, backupPath: backup.path, shape: shape);
   }
 
   /// Deletes a quarantined store so the user is not left holding a

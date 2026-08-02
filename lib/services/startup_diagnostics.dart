@@ -206,6 +206,11 @@ class StartupFailureRecord {
   String get headline => '[$phaseId] $errorType: $message';
 
   /// Full plain-text block for the clipboard and the diagnostics upload.
+  ///
+  /// Includes [repairable] because the uploaded text is usually all a
+  /// maintainer gets. Without it a report of "still broken" cannot be told
+  /// apart from "the screen offered no way forward" and "a repair was offered
+  /// and not taken" — the ambiguity that stalled #1732 for two days.
   String describe() {
     final buffer = StringBuffer()
       ..writeln('Plezy startup failure')
@@ -214,6 +219,7 @@ class StartupFailureRecord {
       ..writeln('When: ${timestamp.toUtc().toIso8601String()}')
       ..writeln('Phase: $phaseId')
       ..writeln('Error: $errorType')
+      ..writeln('Repair offered: ${repairable ? 'yes' : 'no'}')
       ..writeln('Message: $message');
     final stack = stackTrace;
     if (stack != null && stack.isNotEmpty) {

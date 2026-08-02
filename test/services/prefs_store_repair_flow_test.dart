@@ -146,6 +146,80 @@ void main() {
     await expectLater(SettingsService.getInstance(), completes);
   });
 
+  test('the all-zero store reported in #1732 is repairable and costs every sign-in', () async {
+    // The store the reporter actually had: a full-length file whose every byte
+    // is zero. It reaches the parser as "FormatException at offset 0", exactly
+    // like a truncated document, but nothing can be salvaged from it — which
+    // is the opposite of harmless, because the vault key goes with it.
+    await store.writeAsBytes(List<int>.filled(10336, 0));
+
+    final error = await SettingsService.getInstance().then<Object?>((_) => null, onError: (Object e) => e);
+    final corruption = error! as CorruptPreferenceStoreException;
+    expect(corruption.shape?.allZero, isTrue);
+    expect(corruption.shape?.length, 10336);
+
+    // The consent dialog reads this before destroying anything, and must not
+    // promise that servers and profiles survive.
+    final preview = await PrefsRecovery.previewSalvage(storeFileOverride: store);
+    expect(preview.vaultKey, isNull);
+    expect(preview.sessions, isEmpty);
+    // Purely a preview: the damaged store is still exactly where it was.
+    expect(await store.exists(), isTrue);
+    expect(await store.length(), 10336);
+
+    // Retrying re-reads the same bytes and reaches the same verdict, so the
+    // failure screen's Retry button can never clear this on its own.
+    await expectLater(SettingsService.getInstance(), throwsA(isA<CorruptPreferenceStoreException>()));
+
+    final outcome = await BaseSharedPreferencesService.repairCorruptStore();
+
+    expect(outcome.requiresRestart, isFalse);
+    expect(outcome.vaultKeySalvaged, isFalse);
+    // A file of zeros is not a secret, so the outcome dialog must not tell the
+    // user the retained copy holds their credentials.
+    expect(outcome.backupHoldsCredentials, isFalse);
+    // The repair is what actually gets them into the app, in this process.
+    await expectLater(SettingsService.getInstance(), completes);
+  });
+
+  test('a salvageable store previews as keeping its sign-ins', () async {
+    await store.writeAsBytes([
+      0,
+      ...utf8.encode(jsonEncode({credentialVaultKeyPref: validVaultKey})),
+    ]);
+
+    final preview = await PrefsRecovery.previewSalvage(storeFileOverride: store);
+
+    expect(preview.vaultKey, validVaultKey);
+
+    final outcome = await BaseSharedPreferencesService.repairCorruptStore();
+    expect(outcome.vaultKeySalvaged, isTrue);
+    expect(outcome.backupHoldsCredentials, isTrue);
+  });
+
+  test('a store truncated mid-credential still warns that the copy holds secrets', () async {
+    // The ordinary damage shape, and the one that makes "what did salvage
+    // recover" useless as a proxy for "what is still in the file". The value
+    // has no closing quote, so the salvage pattern matches nothing and reports
+    // no losses — while almost the entire vault key sits in the quarantined
+    // copy in plaintext.
+    final truncated = '{"$credentialVaultKeyPref":"${validVaultKey.substring(0, validVaultKey.length - 4)}';
+    await store.writeAsString(truncated);
+
+    final preview = await PrefsRecovery.previewSalvage(storeFileOverride: store);
+    expect(preview.vaultKey, isNull);
+    expect(preview.sessions, isEmpty);
+    expect(preview.losses, 0);
+
+    final outcome = await BaseSharedPreferencesService.repairCorruptStore();
+
+    expect(outcome.vaultKeySalvaged, isFalse);
+    // The copy is unmistakably sensitive even though nothing was recoverable.
+    expect(outcome.backupHoldsCredentials, isTrue);
+    final quarantined = await File(outcome.backupPath!).readAsString();
+    expect(quarantined, contains(validVaultKey.substring(0, 20)));
+  });
+
   test('a genuine read failure keeps its own type and stays non-repairable', () async {
     // A store the process cannot read is not a damaged *document*. Offering a
     // destructive repair for a permissions problem would reset every setting

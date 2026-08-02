@@ -69,13 +69,15 @@ class StartupFailureView extends StatefulWidget {
 }
 
 class _StartupFailureViewState extends State<StartupFailureView> {
-  late final FocusNode _retryFocusNode = FocusNode(debugLabel: 'startup-failure-retry');
+  /// Holds whichever action leads this screen — Repair when it is offered,
+  /// Retry otherwise, Quit once a restart is owed.
+  late final FocusNode _primaryFocusNode = FocusNode(debugLabel: 'startup-failure-primary');
   bool _detailsExpanded = false;
   bool _uploading = false;
 
   @override
   void dispose() {
-    _retryFocusNode.dispose();
+    _primaryFocusNode.dispose();
     super.dispose();
   }
 
@@ -162,7 +164,11 @@ class _StartupFailureViewState extends State<StartupFailureView> {
               ),
               const SizedBox(height: 8),
               Text(
-                restartRequired ? t.startup.restartRequiredBody : t.startup.failedBody,
+                restartRequired
+                    ? t.startup.restartRequiredBody
+                    : repair != null
+                    ? t.startup.failedBodyRepairable
+                    : t.startup.failedBody,
                 key: restartRequired ? startupFailureRestartKey : null,
                 style: theme.textTheme.bodyMedium,
                 textAlign: TextAlign.center,
@@ -181,29 +187,45 @@ class _StartupFailureViewState extends State<StartupFailureView> {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
-                  if (!restartRequired)
-                    FocusableButton(
-                      focusNode: _retryFocusNode,
-                      autofocus: true,
-                      onPressed: canAct ? widget.onRetry : null,
-                      child: FilledButton(
-                        key: startupBootstrapRetryKey,
-                        onPressed: canAct ? widget.onRetry : null,
-                        child: Text(t.common.retry),
-                      ),
-                    ),
+                  // Repair leads whenever it is offered. The failure it
+                  // addresses is a document on disk that Retry re-reads
+                  // unchanged, so Retry cannot clear it however many times it
+                  // is pressed — and it used to be the primary, autofocused,
+                  // first-in-order action, which is what a reporter on #1732
+                  // pressed repeatedly before concluding the fix had not
+                  // shipped. Retry keeps its place for every other failure,
+                  // where the environment really can change between attempts.
                   if (!restartRequired && repair != null)
                     FocusableButton(
+                      focusNode: _primaryFocusNode,
+                      autofocus: true,
                       onPressed: canAct ? () => repair() : null,
-                      child: FilledButton.tonal(
+                      child: FilledButton(
                         key: startupFailureRepairKey,
                         onPressed: canAct ? () => repair() : null,
                         child: Text(t.startup.repairStorage),
                       ),
                     ),
+                  if (!restartRequired)
+                    FocusableButton(
+                      focusNode: repair == null ? _primaryFocusNode : null,
+                      autofocus: repair == null,
+                      onPressed: canAct ? widget.onRetry : null,
+                      child: repair == null
+                          ? FilledButton(
+                              key: startupBootstrapRetryKey,
+                              onPressed: canAct ? widget.onRetry : null,
+                              child: Text(t.common.retry),
+                            )
+                          : OutlinedButton(
+                              key: startupBootstrapRetryKey,
+                              onPressed: canAct ? widget.onRetry : null,
+                              child: Text(t.common.retry),
+                            ),
+                    ),
                   if (restartRequired && PlatformDetector.isDesktopOS())
                     FocusableButton(
-                      focusNode: _retryFocusNode,
+                      focusNode: _primaryFocusNode,
                       autofocus: true,
                       onPressed: enabled ? _quit : null,
                       child: FilledButton(

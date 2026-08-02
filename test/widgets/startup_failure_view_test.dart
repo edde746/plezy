@@ -21,6 +21,7 @@ Future<void> _pumpView(
   WidgetTester tester, {
   required bool restartRequired,
   Future<bool> Function()? onExitRequested,
+  bool repairable = true,
 }) async {
   await tester.pumpWidget(
     TranslationProvider(
@@ -30,7 +31,7 @@ Future<void> _pumpView(
             failure: _record(),
             restartRequired: restartRequired,
             onRetry: () {},
-            onRepair: () async {},
+            onRepair: repairable ? () async {} : null,
             requestExit: ({AppExitApplication? exitApplicationForTesting}) async =>
                 onExitRequested == null ? false : await onExitRequested(),
           ),
@@ -40,6 +41,14 @@ Future<void> _pumpView(
   );
   await tester.pump();
 }
+
+/// Whether [key] resolves to the filled (primary) Material button.
+bool _isPrimary(WidgetTester tester, Key key) => tester.widget(find.byKey(key)) is FilledButton;
+
+/// Whether [key]'s enclosing focusable currently holds focus.
+bool _hasFocus(WidgetTester tester, Key key) =>
+    tester.widget<Focus>(find.ancestor(of: find.byKey(key), matching: find.byType(Focus)).first).focusNode?.hasFocus ??
+    false;
 
 void main() {
   setUpAll(() => LocaleSettings.setLocaleSync(AppLocale.en));
@@ -51,6 +60,31 @@ void main() {
     expect(find.byKey(startupBootstrapRetryKey), findsOneWidget);
     expect(find.byKey(startupFailureRepairKey), findsOneWidget);
     expect(find.byKey(startupFailureRestartKey), findsNothing);
+  });
+
+  testWidgets('repair leads the screen whenever it is offered', (tester) async {
+    await _pumpView(tester, restartRequired: false);
+
+    // Retry re-reads the same damaged document, so it can never clear this
+    // failure. Presenting it as the primary, autofocused action is what left
+    // the #1732 reporter pressing it and concluding the fix had not shipped.
+    expect(_isPrimary(tester, startupFailureRepairKey), isTrue);
+    expect(_isPrimary(tester, startupBootstrapRetryKey), isFalse);
+    await tester.pump();
+    expect(_hasFocus(tester, startupFailureRepairKey), isTrue);
+    expect(find.text(t.startup.failedBodyRepairable), findsOneWidget);
+  });
+
+  testWidgets('retry leads when no repair can address the failure', (tester) async {
+    await _pumpView(tester, restartRequired: false, repairable: false);
+
+    // A locked database or a denied directory can genuinely change between
+    // attempts, so Retry keeps both the primary styling and the focus there.
+    expect(find.byKey(startupFailureRepairKey), findsNothing);
+    expect(_isPrimary(tester, startupBootstrapRetryKey), isTrue);
+    await tester.pump();
+    expect(_hasFocus(tester, startupBootstrapRetryKey), isTrue);
+    expect(find.text(t.startup.failedBody), findsOneWidget);
   });
 
   testWidgets('a pending restart withdraws every action that would touch the store', (tester) async {

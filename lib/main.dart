@@ -85,6 +85,7 @@ import 'utils/android_exit_diagnostics.dart';
 import 'utils/storage_failure.dart';
 import 'services/base_shared_preferences_service.dart';
 import 'services/prefs_recovery.dart';
+import 'services/sensitive_prefs.dart';
 import 'services/startup_diagnostics.dart';
 import 'utils/dialogs.dart';
 import 'widgets/dialog_action_button.dart';
@@ -432,16 +433,21 @@ Future<StartupRepairResult> repairStartupStorage(
   final unreadableKey = cause is UnreadableSensitivePreferenceException ? cause.key : null;
   final reopenSafe = cause is! CorruptPreferenceStoreException || cause.reopenSafe;
 
-  // Name the cost before touching anything. A salvaged vault key keeps servers
-  // and profiles signed in because those tokens are ciphertext in the
-  // database; tracker and Seerr sessions are plaintext preference entries and
-  // can still be lost, so neither branch promises more than it can deliver.
+  // Name the real cost before touching anything, not the usual one. Servers
+  // and profiles survive a repair only because their tokens are ciphertext in
+  // the database and the key that decrypts them lives in the store — so a
+  // store the key cannot be read out of signs the user out of everything. An
+  // all-zero file is exactly that case (#1732), and telling them their
+  // sign-ins are safe would be a promise the outcome dialog then contradicts.
+  final signInsSurvive = unreadableKey != null
+      ? unreadableKey != credentialVaultKeyPref
+      : (await PrefsRecovery.previewSalvage()).vaultKey != null;
+  if (!context.mounted) return StartupRepairResult.none;
+
   final confirmed = await showConfirmDialog(
     context,
     title: t.startup.repairTitle,
-    message: unreadableKey != null
-        ? '${t.startup.repairBodyOneCredential}\n\n${t.startup.repairBodySessionsAtRisk}'
-        : '${t.startup.repairBodyCommon}\n\n${t.startup.repairBodySessionsAtRisk}',
+    message: repairConsentMessage(oneCredential: unreadableKey != null, signInsSurvive: signInsSurvive),
     confirmText: t.startup.repairConfirm,
     isDestructive: true,
   );
@@ -457,11 +463,41 @@ Future<StartupRepairResult> repairStartupStorage(
   return result;
 }
 
-/// Reports a completed repair, including the credential-bearing backup.
+/// The consent dialog's body: what is being repaired, then what it costs.
+///
+/// Separated from [repairStartupStorage] because the two halves fail
+/// differently. Deciding whether the sign-ins survive is I/O against a
+/// damaged file; deciding what to *tell* the user about it is a promise, and
+/// #1732 is what happens when the promise is written once, optimistically,
+/// for a case that does not always hold.
+///
+/// [signInsSurvive] covers servers and profiles only. Their tokens are
+/// ciphertext in the database, so they live or die with the vault key —
+/// which is exactly why that one value decides this sentence.
+///
+/// Tracker and Seerr sessions are plaintext preference entries, salvaged and
+/// reseeded one by one and untouched entirely by the single-credential
+/// repair. They therefore do not follow the vault key in either direction,
+/// and get one cautious sentence in both branches rather than a promise
+/// borrowed from a value that does not govern them.
+@visibleForTesting
+String repairConsentMessage({required bool oneCredential, required bool signInsSurvive}) => [
+  oneCredential ? t.startup.repairBodyOneCredential : t.startup.repairBodyCommon,
+  signInsSurvive ? t.startup.repairBodySignInsKept : t.startup.repairBodySignInsLost,
+  t.startup.repairBodySessionsUncertain,
+].join('\n\n');
+
+/// Reports a completed repair, including the retained copy of the damaged
+/// store.
 ///
 /// The backup path is shown so the user can find and delete it, never so it
-/// can be attached to a report: it holds the credential-vault key, tracker
-/// refresh tokens and Seerr cookies in plaintext.
+/// can be attached to a report: it can hold the credential-vault key, tracker
+/// refresh tokens and Seerr cookies in plaintext. The warning is suppressed
+/// only when the quarantined *bytes* prove there is nothing in them — an
+/// all-zero file (#1732) — never on the strength of what the salvage managed
+/// to recover, which says nothing about what is still in the file. A warning
+/// on a file of zeros is the one that teaches users to ignore the warning
+/// that matters.
 @visibleForTesting
 Future<void> showRepairOutcomeDialog(
   BuildContext context,
@@ -492,8 +528,10 @@ Future<void> showRepairOutcomeDialog(
                 Text(t.startup.backupTitle, style: Theme.of(dialogContext).textTheme.titleSmall),
                 const SizedBox(height: 4),
                 SelectableText(backupPath, style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(t.startup.backupWarning, style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+                if (outcome.backupHoldsCredentials) ...[
+                  const SizedBox(height: 4),
+                  Text(t.startup.backupWarning, style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+                ],
                 const SizedBox(height: 8),
                 DialogActionButton(
                   label: t.startup.deleteBackup,
