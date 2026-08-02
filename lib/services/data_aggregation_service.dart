@@ -68,6 +68,19 @@ List<MediaItem> _withoutHiddenLibraries(List<MediaItem> items, Set<String>? hidd
   }).toList();
 }
 
+/// The server-local library ids [serverId] owns within [hiddenLibraryKeys],
+/// which hold cross-server `serverId:libraryId` global keys. Backends that
+/// cannot attribute a search hit to a library need these to scope the request.
+Set<String> _hiddenLibraryIdsOn(String serverId, Set<String>? hiddenLibraryKeys) {
+  if (hiddenLibraryKeys == null || hiddenLibraryKeys.isEmpty) return const {};
+  final ids = <String>{};
+  for (final key in hiddenLibraryKeys) {
+    final parsed = parseGlobalKey(key);
+    if (parsed != null && parsed.serverId == serverId) ids.add(parsed.ratingKey);
+  }
+  return ids;
+}
+
 /// Cross-server aggregation: fans calls out to every online client and
 /// merges the results. Single-server operations now go through the
 /// [MediaServerClient] interface directly (resolved via
@@ -581,7 +594,12 @@ class DataAggregationService {
       failureMessage: (serverId) => 'Search failed on $serverId',
       fetch: (serverId, client) async {
         final stopwatch = Stopwatch()..start();
-        final items = await client.searchItems(query, limit: fetchLimit, abort: abort);
+        final items = await client.searchItems(
+          query,
+          limit: fetchLimit,
+          abort: abort,
+          excludedLibraryIds: _hiddenLibraryIdsOn(serverId, hiddenLibraryKeys),
+        );
         appLogger.i(
           'Search completed on $serverId in ${stopwatch.elapsedMilliseconds}ms: '
           '${items.length} results ${_searchKindCounts(items)}',

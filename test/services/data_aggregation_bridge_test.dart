@@ -54,6 +54,7 @@ class _LibrariesClient implements MediaServerClient {
   final List<MediaLibrary> libraries;
   final Object? searchError;
   final List<MediaItem> searchResults;
+  Set<String>? lastExcludedLibraryIds;
 
   @override
   Future<List<MediaLibrary>> fetchLibraries() async {
@@ -62,7 +63,13 @@ class _LibrariesClient implements MediaServerClient {
   }
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort}) async {
+  Future<List<MediaItem>> searchItems(
+    String query, {
+    int limit = 100,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
+    lastExcludedLibraryIds = excludedLibraryIds;
     abort?.throwIfAborted();
     if (searchError != null) throw searchError!;
     return searchResults;
@@ -240,6 +247,29 @@ void main() {
       final result = await service.searchAcrossServers('Target', limit: 1, hiddenLibraryKeys: {'plex:2'});
 
       expect(result.items.map((item) => item.id), ['visible-1']);
+    });
+
+    test('each server is told only about its own hidden libraries', () async {
+      // Global keys are cross-server; a backend that scopes its search needs
+      // the bare library ids it actually owns, and none of its neighbour's.
+      final alpha = _LibrariesClient(ServerId('alpha'));
+      final beta = _LibrariesClient(ServerId('beta'));
+      manager.debugRegisterClientForTesting(alpha);
+      manager.debugRegisterClientForTesting(beta);
+
+      await service.searchAcrossServers('Target', hiddenLibraryKeys: {'alpha:1', 'alpha:9', 'beta:1'});
+
+      expect(alpha.lastExcludedLibraryIds, {'1', '9'});
+      expect(beta.lastExcludedLibraryIds, {'1'});
+    });
+
+    test('no hidden libraries passes an empty exclusion set', () async {
+      final client = _LibrariesClient(ServerId('alpha'));
+      manager.debugRegisterClientForTesting(client);
+
+      await service.searchAcrossServers('Target');
+
+      expect(client.lastExcludedLibraryIds, isEmpty);
     });
 
     test('searchAcrossServers overfetches and ranks before trimming across backends', () async {

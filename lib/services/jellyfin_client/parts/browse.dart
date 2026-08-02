@@ -73,6 +73,10 @@ const _browseFields = 'RecursiveItemCount,ChildCount,UserData,PremiereDate,Origi
 /// queries because it is the heaviest item field Jellyfin returns.
 const _episodeRowFields = '$_browseFields,MediaSources';
 
+/// Media types global search surfaces. Episodes are included so a user can
+/// find a single episode by name.
+const _searchItemTypes = 'Movie,Series,Episode,MusicAlbum,Audio';
+
 /// Folder-tree field set for MEDIA children. The tree renders
 /// title/thumb/watch state plus default dto fields (year, runtime, ratings);
 /// it deliberately skips `RecursiveItemCount`/`ChildCount` — per-item COUNT
@@ -197,9 +201,30 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   // endpoints. We mirror that exactly so requests hash the same way against
   // proxy rules and rate limiters as a stock Jellyfin app.
 
+  /// Views as of the last load, reused by scoped search.
+  ///
+  /// Scoped search runs on every debounced keystroke and `/Views` sits
+  /// serially in front of its per-library legs, so re-fetching it each pass is
+  /// pure added latency. `LibrariesProvider` loads libraries before the content
+  /// tabs refresh (main_screen `_primeOnlineServices` awaits `loadLibraries()`),
+  /// so this is already warm by the time the user can type, and every later
+  /// load replaces it — search can never be working from a staler library list
+  /// than the one on screen. Dies with the client, like Plex's
+  /// `_providerLibraries`.
+  List<MediaLibrary>? _loadedLibraryViews;
+
   @override
   Future<List<MediaLibrary>> fetchLibraries() async {
-    final response = await _http.get('/Users/${_segment(connection.userId)}/Views');
+    final libraries = await _fetchLibraries();
+    _loadedLibraryViews = libraries;
+    return libraries;
+  }
+
+  /// [abort] tears the view fetch down with the pass that owns it — a
+  /// superseded search must not leave `/Views` running.
+  Future<List<MediaLibrary>> _fetchLibraries({AbortController? abort}) async {
+    final response = await _http.get('/Users/${_segment(connection.userId)}/Views', abort: abort);
+    abort?.throwIfAborted();
     throwIfHttpError(response);
     final items = _itemsArray(response.data);
     // Jellyfin surfaces the user's collection (BoxSet) and playlist roots as
@@ -1084,30 +1109,163 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort}) async {
-    // Artists come from the dedicated /Artists endpoint: `/Items?SearchTerm=`
-    // only matches folder-derived MusicArtist rows (under folder names), so
-    // tag-only artists would never appear in search. The artists leg is
-    // best-effort — a music-endpoint hiccup shouldn't sink video search.
+  Future<List<MediaItem>> searchItems(
+    String query, {
+    int limit = 100,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
+    if (excludedLibraryIds.isEmpty) return _searchEverywhere(query, limit: limit, abort: abort);
+
+    // Jellyfin search rows cannot be attributed to a library after the fact:
+    // there is no library field, and `ParentId` (which this request does not
+    // even ask for) resolves to a season or physical folder, never the owning
+    // CollectionFolder. A hidden library can therefore only be excluded by
+    // scoping the request, one per visible library.
+    var libraries = _loadedLibraryViews;
+    if (libraries == null) {
+      libraries = await _fetchLibraries(abort: abort);
+      // `??=`, not `=`: an explicit library load that started later can finish
+      // first, and this older response must not clobber its newer views.
+      _loadedLibraryViews ??= libraries;
+    }
+    abort?.throwIfAborted();
+    final visible = [
+      for (final library in libraries)
+        if (!excludedLibraryIds.contains(library.id)) library,
+    ];
+    // Nothing hidden actually belongs to this server — keep the single query.
+    if (visible.length == libraries.length) return _searchEverywhere(query, limit: limit, abort: abort);
+    if (visible.isEmpty) return const [];
+
+    // Each leg keeps the full candidate budget. Splitting it would cap a
+    // library that holds every match (two visible libraries, 100 matches in
+    // one, would return 50), and the caller's pre-ranking budget guarantee is
+    // worth more than the payload saved.
+    const concurrency = 3;
+    // Legs can overlap: `/Artists` resolves parentId to an *ancestor* filter,
+    // so an artist with tracks in two visible music libraries comes back from
+    // both. Ranking does not deduplicate, so the first hit wins here — the
+    // same merge the Plex search does across its supplemental legs.
+    final deduplicated = <String, MediaItem>{};
+    for (var start = 0; start < visible.length; start += concurrency) {
+      abort?.throwIfAborted();
+      final batch = visible.skip(start).take(concurrency);
+      final results = await Future.wait([
+        for (final library in batch) _searchLibrary(library, query, limit: limit, abort: abort),
+      ]);
+      for (final items in results) {
+        for (final item in items) {
+          deduplicated.putIfAbsent(item.id, () => item);
+        }
+      }
+    }
+    return deduplicated.values.toList();
+  }
+
+  /// Unscoped search: one request across every library the user can see.
+  ///
+  /// Artists come from the dedicated /Artists endpoint: `/Items?SearchTerm=`
+  /// only matches folder-derived MusicArtist rows (under folder names), so
+  /// tag-only artists would never appear in search. The artists leg is
+  /// best-effort — a music-endpoint hiccup shouldn't sink video search.
+  Future<List<MediaItem>> _searchEverywhere(String query, {required int limit, AbortController? abort}) async {
     final results = await Future.wait([
       _fetchItemsArray('/Items', {
         'userId': connection.userId,
         'SearchTerm': query,
         'Recursive': 'true',
         'Limit': limit.toString(),
-        'IncludeItemTypes': 'Movie,Series,Episode,MusicAlbum,Audio',
+        'IncludeItemTypes': _searchItemTypes,
         'Fields': _browseFields,
+        // Search ranks and trims client-side and never reads the total, which
+        // the server pays for separately on a broad term.
+        'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }, abort: abort),
       _safeFetchItemsArray('/Artists', {
         'userId': connection.userId,
         'searchTerm': query,
         'Limit': limit.toString(),
+        'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }, abort: abort),
     ]);
     abort?.throwIfAborted();
     return _mapItems([...results.first, ...results[1]]);
+  }
+
+  /// Search a single library. Results are stamped with it, which is the only
+  /// way a Jellyfin search hit ever learns which library it came from.
+  Future<List<MediaItem>> _searchLibrary(
+    MediaLibrary library,
+    String query, {
+    required int limit,
+    AbortController? abort,
+  }) async {
+    // MusicAlbum is a folder DTO: requesting UserData or count fields makes
+    // small servers compute recursive unplayed/count data per album (#1552).
+    // Keep albums and Audio leaves on separate requests so albums can disable
+    // UserData while tracks retain their cheap direct play-state lookup.
+    final itemFutures = library.kind == MediaKind.artist
+        ? <Future<List<Map<String, dynamic>>>>[
+            _fetchItemsArray('/Items', {
+              'userId': connection.userId,
+              'SearchTerm': query,
+              'Recursive': 'true',
+              'Limit': limit.toString(),
+              'IncludeItemTypes': 'MusicAlbum',
+              'ParentId': library.id,
+              'Fields': _musicAlbumRowFields,
+              'EnableUserData': 'false',
+              'EnableTotalRecordCount': 'false',
+              ...jellyfinImageQueryParameters,
+            }, abort: abort),
+            _fetchItemsArray('/Items', {
+              'userId': connection.userId,
+              'SearchTerm': query,
+              'Recursive': 'true',
+              'Limit': limit.toString(),
+              'IncludeItemTypes': 'Audio',
+              'ParentId': library.id,
+              'Fields': _musicTrackRowFields,
+              'EnableTotalRecordCount': 'false',
+              ...jellyfinImageQueryParameters,
+            }, abort: abort),
+          ]
+        : <Future<List<Map<String, dynamic>>>>[
+            _fetchItemsArray('/Items', {
+              'userId': connection.userId,
+              'SearchTerm': query,
+              'Recursive': 'true',
+              'Limit': limit.toString(),
+              'IncludeItemTypes': _searchItemTypes,
+              'ParentId': library.id,
+              'Fields': _browseFields,
+              'EnableTotalRecordCount': 'false',
+              ...jellyfinImageQueryParameters,
+            }, abort: abort),
+          ];
+    // `/Artists` takes parentId and resolves it to an ancestor filter, but
+    // only a music library can contain any — asking elsewhere just buys an
+    // empty response.
+    final artistsFuture = library.kind == MediaKind.artist
+        ? _safeFetchItemsArray('/Artists', {
+            'userId': connection.userId,
+            'searchTerm': query,
+            'Limit': limit.toString(),
+            'parentId': library.id,
+            'EnableTotalRecordCount': 'false',
+            ...jellyfinImageQueryParameters,
+          }, abort: abort)
+        : Future<List<Map<String, dynamic>>>.value(const []);
+
+    final results = await Future.wait([...itemFutures, artistsFuture]);
+    abort?.throwIfAborted();
+    return [
+      for (final item in _mapItems([for (final result in results) ...result]))
+        item.copyWith(libraryId: library.id, libraryTitle: library.title),
+    ];
   }
 
   /// Jellyfin removed `anyProviderIdEquals` (silently ignored on 10.11.10, so

@@ -3607,8 +3607,16 @@ class PlexClient
     return getFirstCharacters(libraryId, filters: filters);
   }
 
+  /// [excludedLibraryIds] is unused: `/library/search` has no section-scoping
+  /// parameter, and every row carries its `librarySectionID`, so the caller
+  /// filters hidden libraries out of the mapped results.
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort}) async {
+  Future<List<MediaItem>> searchItems(
+    String query, {
+    int limit = 100,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
     final results = await _search(query, limit: limit, abort: abort);
     return results.map((m) => PlexMappers.mediaItem(m)).toList();
   }

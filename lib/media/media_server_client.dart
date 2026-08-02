@@ -272,7 +272,18 @@ abstract class MediaServerClient {
   /// candidate budget; a backend may supplement omitted media categories and
   /// return more candidates for cross-server ranking. [abort] cancels every
   /// backend request owned by this search pass.
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100, AbortController? abort});
+  ///
+  /// [excludedLibraryIds] names server-local libraries the user has hidden. A
+  /// backend whose search rows carry a library id may ignore it, because the
+  /// caller drops those rows by id. A backend whose rows cannot be attributed
+  /// to a library MUST scope the request server-side instead — the caller has
+  /// nothing to filter on.
+  Future<List<MediaItem>> searchItems(
+    String query, {
+    int limit = 100,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  });
 
   /// Items the user has started but not finished. Plex calls this "On Deck"
   /// internally; the neutral name matches the Continue Watching UI surface.
