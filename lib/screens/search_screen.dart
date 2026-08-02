@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +12,7 @@ import '../media/media_item.dart';
 import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
+import '../providers/hidden_libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
@@ -38,10 +41,45 @@ class _SearchScreenState extends State<SearchScreen>
   AbortController? _activeSearchAbort;
   ({String query, SearchAggregationResult result})? _pendingSearchOutcome;
 
+  HiddenLibrariesProvider? _hiddenLibraries;
+  Set<String> _lastSeenHiddenKeys = const {};
+
   @override
   void initState() {
     super.initState();
     FocusUtils.requestFocusAfterBuild(this, searchFocusNode);
+    unawaited(_bindHiddenLibraries());
+  }
+
+  @override
+  void dispose() {
+    _hiddenLibraries?.removeListener(_onHiddenLibrariesChanged);
+    super.dispose();
+  }
+
+  /// Re-run the visible query when a library is hidden or unhidden while
+  /// results are on screen. The listener is attached only after the provider
+  /// has hydrated, so its initial load notification cannot race the first
+  /// query — which awaits that same hydration — into running twice.
+  Future<void> _bindHiddenLibraries() async {
+    final hiddenLibraries = context.read<HiddenLibrariesProvider>();
+    await hiddenLibraries.ensureInitialized();
+    if (!mounted) return;
+    _lastSeenHiddenKeys = Set.of(hiddenLibraries.hiddenLibraryKeys);
+    _hiddenLibraries = hiddenLibraries..addListener(_onHiddenLibrariesChanged);
+  }
+
+  void _onHiddenLibrariesChanged() {
+    final hiddenLibraries = _hiddenLibraries;
+    if (hiddenLibraries == null || !mounted) return;
+    final currentKeys = hiddenLibraries.hiddenLibraryKeys;
+    if (currentKeys.length == _lastSeenHiddenKeys.length && currentKeys.containsAll(_lastSeenHiddenKeys)) {
+      return;
+    }
+    _lastSeenHiddenKeys = Set.of(currentKeys);
+    final query = searchController.text.trim();
+    if (query.isEmpty || !hasSearched) return;
+    unawaited(runSearch(query));
   }
 
   @override
@@ -54,10 +92,21 @@ class _SearchScreenState extends State<SearchScreen>
       throw const _SearchUnavailableException();
     }
 
+    // Hidden-library keys must be hydrated before the first query, or a cold
+    // start would filter nothing. Read before any await: the profile subtree
+    // can be torn down mid-search.
+    final hiddenLibraries = context.read<HiddenLibrariesProvider>();
+    await hiddenLibraries.ensureInitialized();
+    if (!mounted) return const [];
+
     final abort = AbortController();
     _activeSearchAbort = abort;
     try {
-      final result = await multiServerProvider.aggregationService.searchAcrossServers(query, abort: abort);
+      final result = await multiServerProvider.aggregationService.searchAcrossServers(
+        query,
+        hiddenLibraryKeys: hiddenLibraries.hiddenLibraryKeys,
+        abort: abort,
+      );
       abort.throwIfAborted();
       if (result.succeededServerIds.isEmpty && result.failedServerIds.isNotEmpty) {
         throw const _SearchUnavailableException();

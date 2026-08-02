@@ -57,6 +57,50 @@ void main() {
     expect(captured.single.queryParameters['searchTypes'], 'movies,tv,music');
   });
 
+  test('search rows carry their library so hidden libraries can be filtered', () async {
+    final client = makeClient((request) async {
+      if (request.url.path != '/library/search') return http.Response('unexpected request', 500);
+      return _json({
+        'MediaContainer': {
+          'SearchResult': [
+            {
+              'score': 90,
+              'Metadata': {
+                'ratingKey': 'movie-1',
+                'type': 'movie',
+                'title': 'The Movie',
+                'librarySectionID': 2,
+                'librarySectionTitle': 'Movies',
+              },
+            },
+            // Older/edge responses name the section only by key.
+            {
+              'score': 80,
+              'Metadata': {
+                'ratingKey': 'show-1',
+                'type': 'show',
+                'title': 'The Show',
+                'librarySectionKey': '/library/sections/7',
+              },
+            },
+            // Shared/external media has no local section at all.
+            {
+              'score': 70,
+              'Metadata': {'ratingKey': 'shared-1', 'type': 'movie', 'title': 'The Shared Movie'},
+            },
+          ],
+        },
+      });
+    });
+    addTearDown(client.close);
+
+    final results = await client.searchItems('the');
+
+    expect(results.map((item) => item.id), ['movie-1', 'show-1', 'shared-1']);
+    expect(results.map((item) => item.libraryId), ['2', '7', null]);
+    expect(results.map((item) => item.libraryGlobalKey), ['plex-1:2', 'plex-1:7', null]);
+  });
+
   test('saturated mixed search supplements omitted media categories and deduplicates results', () async {
     final captured = <Uri>[];
     final primaryResults = <Map<String, Object>>[

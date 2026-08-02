@@ -54,6 +54,20 @@ Map<String, int> _searchKindCounts(Iterable<MediaItem> items) {
   return counts;
 }
 
+/// Drop items belonging to a hidden library.
+///
+/// Items the backend could not attribute to a library ([MediaItem.libraryGlobalKey]
+/// is null) are kept: Plex search and `/library/shared/all` return shared and
+/// external rows that have no local section, and those are not something the
+/// user hid.
+List<MediaItem> _withoutHiddenLibraries(List<MediaItem> items, Set<String>? hiddenLibraryKeys) {
+  if (hiddenLibraryKeys == null || hiddenLibraryKeys.isEmpty) return items;
+  return items.where((item) {
+    final libraryKey = item.libraryGlobalKey;
+    return libraryKey == null || !hiddenLibraryKeys.contains(libraryKey);
+  }).toList();
+}
+
 /// Cross-server aggregation: fans calls out to every online client and
 /// merges the results. Single-server operations now go through the
 /// [MediaServerClient] interface directly (resolved via
@@ -172,17 +186,8 @@ class DataAggregationService {
       failureMessage: (serverId) => 'Failed on-deck fetch from $serverId',
       fetch: (_, client) => client.fetchContinueWatching(count: limit),
     );
-    final allOnDeck = fetched.items;
-
     // Filter out items from hidden libraries
-    List<MediaItem> filteredOnDeck = allOnDeck;
-    if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
-      filteredOnDeck = allOnDeck.where((item) {
-        if (item.libraryId == null || item.serverId == null) return true;
-        final globalKey = buildGlobalKey(ServerId(item.serverId!), item.libraryId!);
-        return !hiddenLibraryKeys.contains(globalKey);
-      }).toList();
-    }
+    var filteredOnDeck = _withoutHiddenLibraries(fetched.items, hiddenLibraryKeys);
 
     // Sort by most recently viewed, falling back to addedAt for unwatched items.
     // Same key as JellyfinClient's continue-watching merge (MediaItem.recencySortKey)
@@ -538,7 +543,16 @@ class DataAggregationService {
 
   /// Search across all online servers (Plex + Jellyfin). Per-server outcomes
   /// distinguish authoritative empty results from failed or cancelled legs.
-  Future<SearchAggregationResult> searchAcrossServers(String query, {int? limit, AbortController? abort}) async {
+  ///
+  /// [hiddenLibraryKeys] excludes results the user has hidden, matching every
+  /// other aggregated surface. Backends whose search rows carry no library id
+  /// cannot be filtered here; they must scope the search server-side instead.
+  Future<SearchAggregationResult> searchAcrossServers(
+    String query, {
+    int? limit,
+    Set<String>? hiddenLibraryKeys,
+    AbortController? abort,
+  }) async {
     if (query.trim().isEmpty) {
       return (
         items: const <MediaItem>[],
@@ -576,7 +590,10 @@ class DataAggregationService {
       },
     );
     abort?.throwIfAborted();
-    final items = rankMediaSearchResults(fetched.items, query, limit: resultLimit);
+    // Before ranking, so hidden results cannot spend the `resultLimit` budget
+    // and silently shrink what the user sees.
+    final visible = _withoutHiddenLibraries(fetched.items, hiddenLibraryKeys);
+    final items = rankMediaSearchResults(visible, query, limit: resultLimit);
 
     appLogger.i(
       'Search aggregation completed: ${items.length} results '

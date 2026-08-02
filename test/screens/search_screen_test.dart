@@ -16,9 +16,11 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
+import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/search_screen.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -42,6 +44,10 @@ void main() {
     _resetGlobalTestState();
     resetSharedPreferencesForTest();
     await SettingsService.getInstance();
+    // HiddenLibrariesProvider resolves this lazily; the real SharedPreferences
+    // round trip never completes inside a testWidgets fake-async zone, so warm
+    // the singleton here.
+    await StorageService.getInstance();
   });
 
   tearDown(_resetGlobalTestState);
@@ -57,9 +63,14 @@ void main() {
       serverName: 'Server',
     );
 
+    final hiddenLibraries = HiddenLibrariesProvider();
+    addTearDown(hiddenLibraries.dispose);
     await tester.pumpWidget(
       TranslationProvider(
-        child: MaterialApp(home: SearchScreen(key: key)),
+        child: ChangeNotifierProvider<HiddenLibrariesProvider>.value(
+          value: hiddenLibraries,
+          child: MaterialApp(home: SearchScreen(key: key)),
+        ),
       ),
     );
 
@@ -220,6 +231,53 @@ void main() {
     expect(find.text(t.messages.searchPartialResults), findsOneWidget);
   });
 
+  testWidgets('results from a hidden library never reach the list', (tester) async {
+    final hiddenLibraries = HiddenLibrariesProvider();
+    addTearDown(hiddenLibraries.dispose);
+    await hiddenLibraries.ensureInitialized();
+    await hiddenLibraries.hideLibrary('server_1:2');
+
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      hiddenLibraries: hiddenLibraries,
+      items: _twoLibraryMovies(),
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    // One request per user action: hydrating the hidden keys must not race the
+    // first query into running twice.
+    expect(client.queries, ['movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text('Movie 2'), findsNothing);
+  });
+
+  testWidgets('hiding a library while results are shown re-runs the query', (tester) async {
+    final hiddenLibraries = HiddenLibrariesProvider();
+    addTearDown(hiddenLibraries.dispose);
+
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      hiddenLibraries: hiddenLibraries,
+      items: _twoLibraryMovies(),
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+    expect(client.queries, ['movie']);
+    expect(find.text('Movie 2'), findsOneWidget);
+
+    await hiddenLibraries.hideLibrary('server_1:2');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie', 'movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text('Movie 2'), findsNothing);
+  });
+
   testWidgets('all server failures render the failed state instead of empty results', (tester) async {
     final (client, key) = await _pumpTvSearchScreen(
       tester,
@@ -373,6 +431,7 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   bool registerClient = true,
   Object? searchError,
   List<_FakeMediaServerClient> additionalClients = const [],
+  HiddenLibrariesProvider? hiddenLibraries,
 }) async {
   TvDetectionService.debugSetAppleTVOverride(true);
   tester.view.devicePixelRatio = 1.0;
@@ -405,11 +464,17 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   final provider = testMultiServerProvider(manager);
   addTearDown(provider.dispose);
 
+  final hidden = hiddenLibraries ?? HiddenLibrariesProvider();
+  if (hiddenLibraries == null) addTearDown(hidden.dispose);
+
   final key = GlobalKey<State<SearchScreen>>();
   await tester.pumpWidget(
     TranslationProvider(
-      child: ChangeNotifierProvider<MultiServerProvider>.value(
-        value: provider,
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+          ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hidden),
+        ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: SearchScreen(key: key),
@@ -425,6 +490,29 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   });
   return (client, key);
 }
+
+/// Two movies on the same server in different libraries, so a test can hide
+/// one library and assert only the other survives.
+List<MediaItem> _twoLibraryMovies() => [
+  testMediaItem(
+    id: 'movie_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: 'Movie 1',
+    serverId: 'server_1',
+    serverName: 'Server',
+    libraryId: '1',
+  ),
+  testMediaItem(
+    id: 'movie_2',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: 'Movie 2',
+    serverId: 'server_1',
+    serverName: 'Server',
+    libraryId: '2',
+  ),
+];
 
 TextEditingController _searchController(WidgetTester tester) {
   return tester.widget<FocusableTextField>(find.byType(FocusableTextField)).controller;

@@ -178,6 +178,70 @@ void main() {
       expect(result.failedServerIds, {'failed'});
     });
 
+    test('searchAcrossServers drops hidden-library results and keeps unattributed ones', () async {
+      final visible = testMediaItem(
+        id: 'visible-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Target',
+        serverId: 'plex',
+        libraryId: '1',
+      );
+      final hidden = testMediaItem(
+        id: 'hidden-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Target',
+        serverId: 'plex',
+        libraryId: '2',
+      );
+      // Plex search asks for external media, and shared rows carry no local
+      // section. The user cannot have hidden a library that isn't theirs, so
+      // an unattributed row must survive the filter.
+      final unattributed = testMediaItem(
+        id: 'shared-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Target',
+        serverId: 'plex',
+      );
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(ServerId('plex'), searchResults: [visible, hidden, unattributed]),
+      );
+
+      final result = await service.searchAcrossServers('Target', hiddenLibraryKeys: {'plex:2'});
+
+      expect(result.items.map((item) => item.id), unorderedEquals(['visible-1', 'shared-1']));
+      expect(result.succeededServerIds, {'plex'});
+    });
+
+    test('hidden-library results are dropped before the ranking limit is spent', () async {
+      // The hidden row is the exact-title match, so it outranks the visible
+      // one. Filtering after ranking would let it consume the single slot and
+      // return nothing at all.
+      final hidden = testMediaItem(
+        id: 'hidden-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Target',
+        serverId: 'plex',
+        libraryId: '2',
+      );
+      final visible = testMediaItem(
+        id: 'visible-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Target Sequel',
+        serverId: 'plex',
+        libraryId: '1',
+      );
+      manager.debugRegisterClientForTesting(_LibrariesClient(ServerId('plex'), searchResults: [hidden, visible]));
+
+      final result = await service.searchAcrossServers('Target', limit: 1, hiddenLibraryKeys: {'plex:2'});
+
+      expect(result.items.map((item) => item.id), ['visible-1']);
+    });
+
     test('searchAcrossServers overfetches and ranks before trimming across backends', () async {
       final plexRequests = <Uri>[];
       final jellyfinRequests = <Uri>[];

@@ -1538,7 +1538,11 @@ class PlexClient
         const allowedTypes = {'movie', 'show', 'artist', 'album', 'track'};
         if (!allowedTypes.contains(type)) continue;
 
-        results.add(_createTaggedMetadata(metadata));
+        // Library-aware: search rows normally carry `librarySectionID`, but the
+        // tolerant resolver also accepts the `librarySectionKey` /
+        // `targetLibrarySectionID` forms. Without a section id the item cannot
+        // be matched against the user's hidden libraries.
+        results.add(_createTaggedMetadataWithLibrary(metadata));
       } catch (e) {
         appLogger.w('Failed to parse search result', error: e);
       }
