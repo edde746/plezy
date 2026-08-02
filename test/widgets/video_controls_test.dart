@@ -362,6 +362,56 @@ void main() {
         );
       }
     });
+
+    test('surrenders bare Backspace to a focused text editor', () {
+      final event = _navigationKeyDown(LogicalKeyboardKey.backspace, ui.KeyEventDeviceType.keyboard);
+
+      expect(
+        classifyPlayerNavigationKey(event, isAppleTV: false, hasModifiers: false, textEditingActive: true),
+        PlayerNavigationKey.none,
+      );
+      expect(
+        classifyPlayerNavigationKey(event, isAppleTV: false, hasModifiers: false, textEditingActive: false),
+        PlayerNavigationKey.back,
+      );
+    });
+
+    test('surrenders bare Home to a focused text editor but never browser Home', () {
+      expect(
+        classifyPlayerNavigationKey(
+          _navigationKeyDown(LogicalKeyboardKey.home, ui.KeyEventDeviceType.keyboard),
+          isAppleTV: false,
+          hasModifiers: false,
+          textEditingActive: true,
+        ),
+        PlayerNavigationKey.none,
+      );
+      // browserHome has no caret role, so an editor never takes it.
+      expect(
+        classifyPlayerNavigationKey(
+          _navigationKeyDown(LogicalKeyboardKey.browserHome, ui.KeyEventDeviceType.keyboard),
+          isAppleTV: false,
+          hasModifiers: false,
+          textEditingActive: true,
+        ),
+        PlayerNavigationKey.home,
+      );
+    });
+
+    test('keeps simulated remote Home navigating while a text editor has focus', () {
+      for (final deviceType in [ui.KeyEventDeviceType.directionalPad, ui.KeyEventDeviceType.gamepad]) {
+        expect(
+          classifyPlayerNavigationKey(
+            _navigationKeyDown(LogicalKeyboardKey.home, deviceType),
+            isAppleTV: false,
+            hasModifiers: false,
+            textEditingActive: true,
+          ),
+          PlayerNavigationKey.home,
+          reason: 'a synthesized remote press has no caret to move',
+        );
+      }
+    });
   });
 
   group('handlePlayerNavigationKeyAction', () {

@@ -466,6 +466,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // key events never escape the video player route.
   late final FocusNode _screenFocusNode;
 
+  /// Key for a context below this screen's own [OverlaySheetHost]. The State's
+  /// context sits ABOVE the host, so resolving the controller with `context`
+  /// always misses it and the screen would walk its back pipeline (hide chrome,
+  /// then exit the player) while a sheet is still open (#1741).
+  final GlobalKey _overlayChildKey = GlobalKey();
+
+  BuildContext get _sheetContext => _overlayChildKey.currentContext ?? context;
+
   // VLC-style in-player toast controller (rate changes, backend switch, etc.).
   final PlayerToastController _toastController = PlayerToastController();
   bool _reclaimingFocus = false;
@@ -1454,7 +1462,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   void _handleScreenPlayerNavigation(PlayerNavigationKey navigationKey) {
     if (navigationKey != PlayerNavigationKey.home) {
-      final sheetController = OverlaySheetController.maybeOf(context);
+      final sheetController = OverlaySheetController.maybeOf(_sheetContext);
       if (sheetController?.isOpen ?? false) {
         sheetController!.pop();
         return;
@@ -1998,6 +2006,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _handleScreenPlayerNavigation(PlayerNavigationKey.back);
         },
         child: Builder(
+          key: _overlayChildKey,
           builder: (sheetContext) => _isPlayerInitialized && player != null
               ? _buildVideoPlayer(sheetContext)
               : (_playerInitializationError != null
