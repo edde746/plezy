@@ -89,10 +89,20 @@ class SeerrClient {
   // ---------- Discover / search ----------
 
   /// `/discover/movies` — popular movies.
-  Future<SeerrPage<SeerrMedia>> getPopularMovies({int page = 1}) => _mediaPage('/discover/movies', page, 'movie');
+  ///
+  /// Deliberately unlocalized. Overseerr and Jellyseerr bind this route's
+  /// `language` query parameter to `originalLanguage`, i.e. TMDB's
+  /// `with_original_language`, so sending the app locale narrows the shelf to
+  /// titles *originally made* in that language (#1763). The display language
+  /// here comes from the instance/user locale, which already wins over the
+  /// query value, so omitting it costs nothing.
+  Future<SeerrPage<SeerrMedia>> getPopularMovies({int page = 1}) =>
+      _mediaPage('/discover/movies', page, 'movie', localized: false);
 
-  /// `/discover/tv` — popular series.
-  Future<SeerrPage<SeerrMedia>> getPopularTv({int page = 1}) => _mediaPage('/discover/tv', page, 'tv');
+  /// `/discover/tv` — popular series. Unlocalized for the same reason as
+  /// [getPopularMovies].
+  Future<SeerrPage<SeerrMedia>> getPopularTv({int page = 1}) =>
+      _mediaPage('/discover/tv', page, 'tv', localized: false);
 
   Future<SeerrPage<SeerrMedia>> getUpcomingMovies({int page = 1}) =>
       _mediaPage('/discover/movies/upcoming', page, 'movie');
@@ -118,8 +128,16 @@ class SeerrClient {
   Future<SeerrPage<SeerrMedia>> getTvRecommendations(int tmdbId, {int page = 1}) =>
       _mediaPage('/tv/$tmdbId/recommendations', page, 'tv');
 
-  Future<SeerrPage<SeerrMedia>> _mediaPage(String path, int page, String? coerceMediaType) async {
-    final data = await _request('GET', path, query: {'page': page, 'language': _language});
+  /// [localized] adds the app locale as `language`. Only the two paged
+  /// discover routes opt out; everywhere else Seerr treats it as the display
+  /// language, which is what we want.
+  Future<SeerrPage<SeerrMedia>> _mediaPage(
+    String path,
+    int page,
+    String? coerceMediaType, {
+    bool localized = true,
+  }) async {
+    final data = await _request('GET', path, query: {'page': page, if (localized) 'language': _language});
     return _parseMediaPage(data, coerceMediaType);
   }
 
