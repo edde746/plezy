@@ -13,6 +13,7 @@ import '../widgets/focusable_media_card.dart';
 import '../widgets/media_card_sliver_layout.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/skeleton_media_card.dart';
+import '../widgets/system_bottom_inset.dart';
 
 /// Mixin that provides common focus navigation functionality for detail screens.
 /// Handles app bar focus, back navigation, scroll-to-top, and grid item focus management.
@@ -86,7 +87,10 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   /// host that defers route back to [handleBackNavigation], plus a Scaffold
   /// with a CustomScrollView bound as the primary scroll view. Callers build
   /// the slivers themselves (typically
-  /// `[appBar, ...header, ...buildStateSlivers(), grid]`).
+  /// `[appBar, ...header, ...buildStateSlivers(), grid]`); a trailing
+  /// [SliverSystemBottomInset] is appended so the last row clears the system
+  /// navigation bar. Screens that add their own trailing spacer (the music
+  /// detail screens reserve the floating mini-player) stack on top of it.
   Widget buildDetailScaffold({required List<Widget> slivers}) {
     return PrimaryScrollController(
       controller: scrollController,
@@ -100,7 +104,9 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
               Navigator.pop(context);
             }
           },
-          child: Scaffold(body: CustomScrollView(primary: true, slivers: slivers)),
+          child: Scaffold(
+            body: CustomScrollView(primary: true, slivers: [...slivers, const SliverSystemBottomInset()]),
+          ),
         ),
       ),
     );

@@ -12,6 +12,7 @@ import '../media/media_server_client.dart';
 import '../media/media_sort.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
+import '../widgets/system_bottom_inset.dart';
 import '../utils/app_logger.dart';
 import '../utils/continuation_pagination_coordinator.dart';
 import '../utils/error_message_utils.dart';
@@ -611,6 +612,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                     onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
                     onBack: handleBackFromContent,
                   ),
+                const SliverSystemBottomInset(),
               ],
             ),
           ),

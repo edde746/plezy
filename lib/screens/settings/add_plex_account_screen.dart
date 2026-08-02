@@ -138,7 +138,7 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
         SliverFillRemaining(
           hasScrollBody: false,
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: .fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 420),

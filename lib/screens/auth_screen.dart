@@ -263,7 +263,7 @@ class _AuthScreenState extends State<AuthScreen> {
         body: Center(
           child: Container(
             constraints: BoxConstraints(maxWidth: isDesktop ? 800 : 400),
-            padding: const EdgeInsets.all(24),
+            padding: .fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
             child: isDesktop
                 ? Row(
                     crossAxisAlignment: .center,

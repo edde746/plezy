@@ -36,6 +36,7 @@ import '../focusable_detail_screen_mixin.dart';
 import '../libraries/content_state_builder.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
 import '../../widgets/overlay_sheet.dart';
+import '../../widgets/system_bottom_inset.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -757,6 +758,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
               onBack: handleBackFromContent,
             ),
         ],
+        const SliverSystemBottomInset(),
       ],
     );
 

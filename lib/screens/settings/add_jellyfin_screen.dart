@@ -461,7 +461,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           SliverFillRemaining(
             hasScrollBody: false,
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: .fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
               child: Center(child: _buildQuickConnectPanel(theme)),
             ),
           )
