@@ -17,6 +17,7 @@ import '../tracker_http_client.dart';
 import '../tracker_session.dart';
 import 'trakt_constants.dart';
 import '../tracker_page.dart';
+import 'dart:io';
 
 /// HTTP wrapper for the Trakt REST API.
 ///
@@ -346,6 +347,9 @@ class TraktClient implements DisposableTrackerClient {
   Future<http.Response> _send(String method, String path, {Map<String, dynamic>? body}) async {
     final uri = Uri.parse('${TraktConstants.apiBase}$path');
     final headers = TraktConstants.headers(accessToken: _session.accessToken);
+
+    headers['Accept-Language'] = Platform.localeName.split('_')[0];
+
     return _http.sendJson(
       method,
       uri,

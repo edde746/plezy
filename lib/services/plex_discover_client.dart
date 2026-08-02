@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 import '../utils/json_utils.dart';
+import 'dart:io';
 
 /// Credentials for Plex's cloud Discover provider. The access token is scoped
 /// to the active Plex/Home profile; it must never be logged or persisted here.
@@ -337,6 +338,9 @@ class PlexDiscoverClient {
       'X-Plex-Client-Identifier': session.clientIdentifier,
       'X-Plex-Product': 'Plezy',
       'X-Plex-Version': '2',
+      'X-Plex-Language': Platform.localeName.split('_')[0],
+      'Accept-Language': Platform.localeName.split('_')[0],
+      // ---------------------------------------------
     };
     final request = switch (method) {
       'GET' => _http.get(uri, headers: headers),
