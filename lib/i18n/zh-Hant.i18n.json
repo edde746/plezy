@@ -64,7 +64,20 @@
     "loading": "載入中…",
     "fullscreen": "全螢幕",
     "exitFullscreen": "退出全螢幕",
-    "pressBackAgainToExit": "再按一次返回以退出"
+    "pressBackAgainToExit": "再按一次返回以退出",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "授權條款",
@@ -987,6 +1000,8 @@
     "repairConfirm": "",
     "repairSucceeded": "",
     "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
     "repairFailed": "",
     "repairKeptSignIns": "",
     "repairLostSignIns": "",
@@ -1129,18 +1144,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1178,17 +1191,6 @@
       "background": ""
     },
     "totalResults": {
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

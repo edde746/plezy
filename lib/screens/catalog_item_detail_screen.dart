@@ -19,6 +19,7 @@ import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_rating.dart';
 import '../models/catalog/catalog_cast_member.dart';
 import '../models/catalog/catalog_item.dart';
 import '../models/catalog/catalog_metadata.dart';
@@ -617,23 +618,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     CatalogCreditRole.composer => t.explore.creditRole.composer,
   };
 
-  static String? _ratingSourceLabel(String source) => switch (source) {
-    'critic' => t.explore.ratingSource.critic,
-    'audience' => t.explore.ratingSource.audience,
-    'imdb' => t.explore.ratingSource.imdb,
-    'tmdb' => t.explore.ratingSource.tmdb,
-    'rottenTomatoes' => t.explore.ratingSource.rottenTomatoes,
-    // Plex splits Rotten Tomatoes into its two panels, so both the provenance
-    // and the critic/audience distinction survive.
-    'rottenTomatoesCritic' => t.explore.ratingSource.rottenTomatoesCritic,
-    'rottenTomatoesAudience' => t.explore.ratingSource.rottenTomatoesAudience,
-    'simkl' => t.explore.ratingSource.simkl,
-    'mal' => t.explore.ratingSource.mal,
-    'anilist' => t.explore.ratingSource.anilist,
-    'trakt' => t.explore.ratingSource.trakt,
-    _ => null,
-  };
-
   static String _relationLabel(CatalogRelationType type) => switch (type) {
     CatalogRelationType.prequel => t.explore.relation.prequel,
     CatalogRelationType.sequel => t.explore.relation.sequel,
@@ -795,9 +779,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   Widget? _buildRatingsSection(ThemeData theme) {
     final compact = NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName);
     final chips = <Widget>[];
-    for (final rating in _item.ratings ?? const <CatalogRatingSource>[]) {
-      final source = _ratingSourceLabel(rating.source);
-      final badge = catalogRatingInfo(rating.source, rating.value);
+    for (final rating in _item.ratings ?? const <MediaRatingSource>[]) {
+      final source = ratingSourceLabel(rating.source);
+      final badge = ratingInfoForSource(rating.source, rating.value);
       if (source == null && badge == null) continue;
       var label = badge == null ? '$source ${rating.value.toStringAsFixed(1)}' : badge.formattedValue;
       if (rating.votes case final votes?) {

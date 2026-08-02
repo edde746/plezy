@@ -64,7 +64,20 @@
     "loading": "Laster...",
     "fullscreen": "Fullskjerm",
     "exitFullscreen": "Avslutt fullskjerm",
-    "pressBackAgainToExit": "Trykk på Tilbake en gang til for å avslutte"
+    "pressBackAgainToExit": "Trykk på Tilbake en gang til for å avslutte",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "Lisenser",
@@ -988,6 +1001,8 @@
     "repairConfirm": "",
     "repairSucceeded": "",
     "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
     "repairFailed": "",
     "repairKeptSignIns": "",
     "repairLostSignIns": "",
@@ -1132,18 +1147,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1183,17 +1196,6 @@
     },
     "totalResults": {
       "one": "",
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

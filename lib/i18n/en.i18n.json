@@ -64,7 +64,20 @@
     "loading": "Loading...",
     "fullscreen": "Fullscreen",
     "exitFullscreen": "Exit fullscreen",
-    "pressBackAgainToExit": "Press back again to exit"
+    "pressBackAgainToExit": "Press back again to exit",
+    "ratingSource": {
+      "critic": "Critics",
+      "audience": "Audience",
+      "imdb": "IMDb",
+      "tmdb": "TMDB",
+      "rottenTomatoes": "Rotten Tomatoes",
+      "simkl": "Simkl",
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "trakt": "Trakt",
+      "rottenTomatoesCritic": "Rotten Tomatoes critics",
+      "rottenTomatoesAudience": "Rotten Tomatoes audience"
+    }
   },
   "screens": {
     "licenses": "Licenses",
@@ -1134,18 +1147,16 @@
       "creator": "Creator",
       "composer": "Composer"
     },
-    "ratingSource": {
-      "critic": "Critics",
-      "audience": "Audience",
-      "imdb": "IMDb",
-      "tmdb": "TMDB",
-      "rottenTomatoes": "Rotten Tomatoes",
-      "simkl": "Simkl",
-      "mal": "MyAnimeList",
-      "anilist": "AniList",
-      "trakt": "Trakt",
-      "rottenTomatoesCritic": "Rotten Tomatoes critics",
-      "rottenTomatoesAudience": "Rotten Tomatoes audience"
+    "relation": {
+      "prequel": "Prequel",
+      "sequel": "Sequel",
+      "sideStory": "Side story",
+      "spinOff": "Spin-off",
+      "alternativeVersion": "Alternative version",
+      "summary": "Summary",
+      "parentStory": "Parent story",
+      "adaptation": "Adaptation",
+      "other": "Related"
     },
     "broadcast": "Airs ${day} at ${time}",
     "broadcastWithZone": "Airs ${day} at ${time} ${timezone}",
@@ -1186,17 +1197,6 @@
     "totalResults": {
       "one": "${n} result",
       "other": "${n} results"
-    },
-    "relation": {
-      "prequel": "Prequel",
-      "sequel": "Sequel",
-      "sideStory": "Side story",
-      "spinOff": "Spin-off",
-      "alternativeVersion": "Alternative version",
-      "summary": "Summary",
-      "parentStory": "Parent story",
-      "adaptation": "Adaptation",
-      "other": "Related"
     }
   },
   "liveTv": {

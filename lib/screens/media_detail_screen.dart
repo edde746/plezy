@@ -50,7 +50,6 @@ import '../services/plex_client.dart';
 import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../utils/content_utils.dart';
-import '../utils/rating_utils.dart';
 import '../models/download_models.dart';
 import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
@@ -961,59 +960,28 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Build a rating chip that shows a source icon when available,
-  /// falling back to a generic Material icon.
-  Widget _buildRatingChip(String? imageUri, double value, IconData fallbackIcon) {
+  /// Every attributed score in one pill, then the tappable user-rating chip.
+  ///
+  /// The scores share a single pill rather than taking a chip each: this row
+  /// is a height-clipped [Wrap], so a per-source chip would push the year,
+  /// certification, and runtime out of the visible band on short heroes.
+  List<Widget> _buildRatingChips(MediaItem metadata) {
     final colorScheme = Theme.of(context).colorScheme;
     final isTv = PlatformDetector.isTV();
-    return MediaRatingBadge.chip(
-      imageUri: imageUri,
-      value: value,
-      fallbackIcon: fallbackIcon,
-      foregroundColor: colorScheme.onSecondaryContainer,
-      backgroundColor: colorScheme.secondaryContainer.withValues(alpha: 0.8),
-      iconSize: isTv ? 20 : 16,
-      spacing: isTv ? 6 : 4,
-      padding: EdgeInsets.symmetric(horizontal: isTv ? 14 : 12, vertical: isTv ? 8 : 6),
-      textStyle: TextStyle(color: colorScheme.onSecondaryContainer, fontSize: isTv ? 16 : 13, fontWeight: .w600),
-    );
-  }
-
-  /// Build all rating chips for the metadata.
-  /// When both critic and audience ratings are from Rotten Tomatoes,
-  /// they are combined into a single badge.
-  List<Widget> _buildRatingChips(MediaItem metadata) {
-    final chips = <Widget>[];
-    // Plex-only fields (audienceRating / ratingImage / audienceRatingImage)
-    // — Jellyfin lacks rating-source attribution. Pull them via a typed
-    // narrow so the rest of the chip layout stays backend-neutral.
-    final plex = metadata is PlexMediaItem ? metadata : null;
-    final audienceRating = plex?.audienceRating;
-    final ratingImage = plex?.ratingImage;
-    final audienceRatingImage = plex?.audienceRatingImage;
-    final bothRT =
-        metadata.rating != null &&
-        audienceRating != null &&
-        isRottenTomatoes(ratingImage) &&
-        isRottenTomatoes(audienceRatingImage);
-
-    if (bothRT) {
-      chips.add(_buildCombinedRtChip(ratingImage, metadata.rating!, audienceRatingImage, audienceRating));
-    } else {
-      if (metadata.rating != null) {
-        chips.add(_buildRatingChip(ratingImage, metadata.rating!, Symbols.star_rounded));
-      }
-      if (audienceRating != null) {
-        chips.add(_buildRatingChip(audienceRatingImage, audienceRating, Symbols.people_rounded));
-      }
-    }
-
-    // User rating chip (tappable)
-    if (!widget.isOffline) {
-      chips.add(_buildUserRatingChip(metadata));
-    }
-
-    return chips;
+    return [
+      if (mediaRatingsFor(metadata).isNotEmpty)
+        MediaRatingBadgeGroup.chip(
+          item: metadata,
+          foregroundColor: colorScheme.onSecondaryContainer,
+          backgroundColor: colorScheme.secondaryContainer.withValues(alpha: 0.8),
+          iconSize: isTv ? 20 : 16,
+          spacing: isTv ? 6 : 4,
+          entrySpacing: isTv ? 12 : 10,
+          padding: EdgeInsets.symmetric(horizontal: isTv ? 14 : 12, vertical: isTv ? 8 : 6),
+          textStyle: TextStyle(color: colorScheme.onSecondaryContainer, fontSize: isTv ? 16 : 13, fontWeight: .w600),
+        ),
+      if (!widget.isOffline) _buildUserRatingChip(metadata),
+    ];
   }
 
   Widget _buildUserRatingChip(MediaItem metadata) {
@@ -1107,49 +1075,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             _fullMetadata = (_fullMetadata ?? widget.metadata).copyWith(isFavorite: favorite);
           });
         },
-      ),
-    );
-  }
-
-  /// Build a combined RT chip showing critic + audience side by side.
-  Widget _buildCombinedRtChip(
-    String? criticImageUri,
-    double criticValue,
-    String? audienceImageUri,
-    double audienceValue,
-  ) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textStyle = TextStyle(color: colorScheme.onSecondaryContainer, fontSize: 13, fontWeight: .w500);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer.withValues(alpha: 0.8),
-        borderRadius: const BorderRadius.all(Radius.circular(100)),
-      ),
-      child: Row(
-        mainAxisSize: .min,
-        children: [
-          MediaRatingBadge.inline(
-            imageUri: criticImageUri,
-            value: criticValue,
-            fallbackIcon: Symbols.star_rounded,
-            foregroundColor: colorScheme.onSecondaryContainer,
-            iconSize: 16,
-            spacing: 4,
-            textStyle: textStyle,
-          ),
-          const SizedBox(width: 10),
-          MediaRatingBadge.inline(
-            imageUri: audienceImageUri,
-            value: audienceValue,
-            fallbackIcon: Symbols.people_rounded,
-            foregroundColor: colorScheme.onSecondaryContainer,
-            iconSize: 16,
-            spacing: 4,
-            textStyle: textStyle,
-          ),
-        ],
       ),
     );
   }
@@ -3625,7 +3550,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final fields = _tvDetailMetadataParts<String>(
       metadata,
       text: (value) => value,
-      rating: (item) => MediaRatingBadge.semanticLabelForMedia(item, fallbackItem: metadata),
+      rating: (item) => MediaRatingBadgeGroup.semanticLabelForMedia(item, fallbackItem: metadata),
     );
     for (final field in fields) {
       add(field);
@@ -3694,12 +3619,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final fields = _tvDetailMetadataParts<Widget>(
       metadata,
       text: (value) => Text(value, maxLines: 1, style: textStyle),
-      rating: (item) => MediaRatingBadge.inlineForMedia(
+      // Every score shares the one metadata slot, so the bullet separators
+      // don't multiply with the number of sources.
+      rating: (item) => MediaRatingBadgeGroup.inlineForMedia(
         item: item,
         fallbackItem: metadata,
         foregroundColor: textStyle.color,
         iconSize: textStyle.fontSize,
         spacing: 4 * scale,
+        entrySpacing: 12 * scale,
         textStyle: textStyle,
       ),
     );

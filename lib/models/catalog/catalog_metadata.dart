@@ -8,35 +8,6 @@
 /// round-trip through `MediaItem.raw` inside a single session.
 library;
 
-/// One provider score with its own source label.
-///
-/// Providers routinely return several: Simkl carries Simkl/IMDb/MAL side by
-/// side, Plex carries a critic score next to an audience score. The neutral
-/// [CatalogItem.rating] keeps the provider's headline number; this list keeps
-/// the rest with attribution so the UI can label them.
-class CatalogRatingSource {
-  /// Stable, lowercase source key: `simkl`, `imdb`, `mal`, `anilist`, `tmdb`,
-  /// `trakt`, `critic`, `audience`. Rendered through a label map, never raw.
-  final String source;
-
-  /// Normalized to 0-10 by the mapper, matching [CatalogItem.rating].
-  final double value;
-
-  /// How many users the score is based on, when the provider says.
-  final int? votes;
-
-  const CatalogRatingSource({required this.source, required this.value, this.votes});
-
-  Map<String, Object?> toJson() => {'source': source, 'value': value, if (votes != null) 'votes': votes};
-
-  static CatalogRatingSource? fromJson(Map<String, Object?> json) {
-    final source = json['source'] as String?;
-    final value = (json['value'] as num?)?.toDouble();
-    if (source == null || value == null) return null;
-    return CatalogRatingSource(source: source, value: value, votes: json['votes'] as int?);
-  }
-}
-
 /// What a leaderboard position is a position *in*.
 ///
 /// MAL returns one rank per ranking endpoint, AniList returns a `rankings`

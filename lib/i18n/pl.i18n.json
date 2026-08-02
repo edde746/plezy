@@ -64,7 +64,20 @@
     "loading": "Ładowanie...",
     "fullscreen": "Pełny ekran",
     "exitFullscreen": "Wyjdź z pełnego ekranu",
-    "pressBackAgainToExit": "Naciśnij ponownie przycisk Wstecz, aby wyjść"
+    "pressBackAgainToExit": "Naciśnij ponownie przycisk Wstecz, aby wyjść",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "Licencje",
@@ -990,6 +1003,8 @@
     "repairConfirm": "",
     "repairSucceeded": "",
     "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
     "repairFailed": "",
     "repairKeptSignIns": "",
     "repairLostSignIns": "",
@@ -1138,18 +1153,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1193,17 +1206,6 @@
       "one": "",
       "few": "",
       "many": "",
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

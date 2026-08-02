@@ -3,6 +3,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
 import '../test_helpers/media_items.dart';
@@ -476,9 +477,10 @@ void main() {
         kind: MediaKind.movie,
         title: 'Old',
         editionTitle: 'Director Cut',
-        audienceRating: 8.9,
-        ratingImage: 'rottentomatoes://rating',
-        audienceRatingImage: 'rottentomatoes://audience',
+        ratings: [
+          MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.4),
+          MediaRatingSource(source: 'imdb', value: 8.9, votes: 1200),
+        ],
         subtitleLanguage: 'eng',
         subtitleMode: 1,
         trailerKey: '/library/metadata/1',
@@ -492,9 +494,8 @@ void main() {
 
       expect(copy.title, 'New');
       expect(copy.editionTitle, 'Director Cut');
-      expect(copy.audienceRating, 8.9);
-      expect(copy.ratingImage, 'rottentomatoes://rating');
-      expect(copy.audienceRatingImage, 'rottentomatoes://audience');
+      expect(copy.ratings?.map((rating) => rating.source), ['rottenTomatoesCritic', 'imdb']);
+      expect(copy.ratings?.last.votes, 1200);
       expect(copy.subtitleLanguage, 'eng');
       expect(copy.subtitleMode, 1);
       expect(copy.trailerKey, '/library/metadata/1');
@@ -536,9 +537,10 @@ void main() {
         kind: MediaKind.movie,
         title: 'Movie',
         editionTitle: 'Theatrical',
-        audienceRating: 9.1,
-        ratingImage: 'rottentomatoes://rating',
-        audienceRatingImage: 'rottentomatoes://audience',
+        ratings: [
+          MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.1),
+          MediaRatingSource(source: 'imdb', value: 8.4, votes: 250858),
+        ],
         genres: ['Drama'],
         roles: [MediaRole(id: '1', tag: 'Actor', role: 'Lead', thumbPath: '/photo')],
         mediaVersions: [
@@ -566,9 +568,9 @@ void main() {
       expect(decoded, isA<PlexMediaItem>());
       final plex = decoded as PlexMediaItem;
       expect(plex.editionTitle, 'Theatrical');
-      expect(plex.audienceRating, 9.1);
-      expect(plex.ratingImage, 'rottentomatoes://rating');
-      expect(plex.audienceRatingImage, 'rottentomatoes://audience');
+      expect(plex.ratings?.map((rating) => rating.source), ['rottenTomatoesCritic', 'imdb']);
+      expect(plex.ratings?.first.value, 9.1);
+      expect(plex.ratings?.last.votes, 250858);
       expect(plex.genres, ['Drama']);
       expect(plex.roles?.single.tag, 'Actor');
       expect(plex.mediaVersions?.single.parts.single.streamPath, '/stream');

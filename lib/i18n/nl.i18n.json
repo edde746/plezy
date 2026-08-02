@@ -64,7 +64,20 @@
     "loading": "Laden...",
     "fullscreen": "Volledig scherm",
     "exitFullscreen": "Volledig scherm verlaten",
-    "pressBackAgainToExit": "Druk nogmaals op terug om af te sluiten"
+    "pressBackAgainToExit": "Druk nogmaals op terug om af te sluiten",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "Licenties",
@@ -988,6 +1001,8 @@
     "repairConfirm": "",
     "repairSucceeded": "",
     "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
     "repairFailed": "",
     "repairKeptSignIns": "",
     "repairLostSignIns": "",
@@ -1132,18 +1147,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1183,17 +1196,6 @@
     },
     "totalResults": {
       "one": "",
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

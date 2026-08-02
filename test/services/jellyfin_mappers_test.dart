@@ -23,6 +23,7 @@ void main() {
         'PremiereDate': '2010-07-16T00:00:00.0000000Z',
         'OfficialRating': 'PG-13',
         'CommunityRating': 8.8,
+        'CriticRating': 88,
         'Genres': ['Action', 'Sci-Fi'],
         'People': [
           {'Type': 'Actor', 'Name': 'Leo', 'Id': 'p1', 'PrimaryImageTag': 'tag1', 'Role': 'Cobb'},
@@ -63,6 +64,9 @@ void main() {
       expect(item.contentRating, 'PG-13');
       expect(item.studio, 'Warner Bros');
       expect(item.rating, 8.8);
+      expect(item.ratings?.map((rating) => rating.source).toList(), ['audience', 'rottenTomatoesCritic']);
+      // CriticRating is the 0-100 Tomatometer; the neutral scale is 0-10.
+      expect(item.ratings?.map((rating) => rating.value).toList(), [8.8, 8.8]);
       expect(item.genres, ['Action', 'Sci-Fi']);
       expect(item.directors, ['Christopher Nolan']);
       expect(item.countries, ['United States']);
@@ -90,6 +94,40 @@ void main() {
       // Multi-server fields.
       expect(item.serverId, _serverId);
       expect(item.serverName, 'Home');
+    });
+
+    test('divides the Tomatometer rather than range-sniffing it', () {
+      // A CriticRating of 9 means 9%, not 9.0/10 — folding by magnitude would
+      // silently promote a rotten score to fresh.
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'movie-rotten', 'Type': 'Movie', 'CriticRating': 9},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.ratings?.single.source, 'rottenTomatoesCritic');
+      expect(item.ratings?.single.value, 0.9);
+    });
+
+    test('omits ratings for photos, whose CommunityRating is an EXIF 0-5 star', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'photo-1', 'Type': 'Photo', 'CommunityRating': 4},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.kind, MediaKind.photo);
+      expect(item.ratings, isNull);
+    });
+
+    test('reports no ratings when the server sent neither score', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'movie-bare', 'Type': 'Movie'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.ratings, isNull);
     });
 
     test('preserves backdrop indices, deduplicates tags, and absolutizes every valid path', () {

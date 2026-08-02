@@ -300,6 +300,8 @@ class Translations$common$en {
 
 	/// en: 'Press back again to exit'
 	String get pressBackAgainToExit => 'Press back again to exit';
+
+	late final Translations$common$ratingSource$en ratingSource = Translations$common$ratingSource$en.internal(_root);
 }
 
 // Path: screens
@@ -3040,7 +3042,7 @@ class Translations$explore$en {
 	late final Translations$explore$format$en format = Translations$explore$format$en.internal(_root);
 	late final Translations$explore$sourceMaterial$en sourceMaterial = Translations$explore$sourceMaterial$en.internal(_root);
 	late final Translations$explore$creditRole$en creditRole = Translations$explore$creditRole$en.internal(_root);
-	late final Translations$explore$ratingSource$en ratingSource = Translations$explore$ratingSource$en.internal(_root);
+	late final Translations$explore$relation$en relation = Translations$explore$relation$en.internal(_root);
 
 	/// en: 'Airs ${day} at ${time}'
 	String broadcast({required Object day, required Object time}) => 'Airs ${day} at ${time}';
@@ -3055,8 +3057,6 @@ class Translations$explore$en {
 		one: '${n} result',
 		other: '${n} results',
 	);
-
-	late final Translations$explore$relation$en relation = Translations$explore$relation$en.internal(_root);
 }
 
 // Path: liveTv
@@ -4820,6 +4820,48 @@ class Translations$addServer$en {
 	String get borrowFromAnotherProfileSubtitle => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.';
 }
 
+// Path: common.ratingSource
+class Translations$common$ratingSource$en {
+	Translations$common$ratingSource$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Critics'
+	String get critic => 'Critics';
+
+	/// en: 'Audience'
+	String get audience => 'Audience';
+
+	/// en: 'IMDb'
+	String get imdb => 'IMDb';
+
+	/// en: 'TMDB'
+	String get tmdb => 'TMDB';
+
+	/// en: 'Rotten Tomatoes'
+	String get rottenTomatoes => 'Rotten Tomatoes';
+
+	/// en: 'Simkl'
+	String get simkl => 'Simkl';
+
+	/// en: 'MyAnimeList'
+	String get mal => 'MyAnimeList';
+
+	/// en: 'AniList'
+	String get anilist => 'AniList';
+
+	/// en: 'Trakt'
+	String get trakt => 'Trakt';
+
+	/// en: 'Rotten Tomatoes critics'
+	String get rottenTomatoesCritic => 'Rotten Tomatoes critics';
+
+	/// en: 'Rotten Tomatoes audience'
+	String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
+}
+
 // Path: hotkeys.actions
 class Translations$hotkeys$actions$en {
 	Translations$hotkeys$actions$en.internal(this._root);
@@ -5414,46 +5456,40 @@ class Translations$explore$creditRole$en {
 	String get composer => 'Composer';
 }
 
-// Path: explore.ratingSource
-class Translations$explore$ratingSource$en {
-	Translations$explore$ratingSource$en.internal(this._root);
+// Path: explore.relation
+class Translations$explore$relation$en {
+	Translations$explore$relation$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
 	// Translations
 
-	/// en: 'Critics'
-	String get critic => 'Critics';
+	/// en: 'Prequel'
+	String get prequel => 'Prequel';
 
-	/// en: 'Audience'
-	String get audience => 'Audience';
+	/// en: 'Sequel'
+	String get sequel => 'Sequel';
 
-	/// en: 'IMDb'
-	String get imdb => 'IMDb';
+	/// en: 'Side story'
+	String get sideStory => 'Side story';
 
-	/// en: 'TMDB'
-	String get tmdb => 'TMDB';
+	/// en: 'Spin-off'
+	String get spinOff => 'Spin-off';
 
-	/// en: 'Rotten Tomatoes'
-	String get rottenTomatoes => 'Rotten Tomatoes';
+	/// en: 'Alternative version'
+	String get alternativeVersion => 'Alternative version';
 
-	/// en: 'Simkl'
-	String get simkl => 'Simkl';
+	/// en: 'Summary'
+	String get summary => 'Summary';
 
-	/// en: 'MyAnimeList'
-	String get mal => 'MyAnimeList';
+	/// en: 'Parent story'
+	String get parentStory => 'Parent story';
 
-	/// en: 'AniList'
-	String get anilist => 'AniList';
+	/// en: 'Adaptation'
+	String get adaptation => 'Adaptation';
 
-	/// en: 'Trakt'
-	String get trakt => 'Trakt';
-
-	/// en: 'Rotten Tomatoes critics'
-	String get rottenTomatoesCritic => 'Rotten Tomatoes critics';
-
-	/// en: 'Rotten Tomatoes audience'
-	String get rottenTomatoesAudience => 'Rotten Tomatoes audience';
+	/// en: 'Related'
+	String get other => 'Related';
 }
 
 // Path: explore.detail
@@ -5553,42 +5589,6 @@ class Translations$explore$detail$en {
 
 	/// en: 'Background'
 	String get background => 'Background';
-}
-
-// Path: explore.relation
-class Translations$explore$relation$en {
-	Translations$explore$relation$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Prequel'
-	String get prequel => 'Prequel';
-
-	/// en: 'Sequel'
-	String get sequel => 'Sequel';
-
-	/// en: 'Side story'
-	String get sideStory => 'Side story';
-
-	/// en: 'Spin-off'
-	String get spinOff => 'Spin-off';
-
-	/// en: 'Alternative version'
-	String get alternativeVersion => 'Alternative version';
-
-	/// en: 'Summary'
-	String get summary => 'Summary';
-
-	/// en: 'Parent story'
-	String get parentStory => 'Parent story';
-
-	/// en: 'Adaptation'
-	String get adaptation => 'Adaptation';
-
-	/// en: 'Related'
-	String get other => 'Related';
 }
 
 // Path: downloads.backgroundWarning
@@ -6083,6 +6083,17 @@ extension on Translations {
 			'common.fullscreen' => 'Fullscreen',
 			'common.exitFullscreen' => 'Exit fullscreen',
 			'common.pressBackAgainToExit' => 'Press back again to exit',
+			'common.ratingSource.critic' => 'Critics',
+			'common.ratingSource.audience' => 'Audience',
+			'common.ratingSource.imdb' => 'IMDb',
+			'common.ratingSource.tmdb' => 'TMDB',
+			'common.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
+			'common.ratingSource.simkl' => 'Simkl',
+			'common.ratingSource.mal' => 'MyAnimeList',
+			'common.ratingSource.anilist' => 'AniList',
+			'common.ratingSource.trakt' => 'Trakt',
+			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
+			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -6523,6 +6534,8 @@ extension on Translations {
 			'rateSheet.notAvailable' => 'No match found',
 			'rateSheet.noConnectedServices' => 'Connect a service in Settings to rate there.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
@@ -6534,8 +6547,6 @@ extension on Translations {
 			'accessibility.increase' => 'Increase',
 			'accessibility.decreaseValue' => ({required Object label}) => 'Decrease ${label}',
 			'accessibility.increaseValue' => ({required Object label}) => 'Increase ${label}',
-			_ => null,
-		} ?? switch (path) {
 			'accessibility.hue' => 'Hue',
 			'accessibility.saturation' => 'Saturation',
 			'accessibility.brightness' => 'Brightness',
@@ -7037,6 +7048,8 @@ extension on Translations {
 			'explore.season.fall' => 'Fall',
 			'explore.season.withYear' => ({required Object season, required Object year}) => '${season} ${year}',
 			'explore.format.tv' => 'TV',
+			_ => null,
+		} ?? switch (path) {
 			'explore.format.tvShort' => 'TV Short',
 			'explore.format.movie' => 'Movie',
 			'explore.format.special' => 'Special',
@@ -7048,8 +7061,6 @@ extension on Translations {
 			'explore.sourceMaterial.manga' => 'Manga',
 			'explore.sourceMaterial.lightNovel' => 'Light novel',
 			'explore.sourceMaterial.novel' => 'Novel',
-			_ => null,
-		} ?? switch (path) {
 			'explore.sourceMaterial.visualNovel' => 'Visual novel',
 			'explore.sourceMaterial.game' => 'Game',
 			'explore.sourceMaterial.webComic' => 'Web comic',
@@ -7060,17 +7071,15 @@ extension on Translations {
 			'explore.creditRole.producer' => 'Producer',
 			'explore.creditRole.creator' => 'Creator',
 			'explore.creditRole.composer' => 'Composer',
-			'explore.ratingSource.critic' => 'Critics',
-			'explore.ratingSource.audience' => 'Audience',
-			'explore.ratingSource.imdb' => 'IMDb',
-			'explore.ratingSource.tmdb' => 'TMDB',
-			'explore.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
-			'explore.ratingSource.simkl' => 'Simkl',
-			'explore.ratingSource.mal' => 'MyAnimeList',
-			'explore.ratingSource.anilist' => 'AniList',
-			'explore.ratingSource.trakt' => 'Trakt',
-			'explore.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
-			'explore.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
+			'explore.relation.prequel' => 'Prequel',
+			'explore.relation.sequel' => 'Sequel',
+			'explore.relation.sideStory' => 'Side story',
+			'explore.relation.spinOff' => 'Spin-off',
+			'explore.relation.alternativeVersion' => 'Alternative version',
+			'explore.relation.summary' => 'Summary',
+			'explore.relation.parentStory' => 'Parent story',
+			'explore.relation.adaptation' => 'Adaptation',
+			'explore.relation.other' => 'Related',
 			'explore.broadcast' => ({required Object day, required Object time}) => 'Airs ${day} at ${time}',
 			'explore.broadcastWithZone' => ({required Object day, required Object time, required Object timezone}) => 'Airs ${day} at ${time} ${timezone}',
 			'explore.detail.originalTitle' => 'Original title',
@@ -7103,15 +7112,6 @@ extension on Translations {
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
 			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
-			'explore.relation.prequel' => 'Prequel',
-			'explore.relation.sequel' => 'Sequel',
-			'explore.relation.sideStory' => 'Side story',
-			'explore.relation.spinOff' => 'Spin-off',
-			'explore.relation.alternativeVersion' => 'Alternative version',
-			'explore.relation.summary' => 'Summary',
-			'explore.relation.parentStory' => 'Parent story',
-			'explore.relation.adaptation' => 'Adaptation',
-			'explore.relation.other' => 'Related',
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'No channels available',

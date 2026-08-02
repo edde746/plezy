@@ -64,7 +64,20 @@
     "loading": "Загрузка...",
     "fullscreen": "Полноэкранный режим",
     "exitFullscreen": "Выйти из полноэкранного режима",
-    "pressBackAgainToExit": "Нажмите ещё раз для выхода"
+    "pressBackAgainToExit": "Нажмите ещё раз для выхода",
+    "ratingSource": {
+      "critic": "",
+      "audience": "",
+      "imdb": "",
+      "tmdb": "",
+      "rottenTomatoes": "",
+      "simkl": "",
+      "mal": "",
+      "anilist": "",
+      "trakt": "",
+      "rottenTomatoesCritic": "",
+      "rottenTomatoesAudience": ""
+    }
   },
   "screens": {
     "licenses": "Лицензии",
@@ -990,6 +1003,8 @@
     "repairConfirm": "",
     "repairSucceeded": "",
     "repairNeedsRestart": "",
+    "restartRequiredBody": "",
+    "quitPlezy": "",
     "repairFailed": "",
     "repairKeptSignIns": "",
     "repairLostSignIns": "",
@@ -1138,18 +1153,16 @@
       "creator": "",
       "composer": ""
     },
-    "ratingSource": {
-      "critic": "",
-      "audience": "",
-      "imdb": "",
-      "tmdb": "",
-      "rottenTomatoes": "",
-      "simkl": "",
-      "mal": "",
-      "anilist": "",
-      "trakt": "",
-      "rottenTomatoesCritic": "",
-      "rottenTomatoesAudience": ""
+    "relation": {
+      "prequel": "",
+      "sequel": "",
+      "sideStory": "",
+      "spinOff": "",
+      "alternativeVersion": "",
+      "summary": "",
+      "parentStory": "",
+      "adaptation": "",
+      "other": ""
     },
     "broadcast": "",
     "broadcastWithZone": "",
@@ -1193,17 +1206,6 @@
       "one": "",
       "few": "",
       "many": "",
-      "other": ""
-    },
-    "relation": {
-      "prequel": "",
-      "sequel": "",
-      "sideStory": "",
-      "spinOff": "",
-      "alternativeVersion": "",
-      "summary": "",
-      "parentStory": "",
-      "adaptation": "",
       "other": ""
     }
   },

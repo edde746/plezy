@@ -328,11 +328,15 @@ class TvSpotlightBackground extends StatelessWidget {
     } else if (media.isShow) {
       addTextPart(t.discover.tvShow);
     }
-    final ratingBadge = MediaRatingBadge.inlineForMedia(
+    // Hub listings carry the scalar rating pair, so the dashboard spotlight
+    // shows every score the shelf request already returned — no per-item
+    // hydration to lengthen it.
+    final ratingBadge = MediaRatingBadgeGroup.inlineForMedia(
       item: media,
       foregroundColor: textStyle.color,
       iconSize: textStyle.fontSize,
       spacing: 4 * scale,
+      entrySpacing: 12 * scale,
       textStyle: textStyle,
     );
     if (ratingBadge != null) {

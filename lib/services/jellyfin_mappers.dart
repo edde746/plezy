@@ -5,6 +5,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_part.dart';
+import '../media/media_rating.dart';
 import '../media/media_role.dart';
 import '../media/media_stream.dart';
 import '../media/media_version.dart';
@@ -236,6 +237,7 @@ class JellyfinMappers {
       addedAt: jellyfinIsoToEpochSeconds(item['DateCreated'] as String?),
       updatedAt: jellyfinIsoToEpochSeconds(item['DateLastSaved'] as String? ?? item['DateModified'] as String?),
       rating: (item['CommunityRating'] as num?)?.toDouble(),
+      ratings: _ratingSources(item, kind),
       isFavorite: _userData(item)?['IsFavorite'] as bool?,
       genres: _stringList(item['Genres']),
       directors: _peopleByType(item['People'], 'Director'),
@@ -366,6 +368,36 @@ class JellyfinMappers {
     if (total == null || unplayed == null) return null;
     if (unplayed >= total) return 0;
     return total - unplayed;
+  }
+
+  /// Jellyfin's two rating slots, community score first.
+  ///
+  /// `BaseItemDto` has no per-source array — the server collapses whatever the
+  /// metadata fetchers found into these two fields, so this is at most two
+  /// entries. Both arrive on every response; neither is gated behind `Fields`.
+  ///
+  /// `CommunityRating` is 0-10 but its provenance is unknowable from the DTO
+  /// (TMDB `vote_average`, IMDb via OMDb, or a local NFO — last writer wins),
+  /// so it stays the generic `audience` source with no brand badge.
+  /// `CriticRating` is the Rotten Tomatoes Tomatometer as a 0-100 percent, so
+  /// it is divided rather than range-sniffed: a Tomatometer of 9 means 9%.
+  static List<MediaRatingSource>? _ratingSources(Map<String, dynamic> item, MediaKind kind) {
+    // Photo items reuse CommunityRating for the EXIF 0-5 star rating.
+    if (kind == MediaKind.photo) return null;
+
+    final ratings = <MediaRatingSource>[];
+    if (_finiteRating(item['CommunityRating']) case final community? when community >= 0 && community <= 10) {
+      ratings.add(MediaRatingSource(source: 'audience', value: community));
+    }
+    if (_finiteRating(item['CriticRating']) case final critic? when critic >= 0 && critic <= 100) {
+      ratings.add(MediaRatingSource(source: 'rottenTomatoesCritic', value: critic / 10));
+    }
+    return ratings.isEmpty ? null : ratings;
+  }
+
+  static double? _finiteRating(Object? value) {
+    final rating = flexibleDouble(value);
+    return rating != null && rating.isFinite ? rating : null;
   }
 
   static String? _firstString(Object? list) {

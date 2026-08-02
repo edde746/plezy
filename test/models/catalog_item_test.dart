@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
 import 'package:plezy/utils/external_ids.dart';
@@ -109,6 +110,28 @@ void main() {
       expect(decoded.season, const ExternalSeasonRef(tvdb: 2, tmdb: 1));
       expect(decoded.title, item.title);
       expect(decoded.ids.entryKey, 'mal:63832');
+    });
+
+    test('carries every attributed rating onto the synthesized MediaItem', () {
+      // Explore's dashboard hubs render through this conversion, so a rating
+      // dropped here means the TV spotlight silently falls back to one score.
+      const rated = CatalogItem(
+        source: CatalogSourceId.simkl,
+        kind: MediaKind.movie,
+        title: 'Rated',
+        ids: CatalogItemIds(tmdb: 603),
+        rating: 8.1,
+        ratings: [
+          MediaRatingSource(source: 'simkl', value: 8.1, votes: 11),
+          MediaRatingSource(source: 'imdb', value: 7.9, votes: 12),
+        ],
+      );
+
+      final rendered = rated.toMediaItem();
+
+      expect(rendered.rating, 8.1);
+      expect(rendered.ratings?.map((rating) => rating.source), ['simkl', 'imdb']);
+      expect(rendered.ratings?.last.votes, 12);
     });
 
     test('survives an encode/decode cycle that erases the static map types', () {

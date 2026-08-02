@@ -1,7 +1,8 @@
-/// Resolves the brand badge shown beside a score: Plex's
-/// ratingImage/audienceRatingImage URIs, and the attributed source keys the
-/// Explore catalog carries instead of them.
+/// Resolves the brand badge and written label shown beside a score, keyed by
+/// the attributed source name every backend mapper normalizes to.
 library;
+
+import '../i18n/strings.g.dart';
 
 class RatingInfo {
   final String assetPath;
@@ -10,49 +11,16 @@ class RatingInfo {
   const RatingInfo(this.assetPath, this.formattedValue);
 }
 
-/// Parse a ratingImage URI (e.g. "rottentomatoes://image.rating.ripe")
-/// together with the numeric rating value into a [RatingInfo].
+/// The brand badge for an attributed source key.
 ///
-/// Returns null if the URI is unrecognised.
-RatingInfo? parseRatingImage(String? imageUri, double? value) {
-  if (imageUri == null || value == null) return null;
-
-  if (imageUri.startsWith('rottentomatoes://image.rating.')) {
-    final suffix = imageUri.substring('rottentomatoes://image.rating.'.length);
-    return switch (suffix) {
-      'ripe' => RatingInfo(_rtFreshAsset, _percent(value)),
-      'rotten' => RatingInfo(_rtRottenAsset, _percent(value)),
-      'upright' => RatingInfo(_rtUprightAsset, _percent(value)),
-      'spilled' => RatingInfo(_rtSpilledAsset, _percent(value)),
-      _ => null,
-    };
-  }
-
-  if (imageUri.startsWith('imdb://')) {
-    return RatingInfo(_imdbAsset, value.toStringAsFixed(1));
-  }
-
-  if (imageUri.startsWith('themoviedb://')) {
-    return RatingInfo(_tmdbAsset, _percent(value));
-  }
-
-  return null;
-}
-
-/// Whether the URI is a Rotten Tomatoes rating source.
-bool isRottenTomatoes(String? imageUri) => imageUri != null && imageUri.startsWith('rottentomatoes://');
-
-/// The same badge for a [CatalogRatingSource]-style source key.
-///
-/// Catalog providers attribute their scores by name (`imdb`, `tmdb`,
-/// `rottenTomatoesCritic`, …) and publish no badge URI, so the icon is chosen
-/// from the key. Rotten Tomatoes picks fresh/rotten and upright/spilled by the
-/// 60% threshold the tomatometer itself uses — the same state Plex encodes in
-/// `image.rating.ripe` / `.rotten`.
+/// Rotten Tomatoes picks fresh/rotten and upright/spilled by the 60% threshold
+/// the tomatometer itself uses — the same state Plex encodes in
+/// `image.rating.ripe` / `.rotten` and Jellyfin's own web client applies to
+/// `CriticRating`.
 ///
 /// Returns null for keys with no brand badge (`critic`, `audience`, `simkl`,
 /// `mal`, `anilist`, `trakt`); those stay labelled with their source name.
-RatingInfo? catalogRatingInfo(String source, double value) => switch (source) {
+RatingInfo? ratingInfoForSource(String source, double value) => switch (source) {
   'imdb' => RatingInfo(_imdbAsset, value.toStringAsFixed(1)),
   'tmdb' => RatingInfo(_tmdbAsset, _percent(value)),
   'rottenTomatoes' ||
@@ -61,6 +29,25 @@ RatingInfo? catalogRatingInfo(String source, double value) => switch (source) {
     value >= _rottenTomatoesFresh ? _rtUprightAsset : _rtSpilledAsset,
     _percent(value),
   ),
+  _ => null,
+};
+
+/// Localized name for an attributed source key, or null when the key is
+/// unknown and the score should be dropped rather than labelled raw.
+String? ratingSourceLabel(String source) => switch (source) {
+  'critic' => t.common.ratingSource.critic,
+  'audience' => t.common.ratingSource.audience,
+  'imdb' => t.common.ratingSource.imdb,
+  'tmdb' => t.common.ratingSource.tmdb,
+  'rottenTomatoes' => t.common.ratingSource.rottenTomatoes,
+  // Plex splits Rotten Tomatoes into its two panels, so both the provenance
+  // and the critic/audience distinction survive.
+  'rottenTomatoesCritic' => t.common.ratingSource.rottenTomatoesCritic,
+  'rottenTomatoesAudience' => t.common.ratingSource.rottenTomatoesAudience,
+  'simkl' => t.common.ratingSource.simkl,
+  'mal' => t.common.ratingSource.mal,
+  'anilist' => t.common.ratingSource.anilist,
+  'trakt' => t.common.ratingSource.trakt,
   _ => null,
 };
 

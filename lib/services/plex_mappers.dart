@@ -23,6 +23,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_part.dart';
 import '../media/media_playlist.dart';
+import '../media/media_rating.dart';
 import '../media/media_role.dart';
 import '../media/media_source_info.dart';
 import '../media/media_stream.dart';
@@ -298,6 +299,24 @@ class PlexRoleDto {
   const PlexRoleDto({this.id, this.filter, required this.tag, this.tagKey, this.role, this.thumb, this.count});
 
   factory PlexRoleDto.fromJson(Map<String, dynamic> json) => _$PlexRoleDtoFromJson(json);
+}
+
+/// One entry of Plex's `Rating[]` child array, present on
+/// `/library/metadata/{id}` responses but never on section listings.
+///
+/// [image] is a source URI (`imdb://image.rating`,
+/// `rottentomatoes://image.rating.ripe`, `themoviedb://image.rating`) and
+/// [type] is `critic` or `audience`; together they attribute [value].
+@JsonSerializable(createToJson: false)
+class PlexRatingDto {
+  final String? image;
+  final String? type;
+  @JsonKey(fromJson: flexibleDouble)
+  final double? value;
+
+  const PlexRatingDto({this.image, this.type, this.value});
+
+  factory PlexRatingDto.fromJson(Map<String, dynamic> json) => _$PlexRatingDtoFromJson(json);
 }
 
 @JsonSerializable(createToJson: false)
@@ -605,6 +624,10 @@ class PlexMetadataDto {
   final List<PlexRoleDto>? role;
   @JsonKey(name: 'Media', includeToJson: false)
   final List<PlexMediaVersionDto>? mediaVersions;
+  @JsonKey(name: 'Rating', includeToJson: false)
+  final List<PlexRatingDto>? ratingSources;
+  @JsonKey(fromJson: flexibleInt)
+  final int? imdbRatingCount;
   @JsonKey(name: 'Genre', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? genre;
   @JsonKey(name: 'Director', fromJson: _tagListFromJson, includeToJson: false)
@@ -693,6 +716,8 @@ class PlexMetadataDto {
     this.childCount,
     this.role,
     this.mediaVersions,
+    this.ratingSources,
+    this.imdbRatingCount,
     this.genre,
     this.director,
     this.writer,
@@ -825,6 +850,8 @@ class PlexMetadataDto {
     int? childCount,
     List<PlexRoleDto>? role,
     List<PlexMediaVersionDto>? mediaVersions,
+    List<PlexRatingDto>? ratingSources,
+    int? imdbRatingCount,
     List<String>? genre,
     List<String>? director,
     List<String>? writer,
@@ -895,6 +922,8 @@ class PlexMetadataDto {
       childCount: childCount ?? this.childCount,
       role: role ?? this.role,
       mediaVersions: mediaVersions ?? this.mediaVersions,
+      ratingSources: ratingSources ?? this.ratingSources,
+      imdbRatingCount: imdbRatingCount ?? this.imdbRatingCount,
       genre: genre ?? this.genre,
       director: director ?? this.director,
       writer: writer ?? this.writer,
@@ -935,6 +964,75 @@ Map<String, Object?>? _rawMetadata(PlexMetadataDto dto) {
   if (dto.skipChildren != null) raw['skipChildren'] = dto.skipChildren;
   if (dto.flattenSeasons != null) raw['flattenSeasons'] = dto.flattenSeasons;
   return raw.isEmpty ? null : raw;
+}
+
+/// Every attributed score a Plex payload carries, headline first.
+///
+/// Section listings only ever send the scalar pair ([rating]/[ratingImage] and
+/// [audienceRating]/[audienceRatingImage]), so they yield one or two entries.
+/// `/library/metadata/{id}` additionally sends the `Rating[]` child array —
+/// IMDb, both Rotten Tomatoes panels, TMDB — with no extra query parameter, so
+/// detail responses yield up to four. Plex offers no listing parameter that
+/// includes the array, which is why cards stay shorter than detail screens.
+///
+/// Entries are deduped on `(source, value)` because the array repeats whichever
+/// source the scalar pair was drawn from. Insertion order keeps the server's
+/// own headline first, so `ratings.first` matches the scalar `rating` the
+/// cards and sorts already use.
+List<MediaRatingSource>? plexRatingSources({
+  Object? rating,
+  Object? ratingImage,
+  Object? audienceRating,
+  Object? audienceRatingImage,
+  Iterable<({Object? image, Object? type, Object? value})> ratingSources = const [],
+  int? imdbVotes,
+}) {
+  final ratings = <MediaRatingSource>[];
+
+  void add(Object? rawValue, {required String fallbackSource, Object? image, Object? type}) {
+    final value = normalizedPlexRating(rawValue);
+    if (value == null) return;
+    final source = _plexRatingSource(image: image, type: type, fallback: fallbackSource);
+    if (ratings.any((rating) => rating.source == source && rating.value == value)) return;
+    ratings.add(MediaRatingSource(source: source, value: value, votes: source == 'imdb' ? imdbVotes : null));
+  }
+
+  add(rating, fallbackSource: 'critic', image: ratingImage);
+  add(audienceRating, fallbackSource: 'audience', image: audienceRatingImage);
+  for (final entry in ratingSources) {
+    add(entry.value, fallbackSource: 'audience', image: entry.image, type: entry.type);
+  }
+  return ratings.isEmpty ? null : ratings;
+}
+
+String _plexRatingSource({Object? image, Object? type, required String fallback}) {
+  final scheme = Uri.tryParse(_nonEmptyRatingString(image) ?? '')?.scheme.toLowerCase();
+  if (scheme == 'imdb') return 'imdb';
+  if (scheme == 'themoviedb' || scheme == 'tmdb') return 'tmdb';
+  final ratingType = _nonEmptyRatingString(type)?.toLowerCase() ?? fallback;
+  if (scheme == 'rottentomatoes') {
+    return ratingType == 'critic' ? 'rottenTomatoesCritic' : 'rottenTomatoesAudience';
+  }
+  return switch (ratingType) {
+    'critic' => 'critic',
+    'audience' => 'audience',
+    _ => fallback,
+  };
+}
+
+/// Coerce a Plex score onto the neutral 0-10 scale, rejecting out-of-range
+/// noise. Plex sends percentages as 0-10 already; a stray 0-100 value is
+/// folded rather than dropped.
+double? normalizedPlexRating(Object? value) {
+  final rating = flexibleDouble(value);
+  if (rating == null || !rating.isFinite || rating < 0 || rating > 100) return null;
+  return rating > 10 ? rating / 10 : rating;
+}
+
+String? _nonEmptyRatingString(Object? value) {
+  if (value is! String) return null;
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? null : trimmed;
 }
 
 /// Pure JSON/DTO→neutral-type mappers for Plex. Mirrors [JellyfinMappers].
@@ -1011,10 +1109,18 @@ class PlexMappers {
       addedAt: dto.addedAt,
       updatedAt: dto.updatedAt,
       rating: dto.rating,
-      audienceRating: dto.audienceRating,
       userRating: dto.userRating,
-      ratingImage: dto.ratingImage,
-      audienceRatingImage: dto.audienceRatingImage,
+      ratings: plexRatingSources(
+        rating: dto.rating,
+        ratingImage: dto.ratingImage,
+        audienceRating: dto.audienceRating,
+        audienceRatingImage: dto.audienceRatingImage,
+        ratingSources: [
+          for (final entry in dto.ratingSources ?? const <PlexRatingDto>[])
+            (image: entry.image, type: entry.type, value: entry.value),
+        ],
+        imdbVotes: dto.imdbRatingCount,
+      ),
       genres: dto.genre,
       directors: dto.director,
       writers: dto.writer,

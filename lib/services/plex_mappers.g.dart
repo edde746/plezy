@@ -16,6 +16,13 @@ PlexRoleDto _$PlexRoleDtoFromJson(Map<String, dynamic> json) => PlexRoleDto(
   count: flexibleInt(json['count']),
 );
 
+PlexRatingDto _$PlexRatingDtoFromJson(Map<String, dynamic> json) =>
+    PlexRatingDto(
+      image: json['image'] as String?,
+      type: json['type'] as String?,
+      value: flexibleDouble(json['value']),
+    );
+
 PlexMediaVersionDto _$PlexMediaVersionDtoFromJson(Map<String, dynamic> json) =>
     PlexMediaVersionDto(
       id: flexibleIntOrZero(json['id']),
@@ -123,6 +130,10 @@ PlexMetadataDto _$PlexMetadataDtoFromJson(Map<String, dynamic> json) =>
       mediaVersions: (json['Media'] as List<dynamic>?)
           ?.map((e) => PlexMediaVersionDto.fromJson(e as Map<String, dynamic>))
           .toList(),
+      ratingSources: (json['Rating'] as List<dynamic>?)
+          ?.map((e) => PlexRatingDto.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      imdbRatingCount: flexibleInt(json['imdbRatingCount']),
       genre: _tagListFromJson(json['Genre']),
       director: _tagListFromJson(json['Director']),
       writer: _tagListFromJson(json['Writer']),
@@ -191,6 +202,7 @@ Map<String, dynamic> _$PlexMetadataDtoToJson(PlexMetadataDto instance) =>
       'leafCount': ?instance.leafCount,
       'viewedLeafCount': ?instance.viewedLeafCount,
       'childCount': ?instance.childCount,
+      'imdbRatingCount': ?instance.imdbRatingCount,
       'audioLanguage': ?instance.audioLanguage,
       'subtitleLanguage': ?instance.subtitleLanguage,
       'subtitleMode': ?instance.subtitleMode,

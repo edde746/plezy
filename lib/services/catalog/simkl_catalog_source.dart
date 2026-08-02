@@ -1,3 +1,4 @@
+import '../../media/media_rating.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_metadata.dart';
 import '../../models/catalog/catalog_item.dart';
@@ -211,14 +212,14 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     if (type == SimklCatalogType.anime && simklId != null) _animeIds.add(simklId);
   }
 
-  static List<CatalogRatingSource>? _ratingsFor(SimklRatings? ratings) {
+  static List<MediaRatingSource>? _ratingsFor(SimklRatings? ratings) {
     if (ratings == null) return null;
-    final result = <CatalogRatingSource>[];
+    final result = <MediaRatingSource>[];
     for (final (source, rating) in [('simkl', ratings.simkl), ('imdb', ratings.imdb), ('mal', ratings.mal)]) {
       final value = rating?.rating;
       if (value == null || value < 0 || value > 10) continue;
       final votes = rating!.votes;
-      result.add(CatalogRatingSource(source: source, value: value, votes: votes != null && votes >= 0 ? votes : null));
+      result.add(MediaRatingSource(source: source, value: value, votes: votes != null && votes >= 0 ? votes : null));
     }
     return result.isEmpty ? null : result;
   }
