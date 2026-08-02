@@ -598,6 +598,7 @@
     "pauseButton": "Pause",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Vis afspilningsknapper",
     "hidePlaybackControls": "Skjul afspilningsknapper",
     "seekBackwardButton": "Spol ${seconds} sekunder tilbage",

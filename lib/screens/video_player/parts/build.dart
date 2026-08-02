@@ -79,7 +79,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   Widget _buildLoadingSpinner() {
     return const Scaffold(
       backgroundColor: Colors.black,
-      body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      body: Center(child: PlayerLoadingIndicator()),
     );
   }
 
@@ -95,7 +95,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       fit: StackFit.expand,
       children: [
         Video(player: bootstrapPlayer, hasFirstFrame: _hasFirstFrame),
-        const Center(child: CircularProgressIndicator(color: Colors.white)),
+        const Center(child: PlayerLoadingIndicator()),
       ],
     );
   }

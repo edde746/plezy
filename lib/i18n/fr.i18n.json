@@ -598,6 +598,7 @@
     "pauseButton": "Pause",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Afficher les commandes de lecture",
     "hidePlaybackControls": "Masquer les commandes de lecture",
     "seekBackwardButton": "Reculer de ${seconds} secondes",

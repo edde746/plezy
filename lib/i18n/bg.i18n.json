@@ -598,6 +598,7 @@
     "pauseButton": "Пауза",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Покажи контролите за възпроизвеждане",
     "hidePlaybackControls": "Скрий контролите за възпроизвеждане",
     "seekBackwardButton": "Превърти назад ${seconds} секунди",

@@ -598,6 +598,7 @@
     "pauseButton": "Duraklat",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Oynatma kontrollerini göster",
     "hidePlaybackControls": "Oynatma kontrollerini gizle",
     "seekBackwardButton": "${seconds} saniye geri sar",

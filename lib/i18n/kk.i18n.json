@@ -598,6 +598,7 @@
     "pauseButton": "Кідірту",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Басқару элементтерін көрсету",
     "hidePlaybackControls": "Басқару элементтерін жасыру",
     "seekBackwardButton": "${seconds} секунд артқа айналдыру",

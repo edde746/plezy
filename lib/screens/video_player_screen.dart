@@ -135,6 +135,17 @@ bool shouldAutoStartReloadedMedia({
   required bool startPaused,
 }) => wasPlayingBeforeReload && !watchTogetherOwnsStart && !startPaused;
 
+/// Whether a freshly opened player route starts with its chrome up.
+///
+/// A television starts with the controls down. Auto-hide cannot even arm until
+/// the first frame lands, so chrome raised by the route opening would park the
+/// whole OSD and timebar over the first seconds of picture (#1765). The route
+/// keeps its own loading surface and buffering overlay, the screen focus node
+/// owns back, and the first D-pad press raises the chrome, so a remote loses
+/// nothing. Pointer and touch platforms keep it: the viewer's hand is already
+/// on the surface, and the title and back affordance belong over the spinner.
+bool playerChromeStartsVisible({required bool isTv}) => !isTv;
+
 /// Builds an item-agnostic subtitle preference for an episode replacement.
 ///
 /// Source ids and sidecar URIs belong to the current media item. Only the
@@ -737,7 +748,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _hasFatalPlaybackError = false;
 
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
-  final PlayerChromeController _chromeController = PlayerChromeController();
+  final PlayerChromeController _chromeController = PlayerChromeController(
+    initiallyVisible: playerChromeStartsVisible(isTv: PlatformDetector.isTV()),
+  );
+
+  /// Lets startup-policy coverage assert the chrome this route actually opened
+  /// with, rather than a controller the test seeded itself.
+  @visibleForTesting
+  PlayerChromeController get chromeController => _chromeController;
+
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;
 
   @override

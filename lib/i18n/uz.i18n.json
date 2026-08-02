@@ -598,6 +598,7 @@
     "pauseButton": "Pauza",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Boshqaruv tugmalarini koʻrsatish",
     "hidePlaybackControls": "Boshqaruv tugmalarini yashirish",
     "seekBackwardButton": "${seconds} soniya orqaga oʻtkazish",

@@ -598,6 +598,7 @@
     "pauseButton": "Pausa",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Visa uppspelningskontroller",
     "hidePlaybackControls": "Dölj uppspelningskontroller",
     "seekBackwardButton": "Spola bakåt ${seconds} sekunder",

@@ -16,13 +16,20 @@ tags:
       visible: "(?s)^(Play|Resume).*$"
     commands:
       - pressKey: "Remote Dpad Center"
+# The TV player opens with its chrome down so the OSD and timebar never sit
+# over the opening seconds of the picture (#1765), so the Pause button can no
+# longer stand in for "the player has finished loading". Wait for the detail
+# screen to go first: the labelled spinner is necessarily up the moment the
+# player route owns the frame, and it only clears once playback reports its
+# first frame or gives up, so this can never advance before the media opens.
+# A give-up lands on the transport assertions below, which is where it belongs.
 - extendedWaitUntil:
-    visible: "Pause"
+    notVisible: "Overview"
     timeout: 30000
-- pressKey: "back"
 - extendedWaitUntil:
-    notVisible: "Pause"
-    timeout: 10000
+    notVisible: "Loading video"
+    timeout: 30000
+- assertNotVisible: "(?s)^(Play|Pause)$"
 # Hardware transport keys drive playback without raising the chrome (#1676):
 # the player answers with a centred disc (pause) or a side readout (seek), never the
 # full chrome, so subtitles stay readable.

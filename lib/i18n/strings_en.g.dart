@@ -1820,6 +1820,9 @@ class Translations$videoControls$en {
 	/// en: 'Playing'
 	String get playbackResumed => 'Playing';
 
+	/// en: 'Loading video'
+	String get loadingVideo => 'Loading video';
+
 	/// en: 'Show playback controls'
 	String get showPlaybackControls => 'Show playback controls';
 
@@ -6599,6 +6602,7 @@ extension on Translations {
 			'videoControls.pauseButton' => 'Pause',
 			'videoControls.playbackPaused' => 'Paused',
 			'videoControls.playbackResumed' => 'Playing',
+			'videoControls.loadingVideo' => 'Loading video',
 			'videoControls.showPlaybackControls' => 'Show playback controls',
 			'videoControls.hidePlaybackControls' => 'Hide playback controls',
 			'videoControls.seekBackwardButton' => ({required Object seconds}) => 'Seek backward ${seconds} seconds',
@@ -7056,9 +7060,9 @@ extension on Translations {
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
 			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
-			'explore.season.summer' => 'Summer',
 			_ => null,
 		} ?? switch (path) {
+			'explore.season.summer' => 'Summer',
 			'explore.season.fall' => 'Fall',
 			'explore.season.withYear' => ({required Object season, required Object year}) => '${season} ${year}',
 			'explore.format.tv' => 'TV',
@@ -7570,9 +7574,9 @@ extension on Translations {
 			'externalPlayer.playerUrlScheme' => 'URL Scheme',
 			'externalPlayer.off' => 'Off',
 			'externalPlayer.launchFailed' => 'Failed to open external player',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',

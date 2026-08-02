@@ -623,6 +623,18 @@ void main() {
       expect(exits, 1);
     });
 
+    testWidgets('Back exits on the first press when the route opened with no chrome', (tester) async {
+      final chromeController = PlayerChromeController(initiallyVisible: false);
+      addTearDown(chromeController.dispose);
+      var exits = 0;
+      final coordinator = coordinatorFor(chromeController, exitPlayer: () => exits++);
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(exits, 1, reason: 'a TV start has no chrome to hide, so back belongs to the route (#1765)');
+    });
+
     testWidgets('physical Escape outside fullscreen hides presented chrome without exiting', (tester) async {
       final chromeController = PlayerChromeController();
       addTearDown(chromeController.dispose);

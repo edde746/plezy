@@ -250,7 +250,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
         _controlsOpaque = false;
         if (_currentMarker != null) _skipButtonDismissed = true;
       });
-      _reclaimFocusAfterControlsHide();
+      _claimHiddenChromeFocus();
     } else if (visibilityChanged) {
       // The timeline is about to take over held-key seeking; commit whatever
       // the hidden-chrome burst accumulated so it can't rebase from a stale
@@ -280,7 +280,11 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
   }
 
-  void _reclaimFocusAfterControlsHide() {
+  /// Park focus on the player surface so the hidden-chrome key layer owns the
+  /// remote. Without this the screen node keeps primary focus and its
+  /// self-heal raises the whole chrome on the first actionable key, which is
+  /// what the transient seek and transport indicators exist to avoid.
+  void _claimHiddenChromeFocus() {
     final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
     if (sheetOpen) return;
     _focusNode.requestFocus();
@@ -295,7 +299,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.chromeController.controlsVisible) return;
       // Never steal focus from an open sheet (same rule as
-      // _reclaimFocusAfterControlsHide).
+      // _claimHiddenChromeFocus).
       if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) return;
       switch (target) {
         case PlayerChromeFocusTarget.playPause:

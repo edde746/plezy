@@ -133,6 +133,25 @@ void main() {
       expect(controller.controlsPresented, isFalse);
     });
 
+    test('a hidden start is also unpresented, so back is not classified as hide-the-chrome', () {
+      final controller = PlayerChromeController(initiallyVisible: false);
+      addTearDown(controller.dispose);
+
+      expect(controller.controlsVisible, isFalse);
+      expect(controller.controlsPresented, isFalse);
+      expect(controller.hide(), isFalse, reason: 'there is nothing to hide, so back must fall through to the route');
+    });
+
+    test('showing after a hidden start restores both visibility and presentation', () {
+      final controller = PlayerChromeController(initiallyVisible: false);
+      addTearDown(controller.dispose);
+
+      controller.show();
+
+      expect(controller.controlsVisible, isTrue);
+      expect(controller.controlsPresented, isTrue);
+    });
+
     test('a stale fade-out completion cannot hide controls that were shown again', () {
       final controller = PlayerChromeController();
       addTearDown(controller.dispose);

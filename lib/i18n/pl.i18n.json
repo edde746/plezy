@@ -598,6 +598,7 @@
     "pauseButton": "Pauza",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Pokaż elementy sterujące odtwarzaniem",
     "hidePlaybackControls": "Ukryj elementy sterujące odtwarzaniem",
     "seekBackwardButton": "Przewiń do tyłu o ${seconds} sekund",

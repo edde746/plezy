@@ -598,6 +598,7 @@
     "pauseButton": "Szünet",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Lejátszásvezérlők megjelenítése",
     "hidePlaybackControls": "Lejátszásvezérlők elrejtése",
     "seekBackwardButton": "Tekerés hátra ${seconds} másodperccel",

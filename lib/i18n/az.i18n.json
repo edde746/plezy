@@ -598,6 +598,7 @@
     "pauseButton": "Fasilə",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "Oynatma idarəetmələrini göstər",
     "hidePlaybackControls": "Oynatma idarəetmələrini gizlət",
     "seekBackwardButton": "${seconds} saniyə geri sar",

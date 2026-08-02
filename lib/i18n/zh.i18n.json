@@ -598,6 +598,7 @@
     "pauseButton": "暂停",
     "playbackPaused": "",
     "playbackResumed": "",
+    "loadingVideo": "",
     "showPlaybackControls": "显示播放控制项",
     "hidePlaybackControls": "隐藏播放控制项",
     "seekBackwardButton": "快退 ${seconds} 秒",

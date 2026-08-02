@@ -851,6 +851,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _rateSubscription = widget.player.streams.rate.listen(_onRateChanged);
       _loadPlaybackExtras();
       _focusPlayPauseIfKeyboardMode();
+      // A route that opened with no chrome never ran the hide transition that
+      // normally hands focus down here, and this Focus autofocuses too late to
+      // win it: the screen node claimed it during the loading phase.
+      if (!widget.chromeController.controlsVisible) _claimHiddenChromeFocus();
       if (PlatformDetector.isMobile(context) && !PlatformDetector.isTV()) {
         _refreshDeviceAdjustmentValues();
       }
