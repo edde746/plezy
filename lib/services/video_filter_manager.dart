@@ -21,6 +21,29 @@ class VideoFilterManager {
   static const double maxZoomScale = 2.0;
   static const double zoomStep = 0.01;
 
+  /// How close a pinch has to get to 100%, in whole percent, before it snaps
+  /// there exactly.
+  ///
+  /// [normalizeZoomScale] rounds to whole percent, so an unaided pinch has to
+  /// land inside half a percent of 1.0 to undo itself — in practice it leaves
+  /// the picture at 99% or 101% and the viewer cannot tell why it still looks
+  /// cropped. A detent makes the pinch a reliable inverse of itself.
+  ///
+  /// Deliberately applied to the pinch handler only, never inside
+  /// [normalizeZoomScale]: [zoomStep] is 1%, so a global detent would trap the
+  /// keyboard and slider paths at 1.0 with no way to step out.
+  static const int pinchZoomResetDetentPercent = 3;
+
+  /// Snaps a pinch-derived [scale] to exactly 1.0 inside the detent.
+  ///
+  /// Compared in whole percent like [normalizeZoomScale], not in raw doubles:
+  /// `(0.97 - 1.0).abs()` is 0.030000000000000027, so a float comparison against
+  /// a 0.03 band drops the very boundary it is meant to include.
+  static double snapPinchZoomScale(double scale) {
+    final percent = (scale * 100).round();
+    return (percent - 100).abs() <= pinchZoomResetDetentPercent ? 1.0 : scale;
+  }
+
   final Player player;
 
   /// BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)

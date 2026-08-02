@@ -270,15 +270,15 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   void _handleTouchPointerDown(PointerDownEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
-    _twoFingerDoubleTapTracker.pointerDown(event.pointer, event.position);
-    if (_twoFingerDoubleTapTracker.isChordActive) {
+    _twoFingerTapTracker.pointerDown(event.pointer, event.position);
+    if (_twoFingerTapTracker.isChordActive) {
       _suppressTouchTaps();
       _cancelEdgeAdjustmentGesture();
       return;
     }
     final hit = _edgeAdjustmentSurfaceHit(event.position);
     _handleEdgeAdjustmentEvent(
-      _edgeAdjustmentGesturesAllowed && hit != null
+      _mobileTouchGesturesAllowed && hit != null
           ? _edgeAdjustmentTracker.pointerDown(event.pointer, hit.position, hit.size)
           : const MobileEdgeAdjustmentEvent.none(),
     );
@@ -286,13 +286,13 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   void _handleTouchPointerMove(PointerMoveEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
-    _twoFingerDoubleTapTracker.pointerMove(event.pointer, event.position);
-    if (_twoFingerDoubleTapTracker.isChordActive) {
+    _twoFingerTapTracker.pointerMove(event.pointer, event.position);
+    if (_twoFingerTapTracker.isChordActive) {
       _suppressTouchTaps();
       _cancelEdgeAdjustmentGesture();
       return;
     }
-    if (!_edgeAdjustmentGesturesAllowed) {
+    if (!_mobileTouchGesturesAllowed) {
       _cancelEdgeAdjustmentGesture();
       return;
     }
@@ -306,21 +306,34 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   void _handleTouchPointerUp(PointerUpEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
-    final isResetGesture = _twoFingerDoubleTapTracker.pointerUp(event.pointer, event.position);
+    final isTwoFingerTap = _twoFingerTapTracker.pointerUp(event.pointer, event.position);
     final hit = _edgeAdjustmentSurfaceHit(event.position);
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerUp(event.pointer, hit?.position ?? event.localPosition));
-    if (_isTouchTapSuppressed || isResetGesture) _suppressTouchTaps();
-    if (isResetGesture) widget.onResetVideoZoom?.call();
+    if (_isTouchTapSuppressed || isTwoFingerTap) _suppressTouchTaps();
+    // Toggle playback with the chrome left down (#1505), the moment the chord
+    // resolves and in every player state. Deliberately no _toggleControls()/
+    // chromeController.show(): covering the frame the viewer paused to read is
+    // the problem this gesture exists to solve. The centred transport disc still
+    // confirms the command via _announceTransportCommand, which only renders
+    // while the chrome is hidden.
+    //
+    // The chord previously also reset the video zoom on a double tap. That was
+    // dropped rather than deferred: recognising a pair means holding this toggle
+    // back for kDoubleTapTimeout, and pausing late is pausing on the wrong
+    // frame. Zoom reset lives in the video settings sheet, its presets, the
+    // keyboard shortcut, and — for touch — pinching back through the 100% detent
+    // in VideoFilterManager.snapPinchZoomScale.
+    if (isTwoFingerTap && _mobileTouchGesturesAllowed) unawaited(_playOrPause());
   }
 
   void _handleTouchPointerCancel(PointerCancelEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
-    _twoFingerDoubleTapTracker.pointerCancel(event.pointer);
+    _twoFingerTapTracker.pointerCancel(event.pointer);
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerCancel(event.pointer));
-    if (_twoFingerDoubleTapTracker.isChordActive) _suppressTouchTaps();
+    if (_twoFingerTapTracker.isChordActive) _suppressTouchTaps();
   }
 
-  bool get _edgeAdjustmentGesturesAllowed {
+  bool get _mobileTouchGesturesAllowed {
     return PlatformDetector.isMobile(context) &&
         !PlatformDetector.isTV() &&
         !_isScreenLocked &&

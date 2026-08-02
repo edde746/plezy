@@ -15,19 +15,6 @@ final _allowedDiagnostics = <AnalyzerDiagnostic>{
     length: 4,
     message: "Missing an 'await' for the 'Future' computed by this expression.",
   ),
-  const AnalyzerDiagnostic(
-    severity: 'INFO',
-    type: 'HINT',
-    code: 'UNNECESSARY_IMPORT',
-    path: 'test/widgets/video_controls_two_finger_double_tap_tracker_test.dart',
-    line: 1,
-    column: 8,
-    length: 31,
-    message:
-        "The import of 'package:flutter/material.dart' is unnecessary because "
-        'all of the used elements are also provided by the import of '
-        "'package:flutter_test/flutter_test.dart'.",
-  ),
 };
 
 Future<void> main() async {

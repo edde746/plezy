@@ -76,7 +76,7 @@ import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
 import 'widgets/double_tap_feedback.dart';
 import 'helpers/mobile_edge_adjustment_tracker.dart';
-import 'helpers/two_finger_double_tap_tracker.dart';
+import 'helpers/two_finger_tap_tracker.dart';
 import 'widgets/linux_keep_alive.dart';
 import 'widgets/mobile_edge_adjustment_indicator.dart';
 import 'widgets/mobile_skip_zones.dart';
@@ -687,7 +687,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Deferred lone-tap action for the skip zones, and the pairing window itself:
   // while it is active the tap that started it can still become a double tap.
   Timer? _singleTapTimer;
-  final TwoFingerDoubleTapTracker _twoFingerDoubleTapTracker = TwoFingerDoubleTapTracker();
+  final TwoFingerTapTracker _twoFingerTapTracker = TwoFingerTapTracker();
   final MobileEdgeAdjustmentTracker _edgeAdjustmentTracker = MobileEdgeAdjustmentTracker();
   final DeviceAdjustmentService _deviceAdjustmentService = DeviceAdjustmentService.instance;
   DateTime? _suppressTouchTapUntil;

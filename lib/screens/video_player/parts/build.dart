@@ -186,7 +186,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
           final startZoom = _pinchStartZoomScale;
           final filterManager = _videoFilterManager;
           if (!_isPinchZooming || startZoom == null || filterManager == null) return;
-          final nextZoomScale = VideoFilterManager.normalizeZoomScale(startZoom * details.scale);
+          // Snap through 100% so pinching back undoes a zoom exactly, which is
+          // the touch path to an unzoomed picture (#1505).
+          final nextZoomScale = VideoFilterManager.normalizeZoomScale(
+            VideoFilterManager.snapPinchZoomScale(startZoom * details.scale),
+          );
 
           if (!_pinchZoomChanged) {
             if ((details.scale - 1.0).abs() <= _pinchZoomActivationThreshold) {
