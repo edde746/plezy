@@ -253,14 +253,17 @@ class JellyfinFileInfoStreamReader implements FileInfoStreamReader {
 // readers above do: one place to compare when a server adds a key.
 // ---------------------------------------------------------------------------
 
-/// Classify a Plex `Part.Stream[]` entry. Plex numbers stream types 1–5;
-/// lyrics/other types beyond that map to [MediaStreamKind.unknown].
+/// Classify a Plex `Part.Stream[]` entry. Plex numbers stream types 1–4
+/// ([PlexStreamType]); anything else maps to [MediaStreamKind.unknown].
+///
+/// Type 4 is lyrics, not an embedded image — music tracks are the only items
+/// that carry it, so the mismatch only became visible once File Info was
+/// offered for tracks.
 MediaStreamKind plexStreamKind(Map<String, dynamic> s) => switch (flexibleInt(s['streamType'])) {
   PlexStreamType.video => MediaStreamKind.video,
   PlexStreamType.audio => MediaStreamKind.audio,
   PlexStreamType.subtitle => MediaStreamKind.subtitle,
-  4 => MediaStreamKind.image,
-  5 => MediaStreamKind.data,
+  PlexStreamType.lyrics => MediaStreamKind.lyric,
   _ => MediaStreamKind.unknown,
 };
 

@@ -30,6 +30,15 @@ enum MediaKind {
 
   bool get isPlayable => isVideo || this == track;
 
+  /// Whether this kind maps to one or more files on disk, i.e. the server can
+  /// answer `MediaServerClient.getFileInfo` for it.
+  ///
+  /// Deliberately not folded into [isPlayable] even though the member sets
+  /// coincide today: container kinds (show, season, artist, album, collection,
+  /// playlist, folder) aggregate leaves and carry no `Media`/`MediaSources` of
+  /// their own, while a non-playable kind can still be file-backed.
+  bool get hasFileInfo => this == movie || this == episode || this == track || this == clip;
+
   /// Whether this container kind derives watched state from aggregate leaves.
   bool get usesLeafWatchCounts => switch (this) {
     show || season || artist || album || collection || playlist || folder => true,

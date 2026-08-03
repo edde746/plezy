@@ -266,6 +266,86 @@ void main() {
       expect(streams.map((stream) => stream.codec), ['h264', 'aac']);
     });
 
+    test('projects an audio-only track without inventing video fields', () {
+      final result = parsePlexFileInfoFromJson({
+        'Media': [
+          {
+            'id': 42,
+            'container': 'flac',
+            'bitrate': 989,
+            'duration': 201000,
+            'audioCodec': 'flac',
+            'audioChannels': 2,
+            'Part': [
+              {
+                'id': 'part-1',
+                'file': '/music/Boards of Canada/Geogaddi/01 Ready Lets Go.flac',
+                'size': 35651584,
+                'container': 'flac',
+                'Stream': [
+                  {
+                    'id': '201',
+                    'streamType': 2,
+                    'codec': 'flac',
+                    'channels': 2,
+                    'audioChannelLayout': 'stereo',
+                    'samplingRate': 44100,
+                    'bitDepth': 16,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      final version = result!.versions.single;
+      expect(version.container, 'flac');
+      expect(version.audioCodec, 'flac');
+      expect(version.audioChannels, 2);
+      expect(version.videoCodec, isNull);
+      expect(version.videoResolutionLabel, isNull);
+      expect(version.resolutionFormatted, isNull);
+      expect(version.aspectRatioFormatted, isNull);
+
+      final part = version.parts.single;
+      expect(part.filePath, '/music/Boards of Canada/Geogaddi/01 Ready Lets Go.flac');
+      expect(part.fileSize, 35651584);
+      expect(part.streamsOfKind(MediaStreamKind.video), isEmpty);
+
+      final audio = part.streamsOfKind(MediaStreamKind.audio).single;
+      expect(audio.codec, 'flac');
+      expect(audio.channelsFormatted, 'stereo (2 ch)');
+      expect(audio.sampleRateFormatted, '44.1 kHz');
+      expect(audio.bitDepthFormatted, '16 bit');
+    });
+
+    test('classifies streamType 4 as lyrics rather than an embedded image', () {
+      // Stream shapes copied from a live Plex music library: a sidecar LRC
+      // arrives as streamType 4 with a `format` and a `/library/streams/{id}`
+      // key, which the sheet renders as the Lyrics group.
+      final streams = _plexStreams([
+        {'id': '52586', 'streamType': 2, 'codec': 'flac'},
+        {
+          'id': '52594',
+          'streamType': 4,
+          'codec': 'lrc',
+          'format': 'lrc',
+          'key': '/library/streams/52594',
+          'displayTitle': 'LRC',
+        },
+        {'id': '203', 'streamType': 9, 'codec': 'mystery'},
+      ]);
+
+      expect(streams.map((stream) => stream.kind), [
+        MediaStreamKind.audio,
+        MediaStreamKind.lyric,
+        MediaStreamKind.unknown,
+      ]);
+      expect(streams[1].codec, 'lrc');
+      expect(streams[1].externalKey, '/library/streams/52594');
+    });
+
     test('returns null for null metadata or metadata without Media', () {
       expect(parsePlexFileInfoFromJson(null), isNull);
       expect(parsePlexFileInfoFromJson(const {}), isNull);
@@ -457,6 +537,56 @@ void main() {
       expect(version.attachments.first.mimeType, 'font/ttf');
       expect(version.attachments.first.codec, 'ttf');
       expect(version.attachments.last.codec, 'explicit-codec');
+    });
+
+    test('projects an audio-only media source without inventing video fields', () {
+      final result = parseJellyfinFileInfoFromJson({
+        'MediaSources': [
+          {
+            'Id': 'source-1',
+            'Name': 'Ready Lets Go',
+            'Container': 'flac',
+            'Path': '/music/Boards of Canada/Geogaddi/01 Ready Lets Go.flac',
+            'Size': 35651584,
+            'Bitrate': 989000,
+            'RunTimeTicks': 2010000000,
+            'MediaStreams': [
+              {
+                'Type': 'Audio',
+                'Codec': 'flac',
+                'Channels': 2,
+                'ChannelLayout': 'stereo',
+                'SampleRate': 44100,
+                'BitDepth': 16,
+              },
+              {'Type': 'EmbeddedImage', 'Codec': 'mjpeg'},
+              {'Type': 'Lyric', 'Codec': 'lrc', 'Path': '/music/Boards of Canada/Geogaddi/01 Ready Lets Go.lrc'},
+            ],
+          },
+        ],
+      });
+
+      final version = result!.versions.single;
+      expect(version.container, 'flac');
+      expect(version.audioCodec, 'flac');
+      expect(version.videoCodec, isNull);
+      expect(version.videoResolutionLabel, isNull);
+      expect(version.resolutionFormatted, isNull);
+      expect(version.aspectRatioFormatted, isNull);
+
+      final part = version.parts.single;
+      expect(part.filePath, '/music/Boards of Canada/Geogaddi/01 Ready Lets Go.flac');
+      expect(part.streamsOfKind(MediaStreamKind.video), isEmpty);
+
+      final audio = part.streamsOfKind(MediaStreamKind.audio).single;
+      expect(audio.channelsFormatted, 'stereo (2 ch)');
+      expect(audio.sampleRateFormatted, '44.1 kHz');
+      expect(audio.bitDepthFormatted, '16 bit');
+
+      expect(part.streamsOfKind(MediaStreamKind.image).single.codec, 'mjpeg');
+      final lyric = part.streamsOfKind(MediaStreamKind.lyric).single;
+      expect(lyric.codec, 'lrc');
+      expect(lyric.filePath, '/music/Boards of Canada/Geogaddi/01 Ready Lets Go.lrc');
     });
 
     test('returns null for missing empty or non-list MediaSources', () {

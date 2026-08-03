@@ -546,12 +546,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // File Info (for episodes and movies). Backend-neutral — both
-      // PlexClient and JellyfinClient implement [getFileInfo], reading
-      // codec/stream metadata from `Media`/`MediaSources` respectively.
-      // Hidden when the item has no backend marker so we don't fan out
-      // to an arbitrary client.
-      if (itemBackend != null && (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie)) {
+      // File Info — every file-backed leaf kind (movies, episodes, tracks,
+      // clips). Backend-neutral: both PlexClient and JellyfinClient implement
+      // [MediaServerClient.getFileInfo], reading codec/stream metadata from
+      // `Media`/`MediaSources` respectively. Container kinds are excluded by
+      // [MediaKind.hasFileInfo] because neither backend attaches media sources
+      // to them — a show/season/album/artist entry would only ever produce the
+      // "not available" snackbar. Hidden when the item has no backend marker
+      // so we don't fan out to an arbitrary client.
+      if (itemBackend != null && mediaKind != null && mediaKind.hasFileInfo) {
         menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
       }
 
