@@ -4,11 +4,19 @@ final Expando<LatestAsyncWrite<String>> _subtitleVisibilityWrites = Expando<Late
 
 extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
   void _toggleSubtitles() {
-    final currentTrack = widget.player.state.track.subtitle;
-    // No-op if no subtitle track is selected
-    if (currentTrack == null || currentTrack.id == 'no') return;
+    // Restoring always works: backends without a renderer-level visibility
+    // switch hide subtitles by deselecting them, so the current track reads
+    // as Off while hidden and a selection check would trap the toggle.
+    if (!_subtitlesVisible) {
+      _setSubtitleVisibility(true);
+      return;
+    }
 
-    _setSubtitleVisibility(!_subtitlesVisible);
+    final currentTrack = widget.player.state.track.subtitle;
+    // Nothing to hide when no subtitle track is selected.
+    if (currentTrack == null || currentTrack.id == SubtitleTrack.off.id) return;
+
+    _setSubtitleVisibility(false);
   }
 
   void _onSubtitleTrackChanged(SubtitleTrack track) {

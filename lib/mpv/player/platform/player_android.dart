@@ -28,6 +28,13 @@ class PlayerAndroid extends PlayerBase {
 
   bool get usingMpvFallback => _usingMpvFallback;
 
+  /// Subtitles are hidden through the player's visibility toggle. Sticky
+  /// across media opens, like mpv's global `sub-visibility`, so an episode
+  /// change cannot put them back on screen.
+  bool _subtitlesHidden = false;
+
+  /// Track that un-hiding restores: whatever was selected when subtitles were
+  /// hidden, then whatever was selected for the current media while hidden.
   String? _hiddenSubtitleTrackId;
 
   @override
@@ -248,14 +255,36 @@ class PlayerAndroid extends PlayerBase {
     await invoke('selectAudioTrack', {'trackId': track.id});
   }
 
+  /// ExoPlayer has no renderer-level subtitle visibility switch, so hiding is
+  /// implemented as deselection (see [setProperty]'s `sub-visibility` case).
+  /// A selection arriving while subtitles are hidden — the automatic pass
+  /// after an episode change, or a manual pick — becomes what un-hiding
+  /// restores instead of putting subtitles back on screen, matching how mpv's
+  /// global `sub-visibility` keeps hiding across files (#1779).
   @override
   Future<void> selectSubtitleTrack(SubtitleTrack track) async {
+    if (_subtitlesHidden) {
+      _hiddenSubtitleTrackId = track.id == SubtitleTrack.off.id ? null : track.id;
+      return _selectSubtitleTrackNatively(SubtitleTrack.off);
+    }
+    return _selectSubtitleTrackNatively(track);
+  }
+
+  Future<void> _selectSubtitleTrackNatively(SubtitleTrack track) async {
     await invoke('selectSubtitleTrack', {'trackId': track.id});
   }
 
+  /// A sidecar flagged default must not draw itself onto a hidden renderer
+  /// either; the selection pass that follows the add records it the same way
+  /// [selectSubtitleTrack] does.
   @override
   Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false}) async {
-    await invoke('addSubtitleTrack', {'uri': uri, 'title': title, 'language': language, 'select': select});
+    await invoke('addSubtitleTrack', {
+      'uri': uri,
+      'title': title,
+      'language': language,
+      'select': select && !_subtitlesHidden,
+    });
   }
 
   @override
@@ -307,19 +336,21 @@ class PlayerAndroid extends PlayerBase {
         break;
       case 'sub-visibility':
         if (value == 'no') {
+          if (_subtitlesHidden) break;
+          _subtitlesHidden = true;
           final current = state.track.subtitle;
-          if (current != null && current.id != 'no') {
-            _hiddenSubtitleTrackId = current.id;
-            await selectSubtitleTrack(SubtitleTrack.off);
+          _hiddenSubtitleTrackId = current != null && current.id != SubtitleTrack.off.id ? current.id : null;
+          if (_hiddenSubtitleTrackId != null) {
+            await _selectSubtitleTrackNatively(SubtitleTrack.off);
           }
         } else {
+          if (!_subtitlesHidden) break;
+          _subtitlesHidden = false;
           final storedId = _hiddenSubtitleTrackId;
-          if (storedId != null) {
-            _hiddenSubtitleTrackId = null;
-            final track = state.tracks.subtitle.firstWhereOrNull((t) => t.id == storedId);
-            if (track != null) {
-              await selectSubtitleTrack(track);
-            }
+          _hiddenSubtitleTrackId = null;
+          final track = storedId == null ? null : state.tracks.subtitle.firstWhereOrNull((t) => t.id == storedId);
+          if (track != null) {
+            await _selectSubtitleTrackNatively(track);
           }
         }
         break;

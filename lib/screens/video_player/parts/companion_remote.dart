@@ -109,7 +109,20 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
       if (!_subtitleCycleDrainActive) unawaited(_drainSubtitleCycles());
       return;
     }
-    _trackManager?.cycleSubtitleTrack();
+    _cycleSubtitleTrackNatively();
+  }
+
+  /// Cycle through the native track list, for playback with no source
+  /// catalog to advance through (downloads, and items whose server exposes no
+  /// subtitle rows).
+  ///
+  /// The manager owns the selection and the server write-back; the committed
+  /// choice is this screen's, and the episode carry-over reads it, so a cycle
+  /// that lands on Off has to be recorded here or the next episode inherits
+  /// the choice this one started with.
+  void _cycleSubtitleTrackNatively() {
+    final cycled = _trackManager?.cycleSubtitleTrack();
+    if (cycled != null) _rememberNativeSubtitleSelection(cycled);
   }
 
   Future<void> _drainSubtitleCycles() async {
@@ -127,7 +140,7 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
         if (_isOfflinePlayback || sourceTracks.isEmpty) {
           _pendingSubtitleCycleCount -= advances;
           for (var i = 0; i < advances; i++) {
-            _trackManager?.cycleSubtitleTrack();
+            _cycleSubtitleTrackNatively();
           }
           continue;
         }

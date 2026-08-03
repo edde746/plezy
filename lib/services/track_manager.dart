@@ -385,10 +385,12 @@ class TrackManager {
 
   // ── Track cycling (remote/keyboard shortcuts) ──────────────────────
 
-  /// Cycle to the next subtitle track and save the preference.
-  void cycleSubtitleTrack() {
+  /// Cycle to the next subtitle track, save the preference, and return the
+  /// track now playing so the caller can record it as the committed choice.
+  /// Returns null when there was nothing to cycle.
+  SubtitleTrack? cycleSubtitleTrack() {
     final tracks = player.state.tracks.subtitle.where((t) => t.id != 'auto').toList();
-    if (tracks.isEmpty) return;
+    if (tracks.isEmpty) return null;
 
     final current = player.state.track.subtitle;
     final currentIndex = tracks.indexWhere((t) => t.id == current?.id);
@@ -403,6 +405,7 @@ class TrackManager {
           : 'Subtitles: ${TrackLabelBuilder.subtitleLabel(title: next.title, language: next.language, codec: next.codec, forced: next.isForced, index: nextIndex).joined}';
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
+    return next;
   }
 
   /// Cycle to the next audio track and save the preference.

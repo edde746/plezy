@@ -1362,7 +1362,7 @@ void main() {
       final mgr = _make(player: player);
       addTearDown(mgr.dispose);
 
-      mgr.cycleSubtitleTrack();
+      expect(mgr.cycleSubtitleTrack(), isNull);
       expect(player.selectedSubtitle, isEmpty);
     });
 
@@ -1371,8 +1371,31 @@ void main() {
       final mgr = _make(player: player);
       addTearDown(mgr.dispose);
 
-      mgr.cycleSubtitleTrack();
+      expect(mgr.cycleSubtitleTrack(), isNull);
       expect(player.selectedSubtitle, isEmpty);
+    });
+
+    test('reports the track it moved to so the caller can commit the choice', () async {
+      await SettingsService.getInstance();
+      // The screen records the committed subtitle, and episode navigation
+      // carries that record to the next item. A cycle the screen cannot see
+      // would be undone by the next episode (#1779).
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          subtitle: [
+            SubtitleTrack.off,
+            SubtitleTrack(id: '1', language: 'eng'),
+          ],
+        ),
+        track: const TrackSelection(
+          subtitle: SubtitleTrack(id: '1', language: 'eng'),
+        ),
+      );
+      final mgr = _make(player: player);
+      addTearDown(mgr.dispose);
+
+      expect(mgr.cycleSubtitleTrack()?.id, SubtitleTrack.off.id);
+      expect(player.selectedSubtitle.map((track) => track.id), [SubtitleTrack.off.id]);
     });
   });
 
