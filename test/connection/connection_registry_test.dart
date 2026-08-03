@@ -20,7 +20,7 @@ Future<String?> _defaultConnectionId(AppDatabase db) async {
   return null;
 }
 
-JellyfinConnection _jellyfin({String id = 'srv-1', String userName = 'edde'}) {
+JellyfinConnection _jellyfin({String id = 'srv-1', String userName = 'edde', int createdAtMs = 1_000_000}) {
   return JellyfinConnection(
     id: id,
     baseUrl: 'https://jellyfin.local',
@@ -30,7 +30,7 @@ JellyfinConnection _jellyfin({String id = 'srv-1', String userName = 'edde'}) {
     userName: userName,
     accessToken: 'tok-$id',
     deviceId: 'dev-1',
-    createdAt: DateTime.fromMillisecondsSinceEpoch(1_000_000),
+    createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMs),
   );
 }
 
@@ -182,6 +182,28 @@ void main() {
       // And re-upserting a non-default row doesn't accidentally promote it.
       await registry.upsert(_jellyfin(id: 'b', userName: 'refreshed'));
       expect(await _defaultConnectionId(db), 'a');
+    });
+
+    test('re-upsert preserves the original creation order', () async {
+      // Regression: creation order decides which connection lends a profile
+      // its picture (issue #1667) and which row `remove` promotes to default.
+      // Re-authenticating rebuilds the model with `DateTime.now()` under the
+      // same stable id, so an unguarded writer restamped the originally-first
+      // connection and shuffled it to last.
+      await registry.upsert(_jellyfin(id: 'first', createdAtMs: 1_000_000));
+      await registry.upsert(_jellyfin(id: 'second', createdAtMs: 2_000_000));
+
+      await registry.upsert(_jellyfin(id: 'first', createdAtMs: 9_000_000));
+
+      final list = await registry.list();
+      expect(list.map((c) => c.id).toList(), ['first', 'second']);
+      expect(list.first.createdAt, DateTime.fromMillisecondsSinceEpoch(1_000_000));
+    });
+
+    test('a genuinely new connection keeps the creation time it was built with', () async {
+      await registry.upsert(_jellyfin(id: 'a', createdAtMs: 5_000_000));
+
+      expect((await registry.list()).single.createdAt, DateTime.fromMillisecondsSinceEpoch(5_000_000));
     });
 
     test('recordAuthSuccess updates lastAuthenticatedAt without losing config', () async {

@@ -42,14 +42,22 @@ class ConnectionRegistry {
 
   /// Insert or replace [connection]. If this is the first stored connection
   /// it is automatically marked default; re-upserting an existing row keeps
-  /// the row's current `isDefault` (so token/metadata refreshes don't clear
-  /// the default flag).
+  /// the row's current `isDefault` and `createdAt` (so token/metadata
+  /// refreshes don't clear the default flag or restamp creation order).
+  ///
+  /// Creation order is behaviour, not bookkeeping: it decides which
+  /// connection lends a profile its picture, and `remove` promotes the oldest
+  /// remaining row to default. Re-authenticating rebuilds the model with
+  /// `DateTime.now()` and reuses the same stable id, so without this the
+  /// originally-first connection would jump to last on every re-sign-in.
   Future<void> upsert(Connection connection) async {
     await _db.runIdentityMutation(() async {
       final existing = await (_db.select(_db.connections)..where((t) => t.id.equals(connection.id))).getSingleOrNull();
       final bool isDefault;
+      final int createdAt;
       if (existing != null) {
         isDefault = existing.isDefault;
+        createdAt = existing.createdAt;
       } else {
         final any =
             await (_db.selectOnly(_db.connections)
@@ -57,6 +65,7 @@ class ConnectionRegistry {
                   ..limit(1))
                 .getSingleOrNull();
         isDefault = any == null;
+        createdAt = connection.createdAt.millisecondsSinceEpoch;
       }
       final protectedConfig = await CredentialVault.protectConnectionConfig(
         connection.kind.id,
@@ -68,7 +77,7 @@ class ConnectionRegistry {
         displayName: Value(connection.displayName),
         configJson: Value(jsonEncode(protectedConfig)),
         isDefault: Value(isDefault),
-        createdAt: Value(connection.createdAt.millisecondsSinceEpoch),
+        createdAt: Value(createdAt),
         lastAuthenticatedAt: Value(connection.lastAuthenticatedAt?.millisecondsSinceEpoch),
       );
       await _db.into(_db.connections).insertOnConflictUpdate(row);
