@@ -75,15 +75,40 @@ void main() {
       expect(jpn.languageCode, 'jpn');
       expect(jpn.selected, isFalse);
 
-      // Subtitle, external + forced
+      // Subtitle, external + forced. Forced is metadata about the row, not a
+      // selection: this source carries no DefaultSubtitleStreamIndex, so
+      // nothing may claim the server picked it.
       final sub = info.subtitleTracks.single;
       expect(sub.id, 3);
       expect(sub.codec, 'srt');
       expect(sub.languageCode, 'eng');
       expect(sub.forced, isTrue);
-      expect(sub.selected, isTrue);
+      expect(sub.selected, isFalse);
       expect(sub.isExternal, isTrue);
       expect(sub.key, '/Videos/src-1/Subtitles/3/Stream.srt');
+    });
+
+    test('no DefaultSubtitleStreamIndex means no server-selected subtitle (#1779)', () {
+      // What Jellyfin answers for a user whose SubtitleMode is None: the
+      // container still flags a default/forced row, the server still declines
+      // to select one. Promoting those flags to a selection outranked the
+      // user's own "no subtitles" setting in the selection ladder.
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'Id': 'src-1',
+        'DefaultSubtitleStreamIndex': null,
+        'MediaStreams': [
+          {'Index': 1, 'Type': 'Audio', 'Language': 'eng', 'IsDefault': true},
+          {'Index': 3, 'Type': 'Subtitle', 'Language': 'eng', 'IsDefault': true, 'IsForced': true},
+          {'Index': 4, 'Type': 'Subtitle', 'Language': 'eng'},
+        ],
+      });
+
+      expect(info.defaultSubtitleStreamIndex, isNull);
+      expect(info.subtitleTracks.map((track) => track.selected), [false, false]);
+      // The row metadata itself is untouched; only the selection claim is.
+      expect(info.subtitleTracks.first.forced, isTrue);
+      // Audio keeps the container default: something always has to play.
+      expect(info.audioTracks.single.selected, isTrue);
     });
 
     test('maps display criteria from Jellyfin video stream metadata', () {

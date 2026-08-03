@@ -70,12 +70,19 @@ List<MediaAudioTrack> _withDefaultAudioSelection(List<MediaAudioTrack> tracks, i
   return [for (final track in tracks) track.withSelected(track.index == defaultStreamIndex)];
 }
 
+/// Marks the row Jellyfin selected for this user, and only that row.
+///
+/// `DefaultSubtitleStreamIndex` is the server's whole answer: it folds in the
+/// user's `SubtitleMode`, their language preference, and any per-item choice
+/// Plezy persisted through playback progress reports (including `-1` for a
+/// deliberate off). A null index is part of that answer — "play no subtitle" —
+/// not a missing field. Synthesising a selection from the container's
+/// default/forced flags overrode `SubtitleMode: None` at the server-selected
+/// priority, so a user who turned subtitles off on the server had them
+/// switched back on by every fresh item (#1779).
 List<MediaSubtitleTrack> _withDefaultSubtitleSelection(List<MediaSubtitleTrack> tracks, int? defaultStreamIndex) {
   return [
-    for (final track in tracks)
-      track.withSelected(
-        defaultStreamIndex != null ? track.index == defaultStreamIndex : track.selected || track.forced,
-      ),
+    for (final track in tracks) track.withSelected(defaultStreamIndex != null && track.index == defaultStreamIndex),
   ];
 }
 

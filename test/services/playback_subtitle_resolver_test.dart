@@ -2,7 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_subtitle_resolver.dart';
 import 'package:plezy/services/subtitle_preference.dart';
@@ -236,6 +238,59 @@ void main() {
 
     expect(result.isOff, isTrue);
     expect(result.sidecarsAtOpen, isEmpty);
+  });
+
+  group('Jellyfin server subtitle answer', () {
+    // Verbatim shape of a direct-played episode from a real Jellyfin server:
+    // the container flags one row default+forced, and the response carries the
+    // index the server picked for this user (null when it picked none).
+    MediaSourceInfo jellyfinInfo({Object? defaultSubtitleStreamIndex}) => jellyfinMediaSourceToMediaSourceInfo({
+      'Id': 'src-1',
+      'DefaultSubtitleStreamIndex': defaultSubtitleStreamIndex,
+      'MediaStreams': [
+        {'Index': 1, 'Type': 'Audio', 'Language': 'eng', 'IsDefault': true},
+        {'Index': 3, 'Type': 'Subtitle', 'Language': 'eng', 'Codec': 'ass', 'IsDefault': true, 'IsForced': true},
+        {'Index': 4, 'Type': 'Subtitle', 'Language': 'eng', 'Codec': 'ass'},
+      ],
+    });
+
+    JellyfinUserProfile profileWithMode(String mode) => JellyfinUserProfile.fromUserDto({
+      'Configuration': {'SubtitleMode': mode, 'PlayDefaultAudioTrack': true},
+    });
+
+    test('a user who turned subtitles off on the server gets none (#1779)', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: jellyfinInfo(),
+        sidecars: const [],
+        profileSettings: profileWithMode('None'),
+      );
+
+      expect(result.isOff, isTrue);
+    });
+
+    test('the stream the server did pick still plays', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: jellyfinInfo(defaultSubtitleStreamIndex: 3),
+        sidecars: const [],
+        profileSettings: profileWithMode('Default'),
+      );
+
+      expect(result.isOff, isFalse);
+      expect(result.primarySourceStreamId, 3);
+    });
+
+    test('an off persisted through progress reports plays nothing', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: jellyfinInfo(defaultSubtitleStreamIndex: -1),
+        sidecars: const [],
+        profileSettings: profileWithMode('Default'),
+      );
+
+      expect(result.isOff, isTrue);
+    });
   });
 
   test('retains each source metadata row for a shared preloaded container', () {
