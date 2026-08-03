@@ -33,7 +33,7 @@ List<FocusableAction> buildMusicActions({
     if (onInstantMix != null)
       FocusableAction(
         debugLabel: 'music_instant_mix',
-        icon: Symbols.instant_mix_rounded,
+        icon: Symbols.wand_stars_rounded,
         tooltip: t.music.instantMix,
         onPressed: onInstantMix,
       ),

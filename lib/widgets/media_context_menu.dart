@@ -395,7 +395,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         // reachable (capabilities stay truthy for offline servers).
         if (itemServerOnline && (mediaClient?.capabilities.instantMix ?? false)) {
           menuActions.add(
-            _MenuAction(value: 'music_instant_mix', icon: Symbols.instant_mix_rounded, label: t.music.instantMix),
+            _MenuAction(value: 'music_instant_mix', icon: Symbols.wand_stars_rounded, label: t.music.instantMix),
           );
         }
 

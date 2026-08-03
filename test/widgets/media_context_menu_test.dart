@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -554,6 +555,42 @@ void main() {
 
       expect(find.text(t.playlists.selectPlaylist), findsNothing);
       expect(find.text('picker target'), findsOneWidget);
+    });
+
+    testWidgets('the music menu gives Instant Mix an icon it shares with no sibling row', (tester) async {
+      final track = testMediaItem(
+        id: 'track-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.track,
+        title: 'Track',
+        parentId: 'album-1',
+        parentTitle: 'Album',
+        grandparentId: 'artist-1',
+        grandparentTitle: 'Artist',
+        serverId: 'srv-1',
+      );
+      final harness = await _pumpSiblingMusicMenu(tester, item: track, relatedItems: const []);
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('mini-player menu target')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.music.instantMix), findsOneWidget);
+      expect(find.byIcon(Symbols.wand_stars_rounded), findsOneWidget);
+
+      // #1629: the fader glyph reads as an equalizer, and the neighbouring
+      // rows must stay tellable apart at a glance on a TV.
+      expect(find.byIcon(Symbols.instant_mix_rounded), findsNothing);
+      expect(find.byIcon(Symbols.tune_rounded), findsNothing);
+      final musicIcons = tester
+          .widgetList<Icon>(find.byType(Icon))
+          .map((icon) => icon.icon)
+          .whereType<IconData>()
+          .toList();
+      expect(
+        musicIcons.where((icon) => icon == Symbols.wand_stars_rounded),
+        hasLength(1),
+        reason: 'Instant Mix must not reuse the glyph of Play, Play next, Add to queue, or Go to artist',
+      );
     });
 
     testWidgets('track album action uses the profile navigator from the sibling menu overlay', (tester) async {
