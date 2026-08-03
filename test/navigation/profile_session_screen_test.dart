@@ -49,6 +49,7 @@ void main() {
       registry: profileRegistry,
       plexHome: plexHome,
       connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final serverManager = MultiServerManager();

@@ -38,6 +38,27 @@ JellyfinConnectionAuthService _service({required _Handler handler}) {
   );
 }
 
+Future<JellyfinConnection> _authenticateByNameWithUser(Map<String, Object?> user) {
+  final svc = _service(
+    handler: (req) {
+      if (req.url.path == '/System/Info/Public') {
+        return _ok({'Id': 'srv-1', 'ServerName': 'Home'});
+      }
+      if (req.url.path == '/Users/AuthenticateByName') {
+        return _ok({'AccessToken': 'tok-new', 'User': user});
+      }
+      return _status(404);
+    },
+  );
+
+  return svc.authenticateByName(
+    baseUrl: 'https://jf.example.com',
+    username: 'edde',
+    password: 'pw',
+    deviceId: 'dev-xyz',
+  );
+}
+
 Future<Object> _captureError(Future<dynamic> future) async {
   try {
     await future;
@@ -155,6 +176,47 @@ void main() {
       expect(conn.serverMachineId, 'srv-1');
       // Composite id keeps multi-user-per-server unambiguous.
       expect(conn.id, 'srv-1/user-7');
+    });
+
+    test('captures the user primary image tag', () async {
+      final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde', 'PrimaryImageTag': 'avatar-tag'});
+
+      expect(conn.primaryImageTag, 'avatar-tag');
+    });
+
+    test('uses no primary image tag when Jellyfin omits the key', () async {
+      final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde'});
+
+      expect(conn.primaryImageTag, isNull);
+    });
+
+    test('uses no primary image tag when Jellyfin returns null', () async {
+      final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde', 'PrimaryImageTag': null});
+
+      expect(conn.primaryImageTag, isNull);
+    });
+
+    test('ignores empty and whitespace-only primary image tags', () async {
+      for (final tag in ['', '   \t ']) {
+        final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde', 'PrimaryImageTag': tag});
+
+        expect(conn.primaryImageTag, isNull, reason: 'tag: "$tag"');
+      }
+    });
+
+    test('a malformed primary image tag does not fail sign-in', () async {
+      final cases = <(Object, String)>[
+        (12345, '12345'),
+        (['unexpected'], '[unexpected]'),
+        ({'unexpected': 'tag'}, '{unexpected: tag}'),
+      ];
+
+      for (final (tag, expected) in cases) {
+        final conn = await _authenticateByNameWithUser({'Id': 'user-7', 'Name': 'edde', 'PrimaryImageTag': tag});
+
+        expect(conn, isA<JellyfinConnection>());
+        expect(conn.primaryImageTag, expected, reason: 'tag: $tag');
+      }
     });
 
     test('throws MediaServerAuthException on 401', () async {
@@ -341,6 +403,36 @@ void main() {
       expect(conn, isNotNull);
       expect(conn!.accessToken, 'tok-qc');
       expect(conn.userId, 'user-9');
+    });
+
+    test('captures the user primary image tag', () async {
+      final svc = _service(
+        handler: (req) {
+          if (req.url.path == '/System/Info/Public') {
+            return _ok({'Id': 'srv-1', 'ServerName': 'Home'});
+          }
+          if (req.url.path == '/QuickConnect/Connect') {
+            return _ok({'Authenticated': true});
+          }
+          if (req.url.path == '/Users/AuthenticateWithQuickConnect') {
+            return _ok({
+              'AccessToken': 'tok-qc',
+              'User': {'Id': 'user-9', 'Name': 'edde', 'PrimaryImageTag': 'quick-connect-avatar'},
+            });
+          }
+          return _status(404);
+        },
+      );
+
+      final conn = await svc.authenticateByQuickConnect(
+        baseUrl: 'https://jf.example.com',
+        secret: 'sec',
+        deviceId: 'dev-xyz',
+        timeout: const Duration(seconds: 30),
+      );
+
+      expect(conn, isNotNull);
+      expect(conn!.primaryImageTag, 'quick-connect-avatar');
     });
 
     test('returns null when secret expires server-side (404 mid-poll)', () async {

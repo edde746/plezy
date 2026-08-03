@@ -9,6 +9,7 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
+import 'package:plezy/profiles/profile_avatar.dart';
 import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
@@ -44,6 +45,7 @@ void main() {
       registry: profiles,
       plexHome: plexHome,
       connections: connections,
+      profileConnections: profileConnections,
       storage: storage,
     );
     addTearDown(() async {
@@ -106,6 +108,7 @@ void main() {
       registry: profiles,
       plexHome: plexHome,
       connections: connections,
+      profileConnections: profileConnections,
       storage: storage,
     );
     addTearDown(() async {
@@ -132,6 +135,87 @@ void main() {
 
     expect(tester.getTopLeft(find.text('Kids')).dy, lessThan(tester.getTopLeft(find.text('Owner')).dy));
   });
+
+  testWidgets('passes derived Jellyfin avatar URLs only to linked profile tiles', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final linkedProfile = Profile.local(id: 'local-linked', displayName: 'Linked', createdAt: DateTime(2026, 1, 1));
+    final unlinkedProfile = Profile.local(
+      id: 'local-unlinked',
+      displayName: 'Unlinked',
+      createdAt: DateTime(2026, 1, 2),
+    );
+    final jellyfin = JellyfinConnection(
+      id: 'jf-machine/jf-user',
+      baseUrl: 'https://jellyfin.example',
+      serverName: 'Jellyfin',
+      serverMachineId: 'jf-machine',
+      userId: 'jf-user',
+      userName: 'Linked',
+      accessToken: 'secret-token',
+      deviceId: 'device-1',
+      primaryImageTag: 'primary-tag',
+      createdAt: DateTime(2025, 12, 1),
+    );
+    final link = ProfileConnection(
+      profileId: linkedProfile.id,
+      connectionId: jellyfin.id,
+      userIdentifier: jellyfin.userId,
+    );
+    final profiles = _FakeProfileRegistry(db, [linkedProfile, unlinkedProfile]);
+    final connections = _FakeConnectionRegistry(db, [jellyfin]);
+    final profileConnections = _FakeProfileConnectionRegistry(db, [link]);
+    final storage = await StorageService.getInstance();
+    final plexHome = PlexHomeService(
+      connections: connections,
+      profileConnections: profileConnections,
+      storage: storage,
+      plexHomeUserFetcher: (_) async => const [],
+    );
+    final activeProfile = ActiveProfileProvider(
+      registry: profiles,
+      plexHome: plexHome,
+      connections: connections,
+      profileConnections: profileConnections,
+      storage: storage,
+    );
+    addTearDown(() async {
+      activeProfile.dispose();
+      await plexHome.dispose();
+      await db.close();
+    });
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            Provider<ProfileRegistry>.value(value: profiles),
+            Provider<ProfileConnectionRegistry>.value(value: profileConnections),
+            Provider<ConnectionRegistry>.value(value: connections),
+            Provider<PlexHomeService>.value(value: plexHome),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
+          ],
+          child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final linkedAvatar = tester.widget<ProfileAvatar>(
+      find.byWidgetPredicate((widget) => widget is ProfileAvatar && widget.profile?.id == linkedProfile.id),
+    );
+    final unlinkedAvatar = tester.widget<ProfileAvatar>(
+      find.byWidgetPredicate((widget) => widget is ProfileAvatar && widget.profile?.id == unlinkedProfile.id),
+    );
+    expect(linkedAvatar.avatarUrl, isNotNull);
+    expect(
+      linkedAvatar.avatarUrl,
+      'https://jellyfin.example/Users/jf-user/Images/Primary?tag=primary-tag&maxWidth=240&maxHeight=240',
+    );
+    expect(unlinkedAvatar.avatarUrl, isNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
 }
 
 class _FakeProfileRegistry extends ProfileRegistry {
@@ -147,18 +231,22 @@ class _FakeProfileRegistry extends ProfileRegistry {
 }
 
 class _FakeConnectionRegistry extends ConnectionRegistry {
-  _FakeConnectionRegistry(super.db);
+  final List<Connection> _connections;
+
+  _FakeConnectionRegistry(super.db, [this._connections = const []]);
 
   @override
-  Stream<List<Connection>> watchConnections() => Stream.value(const []);
+  Stream<List<Connection>> watchConnections() => Stream.value(_connections);
 
   @override
-  Future<List<Connection>> list() async => const [];
+  Future<List<Connection>> list() async => _connections;
 }
 
 class _FakeProfileConnectionRegistry extends ProfileConnectionRegistry {
-  _FakeProfileConnectionRegistry(super.db);
+  final List<ProfileConnection> _profileConnections;
+
+  _FakeProfileConnectionRegistry(super.db, [this._profileConnections = const []]);
 
   @override
-  Stream<List<ProfileConnection>> watchAll() => Stream.value(const []);
+  Stream<List<ProfileConnection>> watchAll() => Stream.value(_profileConnections);
 }

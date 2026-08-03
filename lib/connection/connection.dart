@@ -1,6 +1,7 @@
 import '../media/media_backend.dart';
 import '../models/plex/plex_home_user.dart';
 import '../services/plex_auth_service.dart';
+import '../utils/json_utils.dart';
 import '../utils/url_utils.dart';
 
 /// Identifier of a backend kind a [Connection] points at. Lighter-weight than
@@ -232,6 +233,13 @@ class JellyfinConnection extends Connection {
   /// match/unmatch, edit metadata) without an extra round-trip.
   final bool isAdministrator;
 
+  /// The authenticated user's `PrimaryImageTag`, or `null` when they have no
+  /// profile picture. Jellyfin omits the key entirely in that case, and the
+  /// tag is `MD5(imagePath + lastModified)` so it changes on every upload —
+  /// which makes the derived avatar URL self-invalidating. Captured at auth
+  /// time and refreshed by [JellyfinClient.checkHealth].
+  final String? primaryImageTag;
+
   JellyfinConnection({
     required this.id,
     required String baseUrl,
@@ -243,6 +251,7 @@ class JellyfinConnection extends Connection {
     required this.accessToken,
     required this.deviceId,
     this.isAdministrator = false,
+    this.primaryImageTag,
     this.status = ConnectionStatus.unknown,
     required this.createdAt,
     this.lastAuthenticatedAt,
@@ -298,6 +307,12 @@ class JellyfinConnection extends Connection {
     String? accessToken,
     String? deviceId,
     bool? isAdministrator,
+    String? primaryImageTag,
+
+    /// Deleting a Jellyfin profile picture drops `PrimaryImageTag` from the
+    /// user DTO, so a refresh must be able to null the cached value — a bare
+    /// `primaryImageTag: null` is indistinguishable from "unchanged".
+    bool clearPrimaryImageTag = false,
     ConnectionStatus? status,
     DateTime? createdAt,
     DateTime? lastAuthenticatedAt,
@@ -314,6 +329,7 @@ class JellyfinConnection extends Connection {
       accessToken: accessToken ?? this.accessToken,
       deviceId: deviceId ?? this.deviceId,
       isAdministrator: isAdministrator ?? this.isAdministrator,
+      primaryImageTag: clearPrimaryImageTag ? null : (primaryImageTag ?? this.primaryImageTag),
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
@@ -332,6 +348,7 @@ class JellyfinConnection extends Connection {
       'accessToken': accessToken,
       'deviceId': deviceId,
       'isAdministrator': isAdministrator,
+      'primaryImageTag': primaryImageTag,
     };
   }
 
@@ -359,9 +376,23 @@ class JellyfinConnection extends Connection {
       accessToken: json['accessToken'] as String? ?? '',
       deviceId: json['deviceId'] as String? ?? '',
       isAdministrator: json['isAdministrator'] as bool? ?? false,
+      primaryImageTag: normalizePrimaryImageTag(json['primaryImageTag']),
       status: status,
       createdAt: createdAt,
       lastAuthenticatedAt: lastAuthenticatedAt,
     );
+  }
+
+  /// Tolerant read of a Jellyfin user DTO's `PrimaryImageTag`.
+  ///
+  /// The tag is decorative — a fork or a drifted scalar type must never brick
+  /// sign-in — so this coerces through [readStringField] rather than casting,
+  /// and collapses absent/blank to `null` ("no picture").
+  static String? readPrimaryImageTag(Map<String, Object?> userDto) =>
+      normalizePrimaryImageTag(readStringField(userDto, 'PrimaryImageTag'));
+
+  static String? normalizePrimaryImageTag(Object? raw) {
+    final tag = raw?.toString().trim();
+    return tag == null || tag.isEmpty ? null : tag;
   }
 }

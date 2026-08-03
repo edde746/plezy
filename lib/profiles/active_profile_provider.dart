@@ -11,6 +11,9 @@ import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import 'plex_home_service.dart';
 import 'profile.dart';
+import 'profile_avatar_source.dart';
+import 'profile_connection.dart';
+import 'profile_connection_registry.dart';
 import 'profile_merge.dart';
 import 'profile_registry.dart';
 
@@ -27,6 +30,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     required this._registry,
     required this._plexHome,
     required this._connections,
+    required this._profileConnections,
     this._storage,
     this._activeProfileIdWriter,
   });
@@ -34,6 +38,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   final ProfileRegistry _registry;
   final PlexHomeService _plexHome;
   final ConnectionRegistry _connections;
+  final ProfileConnectionRegistry _profileConnections;
   StorageService? _storage;
   final Future<void> Function(String profileId)? _activeProfileIdWriter;
 
@@ -42,9 +47,12 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   List<Profile> _localProfiles = const [];
   Map<String, List<PlexHomeUser>> _plexHomeUsers = const {};
   Map<String, Connection> _connectionsById = const {};
+  Map<String, List<ProfileConnection>> _connectionsByProfile = const {};
+  Map<String, String?> _avatarUrls = const {};
 
   StreamSubscription<List<Profile>>? _localSub;
   StreamSubscription<List<Connection>>? _connSub;
+  StreamSubscription<List<ProfileConnection>>? _pcSub;
   StreamSubscription<Map<String, List<PlexHomeUser>>>? _plexHomeSub;
   Future<void>? _initializeFuture;
   bool _initialized = false;
@@ -61,6 +69,10 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   Profile? get active => _active;
   String? get activeId => _active?.id;
   List<Profile> get profiles => _profiles;
+
+  /// Derived picture URL for [profileId], or null when initials should render.
+  String? avatarUrlFor(String profileId) => _avatarUrls[profileId];
+
   bool get hasMultipleProfiles => _profiles.length > 1;
   bool get isInitialized => _initialized;
 
@@ -170,6 +182,14 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       _resolveActive();
       safeNotifyListeners();
     });
+    _pcSub = _profileConnections.watchAll().listen((list) {
+      final byProfile = groupConnectionsByProfile(list);
+      if (_sameProfileConnections(byProfile, _connectionsByProfile)) return;
+      _connectionsByProfile = byProfile;
+      _recomputeProfiles();
+      _resolveActive();
+      safeNotifyListeners();
+    });
     _plexHomeSub = _plexHome.stream.listen((cache) {
       if (_samePlexHomeUsers(cache, _plexHomeUsers)) return;
       _plexHomeUsers = cache;
@@ -191,6 +211,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     _localProfiles = await _registry.list();
     final initialConns = await _connections.list();
     _connectionsById = {for (final c in initialConns) c.id: c};
+    _connectionsByProfile = groupConnectionsByProfile(await _profileConnections.listAll());
     _plexHomeUsers = _plexHome.current;
     _recomputeProfiles();
     _resolveActive();
@@ -205,6 +226,29 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       if (other == null) return false;
       if (identical(entry.value, other)) continue;
       if (jsonEncode(entry.value.toConfigJson()) != jsonEncode(other.toConfigJson())) return false;
+    }
+    return true;
+  }
+
+  static bool _sameProfileConnections(Map<String, List<ProfileConnection>> a, Map<String, List<ProfileConnection>> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || entry.value.length != other.length) return false;
+      for (final row in entry.value) {
+        var hasSameFingerprint = false;
+        for (final candidate in other) {
+          if (row.profileId == candidate.profileId &&
+              row.connectionId == candidate.connectionId &&
+              row.userIdentifier == candidate.userIdentifier) {
+            hasSameFingerprint = true;
+            break;
+          }
+        }
+        // Only these identity fields affect avatar selection. Deliberately
+        // ignore tokens, default status, and binder-maintained timestamps.
+        if (!hasSameFingerprint) return false;
+      }
     }
     return true;
   }
@@ -224,6 +268,12 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
       plexHomeByConnectionId: _plexHomeUsers,
       connectionsById: _connectionsById,
       storage: _storage,
+    );
+    _avatarUrls = resolveProfileAvatarUrls(
+      profiles: _profiles,
+      connectionsByProfile: _connectionsByProfile,
+      connectionsById: _connectionsById,
+      plexHomeByConnectionId: _plexHomeUsers,
     );
   }
 
@@ -487,13 +537,17 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     await _localSub?.cancel();
     await _connSub?.cancel();
     await _plexHomeSub?.cancel();
+    await _pcSub?.cancel();
     _localSub = null;
     _connSub = null;
     _plexHomeSub = null;
+    _pcSub = null;
     _profiles = const [];
     _localProfiles = const [];
     _plexHomeUsers = const {};
     _connectionsById = const {};
+    _connectionsByProfile = const {};
+    _avatarUrls = const {};
     _active = null;
     _initializeFuture = null;
     _initialized = false;
@@ -525,6 +579,7 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     _localSub?.cancel();
     _connSub?.cancel();
     _plexHomeSub?.cancel();
+    _pcSub?.cancel();
     super.dispose();
   }
 }

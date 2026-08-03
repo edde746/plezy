@@ -28,12 +28,14 @@ class _JellyfinAuthenticationResponse {
   final String userId;
   final String userName;
   final bool isAdministrator;
+  final String? primaryImageTag;
 
   const _JellyfinAuthenticationResponse({
     required this.accessToken,
     required this.userId,
     required this.userName,
     required this.isAdministrator,
+    this.primaryImageTag,
   });
 }
 
@@ -149,6 +151,7 @@ class JellyfinConnectionAuthService {
         accessToken: auth.accessToken,
         deviceId: validDeviceId,
         isAdministrator: auth.isAdministrator,
+        primaryImageTag: auth.primaryImageTag,
       );
     } finally {
       client.close();
@@ -316,6 +319,7 @@ class JellyfinConnectionAuthService {
         accessToken: auth.accessToken,
         deviceId: validDeviceId,
         isAdministrator: auth.isAdministrator,
+        primaryImageTag: auth.primaryImageTag,
       );
     } finally {
       exchangeClient.close();
@@ -419,6 +423,7 @@ class JellyfinConnectionAuthService {
         userId: userId,
         userName: userName,
         isAdministrator: policy?['IsAdministrator'] as bool? ?? false,
+        primaryImageTag: JellyfinConnection.readPrimaryImageTag(user),
       );
     } on TimeoutException {
       // MediaServerHttpClient normally wraps timeouts, but keep raw client
@@ -445,6 +450,7 @@ class JellyfinConnectionAuthService {
     required String accessToken,
     required String deviceId,
     required bool isAdministrator,
+    required String? primaryImageTag,
   }) {
     final now = DateTime.now();
     return JellyfinConnection(
@@ -458,6 +464,7 @@ class JellyfinConnectionAuthService {
       accessToken: accessToken,
       deviceId: deviceId,
       isAdministrator: isAdministrator,
+      primaryImageTag: primaryImageTag,
       status: ConnectionStatus.online,
       createdAt: now,
       lastAuthenticatedAt: now,

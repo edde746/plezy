@@ -62,6 +62,58 @@ void main() {
       expect(restored.lastAuthenticatedAt, base.lastAuthenticatedAt);
     });
 
+    test('primary image tag round-trips through config JSON', () {
+      final tagged = base.copyWith(primaryImageTag: 'avatar-tag');
+      final restored = JellyfinConnection.fromConfigJson(
+        id: tagged.id,
+        json: tagged.toConfigJson(),
+        status: tagged.status,
+        createdAt: tagged.createdAt,
+        lastAuthenticatedAt: tagged.lastAuthenticatedAt,
+      );
+
+      expect(restored.primaryImageTag, 'avatar-tag');
+    });
+
+    test('config saved before image tags decodes with no primary image tag', () {
+      final legacyJson = <String, Object?>{
+        'baseUrl': base.baseUrl,
+        'baseUrls': base.baseUrls,
+        'serverName': base.serverName,
+        'serverMachineId': base.serverMachineId,
+        'userId': base.userId,
+        'userName': base.userName,
+        'accessToken': base.accessToken,
+        'deviceId': base.deviceId,
+        'isAdministrator': base.isAdministrator,
+      };
+      expect(legacyJson.containsKey('primaryImageTag'), isFalse);
+
+      final restored = JellyfinConnection.fromConfigJson(
+        id: base.id,
+        json: legacyJson,
+        status: base.status,
+        createdAt: base.createdAt,
+        lastAuthenticatedAt: base.lastAuthenticatedAt,
+      );
+
+      expect(restored.primaryImageTag, isNull);
+    });
+
+    test('blank persisted primary image tags decode as null', () {
+      for (final tag in ['', ' \t\n ']) {
+        final restored = JellyfinConnection.fromConfigJson(
+          id: base.id,
+          json: {...base.toConfigJson(), 'primaryImageTag': tag},
+          status: base.status,
+          createdAt: base.createdAt,
+          lastAuthenticatedAt: base.lastAuthenticatedAt,
+        );
+
+        expect(restored.primaryImageTag, isNull, reason: 'tag: "$tag"');
+      }
+    });
+
     test('fromConfigJson with empty payload uses safe defaults (no NPE)', () {
       final restored = JellyfinConnection.fromConfigJson(
         id: 'orphan',
@@ -97,6 +149,32 @@ void main() {
       final updated = base.copyWith(baseUrl: 'https://jellyfin.lan:8096');
       expect(updated.baseUrl, 'https://jellyfin.lan:8096');
       expect(updated.baseUrls, ['https://jellyfin.lan:8096', 'https://jellyfin.example.com']);
+    });
+
+    test('copyWith preserves an existing primary image tag by default', () {
+      final tagged = base.copyWith(primaryImageTag: 'old');
+
+      expect(tagged.copyWith().primaryImageTag, 'old');
+    });
+
+    test('copyWith replaces an existing primary image tag', () {
+      final tagged = base.copyWith(primaryImageTag: 'old');
+
+      expect(tagged.copyWith(primaryImageTag: 'new').primaryImageTag, 'new');
+    });
+
+    test('copyWith only clears a primary image tag through the clear sentinel', () {
+      final tagged = base.copyWith(primaryImageTag: 'old');
+
+      expect(tagged.copyWith(primaryImageTag: null).primaryImageTag, 'old');
+      expect(tagged.copyWith(clearPrimaryImageTag: true).primaryImageTag, isNull);
+    });
+
+    test('reads primary image tags defensively from Jellyfin user DTOs', () {
+      expect(JellyfinConnection.readPrimaryImageTag(const {'PrimaryImageTag': 'avatar-tag'}), 'avatar-tag');
+      expect(JellyfinConnection.readPrimaryImageTag(const {}), isNull);
+      expect(JellyfinConnection.readPrimaryImageTag(const {'PrimaryImageTag': ' \t\n '}), isNull);
+      expect(JellyfinConnection.readPrimaryImageTag(const {'PrimaryImageTag': 42}), '42');
     });
 
     test('kind and backend match Jellyfin', () {

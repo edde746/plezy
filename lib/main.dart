@@ -1472,6 +1472,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               registry: context.read<ProfileRegistry>(),
               plexHome: context.read<PlexHomeService>(),
               connections: context.read<ConnectionRegistry>(),
+              profileConnections: context.read<ProfileConnectionRegistry>(),
               storage: context.read<StorageService>(),
             );
             unawaited(provider.initialize());

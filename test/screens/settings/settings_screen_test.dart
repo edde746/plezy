@@ -642,7 +642,12 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     profileConnections: profileConnections,
     plexHomeUserFetcher: (_) async => const [],
   );
-  final activeProfile = ActiveProfileProvider(registry: profiles, plexHome: plexHome, connections: connections);
+  final activeProfile = ActiveProfileProvider(
+    registry: profiles,
+    plexHome: plexHome,
+    connections: connections,
+    profileConnections: profileConnections,
+  );
   final libraries = LibrariesProvider();
   final hiddenLibraries = HiddenLibrariesProvider(storageService: _FakeHiddenLibrariesStorage());
   await hiddenLibraries.ensureInitialized();

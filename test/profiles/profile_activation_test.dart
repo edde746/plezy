@@ -118,6 +118,7 @@ class _ThrowingActiveProfileProvider extends ActiveProfileProvider {
     required super.registry,
     required super.plexHome,
     required super.connections,
+    required super.profileConnections,
     required super.storage,
     super.activeProfileIdWriter,
   });
@@ -515,6 +516,7 @@ void main() {
       registry: profiles,
       plexHome: plexHome,
       connections: connections,
+      profileConnections: profileConnections,
       storage: storage,
       activeProfileIdWriter: writer,
     );
@@ -623,6 +625,7 @@ Future<_Harness> _pumpHarness(
     registry: profiles,
     plexHome: plexHome,
     connections: connections,
+    profileConnections: profileConnections,
     storage: storage,
     activeProfileIdWriter: gateOwnerRestoreWrite || failNewerIdentityWrite ? activeProfileIdWriter : null,
   );

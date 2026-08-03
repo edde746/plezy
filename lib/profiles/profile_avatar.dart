@@ -12,13 +12,19 @@ class ProfileAvatar extends StatelessWidget {
   final double size;
   final bool showLockBadge;
 
-  const ProfileAvatar({super.key, required this.profile, this.size = 40, this.showLockBadge = true});
+  /// The derived picture for this profile (see [resolveProfileAvatarUrls]).
+  ///
+  /// Falls back to [Profile.avatarThumbUrl] when null.
+  final String? avatarUrl;
+
+  const ProfileAvatar({super.key, required this.profile, this.size = 40, this.showLockBadge = true, this.avatarUrl});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final p = profile;
     final lockBadgeSize = size * 0.34;
+    final memCacheSize = (size * MediaQuery.devicePixelRatioOf(context)).round();
 
     return SizedBox(
       width: size,
@@ -27,7 +33,7 @@ class ProfileAvatar extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           ClipOval(
-            child: SizedBox(width: size, height: size, child: _buildContent(theme, p)),
+            child: SizedBox(width: size, height: size, child: _buildContent(theme, p, memCacheSize)),
           ),
           if (showLockBadge && p != null && p.isPinProtected)
             Positioned(
@@ -55,16 +61,21 @@ class ProfileAvatar extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(ThemeData theme, Profile? p) {
+  Widget _buildContent(ThemeData theme, Profile? p, int memCacheSize) {
     if (p == null) {
       return Container(color: theme.colorScheme.surfaceContainerHighest);
     }
-    final thumb = p.avatarThumbUrl;
+    // An empty override means "nothing derived", not "suppress the profile's
+    // own picture" — same absent-or-blank rule the thumb itself uses below.
+    final override = avatarUrl;
+    final thumb = override != null && override.isNotEmpty ? override : p.avatarThumbUrl;
     if (thumb != null && thumb.isNotEmpty) {
       return CachedNetworkImage(
         imageUrl: thumb,
         cacheManager: PlexImageCacheManager.instance,
         fit: BoxFit.cover,
+        memCacheWidth: memCacheSize,
+        memCacheHeight: memCacheSize,
         placeholder: (_, _) => _initialFallback(theme, p),
         errorBuilder: (_, _, _) => _initialFallback(theme, p),
       );

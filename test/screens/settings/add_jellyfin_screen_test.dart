@@ -168,6 +168,7 @@ class _NoWatchActiveProfileProvider extends ActiveProfileProvider {
     required super.registry,
     required super.plexHome,
     required super.connections,
+    required super.profileConnections,
     required super.storage,
   });
 
@@ -242,6 +243,7 @@ class _RouteHarness {
       registry: profiles,
       plexHome: plexHome,
       connections: connections,
+      profileConnections: profileConnections,
       storage: storage,
     );
     final manager = _CountingJellyfinManager();

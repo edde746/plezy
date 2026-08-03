@@ -6,6 +6,7 @@ import '../models/plex/plex_home_user.dart';
 import '../services/storage_service.dart';
 import 'plex_home_service.dart';
 import 'profile.dart';
+import 'profile_avatar_source.dart';
 import 'profile_connection.dart';
 import 'profile_connection_registry.dart';
 import 'profile_merge.dart';
@@ -25,9 +26,22 @@ class ProfilesView {
 
   final Map<String, Connection> connectionsById;
 
-  const ProfilesView({required this.profiles, required this.connectionsByProfile, required this.connectionsById});
+  /// Picture URL per profile id; null means render initials. See [resolveProfileAvatarUrls].
+  final Map<String, String?> avatarUrlByProfile;
 
-  static const empty = ProfilesView(profiles: [], connectionsByProfile: {}, connectionsById: {});
+  const ProfilesView({
+    required this.profiles,
+    required this.connectionsByProfile,
+    required this.connectionsById,
+    required this.avatarUrlByProfile,
+  });
+
+  static const empty = ProfilesView(
+    profiles: [],
+    connectionsByProfile: {},
+    connectionsById: {},
+    avatarUrlByProfile: {},
+  );
 }
 
 /// Join-table rows that should be shown as explicit, user-manageable
@@ -77,21 +91,24 @@ ProfilesView _build({
   required StorageService? storage,
 }) {
   final connectionsById = {for (final c in conns) c.id: c};
+  final connectionsByProfile = groupConnectionsByProfile(pcs);
   final all = mergeLocalWithPlexHome(
     locals: locals,
     plexHomeByConnectionId: homes,
     connectionsById: connectionsById,
     storage: storage,
   );
-  return ProfilesView(profiles: all, connectionsByProfile: _groupByProfile(pcs), connectionsById: connectionsById);
-}
-
-Map<String, List<ProfileConnection>> _groupByProfile(List<ProfileConnection> pcs) {
-  final out = <String, List<ProfileConnection>>{};
-  for (final pc in pcs) {
-    out.putIfAbsent(pc.profileId, () => []).add(pc);
-  }
-  return out;
+  return ProfilesView(
+    profiles: all,
+    connectionsByProfile: connectionsByProfile,
+    connectionsById: connectionsById,
+    avatarUrlByProfile: resolveProfileAvatarUrls(
+      profiles: all,
+      connectionsByProfile: connectionsByProfile,
+      connectionsById: connectionsById,
+      plexHomeByConnectionId: homes,
+    ),
+  );
 }
 
 /// Lightweight `combineLatest4` — emits the combined value once each input

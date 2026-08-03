@@ -266,6 +266,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
               child: _ProfileTile(
                 borderRadius: tileRadii,
                 profile: profile,
+                avatarUrl: view.avatarUrlByProfile[profile.id],
                 isActive: isActive && !widget.requireSelection,
                 chips: _chipsFor(profile, view),
                 onTap: () => _switchTo(profile),
@@ -363,6 +364,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
 
 class _ProfileTile extends StatelessWidget {
   final Profile profile;
+  final String? avatarUrl;
   final bool isActive;
   final BorderRadius borderRadius;
   final List<_ChipData> chips;
@@ -377,6 +379,7 @@ class _ProfileTile extends StatelessWidget {
 
   const _ProfileTile({
     required this.profile,
+    required this.avatarUrl,
     required this.isActive,
     required this.borderRadius,
     required this.chips,
@@ -403,7 +406,7 @@ class _ProfileTile extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            ProfileAvatar(profile: profile, size: 44),
+            ProfileAvatar(profile: profile, size: 44, avatarUrl: avatarUrl),
             const SizedBox(width: 14),
             Expanded(
               child: Column(

@@ -2,6 +2,16 @@ import '../connection/connection.dart';
 import '../models/plex/plex_home_user.dart';
 import '../services/storage_service.dart';
 import 'profile.dart';
+import 'profile_connection.dart';
+
+/// Groups profile-connection rows by profile id, preserving input order.
+Map<String, List<ProfileConnection>> groupConnectionsByProfile(List<ProfileConnection> pcs) {
+  final out = <String, List<ProfileConnection>>{};
+  for (final pc in pcs) {
+    out.putIfAbsent(pc.profileId, () => []).add(pc);
+  }
+  return out;
+}
 
 /// Merge local profiles with virtual Plex Home profiles. Each Plex Home
 /// user becomes a virtual profile attached to its `connectionId`. Home

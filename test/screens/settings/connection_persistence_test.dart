@@ -79,6 +79,7 @@ class _RejectingActiveProfileProvider extends ActiveProfileProvider {
     required super.registry,
     required super.plexHome,
     required super.connections,
+    required super.profileConnections,
     required super.storage,
   });
 
@@ -91,6 +92,7 @@ class _ThrowingActiveProfileProvider extends ActiveProfileProvider {
     required super.registry,
     required super.plexHome,
     required super.connections,
+    required super.profileConnections,
     required super.storage,
   });
 
@@ -184,7 +186,13 @@ void main() {
     );
     activeProfiles =
         activeFactory?.call(profiles, plexHome, connections, storage) ??
-        ActiveProfileProvider(registry: profiles, plexHome: plexHome, connections: connections, storage: storage);
+        ActiveProfileProvider(
+          registry: profiles,
+          plexHome: plexHome,
+          connections: connections,
+          profileConnections: profileConnections,
+          storage: storage,
+        );
     if (initializeActive) await tester.runAsync(activeProfiles.initialize);
     await tester.pumpWidget(
       MultiProvider(
@@ -347,6 +355,7 @@ void main() {
         registry: profiles,
         plexHome: plexHome,
         connections: connections,
+        profileConnections: profileConnections,
         storage: storage,
       ),
     );
@@ -388,6 +397,7 @@ void main() {
         registry: profiles,
         plexHome: plexHome,
         connections: connections,
+        profileConnections: profileConnections,
         storage: storage,
       ),
     );

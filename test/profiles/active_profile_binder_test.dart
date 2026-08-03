@@ -71,6 +71,7 @@ void main() {
       registry: profiles,
       plexHome: plexHome,
       connections: connections,
+      profileConnections: profileConnections,
       storage: storage,
     );
     manager = MultiServerManager();

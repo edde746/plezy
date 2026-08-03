@@ -104,6 +104,7 @@ void main() {
       registry: profileRegistry,
       plexHome: plexHome,
       connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final discoverProvider = DiscoverProvider(
@@ -295,6 +296,7 @@ void main() {
       registry: profileRegistry,
       plexHome: plexHome,
       connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final discoverProvider = DiscoverProvider(
@@ -406,6 +408,7 @@ void main() {
       registry: profileRegistry,
       plexHome: plexHome,
       connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
       storage: storage,
     );
     final discoverProvider = DiscoverProvider(

@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/plex/plex_home_user.dart';
 import '../../profiles/active_profile_binder.dart';
+import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_avatar.dart';
@@ -269,6 +270,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isLocal = _profile.isLocal;
+    final avatarUrl = context.watch<ActiveProfileProvider>().avatarUrlFor(_profile.id);
 
     return FocusedScrollScaffold(
       title: Text(_profile.displayName),
@@ -277,7 +279,9 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              Center(child: ProfileAvatar(profile: _profile, size: 96)),
+              Center(
+                child: ProfileAvatar(profile: _profile, size: 96, avatarUrl: avatarUrl),
+              ),
               const SizedBox(height: 24),
               Text(t.profiles.profileNameLabel, style: theme.textTheme.labelLarge),
               const SizedBox(height: 8),
