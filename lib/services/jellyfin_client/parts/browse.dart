@@ -2,23 +2,21 @@ part of '../../jellyfin_client.dart';
 
 String _segment(String value) => Uri.encodeComponent(value);
 
-/// Transport policy for a hub surface: bounded transient retries, no
-/// endpoint failover. See `_getItemsResponse`.
-typedef _HubRetryPolicy = ({String operation, List<Duration> attemptTimeouts});
+/// Transport policy for a hub surface: one whole-request deadline, retries
+/// only on immediate connection errors, no endpoint failover. See
+/// `_getItemsResponse` and [retryTransientMediaServerCall].
+typedef _HubRetryPolicy = ({String operation, Duration deadline});
 
-const _HubRetryPolicy _homeHubRetry = (
-  operation: 'Jellyfin home hubs',
-  attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
-);
+const _HubRetryPolicy _homeHubRetry = (operation: 'Jellyfin home hubs', deadline: MediaServerTimeouts.homeHubDeadline);
 
 const _HubRetryPolicy _libraryHubRetry = (
   operation: 'Jellyfin library hubs',
-  attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+  deadline: MediaServerTimeouts.libraryHubDeadline,
 );
 
 const _HubRetryPolicy _continueWatchingRetry = (
   operation: 'Jellyfin continue watching',
-  attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
+  deadline: MediaServerTimeouts.homeHubDeadline,
 );
 
 List<Map<String, dynamic>> _itemsArray(Object? data) {
@@ -58,15 +56,47 @@ LibraryPage<T> _pagedItems<T>(
 /// list calls; we ask for the minimum extras needed to drive the
 /// MediaItem mapper:
 ///  - `RecursiveItemCount`/`ChildCount` for series leaf count
-///  - `UserData` is included in defaults but pinned for safety
-///  - `PremiereDate` for sort-by-release-date and episode metadata
 ///  - `OriginalTitle`/`SortName` for sort + alphabetised display
 ///  - `Overview` so list rows can show their description
 ///
 /// Heavier fields (`MediaSources`, `People`, `Genres`, `Tags`, `Studios`,
 /// `Taglines`, `ProviderIds`, `Chapters`) stay in [_detailFields] — together
 /// they added seconds to large-library pages on small home servers.
-const _browseFields = 'RecursiveItemCount,ChildCount,UserData,PremiereDate,OriginalTitle,SortName,Overview';
+///
+/// `UserData` and `PremiereDate` are deliberately absent: neither is a member
+/// of Jellyfin's `ItemFields` enum, so the server's
+/// `CommaDelimitedCollectionModelBinder` drops them element-by-element and
+/// they never did anything. `UserData` is governed by `EnableUserData`
+/// (default true) and `dto.PremiereDate` is set unconditionally.
+const _browseFields = 'RecursiveItemCount,ChildCount,OriginalTitle,SortName,Overview';
+
+/// Field set for the home / per-library hub rows (Recently Added, Continue
+/// Watching, Next Up). Poster cards render artwork, title, year and the
+/// watch badge; only `Overview` needs asking for, to feed the mobile hero
+/// (`discover_screen`) and the TV spotlight blurb.
+///
+/// Crucially this drops `RecursiveItemCount`/`ChildCount`. `/Items/Latest`
+/// groups a TV library by series, so those rows are Series FOLDER dtos and
+/// each count field costs a per-row DB query server-side
+/// (`Folder.GetRecursiveChildCount` / `Folder.GetChildCount`) — the same cost
+/// already documented on [_folderBrowseFields] and [_musicAlbumRowFields],
+/// which the home rows never got (#1784).
+///
+/// Watch state survives intact: Jellyfin computes `UserData.Played` from
+/// `UnplayedItemCount` when `RecursiveItemCount` is absent
+/// (`Folder.FillUserDataDtoValues`), and [MediaItem.unwatchedCount] falls back
+/// to `UserData.UnplayedItemCount`. Only the season progress bar needs real
+/// leaf totals, and seasons never appear on a hub row.
+const _hubRowFields = 'Overview';
+
+/// How far back `/Shows/NextUp` looks for a series to resume, mirroring
+/// Jellyfin web's `maxDaysForNextUp` default. Without it the server's
+/// `GetNextUpSeriesKeys` scan is unbounded over every series the user has ever
+/// played an episode of.
+const _nextUpDateCutoffDays = 365;
+
+String _nextUpDateCutoff() =>
+    DateTime.now().toUtc().subtract(const Duration(days: _nextUpDateCutoffDays)).toIso8601String();
 
 /// Existing episode-row requests can show Plex-style quality labels when the
 /// response includes `MediaSources`. Keep this off broad library/search/latest
@@ -213,11 +243,32 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// `_providerLibraries`.
   List<MediaLibrary>? _loadedLibraryViews;
 
+  /// In-flight `/Views` request, shared by concurrent callers.
+  ///
+  /// At cold start `LibrariesProvider.loadLibraries()` and
+  /// `DataAggregationService.getHubsFromAllServers` both ask for libraries at
+  /// the same time, and the hub fan-out sits *serially* behind its copy. Two
+  /// identical uncached round trips is a full RTT of pure cold-start latency on
+  /// a remote server (#1784). Plex has never paid it — its library list comes
+  /// from the `/media/providers` response cached at client creation.
+  ///
+  /// Single-flight only: once the request settles the next caller re-fetches,
+  /// so a library added server-side still shows up on the next refresh.
+  Future<List<MediaLibrary>>? _inFlightLibraries;
+
   @override
-  Future<List<MediaLibrary>> fetchLibraries() async {
-    final libraries = await _fetchLibraries();
-    _loadedLibraryViews = libraries;
-    return libraries;
+  Future<List<MediaLibrary>> fetchLibraries() {
+    final inFlight = _inFlightLibraries;
+    if (inFlight != null) return inFlight;
+
+    final request = _fetchLibraries().then((libraries) {
+      _loadedLibraryViews = libraries;
+      return libraries;
+    });
+    _inFlightLibraries = request;
+    return request.whenComplete(() {
+      if (identical(_inFlightLibraries, request)) _inFlightLibraries = null;
+    });
   }
 
   /// [abort] tears the view fetch down with the pass that owns it — a
@@ -1414,7 +1465,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       _fetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
         'Limit': ?count?.toString(),
-        'Fields': _browseFields,
+        'Fields': _hubRowFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
@@ -1423,8 +1474,9 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       _safeFetchItemsArray('/Shows/NextUp', {
         'userId': connection.userId,
         'Limit': ?count?.toString(),
-        'Fields': _browseFields,
+        'Fields': _hubRowFields,
         'EnableResumable': 'false',
+        'NextUpDateCutoff': _nextUpDateCutoff(),
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }, retry: _continueWatchingRetry),
@@ -1519,7 +1571,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
       'Limit': limit.toString(),
       'ParentId': ?parentId,
-      'Fields': _browseFields,
+      'Fields': _hubRowFields,
       'IncludeItemTypes': ?latestItemTypes,
       ...jellyfinImageQueryParameters,
     }, retry: retry);
@@ -1547,7 +1599,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'userId': connection.userId,
         'ParentId': ?parentId,
         'Limit': limit.toString(),
-        'Fields': _browseFields,
+        'Fields': _hubRowFields,
         'MediaTypes': 'Video',
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
@@ -1558,8 +1610,9 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
               'userId': connection.userId,
               'ParentId': ?parentId,
               'Limit': limit.toString(),
-              'Fields': _browseFields,
+              'Fields': _hubRowFields,
               'EnableResumable': 'false',
+              'NextUpDateCutoff': _nextUpDateCutoff(),
               'EnableTotalRecordCount': 'false',
               ...jellyfinImageQueryParameters,
             }, retry: retry)
@@ -1701,7 +1754,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
             'IncludeItemTypes': 'Movie,Series,Episode,Video,MusicVideo,Photo',
             'SortBy': 'DateCreated,SortName,ProductionYear',
             'SortOrder': 'Descending,Descending,Descending',
-            'Fields': _browseFields,
+            'Fields': _hubRowFields,
             ...jellyfinImageQueryParameters,
           },
           offset: offset,
@@ -1732,7 +1785,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
             'userId': connection.userId,
             'StartIndex': offset.toString(),
             'Limit': effectiveLimit,
-            'Fields': _browseFields,
+            'Fields': _hubRowFields,
             'Recursive': 'true',
             'EnableTotalRecordCount': 'true',
             if (parentId != null) 'ParentId': parentId else 'MediaTypes': 'Video',
@@ -1749,9 +1802,10 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
             'userId': connection.userId,
             'StartIndex': offset.toString(),
             'Limit': effectiveLimit,
-            'Fields': _browseFields,
+            'Fields': _hubRowFields,
             'ParentId': ?parentId,
             'EnableResumable': 'false',
+            'NextUpDateCutoff': _nextUpDateCutoff(),
             'EnableTotalRecordCount': 'true',
             ...jellyfinImageQueryParameters,
           },
@@ -2036,14 +2090,13 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   /// GET [path], optionally under a hub-surface transport policy ([retry]):
-  /// bounded transient retries with per-attempt timeouts and **no endpoint
-  /// failover** — a slow hub row must not move the whole client off an
-  /// otherwise working endpoint (same policy as Plex's three hub fetches;
-  /// see [retryTransientMediaServerCall] / [FailoverHttpClient]).
+  /// one whole-request deadline, retries only on immediate connection errors,
+  /// and **no endpoint failover** — a slow hub row must not move the whole
+  /// client off an otherwise working endpoint (same policy as Plex's three hub
+  /// fetches; see [retryTransientMediaServerCall] / [FailoverHttpClient]).
   ///
   /// [timeout] and [allowEndpointFailover] configure the un-retried path only; a
-  /// [retry] policy carries its own per-attempt timeouts and always disables
-  /// failover.
+  /// [retry] policy carries its own deadline and always disables failover.
   Future<MediaServerResponse> _getItemsResponse(
     String path,
     Map<String, dynamic> queryParameters,
@@ -2064,7 +2117,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     abort?.throwIfAborted();
     return retryTransientMediaServerCall(
       operation: retry.operation,
-      attemptTimeouts: retry.attemptTimeouts,
+      deadline: retry.deadline,
       call: (timeout, attemptAbort) => _http.get(
         path,
         queryParameters: queryParameters,

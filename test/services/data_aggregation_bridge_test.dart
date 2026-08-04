@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
@@ -11,6 +12,8 @@ import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
+import 'package:plezy/media/media_hub.dart';
+import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/models/plex/plex_config.dart';
@@ -82,6 +85,59 @@ class _LibrariesClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Per-library hub client whose fetches are held open individually, so a test
+/// can observe exactly when the fan-out starts each library.
+class _GatedHubsClient implements MediaServerClient {
+  _GatedHubsClient(this.libraries);
+
+  final List<MediaLibrary> libraries;
+  final started = <String>[];
+  final _gates = <String, Completer<List<MediaHub>>>{};
+
+  void complete(String libraryId) {
+    _gates[libraryId]!.complete([
+      MediaHub(
+        id: '$libraryId.recent',
+        title: libraryId,
+        type: 'mixed',
+        items: const [],
+        size: 0,
+        libraryId: libraryId,
+      ),
+    ]);
+  }
+
+  @override
+  ServerId get serverId => ServerId('server-1');
+
+  @override
+  String get serverName => 'Server';
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+
+  @override
+  Future<List<MediaLibrary>> fetchLibraries() async => libraries;
+
+  @override
+  Future<List<MediaHub>> fetchLibraryHubs(
+    String libraryId, {
+    String? libraryName,
+    int limit = defaultHubPreviewLimit,
+    bool includePlaybackHubs = true,
+    MediaKind? libraryKind,
+  }) {
+    started.add(libraryId);
+    return (_gates[libraryId] = Completer<List<MediaHub>>()).future;
+  }
+
+  @override
+  void close() {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 /// Smoke tests for the surviving cross-server aggregation surface on
 /// [DataAggregationService]. Single-server passthroughs were removed in
 /// favour of `context.tryGetMediaClientForServer(...).<method>()`; what's
@@ -111,6 +167,43 @@ void main() {
       final result = await service.getMediaLibrariesFromAllServers();
       expect(result.libraries, isEmpty);
       expect(result.succeededServerIds, isEmpty);
+    });
+    test('per-library hub fan-out refills a free slot instead of waiting for the batch', () async {
+      // Old shape: batches of three separated by `Future.wait`, so the 4th
+      // library could not start until ALL of the first three had answered and
+      // one slow row stalled every row queued behind it (#1784). A sliding
+      // window keeps the same peak concurrency with no head-of-line blocking.
+      final client = _GatedHubsClient([
+        for (var i = 1; i <= 4; i++)
+          MediaLibrary(
+            id: 'lib-$i',
+            backend: MediaBackend.jellyfin,
+            title: 'Library $i',
+            kind: MediaKind.movie,
+            serverId: ServerId('server-1'),
+          ),
+      ]);
+      manager.debugRegisterClientForTesting(client);
+
+      final pending = service.getHubsFromAllServers(useGlobalHubs: false, includePlaybackHubs: false);
+      await pumpEventQueue();
+
+      expect(client.started, ['lib-1', 'lib-2', 'lib-3'], reason: 'concurrency stays at 3');
+
+      // Free exactly one slot. The 4th library must take it immediately, while
+      // its two batch-mates are still in flight.
+      client.complete('lib-1');
+      await pumpEventQueue();
+
+      expect(client.started, ['lib-1', 'lib-2', 'lib-3', 'lib-4']);
+
+      // Finish out of order — hub order must still follow library order.
+      client.complete('lib-4');
+      client.complete('lib-3');
+      client.complete('lib-2');
+
+      final result = await pending;
+      expect(result.hubs.map((hub) => hub.libraryId), ['lib-1', 'lib-2', 'lib-3', 'lib-4']);
     });
 
     test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {
@@ -944,17 +1037,20 @@ void main() {
         reason: 'the home screen excludes playback-derived music rows',
       );
       // Music Latest returns album FOLDER dtos — count/user-data fields would
-      // each cost a recursive per-album COUNT query (#1552); video libraries
-      // keep the full browse fields (series leaf counts).
+      // each cost a recursive per-album COUNT query (#1552).
       final musicLatest = captured.singleWhere(
         (uri) => uri.path == '/Users/user-1/Items/Latest' && uri.queryParameters['ParentId'] == 'music',
       );
       expect(musicLatest.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName');
       expect(musicLatest.queryParameters['EnableUserData'], 'false');
+      // Video Latest rows carry the same risk: `/Items/Latest` groups a TV
+      // library by series, so the rows are Series FOLDER dtos and the count
+      // fields cost a per-row COUNT each (#1784). Watch state survives via
+      // UserData.UnplayedItemCount, so the hub row set asks for neither.
       final movieLatest = captured.singleWhere(
         (uri) => uri.path == '/Users/user-1/Items/Latest' && uri.queryParameters['ParentId'] == 'movies',
       );
-      expect(movieLatest.queryParameters['Fields'], contains('RecursiveItemCount'));
+      expect(movieLatest.queryParameters['Fields'], 'Overview');
       expect(movieLatest.queryParameters.containsKey('EnableUserData'), isFalse);
     });
 

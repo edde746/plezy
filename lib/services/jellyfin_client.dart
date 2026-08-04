@@ -177,6 +177,11 @@ class JellyfinClient
       baseUrl: connection.baseUrl,
       defaultHeaders: headers,
       logLabel: 'Jellyfin',
+      // Same pool tuning Plex uses: the home fan-out issues several concurrent
+      // requests per pass, and the untuned dart:io default drops idle
+      // connections after 15s — a fresh TLS handshake per request on a
+      // high-RTT/CDN link.
+      usePlexApiClient: true,
       prioritizedEndpoints: connection.baseUrls,
       onEndpointSwitch: (newBaseUrl, {required persist}) => client._handleEndpointSwitch(newBaseUrl, persist: persist),
       onAllEndpointsExhausted: onAllEndpointsExhausted,

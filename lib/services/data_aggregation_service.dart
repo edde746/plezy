@@ -453,29 +453,35 @@ class DataAggregationService {
         final serverLibraries = libraries?[serverId];
         final shouldUseGlobalHubs = useGlobalHubs && client.capabilities.richHubs;
         final hubItemLimit = limit ?? defaultHubPreviewLimit;
-        final hubs = shouldUseGlobalHubs
-            ? [
-                ...await client.fetchGlobalHubs(limit: hubItemLimit, includePlaybackHubs: includePlaybackHubs),
-                // Plex's promoted/global hub endpoint never includes music
-                // libraries — append their per-library hubs so music rows
-                // reach home. No-op (zero extra calls) without a visible
-                // music library.
-                ...await _fetchLibraryHubsForClient(
-                  client,
-                  limit: hubItemLimit,
-                  hiddenLibraryKeys: hiddenLibraryKeys,
-                  includePlaybackHubs: includePlaybackHubs,
-                  libraries: serverLibraries ?? const [],
-                  kinds: const {MediaKind.artist},
-                ),
-              ]
-            : await _fetchLibraryHubsForClient(
-                client,
-                limit: hubItemLimit,
-                hiddenLibraryKeys: hiddenLibraryKeys,
-                includePlaybackHubs: includePlaybackHubs,
-                libraries: useGlobalHubs ? serverLibraries : null,
-              );
+        List<MediaHub> hubs;
+        if (shouldUseGlobalHubs) {
+          // Both legs are independent, so start them before awaiting either.
+          // Spreading `...await a, ...await b` into one list literal evaluates
+          // them in order, which serialised the music rows behind the global
+          // hub round trip.
+          final globalFuture = client.fetchGlobalHubs(limit: hubItemLimit, includePlaybackHubs: includePlaybackHubs);
+          // Plex's promoted/global hub endpoint never includes music
+          // libraries — append their per-library hubs so music rows
+          // reach home. No-op (zero extra calls) without a visible
+          // music library.
+          final musicFuture = _fetchLibraryHubsForClient(
+            client,
+            limit: hubItemLimit,
+            hiddenLibraryKeys: hiddenLibraryKeys,
+            includePlaybackHubs: includePlaybackHubs,
+            libraries: serverLibraries ?? const [],
+            kinds: const {MediaKind.artist},
+          );
+          hubs = [...await globalFuture, ...await musicFuture];
+        } else {
+          hubs = await _fetchLibraryHubsForClient(
+            client,
+            limit: hubItemLimit,
+            hiddenLibraryKeys: hiddenLibraryKeys,
+            includePlaybackHubs: includePlaybackHubs,
+            libraries: useGlobalHubs ? serverLibraries : null,
+          );
+        }
         return _postProcessHubs(hubs, serverId: ServerId(serverId), hiddenLibraryKeys: hiddenLibraryKeys);
       },
     );
@@ -506,31 +512,39 @@ class DataAggregationService {
       return true;
     }).toList();
 
+    // Sliding window rather than batches of three separated by a barrier: a
+    // batch waits for its slowest member before the next one starts, so wall
+    // time was the sum of per-batch maxima and one slow library stalled every
+    // library queued behind it (#1784). Starting the next request the moment
+    // any slot frees keeps the same peak concurrency with no head-of-line
+    // blocking. Results are written back by index so hub order stays the
+    // library order regardless of completion order.
     const concurrency = 3;
-    final all = <MediaHub>[];
-    for (var start = 0; start < visible.length; start += concurrency) {
-      final batch = visible.skip(start).take(concurrency);
-      final results = await Future.wait(
-        batch.map((l) async {
-          try {
-            return await client.fetchLibraryHubs(
-              l.id,
-              libraryName: l.title,
-              limit: limit,
-              includePlaybackHubs: includePlaybackHubs,
-              libraryKind: l.kind,
-            );
-          } catch (e, st) {
-            appLogger.e('Failed to fetch library hubs for ${l.globalKey}', error: e, stackTrace: st);
-            return <MediaHub>[];
-          }
-        }),
-      );
-      for (final list in results) {
-        all.addAll(list);
+    final results = List<List<MediaHub>>.filled(visible.length, const []);
+    var next = 0;
+
+    Future<void> worker() async {
+      while (true) {
+        final index = next++;
+        if (index >= visible.length) return;
+        final library = visible[index];
+        try {
+          results[index] = await client.fetchLibraryHubs(
+            library.id,
+            libraryName: library.title,
+            limit: limit,
+            includePlaybackHubs: includePlaybackHubs,
+            libraryKind: library.kind,
+          );
+        } catch (e, st) {
+          appLogger.e('Failed to fetch library hubs for ${library.globalKey}', error: e, stackTrace: st);
+        }
       }
     }
-    return all;
+
+    await Future.wait([for (var i = 0; i < concurrency && i < visible.length; i++) worker()]);
+
+    return [for (final list in results) ...list];
   }
 
   /// Filter hidden-library items and drop empty hubs.

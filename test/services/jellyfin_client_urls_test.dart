@@ -102,6 +102,38 @@ void main() {
     tearDown(() {
       client.close();
     });
+    test('concurrent fetchLibraries calls share one /Views request', () async {
+      // At cold start LibrariesProvider.loadLibraries() and
+      // DataAggregationService.getHubsFromAllServers ask for libraries at the
+      // same time, and the hub fan-out waits serially behind its copy. Two
+      // identical round trips was a full RTT of dead cold-start latency (#1784).
+      var views = 0;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Views') views++;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'lib-1', 'Name': 'Movies', 'CollectionType': 'movies'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final results = await Future.wait([scoped.fetchLibraries(), scoped.fetchLibraries()]);
+
+      expect(views, 1);
+      expect(results.map((libs) => libs.single.id), ['lib-1', 'lib-1']);
+
+      // Single-flight, not a cache: a later pass still sees server-side changes.
+      await scoped.fetchLibraries();
+      expect(views, 2);
+    });
 
     test('buildDirectStreamUrl includes static flag, api_key, and device id', () {
       final url = client.buildDirectStreamUrl('item-99');
@@ -264,7 +296,7 @@ void main() {
         '/Items/$encodedItemId/SpecialFeatures',
       });
       expect(requests.every((uri) => uri.queryParameters['userId'] == 'user-1'), isTrue);
-      expect(requests.every((uri) => uri.queryParameters['EnableImageTypes'] == 'Primary,Backdrop,Thumb,Logo'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters['EnableImageTypes'] == 'Primary,Backdrop,Logo'), isTrue);
       expect(requests.every((uri) => uri.queryParameters['ImageTypeLimit'] == '3'), isTrue);
       expect(extras.map((item) => item.id).toList(), ['trailer-1', 'featurette-1']);
       expect(extras.every((item) => item.kind.isVideo), isTrue);
@@ -2291,7 +2323,7 @@ void main() {
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['IncludeItemTypes'], 'Movie');
       expect(captured!.queryParameters['Fields'], isNot(contains('MediaSources')));
-      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
     });
 
@@ -2617,7 +2649,7 @@ void main() {
       expect(captured!.queryParameters['SortBy'], 'PremiereDate,ProductionYear,SortName');
       expect(captured!.queryParameters['SortOrder'], 'Descending,Descending,Ascending');
       expect(captured!.queryParameters['CollapseBoxSetItems'], 'false');
-      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
     });
 
@@ -2643,7 +2675,7 @@ void main() {
       expect(capturedNextUp, isNotNull);
       expect(capturedNextUp!.queryParameters['seriesId'], 'show-1');
       expect(capturedNextUp!.queryParameters['Limit'], '1');
-      expect(capturedNextUp!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(capturedNextUp!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(capturedNextUp!.queryParameters['ImageTypeLimit'], '3');
       expect(capturedNextUp!.queryParameters.containsKey('EnableResumable'), isFalse);
       expect(capturedNextUp!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
@@ -2747,16 +2779,21 @@ void main() {
       expect(resume.queryParameters['MediaTypes'], 'Video');
       expect(resume.queryParameters['Recursive'], 'true');
       expect(resume.queryParameters['EnableTotalRecordCount'], 'false');
-      expect(resume.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(resume.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(resume.queryParameters['ImageTypeLimit'], '3');
       final nextUp = requests.singleWhere((uri) => uri.path == '/Shows/NextUp');
       expect(nextUp.queryParameters['userId'], 'user-1');
       expect(nextUp.queryParameters['Limit'], '3');
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
-      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(nextUp.queryParameters['ImageTypeLimit'], '3');
-      expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+      // Bounds the server's unbounded GetNextUpSeriesKeys scan (#1784).
+      expect(
+        DateTime.parse(nextUp.queryParameters['NextUpDateCutoff']!),
+        isNot(null),
+        reason: 'must be a parseable ISO-8601 instant',
+      );
     });
 
     test('fetchContinueWatching orders a recently watched series Next Up above an older resume item', () async {
@@ -3226,7 +3263,7 @@ void main() {
       expect(hubs.single.more, isTrue);
     });
 
-    test('global Next Up excludes resumable episodes without date cutoff', () async {
+    test('global Next Up excludes resumable episodes and bounds the server scan with a date cutoff', () async {
       final client = buildClient();
       addTearDown(client.close);
 
@@ -3240,9 +3277,9 @@ void main() {
       expect(nextUp.queryParameters['Limit'], '12');
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
-      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(nextUp.queryParameters['ImageTypeLimit'], '3');
-      expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+      expect(nextUp.queryParameters['NextUpDateCutoff'], isNotNull, reason: 'bounds the server-side scan (#1784)');
     });
 
     test('can skip global playback hubs', () async {
@@ -3269,7 +3306,7 @@ void main() {
       return JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
     }
 
-    test('show library Next Up excludes resumable episodes without date cutoff', () async {
+    test('show library Next Up excludes resumable episodes and bounds the server scan with a date cutoff', () async {
       final client = buildClient();
       addTearDown(client.close);
 
@@ -3281,9 +3318,9 @@ void main() {
       expect(nextUp.queryParameters['Limit'], '12');
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
-      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(nextUp.queryParameters['ImageTypeLimit'], '3');
-      expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+      expect(nextUp.queryParameters['NextUpDateCutoff'], isNotNull, reason: 'bounds the server-side scan (#1784)');
     });
 
     test('movie library skips Next Up and disables resume total count', () async {
@@ -3337,7 +3374,7 @@ void main() {
       expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode,Video,MusicVideo,Photo');
       expect(captured!.queryParameters['SortBy'], 'DateCreated,SortName,ProductionYear');
       expect(captured!.queryParameters['SortOrder'], 'Descending,Descending,Descending');
-      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       client.close();
@@ -3355,7 +3392,7 @@ void main() {
       expect(captured!.queryParameters['MediaTypes'], 'Video');
       expect(captured!.queryParameters['Recursive'], 'true');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
-      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       client.close();
@@ -3373,9 +3410,9 @@ void main() {
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       expect(captured!.queryParameters['EnableResumable'], 'false');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
-      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
-      expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+      expect(captured!.queryParameters['NextUpDateCutoff'], isNotNull, reason: 'bounds the server-side scan (#1784)');
       client.close();
     });
 
@@ -3392,7 +3429,7 @@ void main() {
       expect(captured!.queryParameters['Recursive'], 'true');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode,Video,MusicVideo,Photo');
-      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
       client.close();
     });
@@ -3408,7 +3445,7 @@ void main() {
       expect(captured!.queryParameters['StartIndex'], '0');
       expect(captured!.queryParameters['Recursive'], 'true');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
-      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
       client.close();
     });
@@ -3424,9 +3461,9 @@ void main() {
       expect(captured!.queryParameters['StartIndex'], '0');
       expect(captured!.queryParameters['EnableResumable'], 'false');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
-      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '3');
-      expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+      expect(captured!.queryParameters['NextUpDateCutoff'], isNotNull, reason: 'bounds the server-side scan (#1784)');
       client.close();
     });
 
@@ -3602,12 +3639,9 @@ void main() {
       expect(itemsRequest.queryParameters['Limit'], '36');
       expect(itemsRequest.queryParameters['SortBy'], 'SortName');
       expect(itemsRequest.queryParameters['SortOrder'], 'Ascending');
-      expect(
-        itemsRequest.queryParameters['Fields'],
-        'RecursiveItemCount,ChildCount,UserData,PremiereDate,OriginalTitle,SortName,Overview',
-      );
+      expect(itemsRequest.queryParameters['Fields'], 'RecursiveItemCount,ChildCount,OriginalTitle,SortName,Overview');
       expect(itemsRequest.queryParameters.containsKey('EnableTotalRecordCount'), isFalse);
-      expect(itemsRequest.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(itemsRequest.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(itemsRequest.queryParameters['ImageTypeLimit'], '3');
     });
 

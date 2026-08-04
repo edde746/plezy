@@ -311,7 +311,33 @@ void main() {
       expect(client.connection.baseUrl, 'https://primary.example.com');
     });
 
-    test('hub surfaces retry transient failures without hopping endpoints', () async {
+    test('hub surfaces do not replay a timeout, and do not hop endpoints', () async {
+      // `Client.send` resolves on response headers, so a hub row that times out
+      // is usually a server still working on an expensive query. Replaying it
+      // makes the server start over — the 23s cold-start stall in #1784.
+      final attemptsByPath = <String, int>{};
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async {
+          expect(req.url.host, 'primary.example.com', reason: 'retry-wrapped hub fetches must not fail over');
+          attemptsByPath.update(req.url.path, (n) => n + 1, ifAbsent: () => 1);
+          throw TimeoutException('slow row');
+        }),
+      );
+      addTearDown(client.close);
+
+      await expectLater(client.fetchContinueWatching(), throwsA(isA<MediaServerHttpException>()));
+
+      expect(attemptsByPath.values, everyElement(1));
+      expect(client.connection.baseUrl, 'https://primary.example.com');
+    });
+
+    test('hub surfaces retry an immediate connection error without hopping endpoints', () async {
+      // A refused/reset socket costs the server nothing and is often a one-off,
+      // so unlike a timeout it is worth asking again on the same endpoint.
       final attemptsByPath = <String, int>{};
       final client = JellyfinClient.forTesting(
         connection: _conn(
@@ -321,7 +347,7 @@ void main() {
         httpClient: MockClient((req) async {
           expect(req.url.host, 'primary.example.com', reason: 'retry-wrapped hub fetches must not fail over');
           final attempt = attemptsByPath.update(req.url.path, (n) => n + 1, ifAbsent: () => 1);
-          if (attempt == 1) throw TimeoutException('slow row');
+          if (attempt == 1) throw http.ClientException('connection reset', req.url);
           return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
         }),
       );

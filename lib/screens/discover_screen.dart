@@ -600,6 +600,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     unawaited(_discover.load());
   }
 
+  @override
+  void primeRefresh() {
+    // `initState` already fired `load()`. On cold start that pass is still
+    // running when the online-entry hook primes the tab, and asking again only
+    // queues an identical trailing pass — the whole home fan-out twice (#1784).
+    // When nothing is in flight (reconnect-from-offline, or a first pass that
+    // gave up because no server was online yet) a real refresh is still owed.
+    if (_discover.isLoadInFlight) return;
+    fullRefresh();
+  }
+
   /// Whether the loaded hubs span more than one connected server.
   bool _hubsSpanMultipleServers() {
     final serverIds = _hubs.where((hub) => hub.serverId != null).map((hub) => hub.serverId).toSet();

@@ -167,6 +167,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return _loadCoordinator.requestFull();
   }
 
+  /// Whether a [load] pass is already running. The startup online-entry hook
+  /// uses this to skip a prime that would only duplicate the load the screen
+  /// started in `initState`.
+  bool get isLoadInFlight => _loadCoordinator.isBusy;
+
   Future<void> _loadOnce() async {
     // Yield to the microtask queue before the first notify so a load()
     // kicked off during build (the screen's initState) doesn't mark

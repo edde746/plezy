@@ -520,7 +520,7 @@ class _MainScreenState extends State<MainScreen>
     }
 
     if (!mounted) return;
-    _fullRefreshContentTabs();
+    _primeContentTabs();
   }
 
   /// Single-shot "resume queued downloads once any client is online" rule,
@@ -1634,14 +1634,25 @@ class _MainScreenState extends State<MainScreen>
     if (_screenKeys[tab]?.currentState case final T state) fn(state);
   }
 
-  /// Full-refresh the primary content tabs. Shared by the online-entry hook
-  /// ([_primeOnlineServices]) and the profile-switch invalidation
-  /// ([_invalidateAllScreens]), which refresh the same set.
+  /// Full-refresh the primary content tabs. Used by the profile-switch
+  /// invalidation ([_invalidateAllScreens]), which must refetch everything for
+  /// the new identity.
   void _fullRefreshContentTabs() {
-    for (final tab in const [NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search]) {
+    for (final tab in _contentTabs) {
       _onScreen<FullRefreshable>(tab, (screen) => screen.fullRefresh());
     }
   }
+
+  /// Online-entry variant used by [_primeOnlineServices] on cold start and on
+  /// reconnect-from-offline. Screens that already started their own load skip
+  /// it; see [FullRefreshable.primeRefresh].
+  void _primeContentTabs() {
+    for (final tab in _contentTabs) {
+      _onScreen<FullRefreshable>(tab, (screen) => screen.primeRefresh());
+    }
+  }
+
+  static const _contentTabs = [NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search];
 
   Widget _buildBottomNavigationBar(BuildContext context, {required bool hideLabels}) {
     final tabs = _getBottomNavigationTabs(context);

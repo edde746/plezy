@@ -1564,7 +1564,7 @@ class PlexClient
 
     final response = await retryTransientMediaServerCall(
       operation: 'Plex continue watching hubs',
-      attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
+      deadline: MediaServerTimeouts.homeHubDeadline,
       call: (timeout, abort) => _getWithFailover(
         continueWatchingHubKey ?? '/hubs',
         queryParameters: queryParameters,
@@ -2244,7 +2244,7 @@ class PlexClient
     required String path,
     required Map<String, dynamic> queryParameters,
     required String operation,
-    required List<Duration> attemptTimeouts,
+    required Duration deadline,
     required String failureLabel,
     int? librarySectionID,
     String? librarySectionTitle,
@@ -2253,7 +2253,7 @@ class PlexClient
     try {
       final response = await retryTransientMediaServerCall(
         operation: operation,
-        attemptTimeouts: attemptTimeouts,
+        deadline: deadline,
         call: (timeout, abort) => _getWithFailover(
           path,
           queryParameters: queryParameters,
@@ -2291,7 +2291,7 @@ class PlexClient
     path: '/hubs/sections/$sectionId',
     queryParameters: {'count': limit, 'includeGuids': 1},
     operation: 'Plex library hubs',
-    attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+    deadline: MediaServerTimeouts.libraryHubDeadline,
     failureLabel: 'library hubs',
     librarySectionID: _librarySectionIdFromString(sectionId),
     librarySectionTitle: libraryName,
@@ -2305,7 +2305,7 @@ class PlexClient
     path: _providerPromotedHubKey ?? _providerHomeHubKey ?? '/hubs',
     queryParameters: {'count': limit, 'includeGuids': 1},
     operation: 'Plex global hubs',
-    attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
+    deadline: MediaServerTimeouts.homeHubDeadline,
     failureLabel: 'global hubs',
   );
 
@@ -2314,7 +2314,7 @@ class PlexClient
     path: '/hubs/metadata/$ratingKey/related',
     queryParameters: {'count': count},
     operation: 'Plex related hubs',
-    attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+    deadline: MediaServerTimeouts.libraryHubDeadline,
     failureLabel: 'related hubs',
     filter: _videoOrCollectionHubItem,
   );

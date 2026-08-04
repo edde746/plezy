@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/media/ids.dart';
@@ -14,6 +15,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
@@ -239,6 +241,122 @@ void main() {
     await tester.pump();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+  });
+  testWidgets('startup prime does not duplicate the load DiscoverScreen started in initState', (tester) async {
+    // DiscoverScreen.initState fires load(); main_screen._primeOnlineServices
+    // then primes the content tabs once libraries land. Asking for a full
+    // refresh there queued a trailing pass through CoalescedLoadCoordinator and
+    // ran the whole home fan-out twice on every cold start (#1784).
+    await SettingsService.getInstance();
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+
+    final hub = MediaHub(id: 'hub_1', title: 'Recommended', type: 'movie', items: const [], size: 0);
+    final client = _GatedHubsFakeClient(hubs: [hub]);
+    // Disposes both the provider and the manager it wraps; MultiServerProvider
+    // does not own the manager, and manager.dispose() is what closes its
+    // status/progress controllers and the registered clients.
+    final multiServerProvider = testMultiServer(clients: [client]).provider;
+    final hiddenLibrariesProvider = HiddenLibrariesProvider();
+    final librariesProvider = LibrariesProvider();
+    final watchTogetherProvider = WatchTogetherProvider();
+    final companionRemoteProvider = CompanionRemoteProvider();
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final connectionRegistry = _FakeConnectionRegistry(db);
+    final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
+    final storage = await StorageService.getInstance();
+    final plexHome = PlexHomeService(
+      connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
+      storage: storage,
+      plexHomeUserFetcher: (_) async => const [],
+    );
+    final activeProfileProvider = ActiveProfileProvider(
+      registry: _FakeProfileRegistry(db),
+      plexHome: plexHome,
+      connections: connectionRegistry,
+      profileConnections: profileConnectionRegistry,
+      storage: storage,
+    );
+    final discoverProvider = DiscoverProvider(
+      multiServerProvider,
+      hiddenLibrariesProvider,
+      librariesProvider,
+      profileId: null,
+      isProfileBinding: () => false,
+    );
+    addTearDown(() async {
+      discoverProvider.dispose();
+      activeProfileProvider.dispose();
+      companionRemoteProvider.dispose();
+      watchTogetherProvider.dispose();
+      librariesProvider.dispose();
+      hiddenLibrariesProvider.dispose();
+      // multiServerProvider + its manager are torn down by testMultiServer.
+      await plexHome.dispose();
+      await db.close();
+    });
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+            ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
+            ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogetherProvider),
+            ChangeNotifierProvider<CompanionRemoteProvider>.value(value: companionRemoteProvider),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: MainScreenFocusScope(
+              focusSidebar: () {},
+              focusContent: () {},
+              isSidebarFocused: false,
+              sideNavigationWidth: SideNavigationRailState.expandedWidth,
+              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              foregroundLeft: 0,
+              foregroundWidth: 1280,
+              viewportWidth: 1280,
+              child: const SizedBox(width: 1280, height: 720, child: DiscoverScreen()),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // The initState pass is in flight, waiting on the server.
+    expect(discoverProvider.isLoadInFlight, isTrue);
+    expect(client.hubCalls, 1);
+
+    final screen = tester.state(find.byType(DiscoverScreen)) as FullRefreshable;
+    screen.primeRefresh();
+
+    client.release();
+    // Bounded pumps, not pumpAndSettle: the hero carousel runs a repeating
+    // auto-scroll timer, so the frame loop never goes quiet.
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+
+    expect(client.hubCalls, 1, reason: 'the prime rode along with the load already running');
+    expect(discoverProvider.isLoadInFlight, isFalse);
+
+    // A prime with nothing in flight (reconnect-from-offline) must still refetch.
+    screen.primeRefresh();
+    await tester.pump();
+    client.release();
+    await tester.pump();
+    await tester.pump();
+
+    expect(client.hubCalls, 2);
   });
 
   testWidgets('TV selects Continue Watching when it arrives after recommendation hubs', (tester) async {
@@ -535,6 +653,56 @@ class _FakeMediaServerClient implements MediaServerClient {
   @override
   Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async =>
       hubs;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Hub client that holds each fetch open until [release], so a test can act
+/// while a Discover load pass is genuinely in flight.
+class _GatedHubsFakeClient implements MediaServerClient {
+  _GatedHubsFakeClient({required this.hubs});
+
+  final List<MediaHub> hubs;
+  int hubCalls = 0;
+  final _gates = <Completer<List<MediaHub>>>[];
+
+  void release() {
+    for (final gate in _gates.where((g) => !g.isCompleted)) {
+      gate.complete(hubs);
+    }
+  }
+
+  @override
+  ServerId get serverId => ServerId('server_1');
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => const [];
+
+  @override
+  Future<List<MediaLibrary>> fetchLibraries() async => const [];
+
+  @override
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) {
+    hubCalls++;
+    final gate = Completer<List<MediaHub>>();
+    _gates.add(gate);
+    return gate.future;
+  }
+
+  /// Reached by `MultiServerManager.dispose()` via `_closeClientGracefully`.
+  /// Releases any gate still open so teardown cannot leave a fetch hanging.
+  @override
+  void close() => release();
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

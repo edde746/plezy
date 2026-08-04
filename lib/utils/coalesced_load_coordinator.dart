@@ -21,6 +21,11 @@ final class CoalescedLoadCoordinator<T> {
   bool _pendingFull = false;
   bool _disposed = false;
 
+  /// Whether a pass is running (or queued behind the running one). Lets a
+  /// caller tell "this surface is already loading" from "nothing has started",
+  /// without changing the drain's trailing-replay contract.
+  bool get isBusy => _inFlight != null;
+
   Future<void> requestFull() {
     if (_disposed) return Future<void>.value();
     _pendingFull = true;
