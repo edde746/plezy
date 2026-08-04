@@ -346,7 +346,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           plexClient: mediaClient is PlexClient ? mediaClient : null,
           getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
           preferredAudioTrack: _preferredAudioTrack,
-          preferredSubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
+          // Same rule as the reload flow: a declined preference is retried by
+          // the native passes instead of being frozen into off (#1785).
+          preferredSubtitleTrack:
+              subtitleSelection.declinedPreference ?? SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
           preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
         );
 

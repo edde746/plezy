@@ -45,6 +45,14 @@ class PlaybackSubtitleSelection {
   final PlaybackSubtitleSidecar? secondarySidecar;
   final List<PlaybackSubtitleSidecar> preloadedSidecars;
 
+  /// The primary preference the resolver could not serve when this selection
+  /// is off. Distinguishes "the carried choice declined and the ladder fell
+  /// through" from a deliberate off (#1785): the open flow hands the declined
+  /// preference back to the track manager so late-arriving native tracks may
+  /// still serve it, and progress reports must not persist the fallout as an
+  /// explicit server-side off. A user or server decision leaves this null.
+  final SubtitlePreference? declinedPreference;
+
   const PlaybackSubtitleSelection({
     required this.primaryTrack,
     this.primarySourceStreamId,
@@ -53,9 +61,10 @@ class PlaybackSubtitleSelection {
     this.secondarySourceStreamId,
     this.secondarySidecar,
     this.preloadedSidecars = const [],
+    this.declinedPreference,
   });
 
-  const PlaybackSubtitleSelection.off({this.preloadedSidecars = const []})
+  const PlaybackSubtitleSelection.off({this.preloadedSidecars = const [], this.declinedPreference})
     : primaryTrack = SubtitleTrack.off,
       primarySourceStreamId = null,
       primarySidecar = null,
@@ -192,13 +201,25 @@ class PlaybackSubtitleResolver {
     );
     final primaryResult = service.selectSubtitleTrack(availableTracks, primaryPreference, selectedAudio);
     final primary = primaryResult?.track;
+    // A non-off preference that still lands on off (or resolves to a track
+    // this catalog cannot back) was declined, not chosen — keep it on the
+    // selection so the open flow can retry it against native tracks (#1785).
+    final declinedPreference = primaryPreference != null && primaryPreference is! SubtitleOffPreference
+        ? primaryPreference
+        : null;
     if (primary == null || primary.id == SubtitleTrack.off.id) {
-      return PlaybackSubtitleSelection.off(preloadedSidecars: preloadedSidecars);
+      return PlaybackSubtitleSelection.off(
+        preloadedSidecars: preloadedSidecars,
+        declinedPreference: declinedPreference,
+      );
     }
 
     final primaryCandidate = candidates.where((candidate) => candidate.track.id == primary.id).firstOrNull;
     if (primaryCandidate == null) {
-      return PlaybackSubtitleSelection.off(preloadedSidecars: preloadedSidecars);
+      return PlaybackSubtitleSelection.off(
+        preloadedSidecars: preloadedSidecars,
+        declinedPreference: declinedPreference,
+      );
     }
 
     _SubtitleCandidate? secondaryCandidate;

@@ -87,6 +87,14 @@ class PlaybackProgressTracker {
   /// must not turn an unrendered native clock position into watched progress.
   final bool Function()? hasRenderedPlayback;
 
+  /// Whether an off subtitle state is a real decision (viewer or server)
+  /// rather than the fallout of a declined cross-item carry. When false, the
+  /// off state is not reported as an explicit `-1` stream index — persisting
+  /// it would make Jellyfin hand the off back as this item's default on every
+  /// later open, latching a metadata mismatch into a server-side choice
+  /// (#1785). Callers default to deliberate.
+  final bool Function()? subtitleOffIsDeliberate;
+
   /// Timer for periodic progress updates
   Timer? _progressTimer;
 
@@ -166,6 +174,7 @@ class PlaybackProgressTracker {
     this.onPausedKeepalive,
     this.canReportPlayback,
     this.hasRenderedPlayback,
+    this.subtitleOffIsDeliberate,
     this.updateInterval = const Duration(seconds: 10),
   }) : assert(!isOffline || offlineWatchService != null, 'offlineWatchService is required when isOffline is true'),
        assert(isOffline || client != null, 'client is required when isOffline is false') {
@@ -605,7 +614,11 @@ class PlaybackProgressTracker {
 
   int? _currentSubtitleStreamIndex(MediaSourceInfo info) {
     final track = player.state.track.subtitle;
-    if (track == null || track.id == 'no') return -1;
+    if (track == null || track.id == 'no') {
+      // An off that merely fell out of a declined carry is withheld rather
+      // than persisted as an explicit -1 (see [subtitleOffIsDeliberate]).
+      return (subtitleOffIsDeliberate?.call() ?? true) ? -1 : null;
+    }
 
     if (track.isExternal && track.uri != null) {
       for (final mediaTrack in info.subtitleTracks) {

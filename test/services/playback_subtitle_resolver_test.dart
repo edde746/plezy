@@ -548,6 +548,65 @@ void main() {
     });
   });
 
+  group('issue #1785 declined-carry surfacing', () {
+    const swedishIntent = SubtitlePreference.intent(
+      SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'srt'),
+    );
+
+    MediaSubtitleTrack untaggedRow(int id, {String? title, String codec = 'srt'}) =>
+        MediaSubtitleTrack(id: id, title: title, codec: codec, selected: false, forced: false);
+
+    test('an untagged catalog row with the matching title still serves the carry', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([untaggedRow(3, title: 'English'), untaggedRow(4, title: 'Swedish')]),
+        sidecars: const [],
+        preferredSubtitleTrack: swedishIntent,
+        preserveSourceIdentity: false,
+      );
+
+      expect(result.primarySourceStreamId, 4);
+      expect(result.declinedPreference, isNull);
+    });
+
+    test('a carry no row can serve is kept as declined, not converted to off', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng')]),
+        sidecars: const [],
+        preferredSubtitleTrack: swedishIntent,
+        preserveSourceIdentity: false,
+      );
+
+      expect(result.isOff, isTrue);
+      expect(result.declinedPreference, swedishIntent);
+    });
+
+    test('an explicit off carry is a decision, never a decline', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng')]),
+        sidecars: const [],
+        preferredSubtitleTrack: const SubtitlePreference.off(),
+        preserveSourceIdentity: false,
+      );
+
+      expect(result.isOff, isTrue);
+      expect(result.declinedPreference, isNull);
+    });
+
+    test('a ladder off with no carry at all is a decision, never a decline', () {
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([_sourceSubtitle(3, language: 'eng')]),
+        sidecars: const [],
+      );
+
+      expect(result.isOff, isTrue);
+      expect(result.declinedPreference, isNull);
+    });
+  });
+
   test('selected embedded subtitle keeps sidecars out of the open', () {
     final result = PlaybackSubtitleResolver.resolve(
       metadata: metadata,

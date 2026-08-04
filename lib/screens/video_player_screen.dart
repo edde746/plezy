@@ -152,10 +152,15 @@ bool playerChromeStartsVisible({required bool isTv}) => !isTv;
 /// committed semantic choice — a [SubtitleIntent] — may cross the item
 /// boundary; native state is a fallback for sessions created before
 /// source-backed selection was recorded.
+///
+/// [declinedPreference] is the committed selection's unserved carry: its off
+/// is fallout from a metadata mismatch, not a viewer choice, so it must not
+/// harden into an explicit off on the next item (#1785).
 SubtitlePreference? subtitlePreferenceForItemChange({
   required bool hasCommittedSelection,
   required SubtitleTrack? committedTrack,
   required SubtitleTrack? nativeTrack,
+  SubtitlePreference? declinedPreference,
 }) {
   SubtitlePreference? normalize(SubtitleTrack? track, {required bool preserveOff}) {
     if (track == null) return null;
@@ -169,11 +174,53 @@ SubtitlePreference? subtitlePreferenceForItemChange({
     return normalize(nativeTrack, preserveOff: true);
   }
 
+  final committedIsOff = committedTrack == null || committedTrack.id == SubtitleTrack.off.id;
+  if (declinedPreference != null && committedIsOff) {
+    // Live native state wins — a late native pass may have served the
+    // declined carry — otherwise the declined preference itself keeps
+    // crossing item boundaries until the viewer or a richer catalog
+    // settles it.
+    return normalize(nativeTrack, preserveOff: false) ?? SubtitlePreference.demoteToIntent(declinedPreference);
+  }
+
   if (committedTrack == null) return const SubtitlePreference.off();
 
   final committedPreference = normalize(committedTrack, preserveOff: true);
   if (committedPreference != null) return committedPreference;
   return normalize(nativeTrack, preserveOff: false);
+}
+
+/// Builds the committed [PlaybackSubtitleSelection] for a user's subtitle
+/// pick in one slot, leaving the other slot untouched.
+///
+/// [sourceTrack] and [sidecar] are null when the pick has no source-catalog
+/// identity — items without subtitle rows, or a native track the identity
+/// matcher cannot map. The raw native [track] is committed then (without
+/// source ids), so the session still reflects what is on screen and the next
+/// item boundary demotes it to a semantic intent instead of hardening the
+/// stale previous selection into an explicit off (#1785).
+PlaybackSubtitleSelection subtitleSelectionForUserPick({
+  required PlaybackSubtitleSelection currentSelection,
+  required bool isPrimarySlot,
+  required SubtitleTrack track,
+  MediaSubtitleTrack? sourceTrack,
+  PlaybackSubtitleSidecar? sidecar,
+}) {
+  final resolvedTrack = sourceTrack == null
+      ? track
+      : PlaybackSubtitleResolver.subtitleTrackForSource(sourceTrack, sidecar: sidecar);
+  return PlaybackSubtitleSelection(
+    primaryTrack: isPrimarySlot ? resolvedTrack : currentSelection.primaryTrack,
+    primarySourceStreamId: isPrimarySlot ? sourceTrack?.id : currentSelection.primarySourceStreamId,
+    primarySidecar: isPrimarySlot ? sidecar : currentSelection.primarySidecar,
+    secondaryTrack: isPrimarySlot ? currentSelection.secondaryTrack : resolvedTrack,
+    secondarySourceStreamId: isPrimarySlot ? currentSelection.secondarySourceStreamId : sourceTrack?.id,
+    secondarySidecar: isPrimarySlot ? currentSelection.secondarySidecar : sidecar,
+    // A primary pick is a decision that retires any unresolved carry; a
+    // secondary-only change must not relabel the primary's declined off as
+    // deliberate (that would persist -1 and harden the next boundary).
+    declinedPreference: isPrimarySlot ? null : currentSelection.declinedPreference,
+  );
 }
 
 /// The in-place media-source transitions a [VideoPlayerScreenState] can run.
@@ -1878,10 +1925,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (track.id == SubtitleTrack.off.id) {
       _updatePlaybackSessionSubtitleSelection(session, switch (slot) {
         _SubtitleSelectionSlot.primary => const PlaybackSubtitleSelection.off(),
+        // Dropping only the secondary must not relabel the primary's
+        // declined off as deliberate.
         _SubtitleSelectionSlot.secondary => PlaybackSubtitleSelection(
           primaryTrack: currentSelection.primaryTrack,
           primarySourceStreamId: currentSelection.primarySourceStreamId,
           primarySidecar: currentSelection.primarySidecar,
+          declinedPreference: currentSelection.declinedPreference,
         ),
       });
       if (mounted) _setPlayerState(() {});
@@ -1890,7 +1940,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     final info = _currentMediaInfo;
     final currentPlayer = player;
-    if (info == null || currentPlayer == null) return;
 
     MediaSubtitleTrack? sourceTrack;
     final currentSourceId = switch (slot) {
@@ -1901,41 +1950,44 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _SubtitleSelectionSlot.primary => currentSelection.primarySidecar,
       _SubtitleSelectionSlot.secondary => currentSelection.secondarySidecar,
     };
-    if (sourceStreamId != null) {
-      for (final candidate in info.subtitleTracks) {
-        if (candidate.id == sourceStreamId) {
-          sourceTrack = candidate;
-          break;
+    if (info != null) {
+      if (sourceStreamId != null) {
+        for (final candidate in info.subtitleTracks) {
+          if (candidate.id == sourceStreamId) {
+            sourceTrack = candidate;
+            break;
+          }
+        }
+      } else if (track.isExternal && currentSourceId != null && currentSidecar?.track.uri == track.uri) {
+        for (final candidate in info.subtitleTracks) {
+          if (candidate.id == currentSourceId) {
+            sourceTrack = candidate;
+            break;
+          }
         }
       }
-    } else if (track.isExternal && currentSourceId != null && currentSidecar?.track.uri == track.uri) {
-      for (final candidate in info.subtitleTracks) {
-        if (candidate.id == currentSourceId) {
-          sourceTrack = candidate;
-          break;
-        }
+      if (sourceTrack == null && currentPlayer != null) {
+        sourceTrack = findPlexTrackForMpvSubtitle(
+          track,
+          info.subtitleTracks,
+          allMpvTracks: currentPlayer.state.tracks.subtitle,
+        );
       }
     }
-    sourceTrack ??= findPlexTrackForMpvSubtitle(
-      track,
-      info.subtitleTracks,
-      allMpvTracks: currentPlayer.state.tracks.subtitle,
-    );
-    if (sourceTrack == null) return;
 
-    final sidecar = _sidecarForSourceStreamId(session, sourceTrack.id);
-    final resolvedTrack = PlaybackSubtitleResolver.subtitleTrackForSource(sourceTrack, sidecar: sidecar);
-    final selection = PlaybackSubtitleSelection(
-      primaryTrack: slot == _SubtitleSelectionSlot.primary ? resolvedTrack : currentSelection.primaryTrack,
-      primarySourceStreamId: slot == _SubtitleSelectionSlot.primary
-          ? sourceTrack.id
-          : currentSelection.primarySourceStreamId,
-      primarySidecar: slot == _SubtitleSelectionSlot.primary ? sidecar : currentSelection.primarySidecar,
-      secondaryTrack: slot == _SubtitleSelectionSlot.secondary ? resolvedTrack : currentSelection.secondaryTrack,
-      secondarySourceStreamId: slot == _SubtitleSelectionSlot.secondary
-          ? sourceTrack.id
-          : currentSelection.secondarySourceStreamId,
-      secondarySidecar: slot == _SubtitleSelectionSlot.secondary ? sidecar : currentSelection.secondarySidecar,
+    // No source identity (no catalog, or a native track the identity matcher
+    // cannot map) still commits the raw pick: an uncommitted selection reads
+    // as the session's previous choice — usually the initial off — and the
+    // next episode boundary would harden that into an explicit off while the
+    // viewer visibly watches with subtitles on (#1785). The raw track carries
+    // no source ids, so it demotes to a semantic intent at the boundary.
+    final sidecar = sourceTrack == null ? null : _sidecarForSourceStreamId(session, sourceTrack.id);
+    final selection = subtitleSelectionForUserPick(
+      currentSelection: currentSelection,
+      isPrimarySlot: slot == _SubtitleSelectionSlot.primary,
+      track: track,
+      sourceTrack: sourceTrack,
+      sidecar: sidecar,
     );
     _updatePlaybackSessionSubtitleSelection(session, selection);
     if (mounted) _setPlayerState(() {});

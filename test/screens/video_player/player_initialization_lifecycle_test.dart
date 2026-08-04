@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focusable_button.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/services/playback_subtitle_resolver.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/subtitle_preference.dart';
@@ -115,6 +117,146 @@ void main() {
 
     expect(result, isA<SubtitleIntentPreference>());
     expect((result! as SubtitleIntentPreference).intent.language, 'eng');
+  });
+
+  test('a declined committed off re-carries the declined preference (#1785)', () {
+    const declined = SubtitlePreference.intent(
+      SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'srt'),
+    );
+
+    // The committed off is fallout from a declined carry: with the player
+    // also off, the declined preference itself keeps crossing boundaries.
+    expect(
+      subtitlePreferenceForItemChange(
+        hasCommittedSelection: true,
+        committedTrack: SubtitleTrack.off,
+        nativeTrack: SubtitleTrack.off,
+        declinedPreference: declined,
+      ),
+      declined,
+    );
+  });
+
+  test('live native state outranks a declined carry after a late rescue (#1785)', () {
+    const declined = SubtitlePreference.intent(
+      SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'srt'),
+    );
+
+    final result = subtitlePreferenceForItemChange(
+      hasCommittedSelection: true,
+      committedTrack: SubtitleTrack.off,
+      nativeTrack: const SubtitleTrack(id: '5', language: 'swe', title: 'Swedish', codec: 'srt'),
+      declinedPreference: declined,
+    );
+
+    expect(result, isA<SubtitleIntentPreference>());
+    expect((result! as SubtitleIntentPreference).intent.language, 'swe');
+  });
+
+  test('a declined stale source reference crosses the boundary as its intent (#1785)', () {
+    const declined = SubtitlePreference.track(
+      SubtitleTrack(id: 'source:9', title: 'Swedish', language: 'swe', codec: 'srt'),
+    );
+
+    final result = subtitlePreferenceForItemChange(
+      hasCommittedSelection: true,
+      committedTrack: SubtitleTrack.off,
+      nativeTrack: SubtitleTrack.off,
+      declinedPreference: declined,
+    );
+
+    expect(result, isA<SubtitleIntentPreference>());
+    expect((result! as SubtitleIntentPreference).intent.language, 'swe');
+  });
+
+  test('a pick without source identity is committed raw and carries as an intent (#1785)', () {
+    // The identity matcher failed (or the item has no subtitle rows): the
+    // committed selection must still reflect the pick on screen, not the
+    // session's previous choice.
+    const picked = SubtitleTrack(id: '3', title: 'Swedish', language: 'swe', codec: 'srt');
+
+    final selection = subtitleSelectionForUserPick(
+      currentSelection: const PlaybackSubtitleSelection.off(),
+      isPrimarySlot: true,
+      track: picked,
+    );
+
+    expect(selection.primaryTrack, picked);
+    expect(selection.primarySourceStreamId, isNull);
+    expect(selection.primarySidecar, isNull);
+
+    // Next episode boundary: the raw commit demotes to a semantic intent
+    // instead of hardening the stale off.
+    final carried = subtitlePreferenceForItemChange(
+      hasCommittedSelection: true,
+      committedTrack: selection.primaryTrack,
+      nativeTrack: picked,
+    );
+    expect(carried, isA<SubtitleIntentPreference>());
+    expect((carried! as SubtitleIntentPreference).intent.language, 'swe');
+  });
+
+  test('a source-backed pick keeps its source identity in the committed selection', () {
+    final sourceTrack = MediaSubtitleTrack(
+      id: 7,
+      languageCode: 'swe',
+      title: 'Swedish',
+      codec: 'srt',
+      selected: false,
+      forced: false,
+    );
+
+    final selection = subtitleSelectionForUserPick(
+      currentSelection: const PlaybackSubtitleSelection.off(),
+      isPrimarySlot: true,
+      track: const SubtitleTrack(id: '3', title: 'Swedish', language: 'swe', codec: 'srt'),
+      sourceTrack: sourceTrack,
+    );
+
+    expect(selection.primaryTrack.id, 'source:7');
+    expect(selection.primarySourceStreamId, 7);
+  });
+
+  test('a secondary-slot pick leaves the committed primary untouched', () {
+    const primary = SubtitleTrack(id: 'source:4', title: 'Swedish', language: 'swe', codec: 'srt');
+    const secondaryPick = SubtitleTrack(id: '5', title: 'English', language: 'eng', codec: 'srt');
+
+    final selection = subtitleSelectionForUserPick(
+      currentSelection: const PlaybackSubtitleSelection(primaryTrack: primary, primarySourceStreamId: 4),
+      isPrimarySlot: false,
+      track: secondaryPick,
+    );
+
+    expect(selection.primaryTrack, primary);
+    expect(selection.primarySourceStreamId, 4);
+    expect(selection.secondaryTrack, secondaryPick);
+    expect(selection.secondarySourceStreamId, isNull);
+  });
+
+  test('a secondary-only change keeps the primary declined carry alive (#1785)', () {
+    const declined = SubtitlePreference.intent(
+      SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'srt'),
+    );
+    const current = PlaybackSubtitleSelection.off(declinedPreference: declined);
+
+    final selection = subtitleSelectionForUserPick(
+      currentSelection: current,
+      isPrimarySlot: false,
+      track: const SubtitleTrack(id: '5', title: 'English', language: 'eng', codec: 'srt'),
+    );
+
+    // The primary off stays fallout, not a decision: -1 must remain withheld
+    // and the next boundary must still re-carry the intent.
+    expect(selection.primaryTrack.id, SubtitleTrack.off.id);
+    expect(selection.declinedPreference, declined);
+
+    // A primary decision retires the carry.
+    final decided = subtitleSelectionForUserPick(
+      currentSelection: selection,
+      isPrimarySlot: true,
+      track: const SubtitleTrack(id: '3', title: 'Swedish', language: 'swe', codec: 'srt'),
+    );
+    expect(decided.declinedPreference, isNull);
   });
 
   testWidgets('initialization ownership serializes rollback, retry, and route removal', (tester) async {

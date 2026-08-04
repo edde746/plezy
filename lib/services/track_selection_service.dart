@@ -347,47 +347,100 @@ MediaSubtitleTrack? findPlexTrackForMpvSubtitle(
 ///
 /// Identity matching ([findPlexTrackForMpvSubtitle]) answers "which row IS
 /// this track"; this answers "which row of a DIFFERENT item serves the same
-/// intent". Language and effective forced-ness are hard requirements: the
-/// intent's class is preserved or the match declines, so the selection ladder
-/// can fall back to the server's own per-item choice (#1716/#1717).
+/// intent". Effective forced-ness is a hard requirement, and so is language
+/// when both sides declare one: the intent's class is preserved or the match
+/// declines, so the selection ladder can fall back to the server's own
+/// per-item choice (#1716/#1717).
+///
+/// When language metadata is missing on either side, a unique real title
+/// match may vouch for the row instead (#1785) — untagged tracks whose only
+/// signal is a title like "Swedish" are common, and declining them turned the
+/// viewer's subtitles off on every episode advance. Codec/external parity is
+/// never sufficient evidence on its own (an arbitrary untagged row would
+/// reintroduce the #1716 wrong-track class); it only breaks ties WITHIN the
+/// title-matched set, and a residual tie declines rather than guesses.
 MediaSubtitleTrack? findSourceTrackForIntent(SubtitleIntent intent, List<MediaSubtitleTrack> sourceTracks) {
-  MediaSubtitleTrack? bestMatch;
-  var bestScore = -1;
-  for (final row in sourceTracks) {
-    if (!_languagesMatch(intent.language, row.languageCode ?? row.language)) continue;
-    if (row.effectiveForced != intent.forced) continue;
-
-    var score = 0;
-    if (_subtitleCodecsMatch(intent.codec, row.codec)) score += 5;
-    score += _titleScore(intent.title, row.title, row.displayTitle);
-    if (intent.isExternal == row.isExternal) score += 1;
-    if (score > bestScore) {
-      bestScore = score;
-      bestMatch = row;
-    }
-  }
-  return bestMatch;
+  return _findTrackForIntent(
+    intent,
+    sourceTracks,
+    isSelectable: (_) => true,
+    language: (row) => row.languageCode ?? row.language,
+    effectiveForced: (row) => row.effectiveForced,
+    titleScore: (row) => _titleScore(intent.title, row.title, row.displayTitle),
+    codec: (row) => row.codec,
+    isExternal: (row) => row.isExternal,
+  );
 }
 
 /// Native-track twin of [findSourceTrackForIntent], for catalogs the source
 /// side cannot describe (legacy offline sidecars) and late-arriving tracks.
 SubtitleTrack? findNativeTrackForIntent(SubtitleIntent intent, List<SubtitleTrack> tracks) {
-  SubtitleTrack? bestMatch;
-  var bestScore = -1;
-  for (final track in tracks) {
-    if (track.id == SubtitleTrack.auto.id || track.id == SubtitleTrack.off.id) continue;
-    if (!_languagesMatch(intent.language, track.language)) continue;
-    if (track.effectiveForced != intent.forced) continue;
+  return _findTrackForIntent(
+    intent,
+    tracks,
+    isSelectable: (track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id,
+    language: (track) => track.language,
+    effectiveForced: (track) => track.effectiveForced,
+    titleScore: (track) => _titleScore(intent.title, track.title, null),
+    codec: (track) => track.codec,
+    isExternal: (track) => track.isExternal,
+  );
+}
 
+/// Shared scorer behind [findSourceTrackForIntent]/[findNativeTrackForIntent].
+///
+/// Score bands keep the evidence classes strictly ordered: a language-parity
+/// match starts at 10 while a title-evidence match tops out at 9
+/// (codec 5 + title 3 + external 1), so the two can never tie and language
+/// always outranks a title coincidence.
+T? _findTrackForIntent<T extends Object>(
+  SubtitleIntent intent,
+  List<T> candidates, {
+  required bool Function(T) isSelectable,
+  required String? Function(T) language,
+  required bool Function(T) effectiveForced,
+  required int Function(T) titleScore,
+  required String? Function(T) codec,
+  required bool Function(T) isExternal,
+}) {
+  T? bestMatch;
+  var bestScore = -1;
+  var bestIsTitleEvidence = false;
+  var bestIsAmbiguous = false;
+  for (final candidate in candidates) {
+    if (!isSelectable(candidate)) continue;
+    if (effectiveForced(candidate) != intent.forced) continue;
+
+    final candidateLanguage = language(candidate);
+    final candidateTitleScore = titleScore(candidate);
+    final hasLanguageParity = intent.language != null && candidateLanguage != null;
     var score = 0;
-    if (_subtitleCodecsMatch(intent.codec, track.codec)) score += 5;
-    score += _titleScore(intent.title, track.title, null);
-    if (intent.isExternal == track.isExternal) score += 1;
+    if (hasLanguageParity) {
+      // A declared language on both sides stays authoritative: a
+      // contradiction declines no matter what the title says.
+      if (!_languagesMatch(intent.language, candidateLanguage)) continue;
+      score += 10;
+    } else if (candidateTitleScore < 3) {
+      // Language evidence is missing on at least one side; only a real
+      // title match may serve the intent then.
+      continue;
+    }
+    if (_subtitleCodecsMatch(intent.codec, codec(candidate))) score += 5;
+    score += candidateTitleScore;
+    if (intent.isExternal == isExternal(candidate)) score += 1;
     if (score > bestScore) {
       bestScore = score;
-      bestMatch = track;
+      bestMatch = candidate;
+      bestIsTitleEvidence = !hasLanguageParity;
+      bestIsAmbiguous = false;
+    } else if (score == bestScore && bestIsTitleEvidence) {
+      // Only title-evidence matches can tie (their band never reaches a
+      // language-parity score). Two rows the tiebreakers cannot separate
+      // mean the catalog cannot say which one the viewer meant.
+      bestIsAmbiguous = true;
     }
   }
+  if (bestIsTitleEvidence && bestIsAmbiguous) return null;
   return bestMatch;
 }
 

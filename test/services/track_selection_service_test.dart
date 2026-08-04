@@ -1137,9 +1137,73 @@ void main() {
       expect(findSourceTrackForIntent(fullIntent, rows)?.id, 2);
     });
 
-    test('language-less intents decline', () {
+    test('language-less intent declines when no row carries a matching title', () {
       const intent = SubtitleIntent(forced: false, title: 'French', codec: 'srt');
       expect(findSourceTrackForIntent(intent, [_plexSub(1, languageCode: 'fre')]), isNull);
+    });
+
+    // ============================================================
+    // #1785 — missing language tags must not turn the carry off when a
+    // unique real title identifies the row; codec parity alone is never
+    // evidence, and ambiguity declines rather than guesses.
+    // ============================================================
+
+    test('title-only intent matches the row with the same title when tags are missing (#1785)', () {
+      const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'subrip');
+      final rows = [_plexSub(1, title: 'English', codec: 'subrip'), _plexSub(2, title: 'Swedish', codec: 'subrip')];
+      expect(findSourceTrackForIntent(intent, rows)?.id, 2);
+    });
+
+    test('tagged intent reaches an untagged row through its title (#1785)', () {
+      const intent = SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'subrip');
+      expect(findSourceTrackForIntent(intent, [_plexSub(1, title: 'Swedish', codec: 'subrip')])?.id, 1);
+    });
+
+    test('title-only intent reaches a tagged row through its title (#1785)', () {
+      const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'subrip');
+      final rows = [
+        _plexSub(1, languageCode: 'eng', title: 'English'),
+        _plexSub(2, languageCode: 'swe', title: 'Swedish'),
+      ];
+      expect(findSourceTrackForIntent(intent, rows)?.id, 2);
+    });
+
+    test('declared languages stay authoritative over a coincidental title', () {
+      const intent = SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'subrip');
+      expect(findSourceTrackForIntent(intent, [_plexSub(1, languageCode: 'eng', title: 'Swedish')]), isNull);
+    });
+
+    test('codec parity alone never vouches for an untagged row', () {
+      const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'subrip');
+      expect(findSourceTrackForIntent(intent, [_plexSub(1, codec: 'subrip')]), isNull);
+    });
+
+    test('an ambiguous same-title untagged pair declines rather than guesses', () {
+      const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'subrip');
+      final rows = [_plexSub(1, title: 'Swedish', codec: 'subrip'), _plexSub(2, title: 'Swedish', codec: 'subrip')];
+      expect(findSourceTrackForIntent(intent, rows), isNull);
+    });
+
+    test('codec separates same-titled untagged rows before declining', () {
+      const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'ass');
+      final rows = [_plexSub(1, title: 'Swedish', codec: 'subrip'), _plexSub(2, title: 'Swedish', codec: 'ass')];
+      expect(findSourceTrackForIntent(intent, rows)?.id, 2);
+    });
+
+    test('forced parity still gates title-evidence matches', () {
+      const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'subrip');
+      expect(findSourceTrackForIntent(intent, [_plexSub(1, title: 'Swedish Forced', codec: 'subrip')]), isNull);
+    });
+
+    test('a language-parity match outranks a title-evidence match', () {
+      const intent = SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'subrip');
+      final rows = [
+        // Title-evidence candidate (untagged, matching title + codec).
+        _plexSub(1, title: 'Swedish', codec: 'subrip'),
+        // Language-parity candidate with a non-matching title.
+        _plexSub(2, languageCode: 'swe', title: 'Svenska full'),
+      ];
+      expect(findSourceTrackForIntent(intent, rows)?.id, 2);
     });
   });
 
@@ -1166,6 +1230,21 @@ void main() {
       const fullIntent = SubtitleIntent(language: 'fre', forced: false);
       final forcedOnly = [_sub('1', lang: 'fre', title: 'FR Forced', codec: 'ass')];
       expect(findNativeTrackForIntent(fullIntent, forcedOnly), isNull);
+    });
+
+    test('an untagged native track with the matching title serves the intent (#1785)', () {
+      // The server catalog may lack tags while mpv reads them from the
+      // container — and vice versa: a tagged intent must still reach an
+      // untagged native track through its title.
+      const intent = SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'subrip');
+      final tracks = [SubtitleTrack.auto, SubtitleTrack.off, _sub('3', title: 'Swedish', codec: 'subrip')];
+      expect(findNativeTrackForIntent(intent, tracks)?.id, '3');
+    });
+
+    test('an ambiguous untagged native pair declines rather than guesses', () {
+      const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'subrip');
+      final tracks = [_sub('1', title: 'Swedish', codec: 'subrip'), _sub('2', title: 'Swedish', codec: 'subrip')];
+      expect(findNativeTrackForIntent(intent, tracks), isNull);
     });
   });
 

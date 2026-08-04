@@ -414,6 +414,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         mediaInfo: mediaInfo,
         canReportPlayback: () => _hasRenderedFirstFrame && !_hasFatalPlaybackError,
         hasRenderedPlayback: () => _hasRenderedFirstFrame,
+        subtitleOffIsDeliberate: () => _playbackSession?.subtitleSelection.declinedPreference == null,
         onPausedKeepalive: mediaClient is PlexClient && effectivePlayMethod == 'Transcode'
             ? () => mediaClient.pingTranscodeSession(_playbackTranscodeSessionId)
             : null,

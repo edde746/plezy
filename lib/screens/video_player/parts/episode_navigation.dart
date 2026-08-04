@@ -159,6 +159,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
             hasCommittedSelection: committedSubtitleSelection != null,
             committedTrack: committedSubtitleSelection?.primaryTrack,
             nativeTrack: currentPlayer.state.track.subtitle,
+            declinedPreference: committedSubtitleSelection?.declinedPreference,
           );
     final secondarySubtitlePreference = followServerSelections
         ? null
@@ -771,7 +772,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           plexClient: plexClient,
           getProfileSettings: () => userProfileProvider.profileSettings,
           preferredAudioTrack: currentAudioTrack,
-          preferredSubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
+          // A declined carry stays alive for the native passes: freezing the
+          // resolver's off verdict here would turn a metadata mismatch into a
+          // navigation-priority off that no late track can undo (#1785).
+          preferredSubtitleTrack:
+              subtitleSelection.declinedPreference ?? SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
           preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
         );
         _trackManager = trackManager;
