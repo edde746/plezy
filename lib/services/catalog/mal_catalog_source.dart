@@ -368,7 +368,12 @@ class MalCatalogSource with CatalogWatchlistMachinery implements CatalogSource {
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
     if (!external.hasAny) return null;
-    final rows = await _fribb.lookup(tvdbId: external.tvdb, tmdbId: external.tmdb, imdbId: external.imdb);
+    final rows = await _fribb.lookup(
+      anidbId: external.anidb,
+      tvdbId: external.tvdb,
+      tmdbId: external.tmdb,
+      imdbId: external.imdb,
+    );
     final malId = _pickRow(kind, rows)?.malId;
     if (malId == null) return null;
     return CatalogItemIds(mal: malId, imdb: external.imdb, tmdb: external.tmdb, tvdb: external.tvdb);

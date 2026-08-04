@@ -103,7 +103,9 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
 
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
-    if (!external.hasAny) return null;
+    // Plex Discover matches on imdb/tmdb/tvdb only; an AniDB-only item has
+    // nothing to send it.
+    if (!external.hasCatalogIds) return null;
     final metadata = await _client.match(external);
     final matchedKind = metadata == null ? null : _kindFor(metadata['type']);
     if (metadata == null || matchedKind != kind) return null;

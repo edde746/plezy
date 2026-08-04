@@ -364,7 +364,12 @@ class AnilistCatalogSource with CatalogWatchlistMachinery implements CatalogSour
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async {
     if (!external.hasAny) return null;
-    final rows = await _fribb.lookup(tvdbId: external.tvdb, tmdbId: external.tmdb, imdbId: external.imdb);
+    final rows = await _fribb.lookup(
+      anidbId: external.anidb,
+      tvdbId: external.tvdb,
+      tmdbId: external.tmdb,
+      imdbId: external.imdb,
+    );
     final row = _pickRow(kind, rows);
     if (row?.anilistId == null) return null;
     return CatalogItemIds(

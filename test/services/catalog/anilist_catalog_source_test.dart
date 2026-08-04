@@ -37,9 +37,10 @@ class _FakeFribb implements FribbMappingLookup {
   _FakeFribb(this.rows);
 
   @override
-  Future<List<FribbMappingRow>> lookup({int? tvdbId, int? tmdbId, String? imdbId}) async => [
+  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async => [
     for (final row in rows)
-      if ((tvdbId != null && row.tvdbId == tvdbId) ||
+      if ((anidbId != null && row.anidbId == anidbId) ||
+          (tvdbId != null && row.tvdbId == tvdbId) ||
           (tmdbId != null && (row.tmdbIds?.contains(tmdbId) ?? false)) ||
           (imdbId != null && (row.imdbIds?.contains(imdbId) ?? false)))
         row,

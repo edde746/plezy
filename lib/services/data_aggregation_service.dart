@@ -406,6 +406,8 @@ class DataAggregationService {
     if (tmdb != null) keys.add('$scope:tmdb:$tmdb');
     final tvdb = externalIds.tvdb;
     if (tvdb != null) keys.add('$scope:tvdb:$tvdb');
+    final anidb = externalIds.anidb;
+    if (anidb != null) keys.add('$scope:anidb:$anidb');
   }
 
   String? _stableMediaGuid(String? guid) {

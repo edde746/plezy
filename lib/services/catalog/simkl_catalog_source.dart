@@ -565,7 +565,7 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
 
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async =>
-      external.hasAny ? CatalogItemIds.fromExternal(external) : null;
+      external.hasCatalogIds ? CatalogItemIds.fromExternal(external) : null;
 
   @override
   Future<WatchlistKeyPage> fetchWatchlistKeyPage(int page, int limit) async {

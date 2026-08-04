@@ -44,12 +44,14 @@ class ExternalSeasonRef {
   int get hashCode => Object.hash(tvdb, tmdb);
 }
 
-/// External IDs (IMDb / TMDB / TVDB) extracted from a media server's
+/// External IDs (IMDb / TMDB / TVDB / AniDB) extracted from a media server's
 /// metadata. Shared by the Trakt and tracker resolvers.
 ///
 /// - **Plex** stores modern IDs in a `Guid` array (`imdb://tt123`,
-///   `tmdb://456`, `tvdb://789`) and some legacy agents expose one scalar
-///   `guid`. Use [ExternalIds.fromGuids] or [ExternalIds.fromLegacyPlexGuid].
+///   `tmdb://456`, `tvdb://789`) and legacy agents expose one scalar `guid`
+///   instead — the `Guid` array only exists for the Plex Movie / Plex TV
+///   Series agents. Use [ExternalIds.fromGuids] and [fillFrom] with
+///   [ExternalIds.fromLegacyPlexGuid] so both shapes are read.
 /// - **Jellyfin** stores them inline as a `ProviderIds` map on every
 ///   `BaseItemDto`. Use [ExternalIds.fromJellyfinProviderIds].
 class ExternalIds {
@@ -57,9 +59,20 @@ class ExternalIds {
   final int? tmdb;
   final int? tvdb;
 
-  const ExternalIds({this.imdb, this.tmdb, this.tvdb});
+  /// AniDB series id, only ever produced by Plex's HAMA agent. Separate from
+  /// the three catalog ids because almost nothing accepts it: it names a Fribb
+  /// row (and through it MAL/AniList/Simkl) but Trakt, Plex Discover, Seerr and
+  /// the Anime-Lists episode mappings are all keyed the other way.
+  final int? anidb;
 
-  bool get hasAny => imdb != null || tmdb != null || tvdb != null;
+  const ExternalIds({this.imdb, this.tmdb, this.tvdb, this.anidb});
+
+  bool get hasAny => hasCatalogIds || anidb != null;
+
+  /// The ids a title database can be queried with. Callers that can only search
+  /// IMDb/TMDB/TVDB gate on this rather than [hasAny], so an AniDB-only item
+  /// does not send them looking for something they cannot express.
+  bool get hasCatalogIds => imdb != null || tmdb != null || tvdb != null;
 
   /// True when any id form matches [other]. Used to verify reverse-lookup
   /// candidates (never yields false positives; the two sides may carry
@@ -67,7 +80,19 @@ class ExternalIds {
   bool intersects(ExternalIds other) =>
       (imdb != null && imdb == other.imdb) ||
       (tmdb != null && tmdb == other.tmdb) ||
-      (tvdb != null && tvdb == other.tvdb);
+      (tvdb != null && tvdb == other.tvdb) ||
+      (anidb != null && anidb == other.anidb);
+
+  /// This set with every absent id taken from [other].
+  ///
+  /// Used to read a Plex item that carries both shapes: the modern `Guid` array
+  /// wins per field and the legacy scalar `guid` only fills what it left null.
+  ExternalIds fillFrom(ExternalIds other) => ExternalIds(
+    imdb: imdb ?? other.imdb,
+    tmdb: tmdb ?? other.tmdb,
+    tvdb: tvdb ?? other.tvdb,
+    anidb: anidb ?? other.anidb,
+  );
 
   /// Round-trips through the persisted tracker write queue. Absent ids stay
   /// absent so a re-read yields the same [hasAny]/[intersects] answers.
@@ -75,12 +100,14 @@ class ExternalIds {
     if (imdb != null) 'imdb': imdb,
     if (tmdb != null) 'tmdb': tmdb,
     if (tvdb != null) 'tvdb': tvdb,
+    if (anidb != null) 'anidb': anidb,
   };
 
   factory ExternalIds.fromJson(Map<String, Object?> json) => ExternalIds(
     imdb: json['imdb'] as String?,
     tmdb: (json['tmdb'] as num?)?.toInt(),
     tvdb: (json['tvdb'] as num?)?.toInt(),
+    anidb: (json['anidb'] as num?)?.toInt(),
   );
 
   factory ExternalIds.fromGuids(List<dynamic> guids) {
@@ -104,9 +131,11 @@ class ExternalIds {
 
   /// Build from a legacy Plex item's scalar `guid`.
   ///
-  /// Only agent formats that map directly to IMDb, TMDB, or TVDB are
-  /// recognized. HAMA AniDB identifiers require an external mapping and are
-  /// deliberately left unsupported here.
+  /// HAMA composes its guid as `<source>-<id>` over
+  /// `anidb|anidb2..9|tvdb|tvdb2..9|tmdb|tsdb|imdb`. Only plain `anidb-` is
+  /// mapped: `anidb2`..`anidb9` are HAMA's grouping modes, where several AniDB
+  /// entries share one Plex show under TVDB-shaped seasons, so the guid names
+  /// the root entry only and would mislabel every later season.
   factory ExternalIds.fromLegacyPlexGuid(Object? guid) {
     if (guid is! String || guid.isEmpty) return const ExternalIds();
 
@@ -128,6 +157,9 @@ class ExternalIds {
         final id = value.substring(separator + 1);
         if (source == 'imdb') {
           return ExternalIds(imdb: _normalizeImdb(id, allowBareDigits: true));
+        }
+        if (source == 'anidb') {
+          return ExternalIds(anidb: _parseNumericId(id));
         }
         if (source == 'tmdb' || source == 'tsdb') {
           return ExternalIds(tmdb: _parseNumericId(id));

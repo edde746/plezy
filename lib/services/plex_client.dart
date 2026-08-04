@@ -1930,30 +1930,6 @@ class PlexClient
     return _getFirstMetadataJsonFromData(data);
   }
 
-  /// Fetch the raw `Guid` array for a metadata item (`includeGuids=1`).
-  ///
-  /// Returns the list of `{id: 'imdb://tt...'}` maps as Plex returns them, or
-  /// an empty list if the item has no external IDs / can't be fetched.
-  /// Used by the Trakt integration to match Plex items against Trakt's catalog.
-  Future<List<dynamic>> fetchExternalGuids(String ratingKey) async {
-    try {
-      final response = await _getWithFailover('/library/metadata/$ratingKey', queryParameters: {'includeGuids': 1});
-      final data = response.data;
-      if (data is! Map) return const [];
-      final container = data['MediaContainer'] as Map?;
-      final metadata = container?['Metadata'];
-      if (metadata is! List || metadata.isEmpty) return const [];
-      final first = metadata.first;
-      if (first is! Map) return const [];
-      final guids = first['Guid'];
-      if (guids is List) return guids;
-      return const [];
-    } catch (e) {
-      appLogger.d('fetchExternalGuids failed for $ratingKey', error: e);
-      return const [];
-    }
-  }
-
   /// Mark media as watched (transport only — see [MediaServerClient.markWatched]).
   Future<void> markAsWatched(String ratingKey) async {
     await _getWithFailover(
@@ -3871,10 +3847,30 @@ class PlexClient
   @override
   Map<String, String> get streamHeaders => Map.unmodifiable(config.headers);
 
+  /// Reads both guid shapes Plex can answer with. The `Guid` array only exists
+  /// for items matched by the Plex Movie / Plex TV Series agents; a library
+  /// still on a legacy agent (HAMA, `com.plexapp.agents.thetvdb`, ...) carries
+  /// its ids in the scalar `guid` instead, so reading only the array left every
+  /// tracker, watchlist and dedupe path blind to those libraries (#1788).
+  ///
+  /// The array wins per field; the scalar only fills what it left null.
   @override
   Future<ExternalIds> fetchExternalIds(String itemId) async {
-    final guids = await fetchExternalGuids(itemId);
-    return ExternalIds.fromGuids(guids);
+    try {
+      final response = await _getWithFailover('/library/metadata/$itemId', queryParameters: {'includeGuids': 1});
+      final data = response.data;
+      if (data is! Map) return const ExternalIds();
+      final metadata = (data['MediaContainer'] as Map?)?['Metadata'];
+      if (metadata is! List || metadata.isEmpty) return const ExternalIds();
+      final first = metadata.first;
+      if (first is! Map) return const ExternalIds();
+      final guids = first['Guid'];
+      final modern = guids is List ? ExternalIds.fromGuids(guids) : const ExternalIds();
+      return modern.fillFrom(ExternalIds.fromLegacyPlexGuid(first['guid']));
+    } catch (e) {
+      appLogger.d('fetchExternalIds failed for $itemId', error: e);
+      return const ExternalIds();
+    }
   }
 
   /// Map id-verified candidates to items, dropping any sequel the server does

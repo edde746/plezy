@@ -117,7 +117,7 @@ class TraktCatalogSource with CatalogWatchlistMachinery implements CatalogSource
 
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async =>
-      external.hasAny ? CatalogItemIds.fromExternal(external) : null;
+      external.hasCatalogIds ? CatalogItemIds.fromExternal(external) : null;
 
   @override
   Future<CatalogDetail> fetchDetail(CatalogItem item, {int castLimit = 20, int relatedLimit = 20}) async {
