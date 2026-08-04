@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
@@ -303,6 +304,45 @@ void main() {
           'https://jellyfin.example/Users/user-older/Images/Primary'
           '?tag=older-tag&maxWidth=240&maxHeight=240',
         );
+      });
+
+      test('a corrected connection creation time re-picks the avatar without a restart', () async {
+        // createdAt is a real column, not part of toConfigJson, so the
+        // connection diff guard has to compare it explicitly. Nothing in
+        // normal operation rewrites it — ConnectionRegistry pins creation
+        // order across re-auth — but a restore or a backfill can, and
+        // swallowing that would leave a stale avatar until the next launch.
+        final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+        await registry.upsert(profile);
+        await connections.upsert(_jellyfin('a', createdAt: DateTime(2025, 1, 1), primaryImageTag: 'a-tag'));
+        await connections.upsert(_jellyfin('b', createdAt: DateTime(2026, 1, 1), primaryImageTag: 'b-tag'));
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'a', userIdentifier: 'user-a'),
+        );
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'b', userIdentifier: 'user-b'),
+        );
+        await provider.initialize();
+        expect(provider.avatarUrlFor(profile.id), contains('tag=a-tag'));
+
+        final changed = Completer<void>();
+        void listener() {
+          if ((provider.avatarUrlFor(profile.id)?.contains('b-tag') ?? false) && !changed.isCompleted) {
+            changed.complete();
+          }
+        }
+
+        provider.addListener(listener);
+        addTearDown(() => provider.removeListener(listener));
+
+        // Straight to the table: the registry deliberately refuses to restamp
+        // an existing row, so this stands in for an out-of-band correction.
+        await (db.update(db.connections)..where((t) => t.id.equals('a'))).write(
+          ConnectionsCompanion(createdAt: Value(DateTime(2027, 1, 1).millisecondsSinceEpoch)),
+        );
+        await changed.future.timeout(const Duration(seconds: 2));
+
+        expect(provider.avatarUrlFor(profile.id), contains('tag=b-tag'));
       });
 
       test('token and timestamp churn on a link does not notify listeners', () async {

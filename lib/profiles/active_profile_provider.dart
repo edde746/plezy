@@ -217,14 +217,22 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     _resolveActive();
   }
 
-  /// [Connection] has no value equality; its persisted config is the
-  /// cheapest faithful comparison key for the handful of rows involved.
+  /// [Connection] has no value equality; its persisted config is the cheapest
+  /// faithful comparison key for the handful of rows involved.
+  ///
+  /// `createdAt` is compared separately because it is a real column rather
+  /// than part of `toConfigJson`, and avatar selection reads it: a profile
+  /// shows the picture of its oldest linked connection. `ConnectionRegistry`
+  /// pins creation order across re-authentication, so this costs no extra
+  /// notifications — it only stops a genuine correction (a restore, a
+  /// backfill) from being swallowed until the next launch.
   static bool _sameConnections(Map<String, Connection> a, Map<String, Connection> b) {
     if (a.length != b.length) return false;
     for (final entry in a.entries) {
       final other = b[entry.key];
       if (other == null) return false;
       if (identical(entry.value, other)) continue;
+      if (entry.value.createdAt != other.createdAt) return false;
       if (jsonEncode(entry.value.toConfigJson()) != jsonEncode(other.toConfigJson())) return false;
     }
     return true;
