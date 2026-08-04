@@ -821,9 +821,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _configureChromeController();
     widget.chromeController.setPlaying(widget.player.state.playing);
     _initKeyboardService();
-    // Android TV remotes' subtitles/CC button (KEYCODE_CAPTIONS) toggles the
-    // subtitle selector while the player controls are mounted.
-    CaptionsService.onToggleSubtitleSelector = _toggleSubtitleSelector;
+
     _listenToPosition();
     _listenToPlayingState();
     _listenToCompleted();
@@ -846,6 +844,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       windowManager.addListener(this);
       _initAlwaysOnTopState();
     }
+    // Register subtitle selector toggle handler (Android TV)
+    CaptionsService.onToggleSubtitleSelector = _toggleSubtitleSelector;
 
     // Register global key handler for focus-independent shortcuts (desktop only)
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
