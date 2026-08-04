@@ -123,6 +123,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             selectedMediaSourceId: _requestedMediaSourceId,
             qualityPreset: _selectedQualityPreset,
             selectedAudioStreamId: _selectedAudioStreamId,
+            preferredAudioTrack: _preferredAudioTrack,
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,

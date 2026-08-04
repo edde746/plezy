@@ -16,7 +16,7 @@ import '../test_helpers/media_items.dart';
 // integration point (`selectAndApplyTracks`). We cover:
 //
 //   - `languageMatches` — direct, base-code, and ISO 639 variation matching.
-//   - `findBestTrackMatch` / `findBestAudioMatch` / `findBestSubtitleMatch` —
+//   - `findBestTrackMatch` / `findBestSubtitleMatch` —
 //     id+title+language exact, title+language, language-only, and the
 //     "auto"/"no" filtering rule.
 //   - `findAudioTrackByProfile` — picks the first preferred-language match,
@@ -232,49 +232,6 @@ void main() {
   // findBestTrackMatch (via the audio/subtitle wrappers)
   // ============================================================
 
-  group('findBestAudioMatch', () {
-    final svc = _svc();
-
-    test('exact id + title + language match wins', () {
-      final tracks = [_audio('1', lang: 'eng', title: 'Stereo'), _audio('2', lang: 'eng', title: 'Surround')];
-      final preferred = _audio('2', lang: 'eng', title: 'Surround');
-      expect(svc.findBestAudioMatch(tracks, preferred), tracks[1]);
-    });
-
-    test('falls back to title + language when id differs', () {
-      final tracks = [_audio('1', lang: 'eng', title: 'Stereo'), _audio('2', lang: 'eng', title: 'Surround')];
-      // Different id but matching title+language → tracks[1].
-      final preferred = _audio('999', lang: 'eng', title: 'Surround');
-      expect(svc.findBestAudioMatch(tracks, preferred), tracks[1]);
-    });
-
-    test('falls back to language-only match', () {
-      final tracks = [_audio('1', lang: 'eng', title: 'Stereo')];
-      final preferred = _audio('999', lang: 'eng', title: 'Different');
-      expect(svc.findBestAudioMatch(tracks, preferred), tracks[0]);
-    });
-
-    test('returns null when no language match exists', () {
-      final tracks = [_audio('1', lang: 'fre')];
-      final preferred = _audio('1', lang: 'eng');
-      expect(svc.findBestAudioMatch(tracks, preferred), isNull);
-    });
-
-    test('filters out auto and no tracks before matching', () {
-      final tracks = [AudioTrack.auto, AudioTrack.off, _audio('3', lang: 'eng')];
-      final preferred = _audio('3', lang: 'eng');
-      expect(svc.findBestAudioMatch(tracks, preferred), tracks[2]);
-    });
-
-    test('returns null on an empty list', () {
-      expect(svc.findBestAudioMatch(const [], _audio('1', lang: 'eng')), isNull);
-    });
-
-    test('returns null when only auto/no tracks remain after filtering', () {
-      expect(svc.findBestAudioMatch([AudioTrack.auto, AudioTrack.off], _audio('1', lang: 'eng')), isNull);
-    });
-  });
-
   group('findBestSubtitleMatch', () {
     final svc = _svc();
 
@@ -350,6 +307,64 @@ void main() {
       expect(result, isNotNull);
       expect(result!.priority, TrackSelectionPriority.navigation);
       expect(result.track, tracks[1]);
+    });
+
+    test('Priority 1: a cross-item semantic carry matches through the evidence bands', () {
+      // The carried track's id belongs to the previous episode; language and
+      // title must still find the equivalent native track here.
+      final tracks = [_audio('1', lang: 'eng', title: 'Main'), _audio('2', lang: 'eng', title: 'Commentary')];
+      final carried = _audio('source:99', lang: 'eng', title: 'Commentary');
+      final result = _svc().selectAudioTrack(tracks, carried);
+      expect(result!.priority, TrackSelectionPriority.navigation);
+      expect(result.track, tracks[1]);
+    });
+
+    test('Priority 1: a declined audio carry falls to the server-selected track', () {
+      final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
+      final info = _info(
+        audio: [
+          _plexAudio(1, language: 'eng', languageCode: 'eng', selected: true),
+          _plexAudio(2, language: 'fre', languageCode: 'fre'),
+        ],
+      );
+      // Swedish is gone on this episode: the carry declines instead of
+      // latching onto an arbitrary row, and the server's pick plays.
+      final result = _svc(info: info).selectAudioTrack(tracks, _audio('source:9', lang: 'swe'));
+      expect(result!.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'eng');
+    });
+
+    test('a demoted cross-item carry cannot latch a reused native id', () {
+      // Native ids are per-item ordinals: the previous episode's id '2' names
+      // a DIFFERENT track here. The boundary demotes the carry to semantics
+      // only; an indistinguishable same-language pair then declines to the
+      // server's choice instead of silently keeping the old ordinal.
+      final tracks = [
+        _audio('1', lang: 'eng', codec: 'aac', channels: 2),
+        _audio('2', lang: 'eng', codec: 'aac', channels: 2),
+      ];
+      final info = _info(
+        audio: [
+          _plexAudio(1, language: 'eng', languageCode: 'eng', selected: true),
+          _plexAudio(2, language: 'eng', languageCode: 'eng'),
+        ],
+      );
+      final carriedRaw = _audio('2', lang: 'eng', codec: 'aac', channels: 2);
+      final carried = itemAgnosticAudioCarry(carriedRaw);
+
+      // Demotion swaps only the identity; the semantics stay intact.
+      expect(carried.id, carriedAudioTrackId);
+      expect(carried.language, 'eng');
+      expect(carried.channels, 2);
+
+      final result = _svc(info: info).selectAudioTrack(tracks, carried);
+      expect(result!.priority, TrackSelectionPriority.serverSelected);
+
+      // Control: the raw (un-demoted) carry would have identity-latched the
+      // reused id — the exact bypass the boundary demotion exists to prevent.
+      final latched = _svc(info: info).selectAudioTrack(tracks, carriedRaw);
+      expect(latched!.priority, TrackSelectionPriority.navigation);
+      expect(latched.track.id, '2');
     });
 
     test('Priority 2: Plex-selected track from media info', () {
@@ -1205,6 +1220,30 @@ void main() {
       ];
       expect(findSourceTrackForIntent(intent, rows)?.id, 2);
     });
+
+    test('the semantic title outranks a retained codec across a codec flip', () {
+      // The signs track was re-encoded srt on this episode while the full
+      // dialogue track kept the old codec: the row NAMED by the carried
+      // title must win — technical parity only breaks ties the semantic
+      // tiers left.
+      const intent = SubtitleIntent(language: 'eng', forced: false, title: 'Signs/OP/ED', codec: 'ass');
+      final rows = [
+        _plexSub(1, languageCode: 'eng', title: 'Full Subtitles', codec: 'ass'),
+        _plexSub(2, languageCode: 'eng', title: 'Signs/OP/ED', codec: 'subrip'),
+      ];
+      expect(findSourceTrackForIntent(intent, rows)?.id, 2);
+    });
+
+    test('an indistinguishable same-language pair declines rather than latching by order', () {
+      // A titleless carry cannot tell two equal same-language rows apart:
+      // guessing the first row would recreate the #1717 order latch.
+      const intent = SubtitleIntent(language: 'eng', forced: false, codec: 'subrip');
+      final rows = [
+        _plexSub(1, languageCode: 'eng', codec: 'subrip'),
+        _plexSub(2, languageCode: 'eng', codec: 'subrip'),
+      ];
+      expect(findSourceTrackForIntent(intent, rows), isNull);
+    });
   });
 
   group('findNativeTrackForIntent', () {
@@ -1245,6 +1284,75 @@ void main() {
       const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'subrip');
       final tracks = [_sub('1', title: 'Swedish', codec: 'subrip'), _sub('2', title: 'Swedish', codec: 'subrip')];
       expect(findNativeTrackForIntent(intent, tracks), isNull);
+    });
+  });
+
+  group('audio carry evidence bands', () {
+    test('bridges two- and three-letter language codes across episodes', () {
+      // The old carry compared languages with raw equality, so a 'sv' pick
+      // never found a 'swe'-tagged row on the next episode.
+      final rows = [_plexAudio(1, languageCode: 'eng'), _plexAudio(2, languageCode: 'swe')];
+      expect(findSourceAudioTrackForIntent(_audio('x', lang: 'sv'), rows)?.id, 2);
+    });
+
+    test('keeps the commentary/main distinction between same-language tracks', () {
+      // The old language-only tier returned the FIRST same-language row,
+      // flipping a commentary pick back to the main mix every episode.
+      final rows = [
+        _plexAudio(1, languageCode: 'eng', title: 'Main'),
+        _plexAudio(2, languageCode: 'eng', title: 'Commentary'),
+      ];
+      expect(findSourceAudioTrackForIntent(_audio('x', lang: 'eng', title: 'Commentary'), rows)?.id, 2);
+    });
+
+    test('a unique title vouches for untagged tracks', () {
+      final rows = [_plexAudio(1, title: 'Main'), _plexAudio(2, title: 'Commentary')];
+      expect(findSourceAudioTrackForIntent(_audio('x', title: 'Commentary'), rows)?.id, 2);
+    });
+
+    test('codec parity alone never vouches for an untagged track', () {
+      final rows = [_plexAudio(1, codec: 'ac3')];
+      expect(findSourceAudioTrackForIntent(_audio('x', title: 'Commentary', codec: 'ac3'), rows), isNull);
+    });
+
+    test('an ambiguous same-title untagged pair declines rather than guesses', () {
+      final rows = [_plexAudio(1, title: 'Stereo'), _plexAudio(2, title: 'Stereo')];
+      expect(findSourceAudioTrackForIntent(_audio('x', title: 'Stereo'), rows), isNull);
+    });
+
+    test('a declared language contradiction is never rescued by a title', () {
+      final rows = [_plexAudio(1, languageCode: 'eng', title: 'Commentary')];
+      expect(findSourceAudioTrackForIntent(_audio('x', lang: 'swe', title: 'Commentary'), rows), isNull);
+    });
+
+    test('channel count breaks ties between otherwise equal rows', () {
+      final rows = [
+        _plexAudio(1, languageCode: 'eng', channels: 2, codec: 'aac'),
+        _plexAudio(2, languageCode: 'eng', channels: 6, codec: 'aac'),
+      ];
+      expect(findSourceAudioTrackForIntent(_audio('x', lang: 'eng', channels: 6, codec: 'aac'), rows)?.id, 2);
+    });
+
+    test('the native twin skips the auto and off sentinels', () {
+      final tracks = [AudioTrack.auto, AudioTrack.off, _audio('3', lang: 'eng')];
+      expect(findNativeAudioTrackForIntent(_audio('x', lang: 'eng'), tracks)?.id, '3');
+    });
+
+    test('a commentary title outranks a retained codec across a codec flip', () {
+      final rows = [
+        _plexAudio(1, languageCode: 'eng', title: 'Main', codec: 'ac3'),
+        _plexAudio(2, languageCode: 'eng', title: 'Commentary', codec: 'aac'),
+      ];
+      final carried = _audio('x', lang: 'eng', title: 'Commentary', codec: 'ac3');
+      expect(findSourceAudioTrackForIntent(carried, rows)?.id, 2);
+    });
+
+    test('an indistinguishable same-language pair declines rather than latching by order', () {
+      final rows = [
+        _plexAudio(1, languageCode: 'eng', codec: 'aac', channels: 2),
+        _plexAudio(2, languageCode: 'eng', codec: 'aac', channels: 2),
+      ];
+      expect(findSourceAudioTrackForIntent(_audio('x', lang: 'eng', codec: 'aac'), rows), isNull);
     });
   });
 

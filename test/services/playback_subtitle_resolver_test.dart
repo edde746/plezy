@@ -692,6 +692,25 @@ void main() {
     });
   });
 
+  test('audio source descriptor keeps the discriminating row title', () {
+    // Server display titles collapse to the bare language; a commentary or
+    // alternate mix is only identifiable by the row's own title.
+    final row = MediaAudioTrack(
+      id: 7,
+      languageCode: 'eng',
+      title: 'Commentary',
+      displayTitle: 'English',
+      codec: 'ac3',
+      channels: 6,
+      selected: false,
+    );
+    final track = PlaybackSubtitleResolver.audioTrackForSource(row);
+    expect(track.id, 'source:7');
+    expect(track.title, 'Commentary');
+    expect(track.language, 'eng');
+    expect(track.channels, 6);
+  });
+
   test('selected embedded subtitle keeps sidecars out of the open', () {
     final result = PlaybackSubtitleResolver.resolve(
       metadata: metadata,

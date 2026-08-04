@@ -73,6 +73,7 @@ import 'plex_lyrics_parser.dart';
 import 'plex_mappers.dart';
 import 'plex_playback_mapper.dart';
 import 'playback_initialization_types.dart';
+import 'track_selection_service.dart';
 
 part 'plex_client/parts/live_tv.dart';
 part 'plex_client/parts/playlists.dart';
@@ -3252,6 +3253,10 @@ class PlexClient
       if (!data.hasValidVideoUrl) {
         throw PlaybackException(t.messages.fileInfoNotAvailable, reason: PlaybackFailureReason.noPlayableSource);
       }
+      final carriedAudioTrack = options.selectedAudioStreamId == null ? options.preferredAudioTrack : null;
+      final carriedAudioStreamId = carriedAudioTrack == null || data.mediaInfo == null
+          ? null
+          : findSourceAudioTrackForIntent(carriedAudioTrack, data.mediaInfo!.audioTracks)?.id;
 
       // Tracks consult the music preset — [qualityPreset] is video-shaped
       // (resolution/videoQuality) and is ignored for audio.
@@ -3286,7 +3291,9 @@ class PlexClient
           return _transcodeFallbackResult(data, result.outcome, options);
         }
 
-        final resolvedAudioId = _resolveAudioStreamId(options.selectedAudioStreamId, data.mediaInfo);
+        final resolvedAudioId = carriedAudioTrack == null
+            ? _resolveAudioStreamId(options.selectedAudioStreamId, data.mediaInfo)
+            : carriedAudioStreamId;
         final result = await buildTranscodeStartPath(
           ratingKey: options.metadata.id,
           mediaIndex: data.selectedMediaIndex,
@@ -3314,7 +3321,7 @@ class PlexClient
           );
         }
 
-        return _transcodeFallbackResult(data, result.outcome, options);
+        return _transcodeFallbackResult(data, result.outcome, options, activeAudioStreamId: carriedAudioStreamId);
       }
 
       return PlaybackInitializationResult(
@@ -3323,6 +3330,7 @@ class PlexClient
         mediaInfo: data.mediaInfo,
         subtitleSidecars: _buildExternalSubtitles(data.mediaInfo),
         isOffline: false,
+        activeAudioStreamId: carriedAudioStreamId,
         playMethod: 'DirectPlay',
         playSessionId: options.sessionIdentifier,
         selectedMediaIndex: data.selectedMediaIndex,
@@ -3340,8 +3348,9 @@ class PlexClient
   PlaybackInitializationResult _transcodeFallbackResult(
     PlexVideoPlaybackData data,
     TranscodeDecisionOutcome outcome,
-    PlaybackInitializationOptions options,
-  ) {
+    PlaybackInitializationOptions options, {
+    int? activeAudioStreamId,
+  }) {
     final fallbackReason = outcome == TranscodeDecisionOutcome.directPlayOnly
         ? TranscodeFallbackReason.directPlayOnly
         : TranscodeFallbackReason.decisionFailed;
@@ -3354,6 +3363,7 @@ class PlexClient
       isOffline: false,
       isTranscoding: false,
       fallbackReason: fallbackReason,
+      activeAudioStreamId: activeAudioStreamId,
       playMethod: 'DirectPlay',
       playSessionId: options.sessionIdentifier,
       selectedMediaIndex: data.selectedMediaIndex,

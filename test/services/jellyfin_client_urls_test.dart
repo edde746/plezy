@@ -64,6 +64,56 @@ JellyfinClient _clientWithPlaybackInfo(
   );
 }
 
+Future<({PlaybackInitializationResult result, Uri playbackInfoUri, Map<String, dynamic> playbackInfoBody})>
+_initializeJellyfinAudioCarry({int? selectedAudioStreamId, AudioTrack? preferredAudioTrack}) async {
+  late Uri playbackInfoUri;
+  late String playbackInfoBody;
+  final client = _clientWithPlaybackInfo(
+    (request) async {
+      playbackInfoUri = request.url;
+      playbackInfoBody = request.body;
+      return jsonResponse({
+        'MediaSources': [
+          {'Id': 'src-1'},
+        ],
+      });
+    },
+    itemSources: [
+      {
+        'Id': 'src-1',
+        'Container': 'mkv',
+        'MediaStreams': [
+          {'Index': 0, 'Type': 'Video'},
+          {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'IsDefault': true},
+          {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'Title': 'Main'},
+        ],
+      },
+    ],
+  );
+  try {
+    final result = await client.getPlaybackInitialization(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(
+          id: 'item-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.episode,
+          serverId: 'srv-1',
+        ),
+        selectedMediaIndex: 0,
+        selectedAudioStreamId: selectedAudioStreamId,
+        preferredAudioTrack: preferredAudioTrack,
+      ),
+    );
+    return (
+      result: result,
+      playbackInfoUri: playbackInfoUri,
+      playbackInfoBody: jsonDecode(playbackInfoBody) as Map<String, dynamic>,
+    );
+  } finally {
+    client.close();
+  }
+}
+
 /// Serves [routes] as JSON keyed by request path and records the last URL seen
 /// for each path; every other path answers 404.
 ({JellyfinClient client, Map<String, Uri> requests}) _routedClient(Map<String, Object> routes) {
@@ -1340,6 +1390,38 @@ void main() {
       expect(uri.queryParameters.containsKey('AudioStreamIndex'), isFalse);
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters['Container'], 'mkv');
+    });
+
+    test('semantic carried audio resolves against the selected source before PlaybackInfo negotiation', () async {
+      final initialized = await _initializeJellyfinAudioCarry(
+        preferredAudioTrack: const AudioTrack(id: 'source:99', language: 'jpn', title: 'Main', codec: 'flac'),
+      );
+
+      expect(initialized.playbackInfoUri.queryParameters['AudioStreamIndex'], '4');
+      expect(initialized.playbackInfoBody['AudioStreamIndex'], 4);
+      expect(initialized.result.activeAudioStreamId, 4);
+      expect(initialized.result.mediaInfo!.audioTracks.singleWhere((track) => track.id == 4).selected, isTrue);
+    });
+
+    test('explicit Jellyfin audio stream wins over a conflicting semantic carry', () async {
+      final initialized = await _initializeJellyfinAudioCarry(
+        selectedAudioStreamId: 1,
+        preferredAudioTrack: const AudioTrack(id: 'source:99', language: 'jpn', title: 'Main', codec: 'flac'),
+      );
+
+      expect(initialized.playbackInfoUri.queryParameters['AudioStreamIndex'], '1');
+      expect(initialized.playbackInfoBody['AudioStreamIndex'], 1);
+      expect(initialized.result.activeAudioStreamId, 1);
+    });
+
+    test('unresolvable semantic audio carry lets Jellyfin choose the stream', () async {
+      final initialized = await _initializeJellyfinAudioCarry(
+        preferredAudioTrack: const AudioTrack(id: 'source:99', language: 'swe'),
+      );
+
+      expect(initialized.playbackInfoUri.queryParameters.containsKey('AudioStreamIndex'), isFalse);
+      expect(initialized.playbackInfoBody.containsKey('AudioStreamIndex'), isFalse);
+      expect(initialized.result.activeAudioStreamId, isNull);
     });
 
     test('stale selected audio stream is not sent for a source without that stream', () async {

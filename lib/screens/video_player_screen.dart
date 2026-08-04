@@ -153,6 +153,10 @@ bool playerChromeStartsVisible({required bool isTv}) => !isTv;
 /// boundary; native state is a fallback for sessions created before
 /// source-backed selection was recorded.
 ///
+/// [sessionPreference] is the screen's last explicit viewer choice and wins
+/// outright: automatic outcomes never overwrite it, so a catalog-gap episode
+/// cannot reset the choice for the rest of the session.
+///
 /// [declinedPreference] is the committed selection's unserved carry: its off
 /// is fallout from a metadata mismatch, not a viewer choice, so it must not
 /// harden into an explicit off on the next item (#1785).
@@ -161,7 +165,10 @@ SubtitlePreference? subtitlePreferenceForItemChange({
   required SubtitleTrack? committedTrack,
   required SubtitleTrack? nativeTrack,
   SubtitlePreference? declinedPreference,
+  SubtitlePreference? sessionPreference,
 }) {
+  final sessionIntent = SubtitlePreference.demoteToIntent(sessionPreference);
+  if (sessionIntent != null) return sessionIntent;
   SubtitlePreference? normalize(SubtitleTrack? track, {required bool preserveOff}) {
     if (track == null) return null;
     if (track.id == SubtitleTrack.off.id) return preserveOff ? const SubtitlePreference.off() : null;
@@ -221,6 +228,26 @@ PlaybackSubtitleSelection subtitleSelectionForUserPick({
     // deliberate (that would persist -1 and harden the next boundary).
     declinedPreference: isPrimarySlot ? null : currentSelection.declinedPreference,
   );
+}
+
+/// Session-preference form of a source-catalog subtitle choice that had to
+/// go through a reload instead of a local track switch.
+///
+/// The authoritative row — not the reload's outcome — becomes the session
+/// preference: a failed resolution must not turn the viewer's pick into a
+/// carried off. Returns null when the row is absent from [rows] so a stale
+/// id never overwrites the existing session preference.
+SubtitlePreference? sessionPreferenceForSourceSubtitleChoice(
+  PlaybackSourceSubtitleChoice choice,
+  List<MediaSubtitleTrack> rows,
+) {
+  if (choice.isOff) return const SubtitlePreference.off();
+  for (final row in rows) {
+    if (row.id == choice.sourceStreamId) {
+      return SubtitlePreference.track(PlaybackSubtitleResolver.subtitleTrackForSource(row));
+    }
+  }
+  return null;
 }
 
 /// The in-place media-source transitions a [VideoPlayerScreenState] can run.
@@ -425,6 +452,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   AudioTrack? _preferredAudioTrack;
   SubtitlePreference? _preferredSubtitleTrack;
   SubtitlePreference? _preferredSecondarySubtitleTrack;
+
+  /// Last explicit track choices made on this screen. They survive in-place
+  /// reloads but not route replacement. Automatic selections never overwrite
+  /// them, so an episode with a catalog gap cannot reset the viewer's choice
+  /// for the rest of the session (#1785).
+  AudioTrack? _sessionAudioPreference;
+  SubtitlePreference? _sessionSubtitlePreference;
+  SubtitlePreference? _sessionSecondarySubtitlePreference;
   bool _serverSupportsTranscoding = false;
   // Kicked off early in the player initialization attempt for online non-live playback so
   // the metadata fetch (and transcode-decision HTTP, if non-original preset)
@@ -1148,6 +1183,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             preferredVersionSignature: widget.preferredVersionSignature,
             qualityPreset: _selectedQualityPreset,
             selectedAudioStreamId: _selectedAudioStreamId,
+            preferredAudioTrack: _preferredAudioTrack,
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
@@ -1894,7 +1930,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  Future<void> _onAudioTrackChanged(AudioTrack track) async => _trackManager?.onAudioTrackSelectedByUser(track);
+  Future<void> _onAudioTrackChanged(AudioTrack track) async {
+    if (track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id) {
+      _sessionAudioPreference = track;
+    }
+    await _trackManager?.onAudioTrackSelectedByUser(track);
+  }
 
   Future<void> _onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
     _rememberNativeSubtitleSelection(track, sourceStreamId: sourceStreamId);
@@ -1919,10 +1960,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     required _SubtitleSelectionSlot slot,
     int? sourceStreamId,
   }) {
-    final session = _playbackSession;
-    if (session == null) return;
-    final currentSelection = session.subtitleSelection;
     if (track.id == SubtitleTrack.off.id) {
+      switch (slot) {
+        case _SubtitleSelectionSlot.primary:
+          _sessionSubtitlePreference = const SubtitlePreference.off();
+        case _SubtitleSelectionSlot.secondary:
+          _sessionSecondarySubtitlePreference = const SubtitlePreference.off();
+      }
+      final session = _playbackSession;
+      if (session == null) return;
+      final currentSelection = session.subtitleSelection;
       _updatePlaybackSessionSubtitleSelection(session, switch (slot) {
         _SubtitleSelectionSlot.primary => const PlaybackSubtitleSelection.off(),
         // Dropping only the secondary must not relabel the primary's
@@ -1937,6 +1984,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (mounted) _setPlayerState(() {});
       return;
     }
+
+    final session = _playbackSession;
+    if (session == null) return;
+    final currentSelection = session.subtitleSelection;
 
     final info = _currentMediaInfo;
     final currentPlayer = player;
@@ -1989,6 +2040,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       sourceTrack: sourceTrack,
       sidecar: sidecar,
     );
+    final resolvedTrack = switch (slot) {
+      _SubtitleSelectionSlot.primary => selection.primaryTrack,
+      _SubtitleSelectionSlot.secondary => selection.secondaryTrack,
+    };
+    if (resolvedTrack != null) {
+      switch (slot) {
+        case _SubtitleSelectionSlot.primary:
+          _sessionSubtitlePreference = SubtitlePreference.track(resolvedTrack);
+        case _SubtitleSelectionSlot.secondary:
+          _sessionSecondarySubtitlePreference = SubtitlePreference.track(resolvedTrack);
+      }
+    }
     _updatePlaybackSessionSubtitleSelection(session, selection);
     if (mounted) _setPlayerState(() {});
   }

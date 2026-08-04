@@ -60,6 +60,7 @@ void main() {
       hasCommittedSelection: true,
       committedTrack: committed,
       nativeTrack: SubtitleTrack.off,
+      sessionPreference: null,
     );
 
     expect(result, isA<SubtitleIntentPreference>());
@@ -69,6 +70,45 @@ void main() {
     expect(intent.codec, committed.codec);
     expect(intent.forced, isTrue);
     expect(intent.isExternal, isTrue);
+  });
+
+  test('session subtitle intent wins over the committed outcome at an item boundary', () {
+    const sessionPreference = SubtitlePreference.intent(
+      SubtitleIntent(language: 'swe', forced: false, title: 'Swedish', codec: 'srt'),
+    );
+
+    final result = subtitlePreferenceForItemChange(
+      hasCommittedSelection: true,
+      committedTrack: const SubtitleTrack(id: 'source:4', language: 'eng', title: 'English', codec: 'srt'),
+      nativeTrack: const SubtitleTrack(id: '2', language: 'eng', title: 'English', codec: 'srt'),
+      sessionPreference: sessionPreference,
+    );
+
+    expect(result, sessionPreference);
+  });
+
+  test('session subtitle off stays off at an item boundary', () {
+    expect(
+      subtitlePreferenceForItemChange(
+        hasCommittedSelection: true,
+        committedTrack: const SubtitleTrack(id: 'source:4', language: 'eng'),
+        nativeTrack: const SubtitleTrack(id: '2', language: 'eng'),
+        sessionPreference: const SubtitlePreference.off(),
+      ),
+      const SubtitlePreference.off(),
+    );
+  });
+
+  test('semantics-free session subtitle preference falls back to the committed flow', () {
+    final result = subtitlePreferenceForItemChange(
+      hasCommittedSelection: true,
+      committedTrack: const SubtitleTrack(id: 'source:4', language: 'eng', title: 'English', codec: 'srt'),
+      nativeTrack: SubtitleTrack.off,
+      sessionPreference: const SubtitlePreference.track(SubtitleTrack(id: 'source:9')),
+    );
+
+    expect(result, isA<SubtitleIntentPreference>());
+    expect((result! as SubtitleIntentPreference).intent.language, 'eng');
   });
 
   test('item-change subtitle preference derives forced-ness from a forced title (#1716)', () {
@@ -231,6 +271,55 @@ void main() {
     expect(selection.primarySourceStreamId, 4);
     expect(selection.secondaryTrack, secondaryPick);
     expect(selection.secondarySourceStreamId, isNull);
+  });
+
+  test('a reload-path source subtitle pick becomes the session preference (#1785)', () {
+    // Picks that cannot switch locally go through a full reload and never
+    // reach the native remember chain; the authoritative source row still
+    // has to become the session preference — including its discriminating
+    // title — or a later fallback episode erases the choice.
+    final rows = [
+      MediaSubtitleTrack(
+        id: 3,
+        languageCode: 'eng',
+        title: 'Full Subtitles',
+        displayTitle: 'English',
+        codec: 'ass',
+        selected: true,
+        forced: false,
+      ),
+      MediaSubtitleTrack(
+        id: 4,
+        languageCode: 'eng',
+        title: 'Signs & Songs',
+        displayTitle: 'English',
+        codec: 'ass',
+        selected: false,
+        forced: false,
+      ),
+    ];
+
+    final captured = sessionPreferenceForSourceSubtitleChoice(const PlaybackSourceSubtitleChoice.source(4), rows);
+    expect(captured, isA<SubtitleTrackPreference>());
+    expect((captured! as SubtitleTrackPreference).track.title, 'Signs & Songs');
+
+    // The captured preference crosses the next episode boundary as its
+    // intent, keeping the signs/dialogue distinction.
+    final carried = SubtitlePreference.demoteToIntent(captured);
+    expect(carried, isA<SubtitleIntentPreference>());
+    expect((carried! as SubtitleIntentPreference).intent.title, 'Signs & Songs');
+    expect((carried as SubtitleIntentPreference).intent.language, 'eng');
+  });
+
+  test('a reload-path off choice and a stale row id capture correctly', () {
+    expect(
+      sessionPreferenceForSourceSubtitleChoice(const PlaybackSourceSubtitleChoice.off(), const []),
+      const SubtitlePreference.off(),
+    );
+    // A row the catalog no longer carries must not overwrite the session
+    // preference with a fabricated pick.
+    final rows = [MediaSubtitleTrack(id: 3, languageCode: 'eng', codec: 'ass', selected: false, forced: false)];
+    expect(sessionPreferenceForSourceSubtitleChoice(const PlaybackSourceSubtitleChoice.source(99), rows), isNull);
   });
 
   test('a secondary-only change keeps the primary declined carry alive (#1785)', () {

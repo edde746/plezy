@@ -10,6 +10,7 @@ import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -33,6 +34,91 @@ void main() {
 
   PlexClient makeClient(Future<http.Response> Function(http.Request request) handler) =>
       testPlexClient(serverId: ServerId('server-id'), handler: handler);
+
+  Future<({PlaybackInitializationResult result, Uri decisionUri})> initializeTranscodeAudio({
+    int? selectedAudioStreamId,
+    AudioTrack? preferredAudioTrack,
+  }) async {
+    late Uri decisionUri;
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/metadata/42') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {
+                  'ratingKey': '42',
+                  'type': 'episode',
+                  'title': 'Episode',
+                  'Media': [
+                    {
+                      'id': 7,
+                      'container': 'mkv',
+                      'Part': [
+                        {
+                          'id': 99,
+                          'key': '/library/parts/99/file.mkv',
+                          'Stream': [
+                            {'streamType': 1, 'id': 300, 'codec': 'h264'},
+                            {
+                              'streamType': 2,
+                              'id': 301,
+                              'index': 0,
+                              'codec': 'aac',
+                              'languageCode': 'eng',
+                              'title': 'Original',
+                              'selected': true,
+                            },
+                            {
+                              'streamType': 2,
+                              'id': 305,
+                              'index': 1,
+                              'codec': 'flac',
+                              'languageCode': 'jpn',
+                              'title': 'Main',
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.url.path == '/video/:/transcode/universal/decision') {
+        decisionUri = request.url;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {'generalDecisionCode': 1001, 'transcodeDecisionCode': 1001},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('unexpected request', 500);
+    });
+    try {
+      final result = await client.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.episode, serverId: 'server-id'),
+          selectedMediaIndex: 0,
+          selectedAudioStreamId: selectedAudioStreamId,
+          preferredAudioTrack: preferredAudioTrack,
+          qualityPreset: TranscodeQualityPreset.p720_3mbps,
+          sessionIdentifier: 'session-id',
+          transcodeSessionId: 'transcode-id',
+        ),
+      );
+      return (result: result, decisionUri: decisionUri);
+    } finally {
+      client.close();
+    }
+  }
 
   MediaSourceInfo mediaInfoWithSubtitles(List<MediaSubtitleTrack> subtitleTracks) {
     return MediaSourceInfo(
@@ -66,6 +152,34 @@ void main() {
     expect(requests.single.url.path, '/library/parts/99');
     expect(requests.single.url.queryParameters['audioStreamID'], '301');
     expect(requests.single.url.queryParameters['allParts'], '1');
+  });
+
+  test('semantic carried audio is sent to the Plex transcode decision', () async {
+    final initialized = await initializeTranscodeAudio(
+      preferredAudioTrack: const AudioTrack(id: 'source:999', language: 'jpn', title: 'Main', codec: 'flac'),
+    );
+
+    expect(initialized.decisionUri.queryParameters['audioStreamID'], '305');
+    expect(initialized.result.activeAudioStreamId, 305);
+  });
+
+  test('explicit Plex audio stream wins over a conflicting semantic carry', () async {
+    final initialized = await initializeTranscodeAudio(
+      selectedAudioStreamId: 301,
+      preferredAudioTrack: const AudioTrack(id: 'source:999', language: 'jpn', title: 'Main', codec: 'flac'),
+    );
+
+    expect(initialized.decisionUri.queryParameters['audioStreamID'], '301');
+    expect(initialized.result.activeAudioStreamId, 301);
+  });
+
+  test('unresolvable semantic audio carry lets the Plex transcoder choose the stream', () async {
+    final initialized = await initializeTranscodeAudio(
+      preferredAudioTrack: const AudioTrack(id: 'source:999', language: 'swe'),
+    );
+
+    expect(initialized.decisionUri.queryParameters.containsKey('audioStreamID'), isFalse);
+    expect(initialized.result.activeAudioStreamId, isNull);
   });
 
   test('playback metadata request includes streams for transcode sidecar subtitles', () async {
