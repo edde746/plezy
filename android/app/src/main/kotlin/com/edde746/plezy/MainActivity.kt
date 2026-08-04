@@ -70,6 +70,7 @@ class MainActivity : FlutterActivity() {
 
   private val PIP_CHANNEL = "com.plezy/pip"
   private val THEME_CHANNEL = "com.plezy/theme"
+  private val CAPTIONS_CHANNEL = "com.plezy/captions"
   private val DEVICE_CHANNEL = "com.plezy/device"
   private val DEVICE_ADJUSTMENT_CHANNEL = "com.plezy/device_adjustment"
   private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
@@ -440,6 +441,18 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    // Android TV remotes' subtitles/CC button (KEYCODE_CAPTIONS) toggles the
+    // player's subtitle selector. Consume the key here so it never reaches
+    // the Flutter key pipeline (or the system's captions handling) and tell
+    // Dart, which only acts while the player controls are mounted.
+    if (event.keyCode == KeyEvent.KEYCODE_CAPTIONS && isAndroidTvDevice()) {
+      if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+        flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
+          MethodChannel(messenger, CAPTIONS_CHANNEL).invokeMethod("toggleSubtitleSelector", null)
+        }
+      }
+      return true
+    }
     if (isDpadKeyCode(event.keyCode)) {
       logTextInputDiag { "activity.dispatchKeyEvent before ${describeKeyEvent(event)} ${describeImeState()}" }
     }
