@@ -263,7 +263,11 @@ class PlaybackSubtitleResolver {
     final playable = sidecar?.track;
     return SubtitleTrack(
       id: 'source:${sourceTrack.id}',
-      title: playable?.title ?? sourceTrack.displayTitle ?? sourceTrack.title ?? sourceTrack.language,
+      // The row's own title first: server display titles collapse to the bare
+      // language ("English") and are identical across same-language rows, so
+      // a carried intent built from them cannot tell a Signs/Songs track from
+      // the full dialogue track on the next episode (#1785).
+      title: sourceTrack.title ?? playable?.title ?? sourceTrack.displayTitle ?? sourceTrack.language,
       language: playable?.language ?? sourceTrack.languageCode ?? sourceTrack.language,
       codec: playable?.codec ?? sourceTrack.codec,
       isDefault: sourceTrack.selected,

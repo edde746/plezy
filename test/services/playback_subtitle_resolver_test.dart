@@ -605,6 +605,91 @@ void main() {
       expect(result.isOff, isTrue);
       expect(result.declinedPreference, isNull);
     });
+
+    test('same-language rows are told apart by their titles across episodes (#1785)', () {
+      // Real-world shape (Madoka Magica on Plex): both rows English ASS with
+      // the bare displayTitle "English"; only Title separates the full
+      // dialogue track from the signs/songs track.
+      MediaSubtitleTrack row(int id, String title, {bool selected = false}) => MediaSubtitleTrack(
+        id: id,
+        language: 'English',
+        languageCode: 'eng',
+        title: title,
+        displayTitle: 'English',
+        codec: 'ass',
+        selected: selected,
+        forced: false,
+      );
+
+      // E1: the viewer picks the signs track and the session commits it. The
+      // committed track must keep the discriminating row title, not the
+      // language-only display title.
+      final committed = PlaybackSubtitleResolver.subtitleTrackForSource(row(53164, 'Signs/OP/ED'));
+      expect(committed.title, 'Signs/OP/ED');
+
+      // Episode boundary demotes the committed reference to its intent.
+      final carried = SubtitlePreference.demoteToIntent(SubtitlePreference.track(committed));
+
+      // E2: same pair; the dialogue row sorts first AND is server-selected —
+      // the carried signs choice must still win over both.
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: _mediaInfo([row(53193, 'Styled Subtitles', selected: true), row(53194, 'Signs/OP/ED')]),
+        sidecars: const [],
+        preferredSubtitleTrack: carried,
+        preserveSourceIdentity: false,
+      );
+
+      expect(result.primarySourceStreamId, 53194);
+      expect(result.declinedPreference, isNull);
+    });
+
+    test('a Jellyfin signs pick beats the server per-episode default on the next episode (#1785)', () {
+      // Verbatim shape from a live Jellyfin server (Attack on Titan): both
+      // rows English ASS, discriminated by Title, and the server names the
+      // full-dialogue row (DefaultSubtitleStreamIndex 3) on every episode.
+      MediaSourceInfo episodeInfo() => jellyfinMediaSourceToMediaSourceInfo({
+        'Id': 'src-1',
+        'DefaultSubtitleStreamIndex': 3,
+        'MediaStreams': [
+          {'Index': 1, 'Type': 'Audio', 'Language': 'jpn', 'IsDefault': true},
+          {
+            'Index': 3,
+            'Type': 'Subtitle',
+            'Language': 'eng',
+            'Codec': 'ass',
+            'Title': 'Full Subtitles',
+            'DisplayTitle': 'Full Subtitles - English - Default - ASS',
+            'IsDefault': true,
+          },
+          {
+            'Index': 4,
+            'Type': 'Subtitle',
+            'Language': 'eng',
+            'Codec': 'ass',
+            'Title': 'Signs & Songs',
+            'DisplayTitle': 'Signs & Songs - English - ASS',
+          },
+        ],
+      });
+
+      final e1 = episodeInfo();
+      final picked = e1.subtitleTracks.firstWhere((row) => row.id == 4);
+      final committed = PlaybackSubtitleResolver.subtitleTrackForSource(picked);
+      expect(committed.title, 'Signs & Songs');
+
+      final carried = SubtitlePreference.demoteToIntent(SubtitlePreference.track(committed));
+      final result = PlaybackSubtitleResolver.resolve(
+        metadata: metadata,
+        mediaInfo: episodeInfo(),
+        sidecars: const [],
+        preferredSubtitleTrack: carried,
+        preserveSourceIdentity: false,
+      );
+
+      expect(result.primarySourceStreamId, 4);
+      expect(result.declinedPreference, isNull);
+    });
   });
 
   test('selected embedded subtitle keeps sidecars out of the open', () {
