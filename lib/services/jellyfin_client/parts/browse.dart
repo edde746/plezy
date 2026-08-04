@@ -613,17 +613,22 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// OnDeck semantics: returns the resume episode when one exists, or S1E1
   /// when the user hasn't started. Movies and other kinds short-circuit.
   ///
-  /// Deliberately still chained rather than fired in parallel off a caller
-  /// kind hint: measured against a remote server that saved nothing, because
-  /// the two requests contend rather than overlap (`/Shows/NextUp` went from
-  /// 380ms alone to 1395ms beside the detail fetch), and it would cost a
-  /// wasted request on every movie whose hint was absent or wrong.
+  /// The chain stays sequential — firing both together measured no better,
+  /// because the requests contend rather than overlap (`/Shows/NextUp` went
+  /// from 380ms alone to 1395ms beside the detail fetch) and a movie would pay
+  /// for a request it can never use. Instead the item is handed to
+  /// [onItemReady] the moment it lands, so the caller can paint without
+  /// waiting for the on-deck round trip (#1784).
   @override
-  Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(String id) async {
+  Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(
+    String id, {
+    void Function(MediaItem item)? onItemReady,
+  }) async {
     final item = await fetchItem(id);
     if (item == null || item.kind != MediaKind.show) {
       return (item: item, onDeckEpisode: null);
     }
+    onItemReady?.call(item);
     final nextUp = await _safeFetchItemsArray('/Shows/NextUp', {
       'seriesId': id,
       'userId': connection.userId,

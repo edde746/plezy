@@ -207,6 +207,12 @@ class _SeasonEpisodePager {
   }
 }
 
+/// Identifies the TV reveal gate's opacity wrapper. The detail tree builds
+/// other [AnimatedOpacity] widgets (the scroll-linked app-bar scrim is 0 at
+/// rest), so tests must target this one specifically.
+@visibleForTesting
+const tvDetailRevealGateKey = ValueKey<String>('tvDetailRevealGate');
+
 class MediaDetailScreen extends StatefulWidget {
   final MediaItem metadata;
   final bool isOffline;
@@ -837,6 +843,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         child: IgnorePointer(
           ignoring: !revealed,
           child: AnimatedOpacity(
+            // Keyed so tests can assert this specific gate rather than
+            // whichever AnimatedOpacity happens to be lowest on screen.
+            key: tvDetailRevealGateKey,
             opacity: revealed ? 1 : 0,
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOutCubic,
@@ -1280,35 +1289,59 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return;
       }
 
-      final result = await client.fetchItemWithOnDeck(_metadata.id);
+      // Normalises a freshly fetched item against the row we navigated from
+      // (which owns serverId/library) and paints it. Called once from
+      // [onItemReady] on backends that learn the item before on-deck, and once
+      // from the settled result.
+      //
+      // [onDeckSettled] separates "on-deck not looked up yet" from "on-deck
+      // looked up and there is none". Only the settled call may write it, so
+      // the early paint leaves whatever is on screen alone — this method runs
+      // again after playback, and clearing there would blank the play button
+      // for the length of the on-deck round trip — while a reload that finds
+      // the series finished still clears it.
+      MediaItem publish(MediaItem source, {MediaItem? onDeckEpisode, bool onDeckSettled = false}) {
+        final serverId = _metadata.serverId;
+        final serverName = _metadata.serverName;
+        final base = _withFallbackLibrary(
+          source.copyWith(serverId: serverId ?? source.serverId, serverName: serverName ?? source.serverName),
+          _metadata,
+        );
+        final onDeckWithServerId = onDeckEpisode == null
+            ? null
+            : _withFallbackLibrary(
+                onDeckEpisode.copyWith(
+                  serverId: serverId ?? onDeckEpisode.serverId,
+                  serverName: serverName ?? onDeckEpisode.serverName,
+                ),
+                base,
+              );
+
+        setState(() {
+          _fullMetadata = base;
+          if (onDeckSettled) _onDeckEpisode = onDeckWithServerId;
+          _isLoadingMetadata = false;
+        });
+        return base;
+      }
+
+      // Jellyfin needs a second round trip for on-deck, which the screen does
+      // not need in order to paint. Publishing the item as soon as it lands
+      // takes that round trip off the critical path (#1784).
+      //
+      // Seasons/extras deliberately still start after the whole lookup
+      // settles: starting them at the early paint measured *worse*, because
+      // they contend with the on-deck request rather than overlapping it.
+      final result = await client.fetchItemWithOnDeck(
+        _metadata.id,
+        onItemReady: (item) {
+          if (mounted) publish(item);
+        },
+      );
       final metadata = result.item;
-      final onDeckEpisode = result.onDeckEpisode;
 
       if (!mounted) return;
-
-      // Preserve serverId from original metadata
-      final serverId = _metadata.serverId;
-      final serverName = _metadata.serverName;
-      final source = metadata ?? _metadata;
-      final base = _withFallbackLibrary(
-        source.copyWith(serverId: serverId ?? source.serverId, serverName: serverName ?? source.serverName),
-        _metadata,
-      );
-      final onDeckWithServerId = onDeckEpisode == null
-          ? null
-          : _withFallbackLibrary(
-              onDeckEpisode.copyWith(
-                serverId: serverId ?? onDeckEpisode.serverId,
-                serverName: serverName ?? onDeckEpisode.serverName,
-              ),
-              base,
-            );
-
-      setState(() {
-        _fullMetadata = base;
-        _onDeckEpisode = onDeckWithServerId;
-        _isLoadingMetadata = false;
-      });
+      final base = publish(metadata ?? _metadata, onDeckEpisode: result.onDeckEpisode, onDeckSettled: true);
 
       if (base.isShow) {
         unawaited(_loadSeasons());

@@ -167,13 +167,24 @@ abstract class MediaServerClient {
   Future<MediaItem?> fetchItem(String id);
 
   /// Fetch a single item *and* its on-deck episode (the next unwatched /
-  /// in-progress episode) in one round-trip when the backend supports it.
-  /// The item follows [fetchItem]'s error contract: an online HTTP 404 returns
-  /// both nullable fields as `null`, while every other HTTP status throws.
-  /// Plex bundles both via `/library/metadata/{id}?includeOnDeck=1`;
-  /// Jellyfin has no equivalent endpoint and returns `onDeckEpisode: null`,
-  /// leaving callers to fetch on-deck separately if they need it.
-  Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(String id);
+  /// in-progress episode). The item follows [fetchItem]'s error contract: an
+  /// online HTTP 404 returns both nullable fields as `null`, while every other
+  /// HTTP status throws.
+  ///
+  /// Plex bundles both via `/library/metadata/{id}?includeOnDeck=1`. Jellyfin
+  /// has no equivalent endpoint and needs a second request for on-deck, so it
+  /// would otherwise hold the item behind a round trip the detail screen does
+  /// not need in order to paint.
+  ///
+  /// [onItemReady] exists for exactly that case: implementations invoke it as
+  /// soon as the item is known, *if* that is strictly before the on-deck
+  /// lookup finishes. Backends that return both together never invoke it, and
+  /// neither does a null item. Callers must therefore treat it as an optional
+  /// early paint and still handle the returned record.
+  Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(
+    String id, {
+    void Function(MediaItem item)? onItemReady,
+  });
 
   /// Direct children of [parentId] — episodes of a season, seasons of a
   /// show, tracks of an album, items of a collection.

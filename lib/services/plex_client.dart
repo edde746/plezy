@@ -3769,10 +3769,14 @@ class PlexClient
   }
 
   /// Full item with on-deck episode from a single `/library/metadata/{id}`
-  /// round-trip. Implements [MediaServerClient.fetchItemWithOnDeck];
-  /// Jellyfin has no analogous endpoint and returns onDeck=null there.
+  /// round-trip. Implements [MediaServerClient.fetchItemWithOnDeck]. Both
+  /// halves arrive together, so there is no window in which the item is known
+  /// and on-deck is not — `onItemReady` is intentionally never invoked.
   @override
-  Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(String id) async {
+  Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(
+    String id, {
+    void Function(MediaItem item)? onItemReady,
+  }) async {
     try {
       final result = await getMetadataWithImagesAndOnDeck(id, shouldFallback: _shouldFallbackPlexItemLookup);
       final itemDto = result['metadata'] as PlexMetadataDto?;
