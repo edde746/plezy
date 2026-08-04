@@ -441,10 +441,7 @@ class MainActivity : FlutterActivity() {
   }
 
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-    // Android TV remotes' subtitles/CC button (KEYCODE_CAPTIONS) toggles the
-    // player's subtitle selector. Consume the key here so it never reaches
-    // the Flutter key pipeline (or the system's captions handling) and tell
-    // Dart, which only acts while the player controls are mounted.
+    // Android TV remotes' subtitles/CC button (KEYCODE_CAPTIONS) toggles subtitle selector.
     if (event.keyCode == KeyEvent.KEYCODE_CAPTIONS && isAndroidTvDevice()) {
       if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
         flutterEngine?.dartExecutor?.binaryMessenger?.let { messenger ->
