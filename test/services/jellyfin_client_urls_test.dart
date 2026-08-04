@@ -134,6 +134,36 @@ void main() {
       await scoped.fetchLibraries();
       expect(views, 2);
     });
+    test('concurrent fetchItem calls for one id share a single request', () async {
+      // Opening a detail screen fires `_loadFullMetadata` and, via
+      // `_initWatchlistState`, `fetchExternalIds` — both a full-detail GET for
+      // the same id at the same time. Each makes the server rebuild the whole
+      // dto (People, Chapters and MediaSources are a DB query apiece).
+      var detailFetches = 0;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/item-1') detailFetches++;
+          return http.Response(
+            jsonEncode({'Id': 'item-1', 'Name': 'Item', 'Type': 'Movie'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final results = await Future.wait([scoped.fetchItem('item-1'), scoped.fetchItem('item-1')]);
+
+      expect(detailFetches, 1);
+      expect(results.map((item) => item?.id), ['item-1', 'item-1']);
+
+      // Different ids never share, and a later pass re-fetches — single-flight,
+      // not a cache, so nothing here can serve a stale item.
+      await scoped.fetchItem('item-2');
+      await scoped.fetchItem('item-1');
+      expect(detailFetches, 2);
+    });
 
     test('buildDirectStreamUrl includes static flag, api_key, and device id', () {
       final url = client.buildDirectStreamUrl('item-99');

@@ -612,6 +612,12 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// (`enableResumable=true`, `disableFirstEpisode=false`) match Plex
   /// OnDeck semantics: returns the resume episode when one exists, or S1E1
   /// when the user hasn't started. Movies and other kinds short-circuit.
+  ///
+  /// Deliberately still chained rather than fired in parallel off a caller
+  /// kind hint: measured against a remote server that saved nothing, because
+  /// the two requests contend rather than overlap (`/Shows/NextUp` went from
+  /// 380ms alone to 1395ms beside the detail fetch), and it would cost a
+  /// wasted request on every movie whose hint was absent or wrong.
   @override
   Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(String id) async {
     final item = await fetchItem(id);
@@ -629,8 +635,33 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return (item: item, onDeckEpisode: onDeckEpisode);
   }
 
+  /// In-flight `fetchItem` requests, keyed by item id.
+  ///
+  /// Opening a detail screen issues two identical full-detail GETs for the
+  /// same id at the same time — `_loadFullMetadata` and, from
+  /// `_initWatchlistState`, `fetchExternalIds` — and playback start adds three
+  /// more. Each one makes the server rebuild the whole dto (People, Chapters
+  /// and MediaSources are a DB query apiece, Trickplay several), so the
+  /// duplicates are expensive on both ends (#1784).
+  ///
+  /// Single-flight only: once a request settles the next caller re-fetches, so
+  /// nothing here can serve a stale item.
+  final Map<String, Future<MediaItem?>> _inFlightItems = {};
+
   @override
-  Future<MediaItem?> fetchItem(String id) async {
+  Future<MediaItem?> fetchItem(String id) {
+    final existing = _inFlightItems[id];
+    if (existing != null) return existing;
+
+    late final Future<MediaItem?> request;
+    request = _fetchItemOnce(id).whenComplete(() {
+      if (identical(_inFlightItems[id], request)) _inFlightItems.remove(id);
+    });
+    _inFlightItems[id] = request;
+    return request;
+  }
+
+  Future<MediaItem?> _fetchItemOnce(String id) async {
     final endpoint = '/Users/${_segment(connection.userId)}/Items/${_segment(id)}';
     // Contract:
     //   - 200 with parseable Map → MediaItem
