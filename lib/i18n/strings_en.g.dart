@@ -2296,6 +2296,9 @@ class Translations$profiles$en {
 	/// en: 'Active'
 	String get active => 'Active';
 
+	/// en: 'via ${name}'
+	String viaPlexAccount({required Object name}) => 'via ${name}';
+
 	/// en: 'Manage'
 	String get manage => 'Manage';
 
@@ -6751,6 +6754,7 @@ extension on Translations {
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
+			'profiles.viaPlexAccount' => ({required Object name}) => 'via ${name}',
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
@@ -7059,9 +7063,9 @@ extension on Translations {
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
 			'explore.season.winter' => 'Winter',
-			'explore.season.spring' => 'Spring',
 			_ => null,
 		} ?? switch (path) {
+			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
 			'explore.season.fall' => 'Fall',
 			'explore.season.withYear' => ({required Object season, required Object year}) => '${season} ${year}',
@@ -7573,9 +7577,9 @@ extension on Translations {
 			'externalPlayer.playerPackage' => 'Package Name',
 			'externalPlayer.playerUrlScheme' => 'URL Scheme',
 			'externalPlayer.off' => 'Off',
-			'externalPlayer.launchFailed' => 'Failed to open external player',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',

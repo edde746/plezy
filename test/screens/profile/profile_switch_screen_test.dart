@@ -216,6 +216,70 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
+
+  testWidgets('labels a Plex Home parent connection as an account, not as the profile', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final profile = Profile.plexHome(
+      id: 'home-alice',
+      displayName: 'Alice',
+      parentConnectionId: 'plex-account',
+      plexHomeUserUuid: 'alice-uuid',
+      createdAt: DateTime(2026, 1, 1),
+    );
+    final profiles = _FakeProfileRegistry(db, [profile]);
+    final connections = _FakeConnectionRegistry(db, [
+      PlexAccountConnection(
+        id: 'plex-account',
+        accountToken: 'token',
+        clientIdentifier: 'client',
+        accountLabel: 'Bob',
+        createdAt: DateTime(2026, 1, 1),
+      ),
+    ]);
+    final profileConnections = _FakeProfileConnectionRegistry(db);
+    final storage = await StorageService.getInstance();
+    final plexHome = PlexHomeService(
+      connections: connections,
+      profileConnections: profileConnections,
+      storage: storage,
+      plexHomeUserFetcher: (_) async => const [],
+    );
+    final activeProfile = ActiveProfileProvider(
+      registry: profiles,
+      plexHome: plexHome,
+      connections: connections,
+      profileConnections: profileConnections,
+      storage: storage,
+    );
+    addTearDown(() async {
+      activeProfile.dispose();
+      await plexHome.dispose();
+      await db.close();
+    });
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            Provider<ProfileRegistry>.value(value: profiles),
+            Provider<ProfileConnectionRegistry>.value(value: profileConnections),
+            Provider<ConnectionRegistry>.value(value: connections),
+            Provider<PlexHomeService>.value(value: plexHome),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
+          ],
+          child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Alice'), findsOneWidget);
+    expect(find.text(t.profiles.viaPlexAccount(name: 'Bob')), findsOneWidget);
+    expect(find.text('Bob'), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
 }
 
 class _FakeProfileRegistry extends ProfileRegistry {
