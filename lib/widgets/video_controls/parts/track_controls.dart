@@ -19,6 +19,32 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
     _setSubtitleVisibility(false);
   }
 
+  /// Toggles the subtitle selector sheet from the Android TV remote's
+  /// subtitles/CC button (KEYCODE_CAPTIONS). Any open sheet is closed; the
+  /// selector otherwise opens exactly as the tracks button would.
+  void _toggleSubtitleSelector() {
+    if (!mounted) return;
+    final sheetController = OverlaySheetController.maybeOf(context);
+    if (sheetController == null) return;
+    if (sheetController.isOpen) {
+      sheetController.close();
+      return;
+    }
+    final playbackState = context.read<PlaybackStateProvider>();
+    final trackControlsState = _buildTrackControlsState(
+      playbackState: playbackState,
+      onToggleAlwaysOnTop: _toggleAlwaysOnTop,
+    );
+    widget.chromeController.cancelAutoHide();
+    unawaited(
+      sheetController
+          .show(builder: (_) => TrackSheet(player: widget.player, trackControlsState: trackControlsState))
+          .whenComplete(() {
+        if (mounted) _startHideTimer();
+      }),
+    );
+  }
+
   void _onSubtitleTrackChanged(SubtitleTrack track) {
     // Reset visibility when user explicitly picks a new subtitle track
     if (track.id != 'no' && !_subtitlesVisible) {

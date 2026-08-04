@@ -59,6 +59,7 @@ import 'services/data_aggregation_service.dart';
 import 'services/server_registry.dart';
 import 'services/download_manager_service.dart';
 import 'services/pip_service.dart';
+import 'services/captions_service.dart';
 import 'services/download_storage_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'services/jellyfin_api_cache.dart';
@@ -892,6 +893,7 @@ void _startNonessentialInitialization(SettingsService settings) {
 
   bestEffort('Native window', () {
     if (Platform.isAndroid) PipService();
+    if (Platform.isAndroid) CaptionsService();
     NativeWindowService.initialize();
   });
 
