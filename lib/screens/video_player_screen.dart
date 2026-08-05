@@ -845,6 +845,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     super.initState();
     unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.player));
 
+    // Fullscreen entered from here on is the player's to drop; whatever was
+    // already fullscreen belongs to the app window (#1624).
+    FullscreenStateManager().beginScope();
+
     _playerNavigationCoordinator = PlayerNavigationCoordinator(
       chromeController: _chromeController,
       isPromptOpen: () => _showPlayNextDialog || _showStillWatchingPrompt,
@@ -854,10 +858,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       exitFullscreenIfActive: FullscreenStateManager().exitFullscreenIfActive,
       // macOS fullscreen belongs to the app window, while HTPC-style player
       // navigation treats physical Escape as semantic Back. In both cases the
-      // player must leave native fullscreen alone.
+      // player must leave native fullscreen alone. So must it when the window
+      // was already fullscreen before the player opened — that fullscreen is
+      // the app's (start-in-fullscreen, or a toggle from the browse UI) and
+      // Escape is plain Back (#1624).
       physicalEscapeExitsFullscreen: () => shouldPhysicalEscapeExitFullscreen(
         isMacOS: Platform.isMacOS,
         videoPlayerNavigationEnabled: _videoPlayerNavigationEnabled,
+        playerEnteredFullscreen: FullscreenStateManager().scopeOwnsFullscreen,
       ),
       exitPlayer: () => unawaited(_handleBackButton()),
       navigateHome: _handleHomeButton,
@@ -1708,6 +1716,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       FullscreenStateManager().removeListener(_onFullscreenChanged);
       _fullscreenListenerAttached = false;
     }
+    FullscreenStateManager().endScope();
     // Not _restoreWindowsDisplayMode(): that helper waits 200ms after clearing
     // the HDR hint before restoring, which dispose() cannot do. Fire the hint
     // clear at the still-live player and restore immediately.

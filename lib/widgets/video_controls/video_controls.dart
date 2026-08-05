@@ -221,8 +221,12 @@ enum PlayerNavigationKey { none, physicalEscape, back, home }
 
 enum PlayerBackDisposition { closeContentStrip, exitFullscreenIfActive, hideControls, exitPlayer }
 
-bool shouldPhysicalEscapeExitFullscreen({required bool isMacOS, required bool videoPlayerNavigationEnabled}) {
-  return !isMacOS && !videoPlayerNavigationEnabled;
+bool shouldPhysicalEscapeExitFullscreen({
+  required bool isMacOS,
+  required bool videoPlayerNavigationEnabled,
+  required bool playerEnteredFullscreen,
+}) {
+  return !isMacOS && !videoPlayerNavigationEnabled && playerEnteredFullscreen;
 }
 
 /// Coordinates the player-level stages shared by keyboard, controller, and
