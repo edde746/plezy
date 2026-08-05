@@ -765,6 +765,7 @@
     "deleteThisProfileTitle": "Usunąć ten profil?",
     "deleteThisProfileMessage": "Usuń ${displayName}. Połączenia nie zostaną zmienione.",
     "active": "Aktywny",
+    "viaPlexAccount": "",
     "manage": "Zarządzaj",
     "delete": "Usuń",
     "signOut": "Wyloguj się",

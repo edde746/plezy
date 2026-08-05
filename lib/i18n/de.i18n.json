@@ -763,6 +763,7 @@
     "deleteThisProfileTitle": "Dieses Profil löschen?",
     "deleteThisProfileMessage": "${displayName} entfernen. Verbindungen bleiben unberührt.",
     "active": "Aktiv",
+    "viaPlexAccount": "",
     "manage": "Verwalten",
     "delete": "Löschen",
     "signOut": "Abmelden",

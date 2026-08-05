@@ -763,6 +763,7 @@
     "deleteThisProfileTitle": "¿Eliminar este perfil?",
     "deleteThisProfileMessage": "Eliminar ${displayName}. Las conexiones no se verán afectadas.",
     "active": "Activo",
+    "viaPlexAccount": "",
     "manage": "Administrar",
     "delete": "Eliminar",
     "signOut": "Cerrar sesión",

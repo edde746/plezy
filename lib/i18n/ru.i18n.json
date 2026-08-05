@@ -765,6 +765,7 @@
     "deleteThisProfileTitle": "Удалить этот профиль?",
     "deleteThisProfileMessage": "Удалить ${displayName}. Подключения не изменятся.",
     "active": "Активный",
+    "viaPlexAccount": "",
     "manage": "Управление",
     "delete": "Удалить",
     "signOut": "Выйти",

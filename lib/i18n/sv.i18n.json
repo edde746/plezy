@@ -763,6 +763,7 @@
     "deleteThisProfileTitle": "Ta bort denna profil?",
     "deleteThisProfileMessage": "Ta bort ${displayName}. Anslutningar påverkas inte.",
     "active": "Aktiv",
+    "viaPlexAccount": "",
     "manage": "Hantera",
     "delete": "Ta bort",
     "signOut": "Logga ut",

@@ -762,6 +762,7 @@
     "deleteThisProfileTitle": "删除此用户资料？",
     "deleteThisProfileMessage": "移除 ${displayName}。连接不会受影响。",
     "active": "当前使用",
+    "viaPlexAccount": "",
     "manage": "管理",
     "delete": "删除",
     "signOut": "退出登录",

@@ -762,6 +762,7 @@
     "deleteThisProfileTitle": "刪除此使用者設定檔？",
     "deleteThisProfileMessage": "將移除 ${displayName}。連線資訊將不受影響。",
     "active": "使用中",
+    "viaPlexAccount": "",
     "manage": "管理",
     "delete": "刪除",
     "signOut": "登出",

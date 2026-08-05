@@ -763,6 +763,7 @@
     "deleteThisProfileTitle": "Да се изтрие ли този профил?",
     "deleteThisProfileMessage": "Премахване на ${displayName}. Връзките не се засягат.",
     "active": "Активен",
+    "viaPlexAccount": "",
     "manage": "Управление",
     "delete": "Изтрий",
     "signOut": "Изход",

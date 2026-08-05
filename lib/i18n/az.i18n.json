@@ -763,6 +763,7 @@
     "deleteThisProfileTitle": "Bu profil silinsin?",
     "deleteThisProfileMessage": "${displayName} silinəcək. Qoşulmalar təsirlənmir.",
     "active": "Aktiv",
+    "viaPlexAccount": "",
     "manage": "İdarə et",
     "delete": "Sil",
     "signOut": "Çıxış et",

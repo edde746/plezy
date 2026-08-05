@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../connection/connection.dart';
 import '../../connection/connection_registry.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
@@ -331,7 +332,16 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
       final parentId = profile.parentConnectionId;
       if (parentId != null) {
         final conn = view.connectionsById[parentId];
-        if (conn != null) chips.add(_ChipData(backend: conn.backend, label: conn.displayLabel));
+        if (conn != null) {
+          chips.add(
+            _ChipData(
+              backend: conn.backend,
+              label: conn is PlexAccountConnection
+                  ? t.profiles.viaPlexAccount(name: conn.accountLabel)
+                  : conn.displayLabel,
+            ),
+          );
+        }
       }
     }
     final pcs = visibleProfileConnections(

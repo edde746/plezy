@@ -762,6 +762,7 @@
     "deleteThisProfileTitle": "このプロフィールを削除しますか？",
     "deleteThisProfileMessage": "${displayName}を削除します。接続には影響しません。",
     "active": "アクティブ",
+    "viaPlexAccount": "",
     "manage": "管理",
     "delete": "削除",
     "signOut": "サインアウト",

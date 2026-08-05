@@ -763,6 +763,7 @@
     "deleteThisProfileTitle": "Slett denne profilen?",
     "deleteThisProfileMessage": "Fjern ${displayName}. Tilkoblinger påvirkes ikke.",
     "active": "Aktiv",
+    "viaPlexAccount": "",
     "manage": "Administrer",
     "delete": "Slett",
     "signOut": "Logg ut",

@@ -763,6 +763,7 @@
     "deleteThisProfileTitle": "Ushbu profil oʻchirilsinmi?",
     "deleteThisProfileMessage": "${displayName} oʻchiriladi. Ulanishlarga taʼsir qilmaydi.",
     "active": "Faol",
+    "viaPlexAccount": "",
     "manage": "Boshqarish",
     "delete": "Oʻchirish",
     "signOut": "Chiqish",
