@@ -1,5 +1,11 @@
+<!-- android:installLocation="auto" is what makes the app eligible to be moved to adoptable
+     storage (a USB drive adopted by an Android TV, an adopted SD card), which relocates the
+     private data directory — and therefore downloads — along with the APK. Plezy declares none
+     of the components this is unsafe for: no app widget, IME, live wallpaper, device admin,
+     accessibility service, sync adapter or account authenticator. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:installLocation="auto">
     <!-- Allow minSdk=25 despite libmpv-android declaring minSdk=26 -->
     <uses-sdk tools:overrideLibrary="dev.jdtech.mpv" />
 
