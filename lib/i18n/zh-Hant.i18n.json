@@ -518,9 +518,32 @@
     "shufflePlay": "隨機播放",
     "shuffleNotAvailableOffline": "離線時無法隨機播放",
     "fileInfo": "檔案資訊",
-    "deleteFromServer": "從伺服器刪除",
-    "confirmDelete": "確定要從伺服器刪除此媒體及其檔案嗎？",
+    "deleteEpisodeFromServer": "",
+    "deleteSeasonFromServer": "",
+    "deleteShowFromServer": "",
+    "deleteMovieFromServer": "",
+    "deleteEpisodeTitle": "",
+    "deleteSeasonTitle": "",
+    "deleteShowTitle": "",
+    "deleteMovieTitle": "",
+    "deleteEpisodeConfirm": "",
+    "deleteSeasonConfirm": "",
+    "deleteShowConfirm": "",
+    "deleteMovieConfirm": "",
+    "deleteAnyway": "",
+    "confirmDeleteTarget": "",
     "deleteMultipleWarning": "這將會刪除所有單集及其檔案。",
+    "deleteEpisodeCountWarning": {
+      "other": ""
+    },
+    "deleteMultiPartWarning": {
+      "other": ""
+    },
+    "deleteSharedFileHeading": {
+      "other": ""
+    },
+    "deleteScopeUnverifiedProbeFailed": "",
+    "deleteScopeUnverifiedNoFileInfo": "",
     "mediaDeletedSuccessfully": "媒體已成功刪除",
     "mediaFailedToDelete": "刪除媒體失敗",
     "rate": "評分",

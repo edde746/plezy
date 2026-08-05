@@ -19,8 +19,10 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_file_info.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/metadata_edit/metadata_edit_adapters.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
@@ -41,6 +43,7 @@ import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
@@ -193,7 +196,7 @@ void main() {
 
       await _openMenu(tester, menuKey);
 
-      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
     });
 
     testWidgets('shows delete for a non-admin the server permits', (tester) async {
@@ -207,7 +210,7 @@ void main() {
 
       await _openMenu(tester, menuKey);
 
-      expect(find.text(t.mediaMenu.deleteFromServer), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsOneWidget);
       final probes = requests.where((uri) => uri.queryParameters['Fields'] == 'CanDelete').toList();
       expect(probes, hasLength(1));
       expect(probes.single.queryParameters['ids'], 'movie-1');
@@ -223,7 +226,7 @@ void main() {
 
       await _openMenu(tester, menuKey);
 
-      expect(find.text(t.mediaMenu.deleteFromServer), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsOneWidget);
     });
 
     testWidgets('hides delete for a library-granted user outside the grant', (tester) async {
@@ -236,7 +239,7 @@ void main() {
 
       await _openMenu(tester, menuKey);
 
-      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
     });
 
     testWidgets('hides delete when the permission probe fails', (tester) async {
@@ -248,7 +251,7 @@ void main() {
 
       await _openMenu(tester, menuKey);
 
-      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
       expect(tester.takeException(), isNull);
       // The menu itself still opened; only the destructive entry is missing.
       expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
@@ -266,7 +269,7 @@ void main() {
 
       await _openMenu(tester, menuKey);
 
-      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
       expect(requests.where((uri) => uri.queryParameters['Fields'] == 'CanDelete'), isEmpty);
     });
 
@@ -285,7 +288,374 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(t.mediaMenu.fileInfo), findsOneWidget);
-      expect(find.text(t.mediaMenu.deleteFromServer), findsNothing);
+      expect(find.text(t.mediaMenu.deleteMovieFromServer), findsNothing);
+    });
+  });
+
+  group('MediaContextMenu delete confirmation', () {
+    testWidgets('names the episode, never the show, at every step (issue #1781)', (tester) async {
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(id: 'ep-2', index: 2, file: '/tv/bb/S01E02.mkv'),
+        handler: _deleteFlowHandler(
+          episodes: [_episodeJson(id: 'ep-2', index: 2, path: '/tv/bb/S01E02.mkv')],
+        ),
+      );
+
+      await _openMenu(tester, menuKey);
+      expect(find.text(t.mediaMenu.deleteEpisodeFromServer), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteShowFromServer), findsNothing);
+
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+
+      final dialog = find.byType(AlertDialog);
+      expect(dialog, findsOneWidget);
+      expect(find.descendant(of: dialog, matching: find.text(t.mediaMenu.deleteEpisodeTitle)), findsOneWidget);
+      expect(
+        find.descendant(
+          of: dialog,
+          matching: find.text(t.mediaMenu.confirmDeleteTarget(title: 'Breaking Bad · S1 E2 · Cat in the Bag')),
+        ),
+        findsOneWidget,
+        reason: 'the confirmation must name the episode; displayTitle would render only "Breaking Bad"',
+      );
+      expect(find.descendant(of: dialog, matching: find.text(t.mediaMenu.deleteEpisodeConfirm)), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteMultipleWarning), findsNothing);
+    });
+
+    testWidgets('a show delete says so and states the episode count', (tester) async {
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: testMediaItem(
+          id: 'show-1',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.show,
+          title: 'Breaking Bad',
+          serverId: 'srv-1',
+          leafCount: 62,
+        ),
+        handler: _deleteFlowHandler(episodes: const []),
+      );
+
+      await _openMenu(tester, menuKey);
+      expect(find.text(t.mediaMenu.deleteShowFromServer), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteEpisodeFromServer), findsNothing);
+
+      await tester.tap(find.text(t.mediaMenu.deleteShowFromServer));
+      await tester.pumpAndSettle();
+
+      final dialog = find.byType(AlertDialog);
+      expect(find.descendant(of: dialog, matching: find.text(t.mediaMenu.deleteShowTitle)), findsOneWidget);
+      expect(
+        find.descendant(of: dialog, matching: find.text(t.mediaMenu.deleteEpisodeCountWarning(n: 62))),
+        findsOneWidget,
+      );
+      expect(find.descendant(of: dialog, matching: find.text(t.mediaMenu.deleteShowConfirm)), findsOneWidget);
+    });
+
+    testWidgets('cancelling issues no delete request', (tester) async {
+      final requests = <Uri>[];
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        requests: requests,
+        item: _episode(id: 'ep-2', index: 2, file: '/tv/bb/S01E02.mkv'),
+        handler: _deleteFlowHandler(
+          episodes: [_episodeJson(id: 'ep-2', index: 2, path: '/tv/bb/S01E02.mkv')],
+        ),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.common.cancel));
+      await tester.pumpAndSettle();
+
+      expect(requests.where((uri) => uri.path.contains('/Items/ep-2')), isEmpty);
+    });
+
+    testWidgets('confirming deletes exactly the focused episode', (tester) async {
+      final deleted = <String>[];
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(id: 'ep-2', index: 2, file: '/tv/bb/S01E02.mkv'),
+        handler: _deleteFlowHandler(
+          episodes: [
+            _episodeJson(id: 'ep-1', index: 1, path: '/tv/bb/S01E01.mkv'),
+            _episodeJson(id: 'ep-2', index: 2, path: '/tv/bb/S01E02.mkv'),
+            _episodeJson(id: 'ep-3', index: 3, path: '/tv/bb/S01E03.mkv'),
+          ],
+          onDelete: deleted.add,
+        ),
+      );
+
+      await _confirmDelete(tester, menuKey, t.mediaMenu.deleteEpisodeConfirm);
+
+      expect(deleted, ['ep-2'], reason: 'siblings in the same folder must be untouched');
+    });
+
+    testWidgets('warns about episodes sharing the file and reports them deleted', (tester) async {
+      const sharedFile = '/tv/bb/S01E02-E03.mkv';
+      final events = <String>[];
+      final subscription = DeletionNotifier().stream.listen((event) => events.add(event.itemId));
+      addTearDown(subscription.cancel);
+
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(id: 'ep-2', index: 2, file: sharedFile),
+        handler: _deleteFlowHandler(
+          episodes: [
+            _episodeJson(id: 'ep-1', index: 1, path: '/tv/bb/S01E01.mkv'),
+            _episodeJson(id: 'ep-2', index: 2, path: sharedFile),
+            _episodeJson(id: 'ep-3', index: 3, path: sharedFile),
+          ],
+        ),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining(t.mediaMenu.deleteSharedFileHeading(n: 1)), findsOneWidget);
+      expect(find.textContaining('S1 E3'), findsOneWidget);
+
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeConfirm));
+      await tester.pumpAndSettle();
+
+      expect(events, containsAll(<String>['ep-2', 'ep-3']));
+      expect(events, isNot(contains('ep-1')));
+    });
+
+    testWidgets('a long shared-file list scrolls instead of overflowing a phone dialog', (tester) async {
+      const sharedFile = '/tv/bb/S01E01-E08.mkv';
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(id: 'ep-1', index: 1, file: sharedFile),
+        handler: _deleteFlowHandler(
+          episodes: [for (var i = 1; i <= 8; i++) _episodeJson(id: 'ep-$i', index: i, path: sharedFile)],
+        ),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining(t.mediaMenu.deleteSharedFileHeading(n: 7)), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'the warning block must scroll, not overflow');
+    });
+
+    testWidgets('system back during the impact probe keeps the spinner and the screen', (tester) async {
+      // The spinner is documented non-dismissible, but barrierDismissible
+      // alone does not stop system back. If back popped it, the probe's
+      // cleanup would pop the screen underneath instead.
+      final gate = Completer<void>();
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        onPushedRoute: true,
+        item: _episode(id: 'ep-2', index: 2, file: '/tv/bb/S01E02.mkv'),
+        handler: (request) async {
+          if (request.url.queryParameters.containsKey('ParentId')) {
+            await gate.future;
+            return jsonResponse({
+              'Items': [_episodeJson(id: 'ep-2', index: 2, path: '/tv/bb/S01E02.mkv')],
+              'TotalRecordCount': 1,
+            });
+          }
+          if (request.url.queryParameters['Fields'] == 'CanDelete') {
+            return _canDeleteResponse(request.url.queryParameters['ids'] ?? '', true);
+          }
+          if (request.url.path.contains('/Seasons')) return jsonResponse({'Items': <Object?>[]});
+          return jsonResponse({'Items': <Object?>[]});
+        },
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pump();
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      await tester.binding.handlePopRoute();
+      // Bounded pumps only: pumpAndSettle would run the fake clock past
+      // MediaServerTimeouts.deleteImpactProbe and close the spinner by
+      // timeout, hiding whatever back actually did.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget, reason: 'the spinner is non-dismissible');
+      expect(find.text('home screen'), findsNothing, reason: 'the screen under the spinner must survive back');
+
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('home screen'), findsNothing);
+      expect(
+        find.descendant(of: find.byType(AlertDialog), matching: find.text(t.mediaMenu.deleteEpisodeConfirm)),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('warns when the episode is split across several files', (tester) async {
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(
+          id: 'ep-2',
+          index: 2,
+          versions: [
+            MediaVersion(
+              id: 'v-1',
+              parts: const [
+                MediaPart(id: 'p-1', file: '/tv/bb/S01E02-cd1.mkv'),
+                MediaPart(id: 'p-2', file: '/tv/bb/S01E02-cd2.mkv'),
+              ],
+            ),
+          ],
+        ),
+        handler: _deleteFlowHandler(
+          episodes: [_episodeJson(id: 'ep-2', index: 2, path: '/tv/bb/S01E02-cd1.mkv')],
+        ),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining(t.mediaMenu.deleteMultiPartWarning(n: 2)), findsOneWidget);
+    });
+
+    testWidgets('refuses to imply single-file scope when the server withholds paths', (tester) async {
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(
+          id: 'ep-2',
+          index: 2,
+          versions: const [
+            MediaVersion(
+              id: 'v-1',
+              parts: [MediaPart(id: 'p-1')],
+            ),
+          ],
+        ),
+        handler: _deleteFlowHandler(
+          episodes: [_episodeJson(id: 'ep-2', index: 2, path: null)],
+          details: {'ep-2': _episodeJson(id: 'ep-2', index: 2, path: null)},
+        ),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+
+      final dialog = find.byType(AlertDialog);
+      expect(
+        find.descendant(of: dialog, matching: find.text(t.mediaMenu.deleteScopeUnverifiedNoFileInfo)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: dialog, matching: find.text(t.mediaMenu.deleteAnyway)),
+        findsOneWidget,
+        reason: 'an unverified scope must not offer the confident per-kind confirm label',
+      );
+      expect(find.text(t.mediaMenu.deleteEpisodeConfirm), findsNothing);
+    });
+
+    testWidgets('recovers scope from the detail endpoint when the browse row omitted paths', (tester) async {
+      // PlexMappers synthesizes a single file-less part for a thin row, and
+      // Jellyfin resume rows can arrive without MediaSources. Treating that as
+      // "server withholds paths" would make the danger warning the default
+      // even though the detail endpoint answers.
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(
+          id: 'ep-2',
+          index: 2,
+          versions: const [
+            MediaVersion(
+              id: 'v-1',
+              parts: [MediaPart(id: 'p-1')],
+            ),
+          ],
+        ),
+        handler: _deleteFlowHandler(
+          episodes: [
+            _episodeJson(id: 'ep-1', index: 1, path: '/tv/bb/S01E01.mkv'),
+            _episodeJson(id: 'ep-2', index: 2, path: '/tv/bb/S01E02.mkv'),
+          ],
+          details: {'ep-2': _episodeJson(id: 'ep-2', index: 2, path: '/tv/bb/S01E02.mkv')},
+        ),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+
+      final dialog = find.byType(AlertDialog);
+      expect(find.descendant(of: dialog, matching: find.text(t.mediaMenu.deleteEpisodeConfirm)), findsOneWidget);
+      expect(find.text(t.mediaMenu.deleteAnyway), findsNothing);
+      expect(find.text(t.mediaMenu.deleteScopeUnverifiedNoFileInfo), findsNothing);
+      expect(find.text(t.mediaMenu.deleteScopeUnverifiedProbeFailed), findsNothing);
+    });
+
+    testWidgets('resolves a path-less sibling row before ruling out a shared file', (tester) async {
+      // The sibling browse row carries no path. Trusting it would report the
+      // delete as exclusive while the server destroys ep-3 along with it.
+      const sharedFile = '/tv/bb/S01E02-E03.mkv';
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(id: 'ep-2', index: 2, file: sharedFile),
+        handler: _deleteFlowHandler(
+          episodes: [
+            _episodeJson(id: 'ep-2', index: 2, path: sharedFile),
+            _episodeJson(id: 'ep-3', index: 3, path: null),
+          ],
+          details: {'ep-3': _episodeJson(id: 'ep-3', index: 3, path: sharedFile)},
+        ),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining(t.mediaMenu.deleteSharedFileHeading(n: 1)), findsOneWidget);
+      expect(find.textContaining('S1 E3'), findsOneWidget);
+    });
+
+    testWidgets('flags an unverified scope when the sibling lookup fails, and still deletes', (tester) async {
+      final deleted = <String>[];
+      final menuKey = await _pumpJellyfinItemMenu(
+        tester,
+        isAdministrator: true,
+        item: _episode(id: 'ep-2', index: 2, file: '/tv/bb/S01E02.mkv'),
+        handler: _deleteFlowHandler(episodes: null, onDelete: deleted.add),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.mediaMenu.deleteScopeUnverifiedProbeFailed), findsOneWidget);
+
+      await tester.tap(find.text(t.mediaMenu.deleteAnyway));
+      await tester.pumpAndSettle();
+
+      expect(deleted, ['ep-2']);
     });
   });
 
@@ -928,6 +1298,88 @@ Future<http.Response> _libraryGrantedToOneMovie(http.Request request) async {
   return _canDeleteResponse(id, id == 'movie-in-grant');
 }
 
+/// Jellyfin episode fixture. [file] populates the inline media source so the
+/// impact probe resolves without a detail refetch; pass [versions] instead to
+/// model a split or path-less item.
+MediaItem _episode({required String id, required int index, String? file, List<MediaVersion>? versions}) {
+  return testMediaItem(
+    id: id,
+    backend: MediaBackend.jellyfin,
+    kind: MediaKind.episode,
+    title: 'Cat in the Bag',
+    parentId: 'season-1',
+    parentIndex: 1,
+    index: index,
+    grandparentId: 'show-1',
+    grandparentTitle: 'Breaking Bad',
+    serverId: 'srv-1',
+    mediaVersions:
+        versions ??
+        [
+          MediaVersion(
+            id: 'v-$id',
+            parts: [MediaPart(id: 'p-$id', file: file)],
+          ),
+        ],
+  );
+}
+
+Map<String, Object?> _episodeJson({required String id, required int index, required String? path}) => {
+  'Id': id,
+  'Name': 'Episode $index',
+  'Type': 'Episode',
+  'IndexNumber': index,
+  'ParentIndexNumber': 1,
+  'SeriesId': 'show-1',
+  'SeriesName': 'Breaking Bad',
+  'SeasonId': 'season-1',
+  'MediaSources': [
+    {'Id': 'ms-$id', 'Path': ?path},
+  ],
+};
+
+/// Answers every request the delete flow makes: the CanDelete probe, the
+/// season-children lookup, per-item detail refetches, and the DELETE itself.
+///
+/// A null [episodes] makes the children lookup fail, which is the
+/// probe-failure path. [details] is keyed by item id and models the detail
+/// endpoint carrying file paths that the browse row omitted.
+Future<http.Response> Function(http.Request) _deleteFlowHandler({
+  required List<Map<String, Object?>>? episodes,
+  Map<String, Map<String, Object?>> details = const {},
+  void Function(String id)? onDelete,
+}) {
+  return (request) async {
+    final path = request.url.path;
+    final lastSegment = path.split('/').last;
+    if (request.method == 'DELETE') {
+      onDelete?.call(lastSegment);
+      return http.Response('', 204);
+    }
+    if (request.url.queryParameters['Fields'] == 'CanDelete') {
+      return _canDeleteResponse(request.url.queryParameters['ids'] ?? '', true);
+    }
+    // fetchChildren probes /Shows/{id}/Seasons first and falls through to the
+    // generic ParentId query when it comes back empty.
+    if (path.contains('/Seasons')) return jsonResponse({'Items': <Object?>[]});
+    if (request.url.queryParameters.containsKey('ParentId')) {
+      if (episodes == null) return http.Response('boom', 500);
+      return jsonResponse({'Items': episodes, 'TotalRecordCount': episodes.length});
+    }
+    final detail = details[lastSegment];
+    if (detail != null) return jsonResponse(detail);
+    return jsonResponse({'Items': <Object?>[]});
+  };
+}
+
+Future<void> _confirmDelete(WidgetTester tester, GlobalKey<MediaContextMenuState> menuKey, String confirmLabel) async {
+  await _openMenu(tester, menuKey);
+  await tester.tap(find.text(t.mediaMenu.deleteEpisodeFromServer));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text(confirmLabel));
+  await tester.pumpAndSettle();
+}
+
 Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinMovieMenu(
   WidgetTester tester, {
   required bool isAdministrator,
@@ -935,6 +1387,34 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinMovieMenu(
   String itemId = 'movie-1',
   bool serverOnline = true,
   List<Uri>? requests,
+}) {
+  return _pumpJellyfinItemMenu(
+    tester,
+    isAdministrator: isAdministrator,
+    handler: handler,
+    serverOnline: serverOnline,
+    requests: requests,
+    item: testMediaItem(
+      id: itemId,
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Movie',
+      serverId: 'srv-1',
+    ),
+  );
+}
+
+Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
+  WidgetTester tester, {
+  required bool isAdministrator,
+  required Future<http.Response> Function(http.Request request) handler,
+  required MediaItem item,
+  bool serverOnline = true,
+  List<Uri>? requests,
+
+  /// Push the menu onto a route above a home screen, so the navigator has
+  /// something below the menu that a stray pop could reach.
+  bool onPushedRoute = false,
 }) async {
   LocaleSettings.setLocaleSync(AppLocale.en);
   TvDetectionService.debugSetAppleTVOverride(true);
@@ -959,12 +1439,15 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinMovieMenu(
   });
 
   final menuKey = GlobalKey<MediaContextMenuState>();
-  final item = testMediaItem(
-    id: itemId,
-    backend: MediaBackend.jellyfin,
-    kind: MediaKind.movie,
-    title: 'Movie',
-    serverId: 'srv-1',
+  final navigatorKey = GlobalKey<NavigatorState>();
+  final menuScreen = Scaffold(
+    body: Center(
+      child: MediaContextMenu(
+        key: menuKey,
+        item: item,
+        child: const SizedBox(width: 120, height: 80, child: Text('delete target')),
+      ),
+    ),
   );
   await tester.pumpWidget(
     TranslationProvider(
@@ -975,20 +1458,17 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinMovieMenu(
           ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
         ],
         child: MaterialApp(
+          navigatorKey: navigatorKey,
           theme: monoTheme(dark: true),
-          home: Scaffold(
-            body: Center(
-              child: MediaContextMenu(
-                key: menuKey,
-                item: item,
-                child: const SizedBox(width: 120, height: 80, child: Text('delete target')),
-              ),
-            ),
-          ),
+          home: onPushedRoute ? const Scaffold(body: Center(child: Text('home screen'))) : menuScreen,
         ),
       ),
     ),
   );
+  if (onPushedRoute) {
+    unawaited(navigatorKey.currentState!.push(MaterialPageRoute<void>(builder: (_) => menuScreen)));
+    await tester.pumpAndSettle();
+  }
   return menuKey;
 }
 

@@ -546,8 +546,6 @@ class Translations$mediaMenu$zh extends Translations$mediaMenu$en {
 	@override String get shufflePlay => '随机播放';
 	@override String get shuffleNotAvailableOffline => '离线时无法随机播放';
 	@override String get fileInfo => '文件信息';
-	@override String get deleteFromServer => '从服务器删除';
-	@override String get confirmDelete => '要从服务器删除此媒体及其文件吗？';
 	@override String get deleteMultipleWarning => '这包括所有剧集及其文件。';
 	@override String get mediaDeletedSuccessfully => '媒体项已成功删除';
 	@override String get mediaFailedToDelete => '删除媒体项失败';
@@ -2580,8 +2578,6 @@ extension on TranslationsZh {
 			'mediaMenu.shufflePlay' => '随机播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '离线时无法随机播放',
 			'mediaMenu.fileInfo' => '文件信息',
-			'mediaMenu.deleteFromServer' => '从服务器删除',
-			'mediaMenu.confirmDelete' => '要从服务器删除此媒体及其文件吗？',
 			'mediaMenu.deleteMultipleWarning' => '这包括所有剧集及其文件。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
 			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
@@ -2700,10 +2696,10 @@ extension on TranslationsZh {
 			'videoControls.language' => '语言',
 			'videoControls.noSubtitlesFound' => '未找到字幕',
 			'videoControls.subtitleDownloaded' => '字幕已下载',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下载，但无法选择',
 			'videoControls.subtitleDownloadFailed' => '字幕下载失败',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.searchLanguages' => '搜索语言…',
 			'messages.markedAsWatched' => '已标记为已观看',
 			'messages.markedAsUnwatched' => '已标记为未观看',
@@ -3214,10 +3210,10 @@ extension on TranslationsZh {
 			'watchTogether.failedToJoin' => '加入会话失败',
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
 			'watchTogether.relayUnreachable' => '无法访问中继服务器。网络运营商的屏蔽可能导致“一起看”不可用。',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => '正在重新连接到主持人…',
 			'watchTogether.currentPlayback' => '当前播放',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinCurrentPlayback' => '加入当前播放',
 			'watchTogether.joinCurrentPlaybackDescription' => '加入主持人当前正在观看的内容',
 			'watchTogether.failedToOpenCurrentPlayback' => '无法打开当前播放',

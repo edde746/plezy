@@ -547,8 +547,6 @@ class _Translations$mediaMenu$zh_Hant extends Translations$mediaMenu$zh {
 	@override String get shufflePlay => '隨機播放';
 	@override String get shuffleNotAvailableOffline => '離線時無法隨機播放';
 	@override String get fileInfo => '檔案資訊';
-	@override String get deleteFromServer => '從伺服器刪除';
-	@override String get confirmDelete => '確定要從伺服器刪除此媒體及其檔案嗎？';
 	@override String get deleteMultipleWarning => '這將會刪除所有單集及其檔案。';
 	@override String get mediaDeletedSuccessfully => '媒體已成功刪除';
 	@override String get mediaFailedToDelete => '刪除媒體失敗';
@@ -2581,8 +2579,6 @@ extension on TranslationsZhHant {
 			'mediaMenu.shufflePlay' => '隨機播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '離線時無法隨機播放',
 			'mediaMenu.fileInfo' => '檔案資訊',
-			'mediaMenu.deleteFromServer' => '從伺服器刪除',
-			'mediaMenu.confirmDelete' => '確定要從伺服器刪除此媒體及其檔案嗎？',
 			'mediaMenu.deleteMultipleWarning' => '這將會刪除所有單集及其檔案。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒體已成功刪除',
 			'mediaMenu.mediaFailedToDelete' => '刪除媒體失敗',
@@ -2701,10 +2697,10 @@ extension on TranslationsZhHant {
 			'videoControls.language' => '語言',
 			'videoControls.noSubtitlesFound' => '找不到字幕',
 			'videoControls.subtitleDownloaded' => '字幕下載成功',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下載，但無法套用',
 			'videoControls.subtitleDownloadFailed' => '字幕下載失敗',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.searchLanguages' => '搜尋語言…',
 			'messages.markedAsWatched' => '已標記為已觀看',
 			'messages.markedAsUnwatched' => '已標記為未觀看',
@@ -3215,10 +3211,10 @@ extension on TranslationsZhHant {
 			'watchTogether.failedToJoin' => '加入工作階段失敗',
 			'watchTogether.sessionCodeCopied' => '工作階段代碼已複製到剪貼簿',
 			'watchTogether.relayUnreachable' => '無法連線至中繼伺服器。ISP 封鎖可能會導致「一起看」無法使用。',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => '正在重新連線至主持人…',
 			'watchTogether.currentPlayback' => '目前播放內容',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinCurrentPlayback' => '加入目前播放點',
 			'watchTogether.joinCurrentPlaybackDescription' => '同步至主持人目前的觀看進度',
 			'watchTogether.failedToOpenCurrentPlayback' => '無法開啟目前播放點',

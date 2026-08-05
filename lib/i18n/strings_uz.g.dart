@@ -549,8 +549,6 @@ class _Translations$mediaMenu$uz extends Translations$mediaMenu$en {
 	@override String get shufflePlay => 'Aralashtirib ijro etish';
 	@override String get shuffleNotAvailableOffline => 'Aralashtirib ijro etish oflayn rejimda mavjud emas';
 	@override String get fileInfo => 'Fayl haqida maʼlumot';
-	@override String get deleteFromServer => 'Serverdan oʻchirish';
-	@override String get confirmDelete => 'Ushbu media va fayllar serverdan oʻchirilsinmi?';
 	@override String get deleteMultipleWarning => 'Bu barcha qismlar va fayllarga taʼsir qiladi.';
 	@override String get mediaDeletedSuccessfully => 'Media elementi muvaffaqiyatli oʻchirildi';
 	@override String get mediaFailedToDelete => 'Media elementini oʻchirib boʻlmadi';
@@ -2597,8 +2595,6 @@ extension on TranslationsUz {
 			'mediaMenu.shufflePlay' => 'Aralashtirib ijro etish',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Aralashtirib ijro etish oflayn rejimda mavjud emas',
 			'mediaMenu.fileInfo' => 'Fayl haqida maʼlumot',
-			'mediaMenu.deleteFromServer' => 'Serverdan oʻchirish',
-			'mediaMenu.confirmDelete' => 'Ushbu media va fayllar serverdan oʻchirilsinmi?',
 			'mediaMenu.deleteMultipleWarning' => 'Bu barcha qismlar va fayllarga taʼsir qiladi.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media elementi muvaffaqiyatli oʻchirildi',
 			'mediaMenu.mediaFailedToDelete' => 'Media elementini oʻchirib boʻlmadi',
@@ -2714,10 +2710,10 @@ extension on TranslationsUz {
 			'videoControls.queue' => 'Navbat',
 			'videoControls.noQueueItems' => 'Navbatda elementlar yoʻq',
 			'videoControls.searchSubtitles' => 'Subtitr qidirish',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.language' => 'Til',
 			'videoControls.noSubtitlesFound' => 'Subtitr topilmadi',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.subtitleDownloaded' => 'Subtitr yuklab olindi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Subtitr yuklab olindi, lekin qoʻllanilmadi',
 			'videoControls.subtitleDownloadFailed' => 'Subtitrni yuklab boʻlmadi',
@@ -3228,10 +3224,10 @@ extension on TranslationsUz {
 			'watchTogether.pasteFromClipboard' => 'Xotiradan joylash',
 			'watchTogether.pleaseEnterCode' => 'Seans kodini kiriting',
 			'watchTogether.codeMustBe5Chars' => 'Seans kodi 5 ta belgidan iborat boʻlishi kerak',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
 			'watchTogether.failedToCreate' => 'Seansni yaratib boʻlmadi',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Seansga qoʻshilib boʻlmadi',
 			'watchTogether.sessionCodeCopied' => 'Seans kodi nusxalandi',
 			'watchTogether.relayUnreachable' => 'Rele serveriga ulanib boʻlmadi.',

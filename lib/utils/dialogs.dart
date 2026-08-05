@@ -37,6 +37,7 @@ Future<bool> showConfirmDialog(
   required String confirmText,
   String? cancelText,
   bool isDestructive = false,
+  String? warning,
 }) async {
   final confirmed = await showScopedDialog<bool>(
     context: context,
@@ -44,7 +45,27 @@ Future<bool> showConfirmDialog(
       final colorScheme = Theme.of(dialogContext).colorScheme;
       return AlertDialog(
         title: Text(title),
-        content: Text(message),
+        content: warning == null
+            ? Text(message)
+            : SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(message),
+                    const SizedBox(height: 16),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.errorContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(warning, style: TextStyle(color: colorScheme.onErrorContainer)),
+                    ),
+                  ],
+                ),
+              ),
         actions: [
           DialogActionButton(
             autofocus: true,
@@ -75,11 +96,16 @@ Future<bool> showConfirmDialog(
 
 /// Shows a non-dismissible loading-spinner dialog. Caller is responsible for
 /// closing it via `Navigator.pop(context)` when the work completes.
+///
+/// `barrierDismissible: false` only blocks the barrier, so the spinner also
+/// traps system back. Without that, back would dismiss the spinner and the
+/// caller's cleanup pop would land on the route underneath — closing the
+/// screen the user was working in.
 void showLoadingDialog(BuildContext context) {
   showScopedDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => const Center(child: CircularProgressIndicator()),
+    builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
   );
 }
 
@@ -133,6 +159,7 @@ Future<bool> showDeleteConfirmation(
   required String title,
   required String message,
   String? confirmText,
+  String? warning,
 }) {
   return showConfirmDialog(
     context,
@@ -140,6 +167,7 @@ Future<bool> showDeleteConfirmation(
     message: message,
     confirmText: confirmText ?? t.common.delete,
     isDestructive: true,
+    warning: warning,
   );
 }
 

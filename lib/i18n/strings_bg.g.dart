@@ -546,8 +546,6 @@ class _Translations$mediaMenu$bg extends Translations$mediaMenu$en {
 	@override String get shufflePlay => 'Разбъркано възпроизвеждане';
 	@override String get shuffleNotAvailableOffline => 'Разбърканото възпроизвеждане не е налично офлайн';
 	@override String get fileInfo => 'Информация за файла';
-	@override String get deleteFromServer => 'Изтрий от сървъра';
-	@override String get confirmDelete => 'Да се изтрият ли този елемент и файловете му от вашия сървър?';
 	@override String get deleteMultipleWarning => 'Това включва всички епизоди и техните файлове.';
 	@override String get mediaDeletedSuccessfully => 'Елементът е изтрит успешно';
 	@override String get mediaFailedToDelete => 'Неуспешно изтриване на елемента';
@@ -2583,8 +2581,6 @@ extension on TranslationsBg {
 			'mediaMenu.shufflePlay' => 'Разбъркано възпроизвеждане',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Разбърканото възпроизвеждане не е налично офлайн',
 			'mediaMenu.fileInfo' => 'Информация за файла',
-			'mediaMenu.deleteFromServer' => 'Изтрий от сървъра',
-			'mediaMenu.confirmDelete' => 'Да се изтрият ли този елемент и файловете му от вашия сървър?',
 			'mediaMenu.deleteMultipleWarning' => 'Това включва всички епизоди и техните файлове.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Елементът е изтрит успешно',
 			'mediaMenu.mediaFailedToDelete' => 'Неуспешно изтриване на елемента',
@@ -2703,10 +2699,10 @@ extension on TranslationsBg {
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
 			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.searchLanguages' => 'Търсене на езици...',
 			'messages.markedAsWatched' => 'Маркирано като гледано',
 			'messages.markedAsUnwatched' => 'Маркирано като негледано',
@@ -3217,10 +3213,10 @@ extension on TranslationsBg {
 			'watchTogether.failedToJoin' => 'Неуспешно присъединяване към сесия',
 			'watchTogether.sessionCodeCopied' => 'Кодът на сесията е копиран в клипборда',
 			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
 			'watchTogether.currentPlayback' => 'Текущо възпроизвеждане',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Неуспешно отваряне на текущото възпроизвеждане',

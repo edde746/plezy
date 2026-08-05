@@ -518,9 +518,35 @@
     "shufflePlay": "Aralashtirib ijro etish",
     "shuffleNotAvailableOffline": "Aralashtirib ijro etish oflayn rejimda mavjud emas",
     "fileInfo": "Fayl haqida maʼlumot",
-    "deleteFromServer": "Serverdan oʻchirish",
-    "confirmDelete": "Ushbu media va fayllar serverdan oʻchirilsinmi?",
+    "deleteEpisodeFromServer": "",
+    "deleteSeasonFromServer": "",
+    "deleteShowFromServer": "",
+    "deleteMovieFromServer": "",
+    "deleteEpisodeTitle": "",
+    "deleteSeasonTitle": "",
+    "deleteShowTitle": "",
+    "deleteMovieTitle": "",
+    "deleteEpisodeConfirm": "",
+    "deleteSeasonConfirm": "",
+    "deleteShowConfirm": "",
+    "deleteMovieConfirm": "",
+    "deleteAnyway": "",
+    "confirmDeleteTarget": "",
     "deleteMultipleWarning": "Bu barcha qismlar va fayllarga taʼsir qiladi.",
+    "deleteEpisodeCountWarning": {
+      "one": "",
+      "other": ""
+    },
+    "deleteMultiPartWarning": {
+      "one": "",
+      "other": ""
+    },
+    "deleteSharedFileHeading": {
+      "one": "",
+      "other": ""
+    },
+    "deleteScopeUnverifiedProbeFailed": "",
+    "deleteScopeUnverifiedNoFileInfo": "",
     "mediaDeletedSuccessfully": "Media elementi muvaffaqiyatli oʻchirildi",
     "mediaFailedToDelete": "Media elementini oʻchirib boʻlmadi",
     "rate": "Baho berish",

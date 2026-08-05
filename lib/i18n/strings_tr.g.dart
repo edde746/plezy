@@ -549,8 +549,6 @@ class _Translations$mediaMenu$tr extends Translations$mediaMenu$en {
 	@override String get shufflePlay => 'Karışık Oynat';
 	@override String get shuffleNotAvailableOffline => 'Karışık oynatma çevrimdışıyken kullanılamaz';
 	@override String get fileInfo => 'Dosya Bilgisi';
-	@override String get deleteFromServer => 'Sunucudan sil';
-	@override String get confirmDelete => 'Bu medya ve dosyaları sunucunuzdan silinsin mi?';
 	@override String get deleteMultipleWarning => 'Bu işlem tüm bölümleri ve dosyalarını içerir.';
 	@override String get mediaDeletedSuccessfully => 'Medya ögesi başarıyla silindi';
 	@override String get mediaFailedToDelete => 'Medya ögesi silinemedi';
@@ -2597,8 +2595,6 @@ extension on TranslationsTr {
 			'mediaMenu.shufflePlay' => 'Karışık Oynat',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Karışık oynatma çevrimdışıyken kullanılamaz',
 			'mediaMenu.fileInfo' => 'Dosya Bilgisi',
-			'mediaMenu.deleteFromServer' => 'Sunucudan sil',
-			'mediaMenu.confirmDelete' => 'Bu medya ve dosyaları sunucunuzdan silinsin mi?',
 			'mediaMenu.deleteMultipleWarning' => 'Bu işlem tüm bölümleri ve dosyalarını içerir.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medya ögesi başarıyla silindi',
 			'mediaMenu.mediaFailedToDelete' => 'Medya ögesi silinemedi',
@@ -2714,10 +2710,10 @@ extension on TranslationsTr {
 			'videoControls.queue' => 'Kuyruk',
 			'videoControls.noQueueItems' => 'Kuyrukta öge yok',
 			'videoControls.searchSubtitles' => 'Altyazı Ara',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı bulunamadı',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.subtitleDownloaded' => 'Altyazı indirildi',
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı indirildi ancak seçilemedi',
 			'videoControls.subtitleDownloadFailed' => 'Altyazı indirilemedi',
@@ -3228,10 +3224,10 @@ extension on TranslationsTr {
 			'watchTogether.pasteFromClipboard' => 'Panodan yapıştır',
 			'watchTogether.pleaseEnterCode' => 'Lütfen bir oturum kodu girin',
 			'watchTogether.codeMustBe5Chars' => 'Oturum kodu 5 karakter olmalıdır',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Katılmak için kurucunun oturum kodunu girin.',
 			'watchTogether.failedToCreate' => 'Oturum oluşturulamadı',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Oturuma katılınamadı',
 			'watchTogether.sessionCodeCopied' => 'Oturum kodu panoya kopyalandı',
 			'watchTogether.relayUnreachable' => 'Aktarıcı sunucusuna ulaşılamıyor. İSS engellemesi Birlikte İzle\'yi önleyebilir.',

@@ -72,6 +72,20 @@ class MediaServerTimeouts {
   /// only ever costs an entry, never safety.
   static const jellyfinDeletePermission = Duration(seconds: 3);
 
+  /// Whole-probe deadline for establishing what a server-side delete will
+  /// destroy (see `resolveDeleteImpact`). Generous compared to
+  /// [jellyfinDeletePermission] for two reasons: it runs behind a modal
+  /// spinner *after* the user asked to delete, not while a menu is opening,
+  /// and it may fan out one detail request per sibling episode when browse
+  /// rows omit file paths.
+  ///
+  /// Unlike the permission probe, expiry cannot fail closed — Plex never
+  /// sends file paths to restricted users, so refusing the delete would
+  /// permanently remove a feature the server itself authorizes. Expiry
+  /// instead downgrades the confirmation to its explicit "scope unverified"
+  /// form.
+  static const deleteImpactProbe = Duration(seconds: 10);
+
   /// Best-effort `/Sessions/Logout` timeout — short because the call is
   /// fire-and-forget; the token is removed locally regardless.
   static const jellyfinSignOut = Duration(seconds: 5);

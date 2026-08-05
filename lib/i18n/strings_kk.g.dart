@@ -549,8 +549,6 @@ class _Translations$mediaMenu$kk extends Translations$mediaMenu$en {
 	@override String get shufflePlay => 'Араластырып ойнату';
 	@override String get shuffleNotAvailableOffline => 'Араластырып ойнату офлайн режимде қолжетімсіз';
 	@override String get fileInfo => 'Файл туралы ақпарат';
-	@override String get deleteFromServer => 'Серверден өшіру';
-	@override String get confirmDelete => 'Осы медиа мен файлдар серверден өшірілсін бе?';
 	@override String get deleteMultipleWarning => 'Бұл барлық бөлімдер мен файлдарға әсер етеді.';
 	@override String get mediaDeletedSuccessfully => 'Медиа элементі сәтті өшірілді';
 	@override String get mediaFailedToDelete => 'Медиа элементін өшіру мүмкін болмады';
@@ -2597,8 +2595,6 @@ extension on TranslationsKk {
 			'mediaMenu.shufflePlay' => 'Араластырып ойнату',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Араластырып ойнату офлайн режимде қолжетімсіз',
 			'mediaMenu.fileInfo' => 'Файл туралы ақпарат',
-			'mediaMenu.deleteFromServer' => 'Серверден өшіру',
-			'mediaMenu.confirmDelete' => 'Осы медиа мен файлдар серверден өшірілсін бе?',
 			'mediaMenu.deleteMultipleWarning' => 'Бұл барлық бөлімдер мен файлдарға әсер етеді.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Медиа элементі сәтті өшірілді',
 			'mediaMenu.mediaFailedToDelete' => 'Медиа элементін өшіру мүмкін болмады',
@@ -2714,10 +2710,10 @@ extension on TranslationsKk {
 			'videoControls.queue' => 'Кезек',
 			'videoControls.noQueueItems' => 'Кезекте элементтер жоқ',
 			'videoControls.searchSubtitles' => 'Субтитр іздеу',
-			_ => null,
-		} ?? switch (path) {
 			'videoControls.language' => 'Тіл',
 			'videoControls.noSubtitlesFound' => 'Субтитр табылмады',
+			_ => null,
+		} ?? switch (path) {
 			'videoControls.subtitleDownloaded' => 'Субтитр жүктелді',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитр жүктелді, бірақ қолданылмады',
 			'videoControls.subtitleDownloadFailed' => 'Субтитрді жүктеу мүмкін болмады',
@@ -3228,10 +3224,10 @@ extension on TranslationsKk {
 			'watchTogether.pasteFromClipboard' => 'Алмасу буферінен қою',
 			'watchTogether.pleaseEnterCode' => 'Сеанс кодын енгізіңіз',
 			'watchTogether.codeMustBe5Chars' => 'Сеанс коды 5 таңбадан тұруы керек',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.joinInstructions' => 'Ұйымдастырушының сеанс кодын енгізіңіз.',
 			'watchTogether.failedToCreate' => 'Сеансты жасау мүмкін болмады',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Сеансқа қосылу мүмкін болмады',
 			'watchTogether.sessionCodeCopied' => 'Сеанс коды көшірілді',
 			'watchTogether.relayUnreachable' => 'Реле сервері қолжетімсіз.',

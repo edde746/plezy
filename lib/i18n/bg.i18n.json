@@ -518,9 +518,35 @@
     "shufflePlay": "Разбъркано възпроизвеждане",
     "shuffleNotAvailableOffline": "Разбърканото възпроизвеждане не е налично офлайн",
     "fileInfo": "Информация за файла",
-    "deleteFromServer": "Изтрий от сървъра",
-    "confirmDelete": "Да се изтрият ли този елемент и файловете му от вашия сървър?",
+    "deleteEpisodeFromServer": "",
+    "deleteSeasonFromServer": "",
+    "deleteShowFromServer": "",
+    "deleteMovieFromServer": "",
+    "deleteEpisodeTitle": "",
+    "deleteSeasonTitle": "",
+    "deleteShowTitle": "",
+    "deleteMovieTitle": "",
+    "deleteEpisodeConfirm": "",
+    "deleteSeasonConfirm": "",
+    "deleteShowConfirm": "",
+    "deleteMovieConfirm": "",
+    "deleteAnyway": "",
+    "confirmDeleteTarget": "",
     "deleteMultipleWarning": "Това включва всички епизоди и техните файлове.",
+    "deleteEpisodeCountWarning": {
+      "one": "",
+      "other": ""
+    },
+    "deleteMultiPartWarning": {
+      "one": "",
+      "other": ""
+    },
+    "deleteSharedFileHeading": {
+      "one": "",
+      "other": ""
+    },
+    "deleteScopeUnverifiedProbeFailed": "",
+    "deleteScopeUnverifiedNoFileInfo": "",
     "mediaDeletedSuccessfully": "Елементът е изтрит успешно",
     "mediaFailedToDelete": "Неуспешно изтриване на елемента",
     "rate": "Оцени",

@@ -518,9 +518,32 @@
     "shufflePlay": "随机播放",
     "shuffleNotAvailableOffline": "离线时无法随机播放",
     "fileInfo": "文件信息",
-    "deleteFromServer": "从服务器删除",
-    "confirmDelete": "要从服务器删除此媒体及其文件吗？",
+    "deleteEpisodeFromServer": "",
+    "deleteSeasonFromServer": "",
+    "deleteShowFromServer": "",
+    "deleteMovieFromServer": "",
+    "deleteEpisodeTitle": "",
+    "deleteSeasonTitle": "",
+    "deleteShowTitle": "",
+    "deleteMovieTitle": "",
+    "deleteEpisodeConfirm": "",
+    "deleteSeasonConfirm": "",
+    "deleteShowConfirm": "",
+    "deleteMovieConfirm": "",
+    "deleteAnyway": "",
+    "confirmDeleteTarget": "",
     "deleteMultipleWarning": "这包括所有剧集及其文件。",
+    "deleteEpisodeCountWarning": {
+      "other": ""
+    },
+    "deleteMultiPartWarning": {
+      "other": ""
+    },
+    "deleteSharedFileHeading": {
+      "other": ""
+    },
+    "deleteScopeUnverifiedProbeFailed": "",
+    "deleteScopeUnverifiedNoFileInfo": "",
     "mediaDeletedSuccessfully": "媒体项已成功删除",
     "mediaFailedToDelete": "删除媒体项失败",
     "rate": "评分",

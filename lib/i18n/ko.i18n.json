@@ -518,9 +518,32 @@
     "shufflePlay": "무작위 재생",
     "shuffleNotAvailableOffline": "오프라인에서는 무작위 재생을 사용할 수 없습니다",
     "fileInfo": "파일 정보",
-    "deleteFromServer": "서버에서 삭제",
-    "confirmDelete": "이 미디어와 해당 파일을 서버에서 삭제할까요?",
+    "deleteEpisodeFromServer": "",
+    "deleteSeasonFromServer": "",
+    "deleteShowFromServer": "",
+    "deleteMovieFromServer": "",
+    "deleteEpisodeTitle": "",
+    "deleteSeasonTitle": "",
+    "deleteShowTitle": "",
+    "deleteMovieTitle": "",
+    "deleteEpisodeConfirm": "",
+    "deleteSeasonConfirm": "",
+    "deleteShowConfirm": "",
+    "deleteMovieConfirm": "",
+    "deleteAnyway": "",
+    "confirmDeleteTarget": "",
     "deleteMultipleWarning": "모든 에피소드와 파일이 포함됩니다.",
+    "deleteEpisodeCountWarning": {
+      "other": ""
+    },
+    "deleteMultiPartWarning": {
+      "other": ""
+    },
+    "deleteSharedFileHeading": {
+      "other": ""
+    },
+    "deleteScopeUnverifiedProbeFailed": "",
+    "deleteScopeUnverifiedNoFileInfo": "",
     "mediaDeletedSuccessfully": "미디어 항목이 성공적으로 삭제되었습니다",
     "mediaFailedToDelete": "미디어 항목 삭제 실패",
     "rate": "평가",

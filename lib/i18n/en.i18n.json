@@ -518,9 +518,35 @@
     "shufflePlay": "Shuffle Play",
     "shuffleNotAvailableOffline": "Shuffle not available offline",
     "fileInfo": "File Info",
-    "deleteFromServer": "Delete from server",
-    "confirmDelete": "Delete this media and its files from your server?",
+    "deleteEpisodeFromServer": "Delete episode from server",
+    "deleteSeasonFromServer": "Delete season from server",
+    "deleteShowFromServer": "Delete show from server",
+    "deleteMovieFromServer": "Delete movie from server",
+    "deleteEpisodeTitle": "Delete this episode?",
+    "deleteSeasonTitle": "Delete this season?",
+    "deleteShowTitle": "Delete this show?",
+    "deleteMovieTitle": "Delete this movie?",
+    "deleteEpisodeConfirm": "Delete episode",
+    "deleteSeasonConfirm": "Delete season",
+    "deleteShowConfirm": "Delete show",
+    "deleteMovieConfirm": "Delete movie",
+    "deleteAnyway": "Delete anyway",
+    "confirmDeleteTarget": "Permanently delete ${title} from your server?",
     "deleteMultipleWarning": "This includes all episodes and their files.",
+    "deleteEpisodeCountWarning": {
+      "one": "This deletes all ${n} episode in it, and its file.",
+      "other": "This deletes all ${n} episodes in it, and their files."
+    },
+    "deleteMultiPartWarning": {
+      "one": "This item is stored as ${n} file, which will be deleted.",
+      "other": "This item is stored across ${n} files, and all of them will be deleted."
+    },
+    "deleteSharedFileHeading": {
+      "one": "${n} other episode is stored in the same file and will be deleted too:",
+      "other": "${n} other episodes are stored in the same file and will be deleted too:"
+    },
+    "deleteScopeUnverifiedProbeFailed": "Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.",
+    "deleteScopeUnverifiedNoFileInfo": "Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.",
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate",

@@ -518,9 +518,32 @@
     "shufflePlay": "シャッフル再生",
     "shuffleNotAvailableOffline": "オフラインではシャッフルを利用できません",
     "fileInfo": "ファイル情報",
-    "deleteFromServer": "サーバーから削除",
-    "confirmDelete": "このメディアとそのファイルをサーバーから削除しますか？",
+    "deleteEpisodeFromServer": "",
+    "deleteSeasonFromServer": "",
+    "deleteShowFromServer": "",
+    "deleteMovieFromServer": "",
+    "deleteEpisodeTitle": "",
+    "deleteSeasonTitle": "",
+    "deleteShowTitle": "",
+    "deleteMovieTitle": "",
+    "deleteEpisodeConfirm": "",
+    "deleteSeasonConfirm": "",
+    "deleteShowConfirm": "",
+    "deleteMovieConfirm": "",
+    "deleteAnyway": "",
+    "confirmDeleteTarget": "",
     "deleteMultipleWarning": "すべてのエピソードとそのファイルが含まれます。",
+    "deleteEpisodeCountWarning": {
+      "other": ""
+    },
+    "deleteMultiPartWarning": {
+      "other": ""
+    },
+    "deleteSharedFileHeading": {
+      "other": ""
+    },
+    "deleteScopeUnverifiedProbeFailed": "",
+    "deleteScopeUnverifiedNoFileInfo": "",
     "mediaDeletedSuccessfully": "メディアアイテムを正常に削除しました",
     "mediaFailedToDelete": "メディアアイテムの削除に失敗しました",
     "rate": "評価",

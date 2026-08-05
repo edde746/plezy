@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../providers/watch_state_store.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../media/media_item_labels.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/library_query.dart';
@@ -24,6 +25,7 @@ import '../services/playlist_items_loader.dart';
 import '../services/watch_actions.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/content_utils.dart';
+import '../utils/delete_impact.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
 import '../utils/quality_preset_labels.dart';
@@ -634,12 +636,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // implements (DELETE /library/metadata/{id} for Plex and
       // DELETE /Items/{id} for MediaBrowser servers); the kind and permission checks were
       // resolved together above.
+      //
+      // The label names the kind. One shared "Delete from server" string for
+      // an episode, a season and a whole show is what let #1781 happen: the
+      // reporter hit the show-level entry believing it acted on the episode
+      // he had highlighted.
       if (canDeleteFromServer) {
         menuActions.add(
           _MenuAction(
             value: 'delete_media',
             icon: Symbols.delete_forever_rounded,
-            label: t.mediaMenu.deleteFromServer,
+            label: _deleteMenuLabel(mediaKind),
             destructive: true,
           ),
         );
@@ -667,7 +674,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     // fall back to a hostless modal sheet).
     final selected = await showAdaptiveAppMenu<String>(
       this.context,
-      title: _itemDisplayTitle(),
+      title: _itemMenuTitle(),
       entries: _menuEntries(menuActions),
       position: position,
       focusFirstItem: openedFromKeyboard,
@@ -1744,6 +1751,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _ => '',
   };
 
+  /// Header for the menu itself. Unlike [_itemDisplayTitle] — which stays on
+  /// [MediaItem.displayTitle] for snackbars and the file-info sheet — this
+  /// names the exact item the entries will act on, so an episode's menu is no
+  /// longer headed by its show's name (#1781).
+  String _itemMenuTitle() => switch (widget.item) {
+    final MediaItem item => formatMediaTargetLabel(item),
+    MediaPlaylist(:final displayTitle) => displayTitle,
+    _ => '',
+  };
+
+  String _deleteMenuLabel(MediaKind? kind) => switch (kind) {
+    MediaKind.season => t.mediaMenu.deleteSeasonFromServer,
+    MediaKind.show => t.mediaMenu.deleteShowFromServer,
+    MediaKind.movie => t.mediaMenu.deleteMovieFromServer,
+    _ => t.mediaMenu.deleteEpisodeFromServer,
+  };
+
   Future<void> _handleManageSyncRule(BuildContext context) => manageSyncRule(
     context,
     downloadProvider: context.read<DownloadProvider>(),
@@ -1781,24 +1805,47 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     displayTitle: _itemDisplayTitle(),
   );
 
-  /// Handle delete media item action
-  /// This permanently removes the media item and its associated files from the server
+  /// Handle delete media item action.
+  ///
+  /// Permanently removes the item and its files from the server. Everything
+  /// before the DELETE exists to make the blast radius legible: the dialog
+  /// names the exact target, states the kind, and — for a single playable
+  /// item — reports what the server will actually destroy. When that cannot
+  /// be established, the dialog says so instead of implying single-file
+  /// scope (#1781).
   Future<void> _handleDeleteMediaItem(BuildContext context, MediaKind? mediaKind) async {
     final item = _mediaItem!;
-    final isMultipleMediaItems = mediaKind == MediaKind.show || mediaKind == MediaKind.season;
+    final client = _getMediaClientForItem();
 
-    // Show confirmation dialog
+    // Shows and seasons are known-broad by definition; probing their parts
+    // would be a per-episode fan-out to restate what the copy already says.
+    final probesImpact = mediaKind == MediaKind.episode || mediaKind == MediaKind.movie;
+    DeleteImpact? impact;
+    if (probesImpact) {
+      showLoadingDialog(context);
+      try {
+        impact = await resolveDeleteImpact(item: item, client: client);
+      } finally {
+        // The spinner traps system back and nothing else pushes during the
+        // probe, so it is still the top route here. A `Navigator.canPop`
+        // guard would only test "is anything poppable", which is true of the
+        // screen underneath — exactly the route that must not close.
+        if (context.mounted) Navigator.pop(context);
+      }
+      if (!context.mounted) return;
+    }
+
     final confirmed = await showDeleteConfirmation(
       context,
-      title: t.mediaMenu.deleteFromServer,
-      message: "${t.mediaMenu.confirmDelete}${isMultipleMediaItems ? "\n\n${t.mediaMenu.deleteMultipleWarning}" : ""}",
-      confirmText: t.mediaMenu.deleteFromServer,
+      title: _deleteDialogTitle(mediaKind),
+      message: t.mediaMenu.confirmDeleteTarget(title: formatMediaTargetLabel(item)),
+      warning: _deleteWarning(item, mediaKind, impact),
+      confirmText: impact != null && impact.isUnverified ? t.mediaMenu.deleteAnyway : _deleteConfirmLabel(mediaKind),
     );
 
     if (!confirmed || !context.mounted) return;
 
     try {
-      final client = _getMediaClientForItem();
       final success = await client.deleteMediaItem(item);
 
       if (context.mounted) {
@@ -1806,6 +1853,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           showSuccessSnackBar(context, t.mediaMenu.mediaDeletedSuccessfully);
           // Broadcast deletion event for cross-screen propagation
           DeletionNotifier().notifyDeletedItem(item: item);
+          // Siblings sharing the deleted file died with it server-side. Without
+          // their own events their rows linger until a full refresh.
+          for (final sibling in impact?.sharedWith ?? const <MediaItem>[]) {
+            DeletionNotifier().notifyDeletedItem(item: sibling);
+          }
           // Backward-compatible list refresh for screens that are not DeletionAware yet
           _notifyListRefresh();
         } else {
@@ -1818,6 +1870,52 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
       }
     }
+  }
+
+  String _deleteDialogTitle(MediaKind? kind) => switch (kind) {
+    MediaKind.season => t.mediaMenu.deleteSeasonTitle,
+    MediaKind.show => t.mediaMenu.deleteShowTitle,
+    MediaKind.movie => t.mediaMenu.deleteMovieTitle,
+    _ => t.mediaMenu.deleteEpisodeTitle,
+  };
+
+  String _deleteConfirmLabel(MediaKind? kind) => switch (kind) {
+    MediaKind.season => t.mediaMenu.deleteSeasonConfirm,
+    MediaKind.show => t.mediaMenu.deleteShowConfirm,
+    MediaKind.movie => t.mediaMenu.deleteMovieConfirm,
+    _ => t.mediaMenu.deleteEpisodeConfirm,
+  };
+
+  /// The danger block under the confirmation message, or null when the delete
+  /// is verified to remove exactly the named item.
+  String? _deleteWarning(MediaItem item, MediaKind? kind, DeleteImpact? impact) {
+    if (kind == MediaKind.show || kind == MediaKind.season) {
+      // leafCount is the episode total; a season falls back to its direct
+      // children. Neither is guaranteed, so keep the countless sentence.
+      final episodes = item.leafCount ?? (kind == MediaKind.season ? item.childCount : null);
+      return episodes != null && episodes > 0
+          ? t.mediaMenu.deleteEpisodeCountWarning(n: episodes)
+          : t.mediaMenu.deleteMultipleWarning;
+    }
+
+    if (impact == null) return null;
+
+    if (impact.isUnverified) {
+      return switch (impact.reason) {
+        DeleteImpactUnverifiedReason.noFileInfo => t.mediaMenu.deleteScopeUnverifiedNoFileInfo,
+        _ => t.mediaMenu.deleteScopeUnverifiedProbeFailed,
+      };
+    }
+
+    if (!impact.isBroad) return null;
+
+    final lines = <String>[];
+    if (impact.files.length > 1) lines.add(t.mediaMenu.deleteMultiPartWarning(n: impact.files.length));
+    if (impact.sharedWith.isNotEmpty) {
+      lines.add(t.mediaMenu.deleteSharedFileHeading(n: impact.sharedWith.length));
+      lines.addAll(impact.sharedWith.map((sibling) => '\u2022 ${formatMediaTargetLabel(sibling)}'));
+    }
+    return lines.join('\n');
   }
 
   @override
