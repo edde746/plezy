@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Plezy Updates</title>
+    <item>
+      <title>Version 2.12.1</title>
+      <sparkle:version>127</sparkle:version>
+      <sparkle:shortVersionString>2.12.1</sparkle:shortVersionString>
+      <sparkle:releaseNotesLink>https://gh-html.edde746.dev/edde746/plezy/2.12.1</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/edde746/plezy/releases/download/2.12.1/plezy-macos.dmg"
+       length="69882279" type="application/octet-stream"
+       sparkle:edSignature="2iV+ACcPWrw6Lx91Lpcw4ORR4Q/PpTkMAeKgUMOAvan9UpU7eYVar/CCWplDeOyM+0j/3GCSXojCHqyaCHtjCQ=="
+       sparkle:os="macos" />
+      <enclosure url="https://github.com/edde746/plezy/releases/download/2.12.1/plezy-windows-installer.exe"
+       length="130464768" type="application/octet-stream"
+       sparkle:edSignature="PYqFTntPMyHHHwH++rDSlaH5It3klYyJAGKOYahZVbA8b2L5sUlySgHFteJpgp9hD2WChFLjKguUIIO8OKOKBQ=="
+       sparkle:installerArguments="/SILENT /SP-"
+       sparkle:os="windows" />
+    </item>
+  </channel>
+</rss>
