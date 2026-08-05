@@ -184,7 +184,12 @@ void main() {
   });
 
   testWidgets('regex dialog localizes its field label and validation error', (tester) async {
-    await LocaleSettings.setLocale(AppLocale.de);
+    // `runAsync`: a deferred locale library loads on the real event loop, and
+    // the widget tester's fake async never pumps it. Awaiting the load
+    // directly hangs the test whenever the library is not already resident —
+    // running this file alone, under a name filter, or sharded away from the
+    // `themeModeLabel` test above that happens to load `de` first.
+    await tester.runAsync(() => LocaleSettings.setLocale(AppLocale.de));
     addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
 
     await tester.pumpWidget(
