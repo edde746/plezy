@@ -612,8 +612,8 @@ class _SettingsHarness {
     activeProfile.dispose();
     await plexHome.dispose();
     await database.close();
-    expect(trackerHttpClients, hasLength(5));
-    expect(trackerHttpClients.toSet(), hasLength(5));
+    expect(trackerHttpClients, hasLength(6));
+    expect(trackerHttpClients.toSet(), hasLength(6));
     for (final client in trackerHttpClients) {
       expect(client.closeCount, 1);
     }

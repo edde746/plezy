@@ -7,7 +7,7 @@ import 'catalog_cast_member.dart';
 import 'catalog_metadata.dart';
 
 /// External catalog providers that can back the Explore tab.
-enum CatalogSourceId { plex, trakt, mal, anilist, simkl, seerr }
+enum CatalogSourceId { plex, trakt, mal, anilist, simkl, seerr, mdblist }
 
 /// Normalized airing/production status across providers (Trakt `status`,
 /// MAL `status`). Null when unknown or uninteresting (released movies).

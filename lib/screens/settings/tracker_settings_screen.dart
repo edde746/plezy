@@ -7,6 +7,7 @@ import '../../models/trackers/device_code.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/anilist/anilist_tracker.dart';
 import '../../services/trackers/mal/mal_tracker.dart';
+import '../../services/trackers/mdblist/mdblist_tracker.dart';
 import '../../services/trackers/oauth_proxy_client.dart';
 import '../../services/trackers/simkl/simkl_tracker.dart';
 import '../../services/trackers/tracker_constants.dart';
@@ -60,6 +61,20 @@ Future<void> startSimklConnection(BuildContext context) {
   );
 }
 
+Future<void> startMdblistConnection(BuildContext context) {
+  final account = context.read<TrackersProvider>();
+  final name = t.services.names.mdblist;
+  return launchTrackerConnect<DeviceCode>(
+    context,
+    isBusyOrConnected: account.isConnecting(TrackerService.mdblist) || account.isMdblistConnected,
+    serviceName: name,
+    connect: (cb) => account.connectMdblist(onCodeReady: cb),
+    onCancel: account.cancelConnect,
+    buildDialog: (p, cancel) => DeviceCodeDialog(code: p, serviceName: name, onCancel: cancel),
+    urlFor: (p) => p.verificationUrlComplete ?? p.verificationUrl,
+  );
+}
+
 /// Per-service wiring for [TrackerSettingsScreen]. Keeps tracker-specific
 /// method names out of the shared screen body.
 class TrackerConfig {
@@ -107,11 +122,20 @@ class TrackerConfig {
     onScrobbleChanged: SimklTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectSimkl(),
   );
+
+  static TrackerConfig mdblist() => TrackerConfig(
+    service: TrackerService.mdblist,
+    displayName: t.services.names.mdblist,
+    isConnected: (a) => a.isMdblistConnected,
+    username: (a) => a.mdblistUsername,
+    onScrobbleChanged: MdblistTracker.instance.setEnabled,
+    disconnect: (a) => a.disconnectMdblist(),
+  );
 }
 
-/// Shared settings screen for MAL, AniList, and Simkl. Only reachable while
-/// connected — if the session drops (refresh failure, back-nav race) we pop
-/// back to the hub.
+/// Shared settings screen for MAL, AniList, Simkl and MDBList. Only reachable
+/// while connected — if the session drops (refresh failure, back-nav race) we
+/// pop back to the hub.
 class TrackerSettingsScreen extends StatelessWidget {
   final TrackerConfig config;
   const TrackerSettingsScreen({super.key, required this.config});

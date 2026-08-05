@@ -12,6 +12,7 @@ import 'anime_lists_mapping_store.dart';
 import 'anilist/anilist_tracker.dart';
 import 'fribb_mapping_store.dart';
 import 'mal/mal_tracker.dart';
+import 'mdblist/mdblist_tracker.dart';
 import 'simkl/simkl_tracker.dart';
 import 'tracker.dart';
 import 'tracker_constants.dart';
@@ -24,10 +25,10 @@ import 'trakt/trakt_tracker.dart';
 ///
 /// Three mechanisms, chosen per tracker kind:
 ///
-/// * [RealtimeScrobbleTracker]s (Simkl, Trakt) receive the playback lifecycle —
-///   start/resume, pause, seek, stop — with the current progress, and decide
-///   watched state themselves. They are excluded from the threshold fan-out so
-///   a single watch never produces two writes.
+/// * [RealtimeScrobbleTracker]s (Simkl, Trakt, MDBList) receive the playback
+///   lifecycle — start/resume, pause, seek, stop — with the current progress,
+///   and decide watched state themselves. They are excluded from the threshold
+///   fan-out so a single watch never produces two writes.
 /// * Threshold trackers (MAL, AniList) are notified exactly once when progress
 ///   crosses the watched threshold, with a safety-net fire on stop if the
 ///   crossing was missed (e.g. the user stopped between ticks).
@@ -51,6 +52,7 @@ class TrackerCoordinator {
     AnilistTracker.instance,
     SimklTracker.instance,
     TraktTracker.instance,
+    MdblistTracker.instance,
   ];
 
   /// One transport per real-time tracker, created once and outliving individual

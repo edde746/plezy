@@ -24,6 +24,7 @@ class CatalogSourceLogo extends StatelessWidget {
       CatalogSourceId.anilist => 'assets/anilist_mark.svg',
       CatalogSourceId.simkl => 'assets/simkl_mark.svg',
       CatalogSourceId.seerr => 'assets/seerr_mark.svg',
+      CatalogSourceId.mdblist => 'assets/mdblist_mark.svg',
     };
     final color = IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
     return SvgPicture.asset(

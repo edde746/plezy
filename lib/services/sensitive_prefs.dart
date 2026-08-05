@@ -10,7 +10,7 @@
 ///   Losing it orphans every one of those ciphertexts permanently.
 /// * tracker sessions — `TrackerAccountStore` persists `TrackerSession.encode()`
 ///   verbatim, so raw OAuth `access_token`/`refresh_token` pairs for MAL,
-///   AniList, Simkl and Trakt live here in plaintext.
+///   AniList, Simkl, Trakt and MDBList live here in plaintext.
 /// * Seerr sessions — `SeerrSessionStore` persists a raw `connect.sid` cookie
 ///   alongside a vault-protected password.
 /// * [legacyPlexTokenPref] — the pre-connection-registry Plex token slot. It is
@@ -44,6 +44,7 @@ const List<String> trackerSessionBaseKeys = <String>[
   'anilist_session',
   'simkl_session',
   'trakt_session',
+  'mdblist_session',
 ];
 
 /// Unscoped base key used by `SeerrSessionStore`.

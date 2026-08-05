@@ -82,6 +82,7 @@ class TrackerSession {
     switch (service) {
       case TrackerService.mal:
       case TrackerService.trakt:
+      case TrackerService.mdblist:
         _validateRefreshToken(service, refreshToken);
         requireExpiry();
       case TrackerService.anilist:
@@ -119,6 +120,15 @@ class TrackerSession {
         createdAt: createdAt,
       ),
       TrackerService.simkl => TrackerSession(accessToken: json['access_token'] as String, createdAt: createdAt),
+      // MDBList issues a 30-day access token plus a refresh token; the scope
+      // is always `write`, its only offering.
+      TrackerService.mdblist => TrackerSession(
+        accessToken: json['access_token'] as String,
+        refreshToken: _requireRefreshToken(service, json['refresh_token'] as String?),
+        expiresAt: createdAt + (json['expires_in'] as num).toInt(),
+        scope: json['scope'] as String? ?? 'write',
+        createdAt: createdAt,
+      ),
       TrackerService.trakt => TrackerSession(
         accessToken: json['access_token'] as String,
         refreshToken: _requireRefreshToken(service, json['refresh_token'] as String?),

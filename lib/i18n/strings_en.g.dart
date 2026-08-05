@@ -5928,6 +5928,9 @@ class Translations$services$names$en {
 
 	/// en: 'Seerr'
 	String get seerr => 'Seerr';
+
+	/// en: 'MDBList'
+	String get mdblist => 'MDBList';
 }
 
 // Path: services.deviceCode
@@ -7721,6 +7724,7 @@ extension on Translations {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
+			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.body' => ({required Object url}) => 'Visit ${url} and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',

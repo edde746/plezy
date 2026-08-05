@@ -56,7 +56,7 @@ void main() {
         },
       );
 
-      expect(clients, hasLength(5));
+      expect(clients, hasLength(6));
       for (final client in clients) {
         expect(client.closeCount, 0);
       }
