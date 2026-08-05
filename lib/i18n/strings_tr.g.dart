@@ -881,6 +881,8 @@ class _Translations$profiles$tr extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Bağlantı yok — bu profili kullanmak için bir tane ekleyin.';
 	@override String get noConnections => 'Bağlantı yok';
 	@override String get plexHomeAccount => 'Plex Ev hesabı';
+	@override String plexAccountChip({required Object account}) => 'Plex hesabı: ${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} hesabı üzerinden ${user}';
 	@override String get connectionDefault => 'Varsayılan';
 	@override String connectionAs({required Object displayName}) => '${displayName} olarak';
 	@override String get makeDefault => 'Varsayılan yap';
@@ -2842,6 +2844,8 @@ extension on TranslationsTr {
 			'profiles.noConnectionsHint' => 'Bağlantı yok — bu profili kullanmak için bir tane ekleyin.',
 			'profiles.noConnections' => 'Bağlantı yok',
 			'profiles.plexHomeAccount' => 'Plex Ev hesabı',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex hesabı: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} hesabı üzerinden ${user}',
 			'profiles.connectionDefault' => 'Varsayılan',
 			'profiles.connectionAs' => ({required Object displayName}) => '${displayName} olarak',
 			'profiles.makeDefault' => 'Varsayılan yap',
@@ -3224,10 +3228,10 @@ extension on TranslationsTr {
 			'watchTogether.pasteFromClipboard' => 'Panodan yapıştır',
 			'watchTogether.pleaseEnterCode' => 'Lütfen bir oturum kodu girin',
 			'watchTogether.codeMustBe5Chars' => 'Oturum kodu 5 karakter olmalıdır',
-			'watchTogether.joinInstructions' => 'Katılmak için kurucunun oturum kodunu girin.',
-			'watchTogether.failedToCreate' => 'Oturum oluşturulamadı',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joinInstructions' => 'Katılmak için kurucunun oturum kodunu girin.',
+			'watchTogether.failedToCreate' => 'Oturum oluşturulamadı',
 			'watchTogether.failedToJoin' => 'Oturuma katılınamadı',
 			'watchTogether.sessionCodeCopied' => 'Oturum kodu panoya kopyalandı',
 			'watchTogether.relayUnreachable' => 'Aktarıcı sunucusuna ulaşılamıyor. İSS engellemesi Birlikte İzle\'yi önleyebilir.',

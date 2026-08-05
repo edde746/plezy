@@ -881,6 +881,8 @@ class _Translations$profiles$uz extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Ulanishlar yoʻq — ushbu profildan foydalanish uchun ulanish qoʻshing.';
 	@override String get noConnections => 'Ulanishlar yoʻq';
 	@override String get plexHomeAccount => 'Plex Home hisobi';
+	@override String plexAccountChip({required Object account}) => 'Plex hisobi: ${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} hisobi orqali ${user}';
 	@override String get connectionDefault => 'Standart';
 	@override String connectionAs({required Object displayName}) => '${displayName} sifatida';
 	@override String get makeDefault => 'Standart qilish';
@@ -2842,6 +2844,8 @@ extension on TranslationsUz {
 			'profiles.noConnectionsHint' => 'Ulanishlar yoʻq — ushbu profildan foydalanish uchun ulanish qoʻshing.',
 			'profiles.noConnections' => 'Ulanishlar yoʻq',
 			'profiles.plexHomeAccount' => 'Plex Home hisobi',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex hisobi: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} hisobi orqali ${user}',
 			'profiles.connectionDefault' => 'Standart',
 			'profiles.connectionAs' => ({required Object displayName}) => '${displayName} sifatida',
 			'profiles.makeDefault' => 'Standart qilish',
@@ -3224,10 +3228,10 @@ extension on TranslationsUz {
 			'watchTogether.pasteFromClipboard' => 'Xotiradan joylash',
 			'watchTogether.pleaseEnterCode' => 'Seans kodini kiriting',
 			'watchTogether.codeMustBe5Chars' => 'Seans kodi 5 ta belgidan iborat boʻlishi kerak',
-			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
-			'watchTogether.failedToCreate' => 'Seansni yaratib boʻlmadi',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
+			'watchTogether.failedToCreate' => 'Seansni yaratib boʻlmadi',
 			'watchTogether.failedToJoin' => 'Seansga qoʻshilib boʻlmadi',
 			'watchTogether.sessionCodeCopied' => 'Seans kodi nusxalandi',
 			'watchTogether.relayUnreachable' => 'Rele serveriga ulanib boʻlmadi.',

@@ -877,6 +877,8 @@ class _Translations$profiles$nl extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Geen verbindingen — voeg er één toe om dit profiel te gebruiken.';
 	@override String get noConnections => 'Geen verbindingen';
 	@override String get plexHomeAccount => 'Plex Home-account';
+	@override String plexAccountChip({required Object account}) => 'Plex-account: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} via ${account}';
 	@override String get connectionDefault => 'Standaard';
 	@override String connectionAs({required Object displayName}) => 'als ${displayName}';
 	@override String get makeDefault => 'Als standaard instellen';
@@ -2827,6 +2829,8 @@ extension on TranslationsNl {
 			'profiles.noConnectionsHint' => 'Geen verbindingen — voeg er één toe om dit profiel te gebruiken.',
 			'profiles.noConnections' => 'Geen verbindingen',
 			'profiles.plexHomeAccount' => 'Plex Home-account',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex-account: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Standaard',
 			'profiles.connectionAs' => ({required Object displayName}) => 'als ${displayName}',
 			'profiles.makeDefault' => 'Als standaard instellen',
@@ -3213,10 +3217,10 @@ extension on TranslationsNl {
 			'watchTogether.failedToJoin' => 'Deelnemen aan sessie mislukt',
 			'watchTogether.sessionCodeCopied' => 'Sessiecode naar het klembord gekopieerd',
 			'watchTogether.relayUnreachable' => 'De relayserver is onbereikbaar. Een blokkering door je internetprovider kan Samen kijken verhinderen.',
-			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
-			'watchTogether.currentPlayback' => 'Wat nu wordt afgespeeld',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Opnieuw verbinden met host...',
+			'watchTogether.currentPlayback' => 'Wat nu wordt afgespeeld',
 			'watchTogether.joinCurrentPlayback' => 'Deelnemen aan huidige weergave',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Ga terug naar wat de host nu kijkt',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Wat nu wordt afgespeeld kon niet worden geopend',

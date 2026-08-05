@@ -877,6 +877,8 @@ class _Translations$profiles$sv extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Inga anslutningar — lägg till en för att använda den här profilen.';
 	@override String get noConnections => 'Inga anslutningar';
 	@override String get plexHomeAccount => 'Plex Home-konto';
+	@override String plexAccountChip({required Object account}) => 'Plex-konto: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} via ${account}';
 	@override String get connectionDefault => 'Standard';
 	@override String connectionAs({required Object displayName}) => 'som ${displayName}';
 	@override String get makeDefault => 'Gör till standard';
@@ -2827,6 +2829,8 @@ extension on TranslationsSv {
 			'profiles.noConnectionsHint' => 'Inga anslutningar — lägg till en för att använda den här profilen.',
 			'profiles.noConnections' => 'Inga anslutningar',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex-konto: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.connectionAs' => ({required Object displayName}) => 'som ${displayName}',
 			'profiles.makeDefault' => 'Gör till standard',
@@ -3213,10 +3217,10 @@ extension on TranslationsSv {
 			'watchTogether.failedToJoin' => 'Det gick inte att gå med i sessionen',
 			'watchTogether.sessionCodeCopied' => 'Sessionskoden har kopierats till urklipp',
 			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Din internetleverantör kan blockera Titta tillsammans.',
-			'watchTogether.reconnectingToHost' => 'Återansluter till värden...',
-			'watchTogether.currentPlayback' => 'Aktuell uppspelning',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Återansluter till värden...',
+			'watchTogether.currentPlayback' => 'Aktuell uppspelning',
 			'watchTogether.joinCurrentPlayback' => 'Gå med i aktuell uppspelning',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hoppa tillbaka till det värden tittar på just nu',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunde inte öppna aktuell uppspelning',

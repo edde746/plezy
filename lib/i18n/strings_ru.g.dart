@@ -879,6 +879,8 @@ class _Translations$profiles$ru extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Нет соединений — добавьте одно, чтобы использовать этот профиль.';
 	@override String get noConnections => 'Нет соединений';
 	@override String get plexHomeAccount => 'Аккаунт Plex Home';
+	@override String plexAccountChip({required Object account}) => 'Аккаунт Plex: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} через ${account}';
 	@override String get connectionDefault => 'По умолчанию';
 	@override String connectionAs({required Object displayName}) => 'как ${displayName}';
 	@override String get makeDefault => 'Сделать по умолчанию';
@@ -2833,6 +2835,8 @@ extension on TranslationsRu {
 			'profiles.noConnectionsHint' => 'Нет соединений — добавьте одно, чтобы использовать этот профиль.',
 			'profiles.noConnections' => 'Нет соединений',
 			'profiles.plexHomeAccount' => 'Аккаунт Plex Home',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Аккаунт Plex: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} через ${account}',
 			'profiles.connectionDefault' => 'По умолчанию',
 			'profiles.connectionAs' => ({required Object displayName}) => 'как ${displayName}',
 			'profiles.makeDefault' => 'Сделать по умолчанию',
@@ -3219,10 +3223,10 @@ extension on TranslationsRu {
 			'watchTogether.failedToJoin' => 'Не удалось присоединиться к сессии',
 			'watchTogether.sessionCodeCopied' => 'Код сессии скопирован в буфер обмена',
 			'watchTogether.relayUnreachable' => 'Сервер ретрансляции недоступен. Блокировка интернет-провайдером может помешать совместному просмотру.',
-			'watchTogether.reconnectingToHost' => 'Повторное подключение к организатору...',
-			'watchTogether.currentPlayback' => 'Текущее воспроизведение',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Повторное подключение к организатору...',
+			'watchTogether.currentPlayback' => 'Текущее воспроизведение',
 			'watchTogether.joinCurrentPlayback' => 'Присоединиться к текущему воспроизведению',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Вернуться к материалу, который сейчас смотрит организатор',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Не удалось открыть текущее воспроизведение',

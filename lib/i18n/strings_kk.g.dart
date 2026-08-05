@@ -881,6 +881,8 @@ class _Translations$profiles$kk extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Қосылымдар жоқ — бұл профильді пайдалану үшін қосылым қосыңыз.';
 	@override String get noConnections => 'Қосылымдар жоқ';
 	@override String get plexHomeAccount => 'Plex Home тіркелгісі';
+	@override String plexAccountChip({required Object account}) => 'Plex тіркелгісі: ${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} арқылы ${user}';
 	@override String get connectionDefault => 'Әдепкі';
 	@override String connectionAs({required Object displayName}) => '${displayName} ретінде';
 	@override String get makeDefault => 'Әдепкі ету';
@@ -2842,6 +2844,8 @@ extension on TranslationsKk {
 			'profiles.noConnectionsHint' => 'Қосылымдар жоқ — бұл профильді пайдалану үшін қосылым қосыңыз.',
 			'profiles.noConnections' => 'Қосылымдар жоқ',
 			'profiles.plexHomeAccount' => 'Plex Home тіркелгісі',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex тіркелгісі: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} арқылы ${user}',
 			'profiles.connectionDefault' => 'Әдепкі',
 			'profiles.connectionAs' => ({required Object displayName}) => '${displayName} ретінде',
 			'profiles.makeDefault' => 'Әдепкі ету',
@@ -3224,10 +3228,10 @@ extension on TranslationsKk {
 			'watchTogether.pasteFromClipboard' => 'Алмасу буферінен қою',
 			'watchTogether.pleaseEnterCode' => 'Сеанс кодын енгізіңіз',
 			'watchTogether.codeMustBe5Chars' => 'Сеанс коды 5 таңбадан тұруы керек',
-			'watchTogether.joinInstructions' => 'Ұйымдастырушының сеанс кодын енгізіңіз.',
-			'watchTogether.failedToCreate' => 'Сеансты жасау мүмкін болмады',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joinInstructions' => 'Ұйымдастырушының сеанс кодын енгізіңіз.',
+			'watchTogether.failedToCreate' => 'Сеансты жасау мүмкін болмады',
 			'watchTogether.failedToJoin' => 'Сеансқа қосылу мүмкін болмады',
 			'watchTogether.sessionCodeCopied' => 'Сеанс коды көшірілді',
 			'watchTogether.relayUnreachable' => 'Реле сервері қолжетімсіз.',

@@ -876,6 +876,8 @@ class Translations$profiles$zh extends Translations$profiles$en {
 	@override String get noConnectionsHint => '没有连接 — 请添加连接以使用此用户资料。';
 	@override String get noConnections => '没有连接';
 	@override String get plexHomeAccount => 'Plex Home 账户';
+	@override String plexAccountChip({required Object account}) => 'Plex 账户：${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} 账户下的 ${user}';
 	@override String get connectionDefault => '默认';
 	@override String connectionAs({required Object displayName}) => '以 ${displayName} 身份';
 	@override String get makeDefault => '设为默认';
@@ -2824,6 +2826,8 @@ extension on TranslationsZh {
 			'profiles.noConnectionsHint' => '没有连接 — 请添加连接以使用此用户资料。',
 			'profiles.noConnections' => '没有连接',
 			'profiles.plexHomeAccount' => 'Plex Home 账户',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex 账户：${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} 账户下的 ${user}',
 			'profiles.connectionDefault' => '默认',
 			'profiles.connectionAs' => ({required Object displayName}) => '以 ${displayName} 身份',
 			'profiles.makeDefault' => '设为默认',
@@ -3210,10 +3214,10 @@ extension on TranslationsZh {
 			'watchTogether.failedToJoin' => '加入会话失败',
 			'watchTogether.sessionCodeCopied' => '会话代码已复制到剪贴板',
 			'watchTogether.relayUnreachable' => '无法访问中继服务器。网络运营商的屏蔽可能导致“一起看”不可用。',
-			'watchTogether.reconnectingToHost' => '正在重新连接到主持人…',
-			'watchTogether.currentPlayback' => '当前播放',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => '正在重新连接到主持人…',
+			'watchTogether.currentPlayback' => '当前播放',
 			'watchTogether.joinCurrentPlayback' => '加入当前播放',
 			'watchTogether.joinCurrentPlaybackDescription' => '加入主持人当前正在观看的内容',
 			'watchTogether.failedToOpenCurrentPlayback' => '无法打开当前播放',

@@ -29,11 +29,18 @@ class ProfilesView {
   /// Picture URL per profile id; null means render initials. See [resolveProfileAvatarUrls].
   final Map<String, String?> avatarUrlByProfile;
 
+  /// Live Plex Home users per account connection id. Chip/label UI needs it
+  /// to turn a [ProfileConnection.userIdentifier] uuid into the Home user's
+  /// name; without it a borrowed Plex connection can only name the account
+  /// owner, which reads as the wrong identity.
+  final Map<String, List<PlexHomeUser>> plexHomeByConnectionId;
+
   const ProfilesView({
     required this.profiles,
     required this.connectionsByProfile,
     required this.connectionsById,
     required this.avatarUrlByProfile,
+    required this.plexHomeByConnectionId,
   });
 
   static const empty = ProfilesView(
@@ -41,6 +48,7 @@ class ProfilesView {
     connectionsByProfile: {},
     connectionsById: {},
     avatarUrlByProfile: {},
+    plexHomeByConnectionId: {},
   );
 }
 
@@ -108,6 +116,7 @@ ProfilesView _build({
       connectionsById: connectionsById,
       plexHomeByConnectionId: homes,
     ),
+    plexHomeByConnectionId: homes,
   );
 }
 

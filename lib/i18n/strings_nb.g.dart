@@ -877,6 +877,8 @@ class _Translations$profiles$nb extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.';
 	@override String get noConnections => 'Ingen tilkoblinger';
 	@override String get plexHomeAccount => 'Plex Home-konto';
+	@override String plexAccountChip({required Object account}) => 'Plex-konto: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} via ${account}';
 	@override String get connectionDefault => 'Standard';
 	@override String connectionAs({required Object displayName}) => 'som ${displayName}';
 	@override String get makeDefault => 'Gjør til standard';
@@ -2827,6 +2829,8 @@ extension on TranslationsNb {
 			'profiles.noConnectionsHint' => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.',
 			'profiles.noConnections' => 'Ingen tilkoblinger',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex-konto: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.connectionAs' => ({required Object displayName}) => 'som ${displayName}',
 			'profiles.makeDefault' => 'Gjør til standard',
@@ -3213,10 +3217,10 @@ extension on TranslationsNb {
 			'watchTogether.failedToJoin' => 'Kunne ikke bli med i økt',
 			'watchTogether.sessionCodeCopied' => 'Øktkode kopiert til utklippstavle',
 			'watchTogether.relayUnreachable' => 'Reléserveren kan ikke nås. Blokkering hos internettleverandøren kan hindre Se sammen.',
-			'watchTogether.reconnectingToHost' => 'Kobler til verten på nytt...',
-			'watchTogether.currentPlayback' => 'Gjeldende avspilling',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Kobler til verten på nytt...',
+			'watchTogether.currentPlayback' => 'Gjeldende avspilling',
 			'watchTogether.joinCurrentPlayback' => 'Bli med i gjeldende avspilling',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hopp tilbake til det verten ser på nå',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunne ikke åpne gjeldende avspilling',

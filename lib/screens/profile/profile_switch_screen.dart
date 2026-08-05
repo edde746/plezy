@@ -327,21 +327,14 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   List<_ChipData> _chipsFor(Profile profile, ProfilesView view) {
     final chips = <_ChipData>[];
     // Plex Home profiles implicitly own their parent Plex connection (no
-    // join-table row), so prepend it before any borrowed connections.
+    // join-table row), so prepend it before any borrowed connections. The
+    // profile *is* the Home user there, so its own name identifies the user
+    // half of the label.
     if (profile.isPlexHome) {
       final parentId = profile.parentConnectionId;
       if (parentId != null) {
         final conn = view.connectionsById[parentId];
-        if (conn != null) {
-          chips.add(
-            _ChipData(
-              backend: conn.backend,
-              label: conn is PlexAccountConnection
-                  ? t.profiles.viaPlexAccount(name: conn.accountLabel)
-                  : conn.displayLabel,
-            ),
-          );
-        }
+        if (conn != null) chips.add(_chipFor(conn, user: profile.displayName));
       }
     }
     final pcs = visibleProfileConnections(
@@ -350,9 +343,45 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     );
     for (final pc in pcs) {
       final conn = view.connectionsById[pc.connectionId];
-      if (conn != null) chips.add(_ChipData(backend: conn.backend, label: conn.displayLabel));
+      if (conn != null) chips.add(_chipFor(conn, user: _plexHomeUserName(view, conn, pc.userIdentifier)));
     }
     return chips;
+  }
+
+  /// A Plex account connection labels itself with the account owner's name,
+  /// which under a profile tile reads as the profile being signed in as that
+  /// person — wrong for a Plex Home user, and wrong again for a local profile
+  /// that borrowed a Home user out of someone else's account.
+  ///
+  /// Both halves of that relation go through a single translated string so a
+  /// locale can order them itself; several put the account first (`ja`, `ko`,
+  /// `tr`, `zh`). [user] is null only when the Home cache cannot resolve the
+  /// connection's uuid yet, which falls back to naming the account alone.
+  _ChipData _chipFor(Connection conn, {required String? user}) {
+    return _ChipData(
+      backend: conn.backend,
+      label: switch (conn) {
+        PlexAccountConnection(:final accountLabel) when user != null => t.profiles.plexAccountUserChip(
+          user: user,
+          account: accountLabel,
+        ),
+        PlexAccountConnection(:final accountLabel) => t.profiles.plexAccountChip(account: accountLabel),
+        _ => conn.displayLabel,
+      },
+    );
+  }
+
+  /// Home user behind a borrowed Plex connection, or null when the live cache
+  /// has no match for [userIdentifier] (not loaded yet, or the row predates
+  /// the account's current Home membership).
+  String? _plexHomeUserName(ProfilesView view, Connection conn, String userIdentifier) {
+    if (conn is! PlexAccountConnection || userIdentifier.isEmpty) return null;
+    final users = view.plexHomeByConnectionId[conn.id];
+    if (users == null) return null;
+    for (final user in users) {
+      if (user.uuid == userIdentifier) return user.displayName;
+    }
+    return null;
   }
 
   Future<void> _addLocalProfile() async {
@@ -566,7 +595,12 @@ class _ConnectionChips extends StatelessWidget {
               children: [
                 BackendBadge(backend: c.backend, size: 12),
                 const SizedBox(width: 4),
-                Text(c.label, style: theme.textTheme.labelSmall),
+                // Account labels are often an email address, and a chip in a
+                // Wrap gets unbounded main-axis space — without this the row
+                // overflows the tile instead of ellipsizing.
+                Flexible(
+                  child: Text(c.label, style: theme.textTheme.labelSmall, overflow: .ellipsis),
+                ),
               ],
             ),
           ),

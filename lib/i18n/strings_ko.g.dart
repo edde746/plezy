@@ -876,6 +876,8 @@ class _Translations$profiles$ko extends Translations$profiles$en {
 	@override String get noConnectionsHint => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.';
 	@override String get noConnections => '연결 없음';
 	@override String get plexHomeAccount => 'Plex Home 계정';
+	@override String plexAccountChip({required Object account}) => 'Plex 계정: ${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} 계정의 ${user}';
 	@override String get connectionDefault => '기본값';
 	@override String connectionAs({required Object displayName}) => '${displayName}(으)로';
 	@override String get makeDefault => '기본값으로 설정';
@@ -2824,6 +2826,8 @@ extension on TranslationsKo {
 			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
 			'profiles.noConnections' => '연결 없음',
 			'profiles.plexHomeAccount' => 'Plex Home 계정',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex 계정: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} 계정의 ${user}',
 			'profiles.connectionDefault' => '기본값',
 			'profiles.connectionAs' => ({required Object displayName}) => '${displayName}(으)로',
 			'profiles.makeDefault' => '기본값으로 설정',
@@ -3210,10 +3214,10 @@ extension on TranslationsKo {
 			'watchTogether.failedToJoin' => '세션 참여 실패',
 			'watchTogether.sessionCodeCopied' => '세션 코드가 클립보드에 복사되었습니다',
 			'watchTogether.relayUnreachable' => '릴레이 서버에 연결할 수 없습니다. ISP 차단으로 함께 보기를 사용하지 못할 수 있습니다.',
-			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
-			'watchTogether.currentPlayback' => '현재 재생',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => '호스트에 재연결 중...',
+			'watchTogether.currentPlayback' => '현재 재생',
 			'watchTogether.joinCurrentPlayback' => '현재 재생 참여',
 			'watchTogether.joinCurrentPlaybackDescription' => '호스트가 현재 시청 중인 콘텐츠로 이동합니다',
 			'watchTogether.failedToOpenCurrentPlayback' => '현재 재생을 열 수 없습니다',

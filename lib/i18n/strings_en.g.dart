@@ -2296,9 +2296,6 @@ class Translations$profiles$en {
 	/// en: 'Active'
 	String get active => 'Active';
 
-	/// en: 'via ${name}'
-	String viaPlexAccount({required Object name}) => 'via ${name}';
-
 	/// en: 'Manage'
 	String get manage => 'Manage';
 
@@ -2391,6 +2388,12 @@ class Translations$profiles$en {
 
 	/// en: 'Plex Home account'
 	String get plexHomeAccount => 'Plex Home account';
+
+	/// en: 'Plex account: ${account}'
+	String plexAccountChip({required Object account}) => 'Plex account: ${account}';
+
+	/// en: '${user} via ${account}'
+	String plexAccountUserChip({required Object user, required Object account}) => '${user} via ${account}';
 
 	/// en: 'Default'
 	String get connectionDefault => 'Default';
@@ -6757,7 +6760,6 @@ extension on Translations {
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
-			'profiles.viaPlexAccount' => ({required Object name}) => 'via ${name}',
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
@@ -6789,6 +6791,8 @@ extension on Translations {
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
 			'profiles.plexHomeAccount' => 'Plex Home account',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Default',
 			'profiles.connectionAs' => ({required Object displayName}) => 'as ${displayName}',
 			'profiles.makeDefault' => 'Make default',
@@ -7065,9 +7069,9 @@ extension on Translations {
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
-			'explore.season.winter' => 'Winter',
 			_ => null,
 		} ?? switch (path) {
+			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
 			'explore.season.fall' => 'Fall',
@@ -7579,9 +7583,9 @@ extension on Translations {
 			'externalPlayer.playerCommand' => 'Command',
 			'externalPlayer.playerPackage' => 'Package Name',
 			'externalPlayer.playerUrlScheme' => 'URL Scheme',
-			'externalPlayer.off' => 'Off',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.off' => 'Off',
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',

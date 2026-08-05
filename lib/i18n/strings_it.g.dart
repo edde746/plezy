@@ -877,6 +877,8 @@ class _Translations$profiles$it extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Nessuna connessione — aggiungine una per usare questo profilo.';
 	@override String get noConnections => 'Nessuna connessione';
 	@override String get plexHomeAccount => 'Account Plex Home';
+	@override String plexAccountChip({required Object account}) => 'Account Plex: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} tramite ${account}';
 	@override String get connectionDefault => 'Predefinita';
 	@override String connectionAs({required Object displayName}) => 'come ${displayName}';
 	@override String get makeDefault => 'Imposta come predefinita';
@@ -2827,6 +2829,8 @@ extension on TranslationsIt {
 			'profiles.noConnectionsHint' => 'Nessuna connessione — aggiungine una per usare questo profilo.',
 			'profiles.noConnections' => 'Nessuna connessione',
 			'profiles.plexHomeAccount' => 'Account Plex Home',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Account Plex: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} tramite ${account}',
 			'profiles.connectionDefault' => 'Predefinita',
 			'profiles.connectionAs' => ({required Object displayName}) => 'come ${displayName}',
 			'profiles.makeDefault' => 'Imposta come predefinita',
@@ -3213,10 +3217,10 @@ extension on TranslationsIt {
 			'watchTogether.failedToJoin' => 'Impossibile unirsi alla sessione',
 			'watchTogether.sessionCodeCopied' => 'Codice della sessione copiato negli appunti',
 			'watchTogether.relayUnreachable' => 'Il server relay non è raggiungibile. Eventuali blocchi dell\'ISP potrebbero impedire l\'uso di Guarda insieme.',
-			'watchTogether.reconnectingToHost' => 'Riconnessione all\'host...',
-			'watchTogether.currentPlayback' => 'Riproduzione corrente',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Riconnessione all\'host...',
+			'watchTogether.currentPlayback' => 'Riproduzione corrente',
 			'watchTogether.joinCurrentPlayback' => 'Unisciti alla riproduzione corrente',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Torna a ciò che l\'host sta guardando in questo momento',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Impossibile aprire la riproduzione corrente',

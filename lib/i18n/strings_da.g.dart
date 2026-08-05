@@ -877,6 +877,8 @@ class _Translations$profiles$da extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Ingen forbindelser — tilføj en for at bruge denne profil.';
 	@override String get noConnections => 'Ingen forbindelser';
 	@override String get plexHomeAccount => 'Plex Home-konto';
+	@override String plexAccountChip({required Object account}) => 'Plex-konto: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} via ${account}';
 	@override String get connectionDefault => 'Standard';
 	@override String connectionAs({required Object displayName}) => 'som ${displayName}';
 	@override String get makeDefault => 'Gør til standard';
@@ -2827,6 +2829,8 @@ extension on TranslationsDa {
 			'profiles.noConnectionsHint' => 'Ingen forbindelser — tilføj en for at bruge denne profil.',
 			'profiles.noConnections' => 'Ingen forbindelser',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex-konto: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.connectionAs' => ({required Object displayName}) => 'som ${displayName}',
 			'profiles.makeDefault' => 'Gør til standard',
@@ -3213,10 +3217,10 @@ extension on TranslationsDa {
 			'watchTogether.failedToJoin' => 'Kunne ikke deltage i session',
 			'watchTogether.sessionCodeCopied' => 'Sessionskode kopieret til udklipsholder',
 			'watchTogether.relayUnreachable' => 'Relayserveren kan ikke nås. Blokering hos internetudbyderen kan forhindre Se sammen.',
-			'watchTogether.reconnectingToHost' => 'Genopretter forbindelse til vært...',
-			'watchTogether.currentPlayback' => 'Nuværende afspilning',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Genopretter forbindelse til vært...',
+			'watchTogether.currentPlayback' => 'Nuværende afspilning',
 			'watchTogether.joinCurrentPlayback' => 'Deltag i nuværende afspilning',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hop tilbage til det værten ser nu',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunne ikke åbne nuværende afspilning',

@@ -877,6 +877,8 @@ class _Translations$profiles$zh_Hant extends Translations$profiles$zh {
 	@override String get noConnectionsHint => '無連線 — 請新增一個連線以啟用此設定檔。';
 	@override String get noConnections => '無連線資訊';
 	@override String get plexHomeAccount => 'Plex Home 帳戶';
+	@override String plexAccountChip({required Object account}) => 'Plex 帳戶：${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} 帳戶下的 ${user}';
 	@override String get connectionDefault => '預設';
 	@override String connectionAs({required Object displayName}) => '以 ${displayName} 身分';
 	@override String get makeDefault => '設為預設值';
@@ -2825,6 +2827,8 @@ extension on TranslationsZhHant {
 			'profiles.noConnectionsHint' => '無連線 — 請新增一個連線以啟用此設定檔。',
 			'profiles.noConnections' => '無連線資訊',
 			'profiles.plexHomeAccount' => 'Plex Home 帳戶',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex 帳戶：${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} 帳戶下的 ${user}',
 			'profiles.connectionDefault' => '預設',
 			'profiles.connectionAs' => ({required Object displayName}) => '以 ${displayName} 身分',
 			'profiles.makeDefault' => '設為預設值',
@@ -3211,10 +3215,10 @@ extension on TranslationsZhHant {
 			'watchTogether.failedToJoin' => '加入工作階段失敗',
 			'watchTogether.sessionCodeCopied' => '工作階段代碼已複製到剪貼簿',
 			'watchTogether.relayUnreachable' => '無法連線至中繼伺服器。ISP 封鎖可能會導致「一起看」無法使用。',
-			'watchTogether.reconnectingToHost' => '正在重新連線至主持人…',
-			'watchTogether.currentPlayback' => '目前播放內容',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => '正在重新連線至主持人…',
+			'watchTogether.currentPlayback' => '目前播放內容',
 			'watchTogether.joinCurrentPlayback' => '加入目前播放點',
 			'watchTogether.joinCurrentPlaybackDescription' => '同步至主持人目前的觀看進度',
 			'watchTogether.failedToOpenCurrentPlayback' => '無法開啟目前播放點',

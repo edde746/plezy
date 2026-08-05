@@ -879,6 +879,8 @@ class _Translations$profiles$pl extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Brak połączeń — dodaj jedno, aby używać tego profilu.';
 	@override String get noConnections => 'Brak połączeń';
 	@override String get plexHomeAccount => 'Konto Plex Home';
+	@override String plexAccountChip({required Object account}) => 'Konto Plex: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} przez ${account}';
 	@override String get connectionDefault => 'Domyślne';
 	@override String connectionAs({required Object displayName}) => 'jako ${displayName}';
 	@override String get makeDefault => 'Ustaw jako domyślne';
@@ -2833,6 +2835,8 @@ extension on TranslationsPl {
 			'profiles.noConnectionsHint' => 'Brak połączeń — dodaj jedno, aby używać tego profilu.',
 			'profiles.noConnections' => 'Brak połączeń',
 			'profiles.plexHomeAccount' => 'Konto Plex Home',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Konto Plex: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} przez ${account}',
 			'profiles.connectionDefault' => 'Domyślne',
 			'profiles.connectionAs' => ({required Object displayName}) => 'jako ${displayName}',
 			'profiles.makeDefault' => 'Ustaw jako domyślne',
@@ -3219,10 +3223,10 @@ extension on TranslationsPl {
 			'watchTogether.failedToJoin' => 'Nie udało się dołączyć do sesji',
 			'watchTogether.sessionCodeCopied' => 'Kod sesji skopiowany do schowka',
 			'watchTogether.relayUnreachable' => 'Serwer pośredniczący jest nieosiągalny. Blokada operatora internetowego może uniemożliwiać korzystanie z funkcji „Oglądaj razem”.',
-			'watchTogether.reconnectingToHost' => 'Ponowne łączenie z gospodarzem...',
-			'watchTogether.currentPlayback' => 'Bieżące odtwarzanie',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Ponowne łączenie z gospodarzem...',
+			'watchTogether.currentPlayback' => 'Bieżące odtwarzanie',
 			'watchTogether.joinCurrentPlayback' => 'Dołącz do bieżącego odtwarzania',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Wróć do treści oglądanej obecnie przez gospodarza',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Nie udało się otworzyć bieżącego odtwarzania',

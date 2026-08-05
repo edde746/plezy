@@ -877,6 +877,8 @@ class _Translations$profiles$bg extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Няма връзки — добавете такава, за да използвате този профил.';
 	@override String get noConnections => 'Няма връзки';
 	@override String get plexHomeAccount => 'Plex Home акаунт';
+	@override String plexAccountChip({required Object account}) => 'Plex акаунт: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} през ${account}';
 	@override String get connectionDefault => 'По подразбиране';
 	@override String connectionAs({required Object displayName}) => 'като ${displayName}';
 	@override String get makeDefault => 'Направи по подразбиране';
@@ -2827,6 +2829,8 @@ extension on TranslationsBg {
 			'profiles.noConnectionsHint' => 'Няма връзки — добавете такава, за да използвате този профил.',
 			'profiles.noConnections' => 'Няма връзки',
 			'profiles.plexHomeAccount' => 'Plex Home акаунт',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex акаунт: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} през ${account}',
 			'profiles.connectionDefault' => 'По подразбиране',
 			'profiles.connectionAs' => ({required Object displayName}) => 'като ${displayName}',
 			'profiles.makeDefault' => 'Направи по подразбиране',
@@ -3213,10 +3217,10 @@ extension on TranslationsBg {
 			'watchTogether.failedToJoin' => 'Неуспешно присъединяване към сесия',
 			'watchTogether.sessionCodeCopied' => 'Кодът на сесията е копиран в клипборда',
 			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
-			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
-			'watchTogether.currentPlayback' => 'Текущо възпроизвеждане',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
+			'watchTogether.currentPlayback' => 'Текущо възпроизвеждане',
 			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Неуспешно отваряне на текущото възпроизвеждане',

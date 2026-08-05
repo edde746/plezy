@@ -881,6 +881,8 @@ class _Translations$profiles$az extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Qoşulma yoxdur — bu profili istifadə etmək üçün birini əlavə edin.';
 	@override String get noConnections => 'Qoşulma yoxdur';
 	@override String get plexHomeAccount => 'Plex Ev hesabı';
+	@override String plexAccountChip({required Object account}) => 'Plex hesabı: ${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} hesabı vasitəsilə ${user}';
 	@override String get connectionDefault => 'Defolt';
 	@override String connectionAs({required Object displayName}) => '${displayName} olaraq';
 	@override String get makeDefault => 'Defolt et';
@@ -2842,6 +2844,8 @@ extension on TranslationsAz {
 			'profiles.noConnectionsHint' => 'Qoşulma yoxdur — bu profili istifadə etmək üçün birini əlavə edin.',
 			'profiles.noConnections' => 'Qoşulma yoxdur',
 			'profiles.plexHomeAccount' => 'Plex Ev hesabı',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex hesabı: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} hesabı vasitəsilə ${user}',
 			'profiles.connectionDefault' => 'Defolt',
 			'profiles.connectionAs' => ({required Object displayName}) => '${displayName} olaraq',
 			'profiles.makeDefault' => 'Defolt et',
@@ -3224,10 +3228,10 @@ extension on TranslationsAz {
 			'watchTogether.pasteFromClipboard' => 'Buferdən yapışdır',
 			'watchTogether.pleaseEnterCode' => 'Lütfən seans kodunu daxil edin',
 			'watchTogether.codeMustBe5Chars' => 'Seans kodu 5 simvol olmalıdır',
-			'watchTogether.joinInstructions' => 'Qoşulmaq üçün təşkilatçının seans kodunu daxil edin.',
-			'watchTogether.failedToCreate' => 'Seans yaradıla bilmədi',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.joinInstructions' => 'Qoşulmaq üçün təşkilatçının seans kodunu daxil edin.',
+			'watchTogether.failedToCreate' => 'Seans yaradıla bilmədi',
 			'watchTogether.failedToJoin' => 'Seansa qoşuluna bilmədi',
 			'watchTogether.sessionCodeCopied' => 'Seans kodu buferə kopyalandı',
 			'watchTogether.relayUnreachable' => 'Rele serverinə çatmaq olmur. İnternet provayderinin bloklaması Birlikdə İzləməyə mane ola bilər.',

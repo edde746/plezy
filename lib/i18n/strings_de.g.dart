@@ -877,6 +877,8 @@ class _Translations$profiles$de extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Keine Verbindungen — füge eine hinzu, um dieses Profil zu nutzen.';
 	@override String get noConnections => 'Keine Verbindungen';
 	@override String get plexHomeAccount => 'Plex Home-Konto';
+	@override String plexAccountChip({required Object account}) => 'Plex-Konto: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} über ${account}';
 	@override String get connectionDefault => 'Standard';
 	@override String connectionAs({required Object displayName}) => 'als ${displayName}';
 	@override String get makeDefault => 'Als Standard festlegen';
@@ -2827,6 +2829,8 @@ extension on TranslationsDe {
 			'profiles.noConnectionsHint' => 'Keine Verbindungen — füge eine hinzu, um dieses Profil zu nutzen.',
 			'profiles.noConnections' => 'Keine Verbindungen',
 			'profiles.plexHomeAccount' => 'Plex Home-Konto',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex-Konto: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} über ${account}',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.connectionAs' => ({required Object displayName}) => 'als ${displayName}',
 			'profiles.makeDefault' => 'Als Standard festlegen',
@@ -3213,10 +3217,10 @@ extension on TranslationsDe {
 			'watchTogether.failedToJoin' => 'Beitritt zur Sitzung fehlgeschlagen',
 			'watchTogether.sessionCodeCopied' => 'Sitzungscode in Zwischenablage kopiert',
 			'watchTogether.relayUnreachable' => 'Relay-Server nicht erreichbar. Eine Sperre durch den Internetanbieter kann gemeinsames Schauen verhindern.',
-			'watchTogether.reconnectingToHost' => 'Verbindung zum Host wird wiederhergestellt …',
-			'watchTogether.currentPlayback' => 'Aktuelle Wiedergabe',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Verbindung zum Host wird wiederhergestellt …',
+			'watchTogether.currentPlayback' => 'Aktuelle Wiedergabe',
 			'watchTogether.joinCurrentPlayback' => 'Aktueller Wiedergabe beitreten',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Zu dem Inhalt wechseln, den der Host gerade ansieht',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Aktuelle Wiedergabe konnte nicht geöffnet werden',

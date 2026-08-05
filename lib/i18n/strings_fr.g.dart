@@ -877,6 +877,8 @@ class _Translations$profiles$fr extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Aucune connexion — ajoutez-en une pour utiliser ce profil.';
 	@override String get noConnections => 'Aucune connexion';
 	@override String get plexHomeAccount => 'Compte Plex Home';
+	@override String plexAccountChip({required Object account}) => 'Compte Plex : ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} via ${account}';
 	@override String get connectionDefault => 'Par défaut';
 	@override String connectionAs({required Object displayName}) => 'en tant que ${displayName}';
 	@override String get makeDefault => 'Définir par défaut';
@@ -2827,6 +2829,8 @@ extension on TranslationsFr {
 			'profiles.noConnectionsHint' => 'Aucune connexion — ajoutez-en une pour utiliser ce profil.',
 			'profiles.noConnections' => 'Aucune connexion',
 			'profiles.plexHomeAccount' => 'Compte Plex Home',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Compte Plex : ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Par défaut',
 			'profiles.connectionAs' => ({required Object displayName}) => 'en tant que ${displayName}',
 			'profiles.makeDefault' => 'Définir par défaut',
@@ -3213,10 +3217,10 @@ extension on TranslationsFr {
 			'watchTogether.failedToJoin' => 'Échec de la connexion à la session',
 			'watchTogether.sessionCodeCopied' => 'Code de session copié dans le presse-papiers',
 			'watchTogether.relayUnreachable' => 'Serveur relais inaccessible. Un blocage par le fournisseur d’accès peut empêcher le fonctionnement de Regarder ensemble.',
-			'watchTogether.reconnectingToHost' => 'Reconnexion à l\'hôte...',
-			'watchTogether.currentPlayback' => 'Lecture en cours',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Reconnexion à l\'hôte...',
+			'watchTogether.currentPlayback' => 'Lecture en cours',
 			'watchTogether.joinCurrentPlayback' => 'Rejoindre la lecture en cours',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Reprendre le contenu que l’hôte regarde actuellement',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Impossible d\'ouvrir la lecture en cours',

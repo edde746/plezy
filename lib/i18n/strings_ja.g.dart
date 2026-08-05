@@ -876,6 +876,8 @@ class _Translations$profiles$ja extends Translations$profiles$en {
 	@override String get noConnectionsHint => '接続がありません — このプロフィールを使うには接続を追加してください。';
 	@override String get noConnections => '接続がありません';
 	@override String get plexHomeAccount => 'Plex Homeアカウント';
+	@override String plexAccountChip({required Object account}) => 'Plexアカウント: ${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account}経由の${user}';
 	@override String get connectionDefault => 'デフォルト';
 	@override String connectionAs({required Object displayName}) => '${displayName}として';
 	@override String get makeDefault => 'デフォルトに設定';
@@ -2824,6 +2826,8 @@ extension on TranslationsJa {
 			'profiles.noConnectionsHint' => '接続がありません — このプロフィールを使うには接続を追加してください。',
 			'profiles.noConnections' => '接続がありません',
 			'profiles.plexHomeAccount' => 'Plex Homeアカウント',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plexアカウント: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account}経由の${user}',
 			'profiles.connectionDefault' => 'デフォルト',
 			'profiles.connectionAs' => ({required Object displayName}) => '${displayName}として',
 			'profiles.makeDefault' => 'デフォルトに設定',
@@ -3210,10 +3214,10 @@ extension on TranslationsJa {
 			'watchTogether.failedToJoin' => 'セッションへの参加に失敗しました',
 			'watchTogether.sessionCodeCopied' => 'セッションコードをクリップボードにコピーしました',
 			'watchTogether.relayUnreachable' => 'リレーサーバーに接続できません。ISPによるブロックのため「一緒に見る」を利用できない可能性があります。',
-			'watchTogether.reconnectingToHost' => 'ホストに再接続中…',
-			'watchTogether.currentPlayback' => '現在の再生',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'ホストに再接続中…',
+			'watchTogether.currentPlayback' => '現在の再生',
 			'watchTogether.joinCurrentPlayback' => '現在の再生に参加',
 			'watchTogether.joinCurrentPlaybackDescription' => 'ホストが現在視聴中のコンテンツに戻る',
 			'watchTogether.failedToOpenCurrentPlayback' => '現在の再生を開けませんでした',

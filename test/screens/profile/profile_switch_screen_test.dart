@@ -10,6 +10,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focusable_wrapper.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
@@ -369,70 +370,211 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('labels a Plex Home parent connection as an account, not as the profile', (tester) async {
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    final profile = Profile.plexHome(
-      id: 'home-alice',
-      displayName: 'Alice',
-      parentConnectionId: 'plex-account',
-      plexHomeUserUuid: 'alice-uuid',
-      createdAt: DateTime(2026, 1, 1),
-    );
-    final profiles = _FakeProfileRegistry(db, [profile]);
-    final connections = _FakeConnectionRegistry(db, [
-      PlexAccountConnection(
-        id: 'plex-account',
-        accountToken: 'token',
-        clientIdentifier: 'client',
-        accountLabel: 'Bob',
-        createdAt: DateTime(2026, 1, 1),
-      ),
-    ]);
-    final profileConnections = _FakeProfileConnectionRegistry(db);
-    final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
-      connections: connections,
-      profileConnections: profileConnections,
-      storage: storage,
-      plexHomeUserFetcher: (_) async => const [],
-    );
-    final activeProfile = ActiveProfileProvider(
-      registry: profiles,
-      plexHome: plexHome,
-      connections: connections,
-      profileConnections: profileConnections,
-      storage: storage,
-    );
-    addTearDown(() async {
-      activeProfile.dispose();
-      await plexHome.dispose();
-      await db.close();
-    });
-
-    await tester.pumpWidget(
-      TranslationProvider(
-        child: MultiProvider(
-          providers: [
-            Provider<StorageService>.value(value: storage),
-            Provider<ProfileRegistry>.value(value: profiles),
-            Provider<ProfileConnectionRegistry>.value(value: profileConnections),
-            Provider<ConnectionRegistry>.value(value: connections),
-            Provider<PlexHomeService>.value(value: plexHome),
-            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
-          ],
-          child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
+  testWidgets('names the Plex Home user and the account together, not the account alone', (tester) async {
+    await _pumpPicker(
+      tester,
+      profiles: [
+        Profile.plexHome(
+          id: 'home-alice',
+          displayName: 'Alice',
+          parentConnectionId: 'plex-account',
+          plexHomeUserUuid: 'alice-uuid',
+          createdAt: DateTime(2026, 1, 1),
         ),
-      ),
+      ],
+      connections: [_plexAccount('Bob')],
     );
-    await tester.pumpAndSettle();
 
     expect(find.text('Alice'), findsOneWidget);
-    expect(find.text(t.profiles.viaPlexAccount(name: 'Bob')), findsOneWidget);
+    expect(
+      _relationChip(tester, tile: _tileFor('Alice'), first: 'Alice', second: 'Bob'),
+      t.profiles.plexAccountUserChip(user: 'Alice', account: 'Bob'),
+    );
+    expect(find.text('Bob'), findsNothing, reason: 'the owner name alone reads as being signed in as the owner');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('names the borrowed Home user and the account it came from', (tester) async {
+    await _pumpPicker(
+      tester,
+      profiles: [Profile.local(id: 'local-alice', displayName: 'Alice', createdAt: DateTime(2026, 1, 1))],
+      connections: [_plexAccount('Bob')],
+      profileConnections: const [
+        ProfileConnection(
+          profileId: 'local-alice',
+          connectionId: 'plex-account',
+          userToken: 'borrowed-token',
+          userIdentifier: 'charlie-uuid',
+        ),
+      ],
+      homeUsers: [_homeUser('charlie-uuid', 'Charlie')],
+    );
+
+    expect(
+      _relationChip(tester, tile: _tileFor('Alice'), first: 'Charlie', second: 'Bob'),
+      t.profiles.plexAccountUserChip(user: 'Charlie', account: 'Bob'),
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('falls back to naming the account when the Home user cannot be resolved', (tester) async {
+    await _pumpPicker(
+      tester,
+      profiles: [Profile.local(id: 'local-alice', displayName: 'Alice', createdAt: DateTime(2026, 1, 1))],
+      connections: [_plexAccount('Bob')],
+      profileConnections: const [
+        ProfileConnection(
+          profileId: 'local-alice',
+          connectionId: 'plex-account',
+          userToken: 'borrowed-token',
+          userIdentifier: 'departed-uuid',
+        ),
+      ],
+    );
+
+    expect(find.text(t.profiles.plexAccountChip(account: 'Bob')), findsOneWidget);
     expect(find.text('Bob'), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
+
+  testWidgets('lets a locale put the account before the user', (tester) async {
+    // ja renders the relation as `${account}経由の${user}`. Splitting the two
+    // halves across widgets — or across two translated fragments — would pin
+    // them to English order; this is the assertion that keeps them in one
+    // translated string.
+    // `runAsync`: a deferred locale library loads on the real event loop,
+    // which the widget tester's fake async would otherwise never pump.
+    await tester.runAsync(() => LocaleSettings.setLocale(AppLocale.ja));
+    addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
+    await _pumpPicker(
+      tester,
+      profiles: [
+        Profile.plexHome(
+          id: 'home-alice',
+          displayName: 'Alice',
+          parentConnectionId: 'plex-account',
+          plexHomeUserUuid: 'alice-uuid',
+          createdAt: DateTime(2026, 1, 1),
+        ),
+      ],
+      connections: [_plexAccount('Bob')],
+    );
+
+    final label = _relationChip(tester, tile: _tileFor('Alice'), first: 'Alice', second: 'Bob');
+    expect(label, t.profiles.plexAccountUserChip(user: 'Alice', account: 'Bob'));
+    expect(label.indexOf('Bob'), lessThan(label.indexOf('Alice')));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+}
+
+/// Boots the picker over a fixed profile/connection set. [homeUsers] seeds the
+/// live Plex Home cache, which is what turns a borrowed connection's
+/// `userIdentifier` uuid into a name.
+Future<void> _pumpPicker(
+  WidgetTester tester, {
+  required List<Profile> profiles,
+  required List<Connection> connections,
+  List<ProfileConnection> profileConnections = const [],
+  List<PlexHomeUser> homeUsers = const [],
+}) async {
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  final profileRegistry = _FakeProfileRegistry(db, profiles);
+  final connectionRegistry = _FakeConnectionRegistry(db, connections);
+  final profileConnectionRegistry = _FakeProfileConnectionRegistry(db, profileConnections);
+  final storage = await StorageService.getInstance();
+  final plexHome = PlexHomeService(
+    connections: connectionRegistry,
+    profileConnections: profileConnectionRegistry,
+    storage: storage,
+    plexHomeUserFetcher: (_) async => homeUsers,
+  );
+  final activeProfile = ActiveProfileProvider(
+    registry: profileRegistry,
+    plexHome: plexHome,
+    connections: connectionRegistry,
+    profileConnections: profileConnectionRegistry,
+    storage: storage,
+  );
+  addTearDown(() async {
+    activeProfile.dispose();
+    await plexHome.dispose();
+    await db.close();
+  });
+  if (homeUsers.isNotEmpty) {
+    for (final connection in connections.whereType<PlexAccountConnection>()) {
+      expect(await plexHome.refresh(connection), isTrue);
+    }
+  }
+
+  await tester.pumpWidget(
+    TranslationProvider(
+      child: MultiProvider(
+        providers: [
+          Provider<StorageService>.value(value: storage),
+          Provider<ProfileRegistry>.value(value: profileRegistry),
+          Provider<ProfileConnectionRegistry>.value(value: profileConnectionRegistry),
+          Provider<ConnectionRegistry>.value(value: connectionRegistry),
+          Provider<PlexHomeService>.value(value: plexHome),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
+        ],
+        child: MaterialApp(theme: monoTheme(dark: true), home: const ProfileSwitchScreen()),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+PlexAccountConnection _plexAccount(String accountLabel) {
+  return PlexAccountConnection(
+    id: 'plex-account',
+    accountToken: 'token',
+    clientIdentifier: 'client',
+    accountLabel: accountLabel,
+    createdAt: DateTime(2026, 1, 1),
+  );
+}
+
+PlexHomeUser _homeUser(String uuid, String title) {
+  return PlexHomeUser(
+    id: 1,
+    uuid: uuid,
+    title: title,
+    thumb: '',
+    hasPassword: false,
+    restricted: false,
+    updatedAt: null,
+    admin: false,
+    guest: false,
+    protected: false,
+  );
+}
+
+Finder _tileFor(String displayName) {
+  return find.ancestor(of: find.text(displayName), matching: find.byType(FocusableWrapper));
+}
+
+/// The single chip label inside [tile] that names both [first] and [second].
+///
+/// Asserting that exactly one text node carries both halves is the point: two
+/// nodes, or one node plus a neighbouring label, would mean the relation is
+/// assembled in Dart and no locale could reorder it.
+String _relationChip(WidgetTester tester, {required Finder tile, required String first, required String second}) {
+  final labels = tester
+      .widgetList<Text>(find.descendant(of: tile, matching: find.byType(Text)))
+      .map((text) => text.data)
+      .whereType<String>()
+      .where((label) => label.contains(first) && label.contains(second))
+      .toList();
+  expect(labels, hasLength(1), reason: 'both halves must render as one translated string');
+  return labels.single;
 }
 
 /// Tile labels in painted order. Only the two names the reorder tests seed are
@@ -509,6 +651,9 @@ class _FakeConnectionRegistry extends ConnectionRegistry {
 
   @override
   Future<List<Connection>> list() async => _connections;
+
+  @override
+  Future<Connection?> get(String id) async => _connections.where((conn) => conn.id == id).firstOrNull;
 }
 
 class _FakeProfileConnectionRegistry extends ProfileConnectionRegistry {

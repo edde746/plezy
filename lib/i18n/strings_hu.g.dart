@@ -877,6 +877,8 @@ class _Translations$profiles$hu extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Nincsenek kapcsolatok — adj hozzá egyet a profil használatához.';
 	@override String get noConnections => 'Nincsenek kapcsolatok';
 	@override String get plexHomeAccount => 'Plex Home-fiók';
+	@override String plexAccountChip({required Object account}) => 'Plex-fiók: ${account}';
+	@override String plexAccountUserChip({required Object account, required Object user}) => '${account} fiókján keresztül: ${user}';
 	@override String get connectionDefault => 'Alapértelmezett';
 	@override String connectionAs({required Object displayName}) => 'mint ${displayName}';
 	@override String get makeDefault => 'Beállítás alapértelmezettként';
@@ -2827,6 +2829,8 @@ extension on TranslationsHu {
 			'profiles.noConnectionsHint' => 'Nincsenek kapcsolatok — adj hozzá egyet a profil használatához.',
 			'profiles.noConnections' => 'Nincsenek kapcsolatok',
 			'profiles.plexHomeAccount' => 'Plex Home-fiók',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Plex-fiók: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object account, required Object user}) => '${account} fiókján keresztül: ${user}',
 			'profiles.connectionDefault' => 'Alapértelmezett',
 			'profiles.connectionAs' => ({required Object displayName}) => 'mint ${displayName}',
 			'profiles.makeDefault' => 'Beállítás alapértelmezettként',
@@ -3213,10 +3217,10 @@ extension on TranslationsHu {
 			'watchTogether.failedToJoin' => 'Nem sikerült csatlakozni a munkamenethez',
 			'watchTogether.sessionCodeCopied' => 'A munkamenetkód a vágólapra másolva',
 			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
-			'watchTogether.reconnectingToHost' => 'Újracsatlakozás a házigazdához...',
-			'watchTogether.currentPlayback' => 'Jelenlegi lejátszás',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Újracsatlakozás a házigazdához...',
+			'watchTogether.currentPlayback' => 'Jelenlegi lejátszás',
 			'watchTogether.joinCurrentPlayback' => 'Csatlakozás a jelenlegi lejátszáshoz',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Visszatérés ahhoz, amit a házigazda éppen néz',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Nem sikerült megnyitni a jelenlegi lejátszást',

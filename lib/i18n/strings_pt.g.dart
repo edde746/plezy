@@ -877,6 +877,8 @@ class _Translations$profiles$pt extends Translations$profiles$en {
 	@override String get noConnectionsHint => 'Sem conexões — adicione uma para usar este perfil.';
 	@override String get noConnections => 'Sem conexões';
 	@override String get plexHomeAccount => 'Conta Plex Home';
+	@override String plexAccountChip({required Object account}) => 'Conta Plex: ${account}';
+	@override String plexAccountUserChip({required Object user, required Object account}) => '${user} via ${account}';
 	@override String get connectionDefault => 'Padrão';
 	@override String connectionAs({required Object displayName}) => 'como ${displayName}';
 	@override String get makeDefault => 'Definir como padrão';
@@ -2827,6 +2829,8 @@ extension on TranslationsPt {
 			'profiles.noConnectionsHint' => 'Sem conexões — adicione uma para usar este perfil.',
 			'profiles.noConnections' => 'Sem conexões',
 			'profiles.plexHomeAccount' => 'Conta Plex Home',
+			'profiles.plexAccountChip' => ({required Object account}) => 'Conta Plex: ${account}',
+			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Padrão',
 			'profiles.connectionAs' => ({required Object displayName}) => 'como ${displayName}',
 			'profiles.makeDefault' => 'Definir como padrão',
@@ -3213,10 +3217,10 @@ extension on TranslationsPt {
 			'watchTogether.failedToJoin' => 'Falha ao entrar na sessão',
 			'watchTogether.sessionCodeCopied' => 'Código da sessão copiado para a área de transferência',
 			'watchTogether.relayUnreachable' => 'Servidor de retransmissão inacessível. O bloqueio pelo provedor de internet pode impedir o uso do Assistir Juntos.',
-			'watchTogether.reconnectingToHost' => 'Reconectando ao anfitrião...',
-			'watchTogether.currentPlayback' => 'Reprodução atual',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.reconnectingToHost' => 'Reconectando ao anfitrião...',
+			'watchTogether.currentPlayback' => 'Reprodução atual',
 			'watchTogether.joinCurrentPlayback' => 'Entrar na reprodução atual',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Voltar ao conteúdo que o anfitrião está assistindo agora',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Falha ao abrir a reprodução atual',
