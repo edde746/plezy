@@ -161,6 +161,11 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
       .setMinPcmBufferDurationUs(500_000)
       .setMaxPcmBufferDurationUs(1_000_000)
       .setPcmBufferMultiplicationFactor(4)
+      // media3 defaults passthrough to 250ms, which the AC3 factor doubles to 500ms — 40000
+      // bytes at 640 kbps. Some HDMI routes reject a buffer that short outright and the only
+      // retry media3 1.10.1 has is to keep halving it (#1790). Ask for a second up front;
+      // upstream adopted the same 1s floor as its last-resort retry in #3207.
+      .setPassthroughBufferDurationUs(500_000)
       .build()
 
     val realProvider = AudioTrackAudioOutputProvider.Builder(context)
@@ -514,16 +519,45 @@ internal class DvSanitizingVideoRenderer(
 // AudioTrack and creates a new one. On Android TV with tunneled playback, this causes
 // 7-10s audio dropout while the hardware pipeline reinitializes (Sony Bravia, etc).
 // By flushing instead of releasing and caching the output, we skip the teardown cycle.
+//
+// Two invariants keep that safe (#1790):
+//
+//  1. Only outputs [AudioOutputCachePolicy] admits are parked, so the cache never holds a
+//     scarce direct/passthrough route hostage while the next one is being created.
+//  2. Every flush is answered by exactly one onReleased, promptly.
+//
+// DefaultAudioSink increments a *static, process-wide* counter on every flush and decrements it
+// only from `Listener::onReleased`, which media3 delivers by posting to the playback looper — a
+// looper that is already dead by the time a player-release actually completes. A dropped callback
+// pins the counter above zero, and any nonzero value disables media3's escalation of *both* init
+// and write failures: `PendingExceptionHolder` refuses to arm its throw deadline and every retry
+// short-circuits, so a sink error never becomes a PlaybackException and playback hangs in
+// STATE_BUFFERING with no recovery. The wrapper therefore owns the listener set and answers the
+// flush itself when it parks the track, because a parked track is never going to release.
+//
+// Deferring that answer until the parked track is really evicted is tempting — it would let
+// media3 stay patient through the eviction, whose replacement is built while the old AudioTrack
+// is still going away — but it holds the counter above zero for the whole live track after the
+// first seek, which is the very hang above. So the eviction overlap is tolerated instead, as
+// upstream tolerates it: if the replacement does fail to allocate, media3 escalates on its own
+// 200ms deadline into the audio recovery ladder, and the buffering stall watchdog backs that up.
+//
+// Everything below is confined to the ExoPlayer playback thread: sink flush/release, provider
+// lookups, and media3's own onReleased delivery all run there.
 
 @OptIn(UnstableApi::class)
-private class RawPositionOutputProvider(
+internal class RawPositionOutputProvider(
   private val delegate: AudioOutputProvider,
   private val rawPositionUs: AtomicLong,
-  private val log: ((String, String, String) -> Unit)?
+  private val log: ((String, String, String) -> Unit)?,
+  private val sdkInt: Int = Build.VERSION.SDK_INT
 ) : AudioOutputProvider {
 
   private var cachedOutput: RawPositionAudioOutput? = null
   private var cachedConfig: AudioOutputProvider.OutputConfig? = null
+
+  /** Outputs whose real release was started but whose completion has not been observed yet. */
+  private val unsettledReleases = LinkedHashSet<RawPositionAudioOutput>()
 
   override fun getFormatSupport(config: AudioOutputProvider.FormatConfig) = delegate.getFormatSupport(config)
 
@@ -533,14 +567,24 @@ private class RawPositionOutputProvider(
     val cached = cachedOutput
     if (cached != null && cachedConfig == config) {
       cachedOutput = null
+      cached.markReacquired()
       return cached
     }
     cached?.forceRelease()
     cachedOutput = null
+    cachedConfig = null
 
+    // The replacement is built while the evicted track is still going away. Upstream does the
+    // same; the alternatives are worse (see the note above this class).
     val realOutput = delegate.getAudioOutput(config)
     cachedConfig = config
-    return RawPositionAudioOutput(realOutput, rawPositionUs, this, log)
+    return RawPositionAudioOutput(
+      delegate = realOutput,
+      rawPositionUs = rawPositionUs,
+      provider = this,
+      mayCache = AudioOutputCachePolicy.mayCache(config.encoding, config.isOffload, sdkInt),
+      log = log
+    )
   }
 
   fun returnToCache(output: RawPositionAudioOutput) {
@@ -549,6 +593,14 @@ private class RawPositionOutputProvider(
       existing.forceRelease()
     }
     cachedOutput = output
+  }
+
+  fun onRealReleaseStarted(output: RawPositionAudioOutput) {
+    unsettledReleases.add(output)
+  }
+
+  fun onReleaseSettled(output: RawPositionAudioOutput) {
+    unsettledReleases.remove(output)
   }
 
   override fun addListener(listener: AudioOutputProvider.Listener) = delegate.addListener(listener)
@@ -561,15 +613,21 @@ private class RawPositionOutputProvider(
     cachedOutput?.forceRelease()
     cachedOutput = null
     cachedConfig = null
+    // Player teardown: media3 schedules the real AudioTrack release with a delay and posts the
+    // completion back to the playback looper this call is in the middle of quitting, so nothing
+    // will ever deliver it. Settle here rather than leak the accounting for the whole process.
+    for (output in unsettledReleases.toList()) output.settleReleaseNow()
+    unsettledReleases.clear()
     delegate.release()
   }
 }
 
 @OptIn(UnstableApi::class)
-private class RawPositionAudioOutput(
+internal class RawPositionAudioOutput(
   private val delegate: AudioOutput,
   private val rawPositionUs: AtomicLong,
   private val provider: RawPositionOutputProvider,
+  private val mayCache: Boolean,
   private val log: ((String, String, String) -> Unit)?
 ) : AudioOutput {
 
@@ -577,6 +635,46 @@ private class RawPositionAudioOutput(
   private var writeCount = 0L
   private var writtenBytes = 0L
   private var failed = false
+
+  /**
+   * DefaultAudioSink registers here instead of on the real output, so the wrapper can report the
+   * releases media3 will not: a parked output never really releases, and a released output's
+   * completion callback is posted to a playback looper that may already be gone. The set is
+   * cleared on every release report and repopulated by the sink on the next acquisition, which
+   * also stops one stale listener per reuse from piling up on the real output.
+   */
+  private val listeners = mutableListOf<AudioOutput.Listener>()
+  private var releaseSignalled = false
+
+  private val currentListener: AudioOutput.Listener?
+    get() = listeners.lastOrNull()
+
+  private val forwarder = object : AudioOutput.Listener {
+    override fun onPositionAdvancing(playoutStartSystemTimeMs: Long) {
+      currentListener?.onPositionAdvancing(playoutStartSystemTimeMs)
+    }
+
+    override fun onOffloadDataRequest() {
+      currentListener?.onOffloadDataRequest()
+    }
+
+    override fun onOffloadPresentationEnded() {
+      currentListener?.onOffloadPresentationEnded()
+    }
+
+    override fun onUnderrun() {
+      currentListener?.onUnderrun()
+    }
+
+    override fun onReleased() {
+      provider.onReleaseSettled(this@RawPositionAudioOutput)
+      signalReleased()
+    }
+  }
+
+  init {
+    delegate.addListener(forwarder)
+  }
 
   override fun getPositionUs(): Long {
     val pos = delegate.getPositionUs()
@@ -626,22 +724,48 @@ private class RawPositionAudioOutput(
 
   override fun release() {
     rawPositionUs.set(Long.MIN_VALUE)
-    if (failed) {
-      delegate.release()
-      return
-    }
-    if (Build.VERSION.SDK_INT >= 25) {
+    if (!failed && mayCache) {
       delegate.stop()
       delegate.flush()
       provider.returnToCache(this)
-    } else {
-      delegate.release()
+      // A parked track is never going to release, so answer the flush now. Holding the sink's
+      // pending-release count open for it would disable media3's escalation of every later sink
+      // error, for as long as the track stays parked or live — the #1790 hang, re-armed by an
+      // ordinary seek.
+      signalReleased()
+      return
     }
+    startRealRelease()
   }
 
+  /** Releases for real even when the output would otherwise be cacheable. */
   fun forceRelease() {
     rawPositionUs.set(Long.MIN_VALUE)
+    startRealRelease()
+  }
+
+  /** Reports a release whose completion callback can no longer be delivered. */
+  fun settleReleaseNow() {
+    provider.onReleaseSettled(this)
+    signalReleased()
+  }
+
+  /** Re-arms the wrapper for a fresh acquisition out of the provider's cache. */
+  fun markReacquired() {
+    releaseSignalled = false
+  }
+
+  private fun startRealRelease() {
+    provider.onRealReleaseStarted(this)
     delegate.release()
+  }
+
+  private fun signalReleased() {
+    if (releaseSignalled) return
+    releaseSignalled = true
+    val notified = listeners.toList()
+    listeners.clear()
+    for (listener in notified) listener.onReleased()
   }
 
   override fun setVolume(volume: Float) = delegate.setVolume(volume)
@@ -651,8 +775,12 @@ private class RawPositionAudioOutput(
   override fun getBufferSizeInFrames() = delegate.getBufferSizeInFrames()
   override fun getPlaybackParameters() = delegate.getPlaybackParameters()
   override fun isStalled() = delegate.isStalled()
-  override fun addListener(listener: AudioOutput.Listener) = delegate.addListener(listener)
-  override fun removeListener(listener: AudioOutput.Listener) = delegate.removeListener(listener)
+  override fun addListener(listener: AudioOutput.Listener) {
+    listeners.add(listener)
+  }
+  override fun removeListener(listener: AudioOutput.Listener) {
+    listeners.remove(listener)
+  }
   override fun setPlaybackParameters(playbackParameters: PlaybackParameters) = delegate.setPlaybackParameters(playbackParameters)
   override fun setOffloadDelayPadding(delayInFrames: Int, paddingInFrames: Int) = delegate.setOffloadDelayPadding(delayInFrames, paddingInFrames)
   override fun setOffloadEndOfStream() = delegate.setOffloadEndOfStream()

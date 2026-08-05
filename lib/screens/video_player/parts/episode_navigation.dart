@@ -139,52 +139,61 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       return;
     }
 
-    // Carry the playing version to the next episode by signature — its Media
-    // list may order versions differently, so the bare index is a guess and
-    // the source id is per-episode.
-    final currentVersionSignature =
-        _effectiveSelectedMediaIndex >= 0 && _effectiveSelectedMediaIndex < _availableVersions.length
-        ? _availableVersions[_effectiveSelectedMediaIndex].signature
-        : null;
-    // Users who curate per-episode selections server-side (e.g. via Plex Auto
-    // Languages) opt out of carrying tracks across episodes entirely: with no
-    // preferences, both audio and subtitles start at the server-selected
-    // priority (#1717).
-    final settingsService = await SettingsService.getInstance();
-    final followServerSelections = settingsService.read(SettingsService.followServerTrackSelections);
-    final committedSubtitleSelection = _playbackSession?.subtitleSelection;
-    final primarySubtitlePreference = followServerSelections
-        ? null
-        : subtitlePreferenceForItemChange(
-            hasCommittedSelection: committedSubtitleSelection != null,
-            committedTrack: committedSubtitleSelection?.primaryTrack,
-            nativeTrack: currentPlayer.state.track.subtitle,
-            declinedPreference: committedSubtitleSelection?.declinedPreference,
-            sessionPreference: _sessionSubtitlePreference,
-          );
-    final secondarySubtitlePreference = followServerSelections
-        ? null
-        : subtitlePreferenceForItemChange(
-            hasCommittedSelection: committedSubtitleSelection != null,
-            committedTrack: committedSubtitleSelection?.secondaryTrack,
-            nativeTrack: currentPlayer.state.track.secondarySubtitle,
-            sessionPreference: _sessionSecondarySubtitlePreference,
-          );
-    await _reloadMediaInPlace(
-      metadata: episodeMetadata,
-      selectedMediaIndex: _effectiveSelectedMediaIndex,
-      selectedMediaSourceId: null,
-      preferredVersionSignature: currentVersionSignature,
-      qualityPreset: _selectedQualityPreset,
-      // Stream ids are per-part: the previous episode's audio id is
-      // meaningless on the new item, so let preferences pick the track.
-      useCurrentAudioStreamSelection: false,
-      preserveCurrentTrackSelection: !followServerSelections,
-      preservedAudioTrack: _sessionAudioPreference,
-      preservedSubtitleTrack: primarySubtitlePreference,
-      preservedSecondarySubtitleTrack: secondarySubtitlePreference,
-      reason: 'episode navigation',
-    );
+    // Callers fire this without awaiting (auto-play countdown, PiP, the prompt), so an escaping
+    // throw would be an unhandled async error that also strands the loading flag set by
+    // _playNext — which then silently disables item navigation for the rest of the session.
+    try {
+      // Carry the playing version to the next episode by signature — its Media
+      // list may order versions differently, so the bare index is a guess and
+      // the source id is per-episode.
+      final currentVersionSignature =
+          _effectiveSelectedMediaIndex >= 0 && _effectiveSelectedMediaIndex < _availableVersions.length
+          ? _availableVersions[_effectiveSelectedMediaIndex].signature
+          : null;
+      // Users who curate per-episode selections server-side (e.g. via Plex Auto
+      // Languages) opt out of carrying tracks across episodes entirely: with no
+      // preferences, both audio and subtitles start at the server-selected
+      // priority (#1717).
+      final settingsService = await SettingsService.getInstance();
+      final followServerSelections = settingsService.read(SettingsService.followServerTrackSelections);
+      final committedSubtitleSelection = _playbackSession?.subtitleSelection;
+      final primarySubtitlePreference = followServerSelections
+          ? null
+          : subtitlePreferenceForItemChange(
+              hasCommittedSelection: committedSubtitleSelection != null,
+              committedTrack: committedSubtitleSelection?.primaryTrack,
+              nativeTrack: currentPlayer.state.track.subtitle,
+              declinedPreference: committedSubtitleSelection?.declinedPreference,
+              sessionPreference: _sessionSubtitlePreference,
+            );
+      final secondarySubtitlePreference = followServerSelections
+          ? null
+          : subtitlePreferenceForItemChange(
+              hasCommittedSelection: committedSubtitleSelection != null,
+              committedTrack: committedSubtitleSelection?.secondaryTrack,
+              nativeTrack: currentPlayer.state.track.secondarySubtitle,
+              sessionPreference: _sessionSecondarySubtitlePreference,
+            );
+      await _reloadMediaInPlace(
+        metadata: episodeMetadata,
+        selectedMediaIndex: _effectiveSelectedMediaIndex,
+        selectedMediaSourceId: null,
+        preferredVersionSignature: currentVersionSignature,
+        qualityPreset: _selectedQualityPreset,
+        // Stream ids are per-part: the previous episode's audio id is
+        // meaningless on the new item, so let preferences pick the track.
+        useCurrentAudioStreamSelection: false,
+        preserveCurrentTrackSelection: !followServerSelections,
+        preservedAudioTrack: _sessionAudioPreference,
+        preservedSubtitleTrack: primarySubtitlePreference,
+        preservedSecondarySubtitleTrack: secondarySubtitlePreference,
+        reason: 'episode navigation',
+      );
+    } catch (e, stackTrace) {
+      appLogger.e('Failed to navigate to the next item', error: e, stackTrace: stackTrace);
+      _clearEpisodeLoadingFlags();
+      if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+    }
   }
 
   Future<PlaybackSourceChangeOutcome> _switchPlaybackSource({
@@ -970,6 +979,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // throw before the operational try/catch is entered. Identity ownership
       // prevents this continuation from releasing a newer transition.
       _releasePlaybackTransition(reloadLease);
+      // Every superseded return leaves the episode loading flags set otherwise, and
+      // _playNext/_playPrevious treat them as a re-entrancy guard — a stuck flag turns the
+      // Next button into a no-op for the rest of the session. Idempotent: the success and
+      // rollback paths above have already cleared them, and this skips the rebuild when
+      // neither flag is set.
+      _clearEpisodeLoadingFlags();
     }
   }
 }

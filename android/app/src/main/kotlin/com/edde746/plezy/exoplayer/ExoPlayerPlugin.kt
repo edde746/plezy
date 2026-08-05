@@ -319,6 +319,14 @@ class ExoPlayerPlugin :
         fallbackInProgress = false
       }
 
+      // An initialize without an intervening dispose would otherwise orphan the previous core
+      // along with its ExoPlayer, audio sink, codecs and surface views — nothing else holds a
+      // reference, so they would never be released.
+      playerCore?.let { stale ->
+        playerCore = null
+        stale.dispose()
+      }
+
       try {
         val core = ExoPlayerCore(currentActivity).apply {
           delegate = this@ExoPlayerPlugin

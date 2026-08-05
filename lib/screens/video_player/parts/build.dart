@@ -258,7 +258,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     if (widget.isLive) {
                       onNext = _hasNextChannel ? () => _switchLiveChannel(1) : null;
                     } else {
-                      onNext = (_nextEpisode != null && authority.canNavigateMediaItems) ? _playNext : null;
+                      // _playNext no-ops while a navigation is in flight; matching that here
+                      // keeps the control from looking live while it does nothing.
+                      onNext = (_nextEpisode != null && !_isLoadingNext && authority.canNavigateMediaItems)
+                          ? _playNext
+                          : null;
                     }
 
                     VoidCallback? onPrevious;

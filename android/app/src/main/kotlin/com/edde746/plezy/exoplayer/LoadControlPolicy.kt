@@ -31,6 +31,16 @@ internal object LoadControlPolicy {
    */
   const val MIN_TARGET_BYTES = 32 * MIB
 
+  /** `DefaultLoadControl` play-start threshold on a first buffer. */
+  const val BUFFER_FOR_PLAYBACK_MS = 1_000
+
+  /**
+   * `DefaultLoadControl` play-start threshold after a rebuffer. Below this the player is
+   * *supposed* to stay in `STATE_BUFFERING`, so anything judging a buffering player has to clear
+   * this bar before it can call the wait anomalous — see [BufferingStallPolicy].
+   */
+  const val BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 5_000
+
   /**
    * Fraction of a memory budget the allocator may claim. Matches the threshold the Buffer
    * Size setting already warns at (`value > heapMB / 4`).

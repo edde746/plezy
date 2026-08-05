@@ -1,6 +1,7 @@
 package com.edde746.plezy.exoplayer
 
 import android.content.Context
+import android.media.AudioFormat
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -24,6 +25,19 @@ internal fun isPassthroughAudioMimeType(mimeType: String): Boolean = when (mimeT
 }
 
 internal fun shouldBlockDirectOutputForPassthrough(mimeType: String, audioPassthroughEnabled: Boolean): Boolean = !audioPassthroughEnabled && isPassthroughAudioMimeType(mimeType)
+
+/**
+ * Linear PCM output encodings, i.e. the sink decoded the bitstream instead of
+ * passing it through. Mirrors the platform's `AudioFormat.ENCODING_PCM_*` set.
+ */
+internal fun isPcmEncoding(encoding: Int): Boolean = when (encoding) {
+  AudioFormat.ENCODING_PCM_8BIT,
+  AudioFormat.ENCODING_PCM_16BIT,
+  AudioFormat.ENCODING_PCM_FLOAT,
+  AudioFormat.ENCODING_PCM_24BIT_PACKED,
+  AudioFormat.ENCODING_PCM_32BIT -> true
+  else -> false
+}
 
 /**
  * mpv `audio-spdif` codec names and the exact platform encoding a route must
