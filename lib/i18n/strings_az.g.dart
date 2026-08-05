@@ -1528,7 +1528,6 @@ class _Translations$videoSettings$az extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Səs çıxışı';
 	@override String get performanceOverlay => 'Məhsuldarlıq paneli';
-	@override String get audioPassthrough => 'Səsin birbaşa ötürülməsi';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'Əhatəli səs';
@@ -3440,7 +3439,6 @@ extension on TranslationsAz {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Səs çıxışı',
 			'videoSettings.performanceOverlay' => 'Məhsuldarlıq paneli',
-			'videoSettings.audioPassthrough' => 'Səsin birbaşa ötürülməsi',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Əhatəli səs',

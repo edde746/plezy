@@ -21,6 +21,12 @@ class PlayerAndroid extends PlayerBase {
   int _downmixCenterBoostDb = 0;
   bool _downmixNormalize = true;
 
+  /// Server-reported frame rate for the next item, or null when unknown.
+  ///
+  /// Rides on `open` rather than a standalone call because it is per-item and
+  /// must be known before the native side settles tunneling for that item.
+  double? _contentFrameRate;
+
   /// The native plugin switched from ExoPlayer to its mpv fallback for this
   /// session. Sticky for the instance lifetime, mirroring the native flag
   /// (which resets only on initialize/dispose).
@@ -200,6 +206,7 @@ class PlayerAndroid extends PlayerBase {
         'hasStartPosition': hasStartPosition,
         'autoPlay': play,
         'isLive': isLive,
+        if (_contentFrameRate != null) 'contentFrameRate': _contentFrameRate,
         if (externalSubtitles != null && externalSubtitles.isNotEmpty)
           'externalSubtitles': externalSubtitles
               .where((s) => s.uri?.isNotEmpty == true)
@@ -326,6 +333,10 @@ class PlayerAndroid extends PlayerBase {
         break;
       case 'tunneled-playback':
         _tunnelingEnabled = value != 'no';
+        break;
+      case 'content-frame-rate':
+        final fps = double.tryParse(value);
+        _contentFrameRate = fps != null && fps > 0 ? fps : null;
         break;
       case 'dv-conversion-mode':
         _dvConversionMode = value;

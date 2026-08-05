@@ -1514,7 +1514,6 @@ class _Translations$videoSettings$ko extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => '오디오 출력';
 	@override String get performanceOverlay => '성능 오버레이';
-	@override String get audioPassthrough => '오디오 패스스루';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => '서라운드';
@@ -3415,7 +3414,6 @@ extension on TranslationsKo {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => '오디오 출력',
 			'videoSettings.performanceOverlay' => '성능 오버레이',
-			'videoSettings.audioPassthrough' => '오디오 패스스루',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => '서라운드',

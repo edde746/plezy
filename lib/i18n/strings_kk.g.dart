@@ -1528,7 +1528,6 @@ class _Translations$videoSettings$kk extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Аудио шығысы';
 	@override String get performanceOverlay => 'Өнімділік панелі';
-	@override String get audioPassthrough => 'Дыбысты тікелей өткізу';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'Көлемді дыбыс';
@@ -3440,7 +3439,6 @@ extension on TranslationsKk {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Аудио шығысы',
 			'videoSettings.performanceOverlay' => 'Өнімділік панелі',
-			'videoSettings.audioPassthrough' => 'Дыбысты тікелей өткізу',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Көлемді дыбыс',

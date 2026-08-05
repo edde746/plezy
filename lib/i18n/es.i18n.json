@@ -1650,7 +1650,6 @@
     "hdr": "HDR",
     "audioOutput": "Salida de audio",
     "performanceOverlay": "Indicador de rendimiento",
-    "audioPassthrough": "Transferencia directa de audio",
     "audioOutputDolbyAtmos": "Dolby Atmos",
     "audioOutputDolbyAudio": "Dolby Audio",
     "audioOutputSurround": "Envolvente",

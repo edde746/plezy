@@ -1650,7 +1650,6 @@
     "hdr": "HDR",
     "audioOutput": "Lydoutput",
     "performanceOverlay": "Ydelsesoverlay",
-    "audioPassthrough": "Lyd-passthrough",
     "audioOutputDolbyAtmos": "Dolby Atmos",
     "audioOutputDolbyAudio": "Dolby Audio",
     "audioOutputSurround": "Surround",

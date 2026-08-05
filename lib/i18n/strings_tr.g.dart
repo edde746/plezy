@@ -1528,7 +1528,6 @@ class _Translations$videoSettings$tr extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Ses Çıkışı';
 	@override String get performanceOverlay => 'Performans Katmanı';
-	@override String get audioPassthrough => 'Ses Doğrudan Geçişi';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'Çevreleyen Ses';
@@ -3440,7 +3439,6 @@ extension on TranslationsTr {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Ses Çıkışı',
 			'videoSettings.performanceOverlay' => 'Performans Katmanı',
-			'videoSettings.audioPassthrough' => 'Ses Doğrudan Geçişi',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Çevreleyen Ses',

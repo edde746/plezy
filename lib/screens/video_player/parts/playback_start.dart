@@ -198,6 +198,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         preKnownWidth: displayCriteria?.width ?? 0,
         preKnownHeight: displayCriteria?.height ?? 0,
         hasVideoUrl: result.videoUrl != null,
+        isTranscoding: result.isTranscoding,
         ensureAudioFocus: ensureAudioFocus,
       );
       if (frameRatePlan == null) return;

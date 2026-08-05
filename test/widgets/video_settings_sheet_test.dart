@@ -36,12 +36,19 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
-  testWidgets('shows audio passthrough on supported TV-style surfaces', (tester) async {
+  testWidgets('keeps audio passthrough out of the in-player sheet', (tester) async {
+    // It configures the audio output route, not this playback, and applying it
+    // mid-stream bounces the audio renderer and re-decides video tunneling. Settings >
+    // Video Playback owns it, alongside Tunneled Playback.
     await _pumpSheet(tester);
 
-    await tester.scrollUntilVisible(find.text('Audio Passthrough'), 500, scrollable: find.byType(Scrollable).first);
+    final scrollable = find.byType(Scrollable).first;
+    for (var i = 0; i < 10; i++) {
+      await tester.drag(scrollable, const Offset(0, -300));
+      await tester.pumpAndSettle();
+    }
 
-    expect(find.text('Audio Passthrough'), findsOneWidget);
+    expect(find.text('Audio Passthrough'), findsNothing);
   });
 
   testWidgets('localizes Off, Normal, and Active video setting values', (tester) async {

@@ -322,6 +322,12 @@ class ExoPlayerCore(private val activity: Activity) :
   @Volatile private var detectedFrameRate: Float = -1f
   private val fpsTimestamps = LongArray(FPS_SAMPLE_COUNT)
 
+  // Frame rate the media server reported for the open item, or -1 when unknown.
+  // Supplied per open because the extractors media3 uses for direct play (Matroska,
+  // MP4) never populate Format.frameRate, and the tunneled path renders no frames
+  // back to the app for detectedFrameRate to derive one from.
+  @Volatile private var contentFrameRate: Float = -1f
+
   @Volatile private var fpsTimestampCount = 0
   private var assSyncFrameCount = 0L
 
@@ -2590,6 +2596,7 @@ class ExoPlayerCore(private val activity: Activity) :
     val player = exoPlayer ?: return null
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
     return tunnelingUserEnabled &&
+      !DeviceQuirks.hasUnreliableTunneledPlayback(contentFrameRate) &&
       (player.playbackParameters.speed == 1f) &&
       !tunnelingDisabledForCodec &&
       !tunnelingDisabledForAssSubtitles &&
@@ -3270,7 +3277,8 @@ class ExoPlayerCore(private val activity: Activity) :
     autoPlay: Boolean,
     mediaGeneration: Int,
     isLive: Boolean = false,
-    externalSubtitleList: List<Map<String, Any?>>? = null
+    externalSubtitleList: List<Map<String, Any?>>? = null,
+    contentFrameRate: Float = -1f
   ) {
     if (!isInitialized) return
 
@@ -3283,6 +3291,7 @@ class ExoPlayerCore(private val activity: Activity) :
 
     // Reset FPS detection for new content
     detectedFrameRate = -1f
+    this.contentFrameRate = contentFrameRate
     fpsTimestampCount = 0
     assSyncFrameCount = 0
 
@@ -3400,7 +3409,14 @@ class ExoPlayerCore(private val activity: Activity) :
     }
 
     val sourceLabel = if (isLive) "live HLS" else "media"
-    emitLog("info", "media", "Opened $sourceLabel: ${redactUri(uri)}, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay, sessionTunneling=$currentTunneledPlayback, userTunneling=$tunnelingUserEnabled")
+    emitLog(
+      "info",
+      "media",
+      "Opened $sourceLabel: ${redactUri(uri)}, startPosition: ${startPositionMs}ms, autoPlay: $autoPlay, " +
+        "contentFps=${if (contentFrameRate > 0f) contentFrameRate.toString() else "unknown"}, " +
+        "sessionTunneling=$currentTunneledPlayback, userTunneling=$tunnelingUserEnabled, " +
+        "tunnelingStatus=${exoPlayer?.let(::getTunnelingStatus) ?: "n/a"}"
+    )
   }
 
   fun setAudioDelay(seconds: Double) {
@@ -4114,6 +4130,7 @@ class ExoPlayerCore(private val activity: Activity) :
   private fun getTunnelingStatus(player: ExoPlayer): String {
     if (currentTunneledPlayback) return "Active"
     if (!tunnelingUserEnabled) return "Disabled by user"
+    if (DeviceQuirks.hasUnreliableTunneledPlayback(contentFrameRate)) return "Off (unreliable on this device)"
     if (player.playbackParameters.speed != 1f) return "Off (speed ≠ 1×)"
     if (audioNormalizationEnabled) return "Off (loudness normalization)"
     if (tunnelingDisabledForAudioRecovery) return "Off (audio recovery)"

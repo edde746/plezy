@@ -1641,7 +1641,6 @@
     "hdr": "HDR",
     "audioOutput": "오디오 출력",
     "performanceOverlay": "성능 오버레이",
-    "audioPassthrough": "오디오 패스스루",
     "audioOutputDolbyAtmos": "Dolby Atmos",
     "audioOutputDolbyAudio": "Dolby Audio",
     "audioOutputSurround": "서라운드",

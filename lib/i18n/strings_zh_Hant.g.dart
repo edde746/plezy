@@ -1515,7 +1515,6 @@ class _Translations$videoSettings$zh_Hant extends Translations$videoSettings$zh 
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => '音訊輸出';
 	@override String get performanceOverlay => '效能監控';
-	@override String get audioPassthrough => '音訊直通';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => '環繞聲';
@@ -3416,7 +3415,6 @@ extension on TranslationsZhHant {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => '音訊輸出',
 			'videoSettings.performanceOverlay' => '效能監控',
-			'videoSettings.audioPassthrough' => '音訊直通',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => '環繞聲',

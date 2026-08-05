@@ -1514,7 +1514,6 @@ class _Translations$videoSettings$ja extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => '音声出力';
 	@override String get performanceOverlay => 'パフォーマンスオーバーレイ';
-	@override String get audioPassthrough => 'オーディオパススルー';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'サラウンド';
@@ -3415,7 +3414,6 @@ extension on TranslationsJa {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => '音声出力',
 			'videoSettings.performanceOverlay' => 'パフォーマンスオーバーレイ',
-			'videoSettings.audioPassthrough' => 'オーディオパススルー',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'サラウンド',

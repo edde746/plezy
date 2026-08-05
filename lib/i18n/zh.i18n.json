@@ -1641,7 +1641,6 @@
     "hdr": "HDR",
     "audioOutput": "音频输出",
     "performanceOverlay": "性能监控",
-    "audioPassthrough": "音频直通",
     "audioOutputDolbyAtmos": "Dolby Atmos",
     "audioOutputDolbyAudio": "Dolby Audio",
     "audioOutputSurround": "环绕声",

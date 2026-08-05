@@ -1650,7 +1650,6 @@
     "hdr": "HDR",
     "audioOutput": "Аудио шығысы",
     "performanceOverlay": "Өнімділік панелі",
-    "audioPassthrough": "Дыбысты тікелей өткізу",
     "audioOutputDolbyAtmos": "Dolby Atmos",
     "audioOutputDolbyAudio": "Dolby Audio",
     "audioOutputSurround": "Көлемді дыбыс",

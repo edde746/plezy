@@ -710,6 +710,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           preKnownWidth: displayCriteria?.width ?? 0,
           preKnownHeight: displayCriteria?.height ?? 0,
           hasVideoUrl: true,
+          isTranscoding: result.isTranscoding,
           ensureAudioFocus: () => currentPlayer.requestAudioFocus(),
         );
         if (frameRatePlan == null || !isCurrentReload()) {

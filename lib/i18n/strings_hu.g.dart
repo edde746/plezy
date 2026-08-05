@@ -1517,7 +1517,6 @@ class _Translations$videoSettings$hu extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Hangkimenet';
 	@override String get performanceOverlay => 'Teljesítményadatok';
-	@override String get audioPassthrough => 'Hangtovábbítás (passthrough)';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'Térhatású';
@@ -3418,7 +3417,6 @@ extension on TranslationsHu {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Hangkimenet',
 			'videoSettings.performanceOverlay' => 'Teljesítményadatok',
-			'videoSettings.audioPassthrough' => 'Hangtovábbítás (passthrough)',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Térhatású',

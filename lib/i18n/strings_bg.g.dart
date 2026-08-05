@@ -1517,7 +1517,6 @@ class _Translations$videoSettings$bg extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Аудио изход';
 	@override String get performanceOverlay => 'Оверлей за производителност';
-	@override String get audioPassthrough => 'Директно предаване на аудио';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'Съраунд';
@@ -3418,7 +3417,6 @@ extension on TranslationsBg {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Аудио изход',
 			'videoSettings.performanceOverlay' => 'Оверлей за производителност',
-			'videoSettings.audioPassthrough' => 'Директно предаване на аудио',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Съраунд',

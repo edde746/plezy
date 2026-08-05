@@ -1650,7 +1650,6 @@
     "hdr": "HDR",
     "audioOutput": "Ljudutgång",
     "performanceOverlay": "Prestandaöverlägg",
-    "audioPassthrough": "Ljudgenomströmning",
     "audioOutputDolbyAtmos": "Dolby Atmos",
     "audioOutputDolbyAudio": "Dolby Audio",
     "audioOutputSurround": "Surround",

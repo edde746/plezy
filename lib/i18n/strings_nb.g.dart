@@ -1517,7 +1517,6 @@ class _Translations$videoSettings$nb extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Lydutgang';
 	@override String get performanceOverlay => 'Ytelsesoverlegg';
-	@override String get audioPassthrough => 'Direkte lydutgang';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'Surround';
@@ -3418,7 +3417,6 @@ extension on TranslationsNb {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Lydutgang',
 			'videoSettings.performanceOverlay' => 'Ytelsesoverlegg',
-			'videoSettings.audioPassthrough' => 'Direkte lydutgang',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',

@@ -1528,7 +1528,6 @@ class _Translations$videoSettings$uz extends Translations$videoSettings$en {
 	@override String get hdr => 'HDR';
 	@override String get audioOutput => 'Audio chiqishi';
 	@override String get performanceOverlay => 'Unumdorlik paneli';
-	@override String get audioPassthrough => 'Ovozni toʻgʻridan-toʻgʻri oʻtkazish';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
 	@override String get audioOutputDolbyAudio => 'Dolby Audio';
 	@override String get audioOutputSurround => 'Surround';
@@ -3440,7 +3439,6 @@ extension on TranslationsUz {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio chiqishi',
 			'videoSettings.performanceOverlay' => 'Unumdorlik paneli',
-			'videoSettings.audioPassthrough' => 'Ovozni toʻgʻridan-toʻgʻri oʻtkazish',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',

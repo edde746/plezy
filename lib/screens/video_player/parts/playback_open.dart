@@ -182,6 +182,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required SettingsService settingsService,
     required double? preKnownFps,
     required bool hasVideoUrl,
+    required bool isTranscoding,
     required Future<void> Function() ensureAudioFocus,
     int preKnownWidth = 0,
     int preKnownHeight = 0,
@@ -192,6 +193,20 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // the two Android backends: mpv needs its decoder refreshed after a
     // display switch (pre-load path), ExoPlayer switches pre-open instead.
     final isAndroidMpv = currentPlayer.needsDecoderRefreshAfterDisplaySwitch;
+
+    // Independent of matchContentFrameRate: ExoPlayer needs the rate even when the
+    // display never switches, because it also decides whether video tunneling is
+    // safe for this item. Neither the Matroska nor the MP4 extractor populates
+    // Format.frameRate, and a tunneled session renders no frames back for the
+    // native FPS detector, so metadata is the only source.
+    //
+    // Source-side only, like _primeDisplayCriteria: a transcode's metadata rate
+    // describes the original file, not what the server is about to send. "0" clears
+    // a stale rate carried over from the previous item.
+    if (Platform.isAndroid && !isAndroidMpv) {
+      final directPlayFps = isTranscoding ? null : preKnownFps;
+      await currentPlayer.setProperty('content-frame-rate', (directPlayFps ?? 0).toString());
+    }
     final needsMpvPreLoad = willAutoSwitch && isAndroidMpv && hasVideoUrl;
     final needsExoPreOpen = willAutoSwitch && !isAndroidMpv && hasVideoUrl;
     plan.needsPostOpenSwitch = willAutoSwitch && !needsMpvPreLoad && !needsExoPreOpen;

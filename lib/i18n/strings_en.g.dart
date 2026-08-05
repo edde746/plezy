@@ -924,8 +924,8 @@ class Translations$settings$en {
 	/// en: 'Tunneled Playback'
 	String get tunneledPlayback => 'Tunneled Playback';
 
-	/// en: 'Use video tunneling. Disable if HDR playback shows black video.'
-	String get tunneledPlaybackDescription => 'Use video tunneling. Disable if HDR playback shows black video.';
+	/// en: 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.'
+	String get tunneledPlaybackDescription => 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.';
 
 	/// en: 'Audio Passthrough'
 	String get audioPassthrough => 'Audio Passthrough';
@@ -4133,9 +4133,6 @@ class Translations$videoSettings$en {
 	/// en: 'Performance Overlay'
 	String get performanceOverlay => 'Performance Overlay';
 
-	/// en: 'Audio Passthrough'
-	String get audioPassthrough => 'Audio Passthrough';
-
 	/// en: 'Dolby Atmos'
 	String get audioOutputDolbyAtmos => 'Dolby Atmos';
 
@@ -6373,7 +6370,7 @@ extension on Translations {
 			'settings.matchDynamicRangeDescription' => 'Switch HDR on for HDR content, then back to SDR',
 			'settings.displaySwitchDelay' => 'Display Switch Delay',
 			'settings.tunneledPlayback' => 'Tunneled Playback',
-			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video.',
+			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
 			'settings.audioPassthroughDescriptionAppleTv' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
@@ -7605,7 +7602,6 @@ extension on Translations {
 			'videoSettings.hdr' => 'HDR',
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
-			'videoSettings.audioPassthrough' => 'Audio Passthrough',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
@@ -7643,9 +7639,9 @@ extension on Translations {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
+			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			_ => null,
 		} ?? switch (path) {
-			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Memory',

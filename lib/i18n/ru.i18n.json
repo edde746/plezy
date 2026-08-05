@@ -1668,7 +1668,6 @@
     "hdr": "HDR",
     "audioOutput": "Аудиовыход",
     "performanceOverlay": "Оверлей производительности",
-    "audioPassthrough": "Сквозной вывод аудио",
     "audioOutputDolbyAtmos": "Dolby Atmos",
     "audioOutputDolbyAudio": "Dolby Audio",
     "audioOutputSurround": "Объёмный звук",

@@ -64,6 +64,7 @@ class ExoPlayerPlugin :
     val autoPlay: Boolean,
     val isLive: Boolean,
     val externalSubtitles: List<Map<String, Any?>>?,
+    val contentFrameRate: Float,
     private val result: MethodChannel.Result?
   ) {
     private val completed = AtomicBoolean(false)
@@ -379,6 +380,8 @@ class ExoPlayerPlugin :
     val autoPlay = call.argument<Boolean>("autoPlay") ?: true
     val isLive = call.argument<Boolean>("isLive") ?: false
     val externalSubtitles = call.argument<List<Map<String, Any?>>>("externalSubtitles")
+    // Server-reported frame rate for this item; -1 when the metadata did not carry one.
+    val contentFrameRate = call.argument<Number>("contentFrameRate")?.toFloat() ?: -1f
 
     if (uri == null) {
       result.error("INVALID_ARGS", "Missing 'uri'", null)
@@ -399,6 +402,7 @@ class ExoPlayerPlugin :
       autoPlay = autoPlay,
       isLive = isLive,
       externalSubtitles = externalSubtitles?.map { it.toMap() },
+      contentFrameRate = contentFrameRate,
       result = result
     )
     terminalEventGeneration = null
@@ -458,7 +462,8 @@ class ExoPlayerPlugin :
         autoPlay = autoPlay,
         mediaGeneration = request.mediaGeneration,
         isLive = isLive,
-        externalSubtitleList = request.externalSubtitles
+        externalSubtitleList = request.externalSubtitles,
+        contentFrameRate = request.contentFrameRate
       )
       request.success()
     }
@@ -1394,6 +1399,8 @@ class ExoPlayerPlugin :
       autoPlay = playWhenReady,
       isLive = false,
       externalSubtitles = currentExternalSubtitles?.map { it.toMap() },
+      // The mpv fallback core paces frames itself; the rate only gates ExoPlayer tunneling.
+      contentFrameRate = -1f,
       result = null
     )
     fallbackInProgress = true
