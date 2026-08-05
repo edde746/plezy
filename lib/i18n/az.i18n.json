@@ -11,7 +11,7 @@
     "waitingForAuth": "Təsdiqləmə gözlənilir...\nSəyahətçinizdən (brauzer) daxil olun.",
     "useBrowser": "Səyahətçini istifadə et",
     "or": "və ya",
-    "connectToJellyfin": "Jellyfin-ə qoşul",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Sürətli Qoşulmanı istifadə et",
     "quickConnectInstructions": "Jellyfin-də Sürətli Qoşulmanı açın və bu kodu daxil edin.",
     "quickConnectWaiting": "Təsdiq gözlənilir…",
@@ -827,8 +827,8 @@
     "sessionExpiredOne": "${name} üçün seansın vaxtı bitdi",
     "sessionExpiredMany": "${count} server üçün seansın vaxtı bitdi",
     "signInAgain": "Yenidən daxil ol",
-    "editJellyfinTitle": "Jellyfin qoşulmasını dəyişdir",
-    "editJellyfinIntro": "${serverName} üçün URL əlavə edin və ya silin."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "Kəşf et",
@@ -1873,12 +1873,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Jellyfin serveri əlavə et",
+    "addMediaBrowserTitle": "",
     "serverUrls": "Server URL-ləri",
     "serverUrlsHelper": "Vergüllə ayrılmış bir neçə URL-ə icazə verilir.",
     "findServer": "Server tap",
-    "searchingLocalServers": "Yerli Jellyfin serverləri axtarılır...",
-    "localServers": "Yerli Jellyfin serverləri",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "İstifadəçi adı",
     "password": "Şifrə",
     "signIn": "Daxil ol",
@@ -1890,15 +1890,15 @@
     "addPlexTitle": "Plex ilə daxil ol",
     "pinExpired": "PIN-in vaxtı bitdi. Lütfən təzədən cəhd edin.",
     "failedToRegisterAccount": "Hesab qeydiyyatı uğursuz oldu: ${error}",
-    "enterJellyfinUrlError": "Jellyfin server URL-inizi daxil edin",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "Qoşulma əlavə et",
     "addConnectionTitleScoped": "${name} profilinə əlavə et",
     "signInWithPlexCard": "Plex ilə daxil ol",
     "signInWithPlexCardSubtitle": "Bu cihazı səlahiyyətləndirin.",
     "signInWithPlexCardSubtitleScoped": "Plex hesabını səlahiyyətləndirin.",
-    "connectToJellyfinCard": "Jellyfin-ə qoşul",
-    "connectToJellyfinCardSubtitle": "Server URL, istifadəçi adı və şifrənizi daxil edin.",
-    "connectToJellyfinCardSubtitleScoped": "Jellyfin serverinə daxil olun. ${name} profilinə bağlanır.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "Başqa profildən götür",
     "borrowFromAnotherProfileSubtitle": "Başqa profilin qoşulmasını yenidən istifadə edin."
   }

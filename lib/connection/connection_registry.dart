@@ -161,12 +161,13 @@ class ConnectionRegistry {
           createdAt: createdAt,
           lastAuthenticatedAt: lastAuth,
         ),
-        ConnectionKind.jellyfin => JellyfinConnection.fromConfigJson(
+        ConnectionKind.jellyfin || ConnectionKind.emby => JellyfinConnection.fromConfigJson(
           id: row.id,
           json: revealed.config,
           status: ConnectionStatus.unknown,
           createdAt: createdAt,
           lastAuthenticatedAt: lastAuth,
+          dialect: kind.dialect!,
         ),
       };
       if (revealed.migrated) {

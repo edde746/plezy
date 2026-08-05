@@ -116,7 +116,6 @@ class _Translations$auth$zh_Hant extends Translations$auth$zh {
 	@override String get waitingForAuth => '正在等待驗證…\n請在瀏覽器中登入。';
 	@override String get useBrowser => '使用瀏覽器';
 	@override String get or => '或';
-	@override String get connectToJellyfin => '連線至 Jellyfin';
 	@override String get useQuickConnect => '使用快速連線（Quick Connect）';
 	@override String get quickConnectInstructions => '在 Jellyfin 中開啟快速連線並輸入此代碼。';
 	@override String get quickConnectWaiting => '等待核准…';
@@ -918,8 +917,6 @@ class _Translations$connections$zh_Hant extends Translations$connections$zh {
 	@override String sessionExpiredOne({required Object name}) => '${name} 的工作階段已過期';
 	@override String sessionExpiredMany({required Object count}) => '${count} 個伺服器的工作階段已過期';
 	@override String get signInAgain => '重新登入';
-	@override String get editJellyfinTitle => '編輯 Jellyfin 連線';
-	@override String editJellyfinIntro({required Object serverName}) => '新增或移除 ${serverName} 的 URL。Plezy 會自動選擇可連線且延遲最低的網址。';
 }
 
 // Path: discover
@@ -1801,12 +1798,9 @@ class _Translations$addServer$zh_Hant extends Translations$addServer$zh {
 	final TranslationsZhHant _root; // ignore: unused_field
 
 	// Translations
-	@override String get addJellyfinTitle => '新增 Jellyfin 伺服器';
 	@override String get serverUrls => '伺服器 URL';
 	@override String get serverUrlsHelper => '可輸入多個連線網址，以逗號區隔。';
 	@override String get findServer => '尋找伺服器';
-	@override String get searchingLocalServers => '正在尋找本地 Jellyfin 伺服器…';
-	@override String get localServers => '本地 Jellyfin 伺服器';
 	@override String get username => '使用者名稱';
 	@override String get password => '密碼';
 	@override String get signIn => '登入';
@@ -1818,15 +1812,11 @@ class _Translations$addServer$zh_Hant extends Translations$addServer$zh {
 	@override String get addPlexTitle => '使用 Plex 登入';
 	@override String get pinExpired => 'PIN 碼在登入前已過期。請重試。';
 	@override String failedToRegisterAccount({required Object error}) => '註冊帳戶失敗：${error}';
-	@override String get enterJellyfinUrlError => '請輸入您的 Jellyfin 伺服器 URL';
 	@override String get addConnectionTitle => '新增連線';
 	@override String addConnectionTitleScoped({required Object name}) => '新增連線至 ${name}';
 	@override String get signInWithPlexCard => '使用 Plex 登入';
 	@override String get signInWithPlexCardSubtitle => '授權此裝置。將會新增共享的伺服器連線。';
 	@override String get signInWithPlexCardSubtitleScoped => '授權 Plex 帳戶。Home 使用者會建立為個別的使用者設定檔。';
-	@override String get connectToJellyfinCard => '連線至 Jellyfin';
-	@override String get connectToJellyfinCardSubtitle => '輸入伺服器 URL、使用者名稱與密碼。';
-	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => '登入 Jellyfin 伺服器，並綁定至 ${name} 使用者設定檔。';
 	@override String get borrowFromAnotherProfile => '從另一個使用者設定檔共用';
 	@override String get borrowFromAnotherProfileSubtitle => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。';
 }
@@ -2206,7 +2196,6 @@ extension on TranslationsZhHant {
 			'auth.waitingForAuth' => '正在等待驗證…\n請在瀏覽器中登入。',
 			'auth.useBrowser' => '使用瀏覽器',
 			'auth.or' => '或',
-			'auth.connectToJellyfin' => '連線至 Jellyfin',
 			'auth.useQuickConnect' => '使用快速連線（Quick Connect）',
 			'auth.quickConnectInstructions' => '在 Jellyfin 中開啟快速連線並輸入此代碼。',
 			'auth.quickConnectWaiting' => '等待核准…',
@@ -2709,9 +2698,9 @@ extension on TranslationsZhHant {
 			'videoControls.searchSubtitles' => '搜尋字幕',
 			'videoControls.language' => '語言',
 			'videoControls.noSubtitlesFound' => '找不到字幕',
+			'videoControls.subtitleDownloaded' => '字幕下載成功',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloaded' => '字幕下載成功',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕已下載，但無法套用',
 			'videoControls.subtitleDownloadFailed' => '字幕下載失敗',
 			'videoControls.searchLanguages' => '搜尋語言…',
@@ -2867,8 +2856,6 @@ extension on TranslationsZhHant {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的工作階段已過期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 個伺服器的工作階段已過期',
 			'connections.signInAgain' => '重新登入',
-			'connections.editJellyfinTitle' => '編輯 Jellyfin 連線',
-			'connections.editJellyfinIntro' => ({required Object serverName}) => '新增或移除 ${serverName} 的 URL。Plezy 會自動選擇可連線且延遲最低的網址。',
 			'discover.title' => '發現',
 			'discover.noContentAvailable' => '沒有可用內容',
 			'discover.addMediaToLibraries' => '請向您的媒體庫新增一些媒體內容',
@@ -3223,11 +3210,11 @@ extension on TranslationsZhHant {
 			'watchTogether.failedToCreate' => '建立工作階段失敗',
 			'watchTogether.failedToJoin' => '加入工作階段失敗',
 			'watchTogether.sessionCodeCopied' => '工作階段代碼已複製到剪貼簿',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.relayUnreachable' => '無法連線至中繼伺服器。ISP 封鎖可能會導致「一起看」無法使用。',
 			'watchTogether.reconnectingToHost' => '正在重新連線至主持人…',
 			'watchTogether.currentPlayback' => '目前播放內容',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinCurrentPlayback' => '加入目前播放點',
 			'watchTogether.joinCurrentPlaybackDescription' => '同步至主持人目前的觀看進度',
 			'watchTogether.failedToOpenCurrentPlayback' => '無法開啟目前播放點',
@@ -3654,12 +3641,9 @@ extension on TranslationsZhHant {
 			'services.libraryFilter.modeHintWhitelist' => '僅同步下方已勾選的媒體庫。',
 			'services.libraryFilter.libraries' => '媒體庫',
 			'services.libraryFilter.noLibraries' => '沒有可用的媒體庫',
-			'addServer.addJellyfinTitle' => '新增 Jellyfin 伺服器',
 			'addServer.serverUrls' => '伺服器 URL',
 			'addServer.serverUrlsHelper' => '可輸入多個連線網址，以逗號區隔。',
 			'addServer.findServer' => '尋找伺服器',
-			'addServer.searchingLocalServers' => '正在尋找本地 Jellyfin 伺服器…',
-			'addServer.localServers' => '本地 Jellyfin 伺服器',
 			'addServer.username' => '使用者名稱',
 			'addServer.password' => '密碼',
 			'addServer.signIn' => '登入',
@@ -3671,15 +3655,11 @@ extension on TranslationsZhHant {
 			'addServer.addPlexTitle' => '使用 Plex 登入',
 			'addServer.pinExpired' => 'PIN 碼在登入前已過期。請重試。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '註冊帳戶失敗：${error}',
-			'addServer.enterJellyfinUrlError' => '請輸入您的 Jellyfin 伺服器 URL',
 			'addServer.addConnectionTitle' => '新增連線',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '新增連線至 ${name}',
 			'addServer.signInWithPlexCard' => '使用 Plex 登入',
 			'addServer.signInWithPlexCardSubtitle' => '授權此裝置。將會新增共享的伺服器連線。',
 			'addServer.signInWithPlexCardSubtitleScoped' => '授權 Plex 帳戶。Home 使用者會建立為個別的使用者設定檔。',
-			'addServer.connectToJellyfinCard' => '連線至 Jellyfin',
-			'addServer.connectToJellyfinCardSubtitle' => '輸入伺服器 URL、使用者名稱與密碼。',
-			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => '登入 Jellyfin 伺服器，並綁定至 ${name} 使用者設定檔。',
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
 			_ => null,

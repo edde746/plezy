@@ -12,18 +12,21 @@ import '../utils/isolate_helper.dart';
 ///
 /// Stores raw JSON keyed by `serverId:endpoint` in the shared `ApiCache`
 /// Drift table. `serverId` values are globally unique across connected
-/// backends, so Plex and Jellyfin entries never collide despite sharing
+/// backends, so Plex and MediaBrowser entries never collide despite sharing
 /// the same table.
 ///
-/// Plex- and Jellyfin-specific helpers (item-id pinning, metadata parsing)
+/// Plex- and MediaBrowser-specific helpers (item-id pinning, metadata parsing)
 /// live on subclasses [PlexApiCache] / [JellyfinApiCache], which also
 /// implement the abstract [getMetadata] / [pinForOffline] / [deleteForItem]
 /// methods so callers can dispatch via [forBackend] instead of switching on
 /// the backend type at every call site.
 class ApiCacheSingleton<T extends ApiCache> {
-  ApiCacheSingleton(this.backend, this.typeName);
+  ApiCacheSingleton(this.backends, this.typeName);
 
-  final MediaBackend backend;
+  /// Every backend this cache answers for. Jellyfin and Emby share one
+  /// instance: their DTO shapes are identical and cache rows are keyed by the
+  /// compound `machineId/userId` scope, so there is nothing to isolate.
+  final Set<MediaBackend> backends;
   final String typeName;
   T? _instance;
 
@@ -37,7 +40,7 @@ class ApiCacheSingleton<T extends ApiCache> {
 
   void install(T instance) {
     _instance = instance;
-    ApiCache.registerInstance(backend, instance);
+    ApiCache.registerInstance(instance, backends);
   }
 }
 
@@ -65,14 +68,17 @@ Map<String, MediaItem> decodeCachedMediaRows<T>(
 abstract class ApiCache {
   static final Map<MediaBackend, ApiCache> _byBackend = {};
 
-  /// Registers a backend cache. A new database marks a new application/test
-  /// lifecycle, so registrations tied to the previous database are discarded
-  /// instead of leaving backend dispatch pointed at a closed connection.
-  static void registerInstance(MediaBackend backend, ApiCache cache) {
-    if (_byBackend.values.any((registered) => !identical(registered.database, cache.database))) {
+  /// Registers [instance] for each requested backend. A new database marks a
+  /// new application/test lifecycle, so registrations tied to the previous
+  /// database are discarded instead of leaving backend dispatch pointed at a
+  /// closed connection.
+  static void registerInstance(ApiCache instance, Set<MediaBackend> backends) {
+    if (_byBackend.values.any((registered) => !identical(registered.database, instance.database))) {
       _byBackend.clear();
     }
-    _byBackend[backend] = cache;
+    for (final backend in backends) {
+      _byBackend[backend] = instance;
+    }
   }
 
   /// Pick the cache for [backend]. Plex is the legacy default — covers items
@@ -169,7 +175,7 @@ abstract class ApiCache {
   /// Pull pinned rows for [serverId] and extract the first capture group of
   /// [keyPattern] from each `cacheKey`. Returns the unique set of captured
   /// ids — backend subclasses use this to enumerate their pinned items
-  /// (Plex ratingKeys, Jellyfin item ids).
+  /// (Plex ratingKeys, MediaBrowser item ids).
   Future<Set<String>> extractPinnedIds(ServerId serverId, RegExp keyPattern) async {
     final rows = await (_db.select(
       _db.apiCache,
@@ -215,7 +221,7 @@ abstract class ApiCache {
   /// [itemId] so reloads (`getMetadata` / `getAllPinnedMetadata`) reflect the
   /// state without having to refetch from the server. No-op when the row
   /// isn't cached. Backend subclasses know which JSON fields to mutate
-  /// (Plex `viewCount`, Jellyfin `UserData.PlayCount` / `Played`).
+  /// (Plex `viewCount`, MediaBrowser `UserData.PlayCount` / `Played`).
   ///
   /// Optional positional progress fields ([viewOffsetMs], [lastViewedAt],
   /// [viewedLeafCount]) let the offline-watch-sync service mirror richer
@@ -228,7 +234,7 @@ abstract class ApiCache {
   /// shape + units are not. Adding a new watch-state input here means
   /// updating *both* concrete impls ([PlexApiCache.applyWatchState],
   /// [JellyfinApiCache.applyWatchState]) — Plex stores epoch-seconds and
-  /// flat fields, Jellyfin stores ISO-8601 + ticks under `UserData`.
+  /// flat fields, while Jellyfin and Emby store ISO-8601 + ticks under `UserData`.
   /// The mutations are too short (~3 lines per backend) for a shared
   /// adapter to be a net win, so they live duplicated by design.
   Future<void> applyWatchState({

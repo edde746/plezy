@@ -4486,32 +4486,40 @@ void main() {
       expect(requests[1].queryParameters['imageUrl'], 'https://img.example/poster.jpg');
     });
 
-    test('uploadItemImage sends binary image body and image content type', () async {
+    test('uploadItemImage sends the image as base64 text with the image content type', () async {
+      // This asserted a raw binary body until the transport was exercised
+      // against real servers: both dialects answer HTTP 500 for binary
+      // (Emby 4.9.5: `The input is not a valid Base-64 string`; Jellyfin 10.11:
+      // `Error processing request.`) and 204 for the base64 form. The
+      // `Content-Type` still names the image type — that is how the server
+      // picks the on-disk extension.
       Uri? capturedUri;
-      List<int>? capturedBody;
+      String? capturedBody;
       Map<String, String>? capturedHeaders;
       final client = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
           capturedUri = request.url;
-          capturedBody = request.bodyBytes;
+          capturedBody = request.body;
           capturedHeaders = request.headers;
           return http.Response('', 204);
         }),
       );
       addTearDown(client.close);
 
+      const bytes = [0xff, 0xd8, 0xff, 0x00];
       final success = await client.uploadItemImage(
         'item-1',
         imageType: 'Primary',
-        bytes: [0xff, 0xd8, 0xff, 0x00],
+        bytes: bytes,
         contentType: 'image/jpeg',
       );
 
       expect(success, isTrue);
       expect(capturedUri!.path, '/Items/item-1/Images/Primary');
-      expect(capturedBody, [0xff, 0xd8, 0xff, 0x00]);
-      expect(capturedHeaders!['Content-Type'] ?? capturedHeaders!['content-type'], 'image/jpeg');
+      expect(capturedBody, base64Encode(bytes));
+      expect(base64Decode(capturedBody!), bytes);
+      expect(capturedHeaders!['Content-Type'] ?? capturedHeaders!['content-type'], contains('image/jpeg'));
     });
 
     test('smart=true returns empty without network I/O', () async {

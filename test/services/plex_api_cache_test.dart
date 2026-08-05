@@ -74,6 +74,8 @@ void main() {
       // Register the other backend last; cleanup must not depend on whichever
       // concrete singleton happened to initialize most recently.
       JellyfinApiCache.initialize(db);
+      final mediaBrowserCache = ApiCache.forBackend(MediaBackend.jellyfin);
+      expect(identical(ApiCache.forBackend(MediaBackend.emby), mediaBrowserCache), isTrue);
       await ApiCache.clearRegisteredVolatile();
 
       expect(await cache.get(ServerId('srv'), '/volatile'), isNull);
@@ -85,7 +87,10 @@ void main() {
       JellyfinApiCache.initialize(newDb);
 
       expect(() => ApiCache.forBackend(MediaBackend.plex), throwsStateError);
-      expect(identical(ApiCache.forBackend(MediaBackend.jellyfin).database, newDb), isTrue);
+      final replacement = JellyfinApiCache.instance;
+      expect(identical(ApiCache.forBackend(MediaBackend.jellyfin), replacement), isTrue);
+      expect(identical(ApiCache.forBackend(MediaBackend.emby), replacement), isTrue);
+      expect(identical(replacement.database, newDb), isTrue);
 
       await newDb.close();
     });

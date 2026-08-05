@@ -3,7 +3,6 @@ import '../media/ids.dart';
 
 import '../mpv/mpv.dart';
 
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
@@ -17,17 +16,17 @@ import '../utils/watch_state_notifier.dart';
 
 /// Tracks playback progress and reports it to the active media server.
 ///
-/// Both Plex and Jellyfin go through the unified
+/// Plex and both MediaBrowser dialects go through the unified
 /// [MediaServerClient.reportPlayback*] surface — Plex maps the three signals
-/// onto `/:/timeline` updates with appropriate `state`, Jellyfin uses the
-/// three `/Sessions/Playing*` endpoints.
+/// onto `/:/timeline` updates with appropriate `state`, while MediaBrowser
+/// uses the three `/Sessions/Playing*` endpoints.
 ///
 /// Local watched state flips as soon as the position crosses the client's
 /// [MediaServerClient.watchedThreshold] (per-server pref on Plex, fixed 90% on
-/// Jellyfin). The *server-side* mark is a separate decision: both backends
-/// already mark an item played from a threshold crossing they observe in the
+/// MediaBrowser). The *server-side* mark is a separate decision: each backend
+/// already marks an item played from a threshold crossing it observes in the
 /// reports this tracker sends, so an explicit mark is issued only for sessions
-/// that gave them no such crossing (#1287, #1740).
+/// that gave it no such crossing (#1287, #1740).
 class PlaybackProgressTracker {
   /// Server client for online progress updates (null when offline). Pinned
   /// for the tracker's lifetime — one playback session against the server
@@ -429,7 +428,7 @@ class PlaybackProgressTracker {
   /// Records what the backend actually received, then re-evaluates whether the
   /// explicit mark is still needed.
   ///
-  /// Both backends mark an item played from a watched-threshold *crossing*
+  /// Every supported backend marks an item played from a watched-threshold *crossing*
   /// observed inside a single reporting session — a report below the threshold
   /// followed by one at or above it. Absolute position is not enough: a session
   /// whose every report sits above the threshold, or one resuming past it, is
@@ -579,7 +578,7 @@ class PlaybackProgressTracker {
 
   int? _currentAudioStreamIndex(MediaSourceInfo info) {
     final playerAudioTracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
-    if (metadata.backend == MediaBackend.jellyfin &&
+    if (metadata.backend.usesMediaBrowserApi &&
         (info.audioTracks.any((track) => track.isExternal) || playerAudioTracks.length <= 1)) {
       final selectedSourceTrack = _selectedSourceAudioTrack(info);
       if (selectedSourceTrack != null) return selectedSourceTrack.id;

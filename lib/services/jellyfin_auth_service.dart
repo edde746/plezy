@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
+import '../media/media_browser_dialect.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/media_server_timeouts.dart';
@@ -13,6 +14,7 @@ import '../utils/log_redaction_manager.dart';
 import '../utils/poll_with_backoff.dart';
 import 'jellyfin_auth_header.dart';
 import 'jellyfin_endpoint_discovery.dart';
+import 'media_browser_paths.dart';
 
 /// Result of `POST /QuickConnect/Initiate`. The [code] is shown to the user
 /// and entered in their Jellyfin web UI to approve sign-in; the [secret] is
@@ -42,7 +44,7 @@ class _JellyfinAuthenticationResponse {
 /// Auth flow for adding or refreshing a [JellyfinConnection].
 ///
 /// Lifecycle for adding a server:
-///   1. [probe] — validates the URL responds as a Jellyfin server.
+///   1. [probe] — validates the URL responds as a MediaBrowser server.
 ///   2. [authenticateByName] (or future Quick Connect equivalent) — exchanges
 ///      credentials for a long-lived access token and returns a built
 ///      [JellyfinConnection] ready to insert into [ConnectionRegistry].
@@ -53,12 +55,15 @@ class JellyfinConnectionAuthService {
     required this.clientName,
     required this.clientVersion,
     required this.deviceName,
+    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
     @visibleForTesting this._testHttpClientFactory,
-  }) : _endpointDiscovery = JellyfinEndpointDiscovery(testHttpClientFactory: _testHttpClientFactory);
+  }) : dialect = dialect,
+       _endpointDiscovery = JellyfinEndpointDiscovery(dialect: dialect, testHttpClientFactory: _testHttpClientFactory);
 
   /// App identity sent in the `MediaBrowser` Authorization header. Jellyfin
-  /// uses `Client`/`Device`/`DeviceId`/`Version` to populate the device list
-  /// in its admin UI and to issue tokens.
+  /// and Emby use `Client`/`Device`/`DeviceId`/`Version` to populate the
+  /// device list in their admin UI and to issue tokens.
+  final MediaBrowserDialect dialect;
   final String clientName;
   final String clientVersion;
   final String deviceName;
@@ -81,7 +86,7 @@ class JellyfinConnectionAuthService {
   /// Probe the server identified by [baseUrl] without authenticating. Returns
   /// the public info used by the UI to confirm "yes that's the right server"
   /// before asking for credentials. Throws [MediaServerUrlException] when the
-  /// URL is unreachable or doesn't look like a Jellyfin server.
+  /// URL is unreachable or doesn't look like the selected media server.
   Future<JellyfinServerInfo> probe(String baseUrl) async {
     return _endpointDiscovery.probe(baseUrl);
   }
@@ -158,10 +163,12 @@ class JellyfinConnectionAuthService {
     }
   }
 
-  /// Whether [baseUrl] has Quick Connect enabled. Returns `false` for any
-  /// failure — Jellyfin <10.7 returns 404 on this path, and an offline server
-  /// is functionally indistinguishable from QC-disabled for UI purposes.
+  /// Whether [baseUrl] has Quick Connect enabled. Returns `false` without a
+  /// request for dialects that do not support it, and for any probe failure —
+  /// Jellyfin <10.7 returns 404 on this path, and an offline server is
+  /// functionally indistinguishable from QC-disabled for UI purposes.
   Future<bool> isQuickConnectEnabled(String baseUrl) async {
+    if (!dialect.supportsQuickConnect) return false;
     final normalised = _normaliseBaseUrl(baseUrl);
     final client = _buildHttpClient(baseUrl: normalised);
     try {
@@ -184,6 +191,7 @@ class JellyfinConnectionAuthService {
     required String baseUrl,
     required String deviceId,
   }) async {
+    _requireQuickConnectSupport();
     final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final authHeader = buildJellyfinAuthHeader(
@@ -228,7 +236,7 @@ class JellyfinConnectionAuthService {
   /// in their Jellyfin web UI, then exchange the approved secret for a token
   /// and return a fully-formed [JellyfinConnection]. Returns `null` on
   /// cancel, timeout, or server-side secret expiry (404 mid-poll). Throws
-  /// [MediaServerAuthException] on auth failures (401/403).
+  /// [MediaServerAuthException] on auth failures or an unsupported dialect.
   Future<JellyfinConnection?> authenticateByQuickConnect({
     required String baseUrl,
     List<String>? baseUrls,
@@ -238,6 +246,7 @@ class JellyfinConnectionAuthService {
     Duration timeout = const Duration(minutes: 5),
     bool Function()? shouldCancel,
   }) async {
+    _requireQuickConnectSupport();
     final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
     final info = serverInfo ?? await probe(normalised);
@@ -331,8 +340,9 @@ class JellyfinConnectionAuthService {
   Future<bool> validate(Connection connection) async {
     if (connection is! JellyfinConnection) return false;
     final client = _authenticatedClient(connection);
+    final currentUser = MediaBrowserPaths(dialect: dialect, userId: connection.userId).currentUser;
     try {
-      final response = await client.get('/Users/Me', timeout: MediaServerTimeouts.jellyfinProbe);
+      final response = await client.get(currentUser, timeout: MediaServerTimeouts.jellyfinProbe);
       return response.statusCode == 200;
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) return false;
@@ -365,6 +375,15 @@ class JellyfinConnectionAuthService {
       appLogger.d('JellyfinConnectionAuthService: signOut best-effort failed: $e');
     } finally {
       client.close();
+    }
+  }
+
+  /// Emby 4.9.5 returns 404 for every `/QuickConnect/*` route. Emby Connect is
+  /// a separate account-level product and is not an authentication flow Plezy
+  /// implements.
+  void _requireQuickConnectSupport() {
+    if (!dialect.supportsQuickConnect) {
+      throw MediaServerAuthException('Quick Connect rejected by server');
     }
   }
 
@@ -441,7 +460,7 @@ class JellyfinConnectionAuthService {
   /// Build a [JellyfinConnection] from a successful auth/exchange response.
   /// Connection id is derived from `(machineId, userId)` so each user on a
   /// given server has a single stable connection row.
-  static JellyfinConnection _buildConnection({
+  JellyfinConnection _buildConnection({
     required JellyfinServerInfo info,
     required String normalisedBaseUrl,
     List<String>? baseUrls,
@@ -463,6 +482,7 @@ class JellyfinConnectionAuthService {
       userName: userName,
       accessToken: accessToken,
       deviceId: deviceId,
+      dialect: info.dialect ?? dialect,
       isAdministrator: isAdministrator,
       primaryImageTag: primaryImageTag,
       status: ConnectionStatus.online,

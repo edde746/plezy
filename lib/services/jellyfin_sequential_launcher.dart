@@ -17,14 +17,18 @@ import 'jellyfin_client.dart';
 import 'media_list_playback_launcher.dart';
 import 'playlist_items_loader.dart';
 
-/// Backend-neutral launcher for Jellyfin collections, playlists, and folders.
+/// Backend-neutral launcher for MediaBrowser collections, playlists, and
+/// folders.
 ///
-/// Jellyfin has no server-side queue resource — the client fetches
-/// children (collection) or playlist items, applies shuffle locally,
-/// and hands the flat list to [PlaybackStateProvider] via
-/// [PlaybackStateProvider.setPlaybackFromLocalQueue] which the player
-/// already consumes (mirrors the path
-/// [EpisodeNavigationService] uses for episode windows).
+/// Jellyfin and Emby have no server-side queue resource — the client fetches
+/// children (collection) or playlist items, applies shuffle locally, and hands
+/// the flat list to [PlaybackStateProvider] via
+/// [PlaybackStateProvider.setPlaybackFromLocalQueue], which the player already
+/// consumes (mirrors the path [EpisodeNavigationService] uses for episode
+/// windows).
+///
+/// The persisted `jellyfin:` queue-id prefix predates Emby support and covers
+/// both dialects. It must remain stable so existing saved queues keep working.
 class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
   final BuildContext context;
 
@@ -99,9 +103,10 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
     );
   }
 
-  /// Launch playback from a Jellyfin folder row. Jellyfin has no server-side
-  /// queue resource, so folders use the same local queue path as collections.
-  /// The client query is video-only; music-only folders return [PlayQueueEmpty].
+  /// Launch playback from a MediaBrowser folder row. Neither dialect has a
+  /// server-side queue resource, so folders use the same local queue path as
+  /// collections. The client query is video-only; music-only folders return
+  /// [PlayQueueEmpty].
   @override
   Future<PlayQueueResult> launchFromFolder({
     required MediaItem folder,

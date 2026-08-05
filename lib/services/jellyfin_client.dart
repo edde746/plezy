@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
@@ -17,6 +18,7 @@ import '../media/media_filter.dart';
 import '../media/live_tv_support.dart';
 import '../media/lyrics.dart';
 import '../media/media_backend.dart';
+import '../media/media_browser_dialect.dart';
 import '../media/media_file_info.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -61,6 +63,7 @@ import 'jellyfin_media_info_mapper.dart';
 import 'jellyfin_playback_bundle.dart';
 import 'jellyfin_playback_urls.dart';
 import 'jellyfin_trickplay_service.dart';
+import 'media_browser_paths.dart';
 import 'playback_initialization_types.dart';
 import 'scrub_preview_source.dart';
 import 'subtitle_preference.dart';
@@ -86,18 +89,79 @@ part 'jellyfin_client/parts/metadata_edit.dart';
 /// used by a single part stay declared in that part.
 mixin _JellyfinClientInternals on MediaServerCacheMixin {
   JellyfinConnection get connection;
+  MediaBrowserDialect get dialect;
+  MediaBrowserPaths get paths;
   FailoverHttpClient get _http;
   MediaItem? _mapItem(Map<String, dynamic> json);
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
   String? _absolutizeImagePath(String? path);
+
+  /// Row metadata Jellyfin volunteers on `/Items` list responses but Emby
+  /// withholds unless it is named in `Fields`.
+  ///
+  /// Measured on Emby 4.9.5 against a movie that carries them all: a row built
+  /// from [_baseBrowseFields] came back with no `ProductionYear`,
+  /// `OfficialRating`, `PremiereDate` or `DateCreated`, while the same query
+  /// naming them returned `2011`, `PG-13`, the premiere date and the library-add
+  /// time. Jellyfin 10.11 includes the first three in every row regardless.
+  /// Emby's *detail* route volunteers everything, so only list rows are
+  /// affected — but that is every card in the app, which would otherwise lose
+  /// its year and age-rating badge.
+  ///
+  /// `DateCreated` is load-bearing beyond display: it is the `addedAt` every
+  /// recency-ordered surface degrades to when a row has never been played.
+  ///
+  /// `UserDataLastPlayedDate` is the odd one out: it is not an `ItemFields`
+  /// member but an Emby-specific token, and it is the only way to get
+  /// `UserData.LastPlayedDate` onto a list row. Measured on Emby 4.9.5: the
+  /// played date is absent under `Fields=UserData`, `EnableUserData=true` and the
+  /// user-scoped `Ids=` form, and present only on the single-item detail route or
+  /// when this token is named. Jellyfin 10.11 volunteers the date on every row and
+  /// accepts the token without changing its responses, but since it is undocumented
+  /// there, only Emby is asked for it.
+  ///
+  /// Every row set needs it, not just the recency-ordered ones: a null played date
+  /// on a *watched* row makes [JellyfinApiCache.applyWatchState] stamp
+  /// `DateTime.now()`, so an offline watch-state pull over episode rows would
+  /// rewrite the cached play time of everything it touched.
+  static const _embyWithheldRowFields = [
+    'ProductionYear',
+    'OfficialRating',
+    'PremiereDate',
+    'DateCreated',
+    'UserDataLastPlayedDate',
+  ];
+
+  /// Append the fields this dialect withholds, skipping any the set already
+  /// names so Jellyfin's request strings stay byte-identical.
+  String _withDialectRowFields(String fields) {
+    if (dialect != MediaBrowserDialect.emby) return fields;
+    final present = fields.split(',').map((field) => field.trim()).toSet();
+    final missing = _embyWithheldRowFields.where((field) => !present.contains(field));
+    return missing.isEmpty ? fields : '$fields,${missing.join(',')}';
+  }
+
+  String get _browseFields => _withDialectRowFields(_baseBrowseFields);
+  String get _hubRowFields => _withDialectRowFields(_baseHubRowFields);
+  String get _episodeRowFields => _withDialectRowFields(_baseEpisodeRowFields);
+  String get _folderBrowseFields => _withDialectRowFields(_baseFolderBrowseFields);
+  String get _folderRowFields => _withDialectRowFields(_baseFolderRowFields);
+  String get _musicAlbumRowFields => _withDialectRowFields(_baseMusicAlbumRowFields);
+  String get _musicTrackRowFields => _withDialectRowFields(_baseMusicTrackRowFields);
+  String get _queueFields => _withDialectRowFields(_baseQueueFields);
 }
 
-/// [MediaServerClient] over a Jellyfin server.
+/// [MediaServerClient] over a MediaBrowser-family server — Jellyfin or Emby.
 ///
 /// Constructs from a [JellyfinConnection] and a [MediaServerHttpClient] (the
 /// HTTP wrapper is backend-agnostic despite the name). Implements the full
 /// neutral interface: browse, watch state, playlist read, playback session
 /// reporting, and live TV via [LiveTvSupport].
+///
+/// Jellyfin forked from Emby 3.5.2 and the wire contract is still ~95% shared,
+/// so one client serves both. [dialect] selects the divergent routes (via
+/// [paths]) and the features that exist on only one side — see
+/// [MediaBrowserDialect].
 class JellyfinClient
     with
         MediaServerCacheMixin,
@@ -119,7 +183,8 @@ class JellyfinClient
         ScopedMediaServerClient,
         GracefullyCloseable {
   JellyfinClient._({required this._connection, required this._http, FavoriteChannelsRepository? favoritesRepository})
-    : _favoritesRepository = favoritesRepository ?? const SharedPreferencesFavoriteChannelsRepository();
+    : _favoritesRepository = favoritesRepository ?? const SharedPreferencesFavoriteChannelsRepository(),
+      _paths = MediaBrowserPaths(dialect: _connection.dialect, userId: _connection.userId);
 
   /// Build a fully-initialised [JellyfinClient]. Endpoint reachability is
   /// raced before construction by onboarding/profile binding; this factory
@@ -131,6 +196,10 @@ class JellyfinClient
   /// reject requests that only carry the legacy `X-Emby-Token` header,
   /// returning 404 from the proxy or a routing-level handler instead of
   /// 401. We send `X-Emby-Token` too for old Emby/Jellyfin builds.
+  ///
+  /// Emby accepts this header pair verbatim: it authored both the
+  /// `MediaBrowser` Authorization scheme and `X-Emby-Token`, so no dialect
+  /// branch is needed here (verified against Emby 4.9.5).
   static Future<JellyfinClient> create(
     JellyfinConnection connection, {
     FavoriteChannelsRepository? favoritesRepository,
@@ -140,7 +209,7 @@ class JellyfinClient
     // HTTP traffic. Orchestration logs contain no literals; this additionally
     // protects unavoidable network-layer diagnostics.
     _registerConnectionDiagnostics(connection);
-    final endpointDiscovery = JellyfinEndpointDiscovery();
+    final endpointDiscovery = JellyfinEndpointDiscovery(dialect: connection.dialect);
     String version = '1.0';
     try {
       final pkg = await PackageInfo.fromPlatform();
@@ -203,7 +272,10 @@ class JellyfinClient
     void Function()? onAllEndpointsExhausted,
   }) {
     _registerConnectionDiagnostics(connection);
-    final endpointDiscovery = JellyfinEndpointDiscovery(testHttpClientFactory: endpointProbeHttpClientFactory);
+    final endpointDiscovery = JellyfinEndpointDiscovery(
+      dialect: connection.dialect,
+      testHttpClientFactory: endpointProbeHttpClientFactory,
+    );
     late JellyfinClient client;
     final mediaHttp = FailoverHttpClient(
       baseUrl: connection.baseUrl,
@@ -221,11 +293,23 @@ class JellyfinClient
   }
 
   /// Mutable so [isHealthy] can refresh `Policy.IsAdministrator` from the
-  /// `/Users/Me` probe response — admin status changed server-side should
+  /// current-user probe response — admin status changed server-side should
   /// propagate without forcing the user to re-auth.
   JellyfinConnection _connection;
   @override
   JellyfinConnection get connection => _connection;
+
+  /// Which MediaBrowser dialect this server speaks. Fixed for the lifetime of
+  /// the client: an endpoint switch can move the base URL but never turns a
+  /// Jellyfin server into an Emby one.
+  @override
+  MediaBrowserDialect get dialect => _connection.dialect;
+
+  /// Route builders for the endpoints where the two dialects diverge.
+  @override
+  MediaBrowserPaths get paths => _paths;
+  final MediaBrowserPaths _paths;
+
   @override
   final FailoverHttpClient _http;
   final FavoriteChannelsRepository _favoritesRepository;
@@ -275,8 +359,13 @@ class JellyfinClient
   String? _absolutizeImagePath(String? path) => _absolutizer.absolutize(path);
 
   @override
-  MediaItem? _mapItem(Map<String, dynamic> json) =>
-      JellyfinMappers.mediaItem(json, serverId: serverId, serverName: serverName, absolutizer: _absolutizer);
+  MediaItem? _mapItem(Map<String, dynamic> json) => JellyfinMappers.mediaItem(
+    json,
+    serverId: serverId,
+    serverName: serverName,
+    absolutizer: _absolutizer,
+    dialect: dialect,
+  );
 
   @override
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items) =>
@@ -292,20 +381,23 @@ class JellyfinClient
   String? get serverName => connection.serverName;
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
+  MediaBackend get backend => dialect.backend;
 
   @override
-  ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
+  ServerCapabilities get capabilities => switch (dialect) {
+    MediaBrowserDialect.jellyfin => ServerCapabilities.jellyfin,
+    MediaBrowserDialect.emby => ServerCapabilities.emby,
+  };
 
-  /// Jellyfin doesn't expose a per-server played-threshold pref, so we mirror
+  /// Neither dialect exposes a per-server played-threshold pref, so we mirror
   /// Plex's default of 90%.
   @override
   double get watchedThreshold => 0.9;
 
-  /// Jellyfin marks an item played from `/Sessions/Playing/Stopped` itself
-  /// (server `MaxResumePct`, default 90%), so the in-player auto-scrobble must
-  /// not also `POST /UserPlayedItems` — that double-scrobbles via the Trakt
-  /// plugin (#1287). Manual mark-watched still hits `/UserPlayedItems`.
+  /// Both dialects mark an item played from `/Sessions/Playing/Stopped`
+  /// themselves (server `MaxResumePct`, default 90%), so the in-player
+  /// auto-scrobble must not also POST the played route — that double-scrobbles
+  /// via the Trakt plugin (#1287). Manual mark-watched still writes it.
   @override
   bool get marksWatchedOnPlaybackStopped => true;
 
@@ -316,7 +408,8 @@ class JellyfinClient
   Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) =>
       _http.closeGracefully(drainTimeout: drainTimeout);
 
-  /// Reachable *and* token-valid. We probe `/Users/Me` (auth-required)
+  /// Reachable *and* token-valid. We probe the current-user route
+  /// ([MediaBrowserPaths.currentUser], auth-required)
   /// rather than `/System/Info/Public` so a revoked token surfaces as
   /// unhealthy on the very next sweep, instead of waiting for the first
   /// real call to 401.
@@ -332,7 +425,7 @@ class JellyfinClient
   @override
   Future<HealthStatus> checkHealth() async {
     try {
-      final response = await _http.get('/Users/Me', timeout: MediaServerTimeouts.jellyfinProbe);
+      final response = await _http.get(paths.currentUser, timeout: MediaServerTimeouts.jellyfinProbe);
       final ok = response.statusCode >= 200 && response.statusCode < 300;
       if (ok) {
         final data = response.data;
@@ -382,7 +475,7 @@ class JellyfinClient
   /// Returns null on transport failures — caller treats as "no preference".
   Future<JellyfinUserProfile?> fetchUserProfile() async {
     try {
-      final response = await _http.get('/Users/Me');
+      final response = await _http.get(paths.currentUser);
       throwIfHttpError(response);
       final data = response.data;
       if (data is! Map<String, dynamic>) return null;

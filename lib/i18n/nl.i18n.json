@@ -11,7 +11,7 @@
     "waitingForAuth": "Wachten op authenticatie...\nMeld je aan via je browser.",
     "useBrowser": "Gebruik browser",
     "or": "of",
-    "connectToJellyfin": "Verbinden met Jellyfin",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Quick Connect gebruiken",
     "quickConnectInstructions": "Open Quick Connect in Jellyfin en voer deze code in.",
     "quickConnectWaiting": "Wachten op goedkeuring…",
@@ -827,8 +827,8 @@
     "sessionExpiredOne": "Sessie verlopen voor ${name}",
     "sessionExpiredMany": "Sessie verlopen voor ${count} servers",
     "signInAgain": "Opnieuw aanmelden",
-    "editJellyfinTitle": "Jellyfin-verbinding bewerken",
-    "editJellyfinIntro": "Voeg URL's voor ${serverName} toe of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "Ontdekken",
@@ -1873,12 +1873,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Jellyfin-server toevoegen",
+    "addMediaBrowserTitle": "",
     "serverUrls": "Server-URL's",
     "serverUrlsHelper": "Meerdere URL's toegestaan, gescheiden door komma's.",
     "findServer": "Server zoeken",
-    "searchingLocalServers": "Lokale Jellyfin-servers zoeken...",
-    "localServers": "Lokale Jellyfin-servers",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "Gebruikersnaam",
     "password": "Wachtwoord",
     "signIn": "Inloggen",
@@ -1890,15 +1890,15 @@
     "addPlexTitle": "Inloggen met Plex",
     "pinExpired": "De pincode verliep voordat je kon inloggen. Probeer het opnieuw.",
     "failedToRegisterAccount": "Account registreren mislukt: ${error}",
-    "enterJellyfinUrlError": "Voer de URL van je Jellyfin-server in",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "Verbinding toevoegen",
     "addConnectionTitleScoped": "Toevoegen aan ${name}",
     "signInWithPlexCard": "Inloggen met Plex",
     "signInWithPlexCardSubtitle": "Autoriseer dit apparaat. Gedeelde servers worden toegevoegd.",
     "signInWithPlexCardSubtitleScoped": "Autoriseer een Plex-account. Home-gebruikers worden profielen.",
-    "connectToJellyfinCard": "Verbinden met Jellyfin",
-    "connectToJellyfinCardSubtitle": "Voer je server-URL, gebruikersnaam en wachtwoord in.",
-    "connectToJellyfinCardSubtitleScoped": "Log in op een Jellyfin-server. Wordt gekoppeld aan ${name}.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "Van een ander profiel lenen",
     "borrowFromAnotherProfileSubtitle": "Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist."
   }

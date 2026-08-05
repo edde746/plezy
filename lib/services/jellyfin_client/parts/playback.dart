@@ -10,10 +10,10 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
 }
 
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
-  /// Backend-neutral [PlaybackExtras] for [itemId]. Jellyfin exposes chapters
-  /// at the item level (`raw['Chapters']`) and native skip segments through a
-  /// separate `/MediaSegments/{itemId}` endpoint. Segment loading is best-effort
-  /// so older servers still use chapter title fallback.
+  /// Backend-neutral [PlaybackExtras] for [itemId]. Both dialects expose
+  /// chapters at the item level (`raw['Chapters']`), while only Jellyfin exposes
+  /// native skip segments through `/MediaSegments/{itemId}`. Segment loading is
+  /// best-effort so unsupported and older servers use chapter title fallback.
   @override
   Future<PlaybackExtras> fetchPlaybackExtras(
     String itemId, {
@@ -71,6 +71,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     required MediaItem item,
     required MediaSourceInfo mediaSource,
   }) async {
+    // Emby 4.9.5 has neither the `Trickplay` field nor the tile route; its capabilities stop URL construction here.
     if (!capabilities.scrubThumbnails) return null;
     final manifest = mediaSource.trickplayByWidth;
     if (manifest == null || manifest.isEmpty) return null;
@@ -83,6 +84,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   }
 
   Future<List<MediaMarker>> _fetchMediaSegmentMarkers(String itemId) async {
+    if (!dialect.supportsMediaSegments) {
+      // Emby 4.9.5 returns 404 for `/MediaSegments/{itemId}`; empty markers preserve the chapter-name fallback.
+      return const [];
+    }
     final endpoint = JellyfinApiCache.mediaSegmentsEndpoint(itemId);
     try {
       return await fetchWithCacheFallback<List<MediaMarker>>(
@@ -126,14 +131,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     return uri.replace(queryParameters: params).toString();
   }
 
-  /// Jellyfin playback URL resolution.
+  /// MediaBrowser playback URL resolution.
   ///
-  /// Always POSTs `/Items/{id}/PlaybackInfo` so Jellyfin can resolve external
+  /// Always POSTs `/Items/{id}/PlaybackInfo` so the server can resolve external
   /// audio/subtitle streams server-side. Uses the returned `TranscodingUrl`
   /// when the caller asked for a capped quality; otherwise — and on any
-  /// DirectPlay decision — builds the static direct stream URL
-  /// (`/Videos/{id}/stream?Static=true&api_key=...`) itself, because Jellyfin
-  /// never returns a direct-play URL of its own.
+  /// DirectPlay decision — builds the shared static direct stream URL
+  /// (`/Videos/{id}/stream?Static=true&api_key=...`) itself.
   ///
   /// The returned `MediaSourceInfo` is what the player uses for track-picker
   /// labels and auto-track selection by language.
@@ -764,11 +768,26 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         'PlayMethod': playMethod ?? 'DirectPlay',
         'RepeatMode': 'RepeatNone',
         'PlaybackOrder': 'Default',
-        'PlaySessionId': ?playSessionId,
+        'PlaySessionId': ?_resolvePlaySessionId(playSessionId, itemId),
         'LiveStreamId': ?liveStreamId,
       },
     );
     throwIfHttpError(response);
+  }
+
+  /// Session id for a `/Sessions/Playing*` body.
+  ///
+  /// Normally the caller forwards the id returned by the PlaybackInfo
+  /// negotiation. Callers that never negotiated one — the offline
+  /// watch-progress sync, which replays a recorded position — leave it null,
+  /// which Emby rejects with HTTP 400 (see
+  /// [MediaBrowserDialect.requiresPlaySessionId]). The synthesized id is
+  /// derived from [itemId] so the started/progress/stopped triple of one replay
+  /// lands on a single server-side session row instead of orphaning each call.
+  String? _resolvePlaySessionId(String? playSessionId, String itemId) {
+    if (playSessionId != null) return playSessionId;
+    if (!dialect.requiresPlaySessionId) return null;
+    return 'plezy-replay-$itemId';
   }
 
   /// Tell the server the user has started playing [itemId].
@@ -847,7 +866,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         'MediaSourceId': ?mediaSourceId,
         'PositionTicks': msToJellyfinTicks(position.inMilliseconds),
         'Failed': false,
-        'PlaySessionId': ?playSessionId,
+        'PlaySessionId': ?_resolvePlaySessionId(playSessionId, itemId),
         'LiveStreamId': ?liveStreamId,
       },
     );

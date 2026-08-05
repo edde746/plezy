@@ -46,10 +46,10 @@ class PlayQueueError extends PlayQueueResult {
 /// Backend-neutral playback launcher for collections and playlists.
 ///
 /// Plex uses server-side `/playQueues` (one round trip, server tracks
-/// queue state). Jellyfin has no equivalent — the concrete Jellyfin launcher
-/// builds an in-memory queue from playable descendants or playlist items.
-/// [MediaListPlaybackLauncher.forItem] picks the implementation by inspecting
-/// the item's backend.
+/// queue state). MediaBrowser servers have no equivalent — the concrete
+/// [JellyfinSequentialLauncher] builds an in-memory queue from playable
+/// descendants or playlist items. [MediaListPlaybackLauncher.forItem] picks
+/// the implementation by inspecting the item's backend.
 abstract class MediaListPlaybackLauncher {
   /// Launch playback from a collection (a [MediaItem] with
   /// `kind == MediaKind.collection`) or a [MediaPlaylist].
@@ -57,7 +57,7 @@ abstract class MediaListPlaybackLauncher {
   /// [startItem] (optional) starts playback at that item rather than the head
   /// of the queue — used by the playlist detail screen's "tap an item to
   /// start here" interaction. Plex passes it as `key` to `/playQueues`;
-  /// Jellyfin rotates the locally-built queue. Ignored when [shuffle] is
+  /// MediaBrowser rotates the locally-built queue. Ignored when [shuffle] is
   /// true.
   Future<PlayQueueResult> launchFromCollectionOrPlaylist({
     required Object item,
@@ -67,17 +67,17 @@ abstract class MediaListPlaybackLauncher {
   });
 
   /// Launch shuffled playback for a show or season. Plex builds a server-side
-  /// `/playQueues` with `shuffle=1`; Jellyfin fetches the full episode list
-  /// via `fetchClientSideEpisodeQueue`, shuffles locally, and publishes
-  /// through `setPlaybackFromLocalQueue` (same path as the sequential
-  /// queue from `EpisodeNavigationService`).
+  /// `/playQueues` with `shuffle=1`; MediaBrowser fetches the full episode
+  /// list via `fetchClientSideEpisodeQueue`, shuffles locally, and publishes
+  /// through `setPlaybackFromLocalQueue` (same path as the sequential queue
+  /// from `EpisodeNavigationService`).
   Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true});
 
   /// Launch playback from a folder row of the library tree. Everything each
   /// backend needs is stamped onto [folder]: Plex builds a server-side
   /// `/playQueues` from [MediaItem.backendFolderKey] (returning a
-  /// [PlayQueueError] when the row carries none), Jellyfin fetches the
-  /// folder's playable descendants and publishes a local queue.
+  /// [PlayQueueError] when the row carries none), while MediaBrowser fetches
+  /// the folder's playable descendants and publishes a local queue.
   Future<PlayQueueResult> launchFromFolder({
     required MediaItem folder,
     required bool shuffle,
@@ -88,7 +88,7 @@ abstract class MediaListPlaybackLauncher {
   /// [MediaItem.backend] / [MediaPlaylist.backend].
   static MediaListPlaybackLauncher forItem(BuildContext context, Object item) {
     final backend = _backendOf(item);
-    if (backend == MediaBackend.jellyfin) {
+    if (backend.usesMediaBrowserApi) {
       return JellyfinSequentialLauncher(context: context);
     }
     return PlexPlayQueueLauncher.forContext(context, item);

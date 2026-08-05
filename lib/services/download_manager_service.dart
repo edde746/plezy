@@ -459,18 +459,19 @@ class DownloadManagerService {
 
   /// Returns the cache namespace visible to [activeProfileId] for [serverId].
   ///
-  /// Jellyfin prefers the persisted profile-to-user binding so a cold launch
-  /// and a profile switch cannot inherit the physical download row's creator
-  /// scope. A live scope is used only when no persisted binding exists.
+  /// MediaBrowser backends prefer the persisted profile-to-user binding so a
+  /// cold launch and a profile switch cannot inherit the physical download
+  /// row's creator scope. A live scope is used only when no persisted binding
+  /// exists.
   Future<String?> profileClientScopeIdForServer(ServerId serverId, String? activeProfileId) async {
     if (activeProfileId == null || activeProfileId.isEmpty) return null;
     final backend = await _backendForServer(serverId);
-    if (backend == MediaBackend.plex) {
-      return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
+    if (backend == null) return null;
+    if (backend.usesMediaBrowserApi) {
+      final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
+      return persisted ?? activeClientScopeIdForServer(serverId);
     }
-    if (backend != MediaBackend.jellyfin) return null;
-    final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
-    return persisted ?? activeClientScopeIdForServer(serverId);
+    return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
   }
 
   /// Bulk-load pinned metadata. Profile-visible hydration reads only exact
@@ -568,16 +569,19 @@ class DownloadManagerService {
   /// is currently offline (the connection persists across launches).
   ///
   /// [JellyfinCacheResolver] reconciles bare machine ids with compound
-  /// `${serverMachineId}/$userId` connection ids without treating `_` or `%`
-  /// as wildcards.
+  /// `${serverMachineId}/$userId` MediaBrowser connection ids without treating
+  /// `_` or `%` as wildcards.
   Future<MediaBackend?> _backendForServer(ServerId serverId) async {
     // Prefer a live client — `MediaServerClient.backend` is in memory.
     final live = _getClient(serverId);
     if (live != null) return live.backend;
     final row = await JellyfinCacheResolver(_database).findConnection(serverId);
     if (row == null) return null;
+    // Keep the persisted discriminator intact even though both MediaBrowser
+    // values dispatch to the same cache implementation.
     return switch (row.kind) {
       'jellyfin' => MediaBackend.jellyfin,
+      'emby' => MediaBackend.emby,
       'plex' => MediaBackend.plex,
       _ => null,
     };
@@ -590,8 +594,8 @@ class DownloadManagerService {
   /// When [_backendForServer] can't resolve the backend (no live client and
   /// no `connections` row — happens when a server has been removed but old
   /// download rows still reference it), fan out to every registered backend
-  /// cache instead of silently defaulting to Plex. Otherwise Jellyfin items
-  /// would render with blank metadata after a connection is severed.
+  /// cache instead of silently defaulting to Plex. Otherwise MediaBrowser
+  /// items would render with blank metadata after a connection is severed.
   Future<MediaItem?> _lookupMetadata(ServerId serverId, String itemId, {String? clientScopeId}) async {
     final backend = await _backendForServer(serverId);
     final live = _getClient(serverId, clientScopeId: clientScopeId);
@@ -712,8 +716,8 @@ class DownloadManagerService {
     }
   }
 
-  /// Backend-aware "ensure cached & pin". Jellyfin loads playback extras so
-  /// both item metadata and native media segments are available offline; other
+  /// Backend-aware "ensure cached & pin". MediaBrowser backends load playback
+  /// extras; Jellyfin can additionally cache native media segments. Other
   /// backends only need the item metadata row. Then pin cached rows so they
   /// survive general cache eviction.
   Future<void> _pinMetadataForOffline(MediaServerClient client, MediaItem metadata) async {
@@ -722,7 +726,7 @@ class DownloadManagerService {
       appLogger.w('Cannot pin metadata without serverId');
       return;
     }
-    if (client.backend == MediaBackend.jellyfin) {
+    if (client.backend.usesMediaBrowserApi) {
       try {
         await client.fetchPlaybackExtras(metadata.id);
       } catch (e) {
@@ -3564,7 +3568,7 @@ class DownloadManagerService {
   /// Save metadata for a media item (show, season, movie, or episode)
   /// Used to persist parent metadata (shows/seasons) for offline display.
   ///
-  /// Both backends now have read-path cache-through, so the work is just to
+  /// All backends have read-path cache-through, so the work is just to
   /// hit `client.fetchItem` (idempotent) and pin the resulting row.
   Future<void> saveMetadata(MediaItem metadata, MediaServerClient client) async {
     if (metadata.serverId == null) {

@@ -63,11 +63,7 @@ class CredentialVault {
 
   static Future<Map<String, Object?>> protectConnectionConfig(String kind, Map<String, Object?> config) async {
     final copy = Map<String, Object?>.from(config);
-    final tokenKey = switch (kind) {
-      'plex' => 'accountToken',
-      'jellyfin' => 'accessToken',
-      _ => null,
-    };
+    final tokenKey = _tokenKeyForKind(kind);
     final token = tokenKey == null ? null : copy[tokenKey];
     if (token is String) copy[tokenKey!] = await protect(token);
     if (kind == 'plex') {
@@ -81,11 +77,7 @@ class CredentialVault {
     Map<String, dynamic> config,
   ) async {
     final copy = Map<String, dynamic>.from(config);
-    final tokenKey = switch (kind) {
-      'plex' => 'accountToken',
-      'jellyfin' => 'accessToken',
-      _ => null,
-    };
+    final tokenKey = _tokenKeyForKind(kind);
     var migrated = false;
     final token = tokenKey == null ? null : copy[tokenKey];
     if (token is String && token.isNotEmpty) {
@@ -102,6 +94,15 @@ class CredentialVault {
     }
     return (config: copy, migrated: migrated);
   }
+
+  /// Config key holding the long-lived credential for a `connections.kind`
+  /// value. Returning `null` means "nothing to encrypt", so every new kind MUST
+  /// be listed here — an omission silently persists the token in plaintext.
+  static String? _tokenKeyForKind(String kind) => switch (kind) {
+    'plex' => 'accountToken',
+    'jellyfin' || 'emby' => 'accessToken',
+    _ => null,
+  };
 
   static Future<Object?> _protectPlexServers(Object? rawServers) async {
     if (rawServers is! List) return rawServers;

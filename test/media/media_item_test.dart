@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
@@ -638,6 +639,46 @@ void main() {
       expect(decoded.backend, MediaBackend.plex);
       expect(decoded.id, 'legacy');
       expect(decoded.kind, MediaKind.movie);
+    });
+
+    test('an Emby item persists its own backend id and restores the dialect', () {
+      const original = JellyfinMediaItem(
+        dialect: MediaBrowserDialect.emby,
+        // Emby item ids are short numeric strings, not GUIDs.
+        id: '7330',
+        kind: MediaKind.movie,
+        title: 'Movie 001',
+        playlistItemId: 'entry-1',
+      );
+
+      final json = original.toJson();
+      final decoded = MediaItem.fromJson(json);
+
+      // One discriminator on the wire: the union key carries the resolved
+      // backend and the dialect is rebuilt from it.
+      expect(json['backend'], 'emby');
+      expect(json.containsKey('dialect'), isFalse);
+      expect(decoded, isA<JellyfinMediaItem>());
+      expect(decoded.backend, MediaBackend.emby);
+      expect((decoded as JellyfinMediaItem).dialect, MediaBrowserDialect.emby);
+      expect(decoded.playlistItemId, 'entry-1');
+      expect(decoded.id, '7330');
+    });
+
+    test('the compat factory routes both MediaBrowser backends to one variant', () {
+      final emby = MediaItem(id: 'e1', backend: MediaBackend.emby, kind: MediaKind.movie);
+      final jellyfin = MediaItem(id: 'j1', backend: MediaBackend.jellyfin, kind: MediaKind.movie);
+
+      expect(emby, isA<JellyfinMediaItem>());
+      expect(jellyfin, isA<JellyfinMediaItem>());
+      expect(emby.backend, MediaBackend.emby);
+      expect(jellyfin.backend, MediaBackend.jellyfin);
+    });
+
+    test('copyWith preserves the Emby dialect', () {
+      final emby = MediaItem(id: 'e1', backend: MediaBackend.emby, kind: MediaKind.movie) as JellyfinMediaItem;
+
+      expect(emby.copyWith(title: 'renamed').backend, MediaBackend.emby);
     });
   });
 

@@ -37,16 +37,28 @@ mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
       return LibraryPage<MediaPlaylist>(items: const [], totalCount: 0, offset: offset);
     }
 
+    // Emby returns the entire item index when `/Items` carries a `MediaTypes`
+    // filter alongside `IncludeItemTypes=Playlist`, and never types a playlist
+    // DTO, so it lists every playlist and the requested type only decides how
+    // the results are labelled. See
+    // [MediaBrowserDialect.playlistsFilterByMediaType].
+    final filterByMediaType = dialect.playlistsFilterByMediaType;
+    final labelType = requestedType.isEmpty ? 'video' : requestedType;
+
     final response = await _http.get(
       '/Items',
       queryParameters: {
         'userId': connection.userId,
         'IncludeItemTypes': 'Playlist',
         'Recursive': 'true',
-        'MediaTypes': ?mediaType,
+        'MediaTypes': ?(filterByMediaType ? mediaType : null),
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
-        'Fields': 'Overview,DateCreated,DateLastSaved,ChildCount,Tags',
+        // `DateModified` carries the modification time on Emby, which leaves
+        // `DateLastSaved` null for playlists. Unlike the detail route, the list
+        // route honours `Fields` strictly, so the mapper's fallback is dead
+        // unless the field is requested here.
+        'Fields': 'Overview,DateCreated,DateLastSaved,DateModified,ChildCount,Tags',
         ...jellyfinImageQueryParameters,
       },
       abort: abort,
@@ -56,7 +68,7 @@ mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
       response.data,
       offset: offset,
       requestedSize: pageSize,
-      map: (raw) => raw.map(_playlistFromJson).toList(),
+      map: (raw) => raw.map((json) => _playlistFromJson(json, labelType: labelType)).toList(),
     );
   }
 
@@ -66,7 +78,7 @@ mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
     if (item == null) return null;
     return MediaPlaylist(
       id: item.id,
-      backend: MediaBackend.jellyfin,
+      backend: dialect.backend,
       title: item.title ?? t.playlists.playlist,
       summary: item.summary,
       smart: false,
@@ -141,13 +153,13 @@ mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
 
   @override
   Future<bool> deletePlaylist(MediaPlaylist playlist) async {
-    // Jellyfin treats playlists as items — same delete endpoint.
+    // Both MediaBrowser dialects treat playlists as items — same delete endpoint.
     final response = await _http.delete('/Items/${_segment(playlist.id)}');
     throwIfHttpError(response);
     return true;
   }
 
-  /// Jellyfin's move endpoint takes an absolute index, so [afterItem] is
+  /// The MediaBrowser move endpoint takes an absolute index, so [afterItem] is
   /// ignored — its sibling Plex impl needs it for `?after=`. The "wrong
   /// backend" / "missing playlistItemId" branches still return `false`
   /// (business not-applicable, not a network error) so callers can revert
@@ -193,18 +205,23 @@ mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
     return true;
   }
 
-  MediaPlaylist _playlistFromJson(Map<String, dynamic> json) {
+  /// [labelType] backs `MediaType` when the server omits it — always the case
+  /// on Emby, which leaves playlists untyped.
+  MediaPlaylist _playlistFromJson(Map<String, dynamic> json, {String labelType = 'video'}) {
     final id = json['Id'] as String? ?? '';
     return MediaPlaylist(
       id: id,
-      backend: MediaBackend.jellyfin,
+      backend: dialect.backend,
       title: json['Name'] as String? ?? t.playlists.playlist,
       summary: json['Overview'] as String?,
       smart: false,
-      playlistType: (json['MediaType'] as String?)?.toLowerCase() ?? 'video',
+      playlistType: (json['MediaType'] as String?)?.toLowerCase() ?? labelType,
       leafCount: json['ChildCount'] as int?,
       addedAt: jellyfinIsoToEpochSeconds(json['DateCreated'] as String?),
-      updatedAt: jellyfinIsoToEpochSeconds(json['DateLastSaved'] as String?),
+      // Emby leaves `DateLastSaved` null on a playlist and carries the
+      // timestamp in `DateModified`; the item and library mappers already use
+      // this same fallback.
+      updatedAt: jellyfinIsoToEpochSeconds(json['DateLastSaved'] as String? ?? json['DateModified'] as String?),
       thumbPath: _absolutizeImagePath(_imageTagPath(id, json['ImageTags'])),
       serverId: serverId,
       serverName: serverName,

@@ -24,6 +24,7 @@ import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/key_event_utils.dart';
 import '../media/media_backend.dart';
+import '../media/media_browser_dialect.dart';
 import '../navigation/profile_session_screen.dart';
 import '../utils/navigation_transitions.dart';
 import '../widgets/backend_badge.dart';
@@ -231,10 +232,13 @@ class _AuthScreenState extends State<AuthScreen> {
     _showDebugTokenDialog();
   }
 
-  Future<void> _connectToJellyfin() async {
+  Future<void> _connectToMediaBrowser(MediaBrowserDialect dialect) async {
     if (!await _prepareDatabaseRecoveryForSignIn()) return;
     if (!mounted) return;
-    final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddJellyfinScreen()));
+    final added = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => AddJellyfinScreen(dialect: dialect)),
+    );
     if (!mounted || added != true) return;
     // The connection persisted and the manager registered the client; move
     // straight to the main screen. [MainScreen] reads the active client
@@ -350,6 +354,10 @@ class _AuthScreenState extends State<AuthScreen> {
     final isAppleTV = PlatformDetector.isAppleTV();
     void startBrowserAfterRecovery() => unawaited(_startPlexAfterRecovery(startBrowser));
     void startQrAfterRecovery() => unawaited(_startPlexAfterRecovery(startQr));
+    const jellyfinDialect = MediaBrowserDialect.jellyfin;
+    const embyDialect = MediaBrowserDialect.emby;
+    void connectToJellyfin() => unawaited(_connectToMediaBrowser(jellyfinDialect));
+    void connectToEmby() => unawaited(_connectToMediaBrowser(embyDialect));
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .stretch,
@@ -423,12 +431,22 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         const SizedBox(height: 12),
         FocusableButton(
-          onPressed: _connectToJellyfin,
+          onPressed: connectToJellyfin,
           child: OutlinedButton.icon(
-            onPressed: _connectToJellyfin,
+            onPressed: connectToJellyfin,
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
             icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
-            label: Text(t.auth.connectToJellyfin),
+            label: Text(t.auth.connectToMediaBrowser(product: jellyfinDialect.productName)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FocusableButton(
+          onPressed: connectToEmby,
+          child: OutlinedButton.icon(
+            onPressed: connectToEmby,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            icon: const BackendBadge(backend: MediaBackend.emby, size: 18),
+            label: Text(t.auth.connectToMediaBrowser(product: embyDialect.productName)),
           ),
         ),
         if (kDebugMode) ...[

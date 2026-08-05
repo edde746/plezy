@@ -33,7 +33,7 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
       }
       return false;
     } catch (e) {
-      appLogger.d('Jellyfin Live TV probe failed', error: e);
+      appLogger.d('${dialect.productName} Live TV probe failed', error: e);
       return false;
     }
   }
@@ -53,8 +53,8 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
 
   /// EPG / programs grid. [channelIds] scopes to specific channels (when
   /// empty, the server returns programs across all channels). [beginsAt] /
-  /// [endsAt] are epoch seconds and bound the time window — Jellyfin uses
-  /// ISO 8601 strings on the wire.
+  /// [endsAt] are epoch seconds and bound the time window — both MediaBrowser
+  /// dialects use ISO 8601 strings on the wire.
   Future<List<LiveTvProgram>> fetchLiveTvPrograms({
     List<String> channelIds = const [],
     int? beginsAt,
@@ -143,7 +143,7 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
   LiveTvSupport get liveTv => _JellyfinLiveTvSupport(this as JellyfinClient);
 }
 
-/// Adapter from [LiveTvSupport] to Jellyfin channel/program helpers.
+/// Adapter from [LiveTvSupport] to MediaBrowser channel/program helpers.
 class _JellyfinLiveTvSupport implements LiveTvSupport {
   final JellyfinClient _client;
   _JellyfinLiveTvSupport(this._client);
@@ -178,8 +178,8 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     if (sources.isEmpty) return null;
     final firstSource = sources.first;
     if (firstSource is! Map<String, dynamic>) {
-      throw const PlaybackException(
-        'Jellyfin returned invalid Live TV playback data',
+      throw PlaybackException(
+        '${_client.dialect.productName} returned invalid Live TV playback data',
         reason: PlaybackFailureReason.invalidPlaybackData,
       );
     }
@@ -192,12 +192,12 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     var liveStreamId = nonEmptyString(source['LiveStreamId']);
     final rawUrl = nonEmptyString(source['TranscodingUrl']);
     if (rawUrl == null) {
-      appLogger.w('Jellyfin Live TV negotiation returned no HLS transcode URL');
+      appLogger.w('${_client.dialect.productName} Live TV negotiation returned no HLS transcode URL');
       return null;
     }
     final rawUri = Uri.tryParse(rawUrl);
     if (rawUri == null || !rawUri.path.toLowerCase().endsWith('.m3u8')) {
-      appLogger.w('Jellyfin Live TV negotiation returned no HLS transcode URL');
+      appLogger.w('${_client.dialect.productName} Live TV negotiation returned no HLS transcode URL');
       return null;
     }
     final url = _client._withApiKey(rawUrl);
@@ -222,8 +222,9 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   }
 
   /// SharedPreferences key for the locally-persisted favorite-channel list.
-  /// Keyed by the compound connection id (`{machineId}/{userId}`) so two
-  /// Jellyfin users on the same server don't share favorites.
+  /// Keyed by the compound connection id (`{machineId}/{userId}`) so users on
+  /// the same MediaBrowser server don't share favorites.
+  // Keep the legacy prefix: the connection id isolates both dialects, and changing it would lose Jellyfin ordering.
   String get _favoritesPrefsKey => 'jellyfin_fav_channels:${_client.connection.id}';
 
   /// Legacy bare-machineId key, kept for one-shot migration.
@@ -266,7 +267,11 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
       } catch (error, stackTrace) {
         firstError ??= error;
         firstStackTrace ??= stackTrace;
-        appLogger.w('Failed to update a Jellyfin favorite channel', error: error, stackTrace: stackTrace);
+        appLogger.w(
+          'Failed to update a ${_client.dialect.productName} favorite channel',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
     }
 
@@ -291,7 +296,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   }
 }
 
-/// A Jellyfin live playback session: one negotiated HLS transcode URL plus
+/// A MediaBrowser live playback session: one negotiated HLS transcode URL plus
 /// `/Sessions/Playing*` heartbeats via [JellyfinLiveSessionTracker]. No
 /// program-scoped session and no time-shift — [recover] re-opens the same
 /// negotiated URL.

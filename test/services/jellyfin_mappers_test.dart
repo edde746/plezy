@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_stream.dart';
@@ -94,6 +95,27 @@ void main() {
       // Multi-server fields.
       expect(item.serverId, _serverId);
       expect(item.serverName, 'Home');
+    });
+
+    test('Emby dialect stamps backend and preserves opaque item and media source ids', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': '7330',
+          'Name': 'Movie',
+          'Type': 'Movie',
+          'MediaSources': [
+            {'Id': 'mediasource_7330', 'MediaStreams': <Map<String, dynamic>>[]},
+          ],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+        dialect: MediaBrowserDialect.emby,
+      )!;
+
+      expect(item.id, '7330');
+      expect(item.backend, MediaBackend.emby);
+      expect(item.mediaVersions!.single.id, 'mediasource_7330');
+      expect(item.mediaVersions!.single.parts.single.id, 'mediasource_7330');
     });
 
     test('divides the Tomatometer rather than range-sniffing it', () {
@@ -554,6 +576,16 @@ void main() {
         expect(lib.kind, entry.value, reason: 'CollectionType ${entry.key}');
         expect(lib.backend, MediaBackend.jellyfin);
       }
+    });
+
+    test('Emby dialect stamps the library backend', () {
+      final library = JellyfinMappers.library(
+        {'Id': 'view-movies', 'Name': 'Movies', 'CollectionType': 'movies'},
+        serverId: ServerId(_serverId),
+        dialect: MediaBrowserDialect.emby,
+      )!;
+
+      expect(library.backend, MediaBackend.emby);
     });
 
     test('maps content-type-less collection folders to a movie and show root browse', () {

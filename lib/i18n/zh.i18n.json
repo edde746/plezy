@@ -11,7 +11,7 @@
     "waitingForAuth": "正在等待身份验证…\n请在浏览器中登录。",
     "useBrowser": "使用浏览器",
     "or": "或",
-    "connectToJellyfin": "连接到 Jellyfin",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "使用 Quick Connect",
     "quickConnectInstructions": "在 Jellyfin 中打开 Quick Connect 并输入此代码。",
     "quickConnectWaiting": "等待批准…",
@@ -826,8 +826,8 @@
     "sessionExpiredOne": "${name} 的会话已过期",
     "sessionExpiredMany": "${count} 个服务器的会话已过期",
     "signInAgain": "重新登录",
-    "editJellyfinTitle": "编辑 Jellyfin 连接",
-    "editJellyfinIntro": "添加或移除 ${serverName} 的 URL。Plezy 会使用可访问且延迟最低的地址。"
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "发现",
@@ -1867,12 +1867,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "添加 Jellyfin 服务器",
+    "addMediaBrowserTitle": "",
     "serverUrls": "服务器 URL",
     "serverUrlsHelper": "可输入多个 URL，并用逗号分隔。",
     "findServer": "查找服务器",
-    "searchingLocalServers": "正在查找本地 Jellyfin 服务器…",
-    "localServers": "本地 Jellyfin 服务器",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "用户名",
     "password": "密码",
     "signIn": "登录",
@@ -1884,15 +1884,15 @@
     "addPlexTitle": "使用 Plex 登录",
     "pinExpired": "PIN 在登录前已过期。请重试。",
     "failedToRegisterAccount": "注册账户失败：${error}",
-    "enterJellyfinUrlError": "请输入 Jellyfin 服务器 URL",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "添加连接",
     "addConnectionTitleScoped": "添加到 ${name}",
     "signInWithPlexCard": "使用 Plex 登录",
     "signInWithPlexCardSubtitle": "授权此设备。共享服务器会被添加。",
     "signInWithPlexCardSubtitleScoped": "授权一个 Plex 账户。Plex Home 用户将成为 Plezy 用户资料。",
-    "connectToJellyfinCard": "连接到 Jellyfin",
-    "connectToJellyfinCardSubtitle": "输入服务器 URL、用户名和密码。",
-    "connectToJellyfinCardSubtitleScoped": "登录到 Jellyfin 服务器。绑定到 ${name}。",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "使用其他用户资料的连接",
     "borrowFromAnotherProfileSubtitle": "复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。"
   }

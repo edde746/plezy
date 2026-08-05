@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
 import '../database/download_operations.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
@@ -25,8 +24,8 @@ import 'watch_state_resolver.dart';
 
 /// Service for managing offline watch progress and syncing it back to the
 /// owning server. Backend-neutral over [MediaServerClient] — Plex actions
-/// hit `/:/scrobble` and `/:/timeline`, Jellyfin actions hit
-/// `/UserPlayedItems/{id}` and `/Sessions/Playing*` through the same queue.
+/// hit `/:/scrobble` and `/:/timeline`, while MediaBrowser actions use their
+/// dialect's played-item route and `/Sessions/Playing*` through the same queue.
 ///
 /// Handles:
 /// - Queuing progress updates when offline
@@ -53,7 +52,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   /// Get watched threshold for a server. Cascades:
   /// 1. Plex's fetched server prefs (`/:/prefs`)
-  /// 2. Jellyfin's fixed [MediaServerClient.watchedThreshold] (0.9)
+  /// 2. MediaBrowser's fixed [MediaServerClient.watchedThreshold] (0.9)
   /// 3. Cached value in SettingsService (mirrored by PlexClient.fetchServerPrefs)
   /// 4. Default 90%
   double getWatchedThreshold(ServerId serverId) {
@@ -61,9 +60,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
     if (client is PlexClient && client.serverPrefs.isNotEmpty) {
       return client.watchedThreshold;
     }
-    if (client != null && client.backend != MediaBackend.plex) {
-      // Jellyfin (and any future neutral backend) — the client exposes a
-      // fixed threshold that mirrors the wire-protocol behaviour.
+    if (client != null && client.backend.usesMediaBrowserApi) {
+      // MediaBrowser clients expose the fixed threshold that mirrors their
+      // wire-protocol behaviour.
       return client.watchedThreshold;
     }
     // No client bound (offline) or Plex prefs not loaded yet — use the
@@ -455,9 +454,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
     final client = _serverManager.getClient(ServerId(action.serverId));
     if (client == null) return null;
-    if (client.backend == MediaBackend.jellyfin && client.cacheServerId != action.serverId) {
+    if (client.backend.usesMediaBrowserApi && client.cacheServerId != action.serverId) {
       appLogger.w(
-        'Refusing to sync unscoped Jellyfin action ${action.id} for ${action.serverId}:${action.ratingKey}; '
+        'Refusing to sync unscoped MediaBrowser action ${action.id} for ${action.serverId}:${action.ratingKey}; '
         'no queued client scope is available',
       );
       return null;
@@ -574,15 +573,15 @@ class OfflineWatchSyncService extends ChangeNotifier {
         break;
 
       case 'progress':
-        // Push resumable progress, or a completed offline playback. Jellyfin's
+        // Push resumable progress, or a completed offline playback.
         // `/Sessions/Playing/Stopped` ignores events without an open session
-        // row, so non-Plex backends still get a lightweight Started call.
+        // row, so MediaBrowser backends still get a lightweight Started call.
         if (action.viewOffset != null) {
           final duration = action.duration == null ? null : Duration(milliseconds: action.duration!);
           final position = action.shouldMarkWatched && duration != null
               ? duration
               : Duration(milliseconds: action.viewOffset!);
-          if (!action.shouldMarkWatched || client.backend != MediaBackend.plex) {
+          if (!action.shouldMarkWatched || client.backend.usesMediaBrowserApi) {
             try {
               await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
             } catch (e) {
@@ -603,8 +602,8 @@ class OfflineWatchSyncService extends ChangeNotifier {
         }
 
         // If progress exceeded threshold, also mark as watched. On backends
-        // that mark played from the stopped report above (Jellyfin) this only
-        // emits the local watch event — an explicit markWatched would
+        // that mark played from the stopped report above (MediaBrowser), this
+        // only emits the local watch event — an explicit markWatched would
         // double-scrobble via the Trakt plugin (#1287).
         if (action.shouldMarkWatched) {
           await client.markWatchedFromPlaybackStop(item);

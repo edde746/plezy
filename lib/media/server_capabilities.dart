@@ -115,6 +115,43 @@ class ServerCapabilities {
     instantMix: true,
   );
 
+  /// Defaults for an Emby server.
+  ///
+  /// `continueWatchingRemoval` is the one flag where Emby is ahead of Jellyfin:
+  /// `POST /Users/{uid}/Items/{id}/HideFromResume` drops an item from Continue
+  /// Watching while keeping its resume position, and Jellyfin 10.11 has no
+  /// equivalent route.
+  ///
+  /// Otherwise identical to [jellyfin] except [scrubThumbnails]: seek-bar
+  /// previews come
+  /// from Jellyfin's `/Videos/{id}/Trickplay` sprite sheets, which Emby (the
+  /// pre-fork ancestor) never gained — it 404s and never populates the
+  /// `Trickplay` item field. With the flag off the player never attempts the
+  /// load; see [MediaBrowserDialect.supportsTrickplay].
+  ///
+  /// Emby does expose two *other* preview transports, `/Videos/{id}/index.bif`
+  /// (the same BIF format Plex uses, so [BifThumbnailService] could parse it)
+  /// and `/Items/{id}/ThumbnailSet`. Neither is wired: on Emby 4.9.5 both
+  /// answer 200 with an empty payload — a 72-byte header-only BIF and
+  /// `{"Thumbnails": []}` — even after a full metadata+image refresh, because
+  /// Emby only fills them once its own extraction task has run. Wiring them
+  /// needs a server that has actually generated the frames, so the flag stays
+  /// `false` rather than shipping a path that cannot be verified.
+  static const ServerCapabilities emby = ServerCapabilities(
+    liveTv: true,
+    liveTvDvr: false,
+    videoTranscoding: true,
+    richHubs: false,
+    numericUserRating: false,
+    userFavorites: true,
+    continueWatchingRemoval: true,
+    externalSubtitleSearch: false,
+    richMetadataEdit: true,
+    scrubThumbnails: false,
+    folderGrouping: true,
+    instantMix: true,
+  );
+
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
   /// which Plex probes per server (`PlexClient.capabilities`) — so that is the
   /// only override this type needs. Widen the parameter list if another flag

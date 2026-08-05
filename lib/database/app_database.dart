@@ -235,7 +235,7 @@ class AppDatabase extends _$AppDatabase {
   static bool _containsPlaintextConnectionCredential(String kind, Map<String, dynamic> config) {
     bool isPlaintext(Object? value) => value is String && value.isNotEmpty && !CredentialVault.isProtected(value);
 
-    if (kind == 'jellyfin') return isPlaintext(config['accessToken']);
+    if (kind == 'jellyfin' || kind == 'emby') return isPlaintext(config['accessToken']);
     if (kind != 'plex') return false;
     if (isPlaintext(config['accountToken'])) return true;
     final servers = config['servers'];

@@ -1857,7 +1857,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           serverManager: serverManager,
         ).pruneUnreferencedJellyfinConnections();
         if (pruned > 0) {
-          appLogger.i('Setup: pruned $pruned unreferenced Jellyfin connection${pruned == 1 ? '' : 's'}');
+          appLogger.i('Setup: pruned $pruned unreferenced MediaBrowser connection${pruned == 1 ? '' : 's'}');
         }
         // Provider initialization starts before this screen runs the legacy
         // migration. Reload after bootstrap so copied Plex Home users and the
@@ -1943,11 +1943,11 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     }
 
     final plexCount = allConnections.whereType<PlexAccountConnection>().fold<int>(0, (n, c) => n + c.servers.length);
-    final jellyfinCount = allConnections.whereType<JellyfinConnection>().length;
+    final mediaBrowserCount = allConnections.whereType<JellyfinConnection>().length;
     unawaited(
       Sentry.addBreadcrumb(
         Breadcrumb(
-          message: 'Handing off to MainScreen with $plexCount Plex server(s) + $jellyfinCount Jellyfin',
+          message: 'Handing off to MainScreen with $plexCount Plex + $mediaBrowserCount MediaBrowser server(s)',
           category: 'setup',
         ),
       ),
@@ -2003,7 +2003,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       if (!mounted) return;
       bindingSucceeded = activeProfile.active != null && activeProfile.lastBindingSucceeded;
     } else {
-      // Now wait for the binder to settle. This is the Plex/Jellyfin server
+      // Now wait for the binder to settle. This is the media-server client
       // race: per-server status flips on the splash list as each client comes
       // online, and we don't push MainScreen until they're all done (success
       // or fail). Eliminates the "Failed to load discover content: No servers
@@ -2023,7 +2023,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     }
 
     // Repopulate metadata for downloaded items now that per-backend caches
-    // are resolvable (the Connections row + live JellyfinClient are in
+    // are resolvable (the Connections row + live MediaBrowser client are in
     // place). Without this the downloads list and sync-rule titles render
     // empty until something forces a later refresh.
     await downloadProvider.refreshMetadataFromCache();

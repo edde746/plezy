@@ -549,14 +549,14 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   }
 
   Widget _buildLibraryMatchTile(MediaItem match, int index) {
-    // Plex matches carry their library title; Jellyfin's search-based lookup
+    // Plex matches carry their library title; MediaBrowser search-based lookup
     // only does when the ancestors call succeeded, so fall back to the server
     // name alone. The subtitle carries whatever else tells two copies apart.
     final details = [?_libraryMatchQuality(match), ?(match.libraryTitle == null ? null : match.serverName)];
     return FocusableListTile(
       focusNode: _libraryMatchFocusNodes[index],
       leading: BackendBadge(backend: match.backend, size: 24),
-      title: Text(match.libraryTitle ?? match.serverName ?? match.backend.name),
+      title: Text(match.libraryTitle ?? match.serverName ?? match.backend.dialect?.productName ?? 'Plex'),
       subtitle: details.isEmpty ? null : Text(details.join(' • ')),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () => unawaited(navigateToMediaItemDetails(context, match)),

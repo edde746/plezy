@@ -115,7 +115,6 @@ class _Translations$auth$hu extends Translations$auth$en {
 	@override String get waitingForAuth => 'Várakozás a hitelesítésre...\nJelentkezz be a böngésződben.';
 	@override String get useBrowser => 'Böngésző használata';
 	@override String get or => 'vagy';
-	@override String get connectToJellyfin => 'Csatlakozás Jellyfinhez';
 	@override String get useQuickConnect => 'Quick Connect használata';
 	@override String get quickConnectInstructions => 'Nyisd meg a Quick Connect-et a Jellyfinben, és add meg ezt a kódot.';
 	@override String get quickConnectWaiting => 'Várakozás a jóváhagyásra…';
@@ -918,8 +917,6 @@ class _Translations$connections$hu extends Translations$connections$en {
 	@override String sessionExpiredOne({required Object name}) => 'A(z) ${name} munkamenete lejárt';
 	@override String sessionExpiredMany({required Object count}) => '${count} szerver munkamenete lejárt';
 	@override String get signInAgain => 'Bejelentkezés újra';
-	@override String get editJellyfinTitle => 'Jellyfin kapcsolat szerkesztése';
-	@override String editJellyfinIntro({required Object serverName}) => 'URL-ek hozzáadása vagy eltávolítása ehhez: ${serverName}. A Plezy a legalacsonyabb késleltetésű, elérhető URL-t fogja használni.';
 }
 
 // Path: discover
@@ -1803,12 +1800,9 @@ class _Translations$addServer$hu extends Translations$addServer$en {
 	final TranslationsHu _root; // ignore: unused_field
 
 	// Translations
-	@override String get addJellyfinTitle => 'Jellyfin szerver hozzáadása';
 	@override String get serverUrls => 'Szerver URL-címei';
 	@override String get serverUrlsHelper => 'Több URL is megadható, vesszővel elválasztva.';
 	@override String get findServer => 'Szerver keresése';
-	@override String get searchingLocalServers => 'Helyi Jellyfin-szerverek keresése...';
-	@override String get localServers => 'Helyi Jellyfin-szerverek';
 	@override String get username => 'Felhasználónév';
 	@override String get password => 'Jelszó';
 	@override String get signIn => 'Bejelentkezés';
@@ -1820,15 +1814,11 @@ class _Translations$addServer$hu extends Translations$addServer$en {
 	@override String get addPlexTitle => 'Bejelentkezés Plexszel';
 	@override String get pinExpired => 'A PIN-kód a bejelentkezés előtt lejárt. Próbáld újra.';
 	@override String failedToRegisterAccount({required Object error}) => 'Nem sikerült a fiók regisztrálása: ${error}';
-	@override String get enterJellyfinUrlError => 'Add meg a Jellyfin szervered URL-jét';
 	@override String get addConnectionTitle => 'Kapcsolat hozzáadása';
 	@override String addConnectionTitleScoped({required Object name}) => 'Hozzáadás a következőhöz: ${name}';
 	@override String get signInWithPlexCard => 'Bejelentkezés Plexszel';
 	@override String get signInWithPlexCardSubtitle => 'Eszköz engedélyezése. A megosztott szerverek hozzáadásra kerülnek.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Plex-fiók engedélyezése. A Plex Home-felhasználókból profilok lesznek.';
-	@override String get connectToJellyfinCard => 'Csatlakozás Jellyfinhez';
-	@override String get connectToJellyfinCardSubtitle => 'Add meg a szerver URL-jét, felhasználónevedet és jelszavadat.';
-	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Bejelentkezés egy Jellyfin-szerverre. Hozzárendelés ehhez: ${name}.';
 	@override String get borrowFromAnotherProfile => 'Kapcsolat használata másik profilból';
 	@override String get borrowFromAnotherProfileSubtitle => 'Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.';
 }
@@ -2208,7 +2198,6 @@ extension on TranslationsHu {
 			'auth.waitingForAuth' => 'Várakozás a hitelesítésre...\nJelentkezz be a böngésződben.',
 			'auth.useBrowser' => 'Böngésző használata',
 			'auth.or' => 'vagy',
-			'auth.connectToJellyfin' => 'Csatlakozás Jellyfinhez',
 			'auth.useQuickConnect' => 'Quick Connect használata',
 			'auth.quickConnectInstructions' => 'Nyisd meg a Quick Connect-et a Jellyfinben, és add meg ezt a kódot.',
 			'auth.quickConnectWaiting' => 'Várakozás a jóváhagyásra…',
@@ -2711,9 +2700,9 @@ extension on TranslationsHu {
 			'videoControls.searchSubtitles' => 'Feliratok keresése',
 			'videoControls.language' => 'Nyelv',
 			'videoControls.noSubtitlesFound' => 'Nem találhatók feliratok',
+			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloaded' => 'Felirat letöltve',
 			'videoControls.subtitleDownloadedNotApplied' => 'Felirat letöltve, de nem sikerült kiválasztani',
 			'videoControls.subtitleDownloadFailed' => 'Nem sikerült a felirat letöltése',
 			'videoControls.searchLanguages' => 'Nyelvek keresése...',
@@ -2869,8 +2858,6 @@ extension on TranslationsHu {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'A(z) ${name} munkamenete lejárt',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} szerver munkamenete lejárt',
 			'connections.signInAgain' => 'Bejelentkezés újra',
-			'connections.editJellyfinTitle' => 'Jellyfin kapcsolat szerkesztése',
-			'connections.editJellyfinIntro' => ({required Object serverName}) => 'URL-ek hozzáadása vagy eltávolítása ehhez: ${serverName}. A Plezy a legalacsonyabb késleltetésű, elérhető URL-t fogja használni.',
 			'discover.title' => 'Felfedezés',
 			'discover.noContentAvailable' => 'Nincs elérhető tartalom',
 			'discover.addMediaToLibraries' => 'Adj hozzá médiát a könyvtáraidhoz',
@@ -3225,11 +3212,11 @@ extension on TranslationsHu {
 			'watchTogether.failedToCreate' => 'Nem sikerült a munkamenet létrehozása',
 			'watchTogether.failedToJoin' => 'Nem sikerült csatlakozni a munkamenethez',
 			'watchTogether.sessionCodeCopied' => 'A munkamenetkód a vágólapra másolva',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
 			'watchTogether.reconnectingToHost' => 'Újracsatlakozás a házigazdához...',
 			'watchTogether.currentPlayback' => 'Jelenlegi lejátszás',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinCurrentPlayback' => 'Csatlakozás a jelenlegi lejátszáshoz',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Visszatérés ahhoz, amit a házigazda éppen néz',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Nem sikerült megnyitni a jelenlegi lejátszást',
@@ -3656,12 +3643,9 @@ extension on TranslationsHu {
 			'services.libraryFilter.modeHintWhitelist' => 'Csak az alább bejelölt könyvtárak szinkronizálása.',
 			'services.libraryFilter.libraries' => 'Könyvtárak',
 			'services.libraryFilter.noLibraries' => 'Nincsenek elérhető könyvtárak',
-			'addServer.addJellyfinTitle' => 'Jellyfin szerver hozzáadása',
 			'addServer.serverUrls' => 'Szerver URL-címei',
 			'addServer.serverUrlsHelper' => 'Több URL is megadható, vesszővel elválasztva.',
 			'addServer.findServer' => 'Szerver keresése',
-			'addServer.searchingLocalServers' => 'Helyi Jellyfin-szerverek keresése...',
-			'addServer.localServers' => 'Helyi Jellyfin-szerverek',
 			'addServer.username' => 'Felhasználónév',
 			'addServer.password' => 'Jelszó',
 			'addServer.signIn' => 'Bejelentkezés',
@@ -3673,15 +3657,11 @@ extension on TranslationsHu {
 			'addServer.addPlexTitle' => 'Bejelentkezés Plexszel',
 			'addServer.pinExpired' => 'A PIN-kód a bejelentkezés előtt lejárt. Próbáld újra.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Nem sikerült a fiók regisztrálása: ${error}',
-			'addServer.enterJellyfinUrlError' => 'Add meg a Jellyfin szervered URL-jét',
 			'addServer.addConnectionTitle' => 'Kapcsolat hozzáadása',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Hozzáadás a következőhöz: ${name}',
 			'addServer.signInWithPlexCard' => 'Bejelentkezés Plexszel',
 			'addServer.signInWithPlexCardSubtitle' => 'Eszköz engedélyezése. A megosztott szerverek hozzáadásra kerülnek.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Plex-fiók engedélyezése. A Plex Home-felhasználókból profilok lesznek.',
-			'addServer.connectToJellyfinCard' => 'Csatlakozás Jellyfinhez',
-			'addServer.connectToJellyfinCardSubtitle' => 'Add meg a szerver URL-jét, felhasználónevedet és jelszavadat.',
-			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Bejelentkezés egy Jellyfin-szerverre. Hozzárendelés ehhez: ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Kapcsolat használata másik profilból',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.',
 			_ => null,

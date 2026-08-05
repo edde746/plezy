@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/services/jellyfin_endpoint_discovery.dart';
 
 http.Response _info({required String id, String name = 'Home'}) => http.Response(
@@ -53,13 +54,73 @@ void main() {
       expect(JellyfinEndpointDiscovery.normalizeBaseUrl('jf.example.com/'), 'jf.example.com');
     });
 
-    test('expands bare host input into Jellyfin URL candidates', () {
-      expect(JellyfinEndpointDiscovery.expandInputToBaseUrls('jf.example.com'), [
-        'http://jf.example.com:8096',
-        'https://jf.example.com',
-        'https://jf.example.com:8096',
-        'http://jf.example.com',
-      ]);
+    test('Jellyfin bare host expansion preserves its ordered URL candidates', () {
+      const expected = ['http://host.lan:8096', 'https://host.lan', 'https://host.lan:8096', 'http://host.lan'];
+
+      expect(JellyfinEndpointDiscovery.expandInputToBaseUrls('host.lan'), expected);
+      expect(JellyfinEndpointDiscovery.buildUserInputCandidates(['host.lan']).probeBaseUrls, expected);
+    });
+
+    test('Emby bare host expansion includes the 8920 HTTPS candidate in order', () {
+      const expected = [
+        'http://host.lan:8096',
+        'https://host.lan',
+        'https://host.lan:8920',
+        'https://host.lan:8096',
+        'http://host.lan',
+      ];
+
+      expect(JellyfinEndpointDiscovery.expandInputToBaseUrls('host.lan', dialect: MediaBrowserDialect.emby), expected);
+      expect(
+        JellyfinEndpointDiscovery.buildUserInputCandidates([
+          'host.lan',
+        ], dialect: MediaBrowserDialect.emby).probeBaseUrls,
+        expected,
+      );
+    });
+
+    test('explicit URLs are never expanded for either dialect', () {
+      const explicitUrl = 'https://host.lan:9443/emby';
+
+      for (final dialect in MediaBrowserDialect.values) {
+        expect(JellyfinEndpointDiscovery.expandInputToBaseUrls(explicitUrl, dialect: dialect), [
+          explicitUrl,
+        ], reason: dialect.id);
+        final candidates = JellyfinEndpointDiscovery.buildUserInputCandidates([explicitUrl], dialect: dialect);
+        expect(candidates.probeBaseUrls, [explicitUrl], reason: dialect.id);
+        expect(candidates.explicitBaseUrls, [explicitUrl], reason: dialect.id);
+      }
+    });
+
+    test('probe records Jellyfin, Emby, and unknown public-info dialects', () async {
+      Future<JellyfinServerInfo> probe(Map<String, Object?> publicInfo) {
+        final discovery = JellyfinEndpointDiscovery(
+          testHttpClientFactory: () => MockClient((request) async {
+            expect(request.url.path, '/System/Info/Public');
+            return http.Response(jsonEncode(publicInfo), 200, headers: {'content-type': 'application/json'});
+          }),
+        );
+        return discovery.probe('https://server.example.com');
+      }
+
+      final jellyfin = await probe({
+        'Id': 'jellyfin-server',
+        'ServerName': 'Jellyfin Home',
+        'Version': '10.10.7',
+        'ProductName': 'Jellyfin Server',
+      });
+      final emby = await probe({
+        'Id': 'emby-server',
+        'ServerName': 'Emby Home',
+        'Version': '4.9.5.0',
+        'LocalAddresses': <String>[],
+        'RemoteAddresses': <String>[],
+      });
+      final unknown = await probe({'Id': 'unknown-server', 'ServerName': 'Unknown Home', 'Version': '1.0.0'});
+
+      expect(jellyfin.dialect, MediaBrowserDialect.jellyfin);
+      expect(emby.dialect, MediaBrowserDialect.emby);
+      expect(unknown.dialect, isNull);
     });
 
     test('expands host and port input without changing the port', () {
@@ -268,6 +329,39 @@ void main() {
       await expectLater(
         discovery.raceEndpoints(['https://jf.example.com'], expectedMachineId: 'srv-1'),
         throwsA(isA<MediaServerUrlException>()),
+      );
+    });
+
+    test('Emby empty-input errors name the selected product', () async {
+      final discovery = JellyfinEndpointDiscovery(dialect: MediaBrowserDialect.emby);
+
+      await expectLater(
+        discovery.raceEndpoints(const []),
+        throwsA(
+          isA<MediaServerUrlException>().having(
+            (exception) => exception.message,
+            'message',
+            'Enter at least one Emby server URL',
+          ),
+        ),
+      );
+    });
+
+    test('Emby machine-id mismatch errors name the selected product', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        dialect: MediaBrowserDialect.emby,
+        testHttpClientFactory: () => MockClient((_) async => _info(id: 'srv-2')),
+      );
+
+      await expectLater(
+        discovery.raceEndpoints(['https://emby.example.com'], expectedMachineId: 'srv-1', baseUrlsToValidate: const []),
+        throwsA(
+          isA<MediaServerUrlException>().having(
+            (exception) => exception.message,
+            'message',
+            'The URL does not match this Emby server',
+          ),
+        ),
       );
     });
 

@@ -19,8 +19,8 @@ import '../utils/app_logger.dart';
 
 /// Holds the *current user's playback preferences* (audio/subtitle language
 /// defaults) for the active profile. Plex profiles fetch from
-/// `https://clients.plex.tv/api/v2/user`; Jellyfin profiles fetch from
-/// `/Users/Me` on the bound Jellyfin server.
+/// `https://clients.plex.tv/api/v2/user`; MediaBrowser profiles use their
+/// dialect's current-user route on the bound server.
 ///
 /// Profile *identity* and *switching* are owned by [ActiveProfileProvider]
 /// and [ActiveProfileBinder]. This provider is just the settings cache so
@@ -172,12 +172,12 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final settingsConnection = await _resolveActiveSettingsConnection();
     final connection = settingsConnection?.connection;
     if (connection is JellyfinConnection) {
-      final jellyfinClient = _resolveJellyfinClient(connection);
-      if (jellyfinClient == null) {
-        appLogger.d('UserProfileProvider: default Jellyfin client unavailable, skipping settings refresh');
+      final mediaBrowserClient = _resolveMediaBrowserClient(connection);
+      if (mediaBrowserClient == null) {
+        appLogger.d('UserProfileProvider: default MediaBrowser client unavailable, skipping settings refresh');
         return;
       }
-      final profile = await jellyfinClient.fetchUserProfile();
+      final profile = await mediaBrowserClient.fetchUserProfile();
       if (profile != null && !stale()) {
         _profileSettings = profile;
         safeNotifyListeners();
@@ -202,7 +202,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     }
   }
 
-  JellyfinClient? _resolveJellyfinClient(JellyfinConnection conn) {
+  JellyfinClient? _resolveMediaBrowserClient(JellyfinConnection conn) {
     final manager = _serverManager;
     if (manager == null) return null;
     final client = manager.getClient(ServerId(conn.serverMachineId));

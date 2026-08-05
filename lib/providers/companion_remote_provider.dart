@@ -306,7 +306,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
             ),
           );
         case JellyfinConnection():
-          addContext(await _createJellyfinAuthContext(connection: connection));
+          addContext(await _createMediaBrowserAuthContext(connection: connection));
       }
     }
 
@@ -355,7 +355,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
     return RemoteAuthContext(
       id: auth.computeAuthContextId(homeSecret),
-      backend: 'plex',
+      backend: account.kind.id,
       connectionId: account.id,
       homeSecret: homeSecret,
       discoveryKey: await auth.deriveDiscoveryKey(homeSecret),
@@ -365,9 +365,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     );
   }
 
-  Future<RemoteAuthContext?> _createJellyfinAuthContext({required JellyfinConnection connection}) async {
+  Future<RemoteAuthContext?> _createMediaBrowserAuthContext({required JellyfinConnection connection}) async {
     if (connection.accessToken.isEmpty || connection.userId.isEmpty || connection.serverMachineId.isEmpty) {
-      appLogger.w('CompanionRemote: Skipping Jellyfin remote identity — incomplete connection ${connection.id}');
+      appLogger.w('CompanionRemote: Skipping MediaBrowser remote identity — incomplete connection ${connection.id}');
       return null;
     }
 
@@ -378,7 +378,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     );
     return RemoteAuthContext(
       id: auth.computeAuthContextId(homeSecret),
-      backend: 'jellyfin',
+      backend: connection.kind.id,
       connectionId: connection.id,
       homeSecret: homeSecret,
       discoveryKey: await auth.deriveDiscoveryKey(homeSecret),
