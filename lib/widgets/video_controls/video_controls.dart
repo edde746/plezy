@@ -858,7 +858,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       // A route that opened with no chrome never ran the hide transition that
       // normally hands focus down here, and this Focus autofocuses too late to
       // win it: the screen node claimed it during the loading phase.
-      if (!widget.chromeController.controlsVisible) _claimHiddenChromeFocus();
+      if (!widget.chromeController.controlsVisible) _claimPlayerSurfaceFocus();
       if (PlatformDetector.isMobile(context) && !PlatformDetector.isTV()) {
         _refreshDeviceAdjustmentValues();
       }
@@ -1008,6 +1008,25 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
         _isFullscreen = false;
       });
     }
+  }
+
+  /// Re-activating the window drops Flutter's primary focus to the root scope,
+  /// and the enclosing player screen reclaims it onto its own node. Nothing
+  /// hands it back down while the chrome stays visible — the hide transition is
+  /// the only other handoff — so the next arrow key reaches the screen's
+  /// self-heal and jumps focus into the OSD (#1797). Take the surface back
+  /// unless a control below already owns it.
+  @override
+  void onWindowFocus() {
+    // Claim now rather than post-frame: this arrives on a platform callback,
+    // which is not guaranteed to be followed by a frame. The screen's own
+    // reclaim re-tests `hasFocus` when it runs, so once the surface holds the
+    // remote the two no longer compete.
+    if (!mounted || _focusNode.hasFocus) return;
+    // A route pushed above the player still leaves these controls mounted;
+    // re-activating the window must not pull the remote off the top route.
+    if (ModalRoute.of(context)?.isCurrent != true) return;
+    _claimPlayerSurfaceFocus();
   }
 
   @override

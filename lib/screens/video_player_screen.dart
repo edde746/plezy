@@ -2127,8 +2127,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
         // Self-heal: if this node itself has primary focus (no descendant
         // focused, e.g. after controls auto-hide), redirect to first descendant.
+        // Arrows stay playback shortcuts on desktop unless the viewer opted into
+        // player navigation; only Tab/select may deliberately pull focus into
+        // the OSD (#1797). Consuming navigation keys either way keeps them from
+        // leaking to the route below.
         if (node.hasPrimaryFocus) {
-          if (event.isActionable) {
+          final claimsChrome =
+              !event.logicalKey.isDpadDirection || _videoPlayerNavigationEnabled || PlatformDetector.isTV();
+          if (event.isActionable && claimsChrome) {
             _chromeController.show(focusTarget: PlayerChromeFocusTarget.playPause);
           }
           return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
