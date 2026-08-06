@@ -1,5 +1,18 @@
 part of '../../video_player_screen.dart';
 
+/// Prevents an old playback stop from racing a replacement source request.
+///
+/// Plex terminates resources by playback/transcode session identifier. In-place
+/// reloads reuse those identifiers, so a late stop from the old source can
+/// otherwise terminate the replacement transcode after it has started.
+Future<T> resolveReplacementAfterStoppedPlayback<T>({
+  required Future<void> stoppedPlayback,
+  required Future<T> Function() resolve,
+}) async {
+  await stoppedPlayback;
+  return resolve();
+}
+
 /// Keeps an explicit transcode subtitle choice pending while the native
 /// player finishes discovering sidecars that were attached during open.
 ///
@@ -632,25 +645,38 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         }
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
-        // Overlap the old item's stop report with the resolve round-trip; it
-        // is awaited again right before the open below.
+        // Local resume lookup can overlap the old stop, but source resolution
+        // below must not: Plex can use that stop to terminate any new
+        // transcode sharing this playback session identifier.
         final stoppedProgressFuture = _sendStoppedProgressOnce();
 
+        var openResumePosition = await _resolveOpenResumePosition(
+          metadata: metadata,
+          isOffline: _offlineLibraryMode,
+          offlineWatchService: offlineWatchService,
+          requested: resumePosition,
+        );
+        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
-        final playbackContext = await playbackResolver.resolve(
-          PlaybackInitializationOptions(
-            metadata: metadata,
-            selectedMediaIndex: targetMediaIndex,
-            selectedMediaSourceId: selectedMediaSourceId,
-            preferredVersionSignature: preferredVersionSignature,
-            qualityPreset: targetQualityPreset,
-            selectedAudioStreamId: targetAudioStreamId,
-            preferredAudioTrack: initializationAudioTrack,
-            preferredSubtitleTrack: initializationSubtitleTrack,
-            sessionIdentifier: _playbackSessionIdentifier,
-            transcodeSessionId: _playbackTranscodeSessionId,
+        final playbackContext = await resolveReplacementAfterStoppedPlayback(
+          stoppedPlayback: stoppedProgressFuture,
+          resolve: () => playbackResolver.resolve(
+            PlaybackInitializationOptions(
+              metadata: metadata,
+              selectedMediaIndex: targetMediaIndex,
+              selectedMediaSourceId: selectedMediaSourceId,
+              preferredVersionSignature: preferredVersionSignature,
+              qualityPreset: targetQualityPreset,
+              selectedAudioStreamId: targetAudioStreamId,
+              preferredAudioTrack: initializationAudioTrack,
+              preferredSubtitleTrack: initializationSubtitleTrack,
+              sessionIdentifier: _playbackSessionIdentifier,
+              transcodeSessionId: _playbackTranscodeSessionId,
+              transcodeOffset: openResumePosition,
+            ),
+            offlineLibraryMode: _offlineLibraryMode,
           ),
-          offlineLibraryMode: _offlineLibraryMode,
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         final result = playbackContext.result;
@@ -660,6 +686,31 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
         if (result.videoUrl == null) {
           throw PlaybackException('No video URL available');
+        }
+        if (result.isOffline && !_offlineLibraryMode) {
+          // The pre-resolve lookup assumed an online source; a download won
+          // instead, so consult locally tracked progress after all.
+          openResumePosition = await _resolveOpenResumePosition(
+            metadata: metadata,
+            isOffline: true,
+            offlineWatchService: offlineWatchService,
+            requested: resumePosition,
+          );
+          if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        }
+        if (result.isTranscoding &&
+            plexClient != null &&
+            PlexClient.transcodeStreamOffsetFromUrl(result.videoUrl!) != null) {
+          // An offset session's manifest can name its first segment before
+          // the segment exists; opening early makes mpv race the manifest.
+          final ready = await plexClient.waitForTranscodeReady(result.videoUrl!);
+          if (!ready) {
+            throw PlaybackException(
+              t.messages.playbackServerUnavailable,
+              reason: PlaybackFailureReason.serverUnavailable,
+            );
+          }
+          if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         }
 
         var subtitleSelection = await _resolveSubtitleSelectionForOpen(
@@ -687,14 +738,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         if (result.fallbackReason != null && !targetQualityPreset.isOriginal && mounted) {
           showErrorSnackBar(context, t.videoControls.transcodeUnavailableFallback);
         }
-
-        final openResumePosition = await _resolveOpenResumePosition(
-          metadata: metadata,
-          isOffline: _offlineLibraryMode || result.isOffline,
-          offlineWatchService: offlineWatchService,
-          requested: resumePosition,
-        );
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
         final displayCriteria = result.mediaInfo?.displayCriteria;
         final settingsService = await SettingsService.getInstance();
@@ -731,7 +774,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           resumePosition: openResumePosition,
           durationMs: metadata.durationMs,
         );
-        await stoppedProgressFuture;
         _progressTracker?.stopTracking();
         _progressTracker?.dispose();
         _progressTracker = null;

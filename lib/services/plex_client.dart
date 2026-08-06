@@ -2599,6 +2599,7 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
+    Duration? offset,
   }) async {
     try {
       final allParams = _buildTranscodeParams(
@@ -2609,6 +2610,7 @@ class PlexClient
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
         audioStreamId: audioStreamId,
+        offset: offset,
       );
       return await _runTranscodeDecision(
         startEndpoint: _plexVideoHlsStartEndpoint,
@@ -2619,6 +2621,131 @@ class PlexClient
       appLogger.e('Failed to build transcode start path', error: e, stackTrace: st);
       return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
     }
+  }
+
+  /// Absolute media position a transcode start URL was requested at, or null
+  /// when the URL is not an offset HLS start request.
+  static Duration? transcodeStreamOffsetFromUrl(String videoUrl) {
+    final uri = Uri.tryParse(videoUrl);
+    if (uri == null || !uri.path.endsWith('/video/:/transcode/universal/start.m3u8')) return null;
+    final offsetSeconds = double.tryParse(uri.queryParameters['offset'] ?? '');
+    if (offsetSeconds == null || offsetSeconds <= 0) return null;
+    return Duration(microseconds: (offsetSeconds * Duration.microsecondsPerSecond).round());
+  }
+
+  /// Picks the playlist entry the readiness probe should touch: the segment
+  /// whose duration window contains [offset].
+  ///
+  /// Plex media playlists always cover the full title from segment zero, so
+  /// probing the first entry would steer the transcoder back to the start —
+  /// requesting a segment is how a client seeks a Plex HLS session. A master
+  /// playlist (no `#EXTINF` durations) descends into its first variant; a
+  /// media playlist shorter than [offset] probes its last segment.
+  @visibleForTesting
+  static String selectReadinessProbeTarget(String body, Duration offset) {
+    String? firstEntry;
+    String? lastEntry;
+    var sawSegmentDurations = false;
+    var cumulative = Duration.zero;
+    var pending = Duration.zero;
+    for (final raw in body.split(RegExp(r'\r?\n'))) {
+      final line = raw.trim();
+      if (line.isEmpty) continue;
+      if (line.startsWith('#')) {
+        if (line.startsWith('#EXTINF:')) {
+          sawSegmentDurations = true;
+          final seconds = double.tryParse(line.substring('#EXTINF:'.length).split(',').first);
+          if (seconds != null) pending = Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round());
+        }
+        continue;
+      }
+      firstEntry ??= line;
+      lastEntry = line;
+      cumulative += pending;
+      pending = Duration.zero;
+      if (sawSegmentDurations && cumulative > offset) return line;
+    }
+    return (sawSegmentDurations ? lastEntry : firstEntry) ?? '';
+  }
+
+  /// Waits for a just-started Plex HLS session to serve the segment at the
+  /// requested offset before a native player opens its playlist. Plex can
+  /// return a manifest before the segment is ready; mpv treats that 404 as an
+  /// HLS error and races through the rest of the manifest.
+  ///
+  /// Non-2xx responses are the expected not-ready signal — [_http.get] does
+  /// not throw on them — and every not-ready round waits [pollInterval],
+  /// doubling up to 4x after three consecutive failed round-trips so a
+  /// stalled transcode is not hammered. Each request also carries a hard
+  /// timeout (5s, shrinking as the overall deadline approaches) so a single
+  /// hung request cannot consume the entire window.
+  Future<bool> waitForTranscodeReady(
+    String videoUrl, {
+    Duration timeout = const Duration(seconds: 15),
+    Duration pollInterval = const Duration(milliseconds: 500),
+  }) async {
+    final startUri = Uri.tryParse(videoUrl);
+    if (startUri == null || !startUri.path.endsWith('/start.m3u8')) return true;
+    final probeOffset = transcodeStreamOffsetFromUrl(videoUrl) ?? Duration.zero;
+
+    final deadline = DateTime.now().add(timeout);
+    var candidate = startUri;
+    var playlistDepth = 0;
+    var consecutiveFailures = 0;
+    int? lastStatus;
+    while (true) {
+      final remaining = deadline.difference(DateTime.now());
+      if (remaining <= Duration.zero) break;
+      try {
+        final requestTimeout = remaining < const Duration(seconds: 5) ? remaining : const Duration(seconds: 5);
+        final isPlaylist = candidate.path.toLowerCase().endsWith('.m3u8');
+        final response = await _http.get(
+          candidate.toString(),
+          headers: isPlaylist ? null : const {'Range': 'bytes=0-0'},
+          timeout: requestTimeout,
+        );
+        lastStatus = response.statusCode;
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          consecutiveFailures = 0;
+          final body = response.data?.toString() ?? '';
+          if (body.trimLeft().startsWith('#EXTM3U')) {
+            final child = selectReadinessProbeTarget(body, probeOffset);
+            if (child.isNotEmpty) {
+              candidate = (response.effectiveUri ?? candidate).resolve(child);
+              playlistDepth++;
+              if (playlistDepth > 4) {
+                appLogger.w('Plex transcode readiness exceeded the HLS playlist depth limit');
+                return false;
+              }
+              // Descending into a child playlist is progress, not a poll.
+              continue;
+            }
+            // A manifest with no media entries yet: not ready, poll again.
+          } else if (!isPlaylist) {
+            // The first media segment answered: the session is ready.
+            return true;
+          }
+        } else {
+          consecutiveFailures++;
+        }
+      } catch (e) {
+        // Transport failure — same treatment as a not-ready response.
+        consecutiveFailures++;
+        appLogger.d('Plex transcode readiness probe transport failure', error: e);
+      }
+      var delay = pollInterval;
+      if (consecutiveFailures > 3) {
+        delay = pollInterval * (1 << (consecutiveFailures - 3).clamp(0, 2));
+      }
+      final timeLeft = deadline.difference(DateTime.now());
+      if (timeLeft <= Duration.zero) break;
+      await Future<void>.delayed(delay < timeLeft ? delay : timeLeft);
+    }
+    appLogger.w(
+      'Plex transcode did not become ready within ${timeout.inSeconds}s '
+      '(playlistDepth=$playlistDepth, lastStatus=${lastStatus ?? 'none'}, consecutiveFailures=$consecutiveFailures)',
+    );
+    return false;
   }
 
   /// Build a music transcode stream URL (decision + start path).
@@ -2718,6 +2845,7 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
+    Duration? offset,
   }) {
     final isOriginal = preset.isOriginal;
     final clientProfileExtra = _buildPlexHlsClientProfileExtra(
@@ -2742,6 +2870,7 @@ class PlexClient
       'directStreamAudio': '0',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
+      if (offset != null && offset > Duration.zero) 'offset': (offset.inMilliseconds / 1000).toStringAsFixed(6),
       'subtitles': 'none',
       if (audioStreamId != null) 'audioStreamID': audioStreamId.toString(),
       'Accept-Language': 'en',
@@ -2771,6 +2900,7 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
+    Duration? offset,
   }) {
     return _buildTranscodeParams(
       ratingKey: ratingKey,
@@ -2780,6 +2910,7 @@ class PlexClient
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,
       audioStreamId: audioStreamId,
+      offset: offset,
     );
   }
 
@@ -3278,6 +3409,7 @@ class PlexClient
           sessionIdentifier: options.sessionIdentifier!,
           transcodeSessionId: options.transcodeSessionId!,
           audioStreamId: resolvedAudioId,
+          offset: options.transcodeOffset,
         );
 
         if (result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {

@@ -1269,6 +1269,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
+            // The initial resume position is the server view offset (the
+            // online open resolves the same value later), so a resumed
+            // transcode starts producing at the resume point instead of
+            // seeking a stream that begins at zero.
+            transcodeOffset: _currentMetadata.viewOffsetMs != null
+                ? Duration(milliseconds: _currentMetadata.viewOffsetMs!)
+                : null,
           ),
           offlineLibraryMode: false,
         );
