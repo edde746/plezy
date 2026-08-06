@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/services/car_ux_restrictions_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/models/playback_state.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
 import 'package:plezy/watch_together/services/attached_player.dart';
@@ -711,6 +713,34 @@ void main() {
         h.coordinator.onStateRequested('guest');
         final targeted = h.sent.where((entry) => entry.$2 == 'guest').map((entry) => entry.$1);
         expect(targeted.where((s) => s.phase == PlaybackPhase.loading && s.ratingKey == 'rk1'), isNotEmpty);
+        h.dispose();
+      });
+    });
+  });
+
+  group('driver distraction', () {
+    tearDown(() {
+      TvDetectionService.debugReset();
+      CarUxRestrictionsService.debugSetOverride(null);
+    });
+
+    test('a start the vehicle refuses puts the room back to paused', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachForMedia(async);
+        h.hostBecomesReady(async);
+        expect(h.last.phase, PlaybackPhase.playing);
+
+        // The car starts moving during the scheduled-start delay, so the play the
+        // host had already announced is refused.
+        TvDetectionService.debugSetAutomotiveOverride(true);
+        CarUxRestrictionsService.debugSetOverride(CarUxRestrictionState.restricted);
+        final delay = h.last.anchorHostTimeMs - (_epochMs + async.elapsed.inMilliseconds);
+        async.elapse(Duration(milliseconds: delay));
+        async.flushMicrotasks();
+
+        expect(h.player.state.playing, isFalse, reason: 'DD-3: driving must not start video');
+        expect(h.last.phase, PlaybackPhase.paused, reason: 'the room must not be told the host is playing');
         h.dispose();
       });
     });

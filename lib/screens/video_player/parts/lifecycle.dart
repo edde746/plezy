@@ -128,7 +128,18 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       _wasPlayingBeforeInactive = _wasPlayingBeforeInactive || wasActive;
       if (wasActive) {
         try {
-          await _pauseWithPlaybackIntent(currentPlayer);
+          // On a car this is the driving transition itself, on every head unit whose vehicle cannot
+          // report its restrictions. It is forced on this peer alone, so it must not travel to the
+          // rest of a Watch Together room; elsewhere backgrounding keeps its existing meaning.
+          if (isAutomotive) {
+            if (await _pauseWithoutDisturbingTheRoom(currentPlayer)) {
+              // The sync layer owns this pause and its resume. Drop the latch so the screen does not
+              // also restore playback on the way back and ask the room to play along with it.
+              _wasPlayingBeforeInactive = false;
+            }
+          } else {
+            await _pauseWithPlaybackIntent(currentPlayer);
+          }
           appLogger.d(
             'Video paused due to app being hidden '
             '(${isAutomotive

@@ -366,6 +366,16 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     final trackManager = _trackManager;
     if (trackManager == null) return;
     appLogger.d('Frame rate matching: resuming playback after $reason');
+    if (!automotivePlaybackAllowedNow()) {
+      // The vehicle outranks the startup gate: releasing the frame-rate gate is not permission to
+      // play. Subtitle selection still has to land, or the track stays stuck waiting for it.
+      _playbackIntentShouldPlay = false;
+      if (externalSubtitlePlan.requiresPostOpenAdd) {
+        trackManager.waitingForExternalSubsTrackSelection = false;
+        trackManager.applyTrackSelectionWhenReady();
+      }
+      return;
+    }
     _playbackIntentShouldPlay = true;
     if (externalSubtitlePlan.requiresPostOpenAdd) {
       await trackManager.resumeAfterSubtitleLoad();
@@ -499,10 +509,14 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           waitUntilReady: externalSubtitlePlan.readyAfterOpen,
         );
       } finally {
-        if (shouldResumeAfterSubtitleLoad()) {
+        // A car must not start playing just because subtitles finished loading: the vehicle's
+        // verdict outranks the caller's startup gate, and a skipped resume still has to release the
+        // subtitle-selection wait.
+        final resumeWanted = shouldResumeAfterSubtitleLoad();
+        if (resumeWanted && automotivePlaybackAllowedNow()) {
           _playbackIntentShouldPlay = true;
           await trackManager.resumeAfterSubtitleLoad();
-        } else if (applySelectionWhenResumeSkipped) {
+        } else if (applySelectionWhenResumeSkipped || resumeWanted) {
           trackManager.waitingForExternalSubsTrackSelection = false;
           trackManager.applyTrackSelectionWhenReady();
         }
@@ -628,7 +642,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       onOpening?.call();
       return player.open(
         media,
-        play: shouldPlay,
+        // The last word on the vehicle, taken here because this is the only place media actually
+        // starts: callers decide `play` before awaiting resolve, tuning and track work, and a car
+        // that starts driving in between has already spent its restriction pausing the outgoing
+        // item. `DD-3` allows video no exemption, and the gated resume paths start it once parked.
+        play: shouldPlay && automotivePlaybackAllowedNow(),
         externalSubtitles: externalSubtitles,
         timelineDuration: timing.timelineDuration,
       );

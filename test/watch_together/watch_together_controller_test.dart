@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/watch_together/models/playback_state.dart';
@@ -457,6 +459,50 @@ void main() {
         async.flushMicrotasks();
 
         expect(hostExits, 0);
+        room.dispose();
+      });
+    });
+  });
+
+  group('a vehicle forcing a pause on one peer', () {
+    test('a guest stops locally and the room keeps playing', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia();
+        room.guestJoinsMedia();
+        room.bothBecomeReady();
+        async.elapse(const Duration(seconds: 2));
+        expect(room.guestPlayer.state.playing, isTrue);
+
+        bool? handled;
+        unawaited(room.guest.pauseLocallyForSystem().then((value) => handled = value));
+        async.flushMicrotasks();
+
+        expect(handled, isTrue);
+        expect(room.guestPlayer.state.playing, isFalse, reason: 'the car this guest is in must go quiet');
+        async.elapse(const Duration(seconds: 2));
+        expect(room.hostPlayer.state.playing, isTrue, reason: 'one guest driving must not stop the room');
+        expect(room.lastHostState().phase, PlaybackPhase.playing);
+        room.dispose();
+      });
+    });
+
+    test('a host is refused, because the room cannot outrun its own clock', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        room.hostStartsMedia();
+        room.guestJoinsMedia();
+        room.bothBecomeReady();
+        async.elapse(const Duration(seconds: 2));
+
+        bool? handled;
+        unawaited(room.host.pauseLocallyForSystem().then((value) => handled = value));
+        async.flushMicrotasks();
+
+        // Refused, so the caller pauses the ordinary way and the room follows: a host that keeps
+        // broadcasting a playing anchor from a frozen player would stall every guest.
+        expect(handled, isFalse);
+        expect(room.hostPlayer.state.playing, isTrue, reason: 'nothing local happened');
         room.dispose();
       });
     });

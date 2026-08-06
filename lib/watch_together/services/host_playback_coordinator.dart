@@ -650,10 +650,23 @@ class HostPlaybackCoordinator {
       _pendingStartPositionMs = null;
       final currentPlayer = _player;
       if (currentPlayer == null || _phase != PlaybackPhase.playing) return;
+      // A vehicle that requires distraction optimization refuses the play. The room would
+      // otherwise sit in a playing phase the host is not honouring, with nothing to correct it, so
+      // put it back to paused: the host is the authority on what it is actually doing.
+      void settle(bool started) {
+        // Only this attachment's own refusal counts. A reload detaches mid-flight and its disposed
+        // player also answers false, but that pause belongs to the source switch, which deliberately
+        // holds the phase so the replacement can pick the room up again.
+        if (started || _player != currentPlayer || _phase != PlaybackPhase.playing) return;
+        _intendedPlaying = false;
+        _setPhase(PlaybackPhase.paused);
+        _broadcast();
+      }
+
       if (startPos != null && (currentPlayer.position.inMilliseconds - startPos).abs() > 250) {
-        unawaited(currentPlayer.seek(Duration(milliseconds: startPos)).then((_) => currentPlayer.play()));
+        unawaited(currentPlayer.seek(Duration(milliseconds: startPos)).then((_) => currentPlayer.play()).then(settle));
       } else {
-        unawaited(currentPlayer.play());
+        unawaited(currentPlayer.play().then(settle));
       }
     }
 

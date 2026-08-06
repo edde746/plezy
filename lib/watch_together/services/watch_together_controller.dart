@@ -173,6 +173,28 @@ class WatchTogetherController {
     appLogger.d('WatchTogether: Player detached (exiting: $exiting)');
   }
 
+  /// Pause a guest's player without telling the room.
+  ///
+  /// For a pause the environment forces on this peer alone — a vehicle that starts requiring
+  /// distraction optimization. Routing it through the attachment records the expectation, so the
+  /// resulting event is consumed as an acknowledgement instead of being published as a user intent
+  /// that would pause everybody.
+  ///
+  /// A host is refused, and must pause the room the ordinary way. It is the room's clock: swallowing
+  /// its intent would leave the coordinator in a playing phase while its own player was frozen, and
+  /// every heartbeat would then publish that frozen position as the room's anchor — stalling or
+  /// rewinding the guests it was meant to protect. Returns false when there is nothing local to do.
+  Future<bool> pauseLocallyForSystem() async {
+    final attached = _attachedPlayer;
+    if (attached == null || _session.isHost) return false;
+    // Only a player that is actually playing will report the transition this acknowledgement is
+    // for. Recording one for a paused player — or one sitting at end of file, where mpv leaves the
+    // raw pause flag false but no further event is coming — would leave it in the ledger, where the
+    // user's next real pause would consume it and never reach the room.
+    if (!attached.playing || attached.completed) return attached.pauseWithoutAck();
+    return attached.pause();
+  }
+
   // ---------------------------------------------------------------------
   // Provider inputs
   // ---------------------------------------------------------------------

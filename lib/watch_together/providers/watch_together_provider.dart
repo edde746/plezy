@@ -618,6 +618,16 @@ class WatchTogetherProvider with ChangeNotifier {
     _controller?.detachPlayer(exiting: exiting);
   }
 
+  /// Pause a guest's player without pausing the room — see
+  /// [WatchTogetherController.pauseLocallyForSystem]. Returns false when there is no attachment, or
+  /// when this peer is the host and must pause the room the ordinary way, so the caller falls back
+  /// to its own pause.
+  Future<bool> pauseLocallyForSystem() async {
+    final controller = _controller;
+    if (controller == null) return false;
+    return controller.pauseLocallyForSystem();
+  }
+
   /// Suppress sync heartbeats/corrections while the app is backgrounded.
   void setBackgrounded(bool value) {
     _controller?.setBackgrounded(value);

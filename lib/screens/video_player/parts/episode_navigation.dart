@@ -764,6 +764,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           selectedVersion: result.selectedVersion,
           timing: openTiming,
           headers: result.usesLocalMedia ? null : streamHeaders,
+          // The vehicle is not consulted here: `_openMediaOnPlayer` reads it at the `player.open`
+          // itself, which is after this and its own awaited tuning work.
           play: shouldAutoStart && !frameRatePlan.holdPlaybackStart && externalSubtitlePlan.canStartBeforeTrackSetup,
           externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
           shouldContinue: isCurrentReload,

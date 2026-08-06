@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/services/car_ux_restrictions_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/services/attached_player.dart';
 
 import '../test_helpers/watch_together_fakes.dart';
@@ -270,6 +272,125 @@ void main() {
 
         player.setBuffer(const Duration(seconds: 5));
         expect(attached.bufferAhead, Duration.zero);
+        attached.dispose();
+      });
+    });
+  });
+
+  group('driver distraction', () {
+    tearDown(() {
+      TvDetectionService.debugReset();
+      CarUxRestrictionsService.debugSetOverride(null);
+    });
+
+    test('a driving vehicle refuses a play the room asked for', () {
+      fakeAsync((async) {
+        TvDetectionService.debugSetAutomotiveOverride(true);
+        CarUxRestrictionsService.debugSetOverride(CarUxRestrictionState.restricted);
+        final (attached, player, _) = build(async);
+
+        attached.play();
+        async.flushMicrotasks();
+
+        expect(player.state.playing, isFalse, reason: 'DD-3: sync must not start video while driving');
+        attached.dispose();
+      });
+    });
+
+    test('a parked vehicle lets the room drive playback as usual', () {
+      fakeAsync((async) {
+        TvDetectionService.debugSetAutomotiveOverride(true);
+        CarUxRestrictionsService.debugSetOverride(CarUxRestrictionState.unrestricted);
+        final (attached, player, _) = build(async);
+
+        attached.play();
+        async.flushMicrotasks();
+
+        expect(player.state.playing, isTrue);
+        attached.dispose();
+      });
+    });
+
+    test('a pause the vehicle forces is an acknowledgement, not a room-wide intent', () {
+      fakeAsync((async) {
+        final (attached, player, _) = build(async, playing: true);
+        final intents = <bool>[];
+        attached.playingIntents.listen(intents.add);
+
+        // What the video screen issues when a car starts driving: the local player stops, but the
+        // room must not be told its user pressed pause.
+        attached.pause();
+        async.flushMicrotasks();
+
+        expect(player.state.playing, isFalse);
+        expect(intents, isEmpty, reason: 'one car driving must not pause everybody else');
+        attached.dispose();
+      });
+    });
+
+    test('pausing an already-paused player leaves no acknowledgement to swallow the next one', () {
+      fakeAsync((async) {
+        final (attached, player, _) = build(async);
+        final intents = <bool>[];
+        attached.playingIntents.listen(intents.add);
+
+        // The vehicle pauses a guest that is not playing — buffering, say — so nothing will report
+        // a transition, and no expectation may be left behind.
+        attached.pauseWithoutAck();
+        async.flushMicrotasks();
+
+        // The restriction lifts, the guest plays, and then the user pauses for real: that pause is
+        // theirs and the room has to hear about it.
+        player.emitPlaying(true);
+        async.flushMicrotasks();
+        player.emitPlaying(false);
+        async.flushMicrotasks();
+
+        expect(intents, contains(false), reason: 'a stale acknowledgement would have eaten this');
+        attached.dispose();
+      });
+    });
+
+    test('two pauses in flight leave only one acknowledgement behind', () {
+      fakeAsync((async) {
+        final (attached, player, _) = build(async, playing: true);
+        final intents = <bool>[];
+        attached.playingIntents.listen(intents.add);
+
+        // The car's direct restriction pause and its lifecycle pause both land before the player
+        // reports anything: two commands, one event.
+        attached.pause();
+        attached.pause();
+        async.flushMicrotasks();
+        expect(intents, isEmpty);
+
+        // The user's own pause afterwards is theirs, and the room has to hear it.
+        player.emitPlaying(true);
+        async.flushMicrotasks();
+        player.emitPlaying(false);
+        async.flushMicrotasks();
+
+        expect(intents, contains(false), reason: 'a surplus acknowledgement would have eaten this');
+        attached.dispose();
+      });
+    });
+
+    test('a sync seek while driving cannot leave the player running', () {
+      fakeAsync((async) {
+        TvDetectionService.debugSetAutomotiveOverride(true);
+        CarUxRestrictionsService.debugSetOverride(CarUxRestrictionState.restricted);
+        // End of file: mpv leaves the raw pause flag false, so seeking off it resumes without
+        // anyone calling play — the one way past the vehicle guard on play().
+        final (attached, player, _) = build(async, playing: true);
+
+        final intents = <bool>[];
+        attached.playingIntents.listen(intents.add);
+
+        attached.seek(const Duration(minutes: 3));
+        async.flushMicrotasks();
+
+        expect(player.state.playing, isFalse, reason: 'DD-3: a seek must not become playback while driving');
+        expect(intents, isEmpty, reason: 'and stopping it is this car\'s business, not the room\'s');
         attached.dispose();
       });
     });

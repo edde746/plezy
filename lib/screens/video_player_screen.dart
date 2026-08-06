@@ -40,6 +40,7 @@ import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
+import '../services/car_ux_restrictions_service.dart';
 import '../services/driver_distraction.dart';
 import '../services/discord_rpc_service.dart';
 import '../services/trackers/tracker_coordinator.dart';
@@ -943,6 +944,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     WidgetsBinding.instance.addObserver(this);
+    if (PlatformDetector.isAutomotive()) {
+      // Driving normally reaches this screen as a lifecycle event, because the
+      // system puts its blocking activity over a non-distraction-optimized app.
+      // Not always: restrictions are per display, so a session the driver is not
+      // looking at can be restricted while this activity stays resumed. `DD-3`
+      // gives video no exemption, so take the vehicle's word directly too.
+      CarUxRestrictionsService.instance.ensureStarted();
+      CarUxRestrictionsService.instance.listenable.addListener(_handleCarRestrictionsChanged);
+    }
 
     _setupCompanionRemoteCallbacks();
     _setupAppleTvRemotePlaybackActions();
@@ -951,7 +961,71 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (mounted) _showStillWatchingDialog();
     });
 
-    unawaited(_startPlayerInitialization(replaceCurrent: false));
+    if (PlatformDetector.isAutomotive()) {
+      unawaited(_startPlayerInitializationOnceVehicleAnswers());
+    } else {
+      unawaited(_startPlayerInitialization(replaceCurrent: false));
+    }
+  }
+
+  /// A car must not start video before the vehicle has spoken: `DD-3` gives video
+  /// no exemption while driving, so a cold start would otherwise play until the
+  /// verdict lands. The wait is bounded by the service, so a car that cannot
+  /// answer only delays this by that budget and then falls back to lifecycle
+  /// gating — which, for a screen the user just opened, permits playback.
+  Future<void> _startPlayerInitializationOnceVehicleAnswers() async {
+    await CarUxRestrictionsService.instance.ensureResolved();
+    if (!mounted) return;
+    await _startPlayerInitialization(replaceCurrent: false);
+  }
+
+  /// The vehicle started requiring distraction optimization (`DD-3`).
+  ///
+  /// Pauses only. The backgrounding path is deliberately not reused: it hides the
+  /// render surface, suspends the live timeline and marks Watch Together
+  /// backgrounded, all of which `_handleAppResumed` undoes — and no resume event
+  /// is coming, because the activity never left the foreground. The playback gate
+  /// keeps this paused until the vehicle releases it.
+  void _handleCarRestrictionsChanged() {
+    if (!mounted || automotivePlaybackAllowedNow()) return;
+    _enqueueLifecycleTransition('restricted_automotive', _pauseForVehicleRestriction);
+  }
+
+  /// Pauses for something the environment forced on this peer alone.
+  ///
+  /// A guest's pause goes to the Watch Together attachment, which records it as its own command so
+  /// the resulting event is consumed as an acknowledgement rather than a user intent that would
+  /// pause the whole room. A host is refused there and pauses the ordinary way: it is the room's
+  /// clock, and a room whose host cannot play has to pause with it.
+  ///
+  /// Returns whether the sync layer took ownership. When it did, it also owns the resume — through
+  /// the attachment, following the room — so the caller must not restore playback itself: doing so
+  /// would publish a play request and, in a room anyone can control, restart everybody.
+  Future<bool> _pauseWithoutDisturbingTheRoom(Player currentPlayer) async {
+    final syncOwnsIt = await (_watchTogetherProvider?.pauseLocallyForSystem() ?? Future.value(false));
+    if (syncOwnsIt) return true;
+    await _pauseWithPlaybackIntent(currentPlayer);
+    return false;
+  }
+
+  Future<void> _pauseForVehicleRestriction() async {
+    final currentPlayer = player;
+    // Deliberately not gated on `state.isActive`: that is `playing && !completed`, which is false
+    // for the whole of a rebuffer while the native side still intends to play. Skipping here would
+    // leave the play intent standing, and playback would start the moment the buffer fills.
+    if (currentPlayer == null || !_isPlayerInitialized) return;
+    try {
+      await _pauseWithoutDisturbingTheRoom(currentPlayer);
+    } catch (e, stackTrace) {
+      appLogger.w('Failed to pause video for vehicle restrictions', error: e, stackTrace: stackTrace);
+      // Fail closed: `DD-3` is not satisfied by having tried, and the restriction has already
+      // fired, so nothing else is coming to stop this session.
+      try {
+        await currentPlayer.stop();
+      } catch (e, stackTrace) {
+        appLogger.w('Failed to stop restricted video', error: e, stackTrace: stackTrace);
+      }
+    }
   }
 
   @override
@@ -1617,6 +1691,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playerInitializationGeneration++;
     _frameRate.dispose();
     WidgetsBinding.instance.removeObserver(this);
+    CarUxRestrictionsService.instance.listenable.removeListener(_handleCarRestrictionsChanged);
 
     final transitionCompleter = _playbackTransitionIdleCompleter;
     _playbackTransitionIdleCompleter = null;
