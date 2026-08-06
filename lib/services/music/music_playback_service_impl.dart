@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart' show ValueListenable, visibleForTesting;
 import 'package:flutter/widgets.dart';
@@ -70,10 +71,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     this._completedConfirmDelay = const Duration(milliseconds: 400),
     PlaybackCoordinator? coordinator,
     @visibleForTesting Future<void> Function(double)? volumePersistenceWriter,
+    @visibleForTesting Random? queueRandom,
   }) : assert(resolver != null || database != null, 'database is required to build the default resolver'),
        _serverManager = serverManager,
        _resolver = resolver ?? ServerMusicSourceResolver(serverManager: serverManager, database: database!),
        _coordinator = coordinator ?? PlaybackCoordinator.instance,
+       _queue = MusicQueueController(random: queueRandom),
        _volumePersistenceWriter = volumePersistenceWriter ?? _writePersistedVolume {
     _coordinator.registerMusicSession(stopAndDispose: _stopForVideoClaim);
     // tvOS has no background-audio session in v1, so it pauses on
@@ -110,7 +113,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   final PlaybackCoordinator _coordinator;
   final Future<void> Function(double) _volumePersistenceWriter;
 
-  final MusicQueueController _queue = MusicQueueController();
+  final MusicQueueController _queue;
 
   /// Persisted music volume (0–100), applied to every audio player instance
   /// (the core is recreated after video claims playback). Falls back to full
@@ -336,10 +339,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final generation = ++_generation;
     _invalidateArmRequests();
     _finalizeCurrentTrack();
-    var startIndex = 0;
+    // Null start index = "no track has to play first", which is what lets a
+    // shuffled queue randomize its head too. Collapsing that into 0 pinned
+    // every shuffle launch to the list's first track (#1811) — including a
+    // start track the list turns out not to contain.
+    int? startIndex;
     if (startTrack != null) {
-      startIndex = tracks.indexWhere((t) => t.globalKey == startTrack.globalKey);
-      if (startIndex < 0) startIndex = 0;
+      final index = tracks.indexWhere((t) => t.globalKey == startTrack.globalKey);
+      if (index >= 0) startIndex = index;
     }
     _queue.load(tracks, startIndex: startIndex, shuffle: shuffle);
     _playContext = playContext;

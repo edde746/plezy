@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:os_media_controls/os_media_controls.dart';
@@ -547,8 +548,36 @@ class _GatedVolumeWriter {
   }
 }
 
+/// Queue [Random] the tests can script. Real randomness by default;
+/// [lowestDraw] makes a shuffle deterministic without depending on the SDK's
+/// seeded-PRNG sequence (which carries no cross-release guarantee).
+class _ScriptedRandom implements Random {
+  final Random _real = Random();
+  late int Function(int max) _draw = _real.nextInt;
+
+  /// Every draw picks the lowest candidate index.
+  void lowestDraw() => _draw = (_) => 0;
+
+  @override
+  int nextInt(int max) => _draw(max);
+
+  @override
+  bool nextBool() => _real.nextBool();
+
+  @override
+  double nextDouble() => _real.nextDouble();
+}
+
 class _Harness {
-  _Harness._(this.service, this.resolver, this.client, this.controls, this.players, this.serverManager);
+  _Harness._(
+    this.service,
+    this.resolver,
+    this.client,
+    this.controls,
+    this.players,
+    this.serverManager,
+    this.queueRandom,
+  );
 
   final MusicPlaybackServiceImpl service;
   final FakeMusicSourceResolver resolver;
@@ -557,6 +586,9 @@ class _Harness {
   final List<FakePlayer> players;
   final MultiServerManager serverManager;
 
+  /// Drives the queue's shuffle; script it before starting a shuffled queue.
+  final _ScriptedRandom queueRandom;
+
   /// Seeded into every created FakePlayer — lets a test configure arm
   /// failures before the first player exists.
   final Set<String> failingSetNextUris = {};
@@ -564,6 +596,7 @@ class _Harness {
   FakePlayer get player => players.last;
 
   factory _Harness.create({Future<void> Function(double)? volumePersistenceWriter}) {
+    final queueRandom = _ScriptedRandom();
     final client = FakeMediaServerClient();
     final resolver = FakeMusicSourceResolver(client: client);
     final controls = FakeMediaControlsManager();
@@ -584,8 +617,9 @@ class _Harness {
       // paths resolve within pumpEventQueue.
       completedConfirmDelay: Duration.zero,
       volumePersistenceWriter: volumePersistenceWriter,
+      queueRandom: queueRandom,
     );
-    harness = _Harness._(service, resolver, client, controls, players, serverManager);
+    harness = _Harness._(service, resolver, client, controls, players, serverManager, queueRandom);
     return harness;
   }
 
@@ -620,6 +654,42 @@ void main() {
     }
     h.controls.closeControllers();
     h.serverManager.dispose();
+  });
+
+  group('shuffled session start (#1811)', () {
+    final playlist = [for (var i = 0; i < 6; i++) _track('p$i')];
+
+    test('no start track shuffles the head too instead of pinning the first track', () async {
+      h.queueRandom.lowestDraw();
+
+      await h.playTracks(playlist, shuffle: true);
+
+      final opened = h.service.currentTrack!;
+      expect(opened.id, isNot('p0'), reason: 'shuffle opened on the list head');
+      expect(h.service.queue.first.id, opened.id);
+      expect(h.service.queue.map((t) => t.id).toSet(), playlist.map((t) => t.id).toSet());
+      expect(h.service.shuffled, isTrue);
+      expect(h.player.openedUris, [_urlFor(opened)]);
+    });
+
+    test('an explicit start track still anchors the shuffled queue', () async {
+      h.queueRandom.lowestDraw();
+
+      await h.playTracks(playlist, startTrack: playlist[3], shuffle: true);
+
+      expect(h.service.currentTrack!.id, 'p3');
+      expect(h.service.queue.first.id, 'p3');
+      expect(h.service.queue.map((t) => t.id).toSet(), playlist.map((t) => t.id).toSet());
+    });
+
+    test('a start track absent from the list drops the anchor rather than pinning the first track', () async {
+      h.queueRandom.lowestDraw();
+
+      await h.playTracks(playlist, startTrack: _track('not-in-list'), shuffle: true);
+
+      expect(h.service.currentTrack!.id, isNot('p0'));
+      expect(h.service.queue.map((t) => t.id).toSet(), playlist.map((t) => t.id).toSet());
+    });
   });
 
   test('volume updates notify only the dedicated volume listenable', () async {

@@ -73,8 +73,9 @@ abstract class MusicPlaybackService extends ChangeNotifier {
   int get queueSessionRevision;
 
   /// Start a new queue from [tracks], optionally at [startTrack] (defaults
-  /// to the first track). [shuffle] shuffles with the start track anchored
-  /// first.
+  /// to the first track). [shuffle] anchors [startTrack] first and shuffles
+  /// the rest after it; with no [startTrack] the whole list shuffles, so the
+  /// queue opens on a random track rather than always the first one (#1811).
   Future<void> playFromList({
     required List<MediaItem> tracks,
     MediaItem? startTrack,

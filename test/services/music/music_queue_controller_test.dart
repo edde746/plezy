@@ -36,6 +36,21 @@ void main() {
       expect(_ids(q.queue).toSet(), _ids(tracks).toSet());
     });
 
+    test('shuffle without a start index randomizes the head too (#1811)', () {
+      // A shuffle launch has no track that must play first, so the head must
+      // be drawn from the whole list. Anchoring the default index 0 made
+      // every shuffled playlist open on its first track.
+      final heads = <String>{};
+      for (var seed = 0; seed < 8; seed++) {
+        final q = controller(seed: seed)..load(tracks, shuffle: true);
+        expect(q.shuffled, isTrue);
+        expect(q.cursor, 0);
+        expect(_ids(q.queue).toSet(), _ids(tracks).toSet());
+        heads.add(q.current!.id);
+      }
+      expect(heads.length, greaterThan(1), reason: 'head stayed pinned to one track across seeds');
+    });
+
     test('empty load leaves an idle queue', () {
       final q = controller()..load(const []);
       expect(q.isEmpty, isTrue);
