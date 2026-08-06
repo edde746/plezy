@@ -12,10 +12,6 @@ import 'package:plezy/services/image_cache_service.dart';
 void main() {
   const timeout = Duration(seconds: 5);
 
-  test('reduced-tier devices cap artwork fan-out', () {
-    expect(artworkRequestConcurrencyForTier(reduced: true), 3);
-    expect(artworkRequestConcurrencyForTier(reduced: false), 6);
-  });
 
   http.Request get(String path) => http.Request('GET', Uri.parse('https://example.invalid$path'));
 

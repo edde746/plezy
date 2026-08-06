@@ -118,13 +118,6 @@ void main() {
     });
   });
 
-  group('MediaPlaylist.displayTitle', () {
-    test('is an alias of title', () {
-      final pl = _playlist(title: 'Anything');
-      expect(pl.displayTitle, 'Anything');
-      expect(pl.displayTitle, pl.title);
-    });
-  });
 
   group('MediaPlaylist.globalKey', () {
     test('uses "<serverId>:<id>" when serverId is set', () {

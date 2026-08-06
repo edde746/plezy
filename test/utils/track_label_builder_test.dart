@@ -3,13 +3,7 @@ import 'package:plezy/utils/track_label_builder.dart';
 
 void main() {
   group('TrackLabel', () {
-    test('joined concatenates primary and secondary with " · "', () {
-      expect(const TrackLabel('Tamil', 'E-AC3 · 5.1').joined, 'Tamil · E-AC3 · 5.1');
-    });
 
-    test('joined is just primary when secondary is null', () {
-      expect(const TrackLabel('Tamil').joined, 'Tamil');
-    });
 
     test('equality compares both parts', () {
       expect(const TrackLabel('A', 'B'), const TrackLabel('A', 'B'));

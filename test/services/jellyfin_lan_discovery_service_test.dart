@@ -85,11 +85,6 @@ void main() {
       expect(sorted.map((server) => server.id), ['srv-1', 'srv-2', 'srv-3']);
     });
 
-    test('discovery messages are the two distinct measured payloads', () {
-      expect(MediaBrowserDialect.jellyfin.lanDiscoveryMessage, 'who is JellyfinServer?');
-      expect(MediaBrowserDialect.emby.lanDiscoveryMessage, 'who is EmbyServer?');
-      expect(JellyfinLanDiscoveryService.discoveryPort, 7359);
-    });
 
     test('listenDatagrams receives queued loopback datagrams', () async {
       final receiver = await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0);

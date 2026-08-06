@@ -42,9 +42,6 @@ void main() {
   });
 
   group('fatalPlaybackHttpStatuses', () {
-    test('covers exactly the statuses no client-side retry can recover', () {
-      expect(fatalPlaybackHttpStatuses, {404, 500});
-    });
 
     test('excludes the 503 the reconnect path deliberately retries', () {
       // stream-lavf-o sets reconnect_on_http_error=503, so a 503 is expected

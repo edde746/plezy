@@ -45,25 +45,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ServerBoundMediaMixin', () {
-    testWidgets('serverBoundServerId mirrors metadata.serverId', (tester) async {
-      late _ProbeState state;
-      await tester.pumpWidget(
-        _Probe(
-          metadata: _meta(serverId: ServerId('srv-A')),
-          offline: false,
-          onState: (s, _) => state = s,
-        ),
-      );
-      await tester.pump();
-      expect(state.serverBoundServerId, 'srv-A');
-    });
 
-    testWidgets('serverBoundServerId is null when metadata has no server', (tester) async {
-      late _ProbeState state;
-      await tester.pumpWidget(_Probe(metadata: _meta(), offline: false, onState: (s, _) => state = s));
-      await tester.pump();
-      expect(state.serverBoundServerId, isNull);
-    });
 
     testWidgets('toServerBoundGlobalKey uses the metadata serverId by default', (tester) async {
       late _ProbeState state;

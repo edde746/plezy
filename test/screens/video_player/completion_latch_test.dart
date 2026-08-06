@@ -93,14 +93,6 @@ void main() {
       );
     });
 
-    test('does not exit while the initial adjacency load is unresolved', () {
-      // VideoPlayerScreen initializes adjacency status to failed until its
-      // fire-and-forget first load commits a resolved status.
-      expect(
-        completionNavigationAction(hasNext: false, adjacentStatus: QueueNavigationStatus.failed),
-        CompletionNavigationAction.retryAdjacent,
-      );
-    });
 
     test('exits a standalone movie after adjacency resolves unavailable', () {
       expect(

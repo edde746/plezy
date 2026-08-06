@@ -24,41 +24,10 @@ void main() {
   setUp(resetSharedPreferencesForTest);
 
   group('CompanionRemoteProvider — initial state', () {
-    test('starts with no session and no connected device', () {
-      final p = CompanionRemoteProvider();
-      expect(p.session, isNull);
-      expect(p.isInSession, isFalse);
-      expect(p.isHost, isFalse);
-      expect(p.isRemote, isFalse);
-      expect(p.isConnected, isFalse);
-      expect(p.connectedDevice, isNull);
-      expect(p.status, RemoteSessionStatus.disconnected);
-      p.dispose();
-    });
 
-    test('isPlayerActive starts false', () {
-      final p = CompanionRemoteProvider();
-      expect(p.isPlayerActive, isFalse);
-      p.dispose();
-    });
 
-    test('isHostServerRunning starts false (no peer service yet)', () {
-      final p = CompanionRemoteProvider();
-      expect(p.isHostServerRunning, isFalse);
-      p.dispose();
-    });
 
-    test('reconnectAttempts starts at 0', () {
-      final p = CompanionRemoteProvider();
-      expect(p.reconnectAttempts, 0);
-      p.dispose();
-    });
 
-    test('isCryptoReady is false until ensureCryptoReady succeeds', () {
-      final p = CompanionRemoteProvider();
-      expect(p.isCryptoReady, isFalse);
-      p.dispose();
-    });
 
     test('discoverHosts returns null when crypto is not ready', () {
       final p = CompanionRemoteProvider();

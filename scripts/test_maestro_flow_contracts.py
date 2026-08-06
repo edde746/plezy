@@ -163,14 +163,14 @@ class MaestroFlowContractTests(unittest.TestCase):
         self.assertLess(observation_index, offline_index)
         self.assertEqual(steps[observation_index]["extendedWaitUntil"]["timeout"], 60000)
 
-    def test_tv_next_episode_dismissal_has_platform_specific_controls(self) -> None:
+    def test_tv_prompt_dismissal_has_platform_specific_controls(self) -> None:
         steps = load_flow(".maestro/regression_flows/05_tv_next_episode_back.yaml")
-        next_episode_index = next(
+        cancel_index = next(
             index
             for index, step in enumerate(steps)
-            if step.get("extendedWaitUntil", {}).get("visible") == "Next Episode"
+            if step.get("extendedWaitUntil", {}).get("visible") == "(?s)^Cancel$"
         )
-        branches = platform_pair(steps, next_episode_index + 1)
+        branches = platform_pair(steps, cancel_index + 1)
 
         self.assertEqual(branches["iOS"], [{"tapOn": "Cancel"}])
         self.assertEqual(branches["Android"], [{"pressKey": "back"}])

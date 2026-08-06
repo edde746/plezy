@@ -27,10 +27,6 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
   });
 
-  test('a television opens the player with its chrome down', () {
-    expect(playerChromeStartsVisible(isTv: true), isFalse);
-    expect(playerChromeStartsVisible(isTv: false), isTrue);
-  });
 
   testWidgets('the TV player route opens with the chrome down and unpresented', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);

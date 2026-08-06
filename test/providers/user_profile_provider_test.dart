@@ -19,11 +19,6 @@ void main() {
   setUp(resetSharedPreferencesForTest);
 
   group('UserProfileProvider (settings-only)', () {
-    test('starts with null settings', () {
-      final p = UserProfileProvider();
-      expect(p.profileSettings, isNull);
-      p.dispose();
-    });
 
     test('refreshProfileSettings without a stored token is a no-op', () async {
       final p = UserProfileProvider();

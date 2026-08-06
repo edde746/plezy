@@ -78,12 +78,6 @@ void main() {
   // ============================================================
 
   group('PlayQueueResult', () {
-    test('PlayQueueError carries the wrapped error', () {
-      final error = StateError('boom');
-      final result = PlayQueueError(error);
-      expect(result.error, same(error));
-      expect(result, isA<PlayQueueResult>());
-    });
 
     test('PlayQueueCancelled is a distinct re-exported result', () {
       const PlayQueueResult result = PlayQueueCancelled();

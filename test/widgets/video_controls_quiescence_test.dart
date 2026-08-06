@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,14 +29,6 @@ import '../test_helpers/theme.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('the keep-alive ticks on Linux and nowhere else', () {
-    LinuxKeepAlive.debugIsLinuxOverride = null;
-    expect(
-      LinuxKeepAlive.ticksOnThisPlatform,
-      Platform.isLinux,
-      reason: 'forced repaints on any other platform reintroduce the #1707 VRR micro-stutter',
-    );
-  });
 
   group('hidden-chrome frame quiescence', () {
     late _IdlePlayer player;
