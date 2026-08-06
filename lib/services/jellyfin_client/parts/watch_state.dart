@@ -1,9 +1,40 @@
 part of '../../jellyfin_client.dart';
 
 mixin _JellyfinWatchStateMethods on _JellyfinClientInternals {
+  /// Marking played normally zeroes `UserData.PlaybackPositionTicks` server-side,
+  /// which is what drops the row from Continue Watching — membership on this API
+  /// is derived from the position alone, never from `Played` (verified on
+  /// Jellyfin 10.11.10). Relying on that side effect is not enough: a stale
+  /// playback report replayed from the offline queue, another client, or a
+  /// server-side plugin can leave `Played` set *and* a position behind, and the
+  /// row is then pinned to Continue Watching forever (#1812).
+  ///
+  /// So assert the postcondition instead of assuming it, using the
+  /// `UserItemDataDto` the mark already returns. The follow-up write costs a
+  /// request only when the invariant is actually broken.
+  ///
+  /// Folders (series/season) report their own position as 0 while the server
+  /// resets their children recursively, so nothing extra is owed here.
   @override
   Future<void> markWatched(MediaItem item) async {
     final response = await _http.post(paths.playedItem(item.id), queryParameters: {'userId': connection.userId});
+    throwIfHttpError(response);
+
+    final data = response.data;
+    final positionMs = data is Map<String, dynamic> ? jellyfinTicksToMs(data['PlaybackPositionTicks']) : null;
+    if (positionMs == null || positionMs <= 0) return;
+
+    appLogger.d('JellyfinClient: ${item.id} stayed resumable after mark-played; clearing its resume position');
+    await _clearResumePosition(item.id);
+  }
+
+  /// Drop [itemId]'s resume bookmark without touching its played flag.
+  Future<void> _clearResumePosition(String itemId) async {
+    final response = await _http.post(
+      paths.userItemData(itemId),
+      queryParameters: {'userId': connection.userId},
+      body: {'PlaybackPositionTicks': 0},
+    );
     throwIfHttpError(response);
   }
 

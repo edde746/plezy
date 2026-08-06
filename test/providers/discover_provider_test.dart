@@ -415,6 +415,66 @@ void main() {
     expect(aggregation.hubCalls, hubCallsBefore);
   });
 
+  test('watched event drops the row immediately, before the refetch answers', () async {
+    aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
+    await provider.load();
+
+    // A finished item has no business on the shelf, so the row must go now
+    // rather than a round trip later — and it must not come back if the
+    // backend is still returning it (#1812).
+    var sawImmediateRemoval = false;
+    provider.addListener(() {
+      if (provider.onDeck.length == 1 && provider.onDeck.single.id == 'ep-2') {
+        sawImmediateRemoval = true;
+      }
+    });
+    aggregation.onDeckResult = () => [_item('ep-2')];
+
+    WatchStateNotifier().notifyWatched(item: _item('ep-1'));
+    await pumpEventQueue();
+
+    expect(sawImmediateRemoval, isTrue);
+    expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+  });
+
+  test('marking a show watched drops its on-deck episode', () async {
+    aggregation.onDeckResult = () => [_item('ep-1', parentId: 'season-1', grandparentId: 'show-1'), _item('ep-2')];
+    await provider.load();
+    aggregation.onDeckResult = () => [_item('ep-2')];
+
+    WatchStateNotifier().notifyWatched(item: _item('show-1', kind: MediaKind.show));
+    await pumpEventQueue();
+
+    expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+  });
+
+  test('threshold-crossing progress drops the row too', () async {
+    aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
+    await provider.load();
+    aggregation.onDeckResult = () => [_item('ep-2')];
+
+    WatchStateNotifier().notifyProgress(item: _item('ep-1'), viewOffset: 95000, duration: 100000);
+    await pumpEventQueue();
+
+    expect(provider.onDeck.map((i) => i.id), ['ep-2']);
+  });
+
+  test('unwatched event evicts nothing', () async {
+    aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
+    await provider.load();
+
+    var sawShorterList = false;
+    provider.addListener(() {
+      if (provider.onDeck.length < 2) sawShorterList = true;
+    });
+
+    WatchStateNotifier().notifyWatched(item: _item('ep-1'), isNowWatched: false);
+    await pumpEventQueue();
+
+    expect(sawShorterList, isFalse);
+    expect(provider.onDeck.map((i) => i.id), ['ep-1', 'ep-2']);
+  });
+
   test('deletion drops the item from on-deck and hubs, then refreshes continue watching only', () async {
     aggregation.onDeckResult = () => [_item('ep-1'), _item('ep-2')];
     aggregation.hubsResult = () => [

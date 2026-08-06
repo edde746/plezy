@@ -34,6 +34,18 @@ class MediaBrowserPaths {
   String playedItem(String itemId) =>
       dialect.requiresUserScopedItemRoutes ? '$_user/PlayedItems/${_id(itemId)}' : '/UserPlayedItems/${_id(itemId)}';
 
+  /// Per-user playback-state write. `POST` with `{"PlaybackPositionTicks": 0}`
+  /// clears the resume bookmark while leaving `Played` untouched (verified on
+  /// Jellyfin 10.11.10 for both spellings).
+  ///
+  /// Continue Watching membership on this API is derived purely from
+  /// `UserData.PlaybackPositionTicks > 0` — `Played` is not consulted — so this
+  /// is the only route that can guarantee a finished item stops being
+  /// resumable. See [MediaServerClient.markWatched].
+  String userItemData(String itemId) => dialect.requiresUserScopedItemRoutes
+      ? '$_user/Items/${_id(itemId)}/UserData'
+      : '/UserItems/${_id(itemId)}/UserData';
+
   /// Favourite flag write route (`POST` to add, `DELETE` to remove).
   String favoriteItem(String itemId) => dialect.requiresUserScopedItemRoutes
       ? '$_user/FavoriteItems/${_id(itemId)}'

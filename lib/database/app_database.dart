@@ -984,6 +984,37 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Drop queued `progress` rows for one item, leaving `watched`/`unwatched`
+  /// rows alone. Returns how many were removed.
+  ///
+  /// The mirror of the purge [insertWatchAction] performs: a terminal watch
+  /// state written straight to the server (the online path, which queues
+  /// nothing) also supersedes any progress still waiting to replay. Without
+  /// it, [getPendingWatchActions] hands back the older progress row — it
+  /// orders by `createdAt` — and replaying it rewrites the resume position the
+  /// mark just cleared, pinning the item to Continue Watching (#1812).
+  ///
+  /// Progress queued *after* a mark is a genuine rewatch and is not affected:
+  /// this only runs at the moment the mark lands.
+  Future<int> deleteQueuedProgressForItem({
+    String? profileId,
+    required ServerId serverId,
+    String? clientScopeId,
+    required String ratingKey,
+  }) {
+    return _runPendingMutation(() async {
+      final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
+      return (delete(offlineWatchProgress)..where(
+            (t) =>
+                t.globalKey.equals(globalKey) &
+                _nullableTextPredicate(t.profileId, profileId) &
+                _nullableTextPredicate(t.clientScopeId, clientScopeId) &
+                t.actionType.equals(OfflineActionType.progress.id),
+          ))
+          .go();
+    });
+  }
+
   /// Delete a specific watch action after successful sync
   Future<void> deleteWatchAction(int id) {
     return _runPendingMutation(() async {

@@ -86,7 +86,48 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// silently drops local watch progress.
   static const int maxSyncAttempts = 5;
 
-  OfflineWatchSyncService({required this._database, required this._serverManager});
+  StreamSubscription<WatchStateEvent>? _watchStateSubscription;
+
+  OfflineWatchSyncService({required this._database, required this._serverManager}) {
+    _watchStateSubscription = WatchStateNotifier().stream.listen(_onWatchStateChanged);
+  }
+
+  /// A terminal watch state just landed, so any progress still queued for that
+  /// item is stale and must not replay.
+  ///
+  /// [AppDatabase.insertWatchAction] already purges the queue when the mark is
+  /// itself queued (offline). The online path writes straight to the server and
+  /// queues nothing, so without this the older progress row survives and
+  /// [syncPendingItems] later rewrites the resume position the mark cleared —
+  /// on MediaBrowser that pins the item to Continue Watching for good (#1812).
+  /// Plex is unaffected in practice (PMS discards a replay whose `updated`
+  /// timestamp is stale) but the queue entry is meaningless there too.
+  ///
+  /// Progress recorded *after* the mark is a genuine rewatch: it is queued
+  /// later, so it is never touched here.
+  void _onWatchStateChanged(WatchStateEvent event) {
+    if (_isShutDown) return;
+    if (event.changeType != WatchStateChangeType.watched && event.changeType != WatchStateChangeType.unwatched) {
+      return;
+    }
+    unawaited(_discardQueuedProgress(ServerId(event.serverId), event.itemId));
+  }
+
+  Future<void> _discardQueuedProgress(ServerId serverId, String itemId) async {
+    try {
+      final removed = await _database.deleteQueuedProgressForItem(
+        profileId: _activeProfileId,
+        serverId: serverId,
+        clientScopeId: await _clientScopeIdForItem(serverId, itemId),
+        ratingKey: itemId,
+      );
+      if (removed == 0) return;
+      appLogger.d('Dropped $removed superseded queued progress action(s) for $serverId:$itemId');
+      notifyListeners();
+    } catch (e) {
+      appLogger.w('Failed to drop superseded queued progress for $serverId:$itemId', error: e);
+    }
+  }
 
   /// Whether a sync is currently in progress
   bool get isSyncing => _isSyncing;
@@ -834,6 +875,8 @@ class OfflineWatchSyncService extends ChangeNotifier {
   @override
   void dispose() {
     _isShutDown = true;
+    _watchStateSubscription?.cancel();
+    _watchStateSubscription = null;
     if (_offlineModeSource != null && _offlineModeListener != null) {
       _offlineModeSource!.removeListener(_offlineModeListener!);
     }

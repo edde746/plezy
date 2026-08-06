@@ -605,6 +605,111 @@ void main() {
   });
 
   // ============================================================
+  // Superseded queued progress (#1812)
+  // ============================================================
+
+  group('queued progress superseded by a watch-state write', () {
+    MediaItem itemFor(String id) =>
+        testMediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv');
+
+    // The online mark writes straight to the server and queues nothing, so
+    // nothing purges the queue the way insertWatchAction does for the offline
+    // mark. Replaying the stale row afterwards rewrites the resume position the
+    // mark cleared, which pins the item to Continue Watching on MediaBrowser.
+    test('a watched event drops the queued progress row for that item', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
+      expect(await svc.getPendingSyncCount(), 1);
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'));
+      await pumpEventQueue();
+
+      expect(await svc.getPendingSyncCount(), 0);
+      expect(await db.getLatestWatchAction('srv:42'), isNull);
+    });
+
+    test('an unwatched event drops it too', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'), isNowWatched: false);
+      await pumpEventQueue();
+
+      expect(await svc.getPendingSyncCount(), 0);
+    });
+
+    test('other items and queued manual marks are left alone', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '43', viewOffset: 50000, duration: 100000);
+      await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '44');
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'));
+      await pumpEventQueue();
+
+      expect(await db.getLatestWatchAction('srv:42'), isNull);
+      expect((await db.getLatestWatchAction('srv:43'))?.actionType, 'progress');
+      expect((await db.getLatestWatchAction('srv:44'))?.actionType, 'watched');
+    });
+
+    test('progress recorded after the mark survives — that is a rewatch', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'));
+      await pumpEventQueue();
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 5000, duration: 100000);
+
+      expect((await db.getLatestWatchAction('srv:42'))?.viewOffset, 5000);
+    });
+
+    test('a superseded row never reaches the server on the next sync', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+      svc.setActiveProfileId('p1');
+
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.jellyfin);
+      mgr.debugRegisterClientForTesting(client);
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'));
+      await pumpEventQueue();
+      await svc.syncPendingItems();
+
+      // The whole point: no position write, so the resume bookmark the mark
+      // cleared stays cleared.
+      expect(client.stopped, isEmpty);
+      expect(client.started, isEmpty);
+    });
+  });
+
+  // ============================================================
   // getLocalWatchStatus
   // ============================================================
 

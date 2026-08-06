@@ -489,13 +489,27 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
 
     if (event.changeType == WatchStateChangeType.removedFromContinueWatching) {
-      final remaining = _onDeck.where((item) => item.id != event.itemId).toList();
-      if (remaining.length != _onDeck.length) {
-        _onDeck = remaining;
-        safeNotifyListeners();
-      }
+      _evictFromOnDeck((item) => item.id == event.itemId);
+    } else if (event.changeType == WatchStateChangeType.watched ||
+        (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched == true)) {
+      // Finished items have no business in Continue Watching, so drop the row
+      // now instead of waiting a round trip for the refetch below to confirm
+      // it. Marking a season or show watched takes its on-deck episode with
+      // it, matching the parent-aware filter this subscription uses — the
+      // series' successor comes back from the refetch (#1812).
+      _evictFromOnDeck(
+        (item) => item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId,
+      );
     }
     unawaited(refreshContinueWatching());
+  }
+
+  void _evictFromOnDeck(bool Function(MediaItem item) matches) {
+    final remaining = _onDeck.where((item) => !matches(item)).toList();
+    if (remaining.length == _onDeck.length) return;
+    _onDeck = remaining;
+    safeNotifyListeners();
+    unawaited(_syncSystemShelf(_onDeck));
   }
 
   /// Everything on screen: the Continue Watching row plus every hub row.

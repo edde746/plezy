@@ -1356,6 +1356,82 @@ void main() {
     });
   });
 
+  group('MediaBrowser mark-watched clears a surviving resume position', () {
+    // Continue Watching membership on this API is `PlaybackPositionTicks > 0`
+    // alone, so a played item that keeps a position is pinned to the shelf
+    // forever. markWatched must assert that postcondition, not assume it
+    // (#1812).
+    http.Response Function(http.Request) respondWithPosition(int ticks) {
+      return (request) {
+        if (request.url.path.endsWith('/UserData')) return http.Response('', 204);
+        return jsonResponse({'ItemId': 'item-1', 'Played': true, 'PlaybackPositionTicks': ticks});
+      };
+    }
+
+    test('Jellyfin clears it through the unprefixed user-data route', () async {
+      final requests = _RequestCapture(respondWithPosition(12000000000));
+      final client = testJellyfinClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      await client.markWatched(_item(MediaBackend.jellyfin));
+
+      expect(requests.log, [
+        'POST /UserPlayedItems/item-1?userId=user-1',
+        'POST /UserItems/item-1/UserData?userId=user-1',
+      ]);
+      expect(jsonDecode(requests.requests.last.body), {'PlaybackPositionTicks': 0});
+    });
+
+    test('Emby clears it through the user-scoped user-data route', () async {
+      final requests = _RequestCapture(respondWithPosition(12000000000));
+      final client = testEmbyClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      await client.markWatched(_item(MediaBackend.emby));
+
+      expect(requests.log, [
+        'POST /Users/user-1/PlayedItems/item-1?userId=user-1',
+        'POST /Users/user-1/Items/item-1/UserData?userId=user-1',
+      ]);
+      expect(jsonDecode(requests.requests.last.body), {'PlaybackPositionTicks': 0});
+    });
+
+    test('a mark that already zeroed the position issues no follow-up write', () async {
+      // The normal case. A second request on every mark would double the cost
+      // of the app's most common watch-state write.
+      final requests = _RequestCapture(respondWithPosition(0));
+      final client = testJellyfinClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      await client.markWatched(_item(MediaBackend.jellyfin));
+
+      expect(requests.log, ['POST /UserPlayedItems/item-1?userId=user-1']);
+    });
+
+    test('a body without UserData is left alone', () async {
+      // Older servers answer the played toggle with 204 and no DTO; there is
+      // nothing to assert against, so do not guess.
+      final requests = _RequestCapture((_) => http.Response('', 204));
+      final client = testJellyfinClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      await client.markWatched(_item(MediaBackend.jellyfin));
+
+      expect(requests.log, ['POST /UserPlayedItems/item-1?userId=user-1']);
+    });
+
+    test('a failed clear surfaces as MediaServerHttpException', () async {
+      final requests = _RequestCapture((request) {
+        if (request.url.path.endsWith('/UserData')) return http.Response('nope', 500);
+        return jsonResponse({'ItemId': 'item-1', 'Played': true, 'PlaybackPositionTicks': 12000000000});
+      });
+      final client = testJellyfinClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      await expectLater(client.markWatched(_item(MediaBackend.jellyfin)), throwsA(isA<MediaServerHttpException>()));
+    });
+  });
+
   group('MediaBrowser name-pair item fields', () {
     test('Emby item tags and genres survive the browse path via the name-pair arrays', () async {
       // Real Emby DTO shape: the plain arrays are absent, the name-pair

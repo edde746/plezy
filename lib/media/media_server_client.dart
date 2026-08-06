@@ -348,6 +348,14 @@ abstract class MediaServerClient {
   /// emission (and tracker fan-out); the offline sync replay calls this
   /// directly precisely because the event already fired when the action was
   /// queued.
+  ///
+  /// Postcondition: once this completes the backend must no longer treat
+  /// [item] as resumable, so it cannot come back from [fetchContinueWatching].
+  /// Plex gets this for free (PMS filters watched items out of its on-deck
+  /// hub). MediaBrowser derives Continue Watching membership purely from
+  /// `UserData.PlaybackPositionTicks > 0`, so its implementation must ensure
+  /// the resume position is cleared rather than assume the played flag did it
+  /// (#1812).
   Future<void> markWatched(MediaItem item);
 
   /// Mark [item] as unwatched. Transport only — see [markWatched].
