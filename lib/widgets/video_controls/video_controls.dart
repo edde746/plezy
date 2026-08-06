@@ -790,6 +790,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       currentPosition: () => widget.player.state.position,
       duration: () => widget.player.state.duration,
       seek: (target) => unawaited(_seekToPosition(target)),
+      playheadJumps: widget.player.streams.playheadJump,
+      // The badge is a promise about the coalesced burst. Once that burst is
+      // abandoned — the timeline, a chapter jump, a peer, a stream rebuilt at a
+      // resume position, a new item, a swapped player — the promise is void, so
+      // take the readout down instead of leaving a total nothing will seek to
+      // (#1819, keeping the #1676 badge-matches-seek invariant).
+      onBurstAbandoned: _dismissSkipFeedback,
     );
     // Side effects: rotation lock + focus on nav-enable. Both fire immediately
     // so init wiring (orientation, focus) lives in one place.
@@ -876,6 +883,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     super.didUpdateWidget(oldWidget);
     if (oldWidget.player != widget.player) {
       ++_subtitleVisibilityWriteGeneration;
+      // Otherwise the accumulator keeps listening to the retired player and
+      // never hears the new one move.
+      _hiddenSeek.attachPlayheadJumps(widget.player.streams.playheadJump);
     }
     if (oldWidget.chromeController != widget.chromeController) {
       oldWidget.chromeController.removeListener(_onChromeChanged);
@@ -888,6 +898,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // the per-item chapters/markers/skip state when the item changes.
     // (Quality/version switches keep the same item, so no refetch churn.)
     if (oldWidget.metadata.globalKey != widget.metadata.globalKey) {
+      // A pending skip is an offset into the outgoing item's timeline; letting
+      // it survive would rebase the next press onto the previous episode. This
+      // is the lifecycle backstop for every route that replaces the item
+      // without going through a wrapped next/previous callback — natural
+      // completion, a peer, an external change — so it also has to reach the
+      // desktop timeline's own accumulator and the shared readout.
+      _hiddenSeek.cancel();
+      _desktopControlsKey.currentState?.abandonPendingSeek();
+      _dismissSkipFeedback();
       _setControlsState(() {
         _chapters = [];
         _chaptersLoaded = false;
@@ -1187,8 +1206,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       onCancelAutoHide: widget.chromeController.cancelAutoHide,
                                                       onStartAutoHide: widget.chromeController.startAutoHide,
                                                       onBack: widget.onBack,
-                                                      onNext: widget.onNext,
-                                                      onPrevious: widget.onPrevious,
+                                                      onNext: _abandoningBurst(widget.onNext),
+                                                      onPrevious: _abandoningBurst(widget.onPrevious),
                                                       canControl: widget.canControl,
                                                       hasFirstFrame: widget.hasFirstFrame,
                                                       thumbnailDataBuilder: widget.thumbnailDataBuilder,
@@ -1197,7 +1216,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                       captureBuffer: widget.captureBuffer,
                                                       isAtLiveEdge: widget.isAtLiveEdge,
                                                       streamStartEpoch: widget.streamStartEpoch,
-                                                      onLiveSeek: widget.onLiveSeek,
+                                                      onLiveSeek: _liveSeekAbandoningBurst(widget.onLiveSeek),
                                                       serverId: widget.metadata.serverId,
                                                       showQueueTab: canShowQueue,
                                                       onQueueItemSelected: canShowQueue ? _onQueueItemSelected : null,

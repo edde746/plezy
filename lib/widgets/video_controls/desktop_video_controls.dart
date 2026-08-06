@@ -247,15 +247,23 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       currentPosition: () => widget.player.state.position,
       duration: () => widget.player.state.duration,
       seek: widget.onSeekEnd,
+      playheadJumps: widget.player.streams.playheadJump,
       onChanged: () {
         if (mounted) setState(() {});
       },
     );
   }
 
+  /// Drop a coalesced timeline burst that will never be committed, because what
+  /// it was seeking through is being replaced.
+  void abandonPendingSeek() => _timelineSeek.cancel();
+
   @override
   void didUpdateWidget(DesktopVideoControls oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.player != widget.player) {
+      _timelineSeek.attachPlayheadJumps(widget.player.streams.playheadJump);
+    }
     if (oldWidget.chromeController != widget.chromeController) {
       oldWidget.chromeController?.removeListener(_onChromeControllerChanged);
       widget.chromeController?.addListener(_onChromeControllerChanged);

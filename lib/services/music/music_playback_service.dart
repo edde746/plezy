@@ -46,6 +46,13 @@ abstract class MusicPlaybackService extends ChangeNotifier {
   Duration get position;
   Stream<Duration> get positionStream;
 
+  /// Mirrors `Player.streams.playheadJump`: something is moving the playhead
+  /// discontinuously, to this position, or to somewhere only the backend knows
+  /// when null. Request-time intent, not an observed landing.
+  /// Consumers coalescing their own relative seeks use it to drop a pending
+  /// target something else superseded (#1819).
+  Stream<Duration?> get playheadJumpStream => const Stream<Duration?>.empty();
+
   /// Full queue in playback order (shuffle already applied).
   List<MediaItem> get queue;
 

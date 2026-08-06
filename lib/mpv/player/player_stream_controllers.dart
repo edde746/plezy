@@ -8,6 +8,7 @@ mixin PlayerStreamControllersMixin {
   final completedController = StreamController<bool>.broadcast();
   final bufferingController = StreamController<bool>.broadcast();
   final positionController = StreamController<Duration>.broadcast();
+  final playheadJumpController = StreamController<Duration?>.broadcast();
   final durationController = StreamController<Duration>.broadcast();
   final seekableController = StreamController<bool>.broadcast();
   final bufferController = StreamController<Duration>.broadcast();
@@ -34,6 +35,7 @@ mixin PlayerStreamControllersMixin {
       completed: completedController.stream,
       buffering: bufferingController.stream,
       position: positionController.stream,
+      playheadJump: playheadJumpController.stream,
       duration: durationController.stream,
       seekable: seekableController.stream,
       buffer: bufferController.stream,
@@ -61,6 +63,7 @@ mixin PlayerStreamControllersMixin {
     await completedController.close();
     await bufferingController.close();
     await positionController.close();
+    await playheadJumpController.close();
     await durationController.close();
     await seekableController.close();
     await bufferController.close();

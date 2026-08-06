@@ -202,6 +202,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   bool _sleepTimerEndOfTrack = false;
 
   final StreamController<Duration> _positionController = StreamController<Duration>.broadcast();
+  final StreamController<Duration?> _playheadJumpController = StreamController<Duration?>.broadcast();
   final StreamController<Object> _errorsController = StreamController<Object>.broadcast();
 
   // ---------------------------------------------------------------------
@@ -228,6 +229,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   @override
   Stream<Duration> get positionStream => _positionController.stream;
+
+  @override
+  Stream<Duration?> get playheadJumpStream => _playheadJumpController.stream;
 
   @override
   List<MediaItem> get queue => _queue.queue;
@@ -618,6 +622,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _playerSubs
       ..clear()
       ..add(player.streams.position.listen(_onPosition))
+      ..add(player.streams.playheadJump.listen(_playheadJumpController.add))
       ..add(player.streams.playing.listen(_onPlayingChanged))
       ..add(player.streams.trackTransition.listen(_onTrackTransition))
       ..add(player.streams.completed.listen(_onCompleted))
@@ -686,8 +691,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _invalidateArmRequests();
 
     // The finished track played out fully — report stopped at its duration.
+    // Without one, the player's own record of where the outgoing source got to:
+    // by now its live position belongs to the track that replaced it.
     final finishedMs = _currentTrack?.durationMs;
-    _finalizeCurrentTrack(positionOverride: finishedMs != null ? Duration(milliseconds: finishedMs) : null);
+    _finalizeCurrentTrack(
+      positionOverride: finishedMs != null ? Duration(milliseconds: finishedMs) : _player?.outgoingSourcePosition,
+    );
 
     // Move the cursor to the armed entry: the expected natural-next when it
     // still matches, otherwise wherever the armed track now sits.
@@ -1571,6 +1580,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     // Runs to completion synchronously — see the awaitStop: false contract.
     unawaited(_teardownPlayerAndControls(awaitStop: false));
     unawaited(_positionController.close());
+    unawaited(_playheadJumpController.close());
     unawaited(_errorsController.close());
     _volumeNotifier.dispose();
     super.dispose();

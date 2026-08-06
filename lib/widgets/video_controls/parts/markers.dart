@@ -96,7 +96,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
 
     if (marker.isCredits && isAtEnd) {
       if (!skipAutoPlayCountdown && widget.onNext != null) {
-        widget.onNext!.call();
+        _abandoningBurst(widget.onNext)!.call();
       } else {
         // Seeking to EOF is unreliable due to position stream throttling,
         // so pause and defer to the parent's completion flow.

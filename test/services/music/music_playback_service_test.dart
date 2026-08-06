@@ -61,6 +61,7 @@ class FakePlayer implements Player {
   final completedCtrl = StreamController<bool>.broadcast(sync: true);
   final bufferingCtrl = StreamController<bool>.broadcast(sync: true);
   final positionCtrl = StreamController<Duration>.broadcast(sync: true);
+  final playheadJumpCtrl = StreamController<Duration?>.broadcast(sync: true);
   final durationCtrl = StreamController<Duration>.broadcast(sync: true);
   final seekableCtrl = StreamController<bool>.broadcast(sync: true);
   final bufferCtrl = StreamController<Duration>.broadcast(sync: true);
@@ -83,6 +84,7 @@ class FakePlayer implements Player {
     completed: completedCtrl.stream,
     buffering: bufferingCtrl.stream,
     position: positionCtrl.stream,
+    playheadJump: playheadJumpCtrl.stream,
     duration: durationCtrl.stream,
     seekable: seekableCtrl.stream,
     buffer: bufferCtrl.stream,
@@ -162,6 +164,7 @@ class FakePlayer implements Player {
     completedCtrl.close();
     bufferingCtrl.close();
     positionCtrl.close();
+    playheadJumpCtrl.close();
     durationCtrl.close();
     seekableCtrl.close();
     bufferCtrl.close();
@@ -188,6 +191,11 @@ class FakePlayer implements Player {
 
   @override
   Duration get currentPosition => _state.position;
+
+  /// Set by tests that drive a gapless transition; the real player records this
+  /// as the outgoing source hands over.
+  @override
+  Duration? outgoingSourcePosition;
 
   @override
   bool get audioPassthroughActive => false;
@@ -967,6 +975,38 @@ void main() {
     expect(h.client.reportsFor('started').map((r) => r.itemId), ['t1', 't2']);
   });
 
+  test('a track with no metadata duration is reported stopped where the source actually got to', () async {
+    // Nothing supplies a duration to report at, so the outgoing position is the
+    // only truth — and by the time the transition is handled the player's live
+    // position already belongs to the track that replaced it.
+    final undated = testMediaItem(
+      id: 'nd',
+      backend: MediaBackend.plex,
+      kind: MediaKind.track,
+      title: 'Unknown length',
+      parentTitle: 'Album',
+      grandparentTitle: 'Artist',
+      serverId: 'srv',
+    );
+    await h.playTracks([undated, t2]);
+
+    // The gapless advance: the new source is at its start, and the player has
+    // recorded where the old one handed over.
+    h.player.outgoingSourcePosition = const Duration(minutes: 2, seconds: 12);
+    h.player.setPosition(Duration.zero);
+    h.player.emitTransition(_urlFor(t2));
+    await pumpEventQueue();
+
+    final stopped = h.client.reportsFor('stopped').toList();
+    expect(stopped, hasLength(1));
+    expect(stopped.single.itemId, 'nd');
+    expect(
+      stopped.single.position,
+      const Duration(minutes: 2, seconds: 12),
+      reason: 'the new source has reset the live position; the outgoing track played to 2:12',
+    );
+  });
+
   test('completed with nothing armed parks paused at the end and keeps the track', () async {
     await h.playTracks([t1, t2]);
     h.player.emitTransition(_urlFor(t2));
@@ -1389,5 +1429,23 @@ void main() {
     expect(h.service.status, MusicPlaybackStatus.paused);
     expect(h.service.currentTrack?.id, 't1');
     expect(h.service.sleepTimerActive, isFalse);
+  });
+
+  test('the service republishes the player playhead jumps the now-playing bar listens to', () async {
+    // OS media controls, a headset and the lock screen seek straight through
+    // the service, so this stream is the only way the now-playing seek bar can
+    // learn that its pending keyboard target was superseded (#1819). What the
+    // bar then does with a jump is covered in test/media/stepped_seek_test.dart.
+    await h.playTracks([t1]);
+
+    final jumps = <Duration?>[];
+    final subscription = h.service.playheadJumpStream.listen(jumps.add);
+    addTearDown(subscription.cancel);
+
+    h.player.playheadJumpCtrl.add(const Duration(minutes: 2));
+    h.player.playheadJumpCtrl.add(null);
+    await pumpEventQueue();
+
+    expect(jumps, [const Duration(minutes: 2), isNull]);
   });
 }

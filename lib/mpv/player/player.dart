@@ -54,6 +54,12 @@ abstract class Player {
   /// ExoPlayer's native tick is itself 250ms, which bounds freshness there.
   Duration get currentPosition;
 
+  /// Where the source that just handed over was when it did, or null if none
+  /// has. A gapless advance retargets [state] and [currentPosition] at the new
+  /// source immediately, so anything finalising the outgoing item — progress
+  /// reporting, scrobbling — must read its last position from here.
+  Duration? get outgoingSourcePosition => null;
+
   /// Whether audio passthrough (bitstream output) is currently active.
   ///
   /// [setRate] with a non-1.0 rate tears passthrough down, so callers that

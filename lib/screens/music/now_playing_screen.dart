@@ -1036,6 +1036,10 @@ class _NowPlayingSeekBarState extends State<_NowPlayingSeekBar> {
           unawaited(service.seek(target));
         }
       },
+      // The scrub bar cancels the pin itself, but OS media controls, a headset
+      // and the lock screen all seek straight through the service, and those
+      // have to retire it too (#1819).
+      playheadJumps: context.read<MusicPlaybackService>().playheadJumpStream,
       onChanged: () {
         if (mounted) setState(() {});
       },

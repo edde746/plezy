@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:flutter/gestures.dart' show kDoubleTapTimeout;
 import 'package:flutter/material.dart';
@@ -299,6 +300,26 @@ void main() {
     await settleFeedback(tester);
   });
 
+  testWidgets('a double tap keeps its own readout while a keyboard burst is pending', (tester) async {
+    // Both input paths share one badge. The tap's seek is foreign to the
+    // keyboard accumulator, so retiring that burst must not take down the
+    // readout the tap just raised.
+    await pumpControls(tester);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(find.byType(DoubleTapFeedback), findsOneWidget);
+
+    await doubleTap(tester, forwardZoneOf(tester));
+
+    expect(find.byType(DoubleTapFeedback), findsOneWidget, reason: 'the tap that just seeked owns the readout now');
+    expect(find.text('10s'), findsOneWidget, reason: 'and it counts only its own step');
+
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    await settleFeedback(tester);
+  });
+
   testWidgets('a lone tap in the opposite zone does not skip', (tester) async {
     await pumpControls(tester);
 
@@ -340,6 +361,7 @@ void main() {
 /// Minimal [Player] recording seek targets against a fixed 45-minute item.
 class _RecordingPlayer implements Player {
   final List<Duration> seeks = [];
+  final StreamController<Duration?> _jumpController = StreamController<Duration?>.broadcast();
 
   bool _playing = true;
   Duration _position = const Duration(minutes: 10);
@@ -353,6 +375,7 @@ class _RecordingPlayer implements Player {
 
   @override
   PlayerStreams get streams => PlayerStreams(
+    playheadJump: _jumpController.stream,
     playing: const Stream<bool>.empty(),
     completed: const Stream<bool>.empty(),
     buffering: const Stream<bool>.empty(),
@@ -377,6 +400,12 @@ class _RecordingPlayer implements Player {
   Future<void> seek(Duration position) async {
     seeks.add(position);
     _position = position;
+    _jumpController.add(position);
+  }
+
+  @override
+  Future<void> dispose({bool preserveDisplayMode = false}) async {
+    await _jumpController.close();
   }
 
   @override
