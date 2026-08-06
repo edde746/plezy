@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../media/media_item.dart' show CardShape;
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
+import '../utils/platform_detector.dart';
 
 /// Shared grid delegate configuration for media item grids
 /// Maintains consistent aspect ratio and spacing across all media grids.
@@ -81,6 +82,7 @@ class MediaGridDelegate {
   }
 
   static double spacingFor({required BuildContext context, bool fullBleedImage = false}) {
+    if (PlatformDetector.isAutomotive()) return GridLayoutConstants.crossAxisSpacing;
     if (!fullBleedImage) return GridLayoutConstants.crossAxisSpacing;
     return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
   }

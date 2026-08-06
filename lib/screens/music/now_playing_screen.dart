@@ -724,77 +724,74 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   }
 
   Widget _buildTransportRow(MusicPlaybackService service) {
+    final transport = FocusableActionBar(
+      spacing: 8,
+      onNavigateUp: _seekFocusNode.requestFocus,
+      onNavigateDown: () => _utilityBarKey.currentState?.requestFocusOnFirst(),
+      onBack: _pop,
+      actions: [
+        FocusableAction(
+          debugLabel: 'np_shuffle',
+          onPressed: service.toggleShuffle,
+          builder: (context, state) => _transportIcon(
+            state,
+            icon: Symbols.shuffle_rounded,
+            active: service.shuffled,
+            tooltip: t.common.shuffle,
+            onPressed: service.toggleShuffle,
+            size: 22,
+          ),
+        ),
+        FocusableAction(
+          debugLabel: 'np_previous',
+          onPressed: () => unawaited(service.previous()),
+          builder: (context, state) => _transportIcon(
+            state,
+            icon: Symbols.skip_previous_rounded,
+            tooltip: t.music.previousTrack,
+            onPressed: () => unawaited(service.previous()),
+            size: 32,
+          ),
+        ),
+        FocusableAction(
+          debugLabel: 'np_play_pause',
+          focusNode: _playPauseFocusNode,
+          autofocus: PlatformDetector.isTV(),
+          onPressed: () => unawaited(service.togglePlayPause()),
+          builder: (context, state) =>
+              _PlayPauseButton(state: state, onPressed: () => unawaited(service.togglePlayPause())),
+        ),
+        FocusableAction(
+          debugLabel: 'np_next',
+          onPressed: () => unawaited(service.next()),
+          builder: (context, state) => _transportIcon(
+            state,
+            icon: Symbols.skip_next_rounded,
+            tooltip: t.music.nextTrack,
+            onPressed: () => unawaited(service.next()),
+            size: 32,
+          ),
+        ),
+        FocusableAction(
+          debugLabel: 'np_repeat',
+          onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
+          builder: (context, state) => _transportIcon(
+            state,
+            icon: repeatModeIcon(service.repeatMode),
+            active: service.repeatMode != MusicRepeatMode.off,
+            tooltip: repeatModeLabel(service.repeatMode),
+            onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
+            size: 22,
+          ),
+        ),
+      ],
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Center(
-        // Scale down instead of overflowing when the hosting column is
-        // narrower than the row's intrinsic width (e.g. TV layout on a
-        // narrow display or a small desktop window).
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: FocusableActionBar(
-            spacing: 8,
-            onNavigateUp: _seekFocusNode.requestFocus,
-            onNavigateDown: () => _utilityBarKey.currentState?.requestFocusOnFirst(),
-            onBack: _pop,
-            actions: [
-              FocusableAction(
-                debugLabel: 'np_shuffle',
-                onPressed: service.toggleShuffle,
-                builder: (context, state) => _transportIcon(
-                  state,
-                  icon: Symbols.shuffle_rounded,
-                  active: service.shuffled,
-                  tooltip: t.common.shuffle,
-                  onPressed: service.toggleShuffle,
-                  size: 22,
-                ),
-              ),
-              FocusableAction(
-                debugLabel: 'np_previous',
-                onPressed: () => unawaited(service.previous()),
-                builder: (context, state) => _transportIcon(
-                  state,
-                  icon: Symbols.skip_previous_rounded,
-                  tooltip: t.music.previousTrack,
-                  onPressed: () => unawaited(service.previous()),
-                  size: 32,
-                ),
-              ),
-              FocusableAction(
-                debugLabel: 'np_play_pause',
-                focusNode: _playPauseFocusNode,
-                autofocus: PlatformDetector.isTV(),
-                onPressed: () => unawaited(service.togglePlayPause()),
-                builder: (context, state) =>
-                    _PlayPauseButton(state: state, onPressed: () => unawaited(service.togglePlayPause())),
-              ),
-              FocusableAction(
-                debugLabel: 'np_next',
-                onPressed: () => unawaited(service.next()),
-                builder: (context, state) => _transportIcon(
-                  state,
-                  icon: Symbols.skip_next_rounded,
-                  tooltip: t.music.nextTrack,
-                  onPressed: () => unawaited(service.next()),
-                  size: 32,
-                ),
-              ),
-              FocusableAction(
-                debugLabel: 'np_repeat',
-                onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
-                builder: (context, state) => _transportIcon(
-                  state,
-                  icon: repeatModeIcon(service.repeatMode),
-                  active: service.repeatMode != MusicRepeatMode.off,
-                  tooltip: repeatModeLabel(service.repeatMode),
-                  onPressed: () => service.setRepeatMode(nextRepeatMode(service.repeatMode)),
-                  size: 22,
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Cars must retain the enlarged touch targets. Other form factors keep
+        // scaling the row down rather than overflowing narrow layouts.
+        child: PlatformDetector.isAutomotive() ? transport : FittedBox(fit: BoxFit.scaleDown, child: transport),
       ),
     );
   }

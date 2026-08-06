@@ -59,20 +59,14 @@ class GridSizeCalculator {
   /// to account for sidebars or other elements that reduce the grid's actual
   /// width. Never use a plain `SliverLayoutBuilder` for this: its constraints
   /// include the scroll offset, so it rebuilds the whole grid every scroll tick.
-  static int getColumnCount(
-    double crossAxisExtent,
-    double maxCrossAxisExtent, {
-    double crossAxisSpacing = GridLayoutConstants.crossAxisSpacing,
-  }) {
-    return (crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+  static int getColumnCount(double crossAxisExtent, double maxCrossAxisExtent, {double? crossAxisSpacing}) {
+    final effectiveSpacing = crossAxisSpacing ?? GridLayoutConstants.crossAxisSpacing;
+    return (crossAxisExtent / (maxCrossAxisExtent + effectiveSpacing)).ceil().clamp(1, 100);
   }
 
-  static double getCellWidthForColumnCount(
-    double crossAxisExtent,
-    int columnCount, {
-    double crossAxisSpacing = GridLayoutConstants.crossAxisSpacing,
-  }) {
-    return (crossAxisExtent - (crossAxisSpacing * (columnCount - 1))) / columnCount;
+  static double getCellWidthForColumnCount(double crossAxisExtent, int columnCount, {double? crossAxisSpacing}) {
+    final effectiveSpacing = crossAxisSpacing ?? GridLayoutConstants.crossAxisSpacing;
+    return (crossAxisExtent - (effectiveSpacing * (columnCount - 1))) / columnCount;
   }
 
   /// Computes the actual cell width that a grid with [getMaxCrossAxisExtent] would produce

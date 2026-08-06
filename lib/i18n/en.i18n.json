@@ -120,6 +120,7 @@
     "darkTheme": "Dark",
     "oledTheme": "OLED",
     "libraryDensity": "Library Density",
+    "displayScale": "Display Scale",
     "compact": "Compact",
     "comfortable": "Comfortable",
     "tvCornerSpotlightBackdrop": "Corner Spotlight Backdrop",

@@ -121,6 +121,7 @@ class SettingsExportService {
 
     if (pref.key == SettingsService.appLocale.key) return _typeString;
     if (pref.key == SettingsService.libraryDensity.key) return _typeInt;
+    if (pref.key == SettingsService.automotiveUiScale.key) return _typeDouble;
     if (pref.key == SettingsService.autoPip.key ||
         pref.key == SettingsService.useExternalPlayer.key ||
         pref.key == SettingsService.audioPassthrough.key) {

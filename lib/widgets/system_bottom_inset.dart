@@ -17,7 +17,7 @@ import 'package:flutter/widgets.dart';
 ///
 /// Collapses to zero height wherever the bottom padding is already zero, so it
 /// needs no platform branching: desktop and Android TV report no inset, tvOS
-/// has it zeroed by `_AppleTvScale`, and inside `MainScreen`'s tab bodies
+/// has it zeroed by `_FormFactorScale`, and inside `MainScreen`'s tab bodies
 /// Flutter's [Scaffold] has already stripped it because a `bottomNavigationBar`
 /// is present.
 ///

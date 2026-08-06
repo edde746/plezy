@@ -438,6 +438,9 @@ class Translations$settings$en {
 	/// en: 'Library Density'
 	String get libraryDensity => 'Library Density';
 
+	/// en: 'Display Scale'
+	String get displayScale => 'Display Scale';
+
 	/// en: 'Compact'
 	String get compact => 'Compact';
 
@@ -6208,6 +6211,7 @@ extension on Translations {
 			'settings.darkTheme' => 'Dark',
 			'settings.oledTheme' => 'OLED',
 			'settings.libraryDensity' => 'Library Density',
+			'settings.displayScale' => 'Display Scale',
 			'settings.compact' => 'Compact',
 			'settings.comfortable' => 'Comfortable',
 			'settings.tvCornerSpotlightBackdrop' => 'Corner Spotlight Backdrop',
@@ -6611,9 +6615,9 @@ extension on Translations {
 			'mediaMenu.deleteAnyway' => 'Delete anyway',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Permanently delete ${title} from your server?',
 			'mediaMenu.deleteMultipleWarning' => 'This includes all episodes and their files.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This deletes all ${n} episode in it, and its file.', other: 'This deletes all ${n} episodes in it, and their files.', ), 
 			_ => null,
 		} ?? switch (path) {
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This deletes all ${n} episode in it, and its file.', other: 'This deletes all ${n} episodes in it, and their files.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This item is stored as ${n} file, which will be deleted.', other: 'This item is stored across ${n} files, and all of them will be deleted.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} other episode is stored in the same file and will be deleted too:', other: '${n} other episodes are stored in the same file and will be deleted too:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.',
@@ -7125,9 +7129,9 @@ extension on Translations {
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} seasons',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => 'Ep ${episode} in ${duration}',
 			'explore.badge.nextAiringIn' => ({required Object duration}) => 'Next in ${duration}',
-			'explore.badge.episodesShort' => ({required Object n}) => '${n} eps',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.episodesShort' => ({required Object n}) => '${n} eps',
 			'explore.badge.minutesPerEpisode' => ({required Object n}) => '${n} min/ep',
 			'explore.badge.adult' => '18+',
 			'explore.stats.listed' => ({required Object n}) => '${n} listed',
@@ -7639,9 +7643,9 @@ extension on Translations {
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
-			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Memory',

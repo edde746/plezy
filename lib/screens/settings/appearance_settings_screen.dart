@@ -41,6 +41,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             _themeSelector(),
             _languageSelector(context),
             _densitySelector(),
+            if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             _viewModeSelector(),
             _episodePosterModeSelector(),
             if (PlatformDetector.isTV())
@@ -283,6 +284,39 @@ class AppearanceSettingsScreen extends StatelessWidget {
                   Text(t.settings.compact, style: theme.textTheme.bodySmall),
                   Text(t.settings.comfortable, style: theme.textTheme.bodySmall),
                 ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _displayScaleSelector() {
+    return SettingValueBuilder<double>(
+      pref: SettingsService.automotiveUiScale,
+      builder: (context, scale, _) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: .start,
+            children: [
+              Row(
+                children: [
+                  const AppIcon(Symbols.format_size_rounded, fill: 1),
+                  const SizedBox(width: 16),
+                  Text(t.settings.displayScale, style: settingsOptionTitleStyle(context)),
+                  const Spacer(),
+                  Text('${scale.toStringAsFixed(2)}×', style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FocusableSlider(
+                value: scale,
+                min: AutomotiveUiScale.min,
+                max: AutomotiveUiScale.max,
+                divisions: 20,
+                onChanged: (value) => SettingsService.instance.write(SettingsService.automotiveUiScale, value),
               ),
             ],
           ),

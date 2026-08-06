@@ -135,6 +135,31 @@ class _LibraryDensityPref extends Pref<int> {
       svc.writeInt(key, value.clamp(LibraryDensity.min, LibraryDensity.max));
 }
 
+class AutomotiveUiScale {
+  static const double min = 1.0;
+  static const double max = 2.0;
+  static const double defaultValue = 1.35;
+}
+
+/// Uses a larger default on car displays while honoring and clamping a stored
+/// user adjustment on every platform.
+class _AutomotiveUiScalePref extends Pref<double> {
+  const _AutomotiveUiScalePref() : super('automotive_ui_scale');
+
+  @override
+  double readFrom(BaseSharedPreferencesService svc) {
+    final fallback = PlatformDetector.isAutomotive() ? AutomotiveUiScale.defaultValue : 1.0;
+    // Tolerant read, not `prefs.getDouble`: this is read while building the root
+    // app, so a mistyped stored value would turn every launch into the error
+    // widget instead of dropping the key (#1732).
+    return svc.readDouble(key, defaultValue: fallback).clamp(AutomotiveUiScale.min, AutomotiveUiScale.max).toDouble();
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, double value) =>
+      svc.writeDouble(key, value.clamp(AutomotiveUiScale.min, AutomotiveUiScale.max).toDouble());
+}
+
 /// Migrates from the legacy `use_season_poster` boolean key.
 class _EpisodePosterModePref extends EnumPref<EpisodePosterMode> {
   const _EpisodePosterModePref()
@@ -480,6 +505,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();
+  static const automotiveUiScale = _AutomotiveUiScalePref();
   static const tvCornerSpotlightBackdrop = BoolPref('tv_corner_spotlight_backdrop');
   static const episodePosterMode = _EpisodePosterModePref();
   static const continueWatchingAction = EnumPref<ContinueWatchingAction>(
@@ -907,6 +933,7 @@ class SettingsService extends BaseSharedPreferencesService {
     videoPlayerNavigationEnabled,
     bufferSize,
     libraryDensity,
+    automotiveUiScale,
     tvCornerSpotlightBackdrop,
     episodePosterMode,
     continueWatchingAction,

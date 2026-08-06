@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_tile_mixin.dart';
+import '../utils/platform_detector.dart';
 import 'clickable_cursor.dart';
 
 /// A ListTile that accepts a FocusNode for keyboard/controller navigation.
@@ -89,6 +90,7 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
     final needsContrastSwap = _isHoveredOrFocused && widget.hoverColor != null && widget.textColor != null;
     final textColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.textColor;
     final iconColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.iconColor;
+    final automotive = PlatformDetector.isAutomotive();
 
     final Widget tile = MouseRegion(
       cursor: widget.enabled && (widget.onTap != null || widget.onLongPress != null)
@@ -103,11 +105,11 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
         trailing: widget.trailing,
         onTap: widget.onTap,
         onLongPress: widget.onLongPress,
-        dense: widget.dense,
+        dense: automotive ? false : widget.dense,
         enabled: widget.enabled,
         selected: widget.selected,
         contentPadding: widget.contentPadding,
-        visualDensity: widget.visualDensity,
+        visualDensity: automotive ? VisualDensity.standard : widget.visualDensity,
         focusNode: widget.suppressInitialSelect ? null : effectiveFocusNode,
         autofocus: widget.suppressInitialSelect ? false : widget.autofocus,
         hoverColor: widget.hoverColor,
@@ -196,6 +198,7 @@ class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>>
 
   @override
   Widget build(BuildContext context) {
+    final automotive = PlatformDetector.isAutomotive();
     return ClickableCursor(
       enabled: widget.enabled ?? true,
       child: RadioListTile<T>(
@@ -204,8 +207,8 @@ class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>>
         secondary: widget.secondary,
         value: widget.value,
         // groupValue and onChanged provided by RadioGroup ancestor
-        dense: widget.dense,
-        visualDensity: widget.visualDensity,
+        dense: automotive ? false : widget.dense,
+        visualDensity: automotive ? VisualDensity.standard : widget.visualDensity,
         focusNode: effectiveFocusNode,
         autofocus: widget.autofocus,
         enabled: widget.enabled,
@@ -282,6 +285,7 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
 
   @override
   Widget build(BuildContext context) {
+    final automotive = PlatformDetector.isAutomotive();
     return ClickableCursor(
       enabled: widget.onChanged != null,
       child: SwitchListTile(
@@ -290,8 +294,8 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
         secondary: widget.secondary,
         value: widget.value,
         onChanged: widget.onChanged,
-        dense: widget.dense,
-        visualDensity: widget.visualDensity,
+        dense: automotive ? false : widget.dense,
+        visualDensity: automotive ? VisualDensity.standard : widget.visualDensity,
         contentPadding: widget.contentPadding,
         focusNode: effectiveFocusNode,
         autofocus: widget.autofocus,
@@ -346,6 +350,7 @@ class _FocusableCheckboxListTileState extends State<FocusableCheckboxListTile>
 
   @override
   Widget build(BuildContext context) {
+    final automotive = PlatformDetector.isAutomotive();
     return ClickableCursor(
       enabled: widget.onChanged != null,
       child: CheckboxListTile(
@@ -355,8 +360,8 @@ class _FocusableCheckboxListTileState extends State<FocusableCheckboxListTile>
         value: widget.value,
         onChanged: widget.onChanged,
         tristate: widget.tristate,
-        dense: widget.dense,
-        visualDensity: widget.visualDensity,
+        dense: automotive ? false : widget.dense,
+        visualDensity: automotive ? VisualDensity.standard : widget.visualDensity,
         contentPadding: widget.contentPadding,
         focusNode: effectiveFocusNode,
         autofocus: widget.autofocus,

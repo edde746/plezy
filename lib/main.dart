@@ -38,6 +38,7 @@ import 'services/macos_window_service.dart';
 import 'services/native_window_service.dart';
 import 'services/fullscreen_state_manager.dart';
 import 'services/settings_service.dart';
+import 'widgets/settings_builder.dart';
 import 'utils/platform_detector.dart';
 import 'services/apple_tv_remote_touch_service.dart';
 import 'services/discord_rpc_service.dart';
@@ -1677,13 +1678,7 @@ class _AppShell extends StatelessWidget {
                       const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
                       const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
                     },
-                    builder: (context, child) => ScaffoldMessenger(
-                      key: rootScaffoldMessengerKey,
-                      child: Scaffold(
-                        backgroundColor: Colors.transparent,
-                        body: _AppleTvScale(child: child),
-                      ),
-                    ),
+                    builder: (context, child) => _rootShell(child),
                   ),
                 ),
               );
@@ -1695,47 +1690,85 @@ class _AppShell extends StatelessWidget {
   }
 }
 
-/// On Apple TV the system hands Flutter a 1920×1080 surface at
-/// devicePixelRatio 1.0, the same logical pixel count as a phablet. That's
-/// too dense for a 10ft viewing distance, so everything ends up tiny. We
-/// shrink the effective logical size to half and scale the rendered output
-/// back up so fonts, icons, and paddings end up visually ~2× larger — roughly
-/// matching the UI feel of Android TV (which renders at lower logical DPI).
-class _AppleTvScale extends StatelessWidget {
-  final Widget? child;
-  const _AppleTvScale({required this.child});
+/// The root shell every route renders inside.
+///
+/// The form-factor scale sits above the messenger and its root [Scaffold], not inside them:
+/// Flutter presents a messenger's snackbars on the rootmost registered scaffold, so anything
+/// below would leave global snackbars at the car's native density while the rest of the
+/// interface grew.
+Widget _rootShell(Widget? child) {
+  return _FormFactorScale(
+    child: ScaffoldMessenger(
+      key: rootScaffoldMessengerKey,
+      child: Scaffold(backgroundColor: Colors.transparent, body: child),
+    ),
+  );
+}
 
-  static const double _scale = 2.0;
+/// Apple TV receives a full-HD logical surface, while Android Automotive can
+/// report a very low display density. Both make otherwise comfortable controls
+/// physically too small, so render through a smaller, self-consistent logical
+/// viewport and scale the result back to the physical surface.
+class _FormFactorScale extends StatelessWidget {
+  final Widget? child;
+  const _FormFactorScale({required this.child});
+
+  static const double _appleTvScale = 2.0;
 
   @override
   Widget build(BuildContext context) {
-    if (child == null || !PlatformDetector.isAppleTV()) {
-      return child ?? const SizedBox.shrink();
+    final child = this.child;
+    if (child == null) return const SizedBox.shrink();
+
+    // Keep the existing Apple TV path independent of settings so its 2×
+    // behavior and overscan handling remain unchanged.
+    if (PlatformDetector.isAppleTV()) {
+      return _scaledSurface(child: child, scale: _appleTvScale, zeroInsets: true);
     }
+    if (!PlatformDetector.isAutomotive()) return child;
+
+    return SettingValueBuilder<double>(
+      pref: SettingsService.automotiveUiScale,
+      builder: (context, scale, _) => _scaledSurface(child: child, scale: scale, zeroInsets: false),
+    );
+  }
+
+  Widget _scaledSurface({required Widget child, required double scale, required bool zeroInsets}) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final logicalSize = Size(constraints.maxWidth / _scale, constraints.maxHeight / _scale);
+        final logicalSize = Size(constraints.maxWidth / scale, constraints.maxHeight / scale);
         final outerQ = MediaQuery.of(context);
         // tvOS reports conservative overscan insets (~60pt top/bottom,
         // ~90pt left/right). Modern TVs don't overscan, so treat them as
         // dead margin and zero them out — the UI can use the full surface.
+        //
+        // Automotive system bars are real touch-exclusion regions. Preserve
+        // their physical size in the scaled coordinate system so SafeArea
+        // continues to keep controls out from underneath them.
         return Transform.scale(
-          scale: _scale,
+          scale: scale,
           alignment: .topLeft,
           transformHitTests: true,
-          child: SizedBox(
-            width: logicalSize.width,
-            height: logicalSize.height,
-            child: MediaQuery(
-              data: outerQ.copyWith(
-                size: logicalSize,
-                devicePixelRatio: outerQ.devicePixelRatio * _scale,
-                padding: .zero,
-                viewPadding: .zero,
-                viewInsets: .zero,
-                systemGestureInsets: .zero,
+          // Align loosens what it passes down. Without it a tight incoming constraint — which is
+          // what the app's root hands its builder — forces the SizedBox back to the full surface,
+          // and the transform then only magnifies a full-size layout instead of rendering a
+          // smaller one into the same space.
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: logicalSize.width,
+              height: logicalSize.height,
+              child: MediaQuery(
+                data: outerQ.copyWith(
+                  size: logicalSize,
+                  devicePixelRatio: outerQ.devicePixelRatio * scale,
+                  padding: zeroInsets ? .zero : outerQ.padding * (1 / scale),
+                  viewPadding: zeroInsets ? .zero : outerQ.viewPadding * (1 / scale),
+                  viewInsets: zeroInsets ? .zero : outerQ.viewInsets * (1 / scale),
+                  systemGestureInsets: zeroInsets ? .zero : outerQ.systemGestureInsets * (1 / scale),
+                ),
+                child: child,
               ),
-              child: child!,
             ),
           ),
         );
@@ -1743,6 +1776,13 @@ class _AppleTvScale extends StatelessWidget {
     );
   }
 }
+
+@visibleForTesting
+Widget formFactorScaleForTesting({required Widget? child}) => _FormFactorScale(child: child);
+
+/// The real root shell, so a test can assert what the scale actually encloses.
+@visibleForTesting
+Widget rootShellForTesting({required Widget? child}) => _rootShell(child);
 
 @visibleForTesting
 bool shouldBypassSetupForDatabaseRecovery(TvosDatabaseRecoveryOutcome outcome) {
@@ -2134,21 +2174,49 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   @override
   Widget build(BuildContext context) {
     const coralColor = Color(0xFFE5A00D);
+    final height = MediaQuery.sizeOf(context).height;
+    // The stacked layout below hangs its two rows off fixed ±170/180 offsets from the middle, which
+    // needs roughly 700 logical pixels of height. A car at a large interface scale — and a phone in
+    // landscape — has less than that, and the rows would collide or fall outside the Stack's clip.
+    if (height < 700) {
+      return ColoredBox(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 160, height: 160),
+                  _buildStatusText(context),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: _serverStatus.isEmpty
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: coralColor),
+                          )
+                        : _buildServerStatusList(context),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     return ColoredBox(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Stack(
         children: [
           Center(child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288)),
+          Positioned(left: 0, right: 0, bottom: height * 0.5 - 170, child: _buildStatusText(context)),
           Positioned(
             left: 0,
             right: 0,
-            bottom: MediaQuery.sizeOf(context).height * 0.5 - 170,
-            child: _buildStatusText(context),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: MediaQuery.sizeOf(context).height * 0.5 + 180,
+            top: height * 0.5 + 180,
             child: Center(
               child: _serverStatus.isEmpty
                   ? const SizedBox(

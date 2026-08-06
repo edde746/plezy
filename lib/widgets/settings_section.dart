@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/mono_tokens.dart';
+import '../utils/platform_detector.dart';
 import 'app_icon.dart';
 import 'expressive_button_group.dart';
 
@@ -70,7 +71,7 @@ class SettingsGroup extends StatelessWidget {
         Padding(
           padding: margin,
           child: ListTileTheme.merge(
-            visualDensity: const VisualDensity(vertical: -3),
+            visualDensity: PlatformDetector.isAutomotive() ? VisualDensity.standard : const VisualDensity(vertical: -3),
             child: Column(
               children: [
                 for (var i = 0; i < children.length; i++) ...[
