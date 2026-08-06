@@ -22,6 +22,7 @@ import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import com.edde746.plezy.car.CarRestrictionsMonitor
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
@@ -74,7 +75,10 @@ class MainActivity : FlutterActivity() {
   private val DEVICE_ADJUSTMENT_CHANNEL = "com.plezy/device_adjustment"
   private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
+  private val CAR_RESTRICTIONS_CHANNEL = "com.plezy/car_restrictions"
   private var watchNextPlugin: WatchNextPlugin? = null
+  private var carRestrictions: CarRestrictionsMonitor? = null
+  private var carRestrictionsChannel: MethodChannel? = null
   private var nativeTextInputFocused = false
   private var originalWindowBrightness: Float? = null
   private var flutterTextureView: FlutterTextureView? = null
@@ -460,6 +464,9 @@ class MainActivity : FlutterActivity() {
 
   override fun onDestroy() {
     externalPlayerChannel.dispose()
+    carRestrictions?.release()
+    carRestrictions = null
+    carRestrictionsChannel = null
     activityStarted = false
     flutterSurfaceReconnectPending = false
     flutterTextureView = null
@@ -471,6 +478,29 @@ class MainActivity : FlutterActivity() {
     if (contentId != null) {
       // Notify the plugin to send event to Flutter
       watchNextPlugin?.notifyDeepLink(contentId)
+    }
+  }
+
+  // Connects the car UX-restriction monitor on first use, retrying while the platform signal is
+  // unavailable: a car service that was not ready during startup can still answer later, and on a
+  // phone every attempt fails cheaply on the FEATURE_AUTOMOTIVE check. The connect itself never
+  // blocks, so this is safe on the main thread; readiness arrives through the callback below.
+  private fun startCarRestrictionsIfNeeded() {
+    val existing = carRestrictions
+    if (existing?.supported == true) return
+    val monitor = existing ?: CarRestrictionsMonitor(applicationContext).also { carRestrictions = it }
+    monitor.start { restricted ->
+      runOnUiThread {
+        // `supported` rides along because it can go false again when the car service dies, and Dart
+        // must then fall back to lifecycle gating rather than read a stale verdict.
+        carRestrictionsChannel?.invokeMethod(
+          "onChanged",
+          mapOf(
+            "supported" to monitor.supported,
+            "requiresDistractionOptimization" to restricted
+          )
+        )
+      }
     }
   }
 
@@ -597,6 +627,28 @@ class MainActivity : FlutterActivity() {
             AndroidRuntimeDiagnostics.update(this, uiState = uiState)
             result.success(true)
           }
+        }
+        else -> result.notImplemented()
+      }
+    }
+
+    val carChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CAR_RESTRICTIONS_CHANNEL)
+    carRestrictionsChannel = carChannel
+    carChannel.setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getState" -> {
+          startCarRestrictionsIfNeeded()
+          val monitor = carRestrictions
+          val supported = monitor?.supported == true
+          result.success(
+            mapOf(
+              "supported" to supported,
+              // Tells Dart the difference between "this device has no car service" and "the verdict
+              // is coming": only the latter is worth waiting for.
+              "pending" to (monitor?.pending == true),
+              "requiresDistractionOptimization" to (supported && monitor.requiresDistractionOptimization)
+            )
+          )
         }
         else -> result.notImplemented()
       }
