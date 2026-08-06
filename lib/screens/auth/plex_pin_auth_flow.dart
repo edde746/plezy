@@ -12,6 +12,16 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 
+/// Whether the Plex PIN hand-off must stay in-app as a QR code instead of
+/// opening the auth URL.
+///
+/// Android Automotive OS head units ship no browser: the system hands an
+/// app-launched `https` URL to the car link viewer, which only renders it as
+/// a QR code of its own while this flow sits on a "sign in from your browser"
+/// spinner until the PIN expires two minutes later. Owning the QR keeps the
+/// scan target, the retry action and the error copy inside the app.
+bool plexSignInRequiresInAppQr({required bool isAutomotive}) => isAutomotive;
+
 /// Self-contained Plex PIN/QR auth flow.
 ///
 /// Renders the polling UI (QR code or browser-waiting spinner) once an
@@ -59,6 +69,10 @@ class PlexPinAuthFlow extends StatefulWidget {
   final Widget Function(BuildContext context, VoidCallback startBrowser, VoidCallback startQr, bool busy)?
   initialButtonsBuilder;
 
+  /// Test seam: builds the auth service this flow drives. Defaults to the
+  /// production [PlexAuthService.create].
+  final Future<PlexAuthService> Function()? serviceFactory;
+
   const PlexPinAuthFlow({
     super.key,
     required this.onTokenReceived,
@@ -68,6 +82,7 @@ class PlexPinAuthFlow extends StatefulWidget {
     this.initializeService = true,
     this.initialUseQr,
     this.initialButtonsBuilder,
+    this.serviceFactory,
   });
 
   @override
@@ -85,12 +100,14 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
   @override
   void initState() {
     super.initState();
-    _useQr = widget.initialUseQr ?? PlatformDetector.isTV();
+    _useQr =
+        widget.initialUseQr ??
+        (PlatformDetector.isTV() || plexSignInRequiresInAppQr(isAutomotive: PlatformDetector.isAutomotive()));
     if (widget.initializeService) unawaited(_initService());
   }
 
   Future<void> _initService() async {
-    final svc = await PlexAuthService.create();
+    final svc = await (widget.serviceFactory?.call() ?? PlexAuthService.create());
     if (!mounted) {
       svc.dispose();
       return;
@@ -113,9 +130,13 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
   Future<void> _start({required bool useQr}) async {
     final svc = _authService;
     if (svc == null) return;
+    // A car has no browser to hand the PIN URL to, so the browser action
+    // resolves to the in-app QR there instead of a spinner that can only time
+    // out. Every other platform honours what the user pressed.
+    final resolvedUseQr = useQr || plexSignInRequiresInAppQr(isAutomotive: PlatformDetector.isAutomotive());
     final attemptId = ++_attemptId;
     setState(() {
-      _useQr = useQr;
+      _useQr = resolvedUseQr;
       _isPolling = true;
       _errorMessage = null;
       _qrAuthUrl = null;
@@ -129,7 +150,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
       final url = svc.getAuthUrl(pinCode);
 
       if (!_isCurrentAttempt(attemptId)) return;
-      if (useQr) {
+      if (resolvedUseQr) {
         setState(() => _qrAuthUrl = url);
       } else {
         final uri = Uri.parse(url);
@@ -157,7 +178,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
 
       // Auto-close the in-app browser on mobile (no-op on desktop / when
       // already closed).
-      if (!useQr) {
+      if (!resolvedUseQr) {
         try {
           await closeInAppWebView();
         } catch (_) {}
