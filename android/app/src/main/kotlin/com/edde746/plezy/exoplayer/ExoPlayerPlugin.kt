@@ -61,7 +61,13 @@ class ExoPlayerPlugin :
     val headers: Map<String, String>?,
     val startPositionMs: Long,
     val hasStartPosition: Boolean,
-    val autoPlay: Boolean,
+    /**
+     * Whether to start playing once open. Mutable because a play or pause arriving while this
+     * request is queued behind a backend handover has no player to reach — the outgoing core is
+     * being disposed and the replacement does not exist yet — so the latest intent is recorded here
+     * instead. Without that, a pause the caller was told succeeded is silently undone by the open.
+     */
+    var autoPlay: Boolean,
     val isLive: Boolean,
     val externalSubtitles: List<Map<String, Any?>>?,
     val contentFrameRate: Float,
@@ -824,6 +830,9 @@ class ExoPlayerPlugin :
   }
 
   private fun handlePlay(result: MethodChannel.Result) {
+    // A backend handover leaves nothing to command: record the intent on the queued open instead,
+    // so the replacement starts the way the caller last asked.
+    pendingOpen?.autoPlay = true
     if (usingMpvFallback) {
       handleFallbackMpvProperty("pause", "no", result)
       return
@@ -835,6 +844,10 @@ class ExoPlayerPlugin :
   }
 
   private fun handlePause(result: MethodChannel.Result) {
+    // See handlePlay. This direction matters more: the caller is told the pause succeeded, and a
+    // queued open that still carried autoPlay would start playing anyway — on a car, that is
+    // playback after the vehicle said no.
+    pendingOpen?.autoPlay = false
     if (usingMpvFallback) {
       handleFallbackMpvProperty("pause", "yes", result)
       return

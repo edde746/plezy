@@ -14,13 +14,98 @@ class BufferingStallPolicyTest {
     elapsedMs: Long = BufferingStallPolicy.STALL_TIMEOUT_MS,
     baselinePositionMs: Long = position,
     currentPositionMs: Long = position,
-    bufferedAheadMs: Long = 30_000L
+    bufferedAheadMs: Long = 30_000L,
+    playbackSpeed: Float = 1f,
+    loadControlReady: Boolean? = null,
+    loading: Boolean = true
   ) = BufferingStallPolicy.evaluate(
     elapsedMs = elapsedMs,
     baselinePositionMs = baselinePositionMs,
     currentPositionMs = currentPositionMs,
-    bufferedPositionMs = currentPositionMs + bufferedAheadMs
+    bufferedPositionMs = currentPositionMs + bufferedAheadMs,
+    playbackSpeed = playbackSpeed,
+    loadControlReady = loadControlReady,
+    loading = loading
   )
+
+  // The loader's own state, for the case media3 never answers
+
+  @Test
+  fun aLoaderThatStoppedAskingForDataCountsAsEnoughBuffer() {
+    // The #1790 shape on a high bitrate stream: the byte cap is full at a couple of seconds, the
+    // renderers never become ready so media3 never asks its load control, and nothing moves.
+    val belowTheDurationBar = 2_000L
+    assertEquals(Verdict.STARVED, evaluate(bufferedAheadMs = belowTheDurationBar, loading = true))
+    assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = belowTheDurationBar, loading = false))
+  }
+
+  @Test
+  fun aLoaderStillFetchingWithATinyBufferIsAnOrdinaryRebuffer() {
+    assertEquals(Verdict.STARVED, evaluate(bufferedAheadMs = 500L, loading = true))
+  }
+
+  @Test
+  fun aStaleNotYetFromTheLoadControlCannotVetoAStoppedLoader() {
+    // media3 stops asking the moment a renderer goes unready — the failure this watchdog exists for
+    // — so a `false` recorded before that must not outrank a loader that has since stopped.
+    assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = 2_000L, loading = false, loadControlReady = false))
+  }
+
+  // The load control's own verdict
+
+  @Test
+  fun aByteCappedBufferBelowTheDurationBarIsStillIndicted() {
+    // The real failure this watchdog exists for, on a high bitrate stream: media3 released playback
+    // off its byte target with only a couple of seconds buffered, and the player still will not move.
+    val belowTheDurationBar = 2_000L
+    assertEquals(Verdict.STARVED, evaluate(bufferedAheadMs = belowTheDurationBar))
+    assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = belowTheDurationBar, loadControlReady = true))
+  }
+
+  @Test
+  fun aLoadControlHoldingPlaybackBackIsNotIndictedWhileTheLoaderStillWants() {
+    // Plenty buffered by duration, so the duration signal alone would indict; media3 saying "not
+    // yet" while its loader keeps fetching is an ordinary rebuffer.
+    assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = 30_000L))
+    assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = 30_000L, loadControlReady = false))
+    assertEquals(
+      "nothing says this player could start",
+      Verdict.STARVED,
+      evaluate(bufferedAheadMs = 1_000L, loading = true, loadControlReady = false)
+    )
+  }
+
+  @Test
+  fun progressOutranksTheLoadControlVerdict() {
+    assertEquals(
+      Verdict.HEALTHY,
+      evaluate(currentPositionMs = position + 5_000, loadControlReady = true)
+    )
+  }
+
+  // Playback speed
+
+  @Test
+  fun aFastForwardNeedsProportionallyMoreMediaBeforeItIsIndicted() {
+    // Enough media to start at 1x, but the load control measures its bar in playout time, so at 2x
+    // this player is still legitimately rebuffering rather than stalled.
+    val justEnoughAtNormalSpeed = BufferingStallPolicy.MIN_BUFFER_AHEAD_MS + 1_000L
+    assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = justEnoughAtNormalSpeed))
+    assertEquals(Verdict.STARVED, evaluate(bufferedAheadMs = justEnoughAtNormalSpeed, playbackSpeed = 2f))
+  }
+
+  @Test
+  fun aSlowMotionPlayerNeedsLessMediaBeforeItIsIndicted() {
+    val shortOfTheBar = BufferingStallPolicy.MIN_BUFFER_AHEAD_MS - 1_000L
+    assertEquals(Verdict.STARVED, evaluate(bufferedAheadMs = shortOfTheBar))
+    assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = shortOfTheBar, playbackSpeed = 0.5f))
+  }
+
+  @Test
+  fun anImpossibleSpeedIsTreatedAsNormal() {
+    assertEquals(Verdict.STALLED, evaluate(playbackSpeed = 0f))
+    assertEquals(Verdict.STALLED, evaluate(playbackSpeed = -1f))
+  }
 
   // Progress
 

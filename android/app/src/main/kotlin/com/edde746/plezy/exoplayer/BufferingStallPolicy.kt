@@ -38,10 +38,15 @@ internal object BufferingStallPolicy {
   /**
    * Media buffered ahead of the position before a motionless player is anomalous at all.
    *
-   * This has to clear `DefaultLoadControl`'s own play-start bar with room to spare, or the
-   * watchdog would indict the player for obeying it: below
-   * [LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS] the load control deliberately keeps
-   * playback in `STATE_BUFFERING`, and the two evaluate on independent schedules.
+   * A fallback bar, used only until media3 has answered for itself (see [evaluate]). It has to
+   * clear `DefaultLoadControl`'s own play-start bar with room to spare, or the watchdog would
+   * indict the player for obeying it: below [LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS]
+   * the load control deliberately keeps playback in `STATE_BUFFERING`, and the two evaluate on
+   * independent schedules.
+   *
+   * Measured in playout time, not media time, because `shouldStartPlayback` divides buffered media
+   * duration by the playback speed: at 2x the same bar needs twice the media, and comparing raw
+   * media duration would call a legitimately rebuffering fast-forward stalled.
    */
   const val MIN_BUFFER_AHEAD_MS = LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS + 2_000L
 
@@ -59,16 +64,41 @@ internal object BufferingStallPolicy {
     STALLED
   }
 
+  /**
+   * Every signal here can only ever *permit* an indictment; none of them vetoes one, because a
+   * signal that can go stale would otherwise wedge this watchdog shut in exactly the failure it
+   * exists to catch.
+   *
+   * [loadControlReady] is media3's own `shouldStartPlayback` verdict when it has given one, which is
+   * the most faithful answer available — but it is only asked while the renderers report ready, and
+   * a renderer that never becomes ready is that failure. A `false` recorded before the renderer got
+   * stuck would never be revised, so it is treated as no answer rather than as a denial.
+   *
+   * [loading] false means the load control stopped asking for data, whether because its duration
+   * thresholds are met or because its byte target is full. On a high bitrate stream that byte cap is
+   * reached well below [MIN_BUFFER_AHEAD_MS] (see [LoadControlPolicy]), and without this signal a
+   * genuinely stuck player there would look like an ordinary rebuffer forever. A network stall is
+   * the opposite: the loader keeps wanting data it cannot get, so [loading] stays true and none of
+   * the three signals fires.
+   */
   fun evaluate(
     elapsedMs: Long,
     baselinePositionMs: Long,
     currentPositionMs: Long,
-    bufferedPositionMs: Long
-  ): Verdict = when {
-    currentPositionMs - baselinePositionMs >= PROGRESS_EPSILON_MS -> Verdict.HEALTHY
-    bufferedPositionMs - currentPositionMs < MIN_BUFFER_AHEAD_MS -> Verdict.STARVED
-    elapsedMs < STALL_TIMEOUT_MS -> Verdict.WAITING
-    else -> Verdict.STALLED
+    bufferedPositionMs: Long,
+    playbackSpeed: Float = 1f,
+    loadControlReady: Boolean? = null,
+    loading: Boolean = true
+  ): Verdict {
+    val speed = if (playbackSpeed > 0f) playbackSpeed else 1f
+    val bufferedPlayoutMs = ((bufferedPositionMs - currentPositionMs) / speed).toLong()
+    val readyToPlay = loadControlReady == true || !loading || bufferedPlayoutMs >= MIN_BUFFER_AHEAD_MS
+    return when {
+      currentPositionMs - baselinePositionMs >= PROGRESS_EPSILON_MS -> Verdict.HEALTHY
+      !readyToPlay -> Verdict.STARVED
+      elapsedMs < STALL_TIMEOUT_MS -> Verdict.WAITING
+      else -> Verdict.STALLED
+    }
   }
 
   /**
