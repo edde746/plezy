@@ -777,7 +777,11 @@ class HostPlaybackCoordinator {
       anchorPositionMs = _pendingStartPositionMs ?? player?.position.inMilliseconds ?? 0;
       anchorHostTimeMs = _pendingStartAtMs!;
     } else {
-      anchorPositionMs = anchorPositionOverrideMs ?? player?.position.inMilliseconds ?? 0;
+      // An in-place reload detaches the player, and the reply-on-demand paths
+      // still answer while it is gone. Without the last broadcast to fall back
+      // on, they publish an authoritative 0 and every guest hard-seeks to 0:00.
+      anchorPositionMs =
+          anchorPositionOverrideMs ?? player?.position.inMilliseconds ?? _lastBroadcast?.anchorPositionMs ?? 0;
       anchorHostTimeMs = _nowMs();
     }
 

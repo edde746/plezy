@@ -716,6 +716,36 @@ void main() {
         h.dispose();
       });
     });
+
+    test('the reply-on-demand paths hold the anchor while the player is detached', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachForMedia(async, hasFirstFrame: true);
+        h.hostBecomesReady(async);
+        final anchored = h.last.anchorPositionMs;
+        expect(anchored, const Duration(minutes: 2).inMilliseconds);
+
+        // The state every in-place source reload passes through. Heartbeats
+        // suppress themselves here; the on-demand replies do not, so they are
+        // the paths that would otherwise publish a position of 0.
+        h.coordinator.detachPlayer();
+        async.flushMicrotasks();
+
+        h.coordinator.onStateRequested('guest');
+        h.coordinator.onPeerJoined('guest2', compatible: true);
+        h.coordinator.onReconnected();
+        async.flushMicrotasks();
+
+        for (final (state, toPeerId) in h.sent.skip(h.sent.length - 3)) {
+          expect(
+            state.anchorPositionMs,
+            anchored,
+            reason: 'reply to ${toPeerId ?? 'the room'} must hold the anchor, not collapse it to 0',
+          );
+        }
+        h.dispose();
+      });
+    });
   });
 
   group('driver distraction', () {
