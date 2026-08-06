@@ -42,11 +42,13 @@ void main() {
     // Video Playback owns it, alongside Tunneled Playback.
     await _pumpSheet(tester);
 
-    final scrollable = find.byType(Scrollable).first;
-    for (var i = 0; i < 10; i++) {
-      await tester.drag(scrollable, const Offset(0, -300));
-      await tester.pumpAndSettle();
-    }
+    // Positive control: land on the audio block that used to hold the toggle. Without
+    // it, findsNothing below would also pass for an unbuilt or off-screen region, which
+    // is what a bare scroll-then-assert silently degrades into. scrollUntilVisible
+    // throws when the block is missing entirely, so the guard fails loudly instead.
+    await tester.scrollUntilVisible(find.text('Normalize Loudness'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.pumpAndSettle();
+    expect(find.text('Downmix to Stereo'), findsOneWidget);
 
     expect(find.text('Audio Passthrough'), findsNothing);
   });
