@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 
+import '../focus/input_mode_tracker.dart';
 import '../utils/app_logger.dart';
 import '../utils/key_event_simulator.dart' as key_sim;
 import 'gamepad_service.dart';
@@ -31,6 +31,10 @@ class AppleTvRemoteTouchService {
   final VoidCallback _scheduleFrame;
   final DateTime Function() _now;
   final GamepadDuplicateInputGuard _duplicateInputGuard;
+
+  /// Announces that a pointerless device produced input. Injected so tests can
+  /// observe it without a widget tree; defaults to the app-wide tracker.
+  final void Function() reportNonPointerInput;
   final StreamController<AppleTvRemotePlayPauseAction> _playPauseController =
       StreamController<AppleTvRemotePlayPauseAction>.broadcast();
   final double swipeThreshold;
@@ -53,6 +57,7 @@ class AppleTvRemoteTouchService {
     VoidCallback? scheduleFrame,
     DateTime Function()? now,
     GamepadDuplicateInputGuard? duplicateInputGuard,
+    this.reportNonPointerInput = InputModeTracker.reportNonPointerInput,
     Duration duplicateSuppressionWindow = GamepadDuplicateInputGuard.defaultSuppressionWindow,
     this.swipeThreshold = defaultSwipeThreshold,
     this.axisSwitchDominanceRatio = defaultAxisSwitchDominanceRatio,
@@ -229,7 +234,7 @@ class AppleTvRemoteTouchService {
       return false;
     }
 
-    _setTraditionalFocusHighlight();
+    reportNonPointerInput();
     _scheduleFrame();
     _log('emit key=${_keyName(logicalKey)} source=$source${detail == null ? '' : ' $detail'}');
     _simulateKeyPress(logicalKey);
@@ -254,12 +259,6 @@ class AppleTvRemoteTouchService {
     if (!_nativeKeyHandlerRegistered) return;
     HardwareKeyboard.instance.removeHandler(handleNativeKeyEvent);
     _nativeKeyHandlerRegistered = false;
-  }
-
-  void _setTraditionalFocusHighlight() {
-    if (FocusManager.instance.highlightStrategy != FocusHighlightStrategy.alwaysTraditional) {
-      FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTraditional;
-    }
   }
 
   void _logTouch(String type, Map<dynamic, dynamic> arguments) {

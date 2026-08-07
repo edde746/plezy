@@ -40,6 +40,7 @@ import '../../mixins/mounted_set_state_mixin.dart';
 import '../../mpv/mpv.dart';
 import '../overlay_sheet.dart';
 import '../../focus/dpad_navigator.dart';
+import '../../focus/focus_navigation_intent.dart';
 
 import '../../database/app_database.dart';
 import '../../media/media_backend.dart';
@@ -215,6 +216,52 @@ bool shouldShowSkipMarkerButton({
   required bool controlsVisible,
 }) {
   return hasFirstFrame && hasMarker && !hasPlayNextPrompt && (!skipButtonDismissed || controlsVisible);
+}
+
+/// The viewer's raw "Video Player Navigation" preference, ignoring TV.
+///
+/// Use this for genuine preferences — auto-hide delay, Escape semantics,
+/// hardware transport interception. For "do arrow keys move focus in the
+/// player?" use [playerDirectionalNavigationEnabled] instead: OR-ing `isTV()`
+/// into a preference read changes behaviour for a TV viewer who turned the
+/// preference off.
+///
+/// Reads through [SettingsService.instanceOrNull] because focus policy is
+/// consulted from a global key handler that can run before startup finishes.
+/// The pre-init answer is `false`; the preference's real default is
+/// `TvDetectionService.isTVSync`, so a pre-init read understates it on TV —
+/// harmless only because no player route, and so no
+/// [DirectionalShortcutFocusNode], can mount before settings are loaded.
+bool videoPlayerNavigationPreference() =>
+    SettingsService.instanceOrNull?.read(SettingsService.videoPlayerNavigationEnabled) ?? false;
+
+/// Whether the video player treats arrow / D-pad keys as focus navigation
+/// rather than playback shortcuts. A television always navigates.
+///
+/// This is the single derivation of that policy. Every site that used to spell
+/// it `pref || PlatformDetector.isTV()` by hand reads it from here.
+bool playerDirectionalNavigationEnabled() => videoPlayerNavigationPreference() || PlatformDetector.isTV();
+
+/// Builds one of the player's catch-all surface nodes.
+///
+/// Both the screen node and the player-surface node can hold primary focus
+/// without the viewer ever having navigated — they autofocus and are actively
+/// reclaimed — so an arrow pressed while they hold focus is a playback
+/// shortcut, not traversal, and must not switch the app into keyboard mode.
+/// Minting them here keeps that derivation in one place; [alsoOwns] adds the
+/// per-key exceptions a surface still claims once navigation is enabled.
+///
+/// `skipTraversal` keeps these full-screen invisible nodes out of the Tab ring:
+/// they are entered by autofocus and explicit requests, never by traversal.
+DirectionalShortcutFocusNode playerSurfaceFocusNode(
+  String debugLabel, {
+  bool Function(LogicalKeyboardKey key)? alsoOwns,
+}) {
+  return DirectionalShortcutFocusNode(
+    debugLabel: debugLabel,
+    skipTraversal: true,
+    consumesDirectionalKeys: (key) => !playerDirectionalNavigationEnabled() || (alsoOwns?.call(key) ?? false),
+  );
 }
 
 enum PlayerNavigationKey { none, physicalEscape, back, home }
@@ -743,8 +790,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Skip button dismiss state
   bool _skipButtonDismissed = false;
   Timer? _skipButtonDismissTimer;
-  // Video player navigation (use arrow keys to navigate controls)
-  bool get _videoPlayerNavigationEnabled => _settings.read(SettingsService.videoPlayerNavigationEnabled);
   // Performance overlay
   bool get _showPerformanceOverlay => _settings.read(SettingsService.showPerformanceOverlay);
   bool get _autoHidePerformanceOverlay => _settings.read(SettingsService.autoHidePerformanceOverlay);
@@ -776,7 +821,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _lastControlsVisible = widget.chromeController.controlsVisible;
     _controlsMounted = _lastControlsVisible;
     _controlsOpaque = _lastControlsVisible;
-    _focusNode = FocusNode();
+    // Horizontal arrows stay the player's even with navigation enabled: with
+    // the chrome down they run a hidden seek (see parts/key_events.dart), so
+    // they are not evidence of a focus session. Up/Down raises the chrome and
+    // is traversal, so it promotes.
+    _focusNode = playerSurfaceFocusNode(
+      'PlayerSurface',
+      alsoOwns: (key) => !_showControls && (key.isLeftKey || key.isRightKey),
+    );
     _skipMarkerFocusNode = FocusNode(debugLabel: 'SkipMarkerButton');
     _seekThrottle = throttle(
       (Duration pos) {
@@ -861,11 +913,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _lastReportedRate = widget.player.state.rate;
       _rateSubscription = widget.player.streams.rate.listen(_onRateChanged);
       _loadPlaybackExtras();
-      _focusPlayPauseIfKeyboardMode();
-      // A route that opened with no chrome never ran the hide transition that
-      // normally hands focus down here, and this Focus autofocuses too late to
-      // win it: the screen node claimed it during the loading phase.
-      if (!widget.chromeController.controlsVisible) _claimPlayerSurfaceFocus();
+      // The player surface owns the remote whenever no chrome control was
+      // deliberately given focus. A route that opens with the chrome already up
+      // (every desktop route — see playerChromeStartsVisible) never runs the
+      // hide transition that normally hands focus down here, and this Focus
+      // autofocuses too late to win it back from the screen node claimed during
+      // the loading phase. Leaving focus parked up there is what turns the first
+      // actionable key into a chrome-raising self-heal instead of a playback
+      // shortcut.
+      if (!_focusPlayPauseIfKeyboardMode()) _claimPlayerSurfaceFocus();
       if (PlatformDetector.isMobile(context) && !PlatformDetector.isTV()) {
         _refreshDeviceAdjustmentValues();
       }

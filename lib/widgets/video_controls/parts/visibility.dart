@@ -16,14 +16,29 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
   }
 
-  /// Focus play/pause button if we're in keyboard navigation mode (desktop/TV only)
-  void _focusPlayPauseIfKeyboardMode() {
-    if (!mounted) return;
-    if (!_videoPlayerNavigationEnabled) return;
+  /// Focus Play/Pause when the viewer is already driving with keyboard/D-pad
+  /// and opted into player navigation.
+  ///
+  /// This is an *automatic* grab — no key caused it — so it additionally
+  /// requires an active keyboard session; a key-driven grab only needs
+  /// [eventRequestsFocusNavigation].
+  ///
+  /// Returns whether it actually moved focus, because the caller uses that to
+  /// decide whether the player surface still needs to claim the remote. It must
+  /// therefore report `false` when the chrome is not mounted — a TV route opens
+  /// with the chrome down, and claiming that it focused something there would
+  /// leave the remote parked on the screen node (#1765).
+  bool _focusPlayPauseIfKeyboardMode() {
+    if (!mounted || !_showControls) return false;
+    // The raw preference, not the directional policy: a TV viewer who turned
+    // player navigation off must not get Play/Pause focused on open.
+    if (!videoPlayerNavigationPreference()) return false;
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
-    if (!isMobile && InputModeTracker.isKeyboardMode(context)) {
-      _desktopControlsKey.currentState?.requestPlayPauseFocus();
-    }
+    if (isMobile || !InputModeTracker.isKeyboardMode(context, listen: false)) return false;
+    final controls = _desktopControlsKey.currentState;
+    if (controls == null) return false;
+    controls.requestPlayPauseFocus();
+    return true;
   }
 
   /// Listen to playback state changes to manage auto-hide timer
@@ -54,7 +69,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       return const Duration(seconds: 30);
     }
     final isMobile = (Platform.isIOS || Platform.isAndroid) && !PlatformDetector.isTV();
-    if (isMobile || PlatformDetector.isTV() || _videoPlayerNavigationEnabled) {
+    if (isMobile || playerDirectionalNavigationEnabled()) {
       return const Duration(seconds: 5);
     }
     return const Duration(seconds: 3);
@@ -285,15 +300,18 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// self-heal raises the whole chrome on the first actionable key, which is
   /// what the transient seek and transport indicators exist to avoid.
   void _claimPlayerSurfaceFocus() {
-    final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
-    if (sheetOpen) return;
+    if (_sheetIsOpen()) return;
     _focusNode.requestFocus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_focusNode.hasPrimaryFocus) {
-        _focusNode.requestFocus();
-      }
+      // Re-check: a sheet or a route can open during the frame we deferred
+      // over, and the retry must not pull the remote back out of it.
+      if (!mounted || _focusNode.hasPrimaryFocus || _sheetIsOpen()) return;
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      _focusNode.requestFocus();
     });
   }
+
+  bool _sheetIsOpen() => OverlaySheetController.maybeOf(context)?.isOpen ?? false;
 
   void _requestFocusTarget(PlayerChromeFocusTarget target) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -304,8 +322,6 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       switch (target) {
         case PlayerChromeFocusTarget.playPause:
           _desktopControlsKey.currentState?.requestPlayPauseFocus();
-        case PlayerChromeFocusTarget.timeline:
-          _desktopControlsKey.currentState?.requestTimelineFocus();
       }
     });
   }

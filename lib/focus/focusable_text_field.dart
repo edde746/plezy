@@ -393,7 +393,7 @@ KeyEventResult _handleTvHardwareKeyboardKey({
   }
 
   final character = event.character;
-  if (character != null && character.isNotEmpty && !key.isNavigationKey && !_isControlCharacter(character)) {
+  if (character != null && character.isNotEmpty && !key.isReservedControlKey && !_isControlCharacter(character)) {
     _insertText(
       controller: controller,
       text: character,

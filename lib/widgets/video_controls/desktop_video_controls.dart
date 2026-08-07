@@ -152,7 +152,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.onLiveSeek,
     this.onLiveSeekBy,
     this.onJumpToLive,
-    this.useDpadNavigation = false,
+    required this.useDpadNavigation,
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
@@ -297,14 +297,15 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     }
   }
 
-  /// Request focus on the play/pause button (called when controls shown via keyboard)
+  /// Move focus to the play/pause button.
+  ///
+  /// Raw mechanism: it does not decide whether focus *should* enter the chrome.
+  /// A key that raises the chrome makes that decision with
+  /// `eventRequestsFocusNavigation` before queueing a
+  /// [PlayerChromeFocusTarget]; internal hand-offs (the skip-marker button's
+  /// ArrowDown, an item swap) are already inside a focus session.
   void requestPlayPauseFocus() {
     _playPauseFocusNode.requestFocus();
-  }
-
-  /// Request focus on the timeline (called when controls shown via LEFT/RIGHT)
-  void requestTimelineFocus() {
-    _timelineFocusNode.requestFocus();
   }
 
   /// Hide content strip (called by parent when controls hide)

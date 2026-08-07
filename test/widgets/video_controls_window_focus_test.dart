@@ -131,9 +131,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // The controls' own `autofocus` cannot win the scope back, and a visible
-      // chrome never runs the hide transition that hands focus down — so this
-      // is exactly the state a window re-activation leaves behind.
+      // Mounting parks the remote on the player surface. A window blur then
+      // drops focus to the root scope and the screen node's reclaim takes it,
+      // which is the state this suite is about — stage it explicitly.
+      screenFocusNode.requestFocus();
+      await tester.pumpAndSettle();
       expect(
         screenFocusNode.hasPrimaryFocus,
         isTrue,

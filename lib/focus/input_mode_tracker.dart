@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/platform_detector.dart';
-import '../services/gamepad_service.dart';
 import 'dpad_navigator.dart';
-import '../services/companion_remote/companion_remote_receiver.dart';
+import 'focus_navigation_intent.dart';
 
 /// Tracks whether the user is navigating via keyboard/d-pad or pointer (mouse/touch).
 ///
@@ -55,6 +54,21 @@ class InputModeTracker extends StatefulWidget {
     return Platform.isAndroid && isKeyboardMode(context);
   }
 
+  /// Report input from a device that cannot point — gamepad, companion remote,
+  /// Siri Remote touch. Those services synthesize their key events through
+  /// [KeyEventSimulatorController], which dispatches straight down the focus
+  /// chain and never reaches [HardwareKeyboard], so they cannot be observed by
+  /// [eventRequestsFocusNavigation] and must announce themselves here.
+  ///
+  /// Calls `setState`, so never call this during build. A no-op when no tracker
+  /// is mounted.
+  static void reportNonPointerInput() {
+    final state = _instance;
+    if (state != null && state.mounted) state._setMode(InputMode.keyboard);
+  }
+
+  static _InputModeTrackerState? _instance;
+
   @override
   State<InputModeTracker> createState() => _InputModeTrackerState();
 }
@@ -66,23 +80,21 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   @override
   void initState() {
     super.initState();
+    // Published before anything can report input. The outgoing tracker of a
+    // subtree swap disposes *after* the incoming one initialises, so teardown
+    // is identity-guarded — otherwise startup's bootstrap→app swap would leave
+    // the live registration cleared.
+    InputModeTracker._instance = this;
     // Initialize focus highlight strategy based on starting mode
     _updateFocusHighlightStrategy(_mode);
     // Listen to hardware keyboard events globally
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
-
-    // Register callback for gamepad input to switch to keyboard mode
-    GamepadService.onGamepadInput = () => _setMode(InputMode.keyboard);
-
-    // Register callback for companion remote input to switch to keyboard mode
-    CompanionRemoteReceiver.onRemoteInput = () => _setMode(InputMode.keyboard);
   }
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
-    GamepadService.onGamepadInput = null;
-    CompanionRemoteReceiver.onRemoteInput = null;
+    if (identical(InputModeTracker._instance, this)) InputModeTracker._instance = null;
     super.dispose();
   }
 
@@ -91,9 +103,10 @@ class _InputModeTrackerState extends State<InputModeTracker> {
     // events after route pops (see BackKeySuppressorObserver).
     BackKeyPressTracker.handleKeyEvent(event);
 
-    // Only switch to keyboard mode on navigation key down (not repeats, releases,
-    // or non-navigation keys like volume buttons or letter keys while typing)
-    if (event is KeyDownEvent && event.logicalKey.isNavigationKey) {
+    // Only a key that asks to navigate by focus starts a keyboard session.
+    // Activation and dismissal act on what is already focused, so promoting on
+    // them would arm focus chrome for a viewer who never asked to navigate.
+    if (eventRequestsFocusNavigation(event)) {
       _setMode(InputMode.keyboard);
     }
     // Return false to let the event continue propagating

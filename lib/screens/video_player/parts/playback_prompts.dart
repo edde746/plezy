@@ -82,7 +82,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       }
 
       // Capture keyboard mode before async gap
-      final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
+      final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false);
 
       final settings = await SettingsService.getInstance();
       if (!mounted) return;
@@ -171,7 +171,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // Don't show if auto-play dialog is already visible
     if (_showPlayNextDialog) return;
 
-    final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
+    final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false);
 
     _setPlayerState(() {
       _showStillWatchingPrompt = true;

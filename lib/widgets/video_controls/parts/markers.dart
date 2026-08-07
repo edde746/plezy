@@ -76,7 +76,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     }
 
     // Auto-focus skip button on TV when marker appears (only in keyboard/TV mode)
-    if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context)) {
+    if (PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _skipMarkerFocusNode.requestFocus();

@@ -83,7 +83,7 @@ class _PlayerShellState extends State<_PlayerShell> {
           );
         }
         if (node.hasPrimaryFocus) {
-          return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
+          return event.logicalKey.isReservedControlKey ? KeyEventResult.handled : KeyEventResult.ignored;
         }
         return KeyEventResult.ignored;
       },

@@ -102,6 +102,7 @@ import '../widgets/video_controls/widgets/player_toast_indicator.dart';
 import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/dpad_navigator.dart';
+import '../focus/focus_navigation_intent.dart';
 import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
@@ -571,9 +572,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   final PlayerToastController _toastController = PlayerToastController();
   bool _reclaimingFocus = false;
 
-  // Cached setting: when false on Windows/Linux, ESC should not exit the player
-  bool _videoPlayerNavigationEnabled = false;
-
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
   bool _hiddenForBackground = false;
@@ -865,7 +863,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Escape is plain Back (#1624).
       physicalEscapeExitsFullscreen: () => shouldPhysicalEscapeExitFullscreen(
         isMacOS: Platform.isMacOS,
-        videoPlayerNavigationEnabled: _videoPlayerNavigationEnabled,
+        videoPlayerNavigationEnabled: videoPlayerNavigationPreference(),
         playerEnteredFullscreen: FullscreenStateManager().scopeOwnsFullscreen,
       ),
       exitPlayer: () => unawaited(_handleBackButton()),
@@ -906,7 +904,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Screen-level focus node that wraps the entire build output.
     // Ensures a single stable focus target across loading → initialized phases.
-    _screenFocusNode = FocusNode(debugLabel: 'VideoPlayerScreen');
+    _screenFocusNode = playerSurfaceFocusNode('VideoPlayerScreen');
     _screenFocusNode.addListener(_onScreenFocusChanged);
     HardwareKeyboard.instance.addHandler(_primeInitializationNavigationFocus);
 
@@ -1188,7 +1186,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       initPhase = 'loading settings';
       final settingsService = await SettingsService.getInstance();
       if (!_isPlayerInitializationCurrent(generation)) return;
-      _videoPlayerNavigationEnabled = settingsService.read(SettingsService.videoPlayerNavigationEnabled);
       _autoPipEnabled = settingsService.read(SettingsService.autoPip);
       _exitFullscreenOnPlayerClose = settingsService.read(SettingsService.exitFullscreenOnPlayerClose);
       _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
@@ -2196,25 +2193,33 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // The chrome deliberately stays down; _remoteTransport announces the
         // accepted command with a centred transient disc instead (#1676).
         final transportCommand = classifyTransportKey(event.logicalKey);
-        if (_videoPlayerNavigationEnabled && !PlatformDetector.isAppleTV() && transportCommand != null) {
+        if (videoPlayerNavigationPreference() && !PlatformDetector.isAppleTV() && transportCommand != null) {
           if (event is KeyDownEvent) {
             unawaited(_remoteTransport(transportCommand, source: 'Hardware media key'));
           }
           return KeyEventResult.handled; // consume down, repeat, and up
         }
         // Self-heal: if this node itself has primary focus (no descendant
-        // focused, e.g. after controls auto-hide), redirect to first descendant.
-        // Arrows stay playback shortcuts on desktop unless the viewer opted into
-        // player navigation; only Tab/select may deliberately pull focus into
-        // the OSD (#1797). Consuming navigation keys either way keeps them from
-        // leaking to the route below.
+        // focused, e.g. during loading or after a window re-activation),
+        // redirect to the first descendant. Arrows stay playback shortcuts on
+        // desktop unless the viewer opted into player navigation; only Tab and
+        // a remote's OK deliberately pull focus into the OSD (#1797). Consuming
+        // reserved control keys either way keeps them from leaking to the route
+        // below.
         if (node.hasPrimaryFocus) {
-          final claimsChrome =
-              !event.logicalKey.isDpadDirection || _videoPlayerNavigationEnabled || PlatformDetector.isTV();
-          if (event.isActionable && claimsChrome) {
-            _chromeController.show(focusTarget: PlayerChromeFocusTarget.playPause);
+          if (event.isActionable) {
+            // One decision drives both halves: the key that hands the chrome
+            // focus is the same key that switches the app into keyboard mode,
+            // so focus can never land on a control while focus chrome is still
+            // suppressed. For an arrow this already answers "did the viewer opt
+            // into player navigation", because the screen node owns arrows
+            // exactly while that setting is off.
+            final navigating = eventRequestsFocusNavigation(event, focused: node);
+            if (!event.logicalKey.isDpadDirection || navigating) {
+              _chromeController.show(focusTarget: navigating ? PlayerChromeFocusTarget.playPause : null);
+            }
           }
-          return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
+          return event.logicalKey.isReservedControlKey ? KeyEventResult.handled : KeyEventResult.ignored;
         }
         // A descendant has focus — let events pass through so
         // DirectionalFocusAction / ActivateAction can process them.

@@ -8,7 +8,10 @@ import 'package:flutter/material.dart'
 enum PlayerChromeHold { pip, contentStrip, promptInteraction, scrub }
 
 /// Focus target to request after chrome has rebuilt visible controls.
-enum PlayerChromeFocusTarget { playPause, timeline }
+///
+/// Named rather than a bool so the call sites that hand the chrome focus say
+/// what they mean, and so adding a target forces every consumer to decide.
+enum PlayerChromeFocusTarget { playPause }
 
 /// Owns video-player chrome visibility and auto-hide policy for one player route.
 class PlayerChromeController extends ChangeNotifier implements ValueListenable<bool> {

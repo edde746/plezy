@@ -1049,6 +1049,7 @@ void main() {
                 width: 1000,
                 height: 700,
                 child: DesktopVideoControls(
+                  useDpadNavigation: false,
                   player: player,
                   volumeController: volume,
                   metadata: testMediaItem(id: 'desktop'),

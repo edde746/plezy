@@ -392,7 +392,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
       }
 
       final character = event.character;
-      if (character != null && character.isNotEmpty && !key.isNavigationKey) {
+      if (character != null && character.isNotEmpty && !key.isReservedControlKey) {
         _insert(character);
         return KeyEventResult.handled;
       }
@@ -422,7 +422,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
     }
 
     final character = event.character;
-    if (character != null && character.isNotEmpty && !key.isNavigationKey && !_isControlCharacter(character)) {
+    if (character != null && character.isNotEmpty && !key.isReservedControlKey && !_isControlCharacter(character)) {
       _insert(character);
       _dismissForPhysicalKeyboardInput();
       return true;

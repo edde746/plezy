@@ -7,7 +7,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
       playbackState: playbackState,
       onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
     );
-    final useDpad = _videoPlayerNavigationEnabled || PlatformDetector.isTV();
+    final useDpad = playerDirectionalNavigationEnabled();
 
     return Listener(
       behavior: HitTestBehavior.translucent,
