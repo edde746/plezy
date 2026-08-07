@@ -182,6 +182,13 @@ class WindowUtilsPlugin: NSObject, FlutterPlugin {
     let delegate = windowDelegate ?? WindowDelegate()
     delegate.channel = channel
     delegate.window = window
+    // Keep whoever held the slot so their callbacks survive ours. This runs
+    // both from `awakeFromNib` (nothing to displace yet) and again from Dart
+    // once plugins have registered, which is when window_manager's delegate is
+    // the one being replaced. Re-installing must never chain to ourselves.
+    if let displaced = window.delegate, !(displaced === delegate) {
+      delegate.previousDelegate = displaced
+    }
     windowDelegate = delegate
     window.delegate = delegate
   }
