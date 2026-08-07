@@ -300,7 +300,7 @@ jobs:
           cmake --build build/linux-native-${{ matrix.sanitizer }} --parallel 2 --target \
             mpv_player_lifecycle_test \
             mpv_property_result_contract_test \
-            mpv_gpu_bootstrap_test
+            hdr_metadata_test
 
       - name: Run Linux native reliability tests
         run: |

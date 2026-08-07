@@ -83,23 +83,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     );
   }
 
-  Widget _buildPlayerInitializationSurface() {
-    final bootstrapPlayer = _bootstrapPlayer;
-    if (bootstrapPlayer == null) return _buildLoadingSpinner();
-
-    // Linux creates the texture before its EGL/mpv render bootstrap can be
-    // proven. Mount the provisional surface so Flutter drives one texture
-    // copy, while retaining the black loading cover until playback itself
-    // reports its first frame.
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Video(player: bootstrapPlayer, hasFirstFrame: _hasFirstFrame),
-        const Center(child: PlayerLoadingIndicator()),
-      ],
-    );
-  }
-
   Widget _buildInitializationError(String message) {
     return Scaffold(
       backgroundColor: Colors.black,

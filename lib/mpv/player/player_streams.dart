@@ -95,6 +95,13 @@ class PlayerStreams {
   /// subtitle sidecars finish opening.
   final Stream<void> primaryMediaReady;
 
+  /// Emits when the compositor's preferred colour description for the video
+  /// plane changes: the window moved to another output, or an output's HDR
+  /// state was toggled under it. Linux only, where it is the only notice that
+  /// [Player.isHdrOutputSupported] may now answer differently - dragging a
+  /// window between monitors raises no app lifecycle event on Wayland.
+  final Stream<void> hdrOutputChanged;
+
   /// Stream of seekable buffer ranges from the demuxer cache.
   final Stream<List<BufferRange>> bufferRanges;
 
@@ -131,6 +138,7 @@ class PlayerStreams {
     this.fileStarted = const Stream<void>.empty(),
     this.fileLoadFailed = const Stream<void>.empty(),
     this.primaryMediaReady = const Stream<void>.empty(),
+    this.hdrOutputChanged = const Stream<void>.empty(),
     required this.backendSwitched,
     this.trackTransition = const Stream<String>.empty(),
   });

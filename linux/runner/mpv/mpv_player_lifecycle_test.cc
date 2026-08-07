@@ -18,56 +18,6 @@
 #include <utility>
 
 #include "mpv_player.h"
-#include "mpv_texture.h"
-
-struct LifetimeTextureRegistrar {
-  GObject parent_instance;
-  FlTexture* texture;
-};
-
-struct LifetimeTextureRegistrarClass {
-  GObjectClass parent_class;
-};
-
-static void LifetimeTextureRegistrarInterfaceInit(FlTextureRegistrarInterface* interface);
-static void LifetimeTextureRegistrarDispose(GObject* object);
-static void lifetime_texture_registrar_class_init(LifetimeTextureRegistrarClass* klass);
-static void lifetime_texture_registrar_init(LifetimeTextureRegistrar* self);
-
-G_DEFINE_TYPE_WITH_CODE(
-    LifetimeTextureRegistrar, lifetime_texture_registrar, G_TYPE_OBJECT,
-    G_IMPLEMENT_INTERFACE(fl_texture_registrar_get_type(), LifetimeTextureRegistrarInterfaceInit))
-
-static gboolean LifetimeTextureRegistrarRegister(FlTextureRegistrar* registrar, FlTexture* texture) {
-  auto* self = reinterpret_cast<LifetimeTextureRegistrar*>(registrar);
-  if (self->texture) return FALSE;
-  self->texture = FL_TEXTURE(g_object_ref(texture));
-  return TRUE;
-}
-
-static gboolean LifetimeTextureRegistrarUnregister(FlTextureRegistrar* registrar, FlTexture* texture) {
-  auto* self = reinterpret_cast<LifetimeTextureRegistrar*>(registrar);
-  if (self->texture != texture) return FALSE;
-  g_clear_object(&self->texture);
-  return TRUE;
-}
-
-static void LifetimeTextureRegistrarInterfaceInit(FlTextureRegistrarInterface* interface) {
-  interface->register_texture = LifetimeTextureRegistrarRegister;
-  interface->unregister_texture = LifetimeTextureRegistrarUnregister;
-}
-
-static void LifetimeTextureRegistrarDispose(GObject* object) {
-  auto* self = reinterpret_cast<LifetimeTextureRegistrar*>(object);
-  g_clear_object(&self->texture);
-  G_OBJECT_CLASS(lifetime_texture_registrar_parent_class)->dispose(object);
-}
-
-static void lifetime_texture_registrar_class_init(LifetimeTextureRegistrarClass* klass) {
-  G_OBJECT_CLASS(klass)->dispose = LifetimeTextureRegistrarDispose;
-}
-
-static void lifetime_texture_registrar_init(LifetimeTextureRegistrar* self) { self->texture = nullptr; }
 
 namespace mpv {
 
@@ -257,87 +207,6 @@ void TestProcessShutdownDoesNotJoinBlockedNativeTeardown() {
   Check(wait_result == child, "could not collect teardown shutdown subprocess");
   Check(WIFEXITED(child_status), "teardown shutdown subprocess terminated abnormally");
   Check(WEXITSTATUS(child_status) == 0, "teardown shutdown subprocess did not reach normal static shutdown");
-}
-
-struct TextureLifetimeState {
-  std::mutex mutex;
-  std::condition_variable condition;
-  bool callback_entered = false;
-  bool release_callback = false;
-  std::atomic<bool> callback_finalized{false};
-  bool finalized_during_callback = false;
-};
-
-void BlockingTextureReadyCallback(gboolean, const gchar*, gpointer user_data) {
-  auto* state = static_cast<TextureLifetimeState*>(user_data);
-  {
-    std::lock_guard<std::mutex> lock(state->mutex);
-    state->callback_entered = true;
-  }
-  state->condition.notify_all();
-
-  std::unique_lock<std::mutex> lock(state->mutex);
-  state->condition.wait(lock, [state]() { return state->release_callback; });
-  state->finalized_during_callback = state->callback_finalized.load();
-}
-
-void TextureReadyCallbackFinalized(gpointer user_data) {
-  static_cast<TextureLifetimeState*>(user_data)->callback_finalized = true;
-}
-
-void TestPopulateRetainsTextureWhileBootstrapCallbackRuns() {
-  auto* registrar = FL_TEXTURE_REGISTRAR(g_object_new(lifetime_texture_registrar_get_type(), nullptr));
-  TextureLifetimeState state;
-  MpvTexture* texture = mpv_texture_new(nullptr, registrar, nullptr);
-  mpv_texture_set_ready_callback(texture, BlockingTextureReadyCallback, &state, TextureReadyCallbackFinalized);
-  Check(
-      fl_texture_registrar_register_texture(registrar, FL_TEXTURE(texture)),
-      "the lifetime fixture must retain the registered texture");
-
-  gboolean populate_result = TRUE;
-  GError* populate_error = nullptr;
-  std::thread raster_thread([&]() {
-    uint32_t target = 0;
-    uint32_t name = 0;
-    uint32_t width = 0;
-    uint32_t height = 0;
-    auto* texture_class = FL_TEXTURE_GL_GET_CLASS(texture);
-    populate_result = texture_class->populate(FL_TEXTURE_GL(texture), &target, &name, &width, &height, &populate_error);
-  });
-
-  {
-    std::unique_lock<std::mutex> lock(state.mutex);
-    state.condition.wait(lock, [&state]() { return state.callback_entered; });
-  }
-
-  // Match plugin teardown while populate is between releasing its mutex and
-  // returning from the ready callback. Unregister drops the registrar's
-  // reference before dispose drops the plugin's reference.
-  Check(
-      fl_texture_registrar_unregister_texture(registrar, FL_TEXTURE(texture)),
-      "the lifetime fixture must unregister the texture");
-  mpv_texture_dispose(texture);
-  g_object_unref(texture);
-  const bool finalized_before_populate_released = state.callback_finalized.load();
-
-  {
-    std::lock_guard<std::mutex> lock(state.mutex);
-    state.release_callback = true;
-  }
-  state.condition.notify_all();
-  raster_thread.join();
-
-  Check(
-      !finalized_before_populate_released,
-      "platform disposal finalized the texture while its populate callback was still running");
-  Check(
-      !state.finalized_during_callback,
-      "the ready callback was finalized before populate released its retained texture reference");
-  Check(state.callback_finalized.load(), "the texture callback was not finalized after populate returned");
-  Check(!populate_result, "a populate without a player must fail");
-  Check(populate_error != nullptr, "failed populate must report an error");
-  g_clear_error(&populate_error);
-  g_object_unref(registrar);
 }
 
 void TestNodeConversionRejectsMalformedPayloads() {
@@ -695,7 +564,6 @@ int main() {
 
   try {
     mpv::TestProcessShutdownDoesNotJoinBlockedNativeTeardown();
-    mpv::TestPopulateRetainsTextureWhileBootstrapCallbackRuns();
     mpv::TestUnavailablePropertyWriteFails();
     mpv::TestNodeConversionRejectsMalformedPayloads();
     mpv::TestUnavailableCommandFails();

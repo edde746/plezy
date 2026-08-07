@@ -59,6 +59,15 @@ enum SubAssOverride { no, yes, scale, force, strip }
 /// [quarter] trade sharpness for raster throughput on render-bound low-end TVs.
 enum SubtitleRenderResolution { screen, video, threeQuarter, half, third, quarter }
 
+/// Who reduces HDR content to what the display can actually show, on the Linux
+/// native video plane.
+///
+/// [compositor] hands the compositor the source's own metadata and lets its tone
+/// curve do the work — simple, and what Kodi does. [player] tone-maps in mpv to
+/// the display's real peak and declares that peak instead, which is mpv's own
+/// default and leaves the compositor an identity transform.
+enum HdrToneMapping { compositor, player }
+
 extension SubtitleRenderScale on SubtitleRenderResolution {
   /// Android libass overlay render scale (fraction of the surface resolution).
   /// Only Android reads this; the iOS-only [video] basis maps to full scale here.
@@ -348,6 +357,17 @@ class SettingsService extends BaseSharedPreferencesService {
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
   static const enableHardwareDecoding = BoolPref('enable_hardware_decoding', defaultValue: true);
   static const enableHDR = BoolPref('enable_hdr', defaultValue: true);
+  // Linux native video plane only. Defaults to the compositor: photographed on a
+  // 400-nit HDR output against a PQ chart, the compositor keeps 400 -> 1000 nits
+  // monotonic and separated while the player leg flattens it. The player path
+  // drives mpv's legacy vo_gpu, whose own standalone output scores the same, so
+  // the gap is the renderer rather than the wiring. Compositor also needs no
+  // knowledge of the display.
+  static const hdrToneMapping = EnumPref<HdrToneMapping>(
+    'hdr_tone_mapping',
+    values: HdrToneMapping.values,
+    defaultValue: HdrToneMapping.compositor,
+  );
   static const preferredVideoCodec = StringPref('preferred_video_codec', defaultValue: 'auto');
   static const preferredAudioCodec = StringPref('preferred_audio_codec', defaultValue: 'auto');
   static const viewMode = EnumPref<ViewMode>('view_mode', values: ViewMode.values, defaultValue: ViewMode.grid);
@@ -885,6 +905,7 @@ class SettingsService extends BaseSharedPreferencesService {
     enableDebugLogging,
     enableHardwareDecoding,
     enableHDR,
+    hdrToneMapping,
     preferredVideoCodec,
     preferredAudioCodec,
     viewMode,

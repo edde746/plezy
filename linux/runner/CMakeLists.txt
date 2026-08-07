@@ -10,15 +10,20 @@ add_executable(${BINARY_NAME}
   "main.cc"
   "my_application.cc"
   "mpv/mpv_player.cc"
-  "mpv/mpv_gpu_bootstrap.cc"
   "mpv/mpv_plugin.cc"
-  "mpv/mpv_texture.cc"
+  "mpv/wayland_video_surface.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
 
 # Apply the standard set of build settings. This can be removed for applications
 # that need different build settings.
 apply_standard_settings(${BINARY_NAME})
+
+# apply_standard_settings asks for cxx_std_14, which current compilers satisfy
+# with a gnu++17 default and so add no -std flag for. mpv_plugin.cc uses
+# std::optional, so say 17 rather than inherit it from whatever the host
+# compiler happens to default to.
+target_compile_features(${BINARY_NAME} PRIVATE cxx_std_17)
 
 # Add preprocessor definitions for the application ID.
 add_definitions(-DAPPLICATION_ID="${APPLICATION_ID}")
@@ -28,6 +33,37 @@ pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)
 
 # Find epoxy (OpenGL loader).
 pkg_check_modules(EPOXY REQUIRED IMPORTED_TARGET epoxy)
+
+# Wayland client + EGL back the native video plane (a wl_subsurface below the
+# Flutter surface). GTK's Wayland backend already links these, but the runner
+# calls them directly, so depend on them explicitly.
+pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
+pkg_check_modules(WAYLAND_EGL REQUIRED IMPORTED_TARGET wayland-egl)
+pkg_check_modules(EGL REQUIRED IMPORTED_TARGET egl)
+
+# Vendored wayland-scanner output for color-management-v1 (staging), which backs
+# HDR on the native video plane. Built separately because it is C (the runner is
+# C++ only) and generated, so it must not be held to -Wall -Werror.
+#
+# Committed rather than generated at build time: the protocol only appeared in
+# wayland-protocols 1.41, newer than the version the distributions this app is
+# built for ship, so vendoring keeps the build working regardless of the host and
+# adds no build dependency on wayland-scanner. The checked-in files came from
+# wayland-protocols 1.49 via wayland-scanner 1.25.0; the interface is at version
+# 3 and the client binds min(advertised, 3).
+#
+# To refresh, from a host with a new enough wayland-protocols - and do not
+# hand-edit the results:
+#
+#   xml=/usr/share/wayland-protocols/staging/color-management/color-management-v1.xml
+#   cp "$xml" linux/runner/wayland/
+#   wayland-scanner client-header "$xml" linux/runner/wayland/color-management-v1-client-protocol.h
+#   wayland-scanner private-code  "$xml" linux/runner/wayland/color-management-v1-protocol.c
+enable_language(C)
+add_library(wayland_protocols STATIC "wayland/color-management-v1-protocol.c")
+target_include_directories(wayland_protocols PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/wayland")
+target_link_libraries(wayland_protocols PUBLIC PkgConfig::WAYLAND_CLIENT)
+target_compile_options(wayland_protocols PRIVATE -w)
 
 # Build simdutf as a static library from the single-header amalgamation.
 add_library(simdutf STATIC "${simdutf_SOURCE_DIR}/simdutf.cpp")
@@ -41,6 +77,10 @@ target_link_libraries(${BINARY_NAME} PRIVATE flutter)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::MPV)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::EPOXY)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::WAYLAND_CLIENT)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::WAYLAND_EGL)
+target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::EGL)
+target_link_libraries(${BINARY_NAME} PRIVATE wayland_protocols)
 target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
@@ -64,8 +104,6 @@ if(PLEZY_BUILD_MPV_PLAYER_LIFECYCLE_TESTS)
 
   add_executable(mpv_player_lifecycle_test
     "mpv/mpv_player.cc"
-    "mpv/mpv_gpu_bootstrap.cc"
-    "mpv/mpv_texture.cc"
     "mpv/mpv_player_lifecycle_test.cc"
   )
   apply_standard_settings(mpv_player_lifecycle_test)
@@ -140,14 +178,12 @@ if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS OR PLEZY_BUILD_MPV_RELIABILITY_TESTS)
 endif()
 
 if(PLEZY_BUILD_MPV_RELIABILITY_TESTS)
-  add_executable(mpv_gpu_bootstrap_test
-    "mpv/mpv_gpu_bootstrap.cc"
-    "mpv/mpv_gpu_bootstrap_test.cc"
+  add_executable(hdr_metadata_test
+    "mpv/hdr_metadata_test.cc"
   )
-  apply_standard_settings(mpv_gpu_bootstrap_test)
-  target_compile_features(mpv_gpu_bootstrap_test PRIVATE cxx_std_14)
-  target_link_libraries(mpv_gpu_bootstrap_test PRIVATE PkgConfig::EPOXY)
-  target_include_directories(mpv_gpu_bootstrap_test PRIVATE "mpv")
-  apply_mpv_reliability_sanitizer(mpv_gpu_bootstrap_test)
-  add_test(NAME mpv_gpu_bootstrap_test COMMAND mpv_gpu_bootstrap_test)
+  apply_standard_settings(hdr_metadata_test)
+  target_compile_features(hdr_metadata_test PRIVATE cxx_std_14)
+  target_include_directories(hdr_metadata_test PRIVATE "mpv")
+  apply_mpv_reliability_sanitizer(hdr_metadata_test)
+  add_test(NAME hdr_metadata_test COMMAND hdr_metadata_test)
 endif()

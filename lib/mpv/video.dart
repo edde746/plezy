@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'models.dart';
 import 'player/player.dart';
 import 'player/video_rect_support.dart';
 
@@ -40,6 +41,7 @@ class Video extends StatefulWidget {
 
 class _VideoState extends State<Video> {
   Rect? _lastRect;
+  double? _lastDevicePixelRatio;
   bool _hasFirstFrame = false;
   StreamSubscription<void>? _playbackRestartSubscription;
 
@@ -63,6 +65,12 @@ class _VideoState extends State<Video> {
       _playbackRestartSubscription?.cancel();
       _listenForPlaybackRestart();
       _syncExternalFirstFrame();
+      // The cache describes the old player's native surface. Keeping it would
+      // let the next frame short-circuit as "geometry unchanged", and the
+      // replacement surface stays sizeless — invisible, with no Texture
+      // fallback left to cover for it.
+      _lastRect = null;
+      _lastDevicePixelRatio = null;
     }
   }
 
@@ -108,21 +116,6 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
-    final player = widget.player;
-    if (player is PlayerBase) {
-      return ValueListenableBuilder<int?>(
-        valueListenable: player.textureIdListenable,
-        builder: (context, textureId, _) => _buildVideoSurfaceForId(textureId),
-      );
-    }
-    return _buildVideoSurfaceForId(player.textureId);
-  }
-
-  Widget _buildVideoSurfaceForId(int? textureId) {
-    if (textureId != null) {
-      return Texture(textureId: textureId);
-    }
-
     if (widget.player is VideoRectSupport) {
       return LayoutBuilder(
         builder: (context, constraints) {
@@ -146,7 +139,15 @@ class _VideoState extends State<Video> {
 
     final newRect = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
 
+    // The scale is part of what the native side is being told, so it has to be
+    // part of what decides whether to tell it. Moving a window between a
+    // scale-1 and a scale-2 output changes devicePixelRatio while leaving the
+    // logical geometry identical, and dropping that call leaves the native
+    // surface at the old buffer resolution: soft at half resolution after
+    // docking to a HiDPI output, overdrawn at double after undocking. The Steam
+    // Deck's dock is exactly this.
     if (_lastRect != null &&
+        _lastDevicePixelRatio == dpr &&
         (newRect.left - _lastRect!.left).abs() < 1 &&
         (newRect.top - _lastRect!.top).abs() < 1 &&
         (newRect.width - _lastRect!.width).abs() < 1 &&
@@ -155,13 +156,25 @@ class _VideoState extends State<Video> {
     }
 
     _lastRect = newRect;
+    _lastDevicePixelRatio = dpr;
 
-    (widget.player as VideoRectSupport).setVideoRect(
-      left: (position.dx * dpr).toInt(),
-      top: (position.dy * dpr).toInt(),
-      right: ((position.dx + size.width) * dpr).toInt(),
-      bottom: ((position.dy + size.height) * dpr).toInt(),
-      devicePixelRatio: dpr,
-    );
+    final player = widget.player as VideoRectSupport;
+    player
+        .setVideoRect(
+          left: (position.dx * dpr).toInt(),
+          top: (position.dy * dpr).toInt(),
+          right: ((position.dx + size.width) * dpr).toInt(),
+          bottom: ((position.dy + size.height) * dpr).toInt(),
+          devicePixelRatio: dpr,
+        )
+        .catchError((Object e) {
+          // Geometry is the only thing that makes the native surface visible,
+          // so a rejected rect is a black video area, not a cosmetic glitch.
+          // Post-frame callbacks have nobody to rethrow to, so route it to the
+          // player's error stream rather than leaving an unhandled async error.
+          if (!player.errorController.isClosed) {
+            player.errorController.add(PlayerError('Failed to set video rect: $e'));
+          }
+        });
   }
 }

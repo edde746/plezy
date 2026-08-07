@@ -56,9 +56,16 @@ class PlayerNative extends PlayerBase {
   @visibleForTesting
   static bool debugForceContentFdConversion = false;
 
-  /// Overrides the Linux-only video readiness handshake in host tests.
+  /// Overrides the Linux video-plane detection in host tests.
   @visibleForTesting
-  static bool? debugUseLinuxVideoBootstrap;
+  static bool? debugUseLinuxVideoPlane;
+
+  /// Whether this process drives video through the Linux Wayland plane, which
+  /// is `Platform.isLinux` and nothing finer — Linux has no other render path.
+  ///
+  /// The one place the test override is resolved, so production code and host
+  /// tests agree on which path is live without reading a test-only field.
+  static bool get usesLinuxVideoPlane => debugUseLinuxVideoPlane ?? Platform.isLinux;
 
   // Set by open() and consumed by that load's file-loaded event, so it is
   // not mistaken for a gapless advance (see _handleAudioFileLoaded).
@@ -181,10 +188,6 @@ class PlayerNative extends PlayerBase {
     );
   }
 
-  /// Whether the UI must mount the provisional texture before initialization
-  /// can complete its first render/bootstrap handshake.
-  bool get requiresProvisionalTextureSurface => !audioOnly && (debugUseLinuxVideoBootstrap ?? Platform.isLinux);
-
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
   // parallel `requestAudioFocus()` and `setProperty()` paths kicked off in
   // VideoPlayerScreen._initializePlayer) share one `invoke('initialize')`.
@@ -213,20 +216,7 @@ class PlayerNative extends PlayerBase {
   Future<void> _doInitialize() async {
     try {
       final result = await invoke<Object>('initialize');
-      final bool ok;
-      if (result is int) {
-        // Linux publishes a provisional texture so Flutter can invoke
-        // FlTextureGL::populate. Playback stays gated until native GPU
-        // bootstrap reports that the texture is usable.
-        setTextureId(result);
-        if (debugUseLinuxVideoBootstrap ?? Platform.isLinux) {
-          await invoke('waitForVideoReady');
-        }
-        ok = true;
-      } else {
-        ok = result == true;
-      }
-      if (!ok) {
+      if (result != true) {
         throw Exception('Failed to initialize player');
       }
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
@@ -255,7 +245,6 @@ class PlayerNative extends PlayerBase {
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
       initialized = true;
     } catch (e) {
-      setTextureId(null);
       _initFuture = null;
       if (!_nativeCoreUnavailable) {
         errorController.add(PlayerError('Initialization failed: $e'));
@@ -1061,5 +1050,22 @@ class PlayerNative extends PlayerBase {
   Future<void> abandonAudioFocus() async {
     if (_nativeCoreUnavailable || !Platform.isAndroid || !initialized) return;
     await invoke('abandonAudioFocus');
+  }
+
+  /// See [Player.isHdrOutputSupported] for why this is a query and not a constant.
+  ///
+  /// Only Linux delegates to the native side, because only there does the answer
+  /// move: it folds in the output the plane currently sits on. Everywhere else it
+  /// is a platform constant. Windows has a native query of its own, but nothing
+  /// consults this method there - the settings sheet offers HDR on Windows
+  /// unconditionally - so asking would only let the two disagree about the same
+  /// platform. Nothing is cached on either path.
+  @override
+  Future<bool> isHdrOutputSupported() async {
+    // No video plane without video, on any platform, so this precedes the
+    // platform question rather than sitting inside one branch of it.
+    if (_nativeCoreUnavailable || audioOnly) return false;
+    if (Platform.isLinux) return await invoke<bool>('isHDRSupported') ?? false;
+    return Platform.isIOS || Platform.isMacOS || Platform.isWindows;
   }
 }

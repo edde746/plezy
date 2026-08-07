@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier, protected, visibleForTesting;
+import 'package:flutter/foundation.dart' show protected, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
@@ -48,18 +48,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   @override
   PlayerStreams get streams => _streams;
-
-  final ValueNotifier<int?> _textureId = ValueNotifier<int?>(null);
-
-  @override
-  int? get textureId => _textureId.value;
-
-  ValueListenable<int?> get textureIdListenable => _textureId;
-
-  @protected
-  void setTextureId(int? value) {
-    if (!_disposed) _textureId.value = value;
-  }
 
   StreamSubscription? _eventSubscription;
   StreamSubscription? _logSubscription;
@@ -556,6 +544,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
       case 'playback-restart':
         playbackRestartController.add(null);
+        break;
+
+      case 'hdr-output-changed':
+        hdrOutputChangedController.add(null);
         break;
 
       case 'log-message':
@@ -1073,6 +1065,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> updateFrame() async {}
 
   @override
+  Future<bool> isHdrOutputSupported() async => false;
+
+  @override
   Future<bool> setVideoFrameRate(
     double fps,
     int durationMs, {
@@ -1380,7 +1375,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> dispose({bool preserveDisplayMode = false}) async {
     if (_disposed) return;
     _disposed = true;
-    _textureId.value = null;
 
     final channelName = eventChannel.name;
     if (identical(_eventChannelOwners[channelName], this)) {
@@ -1430,7 +1424,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       );
     }
     await closeStreamControllers();
-    _textureId.dispose();
   }
 }
 

@@ -408,7 +408,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   static bool isNavigationActive(VideoPlayerLaunchIdentity identity) => _activeRouteGuard.blocks(identity);
 
   Player? player;
-  Player? _bootstrapPlayer;
   VideoVolumeController? _volumeController;
   bool _isPlayerInitialized = false;
   String? _playerInitializationError;
@@ -1143,9 +1142,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (identical(player, attemptPlayer)) {
       player = null;
     }
-    if (identical(_bootstrapPlayer, attemptPlayer)) {
-      _bootstrapPlayer = null;
-    }
     try {
       await _tearDownFailedPlayerAttempt(attemptPlayer);
     } catch (e, st) {
@@ -1217,9 +1213,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final currentPlayer = Player(useExoPlayer: useExoPlayer);
       attemptPlayer = currentPlayer;
       if (!mounted || generation != _playerInitializationGeneration) return;
-      if (currentPlayer is PlayerNative && currentPlayer.requiresProvisionalTextureSurface) {
-        setState(() => _bootstrapPlayer = currentPlayer);
-      }
       if (Platform.isAndroid && useExoPlayer) {
         await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
         if (!mounted || generation != _playerInitializationGeneration) return;
@@ -1396,10 +1389,47 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await currentPlayer.setAudioPassthrough(settingsService.read(SettingsService.audioPassthrough));
       }
 
-      // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
-      if (Platform.isIOS || Platform.isMacOS || Platform.isWindows) {
+      // Set before hdr-enabled so the first image description is already built
+      // for the chosen mode. Unlike hdr-enabled below, every failure here is
+      // swallowed: an older libmpv rejects it as an unknown property, with no
+      // code to tell that apart, and a tone-mapping preference is never a reason
+      // to fail playback.
+      if (PlayerNative.usesLinuxVideoPlane) {
+        final toneMapping = settingsService.read(SettingsService.hdrToneMapping);
+        try {
+          await currentPlayer.setProperty('hdr-tone-mapping', toneMapping.name);
+        } catch (e) {
+          appLogger.d('VideoPlayerScreen: HDR tone-mapping mode not applied', error: e);
+        }
+      }
+
+      // HDR is controlled via the custom hdr-enabled property. On Linux it means
+      // "allow passthrough": the native side only describes the plane as HDR
+      // when the compositor, the output and the source all agree, so pushing the
+      // preference here is safe even when it cannot be honoured.
+      //
+      // Linux swallows every refusal. The plugin only intercepts hdr-enabled once
+      // it can describe the plane; before then the write falls through to mpv as
+      // target-colorspace-hint=auto, and `auto` is only a legal value for that
+      // option from mpv 0.40. The deb/rpm/pacman packages link the distro's
+      // libmpv, which is older than that on every current LTS, so rethrowing here
+      // would turn "this session cannot do HDR" into "this session cannot play
+      // video" - the initialization error screen, with a Retry that fails the
+      // same way.
+      //
+      // The tolerance is Linux-only rather than "every platform, for this one
+      // error code". HDR_UNSUPPORTED is produced by the Linux plugin and nothing
+      // else, so tolerating it elsewhere would be an inert branch no test on any
+      // runner can reach, and a silent change to what the other platforms did
+      // before this feature existed.
+      if (Platform.isIOS || Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
         final enableHDR = settingsService.read(SettingsService.enableHDR);
-        await currentPlayer.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
+        try {
+          await currentPlayer.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
+        } catch (e) {
+          if (!PlayerNative.usesLinuxVideoPlane) rethrow;
+          appLogger.d('VideoPlayerScreen: HDR passthrough not applied', error: e);
+        }
       }
 
       final audioSyncOffset = settingsService.read(SettingsService.audioSyncOffset);
@@ -1466,10 +1496,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
 
       if (mounted) {
-        setState(() {
-          _isPlayerInitialized = true;
-          _bootstrapPlayer = null;
-        });
+        setState(() => _isPlayerInitialized = true);
 
         // Restart sleep timer if we're starting a new playback session
         SleepTimerService().restartIfNeeded(() => unawaited(_pauseWithPlaybackIntent(currentPlayer)));
@@ -1837,9 +1864,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final volumeController = _volumeController;
     _volumeController = null;
     volumeController?.dispose();
-    final playerToDispose = player ?? _bootstrapPlayer;
+    final playerToDispose = player;
     player = null;
-    _bootstrapPlayer = null;
     if (playerToDispose != null) {
       // Keep the native display mode (tvOS HDMI criteria) across a
       // player→player handoff; the replacement screen primes its own.
@@ -2241,7 +2267,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               ? _buildVideoPlayer(sheetContext)
               : (_playerInitializationError != null
                     ? _buildInitializationError(_playerInitializationError!)
-                    : _buildPlayerInitializationSurface()),
+                    : _buildLoadingSpinner()),
         ),
       ),
     );

@@ -162,7 +162,7 @@ main() {
     --enable-filter=aformat,aresample,format,null,scale \
     --enable-gnutls \
     --enable-vaapi \
-    --enable-vdpau \
+    --disable-vdpau \
     --disable-debug \
     --disable-stripping
 
@@ -226,6 +226,10 @@ main() {
   tar -xzf "$srcdir/mpv.tar.gz"
   cd "mpv-${MPV_VERSION}"
 
+  # The runner's only video path is a Wayland subsurface, and it hands mpv
+  # MPV_RENDER_PARAM_WL_DISPLAY so VAAPI can find the device instead of falling
+  # back to software decoding. A libmpv built without Wayland cannot use that.
+  # VDPAU goes with X11 - it has no Wayland backend at all.
   meson setup build \
     --prefix="$prefix" \
     -Dlibmpv=true \
@@ -240,12 +244,12 @@ main() {
     -Dd3d11=disabled \
     -Dgl=enabled \
     -Dvaapi=enabled \
-    -Dvdpau=enabled \
     -Dalsa=enabled \
     -Dpulse=enabled \
     -Dpipewire=enabled \
-    -Dwayland=disabled \
-    -Dx11=enabled
+    -Dvdpau=disabled \
+    -Dwayland=enabled \
+    -Dx11=disabled
 
   ninja -C build -j"$jobs"
   ninja -C build install

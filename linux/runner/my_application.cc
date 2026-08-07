@@ -1,9 +1,47 @@
 #include "my_application.h"
 
 #include <flutter_linux/flutter_linux.h>
+#include <gdk/gdk.h>
+#ifdef GDK_WINDOWING_WAYLAND
+#include <gdk/gdkwayland.h>
+#endif
 
 #include "flutter/generated_plugin_registrant.h"
 #include "mpv/mpv_plugin.h"
+
+// On Wayland the mpv video plane is a wl_subsurface stacked *below* this
+// window's surface, so the window needs an alpha channel for it to show
+// through. Harmless when the plane is unavailable: the Flutter UI paints
+// opaque anyway, and X11 sessions keep the Flutter texture path.
+static void enable_video_plane_transparency(GtkWindow* window, FlView* view) {
+#ifdef GDK_WINDOWING_WAYLAND
+  GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(window));
+  if (!GDK_IS_WAYLAND_DISPLAY(display)) return;
+
+  GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(window));
+  GdkVisual* visual = gdk_screen_get_rgba_visual(screen);
+  if (visual == nullptr) {
+    // The plane is stacked *below* the toplevel, so without an alpha channel it
+    // is occluded by an opaque Flutter surface and the video area goes blank
+    // with everything else working. GDK's Wayland backend always offers an ARGB
+    // visual, so this is not expected - say so rather than fail silently, since
+    // the symptom on its own points nowhere near here.
+    g_warning("MPV video plane: no RGBA visual; the video plane would be hidden behind an opaque window");
+    return;
+  }
+
+  gtk_widget_set_visual(GTK_WIDGET(window), visual);
+  gtk_widget_set_app_paintable(GTK_WIDGET(window), TRUE);
+
+  // The RGBA visual only reaches the compositor if Flutter stops filling the frame too: fl_view clears to this
+  // colour every frame, so any opaque value would paint over the subsurface whatever the visual says.
+  GdkRGBA transparent = {0.0, 0.0, 0.0, 0.0};
+  fl_view_set_background_color(view, &transparent);
+#else
+  (void)window;
+  (void)view;
+#endif
+}
 
 struct _MyApplication {
   GtkApplication parent_instance;
@@ -36,24 +74,25 @@ static void my_application_activate(GApplication* application) {
 
   gtk_window_set_default_size(window, 1280, 720);
 
-  // Create the Flutter view (opaque — no overlay needed).
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(project, self->dart_entrypoint_arguments);
 
   self->flutter_view = fl_view_new(project);
+  enable_video_plane_transparency(window, self->flutter_view);
   gtk_widget_show(GTK_WIDGET(self->flutter_view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(self->flutter_view));
 
   // Register Flutter plugins.
   fl_register_plugins(FL_PLUGIN_REGISTRY(self->flutter_view));
 
-  // Register the MPV plugin (uses FlTextureGL — no overlay/GtkGLArea needed).
+  // Register the MPV plugin. Video goes to the native Wayland plane; there is no other path, so a session that
+  // cannot host one is refused by name rather than played into nothing.
   FlPluginRegistrar* registrar =
       fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvPlugin");
   mpv_plugin_register_with_registrar(registrar);
 
   // Register the dedicated audio-only MPV core for music playback (no
-  // texture/GL work at all).
+  // video or GL work at all).
   FlPluginRegistrar* audio_registrar =
       fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvAudioPlugin");
   mpv_audio_plugin_register_with_registrar(audio_registrar);
