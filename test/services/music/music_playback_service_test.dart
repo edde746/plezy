@@ -211,8 +211,9 @@ class FakePlayer implements Player {
   @override
   bool get audioPassthroughActive => false;
 
+  // Audio only; there is no video output to carry HDR.
   @override
-  int? get textureId => null;
+  Future<bool> isHdrOutputSupported() async => false;
 
   @override
   String get playerType => 'fake';

@@ -67,12 +67,6 @@ abstract class Player {
   /// this first.
   bool get audioPassthroughActive;
 
-  /// Texture ID for Flutter's Texture widget (video rendering).
-  ///
-  /// This is set by the platform implementation when video
-  /// rendering is initialized. Returns null if not ready.
-  int? get textureId;
-
   /// The type of player backend being used (e.g., 'mpv', 'exoplayer').
   String get playerType;
 
@@ -267,6 +261,14 @@ abstract class Player {
   /// On other platforms, this is a no-op.
   Future<void> updateFrame();
 
+  /// Whether this player's video output can currently carry HDR.
+  ///
+  /// A query rather than a constant because on Linux it genuinely varies: the
+  /// native side needs a 10-bit plane, a compositor advertising the source's
+  /// transfer function and BT.2020, and an output the compositor reports as
+  /// being in HDR. Moving the window to an SDR monitor changes the answer.
+  Future<bool> isHdrOutputSupported();
+
   /// Set the video frame rate for display refresh rate matching.
   ///
   /// On Android, this hints the system to adjust the display refresh rate
@@ -374,7 +376,7 @@ abstract class Player {
   /// - macOS/iOS: [PlayerNative] using MPVKit/libmpv with Metal rendering
   /// - Android: [PlayerAndroid] using ExoPlayer (default) or [PlayerNative] using MPV (fallback)
   /// - Windows: [PlayerWindows] using libmpv with native window embedding
-  /// - Linux: [PlayerLinux] using libmpv with OpenGL rendering via GtkGLArea
+  /// - Linux: [PlayerLinux] using libmpv on a native Wayland video plane
   ///
   /// On Android, pass [useExoPlayer] to override the default:
   /// - true: Use ExoPlayer (default, better hardware support)

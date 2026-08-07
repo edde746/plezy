@@ -129,6 +129,47 @@ part 'video_player/parts/watch_together.dart';
 
 final WakelockController _wakelockController = WakelockController();
 
+/// Property names the free-form mpv config is not allowed to write.
+///
+/// Neither is an mpv property. The Linux plugin intercepts both by name and
+/// moves its own persistent HDR state instead (linux/runner/mpv/mpv_plugin.cc),
+/// and the custom config is applied *after* startup has pushed the stored
+/// preferences, so a `hdr-enabled=yes` or `hdr-tone-mapping=player` line would
+/// change the live plane without anything writing it back to [SettingsService].
+/// The settings sheet renders its HDR switch and tone-mapping row straight off
+/// those preferences with no native readback, so the UI would report one state
+/// while the plane held another - for the whole session, and again after a
+/// restart, since the next startup replays the same order rather than
+/// reconciling.
+///
+/// Filtered rather than reordered: reordering would still leave the config as a
+/// second writer of state the app owns, silently discarded on every startup
+/// instead of silently winning. Nothing legitimate is lost - both names are
+/// settings the player's own HDR controls already expose, and mean nothing to
+/// mpv itself, so no platform is losing a real mpv property here.
+const _appInterceptedMpvProperties = {'hdr-enabled', 'hdr-tone-mapping'};
+
+/// The above, plus the four real mpv properties the Linux video plane owns.
+///
+/// It writes all four as one unit and caches what it last applied so it can skip
+/// a transaction that would change nothing. A config line writing one of them
+/// moves mpv without moving that cache, and the next transaction then compares
+/// against a value mpv no longer holds and skips the write it needed to make -
+/// leaving mpv encoding one colour space while the surface is described as
+/// another, the single state the two-phase apply exists to prevent.
+///
+/// Scoped to the plane deliberately. These are ordinary mpv properties
+/// everywhere else, nothing caches them there, and no other platform exposes a
+/// UI control for them - so withholding them off Linux would remove the user's
+/// only way to set them and point the log at a control they do not have.
+const _appOwnedMpvProperties = {
+  ..._appInterceptedMpvProperties,
+  'target-trc',
+  'target-prim',
+  'target-peak',
+  'tone-mapping',
+};
+
 /// Whether an in-place source reload may start the replacement media.
 ///
 /// Reloading a paused player must not manufacture a new play intent. Watch
@@ -410,7 +451,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   static bool isNavigationActive(VideoPlayerLaunchIdentity identity) => _activeRouteGuard.blocks(identity);
 
   Player? player;
-  Player? _bootstrapPlayer;
   VideoVolumeController? _volumeController;
   bool _isPlayerInitialized = false;
   String? _playerInitializationError;
@@ -1149,9 +1189,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (identical(player, attemptPlayer)) {
       player = null;
     }
-    if (identical(_bootstrapPlayer, attemptPlayer)) {
-      _bootstrapPlayer = null;
-    }
     try {
       await _tearDownFailedPlayerAttempt(attemptPlayer);
     } catch (e, st) {
@@ -1223,9 +1260,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final currentPlayer = Player(useExoPlayer: useExoPlayer);
       attemptPlayer = currentPlayer;
       if (!mounted || generation != _playerInitializationGeneration) return;
-      if (currentPlayer is PlayerNative && currentPlayer.requiresProvisionalTextureSurface) {
-        setState(() => _bootstrapPlayer = currentPlayer);
-      }
       if (Platform.isAndroid && useExoPlayer) {
         await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
         if (!mounted || generation != _playerInitializationGeneration) return;
@@ -1409,10 +1443,90 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await currentPlayer.setAudioPassthrough(settingsService.read(SettingsService.audioPassthrough));
       }
 
-      // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
-      if (Platform.isIOS || Platform.isMacOS || Platform.isWindows) {
+      // Set before hdr-enabled so the first image description is already built
+      // for the chosen mode. Unlike hdr-enabled below, every failure here is
+      // swallowed: an older libmpv rejects it as an unknown property, with no
+      // code to tell that apart, and a tone-mapping preference is never a reason
+      // to fail playback.
+      if (PlayerNative.usesLinuxVideoPlane) {
+        final toneMapping = settingsService.read(SettingsService.hdrToneMapping);
+        try {
+          await currentPlayer.setProperty('hdr-tone-mapping', toneMapping.name);
+        } catch (e) {
+          appLogger.d('VideoPlayerScreen: HDR tone-mapping mode not applied', error: e);
+          // A refused transaction leaves the plugin on the mode it last accepted,
+          // and nothing has moved it off the compositor default this session -
+          // the only writer is this push, plus the sheet, which persists solely
+          // on success. Storing that back keeps the sheet from offering "Player"
+          // as the current mode while the plane tone-maps in the compositor,
+          // a disagreement no later write would correct on its own.
+          // Contained on its own, for the same reason as the hdr-enabled block
+          // below: the refusal is deliberately tolerated, so a preference store
+          // that then throws must not turn "carry on with compositor tone
+          // mapping" into a failed player initialization.
+          if (toneMapping != HdrToneMapping.compositor) {
+            try {
+              await settingsService.write(SettingsService.hdrToneMapping, HdrToneMapping.compositor);
+            } catch (writeError) {
+              appLogger.w('VideoPlayerScreen: could not reconcile the stored tone-mapping mode', error: writeError);
+            }
+          }
+        }
+      }
+
+      // HDR is controlled via the custom hdr-enabled property. On Linux it means
+      // "allow passthrough": the native side only describes the plane as HDR
+      // when the compositor, the output and the source all agree, so pushing the
+      // preference here is safe even when it cannot be honoured.
+      //
+      // Linux swallows every refusal, because on Linux a refusal is a statement
+      // about the *plane*, not about the media: HDR_UNSUPPORTED means this
+      // session's plane can never carry HDR - an 8-bit EGL config, or a
+      // compositor without the colour-management pieces - and a failed colour
+      // transaction means mpv would not take the output properties. Neither is a
+      // reason not to play the video in SDR, so rethrowing would turn "this
+      // session cannot do HDR" into "this session cannot play video": the
+      // initialization error screen, with a Retry that fails the same way.
+      //
+      // Two earlier reasons given here no longer hold and are recorded as gone
+      // so they are not reinstated: the packages no longer link a distro libmpv
+      // (each ships the pinned build), and the plugin intercepts hdr-enabled
+      // whenever a video surface exists, so the old fall-through to mpv's
+      // target-colorspace-hint - and its mpv 0.40 version floor - is unreachable.
+      //
+      // The tolerance is Linux-only rather than "every platform, for this one
+      // error code". HDR_UNSUPPORTED is produced by the Linux plugin and nothing
+      // else, so tolerating it elsewhere would be an inert branch no test on any
+      // runner can reach, and a silent change to what the other platforms did
+      // before this feature existed.
+      if (Platform.isIOS || Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
         final enableHDR = settingsService.read(SettingsService.enableHDR);
-        await currentPlayer.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
+        try {
+          await currentPlayer.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
+        } catch (e) {
+          if (!PlayerNative.usesLinuxVideoPlane) rethrow;
+          appLogger.d('VideoPlayerScreen: HDR passthrough not applied', error: e);
+          // Same hazard as the tone-mapping block above. A refused transaction
+          // hands hdr_wanted back to whatever it held before this write, and
+          // nothing has moved it this session: the plugin is freshly created and
+          // zero-initialised, so it is off. Storing that back keeps the settings
+          // switch - which renders straight off this preference - from reading
+          // on while the plane is SDR, a disagreement no later write corrects
+          // because every internal re-apply reads the native side instead.
+          // Contained on its own. The refusal above is deliberately tolerated -
+          // this session simply plays SDR - so a preference store that then
+          // throws must not escalate that into the initialization error screen,
+          // which is where an escape from this catch lands. Worst case the
+          // preference stays out of step, which is the situation before this
+          // reconciliation existed.
+          if (enableHDR) {
+            try {
+              await settingsService.write(SettingsService.enableHDR, false);
+            } catch (writeError) {
+              appLogger.w('VideoPlayerScreen: could not reconcile the stored HDR preference', error: writeError);
+            }
+          }
+        }
       }
 
       final audioSyncOffset = settingsService.read(SettingsService.audioSyncOffset);
@@ -1446,7 +1560,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));
+      // Only the Linux video plane owns the four real mpv properties, so only
+      // there are they withheld. Elsewhere nothing caches them and a config line
+      // is the user's single way to reach them - dropping it would take away
+      // something that worked, and point at a control that platform does not
+      // show. The two intercepted names are not mpv properties anywhere, so
+      // those stay withheld everywhere.
+      final ownedHere = PlayerNative.usesLinuxVideoPlane ? _appOwnedMpvProperties : _appInterceptedMpvProperties;
       for (final entry in customMpvConfig.entries) {
+        // Not silently dropped: the user typed this line, so say which one went
+        // unapplied and where to set it instead, at the same level as the other
+        // skipped or failed startup writes below.
+        if (ownedHere.contains(entry.key)) {
+          appLogger.w(
+            'Skipped custom MPV property ${entry.key}=${entry.value}: the app owns it, '
+            'set it in the player HDR settings instead',
+          );
+          continue;
+        }
         try {
           await currentPlayer.setProperty(entry.key, entry.value);
           appLogger.d('Applied custom MPV property: ${entry.key}=${entry.value}');
@@ -1479,10 +1610,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (!_ownsPlayerInitializationAttempt(generation, currentPlayer)) return;
 
       if (mounted) {
-        setState(() {
-          _isPlayerInitialized = true;
-          _bootstrapPlayer = null;
-        });
+        setState(() => _isPlayerInitialized = true);
 
         // Restart sleep timer if we're starting a new playback session
         SleepTimerService().restartIfNeeded(() => unawaited(_pauseWithPlaybackIntent(currentPlayer)));
@@ -1852,9 +1980,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final volumeController = _volumeController;
     _volumeController = null;
     volumeController?.dispose();
-    final playerToDispose = player ?? _bootstrapPlayer;
+    final playerToDispose = player;
     player = null;
-    _bootstrapPlayer = null;
     if (playerToDispose != null) {
       // Keep the native display mode (tvOS HDMI criteria) across a
       // player→player handoff; the replacement screen primes its own.
@@ -2261,7 +2388,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               ? _buildVideoPlayer(sheetContext)
               : (_playerInitializationError != null
                     ? _buildInitializationError(_playerInitializationError!)
-                    : _buildPlayerInitializationSurface()),
+                    : _buildLoadingSpinner()),
         ),
       ),
     );

@@ -1,12 +1,10 @@
 import 'dart:async' show Completer;
 
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_base.dart';
-import 'package:plezy/mpv/video.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/mock_player_channels.dart';
@@ -348,163 +346,146 @@ void main() {
     );
   });
 
-  test('Linux texture bootstrap gates observations and commands until ready', () async {
-    PlayerNative.debugUseLinuxVideoBootstrap = true;
-    addTearDown(() => PlayerNative.debugUseLinuxVideoBootstrap = null);
-    final ready = Completer<void>();
+  test('a Linux video plane that cannot start fails initialization by name', () async {
+    PlayerNative.debugUseLinuxVideoPlane = true;
+    addTearDown(() => PlayerNative.debugUseLinuxVideoPlane = null);
     final calls = <MethodCall>[];
+    final errors = <String>[];
+
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',
       eventChannelName: 'com.plezy/mpv_player/events',
-      methodHandler: (call) {
+      methodHandler: (call) async {
         calls.add(call);
-        if (call.method == 'initialize') return Future.value(73);
-        if (call.method == 'waitForVideoReady') return ready.future;
-        return Future.value(null);
-      },
-      testBody: () async {
-        final player = PlayerNative();
-        try {
-          final operation = player.setLogLevel('warn');
-          await Future<void>.delayed(Duration.zero);
-          await Future<void>.delayed(Duration.zero);
-
-          expect(player.textureId, 73);
-          expect(player.textureIdListenable.value, 73);
-          expect(calls.any((call) => call.method == 'waitForVideoReady'), isTrue);
-          expect(calls.any((call) => call.method == 'observeProperty'), isFalse);
-          expect(calls.any((call) => call.method == 'setLogLevel'), isFalse);
-
-          ready.complete();
-          await operation;
-          expect(calls.any((call) => call.method == 'observeProperty'), isTrue);
-          expect(calls.where((call) => call.method == 'setLogLevel'), hasLength(1));
-        } finally {
-          if (!ready.isCompleted) ready.complete();
-          await player.dispose();
-        }
-      },
-    );
-  });
-
-  testWidgets('Linux texture handoff stays black until playback restarts', (tester) async {
-    PlayerNative.debugUseLinuxVideoBootstrap = true;
-    addTearDown(() => PlayerNative.debugUseLinuxVideoBootstrap = null);
-    final ready = Completer<void>();
-    await withMockPlayerChannels(
-      methodChannelName: 'com.plezy/mpv_player',
-      eventChannelName: 'com.plezy/mpv_player/events',
-      methodHandler: (call) async {
-        if (call.method == 'initialize') return 73;
-        if (call.method == 'waitForVideoReady') {
-          await ready.future;
+        if (call.method == 'initialize') {
+          throw PlatformException(
+            code: 'VIDEO_PLANE_UNSUPPORTED',
+            message: 'compositor does not advertise wl_subcompositor',
+          );
         }
         return null;
       },
       testBody: () async {
         final player = PlayerNative();
-        await tester.pumpWidget(MaterialApp(home: Video(player: player)));
-        expect(find.byType(Texture), findsNothing);
-
-        final initialization = player.setLogLevel('warn');
-        await tester.pump();
-        expect(find.byType(Texture), findsOneWidget);
-        final videoBox = find.descendant(of: find.byType(Video), matching: find.byType(ColoredBox));
-        expect(tester.widget<ColoredBox>(videoBox).color, Colors.black);
-
-        ready.complete();
-        await initialization;
-        player.handlePlayerEvent('playback-restart', null);
-        await tester.pump();
-        await tester.pump();
-        expect(tester.widget<ColoredBox>(videoBox).color, Colors.transparent);
-
-        await tester.pumpWidget(const SizedBox());
-        await tester.runAsync(player.dispose);
-      },
-    );
-  }, timeout: const Timeout(Duration(seconds: 30)));
-
-  test('Linux texture bootstrap failure clears the provisional ID and retries', () async {
-    PlayerNative.debugUseLinuxVideoBootstrap = true;
-    addTearDown(() => PlayerNative.debugUseLinuxVideoBootstrap = null);
-    var initializeCount = 0;
-    var readinessCount = 0;
-    await withMockPlayerChannels(
-      methodChannelName: 'com.plezy/mpv_player',
-      eventChannelName: 'com.plezy/mpv_player/events',
-      methodHandler: (call) async {
-        if (call.method == 'initialize') return 80 + initializeCount++;
-        if (call.method == 'waitForVideoReady' && readinessCount++ == 0) {
-          throw PlatformException(code: 'INIT_FAILED', message: 'GPU bootstrap failed');
-        }
-        return null;
-      },
-      testBody: () async {
-        final player = PlayerNative();
+        final subscription = player.streams.error.listen((error) => errors.add(error.message));
         try {
           await expectLater(
             player.setLogLevel('warn'),
-            throwsA(isA<PlatformException>().having((error) => error.code, 'code', 'INIT_FAILED')),
+            throwsA(
+              isA<PlatformException>()
+                  .having((error) => error.code, 'code', 'VIDEO_PLANE_UNSUPPORTED')
+                  .having((error) => error.message, 'message', contains('wl_subcompositor')),
+            ),
           );
-          expect(player.textureId, isNull);
 
-          await player.setLogLevel('warn');
-          expect(initializeCount, 2);
-          expect(readinessCount, 2);
-          expect(player.textureId, 81);
+          // There is no second video path to degrade onto, so the only correct
+          // outcome is a refusal that names its cause. Nothing may run past it:
+          // a player that observed properties or accepted commands here would be
+          // one playing audio at a black window.
+          expect(calls.map((call) => call.method), ['initialize']);
+          // The refusal reaches the error stream a turn behind the throw.
+          await Future<void>.delayed(Duration.zero);
+          expect(errors.single, contains('wl_subcompositor'));
+
+          // Nor is the failure cached as a half-open player: the next caller
+          // asks the plane again and is refused by name again, rather than
+          // sliding through on a memoized "already initialized".
+          await expectLater(player.setLogLevel('warn'), throwsA(isA<PlatformException>()));
+          expect(calls.map((call) => call.method), ['initialize', 'initialize']);
         } finally {
+          await subscription.cancel();
           await player.dispose();
         }
       },
     );
   });
 
-  test('Linux disposal clears the published texture ID', () async {
-    PlayerNative.debugUseLinuxVideoBootstrap = true;
-    addTearDown(() => PlayerNative.debugUseLinuxVideoBootstrap = null);
+  test('the native hdr-output-changed event reaches the stream, and a typeless envelope does not', () async {
+    // The only notice Dart gets that dragging the window changed the answer to
+    // isHdrOutputSupported: Wayland raises no lifecycle event for it. Asserted
+    // on the real event channel rather than a fake stream because the failure
+    // mode is a rename on one side of the wire, which a fake cannot see.
+    var changes = 0;
+
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',
       eventChannelName: 'com.plezy/mpv_player/events',
-      methodHandler: (call) async {
-        if (call.method == 'initialize') return 73;
-        return null;
-      },
       testBody: () async {
         final player = PlayerNative();
-        final textureIds = <int?>[];
-        player.textureIdListenable.addListener(() => textureIds.add(player.textureIdListenable.value));
+        final subscription = player.streams.hdrOutputChanged.listen((_) => changes++);
+        try {
+          await player.setLogLevel('warn');
+          final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+          const codec = StandardMethodCodec();
 
-        await player.setLogLevel('warn');
-        expect(player.textureId, 73);
-        await player.dispose();
+          Future<void> sendEvent(Object? event) async {
+            final done = Completer<void>();
+            await messenger.handlePlatformMessage(
+              'com.plezy/mpv_player/events',
+              codec.encodeSuccessEnvelope(event),
+              (_) => done.complete(),
+            );
+            await done.future;
+            await Future<void>.delayed(Duration.zero);
+          }
 
-        expect(textureIds, [73, null]);
+          await sendEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
+          expect(changes, 1);
+
+          // The envelope needs both keys. Omitting `type` is not hypothetical -
+          // it is exactly what the native side once sent, and the event was
+          // dropped in silence, so the settings sheet kept whatever HDR verdict
+          // it had from before the window moved.
+          await sendEvent(const {'name': 'hdr-output-changed'});
+          expect(changes, 1);
+
+          // And the channel is still live afterwards: a malformed sibling must
+          // not take the subscription down with it.
+          await sendEvent(const {'type': 'event', 'name': 'hdr-output-changed'});
+          expect(changes, 2);
+        } finally {
+          await subscription.cancel();
+          await player.dispose();
+        }
       },
     );
   });
 
-  test('non-Linux texture initialization skips the Linux readiness handshake', () async {
-    PlayerNative.debugUseLinuxVideoBootstrap = false;
-    addTearDown(() => PlayerNative.debugUseLinuxVideoBootstrap = null);
+  test('the HDR output probe asks the plane by name and answers what it said', () async {
+    // The name is half the contract: nothing else in the app invokes
+    // isHDRSupported on the player channel, so a misspelling here would simply
+    // answer null forever and hide the HDR controls on every Linux session.
+    PlayerNative.debugUseLinuxVideoPlane = true;
+    addTearDown(() => PlayerNative.debugUseLinuxVideoPlane = null);
     final calls = <MethodCall>[];
+    Object? reply;
+
     await withMockPlayerChannels(
       methodChannelName: 'com.plezy/mpv_player',
       eventChannelName: 'com.plezy/mpv_player/events',
       methodHandler: (call) async {
         calls.add(call);
-        if (call.method == 'initialize') return 91;
-        if (call.method == 'waitForVideoReady') {
-          throw StateError('non-Linux backends must not use Linux readiness');
-        }
+        if (call.method == 'initialize') return true;
+        if (call.method == 'isHDRSupported') return reply;
         return null;
       },
       testBody: () async {
         final player = PlayerNative();
         try {
-          await player.setLogLevel('warn');
-          expect(player.textureId, 91);
-          expect(calls.any((call) => call.method == 'waitForVideoReady'), isFalse);
+          reply = true;
+          expect(await player.isHdrOutputSupported(), isTrue);
+
+          // Not cached: the output under the window is what the answer folds in,
+          // and that changes without Dart asking anything.
+          reply = false;
+          expect(await player.isHdrOutputSupported(), isFalse);
+
+          // A native that does not implement the method answers null, which is
+          // "no HDR" rather than a crash or an optimistic yes.
+          reply = null;
+          expect(await player.isHdrOutputSupported(), isFalse);
+
+          expect(calls.where((call) => call.method == 'isHDRSupported'), hasLength(3));
         } finally {
           await player.dispose();
         }

@@ -38,6 +38,9 @@ DISTROS = {
         "category": "video",
         "ext": "deb",
         "compression": ["--deb-compression", "xz", "--deb-priority", "optional"],
+        # The native video plane links wayland-client, wayland-egl and EGL, and
+        # bundle-libs.sh deliberately never bundles those: they are coupled to
+        # the running compositor and GPU driver. So they have to be declared.
         "depends": [
             "libgtk-3-0",
             "libmpv2 | libmpv1",
@@ -45,6 +48,9 @@ DISTROS = {
             "libasound2",
             "libevdev2",
             "libglib2.0-0",
+            "libwayland-client0",
+            "libwayland-egl1",
+            "libegl1",
         ],
     },
     "rpm": {
@@ -59,6 +65,9 @@ DISTROS = {
             "alsa-lib",
             "libevdev",
             "glib2",
+            "libwayland-client",
+            "libwayland-egl",
+            "libglvnd-egl",
         ],
     },
     "pacman": {
@@ -66,6 +75,8 @@ DISTROS = {
         "category": None,
         "ext": "pkg.tar.zst",
         "compression": ["--pacman-compression", "zstd"],
+        # Arch ships every libwayland-* in the one `wayland` package, and
+        # libglvnd is what provides libEGL.so.1.
         "depends": [
             "gtk3",
             "mpv",
@@ -73,6 +84,8 @@ DISTROS = {
             "alsa-lib",
             "libevdev",
             "glib2",
+            "wayland",
+            "libglvnd",
         ],
     },
 }

@@ -4115,6 +4115,27 @@ class Translations$videoSettings$en {
 	/// en: 'HDR'
 	String get hdr => 'HDR';
 
+	/// en: 'HDR isn't available here — this desktop compositor or video output can't carry it.'
+	String get hdrUnsupported => 'HDR isn\'t available here — this desktop compositor or video output can\'t carry it.';
+
+	/// en: 'HDR Tone Mapping'
+	String get hdrToneMapping => 'HDR Tone Mapping';
+
+	/// en: 'Compositor'
+	String get hdrToneMappingCompositor => 'Compositor';
+
+	/// en: 'Pass the source's HDR metadata through and let the desktop compositor map it.'
+	String get hdrToneMappingCompositorDescription => 'Pass the source\'s HDR metadata through and let the desktop compositor map it.';
+
+	/// en: 'Player'
+	String get hdrToneMappingPlayer => 'Player';
+
+	/// en: 'Map to the display's peak brightness in the player, then tell the compositor the result.'
+	String get hdrToneMappingPlayerDescription => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.';
+
+	/// en: 'Couldn't change HDR tone mapping — the previous mode is still active.'
+	String get hdrToneMappingFailed => 'Couldn\'t change HDR tone mapping — the previous mode is still active.';
+
 	/// en: 'Audio Output'
 	String get audioOutput => 'Audio Output';
 
@@ -7594,6 +7615,13 @@ extension on Translations {
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
 			'videoSettings.hdr' => 'HDR',
+			'videoSettings.hdrUnsupported' => 'HDR isn\'t available here — this desktop compositor or video output can\'t carry it.',
+			'videoSettings.hdrToneMapping' => 'HDR Tone Mapping',
+			'videoSettings.hdrToneMappingCompositor' => 'Compositor',
+			'videoSettings.hdrToneMappingCompositorDescription' => 'Pass the source\'s HDR metadata through and let the desktop compositor map it.',
+			'videoSettings.hdrToneMappingPlayer' => 'Player',
+			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
+			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
 			'videoSettings.audioOutput' => 'Audio Output',
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
@@ -7631,6 +7659,8 @@ extension on Translations {
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
@@ -7638,8 +7668,6 @@ extension on Translations {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',
