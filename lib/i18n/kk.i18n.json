@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Бөлімдер қолжетімсіз",
     "queue": "Кезек",
     "noQueueItems": "Кезекте элементтер жоқ",
+    "noAudioDevicesAvailable": "Қолжетімді аудио құрылғылар жоқ",
     "searchSubtitles": "Субтитр іздеу",
     "language": "Тіл",
     "noSubtitlesFound": "Субтитр табылмады",

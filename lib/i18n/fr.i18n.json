@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Aucun chapitre disponible",
     "queue": "File d'attente",
     "noQueueItems": "Aucun élément dans la file d'attente",
+    "noAudioDevicesAvailable": "Aucun appareil audio disponible",
     "searchSubtitles": "Rechercher des sous-titres",
     "language": "Langue",
     "noSubtitlesFound": "Aucun sous-titre trouvé",

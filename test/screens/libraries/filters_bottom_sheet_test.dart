@@ -6,6 +6,7 @@ import 'package:plezy/media/media_filter.dart';
 import 'package:plezy/screens/libraries/filters_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/widgets/bottom_sheet_header.dart';
+import 'package:plezy/widgets/bottom_sheet_page_scaffold.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 
 final _filters = [
@@ -18,7 +19,7 @@ MediaFilterValue _value(String key, String title) => MediaFilterValue(key: key, 
 void main() {
   testWidgets('filter switch rejects an obsolete success and its presentation effects', (tester) async {
     final requests = _FilterRequests();
-    final harness = await _pumpSheet(tester, loader: requests.load);
+    await _pumpSheet(tester, loader: requests.load);
 
     await _openFilter(tester, 'Genre');
     await _goBack(tester);
@@ -34,12 +35,11 @@ void main() {
     expect(find.text('Current Studio'), findsOneWidget);
     expect(find.text('Obsolete Genre'), findsNothing);
     expect(tester.takeException(), isNull);
-    harness.dispose();
   });
 
   testWidgets('same-filter reopen rejects the first request completion', (tester) async {
     final requests = _FilterRequests();
-    final harness = await _pumpSheet(tester, loader: requests.load);
+    await _pumpSheet(tester, loader: requests.load);
 
     await _openFilter(tester, 'Genre');
     await _goBack(tester);
@@ -52,12 +52,11 @@ void main() {
 
     expect(find.text('New Genre'), findsOneWidget);
     expect(find.text('Old Genre'), findsNothing);
-    harness.dispose();
   });
 
   testWidgets('stale failure cannot replace a newer successful value list', (tester) async {
     final requests = _FilterRequests();
-    final harness = await _pumpSheet(tester, loader: requests.load);
+    await _pumpSheet(tester, loader: requests.load);
 
     await _openFilter(tester, 'Genre');
     await _goBack(tester);
@@ -70,7 +69,6 @@ void main() {
 
     expect(find.byType(ErrorStateWidget), findsNothing);
     expect(find.text('Current Studio'), findsOneWidget);
-    harness.dispose();
   });
 
   testWidgets('library replacement retires the old owner request', (tester) async {
@@ -87,13 +85,12 @@ void main() {
     expect(find.text('Old Library Genre'), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.text('Filters'), findsOneWidget);
-    harness.dispose();
   });
 
   testWidgets('back then clear retires a loading request before closing', (tester) async {
     final requests = _FilterRequests();
     final applied = <Map<String, String>>[];
-    final harness = await _pumpSheet(
+    await _pumpSheet(
       tester,
       loader: requests.load,
       selectedFilters: const {'studio': 'selected'},
@@ -112,13 +109,12 @@ void main() {
     requests.request('genre').complete([_value('late', 'Late Genre')]);
     await tester.pump();
     expect(tester.takeException(), isNull);
-    harness.dispose();
   });
 
   testWidgets('missing selected value is preserved until explicit user action', (tester) async {
     final requests = _FilterRequests();
     final applied = <Map<String, String>>[];
-    final harness = await _pumpSheet(
+    await _pumpSheet(
       tester,
       loader: requests.load,
       selectedFilters: const {'genre': 'missing'},
@@ -132,12 +128,11 @@ void main() {
 
     expect(find.text('Clear All'), findsOneWidget);
     expect(applied, isEmpty);
-    harness.dispose();
   });
 
   testWidgets('load failure has retry state while empty success remains selectable', (tester) async {
     final requests = _FilterRequests();
-    final harness = await _pumpSheet(tester, loader: requests.load);
+    await _pumpSheet(tester, loader: requests.load);
 
     await _openFilter(tester, 'Genre');
     requests.request('genre').completeError(StateError('temporary failure'));
@@ -154,12 +149,49 @@ void main() {
 
     expect(find.byType(ErrorStateWidget), findsNothing);
     expect(find.text('All'), findsOneWidget);
-    harness.dispose();
+  });
+
+  testWidgets('settled filter-values states hug while the transient one holds the height', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final requests = _FilterRequests();
+    await _pumpSheet(tester, loader: requests.load);
+
+    const cap = 800 * 0.75;
+    double sheetHeight() => tester.getSize(find.byType(BottomSheetPageScaffold)).height;
+
+    // The root filters list must hug too — nothing else in the suite pins it.
+    // (`sheet == header + list` is a layout identity for a min-Column with no
+    // divider, so it holds even under a full fill; only the cap bound below
+    // actually discriminates.)
+    final filtersListHeight = sheetHeight();
+    expect(filtersListHeight, lessThan(cap), reason: 'two filters must not fill the cap');
+
+    // Drilling in is a setState page swap inside one sheet, so the transient
+    // spinner must hold the outgoing height: a change here moves the header and
+    // its Back button, and moves them straight back when the values land.
+    await _openFilter(tester, 'Genre');
+    expect(sheetHeight(), filtersListHeight, reason: 'the transient spinner must not move the sheet');
+
+    // Settled states hug — that is the empty space this change exists to remove.
+    requests.request('genre').completeError(StateError('temporary failure'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ErrorStateWidget), findsOneWidget);
+    expect(sheetHeight(), lessThan(cap), reason: 'error state must not fill the cap');
+
+    await tester.tap(find.text('Retry'));
+    await tester.pump();
+    requests.request('genre', 1).complete([_value('action', 'Action')]);
+    await tester.pumpAndSettle();
+    expect(find.text('Action'), findsOneWidget);
+    expect(sheetHeight(), lessThan(cap), reason: 'short value list must not fill the cap');
   });
 
   testWidgets('cached values bypass the lazy loader', (tester) async {
     var loadCount = 0;
-    final harness = await _pumpSheet(
+    await _pumpSheet(
       tester,
       loader: (_) async {
         loadCount++;
@@ -174,7 +206,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Cached Genre'), findsOneWidget);
     expect(loadCount, 0);
-    harness.dispose();
   });
 }
 
@@ -226,19 +257,31 @@ Future<_SheetHarness> _pumpSheet(
 
   await tester.tap(find.text('Open'));
   await tester.pumpAndSettle();
-  return _SheetHarness(config);
+  final harness = _SheetHarness(config);
+  addTearDown(harness.dispose);
+  return harness;
 }
 
 Future<void> _openFilter(WidgetTester tester, String title) async {
   await tester.tap(find.text(title));
   await tester.pump();
   expect(find.byType(CircularProgressIndicator), findsOneWidget);
+  await _settleSheetResize(tester);
 }
 
 Future<void> _goBack(WidgetTester tester) async {
   final headerRect = tester.getRect(find.byType(BottomSheetHeader));
   await tester.tapAt(headerRect.centerLeft + const Offset(20, 0));
   await tester.pump();
+  await _settleSheetResize(tester);
+}
+
+/// Advances past the host's 180ms resize tween. A page swap changes the sheet's
+/// height, and mid-tween the content is laid out at its final size but clipped
+/// by the still-animating box — so header geometry is not tappable until this
+/// completes. `pumpAndSettle` cannot be used: the spinner never settles.
+Future<void> _settleSheetResize(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 200));
 }
 
 class _FilterRequests {

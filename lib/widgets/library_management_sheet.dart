@@ -395,7 +395,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
               descendantsAreFocusable: false,
               autofocus: InputModeTracker.isKeyboardMode(context),
               onKeyEvent: handleReorderKeyEvent,
-              child: _buildFlatLibraryList(_dialogScrollController, hiddenLibraryKeys),
+              child: _buildFlatLibraryList(_dialogScrollController, hiddenLibraryKeys, shrinkWrap: false),
             ),
           ),
         ),
@@ -403,6 +403,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
     }
 
     return Column(
+      mainAxisSize: .min,
       children: [
         BottomSheetHeader(title: t.libraries.manageLibraries, icon: Symbols.edit_rounded),
         Flexible(
@@ -411,7 +412,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
             descendantsAreFocusable: false,
             autofocus: InputModeTracker.isKeyboardMode(context),
             onKeyEvent: handleReorderKeyEvent,
-            child: _buildFlatLibraryList(_sheetScrollController, hiddenLibraryKeys),
+            child: _buildFlatLibraryList(_sheetScrollController, hiddenLibraryKeys, shrinkWrap: true),
           ),
         ),
       ],
@@ -421,12 +422,17 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   /// Build flat library list with a server subtitle when multiple servers are
   /// connected. The TV dialog passes [_dialogScrollController] so focused rows
   /// can be scrolled into view; the bottom sheet passes its own controller.
-  Widget _buildFlatLibraryList(ScrollController scrollController, Set<String> hiddenLibraryKeys) {
+  Widget _buildFlatLibraryList(
+    ScrollController scrollController,
+    Set<String> hiddenLibraryKeys, {
+    required bool shrinkWrap,
+  }) {
     final showServerNames = _hasMultipleServers();
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
     return ReorderableListView.builder(
       scrollController: scrollController,
+      shrinkWrap: shrinkWrap,
       onReorderItem: _reorderLibraries,
       itemCount: _tempLibraries.length,
       padding: const EdgeInsets.symmetric(vertical: 8),

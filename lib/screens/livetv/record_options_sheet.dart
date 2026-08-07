@@ -315,6 +315,13 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
                 ? Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Center(
+                      // Hugs like every other empty state. Switching entries
+                      // still moves the chooser chips above by the difference
+                      // in row count, which is inherent to content sizing;
+                      // filling this one branch instead made the mixed case
+                      // (one entry with settings, one without) far worse, since
+                      // the empty entry then inflated to the whole height cap.
+                      heightFactor: 1,
                       child: Text(
                         _entry.airingsType ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),

@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Keine Kapitel verfügbar",
     "queue": "Warteschlange",
     "noQueueItems": "Keine Elemente in der Warteschlange",
+    "noAudioDevicesAvailable": "Keine Audiogeräte verfügbar",
     "searchSubtitles": "Untertitel suchen",
     "language": "Sprache",
     "noSubtitlesFound": "Keine Untertitel gefunden",

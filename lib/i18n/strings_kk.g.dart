@@ -831,6 +831,7 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'Бөлімдер қолжетімсіз';
 	@override String get queue => 'Кезек';
 	@override String get noQueueItems => 'Кезекте элементтер жоқ';
+	@override String get noAudioDevicesAvailable => 'Қолжетімді аудио құрылғылар жоқ';
 	@override String get searchSubtitles => 'Субтитр іздеу';
 	@override String get language => 'Тіл';
 	@override String get noSubtitlesFound => 'Субтитр табылмады';
@@ -3233,6 +3234,7 @@ extension on TranslationsKk {
 			'videoControls.noChaptersAvailable' => 'Бөлімдер қолжетімсіз',
 			'videoControls.queue' => 'Кезек',
 			'videoControls.noQueueItems' => 'Кезекте элементтер жоқ',
+			'videoControls.noAudioDevicesAvailable' => 'Қолжетімді аудио құрылғылар жоқ',
 			'videoControls.searchSubtitles' => 'Субтитр іздеу',
 			'videoControls.language' => 'Тіл',
 			'videoControls.noSubtitlesFound' => 'Субтитр табылмады',
@@ -3618,9 +3620,9 @@ extension on TranslationsKk {
 			'explore.badge.requested' => 'Сұралған',
 			'explore.badge.pendingApproval' => 'Растау күтілуде',
 			'explore.badge.processing' => 'Өңделуде',
-			'explore.badge.declined' => 'Қабылданбады',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => 'Қабылданбады',
 			'explore.badge.requestFailed' => 'Сұрау сәтсіз аяқталды',
 			'explore.badge.requested4k' => '4K сұралған',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} маусым',
@@ -4132,9 +4134,9 @@ extension on TranslationsKk {
 			'performanceOverlay.dropped' => 'Өткізілген кадрлар',
 			'performanceOverlay.dvRpus' => 'DV RPU-лар',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Орт.',
-			'performanceOverlay.dvSampleAverage' => 'DV Үлгі Орт.',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV Үлгі Орт.',
 			'performanceOverlay.maxLuma' => 'Макс Luma',
 			'performanceOverlay.minLuma' => 'Мин Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',

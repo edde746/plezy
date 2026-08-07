@@ -681,6 +681,7 @@
     "noChaptersAvailable": "No chapters available",
     "queue": "Queue",
     "noQueueItems": "No items in queue",
+    "noAudioDevicesAvailable": "No audio devices available",
     "searchSubtitles": "Search Subtitles",
     "language": "Language",
     "noSubtitlesFound": "No subtitles found",

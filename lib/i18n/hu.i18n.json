@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Nincsenek elérhető fejezetek",
     "queue": "Lejátszási sor",
     "noQueueItems": "Nincsenek elemek a sorban",
+    "noAudioDevicesAvailable": "Nincsenek elérhető audioeszközök",
     "searchSubtitles": "Feliratok keresése",
     "language": "Nyelv",
     "noSubtitlesFound": "Nem találhatók feliratok",

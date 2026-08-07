@@ -831,6 +831,7 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'Kısım bulunmuyor';
 	@override String get queue => 'Kuyruk';
 	@override String get noQueueItems => 'Kuyrukta öge yok';
+	@override String get noAudioDevicesAvailable => 'Kullanılabilir ses cihazı yok';
 	@override String get searchSubtitles => 'Altyazı Ara';
 	@override String get language => 'Dil';
 	@override String get noSubtitlesFound => 'Altyazı bulunamadı';
@@ -3233,6 +3234,7 @@ extension on TranslationsTr {
 			'videoControls.noChaptersAvailable' => 'Kısım bulunmuyor',
 			'videoControls.queue' => 'Kuyruk',
 			'videoControls.noQueueItems' => 'Kuyrukta öge yok',
+			'videoControls.noAudioDevicesAvailable' => 'Kullanılabilir ses cihazı yok',
 			'videoControls.searchSubtitles' => 'Altyazı Ara',
 			'videoControls.language' => 'Dil',
 			'videoControls.noSubtitlesFound' => 'Altyazı bulunamadı',
@@ -3618,9 +3620,9 @@ extension on TranslationsTr {
 			'explore.badge.requested' => 'İstendi',
 			'explore.badge.pendingApproval' => 'Onay bekliyor',
 			'explore.badge.processing' => 'İşleniyor',
-			'explore.badge.declined' => 'Reddedildi',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => 'Reddedildi',
 			'explore.badge.requestFailed' => 'İstek başarısız oldu',
 			'explore.badge.requested4k' => '4K istendi',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} sezon',
@@ -4132,9 +4134,9 @@ extension on TranslationsTr {
 			'performanceOverlay.dropped' => 'Kare Kaybı',
 			'performanceOverlay.dvRpus' => 'DV RPU\'ları',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Ort.',
-			'performanceOverlay.dvSampleAverage' => 'DV Örnek Ort.',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV Örnek Ort.',
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',

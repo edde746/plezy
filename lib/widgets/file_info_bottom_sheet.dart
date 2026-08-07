@@ -48,6 +48,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   Widget build(BuildContext context) {
     final versions = widget.fileInfo.versions;
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         BottomSheetHeader(
           title: t.fileInfo.title,
@@ -57,8 +58,9 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
           // keeps no rule under it.
           showBorder: false,
         ),
-        Expanded(
+        Flexible(
           child: ListView(
+            shrinkWrap: true,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
               if (widget.title.isNotEmpty) _ItemHeadline(title: widget.title, versions: versions),

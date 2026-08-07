@@ -828,6 +828,7 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'チャプターがありません';
 	@override String get queue => 'キュー';
 	@override String get noQueueItems => 'キューにアイテムがありません';
+	@override String get noAudioDevicesAvailable => 'オーディオデバイスがありません';
 	@override String get searchSubtitles => '字幕を検索';
 	@override String get language => '言語';
 	@override String get noSubtitlesFound => '字幕が見つかりません';
@@ -3224,6 +3225,7 @@ extension on TranslationsJa {
 			'videoControls.noChaptersAvailable' => 'チャプターがありません',
 			'videoControls.queue' => 'キュー',
 			'videoControls.noQueueItems' => 'キューにアイテムがありません',
+			'videoControls.noAudioDevicesAvailable' => 'オーディオデバイスがありません',
 			'videoControls.searchSubtitles' => '字幕を検索',
 			'videoControls.language' => '言語',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
@@ -3609,9 +3611,9 @@ extension on TranslationsJa {
 			'explore.badge.requested' => 'リクエスト済み',
 			'explore.badge.pendingApproval' => '承認待ち',
 			'explore.badge.processing' => '処理中',
-			'explore.badge.declined' => '却下',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => '却下',
 			'explore.badge.requestFailed' => 'リクエスト失敗',
 			'explore.badge.requested4k' => '4Kリクエスト済み',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => 'シーズン ${available}/${total}',
@@ -4123,9 +4125,9 @@ extension on TranslationsJa {
 			'performanceOverlay.dropped' => 'ドロップ',
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
-			'performanceOverlay.dvSampleAverage' => 'DV サンプル平均',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV サンプル平均',
 			'performanceOverlay.maxLuma' => '最大輝度',
 			'performanceOverlay.minLuma' => '最小輝度',
 			'performanceOverlay.maxCll' => 'MaxCLL',

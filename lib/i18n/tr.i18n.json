@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Kısım bulunmuyor",
     "queue": "Kuyruk",
     "noQueueItems": "Kuyrukta öge yok",
+    "noAudioDevicesAvailable": "Kullanılabilir ses cihazı yok",
     "searchSubtitles": "Altyazı Ara",
     "language": "Dil",
     "noSubtitlesFound": "Altyazı bulunamadı",

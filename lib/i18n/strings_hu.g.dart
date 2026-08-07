@@ -831,6 +831,7 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'Nincsenek elérhető fejezetek';
 	@override String get queue => 'Lejátszási sor';
 	@override String get noQueueItems => 'Nincsenek elemek a sorban';
+	@override String get noAudioDevicesAvailable => 'Nincsenek elérhető audioeszközök';
 	@override String get searchSubtitles => 'Feliratok keresése';
 	@override String get language => 'Nyelv';
 	@override String get noSubtitlesFound => 'Nem találhatók feliratok';
@@ -3233,6 +3234,7 @@ extension on TranslationsHu {
 			'videoControls.noChaptersAvailable' => 'Nincsenek elérhető fejezetek',
 			'videoControls.queue' => 'Lejátszási sor',
 			'videoControls.noQueueItems' => 'Nincsenek elemek a sorban',
+			'videoControls.noAudioDevicesAvailable' => 'Nincsenek elérhető audioeszközök',
 			'videoControls.searchSubtitles' => 'Feliratok keresése',
 			'videoControls.language' => 'Nyelv',
 			'videoControls.noSubtitlesFound' => 'Nem találhatók feliratok',
@@ -3618,9 +3620,9 @@ extension on TranslationsHu {
 			'explore.badge.requested' => 'Kérve',
 			'explore.badge.pendingApproval' => 'Jóváhagyásra vár',
 			'explore.badge.processing' => 'Feldolgozás alatt',
-			'explore.badge.declined' => 'Elutasítva',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => 'Elutasítva',
 			'explore.badge.requestFailed' => 'A kérés nem sikerült',
 			'explore.badge.requested4k' => '4K kérve',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} évad',
@@ -4132,9 +4134,9 @@ extension on TranslationsHu {
 			'performanceOverlay.dropped' => 'Eldobva',
 			'performanceOverlay.dvRpus' => 'DV RPU-k',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU-átlag',
-			'performanceOverlay.dvSampleAverage' => 'DV-mintaátlag',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV-mintaátlag',
 			'performanceOverlay.maxLuma' => 'Maximális luma',
 			'performanceOverlay.minLuma' => 'Minimális luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',

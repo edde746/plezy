@@ -829,6 +829,7 @@ class _Translations$videoControls$zh_Hant extends Translations$videoControls$zh 
 	@override String get noChaptersAvailable => '沒有可用的章節';
 	@override String get queue => '播放佇列';
 	@override String get noQueueItems => '佇列中沒有項目';
+	@override String get noAudioDevicesAvailable => '沒有可用的音訊裝置';
 	@override String get searchSubtitles => '搜尋字幕';
 	@override String get language => '語言';
 	@override String get noSubtitlesFound => '找不到字幕';
@@ -3225,6 +3226,7 @@ extension on TranslationsZhHant {
 			'videoControls.noChaptersAvailable' => '沒有可用的章節',
 			'videoControls.queue' => '播放佇列',
 			'videoControls.noQueueItems' => '佇列中沒有項目',
+			'videoControls.noAudioDevicesAvailable' => '沒有可用的音訊裝置',
 			'videoControls.searchSubtitles' => '搜尋字幕',
 			'videoControls.language' => '語言',
 			'videoControls.noSubtitlesFound' => '找不到字幕',
@@ -3610,9 +3612,9 @@ extension on TranslationsZhHant {
 			'explore.badge.requested' => '已提出請求',
 			'explore.badge.pendingApproval' => '等待核准',
 			'explore.badge.processing' => '處理中',
-			'explore.badge.declined' => '已拒絕',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => '已拒絕',
 			'explore.badge.requestFailed' => '請求失敗',
 			'explore.badge.requested4k' => '已請求 4K',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} 季',
@@ -4124,9 +4126,9 @@ extension on TranslationsZhHant {
 			'performanceOverlay.dropped' => '丟格數（Dropped）',
 			'performanceOverlay.dvRpus' => 'DV RPU 數',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
-			'performanceOverlay.dvSampleAverage' => 'DV 取樣平均',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV 取樣平均',
 			'performanceOverlay.maxLuma' => '最大亮度',
 			'performanceOverlay.minLuma' => '最小亮度',
 			'performanceOverlay.maxCll' => 'MaxCLL',

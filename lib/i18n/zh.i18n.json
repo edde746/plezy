@@ -678,6 +678,7 @@
     "noChaptersAvailable": "没有可用的章节",
     "queue": "播放队列",
     "noQueueItems": "队列中没有项目",
+    "noAudioDevicesAvailable": "没有可用的音频设备",
     "searchSubtitles": "搜索字幕",
     "language": "语言",
     "noSubtitlesFound": "未找到字幕",

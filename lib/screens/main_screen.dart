@@ -1561,12 +1561,10 @@ class _MainScreenState extends State<MainScreen>
 
     final controller = OverlaySheetController.of(context);
     final groupByServer = SettingsService.instanceOrNull?.read(SettingsService.groupLibrariesByServer) ?? false;
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.62;
 
     controller
         .show<String>(
           showDragHandle: true,
-          constraints: BoxConstraints(maxHeight: maxHeight),
           builder: (sheetContext) {
             return Consumer2<LibrariesProvider, HiddenLibrariesProvider>(
               builder: (context, librariesProvider, hiddenLibrariesProvider, _) {

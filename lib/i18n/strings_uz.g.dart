@@ -831,6 +831,7 @@ class _Translations$videoControls$uz extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'Boʻlimlar mavjud emas';
 	@override String get queue => 'Navbat';
 	@override String get noQueueItems => 'Navbatda elementlar yoʻq';
+	@override String get noAudioDevicesAvailable => 'Mavjud audio qurilmalar yoʻq';
 	@override String get searchSubtitles => 'Subtitr qidirish';
 	@override String get language => 'Til';
 	@override String get noSubtitlesFound => 'Subtitr topilmadi';
@@ -3233,6 +3234,7 @@ extension on TranslationsUz {
 			'videoControls.noChaptersAvailable' => 'Boʻlimlar mavjud emas',
 			'videoControls.queue' => 'Navbat',
 			'videoControls.noQueueItems' => 'Navbatda elementlar yoʻq',
+			'videoControls.noAudioDevicesAvailable' => 'Mavjud audio qurilmalar yoʻq',
 			'videoControls.searchSubtitles' => 'Subtitr qidirish',
 			'videoControls.language' => 'Til',
 			'videoControls.noSubtitlesFound' => 'Subtitr topilmadi',
@@ -3618,9 +3620,9 @@ extension on TranslationsUz {
 			'explore.badge.requested' => 'Soʻralgan',
 			'explore.badge.pendingApproval' => 'Tasdiq kutilmoqda',
 			'explore.badge.processing' => 'Ishlanmoqda',
-			'explore.badge.declined' => 'Rad etilgan',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => 'Rad etilgan',
 			'explore.badge.requestFailed' => 'Soʻrov amalga oshmadi',
 			'explore.badge.requested4k' => '4K soʻralgan',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} mavsum',
@@ -4132,9 +4134,9 @@ extension on TranslationsUz {
 			'performanceOverlay.dropped' => 'Tushirib qoldirilgan kadrlar',
 			'performanceOverlay.dvRpus' => 'DV RPU-lar',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Oʻrt.',
-			'performanceOverlay.dvSampleAverage' => 'DV Namuna Oʻrt.',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV Namuna Oʻrt.',
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',

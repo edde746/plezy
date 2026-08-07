@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Няма налични глави",
     "queue": "Опашка",
     "noQueueItems": "Няма елементи в опашката",
+    "noAudioDevicesAvailable": "Няма налични аудио устройства",
     "searchSubtitles": "Търсене на субтитри",
     "language": "Език",
     "noSubtitlesFound": "Не са намерени субтитри",

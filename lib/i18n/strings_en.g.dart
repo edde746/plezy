@@ -2026,6 +2026,9 @@ class Translations$videoControls$en {
 	/// en: 'No items in queue'
 	String get noQueueItems => 'No items in queue';
 
+	/// en: 'No audio devices available'
+	String get noAudioDevicesAvailable => 'No audio devices available';
+
 	/// en: 'Search Subtitles'
 	String get searchSubtitles => 'Search Subtitles';
 
@@ -6758,6 +6761,7 @@ extension on Translations {
 			'videoControls.noChaptersAvailable' => 'No chapters available',
 			'videoControls.queue' => 'Queue',
 			'videoControls.noQueueItems' => 'No items in queue',
+			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
@@ -7143,9 +7147,9 @@ extension on Translations {
 			'explore.badge.requested' => 'Requested',
 			'explore.badge.pendingApproval' => 'Pending approval',
 			'explore.badge.processing' => 'Processing',
-			'explore.badge.declined' => 'Declined',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => 'Declined',
 			'explore.badge.requestFailed' => 'Request failed',
 			'explore.badge.requested4k' => '4K requested',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} seasons',
@@ -7657,9 +7661,9 @@ extension on Translations {
 			'performanceOverlay.dropped' => 'Dropped',
 			'performanceOverlay.dvRpus' => 'DV RPUs',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
-			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',

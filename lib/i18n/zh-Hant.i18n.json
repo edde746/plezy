@@ -678,6 +678,7 @@
     "noChaptersAvailable": "沒有可用的章節",
     "queue": "播放佇列",
     "noQueueItems": "佇列中沒有項目",
+    "noAudioDevicesAvailable": "沒有可用的音訊裝置",
     "searchSubtitles": "搜尋字幕",
     "language": "語言",
     "noSubtitlesFound": "找不到字幕",

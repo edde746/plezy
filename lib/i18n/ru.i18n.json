@@ -687,6 +687,7 @@
     "noChaptersAvailable": "Главы недоступны",
     "queue": "Очередь",
     "noQueueItems": "В очереди нет элементов",
+    "noAudioDevicesAvailable": "Нет доступных аудиоустройств",
     "searchSubtitles": "Поиск субтитров",
     "language": "Язык",
     "noSubtitlesFound": "Субтитры не найдены",

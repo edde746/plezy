@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Hissələr əlçatan deyil",
     "queue": "Növbə",
     "noQueueItems": "Növbədə element yoxdur",
+    "noAudioDevicesAvailable": "Səs cihazları əlçatan deyil",
     "searchSubtitles": "Altyazı axtar",
     "language": "Dil",
     "noSubtitlesFound": "Altyazı tapılmadı",

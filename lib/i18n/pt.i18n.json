@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Nenhum capítulo disponível",
     "queue": "Fila",
     "noQueueItems": "Nenhum item na fila",
+    "noAudioDevicesAvailable": "Nenhum dispositivo de áudio disponível",
     "searchSubtitles": "Pesquisar legendas",
     "language": "Idioma",
     "noSubtitlesFound": "Nenhuma legenda encontrada",

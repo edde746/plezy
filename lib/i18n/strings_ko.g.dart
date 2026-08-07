@@ -828,6 +828,7 @@ class _Translations$videoControls$ko extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
 	@override String get queue => '재생 대기열';
 	@override String get noQueueItems => '대기열에 항목이 없습니다';
+	@override String get noAudioDevicesAvailable => '사용 가능한 오디오 기기가 없습니다';
 	@override String get searchSubtitles => '자막 검색';
 	@override String get language => '언어';
 	@override String get noSubtitlesFound => '자막을 찾을 수 없습니다';
@@ -3224,6 +3225,7 @@ extension on TranslationsKo {
 			'videoControls.noChaptersAvailable' => '사용 가능한 챕터가 없습니다',
 			'videoControls.queue' => '재생 대기열',
 			'videoControls.noQueueItems' => '대기열에 항목이 없습니다',
+			'videoControls.noAudioDevicesAvailable' => '사용 가능한 오디오 기기가 없습니다',
 			'videoControls.searchSubtitles' => '자막 검색',
 			'videoControls.language' => '언어',
 			'videoControls.noSubtitlesFound' => '자막을 찾을 수 없습니다',
@@ -3609,9 +3611,9 @@ extension on TranslationsKo {
 			'explore.badge.requested' => '요청됨',
 			'explore.badge.pendingApproval' => '승인 대기 중',
 			'explore.badge.processing' => '처리 중',
-			'explore.badge.declined' => '거절됨',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => '거절됨',
 			'explore.badge.requestFailed' => '요청 실패',
 			'explore.badge.requested4k' => '4K 요청됨',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '시즌 ${available}/${total}',
@@ -4123,9 +4125,9 @@ extension on TranslationsKo {
 			'performanceOverlay.dropped' => '드롭됨',
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 평균',
-			'performanceOverlay.dvSampleAverage' => 'DV 샘플 평균',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV 샘플 평균',
 			'performanceOverlay.maxLuma' => '최대 휘도',
 			'performanceOverlay.minLuma' => '최소 휘도',
 			'performanceOverlay.maxCll' => 'MaxCLL',

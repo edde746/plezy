@@ -831,6 +831,7 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
 	@override String get queue => 'Kö';
 	@override String get noQueueItems => 'Inga objekt i kön';
+	@override String get noAudioDevicesAvailable => 'Inga ljudenheter tillgängliga';
 	@override String get searchSubtitles => 'Sök undertexter';
 	@override String get language => 'Språk';
 	@override String get noSubtitlesFound => 'Inga undertexter hittades';
@@ -3233,6 +3234,7 @@ extension on TranslationsSv {
 			'videoControls.noChaptersAvailable' => 'Inga kapitel tillgängliga',
 			'videoControls.queue' => 'Kö',
 			'videoControls.noQueueItems' => 'Inga objekt i kön',
+			'videoControls.noAudioDevicesAvailable' => 'Inga ljudenheter tillgängliga',
 			'videoControls.searchSubtitles' => 'Sök undertexter',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
@@ -3618,9 +3620,9 @@ extension on TranslationsSv {
 			'explore.badge.requested' => 'Begärd',
 			'explore.badge.pendingApproval' => 'Väntar på godkännande',
 			'explore.badge.processing' => 'Bearbetas',
-			'explore.badge.declined' => 'Avvisad',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => 'Avvisad',
 			'explore.badge.requestFailed' => 'Begäran misslyckades',
 			'explore.badge.requested4k' => '4K begärd',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} säsonger',
@@ -4132,9 +4134,9 @@ extension on TranslationsSv {
 			'performanceOverlay.dropped' => 'Tappade bildrutor',
 			'performanceOverlay.dvRpus' => 'DV-RPU:er',
 			'performanceOverlay.dvRpuAverage' => 'DV-RPU, genomsnitt',
-			'performanceOverlay.dvSampleAverage' => 'DV-sampling, genomsnitt',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'DV-sampling, genomsnitt',
 			'performanceOverlay.maxLuma' => 'Max luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',

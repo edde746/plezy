@@ -51,6 +51,8 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
   bool _isLoadingValues = false;
   String? _filterValuesError;
   int _filterValuesLoadGeneration = 0;
+  final _contentKey = GlobalKey();
+  double? _transitionMinHeight;
   final Map<String, String> _tempSelectedFilters = {};
   static final Map<String, String> _filterDisplayNames = {}; // Cache for display names
   static const int _maxCachedDisplayNames = 1000;
@@ -116,6 +118,11 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     final libraryKey = widget.libraryKey;
     final cachedValues = widget.cachedValues;
     final loader = widget.loadFilterValues;
+    // Drilling in is a setState page swap inside one sheet, and sheets are
+    // bottom-anchored, so any height change during the load drags the header
+    // and its Back button. Hold the outgoing page's height for the transient
+    // spinner; the settled states below are free to hug again.
+    _transitionMinHeight = _contentHeight();
     setState(() {
       _currentFilter = filter;
       _filterValues = [];
@@ -235,26 +242,52 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
               ),
             )
           : null,
-      child: currentFilter != null ? _buildFilterValuesView(currentFilter) : _buildFiltersView(),
+      child: KeyedSubtree(
+        key: _contentKey,
+        child: currentFilter != null ? _buildFilterValuesView(currentFilter) : _buildFiltersView(),
+      ),
     );
+  }
+
+  /// Height the content area currently occupies, used to hold the sheet steady
+  /// across a page swap. Null before first layout.
+  double? _contentHeight() {
+    final box = _contentKey.currentContext?.findRenderObject() as RenderBox?;
+    return box?.hasSize == true ? box!.size.height : null;
   }
 
   Widget _buildFilterValuesView(MediaFilter filter) {
     final error = _filterValuesError;
     if (error != null) {
-      return ErrorStateWidget(
-        message: error,
-        onRetry: () => _loadFilterValues(filter),
-        actionFocusNode: _initialFocusNode,
-        onActionBack: _goBack,
-        actionAutofocus: InputModeTracker.isKeyboardMode(context),
-        actionUseBackgroundFocus: true,
+      // The StateMessageWidget family is filling by design — 33 other sites
+      // render it in page bodies and SliverFillRemaining. The unbounded scroll
+      // axis here is what lets its inner Center shrink to content, so the sheet
+      // does not stretch to the full height cap for one line of text.
+      return SingleChildScrollView(
+        primary: false,
+        child: ErrorStateWidget(
+          message: error,
+          onRetry: () => _loadFilterValues(filter),
+          actionFocusNode: _initialFocusNode,
+          onActionBack: _goBack,
+          actionAutofocus: InputModeTracker.isKeyboardMode(context),
+          actionUseBackgroundFocus: true,
+        ),
       );
     }
     if (_isLoadingValues) {
+      assert(_transitionMinHeight != null, '_transitionMinHeight must be set before entering the loading state');
+      // Held at the outgoing page's height (see [_loadFilterValues]) so the
+      // transient spinner cannot move the header. Settled states below hug.
       return Focus(
         autofocus: InputModeTracker.isKeyboardMode(context),
-        child: const Center(child: CircularProgressIndicator()),
+        // Exactly the outgoing height, so the swap moves nothing.
+        // [_loadFilterValues] assigns it immediately before setting
+        // `_isLoadingValues`, so it is never null here.
+        child: SizedBox(
+          height: _transitionMinHeight,
+          child: const Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
@@ -262,6 +295,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     return ListView.builder(
       controller: _valuesScrollController,
       primary: false,
+      shrinkWrap: true,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _filterValues.length + 1,
       itemBuilder: (context, index) {
@@ -309,6 +343,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     final autofocusFirst = InputModeTracker.isKeyboardMode(context);
     return ListView.builder(
       primary: false,
+      shrinkWrap: true,
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: _sortedFilters.length,
       itemBuilder: (context, index) {

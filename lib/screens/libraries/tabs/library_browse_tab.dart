@@ -836,7 +836,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return BottomSheetPageScaffold(
       title: t.libraries.libraryOptions,
       icon: Symbols.tune_rounded,
-      shrinkWrap: true,
       child: ListView(
         primary: false,
         shrinkWrap: true,
@@ -917,7 +916,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       title: t.libraries.groupings.title,
       icon: Symbols.category_rounded,
       onBack: onBack,
-      shrinkWrap: true,
       child: ListView(
         primary: false,
         shrinkWrap: true,

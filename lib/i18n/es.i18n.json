@@ -681,6 +681,7 @@
     "noChaptersAvailable": "No hay capítulos disponibles",
     "queue": "Cola",
     "noQueueItems": "No hay elementos en la cola",
+    "noAudioDevicesAvailable": "No hay dispositivos de audio disponibles",
     "searchSubtitles": "Buscar subtítulos",
     "language": "Idioma",
     "noSubtitlesFound": "No se encontraron subtítulos",

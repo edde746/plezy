@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Boʻlimlar mavjud emas",
     "queue": "Navbat",
     "noQueueItems": "Navbatda elementlar yoʻq",
+    "noAudioDevicesAvailable": "Mavjud audio qurilmalar yoʻq",
     "searchSubtitles": "Subtitr qidirish",
     "language": "Til",
     "noSubtitlesFound": "Subtitr topilmadi",

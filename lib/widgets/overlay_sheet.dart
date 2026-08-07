@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -102,12 +103,29 @@ class OverlaySheetController {
     _state._autoFocus(clearSelectSuppression: false);
   }
 
-  /// Sizing applied when a caller supplies no explicit constraints: capped
-  /// width on desktop, three quarters of the screen height everywhere.
+  /// Absolute height ceiling for resizable desktop windows. Without it a 4K
+  /// window yields a 1620px sheet, which reads as a wall of list rather than a
+  /// sheet.
+  static const _windowedMaxHeight = 720.0;
+
+  /// Sizing applied when a caller supplies no explicit constraints: three
+  /// quarters of the viewport height everywhere, the capped width on wide
+  /// viewports, and the absolute height ceiling on desktop windows only.
+  ///
+  /// Both caps require `width > 600`. The height ceiling additionally requires
+  /// a desktop OS and not TV, because it exists for a window the user can
+  /// resize arbitrarily tall: a portrait tablet and a 10-foot UI keep the full
+  /// 75%, and so does a desktop window narrower than 601px, which is
+  /// phone-shaped and where 75% is the norm.
   static BoxConstraints _defaultSheetConstraints(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final isDesktop = size.width > 600;
-    return BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: size.height * 0.75);
+    final isWideViewport = size.width > 600;
+    final isDesktopWindow = isWideViewport && PlatformDetector.isDesktopOS() && !PlatformDetector.isTV();
+    final maxHeight = size.height * 0.75;
+    return BoxConstraints(
+      maxWidth: isWideViewport ? 700 : double.infinity,
+      maxHeight: isDesktopWindow ? math.min(maxHeight, _windowedMaxHeight) : maxHeight,
+    );
   }
 
   /// Show a sheet using the overlay system if available, otherwise fall back
@@ -288,6 +306,15 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   Offset? _lastPointerPosition;
   double? _sheetHorizontalAnchor;
 
+  /// Bumped on every [_show]. Keys the resize animation so a freshly opened
+  /// sheet adopts its own height immediately instead of animating down from
+  /// the previous sheet's; nested pushes within one sheet still animate.
+  ///
+  /// Changing the key also remounts the sheet subtree, so a `show` that
+  /// replaces a live sheet of the same widget type starts with fresh [State]
+  /// rather than reconciling into the outgoing sheet's.
+  int _sheetSession = 0;
+
   // Drag-to-dismiss state
   double _dragOffset = 0;
   bool _isDragging = false;
@@ -356,6 +383,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     setState(() {
       _pageStack.add(entry);
+      _sheetSession++;
       _isOpen = true;
       _isClosing = false;
       _barrierDismissible = barrierDismissible;
@@ -602,9 +630,22 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     return renderBox?.size.height ?? 300;
   }
 
+  /// Minimum drag distance that dismisses a sheet, regardless of how short the
+  /// sheet is. Content-sized sheets can be ~150px tall, where a bare 25% of the
+  /// height is barely more than touch slop, so a slow nudge while scrolling or
+  /// reaching would close them. Fast flicks are already handled by the velocity
+  /// check in [_checkDismiss].
+  static const _minDismissDrag = 96.0;
+
+  /// Ceiling on that floor, as a fraction of the sheet. A one-row menu can be
+  /// shorter than [_minDismissDrag], and an unclamped floor would mean the only
+  /// way to dismiss it by distance is to drag it clean off the screen.
+  static const _maxDismissDragFraction = 0.6;
+
   void _checkDismiss(double velocity) {
     final sheetHeight = _getSheetHeight();
-    if (_dragOffset > sheetHeight * 0.25 || velocity > 500) {
+    final threshold = math.min(math.max(sheetHeight * 0.25, _minDismissDrag), sheetHeight * _maxDismissDragFraction);
+    if (_dragOffset > threshold || velocity > 500) {
       _close();
     } else {
       setState(() {
@@ -734,7 +775,19 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
                     bottom: !isTop,
                     left: false,
                     right: false,
-                    child: ConstrainedBox(constraints: effectiveConstraints, child: sheetContent),
+                    // Content is sized by the sheet body, so pushing a nested
+                    // page or resolving async content changes the sheet's
+                    // height. Ease the box between those heights instead of
+                    // snapping. The child is laid out at its final size and
+                    // pinned to the anchored edge throughout, so it is revealed
+                    // rather than stretched.
+                    child: AnimatedSize(
+                      key: ValueKey(_sheetSession),
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      alignment: isTop ? Alignment.topCenter : Alignment.bottomCenter,
+                      child: ConstrainedBox(constraints: effectiveConstraints, child: sheetContent),
+                    ),
                   ),
                 ),
               ),

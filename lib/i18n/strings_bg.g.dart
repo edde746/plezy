@@ -831,6 +831,7 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'Няма налични глави';
 	@override String get queue => 'Опашка';
 	@override String get noQueueItems => 'Няма елементи в опашката';
+	@override String get noAudioDevicesAvailable => 'Няма налични аудио устройства';
 	@override String get searchSubtitles => 'Търсене на субтитри';
 	@override String get language => 'Език';
 	@override String get noSubtitlesFound => 'Не са намерени субтитри';
@@ -3233,6 +3234,7 @@ extension on TranslationsBg {
 			'videoControls.noChaptersAvailable' => 'Няма налични глави',
 			'videoControls.queue' => 'Опашка',
 			'videoControls.noQueueItems' => 'Няма елементи в опашката',
+			'videoControls.noAudioDevicesAvailable' => 'Няма налични аудио устройства',
 			'videoControls.searchSubtitles' => 'Търсене на субтитри',
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
@@ -3618,9 +3620,9 @@ extension on TranslationsBg {
 			'explore.badge.requested' => 'Заявен',
 			'explore.badge.pendingApproval' => 'В очакване на одобрение',
 			'explore.badge.processing' => 'Обработва се',
-			'explore.badge.declined' => 'Отхвърлен',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => 'Отхвърлен',
 			'explore.badge.requestFailed' => 'Заявката се провали',
 			'explore.badge.requested4k' => 'Заявен в 4K',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} сезона',
@@ -4132,9 +4134,9 @@ extension on TranslationsBg {
 			'performanceOverlay.dropped' => 'Пропуснати кадри',
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Средно DV RPU',
-			'performanceOverlay.dvSampleAverage' => 'Средно DV семпл',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'Средно DV семпл',
 			'performanceOverlay.maxLuma' => 'Макс. яркост',
 			'performanceOverlay.minLuma' => 'Мин. яркост',
 			'performanceOverlay.maxCll' => 'MaxCLL',

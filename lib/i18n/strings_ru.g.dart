@@ -837,6 +837,7 @@ class _Translations$videoControls$ru extends Translations$videoControls$en {
 	@override String get noChaptersAvailable => 'Главы недоступны';
 	@override String get queue => 'Очередь';
 	@override String get noQueueItems => 'В очереди нет элементов';
+	@override String get noAudioDevicesAvailable => 'Нет доступных аудиоустройств';
 	@override String get searchSubtitles => 'Поиск субтитров';
 	@override String get language => 'Язык';
 	@override String get noSubtitlesFound => 'Субтитры не найдены';
@@ -3251,6 +3252,7 @@ extension on TranslationsRu {
 			'videoControls.noChaptersAvailable' => 'Главы недоступны',
 			'videoControls.queue' => 'Очередь',
 			'videoControls.noQueueItems' => 'В очереди нет элементов',
+			'videoControls.noAudioDevicesAvailable' => 'Нет доступных аудиоустройств',
 			'videoControls.searchSubtitles' => 'Поиск субтитров',
 			'videoControls.language' => 'Язык',
 			'videoControls.noSubtitlesFound' => 'Субтитры не найдены',
@@ -3636,9 +3638,9 @@ extension on TranslationsRu {
 			'explore.badge.requested' => 'Запрошено',
 			'explore.badge.pendingApproval' => 'Ожидает одобрения',
 			'explore.badge.processing' => 'В обработке',
-			'explore.badge.declined' => 'Отклонено',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.declined' => 'Отклонено',
 			'explore.badge.requestFailed' => 'Запрос не удался',
 			'explore.badge.requested4k' => 'Запрошено в 4K',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} сезонов',
@@ -4150,9 +4152,9 @@ extension on TranslationsRu {
 			'performanceOverlay.dropped' => 'Пропущено',
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Сред. DV RPU',
-			'performanceOverlay.dvSampleAverage' => 'Сред. сэмпл DV',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvSampleAverage' => 'Сред. сэмпл DV',
 			'performanceOverlay.maxLuma' => 'Макс. яркость',
 			'performanceOverlay.minLuma' => 'Мин. яркость',
 			'performanceOverlay.maxCll' => 'MaxCLL',

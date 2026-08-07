@@ -104,13 +104,14 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet>
       mainAxisSize: .min,
       children: [
         BottomSheetHeader(title: t.liveTv.reorderFavorites, icon: Symbols.swap_vert_rounded),
-        Expanded(
+        Flexible(
           child: Focus(
             focusNode: _listFocusNode,
             descendantsAreFocusable: false,
             autofocus: isKeyboardMode,
             onKeyEvent: handleReorderKeyEvent,
             child: ReorderableListView.builder(
+              shrinkWrap: true,
               scrollController: _scrollController,
               onReorderItem: _onReorder,
               itemCount: _tempFavorites.length,

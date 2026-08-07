@@ -681,6 +681,7 @@
     "noChaptersAvailable": "Ingen kapitler tilgængelige",
     "queue": "Kø",
     "noQueueItems": "Ingen elementer i køen",
+    "noAudioDevicesAvailable": "Ingen lydenheder tilgængelige",
     "searchSubtitles": "Søg undertekster",
     "language": "Sprog",
     "noSubtitlesFound": "Ingen undertekster fundet",

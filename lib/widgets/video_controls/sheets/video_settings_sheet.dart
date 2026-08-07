@@ -529,6 +529,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final isDesktop = PlatformDetector.isDesktop(context);
 
     return ListView(
+      shrinkWrap: true,
       children: [
         // Playback Speed - hidden for live TV and when user cannot control playback
         if (_state.canControl && !_state.isLive)
@@ -756,6 +757,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final primary = Theme.of(context).colorScheme.primary;
 
     return ListView(
+      shrinkWrap: true,
       children: [
         for (final mode in modes)
           FocusableListTile(
@@ -796,6 +798,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         ];
 
         return ListView.builder(
+          shrinkWrap: true,
           itemCount: speeds.length,
           itemBuilder: (context, index) {
             final speed = speeds[index];
@@ -826,6 +829,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final primary = Theme.of(context).colorScheme.primary;
 
     return ListView(
+      shrinkWrap: true,
       children: [
         FocusableListTile(
           leading: AppIcon(Symbols.restart_alt_rounded, fill: 1, color: tokens(context).textMuted),
@@ -927,6 +931,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             }
 
             return ListView(
+              shrinkWrap: true,
               children: [
                 for (final d in ungrouped) _buildDeviceTile(d, currentDevice),
                 for (final entry in groups.entries) ...[
@@ -948,7 +953,25 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildFlatDeviceList(List<AudioDevice> devices, AudioDevice currentDevice) {
+    // The device list arrives asynchronously, so an empty list is the normal
+    // first frame. Without a placeholder the shrink-wrapped page would render
+    // as a bare header and then jump once devices land.
+    //
+    // A fixed placeholder rather than FiltersBottomSheet's hold-the-outgoing-
+    // height technique: this page is entered from the menu, whose height is
+    // unrelated to a device list, so holding it would be arbitrary. One small
+    // upward move when the devices land beats two.
+    if (devices.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(
+          heightFactor: 1,
+          child: Text(t.videoControls.noAudioDevicesAvailable, style: TextStyle(color: tokens(context).textMuted)),
+        ),
+      );
+    }
     return ListView.builder(
+      shrinkWrap: true,
       itemCount: devices.length,
       itemBuilder: (context, index) => _buildDeviceTile(devices[index], currentDevice),
     );
@@ -979,6 +1002,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // +1 for the import button at the end
         return ListView.builder(
+          shrinkWrap: true,
           itemCount: presets.length + 1,
           itemBuilder: (context, index) {
             if (index == presets.length) {

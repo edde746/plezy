@@ -169,6 +169,7 @@ class _SessionMenuSheet extends StatelessWidget {
         ),
         Flexible(
           child: ListView(
+            shrinkWrap: true,
             padding: const EdgeInsets.all(16),
             children: [
               Text(

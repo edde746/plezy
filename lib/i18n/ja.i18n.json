@@ -678,6 +678,7 @@
     "noChaptersAvailable": "チャプターがありません",
     "queue": "キュー",
     "noQueueItems": "キューにアイテムがありません",
+    "noAudioDevicesAvailable": "オーディオデバイスがありません",
     "searchSubtitles": "字幕を検索",
     "language": "言語",
     "noSubtitlesFound": "字幕が見つかりません",
