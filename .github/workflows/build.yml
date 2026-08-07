@@ -765,14 +765,17 @@ jobs:
           fi
           echo "BUNDLE_DIR=$bundle_dir" >> "$GITHUB_ENV"
 
-      - name: Build Linux Packages
-        shell: bash
-        run: |
-          BUILD_DIR="$BUNDLE_DIR" \
-          ARCH_SUFFIX=${{ matrix.arch }} \
-          OUTPUT_DIR="$GITHUB_WORKSPACE" \
-          python3 linux/packaging/build-packages.py
-
+      # Everything below resolves the bundle *before* packaging, so the packages
+      # and the tarball are cut from one identical tree.
+      #
+      # The plane needs the pinned Wayland-enabled libmpv: a distro libmpv still
+      # plays and still does HDR, but silently drops hwdec to vaapi-copy - which
+      # was measured, not assumed. So libmpv travels with us and no artifact
+      # depends on a host one. That removed the host `mpv` dependency, and with it
+      # the transitive pull of everything libmpv itself needs - libass, pulse,
+      # pipewire, fontconfig and the rest. bundle-libs.sh is what supplies those,
+      # so it has to run before packaging too, or the packages would carry libmpv
+      # and nothing it links.
       - name: Copy libmpv into bundle
         shell: bash
         run: |
@@ -781,13 +784,29 @@ jobs:
           cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
           cp -a libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
 
-      - name: Bundle shared libraries for portable tarball
+      - name: Bundle shared libraries
         shell: bash
         run: bash linux/packaging/bundle-libs.sh "$BUNDLE_DIR"
 
       - name: Copy wrapper script into bundle
         shell: bash
         run: cp linux/packaging/plezy.sh "$BUNDLE_DIR/plezy.sh"
+
+      # Same check the package smoke build runs, against the artifact that
+      # actually ships: a library nobody declares is a broken install, and it is
+      # invisible until a user on a clean machine tries to launch.
+      - name: Verify every unbundled library the bundle needs is declared
+        shell: bash
+        run: python3 linux/packaging/check-bundle-host-deps.py "$BUNDLE_DIR"
+
+      # Last, from the fully resolved tree above.
+      - name: Build Linux Packages
+        shell: bash
+        run: |
+          BUILD_DIR="$BUNDLE_DIR" \
+          ARCH_SUFFIX=${{ matrix.arch }} \
+          OUTPUT_DIR="$GITHUB_WORKSPACE" \
+          python3 linux/packaging/build-packages.py
 
       - name: Verify no missing dependencies
         shell: bash

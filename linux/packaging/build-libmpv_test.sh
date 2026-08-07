@@ -49,6 +49,30 @@ checkout_verified_ref "file://$repository" release "$approved_commit" "$checkout
 [ "$(git -C "$checkout" rev-parse HEAD)" = "$approved_commit" ] ||
   fail "verified checkout selected the wrong commit"
 
+# A dead primary must fall through to the mirror, because the whole point is
+# that one unreachable host cannot stop the build. This runs while the tag still
+# points at the approved commit; the moved-tag case is below.
+unreachable="file://$temporary/definitely-not-a-repository"
+checkout_verified_ref "$unreachable" release "$approved_commit" "$checkout" "file://$repository"
+[ "$(git -C "$checkout" rev-parse HEAD)" = "$approved_commit" ] ||
+  fail "mirror fallback selected the wrong commit"
+
+# And the mirror answers to the same pin. A mirror serving a different tree is
+# the one thing a fallback must never quietly accept.
+mirror_repository="$temporary/mirror"
+mkdir -p "$mirror_repository"
+git -C "$mirror_repository" init --quiet
+git -C "$mirror_repository" config user.name "Plezy provenance test"
+git -C "$mirror_repository" config user.email "provenance-test@invalid.example"
+printf 'substituted\n' >"$mirror_repository/input.txt"
+git -C "$mirror_repository" add input.txt
+git -C "$mirror_repository" commit --quiet -m substituted
+git -C "$mirror_repository" tag release
+if checkout_verified_ref "$unreachable" release "$approved_commit" "$checkout" "file://$mirror_repository"; then
+  fail "mirror serving another commit was accepted"
+fi
+assert_absent "$checkout"
+
 printf 'second\n' >"$repository/input.txt"
 git -C "$repository" commit --quiet -am second
 git -C "$repository" tag --force release >/dev/null

@@ -41,16 +41,49 @@ DISTROS = {
         # The native video plane links wayland-client, wayland-egl and EGL, and
         # bundle-libs.sh deliberately never bundles those: they are coupled to
         # the running compositor and GPU driver. So they have to be declared.
+        #
+        # libmpv itself travels *in* the package rather than being depended on,
+        # because the plane needs the pinned Wayland-enabled build - a distro
+        # libmpv without Wayland silently drops hwdec to vaapi-copy. That means
+        # the libraries the host libmpv used to drag in transitively are now ours
+        # to declare: libva and its drm/wayland backends for hwdec, and drm/gbm
+        # underneath them.
+        #
+        # The X11 and xcb entries are not a mistake on a Wayland-only video
+        # path: GTK links them whatever backend it runs, and ffmpeg's VA-API
+        # brings libva-x11 with it. They used to arrive via the host gtk3 and
+        # mpv packages.
+        #
+        # Miss any one of these and the loader fails before main() runs, so
+        # check-bundle-host-deps.py re-derives the whole list from the built
+        # bundle and fails the build rather than trusting this comment.
         "depends": [
             "libgtk-3-0",
-            "libmpv2 | libmpv1",
             "libepoxy0",
             "libasound2",
             "libevdev2",
             "libglib2.0-0",
             "libwayland-client0",
+            "libwayland-cursor0",
             "libwayland-egl1",
             "libegl1",
+            # libEGL.so.1 defers to libGLdispatch.so.0, which is a separate
+            # package Debian only pulls in behind libegl1. The runner links it
+            # directly, so it is declared directly.
+            "libglvnd0",
+            "libva2",
+            "libva-drm2",
+            "libva-wayland2",
+            "libva-x11-2",
+            "libdrm2",
+            "libgbm1",
+            "libx11-6",
+            "libx11-xcb1",
+            "libxext6",
+            "libxcb1",
+            "libxcb-dri3-0",
+            "libxcb-render0",
+            "libxcb-shm0",
         ],
     },
     "rpm": {
@@ -58,16 +91,26 @@ DISTROS = {
         "category": "Multimedia",
         "ext": "rpm",
         "compression": ["--rpm-compression", "xzmt"],
+        # Fedora splits glvnd: libglvnd-egl carries libEGL.so.1 but the
+        # libGLdispatch.so.0 it defers to lives in the base libglvnd package.
         "depends": [
             "gtk3",
-            "mpv-libs",
             "libepoxy",
             "alsa-lib",
             "libevdev",
             "glib2",
             "libwayland-client",
+            "libwayland-cursor",
             "libwayland-egl",
+            "libglvnd",
             "libglvnd-egl",
+            "libva",
+            "libdrm",
+            "mesa-libgbm",
+            "libX11",
+            "libX11-xcb",
+            "libXext",
+            "libxcb",
         ],
     },
     "pacman": {
@@ -75,17 +118,24 @@ DISTROS = {
         "category": None,
         "ext": "pkg.tar.zst",
         "compression": ["--pacman-compression", "zstd"],
-        # Arch ships every libwayland-* in the one `wayland` package, and
-        # libglvnd is what provides libEGL.so.1.
+        # Arch ships every libwayland-* in the one `wayland` package, libglvnd is
+        # what provides both libEGL.so.1 and libGLdispatch.so.0, mesa is what
+        # provides libgbm.so.1, and libx11 carries libX11-xcb.so.1 alongside
+        # libX11.so.6.
         "depends": [
             "gtk3",
-            "mpv",
             "libepoxy",
             "alsa-lib",
             "libevdev",
             "glib2",
             "wayland",
             "libglvnd",
+            "libva",
+            "libdrm",
+            "mesa",
+            "libx11",
+            "libxext",
+            "libxcb",
         ],
     },
 }
@@ -185,6 +235,20 @@ def main():
     if not BUILD_DIR.exists():
         print(f"Error: Build directory not found at {BUILD_DIR}")
         print("Please run 'flutter build linux --release' first or set BUILD_DIR")
+        exit(1)
+
+    # None of the three package manifests declares a host libmpv any more,
+    # because the plane needs the pinned Wayland-enabled build and so ships it.
+    # That makes a bundle without one unpackageable rather than merely thinner:
+    # the runner's DT_NEEDED libmpv.so.2 would be satisfied by nothing and the
+    # loader would fail before main(), on a package that installed cleanly.
+    # Both workflows stage it first; this refuses the standalone path that the
+    # message above otherwise invites.
+    if not sorted((BUILD_DIR / "lib").glob("libmpv.so*")):
+        print(f"Error: no libmpv found in {BUILD_DIR / 'lib'}")
+        print("The packages declare no host libmpv, so one has to travel inside them.")
+        print("Stage the bundle first: copy libmpv-prefix/lib/libmpv.so* into the bundle's")
+        print("lib/ directory and run linux/packaging/bundle-libs.sh against it.")
         exit(1)
 
     version = get_version()
