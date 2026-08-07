@@ -2627,10 +2627,14 @@ class PlexClient
   }
 
   /// Absolute media position a transcode start URL was requested at, or null
-  /// when the URL is not an offset HLS start request.
+  /// when the URL is not an offset HLS start request. Matched on decoded
+  /// path segments so a percent-encoded spelling of the same URL cannot
+  /// silently switch the readiness probe off.
   static Duration? transcodeStreamOffsetFromUrl(String videoUrl) {
     final uri = Uri.tryParse(videoUrl);
-    if (uri == null || !uri.path.endsWith('/video/:/transcode/universal/start.m3u8')) return null;
+    if (uri == null || !'/${uri.pathSegments.join('/')}'.endsWith('/video/:/transcode/universal/start.m3u8')) {
+      return null;
+    }
     final offsetSeconds = double.tryParse(uri.queryParameters['offset'] ?? '');
     if (offsetSeconds == null || offsetSeconds <= 0) return null;
     return Duration(microseconds: (offsetSeconds * Duration.microsecondsPerSecond).round());
@@ -2642,12 +2646,13 @@ class PlexClient
   /// Plex media playlists always cover the full title from segment zero, so
   /// probing the first entry would steer the transcoder back to the start —
   /// requesting a segment is how a client seeks a Plex HLS session. A master
-  /// playlist (no `#EXTINF` durations) descends into its first variant; a
-  /// media playlist shorter than [offset] probes its last segment.
+  /// playlist (no `#EXTINF` durations) descends into its first variant. A
+  /// media playlist whose durations never cross [offset] returns null: it
+  /// cannot say where the offset lives, and a probe aimed at the wrong
+  /// segment would seek the session, so the caller skips probing instead.
   @visibleForTesting
-  static String selectReadinessProbeTarget(String body, Duration offset) {
+  static String? selectReadinessProbeTarget(String body, Duration offset) {
     String? firstEntry;
-    String? lastEntry;
     var sawSegmentDurations = false;
     var cumulative = Duration.zero;
     var pending = Duration.zero;
@@ -2663,12 +2668,11 @@ class PlexClient
         continue;
       }
       firstEntry ??= line;
-      lastEntry = line;
       cumulative += pending;
       pending = Duration.zero;
       if (sawSegmentDurations && cumulative > offset) return line;
     }
-    return (sawSegmentDurations ? lastEntry : firstEntry) ?? '';
+    return sawSegmentDurations ? null : (firstEntry ?? '');
   }
 
   /// Waits for a just-started Plex offset HLS session to serve the segment at
@@ -2677,19 +2681,25 @@ class PlexClient
   /// HLS error and races through the rest of the manifest.
   ///
   /// Best-effort by design: the probe never fails an open, it only stops
-  /// waiting. The player then sees whatever the server is actually doing and
-  /// the existing log-stream classification applies unchanged. To that end a
-  /// 500 stops the wait immediately — a persistent 500 must keep failing fast
-  /// so the server-limit dialog appears promptly — and a cancellation (the
+  /// waiting, and callers ignore the returned bool — it exists for tests. The
+  /// player then sees whatever the server is actually doing and the existing
+  /// log-stream classification applies unchanged. To that end a 500 stops the
+  /// wait immediately — a persistent 500 must keep failing fast so the
+  /// server-limit dialog appears promptly — whether it arrives as a response
+  /// or inside a decode exception, and a cancellation ([abort] fired or the
   /// owning client closing) stops it too rather than sleeping out the window.
   /// URLs without an offset return immediately: probing a no-offset playlist
   /// would touch segment zero, and requesting a segment is how a client seeks
   /// a Plex HLS session.
   ///
-  /// Other non-2xx responses are the expected not-ready signal — `_http.get`
-  /// does not throw on them — and every not-ready round waits [pollInterval],
-  /// doubling up to 4x after three consecutive failed round-trips so a
-  /// stalled transcode is not hammered. The probe carries this retry budget
+  /// Other non-2xx responses are the expected not-ready signal. `_http.get`
+  /// does not throw on the status, though its body decode can throw carrying
+  /// one — both paths share [handOffStatus] so they cannot drift. Every
+  /// not-ready round waits [pollInterval], doubling up to 4x after three
+  /// consecutive failed round-trips so a stalled transcode is not hammered;
+  /// the accepted trade is that a session whose segments 404 for real
+  /// reaches the player, and its media-unreadable dialog, one probe window
+  /// later than an unprobed open would. The probe carries this retry budget
   /// itself, so its requests bypass endpoint failover, and each request has a
   /// hard timeout (5s, shrinking as the overall deadline approaches) so a
   /// single hung request cannot consume the entire window.
@@ -2697,10 +2707,21 @@ class PlexClient
     String videoUrl, {
     Duration timeout = const Duration(seconds: 15),
     Duration pollInterval = const Duration(milliseconds: 500),
+    AbortController? abort,
   }) async {
     final startUri = Uri.tryParse(videoUrl);
     final probeOffset = transcodeStreamOffsetFromUrl(videoUrl);
     if (startUri == null || probeOffset == null) return true;
+
+    // One rule for terminal statuses, applied to responses and to
+    // status-bearing exceptions alike.
+    bool handOffStatus(int? statusCode) {
+      if (statusCode != 500) return false;
+      // Hand off without classifying: mpv opens the URL, hits the same 500,
+      // and the log-stream path raises the server-limit dialog.
+      appLogger.i('Plex transcode readiness probe handing off on HTTP 500');
+      return true;
+    }
 
     final deadline = clock.now().add(timeout);
     var candidate = startUri;
@@ -2710,13 +2731,14 @@ class PlexClient
     while (true) {
       final remaining = deadline.difference(clock.now());
       if (remaining <= Duration.zero) break;
+      if (abort?.isAborted ?? false) return false;
       try {
         final requestTimeout = remaining < const Duration(seconds: 5) ? remaining : const Duration(seconds: 5);
         final isPlaylist = candidate.path.toLowerCase().endsWith('.m3u8');
         // The default Accept is application/json (PlexConfig.headers); the
         // probe mirrors the player's request shape instead. Segments go
-        // through getRaw so a server that ignores Range never routes a full
-        // media segment through text decoding.
+        // through getStatus so a server that ignores Range never routes a
+        // full media segment through text decoding.
         final int statusCode;
         var body = '';
         Uri? effectiveUri;
@@ -2725,16 +2747,18 @@ class PlexClient
             candidate.toString(),
             headers: const {'Accept': '*/*'},
             timeout: requestTimeout,
+            abort: abort,
             allowEndpointFailover: false,
           );
           statusCode = response.statusCode;
           body = response.data?.toString() ?? '';
           effectiveUri = response.effectiveUri;
         } else {
-          final response = await _http.getRaw(
+          final response = await _http.getStatus(
             candidate.toString(),
             headers: const {'Range': 'bytes=0-0', 'Accept': '*/*'},
             timeout: requestTimeout,
+            abort: abort,
           );
           statusCode = response.statusCode;
         }
@@ -2743,6 +2767,14 @@ class PlexClient
           consecutiveFailures = 0;
           if (body.trimLeft().startsWith('#EXTM3U')) {
             final child = selectReadinessProbeTarget(body, probeOffset);
+            if (child == null) {
+              // The playlist has segments but its durations never reach the
+              // offset — a playlist shape this client has never observed
+              // against a real PMS. It cannot say where the offset lives,
+              // and a probe aimed at the wrong segment would seek the
+              // session, so skip probing and let the player negotiate.
+              return true;
+            }
             if (child.isNotEmpty) {
               candidate = (effectiveUri ?? candidate).resolve(child);
               playlistDepth++;
@@ -2758,20 +2790,19 @@ class PlexClient
             // The segment at the offset answered: the session is ready.
             return true;
           }
-        } else if (statusCode == 500) {
-          // Hand off without classifying: mpv opens the URL, hits the same
-          // 500, and the log-stream path raises the server-limit dialog.
-          appLogger.i('Plex transcode readiness probe handing off on HTTP 500');
+        } else if (handOffStatus(statusCode)) {
           return false;
         } else {
           consecutiveFailures++;
         }
       } on MediaServerHttpException catch (e) {
         if (e.isCancellation) {
-          // The owning client is closing; cancellation is not a not-ready
-          // signal, so stop instead of sleeping out the window.
+          // Cancellation is not a not-ready signal, so stop instead of
+          // sleeping out the window.
           return false;
         }
+        lastStatus = e.statusCode ?? lastStatus;
+        if (handOffStatus(e.statusCode)) return false;
         // Transport failure — same treatment as a not-ready response.
         consecutiveFailures++;
         appLogger.d('Plex transcode readiness probe transport failure', error: e);

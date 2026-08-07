@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/utils/media_server_http_client.dart' show AbortController;
 import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
@@ -713,6 +714,14 @@ void main() {
       isNull,
     );
     expect(PlexClient.transcodeStreamOffsetFromUrl('https://plex.example.com/library/parts/1/file.mkv'), isNull);
+    // Percent-encoded spelling of the same path must not silently switch the
+    // probe off.
+    expect(
+      PlexClient.transcodeStreamOffsetFromUrl(
+        'https://plex.example.com/video/%3A/transcode/universal/start.m3u8?offset=495.000000',
+      ),
+      const Duration(minutes: 8, seconds: 15),
+    );
   });
 
   test('transcode readiness probes the segment at the offset, not the first one', () async {
@@ -777,11 +786,96 @@ void main() {
         '#EXTINF:2.000000,\n00002.ts\n';
     expect(PlexClient.selectReadinessProbeTarget(mediaPlaylist, Duration.zero), '00000.ts');
     expect(PlexClient.selectReadinessProbeTarget(mediaPlaylist, const Duration(seconds: 3)), '00001.ts');
-    // Beyond the playlist: probe the last segment rather than nothing.
-    expect(PlexClient.selectReadinessProbeTarget(mediaPlaylist, const Duration(seconds: 30)), '00002.ts');
+    // Durations never cross the offset: the playlist cannot say where the
+    // offset lives, and probing a guessed segment would seek the session.
+    expect(PlexClient.selectReadinessProbeTarget(mediaPlaylist, const Duration(seconds: 30)), isNull);
     // A master playlist has no segment durations: descend into the first variant.
     const masterPlaylist = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1500000\nindex.m3u8\nfallback.m3u8\n';
     expect(PlexClient.selectReadinessProbeTarget(masterPlaylist, const Duration(minutes: 10)), 'index.m3u8');
+  });
+
+  test('transcode readiness skips probing when the playlist cannot locate the offset', () {
+    fakeAsync((async) {
+      final requestPaths = <String>[];
+      // The offset-relative playlist shape this client has never observed
+      // against a real PMS: segments named from the resume point, durations
+      // summing to a minute. Probing its last segment would ask the session
+      // to produce a minute past the resume point.
+      final mediaPlaylist = StringBuffer('#EXTM3U\n#EXT-X-TARGETDURATION:1\n');
+      for (var i = 8062; i <= 8121; i++) {
+        mediaPlaylist.write('#EXTINF:1.000000,\n${i.toString().padLeft(5, '0')}.ts\n');
+      }
+      final client = makeClient((request) async {
+        requestPaths.add(request.url.path);
+        if (request.url.path.endsWith('/start.m3u8')) {
+          return http.Response(mediaPlaylist.toString(), 200);
+        }
+        return http.Response('segment bytes', 206, headers: {'content-type': 'video/mp2t'});
+      });
+      addTearDown(client.close);
+
+      bool? ready;
+      client
+          .waitForTranscodeReady(
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=8062.000000',
+            timeout: const Duration(seconds: 15),
+            pollInterval: const Duration(milliseconds: 500),
+          )
+          .then((value) => ready = value);
+      async.flushMicrotasks();
+
+      expect(ready, isTrue);
+      expect(requestPaths.where((path) => path.endsWith('.ts')), isEmpty);
+    });
+  });
+
+  test('transcode readiness hands off on a 500 that arrives inside a decode exception', () {
+    fakeAsync((async) {
+      var requestCount = 0;
+      // A proxy or gateway in front of PMS answering 500 with a JSON
+      // content-type and a non-JSON body: the client's body decode throws a
+      // status-bearing exception instead of returning the response, and the
+      // exception path must apply the same hand-off rule as the response
+      // path.
+      final client = makeClient((request) async {
+        requestCount++;
+        return http.Response('<html>gateway error</html>', 500, headers: {'content-type': 'application/json'});
+      });
+      addTearDown(client.close);
+
+      bool? ready;
+      client
+          .waitForTranscodeReady(
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=495.000000',
+            timeout: const Duration(seconds: 15),
+            pollInterval: const Duration(milliseconds: 500),
+          )
+          .then((value) => ready = value);
+      // No elapse: like the response-path 500, the exception-path 500 must
+      // complete the probe without a single poll wait.
+      async.flushMicrotasks();
+
+      expect(ready, isFalse);
+      expect(requestCount, 1);
+    });
+  });
+
+  test('transcode readiness returns immediately when the probe is already aborted', () async {
+    var requestCount = 0;
+    final client = makeClient((request) async {
+      requestCount++;
+      return http.Response('#EXTM3U\n#EXTINF:1.0,\nmedia-00000.ts\n', 200);
+    });
+    addTearDown(client.close);
+
+    final abort = AbortController()..abort();
+    final ready = await client.waitForTranscodeReady(
+      'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.500000',
+      abort: abort,
+    );
+
+    expect(ready, isFalse);
+    expect(requestCount, 0);
   });
 
   test('transcode readiness polls a bounded number of times while the segment stays unavailable', () {
@@ -799,7 +893,7 @@ void main() {
       bool? ready;
       client
           .waitForTranscodeReady(
-            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=495.000000',
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.500000',
             timeout: const Duration(milliseconds: 600),
             pollInterval: const Duration(milliseconds: 50),
           )
@@ -880,7 +974,7 @@ void main() {
       bool? ready;
       client
           .waitForTranscodeReady(
-            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=495.000000',
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.500000',
             timeout: const Duration(milliseconds: 600),
             pollInterval: const Duration(milliseconds: 50),
           )
@@ -909,7 +1003,7 @@ void main() {
       bool? ready;
       client
           .waitForTranscodeReady(
-            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=495.000000',
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.500000',
             timeout: const Duration(seconds: 15),
             pollInterval: const Duration(milliseconds: 500),
           )

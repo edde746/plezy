@@ -152,14 +152,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
       final result = playbackContext.result;
       final streamHeaders = playbackContext.streamHeaders;
-      final preflightClient = playbackContext.reportingClient;
-      if (result.isTranscoding && result.videoUrl != null && preflightClient is PlexClient) {
-        // Best-effort wait for the offset session's segment at the resume
-        // point; a not-ready session still opens and mpv classifies whatever
-        // the server actually returns. No-offset URLs return immediately.
-        await preflightClient.waitForTranscodeReady(result.videoUrl!);
-        if (!attempt.isCurrent) return;
-      }
       var subtitleSelection = await _resolveSubtitleSelectionForOpen(
         metadata: _currentMetadata,
         result: result,
@@ -265,6 +257,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           resumePosition: resumePosition,
           durationMs: _currentMetadata.durationMs,
         );
+        await _awaitTranscodeReadiness(
+          client: playbackContext.reportingClient,
+          isTranscoding: result.isTranscoding,
+          videoUrl: result.videoUrl!,
+        );
+        if (!attempt.isCurrent) return;
         final openResult = await _openMediaOnPlayer(
           player: currentPlayer,
           settingsService: settingsService,

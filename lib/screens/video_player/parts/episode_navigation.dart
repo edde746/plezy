@@ -684,15 +684,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           );
           if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         }
-        if (result.isTranscoding && plexClient != null) {
-          // Best-effort wait for the offset session's segment at the resume
-          // point; a not-ready session still opens and mpv classifies
-          // whatever the server actually returns. No-offset URLs return
-          // immediately.
-          await plexClient.waitForTranscodeReady(result.videoUrl!);
-          if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
-        }
-
         var subtitleSelection = await _resolveSubtitleSelectionForOpen(
           metadata: metadata,
           result: result,
@@ -775,6 +766,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           externalSubtitles: subtitleSelection.sidecarsAtOpen,
         );
         var effectiveExternalSubtitlePlan = externalSubtitlePlan;
+        await _awaitTranscodeReadiness(
+          client: mediaClient,
+          isTranscoding: result.isTranscoding,
+          videoUrl: result.videoUrl!,
+        );
+        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         final openResult = await _openMediaOnPlayer(
           player: currentPlayer,
           settingsService: settingsService,

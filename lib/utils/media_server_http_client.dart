@@ -177,11 +177,17 @@ class MediaServerHttpClient {
     );
   }
 
-  /// Fetch raw bytes plus status for probe-style requests. Unlike [getBytes]
-  /// the status code is surfaced instead of only logged, and unlike [get] the
-  /// body is never text-decoded — a probe may touch binary media. Non-2xx is
-  /// returned, not thrown, matching [get].
-  Future<MediaServerResponse> getRaw(
+  /// Issue a GET and return only status and headers, draining the body
+  /// unread — the shape for probes that ask "does this answer?" rather than
+  /// "what does it say?".
+  ///
+  /// Unlike [getBytes] the status code is surfaced instead of only logged.
+  /// Unlike [get] nothing is ever decoded, so a body that fails decoding
+  /// cannot convert a status into an exception, and — because
+  /// [FailoverHttpClient] overrides [get] alone — this method structurally
+  /// never enters the endpoint-failover cascade. Non-2xx is returned, not
+  /// thrown, matching [get].
+  Future<MediaServerResponse> getStatus(
     String url, {
     Map<String, String>? headers,
     Duration? timeout,
@@ -194,13 +200,17 @@ class MediaServerHttpClient {
       timeout: timeout,
       abort: abort,
       consume: (streamed, scope) async {
-        final bytes = await scope.receive(streamed.stream.toBytes());
+        final effectiveUri = switch (streamed) {
+          http.BaseResponseWithUrl(:final url) => url,
+          _ => scope.uri,
+        };
+        await scope.receive(streamed.stream.drain<void>());
         scope.logResponse(streamed.statusCode);
         return MediaServerResponse(
           statusCode: streamed.statusCode,
-          data: bytes,
           headers: streamed.headers,
           requestUri: scope.uri,
+          effectiveUri: effectiveUri,
         );
       },
     );
