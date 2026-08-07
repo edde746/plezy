@@ -5,9 +5,11 @@
 # and script guards" step in .github/workflows/ci.yml and section 4 of
 # scripts/ci_checks.sh. The checkers are named explicitly because a few of them
 # belong to other jobs (check_bun_audit.py needs Bun, check_codegen.py runs via
-# codegen.sh), but their regression tests are discovered by glob so a newly
-# added scripts/test_*.py is picked up automatically instead of having to be
-# remembered in two places.
+# codegen.sh, and linux/packaging/check-bundle-host-deps.py and
+# check-package-deps.py need a built bundle and built packages, so both run in
+# the linux-packages job and again in the release build), but their regression
+# tests are discovered by glob so a newly added scripts/test_*.py is picked up
+# automatically instead of having to be remembered in two places.
 set -euo pipefail
 shopt -s nullglob
 
@@ -24,6 +26,7 @@ for checker in \
   scripts/check_workflow_action_pins.py \
   scripts/check_container_image_pins.py \
   scripts/check_update_packages_workflow.py \
+  scripts/check_linux_package_deps.py \
   scripts/check_windows_installer.py \
   scripts/check_windows_msix.py; do
   python3 "$checker"

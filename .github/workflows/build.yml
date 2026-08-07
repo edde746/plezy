@@ -765,14 +765,17 @@ jobs:
           fi
           echo "BUNDLE_DIR=$bundle_dir" >> "$GITHUB_ENV"
 
-      - name: Build Linux Packages
-        shell: bash
-        run: |
-          BUILD_DIR="$BUNDLE_DIR" \
-          ARCH_SUFFIX=${{ matrix.arch }} \
-          OUTPUT_DIR="$GITHUB_WORKSPACE" \
-          python3 linux/packaging/build-packages.py
-
+      # Everything below resolves the bundle *before* packaging, so the packages
+      # and the tarball are cut from one identical tree.
+      #
+      # The plane needs the pinned Wayland-enabled libmpv: a distro libmpv still
+      # plays and still does HDR, but silently drops hwdec to vaapi-copy - which
+      # was measured, not assumed. So libmpv travels with us and no artifact
+      # depends on a host one. That removed the host `mpv` dependency, and with it
+      # the transitive pull of everything libmpv itself needs - libass, pulse,
+      # pipewire, fontconfig and the rest. bundle-libs.sh is what supplies those,
+      # so it has to run before packaging too, or the packages would carry libmpv
+      # and nothing it links.
       - name: Copy libmpv into bundle
         shell: bash
         run: |
@@ -781,7 +784,7 @@ jobs:
           cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
           cp -a libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
 
-      - name: Bundle shared libraries for portable tarball
+      - name: Bundle shared libraries
         shell: bash
         run: bash linux/packaging/bundle-libs.sh "$BUNDLE_DIR"
 
@@ -789,17 +792,43 @@ jobs:
         shell: bash
         run: cp linux/packaging/plezy.sh "$BUNDLE_DIR/plezy.sh"
 
-      - name: Verify no missing dependencies
+      # Same check the package smoke build runs, against the artifact that
+      # actually ships: a library nobody declares is a broken install, and it is
+      # invisible until a user on a clean machine tries to launch.
+      #
+      # This also stands in for the `ldd ./plezy | grep "not found"` step that
+      # used to run after packaging. That one folded ldd's stderr into grep's
+      # input and dropped its exit status, so ldd failing outright - a missing
+      # loader, an exec-format mismatch, no ldd at all - left the match empty and
+      # printed "All dependencies resolved." This guard runs ldd over every
+      # object under lib/ as well as the executable, fails on an unresolved
+      # soname, fails when ldd cannot read an object, and refuses to pass when
+      # the walk found no host libraries at all. Packaging below only reads the
+      # bundle, so a second shell ldd afterwards could only restate a weaker
+      # subset of what this already proved about the very same tree.
+      - name: Verify every unbundled library the bundle needs is declared
+        shell: bash
+        run: python3 linux/packaging/check-bundle-host-deps.py "$BUNDLE_DIR"
+
+      # Last, from the fully resolved tree above. The host-dependency guard is
+      # skipped because the named step above just ran it against this same
+      # bundle; the internal run exists for by-hand packaging outside CI.
+      - name: Build Linux Packages
         shell: bash
         run: |
-          cd "$BUNDLE_DIR"
-          MISSING=$(LD_LIBRARY_PATH=lib ldd ./plezy 2>&1 | grep "not found" || true)
-          if [[ -n "$MISSING" ]]; then
-            echo "ERROR: Unresolved dependencies found:" >&2
-            echo "$MISSING" >&2
-            exit 1
-          fi
-          echo "All dependencies resolved."
+          BUILD_DIR="$BUNDLE_DIR" \
+          ARCH_SUFFIX=${{ matrix.arch }} \
+          OUTPUT_DIR="$GITHUB_WORKSPACE" \
+          PLEZY_SKIP_HOST_DEP_CHECK=1 \
+          python3 linux/packaging/build-packages.py
+
+      # The depends lists reached fpm above; only the packages it wrote can show
+      # they arrived. Same script the smoke build runs, so the two jobs cannot
+      # drift on what counts as declared - and unlike the smoke build, this one
+      # covers arm64 and the artifacts users actually install.
+      - name: Verify the declared dependencies reached the package metadata
+        shell: bash
+        run: python3 linux/packaging/check-package-deps.py "$GITHUB_WORKSPACE" --arch ${{ matrix.arch }}
 
       - name: Create tarball
         shell: bash

@@ -88,6 +88,12 @@ def _validate_native(root: Path, errors: list[str]) -> None:
         _require_text(value.get("provenance"), f"{label}.provenance", errors)
         if url and not url.startswith("https://"):
             errors.append(f"{label}.url: production source must use HTTPS")
+        # A fallback source is optional, but it is a production source when it is
+        # used, so it answers to the same rule as the primary.
+        mirror = value.get("mirror")
+        if mirror is not None:
+            if not isinstance(mirror, str) or not mirror.startswith("https://"):
+                errors.append(f"{label}.mirror: production source must use HTTPS")
         if version and url and name in {"ffmpeg", "mpv", "simdutf"} and version not in url:
             errors.append(f"{label}.url: must identify declared version {version}")
         if kind == "archive":

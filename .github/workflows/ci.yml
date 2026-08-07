@@ -9,6 +9,14 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      build_linux_packages:
+        description: >
+          Smoke-build the Linux deb/rpm/pacman packages. Off by default: it needs
+          a release build plus fpm, and build.yml only packages from main, so this
+          is the only way to exercise linux/packaging from a branch.
+        default: false
+        type: boolean
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
@@ -244,7 +252,7 @@ jobs:
       - name: Verify native formatting
         run: scripts/format_native.sh --check
 
-      - name: Verify Linux native acquisition integrity
+      - name: Verify Linux native acquisition and build plan
         run: bash linux/packaging/build-libmpv_test.sh
 
   linux-native-test:
@@ -279,7 +287,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
-            libstdc++-12-dev libmpv-dev libepoxy-dev libcurl4-openssl-dev libevdev-dev
+            libstdc++-12-dev libmpv-dev libepoxy-dev libcurl4-openssl-dev libevdev-dev \
+            libwayland-dev libegl-dev
 
       - name: Prepare Flutter Linux configuration
         run: |
@@ -295,13 +304,20 @@ jobs:
             -DPLEZY_BUILD_MPV_RELIABILITY_TESTS=ON \
             -DPLEZY_MPV_RELIABILITY_SANITIZER=${{ matrix.sanitizer }}
 
+      # `plezy` is the runner itself. Without it nothing in CI ever compiles
+      # my_application.cc, mpv_plugin.cc or the Wayland video plane — the
+      # reliability test targets each pull in only a couple of translation units,
+      # so a break in the rest of linux/runner reached a release build unseen.
       - name: Build Linux native reliability tests
         run: |
           cmake --build build/linux-native-${{ matrix.sanitizer }} --parallel 2 --target \
+            plezy \
             mpv_player_lifecycle_test \
+            mpv_player_hdr_output_test \
             mpv_property_result_contract_test \
             hdr_metadata_test \
-            plane_geometry_test
+            plane_geometry_test \
+            video_params_test
 
       - name: Run Linux native reliability tests
         run: |
@@ -593,3 +609,154 @@ jobs:
 
       - name: Run website checks
         run: scripts/ci_website_checks.sh
+
+
+  # The only job that checks packaging against a real artifact. build.yml also
+  # packages Linux, but refuses any ref but refs/heads/main, and
+  # check_linux_package_deps.py can only compare a hand-written list against
+  # CMake - it cannot prove the list reaches the artifact, nor see the
+  # transitive libraries the bundled libmpv drags in. This can, by reading the
+  # built bundle back with ldd.
+  #
+  # Runs on every push to main and on request, but not on pull requests: it
+  # needs a release build plus fpm, which is minutes of runner time that most
+  # changes here have no reason to pay. That buys post-merge detection rather
+  # than pre-merge, which is the deliberate trade. Dispatch it from a branch
+  # with build_linux_packages when touching linux/packaging - which is the only
+  # way to exercise it before merging.
+  linux-packages:
+    name: Linux package smoke build
+    if: ${{ inputs.build_linux_packages || github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          pub-cache: false
+
+      # The packaging deps, minus libmpv: this job builds it from source below,
+      # because the distro's is a different version with different windowing
+      # backends, and a package smoke-built against it cannot show that
+      # build-libmpv.sh still works or that the bundle it produces is coherent.
+      - name: Install packaging dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang cmake meson ninja-build pkg-config nasm libgtk-3-dev liblzma-dev \
+            libstdc++-12-dev libepoxy-dev libcurl4-openssl-dev libevdev-dev \
+            libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev \
+            libharfbuzz-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev \
+            libva-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev \
+            libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev \
+            liblua5.2-dev rpm libarchive-tools imagemagick ruby-dev build-essential
+          sudo gem install fpm --version 1.17.0 --no-document
+
+      # Keyed the same way build.yml keys it, so editing the script or its pinned
+      # inputs is what invalidates the cache - and this branch's whole point is
+      # that those edits get exercised somewhere.
+      - name: Cache libmpv build
+        id: libmpv-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: libmpv-prefix
+          key: ci-libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh', 'linux/packaging/native-inputs.json') }}
+
+      - name: Build libmpv
+        if: steps.libmpv-cache.outputs.cache-hit != 'true'
+        run: bash linux/packaging/build-libmpv.sh
+
+      # The windowing backends the runner depends on, read off the library the
+      # script just produced. The plane hands mpv MPV_RENDER_PARAM_WL_DISPLAY, so
+      # a libmpv without Wayland cannot find the VAAPI device and quietly decodes
+      # in software; X11 and VDPAU are gone with the texture path.
+      - name: Check the built libmpv's backends
+        run: |
+          LIB=$(find libmpv-prefix -name 'libmpv.so.2' | head -1)
+          echo "== $LIB =="
+          ldd "$LIB" | grep -iE 'wayland|libX11|vdpau' || echo '(none)'
+          ldd "$LIB" | grep -q libwayland-client || {
+            echo "::error::the built libmpv does not link libwayland-client, so the video plane cannot work"
+            exit 1
+          }
+
+      - name: Build the release bundle
+        run: |
+          flutter pub get --enforce-lockfile --no-example
+          flutter build linux --release
+        env:
+          PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig
+
+      # Mirrors build.yml: resolve the bundle completely, then package from it.
+      # libmpv travels with us, so nothing depends on a host one - which also
+      # removes the transitive pull of everything libmpv links, hence bundle-libs
+      # before packaging rather than after.
+      - name: Copy libmpv into the bundle
+        run: |
+          BUNDLE_LIB=build/linux/x64/release/bundle/lib
+          LIBMPV_DIR=$(dirname "$(find libmpv-prefix -name 'libmpv.so' | head -1)")
+          cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
+          cp -a libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
+
+      - name: Bundle shared libraries
+        run: bash linux/packaging/bundle-libs.sh build/linux/x64/release/bundle
+
+      - name: Copy wrapper script into the bundle
+        run: cp linux/packaging/plezy.sh build/linux/x64/release/bundle/plezy.sh
+
+      # Derives what the resolved bundle still needs from the host and proves
+      # every one of those libraries is declared. This is the check that would
+      # have caught bundling libmpv without also declaring what libmpv links.
+      - name: Verify every unbundled library the bundle needs is declared
+        run: python3 linux/packaging/check-bundle-host-deps.py build/linux/x64/release/bundle
+
+      # OUTPUT_DIR defaults to the repo root; name it so the paths below are not
+      # a guess about where fpm dropped things. The host-dependency guard is
+      # skipped because the named step above just ran it against this same
+      # bundle; the internal run exists for by-hand packaging outside CI.
+      - name: Build the packages
+        run: |
+          mkdir -p "$OUTPUT_DIR"
+          python3 linux/packaging/build-packages.py
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/packages
+          PLEZY_SKIP_HOST_DEP_CHECK: "1"
+
+      # The guard above reconciles the depends lists with the staged bundle; only
+      # the packages themselves can show that list survived fpm. Every name comes
+      # from build-packages.py, so adding a library there is verified here without
+      # a second edit - and this job is off by default, so a hand-copied list
+      # would rot unseen. The release job in build.yml runs the same script
+      # against the artifacts users install, so the assertions cannot drift.
+      - name: Verify the declared dependencies reached the package metadata
+        run: python3 linux/packaging/check-package-deps.py "${{ github.workspace }}/packages"
+
+      # Same resolved bundle the packages were cut from, so the tarball is not a
+      # second, differently-assembled artifact. It is the one to put on a USB for
+      # a foreign machine, because it needs nothing installed.
+      - name: Create the tarball
+        run: |
+          BUNDLE_DIR=build/linux/x64/release/bundle
+          mkdir -p "$OUTPUT_DIR"
+          tar -czf "$OUTPUT_DIR/plezy-linux-x64.tar.gz" -C "$BUNDLE_DIR" .
+          echo "=== libmpv travelling in every artifact ==="
+          ldd "$BUNDLE_DIR/lib/libmpv.so" | grep -iE 'wayland|libX11|vdpau' || echo '(none)'
+        env:
+          OUTPUT_DIR: ${{ github.workspace }}/packages
+
+      - name: Upload the packages
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: linux-packages-smoke
+          path: ${{ github.workspace }}/packages/plezy-linux-x64.*
+          if-no-files-found: error
+          retention-days: 7
