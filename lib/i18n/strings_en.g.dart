@@ -588,6 +588,21 @@ class Translations$settings$en {
 	/// en: '${heap}MB memory available. A ${size}MB buffer may affect playback.'
 	String bufferSizeWarning({required Object heap, required Object size}) => '${heap}MB memory available. A ${size}MB buffer may affect playback.';
 
+	/// en: 'Playback Buffer'
+	String get playbackBuffer => 'Playback Buffer';
+
+	/// en: 'Auto (Recommended)'
+	String get playbackBufferAuto => 'Auto (Recommended)';
+
+	/// en: 'Large'
+	String get playbackBufferLarge => 'Large';
+
+	/// en: 'Extra Large'
+	String get playbackBufferExtraLarge => 'Extra Large';
+
+	/// en: 'Buffer more against unstable connections. Also limited by Buffer Size.'
+	String get playbackBufferDescription => 'Buffer more against unstable connections. Also limited by Buffer Size.';
+
 	/// en: 'Default Quality'
 	String get defaultQualityTitle => 'Default Quality';
 
@@ -6261,6 +6276,11 @@ extension on Translations {
 			'settings.bufferSizeMB' => ({required Object size}) => '${size}MB',
 			'settings.bufferSizeAuto' => 'Auto (Recommended)',
 			'settings.bufferSizeWarning' => ({required Object heap, required Object size}) => '${heap}MB memory available. A ${size}MB buffer may affect playback.',
+			'settings.playbackBuffer' => 'Playback Buffer',
+			'settings.playbackBufferAuto' => 'Auto (Recommended)',
+			'settings.playbackBufferLarge' => 'Large',
+			'settings.playbackBufferExtraLarge' => 'Extra Large',
+			'settings.playbackBufferDescription' => 'Buffer more against unstable connections. Also limited by Buffer Size.',
 			'settings.defaultQualityTitle' => 'Default Quality',
 			'settings.musicQualityTitle' => 'Music Quality',
 			'settings.subtitleStyling' => 'Subtitle Styling',
@@ -6610,13 +6630,13 @@ extension on Translations {
 			'mediaMenu.deleteMovieTitle' => 'Delete this movie?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Delete episode',
 			'mediaMenu.deleteSeasonConfirm' => 'Delete season',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Delete show',
 			'mediaMenu.deleteMovieConfirm' => 'Delete movie',
 			'mediaMenu.deleteAnyway' => 'Delete anyway',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Permanently delete ${title} from your server?',
 			'mediaMenu.deleteMultipleWarning' => 'This includes all episodes and their files.',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This deletes all ${n} episode in it, and its file.', other: 'This deletes all ${n} episodes in it, and their files.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This item is stored as ${n} file, which will be deleted.', other: 'This item is stored across ${n} files, and all of them will be deleted.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} other episode is stored in the same file and will be deleted too:', other: '${n} other episodes are stored in the same file and will be deleted too:', ), 
@@ -7124,13 +7144,13 @@ extension on Translations {
 			'explore.badge.pendingApproval' => 'Pending approval',
 			'explore.badge.processing' => 'Processing',
 			'explore.badge.declined' => 'Declined',
+			_ => null,
+		} ?? switch (path) {
 			'explore.badge.requestFailed' => 'Request failed',
 			'explore.badge.requested4k' => '4K requested',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} seasons',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => 'Ep ${episode} in ${duration}',
 			'explore.badge.nextAiringIn' => ({required Object duration}) => 'Next in ${duration}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.episodesShort' => ({required Object n}) => '${n} eps',
 			'explore.badge.minutesPerEpisode' => ({required Object n}) => '${n} min/ep',
 			'explore.badge.adult' => '18+',
@@ -7638,13 +7658,13 @@ extension on Translations {
 			'performanceOverlay.dvRpus' => 'DV RPUs',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
 			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
 			'performanceOverlay.cacheUsed' => 'Cache Used',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',

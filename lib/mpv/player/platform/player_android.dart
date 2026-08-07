@@ -13,6 +13,7 @@ class PlayerAndroid extends PlayerBase {
 
   int? _bufferSizeBytes;
   bool _bufferSizeIsAuto = false;
+  String _bufferTier = 'auto';
   bool _tunnelingEnabled = true;
   String _dvConversionMode = 'auto';
   bool _audioNormalizationEnabled = false;
@@ -115,6 +116,7 @@ class PlayerAndroid extends PlayerBase {
       final result = await invoke<bool>('initialize', {
         'bufferSizeBytes': _bufferSizeBytes,
         'bufferSizeAuto': _bufferSizeIsAuto,
+        'bufferTier': _bufferTier,
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,
         'audioPassthroughEnabled': _audioPassthroughEnabled,
@@ -330,6 +332,12 @@ class PlayerAndroid extends PlayerBase {
       // LoadControl target instead of reusing `demuxer-max-bytes` (#1618).
       case 'demuxer-max-bytes-auto':
         _bufferSizeIsAuto = value != 'no';
+        break;
+      // Not an mpv property. mpv read-ahead is owned by the mpv.conf editor; this tier is
+      // a named ExoPlayer read-ahead depth rather than a duration because the byte cap can
+      // bind first (#1816).
+      case 'exo-buffer-tier':
+        _bufferTier = value;
         break;
       case 'tunneled-playback':
         _tunnelingEnabled = value != 'no';

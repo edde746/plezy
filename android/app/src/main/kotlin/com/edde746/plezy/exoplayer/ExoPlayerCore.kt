@@ -289,6 +289,15 @@ class ExoPlayerCore(private val activity: Activity) :
    */
   private var observingLoadControl: ObservingLoadControl? = null
 
+  /**
+   * The read-ahead limits this session actually resolved to, kept so [getStats] can report them.
+   * Both ceilings matter and the smaller one binds: with `prioritizeTimeOverSizeThresholds`
+   * disabled the byte target stops the loader even below `minBufferMs`, so a raised Maximum
+   * Buffer that changes nothing on a UHD remux is explained by these two numbers side by side.
+   */
+  private var resolvedTargetBufferBytes: Int? = null
+  private var resolvedBufferDurations: LoadControlPolicy.BufferDurations? = null
+
   // Decoder hang detection: tracks gap between decoder init and first rendered frame
   private var decoderHangRunnable: Runnable? = null
   private var decoderInitName: String? = null
@@ -554,7 +563,11 @@ class ExoPlayerCore(private val activity: Activity) :
     bufferSizeBytes: Int? = null,
     bufferSizeAuto: Boolean = false,
     tunnelingEnabled: Boolean = true,
-    audioPassthroughEnabled: Boolean = false
+    audioPassthroughEnabled: Boolean = false,
+    // Read-ahead depth, as the wire name Dart sends. Kept a String because `LoadControlPolicy`
+    // is internal and this function is not; unrecognised names resolve to Auto, which is also
+    // the default (#1816).
+    bufferTier: String = "auto"
   ): Boolean {
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
@@ -777,30 +790,32 @@ class ExoPlayerCore(private val activity: Activity) :
         LoadControlPolicy.autoTargetBufferBytes(largeHeapMB, availableMB)
       }
 
+      val resolvedTier = LoadControlPolicy.BufferTier.fromWire(bufferTier)
+      val bufferDurations = LoadControlPolicy.bufferDurations(resolvedTier, availableMB)
+      resolvedTargetBufferBytes = targetBufferBytes
+      resolvedBufferDurations = bufferDurations
+
       val loadControl = DefaultLoadControl.Builder().apply {
         setTargetBufferBytes(targetBufferBytes)
         setPrioritizeTimeOverSizeThresholds(false)
-        if (availableMB <= 2048) {
-          setBufferDurationsMs(
-            15_000,
-            50_000,
-            LoadControlPolicy.BUFFER_FOR_PLAYBACK_MS,
-            LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
-          )
-        } else {
-          setBufferDurationsMs(
-            30_000,
-            60_000,
-            LoadControlPolicy.BUFFER_FOR_PLAYBACK_MS,
-            LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
-          )
-        }
+        // Generic setter only. media3 1.9 added ...ForStreaming/...ForLocalPlayback variants and a
+        // latch that stops mirroring these into the local-playback fields the moment either is
+        // called, which would silently give file:// playback its own defaults.
+        setBufferDurationsMs(
+          bufferDurations.minBufferMs,
+          bufferDurations.maxBufferMs,
+          LoadControlPolicy.BUFFER_FOR_PLAYBACK_MS,
+          LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
+        )
       }.build().let { ObservingLoadControl(it).also { observing -> observingLoadControl = observing } }
       emitLog(
         "info",
         "init",
         "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit (${if (bufferSizeAuto) "auto" else "manual"}, " +
-          "heap=${largeHeapMB}MB, available=${availableMB}MB), tunneling=$tunnelingUserEnabled, dataSource=$dataSourceLabel"
+          "heap=${largeHeapMB}MB, available=${availableMB}MB), " +
+          "buffer=${bufferDurations.minBufferMs / 1000}-${bufferDurations.maxBufferMs / 1000}s " +
+          "(${resolvedTier.name.lowercase()}), " +
+          "tunneling=$tunnelingUserEnabled, dataSource=$dataSourceLabel"
       )
 
       exoPlayer = ExoPlayer.Builder(activity)
@@ -4132,6 +4147,10 @@ class ExoPlayerCore(private val activity: Activity) :
       // Buffer metrics
       "bufferedPositionMs" to player.bufferedPosition,
       "currentPositionMs" to player.currentPosition,
+      // Both read-ahead ceilings. The smaller binds, so a Maximum Buffer that appears to do
+      // nothing on a high bitrate file is explained by the byte target sitting beside it.
+      "bufferTargetBytes" to resolvedTargetBufferBytes,
+      "bufferMaxMs" to resolvedBufferDurations?.maxBufferMs,
       "totalBufferedDurationMs" to player.totalBufferedDuration,
       // Playback state
       "playbackSpeed" to player.playbackParameters.speed,

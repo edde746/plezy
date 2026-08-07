@@ -301,6 +301,9 @@ class ExoPlayerPlugin :
     val audioPassthroughEnabled = call.argument<Boolean>("audioPassthroughEnabled") ?: false
     val assVideoLatencyFrames = call.argument<Int>("assVideoLatencyFrames") ?: 0
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1.0f
+    // ExoPlayer-only: mpv's read-ahead is owned by the mpv.conf editor, so there is no
+    // fallback replay for this one. Resolved in the core; unrecognised means Auto (#1816).
+    val bufferTier = call.argument<String>("bufferTier") ?: "auto"
     configuredBufferSizeBytes = bufferSizeBytes
     // Seed the request here rather than waiting for Dart's separate setAudioPassthrough
     // call, so a fallback raised before that arrives still derives audio-spdif correctly.
@@ -344,7 +347,8 @@ class ExoPlayerPlugin :
           bufferSizeBytes = bufferSizeBytes,
           bufferSizeAuto = bufferSizeAuto,
           tunnelingEnabled = tunnelingEnabled,
-          audioPassthroughEnabled = audioPassthroughEnabled
+          audioPassthroughEnabled = audioPassthroughEnabled,
+          bufferTier = bufferTier
         )
         if (!success) {
           if (playerCore === core) playerCore = null

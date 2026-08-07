@@ -83,6 +83,16 @@ extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
   };
 }
 
+enum PlaybackBufferTier { auto, large, extraLarge }
+
+extension PlaybackBufferTierNativeValue on PlaybackBufferTier {
+  String get nativeValue => switch (this) {
+    PlaybackBufferTier.auto => 'auto',
+    PlaybackBufferTier.large => 'large',
+    PlaybackBufferTier.extraLarge => 'extra_large',
+  };
+}
+
 const String _bufferSizeMigratedKey = 'buffer_size_migrated_to_auto';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
@@ -504,6 +514,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
 
   static const bufferSize = _BufferSizePref();
+  static const playbackBufferTier = EnumPref<PlaybackBufferTier>(
+    'playback_buffer_tier',
+    values: PlaybackBufferTier.values,
+    defaultValue: PlaybackBufferTier.auto,
+  );
   static const libraryDensity = _LibraryDensityPref();
   static const automotiveUiScale = _AutomotiveUiScalePref();
   static const tvCornerSpotlightBackdrop = BoolPref('tv_corner_spotlight_backdrop');
@@ -932,6 +947,7 @@ class SettingsService extends BaseSharedPreferencesService {
     themeMode,
     videoPlayerNavigationEnabled,
     bufferSize,
+    playbackBufferTier,
     libraryDensity,
     automotiveUiScale,
     tvCornerSpotlightBackdrop,

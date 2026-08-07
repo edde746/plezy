@@ -53,6 +53,8 @@ class PerformanceStats {
   final int? cacheLimit;
   final double? cacheSpeed;
   final double? cacheDuration;
+  final int? bufferTargetBytes;
+  final int? bufferMaxMs;
 
   // DV conversion
   final bool dvConversionActive;
@@ -106,6 +108,8 @@ class PerformanceStats {
     this.cacheLimit,
     this.cacheSpeed,
     this.cacheDuration,
+    this.bufferTargetBytes,
+    this.bufferMaxMs,
     this.dvConversionActive = false,
     this.dvConversionMode = '',
     this.dvConvertedRpus,
@@ -157,6 +161,8 @@ class PerformanceStats {
       cacheLimit = null,
       cacheSpeed = null,
       cacheDuration = null,
+      bufferTargetBytes = null,
+      bufferMaxMs = null,
       dvConversionActive = false,
       dvConversionMode = '',
       dvConvertedRpus = null,
@@ -181,6 +187,17 @@ class PerformanceStats {
     if (videoBitrate == null || videoBitrate == 0) return 'N/A';
     final mbps = videoBitrate! / 1_000_000;
     return '${mbps.toStringAsFixed(1)} Mbps';
+  }
+
+  /// Both ExoPlayer read-ahead ceilings: the duration target and the hard byte cap.
+  /// The smaller one binds, so showing both explains a duration setting that
+  /// appears to have no effect on high-bitrate media.
+  String get bufferLimitsFormatted {
+    if (bufferMaxMs == null || bufferMaxMs! <= 0) return 'N/A';
+    final duration = '${bufferMaxMs! ~/ 1000}s';
+    if (bufferTargetBytes == null) return duration;
+    final targetBufferMb = bufferTargetBytes! ~/ (1024 * 1024);
+    return '$duration / ${targetBufferMb}MB';
   }
 
   /// Format audio bitrate in kbps.
@@ -376,6 +393,8 @@ class PerformanceStats {
   bool get hasValidVideoBitrate {
     return videoBitrate != null && videoBitrate! > 0;
   }
+
+  bool get hasValidBufferLimits => bufferMaxMs != null && bufferMaxMs! > 0;
 
   /// Check if audio bitrate is valid (not null, not negative, not zero).
   bool get hasValidAudioBitrate {

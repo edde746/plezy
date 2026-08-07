@@ -1193,6 +1193,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _exitFullscreenOnPlayerClose = settingsService.read(SettingsService.exitFullscreenOnPlayerClose);
       _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
       final bufferSizeMB = settingsService.read(SettingsService.bufferSize);
+      final playbackBufferTier = settingsService.read(SettingsService.playbackBufferTier);
       final enableHardwareDecoding = settingsService.read(SettingsService.enableHardwareDecoding);
       final debugLoggingEnabled = settingsService.read(SettingsService.enableDebugLogging);
       final useExoPlayer = settingsService.read(SettingsService.useExoPlayer);
@@ -1285,6 +1286,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (Platform.isAndroid && useExoPlayer) {
         final tunneledPlayback = settingsService.read(SettingsService.tunneledPlayback);
         await currentPlayer.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
+        await currentPlayer.setProperty('exo-buffer-tier', playbackBufferTier.nativeValue);
       }
       if ((Platform.isAndroid && useExoPlayer) || Platform.isIOS || Platform.isMacOS) {
         final dvConversionMode = settingsService.read(SettingsService.dvConversionMode);
