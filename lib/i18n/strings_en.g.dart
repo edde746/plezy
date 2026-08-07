@@ -828,6 +828,42 @@ class Translations$settings$en {
 	/// en: 'Regex pattern to match credits markers in chapter titles'
 	String get creditsPatternDescription => 'Regex pattern to match credits markers in chapter titles';
 
+	/// en: 'Prerolls'
+	String get prerolls => 'Prerolls';
+
+	/// en: 'Play prerolls before movies'
+	String get playPrerollsBeforeMovies => 'Play prerolls before movies';
+
+	/// en: 'Plays a random clip from your selection below before each movie. Press back to skip.'
+	String get playPrerollsBeforeMoviesDescription => 'Plays a random clip from your selection below before each movie. Press back to skip.';
+
+	/// en: 'Preroll library'
+	String get prerollLibrary => 'Preroll library';
+
+	/// en: 'Not set'
+	String get prerollLibraryNotSet => 'Not set';
+
+	/// en: 'No libraries found on your servers.'
+	String get prerollLibraryNoneFound => 'No libraries found on your servers.';
+
+	/// en: 'Selected prerolls'
+	String get prerollSelection => 'Selected prerolls';
+
+	/// en: 'Pick a library first'
+	String get prerollSelectionPickLibraryFirst => 'Pick a library first';
+
+	/// en: 'No prerolls selected'
+	String get prerollSelectionNoneSelected => 'No prerolls selected';
+
+	/// en: '${count} selected'
+	String prerollSelectionCount({required Object count}) => '${count} selected';
+
+	/// en: 'Select prerolls'
+	String get prerollItemPicker => 'Select prerolls';
+
+	/// en: 'Couldn't load items from this library.'
+	String get prerollItemPickerLoadFailed => 'Couldn\'t load items from this library.';
+
 	/// en: 'Invalid regular expression'
 	String get invalidRegex => 'Invalid regular expression';
 
@@ -6359,6 +6395,18 @@ extension on Translations {
 			'settings.introPatternDescription' => 'Regex pattern to match intro markers in chapter titles',
 			'settings.creditsPattern' => 'Credits Marker Pattern',
 			'settings.creditsPatternDescription' => 'Regex pattern to match credits markers in chapter titles',
+			'settings.prerolls' => 'Prerolls',
+			'settings.playPrerollsBeforeMovies' => 'Play prerolls before movies',
+			'settings.playPrerollsBeforeMoviesDescription' => 'Plays a random clip from your selection below before each movie. Press back to skip.',
+			'settings.prerollLibrary' => 'Preroll library',
+			'settings.prerollLibraryNotSet' => 'Not set',
+			'settings.prerollLibraryNoneFound' => 'No libraries found on your servers.',
+			'settings.prerollSelection' => 'Selected prerolls',
+			'settings.prerollSelectionPickLibraryFirst' => 'Pick a library first',
+			'settings.prerollSelectionNoneSelected' => 'No prerolls selected',
+			'settings.prerollSelectionCount' => ({required Object count}) => '${count} selected',
+			'settings.prerollItemPicker' => 'Select prerolls',
+			'settings.prerollItemPickerLoadFailed' => 'Couldn\'t load items from this library.',
 			'settings.invalidRegex' => 'Invalid regular expression',
 			'settings.regex' => 'Regular expression',
 			'settings.downloads' => 'Downloads',
@@ -6657,6 +6705,8 @@ extension on Translations {
 			'rateSheet.saved' => 'Saved',
 			'rateSheet.notAvailable' => 'No match found',
 			'rateSheet.noConnectedServices' => 'Connect a service in Settings to rate there.',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -7200,6 +7250,19 @@ extension on Translations {
 			'explore.creditRole.producer' => 'Producer',
 			'explore.creditRole.creator' => 'Creator',
 			'explore.creditRole.composer' => 'Composer',
+			'explore.ratingSource.critic' => 'Critics',
+			'explore.ratingSource.audience' => 'Audience',
+			'explore.ratingSource.imdb' => 'IMDb',
+			'explore.ratingSource.tmdb' => 'TMDB',
+			'explore.ratingSource.rottenTomatoes' => 'Rotten Tomatoes',
+			'explore.ratingSource.simkl' => 'Simkl',
+			'explore.ratingSource.mal' => 'MyAnimeList',
+			_ => null,
+		} ?? switch (path) {
+			'explore.ratingSource.anilist' => 'AniList',
+			'explore.ratingSource.trakt' => 'Trakt',
+			'explore.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes critics',
+			'explore.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes audience',
 			'explore.relation.prequel' => 'Prequel',
 			'explore.relation.sequel' => 'Sequel',
 			'explore.relation.sideStory' => 'Side story',
@@ -7709,6 +7772,8 @@ extension on Translations {
 			'metadataEdit.squareArt' => 'Square Art',
 			'metadataEdit.selectPoster' => 'Select Poster',
 			'metadataEdit.selectBackground' => 'Select Background',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.selectLogo' => 'Select Logo',
 			'metadataEdit.selectSquareArt' => 'Select Square Art',
 			'metadataEdit.fromUrl' => 'From URL',
