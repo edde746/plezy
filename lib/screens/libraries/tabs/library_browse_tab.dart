@@ -1668,8 +1668,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// Whether the sort chip is visible
   bool get _isSortChipVisible => _sortOptions.isNotEmpty && _selectedGrouping != 'folders';
 
+  /// Whether the current browse result count is ready to display.
+  bool get _isItemCountVisible => !isLoading && errorMessage == null;
+
   /// Builds the chips bar widget
   Widget _buildChipsBar() {
+    final theme = Theme.of(context);
+    final itemCountText = totalSize.toString();
     VoidCallback? groupingNavigateRight;
     if (_isFiltersChipVisible) {
       groupingNavigateRight = () => _filtersChipFocusNode.requestFocus();
@@ -1678,7 +1683,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
 
     return Container(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: theme.scaffoldBackgroundColor,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: .centerLeft,
       child: Row(
@@ -1696,7 +1701,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             onNavigateRight: groupingNavigateRight,
             onBack: widget.onBack,
           ),
-          const SizedBox(width: 8),
+          if (_isFiltersChipVisible || _isSortChipVisible) const SizedBox(width: 8),
           // Filters chip
           if (_isFiltersChipVisible)
             FocusableFilterChip(
@@ -1727,6 +1732,19 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                   : () => _groupingChipFocusNode.requestFocus(),
               onBack: widget.onBack,
             ),
+          if (_isItemCountVisible) ...[
+            const SizedBox(width: 12),
+            Semantics(
+              key: const ValueKey('library_browse_item_count'),
+              label: t.libraries.content,
+              value: itemCountText,
+              excludeSemantics: true,
+              child: Text(
+                itemCountText,
+                style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+          ],
         ],
       ),
     );
