@@ -306,6 +306,10 @@ class TvBrowseRailLayout {
 /// What [TvBrowseRail] renders in a hub's trailing slot (after the last item).
 enum TvRailTrailing { none, loading, error, viewAll }
 
+/// Loads a hub's complete item list in one shot, bypassing [HubDetailScreen]'s
+/// server-side pagination. See [TvBrowseRail.loaderForHub].
+typedef HubItemsLoader = Future<List<MediaItem>> Function();
+
 class TvBrowseRail extends StatefulWidget {
   final List<MediaHub> hubs;
   final HubFocusMemory focusMemory;
@@ -321,7 +325,15 @@ class TvBrowseRail extends StatefulWidget {
   final VoidCallback? onRemoveFromContinueWatching;
   final bool Function(MediaHub hub)? isContinueWatchingHub;
   final bool Function(MediaHub hub)? usesContinueWatchingAction;
-  final Future<List<MediaItem>> Function(MediaHub hub)? loadMoreItems;
+
+  /// Resolves the one-shot loader for [hub]'s View All screen, or `null` when
+  /// the hub has no custom loader.
+  ///
+  /// Supplying a loader *disables* [HubDetailScreen]'s server-side pagination,
+  /// so only return one for hubs the server cannot page — e.g. the synthesized
+  /// Continue Watching hub. Returning `null` lets the detail screen page the
+  /// hub itself, which is what every server-backed hub wants.
+  final HubItemsLoader? Function(MediaHub hub)? loaderForHub;
 
   /// Optional per-hub trailing-slot state (loading/error/viewAll). When null the
   /// rail keeps the legacy "[MediaHub.more] → View All" behavior.
@@ -359,7 +371,7 @@ class TvBrowseRail extends StatefulWidget {
     this.onRemoveFromContinueWatching,
     this.isContinueWatchingHub,
     this.usesContinueWatchingAction,
-    this.loadMoreItems,
+    this.loaderForHub,
     this.trailingForHub,
     this.onRetryHub,
     this.onActiveHubChanged,
@@ -976,7 +988,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       MaterialPageRoute(
         builder: (context) => HubDetailScreen(
           hub: hub,
-          loadItems: widget.loadMoreItems == null ? null : () => widget.loadMoreItems!(hub),
+          loadItems: widget.loaderForHub?.call(hub),
           isInContinueWatching: _isContinueWatchingHub(hub),
           usesContinueWatchingAction: _usesContinueWatchingAction(hub),
           onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
