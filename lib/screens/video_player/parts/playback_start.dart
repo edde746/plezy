@@ -153,19 +153,11 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       final result = playbackContext.result;
       final streamHeaders = playbackContext.streamHeaders;
       final preflightClient = playbackContext.reportingClient;
-      if (result.isTranscoding &&
-          result.videoUrl != null &&
-          preflightClient is PlexClient &&
-          PlexClient.transcodeStreamOffsetFromUrl(result.videoUrl!) != null) {
-        // An offset session's manifest can name its first segment before the
-        // segment exists; opening early makes mpv race the manifest.
-        final ready = await preflightClient.waitForTranscodeReady(result.videoUrl!);
-        if (!ready) {
-          throw PlaybackException(
-            t.messages.playbackServerUnavailable,
-            reason: PlaybackFailureReason.serverUnavailable,
-          );
-        }
+      if (result.isTranscoding && result.videoUrl != null && preflightClient is PlexClient) {
+        // Best-effort wait for the offset session's segment at the resume
+        // point; a not-ready session still opens and mpv classifies whatever
+        // the server actually returns. No-offset URLs return immediately.
+        await preflightClient.waitForTranscodeReady(result.videoUrl!);
         if (!attempt.isCurrent) return;
       }
       var subtitleSelection = await _resolveSubtitleSelectionForOpen(

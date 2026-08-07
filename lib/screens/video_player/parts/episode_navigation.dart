@@ -1,18 +1,5 @@
 part of '../../video_player_screen.dart';
 
-/// Prevents an old playback stop from racing a replacement source request.
-///
-/// Plex terminates resources by playback/transcode session identifier. In-place
-/// reloads reuse those identifiers, so a late stop from the old source can
-/// otherwise terminate the replacement transcode after it has started.
-Future<T> resolveReplacementAfterStoppedPlayback<T>({
-  required Future<void> stoppedPlayback,
-  required Future<T> Function() resolve,
-}) async {
-  await stoppedPlayback;
-  return resolve();
-}
-
 /// Keeps an explicit transcode subtitle choice pending while the native
 /// player finishes discovering sidecars that were attached during open.
 ///
@@ -659,24 +646,23 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
 
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
-        final playbackContext = await resolveReplacementAfterStoppedPlayback(
-          stoppedPlayback: stoppedProgressFuture,
-          resolve: () => playbackResolver.resolve(
-            PlaybackInitializationOptions(
-              metadata: metadata,
-              selectedMediaIndex: targetMediaIndex,
-              selectedMediaSourceId: selectedMediaSourceId,
-              preferredVersionSignature: preferredVersionSignature,
-              qualityPreset: targetQualityPreset,
-              selectedAudioStreamId: targetAudioStreamId,
-              preferredAudioTrack: initializationAudioTrack,
-              preferredSubtitleTrack: initializationSubtitleTrack,
-              sessionIdentifier: _playbackSessionIdentifier,
-              transcodeSessionId: _playbackTranscodeSessionId,
-              transcodeOffset: openResumePosition,
-            ),
-            offlineLibraryMode: _offlineLibraryMode,
+        await stoppedProgressFuture;
+        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        final playbackContext = await playbackResolver.resolve(
+          PlaybackInitializationOptions(
+            metadata: metadata,
+            selectedMediaIndex: targetMediaIndex,
+            selectedMediaSourceId: selectedMediaSourceId,
+            preferredVersionSignature: preferredVersionSignature,
+            qualityPreset: targetQualityPreset,
+            selectedAudioStreamId: targetAudioStreamId,
+            preferredAudioTrack: initializationAudioTrack,
+            preferredSubtitleTrack: initializationSubtitleTrack,
+            sessionIdentifier: _playbackSessionIdentifier,
+            transcodeSessionId: _playbackTranscodeSessionId,
+            transcodeOffset: openResumePosition,
           ),
+          offlineLibraryMode: _offlineLibraryMode,
         );
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         final result = playbackContext.result;
@@ -698,18 +684,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           );
           if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         }
-        if (result.isTranscoding &&
-            plexClient != null &&
-            PlexClient.transcodeStreamOffsetFromUrl(result.videoUrl!) != null) {
-          // An offset session's manifest can name its first segment before
-          // the segment exists; opening early makes mpv race the manifest.
-          final ready = await plexClient.waitForTranscodeReady(result.videoUrl!);
-          if (!ready) {
-            throw PlaybackException(
-              t.messages.playbackServerUnavailable,
-              reason: PlaybackFailureReason.serverUnavailable,
-            );
-          }
+        if (result.isTranscoding && plexClient != null) {
+          // Best-effort wait for the offset session's segment at the resume
+          // point; a not-ready session still opens and mpv classifies
+          // whatever the server actually returns. No-offset URLs return
+          // immediately.
+          await plexClient.waitForTranscodeReady(result.videoUrl!);
           if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         }
 

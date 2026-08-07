@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../utils/isolate_helper.dart';
 import '../utils/json_utils.dart';
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
@@ -490,6 +491,7 @@ class PlexClient
     String? serverName,
     required http.Client httpClient,
     List<String>? prioritizedEndpoints,
+    void Function()? onAllEndpointsExhausted,
     List<({String identifier, String gridEndpoint})> epgProviders = const [],
     String? homeHubKey,
     String? promotedHubKey,
@@ -502,6 +504,7 @@ class PlexClient
       serverName: serverName,
       httpClient: httpClient,
       prioritizedEndpoints: prioritizedEndpoints,
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
     );
     client._providerLibraries = const [];
     client._providerEpg = epgProviders;
@@ -2668,50 +2671,80 @@ class PlexClient
     return (sawSegmentDurations ? lastEntry : firstEntry) ?? '';
   }
 
-  /// Waits for a just-started Plex HLS session to serve the segment at the
-  /// requested offset before a native player opens its playlist. Plex can
+  /// Waits for a just-started Plex offset HLS session to serve the segment at
+  /// the requested offset before a native player opens its playlist. Plex can
   /// return a manifest before the segment is ready; mpv treats that 404 as an
   /// HLS error and races through the rest of the manifest.
   ///
-  /// Non-2xx responses are the expected not-ready signal — [_http.get] does
-  /// not throw on them — and every not-ready round waits [pollInterval],
+  /// Best-effort by design: the probe never fails an open, it only stops
+  /// waiting. The player then sees whatever the server is actually doing and
+  /// the existing log-stream classification applies unchanged. To that end a
+  /// 500 stops the wait immediately — a persistent 500 must keep failing fast
+  /// so the server-limit dialog appears promptly — and a cancellation (the
+  /// owning client closing) stops it too rather than sleeping out the window.
+  /// URLs without an offset return immediately: probing a no-offset playlist
+  /// would touch segment zero, and requesting a segment is how a client seeks
+  /// a Plex HLS session.
+  ///
+  /// Other non-2xx responses are the expected not-ready signal — `_http.get`
+  /// does not throw on them — and every not-ready round waits [pollInterval],
   /// doubling up to 4x after three consecutive failed round-trips so a
-  /// stalled transcode is not hammered. Each request also carries a hard
-  /// timeout (5s, shrinking as the overall deadline approaches) so a single
-  /// hung request cannot consume the entire window.
+  /// stalled transcode is not hammered. The probe carries this retry budget
+  /// itself, so its requests bypass endpoint failover, and each request has a
+  /// hard timeout (5s, shrinking as the overall deadline approaches) so a
+  /// single hung request cannot consume the entire window.
   Future<bool> waitForTranscodeReady(
     String videoUrl, {
     Duration timeout = const Duration(seconds: 15),
     Duration pollInterval = const Duration(milliseconds: 500),
   }) async {
     final startUri = Uri.tryParse(videoUrl);
-    if (startUri == null || !startUri.path.endsWith('/start.m3u8')) return true;
-    final probeOffset = transcodeStreamOffsetFromUrl(videoUrl) ?? Duration.zero;
+    final probeOffset = transcodeStreamOffsetFromUrl(videoUrl);
+    if (startUri == null || probeOffset == null) return true;
 
-    final deadline = DateTime.now().add(timeout);
+    final deadline = clock.now().add(timeout);
     var candidate = startUri;
     var playlistDepth = 0;
     var consecutiveFailures = 0;
     int? lastStatus;
     while (true) {
-      final remaining = deadline.difference(DateTime.now());
+      final remaining = deadline.difference(clock.now());
       if (remaining <= Duration.zero) break;
       try {
         final requestTimeout = remaining < const Duration(seconds: 5) ? remaining : const Duration(seconds: 5);
         final isPlaylist = candidate.path.toLowerCase().endsWith('.m3u8');
-        final response = await _http.get(
-          candidate.toString(),
-          headers: isPlaylist ? null : const {'Range': 'bytes=0-0'},
-          timeout: requestTimeout,
-        );
-        lastStatus = response.statusCode;
-        if (response.statusCode >= 200 && response.statusCode < 300) {
+        // The default Accept is application/json (PlexConfig.headers); the
+        // probe mirrors the player's request shape instead. Segments go
+        // through getRaw so a server that ignores Range never routes a full
+        // media segment through text decoding.
+        final int statusCode;
+        var body = '';
+        Uri? effectiveUri;
+        if (isPlaylist) {
+          final response = await _http.get(
+            candidate.toString(),
+            headers: const {'Accept': '*/*'},
+            timeout: requestTimeout,
+            allowEndpointFailover: false,
+          );
+          statusCode = response.statusCode;
+          body = response.data?.toString() ?? '';
+          effectiveUri = response.effectiveUri;
+        } else {
+          final response = await _http.getRaw(
+            candidate.toString(),
+            headers: const {'Range': 'bytes=0-0', 'Accept': '*/*'},
+            timeout: requestTimeout,
+          );
+          statusCode = response.statusCode;
+        }
+        lastStatus = statusCode;
+        if (statusCode >= 200 && statusCode < 300) {
           consecutiveFailures = 0;
-          final body = response.data?.toString() ?? '';
           if (body.trimLeft().startsWith('#EXTM3U')) {
             final child = selectReadinessProbeTarget(body, probeOffset);
             if (child.isNotEmpty) {
-              candidate = (response.effectiveUri ?? candidate).resolve(child);
+              candidate = (effectiveUri ?? candidate).resolve(child);
               playlistDepth++;
               if (playlistDepth > 4) {
                 appLogger.w('Plex transcode readiness exceeded the HLS playlist depth limit');
@@ -2722,14 +2755,27 @@ class PlexClient
             }
             // A manifest with no media entries yet: not ready, poll again.
           } else if (!isPlaylist) {
-            // The first media segment answered: the session is ready.
+            // The segment at the offset answered: the session is ready.
             return true;
           }
+        } else if (statusCode == 500) {
+          // Hand off without classifying: mpv opens the URL, hits the same
+          // 500, and the log-stream path raises the server-limit dialog.
+          appLogger.i('Plex transcode readiness probe handing off on HTTP 500');
+          return false;
         } else {
           consecutiveFailures++;
         }
-      } catch (e) {
+      } on MediaServerHttpException catch (e) {
+        if (e.isCancellation) {
+          // The owning client is closing; cancellation is not a not-ready
+          // signal, so stop instead of sleeping out the window.
+          return false;
+        }
         // Transport failure — same treatment as a not-ready response.
+        consecutiveFailures++;
+        appLogger.d('Plex transcode readiness probe transport failure', error: e);
+      } catch (e) {
         consecutiveFailures++;
         appLogger.d('Plex transcode readiness probe transport failure', error: e);
       }
@@ -2737,12 +2783,12 @@ class PlexClient
       if (consecutiveFailures > 3) {
         delay = pollInterval * (1 << (consecutiveFailures - 3).clamp(0, 2));
       }
-      final timeLeft = deadline.difference(DateTime.now());
+      final timeLeft = deadline.difference(clock.now());
       if (timeLeft <= Duration.zero) break;
       await Future<void>.delayed(delay < timeLeft ? delay : timeLeft);
     }
     appLogger.w(
-      'Plex transcode did not become ready within ${timeout.inSeconds}s '
+      'Plex transcode did not become ready within ${timeout.inMilliseconds}ms '
       '(playlistDepth=$playlistDepth, lastStatus=${lastStatus ?? 'none'}, consecutiveFailures=$consecutiveFailures)',
     );
     return false;

@@ -177,6 +177,35 @@ class MediaServerHttpClient {
     );
   }
 
+  /// Fetch raw bytes plus status for probe-style requests. Unlike [getBytes]
+  /// the status code is surfaced instead of only logged, and unlike [get] the
+  /// body is never text-decoded — a probe may touch binary media. Non-2xx is
+  /// returned, not thrown, matching [get].
+  Future<MediaServerResponse> getRaw(
+    String url, {
+    Map<String, String>? headers,
+    Duration? timeout,
+    AbortController? abort,
+  }) {
+    return _perform<MediaServerResponse>(
+      'GET',
+      url,
+      headers: headers,
+      timeout: timeout,
+      abort: abort,
+      consume: (streamed, scope) async {
+        final bytes = await scope.receive(streamed.stream.toBytes());
+        scope.logResponse(streamed.statusCode);
+        return MediaServerResponse(
+          statusCode: streamed.statusCode,
+          data: bytes,
+          headers: streamed.headers,
+          requestUri: scope.uri,
+        );
+      },
+    );
+  }
+
   /// Stream-download a URL directly into a file.
   Future<void> downloadFile(
     String url,

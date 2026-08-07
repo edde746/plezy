@@ -45,26 +45,6 @@ void main() {
     );
   });
 
-  test('replacement source resolution waits for the old stopped report', () async {
-    final stoppedPlayback = Completer<void>();
-    var resolverCalled = false;
-
-    final replacement = resolveReplacementAfterStoppedPlayback(
-      stoppedPlayback: stoppedPlayback.future,
-      resolve: () async {
-        resolverCalled = true;
-        return 'replacement';
-      },
-    );
-
-    expect(resolverCalled, isFalse);
-
-    stoppedPlayback.complete();
-
-    expect(await replacement, 'replacement');
-    expect(resolverCalled, isTrue);
-  });
-
   test('item-change subtitle preference carries committed semantics without item identity', () {
     const committed = SubtitleTrack(
       id: 'source:4',
