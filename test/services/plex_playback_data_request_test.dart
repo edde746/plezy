@@ -936,6 +936,26 @@ void main() {
     expect(params['partIndex'], '2');
   });
 
+  test('quality-capped transcode caps video via the profile and direct-streams compatible audio', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final params = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 0,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+
+    // maxVideoBitrate budgets the whole stream and forces profile-compatible
+    // audio down to low-rate AAC; the cap must ride the client-profile
+    // limitation alone so directStreamAudio can copy the source audio.
+    expect(params.containsKey('maxVideoBitrate'), isFalse, reason: 'the cap rides the profile add-limitation');
+    expect(params['X-Plex-Client-Profile-Extra'], contains('name=video.bitrate&value=3000'));
+    expect(params['directStreamAudio'], '1');
+  });
+
   test('image-based embedded subtitles produce no sidecar (the server burns them)', () {
     // HLS has no bitmap subtitle rendition, so PGS/VOBSUB can only reach the
     // viewer burned into the video by the transcode (#1738).

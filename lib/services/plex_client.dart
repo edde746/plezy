@@ -2784,10 +2784,16 @@ class PlexClient
       'subtitleSize': '100',
       'audioBoost': '100',
       'location': 'lan',
-      if (!isOriginal && preset.videoBitrateKbps != null) 'maxVideoBitrate': preset.videoBitrateKbps.toString(),
+      // The video quality cap rides the client-profile `add-limitation` (see
+      // [_buildPlexHlsClientProfileExtra]) rather than `maxVideoBitrate`:
+      // measured against Plex 1.43, `maxVideoBitrate` budgets the whole
+      // stream, which forces even profile-compatible audio down to low-rate
+      // AAC. With the profile limitation the video is capped on its own and
+      // `directStreamAudio=1` lets the audio codecs the profile declares
+      // (aac/ac3/eac3/mp3) copy through untouched.
       'addDebugOverlay': '0',
       'autoAdjustQuality': '0',
-      'directStreamAudio': '0',
+      'directStreamAudio': '1',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
       'subtitles': segmentSubtitle
