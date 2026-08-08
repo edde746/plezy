@@ -20,9 +20,8 @@ import org.junit.Test
  */
 class TrueHdMatPackerTest {
 
-  private fun resource(name: String): ByteArray =
-    checkNotNull(javaClass.classLoader?.getResourceAsStream(name)) { "missing fixture $name" }
-      .use { it.readBytes() }
+  private fun resource(name: String): ByteArray = checkNotNull(javaClass.classLoader?.getResourceAsStream(name)) { "missing fixture $name" }
+    .use { it.readBytes() }
 
   private val accessUnits by lazy { resource("truehd_access_units.bin") }
   private val golden by lazy { resource("truehd_iec61937_golden.bin") }
@@ -116,7 +115,10 @@ class TrueHdMatPackerTest {
     while (offset < accessUnits.size) {
       val length = TrueHdMatPacker.accessUnitLength(accessUnits, offset, accessUnits.size)
       if (length == 0) break
-      packer.packAccessUnit(accessUnits, offset, length)?.let { seen[it] = true; bursts++ }
+      packer.packAccessUnit(accessUnits, offset, length)?.let {
+        seen[it] = true
+        bursts++
+      }
       offset += length
     }
     assertTrue("expected several bursts, saw $bursts", bursts > 2)
@@ -150,6 +152,5 @@ class TrueHdMatPackerTest {
     }
   }
 
-  private fun readLittleEndianShort(data: ByteArray, offset: Int): Int =
-    (data[offset].toInt() and 0xFF) or ((data[offset + 1].toInt() and 0xFF) shl 8)
+  private fun readLittleEndianShort(data: ByteArray, offset: Int): Int = (data[offset].toInt() and 0xFF) or ((data[offset + 1].toInt() and 0xFF) shl 8)
 }

@@ -2,6 +2,9 @@ package com.edde746.plezy.exoplayer
 
 import android.content.Context
 import android.media.AudioFormat
+import android.media.AudioManager
+import android.media.AudioTrack
+import android.os.Build
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -85,4 +88,47 @@ internal fun supportedMpvSpdifCodecs(context: Context): String {
     return ""
   }
   return mpvSpdifCodecs(capabilities::supportsEncoding)
+}
+
+/**
+ * Whether this route can carry TrueHD as MAT inside IEC 61937 (#1804).
+ *
+ * This is Kodi's test, and deliberately not media3's. Kodi asks the AudioTrack layer whether it can
+ * size a buffer for one exact tuple — `getMinBufferSize(rate, mask, encoding) > 0` — and gates the
+ * carrier on the 192kHz/7.1 IEC combination specifically. media3 instead asks the audio policy
+ * layer about the encoding, which on the boxes measured for this issue answers "TrueHD is
+ * offload-capable" and says nothing about whether a raw TrueHD track will ever drain.
+ *
+ * Both are consulted: `getMinBufferSize` proves a track can be built, and, where the API exists,
+ * `getDirectPlaybackSupport` proves the route will actually bitstream it rather than silently
+ * decode or wedge.
+ */
+internal fun supportsTrueHdMatCarrier(context: Context): Boolean {
+  val rate = TrueHdMatPacker.CARRIER_SAMPLE_RATE
+  val mask = AudioFormat.CHANNEL_OUT_7POINT1_SURROUND
+  val sizedOk = try {
+    AudioTrack.getMinBufferSize(rate, mask, AudioFormat.ENCODING_IEC61937) > 0
+  } catch (error: Exception) {
+    false
+  }
+  if (!sizedOk) return false
+  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+
+  return try {
+    val audioAttributes = AudioAttributes.Builder()
+      .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+      .setUsage(C.USAGE_MEDIA)
+      .build()
+      .getPlatformAudioAttributes()
+    val probe = AudioFormat.Builder()
+      .setEncoding(AudioFormat.ENCODING_IEC61937)
+      .setChannelMask(mask)
+      .setSampleRate(rate)
+      .build()
+    val support = AudioManager.getDirectPlaybackSupport(probe, audioAttributes)
+    (support and AudioManager.DIRECT_PLAYBACK_BITSTREAM_SUPPORTED) != 0
+  } catch (error: Exception) {
+    Log.w(TAG, "IEC 61937 carrier probe failed; not offering the TrueHD carrier", error)
+    false
+  }
 }
