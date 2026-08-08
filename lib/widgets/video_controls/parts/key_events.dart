@@ -148,6 +148,24 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     // performs its normal action. Single cancel point for keys.
     if (event.isActionable) _cancelAutoSkipFromUserInteraction();
 
+    // The Android TV remote's subtitles/CC button (KEYCODE_CAPTIONS) is
+    // focus-independent: it toggles subtitle visibility, and only dismisses a
+    // tracks sheet when one is open. Handled before the text-input bail below:
+    // it can never type, and the tracks sheet holds focus while it is open.
+    // Other open sheets (settings/chapters/queue) keep their own back/close
+    // affordances and are left alone.
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.closedCaptionToggle) {
+      final sheetController = OverlaySheetController.maybeOf(context);
+      if (sheetController != null && sheetController.isOpen) {
+        if (sheetController.isCurrentEntry(TrackSheet)) {
+          sheetController.close();
+        }
+        return true;
+      }
+      _toggleSubtitles();
+      return true;
+    }
+
     // When an overlay sheet is open (e.g. subtitle search with text fields),
     // don't consume key events — let text input work normally.
     if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) {
