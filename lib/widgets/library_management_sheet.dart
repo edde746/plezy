@@ -99,9 +99,9 @@ Future<void> showLibraryManagementSheet(
 }
 
 List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
-  // Refresh metadata is the only admin action both backends support — Plex
-  // hits `/library/sections/{id}/refresh?force=1`, Jellyfin posts to
-  // `/Items/{id}/Refresh` (the library view is itself an item).
+  // Refresh metadata is the only admin action every backend supports — Plex
+  // hits `/library/sections/{id}/refresh?force=1`; MediaBrowser servers post
+  // to `/Items/{id}/Refresh` (the library view is itself an item).
   final refresh = ContextMenuItem(
     value: 'refresh',
     icon: Symbols.sync_rounded,
@@ -112,7 +112,7 @@ List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
     isDestructive: true,
   );
   // Scan / analyze / empty trash hit Plex-only endpoints, so backend
-  // capability gating keeps them out of Jellyfin menus. The library-qualified
+  // capability gating keeps them out of MediaBrowser menus. The library-qualified
   // resolver independently requires the exact owning Plex server.
   if (library.backend != MediaBackend.plex) return [refresh];
   return [

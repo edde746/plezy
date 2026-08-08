@@ -11,7 +11,7 @@
     "waitingForAuth": "Waiting for authentication...\nSign in from your browser.",
     "useBrowser": "Use browser",
     "or": "or",
-    "connectToJellyfin": "Connect to Jellyfin",
+    "connectToMediaBrowser": "Connect to ${product}",
     "useQuickConnect": "Use Quick Connect",
     "quickConnectInstructions": "Open Quick Connect in Jellyfin and enter this code.",
     "quickConnectWaiting": "Waiting for approval…",
@@ -802,7 +802,7 @@
     "borrowAddTo": "Add to ${displayName}",
     "borrowExplain": "Borrow another profile's connection. PIN-protected profiles require a PIN.",
     "borrowEmpty": "Nothing to borrow yet.",
-    "borrowEmptySubtitle": "Connect Plex or Jellyfin to another profile first.",
+    "borrowEmptySubtitle": "Connect Plex, Jellyfin, or Emby to another profile first.",
     "borrowLoadFailed": "Available connections could not be loaded. Try again.",
     "borrowFromProfile": "From ${displayName}",
     "borrowConnectionBorrowed": "Connection borrowed.",
@@ -822,13 +822,13 @@
   "connections": {
     "sectionTitle": "Connections",
     "addConnection": "Add connection",
-    "addConnectionSubtitleNoProfile": "Sign in with Plex or connect a Jellyfin server",
-    "addConnectionSubtitleScoped": "Add to ${displayName}: Plex, Jellyfin, or another profile connection",
+    "addConnectionSubtitleNoProfile": "Sign in with Plex or connect a Jellyfin or Emby server",
+    "addConnectionSubtitleScoped": "Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection",
     "sessionExpiredOne": "Session expired for ${name}",
     "sessionExpiredMany": "Session expired for ${count} servers",
     "signInAgain": "Sign in again",
-    "editJellyfinTitle": "Edit Jellyfin connection",
-    "editJellyfinIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
+    "editMediaBrowserTitle": "Edit ${product} connection",
+    "editMediaBrowserIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
   },
   "discover": {
     "title": "Discover",
@@ -966,7 +966,7 @@
     "title": "About",
     "openSourceLicenses": "Open Source Licenses",
     "versionLabel": "Version ${version}",
-    "appDescription": "A beautiful Plex and Jellyfin client for Flutter",
+    "appDescription": "A beautiful Plex, Jellyfin, and Emby client for Flutter",
     "viewLicensesDescription": "View licenses of third-party libraries"
   },
   "serverSelection": {
@@ -1873,12 +1873,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Add Jellyfin server",
+    "addMediaBrowserTitle": "Add ${product} server",
     "serverUrls": "Server URLs",
     "serverUrlsHelper": "Multiple URLs allowed, separated by commas.",
     "findServer": "Find server",
-    "searchingLocalServers": "Looking for local Jellyfin servers...",
-    "localServers": "Local Jellyfin servers",
+    "searchingLocalMediaBrowserServers": "Looking for local ${product} servers...",
+    "localMediaBrowserServers": "Local ${product} servers",
     "username": "Username",
     "password": "Password",
     "signIn": "Sign in",
@@ -1890,15 +1890,15 @@
     "addPlexTitle": "Sign in with Plex",
     "pinExpired": "PIN expired before sign-in. Please try again.",
     "failedToRegisterAccount": "Failed to register account: ${error}",
-    "enterJellyfinUrlError": "Enter your Jellyfin server URL",
+    "enterMediaBrowserUrlError": "Enter your ${product} server URL",
     "addConnectionTitle": "Add connection",
     "addConnectionTitleScoped": "Add to ${name}",
     "signInWithPlexCard": "Sign in with Plex",
     "signInWithPlexCardSubtitle": "Authorize this device. Shared servers are added.",
     "signInWithPlexCardSubtitleScoped": "Authorize a Plex account. Home users become profiles.",
-    "connectToJellyfinCard": "Connect to Jellyfin",
-    "connectToJellyfinCardSubtitle": "Enter your server URL, username, and password.",
-    "connectToJellyfinCardSubtitleScoped": "Sign in to a Jellyfin server. Binds to ${name}.",
+    "connectToMediaBrowserCard": "Connect to ${product}",
+    "connectToMediaBrowserCardSubtitle": "Enter your server URL, username, and password.",
+    "connectToMediaBrowserCardSubtitleScoped": "Sign in to your ${product} server. Binds to ${name}.",
     "borrowFromAnotherProfile": "Borrow from another profile",
     "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN."
   }

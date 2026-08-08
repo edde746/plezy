@@ -11,7 +11,7 @@
     "waitingForAuth": "Väntar på autentisering...\nLogga in från din webbläsare.",
     "useBrowser": "Använd webbläsare",
     "or": "eller",
-    "connectToJellyfin": "Anslut till Jellyfin",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Använd Quick Connect",
     "quickConnectInstructions": "Öppna Quick Connect i Jellyfin och ange den här koden.",
     "quickConnectWaiting": "Väntar på godkännande…",
@@ -827,8 +827,8 @@
     "sessionExpiredOne": "Sessionen har gått ut för ${name}",
     "sessionExpiredMany": "Sessionen har gått ut för ${count} servrar",
     "signInAgain": "Logga in igen",
-    "editJellyfinTitle": "Redigera Jellyfin-anslutning",
-    "editJellyfinIntro": "Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL som har lägst latens."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "Upptäck",
@@ -1873,12 +1873,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Lägg till Jellyfin-server",
+    "addMediaBrowserTitle": "",
     "serverUrls": "Server-URL:er",
     "serverUrlsHelper": "Du kan ange flera URL:er avgränsade med kommatecken.",
     "findServer": "Hitta server",
-    "searchingLocalServers": "Söker efter lokala Jellyfin-servrar...",
-    "localServers": "Lokala Jellyfin-servrar",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "Användarnamn",
     "password": "Lösenord",
     "signIn": "Logga in",
@@ -1890,15 +1890,15 @@
     "addPlexTitle": "Logga in med Plex",
     "pinExpired": "PIN-koden gick ut innan inloggning. Försök igen.",
     "failedToRegisterAccount": "Kunde inte registrera kontot: ${error}",
-    "enterJellyfinUrlError": "Ange URL till din Jellyfin-server",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "Lägg till anslutning",
     "addConnectionTitleScoped": "Lägg till i ${name}",
     "signInWithPlexCard": "Logga in med Plex",
     "signInWithPlexCardSubtitle": "Auktorisera den här enheten. Delade servrar läggs till.",
     "signInWithPlexCardSubtitleScoped": "Auktorisera ett Plex-konto. Home-användare blir profiler.",
-    "connectToJellyfinCard": "Anslut till Jellyfin",
-    "connectToJellyfinCardSubtitle": "Ange server-URL, användarnamn och lösenord.",
-    "connectToJellyfinCardSubtitleScoped": "Logga in på en Jellyfin-server. Kopplas till ${name}.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "Låna från en annan profil",
     "borrowFromAnotherProfileSubtitle": "Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN."
   }

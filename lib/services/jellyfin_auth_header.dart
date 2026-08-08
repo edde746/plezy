@@ -1,22 +1,21 @@
 import '../utils/device_identity.dart';
 
-/// Build the `MediaBrowser` Authorization header value the way the official
-/// Jellyfin SDK formats it: every field value is percent-encoded, and the
-/// server reverses that with `WebUtility.UrlDecode` while parsing the header.
-/// Used at auth time and on every authenticated request so the server sees a
+/// Builds the `MediaBrowser` Authorization header value understood by both
+/// Jellyfin and Emby. Every field value is percent-encoded, and the server
+/// reverses that encoding while parsing the header. The same value is used at
+/// auth time and on every authenticated request so either dialect sees a
 /// consistent client identity.
 ///
 /// Encoding is what keeps the header sendable at all. A device name like
 /// `Bjørn PC` cannot travel verbatim: `dart:io` rejects header values above
 /// 0x7F outright, and CFNetwork puts the raw code unit on the wire as a
-/// Latin-1 byte, which Kestrel — the HTTP server hosting Jellyfin — refuses
-/// as a malformed header with 400 before the request is ever routed. It also
-/// removes the grammar hazards the header has no escape for: quotes, commas,
-/// and `=` inside a value.
+/// Latin-1 byte, which the server rejects as a malformed header before the
+/// request is routed. It also removes the grammar hazards the header has no
+/// escape for: quotes, commas, and `=` inside a value.
 ///
-/// Jellyfin requires non-empty client, device, and version fields when
+/// Both dialects require non-empty client, device, and version fields when
 /// creating a session, so those values use stable fallbacks. An empty device
-/// ID is omitted for authenticated requests, where Jellyfin can recover it
+/// ID is omitted for authenticated requests, where the server can recover it
 /// from the token; unauthenticated entry points must call
 /// [requireJellyfinDeviceId].
 String buildJellyfinAuthHeader({
@@ -49,14 +48,14 @@ final RegExp _controlCharacters = RegExp(r'[\x00-\x1f\x7f-\x9f]');
 
 /// Percent-encoding makes any byte transportable, so the only values worth
 /// filtering are the ones that carry no identity at all — a name of control
-/// characters would otherwise reach Jellyfin's device list as `%00` noise
+/// characters would otherwise reach the server's device list as `%00` noise
 /// instead of falling back to a readable label.
 String _meaningful(String value) => value.replaceAll(_controlCharacters, '').trim();
 
-/// Validates the stable device identity required by unauthenticated Jellyfin
-/// session creation. Never substitute a placeholder: Jellyfin keys sessions
-/// and access tokens by this value, so a shared fallback would collide across
-/// installations.
+/// Validates the stable device identity required by unauthenticated
+/// MediaBrowser session creation. Never substitute a placeholder: both
+/// dialects key sessions and access tokens by this value, so a shared fallback
+/// would collide across installations.
 String requireJellyfinDeviceId(String deviceId) {
   final sanitized = sanitizeHeaderValue(deviceId);
   if (sanitized == null || sanitized != deviceId || sanitized.contains('"')) {

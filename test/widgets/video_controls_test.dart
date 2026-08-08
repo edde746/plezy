@@ -874,15 +874,47 @@ void main() {
 
   group('shouldPhysicalEscapeExitFullscreen', () {
     test('uses fullscreen-first behavior for normal Windows and Linux navigation', () {
-      expect(shouldPhysicalEscapeExitFullscreen(isMacOS: false, videoPlayerNavigationEnabled: false), isTrue);
+      expect(
+        shouldPhysicalEscapeExitFullscreen(
+          isMacOS: false,
+          videoPlayerNavigationEnabled: false,
+          playerEnteredFullscreen: true,
+        ),
+        isTrue,
+      );
     });
 
     test('preserves fullscreen when HTPC-style player navigation is enabled', () {
-      expect(shouldPhysicalEscapeExitFullscreen(isMacOS: false, videoPlayerNavigationEnabled: true), isFalse);
+      expect(
+        shouldPhysicalEscapeExitFullscreen(
+          isMacOS: false,
+          videoPlayerNavigationEnabled: true,
+          playerEnteredFullscreen: true,
+        ),
+        isFalse,
+      );
     });
 
     test('preserves native fullscreen inside the macOS player', () {
-      expect(shouldPhysicalEscapeExitFullscreen(isMacOS: true, videoPlayerNavigationEnabled: false), isFalse);
+      expect(
+        shouldPhysicalEscapeExitFullscreen(
+          isMacOS: true,
+          videoPlayerNavigationEnabled: false,
+          playerEnteredFullscreen: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('preserves app-owned fullscreen the player did not enter', () {
+      expect(
+        shouldPhysicalEscapeExitFullscreen(
+          isMacOS: false,
+          videoPlayerNavigationEnabled: false,
+          playerEnteredFullscreen: false,
+        ),
+        isFalse,
+      );
     });
   });
 

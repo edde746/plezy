@@ -3,23 +3,28 @@ import 'dart:async';
 import 'package:http/http.dart' as http;
 
 import '../exceptions/media_server_exceptions.dart';
+import '../media/media_browser_dialect.dart';
 import '../utils/endpoint_race.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/url_utils.dart';
 
-/// Result of a successful Jellyfin URL probe (`/System/Info/Public`).
+/// Result of a successful MediaBrowser server URL probe (`/System/Info/Public`).
 class JellyfinServerInfo {
   final String serverName;
 
-  /// Server's `Id` field — Jellyfin's machine identifier (UUID hex).
+  /// Server's `Id` field — its stable machine identifier.
   final String machineId;
 
   /// Server's reported version string.
   final String version;
 
-  const JellyfinServerInfo({required this.serverName, required this.machineId, required this.version});
+  /// Dialect detected from public system info, or `null` when the response has
+  /// no trustworthy Jellyfin/Emby discriminator.
+  final MediaBrowserDialect? dialect;
+
+  const JellyfinServerInfo({required this.serverName, required this.machineId, required this.version, this.dialect});
 }
 
 class JellyfinEndpointRaceResult {
@@ -100,8 +105,9 @@ class JellyfinEndpointUserInputCandidates {
 class JellyfinEndpointDiscovery {
   static const int defaultPort = 8096;
 
-  JellyfinEndpointDiscovery({this._testHttpClientFactory});
+  JellyfinEndpointDiscovery({this.dialect = MediaBrowserDialect.jellyfin, this._testHttpClientFactory});
 
+  final MediaBrowserDialect dialect;
   final http.Client Function()? _testHttpClientFactory;
 
   MediaServerHttpClient _buildHttpClient({required String baseUrl}) {
@@ -140,10 +146,15 @@ class JellyfinEndpointDiscovery {
       final id = data['Id'];
       final name = data['ServerName'] ?? data['LocalAddress'];
       if (id is! String || name is! String) {
-        throw MediaServerUrlException('Server response missing Id/ServerName — not a Jellyfin server?');
+        throw MediaServerUrlException('Server response missing Id/ServerName — not a ${dialect.productName} server?');
       }
       return (
-        serverInfo: JellyfinServerInfo(serverName: name, machineId: id, version: data['Version'] as String? ?? ''),
+        serverInfo: JellyfinServerInfo(
+          serverName: name,
+          machineId: id,
+          version: data['Version'] as String? ?? '',
+          dialect: MediaBrowserDialect.detectFromPublicSystemInfo(data),
+        ),
         effectiveBaseUrl: effectiveBaseUrl,
       );
     } on MediaServerUrlException {
@@ -160,7 +171,7 @@ class JellyfinEndpointDiscovery {
     }
   }
 
-  /// Races public Jellyfin probes and returns persistence-safe endpoints.
+  /// Races public MediaBrowser server probes and returns persistence-safe endpoints.
   ///
   /// [baseUrlsToPersist] contains caller-selected persistence candidates.
   /// Candidates that reported another machine are excluded; candidates that
@@ -175,7 +186,7 @@ class JellyfinEndpointDiscovery {
   }) async {
     final urls = normalizeBaseUrls(baseUrls);
     if (urls.isEmpty) {
-      throw MediaServerUrlException('Enter at least one Jellyfin server URL');
+      throw MediaServerUrlException('Enter at least one ${dialect.productName} server URL');
     }
 
     final persistUrls = baseUrlsToPersist == null ? urls : normalizeBaseUrls(baseUrlsToPersist);
@@ -199,7 +210,7 @@ class JellyfinEndpointDiscovery {
     EndpointRaceSelection<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>? bestSelection;
 
     await for (final selection in raceEndpointCandidates<JellyfinEndpointCandidate, JellyfinEndpointProbeResult>(
-      label: 'Jellyfin server URL',
+      label: '${dialect.productName} server URL',
       candidates: candidates,
       preferredUrl: preferred,
       urlOf: (candidate) => candidate.url,
@@ -232,7 +243,7 @@ class JellyfinEndpointDiscovery {
 
     final selected = bestSelection ?? firstSelection;
     if (selected == null || selected.result.serverInfo == null) {
-      throw MediaServerUrlException('No reachable Jellyfin server found');
+      throw MediaServerUrlException('No reachable ${dialect.productName} server found');
     }
 
     final Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult> successfulResults =
@@ -256,7 +267,7 @@ class JellyfinEndpointDiscovery {
 
     final selectedInfo = selectedResult.serverInfo;
     if (selectedInfo == null) {
-      throw MediaServerUrlException('No reachable Jellyfin server found');
+      throw MediaServerUrlException('No reachable ${dialect.productName} server found');
     }
 
     final expected = hasExpectedMachineId ? expectedMachineIdTrimmed! : selectedInfo.machineId;
@@ -270,7 +281,7 @@ class JellyfinEndpointDiscovery {
           final candidate = _selectValidationCandidate(groupResults, expectedMachineId: expectedMachineIdTrimmed);
           final info = candidate == null ? null : groupResults[candidate]?.serverInfo;
           if (info != null && info.machineId != expected) {
-            throw MediaServerUrlException('The URLs point to different Jellyfin servers');
+            throw MediaServerUrlException('The URLs point to different ${dialect.productName} servers');
           }
         }
       }
@@ -279,13 +290,13 @@ class JellyfinEndpointDiscovery {
         if (!validateUrlSet.contains(entry.key.url)) continue;
         final info = entry.value.serverInfo;
         if (info != null && info.machineId != expected) {
-          throw MediaServerUrlException('The URLs point to different Jellyfin servers');
+          throw MediaServerUrlException('The URLs point to different ${dialect.productName} servers');
         }
       }
     }
 
     if (selectedInfo.machineId != expected) {
-      throw MediaServerUrlException('The URL does not match this Jellyfin server');
+      throw MediaServerUrlException('The URL does not match this ${dialect.productName} server');
     }
 
     final effectiveUrls = <String, String>{};
@@ -392,7 +403,7 @@ class JellyfinEndpointDiscovery {
     return _selectLowestLatencyCandidate(results);
   }
 
-  static String _resolveEffectiveBaseUrl(String requestedBaseUrl, MediaServerResponse response) {
+  String _resolveEffectiveBaseUrl(String requestedBaseUrl, MediaServerResponse response) {
     final requestedUri = response.requestUri;
     final effectiveUri = response.effectiveUri;
     if (requestedUri == null || effectiveUri == null || effectiveUri == requestedUri) {
@@ -407,7 +418,9 @@ class JellyfinEndpointDiscovery {
       throw MediaServerUrlException('Server redirected to an unsupported URL');
     }
     if (requestedBaseUri.host.toLowerCase() != effectiveUri.host.toLowerCase()) {
-      throw MediaServerUrlException('Server redirected to a different host. Enter the final Jellyfin URL directly');
+      throw MediaServerUrlException(
+        'Server redirected to a different host. Enter the final ${dialect.productName} URL directly',
+      );
     }
     if (requestedBaseUri.scheme.toLowerCase() == 'https' && effectiveScheme != 'https') {
       throw MediaServerUrlException('Server redirected from HTTPS to an insecure URL');
@@ -415,18 +428,23 @@ class JellyfinEndpointDiscovery {
 
     const publicInfoPath = '/System/Info/Public';
     if (!effectiveUri.path.endsWith(publicInfoPath)) {
-      throw MediaServerUrlException('Server redirected to an unsupported URL. Enter the final Jellyfin URL directly');
+      throw MediaServerUrlException(
+        'Server redirected to an unsupported URL. Enter the final ${dialect.productName} URL directly',
+      );
     }
     final basePath = effectiveUri.path.substring(0, effectiveUri.path.length - publicInfoPath.length);
     return normalizeBaseUrl(effectiveUri.replace(path: basePath, query: null, fragment: null).toString());
   }
 
-  /// Normalizes a concrete Jellyfin base URL without inventing a scheme or port.
+  /// Normalizes a concrete MediaBrowser base URL without inventing a scheme or port.
   static String normalizeBaseUrl(String input) => canonicalizeBaseUrl(input);
 
   /// Expands a user-typed add/edit form entry into temporary probe candidates.
   /// These guesses are for discovery only; failed guesses should not be stored.
-  static List<String> expandInputToBaseUrls(String input) {
+  static List<String> expandInputToBaseUrls(
+    String input, {
+    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
+  }) {
     final trimmed = canonicalizeBaseUrl(input);
     if (trimmed.isEmpty) return const [];
     if (_hasScheme(trimmed)) return [trimmed];
@@ -448,7 +466,9 @@ class JellyfinEndpointDiscovery {
     } else {
       add(parsed.replace(scheme: 'http', port: defaultPort));
       add(parsed.replace(scheme: 'https'));
-      add(parsed.replace(scheme: 'https', port: defaultPort));
+      for (final port in dialect.httpsPortGuesses) {
+        add(parsed.replace(scheme: 'https', port: port));
+      }
       add(parsed.replace(scheme: 'http'));
     }
     return List.unmodifiable(result);
@@ -460,7 +480,10 @@ class JellyfinEndpointDiscovery {
     return raw.split(RegExp(r'[\n,]+')).map((url) => url.trim()).where((url) => url.isNotEmpty).toList(growable: false);
   }
 
-  static JellyfinEndpointUserInputCandidates buildUserInputCandidates(Iterable<String> input) {
+  static JellyfinEndpointUserInputCandidates buildUserInputCandidates(
+    Iterable<String> input, {
+    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
+  }) {
     final probeBaseUrls = <String>[];
     final explicitBaseUrls = <String>[];
     final validationBaseUrlGroups = <List<String>>[];
@@ -488,7 +511,7 @@ class JellyfinEndpointDiscovery {
         validationBaseUrlGroups.add([normalized]);
       } else {
         final group = <String>[];
-        for (final candidate in expandInputToBaseUrls(normalized)) {
+        for (final candidate in expandInputToBaseUrls(normalized, dialect: dialect)) {
           addProbe(candidate);
           group.add(candidate);
         }

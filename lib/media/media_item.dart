@@ -7,6 +7,7 @@ import '../services/settings_service.dart' show EpisodePosterMode;
 import '../utils/global_key_utils.dart';
 import '../utils/json_utils.dart';
 import 'media_backend.dart';
+import 'media_browser_dialect.dart';
 import 'media_kind.dart';
 import 'media_role.dart';
 import 'media_version.dart';
@@ -23,6 +24,10 @@ const double _squareHeroAspectRatio = 1.39;
 /// Backend-neutral media item shape used by UI, providers, persistence, and
 /// playback. Concrete variants retain backend-only fields without forcing the
 /// rest of the app to traffic in Plex/Jellyfin DTOs.
+///
+/// [JellyfinMediaItem] backs both MediaBrowser-family backends: Jellyfin and
+/// Emby return field-identical `BaseItemDto`s, so they share one variant and
+/// carry [JellyfinMediaItem.dialect] to tell them apart.
 @Freezed(unionKey: 'backend', unionValueCase: FreezedUnionCase.none, equal: false, makeCollectionsUnmodifiable: false)
 sealed class MediaItem with _$MediaItem {
   const MediaItem._();
@@ -154,7 +159,8 @@ sealed class MediaItem with _$MediaItem {
         backendFolderKey: backendFolderKey,
         raw: raw,
       ),
-      MediaBackend.jellyfin => JellyfinMediaItem(
+      MediaBackend.jellyfin || MediaBackend.emby => JellyfinMediaItem(
+        dialect: backend.dialect!,
         id: id,
         kind: kind,
         guid: guid,
@@ -300,10 +306,20 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: _mediaItemRawFromJson) Map<String, Object?>? raw,
   }) = PlexMediaItem;
 
-  /// Backend-tagged concrete subclass for items sourced from a Jellyfin server.
+  /// Backend-tagged concrete subclass for items sourced from a MediaBrowser
+  /// server — Jellyfin or Emby, discriminated by [JellyfinMediaItem.dialect].
   @FreezedUnionValue('jellyfin')
   @JsonSerializable(includeIfNull: false, explicitToJson: true)
   const factory MediaItem.jellyfin({
+    /// Which MediaBrowser dialect produced this item.
+    ///
+    /// Not serialized on its own: [MediaItem.toJson] already writes the
+    /// resolved [backend] id under the union key, and [MediaItem.fromJson]
+    /// restores the dialect from it. Keeping one discriminator on the wire
+    /// avoids the two disagreeing on a stale cache row.
+    @JsonKey(includeToJson: false, includeFromJson: false)
+    @Default(MediaBrowserDialect.jellyfin)
+    MediaBrowserDialect dialect,
     @JsonKey(readValue: readStringField, defaultValue: '') required String id,
     @JsonKey(fromJson: _mediaKindFromJson, toJson: _mediaKindToJson) required MediaKind kind,
     String? guid,
@@ -375,7 +391,7 @@ sealed class MediaItem with _$MediaItem {
 
   MediaBackend get backend => switch (this) {
     PlexMediaItem() => MediaBackend.plex,
-    JellyfinMediaItem() => MediaBackend.jellyfin,
+    JellyfinMediaItem(:final dialect) => dialect.backend,
   };
 
   /// Restore a [MediaItem] from a [toJson] payload. Missing/unknown backend
@@ -385,13 +401,14 @@ sealed class MediaItem with _$MediaItem {
     return switch (MediaBackend.fromString(json['backend'] as String?)) {
       MediaBackend.plex => _$PlexMediaItemFromJson(json),
       MediaBackend.jellyfin => _$JellyfinMediaItemFromJson(json),
+      MediaBackend.emby => _$JellyfinMediaItemFromJson(json).copyWith(dialect: MediaBrowserDialect.emby),
     };
   }
 
   Map<String, dynamic> toJson() {
     return switch (this) {
       final PlexMediaItem item => {'backend': MediaBackend.plex.id, ..._$PlexMediaItemToJson(item)},
-      final JellyfinMediaItem item => {'backend': MediaBackend.jellyfin.id, ..._$JellyfinMediaItemToJson(item)},
+      final JellyfinMediaItem item => {'backend': item.dialect.backend.id, ..._$JellyfinMediaItemToJson(item)},
     };
   }
 

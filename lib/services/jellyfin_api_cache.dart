@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
 import '../media/media_backend.dart';
+import '../media/media_browser_dialect.dart';
 import '../media/media_item.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
@@ -14,22 +15,26 @@ import 'credential_vault.dart';
 import 'jellyfin_cache_resolver.dart';
 import 'jellyfin_mappers.dart';
 
-/// Jellyfin-shape helpers on top of the shared [ApiCache] substrate.
+/// MediaBrowser-shape helpers on top of the shared [ApiCache] substrate.
 ///
-/// Cache rows for Jellyfin item metadata use the compound connection id
-/// (`{machineId}/{userId}`) plus the read-path endpoint key
+/// Cache rows for Jellyfin and Emby item metadata use the compound connection
+/// id (`{machineId}/{userId}`) plus the read-path endpoint key
 /// `/Users/{userId}/Items/{itemId}`. The public [MediaItem.serverId] remains
 /// the bare machine id; the compound prefix only isolates local user-scoped
 /// state such as `UserData`.
 class JellyfinApiCache extends ApiCache {
-  static final _singleton = ApiCacheSingleton<JellyfinApiCache>(MediaBackend.jellyfin, 'JellyfinApiCache');
+  static final _singleton = ApiCacheSingleton<JellyfinApiCache>(const {
+    MediaBackend.jellyfin,
+    MediaBackend.emby,
+  }, 'JellyfinApiCache');
   static JellyfinApiCache get instance => _singleton.instance;
 
   JellyfinApiCache._(super.db);
 
   /// Initialize the singleton with an [AppDatabase] instance. Also registers
   /// this instance with the [ApiCache] backend dispatch so callers using
-  /// `ApiCache.forBackend(MediaBackend.jellyfin)` resolve here.
+  /// `ApiCache.forBackend(MediaBackend.jellyfin)` or
+  /// `ApiCache.forBackend(MediaBackend.emby)` resolve here.
   static void initialize(AppDatabase db) => _singleton.install(JellyfinApiCache._(db));
 
   JellyfinCacheResolver get _resolver => JellyfinCacheResolver(database);
@@ -111,6 +116,7 @@ class JellyfinApiCache extends ApiCache {
         serverId: ServerId(ctx.machineId),
         serverName: ctx.name,
         absolutizer: absolutizer,
+        dialect: ctx.dialect,
       );
     } catch (_) {
       return null;
@@ -118,18 +124,17 @@ class JellyfinApiCache extends ApiCache {
   }
 
   /// Persist a watched/unwatched flip into cached `BaseItemDto` rows for
-  /// [itemId]. Compound Jellyfin scope ids update only their user. A legacy
+  /// [itemId]. Compound MediaBrowser scope ids update only their user. A legacy
   /// bare machine id is accepted only when its matching rows belong to one
   /// user; ambiguous multi-user writes are skipped rather than bleeding watch
   /// state across profiles.
   ///
-  /// [viewOffsetMs] is converted to Jellyfin's 100-ns ticks for
+  /// [viewOffsetMs] is converted to MediaBrowser 100-ns ticks for
   /// `UserData.PlaybackPositionTicks`. [lastViewedAt] is treated as Plex's
-  /// epoch-seconds and translated to Jellyfin's ISO-8601 `LastPlayedDate`.
-  /// [viewedLeafCount] is ignored — Jellyfin tracks per-show rollup via
-  /// `UserData.UnplayedItemCount`, computed from individual children rather
-  /// than aggregated on the parent. The parameter is accepted for API parity
-  /// with the Plex caller.
+  /// epoch-seconds and translated to the MediaBrowser ISO-8601
+  /// `LastPlayedDate`. [viewedLeafCount] is ignored — both dialects compute
+  /// per-show rollup from individual children via `UserData.UnplayedItemCount`.
+  /// The parameter is accepted for API parity with the Plex caller.
   @override
   Future<void> applyWatchState({
     required ServerId serverId,
@@ -150,7 +155,7 @@ class JellyfinApiCache extends ApiCache {
       };
       if (userIds.length > 1) {
         appLogger.w(
-          'Skipping ambiguous bare-scope Jellyfin watch-state cache write',
+          'Skipping ambiguous bare-scope MediaBrowser watch-state cache write',
           error: {'serverId': serverId, 'itemId': itemId, 'userCount': userIds.length},
         );
         return;
@@ -192,7 +197,7 @@ class JellyfinApiCache extends ApiCache {
     }
   }
 
-  /// Load all pinned Jellyfin metadata in a single query.
+  /// Load all pinned MediaBrowser metadata in a single query.
   ///
   /// Returns a map keyed by `buildGlobalKey(ServerId(serverId), itemId)` for O(1)
   /// lookups, mirroring [PlexApiCache.getAllPinnedMetadata] so callers can
@@ -213,9 +218,10 @@ class JellyfinApiCache extends ApiCache {
 
     // Resolve the connection context per serverId once on the main thread
     // (DB queries can't move into the isolate). Each context carries the
-    // serverName used to stamp the [MediaItem] plus the baseUrl/accessToken
-    // required to absolutize image paths.
-    final contexts = <String, ({String machineId, String name, String baseUrl, String accessToken})>{};
+    // serverName and dialect used to stamp the [MediaItem] plus the
+    // baseUrl/accessToken required to absolutize image paths.
+    final contexts =
+        <String, ({String machineId, String name, String baseUrl, String accessToken, MediaBrowserDialect dialect})>{};
     final absolutizers = <String, JellyfinImageAbsolutizer>{};
     for (final entry in entries) {
       final id = entry.connection.id;
@@ -240,6 +246,7 @@ class JellyfinApiCache extends ApiCache {
             serverId: ServerId(ctx.machineId),
             serverName: ctx.name,
             absolutizer: absolutizer,
+            dialect: ctx.dialect,
           );
           if (mapped == null) return null;
           return MapEntry(buildGlobalKey(ServerId(entry.key.scopeId), entry.key.itemId), mapped);
@@ -248,27 +255,26 @@ class JellyfinApiCache extends ApiCache {
     );
   }
 
-  /// Resolve the connection context (server name + base URL + access token)
-  /// for a cache row keyed by the server's machineId. The [Connections]
+  /// Resolve the connection context (server name, dialect, base URL, and access
+  /// token) for a cache row keyed by the server's machineId. The [Connections]
   /// row's `id` is `${serverMachineId}/$userId`, so a direct `id == serverId`
   /// lookup misses; fall back to a prefix match.
   ///
-  /// `name` matches what the live [JellyfinClient] stamps onto online
-  /// MediaItems (`connection.serverName`, not the compound `displayName`).
-  /// `baseUrl` and `accessToken` come from the same `configJson` payload
-  /// [JellyfinConnection.toConfigJson] writes, so cache-read absolutization
-  /// uses the current values — token/URL rotations Just Work.
+  /// `name` and `dialect` match what the live [JellyfinClient] stamps onto
+  /// online MediaItems. `baseUrl` and `accessToken` come from the same
+  /// `configJson` payload [JellyfinConnection.toConfigJson] writes, so
+  /// cache-read absolutization uses the current values — token/URL rotations
+  /// Just Work.
   ///
-  /// Returns `null` when no row matches or the row carries an empty
-  /// `baseUrl` (no honest URL we can build).
-  Future<({String machineId, String name, String baseUrl, String accessToken})?> _serverContext(
-    ConnectionRow row, {
-    required String machineId,
-  }) async {
+  /// Returns `null` when no row matches or the row carries an empty `baseUrl`
+  /// (no honest URL we can build).
+  Future<({String machineId, String name, String baseUrl, String accessToken, MediaBrowserDialect dialect})?>
+  _serverContext(ConnectionRow row, {required String machineId}) async {
     String? configName;
     String? configMachineId;
     String baseUrl = '';
     String accessToken = '';
+    final dialect = MediaBrowserDialect.fromIdOrJellyfin(row.kind);
     try {
       final rawConfig = jsonDecode(row.configJson) as Map<String, dynamic>;
       final config = (await CredentialVault.revealConnectionConfig(row.kind, rawConfig)).config;
@@ -282,6 +288,6 @@ class JellyfinApiCache extends ApiCache {
     if (baseUrl.isEmpty) return null;
     configMachineId ??= machineId;
     final name = (configName != null && configName.isNotEmpty) ? configName : row.displayName;
-    return (machineId: configMachineId, name: name, baseUrl: baseUrl, accessToken: accessToken);
+    return (machineId: configMachineId, name: name, baseUrl: baseUrl, accessToken: accessToken, dialect: dialect);
   }
 }

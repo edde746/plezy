@@ -115,7 +115,6 @@ class _Translations$auth$uz extends Translations$auth$en {
 	@override String get waitingForAuth => 'Tasdiqlanish kutilmoqda...\nBrauzeringizdan kiring.';
 	@override String get useBrowser => 'Brauzerdan foydalanish';
 	@override String get or => 'yoki';
-	@override String get connectToJellyfin => 'Jellyfin-ga ulanish';
 	@override String get useQuickConnect => 'Tezkor ulanishdan foydalanish';
 	@override String get quickConnectInstructions => 'Jellyfin-da Tezkor ulanishni oching va ushbu kodni kiriting.';
 	@override String get quickConnectWaiting => 'Tasdiq kutilmoqda…';
@@ -922,8 +921,6 @@ class _Translations$connections$uz extends Translations$connections$en {
 	@override String sessionExpiredOne({required Object name}) => '${name} uchun seans vaqti tugadi';
 	@override String sessionExpiredMany({required Object count}) => '${count} server uchun seans vaqti tugadi';
 	@override String get signInAgain => 'Qaytadan kirish';
-	@override String get editJellyfinTitle => 'Jellyfin ulanishini tahrirlash';
-	@override String editJellyfinIntro({required Object serverName}) => '${serverName} uchun URL manzilini qoʻshing yoki oʻchiring.';
 }
 
 // Path: discover
@@ -1814,12 +1811,9 @@ class _Translations$addServer$uz extends Translations$addServer$en {
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String get addJellyfinTitle => 'Jellyfin serverini qoʻshish';
 	@override String get serverUrls => 'Server URL-lari';
 	@override String get serverUrlsHelper => 'Vergul bilan ajratilgan bir nechta URL manziliga ruxsat beriladi.';
 	@override String get findServer => 'Serverni topish';
-	@override String get searchingLocalServers => 'Mahalliy Jellyfin serverlari qidirilmoqda...';
-	@override String get localServers => 'Mahalliy Jellyfin serverlari';
 	@override String get username => 'Foydalanuvchi nomi';
 	@override String get password => 'Parol';
 	@override String get signIn => 'Kirish';
@@ -1831,15 +1825,11 @@ class _Translations$addServer$uz extends Translations$addServer$en {
 	@override String get addPlexTitle => 'Plex orqali kirish';
 	@override String get pinExpired => 'PIN kod vaqti tugadi.';
 	@override String failedToRegisterAccount({required Object error}) => 'Hisobni roʻyxatdan oʻtkazishda xatolik: ${error}';
-	@override String get enterJellyfinUrlError => 'Jellyfin server URL-ini kiriting';
 	@override String get addConnectionTitle => 'Ulanish qoʻshish';
 	@override String addConnectionTitleScoped({required Object name}) => '${name} profiliga qoʻshish';
 	@override String get signInWithPlexCard => 'Plex orqali kirish';
 	@override String get signInWithPlexCardSubtitle => 'Ushbu qurilmani avtorizatsiya qiling.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Plex hisobini avtorizatsiya qiling.';
-	@override String get connectToJellyfinCard => 'Jellyfin-ga ulanish';
-	@override String get connectToJellyfinCardSubtitle => 'Server URL, foydalanuvchi nomi va parolingizni kiriting.';
-	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Jellyfin serveriga kiring. ${name} profiliga ulanmoqda.';
 	@override String get borrowFromAnotherProfile => 'Boshqa profildan olish';
 	@override String get borrowFromAnotherProfileSubtitle => 'Boshqa profilning ulanishidan qayta foydalaning.';
 }
@@ -2219,7 +2209,6 @@ extension on TranslationsUz {
 			'auth.waitingForAuth' => 'Tasdiqlanish kutilmoqda...\nBrauzeringizdan kiring.',
 			'auth.useBrowser' => 'Brauzerdan foydalanish',
 			'auth.or' => 'yoki',
-			'auth.connectToJellyfin' => 'Jellyfin-ga ulanish',
 			'auth.useQuickConnect' => 'Tezkor ulanishdan foydalanish',
 			'auth.quickConnectInstructions' => 'Jellyfin-da Tezkor ulanishni oching va ushbu kodni kiriting.',
 			'auth.quickConnectWaiting' => 'Tasdiq kutilmoqda…',
@@ -2722,9 +2711,9 @@ extension on TranslationsUz {
 			'videoControls.noChaptersAvailable' => 'Boʻlimlar mavjud emas',
 			'videoControls.queue' => 'Navbat',
 			'videoControls.noQueueItems' => 'Navbatda elementlar yoʻq',
+			'videoControls.searchSubtitles' => 'Subtitr qidirish',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.searchSubtitles' => 'Subtitr qidirish',
 			'videoControls.language' => 'Til',
 			'videoControls.noSubtitlesFound' => 'Subtitr topilmadi',
 			'videoControls.subtitleDownloaded' => 'Subtitr yuklab olindi',
@@ -2884,8 +2873,6 @@ extension on TranslationsUz {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} uchun seans vaqti tugadi',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} server uchun seans vaqti tugadi',
 			'connections.signInAgain' => 'Qaytadan kirish',
-			'connections.editJellyfinTitle' => 'Jellyfin ulanishini tahrirlash',
-			'connections.editJellyfinIntro' => ({required Object serverName}) => '${serverName} uchun URL manzilini qoʻshing yoki oʻchiring.',
 			'discover.title' => 'Kashf qilish',
 			'discover.noContentAvailable' => 'Kontent mavjud emas',
 			'discover.addMediaToLibraries' => 'Kutubxonalaringizga media qoʻshing',
@@ -3236,11 +3223,11 @@ extension on TranslationsUz {
 			'watchTogether.enterCodeHint' => '5 xonali kodni kiriting',
 			'watchTogether.pasteFromClipboard' => 'Xotiradan joylash',
 			'watchTogether.pleaseEnterCode' => 'Seans kodini kiriting',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.codeMustBe5Chars' => 'Seans kodi 5 ta belgidan iborat boʻlishi kerak',
 			'watchTogether.joinInstructions' => 'Tashkilotchining seans kodini kiriting.',
 			'watchTogether.failedToCreate' => 'Seansni yaratib boʻlmadi',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.failedToJoin' => 'Seansga qoʻshilib boʻlmadi',
 			'watchTogether.sessionCodeCopied' => 'Seans kodi nusxalandi',
 			'watchTogether.relayUnreachable' => 'Rele serveriga ulanib boʻlmadi.',
@@ -3678,12 +3665,9 @@ extension on TranslationsUz {
 			'services.libraryFilter.modeHintWhitelist' => 'Faqat quyida tanlangan kutubxonalarni sinxronlash.',
 			'services.libraryFilter.libraries' => 'Kutubxonalar',
 			'services.libraryFilter.noLibraries' => 'Kutubxonalar yoʻq',
-			'addServer.addJellyfinTitle' => 'Jellyfin serverini qoʻshish',
 			'addServer.serverUrls' => 'Server URL-lari',
 			'addServer.serverUrlsHelper' => 'Vergul bilan ajratilgan bir nechta URL manziliga ruxsat beriladi.',
 			'addServer.findServer' => 'Serverni topish',
-			'addServer.searchingLocalServers' => 'Mahalliy Jellyfin serverlari qidirilmoqda...',
-			'addServer.localServers' => 'Mahalliy Jellyfin serverlari',
 			'addServer.username' => 'Foydalanuvchi nomi',
 			'addServer.password' => 'Parol',
 			'addServer.signIn' => 'Kirish',
@@ -3695,15 +3679,11 @@ extension on TranslationsUz {
 			'addServer.addPlexTitle' => 'Plex orqali kirish',
 			'addServer.pinExpired' => 'PIN kod vaqti tugadi.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hisobni roʻyxatdan oʻtkazishda xatolik: ${error}',
-			'addServer.enterJellyfinUrlError' => 'Jellyfin server URL-ini kiriting',
 			'addServer.addConnectionTitle' => 'Ulanish qoʻshish',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name} profiliga qoʻshish',
 			'addServer.signInWithPlexCard' => 'Plex orqali kirish',
 			'addServer.signInWithPlexCardSubtitle' => 'Ushbu qurilmani avtorizatsiya qiling.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Plex hisobini avtorizatsiya qiling.',
-			'addServer.connectToJellyfinCard' => 'Jellyfin-ga ulanish',
-			'addServer.connectToJellyfinCardSubtitle' => 'Server URL, foydalanuvchi nomi va parolingizni kiriting.',
-			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Jellyfin serveriga kiring. ${name} profiliga ulanmoqda.',
 			'addServer.borrowFromAnotherProfile' => 'Boshqa profildan olish',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Boshqa profilning ulanishidan qayta foydalaning.',
 			_ => null,

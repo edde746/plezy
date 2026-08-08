@@ -11,7 +11,7 @@
     "waitingForAuth": "Tasdiqlanish kutilmoqda...\nBrauzeringizdan kiring.",
     "useBrowser": "Brauzerdan foydalanish",
     "or": "yoki",
-    "connectToJellyfin": "Jellyfin-ga ulanish",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Tezkor ulanishdan foydalanish",
     "quickConnectInstructions": "Jellyfin-da Tezkor ulanishni oching va ushbu kodni kiriting.",
     "quickConnectWaiting": "Tasdiq kutilmoqda…",
@@ -827,8 +827,8 @@
     "sessionExpiredOne": "${name} uchun seans vaqti tugadi",
     "sessionExpiredMany": "${count} server uchun seans vaqti tugadi",
     "signInAgain": "Qaytadan kirish",
-    "editJellyfinTitle": "Jellyfin ulanishini tahrirlash",
-    "editJellyfinIntro": "${serverName} uchun URL manzilini qoʻshing yoki oʻchiring."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "Kashf qilish",
@@ -1873,12 +1873,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Jellyfin serverini qoʻshish",
+    "addMediaBrowserTitle": "",
     "serverUrls": "Server URL-lari",
     "serverUrlsHelper": "Vergul bilan ajratilgan bir nechta URL manziliga ruxsat beriladi.",
     "findServer": "Serverni topish",
-    "searchingLocalServers": "Mahalliy Jellyfin serverlari qidirilmoqda...",
-    "localServers": "Mahalliy Jellyfin serverlari",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "Foydalanuvchi nomi",
     "password": "Parol",
     "signIn": "Kirish",
@@ -1890,15 +1890,15 @@
     "addPlexTitle": "Plex orqali kirish",
     "pinExpired": "PIN kod vaqti tugadi.",
     "failedToRegisterAccount": "Hisobni roʻyxatdan oʻtkazishda xatolik: ${error}",
-    "enterJellyfinUrlError": "Jellyfin server URL-ini kiriting",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "Ulanish qoʻshish",
     "addConnectionTitleScoped": "${name} profiliga qoʻshish",
     "signInWithPlexCard": "Plex orqali kirish",
     "signInWithPlexCardSubtitle": "Ushbu qurilmani avtorizatsiya qiling.",
     "signInWithPlexCardSubtitleScoped": "Plex hisobini avtorizatsiya qiling.",
-    "connectToJellyfinCard": "Jellyfin-ga ulanish",
-    "connectToJellyfinCardSubtitle": "Server URL, foydalanuvchi nomi va parolingizni kiriting.",
-    "connectToJellyfinCardSubtitleScoped": "Jellyfin serveriga kiring. ${name} profiliga ulanmoqda.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "Boshqa profildan olish",
     "borrowFromAnotherProfileSubtitle": "Boshqa profilning ulanishidan qayta foydalaning."
   }

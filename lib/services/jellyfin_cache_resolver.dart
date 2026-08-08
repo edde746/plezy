@@ -8,7 +8,7 @@ typedef JellyfinItemCacheKey = ({String scopeId, String machineId, String userId
 typedef JellyfinCacheItem = ({ApiCacheData cacheRow, JellyfinItemCacheKey key});
 typedef ResolvedJellyfinCacheItem = ({ApiCacheData cacheRow, ConnectionRow connection, JellyfinItemCacheKey key});
 
-/// Canonical Jellyfin connection and item-cache key resolution.
+/// Canonical MediaBrowser connection and item-cache key resolution.
 class JellyfinCacheResolver {
   JellyfinCacheResolver(this.database);
 
@@ -17,6 +17,9 @@ class JellyfinCacheResolver {
   static const _likeEscape = r'\';
   static const _usersMarker = ':/Users/';
   static const _itemsMarker = '/Items/';
+
+  static Expression<bool> _mediaBrowserKind(GeneratedColumn<String> kind) =>
+      kind.equals('jellyfin') | kind.equals('emby');
 
   Expression<bool> itemKeyPredicate(GeneratedColumn<String> column, String serverOrScopeId, String itemId) {
     final scope = _splitScope(serverOrScopeId);
@@ -78,7 +81,7 @@ class JellyfinCacheResolver {
             .get();
     if (rows.isEmpty) return const [];
 
-    final connections = await (database.select(database.connections)..where((t) => t.kind.equals('jellyfin'))).get();
+    final connections = await (database.select(database.connections)..where((t) => _mediaBrowserKind(t.kind))).get();
     final connectionById = {for (final connection in connections) connection.id: connection};
     final bindings = await database.select(database.profileConnections).get();
     final bindingsByConnection = <String, List<ProfileConnectionRow>>{};
@@ -111,11 +114,11 @@ class JellyfinCacheResolver {
     return matches;
   }
 
-  /// Resolves the exact persisted Jellyfin cache namespace owned by
+  /// Resolves the exact persisted MediaBrowser cache namespace owned by
   /// [profileId] for [serverOrScopeId].
   ///
   /// The physical download row is deliberately not consulted: it is shared
-  /// across profiles and may have been created by a different Jellyfin user.
+  /// across profiles and may have been created by a different MediaBrowser user.
   Future<String?> findProfileScopeId(String serverOrScopeId, String profileId) async {
     if (profileId.isEmpty) return null;
     final requested = _splitScope(serverOrScopeId);
@@ -132,7 +135,7 @@ class JellyfinCacheResolver {
       if (binding.userIdentifier.isEmpty) continue;
       final connection = await (database.select(
         database.connections,
-      )..where((t) => t.id.equals(binding.connectionId) & t.kind.equals('jellyfin'))).getSingleOrNull();
+      )..where((t) => t.id.equals(binding.connectionId) & _mediaBrowserKind(t.kind))).getSingleOrNull();
       if (connection == null) continue;
 
       final connectionScope = _splitScope(connection.id);
@@ -169,12 +172,12 @@ class JellyfinCacheResolver {
       final compoundId = '${scope.machineId}/$expectedUserId';
       final compound = await (database.select(
         database.connections,
-      )..where((t) => t.id.equals(compoundId) & t.kind.equals('jellyfin'))).getSingleOrNull();
+      )..where((t) => t.id.equals(compoundId) & _mediaBrowserKind(t.kind))).getSingleOrNull();
       if (compound != null && await _matchesProfileBinding(compound.id, expectedUserId)) return compound;
 
       final legacy = await (database.select(
         database.connections,
-      )..where((t) => t.id.equals(scope.machineId) & t.kind.equals('jellyfin'))).getSingleOrNull();
+      )..where((t) => t.id.equals(scope.machineId) & _mediaBrowserKind(t.kind))).getSingleOrNull();
       if (legacy != null && await _matchesProfileBinding(legacy.id, expectedUserId)) return legacy;
       return null;
     }
@@ -189,7 +192,7 @@ class JellyfinCacheResolver {
 
     final prefix = '${scope.machineId}/';
     return (database.select(database.connections)
-          ..where((t) => t.id.substr(1, prefix.length).equals(prefix) & t.kind.equals('jellyfin'))
+          ..where((t) => t.id.substr(1, prefix.length).equals(prefix) & _mediaBrowserKind(t.kind))
           ..orderBy([(t) => OrderingTerm.asc(t.id)])
           ..limit(1))
         .getSingleOrNull();

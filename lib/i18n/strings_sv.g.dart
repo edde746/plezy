@@ -115,7 +115,6 @@ class _Translations$auth$sv extends Translations$auth$en {
 	@override String get waitingForAuth => 'Väntar på autentisering...\nLogga in från din webbläsare.';
 	@override String get useBrowser => 'Använd webbläsare';
 	@override String get or => 'eller';
-	@override String get connectToJellyfin => 'Anslut till Jellyfin';
 	@override String get useQuickConnect => 'Använd Quick Connect';
 	@override String get quickConnectInstructions => 'Öppna Quick Connect i Jellyfin och ange den här koden.';
 	@override String get quickConnectWaiting => 'Väntar på godkännande…';
@@ -918,8 +917,6 @@ class _Translations$connections$sv extends Translations$connections$en {
 	@override String sessionExpiredOne({required Object name}) => 'Sessionen har gått ut för ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sessionen har gått ut för ${count} servrar';
 	@override String get signInAgain => 'Logga in igen';
-	@override String get editJellyfinTitle => 'Redigera Jellyfin-anslutning';
-	@override String editJellyfinIntro({required Object serverName}) => 'Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL som har lägst latens.';
 }
 
 // Path: discover
@@ -1803,12 +1800,9 @@ class _Translations$addServer$sv extends Translations$addServer$en {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get addJellyfinTitle => 'Lägg till Jellyfin-server';
 	@override String get serverUrls => 'Server-URL:er';
 	@override String get serverUrlsHelper => 'Du kan ange flera URL:er avgränsade med kommatecken.';
 	@override String get findServer => 'Hitta server';
-	@override String get searchingLocalServers => 'Söker efter lokala Jellyfin-servrar...';
-	@override String get localServers => 'Lokala Jellyfin-servrar';
 	@override String get username => 'Användarnamn';
 	@override String get password => 'Lösenord';
 	@override String get signIn => 'Logga in';
@@ -1820,15 +1814,11 @@ class _Translations$addServer$sv extends Translations$addServer$en {
 	@override String get addPlexTitle => 'Logga in med Plex';
 	@override String get pinExpired => 'PIN-koden gick ut innan inloggning. Försök igen.';
 	@override String failedToRegisterAccount({required Object error}) => 'Kunde inte registrera kontot: ${error}';
-	@override String get enterJellyfinUrlError => 'Ange URL till din Jellyfin-server';
 	@override String get addConnectionTitle => 'Lägg till anslutning';
 	@override String addConnectionTitleScoped({required Object name}) => 'Lägg till i ${name}';
 	@override String get signInWithPlexCard => 'Logga in med Plex';
 	@override String get signInWithPlexCardSubtitle => 'Auktorisera den här enheten. Delade servrar läggs till.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Auktorisera ett Plex-konto. Home-användare blir profiler.';
-	@override String get connectToJellyfinCard => 'Anslut till Jellyfin';
-	@override String get connectToJellyfinCardSubtitle => 'Ange server-URL, användarnamn och lösenord.';
-	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Logga in på en Jellyfin-server. Kopplas till ${name}.';
 	@override String get borrowFromAnotherProfile => 'Låna från en annan profil';
 	@override String get borrowFromAnotherProfileSubtitle => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.';
 }
@@ -2208,7 +2198,6 @@ extension on TranslationsSv {
 			'auth.waitingForAuth' => 'Väntar på autentisering...\nLogga in från din webbläsare.',
 			'auth.useBrowser' => 'Använd webbläsare',
 			'auth.or' => 'eller',
-			'auth.connectToJellyfin' => 'Anslut till Jellyfin',
 			'auth.useQuickConnect' => 'Använd Quick Connect',
 			'auth.quickConnectInstructions' => 'Öppna Quick Connect i Jellyfin och ange den här koden.',
 			'auth.quickConnectWaiting' => 'Väntar på godkännande…',
@@ -2711,9 +2700,9 @@ extension on TranslationsSv {
 			'videoControls.searchSubtitles' => 'Sök undertexter',
 			'videoControls.language' => 'Språk',
 			'videoControls.noSubtitlesFound' => 'Inga undertexter hittades',
+			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloaded' => 'Undertexten har laddats ned',
 			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
 			'videoControls.subtitleDownloadFailed' => 'Det gick inte att ladda ned undertexten',
 			'videoControls.searchLanguages' => 'Sök språk...',
@@ -2869,8 +2858,6 @@ extension on TranslationsSv {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen har gått ut för ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessionen har gått ut för ${count} servrar',
 			'connections.signInAgain' => 'Logga in igen',
-			'connections.editJellyfinTitle' => 'Redigera Jellyfin-anslutning',
-			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL som har lägst latens.',
 			'discover.title' => 'Upptäck',
 			'discover.noContentAvailable' => 'Inget innehåll tillgängligt',
 			'discover.addMediaToLibraries' => 'Lägg till medieinnehåll i dina bibliotek',
@@ -3225,11 +3212,11 @@ extension on TranslationsSv {
 			'watchTogether.failedToCreate' => 'Det gick inte att skapa sessionen',
 			'watchTogether.failedToJoin' => 'Det gick inte att gå med i sessionen',
 			'watchTogether.sessionCodeCopied' => 'Sessionskoden har kopierats till urklipp',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.relayUnreachable' => 'Reläservern kan inte nås. Din internetleverantör kan blockera Titta tillsammans.',
 			'watchTogether.reconnectingToHost' => 'Återansluter till värden...',
 			'watchTogether.currentPlayback' => 'Aktuell uppspelning',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinCurrentPlayback' => 'Gå med i aktuell uppspelning',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Hoppa tillbaka till det värden tittar på just nu',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Kunde inte öppna aktuell uppspelning',
@@ -3656,12 +3643,9 @@ extension on TranslationsSv {
 			'services.libraryFilter.modeHintWhitelist' => 'Synkronisera endast de bibliotek som markeras nedan.',
 			'services.libraryFilter.libraries' => 'Bibliotek',
 			'services.libraryFilter.noLibraries' => 'Inga bibliotek tillgängliga',
-			'addServer.addJellyfinTitle' => 'Lägg till Jellyfin-server',
 			'addServer.serverUrls' => 'Server-URL:er',
 			'addServer.serverUrlsHelper' => 'Du kan ange flera URL:er avgränsade med kommatecken.',
 			'addServer.findServer' => 'Hitta server',
-			'addServer.searchingLocalServers' => 'Söker efter lokala Jellyfin-servrar...',
-			'addServer.localServers' => 'Lokala Jellyfin-servrar',
 			'addServer.username' => 'Användarnamn',
 			'addServer.password' => 'Lösenord',
 			'addServer.signIn' => 'Logga in',
@@ -3673,15 +3657,11 @@ extension on TranslationsSv {
 			'addServer.addPlexTitle' => 'Logga in med Plex',
 			'addServer.pinExpired' => 'PIN-koden gick ut innan inloggning. Försök igen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunde inte registrera kontot: ${error}',
-			'addServer.enterJellyfinUrlError' => 'Ange URL till din Jellyfin-server',
 			'addServer.addConnectionTitle' => 'Lägg till anslutning',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Lägg till i ${name}',
 			'addServer.signInWithPlexCard' => 'Logga in med Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Auktorisera den här enheten. Delade servrar läggs till.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Auktorisera ett Plex-konto. Home-användare blir profiler.',
-			'addServer.connectToJellyfinCard' => 'Anslut till Jellyfin',
-			'addServer.connectToJellyfinCardSubtitle' => 'Ange server-URL, användarnamn och lösenord.',
-			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Logga in på en Jellyfin-server. Kopplas till ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Låna från en annan profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.',
 			_ => null,

@@ -80,6 +80,9 @@ bool _isEarlier(Connection candidate, Connection incumbent) {
 /// borrows a *specific* Home user (`userIdentifier`), and that user's live
 /// [PlexHomeUser.thumb] is the picture Plex shows for it. Reading the live
 /// cache also means the avatar tracks Plex's hourly refresh for free.
+///
+/// Jellyfin and Emby use the same `/Users/{uid}/Images/Primary` route, so the
+/// shared [JellyfinConnection] arm is dialect-agnostic.
 String? connectionAvatarUrl({
   required Connection connection,
   required ProfileConnection link,

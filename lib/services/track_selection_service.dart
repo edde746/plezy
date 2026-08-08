@@ -1037,7 +1037,7 @@ class TrackSelectionService {
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
         }
-      } else if (metadata.backend == MediaBackend.jellyfin) {
+      } else if (metadata.backend.usesMediaBrowserApi) {
         final defaultStreamIndex = info.defaultAudioStreamIndex;
         final defaultTrack = defaultStreamIndex != null
             ? info.audioTracks
@@ -1155,7 +1155,7 @@ class TrackSelectionService {
     }
 
     // Priority 2: Trust the server's selected track. Plex computes this from
-    // account/show/per-item prefs; Jellyfin exposes DefaultSubtitleStreamIndex.
+    // account/show/per-item prefs; MediaBrowser exposes DefaultSubtitleStreamIndex.
     final info = plexMediaInfo;
     if (info != null) {
       final serverSelectedTrack = info.subtitleTracks.where((track) => track.selected).firstOrNull;
@@ -1177,7 +1177,7 @@ class TrackSelectionService {
         if (waitForPendingSource && !_hasCompleteDirectSourceCatalogFor(serverSelectedTrack, availableTracks)) {
           return null;
         }
-      } else if (metadata.backend == MediaBackend.jellyfin) {
+      } else if (metadata.backend.usesMediaBrowserApi) {
         final defaultStreamIndex = info.defaultSubtitleStreamIndex;
         if (defaultStreamIndex == -1) {
           return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
@@ -1209,7 +1209,7 @@ class TrackSelectionService {
     }
 
     // Priority 3: Apply server profile subtitle mode when the backend exposes
-    // one (Jellyfin). Plex keeps using the selected-stream path above.
+    // one (MediaBrowser). Plex keeps using the selected-stream path above.
     final profileSelectedTrack = _selectSubtitleTrackByProfile(availableTracks, selectedAudioTrack);
     if (profileSelectedTrack != null) return profileSelectedTrack;
 

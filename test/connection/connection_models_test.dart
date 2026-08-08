@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 
 /// Backend-agnostic [Connection] sealed-class tests. The
 /// `connection_registry_test` already covers DB persistence; these focus on
@@ -16,12 +17,22 @@ void main() {
     });
 
     test('fromId throws on unknown id (no silent fallback)', () {
-      expect(() => ConnectionKind.fromId('emby'), throwsA(isA<ArgumentError>()));
+      expect(() => ConnectionKind.fromId('kodi'), throwsA(isA<ArgumentError>()));
     });
 
     test('backend mapping is total', () {
       expect(ConnectionKind.plex.backend, MediaBackend.plex);
       expect(ConnectionKind.jellyfin.backend, MediaBackend.jellyfin);
+      expect(ConnectionKind.emby.backend, MediaBackend.emby);
+    });
+
+    test('dialect maps only the MediaBrowser kinds and round-trips', () {
+      expect(ConnectionKind.plex.dialect, isNull);
+      expect(ConnectionKind.jellyfin.dialect, MediaBrowserDialect.jellyfin);
+      expect(ConnectionKind.emby.dialect, MediaBrowserDialect.emby);
+      for (final dialect in MediaBrowserDialect.values) {
+        expect(ConnectionKind.fromDialect(dialect).dialect, dialect);
+      }
     });
   });
 
@@ -178,8 +189,58 @@ void main() {
     });
 
     test('kind and backend match Jellyfin', () {
+      expect(base.dialect, MediaBrowserDialect.jellyfin);
       expect(base.kind, ConnectionKind.jellyfin);
       expect(base.backend, MediaBackend.jellyfin);
+    });
+
+    test('an Emby dialect drives kind, backend and the persisted discriminator', () {
+      final emby = base.copyWith(dialect: MediaBrowserDialect.emby);
+
+      expect(emby.kind, ConnectionKind.emby);
+      expect(emby.kind.id, 'emby');
+      expect(emby.backend, MediaBackend.emby);
+      // The dialect lives in the `connections.kind` column, never in the
+      // encrypted config payload, so exactly one discriminator is on disk.
+      expect(emby.toConfigJson().containsKey('dialect'), isFalse);
+    });
+
+    test('fromConfigJson restores the dialect handed in by the registry', () {
+      final restored = JellyfinConnection.fromConfigJson(
+        id: 'srv-1/user-1',
+        json: base.toConfigJson(),
+        status: ConnectionStatus.online,
+        createdAt: base.createdAt,
+        dialect: MediaBrowserDialect.emby,
+      );
+
+      expect(restored.dialect, MediaBrowserDialect.emby);
+      expect(restored.kind, ConnectionKind.emby);
+      expect(restored.accessToken, 'tok-abc');
+    });
+
+    test('fromConfigJson defaults to Jellyfin for rows written before Emby support', () {
+      final restored = JellyfinConnection.fromConfigJson(
+        id: 'legacy',
+        json: const {'baseUrl': 'https://jellyfin.example.com'},
+        status: ConnectionStatus.unknown,
+        createdAt: DateTime.utc(2026),
+      );
+
+      expect(restored.dialect, MediaBrowserDialect.jellyfin);
+      expect(restored.kind, ConnectionKind.jellyfin);
+    });
+
+    test('empty-payload serverName falls back to the dialect product name', () {
+      final emby = JellyfinConnection.fromConfigJson(
+        id: 'orphan',
+        json: const {},
+        status: ConnectionStatus.unknown,
+        createdAt: DateTime.utc(2026),
+        dialect: MediaBrowserDialect.emby,
+      );
+
+      expect(emby.serverName, 'Emby');
     });
   });
 

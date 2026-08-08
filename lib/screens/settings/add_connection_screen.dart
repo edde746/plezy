@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
+import '../../media/media_browser_dialect.dart';
 import '../../theme/mono_tokens.dart';
 import '../../profiles/profile.dart';
 import '../../widgets/backend_badge.dart';
@@ -18,8 +19,8 @@ import 'add_plex_account_screen.dart';
 /// When [targetProfile] is provided, also offers a "Borrow from another
 /// profile" option that opens [BorrowConnectionScreen] for the target. The
 /// global Connections screen invokes this without a target — Plex auto-
-/// surfaces its Home users as new profiles, Jellyfin binds to the active
-/// profile via [AddJellyfinScreen].
+/// surfaces its Home users as new profiles, while MediaBrowser servers bind
+/// to the active profile via [AddJellyfinScreen].
 ///
 /// Pops with `true` after the underlying flow succeeds so the parent list
 /// refreshes; pops with `null` (the default) when the user backs out.
@@ -31,6 +32,8 @@ class AddConnectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoped = targetProfile != null;
+    const jellyfinDialect = MediaBrowserDialect.jellyfin;
+    const embyDialect = MediaBrowserDialect.emby;
     final options = <_BackendOption>[
       _BackendOption(
         backend: MediaBackend.plex,
@@ -40,11 +43,25 @@ class AddConnectionScreen extends StatelessWidget {
       ),
       _BackendOption(
         backend: MediaBackend.jellyfin,
-        title: t.addServer.connectToJellyfinCard,
+        title: t.addServer.connectToMediaBrowserCard(product: jellyfinDialect.productName),
         subtitle: scoped
-            ? t.addServer.connectToJellyfinCardSubtitleScoped(name: targetProfile!.displayName)
-            : t.addServer.connectToJellyfinCardSubtitle,
-        builder: (_) => AddJellyfinScreen(targetProfile: targetProfile),
+            ? t.addServer.connectToMediaBrowserCardSubtitleScoped(
+                product: jellyfinDialect.productName,
+                name: targetProfile!.displayName,
+              )
+            : t.addServer.connectToMediaBrowserCardSubtitle,
+        builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: jellyfinDialect),
+      ),
+      _BackendOption(
+        backend: MediaBackend.emby,
+        title: t.addServer.connectToMediaBrowserCard(product: embyDialect.productName),
+        subtitle: scoped
+            ? t.addServer.connectToMediaBrowserCardSubtitleScoped(
+                product: embyDialect.productName,
+                name: targetProfile!.displayName,
+              )
+            : t.addServer.connectToMediaBrowserCardSubtitle,
+        builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: embyDialect),
       ),
       if (scoped)
         _BackendOption(

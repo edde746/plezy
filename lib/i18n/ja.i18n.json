@@ -11,7 +11,7 @@
     "waitingForAuth": "認証を待っています…\nブラウザでサインインしてください。",
     "useBrowser": "ブラウザを使用",
     "or": "または",
-    "connectToJellyfin": "Jellyfinに接続",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Quick Connect を使う",
     "quickConnectInstructions": "JellyfinでQuick Connectを開き、このコードを入力してください。",
     "quickConnectWaiting": "承認を待っています…",
@@ -826,8 +826,8 @@
     "sessionExpiredOne": "${name} のセッションの有効期限が切れました",
     "sessionExpiredMany": "${count} 台のサーバーのセッションの有効期限が切れました",
     "signInAgain": "再度サインイン",
-    "editJellyfinTitle": "Jellyfin接続を編集",
-    "editJellyfinIntro": "${serverName}のURLを追加または削除します。Plezyは接続可能なURLのうち遅延が最も少ないものを使用します。"
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "探す",
@@ -1867,12 +1867,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Jellyfinサーバーを追加",
+    "addMediaBrowserTitle": "",
     "serverUrls": "サーバーURL",
     "serverUrlsHelper": "複数のURLをカンマ区切りで入力できます。",
     "findServer": "サーバーを検索",
-    "searchingLocalServers": "ローカルのJellyfinサーバーを検索中…",
-    "localServers": "ローカルのJellyfinサーバー",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "ユーザー名",
     "password": "パスワード",
     "signIn": "サインイン",
@@ -1884,15 +1884,15 @@
     "addPlexTitle": "Plexでサインイン",
     "pinExpired": "サインイン前にPINの有効期限が切れました。もう一度お試しください。",
     "failedToRegisterAccount": "アカウントの登録に失敗しました: ${error}",
-    "enterJellyfinUrlError": "JellyfinサーバーのURLを入力してください",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "接続を追加",
     "addConnectionTitleScoped": "${name}に追加",
     "signInWithPlexCard": "Plexでサインイン",
     "signInWithPlexCardSubtitle": "このデバイスを承認します。共有サーバーが追加されます。",
     "signInWithPlexCardSubtitleScoped": "Plexアカウントを承認します。Homeユーザーはプロフィールになります。",
-    "connectToJellyfinCard": "Jellyfinに接続",
-    "connectToJellyfinCardSubtitle": "サーバーURL、ユーザー名、パスワードを入力してください。",
-    "connectToJellyfinCardSubtitleScoped": "Jellyfinサーバーにサインインします。${name}にひも付けられます。",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "別のプロフィールの接続を利用",
     "borrowFromAnotherProfileSubtitle": "別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。"
   }

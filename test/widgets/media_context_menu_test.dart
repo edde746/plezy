@@ -126,6 +126,36 @@ void main() {
       );
     });
 
+    test('Emby follows the server answer, not the admin bit', () {
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.emby,
+          resolvedItemPermission: false,
+          isAdminActionAllowed: true,
+        ),
+        isFalse,
+      );
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.emby,
+          resolvedItemPermission: true,
+          isAdminActionAllowed: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('Emby fails closed when the permission is unknown', () {
+      expect(
+        isMediaDeletionAllowed(
+          itemBackend: MediaBackend.emby,
+          resolvedItemPermission: null,
+          isAdminActionAllowed: true,
+        ),
+        isFalse,
+      );
+    });
+
     test('Plex keeps its account-level gate', () {
       expect(
         isMediaDeletionAllowed(

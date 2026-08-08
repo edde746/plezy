@@ -22,7 +22,7 @@ import 'plex_mappers.dart';
 /// endpoint shape and parse cached JSON into [MediaItem] via
 /// [PlexMappers.mediaItemFromCacheJson].
 class PlexApiCache extends ApiCache {
-  static final _singleton = ApiCacheSingleton<PlexApiCache>(MediaBackend.plex, 'PlexApiCache');
+  static final _singleton = ApiCacheSingleton<PlexApiCache>(const {MediaBackend.plex}, 'PlexApiCache');
   static PlexApiCache get instance => _singleton.instance;
 
   PlexApiCache._(super.db);

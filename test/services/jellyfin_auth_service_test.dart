@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
 import 'package:plezy/services/jellyfin_endpoint_discovery.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
@@ -22,18 +23,26 @@ http.Response _bareOk(String body) => http.Response(body, 200, headers: {'conten
 http.Response _status(int code, [Object? json]) =>
     http.Response(json == null ? '' : jsonEncode(json), code, headers: {'content-type': 'application/json'});
 
-JellyfinConnection _existingConn({String accessToken = 'tok-old'}) => testJellyfinConnection(
+JellyfinConnection _existingConn({
+  String accessToken = 'tok-old',
+  MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
+}) => testJellyfinConnection(
   userName: 'edde',
   accessToken: accessToken,
   deviceId: 'dev-xyz',
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+  dialect: dialect,
 );
 
-JellyfinConnectionAuthService _service({required _Handler handler}) {
+JellyfinConnectionAuthService _service({
+  required _Handler handler,
+  MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
+}) {
   return JellyfinConnectionAuthService(
     clientName: 'Plezy',
     clientVersion: 'test',
     deviceName: 'TestDevice',
+    dialect: dialect,
     testHttpClientFactory: () => MockClient((req) async => handler(req)),
   );
 }
@@ -763,6 +772,195 @@ void main() {
       );
       await svc.signOut(plex);
       expect(fired, isFalse);
+    });
+  });
+
+  group('Emby dialect', () {
+    test('validate uses the user-scoped current-user route instead of /Users/Me', () async {
+      final paths = <String>[];
+      final svc = _service(
+        dialect: MediaBrowserDialect.emby,
+        handler: (req) {
+          paths.add(req.url.path);
+          if (req.url.path == '/Users/Me') {
+            return _status(500, {'error': 'Unrecognized Guid format'});
+          }
+          return _ok({'Id': 'user-1'});
+        },
+      );
+
+      expect(await svc.validate(_existingConn(dialect: MediaBrowserDialect.emby)), isTrue);
+      expect(paths, ['/Users/user-1']);
+    });
+
+    test('checking Quick Connect support sends no unsupported Emby request', () async {
+      final paths = <String>[];
+      final svc = _service(
+        dialect: MediaBrowserDialect.emby,
+        handler: (req) {
+          paths.add(req.url.path);
+          expect(req.url.path, isNot(startsWith('/QuickConnect/')));
+          return _status(404);
+        },
+      );
+
+      expect(await svc.isQuickConnectEnabled('https://emby.example.com'), isFalse);
+      expect(paths, isEmpty);
+    });
+
+    test('initiating Quick Connect rejects locally without an Emby request', () async {
+      final paths = <String>[];
+      final svc = _service(
+        dialect: MediaBrowserDialect.emby,
+        handler: (req) {
+          paths.add(req.url.path);
+          expect(req.url.path, isNot(startsWith('/QuickConnect/')));
+          return _status(404);
+        },
+      );
+
+      final error = await _captureError(
+        svc.initiateQuickConnect(baseUrl: 'https://emby.example.com', deviceId: 'dev-xyz'),
+      );
+
+      expect(
+        error,
+        isA<MediaServerAuthException>()
+            .having((exception) => exception.message, 'message', 'Quick Connect rejected by server')
+            .having((exception) => exception.statusCode, 'statusCode', isNull),
+      );
+      expect(paths, isEmpty);
+    });
+
+    test('authenticating by Quick Connect rejects locally without an Emby request', () async {
+      final paths = <String>[];
+      final svc = _service(
+        dialect: MediaBrowserDialect.emby,
+        handler: (req) {
+          paths.add(req.url.path);
+          expect(req.url.path, isNot(startsWith('/QuickConnect/')));
+          return _status(404);
+        },
+      );
+
+      final error = await _captureError(
+        svc.authenticateByQuickConnect(
+          baseUrl: 'https://emby.example.com',
+          secret: 'quick-secret',
+          deviceId: 'dev-xyz',
+        ),
+      );
+
+      expect(
+        error,
+        isA<MediaServerAuthException>()
+            .having((exception) => exception.message, 'message', 'Quick Connect rejected by server')
+            .having((exception) => exception.statusCode, 'statusCode', isNull),
+      );
+      expect(paths, isEmpty);
+    });
+
+    test('password authentication builds an Emby-persisted connection discriminator', () async {
+      final svc = _service(
+        dialect: MediaBrowserDialect.emby,
+        handler: (req) {
+          expect(req.url.path, '/Users/AuthenticateByName');
+          return _ok({
+            'AccessToken': 'tok-new',
+            'User': {'Id': 'user-7', 'Name': 'edde'},
+          });
+        },
+      );
+
+      final connection = await svc.authenticateByName(
+        baseUrl: 'https://emby.example.com',
+        username: 'edde',
+        password: 'pw',
+        deviceId: 'dev-xyz',
+        serverInfo: _serverInfo,
+      );
+
+      expect(connection.dialect, MediaBrowserDialect.emby);
+      expect(connection.kind, ConnectionKind.emby);
+      expect(connection.kind.id, 'emby');
+    });
+
+    test('detected server dialect overrides the picker and an unknown response preserves it', () async {
+      Future<JellyfinConnection> authenticate(Map<String, Object?> publicInfo) {
+        final svc = _service(
+          handler: (req) {
+            if (req.url.path == '/System/Info/Public') return _ok(publicInfo);
+            if (req.url.path == '/Users/AuthenticateByName') {
+              return _ok({
+                'AccessToken': 'tok-new',
+                'User': {'Id': 'user-7', 'Name': 'edde'},
+              });
+            }
+            return _status(404);
+          },
+        );
+        return svc.authenticateByName(
+          baseUrl: 'https://server.example.com',
+          username: 'edde',
+          password: 'pw',
+          deviceId: 'dev-xyz',
+        );
+      }
+
+      final detected = await authenticate({
+        'LocalAddresses': <String>[],
+        'RemoteAddresses': <String>[],
+        'ServerName': 'Emby Home',
+        'Version': '4.9.5.0',
+        'Id': 'emby-server',
+      });
+      final unknown = await authenticate({'ServerName': 'Unknown Home', 'Id': 'unknown-server', 'Version': '4.9.5.0'});
+
+      expect(detected.dialect, MediaBrowserDialect.emby);
+      expect(detected.kind, ConnectionKind.emby);
+      expect(unknown.dialect, MediaBrowserDialect.jellyfin);
+      expect(unknown.kind, ConnectionKind.jellyfin);
+    });
+
+    test('password authentication and logout remain wire-identical to Jellyfin', () async {
+      Future<List<(String, String, String)>> capture(MediaBrowserDialect dialect) async {
+        final requests = <(String, String, String)>[];
+        final svc = _service(
+          dialect: dialect,
+          handler: (req) {
+            final request = req as http.Request;
+            requests.add((request.method, request.url.path, request.body));
+            if (request.url.path == '/Users/AuthenticateByName') {
+              return _ok({
+                'AccessToken': 'tok-new',
+                'User': {'Id': 'user-7', 'Name': 'edde'},
+              });
+            }
+            if (request.url.path == '/Sessions/Logout') return _ok({});
+            return _status(404);
+          },
+        );
+        final connection = await svc.authenticateByName(
+          baseUrl: 'https://server.example.com',
+          username: 'edde',
+          password: 'pw',
+          deviceId: 'dev-xyz',
+          serverInfo: _serverInfo,
+        );
+        await svc.signOut(connection);
+        return requests;
+      }
+
+      final jellyfinRequests = await capture(MediaBrowserDialect.jellyfin);
+      final embyRequests = await capture(MediaBrowserDialect.emby);
+      final expected = <(String, String, String)>[
+        ('POST', '/Users/AuthenticateByName', '{"Username":"edde","Pw":"pw"}'),
+        ('POST', '/Sessions/Logout', ''),
+      ];
+
+      expect(jellyfinRequests, expected);
+      expect(embyRequests, expected);
+      expect(embyRequests, jellyfinRequests);
     });
   });
 

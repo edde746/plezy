@@ -11,7 +11,7 @@
     "waitingForAuth": "正在等待驗證…\n請在瀏覽器中登入。",
     "useBrowser": "使用瀏覽器",
     "or": "或",
-    "connectToJellyfin": "連線至 Jellyfin",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "使用快速連線（Quick Connect）",
     "quickConnectInstructions": "在 Jellyfin 中開啟快速連線並輸入此代碼。",
     "quickConnectWaiting": "等待核准…",
@@ -826,8 +826,8 @@
     "sessionExpiredOne": "${name} 的工作階段已過期",
     "sessionExpiredMany": "${count} 個伺服器的工作階段已過期",
     "signInAgain": "重新登入",
-    "editJellyfinTitle": "編輯 Jellyfin 連線",
-    "editJellyfinIntro": "新增或移除 ${serverName} 的 URL。Plezy 會自動選擇可連線且延遲最低的網址。"
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "發現",
@@ -1867,12 +1867,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "新增 Jellyfin 伺服器",
+    "addMediaBrowserTitle": "",
     "serverUrls": "伺服器 URL",
     "serverUrlsHelper": "可輸入多個連線網址，以逗號區隔。",
     "findServer": "尋找伺服器",
-    "searchingLocalServers": "正在尋找本地 Jellyfin 伺服器…",
-    "localServers": "本地 Jellyfin 伺服器",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "使用者名稱",
     "password": "密碼",
     "signIn": "登入",
@@ -1884,15 +1884,15 @@
     "addPlexTitle": "使用 Plex 登入",
     "pinExpired": "PIN 碼在登入前已過期。請重試。",
     "failedToRegisterAccount": "註冊帳戶失敗：${error}",
-    "enterJellyfinUrlError": "請輸入您的 Jellyfin 伺服器 URL",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "新增連線",
     "addConnectionTitleScoped": "新增連線至 ${name}",
     "signInWithPlexCard": "使用 Plex 登入",
     "signInWithPlexCardSubtitle": "授權此裝置。將會新增共享的伺服器連線。",
     "signInWithPlexCardSubtitleScoped": "授權 Plex 帳戶。Home 使用者會建立為個別的使用者設定檔。",
-    "connectToJellyfinCard": "連線至 Jellyfin",
-    "connectToJellyfinCardSubtitle": "輸入伺服器 URL、使用者名稱與密碼。",
-    "connectToJellyfinCardSubtitleScoped": "登入 Jellyfin 伺服器，並綁定至 ${name} 使用者設定檔。",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "從另一個使用者設定檔共用",
     "borrowFromAnotherProfileSubtitle": "重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。"
   }

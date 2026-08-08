@@ -115,7 +115,6 @@ class _Translations$auth$ja extends Translations$auth$en {
 	@override String get waitingForAuth => '認証を待っています…\nブラウザでサインインしてください。';
 	@override String get useBrowser => 'ブラウザを使用';
 	@override String get or => 'または';
-	@override String get connectToJellyfin => 'Jellyfinに接続';
 	@override String get useQuickConnect => 'Quick Connect を使う';
 	@override String get quickConnectInstructions => 'JellyfinでQuick Connectを開き、このコードを入力してください。';
 	@override String get quickConnectWaiting => '承認を待っています…';
@@ -917,8 +916,6 @@ class _Translations$connections$ja extends Translations$connections$en {
 	@override String sessionExpiredOne({required Object name}) => '${name} のセッションの有効期限が切れました';
 	@override String sessionExpiredMany({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました';
 	@override String get signInAgain => '再度サインイン';
-	@override String get editJellyfinTitle => 'Jellyfin接続を編集';
-	@override String editJellyfinIntro({required Object serverName}) => '${serverName}のURLを追加または削除します。Plezyは接続可能なURLのうち遅延が最も少ないものを使用します。';
 }
 
 // Path: discover
@@ -1800,12 +1797,9 @@ class _Translations$addServer$ja extends Translations$addServer$en {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get addJellyfinTitle => 'Jellyfinサーバーを追加';
 	@override String get serverUrls => 'サーバーURL';
 	@override String get serverUrlsHelper => '複数のURLをカンマ区切りで入力できます。';
 	@override String get findServer => 'サーバーを検索';
-	@override String get searchingLocalServers => 'ローカルのJellyfinサーバーを検索中…';
-	@override String get localServers => 'ローカルのJellyfinサーバー';
 	@override String get username => 'ユーザー名';
 	@override String get password => 'パスワード';
 	@override String get signIn => 'サインイン';
@@ -1817,15 +1811,11 @@ class _Translations$addServer$ja extends Translations$addServer$en {
 	@override String get addPlexTitle => 'Plexでサインイン';
 	@override String get pinExpired => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。';
 	@override String failedToRegisterAccount({required Object error}) => 'アカウントの登録に失敗しました: ${error}';
-	@override String get enterJellyfinUrlError => 'JellyfinサーバーのURLを入力してください';
 	@override String get addConnectionTitle => '接続を追加';
 	@override String addConnectionTitleScoped({required Object name}) => '${name}に追加';
 	@override String get signInWithPlexCard => 'Plexでサインイン';
 	@override String get signInWithPlexCardSubtitle => 'このデバイスを承認します。共有サーバーが追加されます。';
 	@override String get signInWithPlexCardSubtitleScoped => 'Plexアカウントを承認します。Homeユーザーはプロフィールになります。';
-	@override String get connectToJellyfinCard => 'Jellyfinに接続';
-	@override String get connectToJellyfinCardSubtitle => 'サーバーURL、ユーザー名、パスワードを入力してください。';
-	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Jellyfinサーバーにサインインします。${name}にひも付けられます。';
 	@override String get borrowFromAnotherProfile => '別のプロフィールの接続を利用';
 	@override String get borrowFromAnotherProfileSubtitle => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。';
 }
@@ -2205,7 +2195,6 @@ extension on TranslationsJa {
 			'auth.waitingForAuth' => '認証を待っています…\nブラウザでサインインしてください。',
 			'auth.useBrowser' => 'ブラウザを使用',
 			'auth.or' => 'または',
-			'auth.connectToJellyfin' => 'Jellyfinに接続',
 			'auth.useQuickConnect' => 'Quick Connect を使う',
 			'auth.quickConnectInstructions' => 'JellyfinでQuick Connectを開き、このコードを入力してください。',
 			'auth.quickConnectWaiting' => '承認を待っています…',
@@ -2708,9 +2697,9 @@ extension on TranslationsJa {
 			'videoControls.searchSubtitles' => '字幕を検索',
 			'videoControls.language' => '言語',
 			'videoControls.noSubtitlesFound' => '字幕が見つかりません',
+			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloaded' => '字幕をダウンロードしました',
 			'videoControls.subtitleDownloadedNotApplied' => '字幕はダウンロードされましたが、選択できませんでした',
 			'videoControls.subtitleDownloadFailed' => '字幕のダウンロードに失敗しました',
 			'videoControls.searchLanguages' => '言語を検索…',
@@ -2866,8 +2855,6 @@ extension on TranslationsJa {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました',
 			'connections.signInAgain' => '再度サインイン',
-			'connections.editJellyfinTitle' => 'Jellyfin接続を編集',
-			'connections.editJellyfinIntro' => ({required Object serverName}) => '${serverName}のURLを追加または削除します。Plezyは接続可能なURLのうち遅延が最も少ないものを使用します。',
 			'discover.title' => '探す',
 			'discover.noContentAvailable' => 'コンテンツがありません',
 			'discover.addMediaToLibraries' => 'ライブラリにメディアを追加してください',
@@ -3222,11 +3209,11 @@ extension on TranslationsJa {
 			'watchTogether.failedToCreate' => 'セッションの作成に失敗しました',
 			'watchTogether.failedToJoin' => 'セッションへの参加に失敗しました',
 			'watchTogether.sessionCodeCopied' => 'セッションコードをクリップボードにコピーしました',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.relayUnreachable' => 'リレーサーバーに接続できません。ISPによるブロックのため「一緒に見る」を利用できない可能性があります。',
 			'watchTogether.reconnectingToHost' => 'ホストに再接続中…',
 			'watchTogether.currentPlayback' => '現在の再生',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinCurrentPlayback' => '現在の再生に参加',
 			'watchTogether.joinCurrentPlaybackDescription' => 'ホストが現在視聴中のコンテンツに戻る',
 			'watchTogether.failedToOpenCurrentPlayback' => '現在の再生を開けませんでした',
@@ -3653,12 +3640,9 @@ extension on TranslationsJa {
 			'services.libraryFilter.modeHintWhitelist' => '下でチェックしたライブラリのみ同期します。',
 			'services.libraryFilter.libraries' => 'ライブラリ',
 			'services.libraryFilter.noLibraries' => '利用できるライブラリがありません',
-			'addServer.addJellyfinTitle' => 'Jellyfinサーバーを追加',
 			'addServer.serverUrls' => 'サーバーURL',
 			'addServer.serverUrlsHelper' => '複数のURLをカンマ区切りで入力できます。',
 			'addServer.findServer' => 'サーバーを検索',
-			'addServer.searchingLocalServers' => 'ローカルのJellyfinサーバーを検索中…',
-			'addServer.localServers' => 'ローカルのJellyfinサーバー',
 			'addServer.username' => 'ユーザー名',
 			'addServer.password' => 'パスワード',
 			'addServer.signIn' => 'サインイン',
@@ -3670,15 +3654,11 @@ extension on TranslationsJa {
 			'addServer.addPlexTitle' => 'Plexでサインイン',
 			'addServer.pinExpired' => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'アカウントの登録に失敗しました: ${error}',
-			'addServer.enterJellyfinUrlError' => 'JellyfinサーバーのURLを入力してください',
 			'addServer.addConnectionTitle' => '接続を追加',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name}に追加',
 			'addServer.signInWithPlexCard' => 'Plexでサインイン',
 			'addServer.signInWithPlexCardSubtitle' => 'このデバイスを承認します。共有サーバーが追加されます。',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Plexアカウントを承認します。Homeユーザーはプロフィールになります。',
-			'addServer.connectToJellyfinCard' => 'Jellyfinに接続',
-			'addServer.connectToJellyfinCardSubtitle' => 'サーバーURL、ユーザー名、パスワードを入力してください。',
-			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Jellyfinサーバーにサインインします。${name}にひも付けられます。',
 			'addServer.borrowFromAnotherProfile' => '別のプロフィールの接続を利用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。',
 			_ => null,

@@ -11,7 +11,7 @@
     "waitingForAuth": "Várakozás a hitelesítésre...\nJelentkezz be a böngésződben.",
     "useBrowser": "Böngésző használata",
     "or": "vagy",
-    "connectToJellyfin": "Csatlakozás Jellyfinhez",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Quick Connect használata",
     "quickConnectInstructions": "Nyisd meg a Quick Connect-et a Jellyfinben, és add meg ezt a kódot.",
     "quickConnectWaiting": "Várakozás a jóváhagyásra…",
@@ -827,8 +827,8 @@
     "sessionExpiredOne": "A(z) ${name} munkamenete lejárt",
     "sessionExpiredMany": "${count} szerver munkamenete lejárt",
     "signInAgain": "Bejelentkezés újra",
-    "editJellyfinTitle": "Jellyfin kapcsolat szerkesztése",
-    "editJellyfinIntro": "URL-ek hozzáadása vagy eltávolítása ehhez: ${serverName}. A Plezy a legalacsonyabb késleltetésű, elérhető URL-t fogja használni."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "Felfedezés",
@@ -1873,12 +1873,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Jellyfin szerver hozzáadása",
+    "addMediaBrowserTitle": "",
     "serverUrls": "Szerver URL-címei",
     "serverUrlsHelper": "Több URL is megadható, vesszővel elválasztva.",
     "findServer": "Szerver keresése",
-    "searchingLocalServers": "Helyi Jellyfin-szerverek keresése...",
-    "localServers": "Helyi Jellyfin-szerverek",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "Felhasználónév",
     "password": "Jelszó",
     "signIn": "Bejelentkezés",
@@ -1890,15 +1890,15 @@
     "addPlexTitle": "Bejelentkezés Plexszel",
     "pinExpired": "A PIN-kód a bejelentkezés előtt lejárt. Próbáld újra.",
     "failedToRegisterAccount": "Nem sikerült a fiók regisztrálása: ${error}",
-    "enterJellyfinUrlError": "Add meg a Jellyfin szervered URL-jét",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "Kapcsolat hozzáadása",
     "addConnectionTitleScoped": "Hozzáadás a következőhöz: ${name}",
     "signInWithPlexCard": "Bejelentkezés Plexszel",
     "signInWithPlexCardSubtitle": "Eszköz engedélyezése. A megosztott szerverek hozzáadásra kerülnek.",
     "signInWithPlexCardSubtitleScoped": "Plex-fiók engedélyezése. A Plex Home-felhasználókból profilok lesznek.",
-    "connectToJellyfinCard": "Csatlakozás Jellyfinhez",
-    "connectToJellyfinCardSubtitle": "Add meg a szerver URL-jét, felhasználónevedet és jelszavadat.",
-    "connectToJellyfinCardSubtitleScoped": "Bejelentkezés egy Jellyfin-szerverre. Hozzárendelés ehhez: ${name}.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "Kapcsolat használata másik profilból",
     "borrowFromAnotherProfileSubtitle": "Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges."
   }

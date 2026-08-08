@@ -43,8 +43,11 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
     if (!(_formKey.currentState?.validate() ?? false)) return;
     await runAsync<void>(
       () async {
-        final input = JellyfinEndpointDiscovery.buildUserInputCandidates(_enteredUrls());
-        final endpoint = await JellyfinEndpointDiscovery().raceEndpoints(
+        final input = JellyfinEndpointDiscovery.buildUserInputCandidates(
+          _enteredUrls(),
+          dialect: widget.connection.dialect,
+        );
+        final endpoint = await JellyfinEndpointDiscovery(dialect: widget.connection.dialect).raceEndpoints(
           input.probeBaseUrls,
           preferredUrl: widget.connection.baseUrl,
           expectedMachineId: widget.connection.serverMachineId,
@@ -63,7 +66,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
       },
       errorMapper: (e) {
         if (e is MediaServerUrlException) return e.message;
-        appLogger.e('Edit Jellyfin connection failed', error: e);
+        appLogger.e('Edit ${widget.connection.dialect.productName} connection failed', error: e);
         return t.addServer.couldNotReachServer(error: e.toString());
       },
     );
@@ -75,7 +78,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return FocusedScrollScaffold(
-      title: Text(t.connections.editJellyfinTitle),
+      title: Text(t.connections.editMediaBrowserTitle(product: widget.connection.dialect.productName)),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.all(16),
@@ -86,7 +89,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
                 crossAxisAlignment: .stretch,
                 children: [
                   Text(
-                    t.connections.editJellyfinIntro(serverName: widget.connection.serverName),
+                    t.connections.editMediaBrowserIntro(serverName: widget.connection.serverName),
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 16),

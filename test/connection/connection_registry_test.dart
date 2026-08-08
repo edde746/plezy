@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/plex_auth_service.dart';
 
@@ -30,6 +31,21 @@ JellyfinConnection _jellyfin({String id = 'srv-1', String userName = 'edde', int
     userName: userName,
     accessToken: 'tok-$id',
     deviceId: 'dev-1',
+    createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMs),
+  );
+}
+
+JellyfinConnection _emby({String id = 'emby-1', String accessToken = 'emby-token', int createdAtMs = 1_000_000}) {
+  return JellyfinConnection(
+    id: id,
+    baseUrl: 'https://emby.local',
+    serverName: 'Emby Home',
+    serverMachineId: 'emby-machine-$id',
+    userId: 'user-$id',
+    userName: 'edde',
+    accessToken: accessToken,
+    deviceId: 'dev-1',
+    dialect: MediaBrowserDialect.emby,
     createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMs),
   );
 }
@@ -105,18 +121,49 @@ void main() {
       expect((jelly as JellyfinConnection).baseUrl, 'https://jellyfin.local');
     });
 
+    test('Emby upsert preserves its persisted discriminator and connection dialect', () async {
+      await registry.upsert(_emby(id: 'e'));
+
+      final restored = await registry.get('e') as JellyfinConnection;
+      final row = await (db.select(db.connections)..where((table) => table.id.equals('e'))).getSingle();
+
+      expect(restored.dialect, MediaBrowserDialect.emby);
+      expect(restored.kind, ConnectionKind.emby);
+      expect(restored.kind.id, 'emby');
+      expect(row.kind, 'emby');
+    });
+
+    test('Jellyfin and Emby rows coexist and round-trip to their own dialects', () async {
+      await registry.upsert(_jellyfin(id: 'j'));
+      await registry.upsert(_emby(id: 'e'));
+
+      final jellyfin = await registry.get('j') as JellyfinConnection;
+      final emby = await registry.get('e') as JellyfinConnection;
+      final rows = await db.select(db.connections).get();
+      final kindById = {for (final row in rows) row.id: row.kind};
+
+      expect(jellyfin.dialect, MediaBrowserDialect.jellyfin);
+      expect(jellyfin.kind, ConnectionKind.jellyfin);
+      expect(emby.dialect, MediaBrowserDialect.emby);
+      expect(emby.kind, ConnectionKind.emby);
+      expect(kindById, {'j': 'jellyfin', 'e': 'emby'});
+    });
+
     test('upsert encrypts tokens at rest and decrypts on read', () async {
       await registry.upsert(_plex(id: 'p'));
       await registry.upsert(_jellyfin(id: 'j'));
+      await registry.upsert(_emby(id: 'e', accessToken: 'emby-raw-token'));
 
       final rows = await db.select(db.connections).get();
       expect(rows.singleWhere((r) => r.id == 'p').configJson, isNot(contains('tok-p')));
       expect(rows.singleWhere((r) => r.id == 'p').configJson, isNot(contains('server-token-p')));
       expect(rows.singleWhere((r) => r.id == 'j').configJson, isNot(contains('tok-j')));
+      expect(rows.singleWhere((r) => r.id == 'e').configJson, isNot(contains('emby-raw-token')));
 
       expect((await registry.get('p') as PlexAccountConnection).accountToken, 'tok-p');
       expect((await registry.get('p') as PlexAccountConnection).servers.single.accessToken, 'server-token-p');
       expect((await registry.get('j') as JellyfinConnection).accessToken, 'tok-j');
+      expect((await registry.get('e') as JellyfinConnection).accessToken, 'emby-raw-token');
     });
 
     test('read migrates legacy plaintext Plex server tokens', () async {

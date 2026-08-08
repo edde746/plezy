@@ -11,7 +11,7 @@
     "waitingForAuth": "Warte auf die Authentifizierung …\nMelde dich über deinen Browser an.",
     "useBrowser": "Browser verwenden",
     "or": "oder",
-    "connectToJellyfin": "Mit Jellyfin verbinden",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Quick Connect verwenden",
     "quickConnectInstructions": "Öffne Quick Connect in Jellyfin und gib diesen Code ein.",
     "quickConnectWaiting": "Warte auf Bestätigung…",
@@ -827,8 +827,8 @@
     "sessionExpiredOne": "Sitzung für ${name} abgelaufen",
     "sessionExpiredMany": "Sitzungen für ${count} Server abgelaufen",
     "signInAgain": "Erneut anmelden",
-    "editJellyfinTitle": "Jellyfin-Verbindung bearbeiten",
-    "editJellyfinIntro": "Füge URLs für ${serverName} hinzu oder entferne sie. Plezy verwendet die erreichbare URL mit der geringsten Latenz."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "Entdecken",
@@ -1873,12 +1873,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Jellyfin-Server hinzufügen",
+    "addMediaBrowserTitle": "",
     "serverUrls": "Server-URLs",
     "serverUrlsHelper": "Mehrere URLs möglich, durch Kommas getrennt.",
     "findServer": "Server finden",
-    "searchingLocalServers": "Suche nach lokalen Jellyfin-Servern …",
-    "localServers": "Lokale Jellyfin-Server",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "Benutzername",
     "password": "Passwort",
     "signIn": "Anmelden",
@@ -1890,15 +1890,15 @@
     "addPlexTitle": "Mit Plex anmelden",
     "pinExpired": "PIN ist vor der Anmeldung abgelaufen. Bitte erneut versuchen.",
     "failedToRegisterAccount": "Konto konnte nicht registriert werden: ${error}",
-    "enterJellyfinUrlError": "Gib die URL deines Jellyfin-Servers ein",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "Verbindung hinzufügen",
     "addConnectionTitleScoped": "Zu ${name} hinzufügen",
     "signInWithPlexCard": "Mit Plex anmelden",
     "signInWithPlexCardSubtitle": "Dieses Gerät autorisieren. Geteilte Server werden hinzugefügt.",
     "signInWithPlexCardSubtitleScoped": "Ein Plex-Konto autorisieren. Home-Benutzer werden zu Profilen.",
-    "connectToJellyfinCard": "Mit Jellyfin verbinden",
-    "connectToJellyfinCardSubtitle": "Gib Server-URL, Benutzername und Passwort ein.",
-    "connectToJellyfinCardSubtitleScoped": "Bei einem Jellyfin-Server anmelden. Wird mit ${name} verknüpft.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "Von einem anderen Profil ausleihen",
     "borrowFromAnotherProfileSubtitle": "Verbindung eines anderen Profils wiederverwenden. PIN-geschützte Profile erfordern eine PIN."
   }

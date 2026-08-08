@@ -304,7 +304,7 @@ class ActiveProfileBinder {
 
       // Bind the implicit Plex Home parent and borrowed/extra join rows in
       // parallel. A slow/offline Plex parent should not add its timeout budget
-      // on top of an otherwise reachable Jellyfin or borrowed-server bind.
+      // on top of an otherwise reachable MediaBrowser or borrowed-server bind.
       final results = await Future.wait([
         if (profile.isPlexHome)
           _bindPlexHome(
@@ -315,8 +315,8 @@ class ActiveProfileBinder {
             generation: generation,
           ),
         // Both kinds also bind borrowed/extra connections via the join table.
-        // For plex_home this handles a Jellyfin server (or extra Plex account)
-        // that was attached to the profile via the borrow flow — the parent
+        // For plex_home this handles a MediaBrowser server (or extra Plex
+        // account) that was attached to the profile via the borrow flow — the
         // account is bound by `_bindPlexHome` above and isn't represented in
         // the join table.
         _bindJoinRows(
@@ -548,7 +548,7 @@ class ActiveProfileBinder {
           );
         case JellyfinConnection():
           expected.add(conn.serverMachineId);
-          futures.add(_bindJellyfin(conn, profileId: profile.id, generation: generation));
+          futures.add(_bindMediaBrowser(conn, profileId: profile.id, generation: generation));
       }
     }
     final results = await Future.wait(futures);
@@ -1001,7 +1001,7 @@ class ActiveProfileBinder {
     );
   }
 
-  Future<_ProfileBindResult> _bindJellyfin(
+  Future<_ProfileBindResult> _bindMediaBrowser(
     JellyfinConnection conn, {
     required String profileId,
     required int generation,

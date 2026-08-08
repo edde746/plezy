@@ -11,7 +11,7 @@
     "waitingForAuth": "Ожидание аутентификации...\nВыполните вход в браузере.",
     "useBrowser": "Использовать браузер",
     "or": "или",
-    "connectToJellyfin": "Подключиться к Jellyfin",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Использовать Quick Connect",
     "quickConnectInstructions": "Откройте Quick Connect в Jellyfin и введите этот код.",
     "quickConnectWaiting": "Ожидание подтверждения…",
@@ -829,8 +829,8 @@
     "sessionExpiredOne": "Сессия истекла для ${name}",
     "sessionExpiredMany": "Сессия истекла для ${count} серверов",
     "signInAgain": "Войти снова",
-    "editJellyfinTitle": "Изменить подключение Jellyfin",
-    "editJellyfinIntro": "Добавьте или удалите URL для ${serverName}. Plezy будет использовать доступный URL с минимальной задержкой."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "Обзор",
@@ -1885,12 +1885,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Добавить сервер Jellyfin",
+    "addMediaBrowserTitle": "",
     "serverUrls": "URL-адреса сервера",
     "serverUrlsHelper": "Можно указать несколько URL через запятую.",
     "findServer": "Найти сервер",
-    "searchingLocalServers": "Поиск локальных серверов Jellyfin...",
-    "localServers": "Локальные серверы Jellyfin",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "Имя пользователя",
     "password": "Пароль",
     "signIn": "Войти",
@@ -1902,15 +1902,15 @@
     "addPlexTitle": "Войти через Plex",
     "pinExpired": "Срок действия PIN истёк до входа. Попробуйте снова.",
     "failedToRegisterAccount": "Не удалось зарегистрировать учётную запись: ${error}",
-    "enterJellyfinUrlError": "Введите URL вашего сервера Jellyfin",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "Добавить подключение",
     "addConnectionTitleScoped": "Добавить в ${name}",
     "signInWithPlexCard": "Войти через Plex",
     "signInWithPlexCardSubtitle": "Авторизуйте это устройство. Общие серверы будут добавлены.",
     "signInWithPlexCardSubtitleScoped": "Авторизуйте аккаунт Plex. Пользователи Home станут профилями.",
-    "connectToJellyfinCard": "Подключиться к Jellyfin",
-    "connectToJellyfinCardSubtitle": "Введите URL сервера, имя пользователя и пароль.",
-    "connectToJellyfinCardSubtitleScoped": "Войдите на сервер Jellyfin. Привязывается к ${name}.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "Использовать подключение другого профиля",
     "borrowFromAnotherProfileSubtitle": "Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN."
   }

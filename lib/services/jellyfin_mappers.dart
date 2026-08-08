@@ -1,4 +1,4 @@
-import '../media/media_backend.dart';
+import '../media/media_browser_dialect.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -180,17 +180,22 @@ class JellyfinMappers {
     return '/Items/${_segment(id)}/Images/$type$indexPart$tagPart';
   }
 
-  /// Map a Jellyfin `BaseItemDto` (the `Items[]` shape returned by most
+  /// Map a MediaBrowser `BaseItemDto` (the `Items[]` shape returned by most
   /// browse endpoints) into a [MediaItem]. Returns `null` when the server
   /// payload is missing `Id` — the mapped item would otherwise carry an
   /// empty-string id that breaks cache keys and image URLs (e.g.
   /// `/Items//Images/Primary`). Callers should filter nulls with
   /// `.whereType<MediaItem>()`.
+  ///
+  /// [dialect] stamps the produced item so downstream UI resolves the right
+  /// backend badge/label. Jellyfin and Emby DTOs are field-identical, so the
+  /// mapping itself is shared.
   static MediaItem? mediaItem(
     Map<String, dynamic> item, {
     required ServerId serverId,
     String? serverName,
     required JellyfinImageAbsolutizer? absolutizer,
+    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
   }) {
     final id = item['Id'] as String?;
     if (id == null || id.isEmpty) return null;
@@ -212,6 +217,7 @@ class JellyfinMappers {
         : <String>[seriesBackdropPath];
 
     final mapped = JellyfinMediaItem(
+      dialect: dialect,
       id: id,
       kind: kind,
       guid: id,
@@ -273,13 +279,13 @@ class JellyfinMappers {
       rating: (item['CommunityRating'] as num?)?.toDouble(),
       ratings: _ratingSources(item, kind),
       isFavorite: _userData(item)?['IsFavorite'] as bool?,
-      genres: _stringList(item['Genres']),
+      genres: _stringListOrNamePairs(item['Genres'], item['GenreItems']),
       directors: _peopleByType(item['People'], 'Director'),
       writers: _peopleByType(item['People'], 'Writer'),
       producers: _peopleByType(item['People'], 'Producer'),
       countries: _stringList(item['ProductionLocations']),
       collections: null,
-      labels: _stringList(item['Tags']),
+      labels: _stringListOrNamePairs(item['Tags'], item['TagItems']),
       styles: null,
       moods: null,
       roles: _actors(item['People']),
@@ -297,18 +303,23 @@ class JellyfinMappers {
     return absolutizer == null ? mapped : absolutizer.applyTo(mapped);
   }
 
-  /// Map a Jellyfin "view" (returned by `/Users/{userId}/Views`) into a
+  /// Map a MediaBrowser "view" (returned by `/Users/{userId}/Views`) into a
   /// [MediaLibrary]. The CollectionType field maps onto [MediaKind] roughly.
   /// Returns `null` when the view is missing `Id` — same rationale as
   /// [mediaItem].
-  static MediaLibrary? library(Map<String, dynamic> view, {required ServerId serverId, String? serverName}) {
+  static MediaLibrary? library(
+    Map<String, dynamic> view, {
+    required ServerId serverId,
+    String? serverName,
+    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
+  }) {
     final id = view['Id'] as String?;
     if (id == null || id.isEmpty) return null;
     final collectionType = view['CollectionType'] as String?;
     final type = view['Type'] as String?;
     return MediaLibrary(
       id: id,
-      backend: MediaBackend.jellyfin,
+      backend: dialect.backend,
       title: view['Name'] as String? ?? t.libraries.fallbackTitle,
       kind: _libraryKindFromCollectionType(collectionType, type),
       defaultBrowseKinds: _defaultBrowseKindsFromCollectionType(collectionType, type),
@@ -449,6 +460,25 @@ class JellyfinMappers {
 
   static List<String>? _stringList(Object? list) {
     return stringListFromRaw(list);
+  }
+
+  /// A `Genres`/`Tags` style list, falling back to its `…Items` name-pair
+  /// sibling when the plain array is absent.
+  ///
+  /// Emby never returns the plain `Tags` array on an item DTO — only
+  /// `TagItems` — whatever `Fields` the request asks for (measured on Emby
+  /// 4.9.5), so reading the plain key alone silently drops every tag.
+  static List<String>? _stringListOrNamePairs(Object? plain, Object? namePairs) {
+    final direct = stringListFromRaw(plain);
+    if (direct != null && direct.isNotEmpty) return direct;
+    if (namePairs is! List) return direct;
+    final result = <String>[];
+    for (final entry in namePairs) {
+      if (entry is! Map<String, dynamic>) continue;
+      final name = entry['Name'];
+      if (name is String && name.trim().isNotEmpty) result.add(name.trim());
+    }
+    return nullIfEmptyList(result) ?? direct;
   }
 
   static List<String>? _peopleByType(Object? list, String type) {

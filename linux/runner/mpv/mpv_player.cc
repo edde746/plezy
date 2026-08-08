@@ -641,17 +641,6 @@ void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& val
     SetHDREnabled(plezy::mpv_common::ParseEnabledFlag(value), std::move(callback));
     return;
   }
-
-  if (name == "pause" && !plezy::mpv_common::ParseEnabledFlag(value)) {
-    auto completion = std::move(callback);
-    callback = [this, completion = std::move(completion)](int error) {
-      if (error >= 0 && !disposed_) {
-        audio_recovery_.RequestResume();
-        EnsureAudioRecoveryTimer();
-      }
-      if (completion) completion(error);
-    };
-  }
   plezy::mpv_common::SubmitSetPropertyAsync(mpv_, pending_requests_, name, value, std::move(callback));
 }
 

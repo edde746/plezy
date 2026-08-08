@@ -115,7 +115,6 @@ class _Translations$auth$bg extends Translations$auth$en {
 	@override String get waitingForAuth => 'Изчакване на удостоверяване...\nВлезте от браузъра си.';
 	@override String get useBrowser => 'Използвай браузър';
 	@override String get or => 'или';
-	@override String get connectToJellyfin => 'Свържи се с Jellyfin';
 	@override String get useQuickConnect => 'Използвай Quick Connect';
 	@override String get quickConnectInstructions => 'Отворете Quick Connect в Jellyfin и въведете този код.';
 	@override String get quickConnectWaiting => 'Изчакване на одобрение…';
@@ -918,8 +917,6 @@ class _Translations$connections$bg extends Translations$connections$en {
 	@override String sessionExpiredOne({required Object name}) => 'Сесията за ${name} е изтекла';
 	@override String sessionExpiredMany({required Object count}) => 'Сесиите за ${count} сървъра са изтекли';
 	@override String get signInAgain => 'Влез отново';
-	@override String get editJellyfinTitle => 'Редактиране на Jellyfin връзка';
-	@override String editJellyfinIntro({required Object serverName}) => 'Добавете или премахнете URL адреси за ${serverName}. Plezy ще използва достъпния URL адрес с най-ниска латентност.';
 }
 
 // Path: discover
@@ -1803,12 +1800,9 @@ class _Translations$addServer$bg extends Translations$addServer$en {
 	final TranslationsBg _root; // ignore: unused_field
 
 	// Translations
-	@override String get addJellyfinTitle => 'Добави Jellyfin сървър';
 	@override String get serverUrls => 'URL адреси на сървъра';
 	@override String get serverUrlsHelper => 'Позволени са няколко URL адреса, разделени със запетаи.';
 	@override String get findServer => 'Намери сървър';
-	@override String get searchingLocalServers => 'Търсене на локални Jellyfin сървъри...';
-	@override String get localServers => 'Локални Jellyfin сървъри';
 	@override String get username => 'Потребителско име';
 	@override String get password => 'Парола';
 	@override String get signIn => 'Вход';
@@ -1820,15 +1814,11 @@ class _Translations$addServer$bg extends Translations$addServer$en {
 	@override String get addPlexTitle => 'Вход с Plex';
 	@override String get pinExpired => 'PIN-ът изтече преди вход. Моля, опитайте отново.';
 	@override String failedToRegisterAccount({required Object error}) => 'Неуспешна регистрация на акаунт: ${error}';
-	@override String get enterJellyfinUrlError => 'Въведете URL адреса на вашия Jellyfin сървър';
 	@override String get addConnectionTitle => 'Добави връзка';
 	@override String addConnectionTitleScoped({required Object name}) => 'Добави към ${name}';
 	@override String get signInWithPlexCard => 'Вход с Plex';
 	@override String get signInWithPlexCardSubtitle => 'Удостоверете това устройство. Споделените сървъри се добавят.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Удостоверете Plex акаунт. Домашните потребители стават профили.';
-	@override String get connectToJellyfinCard => 'Свързване с Jellyfin';
-	@override String get connectToJellyfinCardSubtitle => 'Въведете URL адрес на сървъра, потребителско име и парола.';
-	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Вход в Jellyfin сървър. Свързва се с ${name}.';
 	@override String get borrowFromAnotherProfile => 'Използвай от друг профил';
 	@override String get borrowFromAnotherProfileSubtitle => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.';
 }
@@ -2208,7 +2198,6 @@ extension on TranslationsBg {
 			'auth.waitingForAuth' => 'Изчакване на удостоверяване...\nВлезте от браузъра си.',
 			'auth.useBrowser' => 'Използвай браузър',
 			'auth.or' => 'или',
-			'auth.connectToJellyfin' => 'Свържи се с Jellyfin',
 			'auth.useQuickConnect' => 'Използвай Quick Connect',
 			'auth.quickConnectInstructions' => 'Отворете Quick Connect в Jellyfin и въведете този код.',
 			'auth.quickConnectWaiting' => 'Изчакване на одобрение…',
@@ -2711,9 +2700,9 @@ extension on TranslationsBg {
 			'videoControls.searchSubtitles' => 'Търсене на субтитри',
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
+			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
 			_ => null,
 		} ?? switch (path) {
-			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
 			'videoControls.subtitleDownloadedNotApplied' => 'Субтитрите са изтеглени, но не можаха да бъдат избрани',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
 			'videoControls.searchLanguages' => 'Търсене на езици...',
@@ -2869,8 +2858,6 @@ extension on TranslationsBg {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сесията за ${name} е изтекла',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сесиите за ${count} сървъра са изтекли',
 			'connections.signInAgain' => 'Влез отново',
-			'connections.editJellyfinTitle' => 'Редактиране на Jellyfin връзка',
-			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Добавете или премахнете URL адреси за ${serverName}. Plezy ще използва достъпния URL адрес с най-ниска латентност.',
 			'discover.title' => 'Открий',
 			'discover.noContentAvailable' => 'Няма налично съдържание',
 			'discover.addMediaToLibraries' => 'Добавете медия към библиотеките си',
@@ -3225,11 +3212,11 @@ extension on TranslationsBg {
 			'watchTogether.failedToCreate' => 'Неуспешно създаване на сесия',
 			'watchTogether.failedToJoin' => 'Неуспешно присъединяване към сесия',
 			'watchTogether.sessionCodeCopied' => 'Кодът на сесията е копиран в клипборда',
-			_ => null,
-		} ?? switch (path) {
 			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
 			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
 			'watchTogether.currentPlayback' => 'Текущо възпроизвеждане',
+			_ => null,
+		} ?? switch (path) {
 			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Неуспешно отваряне на текущото възпроизвеждане',
@@ -3656,12 +3643,9 @@ extension on TranslationsBg {
 			'services.libraryFilter.modeHintWhitelist' => 'Синхронизирай само отметнатите по-долу библиотеки.',
 			'services.libraryFilter.libraries' => 'Библиотеки',
 			'services.libraryFilter.noLibraries' => 'Няма налични библиотеки',
-			'addServer.addJellyfinTitle' => 'Добави Jellyfin сървър',
 			'addServer.serverUrls' => 'URL адреси на сървъра',
 			'addServer.serverUrlsHelper' => 'Позволени са няколко URL адреса, разделени със запетаи.',
 			'addServer.findServer' => 'Намери сървър',
-			'addServer.searchingLocalServers' => 'Търсене на локални Jellyfin сървъри...',
-			'addServer.localServers' => 'Локални Jellyfin сървъри',
 			'addServer.username' => 'Потребителско име',
 			'addServer.password' => 'Парола',
 			'addServer.signIn' => 'Вход',
@@ -3673,15 +3657,11 @@ extension on TranslationsBg {
 			'addServer.addPlexTitle' => 'Вход с Plex',
 			'addServer.pinExpired' => 'PIN-ът изтече преди вход. Моля, опитайте отново.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Неуспешна регистрация на акаунт: ${error}',
-			'addServer.enterJellyfinUrlError' => 'Въведете URL адреса на вашия Jellyfin сървър',
 			'addServer.addConnectionTitle' => 'Добави връзка',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Добави към ${name}',
 			'addServer.signInWithPlexCard' => 'Вход с Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Удостоверете това устройство. Споделените сървъри се добавят.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Удостоверете Plex акаунт. Домашните потребители стават профили.',
-			'addServer.connectToJellyfinCard' => 'Свързване с Jellyfin',
-			'addServer.connectToJellyfinCardSubtitle' => 'Въведете URL адрес на сървъра, потребителско име и парола.',
-			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Вход в Jellyfin сървър. Свързва се с ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Използвай от друг профил',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
 			_ => null,

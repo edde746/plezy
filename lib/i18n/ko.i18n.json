@@ -11,7 +11,7 @@
     "waitingForAuth": "인증 대기 중...\n브라우저에서 로그인하세요.",
     "useBrowser": "브라우저 사용",
     "or": "또는",
-    "connectToJellyfin": "Jellyfin에 연결",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Quick Connect 사용",
     "quickConnectInstructions": "Jellyfin에서 Quick Connect를 열고 이 코드를 입력하세요.",
     "quickConnectWaiting": "승인 대기 중…",
@@ -826,8 +826,8 @@
     "sessionExpiredOne": "${name}의 세션이 만료되었습니다",
     "sessionExpiredMany": "${count}개 서버의 세션이 만료되었습니다",
     "signInAgain": "다시 로그인",
-    "editJellyfinTitle": "Jellyfin 연결 편집",
-    "editJellyfinIntro": "${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "둘러보기",
@@ -1867,12 +1867,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Jellyfin 서버 추가",
+    "addMediaBrowserTitle": "",
     "serverUrls": "서버 URL",
     "serverUrlsHelper": "쉼표로 구분하여 여러 URL을 입력할 수 있습니다.",
     "findServer": "서버 찾기",
-    "searchingLocalServers": "로컬 Jellyfin 서버 검색 중...",
-    "localServers": "로컬 Jellyfin 서버",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "사용자 이름",
     "password": "비밀번호",
     "signIn": "로그인",
@@ -1884,15 +1884,15 @@
     "addPlexTitle": "Plex로 로그인",
     "pinExpired": "로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.",
     "failedToRegisterAccount": "계정 등록 실패: ${error}",
-    "enterJellyfinUrlError": "Jellyfin 서버 URL을 입력하세요",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "연결 추가",
     "addConnectionTitleScoped": "${name}에 추가",
     "signInWithPlexCard": "Plex로 로그인",
     "signInWithPlexCardSubtitle": "이 기기를 승인합니다. 공유 서버가 추가됩니다.",
     "signInWithPlexCardSubtitleScoped": "Plex 계정을 승인합니다. Home 사용자는 프로필이 됩니다.",
-    "connectToJellyfinCard": "Jellyfin에 연결",
-    "connectToJellyfinCardSubtitle": "서버 URL, 사용자 이름, 비밀번호를 입력하세요.",
-    "connectToJellyfinCardSubtitleScoped": "Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "다른 프로필에서 빌리기",
     "borrowFromAnotherProfileSubtitle": "다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다."
   }

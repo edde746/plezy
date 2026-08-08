@@ -11,7 +11,7 @@
     "waitingForAuth": "Изчакване на удостоверяване...\nВлезте от браузъра си.",
     "useBrowser": "Използвай браузър",
     "or": "или",
-    "connectToJellyfin": "Свържи се с Jellyfin",
+    "connectToMediaBrowser": "",
     "useQuickConnect": "Използвай Quick Connect",
     "quickConnectInstructions": "Отворете Quick Connect в Jellyfin и въведете този код.",
     "quickConnectWaiting": "Изчакване на одобрение…",
@@ -827,8 +827,8 @@
     "sessionExpiredOne": "Сесията за ${name} е изтекла",
     "sessionExpiredMany": "Сесиите за ${count} сървъра са изтекли",
     "signInAgain": "Влез отново",
-    "editJellyfinTitle": "Редактиране на Jellyfin връзка",
-    "editJellyfinIntro": "Добавете или премахнете URL адреси за ${serverName}. Plezy ще използва достъпния URL адрес с най-ниска латентност."
+    "editMediaBrowserTitle": "",
+    "editMediaBrowserIntro": ""
   },
   "discover": {
     "title": "Открий",
@@ -1873,12 +1873,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Добави Jellyfin сървър",
+    "addMediaBrowserTitle": "",
     "serverUrls": "URL адреси на сървъра",
     "serverUrlsHelper": "Позволени са няколко URL адреса, разделени със запетаи.",
     "findServer": "Намери сървър",
-    "searchingLocalServers": "Търсене на локални Jellyfin сървъри...",
-    "localServers": "Локални Jellyfin сървъри",
+    "searchingLocalMediaBrowserServers": "",
+    "localMediaBrowserServers": "",
     "username": "Потребителско име",
     "password": "Парола",
     "signIn": "Вход",
@@ -1890,15 +1890,15 @@
     "addPlexTitle": "Вход с Plex",
     "pinExpired": "PIN-ът изтече преди вход. Моля, опитайте отново.",
     "failedToRegisterAccount": "Неуспешна регистрация на акаунт: ${error}",
-    "enterJellyfinUrlError": "Въведете URL адреса на вашия Jellyfin сървър",
+    "enterMediaBrowserUrlError": "",
     "addConnectionTitle": "Добави връзка",
     "addConnectionTitleScoped": "Добави към ${name}",
     "signInWithPlexCard": "Вход с Plex",
     "signInWithPlexCardSubtitle": "Удостоверете това устройство. Споделените сървъри се добавят.",
     "signInWithPlexCardSubtitleScoped": "Удостоверете Plex акаунт. Домашните потребители стават профили.",
-    "connectToJellyfinCard": "Свързване с Jellyfin",
-    "connectToJellyfinCardSubtitle": "Въведете URL адрес на сървъра, потребителско име и парола.",
-    "connectToJellyfinCardSubtitleScoped": "Вход в Jellyfin сървър. Свързва се с ${name}.",
+    "connectToMediaBrowserCard": "",
+    "connectToMediaBrowserCardSubtitle": "",
+    "connectToMediaBrowserCardSubtitleScoped": "",
     "borrowFromAnotherProfile": "Използвай от друг профил",
     "borrowFromAnotherProfileSubtitle": "Използвай връзка от друг профил. PIN-защитените профили изискват PIN."
   }
