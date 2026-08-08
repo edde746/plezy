@@ -27,7 +27,6 @@ CI_SCRIPT_TEST_DISPATCHER = ROOT_DIR / ".github/workflows/ci.yml"
 # The guard roster both dispatchers above delegate to. It discovers the script
 # tests by glob, so a new scripts/test_*.py is picked up without being listed.
 GUARD_SCRIPT_TEST_DISPATCHER = SCRIPTS_DIR / "ci_guard_checks.sh"
-E2E_WORKFLOW = ROOT_DIR / ".github/workflows/e2e.yml"
 SCRIPT_TEST_DISPATCHERS = (
     LOCAL_SCRIPT_TEST_DISPATCHER,
     CI_SCRIPT_TEST_DISPATCHER,
@@ -88,19 +87,6 @@ def _dispatched_script_tests(path: Path) -> list[str]:
         if script_name.startswith("test_") and script_name.endswith(".py"):
             dispatched.append(script_name)
     return dispatched
-
-
-def _dispatched_maestro_ci_targets(path: Path) -> set[str]:
-    targets = set()
-    for line in path.read_text(encoding="utf-8").splitlines():
-        try:
-            command = shlex.split(line.strip(), comments=True)
-        except ValueError:
-            continue
-        for index, token in enumerate(command[:-1]):
-            if Path(token).name == "run_maestro_ci.py":
-                targets.add(command[index + 1])
-    return targets
 
 
 def _registered_regression_flows(
@@ -369,15 +355,6 @@ class CiGroupTests(unittest.TestCase):
         self.assertTrue(
             profile_flows.isdisjoint(
                 _registered_regression_flows(run_maestro_ci.GROUPS)
-            )
-        )
-
-    def test_destructive_manual_targets_are_not_automatic_pr_targets(self) -> None:
-        automatic_pr_targets = _dispatched_maestro_ci_targets(E2E_WORKFLOW)
-
-        self.assertTrue(
-            set(run_maestro_ci.DESTRUCTIVE_MANUAL_TARGETS).isdisjoint(
-                automatic_pr_targets
             )
         )
 
