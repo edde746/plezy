@@ -71,6 +71,8 @@ class _FakeAggregationService extends DataAggregationService {
   Set<String>? hubSucceededServerIds;
   Set<String> onDeckCancelledServerIds = const {};
   Set<String> hubCancelledServerIds = const {};
+  Set<String> onDeckFailedServerIds = const {};
+  Set<String> hubFailedServerIds = const {};
   List<MediaItem> Function() onDeckResult = () => const [];
   List<MediaHub> Function() hubsResult = () => const [];
   Future<void>? onDeckGate;
@@ -93,8 +95,10 @@ class _FakeAggregationService extends DataAggregationService {
     final items = onDeckResult();
     return (
       items: limit != null && items.length > limit ? items.sublist(0, limit) : items,
+      observedItems: [for (final item in items) (item: item, clientScope: null)],
       succeededServerIds: onDeckSucceededServerIds ?? serverIds ?? const {'server_1'},
       cancelledServerIds: onDeckCancelledServerIds,
+      failedServerIds: onDeckFailedServerIds,
     );
   }
 
@@ -112,10 +116,16 @@ class _FakeAggregationService extends DataAggregationService {
     if (started != null && !started.isCompleted) started.complete();
     final gate = hubGate;
     if (gate != null) await gate;
+    final hubs = hubsResult();
     return (
-      hubs: hubsResult(),
+      hubs: hubs,
+      observedItems: [
+        for (final hub in hubs)
+          for (final item in hub.items) (item: item, clientScope: null),
+      ],
       succeededServerIds: hubSucceededServerIds ?? serverIds ?? const {'server_1'},
       cancelledServerIds: hubCancelledServerIds,
+      failedServerIds: hubFailedServerIds,
     );
   }
 }
@@ -695,6 +705,81 @@ void main() {
     final callsBefore = aggregation.onDeckCalls;
     await provider.syncToOnlineServers({'server_1'});
     expect(aggregation.onDeckCalls, greaterThan(callsBefore));
+  });
+
+  group('manual refresh reports what actually happened (#1829)', () {
+    test('a zero-success refresh reports failure while keeping the rows visible', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+
+      aggregation.onDeckSucceededServerIds = const {};
+      aggregation.hubSucceededServerIds = const {};
+      aggregation.onDeckFailedServerIds = const {'server_1'};
+      aggregation.hubFailedServerIds = const {'server_1'};
+      aggregation.onDeckResult = () => const [];
+      aggregation.hubsResult = () => const [];
+
+      expect(await provider.refreshNow(), DiscoverRefreshOutcome.failed);
+      // Retained content still renders: the error is surfaced by the caller as
+      // a snackbar, never by blanking the screen.
+      expect(provider.onDeck.map((i) => i.id), ['a']);
+      expect(provider.hubs.map((h) => h.id), ['hub-1']);
+      expect(provider.errorMessage, isNull);
+    });
+
+    test('a partly failed refresh is degraded, not a success', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      await provider.load();
+
+      aggregation.hubFailedServerIds = const {'server_2'};
+      expect(await provider.refreshNow(), DiscoverRefreshOutcome.degraded);
+    });
+
+    test('a cancelled refresh is not reported as a failure', () async {
+      aggregation.onDeckSucceededServerIds = const {};
+      aggregation.hubSucceededServerIds = const {};
+      aggregation.onDeckCancelledServerIds = const {'server_1'};
+      aggregation.hubCancelledServerIds = const {'server_1'};
+
+      expect(await provider.refreshNow(), DiscoverRefreshOutcome.cancelled);
+    });
+
+    test('a fully successful refresh reports success', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+
+      expect(await provider.refreshNow(), DiscoverRefreshOutcome.refreshed);
+    });
+
+    test('a server that failed one leg stays eligible for retry', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      aggregation.hubsResult = () => [_hub('hub-1')];
+      // Succeeded and failed are unions, so one server can appear in both;
+      // loaded ids must exclude it or syncToOnlineServers never retries.
+      aggregation.hubFailedServerIds = const {'server_1'};
+      await provider.load();
+
+      final callsBefore = aggregation.hubCalls;
+      await provider.syncToOnlineServers({'server_1'});
+      expect(aggregation.hubCalls, greaterThan(callsBefore));
+    });
+
+    test('a zero-success background refresh retains rows and stays silent', () async {
+      aggregation.onDeckResult = () => [_item('a')];
+      await provider.load();
+
+      aggregation.onDeckSucceededServerIds = const {};
+      aggregation.onDeckFailedServerIds = const {'server_1'};
+      aggregation.onDeckResult = () => const [];
+      await provider.refreshContinueWatching();
+
+      // Previously this wiped the row outright.
+      expect(provider.onDeck.map((i) => i.id), ['a']);
+      expect(provider.errorMessage, isNull);
+      expect(provider.isLoading, isFalse);
+    });
   });
 
   test('a disrupted half is independent: on-deck commits while hubs stay loading', () async {

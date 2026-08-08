@@ -882,7 +882,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Insert or update a progress action (merges with existing).
-  Future<void> upsertProgressAction({
+  Future<({int rowId, int revision})> upsertProgressAction({
     String? profileId,
     required ServerId serverId,
     String? clientScopeId,
@@ -895,7 +895,7 @@ class AppDatabase extends _$AppDatabase {
       final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
       final now = DateTime.now().millisecondsSinceEpoch;
 
-      await transaction(() async {
+      return transaction(() async {
         final existing =
             await (select(offlineWatchProgress)
                   ..where(
@@ -910,6 +910,12 @@ class AppDatabase extends _$AppDatabase {
 
         final keep = existing.isEmpty ? null : existing.first;
         if (keep != null) {
+          // The row id survives a merge, so its timestamp must advance even
+          // when multiple playback updates land in one clock millisecond.
+          final nextRevision = keep.updatedAt + 1;
+          final revision = now > nextRevision ? now : nextRevision;
+          // A merge is a new logical action; retry history belongs only to
+          // the revision whose server write failed.
           await (update(offlineWatchProgress)..where((t) => t.id.equals(keep.id))).write(
             OfflineWatchProgressCompanion(
               viewOffset: Value(viewOffset),
@@ -917,37 +923,41 @@ class AppDatabase extends _$AppDatabase {
               shouldMarkWatched: Value(shouldMarkWatched),
               profileId: Value(profileId),
               clientScopeId: Value(clientScopeId),
-              updatedAt: Value(now),
+              updatedAt: Value(revision),
+              syncAttempts: const Value(0),
+              lastError: const Value<String?>(null),
             ),
           );
           final duplicateIds = existing.skip(1).map((row) => row.id).toList(growable: false);
           if (duplicateIds.isNotEmpty) {
             await (delete(offlineWatchProgress)..where((t) => t.id.isIn(duplicateIds))).go();
           }
-        } else {
-          await into(offlineWatchProgress).insert(
-            OfflineWatchProgressCompanion.insert(
-              serverId: serverId,
-              profileId: Value(profileId),
-              clientScopeId: Value(clientScopeId),
-              ratingKey: ratingKey,
-              globalKey: globalKey,
-              actionType: OfflineActionType.progress.id,
-              viewOffset: Value(viewOffset),
-              duration: Value(duration),
-              shouldMarkWatched: Value(shouldMarkWatched),
-              createdAt: now,
-              updatedAt: now,
-            ),
-          );
+          return (rowId: keep.id, revision: revision);
         }
+
+        final rowId = await into(offlineWatchProgress).insert(
+          OfflineWatchProgressCompanion.insert(
+            serverId: serverId,
+            profileId: Value(profileId),
+            clientScopeId: Value(clientScopeId),
+            ratingKey: ratingKey,
+            globalKey: globalKey,
+            actionType: OfflineActionType.progress.id,
+            viewOffset: Value(viewOffset),
+            duration: Value(duration),
+            shouldMarkWatched: Value(shouldMarkWatched),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+        return (rowId: rowId, revision: now);
       });
     });
   }
 
   /// Insert a manual watch action (watched or unwatched).
   /// Removes conflicting actions for the same item.
-  Future<void> insertWatchAction({
+  Future<({int rowId, int revision})> insertWatchAction({
     String? profileId,
     required ServerId serverId,
     String? clientScopeId,
@@ -958,7 +968,7 @@ class AppDatabase extends _$AppDatabase {
       final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
       final now = DateTime.now().millisecondsSinceEpoch;
 
-      await transaction(() async {
+      return transaction(() async {
         // Remove conflicting actions (opposite action type and progress).
         await (delete(offlineWatchProgress)..where(
               (t) =>
@@ -968,7 +978,7 @@ class AppDatabase extends _$AppDatabase {
             ))
             .go();
 
-        await into(offlineWatchProgress).insert(
+        final rowId = await into(offlineWatchProgress).insert(
           OfflineWatchProgressCompanion.insert(
             serverId: serverId,
             profileId: Value(profileId),
@@ -980,6 +990,7 @@ class AppDatabase extends _$AppDatabase {
             updatedAt: now,
           ),
         );
+        return (rowId: rowId, revision: now);
       });
     });
   }
@@ -994,13 +1005,15 @@ class AppDatabase extends _$AppDatabase {
   /// orders by `createdAt` — and replaying it rewrites the resume position the
   /// mark just cleared, pinning the item to Continue Watching (#1812).
   ///
-  /// Progress queued *after* a mark is a genuine rewatch and is not affected:
-  /// this only runs at the moment the mark lands.
+  /// When [beforeRevision] is present, the notifier is settling a persisted
+  /// offline mark. Its listener is asynchronous, so only older revisions are
+  /// stale; an equal or newer progress revision is a genuine concurrent rewatch.
   Future<int> deleteQueuedProgressForItem({
     String? profileId,
     required ServerId serverId,
     String? clientScopeId,
     required String ratingKey,
+    int? beforeRevision,
   }) {
     return _runPendingMutation(() async {
       final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
@@ -1009,29 +1022,58 @@ class AppDatabase extends _$AppDatabase {
                 t.globalKey.equals(globalKey) &
                 _nullableTextPredicate(t.profileId, profileId) &
                 _nullableTextPredicate(t.clientScopeId, clientScopeId) &
-                t.actionType.equals(OfflineActionType.progress.id),
+                t.actionType.equals(OfflineActionType.progress.id) &
+                (beforeRevision == null ? const Constant(true) : t.updatedAt.isSmallerThanValue(beforeRevision)),
           ))
           .go();
     });
   }
 
-  /// Delete a specific watch action after successful sync
+  /// Delete a watch action only if it is still the snapshotted revision.
+  Future<bool> deleteWatchActionIfUnchanged(int id, int revision) {
+    return _runPendingMutation(() async {
+      final deleted = await (delete(
+        offlineWatchProgress,
+      )..where((t) => t.id.equals(id) & t.updatedAt.equals(revision))).go();
+      return deleted != 0;
+    });
+  }
+
+  /// Update the retry state only if the action is still the snapshotted revision.
+  Future<bool> updateSyncAttemptIfUnchanged(int id, int revision, String? errorMessage) {
+    return _runPendingMutation(() async {
+      final existing = await (select(
+        offlineWatchProgress,
+      )..where((t) => t.id.equals(id) & t.updatedAt.equals(revision))).getSingleOrNull();
+      if (existing == null) return false;
+
+      final updated = await (update(offlineWatchProgress)..where((t) => t.id.equals(id) & t.updatedAt.equals(revision)))
+          .write(
+            OfflineWatchProgressCompanion(
+              syncAttempts: Value(existing.syncAttempts + 1),
+              lastError: Value(errorMessage),
+            ),
+          );
+      return updated != 0;
+    });
+  }
+
+  /// Delete a specific watch action outside a snapshotted replay.
   Future<void> deleteWatchAction(int id) {
     return _runPendingMutation(() async {
       await (delete(offlineWatchProgress)..where((t) => t.id.equals(id))).go();
     });
   }
 
-  /// Update sync attempt count and error message
-  Future<void> updateSyncAttempt(int id, String? errorMessage) async {
+  /// Update retry state outside a snapshotted replay.
+  Future<void> updateSyncAttempt(int id, String? errorMessage) {
     return _runPendingMutation(() async {
       final existing = await (select(offlineWatchProgress)..where((t) => t.id.equals(id))).getSingleOrNull();
+      if (existing == null) return;
 
-      if (existing != null) {
-        await (update(offlineWatchProgress)..where((t) => t.id.equals(id))).write(
-          OfflineWatchProgressCompanion(syncAttempts: Value(existing.syncAttempts + 1), lastError: Value(errorMessage)),
-        );
-      }
+      await (update(offlineWatchProgress)..where((t) => t.id.equals(id))).write(
+        OfflineWatchProgressCompanion(syncAttempts: Value(existing.syncAttempts + 1), lastError: Value(errorMessage)),
+      );
     });
   }
 

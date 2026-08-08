@@ -12,6 +12,8 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
     Duration? timeout,
     // ignore: unused_element_parameter
     bool allowEndpointFailover,
+    // ignore: unused_element_parameter
+    HubFetchDiagnostics? diagnostics,
   });
 
   /// Returns `true` when this server has Live TV configured (channels

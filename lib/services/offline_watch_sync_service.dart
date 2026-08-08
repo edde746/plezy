@@ -22,6 +22,17 @@ import 'settings_service.dart';
 import 'trackers/tracker_coordinator.dart';
 import 'watch_state_resolver.dart';
 
+typedef QueuedOfflineWatchAction = ({String? clientScopeId, String? profileId, int rowId, int revision});
+
+typedef _OfflineWatchReplayResult = ({
+  MediaItem item,
+  String? clientScopeId,
+  String? profileId,
+  int rowId,
+  int revision,
+  bool persisted,
+});
+
 /// Service for managing offline watch progress and syncing it back to the
 /// owning server. Backend-neutral over [MediaServerClient] — Plex actions
 /// hit `/:/scrobble` and `/:/timeline`, while MediaBrowser actions use their
@@ -110,16 +121,30 @@ class OfflineWatchSyncService extends ChangeNotifier {
     if (event.changeType != WatchStateChangeType.watched && event.changeType != WatchStateChangeType.unwatched) {
       return;
     }
-    unawaited(_discardQueuedProgress(ServerId(event.serverId), event.itemId));
+    unawaited(
+      _discardQueuedProgress(
+        ServerId(event.serverId),
+        event.itemId,
+        beforeRevision: _offlineActionRevision(event.patchId),
+      ),
+    );
   }
 
-  Future<void> _discardQueuedProgress(ServerId serverId, String itemId) async {
+  int? _offlineActionRevision(WatchPatchId? patchId) {
+    final value = patchId?.value;
+    if (value == null || !value.startsWith('o:')) return null;
+    final separator = value.lastIndexOf(':');
+    return separator < 2 ? null : int.tryParse(value.substring(separator + 1));
+  }
+
+  Future<void> _discardQueuedProgress(ServerId serverId, String itemId, {int? beforeRevision}) async {
     try {
       final removed = await _database.deleteQueuedProgressForItem(
         profileId: _activeProfileId,
         serverId: serverId,
         clientScopeId: await _clientScopeIdForItem(serverId, itemId),
         ratingKey: itemId,
+        beforeRevision: beforeRevision,
       );
       if (removed == 0) return;
       appLogger.d('Dropped $removed superseded queued progress action(s) for $serverId:$itemId');
@@ -258,7 +283,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// The `ratingKey:` parameter on the underlying `_database` calls is
   /// preserved as the on-disk column name; the in-memory parameter renamed
   /// here is just the API-level identifier.
-  Future<String?> queueProgressUpdate({
+  Future<QueuedOfflineWatchAction> queueProgressUpdate({
     required ServerId serverId,
     required String itemId,
     required int viewOffset,
@@ -267,9 +292,10 @@ class OfflineWatchSyncService extends ChangeNotifier {
     final shouldMarkWatched =
         duration != null && isWatchedByProgress(viewOffset, duration, serverId: ServerId(serverId));
     final clientScopeId = await _clientScopeIdForItem(ServerId(serverId), itemId);
+    final profileId = _activeProfileId;
 
-    await _database.upsertProgressAction(
-      profileId: _activeProfileId,
+    final queued = await _database.upsertProgressAction(
+      profileId: profileId,
       serverId: serverId,
       clientScopeId: clientScopeId,
       ratingKey: itemId,
@@ -287,23 +313,24 @@ class OfflineWatchSyncService extends ChangeNotifier {
     );
 
     notifyListeners();
-    return clientScopeId;
+    return (clientScopeId: clientScopeId, profileId: profileId, rowId: queued.rowId, revision: queued.revision);
   }
 
-  Future<String?> queueMarkWatched({required ServerId serverId, required String itemId}) =>
+  Future<QueuedOfflineWatchAction> queueMarkWatched({required ServerId serverId, required String itemId}) =>
       _queueWatchStatusAction(serverId: serverId, itemId: itemId, actionType: OfflineActionType.watched.id);
 
-  Future<String?> queueMarkUnwatched({required ServerId serverId, required String itemId}) =>
+  Future<QueuedOfflineWatchAction> queueMarkUnwatched({required ServerId serverId, required String itemId}) =>
       _queueWatchStatusAction(serverId: serverId, itemId: itemId, actionType: OfflineActionType.unwatched.id);
 
-  Future<String?> _queueWatchStatusAction({
+  Future<QueuedOfflineWatchAction> _queueWatchStatusAction({
     required ServerId serverId,
     required String itemId,
     required String actionType,
   }) async {
     final clientScopeId = await _clientScopeIdForItem(ServerId(serverId), itemId);
-    await _database.insertWatchAction(
-      profileId: _activeProfileId,
+    final profileId = _activeProfileId;
+    final queued = await _database.insertWatchAction(
+      profileId: profileId,
       serverId: serverId,
       clientScopeId: clientScopeId,
       ratingKey: itemId,
@@ -312,7 +339,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
     appLogger.d('Queued offline mark $actionType: $serverId:$itemId');
     notifyListeners();
-    return clientScopeId;
+    return (clientScopeId: clientScopeId, profileId: profileId, rowId: queued.rowId, revision: queued.revision);
   }
 
   /// Check if an item should be considered watched based on progress percentage.
@@ -446,14 +473,29 @@ class OfflineWatchSyncService extends ChangeNotifier {
           continue;
         }
 
-        final synced = await _withOnlineClientForAction(action, (client) async {
+        final synced = await _withOnlineClientForAction(action, (client, clientScopeId) async {
           try {
-            await _syncAction(client, action);
-            await _database.deleteWatchAction(action.id);
+            final result = await _syncAction(client, action, clientScopeId: clientScopeId);
+            if (!result.persisted) {
+              // The write did not land — MediaBrowser drops a stop for a
+              // session its Started never opened. Leave the row queued and
+              // count the attempt so a later pass retries it.
+              appLogger.d('Action ${action.id} did not persist; keeping it queued');
+              await _database.updateSyncAttemptIfUnchanged(action.id, action.updatedAt, 'write did not persist');
+              return;
+            }
+            final deleted = await _database.deleteWatchActionIfUnchanged(result.rowId, result.revision);
+            if (!deleted) {
+              appLogger.d('Synced action ${action.id} revision ${action.updatedAt}; a newer revision remains queued');
+              return;
+            }
+            WatchPatchPromotionNotifier().promote(
+              WatchPatchId.offlineAction(profileId: result.profileId, rowId: result.rowId, revision: result.revision),
+            );
             appLogger.d('Successfully synced action ${action.id}: ${action.actionType} for ${action.ratingKey}');
           } catch (e) {
             appLogger.w('Failed to sync action ${action.id}: $e');
-            await _database.updateSyncAttempt(action.id, e.toString());
+            await _database.updateSyncAttemptIfUnchanged(action.id, action.updatedAt, e.toString());
           }
         });
         if (!synced) {
@@ -507,7 +549,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   Future<bool> _withOnlineClientForAction(
     OfflineWatchProgressItem action,
-    Future<void> Function(MediaServerClient client) callback,
+    Future<void> Function(MediaServerClient client, String? clientScopeId) callback,
   ) async {
     final resolved = await _clientForAction(action);
     if (resolved == null) {
@@ -520,7 +562,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
       return false;
     }
 
-    await callback(resolved.client);
+    await callback(resolved.client, resolved.clientScopeId);
     return true;
   }
 
@@ -575,14 +617,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Uses the neutral [MediaServerClient] surface so Jellyfin's
   /// `/UserPlayedItems/{id}` and `/Sessions/Playing*` endpoints receive
   /// the same queued state Plex's `/:/scrobble` and `/:/timeline` do.
-  Future<void> _syncAction(MediaServerClient client, OfflineWatchProgressItem action) async {
-    // Fetch metadata so trackers (and the stop-path watch event) get enough
-    // context — external ids, parent chain, library section. The plain
-    // watched/unwatched replays deliberately emit no WatchStateEvent: the
-    // offline provider already emitted it when the action was queued, and
-    // client markWatched/markUnwatched are transport-only. Best-effort: a
-    // missed metadata fetch falls back to a minimal MediaItem — the network
-    // call still goes through.
+  Future<_OfflineWatchReplayResult> _syncAction(
+    MediaServerClient client,
+    OfflineWatchProgressItem action, {
+    required String? clientScopeId,
+  }) async {
+    // Fetch metadata so tracker writes get enough context — external ids,
+    // parent chain and library section. Best-effort: a missed metadata fetch
+    // falls back to a minimal item while the server write still proceeds.
     final needsRichItem =
         action.actionType == OfflineActionType.watched.id ||
         action.actionType == OfflineActionType.unwatched.id ||
@@ -602,14 +644,17 @@ class OfflineWatchSyncService extends ChangeNotifier {
       serverId: action.serverId,
     );
 
+    var persisted = false;
     switch (action.actionType) {
       case 'watched':
         await client.markWatched(item);
+        persisted = true;
         await TrackerCoordinator.instance.markWatched(item, client);
         break;
 
       case 'unwatched':
         await client.markUnwatched(item);
+        persisted = true;
         await TrackerCoordinator.instance.markUnwatched(item, client);
         break;
 
@@ -622,13 +667,19 @@ class OfflineWatchSyncService extends ChangeNotifier {
           final position = action.shouldMarkWatched && duration != null
               ? duration
               : Duration(milliseconds: action.viewOffset!);
-          if (!action.shouldMarkWatched || client.backend.usesMediaBrowserApi) {
+          // MediaBrowser ignores a stop for a session it never opened, so its
+          // Started call is a precondition for persistence, not best effort.
+          final requiresOpenSession = client.backend.usesMediaBrowserApi;
+          var startedSucceeded = !requiresOpenSession;
+          if (!action.shouldMarkWatched || requiresOpenSession) {
             try {
               await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
+              startedSucceeded = true;
             } catch (e) {
-              // Plex sometimes 5xxs the start when nothing follows; treat as
-              // best-effort and continue to the stop call which is the one
-              // that actually persists the resume position.
+              // Plex sometimes 5xxs the start when nothing follows; there the
+              // stop call is the one that persists the resume position, so
+              // continue. On MediaBrowser the stop will be dropped, so the
+              // action must stay queued for a later attempt.
               appLogger.d('Offline progress: started call failed (continuing)', error: e);
             }
           }
@@ -640,18 +691,30 @@ class OfflineWatchSyncService extends ChangeNotifier {
               recordedAt: DateTime.fromMillisecondsSinceEpoch(action.updatedAt),
             ),
           );
+          persisted = startedSucceeded;
         }
 
-        // If progress exceeded threshold, also mark as watched. On backends
-        // that mark played from the stopped report above (MediaBrowser), this
-        // only emits the local watch event — an explicit markWatched would
-        // double-scrobble via the Trakt plugin (#1287).
         if (action.shouldMarkWatched) {
-          await client.markWatchedFromPlaybackStop(item);
+          // MediaBrowser persists the played state from the stopped report.
+          // Plex still needs the explicit transport call, but replay must not
+          // emit another semantic event for an action already emitted offline.
+          if (!client.marksWatchedOnPlaybackStopped) {
+            await client.markWatched(item);
+            persisted = true;
+          }
           await TrackerCoordinator.instance.markWatched(item, client);
         }
         break;
     }
+
+    return (
+      item: item,
+      clientScopeId: clientScopeId,
+      profileId: action.profileId,
+      rowId: action.id,
+      revision: action.updatedAt,
+      persisted: persisted,
+    );
   }
 
   /// Push a watch-state change Plezy observed on the server to the trackers.
@@ -703,6 +766,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
               item: episode,
               isNowWatched: isWatched,
               cacheServerId: client.cacheServerId,
+              serverAcknowledged: true,
             );
             // The change came from the server (watched on another client), so no
             // playback or manual path has told the trackers about it.
@@ -841,6 +905,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
                     item: metadata,
                     isNowWatched: isWatched,
                     cacheServerId: client.cacheServerId,
+                    serverAcknowledged: true,
                   );
                   await _mirrorWatchStateToTrackers(metadata, client, isWatched: isWatched);
                 }

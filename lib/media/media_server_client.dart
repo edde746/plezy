@@ -70,6 +70,42 @@ abstract interface class GracefullyCloseable {
   Future<void> closeGracefully({Duration drainTimeout});
 }
 
+/// Per-leg outcome sink for hub fetches.
+///
+/// Home rows are best-effort by design: a hub leg that fails degrades to an
+/// empty list rather than sinking the screen. That makes "this server has no
+/// rows" and "every row request failed" indistinguishable at the aggregation
+/// boundary, so a totally failed refresh was reported to the user as a
+/// success (#1829).
+///
+/// Callers that need to tell them apart pass a sink and the backend records
+/// each leg it degraded. A sink rather than a widened return type keeps every
+/// existing caller untouched, and lets a response carry *partial* rows
+/// alongside a failure — which throwing cannot.
+///
+/// Deliberately not recorded: legs whose degradation is intentional rather
+/// than a fault, i.e. Emby's series-reconstruction deadline and its
+/// per-series probes.
+class HubFetchDiagnostics {
+  var _failed = false;
+  var _cancelled = false;
+
+  /// A leg failed for a reason that is not a client-side abort.
+  bool get failed => _failed;
+
+  /// A leg was aborted client-side. Cancellation is not failure: a disrupted
+  /// pass says nothing about the server's actual content.
+  bool get cancelled => _cancelled;
+
+  void recordFailure(Object error) {
+    if (error is MediaServerHttpException && error.isCancellation) {
+      _cancelled = true;
+    } else {
+      _failed = true;
+    }
+  }
+}
+
 abstract class MediaServerClient {
   ServerId get serverId;
   String? get serverName;
@@ -302,7 +338,14 @@ abstract class MediaServerClient {
 
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
   /// synthesizes `Latest` plus optional `Resume` + `NextUp`).
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true});
+  ///
+  /// [diagnostics], when supplied, receives every leg this call degraded to
+  /// empty, so the caller can tell an empty home from a failed one (#1829).
+  Future<List<MediaHub>> fetchGlobalHubs({
+    int limit = defaultHubPreviewLimit,
+    bool includePlaybackHubs = true,
+    HubFetchDiagnostics? diagnostics,
+  });
 
   /// Hubs scoped to a single library section. [libraryName] is baked into
   /// the title of synthetic hubs (Jellyfin) so per-library "Recently Added"
@@ -310,12 +353,14 @@ abstract class MediaServerClient {
   /// [includePlaybackHubs] lets surfaces that already render Continue
   /// Watching skip duplicate playback rows. [libraryKind] lets backends avoid
   /// irrelevant expensive probes, e.g. Jellyfin `NextUp` for movie libraries.
+  /// [diagnostics] carries degraded legs as in [fetchGlobalHubs].
   Future<List<MediaHub>> fetchLibraryHubs(
     String libraryId, {
     required String libraryName,
     int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
+    HubFetchDiagnostics? diagnostics,
   });
 
   /// "More like this" recommendations for [id].
@@ -769,10 +814,18 @@ extension MediaServerClientScope on MediaServerClient {
   /// In-player sessions that *did* give the backend an observable crossing use
   /// [notifyWatchedFromPlaybackSession] instead.
   Future<void> markWatchedFromPlaybackStop(MediaItem item) async {
-    if (!marksWatchedOnPlaybackStopped) {
+    final performedExplicitMark = !marksWatchedOnPlaybackStopped;
+    if (performedExplicitMark) {
       await markWatched(item);
     }
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
+    WatchStateNotifier().notifyWatched(
+      item: item,
+      isNowWatched: true,
+      cacheServerId: cacheServerId,
+      // A successful report cannot prove that the backend marked the item
+      // played; only the explicit mutation settles this patch.
+      serverAcknowledged: performedExplicitMark,
+    );
   }
 
   /// Emit the local watched event for [item] without touching the server.
@@ -786,8 +839,17 @@ extension MediaServerClientScope on MediaServerClient {
   /// records the same watch twice — a second Trakt-plugin scrobble on Jellyfin
   /// (#1287), a second Play History row and an inflated `viewCount` on Plex
   /// (#1740).
-  void notifyWatchedFromPlaybackSession(MediaItem item) {
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
+  ///
+  /// The event remains unacknowledged because reporting success proves only
+  /// receipt, not that the server classified the item as played. The caller
+  /// keeps the returned patch id so a later explicit mark can promote it.
+  WatchPatchId? notifyWatchedFromPlaybackSession(MediaItem item) {
+    return WatchStateNotifier().notifyWatched(
+      item: item,
+      isNowWatched: true,
+      cacheServerId: cacheServerId,
+      serverAcknowledged: false,
+    );
   }
 }
 

@@ -2226,6 +2226,7 @@ class PlexClient
     int? librarySectionID,
     String? librarySectionTitle,
     bool Function(PlexMetadataDto)? filter,
+    HubFetchDiagnostics? diagnostics,
   }) async {
     try {
       final response = await retryTransientMediaServerCall(
@@ -2253,6 +2254,7 @@ class PlexClient
         ),
       );
     } catch (e) {
+      diagnostics?.recordFailure(e);
       appLogger.e('Failed to get $failureLabel: $e');
     }
     return [];
@@ -2264,6 +2266,7 @@ class PlexClient
     String sectionId, {
     int limit = defaultHubPreviewLimit,
     String? libraryName,
+    HubFetchDiagnostics? diagnostics,
   }) => _fetchHubs(
     path: '/hubs/sections/$sectionId',
     queryParameters: {'count': limit, 'includeGuids': 1},
@@ -2272,19 +2275,22 @@ class PlexClient
     failureLabel: 'library hubs',
     librarySectionID: _librarySectionIdFromString(sectionId),
     librarySectionTitle: libraryName,
+    diagnostics: diagnostics,
     filter: _videoOrMusicHubItem,
   );
 
   /// Get global hubs (home page recommendations)
   /// Returns actual home page hubs like "Recently Added Movies", "Recently Added TV", etc.
   /// This matches the official Plex client's home page layout.
-  Future<List<PlexHubDto>> _getGlobalHubs({int limit = defaultHubPreviewLimit}) => _fetchHubs(
-    path: _providerPromotedHubKey ?? _providerHomeHubKey ?? '/hubs',
-    queryParameters: {'count': limit, 'includeGuids': 1},
-    operation: 'Plex global hubs',
-    deadline: MediaServerTimeouts.homeHubDeadline,
-    failureLabel: 'global hubs',
-  );
+  Future<List<PlexHubDto>> _getGlobalHubs({int limit = defaultHubPreviewLimit, HubFetchDiagnostics? diagnostics}) =>
+      _fetchHubs(
+        path: _providerPromotedHubKey ?? _providerHomeHubKey ?? '/hubs',
+        queryParameters: {'count': limit, 'includeGuids': 1},
+        operation: 'Plex global hubs',
+        deadline: MediaServerTimeouts.homeHubDeadline,
+        failureLabel: 'global hubs',
+        diagnostics: diagnostics,
+      );
 
   /// Get related hubs for a specific metadata item (collections, similar, "more from" director/actor)
   Future<List<PlexHubDto>> _getRelatedHubs(String ratingKey, {int count = 10}) => _fetchHubs(
@@ -3614,8 +3620,12 @@ class PlexClient
   }
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async {
-    final hubs = await _getGlobalHubs(limit: limit);
+  Future<List<MediaHub>> fetchGlobalHubs({
+    int limit = defaultHubPreviewLimit,
+    bool includePlaybackHubs = true,
+    HubFetchDiagnostics? diagnostics,
+  }) async {
+    final hubs = await _getGlobalHubs(limit: limit, diagnostics: diagnostics);
     return hubs.map((h) => PlexMappers.mediaHub(h)).toList();
   }
 
@@ -3626,10 +3636,11 @@ class PlexClient
     int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
+    HubFetchDiagnostics? diagnostics,
   }) async {
     // libraryName is unused: Plex's /hubs/sections/{id} returns hubs already
     // titled per-library (e.g. "Recently Added in Movies").
-    final hubs = await _getLibraryHubs(libraryId, limit: limit, libraryName: libraryName);
+    final hubs = await _getLibraryHubs(libraryId, limit: limit, libraryName: libraryName, diagnostics: diagnostics);
     return hubs.map((h) => PlexMappers.mediaHub(h)).toList();
   }
 

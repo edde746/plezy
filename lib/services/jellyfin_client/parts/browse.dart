@@ -1593,7 +1593,11 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async {
+  Future<List<MediaHub>> fetchGlobalHubs({
+    int limit = defaultHubPreviewLimit,
+    bool includePlaybackHubs = true,
+    HubFetchDiagnostics? diagnostics,
+  }) async {
     // Jellyfin doesn't expose a single "hubs" endpoint, so we synthesise the
     // home rows from Latest plus optional playback rows. The richer Plex Discover surface
     // is intentionally left untranslated — see ServerCapabilities.richHubs.
@@ -1607,6 +1611,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       continueTitle: t.discover.continueWatching,
       nextUpTitle: t.discover.nextUp,
       recentTitle: t.discover.recentlyAdded,
+      diagnostics: diagnostics,
     );
   }
 
@@ -1617,6 +1622,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
+    HubFetchDiagnostics? diagnostics,
   }) async {
     // Music libraries get their own hub set. Home passes
     // includePlaybackHubs=false because it already renders the app-level
@@ -1630,6 +1636,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         libraryName: libraryName,
         limit: limit,
         includePlaybackHubs: includePlaybackHubs,
+        diagnostics: diagnostics,
       );
     }
 
@@ -1649,6 +1656,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       continueTitle: t.discover.continueWatchingIn(library: libraryName),
       nextUpTitle: t.discover.nextUpIn(library: libraryName),
       recentTitle: t.discover.recentlyAddedIn(library: libraryName),
+      diagnostics: diagnostics,
     );
   }
 
@@ -1670,14 +1678,20 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     required String recentTitle,
     String? parentId,
     String? latestItemTypes,
+    HubFetchDiagnostics? diagnostics,
   }) async {
-    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
-      'Limit': limit.toString(),
-      'ParentId': ?parentId,
-      'Fields': _hubRowFields,
-      'IncludeItemTypes': ?latestItemTypes,
-      ...jellyfinImageQueryParameters,
-    }, retry: retry);
+    final latestFuture = _safeFetchItemsArray(
+      '/Users/${_segment(connection.userId)}/Items/Latest',
+      {
+        'Limit': limit.toString(),
+        'ParentId': ?parentId,
+        'Fields': _hubRowFields,
+        'IncludeItemTypes': ?latestItemTypes,
+        ...jellyfinImageQueryParameters,
+      },
+      retry: retry,
+      diagnostics: diagnostics,
+    );
 
     MediaHub hub(String suffix, String title, String type, List<Map<String, dynamic>> items) =>
         JellyfinMappers.syntheticHub(
@@ -1698,28 +1712,37 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
 
     final results = await Future.wait([
       latestFuture,
-      _safeFetchItemsArray(_resumePath, {
-        'userId': connection.userId,
-        ..._resumeFilterQuery,
-        'ParentId': ?parentId,
-        'Limit': limit.toString(),
-        'Fields': _hubRowFields,
-        'MediaTypes': 'Video',
-        'Recursive': 'true',
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, retry: retry),
+      _safeFetchItemsArray(
+        _resumePath,
+        {
+          'userId': connection.userId,
+          ..._resumeFilterQuery,
+          'ParentId': ?parentId,
+          'Limit': limit.toString(),
+          'Fields': _hubRowFields,
+          'MediaTypes': 'Video',
+          'Recursive': 'true',
+          'EnableTotalRecordCount': 'false',
+          ...jellyfinImageQueryParameters,
+        },
+        retry: retry,
+        diagnostics: diagnostics,
+      ),
       includeNextUp
-          ? _fetchNextUpRows({
-              'userId': connection.userId,
-              'ParentId': ?parentId,
-              'Limit': limit.toString(),
-              'Fields': _hubRowFields,
-              'EnableResumable': 'false',
-              'NextUpDateCutoff': _nextUpDateCutoff(),
-              'EnableTotalRecordCount': 'false',
-              ...jellyfinImageQueryParameters,
-            }, retry: retry)
+          ? _fetchNextUpRows(
+              {
+                'userId': connection.userId,
+                'ParentId': ?parentId,
+                'Limit': limit.toString(),
+                'Fields': _hubRowFields,
+                'EnableResumable': 'false',
+                'NextUpDateCutoff': _nextUpDateCutoff(),
+                'EnableTotalRecordCount': 'false',
+                ...jellyfinImageQueryParameters,
+              },
+              retry: retry,
+              diagnostics: diagnostics,
+            )
           : Future.value(const <Map<String, dynamic>>[]),
     ]);
 
@@ -1744,14 +1767,20 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     required String libraryName,
     required int limit,
     required bool includePlaybackHubs,
+    HubFetchDiagnostics? diagnostics,
   }) async {
-    final latestFuture = _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
-      'Limit': limit.toString(),
-      'ParentId': libraryId,
-      'Fields': _musicAlbumRowFields,
-      'EnableUserData': 'false',
-      ...jellyfinImageQueryParameters,
-    }, retry: _libraryHubRetry);
+    final latestFuture = _safeFetchItemsArray(
+      '/Users/${_segment(connection.userId)}/Items/Latest',
+      {
+        'Limit': limit.toString(),
+        'ParentId': libraryId,
+        'Fields': _musicAlbumRowFields,
+        'EnableUserData': 'false',
+        ...jellyfinImageQueryParameters,
+      },
+      retry: _libraryHubRetry,
+      diagnostics: diagnostics,
+    );
 
     MediaHub latestAlbumsHub(List<Map<String, dynamic>> items) => JellyfinMappers.syntheticHub(
       mapItem: _mapItem,
@@ -1781,8 +1810,18 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     };
     final results = await Future.wait([
       latestFuture,
-      _safeFetchItemsArray('/Items', {...playedParams, 'SortBy': 'DatePlayed'}, retry: _libraryHubRetry),
-      _safeFetchItemsArray('/Items', {...playedParams, 'SortBy': 'PlayCount'}, retry: _libraryHubRetry),
+      _safeFetchItemsArray(
+        '/Items',
+        {...playedParams, 'SortBy': 'DatePlayed'},
+        retry: _libraryHubRetry,
+        diagnostics: diagnostics,
+      ),
+      _safeFetchItemsArray(
+        '/Items',
+        {...playedParams, 'SortBy': 'PlayCount'},
+        retry: _libraryHubRetry,
+        diagnostics: diagnostics,
+      ),
     ]);
 
     return [
@@ -2155,9 +2194,16 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     Map<String, dynamic> queryParameters, {
     _HubRetryPolicy? retry,
     AbortController? abort,
+    HubFetchDiagnostics? diagnostics,
   }) async {
     if (dialect.supportsGlobalNextUp) {
-      return _safeFetchItemsArray('/Shows/NextUp', queryParameters, retry: retry, abort: abort);
+      return _safeFetchItemsArray(
+        '/Shows/NextUp',
+        queryParameters,
+        retry: retry,
+        abort: abort,
+        diagnostics: diagnostics,
+      );
     }
 
     final budgetAbort = AbortController();
@@ -2508,6 +2554,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     Map<String, dynamic> queryParameters, {
     _HubRetryPolicy? retry,
     AbortController? abort,
+    HubFetchDiagnostics? diagnostics,
     Duration? timeout,
     bool allowEndpointFailover = true,
   }) async {
@@ -2532,6 +2579,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       // it propagate so the caller classifies the fetch as disrupted, not
       // empty.
       if (e is MediaServerHttpException && e.isCancellation) rethrow;
+      diagnostics?.recordFailure(e);
       appLogger.w('JellyfinClient: $path failed (treating as empty)', error: e, stackTrace: st);
       return const [];
     }

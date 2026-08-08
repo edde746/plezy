@@ -50,6 +50,7 @@ import '../utils/formatters.dart';
 import '../utils/hub_icons.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
@@ -756,7 +757,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: _focusContentFromAppBar,
                 actions: [
-                  FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: _discover.load),
+                  FocusableAction(
+                    icon: Symbols.refresh_rounded,
+                    iconColor: foregroundColor,
+                    onPressed: () async {
+                      final outcome = await _discover.refreshNow();
+                      if (!context.mounted) return;
+                      switch (outcome) {
+                        case DiscoverRefreshOutcome.failed:
+                          showErrorSnackBar(context, t.errors.unableToLoad(context: t.discover.title));
+                        case DiscoverRefreshOutcome.degraded:
+                          appLogger.w('Discover refresh completed with partial server failures');
+                        case DiscoverRefreshOutcome.cancelled:
+                        case DiscoverRefreshOutcome.refreshed:
+                          break;
+                      }
+                    },
+                  ),
                   // Watch Together
                   FocusableAction(
                     onPressed: () =>

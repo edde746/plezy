@@ -651,8 +651,11 @@ class _FakeMediaServerClient implements MediaServerClient {
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => continueWatching;
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async =>
-      hubs;
+  Future<List<MediaHub>> fetchGlobalHubs({
+    int limit = defaultHubPreviewLimit,
+    bool includePlaybackHubs = true,
+    HubFetchDiagnostics? diagnostics,
+  }) async => hubs;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -692,7 +695,11 @@ class _GatedHubsFakeClient implements MediaServerClient {
   Future<List<MediaLibrary>> fetchLibraries() async => const [];
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) {
+  Future<List<MediaHub>> fetchGlobalHubs({
+    int limit = defaultHubPreviewLimit,
+    bool includePlaybackHubs = true,
+    HubFetchDiagnostics? diagnostics,
+  }) {
     hubCalls++;
     final gate = Completer<List<MediaHub>>();
     _gates.add(gate);

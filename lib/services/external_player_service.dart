@@ -177,6 +177,7 @@ class ExternalPlayerService {
       return;
     }
 
+    var startedSucceeded = false;
     try {
       await client.reportPlaybackStarted(
         itemId: metadata.id,
@@ -185,6 +186,7 @@ class ExternalPlayerService {
         playMethod: 'DirectPlay',
         mediaSourceId: mediaSourceId,
       );
+      startedSucceeded = true;
     } catch (e) {
       appLogger.d('External player progress: started call failed (continuing)', error: e);
     }
@@ -210,6 +212,9 @@ class ExternalPlayerService {
       viewOffset: position.inMilliseconds,
       duration: duration.inMilliseconds,
       watchedThreshold: client.watchedThreshold,
+      // MediaBrowser persists stopped progress only for a session opened by
+      // Started; Plex persists every timeline report independently.
+      serverAcknowledged: !metadata.backend.usesMediaBrowserApi || startedSucceeded,
     );
 
     if (isWatchedProgress(

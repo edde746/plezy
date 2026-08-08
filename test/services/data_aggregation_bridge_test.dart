@@ -126,6 +126,7 @@ class _GatedHubsClient implements MediaServerClient {
     int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
+    HubFetchDiagnostics? diagnostics,
   }) {
     started.add(libraryId);
     return (_gates[libraryId] = Completer<List<MediaHub>>()).future;

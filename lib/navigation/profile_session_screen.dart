@@ -225,6 +225,10 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                     context.read<MultiServerProvider>(),
                     context.read<HiddenLibrariesProvider>(),
                     context.read<LibrariesProvider>(),
+                    // Created above in this same subtree, so its lifetime
+                    // matches; the proxy reuses `previous`, so the reference
+                    // stays valid for as long as this provider does.
+                    watchStateStore: context.read<WatchStateStore>(),
                     isProfileBinding: () => activeProfile.isBinding,
                     profileId: activeId,
                   );

@@ -144,12 +144,18 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
     required String itemId,
     required bool isNowWatched,
     required WatchStateChangeType changeType,
+    required WatchPatchId patchId,
     String? cacheServerId,
   }) {
     final globalKey = buildGlobalKey(ServerId(serverId), itemId);
     final metadata = _downloadProvider.getMetadata(globalKey);
     if (metadata != null) {
-      WatchStateNotifier().notifyWatched(item: metadata, isNowWatched: isNowWatched, cacheServerId: cacheServerId);
+      WatchStateNotifier().notifyWatched(
+        item: metadata,
+        isNowWatched: isNowWatched,
+        cacheServerId: cacheServerId,
+        patchId: patchId,
+      );
     } else {
       // Fallback: emit minimal event without parent chain.
       WatchStateNotifier().notify(
@@ -161,6 +167,7 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
           parentChain: [],
           mediaType: 'unknown',
           isNowWatched: isNowWatched,
+          patchId: patchId,
         ),
       );
     }
@@ -170,13 +177,14 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   ///
   /// This queues the action for sync when online and emits a [WatchStateEvent].
   Future<void> markAsWatched({required ServerId serverId, required String itemId}) async {
-    final cacheServerId = await _syncService.queueMarkWatched(serverId: serverId, itemId: itemId);
+    final queued = await _syncService.queueMarkWatched(serverId: serverId, itemId: itemId);
     _emitWatchStateChange(
       serverId: serverId,
       itemId: itemId,
       isNowWatched: true,
       changeType: WatchStateChangeType.watched,
-      cacheServerId: cacheServerId,
+      cacheServerId: queued.clientScopeId,
+      patchId: WatchPatchId.offlineAction(profileId: queued.profileId, rowId: queued.rowId, revision: queued.revision),
     );
     safeNotifyListeners();
     _autoDeleteIfWatched(serverId, itemId);
@@ -212,13 +220,14 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   ///
   /// This queues the action for sync when online and emits a [WatchStateEvent].
   Future<void> markAsUnwatched({required ServerId serverId, required String itemId}) async {
-    final cacheServerId = await _syncService.queueMarkUnwatched(serverId: serverId, itemId: itemId);
+    final queued = await _syncService.queueMarkUnwatched(serverId: serverId, itemId: itemId);
     _emitWatchStateChange(
       serverId: serverId,
       itemId: itemId,
       isNowWatched: false,
       changeType: WatchStateChangeType.unwatched,
-      cacheServerId: cacheServerId,
+      cacheServerId: queued.clientScopeId,
+      patchId: WatchPatchId.offlineAction(profileId: queued.profileId, rowId: queued.rowId, revision: queued.revision),
     );
     safeNotifyListeners();
   }

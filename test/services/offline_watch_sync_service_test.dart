@@ -981,7 +981,7 @@ void main() {
       mgr.debugRegisterClientForTesting(clientA);
 
       final queuedScope = await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
-      expect(queuedScope, clientA.profileScopeId);
+      expect(queuedScope.clientScopeId, clientA.profileScopeId);
       expect((await db.getPendingWatchActions()).single.clientScopeId, clientA.profileScopeId);
 
       await svc.syncPendingItems();
@@ -1044,7 +1044,7 @@ void main() {
       final returnedScope = await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
 
       final queued = await db.getPendingWatchActions();
-      expect(returnedScope, 'jf-machine/user-a');
+      expect(returnedScope.clientScopeId, 'jf-machine/user-a');
       expect(queued.single.clientScopeId, 'jf-machine/user-a');
     });
 
@@ -1145,7 +1145,7 @@ void main() {
       final returnedScope = await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
 
       final queued = await db.getPendingWatchActions();
-      expect(returnedScope, 'jf-machine/user-b');
+      expect(returnedScope.clientScopeId, 'jf-machine/user-b');
       expect(queued.single.clientScopeId, 'jf-machine/user-b');
     });
 
