@@ -332,6 +332,12 @@ class PlexClient
   final Future<void> Function(String newBaseUrl)? _onEndpointChanged;
   final VoidCallback? _onAllEndpointsExhausted;
 
+  /// Test seam for [_validateFailoverCandidate]'s ephemeral probe client,
+  /// mirroring [JellyfinClient.forTesting]'s `endpointProbeHttpClientFactory`.
+  /// Each validation constructs (and closes) its own client, so this is a
+  /// factory rather than a shared instance.
+  final http.Client Function()? _endpointProbeHttpClientFactory;
+
   /// Server identifier - all PlexMetadataDto items created by this client are tagged with this
   @override
   final ServerId serverId;
@@ -460,6 +466,7 @@ class PlexClient
     this._onEndpointChanged,
     this._onAllEndpointsExhausted,
     http.Client? httpClient,
+    this._endpointProbeHttpClientFactory,
   }) {
     LogRedactionManager.registerServer(config.baseUrl, config.token);
 
@@ -474,6 +481,7 @@ class PlexClient
       prioritizedEndpoints: prioritizedEndpoints ?? const [],
       onEndpointSwitch: (newBaseUrl, {required persist}) => _handleEndpointSwitch(newBaseUrl, persist: persist),
       onAllEndpointsExhausted: _onAllEndpointsExhausted,
+      validateCandidate: _validateFailoverCandidate,
     );
   }
 
@@ -490,6 +498,8 @@ class PlexClient
     String? serverName,
     required http.Client httpClient,
     List<String>? prioritizedEndpoints,
+    http.Client Function()? endpointProbeHttpClientFactory,
+    VoidCallback? onAllEndpointsExhausted,
     List<({String identifier, String gridEndpoint})> epgProviders = const [],
     String? homeHubKey,
     String? promotedHubKey,
@@ -502,6 +512,8 @@ class PlexClient
       serverName: serverName,
       httpClient: httpClient,
       prioritizedEndpoints: prioritizedEndpoints,
+      endpointProbeHttpClientFactory: endpointProbeHttpClientFactory,
+      onAllEndpointsExhausted: onAllEndpointsExhausted,
     );
     client._providerLibraries = const [];
     client._providerEpg = epgProviders;
@@ -2917,6 +2929,40 @@ class PlexClient
 
     if (persist && _onEndpointChanged != null) {
       await _onEndpointChanged(newBaseUrl);
+    }
+  }
+
+  /// Trust gate for endpoint failover: before the cascade may switch to a
+  /// fallback candidate, it must answer the unauthenticated `/identity` probe
+  /// quickly *and* identify as this client's server.
+  ///
+  /// plex.tv advertises every interface of the server host as a connection
+  /// candidate, including addresses only that host can reach (e.g. its Docker
+  /// bridge gateway) — whether such an address works is a property of the
+  /// session, not the address, so it can only be probed, not filtered. Without
+  /// this gate one transient error on a healthy endpoint parked the live base
+  /// URL on a dead candidate for a full connect timeout (log bbr90).
+  ///
+  /// The probe is deliberately unauthenticated — the token must not be sent to
+  /// an endpoint whose identity is unconfirmed — and uses the discovery race's
+  /// budget: every viable candidate already answered within it at discovery
+  /// time. Cancellations propagate to abort the cascade; other probe failures
+  /// propagate and reject the candidate ([FailoverHttpClient] semantics).
+  Future<bool> _validateFailoverCandidate(String candidateBaseUrl, AbortController? abort) async {
+    LogRedactionManager.registerServerUrl(candidateBaseUrl);
+    final probe = MediaServerHttpClient(
+      client: _endpointProbeHttpClientFactory?.call(),
+      baseUrl: candidateBaseUrl,
+      defaultHeaders: const {'Accept': 'application/json'},
+      connectTimeout: MediaServerTimeouts.connectionRace,
+      receiveTimeout: MediaServerTimeouts.connectionRace,
+    );
+    try {
+      final response = await probe.get('/identity', abort: abort);
+      if (response.statusCode != 200) return false;
+      return _getMediaContainer(response)?['machineIdentifier']?.toString() == serverId;
+    } finally {
+      probe.close();
     }
   }
 

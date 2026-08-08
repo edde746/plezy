@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
@@ -523,6 +524,119 @@ void main() {
     );
     await expectLater(transport.abortObserved.future, completes);
     expect(transport.requestCount, 1);
+  });
+
+  group('Plex endpoint failover candidate validation', () {
+    http.Response identity(String machineIdentifier) => http.Response(
+      jsonEncode({
+        'MediaContainer': {'machineIdentifier': machineIdentifier},
+      }),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+
+    test('validates the candidate unauthenticated before the authenticated retry and switches', () async {
+      const primary = 'https://plex.example.com';
+      const fallback = 'https://plex-fallback.example.com';
+      final events = <String>[];
+      final probeRequests = <http.Request>[];
+      final client = testPlexClient(
+        serverId: publicServerId,
+        profileScopeId: defaultProfileScopeId,
+        httpClient: MockClient((request) async {
+          events.add('application:${request.url.host}');
+          expect(request.headers['X-Plex-Token'], isNotNull);
+          if (request.url.host == 'plex.example.com') {
+            throw TimeoutException('primary down');
+          }
+          return identity('server-id');
+        }),
+        prioritizedEndpoints: const [primary, fallback],
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          probeRequests.add(request);
+          events.add('probe:${request.url.host}');
+          return identity('server-id');
+        }),
+      );
+      addTearDown(client.close);
+
+      expect(await client.getMachineIdentifier(), 'server-id');
+
+      expect(events, [
+        'application:plex.example.com',
+        'probe:plex-fallback.example.com',
+        'application:plex-fallback.example.com',
+      ]);
+      expect(probeRequests.single.url.path, '/identity');
+      expect(probeRequests.single.headers.keys.map((name) => name.toLowerCase()), isNot(contains('x-plex-token')));
+      expect(client.config.baseUrl, fallback);
+    });
+
+    test('wrong-machine candidate is skipped before one authenticated retry to a valid candidate', () async {
+      final events = <String>[];
+      var exhausted = 0;
+      final client = testPlexClient(
+        serverId: publicServerId,
+        profileScopeId: defaultProfileScopeId,
+        httpClient: MockClient((request) async {
+          events.add('application:${request.url.host}');
+          if (request.url.host == 'plex.example.com') {
+            throw TimeoutException('primary down');
+          }
+          expect(request.url.host, 'valid.example.com');
+          return identity('server-id');
+        }),
+        prioritizedEndpoints: const [
+          'https://plex.example.com',
+          'https://wrong-machine.example.com',
+          'https://valid.example.com',
+        ],
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          events.add('probe:${request.url.host}');
+          return identity(request.url.host == 'wrong-machine.example.com' ? 'other-server' : 'server-id');
+        }),
+        onAllEndpointsExhausted: () => exhausted++,
+      );
+      addTearDown(client.close);
+
+      expect(await client.getMachineIdentifier(), 'server-id');
+
+      expect(events, [
+        'application:plex.example.com',
+        'probe:wrong-machine.example.com',
+        'probe:valid.example.com',
+        'application:valid.example.com',
+      ]);
+      expect(exhausted, 0);
+      expect(client.config.baseUrl, 'https://valid.example.com');
+    });
+
+    test('unreachable candidate receives no authenticated request and the base URL stays put', () async {
+      final events = <String>[];
+      var exhausted = 0;
+      final client = testPlexClient(
+        serverId: publicServerId,
+        profileScopeId: defaultProfileScopeId,
+        httpClient: MockClient((request) async {
+          events.add('application:${request.url.host}');
+          expect(request.url.host, 'plex.example.com', reason: 'unvalidated candidates must not see the token');
+          throw TimeoutException('primary down');
+        }),
+        prioritizedEndpoints: const ['https://plex.example.com', 'https://unreachable.example.com'],
+        endpointProbeHttpClientFactory: () => MockClient((request) async {
+          events.add('probe:${request.url.host}');
+          throw TimeoutException('probe unavailable');
+        }),
+        onAllEndpointsExhausted: () => exhausted++,
+      );
+      addTearDown(client.close);
+
+      expect(await client.getMachineIdentifier(), isNull);
+
+      expect(events, ['application:plex.example.com', 'probe:unreachable.example.com']);
+      expect(exhausted, 1);
+      expect(client.config.baseUrl, 'https://plex.example.com');
+    });
   });
 
   test('metadata edit preserves locked fields and removed tag wire format', () async {

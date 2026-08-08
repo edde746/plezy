@@ -620,8 +620,11 @@ class PlexServer {
     }
 
     for (final connection in connections) {
-      // Skip endpoints that are never reachable from an external client:
-      // Docker bridge addresses and IPv6 link-local / all-zeros addresses.
+      // Skip endpoints that are never reachable from any client: IPv6
+      // link-local / all-zeros addresses. Private IPv4 addresses (including
+      // Docker bridge gateways) are deliberately kept — a client running on
+      // the server host itself can reach them, so reachability is probed at
+      // failover time (PlexClient's validateCandidate), not inferred here.
       if (_isUnreachableAddress(connection.address)) {
         continue;
       }
