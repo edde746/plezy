@@ -115,6 +115,23 @@ class PlaybackInitializationResult {
   /// `true` when [videoUrl] points at a backend transcoding stream.
   final bool isTranscoding;
 
+  /// Milliseconds the backend's subtitle timeline leads the video timeline.
+  ///
+  /// Plex's HLS transcode starts its presentation clock at a fixed PTS base
+  /// and declares it in the WebVTT rendition as
+  /// `X-TIMESTAMP-MAP=LOCAL:00:00.000,MPEGTS:900000` (900000 / 90000 Hz =
+  /// 10s). mpv does not apply that map, so every cue lands that far early
+  /// (measured on iOS against PMS 1.43, #1738). Callers add this to the
+  /// viewer's own sync offset when setting `sub-delay`.
+  final int subtitleTimelineOffsetMs;
+
+  /// Source stream id of a subtitle the backend rendered into the video.
+  ///
+  /// A burned-in subtitle is pixels, not a track: nothing will ever appear in
+  /// the player's subtitle list for it, so the track layer must treat the
+  /// choice as already served instead of waiting for a native track (#1738).
+  final int? burnedInSubtitleStreamId;
+
   /// Non-null when a non-original preset was requested but fallback kicked in.
   final TranscodeFallbackReason? fallbackReason;
 
@@ -157,6 +174,8 @@ class PlaybackInitializationResult {
     this.videoUrl,
     this.mediaInfo,
     this.subtitleSidecars = const [],
+    this.burnedInSubtitleStreamId,
+    this.subtitleTimelineOffsetMs = 0,
     this.isOffline = false,
     this.isTranscoding = false,
     this.fallbackReason,

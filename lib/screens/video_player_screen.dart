@@ -233,6 +233,23 @@ PlaybackSubtitleSelection subtitleSelectionForUserPick({
   );
 }
 
+/// Builds the committed selection after a stalled subtitle sidecar forced a
+/// reopen without subtitles.
+///
+/// Nothing is attached after that reopen, so the selection goes off — but the
+/// viewer never asked for off. Recording the unserved choice as a declined
+/// carry keeps it out of `subtitleOffIsDeliberate`, so a sidecar the server
+/// was merely slow to produce cannot persist -1 over the viewer's stored
+/// choice, and it leaves a late native pass (or the next item) something to
+/// serve. A selection that was already off stays a deliberate off.
+PlaybackSubtitleSelection subtitleSelectionForSidecarFallback(PlaybackSubtitleSelection currentSelection) {
+  return PlaybackSubtitleSelection.off(
+    declinedPreference:
+        currentSelection.declinedPreference ??
+        (currentSelection.isOff ? null : SubtitlePreference.trackOrNull(currentSelection.primaryTrack)),
+  );
+}
+
 /// Session-preference form of a source-catalog subtitle choice that had to
 /// go through a reload instead of a local track switch.
 ///
@@ -825,6 +842,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // UI readiness may be forced true to hide the loading spinner after a
   // startup failure. Reporting readiness is stricter: only a renderer event
   // (or the established non-ExoPlayer position fallback) sets this latch.
+  /// Milliseconds the active source's subtitle timeline leads its video, which
+  /// the player adds to the viewer's own sync offset (#1738). Reset per open.
+  int _subtitleTimelineOffsetMs = 0;
   bool _hasRenderedFirstFrame = false;
   bool _hasFatalPlaybackError = false;
 
@@ -1409,11 +1429,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await currentPlayer.setProperty('audio-delay', offsetSeconds.toString());
       }
 
-      final subtitleSyncOffset = settingsService.read(SettingsService.subtitleSyncOffset);
-      if (subtitleSyncOffset != 0) {
-        final offsetSeconds = subtitleSyncOffset / 1000.0;
-        await currentPlayer.setProperty('sub-delay', offsetSeconds.toString());
-      }
+      await _applySubtitleSyncOffset(currentPlayer, settingsService);
 
       if (settingsService.read(SettingsService.audioNormalization)) {
         await currentPlayer.setAudioNormalization(true);

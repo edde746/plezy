@@ -273,6 +273,30 @@ void main() {
     expect(selection.secondarySourceStreamId, isNull);
   });
 
+  test('a sidecar-stall fallback carries the unserved choice instead of a deliberate off (#1738)', () {
+    // The reopen drops the sidecars, so the selection goes off — but the
+    // viewer never asked for off. Leaving declinedPreference null makes
+    // subtitleOffIsDeliberate true, which persists -1 to the server and
+    // hardens a slow sidecar into a stored "subtitles off".
+    const picked = SubtitleTrack(id: 'source:7', title: 'English', language: 'eng', codec: 'pgs');
+
+    final selection = subtitleSelectionForSidecarFallback(
+      const PlaybackSubtitleSelection(primaryTrack: picked, primarySourceStreamId: 7),
+    );
+
+    expect(selection.isOff, isTrue);
+    expect(selection.declinedPreference, isNotNull);
+    expect(selection.declinedPreference, isA<SubtitleTrackPreference>());
+    expect((selection.declinedPreference! as SubtitleTrackPreference).track.id, 'source:7');
+  });
+
+  test('a sidecar-stall fallback leaves an already-deliberate off deliberate (#1738)', () {
+    final selection = subtitleSelectionForSidecarFallback(const PlaybackSubtitleSelection.off());
+
+    expect(selection.isOff, isTrue);
+    expect(selection.declinedPreference, isNull);
+  });
+
   test('a reload-path source subtitle pick becomes the session preference (#1785)', () {
     // Picks that cannot switch locally go through a full reload and never
     // reach the native remember chain; the authoritative source row still

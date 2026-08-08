@@ -370,6 +370,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             player: widget.player,
             propertyName: propertyName,
             initialOffset: initialOffset,
+            baselineOffsetMs: isSubtitle ? _state.subtitleTimelineOffsetMs : 0,
             sliderFocusNode: sliderFocusNode,
             onOffsetChanged: (offset) async {
               final settings = SettingsService.instance;
@@ -1181,6 +1182,7 @@ class _CompactSyncBar extends StatefulWidget {
   final Player player;
   final String propertyName;
   final int initialOffset;
+  final int baselineOffsetMs;
   final Future<void> Function(int offset) onOffsetChanged;
   final FocusNode sliderFocusNode;
 
@@ -1190,6 +1192,7 @@ class _CompactSyncBar extends StatefulWidget {
     required this.player,
     required this.propertyName,
     required this.initialOffset,
+    this.baselineOffsetMs = 0,
     required this.onOffsetChanged,
     required this.sliderFocusNode,
   });
@@ -1222,6 +1225,7 @@ class _CompactSyncBarState extends State<_CompactSyncBar> {
             player: widget.player,
             propertyName: widget.propertyName,
             initialOffset: widget.initialOffset,
+            baselineOffsetMs: widget.baselineOffsetMs,
             labelText: widget.title,
             onOffsetChanged: widget.onOffsetChanged,
             compact: true,

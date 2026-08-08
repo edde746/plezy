@@ -50,6 +50,11 @@ class TrackManager {
 
   MediaItem metadata;
   MediaSourceInfo? mediaInfo;
+
+  /// Whether the backend rendered the chosen subtitle into the video. There is
+  /// no native subtitle track to select in that case, so the selection wait
+  /// must not hold out for one (#1738).
+  bool subtitleIsBurnedIn;
   AudioTrack? preferredAudioTrack;
   SubtitlePreference? preferredSubtitleTrack;
   SubtitlePreference? preferredSecondarySubtitleTrack;
@@ -96,6 +101,7 @@ class TrackManager {
     required this.waitForProfileSettings,
     required this.metadata,
     this.mediaInfo,
+    this.subtitleIsBurnedIn = false,
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
     this.preferredSecondarySubtitleTrack,
@@ -241,8 +247,10 @@ class TrackManager {
       if (!selectionIsCurrent()) return;
 
       final tracks = player.state.tracks;
+      // A burned-in subtitle never becomes a native track, so waiting on one
+      // would always burn the full 30-second deadline for nothing (#1738).
       final waitingForAdvertisedSubtitles =
-          mediaInfo?.subtitleTracks.isNotEmpty == true && !_tracksReadyForSelection(tracks);
+          !subtitleIsBurnedIn && mediaInfo?.subtitleTracks.isNotEmpty == true && !_tracksReadyForSelection(tracks);
       if (!waitingForAdvertisedSubtitles) {
         _trackLoadingSubscription?.cancel();
         _trackLoadingSubscription = null;

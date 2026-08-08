@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import '../utils/isolate_helper.dart';
 import '../utils/json_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -27,6 +28,7 @@ import 'bif_thumbnail_service.dart';
 import 'download_artwork_helpers.dart';
 import 'settings_service.dart';
 import 'library_query_translator.dart';
+import 'plex_hls_timestamp_map.dart';
 import 'scrub_preview_source.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/url_utils.dart';
@@ -73,6 +75,7 @@ import 'plex_lyrics_parser.dart';
 import 'plex_mappers.dart';
 import 'plex_playback_mapper.dart';
 import 'playback_initialization_types.dart';
+import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
 
 part 'plex_client/parts/live_tv.dart';
@@ -88,6 +91,15 @@ const _plexHlsVideoTranscodeTarget =
     'add-transcode-target(type=videoProfile&context=streaming'
     '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'
     '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
+
+/// Plex's HLS presentation clock starts at PTS 900000 (90 kHz), i.e. 10s, and
+/// the WebVTT rendition declares it as `X-TIMESTAMP-MAP:MPEGTS:900000`. mpv
+/// does not apply that map, so segmented cues arrive exactly this early and the
+/// player compensates when it sets `sub-delay` (#1738). The live value is read
+/// from the transcode's own first WebVTT segment at open; this constant is the
+/// fallback when that probe cannot complete.
+const plexHlsSubtitleTimelineOffsetMs = 10000;
+
 const _plexHlsSubtitleTranscodeTarget =
     'add-transcode-target(type=subtitleProfile&context=streaming'
     '&protocol=hls&container=webvtt&subtitleCodec=webvtt)';
@@ -2617,6 +2629,7 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
+    MediaSubtitleTrack? selectedSubtitleTrack,
   }) async {
     try {
       final allParams = _buildTranscodeParams(
@@ -2627,6 +2640,7 @@ class PlexClient
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
         audioStreamId: audioStreamId,
+        selectedSubtitleTrack: selectedSubtitleTrack,
       );
       return await _runTranscodeDecision(
         startEndpoint: _plexVideoHlsStartEndpoint,
@@ -2736,8 +2750,24 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
+    MediaSubtitleTrack? selectedSubtitleTrack,
   }) {
     final isOriginal = preset.isOriginal;
+    // An embedded subtitle cannot be fetched alongside a transcode: Plex
+    // answers 501 for /library/streams on an embedded stream, and the raw part
+    // file is refused (503) precisely because direct play is off — which is why
+    // the transcode exists. So the server has to deliver it: text streams as a
+    // segmented subtitle rendition, image streams burned into the video (HLS
+    // has no bitmap subtitle rendition).
+    // Text streams ride a separate segmented WebVTT rendition, so the viewer
+    // keeps local subtitle styling and can switch track without reloading the
+    // transcode. Image streams have no HLS bitmap rendition and must be burned
+    // into the video. See `demuxer-lavf-o` in playback_open for the reconnect
+    // tuning the WebVTT rendition depends on (#1738).
+    final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
+    final segmentSubtitle =
+        selectedInternalSubtitle != null && CodecUtils.isTextSubtitleCodec(selectedInternalSubtitle.codec);
+    final burnSubtitle = selectedInternalSubtitle != null && !segmentSubtitle;
     final clientProfileExtra = _buildPlexHlsClientProfileExtra(
       maxVideoBitrateKbps: !isOriginal ? preset.videoBitrateKbps : null,
     );
@@ -2760,7 +2790,13 @@ class PlexClient
       'directStreamAudio': '0',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
-      'subtitles': 'none',
+      'subtitles': segmentSubtitle
+          ? 'segmented'
+          : burnSubtitle
+          ? 'burn'
+          : 'none',
+      if (selectedInternalSubtitle != null) 'subtitleStreamID': selectedInternalSubtitle.id.toString(),
+      if (segmentSubtitle) 'advancedSubtitles': 'text',
       if (audioStreamId != null) 'audioStreamID': audioStreamId.toString(),
       'Accept-Language': 'en',
       'X-Plex-Session-Identifier': sessionIdentifier,
@@ -2789,8 +2825,10 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
+    MediaSubtitleTrack? selectedSubtitleTrack,
   }) {
     return _buildTranscodeParams(
+      selectedSubtitleTrack: selectedSubtitleTrack,
       ratingKey: ratingKey,
       mediaIndex: mediaIndex,
       partIndex: partIndex,
@@ -3322,6 +3360,7 @@ class PlexClient
         final resolvedAudioId = carriedAudioTrack == null
             ? _resolveAudioStreamId(options.selectedAudioStreamId, data.mediaInfo)
             : carriedAudioStreamId;
+        final selectedSubtitleTrack = _resolveTranscodeSubtitleTrack(data.mediaInfo, options.preferredSubtitleTrack);
         final result = await buildTranscodeStartPath(
           ratingKey: options.metadata.id,
           mediaIndex: data.selectedMediaIndex,
@@ -3330,16 +3369,24 @@ class PlexClient
           sessionIdentifier: options.sessionIdentifier!,
           transcodeSessionId: options.transcodeSessionId!,
           audioStreamId: resolvedAudioId,
+          selectedSubtitleTrack: selectedSubtitleTrack,
         );
 
         if (result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
           final transcodeUrl = '${config.baseUrl}${result.startPath}'.withPlexToken(config.token);
-          final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo, data.videoUrl!);
+          final internal = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
+          final burnedIn = internal != null && !CodecUtils.isTextSubtitleCodec(internal.codec) ? internal.id : null;
+          final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo);
+          final subtitleTimelineOffsetMs = internal != null && burnedIn == null
+              ? await _probeHlsSubtitleTimelineOffsetMs(transcodeUrl)
+              : 0;
           return PlaybackInitializationResult(
             availableVersions: data.availableVersions,
             videoUrl: transcodeUrl,
             mediaInfo: data.mediaInfo,
             subtitleSidecars: subtitleSidecars,
+            burnedInSubtitleStreamId: burnedIn,
+            subtitleTimelineOffsetMs: subtitleTimelineOffsetMs,
             isOffline: false,
             isTranscoding: true,
             activeAudioStreamId: resolvedAudioId,
@@ -3427,6 +3474,57 @@ class PlexClient
     return '${config.baseUrl}${track.key}.$ext?encoding=utf-8&X-Plex-Token=$token';
   }
 
+  /// The embedded subtitle stream the HLS transcode must deliver itself, or
+  /// null when the choice is a real sidecar file (keyed, fetched directly) or
+  /// a codec Plex cannot transcode.
+  MediaSubtitleTrack? _selectedInternalSubtitleForHls(MediaSubtitleTrack? track) {
+    if (track == null) return null;
+    if (track.key != null && track.key!.isNotEmpty) return null;
+    return CodecUtils.isTranscodableSubtitleCodec(track.codec) ? track : null;
+  }
+
+  MediaSubtitleTrack? _selectedSubtitleTrack(MediaSourceInfo? info) {
+    if (info == null) return null;
+    for (final track in info.subtitleTracks) {
+      if (track.selected) return track;
+    }
+    return null;
+  }
+
+  /// Resolve which source subtitle row a transcode should carry, from the
+  /// viewer's carried preference. Falls back to the server-selected row so a
+  /// transcode never silently drops a subtitle the server already had on.
+  MediaSubtitleTrack? _resolveTranscodeSubtitleTrack(MediaSourceInfo? info, SubtitlePreference? preferred) {
+    if (info == null) return null;
+    if (preferred == null) return _selectedSubtitleTrack(info);
+    if (preferred is SubtitleOffPreference) return null;
+    if (preferred is SubtitleIntentPreference) {
+      return findSourceTrackForIntent(preferred.intent, info.subtitleTracks) ?? _selectedSubtitleTrack(info);
+    }
+    final track = (preferred as SubtitleTrackPreference).track;
+    if (track.id == SubtitleTrack.off.id) return null;
+
+    MediaSubtitleTrack? matched;
+    if (track.id.startsWith('source:')) {
+      final sourceId = int.tryParse(track.id.substring('source:'.length));
+      if (sourceId != null) {
+        for (final row in info.subtitleTracks) {
+          if (row.id == sourceId) {
+            matched = row;
+            break;
+          }
+        }
+      }
+    }
+    matched ??= findPlexTrackForMpvSubtitle(track, info.subtitleTracks);
+    return matched ?? _selectedSubtitleTrack(info);
+  }
+
+  @visibleForTesting
+  MediaSubtitleTrack? resolveTranscodeSubtitleTrackForTesting(MediaSourceInfo? info, SubtitlePreference? preferred) {
+    return _resolveTranscodeSubtitleTrack(info, preferred);
+  }
+
   /// Raw sidecar URL for real sidecar subtitle streams. Plex returns 501 for
   /// `/library/streams/{id}.{ext}` when the stream is embedded, so a Plex
   /// `Stream.key` is required here.
@@ -3451,41 +3549,24 @@ class PlexClient
     );
   }
 
-  SubtitleTrack _containerSubtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
-    return SubtitleTrack(
-      id: 'container:${track.id}',
-      title: track.displayTitle ?? track.title ?? track.language ?? 'Track ${track.id}',
-      language: track.languageCode,
-      codec: track.codec,
-      isDefault: track.selected,
-      isForced: track.forced,
-      isExternal: true,
-      isContainer: true,
-      uri: url,
-    );
-  }
-
-  /// Build the complete subtitle catalog for Plex transcode playback.
-  ///
-  /// Real sidecar files keep their direct stream URL. Embedded subtitle
-  /// streams share the original media container as a subtitle-only source;
-  /// player backends filter that source to text tracks. Every entry is
-  /// preloaded so changing subtitles is a local track selection.
-  List<PlaybackSubtitleSidecar> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo, String sourceUrl) {
+  /// Build subtitle sidecars for Plex transcode playback. Only real sidecar
+  /// files (keyed streams) are fetched directly; the selected embedded stream
+  /// rides the HLS transcode itself, because the raw part file it would
+  /// otherwise be read from is refused whenever direct play is off.
+  List<PlaybackSubtitleSidecar> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo) {
     if (mediaInfo == null) return const [];
+    if (config.token == null) {
+      appLogger.w('No auth token available for transcode sidecar subtitles');
+      return const [];
+    }
 
     final tracks = <PlaybackSubtitleSidecar>[];
     for (final sub in mediaInfo.subtitleTracks) {
       try {
-        final directUrl = _buildSidecarSubtitleUrl(sub);
+        final url = _buildSidecarSubtitleUrl(sub);
+        if (url == null) continue;
         tracks.add(
-          PlaybackSubtitleSidecar(
-            sourceStreamId: sub.id,
-            track: directUrl == null
-                ? _containerSubtitleTrackFromMediaTrack(sub, sourceUrl)
-                : _subtitleTrackFromMediaTrack(sub, directUrl),
-            preload: true,
-          ),
+          PlaybackSubtitleSidecar(sourceStreamId: sub.id, track: _subtitleTrackFromMediaTrack(sub, url), preload: true),
         );
       } catch (e) {
         appLogger.w('Failed to build sidecar subtitle for stream ${sub.id}', error: e);
@@ -3495,8 +3576,63 @@ class PlexClient
   }
 
   @visibleForTesting
-  List<PlaybackSubtitleSidecar> buildTranscodeSidecarSubtitlesForTesting(MediaSourceInfo? mediaInfo, String sourceUrl) {
-    return _buildTranscodeSidecarSubtitles(mediaInfo, sourceUrl);
+  List<PlaybackSubtitleSidecar> buildTranscodeSidecarSubtitlesForTesting(MediaSourceInfo? mediaInfo) {
+    return _buildTranscodeSidecarSubtitles(mediaInfo);
+  }
+
+  /// Best-effort read of the transcode's declared subtitle timeline offset
+  /// (#1738): walk master playlist → subtitle rendition → WebVTT segments and
+  /// parse `X-TIMESTAMP-MAP`, so the `sub-delay` compensation follows what
+  /// this server actually emits. Cue-less segments are bare `WEBVTT` stubs
+  /// with no map — and the opening seconds of most items have no dialogue —
+  /// so several segments are scanned, nearby ones first plus two deeper picks
+  /// for dialogue-free intros. Any break in the chain falls back to
+  /// [plexHlsSubtitleTimelineOffsetMs] — the value Plex has emitted
+  /// historically — so playback never fails on this. The first fetch is the
+  /// session's own start URL, which also warms the transcoder before mpv
+  /// opens the same playlist.
+  Future<int> _probeHlsSubtitleTimelineOffsetMs(String transcodeUrl) async {
+    const fetchTimeout = Duration(seconds: 4);
+    const scanIndices = [0, 1, 2, 3, 10, 20];
+    int fallback(String reason) {
+      appLogger.d('HLS subtitle offset probe fell back to ${plexHlsSubtitleTimelineOffsetMs}ms: $reason');
+      return plexHlsSubtitleTimelineOffsetMs;
+    }
+
+    try {
+      return await () async {
+        final master = utf8.decode(await _http.getBytes(transcodeUrl, timeout: fetchTimeout), allowMalformed: true);
+        final renditionUri = hlsSubtitleRenditionUri(master);
+        if (renditionUri == null) return fallback('master has no subtitle rendition');
+        final renditionUrl = Uri.parse(transcodeUrl).resolve(renditionUri);
+        final rendition = utf8.decode(
+          await _http.getBytes(renditionUrl.toString(), timeout: fetchTimeout),
+          allowMalformed: true,
+        );
+        final segments = hlsSegmentUris(rendition);
+        for (final index in scanIndices) {
+          if (index >= segments.length) break;
+          final segment = utf8.decode(
+            await _http.getBytes(renditionUrl.resolve(segments[index]).toString(), timeout: fetchTimeout),
+            allowMalformed: true,
+          );
+          final offsetMs = webVttTimestampMapOffsetMs(segment);
+          if (offsetMs == null) continue;
+          if (offsetMs != plexHlsSubtitleTimelineOffsetMs) {
+            appLogger.i('Plex HLS subtitle timeline offset from X-TIMESTAMP-MAP: ${offsetMs}ms (segment $index)');
+          }
+          return offsetMs;
+        }
+        return fallback('no scanned segment carried a timestamp map (${segments.length} listed)');
+      }().timeout(const Duration(seconds: 8));
+    } on MediaServerHttpException catch (e) {
+      // A cancelled fetch means the open is being torn down, not that the
+      // server said anything — return quietly, nothing will render the value.
+      if (e.isCancellation) return plexHlsSubtitleTimelineOffsetMs;
+      return fallback('$e');
+    } catch (e) {
+      return fallback('$e');
+    }
   }
 
   /// Build list of external subtitle tracks from media info

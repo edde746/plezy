@@ -355,7 +355,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           preferredSubtitleTrack:
               subtitleSelection.declinedPreference ?? SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
           preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
+          subtitleIsBurnedIn: result.burnedInSubtitleStreamId != null,
         );
+        _subtitleTimelineOffsetMs = result.subtitleTimelineOffsetMs;
+        await _applySubtitleSyncOffset(currentPlayer, settingsService);
 
         // Store only the active sidecars for re-use after backend fallback.
         _trackManager!.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);

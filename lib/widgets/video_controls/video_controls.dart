@@ -507,6 +507,11 @@ class PlexVideoControls extends StatefulWidget {
   final TranscodeQualityPreset selectedQualityPreset;
   final bool serverSupportsTranscoding;
   final bool isTranscoding;
+
+  /// Milliseconds the source's subtitle timeline leads its video. The sync
+  /// slider adds this to the viewer's offset so a corrected stream still
+  /// reads 0 (#1738).
+  final int subtitleTimelineOffsetMs;
   final bool isOfflinePlayback;
   final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
@@ -633,6 +638,7 @@ class PlexVideoControls extends StatefulWidget {
     this.selectedQualityPreset = TranscodeQualityPreset.original,
     this.serverSupportsTranscoding = false,
     this.isTranscoding = false,
+    this.subtitleTimelineOffsetMs = 0,
     this.isOfflinePlayback = false,
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,

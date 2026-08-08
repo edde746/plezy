@@ -66,6 +66,51 @@ class _MediaOpenResult {
   final bool sidecarFallbackUsed;
 }
 
+/// The mpv network/subtitle tuning every open writes, set or reset, so a
+/// reused player never carries one item's tuning into the next open. Pure so
+/// tests can pin the exact writes per mode; [_applyNetworkStreamTuning] is the
+/// only production caller.
+@visibleForTesting
+Map<String, String> networkStreamTuningProperties({required bool isNetworkVod, required bool isTranscoding}) {
+  return {
+    // Covers network drops up to 10 min; applies to transcode streams too.
+    //
+    // reconnect_on_http_error=503: without it, ffmpeg abandons a reconnect
+    // that gets an HTTP error and the truncated body surfaces as a clean
+    // mid-file EOF (#1520 — PMS answers 503 while restarting/maintenance).
+    // Deliberately 503 only: a persistent 500 must keep failing fast so the
+    // server-limit dialog (_httpStatusPattern) appears promptly, and a
+    // multi-code list would need mpv's %len% quoting to survive the
+    // comma-separated option string. While ffmpeg retries, mpv reports
+    // buffering, which also makes the server-online reconnect hook in
+    // _wirePlayerStreams reachable.
+    'stream-lavf-o': isNetworkVod
+        ? 'reconnect=1,reconnect_on_network_error=1,reconnect_on_http_error=503,'
+              'reconnect_streamed=1,reconnect_delay_max=600'
+        : '',
+    // `stream-lavf-o` only reaches the playlist fetch; ffmpeg's hls demuxer
+    // opens each segment itself and takes its options from here instead.
+    //
+    // Plex serves WebVTT subtitle segments with **no Content-Length**
+    // (measured: `declaredLen=null actualLen=126 encoding=Identity`), so
+    // ffmpeg cannot tell a complete body from a truncated one. Every clean EOF
+    // looked like an interrupted transfer, it re-requested at the byte offset,
+    // and PMS answered `416 Requested Range Not Satisfiable` on a doubling
+    // backoff that never resolved — playback never started (#1738). Segment
+    // retries belong to the hls demuxer, which re-reads the playlist, so the
+    // HTTP layer must not second-guess a finished segment.
+    'demuxer-lavf-o': isTranscoding ? 'reconnect=0,reconnect_streamed=0,reconnect_on_network_error=0' : '',
+    // A seek inside an HLS transcode makes ffmpeg re-deliver WebVTT cues and
+    // restart their ReadOrder numbering, so mpv's usual dedup by ReadOrder
+    // misses and identical cues render stacked on top of each other (#1738).
+    // Clearing cached subtitle events on seek is mpv's remedy for exactly
+    // this; the rendition is demuxed, so cues re-arrive after the seek and
+    // nothing is lost. Scoped to transcodes — for ordinary files the cache
+    // is correct and keeping it avoids re-reading sidecars on every seek.
+    'sub-clear-on-seek': isTranscoding ? 'yes' : 'no',
+  };
+}
+
 /// Shared building blocks for opening media on the live player.
 ///
 /// The initial start flow ([_startPlayback]) and in-place reload flow
@@ -76,7 +121,19 @@ class _MediaOpenResult {
 /// [SettingsService.displaySwitchDelay].
 extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   PlaybackSession _commitSidecarFallbackSession(PlaybackSession session) {
-    return _updatePlaybackSessionSubtitleSelection(session, const PlaybackSubtitleSelection.off());
+    return _updatePlaybackSessionSubtitleSelection(
+      session,
+      subtitleSelectionForSidecarFallback(session.subtitleSelection),
+    );
+  }
+
+  /// Push the effective subtitle delay for the source that just opened: the
+  /// viewer's own offset plus whatever timeline compensation the backend
+  /// forces on us (#1738). Runs after the playback result resolves, because
+  /// player configuration happens before the backend has told us anything.
+  Future<void> _applySubtitleSyncOffset(Player forPlayer, SettingsService settingsService) async {
+    final offsetMs = settingsService.read(SettingsService.subtitleSyncOffset) + _subtitleTimelineOffsetMs;
+    await forPlayer.setProperty('sub-delay', (offsetMs / 1000.0).toString());
   }
 
   Future<PlaybackSubtitleSelection> _resolveSubtitleSelectionForOpen({
@@ -467,6 +524,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     AudioTrack? preferredAudioTrack,
     SubtitlePreference? preferredSubtitleTrack,
     SubtitlePreference? preferredSecondarySubtitleTrack,
+    bool subtitleIsBurnedIn = false,
   }) {
     return TrackManager(
       player: forPlayer,
@@ -478,6 +536,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       waitForProfileSettings: _waitForProfileSettingsIfNeeded,
       metadata: metadata,
       mediaInfo: _currentMediaInfo,
+      subtitleIsBurnedIn: subtitleIsBurnedIn,
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
@@ -554,25 +613,11 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool isTranscoding,
     required MediaVersion? selectedVersion,
   }) async {
-    if (isNetworkVod) {
-      // Covers network drops up to 10 min; applies to transcode streams too.
-      //
-      // reconnect_on_http_error=503: without it, ffmpeg abandons a reconnect
-      // that gets an HTTP error and the truncated body surfaces as a clean
-      // mid-file EOF (#1520 — PMS answers 503 while restarting/maintenance).
-      // Deliberately 503 only: a persistent 500 must keep failing fast so the
-      // server-limit dialog (_httpStatusPattern) appears promptly, and a
-      // multi-code list would need mpv's %len% quoting to survive the
-      // comma-separated option string. While ffmpeg retries, mpv reports
-      // buffering, which also makes the server-online reconnect hook in
-      // _wirePlayerStreams reachable.
-      await player.setProperty(
-        'stream-lavf-o',
-        'reconnect=1,reconnect_on_network_error=1,reconnect_on_http_error=503,'
-            'reconnect_streamed=1,reconnect_delay_max=600',
-      );
-    } else {
-      await player.setProperty('stream-lavf-o', '');
+    for (final entry in networkStreamTuningProperties(
+      isNetworkVod: isNetworkVod,
+      isTranscoding: isTranscoding,
+    ).entries) {
+      await player.setProperty(entry.key, entry.value);
     }
 
     int? ringBytes;

@@ -18,6 +18,12 @@ import '../../../utils/latest_async_write.dart';
 class SyncOffsetControl extends StatefulWidget {
   final Player player;
   final String propertyName; // 'audio-delay' or 'sub-delay'
+
+  /// Milliseconds added to the viewer's offset before it reaches the player.
+  /// Non-zero when the backend's subtitle timeline leads the video's and the
+  /// player has to compensate, so the viewer's own slider still reads 0 when
+  /// subtitles are in sync (#1738).
+  final int baselineOffsetMs;
   final int initialOffset;
   final String labelText; // 'Audio' or 'Subtitles'
   final Future<void> Function(int offset) onOffsetChanged;
@@ -41,6 +47,7 @@ class SyncOffsetControl extends StatefulWidget {
     super.key,
     required this.player,
     required this.propertyName,
+    this.baselineOffsetMs = 0,
     required this.initialOffset,
     required this.labelText,
     required this.onOffsetChanged,
@@ -114,7 +121,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
           // Convert milliseconds to seconds for mpv. Keep the native write and
           // persistence on the same per-player/property queue so an older
           // native write can never complete after a newer one.
-          final offsetSeconds = offsetMs / 1000.0;
+          final offsetSeconds = (offsetMs + widget.baselineOffsetMs) / 1000.0;
           await targetPlayer.setProperty(propertyName, offsetSeconds.toString());
           await persistOffset(offsetMs.round());
           if (mounted &&

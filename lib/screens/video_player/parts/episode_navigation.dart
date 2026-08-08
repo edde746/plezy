@@ -831,7 +831,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           preferredSubtitleTrack:
               subtitleSelection.declinedPreference ?? SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
           preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
+          subtitleIsBurnedIn: result.burnedInSubtitleStreamId != null,
         );
+        _subtitleTimelineOffsetMs = result.subtitleTimelineOffsetMs;
+        await _applySubtitleSyncOffset(currentPlayer, settingsService);
         _trackManager = trackManager;
         trackManager.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);
 

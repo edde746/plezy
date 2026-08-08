@@ -56,6 +56,10 @@ class TrackControlsState {
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
   final void Function(String propertyName, int offset)? onSyncOffsetChanged;
+
+  /// Milliseconds the backend's subtitle timeline leads the video's, which the
+  /// player adds to the viewer's own offset when writing `sub-delay` (#1738).
+  final int subtitleTimelineOffsetMs;
   final String? serverId;
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
@@ -117,6 +121,7 @@ class TrackControlsState {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.onSyncOffsetChanged,
+    this.subtitleTimelineOffsetMs = 0,
     this.serverId,
     this.shaderService,
     this.onShaderChanged,
