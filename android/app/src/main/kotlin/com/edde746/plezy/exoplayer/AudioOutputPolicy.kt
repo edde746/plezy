@@ -104,6 +104,12 @@ internal fun supportedMpvSpdifCodecs(context: Context): String {
  * decode or wedge.
  */
 internal fun supportsTrueHdMatCarrier(context: Context): Boolean {
+  // getMinBufferSize alone is not sufficient. On a Shield it answers yes for the 192kHz/7.1 IEC
+  // tuple and the AudioTrack then fails to initialise; it reports that a buffer can be sized, not
+  // that the route will carry the format. Without getDirectPlaybackSupport there is no way to tell
+  // the two apart, so below API 33 the carrier is not offered and TrueHD decodes as before.
+  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return false
+
   val rate = TrueHdMatPacker.CARRIER_SAMPLE_RATE
   val mask = AudioFormat.CHANNEL_OUT_7POINT1_SURROUND
   val sizedOk = try {
@@ -112,7 +118,6 @@ internal fun supportsTrueHdMatCarrier(context: Context): Boolean {
     false
   }
   if (!sizedOk) return false
-  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
 
   return try {
     val audioAttributes = AudioAttributes.Builder()

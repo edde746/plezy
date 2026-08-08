@@ -1,0 +1,297 @@
+package com.edde746.plezy.exoplayer
+
+import android.media.AudioDeviceInfo
+import androidx.annotation.OptIn
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.AuxEffectInfo
+import androidx.media3.common.C
+import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.util.Clock
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.analytics.PlayerId
+import androidx.media3.exoplayer.audio.AudioSink
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+/**
+ * Routing and back-pressure contract for the TrueHD MAT carrier (#1804).
+ *
+ * The carrier is bit-exact, so the two failure modes that matter here are losing bytes and letting
+ * the wrong sink handle TrueHD.
+ */
+@OptIn(UnstableApi::class)
+class TrueHdCarrierSinkTest {
+
+  private val accessUnits: ByteArray =
+    checkNotNull(javaClass.classLoader?.getResourceAsStream("truehd_access_units.bin"))
+      .use { it.readBytes() }
+
+  private val golden: ByteArray =
+    checkNotNull(javaClass.classLoader?.getResourceAsStream("truehd_iec61937_golden.bin"))
+      .use { it.readBytes() }
+
+  private fun trueHdFormat(sampleRate: Int = 48_000): Format = Format.Builder()
+    .setSampleMimeType(MimeTypes.AUDIO_TRUEHD)
+    .setChannelCount(6)
+    .setSampleRate(sampleRate)
+    .build()
+
+  private fun sink(
+    carrier: FakeSink = FakeSink(),
+    normal: FakeSink = FakeSink(),
+    routeAvailable: Boolean = true,
+    blocked: Boolean = false
+  ) = TrueHdCarrierSink(normal, carrier, { routeAvailable }, { blocked })
+
+  // --- Selection ---
+
+  /**
+   * TrueHD is the carrier or it is decoded. Falling through to the normal sink would hand media3
+   * its raw ENCODING_DOLBY_TRUEHD path, which is the configuration that wedges on these devices.
+   */
+  @Test
+  fun trueHdWithoutACarrierRouteIsReportedUnsupportedSoItDecodes() {
+    val normal = FakeSink().apply { formatSupport = AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY }
+    val carrierSink = sink(normal = normal, routeAvailable = false)
+
+    assertFalse(carrierSink.supportsFormat(trueHdFormat()))
+    assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, carrierSink.getFormatSupport(trueHdFormat()))
+  }
+
+  @Test
+  fun trueHdWithACarrierRouteIsSupportedDirectly() {
+    val carrierSink = sink()
+    assertTrue(carrierSink.supportsFormat(trueHdFormat()))
+    assertEquals(AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY, carrierSink.getFormatSupport(trueHdFormat()))
+  }
+
+  /** Downmix and normalization already force decoding; the carrier must not override that. */
+  @Test
+  fun blockedDirectOutputDeclinesTheCarrier() {
+    val carrierSink = sink(blocked = true)
+    assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, carrierSink.getFormatSupport(trueHdFormat()))
+  }
+
+  /**
+   * 44.1kHz-family TrueHD rides a 176.4kHz carrier this path does not build. It has to be decided
+   * from the format: the packer only learns the rate from a major sync, long after selection, and
+   * selecting the carrier for it would produce silence.
+   */
+  @Test
+  fun theFortyFourPointOneFamilyDeclinesTheCarrierFromTheFormatAlone() {
+    val carrierSink = sink()
+    assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, carrierSink.getFormatSupport(trueHdFormat(sampleRate = 44_100)))
+    assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, carrierSink.getFormatSupport(trueHdFormat(sampleRate = 176_400)))
+  }
+
+  /** A bitstream cannot be resampled, so any speed other than 1.0x decodes. */
+  @Test
+  fun aSpeedChangeDeclinesTheCarrier() {
+    val carrierSink = sink()
+    carrierSink.setPlaybackParameters(PlaybackParameters(1.5f))
+    assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, carrierSink.getFormatSupport(trueHdFormat()))
+  }
+
+  /** Everything that is not TrueHD keeps going to the existing processed sink. */
+  @Test
+  fun otherFormatsAreLeftToTheNormalSink() {
+    val normal = FakeSink().apply { formatSupport = AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY }
+    val carrierSink = sink(normal = normal)
+    val ac3 = Format.Builder().setSampleMimeType(MimeTypes.AUDIO_AC3).setSampleRate(48_000).build()
+
+    assertEquals(AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY, carrierSink.getFormatSupport(ac3))
+    assertTrue(carrierSink.supportsFormat(ac3))
+  }
+
+  // --- Back pressure ---
+
+  /**
+   * The regression this exists for: a delegate that refuses a burst part-way through a sample must
+   * not cost the access units behind it. media3 re-delivers the same buffer after a false return,
+   * so the carrier has to resume from where it stopped and come out byte-identical.
+   */
+  @Test
+  fun aRefusedBurstMidSampleLosesNoAccessUnits() {
+    val carrier = FakeSink()
+    val carrierSink = sink(carrier = carrier)
+    carrierSink.configure(trueHdFormat(), 0, null)
+
+    // Refuse every third burst once, so rejections land inside samples rather than between them.
+    carrier.refuseEveryNth = 3
+
+    val produced = feedWholeStream(carrierSink)
+    assertArrayEquals("carrier output must survive back pressure unchanged", golden, produced)
+    assertTrue("the fake must actually have exercised the refusal path", carrier.refusals > 0)
+  }
+
+  /** With no back pressure the same stream must produce exactly the same bytes. */
+  @Test
+  fun theCarrierOutputMatchesTheGoldenStream() {
+    val carrier = FakeSink()
+    val carrierSink = sink(carrier = carrier)
+    carrierSink.configure(trueHdFormat(), 0, null)
+
+    assertArrayEquals(golden, feedWholeStream(carrierSink))
+  }
+
+  /** A refused burst must be re-offered before any further input is taken. */
+  @Test
+  fun aPendingBurstIsPlacedBeforeMoreInputIsConsumed() {
+    val carrier = FakeSink()
+    val carrierSink = sink(carrier = carrier)
+    carrierSink.configure(trueHdFormat(), 0, null)
+    carrier.refuseNext = true
+
+    val buffer = ByteBuffer.wrap(accessUnits)
+    // Drive until the first refusal is observed.
+    while (buffer.hasRemaining() && carrierSink.handleBuffer(buffer, 0L, 1)) Unit
+
+    assertTrue("expected a refusal to leave input unconsumed", buffer.hasRemaining())
+    assertTrue(carrierSink.hasPendingData())
+  }
+
+  // --- Routing of controls ---
+
+  @Test
+  fun persistentControlsReachBothDelegates() {
+    val carrier = FakeSink()
+    val normal = FakeSink()
+    val carrierSink = sink(carrier = carrier, normal = normal)
+
+    carrierSink.setVolume(0.5f)
+    carrierSink.setAudioSessionId(7)
+
+    assertEquals(0.5f, carrier.lastVolume, 0f)
+    assertEquals(0.5f, normal.lastVolume, 0f)
+    assertEquals(7, carrier.sessionId)
+    assertEquals(7, normal.sessionId)
+  }
+
+  /** Silence skipping deletes "silent" bytes, which would break the carrier's frame cadence. */
+  @Test
+  fun silenceSkippingNeverReachesTheCarrier() {
+    val carrier = FakeSink()
+    val normal = FakeSink()
+    val carrierSink = sink(carrier = carrier, normal = normal)
+
+    carrierSink.setSkipSilenceEnabled(true)
+
+    assertTrue(normal.skipSilence)
+    assertFalse("the carrier delegate must never skip silence", carrier.skipSilence)
+  }
+
+  @Test
+  fun theCarrierDelegateIsConfiguredAsAFixedRatePcmCarrier() {
+    val carrier = FakeSink()
+    val carrierSink = sink(carrier = carrier)
+
+    carrierSink.configure(trueHdFormat(), 0, null)
+
+    val configured = checkNotNull(carrier.configuredFormat)
+    assertEquals(MimeTypes.AUDIO_RAW, configured.sampleMimeType)
+    assertEquals(C.ENCODING_PCM_16BIT, configured.pcmEncoding)
+    assertEquals(TrueHdMatPacker.CARRIER_SAMPLE_RATE, configured.sampleRate)
+    assertEquals(TrueHdMatPacker.CARRIER_CHANNEL_COUNT, configured.channelCount)
+  }
+
+  @Test
+  fun nonCarrierAudioIsConfiguredOnTheNormalSink() {
+    val carrier = FakeSink()
+    val normal = FakeSink()
+    val carrierSink = sink(carrier = carrier, normal = normal)
+    val ac3 = Format.Builder().setSampleMimeType(MimeTypes.AUDIO_AC3).setSampleRate(48_000).build()
+
+    carrierSink.configure(ac3, 0, null)
+
+    assertSame(ac3, normal.configuredFormat)
+    assertEquals(null, carrier.configuredFormat)
+  }
+
+  private fun feedWholeStream(carrierSink: TrueHdCarrierSink): ByteArray {
+    val buffer = ByteBuffer.wrap(accessUnits)
+    var guard = 0
+    while (buffer.hasRemaining() && guard++ < 10_000) {
+      carrierSink.handleBuffer(buffer, 0L, 1)
+    }
+    val carrier = carrierSinkDelegate(carrierSink)
+    return carrier.written.toByteArray()
+  }
+
+  private fun carrierSinkDelegate(sink: TrueHdCarrierSink): FakeSink {
+    val field = TrueHdCarrierSink::class.java.getDeclaredField("carrierSink")
+    field.isAccessible = true
+    return field.get(sink) as FakeSink
+  }
+
+  /** Minimal AudioSink that records what it was handed and can apply back pressure. */
+  private class FakeSink : AudioSink {
+    val written = ByteArrayOutputStream()
+    var configuredFormat: Format? = null
+    var formatSupport: Int = AudioSink.SINK_FORMAT_UNSUPPORTED
+    var lastVolume: Float = -1f
+    var sessionId: Int = -1
+    var skipSilence: Boolean = false
+    var refuseNext: Boolean = false
+    var refuseEveryNth: Int = 0
+    var refusals: Int = 0
+    private var offered = 0
+
+    override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
+      offered++
+      val refuse = refuseNext || (refuseEveryNth > 0 && offered % refuseEveryNth == 0)
+      if (refuse) {
+        refuseNext = false
+        refusals++
+        // Refuse once per burst: the retry must be accepted or the stream cannot progress.
+        offered++
+        return false
+      }
+      val copy = ByteArray(buffer.remaining())
+      buffer.duplicate().get(copy)
+      written.write(copy)
+      buffer.position(buffer.limit())
+      return true
+    }
+
+    override fun configure(inputFormat: Format, specifiedBufferSize: Int, outputChannels: IntArray?) {
+      configuredFormat = inputFormat
+    }
+
+    override fun supportsFormat(format: Format) = formatSupport == AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
+    override fun getFormatSupport(format: Format) = formatSupport
+    override fun setVolume(volume: Float) { lastVolume = volume }
+    override fun setAudioSessionId(audioSessionId: Int) { sessionId = audioSessionId }
+    override fun setSkipSilenceEnabled(skipSilenceEnabled: Boolean) { skipSilence = skipSilenceEnabled }
+    override fun getSkipSilenceEnabled() = skipSilence
+
+    override fun setListener(listener: AudioSink.Listener) = Unit
+    override fun setPlayerId(playerId: PlayerId?) = Unit
+    override fun setClock(clock: Clock) = Unit
+    override fun getCurrentPositionUs(sourceEnded: Boolean) = 0L
+    override fun play() = Unit
+    override fun handleDiscontinuity() = Unit
+    override fun playToEndOfStream() = Unit
+    override fun isEnded() = false
+    override fun hasPendingData() = false
+    override fun setPlaybackParameters(playbackParameters: PlaybackParameters) = Unit
+    override fun getPlaybackParameters(): PlaybackParameters = PlaybackParameters.DEFAULT
+    override fun setAudioAttributes(audioAttributes: AudioAttributes) = Unit
+    override fun getAudioAttributes(): AudioAttributes? = null
+    override fun setAuxEffectInfo(auxEffectInfo: AuxEffectInfo) = Unit
+    override fun setPreferredDevice(audioDeviceInfo: AudioDeviceInfo?) = Unit
+    override fun getAudioTrackBufferSizeUs() = 0L
+    override fun enableTunnelingV21() = Unit
+    override fun disableTunneling() = Unit
+    override fun pause() = Unit
+    override fun flush() = Unit
+    override fun reset() = Unit
+  }
+}

@@ -85,14 +85,24 @@ internal class TrueHdCarrierSink(
    * Speed changes are excluded deliberately: a bitstream cannot be resampled, so anything other
    * than 1.0x has to decode. The same is true of the existing downmix/normalization blocks, which
    * [directOutputBlocked] already reports.
+   *
+   * The rate family is decided from the format rather than from the packer, which only learns it
+   * from a major sync once buffers are already flowing — far too late for a selection that happens
+   * before configure.
    */
   private fun shouldUseCarrier(format: Format): Boolean {
     if (format.sampleMimeType != MimeTypes.AUDIO_TRUEHD) return false
-    if (packer.unsupportedRateFamily) return false
+    if (!isCarrierRateFamily(format.sampleRate)) return false
     if (playbackParameters.speed != 1f) return false
     if (directOutputBlocked(format)) return false
     return carrierRouteAvailable()
   }
+
+  /**
+   * The 48kHz family rides the 192kHz carrier this path builds. The 44.1kHz family needs a 176.4kHz
+   * carrier, which would be a different AudioTrack tuple throughout, so it decodes instead.
+   */
+  private fun isCarrierRateFamily(sampleRate: Int): Boolean = sampleRate == 48_000 || sampleRate == 96_000 || sampleRate == 192_000
 
   /** The PCM-shaped format the carrier delegate is configured with. */
   private fun carrierFormat(): Format = Format.Builder()
@@ -102,11 +112,30 @@ internal class TrueHdCarrierSink(
     .setSampleRate(TrueHdMatPacker.CARRIER_SAMPLE_RATE)
     .build()
 
-  override fun supportsFormat(format: Format): Boolean =
-    if (shouldUseCarrier(format)) true else defaultSink.supportsFormat(format)
+  /**
+   * TrueHD is deliberately binary: the carrier, or decoded PCM. Never media3's own raw TrueHD path.
+   *
+   * That path builds an `ENCODING_DOLBY_TRUEHD` track at the *stream* rate, which is the
+   * configuration this issue is about — one box takes a single write and never advances its
+   * playback head, another freezes for ten seconds, and the third declines it and decodes anyway.
+   * Even Kodi's raw fallback is a different thing: it only offers raw TrueHD after verifying it at
+   * 192kHz, which media3 never requests. So when the carrier is unavailable — no IEC route, a speed
+   * change, downmix, normalization, or a 44.1kHz-family stream — report unsupported and let the
+   * bundled FFmpeg decoder take it, exactly as the existing decoded-PCM fallback does.
+   */
+  private fun isTrueHd(format: Format): Boolean = format.sampleMimeType == MimeTypes.AUDIO_TRUEHD
 
-  override fun getFormatSupport(format: Format): Int =
-    if (shouldUseCarrier(format)) AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY else defaultSink.getFormatSupport(format)
+  override fun supportsFormat(format: Format): Boolean = when {
+    shouldUseCarrier(format) -> true
+    isTrueHd(format) -> false
+    else -> defaultSink.supportsFormat(format)
+  }
+
+  override fun getFormatSupport(format: Format): Int = when {
+    shouldUseCarrier(format) -> AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
+    isTrueHd(format) -> AudioSink.SINK_FORMAT_UNSUPPORTED
+    else -> defaultSink.getFormatSupport(format)
+  }
 
   override fun configure(inputFormat: Format, specifiedBufferSize: Int, outputChannels: IntArray?) {
     val useCarrier = shouldUseCarrier(inputFormat)
@@ -145,17 +174,26 @@ internal class TrueHdCarrierSink(
       pendingBurst = null
     }
     if (!buffer.hasRemaining()) return true
-
-    val sample = ByteArray(buffer.remaining())
-    buffer.duplicate().get(sample)
     if (carrierAnchorUs == C.TIME_UNSET) carrierAnchorUs = presentationTimeUs
 
+    // One media3 sample holds many access units. The buffer position advances per unit, so a burst
+    // the delegate refuses leaves the units behind it in the buffer for the retry rather than
+    // dropping them — media3 re-delivers the same buffer whenever this returns false.
+    val remaining = ByteArray(buffer.remaining())
+    buffer.duplicate().get(remaining)
+
     var offset = 0
-    while (offset < sample.size) {
-      val length = TrueHdMatPacker.accessUnitLength(sample, offset, sample.size)
-      if (length == 0) break
-      val burst = packer.packAccessUnit(sample, offset, length)
+    while (offset < remaining.size) {
+      val length = TrueHdMatPacker.accessUnitLength(remaining, offset, remaining.size)
+      if (length == 0) {
+        // Not a unit boundary we recognise. Consuming the tail keeps the stream moving; trying to
+        // resynchronise mid-carrier would splice a frame.
+        buffer.position(buffer.limit())
+        return true
+      }
+      val burst = packer.packAccessUnit(remaining, offset, length)
       offset += length
+      buffer.position(buffer.position() + length)
       if (burst == null) continue
 
       val burstTimeUs = carrierAnchorUs + burstsSinceAnchor * CARRIER_BURST_DURATION_US
@@ -163,15 +201,19 @@ internal class TrueHdCarrierSink(
       if (!carrierSink.handleBuffer(burst, burstTimeUs, 1)) {
         pendingBurst = burst
         pendingBurstTimeUs = burstTimeUs
-        break
+        return false
       }
     }
-    if (packer.unsupportedRateFamily) {
-      log?.invoke("info", "audio", "TrueHD is 44.1kHz-family; the MAT carrier does not cover it, decoding instead")
-    }
 
-    // The sample is consumed either way: a stashed burst is placed on the next call.
-    buffer.position(buffer.limit())
+    if (packer.unsupportedRateFamily) {
+      // Selection is made from Format.sampleRate, so this means the bitstream disagrees with the
+      // container. Nothing is packed in that state, which would be silence rather than a glitch.
+      log?.invoke(
+        "warn",
+        "audio",
+        "TrueHD bitstream announced a 44.1kHz-family rate the container did not; carrier is producing nothing"
+      )
+    }
     return true
   }
 
