@@ -3442,6 +3442,11 @@ class ExoPlayerCore(private val activity: Activity) :
     )
     emitSeekable(false, force = true)
 
+    // Only here: this is the one caller that is a genuinely new item. The recovery, DV-mode and
+    // subtitle reloads all reuse setCurrentMediaSource for the *same* stream, and clearing
+    // per-stream audio decisions there would undo them and loop.
+    renderersFactory?.beginMediaItem()
+
     exoPlayer?.apply {
       setCurrentMediaSource(this, uri, startPositionMs)
       prepare()

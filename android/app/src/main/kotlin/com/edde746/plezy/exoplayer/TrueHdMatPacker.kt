@@ -105,6 +105,9 @@ internal class TrueHdMatPacker {
     previousTiming = 0
     previousSize = 0
     samplesPerFrame = 0
+    // The family is re-learned from the next major sync. Leaving it latched here would make every
+    // later stream on this packer emit nothing.
+    unsupportedRateFamily = false
     java.util.Arrays.fill(matBuffers[0], 0)
     java.util.Arrays.fill(matBuffers[1], 0)
   }

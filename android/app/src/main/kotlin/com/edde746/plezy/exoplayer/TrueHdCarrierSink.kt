@@ -13,6 +13,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.analytics.PlayerId
 import androidx.media3.exoplayer.audio.AudioSink
 import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Routes Dolby TrueHD through a MAT/IEC 61937 carrier, and everything else through the normal sink
@@ -78,6 +79,33 @@ internal class TrueHdCarrierSink(
   private var playbackParameters: PlaybackParameters = PlaybackParameters.DEFAULT
   private var sinkListener: AudioSink.Listener? = null
 
+  /**
+   * Latched when a stream's bitstream contradicts the rate its container announced, which selection
+   * was made from.
+   *
+   * Deliberately outlives [flush] and [reset]: media3 resets every renderer disabled by a new
+   * selection before enabling the replacement (ExoPlayerImplInternal.enableRenderers), and both
+   * audio renderers share this sink, so the outgoing renderer's reset lands here in the middle of
+   * the very handover this latch exists to cause. Clearing it there would re-offer the carrier and
+   * loop straight back into the mismatch.
+   *
+   * The real boundary is a new media item, which only the caller knows and which happens before
+   * selection asks anything. [beginMediaItem] is that hook; without it one malformed item would
+   * cost bitstreaming for every later item sharing the player.
+   *
+   * It is held as a generation rather than a flag because that hook is called on the app thread
+   * while the mismatch is discovered on the playback thread. A late buffer from the outgoing stream
+   * can land after the new item began; latching the generation the carrier was configured for makes
+   * that write name the stream it belongs to instead of poisoning its successor.
+   */
+  private val mediaGeneration = AtomicInteger(0)
+
+  /** Generation [mediaGeneration] held when the carrier was last configured; playback thread. */
+  private var configuredGeneration = 0
+
+  @Volatile
+  private var mismatchGeneration = -1
+
   // --- Selection ---
 
   /**
@@ -93,6 +121,7 @@ internal class TrueHdCarrierSink(
    */
   private fun shouldUseCarrier(format: Format): Boolean {
     if (format.sampleMimeType != MimeTypes.AUDIO_TRUEHD) return false
+    if (mismatchGeneration == mediaGeneration.get()) return false
     if (!isCarrierRateFamily(format.sampleRate)) return false
     if (playbackParameters.speed != 1f) return false
     if (directOutputBlocked(format)) return false
@@ -153,6 +182,7 @@ internal class TrueHdCarrierSink(
       )
     }
     carrierActive = useCarrier
+    configuredGeneration = mediaGeneration.get()
     active = if (useCarrier) carrierSink else defaultSink
     discardCarrierState()
 
@@ -193,6 +223,23 @@ internal class TrueHdCarrierSink(
         return true
       }
       val burst = packer.packAccessUnit(remaining, offset, length)
+      if (packer.unsupportedRateFamily) {
+        // Selection is made from Format.sampleRate, so the bitstream disagrees with its container.
+        // The packer emits nothing in that state; consuming here would turn the stream into
+        // silence. Leave this unit in the buffer, latch the carrier off, and ask for reselection so
+        // the decoder takes over and receives it.
+        if (mismatchGeneration != configuredGeneration) {
+          mismatchGeneration = configuredGeneration
+          log?.invoke(
+            "warn",
+            "audio",
+            "TrueHD bitstream announced a 44.1kHz-family rate its container did not; " +
+              "leaving the carrier so it decodes"
+          )
+          sinkListener?.onAudioCapabilitiesChanged()
+        }
+        return false
+      }
       offset += length
       buffer.position(buffer.position() + length)
       if (burst == null) continue
@@ -204,16 +251,6 @@ internal class TrueHdCarrierSink(
         pendingBurstTimeUs = burstTimeUs
         return false
       }
-    }
-
-    if (packer.unsupportedRateFamily) {
-      // Selection is made from Format.sampleRate, so this means the bitstream disagrees with the
-      // container. Nothing is packed in that state, which would be silence rather than a glitch.
-      log?.invoke(
-        "warn",
-        "audio",
-        "TrueHD bitstream announced a 44.1kHz-family rate the container did not; carrier is producing nothing"
-      )
     }
     return true
   }
@@ -366,7 +403,16 @@ internal class TrueHdCarrierSink(
     carrierSink.reset()
   }
 
+  /**
+   * Called by the owner immediately before a new media item is set, which is the only point where
+   * "this stream lied about its rate" stops being true and the carrier can be offered again.
+   */
+  fun beginMediaItem() {
+    mediaGeneration.incrementAndGet()
+  }
+
   override fun release() {
+    mediaGeneration.incrementAndGet()
     discardCarrierState()
     defaultSink.release()
     carrierSink.release()

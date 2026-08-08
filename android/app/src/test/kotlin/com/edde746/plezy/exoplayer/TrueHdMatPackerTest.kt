@@ -2,6 +2,7 @@ package com.edde746.plezy.exoplayer
 
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -153,4 +154,27 @@ class TrueHdMatPackerTest {
   }
 
   private fun readLittleEndianShort(data: ByteArray, offset: Int): Int = (data[offset].toInt() and 0xFF) or ((data[offset + 1].toInt() and 0xFF) shl 8)
+
+  /**
+   * The flag gates every later call, so leaving it latched across a reset would make a packer that
+   * once saw a 44.1kHz-family stream emit nothing for the rest of its life.
+   */
+  @Test
+  fun resetClearsTheUnsupportedRateFamilyFlag() {
+    val packer = TrueHdMatPacker()
+    val units = resource("truehd_441_access_units.bin")
+
+    val length = TrueHdMatPacker.accessUnitLength(units, 0, units.size)
+    packer.packAccessUnit(units, 0, length)
+    assertTrue("the fixture must actually announce the 44.1kHz family", packer.unsupportedRateFamily)
+
+    packer.reset()
+
+    assertFalse("reset must clear the flag", packer.unsupportedRateFamily)
+    assertArrayEquals(
+      "a clean packer must reproduce the stream after a poisoned one",
+      golden,
+      packAll(accessUnits, TrueHdMatPacker())
+    )
+  }
 }

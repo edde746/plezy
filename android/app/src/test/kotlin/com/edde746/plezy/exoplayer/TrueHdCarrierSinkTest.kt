@@ -154,6 +154,130 @@ class TrueHdCarrierSinkTest {
     assertEquals(0, listener.capabilityInvalidations)
   }
 
+  // --- Rate-family mismatch discovered mid-stream ---
+
+  /**
+   * Selection reads Format.sampleRate; the rate family is only certain once a major sync is parsed.
+   * When they disagree the packer emits nothing, so consuming the input would turn the stream into
+   * silence. The unit has to survive for whoever takes over.
+   */
+  @Test
+  fun aRateFamilyMismatchLeavesTheCarrierInsteadOfGoingSilent() {
+    val carrier = FakeSink()
+    val carrierSink = sink(carrier = carrier)
+    val listener = RecordingSinkListener()
+    carrierSink.setListener(listener)
+    carrierSink.configure(trueHdFormat(), 0, null)
+
+    val buffer = ByteBuffer.wrap(fortyFourFamilyAccessUnits())
+    val accepted = carrierSink.handleBuffer(buffer, 0L, 1)
+
+    assertFalse("a mismatch must apply back pressure, not report success", accepted)
+    assertEquals("the offending access unit must stay in the buffer", 0, buffer.position())
+    assertEquals("the renderer must be asked to reselect", 1, listener.capabilityInvalidations)
+    assertEquals(
+      "TrueHD must now decode rather than ride the carrier",
+      AudioSink.SINK_FORMAT_UNSUPPORTED,
+      carrierSink.getFormatSupport(trueHdFormat())
+    )
+    assertEquals("nothing may reach the carrier delegate", 0, carrier.written.size())
+  }
+
+  /**
+   * media3 resets every renderer disabled by a new selection before enabling the replacement, and
+   * both audio renderers share this sink. That reset lands mid-handover, so a latch cleared there
+   * would re-offer the carrier and loop straight back into the mismatch.
+   */
+  @Test
+  fun theMismatchLatchSurvivesTheResetThatAccompaniesTheHandover() {
+    val carrierSink = sink()
+    carrierSink.setListener(RecordingSinkListener())
+    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.handleBuffer(ByteBuffer.wrap(fortyFourFamilyAccessUnits()), 0L, 1)
+
+    carrierSink.flush()
+    carrierSink.reset()
+
+    assertEquals(
+      "the carrier must stay off across the handover",
+      AudioSink.SINK_FORMAT_UNSUPPORTED,
+      carrierSink.getFormatSupport(trueHdFormat())
+    )
+  }
+
+  /** The latch is scoped to the sink, so a released sink starts clean. */
+  @Test
+  fun releasingTheSinkClearsTheMismatchLatch() {
+    val carrierSink = sink()
+    carrierSink.setListener(RecordingSinkListener())
+    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.handleBuffer(ByteBuffer.wrap(fortyFourFamilyAccessUnits()), 0L, 1)
+
+    carrierSink.release()
+
+    assertEquals(
+      AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY,
+      carrierSink.getFormatSupport(trueHdFormat())
+    )
+  }
+
+  /**
+   * Genuine 44.1kHz TrueHD access units, encoder-produced. Flipping the rate nibble in a 48kHz
+   * stream would invalidate the major sync checksum, which is not the case being modelled.
+   */
+  private val fortyFourFamilyUnits by lazy {
+    checkNotNull(javaClass.classLoader?.getResourceAsStream("truehd_441_access_units.bin"))
+      .use { it.readBytes() }
+  }
+
+  private fun fortyFourFamilyAccessUnits(): ByteArray = fortyFourFamilyUnits
+
+  /**
+   * The mismatch is a property of one stream. The owner signals the real boundary, because the sink
+   * cannot see it: renderer resets and flushes happen constantly within a single item.
+   */
+  @Test
+  fun aNewMediaItemClearsTheMismatchLatch() {
+    val carrierSink = sink()
+    carrierSink.setListener(RecordingSinkListener())
+    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.handleBuffer(ByteBuffer.wrap(fortyFourFamilyAccessUnits()), 0L, 1)
+    assertEquals(
+      AudioSink.SINK_FORMAT_UNSUPPORTED,
+      carrierSink.getFormatSupport(trueHdFormat())
+    )
+
+    carrierSink.beginMediaItem()
+
+    assertEquals(
+      "a new item must be able to bitstream again",
+      AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY,
+      carrierSink.getFormatSupport(trueHdFormat())
+    )
+  }
+
+  /**
+   * The boundary hook runs on the app thread while the mismatch is found on the playback thread, so
+   * a buffer from the outgoing stream can be handled after the new item began. That write must name
+   * the stream it came from rather than disabling the carrier for its successor.
+   */
+  @Test
+  fun aLateMismatchFromThePreviousItemDoesNotPoisonTheNewOne() {
+    val carrierSink = sink()
+    carrierSink.setListener(RecordingSinkListener())
+    carrierSink.configure(trueHdFormat(), 0, null)
+
+    // The new item starts before the outgoing stream's last buffer is handled.
+    carrierSink.beginMediaItem()
+    carrierSink.handleBuffer(ByteBuffer.wrap(fortyFourFamilyAccessUnits()), 0L, 1)
+
+    assertEquals(
+      "the stale mismatch belongs to the previous item",
+      AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY,
+      carrierSink.getFormatSupport(trueHdFormat())
+    )
+  }
+
   /** Everything that is not TrueHD keeps going to the existing processed sink. */
   @Test
   fun otherFormatsAreLeftToTheNormalSink() {

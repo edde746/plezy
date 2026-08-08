@@ -151,6 +151,16 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     )
   }
 
+  private var trueHdCarrierSink: TrueHdCarrierSink? = null
+
+  /**
+   * Clears per-stream carrier state that must survive renderer resets but not a new media item.
+   * Call before setting a new source; see [TrueHdCarrierSink.beginMediaItem].
+   */
+  fun beginMediaItem() {
+    trueHdCarrierSink?.beginMediaItem()
+  }
+
   override fun buildAudioSink(
     context: Context,
     enableFloatOutput: Boolean,
@@ -201,7 +211,7 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
       carrierRouteAvailable = { supportsTrueHdMatCarrier(context) },
       directOutputBlocked = { format -> shouldBlockDirectAudioOutput?.invoke(format) == true },
       log = audioDiagnosticsLogger
-    )
+    ).also { trueHdCarrierSink = it }
   }
 
   /**
