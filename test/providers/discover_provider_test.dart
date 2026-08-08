@@ -567,6 +567,37 @@ void main() {
     expect(aggregation.hubCalls, hubCallsBefore + 1);
   });
 
+  // Regression test for #1120/#1291: toggling "Use Home Layout" persisted the
+  // preference but never told an already-loaded DiscoverProvider to refetch,
+  // so the effect was invisible until the next unrelated reload (e.g. an app
+  // restart). Mirrors the hidden-library test above, which already covers the
+  // correct "one setting change, one full reload" contract.
+  test('useGlobalHubs change triggers exactly one full reload', () async {
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+
+    final current = SettingsService.instance.read(SettingsService.useGlobalHubs);
+    await SettingsService.instance.write(SettingsService.useGlobalHubs, !current);
+    await pumpEventQueue();
+
+    expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
+    expect(aggregation.hubCalls, hubCallsBefore + 1);
+  });
+
+  test('writing the same useGlobalHubs value again triggers no reload', () async {
+    await provider.load();
+    final onDeckCallsBefore = aggregation.onDeckCalls;
+    final hubCallsBefore = aggregation.hubCalls;
+
+    final current = SettingsService.instance.read(SettingsService.useGlobalHubs);
+    await SettingsService.instance.write(SettingsService.useGlobalHubs, current);
+    await pumpEventQueue();
+
+    expect(aggregation.onDeckCalls, onDeckCallsBefore);
+    expect(aggregation.hubCalls, hubCallsBefore);
+  });
+
   test('refreshContinueWatching never flips states or surfaces errors', () async {
     aggregation.onDeckResult = () => [_item('a')];
     await provider.load();
