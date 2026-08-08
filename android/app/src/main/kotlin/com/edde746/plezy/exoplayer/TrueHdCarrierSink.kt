@@ -76,6 +76,7 @@ internal class TrueHdCarrierSink(
   private var burstsSinceAnchor: Long = 0
 
   private var playbackParameters: PlaybackParameters = PlaybackParameters.DEFAULT
+  private var sinkListener: AudioSink.Listener? = null
 
   // --- Selection ---
 
@@ -255,6 +256,7 @@ internal class TrueHdCarrierSink(
   // --- Persistent state: mirrored, so either delegate can be activated later ---
 
   override fun setListener(listener: AudioSink.Listener) {
+    sinkListener = listener
     defaultSink.setListener(listener)
     carrierSink.setListener(listener)
   }
@@ -270,15 +272,47 @@ internal class TrueHdCarrierSink(
   }
 
   override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
+    val wasUnitSpeed = this.playbackParameters.speed == 1f
+    val isUnitSpeed = playbackParameters.speed == 1f
     this.playbackParameters = playbackParameters
     defaultSink.setPlaybackParameters(playbackParameters)
-    carrierSink.setPlaybackParameters(playbackParameters)
+    // A bitstream cannot be resampled, and the carrier delegate has no processor chain to do it
+    // with, so it is never handed a speed nothing can apply.
+    carrierSink.setPlaybackParameters(
+      if (isUnitSpeed) playbackParameters else PlaybackParameters.DEFAULT
+    )
+
+    // Crossing 1x changes whether TrueHD may ride the carrier, but nothing re-asks on its own:
+    // the renderer only consults the sink when capabilities are invalidated. Rebuilding the track
+    // selector parameters is not enough either — DefaultTrackSelector skips invalidation when the
+    // rebuilt parameters compare equal. This is the path media3 itself uses for a route change,
+    // and it reaches onRendererCapabilitiesChanged, so the format is re-evaluated and TrueHD moves
+    // between the carrier and the decoder.
+    if (wasUnitSpeed != isUnitSpeed && (carrierActive || isUnitSpeed)) {
+      log?.invoke(
+        "info",
+        "audio",
+        "Playback speed ${if (isUnitSpeed) "returned to" else "left"} 1.0x; re-evaluating the TrueHD carrier"
+      )
+      sinkListener?.onAudioCapabilitiesChanged()
+    }
   }
 
-  override fun getPlaybackParameters(): PlaybackParameters = active.getPlaybackParameters()
+  /** Whether TrueHD is currently riding the carrier. Read by the core when speed changes. */
+  val isCarrierActive: Boolean
+    get() = carrierActive
+
+  /**
+   * While the carrier is live the delegate is deliberately pinned to 1x, but the player polls this
+   * through the media clock and adopts whatever it reads. Reporting the delegate's value would push
+   * the pinned 1x back and silently undo the user's speed change, so the requested parameters are
+   * reported instead; the reselection triggered above then moves TrueHD onto the decoder, which
+   * really can apply them.
+   */
+  override fun getPlaybackParameters(): PlaybackParameters = if (carrierActive) playbackParameters else active.getPlaybackParameters()
 
   override fun setSkipSilenceEnabled(skipSilenceEnabled: Boolean) {
-    // Only reaches the normal sink: the carrier delegate has no processors to skip silence with,
+    // Only the normal sink: the carrier delegate is fed a fixed-rate bitstream,
     // and dropping "silent" carrier bytes would break the frame cadence.
     defaultSink.setSkipSilenceEnabled(skipSilenceEnabled)
   }

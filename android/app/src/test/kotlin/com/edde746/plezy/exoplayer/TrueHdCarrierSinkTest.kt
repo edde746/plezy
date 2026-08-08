@@ -100,6 +100,60 @@ class TrueHdCarrierSinkTest {
     assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, carrierSink.getFormatSupport(trueHdFormat()))
   }
 
+  /**
+   * The real UI path: speed changes while the carrier is already live. Querying support after
+   * setting speed passes trivially; nothing re-asks the sink unless capabilities are invalidated,
+   * so without this the carrier keeps running and is handed a speed it cannot apply.
+   */
+  @Test
+  fun leavingUnitSpeedMidPlaybackInvalidatesCapabilities() {
+    val carrier = FakeSink()
+    val carrierSink = sink(carrier = carrier)
+    val listener = RecordingSinkListener()
+    carrierSink.setListener(listener)
+    carrierSink.configure(trueHdFormat(), 0, null)
+    assertTrue("carrier should be live before the speed change", carrierSink.isCarrierActive)
+
+    carrierSink.setPlaybackParameters(PlaybackParameters(1.5f))
+
+    assertEquals("the renderer must be asked to re-evaluate", 1, listener.capabilityInvalidations)
+    assertEquals(
+      "the carrier delegate must never receive a speed it cannot apply",
+      1f,
+      carrier.lastPlaybackParameters.speed,
+      0f
+    )
+    assertEquals(AudioSink.SINK_FORMAT_UNSUPPORTED, carrierSink.getFormatSupport(trueHdFormat()))
+  }
+
+  /** Returning to 1x has to re-offer the carrier, or Atmos is lost until the next open. */
+  @Test
+  fun returningToUnitSpeedInvalidatesCapabilitiesAgain() {
+    val carrierSink = sink()
+    val listener = RecordingSinkListener()
+    carrierSink.setListener(listener)
+    carrierSink.configure(trueHdFormat(), 0, null)
+
+    carrierSink.setPlaybackParameters(PlaybackParameters(1.5f))
+    carrierSink.setPlaybackParameters(PlaybackParameters(1f))
+
+    assertEquals(2, listener.capabilityInvalidations)
+    assertEquals(AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY, carrierSink.getFormatSupport(trueHdFormat()))
+  }
+
+  /** A speed change that stays at 1x is not a transition and must not disturb selection. */
+  @Test
+  fun aNoOpSpeedChangeDoesNotInvalidateCapabilities() {
+    val carrierSink = sink()
+    val listener = RecordingSinkListener()
+    carrierSink.setListener(listener)
+    carrierSink.configure(trueHdFormat(), 0, null)
+
+    carrierSink.setPlaybackParameters(PlaybackParameters(1f))
+
+    assertEquals(0, listener.capabilityInvalidations)
+  }
+
   /** Everything that is not TrueHD keeps going to the existing processed sink. */
   @Test
   fun otherFormatsAreLeftToTheNormalSink() {
@@ -231,6 +285,18 @@ class TrueHdCarrierSinkTest {
     return field.get(sink) as FakeSink
   }
 
+  private class RecordingSinkListener : AudioSink.Listener {
+    var capabilityInvalidations = 0
+    override fun onPositionDiscontinuity() = Unit
+    override fun onPositionAdvancing(playoutStartSystemTimeMs: Long) = Unit
+    override fun onUnderrun(bufferSize: Int, bufferSizeMs: Long, elapsedSinceLastFeedMs: Long) = Unit
+    override fun onSkipSilenceEnabledChanged(skipSilenceEnabled: Boolean) = Unit
+    override fun onAudioSinkError(audioSinkError: Exception) = Unit
+    override fun onAudioCapabilitiesChanged() {
+      capabilityInvalidations++
+    }
+  }
+
   /** Minimal AudioSink that records what it was handed and can apply back pressure. */
   private class FakeSink : AudioSink {
     val written = ByteArrayOutputStream()
@@ -242,6 +308,7 @@ class TrueHdCarrierSinkTest {
     var refuseNext: Boolean = false
     var refuseEveryNth: Int = 0
     var refusals: Int = 0
+    var lastPlaybackParameters: PlaybackParameters = PlaybackParameters.DEFAULT
     private var offered = 0
 
     override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
@@ -267,9 +334,15 @@ class TrueHdCarrierSinkTest {
 
     override fun supportsFormat(format: Format) = formatSupport == AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
     override fun getFormatSupport(format: Format) = formatSupport
-    override fun setVolume(volume: Float) { lastVolume = volume }
-    override fun setAudioSessionId(audioSessionId: Int) { sessionId = audioSessionId }
-    override fun setSkipSilenceEnabled(skipSilenceEnabled: Boolean) { skipSilence = skipSilenceEnabled }
+    override fun setVolume(volume: Float) {
+      lastVolume = volume
+    }
+    override fun setAudioSessionId(audioSessionId: Int) {
+      sessionId = audioSessionId
+    }
+    override fun setSkipSilenceEnabled(skipSilenceEnabled: Boolean) {
+      skipSilence = skipSilenceEnabled
+    }
     override fun getSkipSilenceEnabled() = skipSilence
 
     override fun setListener(listener: AudioSink.Listener) = Unit
@@ -281,7 +354,9 @@ class TrueHdCarrierSinkTest {
     override fun playToEndOfStream() = Unit
     override fun isEnded() = false
     override fun hasPendingData() = false
-    override fun setPlaybackParameters(playbackParameters: PlaybackParameters) = Unit
+    override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
+      lastPlaybackParameters = playbackParameters
+    }
     override fun getPlaybackParameters(): PlaybackParameters = PlaybackParameters.DEFAULT
     override fun setAudioAttributes(audioAttributes: AudioAttributes) = Unit
     override fun getAudioAttributes(): AudioAttributes? = null
