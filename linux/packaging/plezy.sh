@@ -42,4 +42,8 @@ if [[ -d "$INSTALL_DIR/share/glib-2.0/schemas" ]]; then
     export GSETTINGS_SCHEMA_DIR="$INSTALL_DIR/share/glib-2.0/schemas"
 fi
 
+#SteamOS Fixes for Steam Machine/Steam Deck
+export GDK_SCALE=2
+export GTK_CSD=0
+
 exec "$INSTALL_DIR/plezy" "$@"
