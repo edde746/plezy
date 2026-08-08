@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:drift/drift.dart' show ApplyInterceptor, QueryExecutor, QueryExecutorUser, QueryInterceptor;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
@@ -11,9 +13,12 @@ import 'package:plezy/database/tvos_database_recovery_store.dart';
 import 'package:plezy/main.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/prefs_recovery.dart';
+import 'package:plezy/services/settings_service.dart' as settings;
 import 'package:plezy/services/startup_diagnostics.dart';
+import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/widgets/startup_failure_view.dart';
 
 import 'test_helpers/download_fixtures.dart';
@@ -73,6 +78,147 @@ void main() {
 
     completion.complete(1);
     await tester.pump();
+  });
+
+  // The window behind Flutter already holds the launch colour: on Android
+  // `MainActivity` restores the persisted one and the television resource
+  // qualifier pins the default to black. Anything the loading frame paints
+  // over it lasts the whole gate, so #1833 saw a near-white #F7F7F8 sheet in
+  // place of a black TV splash.
+  const windowKey = Key('window');
+  const launchScreen = Color(0xFF123456);
+
+  Future<int> windowPixel(WidgetTester tester) async {
+    final boundary = tester.renderObject<RenderRepaintBoundary>(find.byKey(windowKey));
+    late ByteData bytes;
+    await tester.runAsync(() async {
+      final image = await boundary.toImage();
+      bytes = (await image.toByteData())!;
+      image.dispose();
+    });
+    // Top-left corner in rawRgba: outside the centred progress indicator.
+    return Color.fromARGB(bytes.getUint8(3), bytes.getUint8(0), bytes.getUint8(1), bytes.getUint8(2)).toARGB32();
+  }
+
+  Widget overLaunchScreen(Widget child) => RepaintBoundary(
+    key: windowKey,
+    child: ColoredBox(color: launchScreen, child: child),
+  );
+
+  ThemeData bootstrapTheme(WidgetTester tester) => Theme.of(tester.element(find.byKey(startupBootstrapProgressKey)));
+
+  testWidgets('the loading frame leaves the platform launch screen visible', (tester) async {
+    final completion = Completer<int>();
+
+    await tester.pumpWidget(
+      overLaunchScreen(
+        StartupBootstrap<int>(
+          initialize: () => completion.future,
+          buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+          lightTheme: monoTheme(dark: false),
+          darkTheme: monoTheme(dark: true),
+          transparentWhileLoading: true,
+        ),
+      ),
+    );
+
+    expect(find.byKey(startupBootstrapProgressKey), findsOneWidget);
+    expect(await windowPixel(tester), launchScreen.toARGB32());
+
+    completion.complete(1);
+    await tester.pump();
+  });
+
+  testWidgets('the loading frame paints a background where nothing is behind Flutter', (tester) async {
+    final completion = Completer<int>();
+
+    await tester.pumpWidget(
+      overLaunchScreen(
+        StartupBootstrap<int>(
+          initialize: () => completion.future,
+          buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+          lightTheme: monoTheme(dark: false),
+          darkTheme: monoTheme(dark: true),
+        ),
+      ),
+    );
+
+    expect(await windowPixel(tester), monoTheme(dark: false).scaffoldBackgroundColor.toARGB32());
+
+    completion.complete(1);
+    await tester.pump();
+  });
+
+  testWidgets('the failure screen stays opaque over the launch screen', (tester) async {
+    await tester.pumpWidget(
+      overLaunchScreen(
+        StartupBootstrap<int>(
+          initialize: () async => throw StateError('database unavailable'),
+          buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+          lightTheme: monoTheme(dark: false),
+          darkTheme: monoTheme(dark: true),
+          transparentWhileLoading: true,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(startupBootstrapFailureKey), findsOneWidget);
+    expect(await windowPixel(tester), monoTheme(dark: false).scaffoldBackgroundColor.toARGB32());
+  });
+
+  testWidgets('adopts the persisted theme instead of platform brightness', (tester) async {
+    // What a Fire TV or Shield reports: no system dark-mode toggle, so
+    // ThemeMode.system resolves light while the app's own TV default is OLED.
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+
+    final resolved = Completer<StartupThemeResolution>();
+    final completion = Completer<int>();
+
+    await tester.pumpWidget(
+      StartupBootstrap<int>(
+        initialize: () => completion.future,
+        buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+        lightTheme: monoTheme(dark: false),
+        darkTheme: monoTheme(dark: true),
+        resolveTheme: () => resolved.future,
+      ),
+    );
+
+    expect(bootstrapTheme(tester).scaffoldBackgroundColor, monoTheme(dark: false).scaffoldBackgroundColor);
+
+    resolved.complete((
+      themeMode: ThemeProvider.materialThemeModeFor(settings.ThemeMode.oled),
+      darkTheme: ThemeProvider.darkThemeFor(settings.ThemeMode.oled),
+    ));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(bootstrapTheme(tester).brightness, Brightness.dark);
+    expect(bootstrapTheme(tester).scaffoldBackgroundColor, const Color(0xFF000000));
+
+    completion.complete(1);
+    await tester.pump();
+  });
+
+  testWidgets('a theme preference that cannot be read does not block the gate', (tester) async {
+    final completion = Completer<int>();
+
+    await tester.pumpWidget(
+      StartupBootstrap<int>(
+        initialize: () => completion.future,
+        buildApp: (_, value) => MaterialApp(home: Text('ready $value')),
+        resolveTheme: () async => throw const FormatException('unreadable'),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byKey(startupBootstrapProgressKey), findsOneWidget);
+
+    completion.complete(3);
+    await tester.pump();
+    expect(find.text('ready 3'), findsOneWidget);
   });
 
   testWidgets('replaces bootstrap UI with the initialized app on success', (tester) async {

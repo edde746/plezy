@@ -52,26 +52,26 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
 
   settings.ThemeMode get themeMode => _themeMode;
 
-  ThemeData get lightTheme => monoTheme(dark: false);
-  ThemeData get darkTheme {
-    if (_themeMode == settings.ThemeMode.oled) {
-      return monoTheme(dark: true, oled: true);
-    }
-    return monoTheme(dark: true);
-  }
+  /// Dark palette for [mode], honouring the OLED variant.
+  ///
+  /// Static so the pre-provider startup frame can resolve the same theme this
+  /// provider will settle on, instead of guessing from platform brightness
+  /// and flashing when the two disagree (#1833).
+  static ThemeData darkThemeFor(settings.ThemeMode mode) =>
+      monoTheme(dark: true, oled: mode == settings.ThemeMode.oled);
 
-  ThemeMode get materialThemeMode {
-    switch (_themeMode) {
-      case settings.ThemeMode.light:
-        return ThemeMode.light;
-      case settings.ThemeMode.dark:
-        return ThemeMode.dark;
-      case settings.ThemeMode.oled:
-        return ThemeMode.dark;
-      case settings.ThemeMode.system:
-        return ThemeMode.system;
-    }
-  }
+  /// Material equivalent of the app's own [settings.ThemeMode].
+  static ThemeMode materialThemeModeFor(settings.ThemeMode mode) => switch (mode) {
+    settings.ThemeMode.light => ThemeMode.light,
+    settings.ThemeMode.dark => ThemeMode.dark,
+    settings.ThemeMode.oled => ThemeMode.dark,
+    settings.ThemeMode.system => ThemeMode.system,
+  };
+
+  ThemeData get lightTheme => monoTheme(dark: false);
+  ThemeData get darkTheme => darkThemeFor(_themeMode);
+
+  ThemeMode get materialThemeMode => materialThemeModeFor(_themeMode);
 
   bool get isDarkMode {
     switch (_themeMode) {
