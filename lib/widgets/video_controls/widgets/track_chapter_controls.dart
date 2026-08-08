@@ -222,6 +222,7 @@ class TrackChapterControls extends StatelessWidget {
                     OverlaySheetController.of(context)
                         .show(
                           builder: (_) => TrackSheet(player: player, trackControlsState: state),
+                          tag: TrackSheet,
                         )
                         .whenComplete(() => state.onStartAutoHide?.call());
                   },

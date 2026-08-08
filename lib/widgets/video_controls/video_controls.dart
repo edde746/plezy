@@ -54,6 +54,7 @@ import '../../media/media_version.dart';
 import '../../screens/video_player_screen.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../services/captions_service.dart';
 import '../../services/device_adjustment_service.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../services/settings_service.dart';
@@ -83,6 +84,7 @@ import 'widgets/mobile_edge_adjustment_indicator.dart';
 import 'widgets/mobile_skip_zones.dart';
 import 'widgets/skip_marker_button.dart';
 import 'widgets/track_chapter_controls.dart';
+import 'sheets/track_sheet.dart';
 import 'widgets/performance_overlay/performance_overlay.dart';
 import '../rasterized_gradient.dart';
 import 'mobile_video_controls.dart';
@@ -878,6 +880,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _configureChromeController();
     widget.chromeController.setPlaying(widget.player.state.playing);
     _initKeyboardService();
+
     _listenToPosition();
     _listenToPlayingState();
     _listenToCompleted();
@@ -900,6 +903,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       windowManager.addListener(this);
       _initAlwaysOnTopState();
     }
+    // Register subtitle selector toggle handler (Android TV)
+    CaptionsService.onToggleSubtitleSelector = _toggleSubtitleSelector;
 
     // Register global key handler for focus-independent shortcuts (desktop only)
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
@@ -978,6 +983,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void dispose() {
     ++_subtitleVisibilityWriteGeneration;
+    if (identical(CaptionsService.onToggleSubtitleSelector, _toggleSubtitleSelector)) {
+      CaptionsService.onToggleSubtitleSelector = null;
+    }
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
     widget.chromeController.removeListener(_onChromeChanged);
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);

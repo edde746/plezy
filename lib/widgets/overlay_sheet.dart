@@ -16,7 +16,11 @@ class _OverlaySheetEntry {
   final Completer<dynamic> completer;
   final FocusNode? initialFocusNode;
 
-  _OverlaySheetEntry({required this.builder, required this.completer, this.initialFocusNode});
+  /// Optional identity token for the page, used by [OverlaySheetController.isCurrentEntry]
+  /// so callers can react to the specific sheet that is open.
+  final Object? tag;
+
+  _OverlaySheetEntry({required this.builder, required this.completer, this.initialFocusNode, this.tag});
 }
 
 /// Provides [OverlaySheetController] to descendants via [of] / [maybeOf].
@@ -56,17 +60,25 @@ class OverlaySheetController {
   /// Whether a sheet is currently showing (including while animating closed).
   bool get isOpen => _state._isOpen;
 
+  /// Whether the top page of the open sheet was shown with [tag]. Returns
+  /// false when no sheet is open or the top page has a different tag.
+  bool isCurrentEntry(Object tag) => _state._isCurrentEntry(tag);
+
   /// Show a sheet with [builder] content. Returns a Future that completes
   /// when the sheet is closed (with an optional result).
   ///
   /// [alignment] controls where the sheet appears. Defaults to
   /// [Alignment.bottomCenter]. Use [Alignment.topCenter] to anchor at the top.
+  ///
+  /// [tag] is an optional identity token for the page, queryable via
+  /// [isCurrentEntry].
   Future<T?> show<T>({
     required WidgetBuilder builder,
     BoxConstraints? constraints,
     Color? backgroundColor,
     bool barrierDismissible = true,
     FocusNode? initialFocusNode,
+    Object? tag,
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
   }) {
@@ -76,6 +88,7 @@ class OverlaySheetController {
       backgroundColor: backgroundColor,
       barrierDismissible: barrierDismissible,
       initialFocusNode: initialFocusNode,
+      tag: tag,
       alignment: alignment,
       showDragHandle: showDragHandle,
     );
@@ -83,8 +96,8 @@ class OverlaySheetController {
 
   /// Push a sub-page within the open sheet. Returns a Future that completes
   /// when the pushed page is popped (with an optional result).
-  Future<T?> push<T>({required WidgetBuilder builder, FocusNode? initialFocusNode}) {
-    return _state._push<T>(builder: builder, initialFocusNode: initialFocusNode);
+  Future<T?> push<T>({required WidgetBuilder builder, FocusNode? initialFocusNode, Object? tag}) {
+    return _state._push<T>(builder: builder, initialFocusNode: initialFocusNode, tag: tag);
   }
 
   /// Pop the top sub-page, or close the sheet if on the last page.
@@ -361,6 +374,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Color? backgroundColor,
     bool barrierDismissible = true,
     FocusNode? initialFocusNode,
+    Object? tag,
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
   }) {
@@ -378,7 +392,12 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     }
 
     final completer = Completer<T?>();
-    final entry = _OverlaySheetEntry(builder: builder, completer: completer, initialFocusNode: initialFocusNode);
+    final entry = _OverlaySheetEntry(
+      builder: builder,
+      completer: completer,
+      initialFocusNode: initialFocusNode,
+      tag: tag,
+    );
     final horizontalAnchor = _resolveSheetHorizontalAnchor(alignment);
 
     setState(() {
@@ -407,13 +426,18 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     return completer.future;
   }
 
-  Future<T?> _push<T>({required WidgetBuilder builder, FocusNode? initialFocusNode}) {
+  Future<T?> _push<T>({required WidgetBuilder builder, FocusNode? initialFocusNode, Object? tag}) {
     if (!_isOpen || _isClosing) {
       return Future.value(null);
     }
 
     final completer = Completer<T?>();
-    final entry = _OverlaySheetEntry(builder: builder, completer: completer, initialFocusNode: initialFocusNode);
+    final entry = _OverlaySheetEntry(
+      builder: builder,
+      completer: completer,
+      initialFocusNode: initialFocusNode,
+      tag: tag,
+    );
 
     setState(() {
       _pageStack.add(entry);
@@ -421,6 +445,10 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
     _autoFocus();
     return completer.future;
+  }
+
+  bool _isCurrentEntry(Object tag) {
+    return _isOpen && _pageStack.isNotEmpty && identical(_pageStack.last.tag, tag);
   }
 
   void _pop([dynamic result]) {
