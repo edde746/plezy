@@ -37,6 +37,10 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
         _hasFatalPlaybackError = true;
         _progressTracker?.stopTracking();
         unawaited(_showMediaUnreadableDialog());
+      case PlaybackFailureAction.serverBusyDialog:
+        _hasFatalPlaybackError = true;
+        _progressTracker?.stopTracking();
+        unawaited(_showServerBusyDialog());
       // The bounded retry operation owns errors raised while applying/opening
       // its replacement stream. Do not let the same error close the route.
       case PlaybackFailureAction.ignore:
@@ -59,10 +63,31 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   void _onPlayerLog(PlayerLog log) {
     final status = PlayerError.httpStatusFromLog(log.text);
     if (status != null && fatalPlaybackHttpStatuses.contains(status)) _fatalHttpStatuses.add(status);
+    // An open the server answers with 503 never fails on its own: ffmpeg's
+    // reconnect loop retries 503 forever and mpv just reports buffering
+    // (#1830). Bound it. Live TV stays out — its ladder owns retries there.
+    // A sidecar subtitle fetch shares this log stream and could arm the
+    // watchdog too, but a first frame disarms it, so that only matters when
+    // the primary media is itself stuck.
+    if (status == 503 && !widget.isLive && !_hasRenderedFirstFrame && !_hasFatalPlaybackError) {
+      _http503Watchdog.onOpenPhase503();
+    }
     if (log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal) {
       appLogger.e('[Player LOG ERROR] [${log.prefix}] ${log.text}');
       _lastLogError = _redactPlayerError(log.text.trim());
     }
+  }
+
+  /// The open-phase 503 watchdog's deadline passed with no first frame: the
+  /// server is still refusing the stream. Synthesize the error the reconnect
+  /// loop will never raise on its own so the normal failure policy runs.
+  void _onOpenHttp503Persistent() {
+    if (!mounted || _isExiting.value || _hasRenderedFirstFrame || _hasFatalPlaybackError) return;
+    appLogger.w(
+      'Server kept answering the stream with HTTP 503 for '
+      '${openHttp503Patience.inSeconds}s without a first frame — giving up on this open',
+    );
+    _onPlayerError(const PlayerError('HTTP 503', cause: PlayerError.serverHttp503));
   }
 
   String _redactPlayerError(String message) => LogRedactionManager.redact(message);
@@ -76,6 +101,16 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   Future<void> _showMediaUnreadableDialog() async {
     if (!mounted) return;
     await showMediaUnreadableDialog(context);
+    if (mounted) unawaited(_handleBackButton());
+  }
+
+  Future<void> _showServerBusyDialog() async {
+    if (!mounted) return;
+    // The reconnect loop is still running behind the modal; pause so a server
+    // that recovers mid-dialog cannot start playing under it. Best-effort —
+    // the route is left on dialog close either way.
+    unawaited(player?.pause().catchError((_) {}));
+    await showServerBusyDialog(context);
     if (mounted) unawaited(_handleBackButton());
   }
 

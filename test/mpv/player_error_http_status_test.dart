@@ -42,10 +42,11 @@ void main() {
   });
 
   group('fatalPlaybackHttpStatuses', () {
-
     test('excludes the 503 the reconnect path deliberately retries', () {
       // stream-lavf-o sets reconnect_on_http_error=503, so a 503 is expected
-      // mid-playback and must not latch as fatal.
+      // mid-playback and must not latch as fatal. At open time the player
+      // screen's OpenHttp503Watchdog bounds the loop instead — only its
+      // synthesized cause tag, never a raw latched status, ends playback.
       expect(fatalPlaybackHttpStatuses.contains(503), isFalse);
       expect(PlayerError.httpStatusFromLog('http: HTTP error 503 Service Unavailable'), 503);
     });

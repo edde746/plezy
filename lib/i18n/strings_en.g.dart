@@ -2209,6 +2209,12 @@ class Translations$messages$en {
 	/// en: 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.'
 	String get mediaUnreadableBody => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.';
 
+	/// en: 'Stream unavailable'
+	String get serverBusyTitle => 'Stream unavailable';
+
+	/// en: 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file's storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file's storage.'
+	String get serverBusyBody => 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file\'s storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file\'s storage.';
+
 	/// en: 'Logs uploaded'
 	String get logsUploaded => 'Logs uploaded';
 
@@ -6818,6 +6824,8 @@ extension on Translations {
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
 			'messages.mediaUnreadableTitle' => 'File unavailable',
 			'messages.mediaUnreadableBody' => 'The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.',
+			'messages.serverBusyTitle' => 'Stream unavailable',
+			'messages.serverBusyBody' => 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file\'s storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file\'s storage.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -7145,10 +7153,10 @@ extension on Translations {
 			'explore.badge.partiallyAvailable' => 'Partly available',
 			'explore.badge.availableIn4k' => '4K available',
 			'explore.badge.requested' => 'Requested',
-			'explore.badge.pendingApproval' => 'Pending approval',
-			'explore.badge.processing' => 'Processing',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.pendingApproval' => 'Pending approval',
+			'explore.badge.processing' => 'Processing',
 			'explore.badge.declined' => 'Declined',
 			'explore.badge.requestFailed' => 'Request failed',
 			'explore.badge.requested4k' => '4K requested',
@@ -7659,10 +7667,10 @@ extension on Translations {
 			'performanceOverlay.displayFps' => 'Display FPS',
 			'performanceOverlay.avSync' => 'A/V Sync',
 			'performanceOverlay.dropped' => 'Dropped',
-			'performanceOverlay.dvRpus' => 'DV RPUs',
-			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dvRpus' => 'DV RPUs',
+			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
 			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
 			'performanceOverlay.maxLuma' => 'Max Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',

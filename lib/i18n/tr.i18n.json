@@ -744,6 +744,8 @@
     "serverLimitBody": "Sunucu hatası (HTTP 500). Muhtemelen bir bant genişliği/kod dönüştürme sınırı bu oturumu reddetti. Sunucu sahibinden bunu ayarlamasını isteyin.",
     "mediaUnreadableTitle": "Dosya kullanılamıyor",
     "mediaUnreadableBody": "Sunucu bu ögeyi buldu ancak dosyasını okuyamadı (HTTP 404). Dosya büyük olasılıkla taşındı, silindi veya depolama alanı çevrimdışı. Sunucu sahibinden dosyayı kontrol edip kitaplığı yeniden taramasını isteyin.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Günlükler yüklendi",
     "logsUploadFailed": "Günlükler yüklenemedi",
     "logId": "Günlük Kimliği (ID)"

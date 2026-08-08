@@ -740,6 +740,8 @@
     "serverLimitBody": "服务器错误（HTTP 500）。此次会话可能因带宽或转码限制而被拒绝。请联系服务器所有者调整限制。",
     "mediaUnreadableTitle": "文件不可用",
     "mediaUnreadableBody": "服务器找到了此项目，但无法读取其文件（HTTP 404）。文件可能已被移动、删除，或其存储已离线。请联系服务器管理员检查文件并重新扫描媒体库。",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "日志已上传",
     "logsUploadFailed": "上传日志失败",
     "logId": "日志 ID"

@@ -744,6 +744,8 @@
     "serverLimitBody": "Erreur serveur (HTTP 500). Une limite de bande passante/transcodage a probablement rejeté cette session. Demandez au propriétaire de l'ajuster.",
     "mediaUnreadableTitle": "Fichier indisponible",
     "mediaUnreadableBody": "Le serveur a trouvé cet élément mais n'a pas pu lire son fichier (HTTP 404). Le fichier a probablement été déplacé, supprimé, ou son stockage est hors ligne. Demandez au propriétaire du serveur de vérifier le fichier et de relancer l'analyse de la bibliothèque.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Journaux envoyés",
     "logsUploadFailed": "Échec de l’envoi des journaux",
     "logId": "Identifiant du journal"

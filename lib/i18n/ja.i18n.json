@@ -740,6 +740,8 @@
     "serverLimitBody": "サーバーエラー（HTTP 500）。帯域幅/トランスコード制限により拒否された可能性があります。所有者に調整を依頼してください。",
     "mediaUnreadableTitle": "ファイルを利用できません",
     "mediaUnreadableBody": "サーバーはこのアイテムを見つけましたが、そのファイルを読み取れませんでした（HTTP 404）。ファイルが移動・削除されたか、ストレージがオフラインの可能性があります。サーバーの管理者にファイルの確認とライブラリの再スキャンを依頼してください。",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "ログをアップロードしました",
     "logsUploadFailed": "ログのアップロードに失敗しました",
     "logId": "ログID"

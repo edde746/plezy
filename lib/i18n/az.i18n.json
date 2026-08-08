@@ -744,6 +744,8 @@
     "serverLimitBody": "Server xətası (HTTP 500). Məhdudiyyət bu seansı rədd etdi.",
     "mediaUnreadableTitle": "Fayl əlçatan deyil",
     "mediaUnreadableBody": "Server bu elementi tapdı, lakin onun faylını oxuya bilmədi (HTTP 404). Fayl yəqin ki, köçürülüb, silinib və ya onun saxlanma yeri oflayndır. Server sahibindən faylı yoxlamasını və kitabxananı yenidən skan etməsini xahiş edin.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Jurnallar yükləndi",
     "logsUploadFailed": "Jurnallar yüklənə bilmədi",
     "logId": "Jurnal ID-si"

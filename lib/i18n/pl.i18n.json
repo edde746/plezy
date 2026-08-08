@@ -752,6 +752,8 @@
     "serverLimitBody": "Błąd serwera (HTTP 500). Limit przepustowości/transkodowania prawdopodobnie odrzucił tę sesję. Poproś właściciela o zmianę.",
     "mediaUnreadableTitle": "Plik niedostępny",
     "mediaUnreadableBody": "Serwer znalazł ten element, ale nie mógł odczytać jego pliku (HTTP 404). Plik został prawdopodobnie przeniesiony, usunięty albo jego pamięć masowa jest niedostępna. Poproś właściciela serwera o sprawdzenie pliku i ponowne przeskanowanie biblioteki.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
     "logId": "ID logu"

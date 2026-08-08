@@ -744,6 +744,8 @@
     "serverLimitBody": "Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.",
     "mediaUnreadableTitle": "Bestand niet beschikbaar",
     "mediaUnreadableBody": "De server heeft dit item gevonden maar kon het bestand niet lezen (HTTP 404). Het bestand is waarschijnlijk verplaatst of verwijderd, of de opslag is offline. Vraag de serverbeheerder om het bestand te controleren en de bibliotheek opnieuw te scannen.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Logbestanden geüpload",
     "logsUploadFailed": "Uploaden van logbestanden mislukt",
     "logId": "Logboek-ID"

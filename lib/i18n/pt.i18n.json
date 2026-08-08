@@ -744,6 +744,8 @@
     "serverLimitBody": "Erro do servidor (HTTP 500). Um limite de largura de banda ou transcodificação provavelmente rejeitou esta sessão. Peça ao proprietário do servidor para ajustá-lo.",
     "mediaUnreadableTitle": "Arquivo indisponível",
     "mediaUnreadableBody": "O servidor encontrou este item, mas não conseguiu ler o arquivo (HTTP 404). O arquivo provavelmente foi movido, excluído ou o armazenamento está offline. Peça ao responsável pelo servidor para verificar o arquivo e reexaminar a biblioteca.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Logs enviados",
     "logsUploadFailed": "Falha ao enviar logs",
     "logId": "ID do log"

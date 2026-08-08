@@ -771,6 +771,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           shouldContinue: isCurrentReload,
           onOpening: () {
             _hasRenderedFirstFrame = false;
+            // 503s observed from here on belong to the replacement open.
+            _http503Watchdog.disarm();
           },
           onOpened: () {
             // The player now owns the new file — publish the session at the

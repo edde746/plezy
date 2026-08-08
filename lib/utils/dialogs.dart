@@ -152,6 +152,29 @@ Future<void> showMediaUnreadableDialog(BuildContext context) async {
   );
 }
 
+/// Shows the server-side 503 modal: the server kept refusing to serve the
+/// stream for the whole open-phase watchdog window, so the reconnect loop is
+/// not going to start this playback (#1830).
+Future<void> showServerBusyDialog(BuildContext context) async {
+  await showScopedDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (ctx) => AlertDialog(
+      title: Text(t.messages.serverBusyTitle),
+      content: Text(t.messages.serverBusyBody),
+      actions: [
+        DialogActionButton(
+          autofocus: true,
+          onPressed: () => Navigator.of(ctx).pop(),
+          label: t.common.close,
+          isPrimary: true,
+          style: FilledButton.styleFrom(padding: _buttonPadding, shape: _buttonShape),
+        ),
+      ],
+    ),
+  );
+}
+
 /// Shows a delete confirmation dialog.
 /// Convenience wrapper around [showConfirmDialog] with destructive styling.
 Future<bool> showDeleteConfirmation(

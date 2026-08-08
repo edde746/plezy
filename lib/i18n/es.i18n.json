@@ -744,6 +744,8 @@
     "serverLimitBody": "Error del servidor (HTTP 500). Un límite de ancho de banda/transcodificación probablemente rechazó esta sesión. Pide al propietario que lo ajuste.",
     "mediaUnreadableTitle": "Archivo no disponible",
     "mediaUnreadableBody": "El servidor encontró este elemento pero no pudo leer su archivo (HTTP 404). Es probable que el archivo se haya movido o eliminado, o que su almacenamiento esté sin conexión. Pide al propietario del servidor que revise el archivo y vuelva a escanear la biblioteca.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Registros subidos",
     "logsUploadFailed": "Error al subir registros",
     "logId": "ID de registro"

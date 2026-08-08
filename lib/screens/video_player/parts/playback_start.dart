@@ -7,6 +7,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final attempt = _beginPlaybackAttempt(currentPlayer);
     _hasRenderedFirstFrame = false;
     _hasFatalPlaybackError = false;
+    // 503s observed from here on belong to this attempt's open.
+    _http503Watchdog.disarm();
 
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {

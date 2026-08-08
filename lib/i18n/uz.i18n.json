@@ -744,6 +744,8 @@
     "serverLimitBody": "Server xatoligi (HTTP 500). Cheklov ushbu seansni rad etdi.",
     "mediaUnreadableTitle": "Fayl mavjud emas",
     "mediaUnreadableBody": "Server bu elementni topdi, lekin uning faylini oʻqiy olmadi (HTTP 404). Fayl koʻchirilgan, oʻchirilgan yoki uning saqlash joyi oflayn boʻlishi mumkin. Server egasidan faylni tekshirishni va kutubxonani qayta skanerlashni soʻrang.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Jurnallar yuklandi",
     "logsUploadFailed": "Jurnallarni yuklab boʻlmadi",
     "logId": "Jurnal ID-si"

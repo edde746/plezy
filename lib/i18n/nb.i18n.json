@@ -744,6 +744,8 @@
     "serverLimitBody": "Serverfeil (HTTP 500). En båndbredde-/transkodingsgrense avviste trolig økten. Be eieren justere den.",
     "mediaUnreadableTitle": "Fil utilgjengelig",
     "mediaUnreadableBody": "Serveren fant dette elementet, men kunne ikke lese filen (HTTP 404). Filen er sannsynligvis flyttet, slettet, eller lagringen er frakoblet. Be serverens eier om å sjekke filen og skanne biblioteket på nytt.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Logger lastet opp",
     "logsUploadFailed": "Kunne ikke laste opp logger",
     "logId": "Logg-ID"

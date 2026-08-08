@@ -41,6 +41,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     _hasRenderedFirstFrame = true;
     _hasFirstFrame.value = true;
+    _http503Watchdog.disarm();
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
     final progressTracker = _progressTracker;
     if (progressTracker != null && currentPlayer.state.isActive) {
@@ -323,6 +324,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       _isBuffering.value = false;
       _hasFirstFrame.value = false;
       _hasRenderedFirstFrame = false;
+      _http503Watchdog.disarm();
     }
   }
 

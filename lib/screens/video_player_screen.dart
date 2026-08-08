@@ -91,6 +91,7 @@ import 'video_player/live_stream_retry.dart';
 import 'video_player/live_timeline_report.dart';
 import 'video_player/wakelock_controller.dart';
 import 'video_player/playback_failure_action.dart';
+import 'video_player/open_http_503_watchdog.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
 import 'video_player/tv_background_suspend_policy.dart';
@@ -1765,6 +1766,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     _autoPlayTimer?.cancel();
     _tvBackgroundPlayerSuspendTimer?.cancel();
+    _http503Watchdog.disarm();
 
     _stillWatchingTimer?.cancel();
 
@@ -1976,6 +1978,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// deliberately retries a 503 (see `_applyNetworkStreamTuning`), and a
   /// transient status must never mask the fatal one that follows.
   final Set<int> _fatalHttpStatuses = <int>{};
+
+  /// Bounds an open the server keeps answering with HTTP 503 — that loop
+  /// otherwise never raises an error (#1830). Armed from [_onPlayerLog],
+  /// disarmed on first frame, on every new-open reset, and in [dispose].
+  late final OpenHttp503Watchdog _http503Watchdog = OpenHttp503Watchdog(onPersistent: _onOpenHttp503Persistent);
 
   // OS Media Controls Integration
 

@@ -744,6 +744,8 @@
     "serverLimitBody": "Szerverhiba (HTTP 500). A munkamenetet valószínűleg egy sávszélességi vagy átkódolási korlát utasította el. Kérd meg a tulajdonost a korlát módosítására.",
     "mediaUnreadableTitle": "A fájl nem érhető el",
     "mediaUnreadableBody": "A szerver megtalálta ezt az elemet, de nem tudta beolvasni a fájlját (HTTP 404). A fájl valószínűleg áthelyezésre vagy törlésre került, vagy a tárhelye offline. Kérje meg a szerver tulajdonosát, hogy ellenőrizze a fájlt, és vizsgálja újra a könyvtárat.",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "Naplók feltöltve",
     "logsUploadFailed": "Nem sikerült a naplók feltöltése",
     "logId": "Naplóazonosító"

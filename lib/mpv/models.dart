@@ -12,7 +12,9 @@ final RegExp _httpStatusPattern = RegExp(r'\b(?:HTTP error |Response code: )(\d{
 
 /// Server statuses that end playback outright: nothing client-side recovers a
 /// transcoding-limit rejection or a file the server cannot read. Everything
-/// else (notably the 503 the reconnect path retries) is transient.
+/// else is transient — notably 503, which the reconnect path retries
+/// mid-stream (#1520) and the player screen's open-phase watchdog bounds at
+/// open time instead of latching here (#1830).
 const Set<int> fatalPlaybackHttpStatuses = {404, 500};
 
 /// [cause] is an optional machine-readable tag (e.g. `server-http-500`),
@@ -31,6 +33,13 @@ sealed class PlayerError with _$PlayerError {
   /// resolved the item but cannot read the file behind it (moved, deleted, or
   /// on unavailable storage), so no retry or backend switch can recover it.
   static const String serverHttp404 = 'server-http-404';
+
+  /// Cause tag for a persistent HTTP 503 on the media stream during the open
+  /// phase. Mid-stream 503 is transient — ffmpeg reconnects through server
+  /// restarts (#1520) — so this tag is never derived from a raw status: only
+  /// the player screen's open-phase watchdog synthesizes it, after a refused
+  /// open has produced no frame for the whole patience window (#1830).
+  static const String serverHttp503 = 'server-http-503';
 
   /// HTTP status [logText] reports, or null when it names none.
   ///

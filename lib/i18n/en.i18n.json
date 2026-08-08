@@ -744,6 +744,8 @@
     "serverLimitBody": "Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.",
     "mediaUnreadableTitle": "File unavailable",
     "mediaUnreadableBody": "The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.",
+    "serverBusyTitle": "Stream unavailable",
+    "serverBusyBody": "The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file's storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file's storage.",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
     "logId": "Log ID"

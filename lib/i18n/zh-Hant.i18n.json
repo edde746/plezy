@@ -740,6 +740,8 @@
     "serverLimitBody": "伺服器錯誤（HTTP 500）。伺服器的頻寬或轉碼限制可能拒絕此播放要求。請聯絡伺服器擁有者調整設定。",
     "mediaUnreadableTitle": "檔案無法使用",
     "mediaUnreadableBody": "伺服器找到了此項目，但無法讀取其檔案（HTTP 404）。檔案可能已移動、刪除，或其儲存空間離線。請聯絡伺服器擁有者檢查檔案並重新掃描媒體庫。",
+    "serverBusyTitle": "",
+    "serverBusyBody": "",
     "logsUploaded": "日誌已上傳",
     "logsUploadFailed": "上傳日誌失敗",
     "logId": "日誌 ID"
