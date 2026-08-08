@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:drift/native.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:flutter/material.dart';
@@ -43,6 +44,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/watch_together.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
+import 'package:plezy/widgets/system_clock.dart';
 import 'package:plezy/widgets/tv_spotlight_background.dart';
 import 'package:provider/provider.dart';
 
@@ -52,6 +54,8 @@ import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() => initializeDateFormatting('en'));
 
   setUp(() {
     resetSharedPreferencesForTest();
@@ -627,6 +631,116 @@ void main() {
     // the binding's pending-timer check.
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('the home clock is TV-only chrome', (tester) async {
+    await _pumpDiscoverShell(tester, isTv: false);
+    expect(find.text(t.discover.title), findsOneWidget);
+    expect(
+      find.byType(SystemClock),
+      findsNothing,
+      reason: 'a phone status bar and a desktop menu bar already show the time',
+    );
+    await tester.pumpWidget(const SizedBox());
+
+    await _pumpDiscoverShell(tester, isTv: true);
+    expect(find.byType(SystemClock), findsOneWidget, reason: 'a fullscreen leanback app hides the system clock');
+    await tester.pumpWidget(const SizedBox());
+  });
+}
+
+/// Mounts [DiscoverScreen] in the smallest graph both layout branches need, so
+/// one test can compare the TV and non-TV chrome without rebuilding it twice.
+Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async {
+  TvDetectionService.debugSetAppleTVOverride(isTv);
+  await SettingsService.getInstance();
+  tester.view.devicePixelRatio = 1.0;
+  tester.view.physicalSize = const Size(1280, 720);
+  addTearDown(() {
+    tester.view.resetDevicePixelRatio();
+    tester.view.resetPhysicalSize();
+  });
+
+  final client = _FakeMediaServerClient(hubs: const []);
+  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final multiServerProvider = testMultiServerProvider(manager);
+  final hiddenLibrariesProvider = HiddenLibrariesProvider();
+  final librariesProvider = LibrariesProvider();
+  final watchTogetherProvider = WatchTogetherProvider();
+  final companionRemoteProvider = CompanionRemoteProvider();
+
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  final storage = await StorageService.getInstance();
+  final connectionRegistry = _FakeConnectionRegistry(db);
+  final profileConnectionRegistry = _FakeProfileConnectionRegistry(db);
+  final plexHome = PlexHomeService(
+    connections: connectionRegistry,
+    profileConnections: profileConnectionRegistry,
+    storage: storage,
+    plexHomeUserFetcher: (_) async => const [],
+  );
+  final activeProfileProvider = ActiveProfileProvider(
+    registry: _FakeProfileRegistry(db),
+    plexHome: plexHome,
+    connections: connectionRegistry,
+    profileConnections: profileConnectionRegistry,
+    storage: storage,
+  );
+  final discoverProvider = DiscoverProvider(
+    multiServerProvider,
+    hiddenLibrariesProvider,
+    librariesProvider,
+    profileId: null,
+    isProfileBinding: () => activeProfileProvider.isBinding,
+  );
+
+  addTearDown(() async {
+    discoverProvider.dispose();
+    activeProfileProvider.dispose();
+    companionRemoteProvider.dispose();
+    watchTogetherProvider.dispose();
+    librariesProvider.dispose();
+    hiddenLibrariesProvider.dispose();
+    multiServerProvider.dispose();
+    await plexHome.dispose();
+    await db.close();
+  });
+
+  await tester.pumpWidget(
+    TranslationProvider(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+          ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+          ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogetherProvider),
+          ChangeNotifierProvider<CompanionRemoteProvider>.value(value: companionRemoteProvider),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
+          ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
+        ],
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: MainScreenFocusScope(
+              focusSidebar: () {},
+              focusContent: () {},
+              isSidebarFocused: false,
+              sideNavigationWidth: SideNavigationRailState.expandedWidth,
+              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              foregroundLeft: 0,
+              foregroundWidth: 1280,
+              viewportWidth: 1280,
+              child: const DiscoverScreen(),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // Bounded pumps only: the hero runs periodic auto-scroll timers, so
+  // pumpAndSettle would never settle.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 100));
 }
 
 class _FakeMediaServerClient implements MediaServerClient {

@@ -7,6 +7,7 @@ import '../../../i18n/strings.g.dart';
 import '../../../watch_together/widgets/watch_together_overlay.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
 import '../../app_bar_back_button.dart';
+import '../../system_clock.dart';
 
 /// Header layout style for video controls
 enum VideoHeaderStyle {
@@ -67,6 +68,12 @@ class VideoControlsHeader extends StatelessWidget {
               ),
             );
           },
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: SystemClock(
+            style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: .w500),
+          ),
         ),
         ?trailing,
       ],
