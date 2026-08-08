@@ -154,6 +154,11 @@ class PlaybackProgressTracker {
   /// Whether this backend reporting session has successfully opened.
   bool _hasDeliveredStart = false;
 
+  /// Whether a delivered stopped report reached a backend session able to act
+  /// on it. MediaBrowser drops a stop for a session it never opened, so both
+  /// the position it would persist and the watch it would record are lost.
+  bool _stoppedReportActedOn = false;
+
   /// Whether the delivered stopped report persisted its position.
   bool _stoppedProgressServerAcknowledged = false;
 
@@ -161,7 +166,8 @@ class PlaybackProgressTracker {
   /// upgrade local provenance even when the position delta is throttled.
   bool _lastProgressNotificationServerAcknowledged = false;
 
-  /// The exact report-derived watched patch that an explicit mark can settle.
+  /// The exact report-derived watched patch that a settled server-side watch
+  /// can promote. Cleared once promoted so promotion happens at most once.
   WatchPatchId? _watchedPatchId;
 
   /// Whether the final stopped progress event was already emitted locally.
@@ -280,6 +286,7 @@ class PlaybackProgressTracker {
     _serverObservedCrossing = false;
     _sessionEnded = false;
     _hasDeliveredStart = false;
+    _stoppedReportActedOn = false;
     _stoppedProgressServerAcknowledged = false;
   }
 
@@ -478,8 +485,15 @@ class PlaybackProgressTracker {
     final persistsPositionOnEveryReport = !metadata.backend.usesMediaBrowserApi;
     if (snapshot.isStopped) {
       // MediaBrowser needs a successfully opened session before Stopped can
-      // persist position; Plex timeline reports are independent.
-      _stoppedProgressServerAcknowledged = persistsPositionOnEveryReport || _hasDeliveredStart;
+      // persist position or record the watch; Plex timeline reports are
+      // independent.
+      _stoppedReportActedOn = persistsPositionOnEveryReport || _hasDeliveredStart;
+      _stoppedProgressServerAcknowledged = _stoppedReportActedOn;
+      // A backend that marks played from the stop has now done so, so a
+      // crossing latched earlier this session is no longer a write owed to
+      // it. Ordering runs both ways -- the crossing can latch before this
+      // stop or from it -- so _settleServerMark promotes on the other path.
+      if (_stoppedReportActedOn && (c?.marksWatchedOnPlaybackStopped ?? false)) _promoteWatchedPatch();
     } else {
       final isStarted = !_hasDeliveredStart;
       _hasDeliveredStart = true;
@@ -523,6 +537,10 @@ class PlaybackProgressTracker {
     // double-scrobble through the Jellyfin Trakt plugin (#1287).
     if (c.marksWatchedOnPlaybackStopped) {
       _serverMarkSettled = true;
+      // Only once the stop actually reached an open session: settling happens
+      // when the crossing latches, which can be before the stop is sent, and
+      // until it lands the watch is still owed to the server.
+      if (_stoppedReportActedOn) _promoteWatchedPatch();
       await _runScrobbledHook();
       return;
     }
@@ -530,6 +548,9 @@ class PlaybackProgressTracker {
     // again records the same watch twice (#1740).
     if (_serverObservedCrossing) {
       _serverMarkSettled = true;
+      // Delivery is proven: the crossing was assembled from two delivered
+      // reports, so nothing is owed.
+      _promoteWatchedPatch();
       await _runScrobbledHook();
       return;
     }
@@ -557,9 +578,23 @@ class PlaybackProgressTracker {
       _serverMarkSettled = false; // Retry on the next delivered report.
       return;
     }
-    final patchId = _watchedPatchId;
-    if (patchId != null) WatchPatchPromotionNotifier().promote(patchId);
+    _promoteWatchedPatch();
     await _runScrobbledHook();
+  }
+
+  /// Settle the report-derived watched patch: the server has taken this watch,
+  /// so the overlay entry is no longer a write owed to it and a later
+  /// authoritative read may supersede it.
+  ///
+  /// Without this a crossing pins `watched` for the whole session — the read
+  /// that would clear it cannot, because an unacknowledged patch is never
+  /// suppressed. Idempotent: the id is cleared so repeated settle paths and
+  /// the delivery callback cannot promote twice.
+  void _promoteWatchedPatch() {
+    final patchId = _watchedPatchId;
+    if (patchId == null) return;
+    _watchedPatchId = null;
+    WatchPatchPromotionNotifier().promote(patchId);
   }
 
   /// Runs the post-watch hook once, after the item's own watched state is

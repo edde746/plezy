@@ -1855,6 +1855,178 @@ void main() {
       expect(tracker.dispose, returnsNormally);
     });
   });
+
+  // A report-derived crossing writes an unacknowledged overlay patch, which the
+  // store never suppresses. Unless the settled server-side watch promotes it,
+  // it pins `watched` for the rest of the session and no refresh can clear it.
+  group('watched-patch promotion', () {
+    List<WatchPatchId> listenForPromotions() {
+      final seen = <WatchPatchId>[];
+      final sub = WatchPatchPromotionNotifier().stream.listen((p) => seen.add(p.patchId));
+      addTearDown(sub.cancel);
+      return seen;
+    }
+
+    /// Watched events prove the crossing actually latched and created a patch,
+    /// so a "did not promote" assertion cannot pass vacuously.
+    List<WatchStateEvent> listenForWatchedEvents() {
+      final seen = <WatchStateEvent>[];
+      final sub = WatchStateNotifier().stream.listen((e) {
+        if (e.changeType == WatchStateChangeType.watched) seen.add(e);
+      });
+      addTearDown(sub.cancel);
+      return seen;
+    }
+
+    test('a delivered stop promotes the crossing on a backend that marks on stop', () async {
+      final promotions = listenForPromotions();
+      final client = _StopMarksWatchedClient();
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(promotions, hasLength(1));
+      // The #1287 contract is unchanged: still no explicit mark.
+      expect(client.markWatchedCalls, isEmpty);
+    });
+
+    test('a MediaBrowser stop for a session that never opened does not promote', () async {
+      // Jellyfin drops a stop for a session it never opened, so the watch it
+      // would have recorded never happened and the patch is still owed.
+      final promotions = listenForPromotions();
+      final watched = listenForWatchedEvents();
+      final client = _StopMarksWatchedClient();
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: testMediaItem(
+          id: '42',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv'),
+        ),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+
+      // The crossing latched locally, so there is a patch to leave owed.
+      expect(watched, hasLength(1));
+      expect(promotions, isEmpty);
+    });
+
+    test('a MediaBrowser stop into an opened session promotes', () async {
+      final promotions = listenForPromotions();
+      final client = _StopMarksWatchedClient();
+      final player = _FakePlayer(position: const Duration(seconds: 10), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: testMediaItem(
+          id: '42',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv'),
+        ),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      player.position = const Duration(seconds: 95);
+      await tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(promotions, hasLength(1));
+    });
+
+    test('a server-observed crossing promotes without an explicit mark (#1740)', () async {
+      final promotions = listenForPromotions();
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 10), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      // Below then above, both delivered: the backend saw the crossing itself.
+      // The playing report is dispatched fire-and-forget, so let it land before
+      // the stop that completes the crossing.
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      player.position = const Duration(seconds: 95);
+      await tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(promotions, hasLength(1));
+      expect(client.markWatchedCalls, isEmpty);
+    });
+
+    test('the explicit-mark path promotes exactly once', () async {
+      final promotions = listenForPromotions();
+      final client = _FakePlexClient(thresholdPercent: 90);
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      // No observable crossing, so this session takes the explicit mark.
+      await tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(client.markWatchedCalls, ['42']);
+      expect(promotions, hasLength(1));
+    });
+
+    test('a failed explicit mark leaves the patch owed', () async {
+      final promotions = listenForPromotions();
+      final watched = listenForWatchedEvents();
+      final client = _ScrobblePreciseClient(thresholdPercent: 90, failScrobbleFirstTime: true);
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+
+      // The crossing latched locally, so there is a patch to leave owed.
+      expect(watched, hasLength(1));
+      // The write never landed, so nothing may retire the local patch.
+      expect(promotions, isEmpty);
+    });
+
+    test('a re-armed session does not promote off the previous stop', () async {
+      final promotions = listenForPromotions();
+      final client = _StopMarksWatchedClient();
+      final player = _FakePlayer(position: const Duration(seconds: 10), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: testMediaItem(
+          id: '42',
+          backend: MediaBackend.jellyfin,
+          kind: MediaKind.movie,
+          serverId: ServerId('srv'),
+        ),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      player.position = const Duration(seconds: 95);
+      await tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+      expect(promotions, hasLength(1));
+
+      // A new server-side session must earn its own delivered stop.
+      tracker.resumeAfterStoppedReport();
+      await Future<void>.delayed(Duration.zero);
+      expect(promotions, hasLength(1));
+    });
+  });
 }
 
 /// A more precise fake than [_FakePlexClient]: lets the test independently
