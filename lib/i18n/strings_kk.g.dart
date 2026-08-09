@@ -1963,6 +1963,7 @@ class _Translations$services$kk extends Translations$services$en {
 	@override late final _Translations$services$names$kk names = _Translations$services$names$kk._(_root);
 	@override late final _Translations$services$deviceCode$kk deviceCode = _Translations$services$deviceCode$kk._(_root);
 	@override late final _Translations$services$oauthProxy$kk oauthProxy = _Translations$services$oauthProxy$kk._(_root);
+	@override late final _Translations$services$pendingAuth$kk pendingAuth = _Translations$services$pendingAuth$kk._(_root);
 	@override late final _Translations$services$libraryFilter$kk libraryFilter = _Translations$services$libraryFilter$kk._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$kk extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy-ді ${service} қызметінде белсендіру';
-	@override String body({required Object url}) => '${url} мекенжайына өтіп, осы кодты енгізіңіз:';
 	@override String openToActivate({required Object service}) => 'Белсендіру үшін ${service} ашу';
 	@override String get copyCode => 'Белсендіру кодын көшіру';
 	@override String get waitingForAuthorization => 'Авторизация күтілуде…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$kk extends Translations$services$oauthPr
 	@override String title({required Object service}) => '${service} қызметіне кіру';
 	@override String get body => 'Осы QR кодты сканерлеңіз немесе URL-ді ашыңыз.';
 	@override String openToSignIn({required Object service}) => 'Кіру үшін ${service} ашу';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$kk extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Кіру URL-ін көшіру';
 	@override String get urlCopied => 'URL көшірілді';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsKk {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy-ді ${service} қызметінде белсендіру',
-			'services.deviceCode.body' => ({required Object url}) => '${url} мекенжайына өтіп, осы кодты енгізіңіз:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Белсендіру үшін ${service} ашу',
 			'services.deviceCode.copyCode' => 'Белсендіру кодын көшіру',
 			'services.deviceCode.waitingForAuthorization' => 'Авторизация күтілуде…',
@@ -4268,8 +4276,8 @@ extension on TranslationsKk {
 			'services.oauthProxy.title' => ({required Object service}) => '${service} қызметіне кіру',
 			'services.oauthProxy.body' => 'Осы QR кодты сканерлеңіз немесе URL-ді ашыңыз.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Кіру үшін ${service} ашу',
-			'services.oauthProxy.copyUrl' => 'Кіру URL-ін көшіру',
-			'services.oauthProxy.urlCopied' => 'URL көшірілді',
+			'services.pendingAuth.copyUrl' => 'Кіру URL-ін көшіру',
+			'services.pendingAuth.urlCopied' => 'URL көшірілді',
 			'services.libraryFilter.title' => 'Кітапхана фильтрі',
 			'services.libraryFilter.subtitleAllSyncing' => 'Барлық кітапханалар синхрондалуда',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Ештеңе синхрондалмайды',

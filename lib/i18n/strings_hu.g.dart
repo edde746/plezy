@@ -1963,6 +1963,7 @@ class _Translations$services$hu extends Translations$services$en {
 	@override late final _Translations$services$names$hu names = _Translations$services$names$hu._(_root);
 	@override late final _Translations$services$deviceCode$hu deviceCode = _Translations$services$deviceCode$hu._(_root);
 	@override late final _Translations$services$oauthProxy$hu oauthProxy = _Translations$services$oauthProxy$hu._(_root);
+	@override late final _Translations$services$pendingAuth$hu pendingAuth = _Translations$services$pendingAuth$hu._(_root);
 	@override late final _Translations$services$libraryFilter$hu libraryFilter = _Translations$services$libraryFilter$hu._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$hu extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy aktiválása a következőn: ${service}';
-	@override String body({required Object url}) => 'Nyisd meg a(z) ${url} oldalt és add meg ezt a kódot:';
 	@override String openToActivate({required Object service}) => 'Nyisd meg a(z) ${service} oldalt az aktiváláshoz';
 	@override String get copyCode => 'Aktiválási kód másolása';
 	@override String get waitingForAuthorization => 'Várakozás az engedélyezésre…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$hu extends Translations$services$oauthPr
 	@override String title({required Object service}) => 'Bejelentkezés ide: ${service}';
 	@override String get body => 'Olvasd be ezt a QR-kódot vagy nyisd meg az URL-t bármelyik eszközön.';
 	@override String openToSignIn({required Object service}) => 'Nyisd meg a(z) ${service} oldalt a bejelentkezéshez';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$hu extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Bejelentkezési URL másolása';
 	@override String get urlCopied => 'URL másolva';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsHu {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy aktiválása a következőn: ${service}',
-			'services.deviceCode.body' => ({required Object url}) => 'Nyisd meg a(z) ${url} oldalt és add meg ezt a kódot:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Nyisd meg a(z) ${service} oldalt az aktiváláshoz',
 			'services.deviceCode.copyCode' => 'Aktiválási kód másolása',
 			'services.deviceCode.waitingForAuthorization' => 'Várakozás az engedélyezésre…',
@@ -4268,8 +4276,8 @@ extension on TranslationsHu {
 			'services.oauthProxy.title' => ({required Object service}) => 'Bejelentkezés ide: ${service}',
 			'services.oauthProxy.body' => 'Olvasd be ezt a QR-kódot vagy nyisd meg az URL-t bármelyik eszközön.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Nyisd meg a(z) ${service} oldalt a bejelentkezéshez',
-			'services.oauthProxy.copyUrl' => 'Bejelentkezési URL másolása',
-			'services.oauthProxy.urlCopied' => 'URL másolva',
+			'services.pendingAuth.copyUrl' => 'Bejelentkezési URL másolása',
+			'services.pendingAuth.urlCopied' => 'URL másolva',
 			'services.libraryFilter.title' => 'Könyvtárszűrő',
 			'services.libraryFilter.subtitleAllSyncing' => 'Minden könyvtár szinkronizálása',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Nincs szinkronizálás',

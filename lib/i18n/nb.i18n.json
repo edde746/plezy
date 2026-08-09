@@ -1868,7 +1868,7 @@
     },
     "deviceCode": {
       "title": "Aktiver Plezy på ${service}",
-      "body": "Besøk ${url} og skriv inn denne koden:",
+      "instructions": "",
       "openToActivate": "Åpne ${service} for å aktivere",
       "copyCode": "Kopier aktiveringskode",
       "waitingForAuthorization": "Venter på godkjenning…",
@@ -1877,7 +1877,9 @@
     "oauthProxy": {
       "title": "Logg inn på ${service}",
       "body": "Skann denne QR-koden eller åpne URL-en på en enhet.",
-      "openToSignIn": "Åpne ${service} for å logge inn",
+      "openToSignIn": "Åpne ${service} for å logge inn"
+    },
+    "pendingAuth": {
       "copyUrl": "Kopier URL for pålogging",
       "urlCopied": "URL kopiert"
     },

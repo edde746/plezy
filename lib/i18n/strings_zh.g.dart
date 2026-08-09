@@ -1956,6 +1956,7 @@ class Translations$services$zh extends Translations$services$en {
 	@override late final Translations$services$names$zh names = Translations$services$names$zh.internal(_root);
 	@override late final Translations$services$deviceCode$zh deviceCode = Translations$services$deviceCode$zh.internal(_root);
 	@override late final Translations$services$oauthProxy$zh oauthProxy = Translations$services$oauthProxy$zh.internal(_root);
+	@override late final Translations$services$pendingAuth$zh pendingAuth = Translations$services$pendingAuth$zh.internal(_root);
 	@override late final Translations$services$libraryFilter$zh libraryFilter = Translations$services$libraryFilter$zh.internal(_root);
 }
 
@@ -2511,7 +2512,6 @@ class Translations$services$deviceCode$zh extends Translations$services$deviceCo
 
 	// Translations
 	@override String title({required Object service}) => '在 ${service} 上激活 Plezy';
-	@override String body({required Object url}) => '访问 ${url} 并输入此代码：';
 	@override String openToActivate({required Object service}) => '打开 ${service} 以激活';
 	@override String get copyCode => '复制激活代码';
 	@override String get waitingForAuthorization => '等待授权…';
@@ -2528,6 +2528,15 @@ class Translations$services$oauthProxy$zh extends Translations$services$oauthPro
 	@override String title({required Object service}) => '登录 ${service}';
 	@override String get body => '扫描此二维码，或在任意设备上打开 URL。';
 	@override String openToSignIn({required Object service}) => '打开 ${service} 以登录';
+}
+
+// Path: services.pendingAuth
+class Translations$services$pendingAuth$zh extends Translations$services$pendingAuth$en {
+	Translations$services$pendingAuth$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => '复制登录 URL';
 	@override String get urlCopied => 'URL 已复制';
 }
@@ -4251,7 +4260,6 @@ extension on TranslationsZh {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 Plezy',
-			'services.deviceCode.body' => ({required Object url}) => '访问 ${url} 并输入此代码：',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '打开 ${service} 以激活',
 			'services.deviceCode.copyCode' => '复制激活代码',
 			'services.deviceCode.waitingForAuthorization' => '等待授权…',
@@ -4259,8 +4267,8 @@ extension on TranslationsZh {
 			'services.oauthProxy.title' => ({required Object service}) => '登录 ${service}',
 			'services.oauthProxy.body' => '扫描此二维码，或在任意设备上打开 URL。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '打开 ${service} 以登录',
-			'services.oauthProxy.copyUrl' => '复制登录 URL',
-			'services.oauthProxy.urlCopied' => 'URL 已复制',
+			'services.pendingAuth.copyUrl' => '复制登录 URL',
+			'services.pendingAuth.urlCopied' => 'URL 已复制',
 			'services.libraryFilter.title' => '媒体库筛选',
 			'services.libraryFilter.subtitleAllSyncing' => '同步所有媒体库',
 			'services.libraryFilter.subtitleNoneSyncing' => '不同步任何内容',

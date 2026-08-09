@@ -1868,7 +1868,7 @@
     },
     "deviceCode": {
       "title": "Plezy'yi ${service} üzerinde etkinleştirin",
-      "body": "${url} adresini ziyaret edin ve bu kodu girin:",
+      "instructions": "",
       "openToActivate": "Etkinleştirmek için ${service} servisini açın",
       "copyCode": "Etkinleştirme kodunu kopyala",
       "waitingForAuthorization": "Yetkilendirme bekleniyor…",
@@ -1877,7 +1877,9 @@
     "oauthProxy": {
       "title": "${service} servisine giriş yapın",
       "body": "Bu QR kodunu tarayın veya URL'yi herhangi bir cihazda açın.",
-      "openToSignIn": "Giriş yapmak için ${service} servisini açın",
+      "openToSignIn": "Giriş yapmak için ${service} servisini açın"
+    },
+    "pendingAuth": {
       "copyUrl": "Giriş URL'sini kopyala",
       "urlCopied": "URL kopyalandı"
     },

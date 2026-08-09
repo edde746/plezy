@@ -1977,6 +1977,7 @@ class _Translations$services$ru extends Translations$services$en {
 	@override late final _Translations$services$names$ru names = _Translations$services$names$ru._(_root);
 	@override late final _Translations$services$deviceCode$ru deviceCode = _Translations$services$deviceCode$ru._(_root);
 	@override late final _Translations$services$oauthProxy$ru oauthProxy = _Translations$services$oauthProxy$ru._(_root);
+	@override late final _Translations$services$pendingAuth$ru pendingAuth = _Translations$services$pendingAuth$ru._(_root);
 	@override late final _Translations$services$libraryFilter$ru libraryFilter = _Translations$services$libraryFilter$ru._(_root);
 }
 
@@ -2538,7 +2539,6 @@ class _Translations$services$deviceCode$ru extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Активируйте Plezy в ${service}';
-	@override String body({required Object url}) => 'Перейдите на ${url} и введите этот код:';
 	@override String openToActivate({required Object service}) => 'Открыть ${service} для активации';
 	@override String get copyCode => 'Скопировать код активации';
 	@override String get waitingForAuthorization => 'Ожидание авторизации…';
@@ -2555,6 +2555,15 @@ class _Translations$services$oauthProxy$ru extends Translations$services$oauthPr
 	@override String title({required Object service}) => 'Войти в ${service}';
 	@override String get body => 'Отсканируйте этот QR-код или откройте URL на любом устройстве.';
 	@override String openToSignIn({required Object service}) => 'Открыть ${service} для входа';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$ru extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Скопировать URL для входа';
 	@override String get urlCopied => 'URL скопирован';
 }
@@ -4278,7 +4287,6 @@ extension on TranslationsRu {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Активируйте Plezy в ${service}',
-			'services.deviceCode.body' => ({required Object url}) => 'Перейдите на ${url} и введите этот код:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Открыть ${service} для активации',
 			'services.deviceCode.copyCode' => 'Скопировать код активации',
 			'services.deviceCode.waitingForAuthorization' => 'Ожидание авторизации…',
@@ -4286,8 +4294,8 @@ extension on TranslationsRu {
 			'services.oauthProxy.title' => ({required Object service}) => 'Войти в ${service}',
 			'services.oauthProxy.body' => 'Отсканируйте этот QR-код или откройте URL на любом устройстве.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Открыть ${service} для входа',
-			'services.oauthProxy.copyUrl' => 'Скопировать URL для входа',
-			'services.oauthProxy.urlCopied' => 'URL скопирован',
+			'services.pendingAuth.copyUrl' => 'Скопировать URL для входа',
+			'services.pendingAuth.urlCopied' => 'URL скопирован',
 			'services.libraryFilter.title' => 'Фильтр библиотек',
 			'services.libraryFilter.subtitleAllSyncing' => 'Синхронизация всех библиотек',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Ничего не синхронизируется',

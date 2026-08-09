@@ -1868,7 +1868,7 @@
     },
     "deviceCode": {
       "title": "Plezy-ni ${service} xizmatida faollashtiring",
-      "body": "${url} manziliga oʻting va ushbu kodni kiriting:",
+      "instructions": "",
       "openToActivate": "Faollashtirish uchun ${service} xizmatini oching",
       "copyCode": "Faollashtirish kodini nusxalash",
       "waitingForAuthorization": "Avtorizatsiya kutilmoqda…",
@@ -1877,7 +1877,9 @@
     "oauthProxy": {
       "title": "${service} xizmatiga kiring",
       "body": "Ushbu QR kodni skanerlang yoki URL-ni oching.",
-      "openToSignIn": "Kirish uchun ${service} xizmatini oching",
+      "openToSignIn": "Kirish uchun ${service} xizmatini oching"
+    },
+    "pendingAuth": {
       "copyUrl": "Kirish URL-ini nusxalash",
       "urlCopied": "URL nusxalandi"
     },

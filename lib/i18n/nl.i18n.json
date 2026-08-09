@@ -1868,7 +1868,7 @@
     },
     "deviceCode": {
       "title": "Plezy activeren op ${service}",
-      "body": "Ga naar ${url} en voer deze code in:",
+      "instructions": "",
       "openToActivate": "Open ${service} om te activeren",
       "copyCode": "Activeringscode kopiëren",
       "waitingForAuthorization": "Wachten op autorisatie…",
@@ -1877,7 +1877,9 @@
     "oauthProxy": {
       "title": "Aanmelden bij ${service}",
       "body": "Scan deze QR-code of open de URL op een apparaat.",
-      "openToSignIn": "${service} openen om aan te melden",
+      "openToSignIn": "${service} openen om aan te melden"
+    },
+    "pendingAuth": {
       "copyUrl": "Aanmeldings-URL kopiëren",
       "urlCopied": "URL gekopieerd"
     },

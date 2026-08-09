@@ -1868,7 +1868,7 @@
     },
     "deviceCode": {
       "title": "Plezy auf ${service} aktivieren",
-      "body": "Gehe zu ${url} und gib diesen Code ein:",
+      "instructions": "",
       "openToActivate": "${service} zum Aktivieren öffnen",
       "copyCode": "Aktivierungscode kopieren",
       "waitingForAuthorization": "Warte auf Autorisierung…",
@@ -1877,7 +1877,9 @@
     "oauthProxy": {
       "title": "Bei ${service} anmelden",
       "body": "Scanne diesen QR-Code oder öffne die URL auf einem beliebigen Gerät.",
-      "openToSignIn": "${service} zum Anmelden öffnen",
+      "openToSignIn": "${service} zum Anmelden öffnen"
+    },
+    "pendingAuth": {
       "copyUrl": "Anmelde-URL kopieren",
       "urlCopied": "URL kopiert"
     },

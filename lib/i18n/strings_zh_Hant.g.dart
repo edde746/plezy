@@ -1957,6 +1957,7 @@ class _Translations$services$zh_Hant extends Translations$services$zh {
 	@override late final _Translations$services$names$zh_Hant names = _Translations$services$names$zh_Hant._(_root);
 	@override late final _Translations$services$deviceCode$zh_Hant deviceCode = _Translations$services$deviceCode$zh_Hant._(_root);
 	@override late final _Translations$services$oauthProxy$zh_Hant oauthProxy = _Translations$services$oauthProxy$zh_Hant._(_root);
+	@override late final _Translations$services$pendingAuth$zh_Hant pendingAuth = _Translations$services$pendingAuth$zh_Hant._(_root);
 	@override late final _Translations$services$libraryFilter$zh_Hant libraryFilter = _Translations$services$libraryFilter$zh_Hant._(_root);
 }
 
@@ -2512,7 +2513,6 @@ class _Translations$services$deviceCode$zh_Hant extends Translations$services$de
 
 	// Translations
 	@override String title({required Object service}) => '在 ${service} 啟用 Plezy';
-	@override String body({required Object url}) => '請前往 ${url} 並輸入此代碼：';
 	@override String openToActivate({required Object service}) => '開啟 ${service} 進行啟用';
 	@override String get copyCode => '複製啟用代碼';
 	@override String get waitingForAuthorization => '等待授權中…';
@@ -2529,6 +2529,15 @@ class _Translations$services$oauthProxy$zh_Hant extends Translations$services$oa
 	@override String title({required Object service}) => '登入 ${service}';
 	@override String get body => '掃描 QR 碼，或在任何裝置上開啟該網址。';
 	@override String openToSignIn({required Object service}) => '開啟 ${service} 進行登入';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$zh_Hant extends Translations$services$pendingAuth$zh {
+	_Translations$services$pendingAuth$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => '複製登入 URL';
 	@override String get urlCopied => 'URL 已複製';
 }
@@ -4252,7 +4261,6 @@ extension on TranslationsZhHant {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => '在 ${service} 啟用 Plezy',
-			'services.deviceCode.body' => ({required Object url}) => '請前往 ${url} 並輸入此代碼：',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '開啟 ${service} 進行啟用',
 			'services.deviceCode.copyCode' => '複製啟用代碼',
 			'services.deviceCode.waitingForAuthorization' => '等待授權中…',
@@ -4260,8 +4268,8 @@ extension on TranslationsZhHant {
 			'services.oauthProxy.title' => ({required Object service}) => '登入 ${service}',
 			'services.oauthProxy.body' => '掃描 QR 碼，或在任何裝置上開啟該網址。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '開啟 ${service} 進行登入',
-			'services.oauthProxy.copyUrl' => '複製登入 URL',
-			'services.oauthProxy.urlCopied' => 'URL 已複製',
+			'services.pendingAuth.copyUrl' => '複製登入 URL',
+			'services.pendingAuth.urlCopied' => 'URL 已複製',
 			'services.libraryFilter.title' => '媒體庫篩選',
 			'services.libraryFilter.subtitleAllSyncing' => '同步所有媒體庫',
 			'services.libraryFilter.subtitleNoneSyncing' => '不同步任何內容',

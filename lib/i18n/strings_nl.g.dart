@@ -1963,6 +1963,7 @@ class _Translations$services$nl extends Translations$services$en {
 	@override late final _Translations$services$names$nl names = _Translations$services$names$nl._(_root);
 	@override late final _Translations$services$deviceCode$nl deviceCode = _Translations$services$deviceCode$nl._(_root);
 	@override late final _Translations$services$oauthProxy$nl oauthProxy = _Translations$services$oauthProxy$nl._(_root);
+	@override late final _Translations$services$pendingAuth$nl pendingAuth = _Translations$services$pendingAuth$nl._(_root);
 	@override late final _Translations$services$libraryFilter$nl libraryFilter = _Translations$services$libraryFilter$nl._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$nl extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy activeren op ${service}';
-	@override String body({required Object url}) => 'Ga naar ${url} en voer deze code in:';
 	@override String openToActivate({required Object service}) => 'Open ${service} om te activeren';
 	@override String get copyCode => 'Activeringscode kopiëren';
 	@override String get waitingForAuthorization => 'Wachten op autorisatie…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$nl extends Translations$services$oauthPr
 	@override String title({required Object service}) => 'Aanmelden bij ${service}';
 	@override String get body => 'Scan deze QR-code of open de URL op een apparaat.';
 	@override String openToSignIn({required Object service}) => '${service} openen om aan te melden';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$nl extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Aanmeldings-URL kopiëren';
 	@override String get urlCopied => 'URL gekopieerd';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsNl {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy activeren op ${service}',
-			'services.deviceCode.body' => ({required Object url}) => 'Ga naar ${url} en voer deze code in:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} om te activeren',
 			'services.deviceCode.copyCode' => 'Activeringscode kopiëren',
 			'services.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
@@ -4268,8 +4276,8 @@ extension on TranslationsNl {
 			'services.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
 			'services.oauthProxy.body' => 'Scan deze QR-code of open de URL op een apparaat.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
-			'services.oauthProxy.copyUrl' => 'Aanmeldings-URL kopiëren',
-			'services.oauthProxy.urlCopied' => 'URL gekopieerd',
+			'services.pendingAuth.copyUrl' => 'Aanmeldings-URL kopiëren',
+			'services.pendingAuth.urlCopied' => 'URL gekopieerd',
 			'services.libraryFilter.title' => 'Bibliotheekfilter',
 			'services.libraryFilter.subtitleAllSyncing' => 'Alle bibliotheken synchroniseren',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Niets wordt gesynchroniseerd',

@@ -1963,6 +1963,7 @@ class _Translations$services$pt extends Translations$services$en {
 	@override late final _Translations$services$names$pt names = _Translations$services$names$pt._(_root);
 	@override late final _Translations$services$deviceCode$pt deviceCode = _Translations$services$deviceCode$pt._(_root);
 	@override late final _Translations$services$oauthProxy$pt oauthProxy = _Translations$services$oauthProxy$pt._(_root);
+	@override late final _Translations$services$pendingAuth$pt pendingAuth = _Translations$services$pendingAuth$pt._(_root);
 	@override late final _Translations$services$libraryFilter$pt libraryFilter = _Translations$services$libraryFilter$pt._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$pt extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Ativar o Plezy no ${service}';
-	@override String body({required Object url}) => 'Acesse ${url} e insira este código:';
 	@override String openToActivate({required Object service}) => 'Abrir ${service} para ativar';
 	@override String get copyCode => 'Copiar código de ativação';
 	@override String get waitingForAuthorization => 'Aguardando autorização…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$pt extends Translations$services$oauthPr
 	@override String title({required Object service}) => 'Entrar no ${service}';
 	@override String get body => 'Leia este código QR ou abra a URL em qualquer dispositivo.';
 	@override String openToSignIn({required Object service}) => 'Abrir ${service} para entrar';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$pt extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$pt._(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Copiar URL de acesso';
 	@override String get urlCopied => 'URL copiada';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsPt {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Ativar o Plezy no ${service}',
-			'services.deviceCode.body' => ({required Object url}) => 'Acesse ${url} e insira este código:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Abrir ${service} para ativar',
 			'services.deviceCode.copyCode' => 'Copiar código de ativação',
 			'services.deviceCode.waitingForAuthorization' => 'Aguardando autorização…',
@@ -4268,8 +4276,8 @@ extension on TranslationsPt {
 			'services.oauthProxy.title' => ({required Object service}) => 'Entrar no ${service}',
 			'services.oauthProxy.body' => 'Leia este código QR ou abra a URL em qualquer dispositivo.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Abrir ${service} para entrar',
-			'services.oauthProxy.copyUrl' => 'Copiar URL de acesso',
-			'services.oauthProxy.urlCopied' => 'URL copiada',
+			'services.pendingAuth.copyUrl' => 'Copiar URL de acesso',
+			'services.pendingAuth.urlCopied' => 'URL copiada',
 			'services.libraryFilter.title' => 'Filtro de bibliotecas',
 			'services.libraryFilter.subtitleAllSyncing' => 'Sincronizando todas as bibliotecas',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Nada a sincronizar',

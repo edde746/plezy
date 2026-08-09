@@ -1963,6 +1963,7 @@ class _Translations$services$sv extends Translations$services$en {
 	@override late final _Translations$services$names$sv names = _Translations$services$names$sv._(_root);
 	@override late final _Translations$services$deviceCode$sv deviceCode = _Translations$services$deviceCode$sv._(_root);
 	@override late final _Translations$services$oauthProxy$sv oauthProxy = _Translations$services$oauthProxy$sv._(_root);
+	@override late final _Translations$services$pendingAuth$sv pendingAuth = _Translations$services$pendingAuth$sv._(_root);
 	@override late final _Translations$services$libraryFilter$sv libraryFilter = _Translations$services$libraryFilter$sv._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$sv extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Aktivera Plezy på ${service}';
-	@override String body({required Object url}) => 'Besök ${url} och ange den här koden:';
 	@override String openToActivate({required Object service}) => 'Öppna ${service} för att aktivera';
 	@override String get copyCode => 'Kopiera aktiveringskod';
 	@override String get waitingForAuthorization => 'Väntar på auktorisering…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$sv extends Translations$services$oauthPr
 	@override String title({required Object service}) => 'Logga in på ${service}';
 	@override String get body => 'Skanna den här QR-koden eller öppna URL:en på valfri enhet.';
 	@override String openToSignIn({required Object service}) => 'Öppna ${service} för att logga in';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$sv extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Kopiera inloggnings-URL';
 	@override String get urlCopied => 'URL kopierad';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsSv {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Aktivera Plezy på ${service}',
-			'services.deviceCode.body' => ({required Object url}) => 'Besök ${url} och ange den här koden:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Öppna ${service} för att aktivera',
 			'services.deviceCode.copyCode' => 'Kopiera aktiveringskod',
 			'services.deviceCode.waitingForAuthorization' => 'Väntar på auktorisering…',
@@ -4268,8 +4276,8 @@ extension on TranslationsSv {
 			'services.oauthProxy.title' => ({required Object service}) => 'Logga in på ${service}',
 			'services.oauthProxy.body' => 'Skanna den här QR-koden eller öppna URL:en på valfri enhet.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Öppna ${service} för att logga in',
-			'services.oauthProxy.copyUrl' => 'Kopiera inloggnings-URL',
-			'services.oauthProxy.urlCopied' => 'URL kopierad',
+			'services.pendingAuth.copyUrl' => 'Kopiera inloggnings-URL',
+			'services.pendingAuth.urlCopied' => 'URL kopierad',
 			'services.libraryFilter.title' => 'Biblioteksfilter',
 			'services.libraryFilter.subtitleAllSyncing' => 'Synkroniserar alla bibliotek',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Ingenting synkroniseras',

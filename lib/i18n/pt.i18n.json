@@ -1868,7 +1868,7 @@
     },
     "deviceCode": {
       "title": "Ativar o Plezy no ${service}",
-      "body": "Acesse ${url} e insira este código:",
+      "instructions": "",
       "openToActivate": "Abrir ${service} para ativar",
       "copyCode": "Copiar código de ativação",
       "waitingForAuthorization": "Aguardando autorização…",
@@ -1877,7 +1877,9 @@
     "oauthProxy": {
       "title": "Entrar no ${service}",
       "body": "Leia este código QR ou abra a URL em qualquer dispositivo.",
-      "openToSignIn": "Abrir ${service} para entrar",
+      "openToSignIn": "Abrir ${service} para entrar"
+    },
+    "pendingAuth": {
       "copyUrl": "Copiar URL de acesso",
       "urlCopied": "URL copiada"
     },

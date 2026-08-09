@@ -1963,6 +1963,7 @@ class _Translations$services$uz extends Translations$services$en {
 	@override late final _Translations$services$names$uz names = _Translations$services$names$uz._(_root);
 	@override late final _Translations$services$deviceCode$uz deviceCode = _Translations$services$deviceCode$uz._(_root);
 	@override late final _Translations$services$oauthProxy$uz oauthProxy = _Translations$services$oauthProxy$uz._(_root);
+	@override late final _Translations$services$pendingAuth$uz pendingAuth = _Translations$services$pendingAuth$uz._(_root);
 	@override late final _Translations$services$libraryFilter$uz libraryFilter = _Translations$services$libraryFilter$uz._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$uz extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy-ni ${service} xizmatida faollashtiring';
-	@override String body({required Object url}) => '${url} manziliga oʻting va ushbu kodni kiriting:';
 	@override String openToActivate({required Object service}) => 'Faollashtirish uchun ${service} xizmatini oching';
 	@override String get copyCode => 'Faollashtirish kodini nusxalash';
 	@override String get waitingForAuthorization => 'Avtorizatsiya kutilmoqda…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$uz extends Translations$services$oauthPr
 	@override String title({required Object service}) => '${service} xizmatiga kiring';
 	@override String get body => 'Ushbu QR kodni skanerlang yoki URL-ni oching.';
 	@override String openToSignIn({required Object service}) => 'Kirish uchun ${service} xizmatini oching';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$uz extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Kirish URL-ini nusxalash';
 	@override String get urlCopied => 'URL nusxalandi';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsUz {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy-ni ${service} xizmatida faollashtiring',
-			'services.deviceCode.body' => ({required Object url}) => '${url} manziliga oʻting va ushbu kodni kiriting:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Faollashtirish uchun ${service} xizmatini oching',
 			'services.deviceCode.copyCode' => 'Faollashtirish kodini nusxalash',
 			'services.deviceCode.waitingForAuthorization' => 'Avtorizatsiya kutilmoqda…',
@@ -4268,8 +4276,8 @@ extension on TranslationsUz {
 			'services.oauthProxy.title' => ({required Object service}) => '${service} xizmatiga kiring',
 			'services.oauthProxy.body' => 'Ushbu QR kodni skanerlang yoki URL-ni oching.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Kirish uchun ${service} xizmatini oching',
-			'services.oauthProxy.copyUrl' => 'Kirish URL-ini nusxalash',
-			'services.oauthProxy.urlCopied' => 'URL nusxalandi',
+			'services.pendingAuth.copyUrl' => 'Kirish URL-ini nusxalash',
+			'services.pendingAuth.urlCopied' => 'URL nusxalandi',
 			'services.libraryFilter.title' => 'Kutubxona filtri',
 			'services.libraryFilter.subtitleAllSyncing' => 'Barcha kutubxonalar sinxronlanmoqda',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Hech narsa sinxronlanmaydi',

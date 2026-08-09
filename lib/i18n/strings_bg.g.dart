@@ -1963,6 +1963,7 @@ class _Translations$services$bg extends Translations$services$en {
 	@override late final _Translations$services$names$bg names = _Translations$services$names$bg._(_root);
 	@override late final _Translations$services$deviceCode$bg deviceCode = _Translations$services$deviceCode$bg._(_root);
 	@override late final _Translations$services$oauthProxy$bg oauthProxy = _Translations$services$oauthProxy$bg._(_root);
+	@override late final _Translations$services$pendingAuth$bg pendingAuth = _Translations$services$pendingAuth$bg._(_root);
 	@override late final _Translations$services$libraryFilter$bg libraryFilter = _Translations$services$libraryFilter$bg._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$bg extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Активиране на Plezy в ${service}';
-	@override String body({required Object url}) => 'Посетете ${url} и въведете този код:';
 	@override String openToActivate({required Object service}) => 'Отворете ${service}, за да активирате';
 	@override String get copyCode => 'Копирай кода за активиране';
 	@override String get waitingForAuthorization => 'Изчакване на оторизация…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$bg extends Translations$services$oauthPr
 	@override String title({required Object service}) => 'Вход в ${service}';
 	@override String get body => 'Сканирайте този QR код или отворете URL-а на което и да е устройство.';
 	@override String openToSignIn({required Object service}) => 'Отворете ${service}, за да влезете';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$bg extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Копирай URL адреса за вход';
 	@override String get urlCopied => 'URL адресът е копиран';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsBg {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Активиране на Plezy в ${service}',
-			'services.deviceCode.body' => ({required Object url}) => 'Посетете ${url} и въведете този код:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Отворете ${service}, за да активирате',
 			'services.deviceCode.copyCode' => 'Копирай кода за активиране',
 			'services.deviceCode.waitingForAuthorization' => 'Изчакване на оторизация…',
@@ -4268,8 +4276,8 @@ extension on TranslationsBg {
 			'services.oauthProxy.title' => ({required Object service}) => 'Вход в ${service}',
 			'services.oauthProxy.body' => 'Сканирайте този QR код или отворете URL-а на което и да е устройство.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Отворете ${service}, за да влезете',
-			'services.oauthProxy.copyUrl' => 'Копирай URL адреса за вход',
-			'services.oauthProxy.urlCopied' => 'URL адресът е копиран',
+			'services.pendingAuth.copyUrl' => 'Копирай URL адреса за вход',
+			'services.pendingAuth.urlCopied' => 'URL адресът е копиран',
 			'services.libraryFilter.title' => 'Филтър на библиотеките',
 			'services.libraryFilter.subtitleAllSyncing' => 'Синхронизират се всички библиотеки',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Нищо не се синхронизира',

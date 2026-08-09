@@ -1963,6 +1963,7 @@ class _Translations$services$az extends Translations$services$en {
 	@override late final _Translations$services$names$az names = _Translations$services$names$az._(_root);
 	@override late final _Translations$services$deviceCode$az deviceCode = _Translations$services$deviceCode$az._(_root);
 	@override late final _Translations$services$oauthProxy$az oauthProxy = _Translations$services$oauthProxy$az._(_root);
+	@override late final _Translations$services$pendingAuth$az pendingAuth = _Translations$services$pendingAuth$az._(_root);
 	@override late final _Translations$services$libraryFilter$az libraryFilter = _Translations$services$libraryFilter$az._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$az extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy-ni ${service} üzərində aktivləşdirin';
-	@override String body({required Object url}) => '${url} ünvanına keçin və bu kodu daxil edin:';
 	@override String openToActivate({required Object service}) => 'Aktivləşdirmək üçün ${service} açın';
 	@override String get copyCode => 'Aktivləşdirmə kodunu kopyala';
 	@override String get waitingForAuthorization => 'Səlahiyyət gözlənilir…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$az extends Translations$services$oauthPr
 	@override String title({required Object service}) => '${service} xidmətinə daxil olun';
 	@override String get body => 'Bu QR kodu skan edin və ya URL-i açın.';
 	@override String openToSignIn({required Object service}) => 'Daxil olmaq üçün ${service} açın';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$az extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Daxil olma URL-ini kopyala';
 	@override String get urlCopied => 'URL kopyalandı';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsAz {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy-ni ${service} üzərində aktivləşdirin',
-			'services.deviceCode.body' => ({required Object url}) => '${url} ünvanına keçin və bu kodu daxil edin:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Aktivləşdirmək üçün ${service} açın',
 			'services.deviceCode.copyCode' => 'Aktivləşdirmə kodunu kopyala',
 			'services.deviceCode.waitingForAuthorization' => 'Səlahiyyət gözlənilir…',
@@ -4268,8 +4276,8 @@ extension on TranslationsAz {
 			'services.oauthProxy.title' => ({required Object service}) => '${service} xidmətinə daxil olun',
 			'services.oauthProxy.body' => 'Bu QR kodu skan edin və ya URL-i açın.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Daxil olmaq üçün ${service} açın',
-			'services.oauthProxy.copyUrl' => 'Daxil olma URL-ini kopyala',
-			'services.oauthProxy.urlCopied' => 'URL kopyalandı',
+			'services.pendingAuth.copyUrl' => 'Daxil olma URL-ini kopyala',
+			'services.pendingAuth.urlCopied' => 'URL kopyalandı',
 			'services.libraryFilter.title' => 'Kitabxana filtri',
 			'services.libraryFilter.subtitleAllSyncing' => 'Bütün kitabxanalar eyniləşdirilir',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Heç nə eyniləşdirilmir',

@@ -1859,7 +1859,7 @@
     },
     "deviceCode": {
       "title": "${service}에서 Plezy 활성화",
-      "body": "${url}을 방문하여 이 코드를 입력하세요:",
+      "instructions": "",
       "openToActivate": "활성화하려면 ${service} 열기",
       "copyCode": "활성화 코드 복사",
       "waitingForAuthorization": "인증을 기다리는 중…",
@@ -1868,7 +1868,9 @@
     "oauthProxy": {
       "title": "${service}에 로그인",
       "body": "이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.",
-      "openToSignIn": "로그인하려면 ${service} 열기",
+      "openToSignIn": "로그인하려면 ${service} 열기"
+    },
+    "pendingAuth": {
       "copyUrl": "로그인 URL 복사",
       "urlCopied": "URL이 복사되었습니다"
     },

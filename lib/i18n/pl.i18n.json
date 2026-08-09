@@ -1886,7 +1886,7 @@
     },
     "deviceCode": {
       "title": "Aktywuj Plezy w ${service}",
-      "body": "Odwiedź ${url} i wpisz ten kod:",
+      "instructions": "",
       "openToActivate": "Otwórz ${service}, aby aktywować",
       "copyCode": "Skopiuj kod aktywacyjny",
       "waitingForAuthorization": "Oczekiwanie na autoryzację…",
@@ -1895,7 +1895,9 @@
     "oauthProxy": {
       "title": "Zaloguj się do ${service}",
       "body": "Zeskanuj ten kod QR lub otwórz URL na dowolnym urządzeniu.",
-      "openToSignIn": "Otwórz ${service}, aby się zalogować",
+      "openToSignIn": "Otwórz ${service}, aby się zalogować"
+    },
+    "pendingAuth": {
       "copyUrl": "Skopiuj adres URL logowania",
       "urlCopied": "URL skopiowany"
     },

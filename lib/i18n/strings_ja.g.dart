@@ -1956,6 +1956,7 @@ class _Translations$services$ja extends Translations$services$en {
 	@override late final _Translations$services$names$ja names = _Translations$services$names$ja._(_root);
 	@override late final _Translations$services$deviceCode$ja deviceCode = _Translations$services$deviceCode$ja._(_root);
 	@override late final _Translations$services$oauthProxy$ja oauthProxy = _Translations$services$oauthProxy$ja._(_root);
+	@override late final _Translations$services$pendingAuth$ja pendingAuth = _Translations$services$pendingAuth$ja._(_root);
 	@override late final _Translations$services$libraryFilter$ja libraryFilter = _Translations$services$libraryFilter$ja._(_root);
 }
 
@@ -2511,7 +2512,6 @@ class _Translations$services$deviceCode$ja extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => '${service} で Plezy を有効化';
-	@override String body({required Object url}) => '${url}にアクセスして、このコードを入力してください。';
 	@override String openToActivate({required Object service}) => '${service} を開いて有効化';
 	@override String get copyCode => 'アクティベーションコードをコピー';
 	@override String get waitingForAuthorization => '認証を待っています…';
@@ -2528,6 +2528,15 @@ class _Translations$services$oauthProxy$ja extends Translations$services$oauthPr
 	@override String title({required Object service}) => '${service} にサインイン';
 	@override String get body => 'このQRコードをスキャンするか、任意のデバイスでURLを開いてください。';
 	@override String openToSignIn({required Object service}) => '${service} を開いてサインイン';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$ja extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'サインインURLをコピー';
 	@override String get urlCopied => 'URLをコピーしました';
 }
@@ -4251,7 +4260,6 @@ extension on TranslationsJa {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => '${service} で Plezy を有効化',
-			'services.deviceCode.body' => ({required Object url}) => '${url}にアクセスして、このコードを入力してください。',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '${service} を開いて有効化',
 			'services.deviceCode.copyCode' => 'アクティベーションコードをコピー',
 			'services.deviceCode.waitingForAuthorization' => '認証を待っています…',
@@ -4259,8 +4267,8 @@ extension on TranslationsJa {
 			'services.oauthProxy.title' => ({required Object service}) => '${service} にサインイン',
 			'services.oauthProxy.body' => 'このQRコードをスキャンするか、任意のデバイスでURLを開いてください。',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '${service} を開いてサインイン',
-			'services.oauthProxy.copyUrl' => 'サインインURLをコピー',
-			'services.oauthProxy.urlCopied' => 'URLをコピーしました',
+			'services.pendingAuth.copyUrl' => 'サインインURLをコピー',
+			'services.pendingAuth.urlCopied' => 'URLをコピーしました',
 			'services.libraryFilter.title' => 'ライブラリフィルター',
 			'services.libraryFilter.subtitleAllSyncing' => 'すべてのライブラリを同期中',
 			'services.libraryFilter.subtitleNoneSyncing' => '同期なし',

@@ -1956,6 +1956,7 @@ class _Translations$services$ko extends Translations$services$en {
 	@override late final _Translations$services$names$ko names = _Translations$services$names$ko._(_root);
 	@override late final _Translations$services$deviceCode$ko deviceCode = _Translations$services$deviceCode$ko._(_root);
 	@override late final _Translations$services$oauthProxy$ko oauthProxy = _Translations$services$oauthProxy$ko._(_root);
+	@override late final _Translations$services$pendingAuth$ko pendingAuth = _Translations$services$pendingAuth$ko._(_root);
 	@override late final _Translations$services$libraryFilter$ko libraryFilter = _Translations$services$libraryFilter$ko._(_root);
 }
 
@@ -2511,7 +2512,6 @@ class _Translations$services$deviceCode$ko extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => '${service}에서 Plezy 활성화';
-	@override String body({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:';
 	@override String openToActivate({required Object service}) => '활성화하려면 ${service} 열기';
 	@override String get copyCode => '활성화 코드 복사';
 	@override String get waitingForAuthorization => '인증을 기다리는 중…';
@@ -2528,6 +2528,15 @@ class _Translations$services$oauthProxy$ko extends Translations$services$oauthPr
 	@override String title({required Object service}) => '${service}에 로그인';
 	@override String get body => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.';
 	@override String openToSignIn({required Object service}) => '로그인하려면 ${service} 열기';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$ko extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => '로그인 URL 복사';
 	@override String get urlCopied => 'URL이 복사되었습니다';
 }
@@ -4251,7 +4260,6 @@ extension on TranslationsKo {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => '${service}에서 Plezy 활성화',
-			'services.deviceCode.body' => ({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '활성화하려면 ${service} 열기',
 			'services.deviceCode.copyCode' => '활성화 코드 복사',
 			'services.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',
@@ -4259,8 +4267,8 @@ extension on TranslationsKo {
 			'services.oauthProxy.title' => ({required Object service}) => '${service}에 로그인',
 			'services.oauthProxy.body' => '이 QR 코드를 스캔하거나 아무 기기에서 URL을 여세요.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => '로그인하려면 ${service} 열기',
-			'services.oauthProxy.copyUrl' => '로그인 URL 복사',
-			'services.oauthProxy.urlCopied' => 'URL이 복사되었습니다',
+			'services.pendingAuth.copyUrl' => '로그인 URL 복사',
+			'services.pendingAuth.urlCopied' => 'URL이 복사되었습니다',
 			'services.libraryFilter.title' => '라이브러리 필터',
 			'services.libraryFilter.subtitleAllSyncing' => '모든 라이브러리 동기화 중',
 			'services.libraryFilter.subtitleNoneSyncing' => '동기화 안 함',

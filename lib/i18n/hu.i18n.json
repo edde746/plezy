@@ -1868,7 +1868,7 @@
     },
     "deviceCode": {
       "title": "Plezy aktiválása a következőn: ${service}",
-      "body": "Nyisd meg a(z) ${url} oldalt és add meg ezt a kódot:",
+      "instructions": "",
       "openToActivate": "Nyisd meg a(z) ${service} oldalt az aktiváláshoz",
       "copyCode": "Aktiválási kód másolása",
       "waitingForAuthorization": "Várakozás az engedélyezésre…",
@@ -1877,7 +1877,9 @@
     "oauthProxy": {
       "title": "Bejelentkezés ide: ${service}",
       "body": "Olvasd be ezt a QR-kódot vagy nyisd meg az URL-t bármelyik eszközön.",
-      "openToSignIn": "Nyisd meg a(z) ${service} oldalt a bejelentkezéshez",
+      "openToSignIn": "Nyisd meg a(z) ${service} oldalt a bejelentkezéshez"
+    },
+    "pendingAuth": {
       "copyUrl": "Bejelentkezési URL másolása",
       "urlCopied": "URL másolva"
     },

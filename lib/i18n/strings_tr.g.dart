@@ -1963,6 +1963,7 @@ class _Translations$services$tr extends Translations$services$en {
 	@override late final _Translations$services$names$tr names = _Translations$services$names$tr._(_root);
 	@override late final _Translations$services$deviceCode$tr deviceCode = _Translations$services$deviceCode$tr._(_root);
 	@override late final _Translations$services$oauthProxy$tr oauthProxy = _Translations$services$oauthProxy$tr._(_root);
+	@override late final _Translations$services$pendingAuth$tr pendingAuth = _Translations$services$pendingAuth$tr._(_root);
 	@override late final _Translations$services$libraryFilter$tr libraryFilter = _Translations$services$libraryFilter$tr._(_root);
 }
 
@@ -2520,7 +2521,6 @@ class _Translations$services$deviceCode$tr extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy\'yi ${service} üzerinde etkinleştirin';
-	@override String body({required Object url}) => '${url} adresini ziyaret edin ve bu kodu girin:';
 	@override String openToActivate({required Object service}) => 'Etkinleştirmek için ${service} servisini açın';
 	@override String get copyCode => 'Etkinleştirme kodunu kopyala';
 	@override String get waitingForAuthorization => 'Yetkilendirme bekleniyor…';
@@ -2537,6 +2537,15 @@ class _Translations$services$oauthProxy$tr extends Translations$services$oauthPr
 	@override String title({required Object service}) => '${service} servisine giriş yapın';
 	@override String get body => 'Bu QR kodunu tarayın veya URL\'yi herhangi bir cihazda açın.';
 	@override String openToSignIn({required Object service}) => 'Giriş yapmak için ${service} servisini açın';
+}
+
+// Path: services.pendingAuth
+class _Translations$services$pendingAuth$tr extends Translations$services$pendingAuth$en {
+	_Translations$services$pendingAuth$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
 	@override String get copyUrl => 'Giriş URL\'sini kopyala';
 	@override String get urlCopied => 'URL kopyalandı';
 }
@@ -4260,7 +4269,6 @@ extension on TranslationsTr {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy\'yi ${service} üzerinde etkinleştirin',
-			'services.deviceCode.body' => ({required Object url}) => '${url} adresini ziyaret edin ve bu kodu girin:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Etkinleştirmek için ${service} servisini açın',
 			'services.deviceCode.copyCode' => 'Etkinleştirme kodunu kopyala',
 			'services.deviceCode.waitingForAuthorization' => 'Yetkilendirme bekleniyor…',
@@ -4268,8 +4276,8 @@ extension on TranslationsTr {
 			'services.oauthProxy.title' => ({required Object service}) => '${service} servisine giriş yapın',
 			'services.oauthProxy.body' => 'Bu QR kodunu tarayın veya URL\'yi herhangi bir cihazda açın.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Giriş yapmak için ${service} servisini açın',
-			'services.oauthProxy.copyUrl' => 'Giriş URL\'sini kopyala',
-			'services.oauthProxy.urlCopied' => 'URL kopyalandı',
+			'services.pendingAuth.copyUrl' => 'Giriş URL\'sini kopyala',
+			'services.pendingAuth.urlCopied' => 'URL kopyalandı',
 			'services.libraryFilter.title' => 'Kitaplık filtresi',
 			'services.libraryFilter.subtitleAllSyncing' => 'Tüm kitaplıklar eşitleniyor',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Hiçbir şey eşitlenmiyor',

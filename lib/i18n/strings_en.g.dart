@@ -4787,6 +4787,7 @@ class Translations$services$en {
 	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
 	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
 	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
+	late final Translations$services$pendingAuth$en pendingAuth = Translations$services$pendingAuth$en.internal(_root);
 	late final Translations$services$libraryFilter$en libraryFilter = Translations$services$libraryFilter$en.internal(_root);
 }
 
@@ -5995,8 +5996,8 @@ class Translations$services$deviceCode$en {
 	/// en: 'Activate Plezy on ${service}'
 	String title({required Object service}) => 'Activate Plezy on ${service}';
 
-	/// en: 'Visit ${url} and enter this code:'
-	String body({required Object url}) => 'Visit ${url} and enter this code:';
+	/// en: 'Scan the QR code, or visit the address below and enter this code:'
+	String get instructions => 'Scan the QR code, or visit the address below and enter this code:';
 
 	/// en: 'Open ${service} to activate'
 	String openToActivate({required Object service}) => 'Open ${service} to activate';
@@ -6027,6 +6028,15 @@ class Translations$services$oauthProxy$en {
 
 	/// en: 'Open ${service} to sign in'
 	String openToSignIn({required Object service}) => 'Open ${service} to sign in';
+}
+
+// Path: services.pendingAuth
+class Translations$services$pendingAuth$en {
+	Translations$services$pendingAuth$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
 
 	/// en: 'Copy sign-in URL'
 	String get copyUrl => 'Copy sign-in URL';
@@ -7791,7 +7801,7 @@ extension on Translations {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
-			'services.deviceCode.body' => ({required Object url}) => 'Visit ${url} and enter this code:',
+			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
 			'services.deviceCode.copyCode' => 'Copy activation code',
 			'services.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
@@ -7799,8 +7809,8 @@ extension on Translations {
 			'services.oauthProxy.title' => ({required Object service}) => 'Sign in to ${service}',
 			'services.oauthProxy.body' => 'Scan this QR code or open the URL on any device.',
 			'services.oauthProxy.openToSignIn' => ({required Object service}) => 'Open ${service} to sign in',
-			'services.oauthProxy.copyUrl' => 'Copy sign-in URL',
-			'services.oauthProxy.urlCopied' => 'URL copied',
+			'services.pendingAuth.copyUrl' => 'Copy sign-in URL',
+			'services.pendingAuth.urlCopied' => 'URL copied',
 			'services.libraryFilter.title' => 'Library filter',
 			'services.libraryFilter.subtitleAllSyncing' => 'Syncing all libraries',
 			'services.libraryFilter.subtitleNoneSyncing' => 'Nothing syncing',

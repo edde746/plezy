@@ -1859,7 +1859,7 @@
     },
     "deviceCode": {
       "title": "在 ${service} 啟用 Plezy",
-      "body": "請前往 ${url} 並輸入此代碼：",
+      "instructions": "",
       "openToActivate": "開啟 ${service} 進行啟用",
       "copyCode": "複製啟用代碼",
       "waitingForAuthorization": "等待授權中…",
@@ -1868,7 +1868,9 @@
     "oauthProxy": {
       "title": "登入 ${service}",
       "body": "掃描 QR 碼，或在任何裝置上開啟該網址。",
-      "openToSignIn": "開啟 ${service} 進行登入",
+      "openToSignIn": "開啟 ${service} 進行登入"
+    },
+    "pendingAuth": {
       "copyUrl": "複製登入 URL",
       "urlCopied": "URL 已複製"
     },
