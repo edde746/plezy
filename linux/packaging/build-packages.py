@@ -52,6 +52,13 @@ DISTROS = {
         "category": "Multimedia",
         "ext": "rpm",
         "compression": ["--rpm-compression", "xzmt"],
+        "extra_files": [
+            {
+                "source": "plezy.repo",
+                "destination": "/etc/yum.repos.d/plezy.repo",
+                "config": True,
+            }
+        ],
         "depends": [
             "gtk3",
             "mpv-libs",
@@ -108,13 +115,18 @@ def generate_icons():
             shutil.copy(source, dest)
 
 
-def get_file_mappings() -> list[str]:
+def get_file_mappings(distro: str) -> list[str]:
     """Get file mappings for fpm."""
     mappings = [
         f"{BUILD_DIR}/=/opt/plezy/",
         f"{SCRIPT_DIR}/com.edde746.plezy.desktop=/usr/share/applications/com.edde746.plezy.desktop",
         f"{SCRIPT_DIR}/plezy.sh=/usr/bin/plezy",
     ]
+
+    for extra_file in DISTROS[distro].get("extra_files", []):
+        mappings.append(
+            f"{SCRIPT_DIR / extra_file['source']}={extra_file['destination']}"
+        )
 
     for size in ICON_SIZES:
         mappings.append(
@@ -153,6 +165,10 @@ def build_package(distro: str, version: str):
     for dep in config["depends"]:
         cmd.extend(["--depends", dep])
 
+    for extra_file in config.get("extra_files", []):
+        if extra_file.get("config"):
+            cmd.extend(["--config-files", extra_file["destination"]])
+
     cmd.extend(config["compression"])
 
     cmd.extend([
@@ -161,7 +177,7 @@ def build_package(distro: str, version: str):
         "--package", str(output_file),
     ])
 
-    cmd.extend(get_file_mappings())
+    cmd.extend(get_file_mappings(distro))
 
     subprocess.run(cmd, check=True)
     print(f"Created: {output_file}")

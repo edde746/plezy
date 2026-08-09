@@ -37,7 +37,7 @@ env:
     libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
     libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev
     libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev liblua5.2-dev
-    ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
+    ruby ruby-dev rubygems build-essential rpm gnupg libarchive-tools imagemagick libcurl4-openssl-dev
 
 jobs:
   validate-trusted-ref:
@@ -772,6 +772,12 @@ jobs:
           ARCH_SUFFIX=${{ matrix.arch }} \
           OUTPUT_DIR="$GITHUB_WORKSPACE" \
           python3 linux/packaging/build-packages.py
+
+      - name: Sign Linux RPM
+        shell: bash
+        env:
+          RPM_SIGNING_PRIVATE_KEY: ${{ secrets.RPM_SIGNING_PRIVATE_KEY }}
+        run: bash linux/packaging/sign-rpm.sh "plezy-linux-${{ matrix.arch }}.rpm"
 
       - name: Copy libmpv into bundle
         shell: bash

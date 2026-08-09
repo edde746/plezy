@@ -56,6 +56,12 @@ jobs:
       - name: Verify translation hygiene
         run: python3 scripts/clean_translations.py --check --strict
 
+      - name: Install RPM test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gnupg rpm ruby
+          sudo gem install fpm --version 1.17.0 --no-document
+
       - name: Verify workflow and script guards
         run: bash scripts/ci_guard_checks.sh
 
