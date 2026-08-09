@@ -12,9 +12,10 @@ import 'key_event_utils.dart';
 import 'owned_focus_node_binding.dart';
 
 enum TvTextInputPresentation {
-  /// Use the native platform keyboard for single-line input on every TV and
-  /// the Flutter overlay for multiline input, whose newline/caret handling
-  /// the TV IMEs do not cover well.
+  /// Use the native platform keyboard wherever it can host the field: always
+  /// on Android TV (its docked IME handles multiline input), and for
+  /// single-line input on Apple TV, whose modal fullscreen keyboard cannot
+  /// edit multiline text — that falls back to the Flutter overlay.
   automatic,
 
   /// Always use the platform text input implementation.
@@ -27,7 +28,8 @@ enum TvTextInputPresentation {
 bool _usesTvKeyboard({required TvTextInputPresentation presentation, TextInputType? keyboardType, int? maxLines}) {
   if (!PlatformDetector.isTV()) return false;
   return switch (presentation) {
-    TvTextInputPresentation.automatic => _isMultilineTextInput(keyboardType: keyboardType, maxLines: maxLines),
+    TvTextInputPresentation.automatic =>
+      PlatformDetector.isAppleTV() && _isMultilineTextInput(keyboardType: keyboardType, maxLines: maxLines),
     TvTextInputPresentation.platform => false,
     TvTextInputPresentation.flutterOverlay => true,
   };

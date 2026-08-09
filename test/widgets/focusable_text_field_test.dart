@@ -849,6 +849,37 @@ void main() {
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
   });
 
+  testWidgets('Android TV automatic multiline input uses the platform field', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'notes_field');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTextField(
+            controller: controller,
+            focusNode: fieldFocusNode,
+            keyboardType: TextInputType.multiline,
+            maxLines: 4,
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    // Unlike Apple TV's modal fullscreen keyboard, the docked Android IME
+    // hosts multiline input natively — no Flutter overlay.
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+  });
+
   testWidgets('Android TV after-first-focus skips initial auto-open and opens on refocus', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
