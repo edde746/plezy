@@ -188,18 +188,99 @@ void main() {
 
       expect(harness.keys, isEmpty);
     });
+
+    test('a small focused item lowers the swipe distance for a step', () async {
+      final harness = _Harness(minSwipeThreshold: 40);
+      harness.focusRect = const Rect.fromLTWH(0, 0, 60, 60);
+
+      // 60pt extent × 0.55 gain = 33pt, min-clamped to the 40pt floor: fires
+      // well below the 100pt fallback threshold.
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 430, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('a large focused item demands a longer swipe for a step', () async {
+      final harness = _Harness();
+      harness.focusRect = const Rect.fromLTWH(0, 0, 300, 300);
+
+      // 300pt extent × 0.55 gain = 165pt step: the fallback-sized 120pt move
+      // that used to fire must not.
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 380, y: 500);
+
+      expect(harness.keys, isEmpty);
+
+      await harness.send('move', x: 160, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('the swipe distance is capped for oversized focused items', () async {
+      final harness = _Harness();
+      harness.focusRect = const Rect.fromLTWH(0, 0, 3000, 3000);
+
+      await harness.send('started', x: 900, y: 500);
+      await harness.send('move', x: 530, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('per-axis thresholds follow the focused item shape', () async {
+      final harness = _Harness();
+      harness.focusRect = const Rect.fromLTWH(0, 0, 300, 100);
+
+      // Raw horizontal delta (200pt) dominates vertical (130pt), but only the
+      // vertical axis crossed its threshold (55pt vs 165pt): the step must
+      // go down, like dragging focus off a wide-flat tile natively.
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 300, y: 630);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowDown]);
+    });
+
+    test('a focus hop re-prices the next step from the new item', () async {
+      final harness = _Harness(minSwipeThreshold: 40);
+      harness.focusRect = const Rect.fromLTWH(0, 0, 60, 60);
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 430, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+
+      // Focus landed on a large card: the next step costs its extent, not the
+      // small chip's.
+      harness.focusRect = const Rect.fromLTWH(0, 0, 300, 300);
+      harness.advance(const Duration(milliseconds: 141));
+      await harness.send('move', x: 310, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+
+      await harness.send('move', x: 95, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
+    });
   });
 }
 
 class _Harness {
+  _Harness({this.minSwipeThreshold = AppleTvRemoteTouchService.defaultMinSwipeThreshold});
+
   DateTime now = DateTime(2026, 5, 5, 12);
   final List<LogicalKeyboardKey> keys = [];
+  final double minSwipeThreshold;
+
+  /// Fake focus geometry; null exercises the fixed-threshold fallback.
+  Rect? focusRect;
 
   late final AppleTvRemoteTouchService service = AppleTvRemoteTouchService(
     simulateKeyPress: keys.add,
     scheduleFrame: () {},
     now: () => now,
     swipeThreshold: 100,
+    minSwipeThreshold: minSwipeThreshold,
+    focusedItemRect: () => focusRect,
   );
 
   Future<void> send(String type, {double x = 0, double y = 0}) {
