@@ -186,8 +186,7 @@ class ShelfRefreshWorkerTest {
 
   private val directExecutor = Executor { it.run() }
 
-  private fun uniqueWorkInfos(): List<WorkInfo> =
-    WorkManager.getInstance(context).getWorkInfosForUniqueWork(ShelfRefreshScheduler.WORK_NAME).get()
+  private fun uniqueWorkInfos(): List<WorkInfo> = WorkManager.getInstance(context).getWorkInfosForUniqueWork(ShelfRefreshScheduler.WORK_NAME).get()
 
   private fun syncCall(generation: Long) = MethodCall(
     "sync",
