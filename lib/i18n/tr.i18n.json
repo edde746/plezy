@@ -323,6 +323,8 @@
     "showNavBarLabels": "Gezinme Çubuğu Etiketlerini Göster",
     "showNavBarLabelsDescription": "Gezinme çubuğu simgelerinin altında metin etiketlerini göster",
     "startupSection": "Başlangıç Bölümü",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Canlı TV'de Favorileri Varsayılan Yap",
     "liveTvDefaultFavoritesDescription": "Canlı TV açıldığında yalnızca favori kanalları göster",
     "display": "Ekran",

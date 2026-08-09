@@ -323,6 +323,8 @@
     "showNavBarLabels": "Mostrar Rótulos da Barra de Navegação",
     "showNavBarLabelsDescription": "Exibir rótulos de texto sob os ícones da barra de navegação",
     "startupSection": "Seção inicial",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Canais favoritos por padrão",
     "liveTvDefaultFavoritesDescription": "Mostrar apenas os canais favoritos ao abrir a TV ao vivo",
     "display": "Tela",

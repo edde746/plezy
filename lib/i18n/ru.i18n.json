@@ -323,6 +323,8 @@
     "showNavBarLabels": "Показывать подписи панели навигации",
     "showNavBarLabelsDescription": "Отображать текстовые подписи под иконками панели навигации",
     "startupSection": "Начальный раздел",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Избранные каналы по умолчанию",
     "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ",
     "display": "Экран",

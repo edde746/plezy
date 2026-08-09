@@ -652,7 +652,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
     // Nullable watch: rail tests (and any host without the profile session
     // scope) simply never show the Explore item.
-    final hasExplore = context.watch<CatalogSourcesProvider?>()?.hasAnySource ?? false;
+    final hasExploreSource = context.watch<CatalogSourcesProvider?>()?.hasAnySource ?? false;
     // Nullable watch: rail tests (and any host without the profile session
     // scope) simply never show the Now Playing item. TV-only — it is the
     // way back into the now-playing screen there; desktop already has the
@@ -660,14 +660,16 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final musicService = context.watch<MusicPlaybackService?>();
     final nowPlayingTrack = widget.isOfflineMode || !PlatformDetector.isTV() ? null : musicService?.currentTrack;
 
-    // Listen to fullscreen + groupLibrariesByServer setting so the rail
-    // rebuilds when the user toggles "Group libraries by server" in Appearance.
+    // Listen to fullscreen + the groupLibrariesByServer / showExploreTab
+    // settings so the rail rebuilds when they are toggled in Appearance.
     return ListenableBuilder(
       listenable: Listenable.merge([
         FullscreenStateManager(),
         SettingsService.instance.listenable(SettingsService.groupLibrariesByServer),
+        SettingsService.instance.listenable(SettingsService.showExploreTab),
       ]),
       builder: (context, _) {
+        final hasExplore = hasExploreSource && SettingsService.instance.read(SettingsService.showExploreTab);
         // Server grouping: only when multi-server AND the user-facing toggle is on.
         final groupByServerSetting = SettingsService.instance.read(SettingsService.groupLibrariesByServer);
         final showServerHeaders = serverIds.length > 1 && groupByServerSetting;

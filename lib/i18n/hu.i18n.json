@@ -323,6 +323,8 @@
     "showNavBarLabels": "Navigációs sáv címkéinek megjelenítése",
     "showNavBarLabelsDescription": "Szöveges címkék megjelenítése a navigációs sáv ikonjai alatt",
     "startupSection": "Indítási oldal",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Kedvenc csatornák alapértelmezés szerint",
     "liveTvDefaultFavoritesDescription": "Csak a kedvenc csatornák megjelenítése az Élő TV megnyitásakor",
     "display": "Kijelző",

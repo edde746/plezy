@@ -323,6 +323,8 @@
     "showNavBarLabels": "Visa navigeringsfältets etiketter",
     "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner",
     "startupSection": "Startsida",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Öppna med favoriter",
     "liveTvDefaultFavoritesDescription": "Visa endast favoritkanaler när Live-TV öppnas",
     "display": "Skärm",

@@ -323,6 +323,8 @@
     "showNavBarLabels": "顯示導覽列標籤",
     "showNavBarLabelsDescription": "在導覽列圖示下方顯示文字標籤",
     "startupSection": "啟動頁面",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "預設顯示最愛頻道",
     "liveTvDefaultFavoritesDescription": "開啟直播電視時僅顯示最愛頻道",
     "display": "顯示器",

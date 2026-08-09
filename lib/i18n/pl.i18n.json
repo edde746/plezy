@@ -323,6 +323,8 @@
     "showNavBarLabels": "Pokaż etykiety paska nawigacji",
     "showNavBarLabelsDescription": "Wyświetl tekstowe etykiety pod ikonami paska nawigacji",
     "startupSection": "Sekcja startowa",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Domyślnie ulubione kanały",
     "liveTvDefaultFavoritesDescription": "Pokaż tylko ulubione kanały po otwarciu telewizji na żywo",
     "display": "Ekran",

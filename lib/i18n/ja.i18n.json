@@ -323,6 +323,8 @@
     "showNavBarLabels": "ナビゲーションバーのラベルを表示",
     "showNavBarLabelsDescription": "ナビゲーションバーのアイコンの下にテキストラベルを表示",
     "startupSection": "起動時のセクション",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "お気に入りチャンネルをデフォルトに",
     "liveTvDefaultFavoritesDescription": "ライブTVを開いたときにお気に入りチャンネルのみ表示",
     "display": "ディスプレイ",

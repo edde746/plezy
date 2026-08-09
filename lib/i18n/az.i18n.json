@@ -323,6 +323,8 @@
     "showNavBarLabels": "Naviqasiya paneli yazılarını göstər",
     "showNavBarLabelsDescription": "Naviqasiya paneli ikonlarının altında mətni göstər",
     "startupSection": "Başlanğıc bölməsi",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Canlı TV-də sevimli kanalları defolt et",
     "liveTvDefaultFavoritesDescription": "Canlı TV açıldıqda yalnız sevimli kanalları göstər",
     "display": "Ekran",

@@ -444,6 +444,11 @@ class SettingsService extends BaseSharedPreferencesService {
     values: NavigationTabId.values,
     defaultValue: NavigationTabId.discover,
   );
+
+  /// Whether the Explore tab (Plex Discover / tracker catalog rows) is shown
+  /// at all. UI-only: catalog sources stay connected so watchlist surfaces
+  /// keep working while the tab is hidden.
+  static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
   static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
@@ -920,6 +925,7 @@ class SettingsService extends BaseSharedPreferencesService {
     autoPlayNextEpisode,
     useExoPlayer,
     startupSection,
+    showExploreTab,
     alwaysKeepSidebarOpen,
     showUnwatchedCount,
     showEpisodeNumberOnCards,

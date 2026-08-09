@@ -323,6 +323,8 @@
     "showNavBarLabels": "Labels op navigatiebalk tonen",
     "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen op de navigatiebalk weergeven",
     "startupSection": "Opstartsectie",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Standaard favoriete zenders",
     "liveTvDefaultFavoritesDescription": "Toon alleen favoriete zenders bij het openen van Live TV",
     "display": "Weergave",

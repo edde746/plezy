@@ -323,6 +323,8 @@
     "showNavBarLabels": "Vis tekst på navigationslinjen",
     "showNavBarLabelsDescription": "Vis tekst under ikonerne på navigationslinjen",
     "startupSection": "Startsektion",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Vis favoritkanaler som standard",
     "liveTvDefaultFavoritesDescription": "Vis kun favoritkanaler ved åbning af Live TV",
     "display": "Skærm",

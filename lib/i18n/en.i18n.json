@@ -323,6 +323,8 @@
     "showNavBarLabels": "Show Navigation Bar Labels",
     "showNavBarLabelsDescription": "Display text labels under navigation bar icons",
     "startupSection": "Startup Section",
+    "showExploreTab": "Show Explore Tab",
+    "showExploreTabDescription": "Display the Explore tab with content from Plex Discover and connected trackers",
     "liveTvDefaultFavorites": "Default to Favorite Channels",
     "liveTvDefaultFavoritesDescription": "Show only favorite channels when opening Live TV",
     "display": "Display",

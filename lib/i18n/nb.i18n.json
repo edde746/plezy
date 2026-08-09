@@ -323,6 +323,8 @@
     "showNavBarLabels": "Vis etiketter i navigasjonsfeltet",
     "showNavBarLabelsDescription": "Vis tekstetiketter under ikonene i navigasjonsfeltet",
     "startupSection": "Startseksjon",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Vis favorittkanaler som standard",
     "liveTvDefaultFavoritesDescription": "Vis bare favorittkanaler når du åpner Direkte-TV",
     "display": "Skjerm",

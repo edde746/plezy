@@ -11,6 +11,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/navigation/navigation_tabs.dart';
+import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
@@ -24,6 +25,12 @@ import 'package:provider/provider.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
+
+/// Minimal source-bearing stand-in: the rail only reads [hasAnySource].
+class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
+  @override
+  bool get hasAnySource => true;
+}
 
 MediaLibrary _library({
   required String id,
@@ -68,6 +75,7 @@ Future<void> _pumpBasicRail(
   bool isSidebarFocused = false,
   bool alwaysExpanded = false,
   double? height,
+  CatalogSourcesProvider? catalogSources,
 }) async {
   await SettingsService.getInstance();
 
@@ -102,6 +110,7 @@ Future<void> _pumpBasicRail(
           ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
           ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          if (catalogSources != null) ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
         ],
         child: MaterialApp(
           theme: ThemeData(extensions: const [testMonoTokens]),
@@ -293,6 +302,22 @@ void main() {
     final targetRect = tester.getRect(find.text(targetLibrary.title));
     expect(targetRect.top, greaterThanOrEqualTo(railRect.top));
     expect(targetRect.bottom, lessThanOrEqualTo(railRect.bottom));
+  });
+
+  testWidgets('Explore item follows the showExploreTab appearance setting', (tester) async {
+    final catalogSources = _FakeCatalogSourcesProvider();
+    addTearDown(catalogSources.dispose);
+
+    await _pumpBasicRail(tester, alwaysExpanded: true, catalogSources: catalogSources);
+    expect(find.widgetWithText(NavigationRailItem, 'Explore'), findsOneWidget);
+
+    await SettingsService.instance.write(SettingsService.showExploreTab, false);
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(NavigationRailItem, 'Explore'), findsNothing);
+
+    await SettingsService.instance.write(SettingsService.showExploreTab, true);
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(NavigationRailItem, 'Explore'), findsOneWidget);
   });
 
   testWidgets('reports interaction expansion for shell content push', (tester) async {

@@ -7,6 +7,7 @@ import 'dart:io' show Platform, exit;
 export '../navigation/main_screen_scope.dart'
     show MainScreenFocusScope, MainScreenScopeAspect, SideNavigationBleedBuilder;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyDownEvent, KeyRepeatEvent, KeyUpEvent, LogicalKeyboardKey;
@@ -246,6 +247,7 @@ class _MainScreenState extends State<MainScreen>
   OfflineModeProvider? _offlineModeProvider;
   MultiServerProvider? _multiServerProvider;
   CatalogSourcesProvider? _catalogSourcesProvider;
+  ValueListenable<bool>? _showExploreTabListenable;
   RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
   bool _lastHasLiveTv = false;
   bool _lastHasExplore = false;
@@ -347,10 +349,14 @@ class _MainScreenState extends State<MainScreen>
       _lastHasLiveTv = false;
     }
     try {
-      _lastHasExplore = context.read<CatalogSourcesProvider>().hasAnySource;
+      _lastHasExplore = context.read<CatalogSourcesProvider>().hasAnySource && _showExploreTabSetting;
     } catch (_) {
       _lastHasExplore = false;
     }
+    // Re-evaluate Explore tab visibility when the appearance toggle flips
+    // mid-session; the catalog-sources listener covers source changes.
+    _showExploreTabListenable = SettingsService.instanceOrNull?.listenable(SettingsService.showExploreTab);
+    _showExploreTabListenable?.addListener(_handleCatalogSourcesChanged);
     _currentTab = _defaultTabForMode(_isOffline);
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
     _autoSwitchedToDownloads = _isOffline && _currentTab == NavigationTabId.downloads;
@@ -887,6 +893,7 @@ class _MainScreenState extends State<MainScreen>
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
+    _showExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
     }
@@ -1078,8 +1085,10 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
+  bool get _showExploreTabSetting => SettingsService.instanceOrNull?.read(SettingsService.showExploreTab) ?? true;
+
   void _handleCatalogSourcesChanged() {
-    final hasExplore = _catalogSourcesProvider?.hasAnySource ?? false;
+    final hasExplore = (_catalogSourcesProvider?.hasAnySource ?? false) && _showExploreTabSetting;
     if (hasExplore == _lastHasExplore) return;
     _lastHasExplore = hasExplore;
 

@@ -323,6 +323,8 @@
     "showNavBarLabels": "Mostrar etiquetas de la barra de navegación",
     "showNavBarLabelsDescription": "Mostrar etiquetas de texto bajo los iconos de la barra de navegación",
     "startupSection": "Sección de inicio",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Canales favoritos por defecto",
     "liveTvDefaultFavoritesDescription": "Mostrar solo canales favoritos al abrir TV en vivo",
     "display": "Pantalla",

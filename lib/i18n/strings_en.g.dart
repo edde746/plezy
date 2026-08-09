@@ -1047,6 +1047,12 @@ class Translations$settings$en {
 	/// en: 'Startup Section'
 	String get startupSection => 'Startup Section';
 
+	/// en: 'Show Explore Tab'
+	String get showExploreTab => 'Show Explore Tab';
+
+	/// en: 'Display the Explore tab with content from Plex Discover and connected trackers'
+	String get showExploreTabDescription => 'Display the Explore tab with content from Plex Discover and connected trackers';
+
 	/// en: 'Default to Favorite Channels'
 	String get liveTvDefaultFavorites => 'Default to Favorite Channels';
 
@@ -6384,6 +6390,8 @@ extension on Translations {
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'settings.startupSection' => 'Startup Section',
+			'settings.showExploreTab' => 'Show Explore Tab',
+			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
 			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
 			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
 			'settings.display' => 'Display',
@@ -6583,10 +6591,10 @@ extension on Translations {
 			'rateSheet.saved' => 'Saved',
 			'rateSheet.notAvailable' => 'No match found',
 			'rateSheet.noConnectedServices' => 'Connect a service in Settings to rate there.',
-			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
-			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			_ => null,
 		} ?? switch (path) {
+			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
+			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'watched',
@@ -7097,10 +7105,10 @@ extension on Translations {
 			'explore.stats.viewersAllTime' => ({required Object n}) => '${n} viewers',
 			'explore.stats.planning' => ({required Object n}) => '${n} planning to watch',
 			'explore.stats.favorited' => ({required Object n}) => '${n} favorites',
-			'explore.stats.dropRate' => ({required Object percent}) => '${percent} dropped it',
-			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} comment', other: '${n} comments', ), 
 			_ => null,
 		} ?? switch (path) {
+			'explore.stats.dropRate' => ({required Object percent}) => '${percent} dropped it',
+			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} comment', other: '${n} comments', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} votes',
 			'explore.stats.watching' => ({required Object n}) => '${n} watching it',
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
@@ -7611,10 +7619,10 @@ extension on Translations {
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',
-			'externalPlayer.selectPlayer' => 'Select Player',
-			'externalPlayer.customPlayers' => 'Custom Players',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.selectPlayer' => 'Select Player',
+			'externalPlayer.customPlayers' => 'Custom Players',
 			'externalPlayer.systemDefault' => 'System Default',
 			'externalPlayer.addCustomPlayer' => 'Add Custom Player',
 			'externalPlayer.playerName' => 'Player Name',

@@ -323,6 +323,8 @@
     "showNavBarLabels": "Navigationsleisten-Beschriftungen anzeigen",
     "showNavBarLabelsDescription": "Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen",
     "startupSection": "Startbereich",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Standardmäßig Favoritenkanäle",
     "liveTvDefaultFavoritesDescription": "Beim Öffnen von Live TV nur Favoritenkanäle anzeigen",
     "display": "Anzeige",

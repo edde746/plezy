@@ -323,6 +323,8 @@
     "showNavBarLabels": "显示导航栏标签",
     "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签",
     "startupSection": "启动页面",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "默认显示收藏频道",
     "liveTvDefaultFavoritesDescription": "打开直播电视时仅显示收藏频道",
     "display": "显示",

@@ -323,6 +323,8 @@
     "showNavBarLabels": "Навигация панелінің мәтіндерін көрсету",
     "showNavBarLabelsDescription": "Навигация белгішелерінің астында мәтінді көрсету",
     "startupSection": "Бастапқы бөлім",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "Тікелей TV-де таңдаулы арналарды әдепкі ету",
     "liveTvDefaultFavoritesDescription": "Тікелей TV ашылғанда тек таңдаулы арналарды көрсету",
     "display": "Дисплей",

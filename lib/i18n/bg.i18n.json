@@ -323,6 +323,8 @@
     "showNavBarLabels": "Показвай етикети в навигационната лента",
     "showNavBarLabelsDescription": "Показвай текстови етикети под иконите в навигационната лента",
     "startupSection": "Начален раздел",
+    "showExploreTab": "",
+    "showExploreTabDescription": "",
     "liveTvDefaultFavorites": "По подразбиране към любими канали",
     "liveTvDefaultFavoritesDescription": "Показвай само любими канали при отваряне на телевизия на живо",
     "display": "Дисплей",
