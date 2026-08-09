@@ -177,6 +177,45 @@ class MediaServerHttpClient {
     );
   }
 
+  /// Issue a GET and return only status and headers, draining the body
+  /// unread — the shape for probes that ask "does this answer?" rather than
+  /// "what does it say?".
+  ///
+  /// Unlike [getBytes] the status code is surfaced instead of only logged.
+  /// Unlike [get] nothing is ever decoded, so a body that fails decoding
+  /// cannot convert a status into an exception, and — because
+  /// [FailoverHttpClient] overrides [get] alone — this method structurally
+  /// never enters the endpoint-failover cascade. Non-2xx is returned, not
+  /// thrown, matching [get].
+  Future<MediaServerResponse> getStatus(
+    String url, {
+    Map<String, String>? headers,
+    Duration? timeout,
+    AbortController? abort,
+  }) {
+    return _perform<MediaServerResponse>(
+      'GET',
+      url,
+      headers: headers,
+      timeout: timeout,
+      abort: abort,
+      consume: (streamed, scope) async {
+        final effectiveUri = switch (streamed) {
+          http.BaseResponseWithUrl(:final url) => url,
+          _ => scope.uri,
+        };
+        await scope.receive(streamed.stream.drain<void>());
+        scope.logResponse(streamed.statusCode);
+        return MediaServerResponse(
+          statusCode: streamed.statusCode,
+          headers: streamed.headers,
+          requestUri: scope.uri,
+          effectiveUri: effectiveUri,
+        );
+      },
+    );
+  }
+
   /// Stream-download a URL directly into a file.
   Future<void> downloadFile(
     String url,

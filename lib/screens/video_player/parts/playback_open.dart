@@ -602,6 +602,24 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     await player.setProperty('stream-buffer-size', '${ringBytes ?? mpvDefaultStreamBufferBytes}');
   }
 
+  /// Best-effort wait for an offset transcode session's segment at the
+  /// resume point, run immediately before the player opens the URL so the
+  /// wait hides behind the other pre-open work and the guarantee is fresh
+  /// when the player attaches. A not-ready session still opens — mpv
+  /// classifies whatever the server actually returns — and no-offset URLs
+  /// return immediately. Starting a new probe aborts the previous one so a
+  /// superseded open never leaves it polling out its window.
+  Future<void> _awaitTranscodeReadiness({
+    required MediaServerClient? client,
+    required bool isTranscoding,
+    required String videoUrl,
+  }) async {
+    if (!isTranscoding || client is! PlexClient) return;
+    _transcodeReadinessAbort?.abort();
+    final abort = _transcodeReadinessAbort = AbortController();
+    await client.waitForTranscodeReady(videoUrl, abort: abort);
+  }
+
   /// Open [videoUrl] on [player]: stream tuning → open → native subtitle style.
   ///
   /// [shouldContinue] is re-checked between the awaits so stale generations

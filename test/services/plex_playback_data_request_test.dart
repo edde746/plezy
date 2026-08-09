@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:fake_async/fake_async.dart';
 import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/utils/media_server_http_client.dart' show AbortController;
 import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
@@ -319,6 +321,7 @@ void main() {
         qualityPreset: TranscodeQualityPreset.p720_3mbps,
         sessionIdentifier: 'session-id',
         transcodeSessionId: 'transcode-id',
+        transcodeOffset: const Duration(minutes: 8, seconds: 15),
       ),
     );
 
@@ -326,10 +329,14 @@ void main() {
       (request) => request.url.path == '/video/:/transcode/universal/decision',
     );
     expect(decisionRequest.url.queryParameters['subtitles'], 'none');
+    expect(decisionRequest.url.queryParameters['offset'], '495.000000');
     expect(decisionRequest.url.queryParameters.containsKey('subtitleStreamID'), isFalse);
     expect(decisionRequest.url.queryParameters.containsKey('advancedSubtitles'), isFalse);
+    expect(decisionRequest.url.queryParameters['X-Plex-Incomplete-Segments'], '1');
     expect(result.isTranscoding, isTrue);
     expect(result.videoUrl, contains('/video/:/transcode/universal/start.m3u8?'));
+    expect(Uri.parse(result.videoUrl!).queryParameters['offset'], '495.000000');
+    expect(PlexClient.transcodeStreamOffsetFromUrl(result.videoUrl!), const Duration(minutes: 8, seconds: 15));
     expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [401, 402]);
     expect(result.subtitleSidecars.every((sidecar) => sidecar.preload), isTrue);
     expect(result.subtitleSidecars.first.track.isContainer, isTrue);
@@ -661,8 +668,371 @@ void main() {
 
     expect(startPath, startsWith('/video/:/transcode/universal/start.m3u8?'));
     expect(startPath, contains('protocol=hls'));
+    // Without a requested offset the start path must stay offset-free so the
+    // session transcodes from the beginning exactly as before.
     expect(startPath, isNot(contains('offset=')));
     expect(startPath, isNot(contains('X-Plex-Token')));
+  });
+
+  test('transcode start path carries the requested decision offset', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final params = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 0,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+      offset: const Duration(minutes: 8, seconds: 15),
+    );
+
+    final startPath = client.buildTranscodeStartPathFromParamsForTesting(params);
+
+    expect(startPath, startsWith('/video/:/transcode/universal/start.m3u8?'));
+    expect(Uri.parse(startPath).queryParameters['offset'], '495.000000');
+    expect(startPath, isNot(contains('X-Plex-Token')));
+  });
+
+  test('transcode stream offset is parsed from an offset start URL only', () {
+    expect(
+      PlexClient.transcodeStreamOffsetFromUrl(
+        'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=495.000000',
+      ),
+      const Duration(minutes: 8, seconds: 15),
+    );
+    expect(
+      PlexClient.transcodeStreamOffsetFromUrl(
+        'https://plex.example.com/video/:/transcode/universal/start.m3u8?session=abc',
+      ),
+      isNull,
+    );
+    expect(
+      PlexClient.transcodeStreamOffsetFromUrl(
+        'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.000000',
+      ),
+      isNull,
+    );
+    expect(PlexClient.transcodeStreamOffsetFromUrl('https://plex.example.com/library/parts/1/file.mkv'), isNull);
+    // Percent-encoded spelling of the same path must not silently switch the
+    // probe off.
+    expect(
+      PlexClient.transcodeStreamOffsetFromUrl(
+        'https://plex.example.com/video/%3A/transcode/universal/start.m3u8?offset=495.000000',
+      ),
+      const Duration(minutes: 8, seconds: 15),
+    );
+  });
+
+  test('transcode readiness probes the segment at the offset, not the first one', () async {
+    final requests = <Uri>[];
+    final rangeHeaders = <String?>[];
+    final acceptHeaders = <String?>[];
+    var segmentAttempts = 0;
+    // Plex media playlists cover the full title from segment zero; the probe
+    // must touch the offset's segment because requesting a segment is how a
+    // client seeks a Plex HLS session — probing 00000.ts would relocate the
+    // transcoder back to the start.
+    final mediaPlaylist = StringBuffer('#EXTM3U\n#EXT-X-TARGETDURATION:1\n');
+    for (var i = 0; i < 600; i++) {
+      mediaPlaylist.write('#EXTINF:1.000000,\n${i.toString().padLeft(5, '0')}.ts\n');
+    }
+    final client = makeClient((request) async {
+      requests.add(request.url);
+      rangeHeaders.add(request.headers['Range']);
+      acceptHeaders.add(request.headers['Accept']);
+      return switch (request.url.path) {
+        '/video/:/transcode/universal/start.m3u8' => http.Response(
+          '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1500000\nindex.m3u8?session=transcode-id\n',
+          200,
+        ),
+        '/video/:/transcode/universal/index.m3u8' => http.Response(mediaPlaylist.toString(), 200),
+        '/video/:/transcode/universal/00495.ts' =>
+          ++segmentAttempts == 1
+              ? http.Response('not ready', 404)
+              : http.Response('segment bytes', 206, headers: {'content-type': 'video/mp2t'}),
+        _ => http.Response('unexpected request', 500),
+      };
+    });
+    addTearDown(client.close);
+
+    final ready = await client.waitForTranscodeReady(
+      'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=495.500000',
+      timeout: const Duration(seconds: 1),
+      pollInterval: Duration.zero,
+    );
+
+    expect(ready, isTrue);
+    expect(segmentAttempts, 2);
+    expect(requests.map((uri) => uri.path), [
+      '/video/:/transcode/universal/start.m3u8',
+      '/video/:/transcode/universal/index.m3u8',
+      '/video/:/transcode/universal/00495.ts',
+      '/video/:/transcode/universal/00495.ts',
+    ]);
+    expect(requests[1].queryParameters['session'], 'transcode-id');
+    expect(rangeHeaders, [null, null, 'bytes=0-0', 'bytes=0-0']);
+    // The client's default Accept is application/json; the probe must mirror
+    // the player's request shape instead.
+    expect(acceptHeaders, everyElement('*/*'));
+  });
+
+  test('readiness probe target selection walks segment durations to the offset', () {
+    const mediaPlaylist =
+        '#EXTM3U\n'
+        '#EXT-X-TARGETDURATION:2\n'
+        '#EXTINF:2.000000,\n00000.ts\n'
+        '#EXTINF:2.000000,\n00001.ts\n'
+        '#EXTINF:2.000000,\n00002.ts\n';
+    expect(PlexClient.selectReadinessProbeTarget(mediaPlaylist, Duration.zero), '00000.ts');
+    expect(PlexClient.selectReadinessProbeTarget(mediaPlaylist, const Duration(seconds: 3)), '00001.ts');
+    // Durations never cross the offset: the playlist cannot say where the
+    // offset lives, and probing a guessed segment would seek the session.
+    expect(PlexClient.selectReadinessProbeTarget(mediaPlaylist, const Duration(seconds: 30)), isNull);
+    // A master playlist has no segment durations: descend into the first variant.
+    const masterPlaylist = '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1500000\nindex.m3u8\nfallback.m3u8\n';
+    expect(PlexClient.selectReadinessProbeTarget(masterPlaylist, const Duration(minutes: 10)), 'index.m3u8');
+  });
+
+  test('transcode readiness skips probing when the playlist cannot locate the offset', () {
+    fakeAsync((async) {
+      final requestPaths = <String>[];
+      // The offset-relative playlist shape this client has never observed
+      // against a real PMS: segments named from the resume point, durations
+      // summing to a minute. Probing its last segment would ask the session
+      // to produce a minute past the resume point.
+      final mediaPlaylist = StringBuffer('#EXTM3U\n#EXT-X-TARGETDURATION:1\n');
+      for (var i = 8062; i <= 8121; i++) {
+        mediaPlaylist.write('#EXTINF:1.000000,\n${i.toString().padLeft(5, '0')}.ts\n');
+      }
+      final client = makeClient((request) async {
+        requestPaths.add(request.url.path);
+        if (request.url.path.endsWith('/start.m3u8')) {
+          return http.Response(mediaPlaylist.toString(), 200);
+        }
+        return http.Response('segment bytes', 206, headers: {'content-type': 'video/mp2t'});
+      });
+      addTearDown(client.close);
+
+      bool? ready;
+      client
+          .waitForTranscodeReady(
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=8062.000000',
+            timeout: const Duration(seconds: 15),
+            pollInterval: const Duration(milliseconds: 500),
+          )
+          .then((value) => ready = value);
+      async.flushMicrotasks();
+
+      expect(ready, isTrue);
+      expect(requestPaths.where((path) => path.endsWith('.ts')), isEmpty);
+    });
+  });
+
+  test('transcode readiness hands off on a 500 that arrives inside a decode exception', () {
+    fakeAsync((async) {
+      var requestCount = 0;
+      // A proxy or gateway in front of PMS answering 500 with a JSON
+      // content-type and a non-JSON body: the client's body decode throws a
+      // status-bearing exception instead of returning the response, and the
+      // exception path must apply the same hand-off rule as the response
+      // path.
+      final client = makeClient((request) async {
+        requestCount++;
+        return http.Response('<html>gateway error</html>', 500, headers: {'content-type': 'application/json'});
+      });
+      addTearDown(client.close);
+
+      bool? ready;
+      client
+          .waitForTranscodeReady(
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=495.000000',
+            timeout: const Duration(seconds: 15),
+            pollInterval: const Duration(milliseconds: 500),
+          )
+          .then((value) => ready = value);
+      // No elapse: like the response-path 500, the exception-path 500 must
+      // complete the probe without a single poll wait.
+      async.flushMicrotasks();
+
+      expect(ready, isFalse);
+      expect(requestCount, 1);
+    });
+  });
+
+  test('transcode readiness returns immediately when the probe is already aborted', () async {
+    var requestCount = 0;
+    final client = makeClient((request) async {
+      requestCount++;
+      return http.Response('#EXTM3U\n#EXTINF:1.0,\nmedia-00000.ts\n', 200);
+    });
+    addTearDown(client.close);
+
+    final abort = AbortController()..abort();
+    final ready = await client.waitForTranscodeReady(
+      'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.500000',
+      abort: abort,
+    );
+
+    expect(ready, isFalse);
+    expect(requestCount, 0);
+  });
+
+  test('transcode readiness polls a bounded number of times while the segment stays unavailable', () {
+    fakeAsync((async) {
+      var requestCount = 0;
+      final client = makeClient((request) async {
+        requestCount++;
+        if (request.url.path.endsWith('/start.m3u8')) {
+          return http.Response('#EXTM3U\n#EXTINF:1.0,\nmedia-00000.ts\n', 200);
+        }
+        return http.Response('not ready', 404);
+      });
+      addTearDown(client.close);
+
+      bool? ready;
+      client
+          .waitForTranscodeReady(
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.500000',
+            timeout: const Duration(milliseconds: 600),
+            pollInterval: const Duration(milliseconds: 50),
+          )
+          .then((value) => ready = value);
+      async.elapse(const Duration(milliseconds: 700));
+
+      expect(ready, isFalse);
+      // The not-ready signal is a non-2xx *response*, not an exception: every
+      // failed probe must still wait out the poll interval, and after three
+      // consecutive failures the interval doubles to a 4x cap. Under a fake
+      // clock the cadence is exact: the playlist hop, then segment polls at
+      // 0/50/100/150/250/450ms. Drafts of this probe that skipped the delay
+      // on non-2xx or discarded the backoff measured 3,651 and 12 requests
+      // respectively in this same window; neither shape ever shipped.
+      expect(requestCount, 7);
+    });
+  });
+
+  test('transcode readiness requests bypass endpoint failover', () {
+    fakeAsync((async) {
+      var exhaustedSignals = 0;
+      var requestCount = 0;
+      final client = testPlexClient(
+        serverId: ServerId('server-id'),
+        prioritizedEndpoints: const ['https://plex.example.com'],
+        onAllEndpointsExhausted: () => exhaustedSignals++,
+        // 503 on the playlist itself: the segment leg goes through getRaw,
+        // which never enters the failover path, so the playlist request is
+        // the one that could drive the cascade.
+        handler: (request) async {
+          requestCount++;
+          return http.Response('busy', 503);
+        },
+      );
+      addTearDown(client.close);
+
+      bool? ready;
+      client
+          .waitForTranscodeReady(
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=495.000000',
+            timeout: const Duration(milliseconds: 200),
+            pollInterval: const Duration(milliseconds: 50),
+          )
+          .then((value) => ready = value);
+      async.elapse(const Duration(milliseconds: 300));
+
+      expect(ready, isFalse);
+      expect(requestCount, greaterThanOrEqualTo(3));
+      // The probe carries its own retry budget, so it must not drive the
+      // endpoint-failover cascade: its URL is absolute (the retry re-hits the
+      // same host), each switch rewrites config.baseUrl underneath the
+      // videoUrl already handed to the open path, and on a single-endpoint
+      // server every failed poll fires the all-endpoints-exhausted signal —
+      // the manager's cue to flip server status and reconnect.
+      expect(exhaustedSignals, 0);
+      expect(client.config.baseUrl, 'https://plex.example.com');
+    });
+  });
+
+  test('transcode readiness stops on cancellation instead of sleeping out the window', () {
+    fakeAsync((async) {
+      var requestCount = 0;
+      late final PlexClient client;
+      client = testPlexClient(
+        serverId: ServerId('server-id'),
+        handler: (request) async {
+          requestCount++;
+          if (request.url.path.endsWith('/start.m3u8')) {
+            return http.Response('#EXTM3U\n#EXTINF:1.0,\nmedia-00000.ts\n', 200);
+          }
+          // The owner closes mid-probe; the next request must surface as a
+          // cancellation, not as one more not-ready round.
+          client.close();
+          return http.Response('not ready', 404);
+        },
+      );
+
+      bool? ready;
+      client
+          .waitForTranscodeReady(
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.500000',
+            timeout: const Duration(milliseconds: 600),
+            pollInterval: const Duration(milliseconds: 50),
+          )
+          .then((value) => ready = value);
+      // One poll interval is all it may consume after the close; a probe
+      // that counts cancellation as not-ready sleeps out the full 600ms.
+      async.elapse(const Duration(milliseconds: 100));
+
+      expect(ready, isFalse);
+      expect(requestCount, 2);
+    });
+  });
+
+  test('transcode readiness hands off immediately on HTTP 500', () {
+    fakeAsync((async) {
+      var requestCount = 0;
+      final client = makeClient((request) async {
+        requestCount++;
+        if (request.url.path.endsWith('/start.m3u8')) {
+          return http.Response('#EXTM3U\n#EXTINF:1.0,\nmedia-00000.ts\n', 200);
+        }
+        return http.Response('limit rejected', 500);
+      });
+      addTearDown(client.close);
+
+      bool? ready;
+      client
+          .waitForTranscodeReady(
+            'https://plex.example.com/video/:/transcode/universal/start.m3u8?offset=0.500000',
+            timeout: const Duration(seconds: 15),
+            pollInterval: const Duration(milliseconds: 500),
+          )
+          .then((value) => ready = value);
+      // No elapse: a 500 must complete the probe without a single poll wait,
+      // so the player opens promptly and the server-limit dialog path runs.
+      async.flushMicrotasks();
+
+      expect(ready, isFalse);
+      expect(requestCount, 2);
+    });
+  });
+
+  test('transcode readiness returns immediately for URLs without an offset', () async {
+    var requestCount = 0;
+    final client = makeClient((request) async {
+      requestCount++;
+      return http.Response('should not be called', 500);
+    });
+    addTearDown(client.close);
+
+    // Probing a no-offset playlist would touch segment zero, and requesting
+    // a segment is how a client seeks a Plex HLS session.
+    expect(
+      await client.waitForTranscodeReady('https://plex.example.com/video/:/transcode/universal/start.m3u8?session=x'),
+      isTrue,
+    );
+    expect(await client.waitForTranscodeReady('https://plex.example.com/library/parts/1/file.mkv'), isTrue);
+    expect(requestCount, 0);
   });
 
   test('transcode params preserve resolved media and part indices', () {
