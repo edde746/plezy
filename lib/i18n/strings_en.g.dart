@@ -3259,6 +3259,15 @@ class Translations$liveTv$en {
 	/// en: 'Reorder Favorites'
 	String get reorderFavorites => 'Reorder Favorites';
 
+	/// en: 'No favorite channels'
+	String get noFavoriteChannels => 'No favorite channels';
+
+	/// en: 'Show all channels, then long-press a channel to add it to your favorites.'
+	String get noFavoriteChannelsHint => 'Show all channels, then long-press a channel to add it to your favorites.';
+
+	/// en: 'Show All Channels'
+	String get showAllChannels => 'Show All Channels';
+
 	/// en: 'Could not load favorites. Check your connection and try again.'
 	String get favoritesLoadFailed => 'Could not load favorites. Check your connection and try again.';
 
@@ -7281,6 +7290,9 @@ extension on Translations {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
 			'liveTv.reorderFavorites' => 'Reorder Favorites',
+			'liveTv.noFavoriteChannels' => 'No favorite channels',
+			'liveTv.noFavoriteChannelsHint' => 'Show all channels, then long-press a channel to add it to your favorites.',
+			'liveTv.showAllChannels' => 'Show All Channels',
 			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
 			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Join Session in Progress',
@@ -7667,11 +7679,11 @@ extension on Translations {
 			'performanceOverlay.matrix' => 'Matrix',
 			'performanceOverlay.primaries' => 'Primaries',
 			'performanceOverlay.transfer' => 'Transfer',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.renderFps' => 'Render FPS',
 			'performanceOverlay.displayFps' => 'Display FPS',
 			'performanceOverlay.avSync' => 'A/V Sync',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dropped' => 'Dropped',
 			'performanceOverlay.dvRpus' => 'DV RPUs',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
