@@ -9,6 +9,7 @@ import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_version.dart';
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/download_version_utils.dart';
 import '../database/app_database.dart';
 import '../database/download_operations.dart';
@@ -20,6 +21,7 @@ import '../services/download_storage_service.dart';
 import '../services/downloaded_video_source.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
+import '../services/settings_service.dart';
 import '../services/watch_state_resolver.dart';
 import 'watch_state_store.dart';
 import '../media/media_server_client.dart';
@@ -62,6 +64,19 @@ class _RelatedMetadataDownloadContext {
 }
 
 typedef _MetadataHydrationResult = ({MediaItem? metadata, bool networkFilled, bool stale});
+
+@visibleForTesting
+DownloadProgress restoredDownloadProgress(DownloadedMediaItem item, {required bool videoTransferActive}) {
+  return DownloadProgress(
+    globalKey: item.globalKey,
+    status: DownloadStatus.values[item.status],
+    progress: item.progress,
+    downloadedBytes: item.downloadedBytes,
+    totalBytes: item.totalBytes ?? 0,
+    errorMessage: item.errorMessage,
+    currentFile: videoTransferActive ? 'video' : null,
+  );
+}
 
 /// Provider for managing download state and operations.
 class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
@@ -208,6 +223,88 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return profileId;
   }
 
+  Future<void> _recordDownloadQualityDemand({
+    required String profileId,
+    required String globalKey,
+    required String sourceKey,
+    required TranscodeQualityPreset? qualityOverride,
+  }) async {
+    await _database.upsertDownloadQualityDemand(
+      profileId: profileId,
+      globalKey: globalKey,
+      sourceKey: sourceKey,
+      qualityPreset: qualityOverride?.storageKey,
+    );
+    if (sourceKey != 'legacy') {
+      await _database.removeDownloadQualityDemand(profileId: profileId, globalKey: globalKey, sourceKey: 'legacy');
+    }
+  }
+
+  Future<TranscodeQualityPreset?> _effectiveDownloadQuality(
+    String globalKey, {
+    TranscodeQualityPreset? defaultPreset,
+  }) async {
+    final demands = await _database.getDownloadQualityDemands(globalKey);
+    if (demands.isEmpty) return null;
+    final TranscodeQualityPreset resolvedDefault =
+        defaultPreset ?? (await SettingsService.getInstance()).read(SettingsService.defaultDownloadQualityPreset);
+    TranscodeQualityPreset? highest;
+    int rank(TranscodeQualityPreset preset) => preset.isOriginal ? 1 << 62 : preset.videoBitrateKbps ?? 0;
+    for (final demand in demands) {
+      final preset = demand.qualityPreset == null
+          ? resolvedDefault
+          : TranscodeQualityPreset.fromStorage(demand.qualityPreset);
+      if (highest == null || rank(preset) > rank(highest)) highest = preset;
+    }
+    return highest;
+  }
+
+  @visibleForTesting
+  Future<TranscodeQualityPreset?> debugEffectiveDownloadQuality(
+    String globalKey, {
+    required TranscodeQualityPreset defaultPreset,
+  }) => _effectiveDownloadQuality(globalKey, defaultPreset: defaultPreset);
+
+  Future<void> _reconcileDownloadQualityKeys(Iterable<String> globalKeys) async {
+    final keys = globalKeys.toSet();
+    if (keys.isEmpty) return;
+    for (final globalKey in keys) {
+      final row = await _database.getDownloadedMedia(globalKey);
+      if (row == null) continue;
+      final client = await _downloadManager.clientForDownloadKey(globalKey);
+      if (client is! QualityDownloadMediaServerClient) continue;
+      final effective = await _effectiveDownloadQuality(globalKey);
+      if (effective == null || row.downloadQualityPreset == effective.storageKey) continue;
+      await _downloadManager.replaceDownloadQuality(globalKey, effective, fallbackClient: client);
+    }
+  }
+
+  /// Reconcile every persisted Plex video whose effective Default/override
+  /// demand differs from the artifact currently on disk.
+  Future<void> reconcileAllDownloadQualities() async {
+    final rows = await _downloadManager.getAllDownloads();
+    await _reconcileDownloadQualityKeys(rows.map((row) => row.globalKey));
+  }
+
+  Future<void> _replaceRuleQualityDemands(
+    SyncRuleItem rule,
+    MediaServerClient client,
+    List<MediaItem> managedItems,
+  ) async {
+    if (client is! QualityDownloadMediaServerClient) return;
+    final keys = managedItems
+        .where((item) => item.isMovie || item.isEpisode)
+        .map((item) => buildGlobalKey(ServerId(rule.serverId), item.id))
+        .toSet();
+    final affected = await _database.replaceDownloadQualityDemandsForSource(
+      profileId: rule.profileId,
+      sourceKey: rule.globalKey,
+      globalKeys: keys,
+      qualityPreset: rule.downloadQualityPreset,
+    );
+    await _reconcileDownloadQualityKeys(affected);
+  }
+
   bool _ownsDownloadKey(String globalKey) => _ownedDownloadKeys.contains(globalKey);
 
   bool _ownsProgressEntry(MapEntry<String, DownloadProgress> entry) => _ownsDownloadKey(entry.key);
@@ -246,8 +343,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       );
       if (!result.hasRemainingOwner) return false;
       owner = result.removedOwner ?? owner;
+      await _database.removeDownloadQualityDemandsForProfileKey(profileId: profileId, globalKey: globalKey);
+      await _reconcileDownloadQualityKeys([globalKey]);
     } else {
       owner ??= await _database.getDownloadOwner(profileId: profileId, globalKey: globalKey);
+      await _database.removeDownloadQualityDemandsForProfileKey(profileId: profileId, globalKey: globalKey);
       await _database.removeDownloadOwner(profileId: profileId, globalKey: globalKey);
     }
 
@@ -288,6 +388,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _profileScopedReloadFuture;
     await _downloadManager.preparePlexMetadataForLogoutTransfer();
     await _database.clearAllDownloadOwners();
+    await _database.clearAllDownloadQualityDemands();
     _ownedDownloadKeys.clear();
     _syncRules.clear();
     safeNotifyListeners();
@@ -411,14 +512,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       );
 
       for (final item in downloads) {
-        _downloads[item.globalKey] = DownloadProgress(
-          globalKey: item.globalKey,
-          status: DownloadStatus.values[item.status],
-          progress: item.progress,
-          downloadedBytes: item.downloadedBytes,
-          totalBytes: item.totalBytes ?? 0,
-          errorMessage: item.errorMessage,
-        );
+        final videoTransferActive =
+            item.status == DownloadStatus.downloading.index && _downloadManager.isVideoTransferActive(item.globalKey);
+        _downloads[item.globalKey] = restoredDownloadProgress(item, videoTransferActive: videoTransferActive);
 
         _artworkPaths[item.globalKey] = DownloadedArtwork(thumbPath: item.thumbPath);
 
@@ -994,6 +1090,43 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return downloadedItem;
   }
 
+  /// Recover the version and manual quality choice associated with a persisted
+  /// row so a cancelled retry does not silently revert to current defaults.
+  Future<DownloadVersionConfig?> getPersistedDownloadConfig(String globalKey) async {
+    final row = await _database.getDownloadedMedia(globalKey);
+    if (row == null) return null;
+    final profileId = _activeProfileId;
+    final profileDemands = profileId == null
+        ? const <DownloadQualityDemandItem>[]
+        : (await _database.getDownloadQualityDemands(
+            globalKey,
+          )).where((demand) => demand.profileId == profileId).toList(growable: false);
+    final persistedDemand =
+        profileDemands.where((demand) => demand.sourceKey == 'manual').firstOrNull ?? profileDemands.firstOrNull;
+    final qualityOverride = persistedDemand != null
+        ? (persistedDemand.qualityPreset == null
+              ? null
+              : TranscodeQualityPreset.fromStorage(persistedDemand.qualityPreset))
+        : TranscodeQualityPreset.fromStorage(row.downloadQualityPreset);
+    return DownloadVersionConfig(mediaIndex: row.mediaIndex, qualityOverride: qualityOverride);
+  }
+
+  /// Update this profile's one-time quality request for an existing download.
+  /// If its server is offline, the demand remains persisted and the normal
+  /// connectivity reconciliation will replace the artifact later.
+  Future<void> updateManualDownloadQuality(String globalKey, TranscodeQualityPreset? qualityOverride) async {
+    final profileId = _requireActiveProfileId();
+    if (!_ownsDownloadKey(globalKey) || await _database.getDownloadedMedia(globalKey) == null) return;
+    await _recordDownloadQualityDemand(
+      profileId: profileId,
+      globalKey: globalKey,
+      sourceKey: 'manual',
+      qualityOverride: qualityOverride,
+    );
+    await _reconcileDownloadQualityKeys([globalKey]);
+    safeNotifyListeners();
+  }
+
   /// Get the local video file path for a downloaded item
   /// Returns null if not downloaded or file doesn't exist
   Future<String?> getVideoFilePath(String globalKey, {int? mediaIndex, String? mediaSourceId}) async {
@@ -1029,6 +1162,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
     bool includeSpecials = true,
+    String qualitySourceKey = 'manual',
   }) async {
     if (!_downloadManager.downloadsSupported) return 0;
 
@@ -1057,6 +1191,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           client,
           ownership: ownership,
           mediaIndex: config.mediaIndex,
+          qualityOverride: config.qualityOverride,
+          qualitySourceKey: qualitySourceKey,
         );
         return queued ? 1 : 0;
       } else if (metadata.kind == MediaKind.album || metadata.kind == MediaKind.artist) {
@@ -1078,6 +1214,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             maxCount: maxCount,
             skipExisting: false,
             includeSpecials: includeSpecials,
+            qualitySourceKey: qualitySourceKey,
           ),
         );
       } else {
@@ -1129,6 +1266,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     MediaServerClient client, {
     DownloadFilter filter = DownloadFilter.all,
     SyncRuleItem? syncRule,
+    TranscodeQualityPreset? qualityOverride,
+    String qualitySourceKey = 'manual',
   }) async {
     if (!_downloadManager.downloadsSupported) return 0;
 
@@ -1166,6 +1305,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           await _associateSyncRuleDownload(syncRule, withServer.globalKey, ownership);
         }
       }
+      await _replaceRuleQualityDemands(syncRule, client, candidates);
     }
 
     final relatedContext = _RelatedMetadataDownloadContext();
@@ -1173,12 +1313,28 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     for (final item in candidates) {
       if (!_isQueueOwnershipCurrent(ownership)) return count;
       final withServer = _ensureServerId(item, client.serverId);
-      if (_hasActiveOwnedDownload(withServer.globalKey)) continue;
+      if (_hasActiveOwnedDownload(withServer.globalKey)) {
+        if (syncRule == null &&
+            client is QualityDownloadMediaServerClient &&
+            (withServer.isMovie || withServer.isEpisode)) {
+          await _recordDownloadQualityDemand(
+            profileId: ownership.profileId,
+            globalKey: withServer.globalKey,
+            sourceKey: qualitySourceKey,
+            qualityOverride: qualityOverride,
+          );
+          await _reconcileDownloadQualityKeys([withServer.globalKey]);
+        }
+        continue;
+      }
       final queued = await _queueSingleDownload(
         withServer,
         client,
         ownership: ownership,
         relatedContext: relatedContext,
+        qualityOverride: qualityOverride,
+        qualitySourceKey: qualitySourceKey,
+        recordQualityDemand: syncRule == null,
       );
       if (syncRule != null) {
         await _associateSyncRuleDownload(syncRule, withServer.globalKey, ownership);
@@ -1200,12 +1356,28 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
     DownloadVersionConfig? versionConfig,
     _RelatedMetadataDownloadContext? relatedContext,
+    TranscodeQualityPreset? qualityOverride,
+    String qualitySourceKey = 'manual',
+    bool recordQualityDemand = true,
   }) async {
     if (!_downloadManager.downloadsSupported) return false;
 
     if (!_isQueueOwnershipCurrent(ownership)) return false;
     var metadataToStore = metadata.serverId == null ? metadata.copyWith(serverId: client.serverId) : metadata;
     final globalKey = metadataToStore.globalKey;
+    final qualityCapableVideo =
+        (metadataToStore.isMovie || metadataToStore.isEpisode) && client is QualityDownloadMediaServerClient;
+    if (qualityCapableVideo && recordQualityDemand) {
+      await _recordDownloadQualityDemand(
+        profileId: ownership.profileId,
+        globalKey: globalKey,
+        sourceKey: qualitySourceKey,
+        qualityOverride: qualityOverride,
+      );
+    }
+    final effectiveQuality = qualityCapableVideo
+        ? await _effectiveDownloadQuality(globalKey)
+        : TranscodeQualityPreset.original;
 
     // Don't duplicate the physical download. If another profile already owns
     // the shared row, claiming it makes it visible for the owning profile.
@@ -1225,6 +1397,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         if (!_isQueueOwnershipCurrent(ownership)) return false;
         final claimed = await _claimDownloadForProfile(globalKey, ownership, client);
         if (!_isQueueOwnershipCurrent(ownership)) return false;
+        final row = await _database.getDownloadedMedia(globalKey);
+        if (row != null && effectiveQuality != null && row.downloadQualityPreset != effectiveQuality.storageKey) {
+          await _downloadManager.replaceDownloadQuality(globalKey, effectiveQuality, fallbackClient: client);
+          return true;
+        }
         if (claimed) safeNotifyListeners();
         return claimed;
       }
@@ -1300,7 +1477,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     // Actually trigger download via DownloadManagerService
     if (!_isQueueOwnershipCurrent(ownership)) return false;
-    await _downloadManager.queueDownload(metadata: metadataToStore, client: client, mediaIndex: resolvedIndex);
+    await _downloadManager.queueDownload(
+      metadata: metadataToStore,
+      client: client,
+      mediaIndex: resolvedIndex,
+      qualityPreset: effectiveQuality ?? TranscodeQualityPreset.original,
+    );
     return true;
   }
 
@@ -1440,6 +1622,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required int? maxCount,
     required bool skipExisting,
     bool includeSpecials = true,
+    String qualitySourceKey = 'manual',
   }) async {
     final unwatchedOnly = filter == DownloadFilter.unwatched;
     // Downloading the Specials season itself must still queue its episodes —
@@ -1482,6 +1665,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         ownership: ownership,
         versionConfig: versionConfig,
         relatedContext: relatedContext,
+        qualityOverride: versionConfig?.qualityOverride,
+        qualitySourceKey: qualitySourceKey,
       );
       if (queued) count++;
     }
@@ -1637,6 +1822,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   void resumeQueuedDownloads(MediaServerClient client) {
     if (!_downloadManager.downloadsSupported) return;
     _downloadManager.resumeQueuedDownloads(client);
+    unawaited(reconcileAllDownloadQualities());
   }
 
   /// Backend-aware metadata lookup for offline UI. Routes through
@@ -1816,6 +2002,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       ownership: ownership,
       mediaIndex: mediaIndex,
       relatedContext: relatedContext,
+      recordQualityDemand: false,
     );
   }
 
@@ -1841,6 +2028,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int mediaIndex = 0,
     String downloadFilter = SyncRuleFilter.unwatched,
     bool includeSpecials = true,
+    TranscodeQualityPreset? downloadQualityOverride,
     MediaItem? targetMetadata,
   }) async {
     final profileId = _requireActiveProfileId();
@@ -1856,6 +2044,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       mediaIndex: mediaIndex,
       downloadFilter: downloadFilter,
       includeSpecials: includeSpecials,
+      downloadQualityPreset: downloadQualityOverride?.storageKey,
     );
 
     if (targetMetadata != null) {
@@ -1908,7 +2097,40 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _syncRules[globalKey] = existing.copyWith(enabled: enabled);
       safeNotifyListeners();
     }
+    if (!enabled && existing != null) {
+      final affected = (await _database.getDownloadQualityDemandsForSource(
+        profileId: existing.profileId,
+        sourceKey: existing.globalKey,
+      )).map((demand) => demand.globalKey).toSet();
+      await _database.replaceDownloadQualityDemandsForSource(
+        profileId: existing.profileId,
+        sourceKey: existing.globalKey,
+        globalKeys: const {},
+        qualityPreset: existing.downloadQualityPreset,
+      );
+      await _reconcileDownloadQualityKeys(affected);
+    }
     appLogger.i('${enabled ? 'Enabled' : 'Disabled'} sync rule: $globalKey');
+  }
+
+  Future<void> updateSyncRuleDownloadQuality(String globalKey, TranscodeQualityPreset? qualityOverride) async {
+    _requireActiveProfileId();
+    await _database.updateSyncRuleDownloadQuality(globalKey, qualityOverride?.storageKey);
+    final existing = _syncRules[globalKey];
+    if (existing == null) return;
+    final updated = await _database.getSyncRule(globalKey);
+    if (updated != null) _syncRules[globalKey] = updated;
+    await _database.updateDownloadQualityDemandsForSource(
+      profileId: existing.profileId,
+      sourceKey: existing.globalKey,
+      qualityPreset: qualityOverride?.storageKey,
+    );
+    final affected = await _database.getDownloadQualityDemandsForSource(
+      profileId: existing.profileId,
+      sourceKey: existing.globalKey,
+    );
+    await _reconcileDownloadQualityKeys(affected.map((demand) => demand.globalKey));
+    safeNotifyListeners();
   }
 
   /// Delete a sync rule. Downloaded episodes are kept.
@@ -2041,6 +2263,19 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final publicGlobalKey = existing == null
         ? globalKey
         : buildGlobalKey(ServerId(existing.serverId), existing.ratingKey);
+    if (existing != null) {
+      final affected = (await _database.getDownloadQualityDemandsForSource(
+        profileId: existing.profileId,
+        sourceKey: existing.globalKey,
+      )).map((demand) => demand.globalKey).toSet();
+      await _database.replaceDownloadQualityDemandsForSource(
+        profileId: existing.profileId,
+        sourceKey: existing.globalKey,
+        globalKeys: const {},
+        qualityPreset: existing.downloadQualityPreset,
+      );
+      await _reconcileDownloadQualityKeys(affected);
+    }
     await _database.deleteSyncRule(globalKey);
     _syncRules.remove(globalKey);
     // createSyncRule may have stashed targetMetadata for collection/playlist
@@ -2061,6 +2296,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<List<String>> executeSyncRules(MultiServerManager serverManager, {bool force = false}) async {
     if (!_downloadManager.downloadsSupported) return [];
     if (_syncRuleCleanupInProgress) return [];
+
+    // Also catches quality changes saved while the Plex server was offline.
+    await reconcileAllDownloadQualities();
 
     final profileId = _activeProfileId;
     if (profileId == null || profileId.isEmpty) return [];
@@ -2086,6 +2324,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           mediaIndex: mediaIndex,
         );
       },
+      updateRuleQualityDemands: _replaceRuleQualityDemands,
       isOffline: _offlineSource?.isOffline ?? false,
       force: force,
     );
@@ -2122,6 +2361,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         relatedContext: relatedContext,
         mediaIndex: mediaIndex,
       ),
+      updateRuleQualityDemands: _replaceRuleQualityDemands,
       isOffline: _offlineSource?.isOffline ?? false,
     );
   }

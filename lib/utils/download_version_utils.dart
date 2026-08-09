@@ -9,28 +9,43 @@ import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/media_version_resolver.dart';
 import '../i18n/strings.g.dart';
+import '../models/transcode_quality_preset.dart';
 
 /// Configuration for download version selection, threaded through the queue pipeline.
 class DownloadVersionConfig {
   final int mediaIndex;
+  final TranscodeQualityPreset? qualityOverride;
   final Set<String> acceptedSignatures;
   final Future<int?> Function(MediaItem episode, List<MediaVersion> versions)? onVersionMismatch;
 
-  DownloadVersionConfig({this.mediaIndex = 0, Set<String>? acceptedSignatures, this.onVersionMismatch})
-    : acceptedSignatures = acceptedSignatures ?? {};
+  DownloadVersionConfig({
+    this.mediaIndex = 0,
+    this.qualityOverride,
+    Set<String>? acceptedSignatures,
+    this.onVersionMismatch,
+  }) : acceptedSignatures = acceptedSignatures ?? {};
 
   /// Create from a selected version's signature.
   factory DownloadVersionConfig.fromSignature(
     String signature, {
     int mediaIndex = 0,
+    TranscodeQualityPreset? qualityOverride,
     Future<int?> Function(MediaItem, List<MediaVersion>)? onVersionMismatch,
   }) {
     return DownloadVersionConfig(
       mediaIndex: mediaIndex,
+      qualityOverride: qualityOverride,
       acceptedSignatures: {signature},
       onVersionMismatch: onVersionMismatch,
     );
   }
+
+  DownloadVersionConfig withQualityOverride(TranscodeQualityPreset? qualityOverride) => DownloadVersionConfig(
+    mediaIndex: mediaIndex,
+    qualityOverride: qualityOverride,
+    acceptedSignatures: acceptedSignatures,
+    onVersionMismatch: onVersionMismatch,
+  );
 }
 
 /// Resolve version selection for a download. Shows picker if needed.

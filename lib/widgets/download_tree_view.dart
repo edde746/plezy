@@ -579,12 +579,24 @@ class _DownloadTreeItem extends StatefulWidget {
 }
 
 class _DownloadTreeItemState extends State<_DownloadTreeItem> {
-  /// Treat downloading items with no progress/speed as effectively queued
-  /// (they're waiting in background_downloader's HoldingQueue).
+  bool _hasStartedTransfer(DownloadTreeNode node) {
+    if (node.status == DownloadStatus.downloading && node.downloadProgress?.currentFile == 'video') return true;
+    return node.children.any(_hasStartedTransfer);
+  }
+
+  /// Treat prepared downloads with no transfer event as effectively queued
+  /// (they're waiting in background_downloader's HoldingQueue). A running
+  /// progressive transcode is marked as `video` even though its response has
+  /// no Content-Length and therefore no percentage or speed updates.
   DownloadStatus get _effectiveStatus {
-    if (widget.node.status == DownloadStatus.downloading &&
-        widget.node.progress == 0 &&
-        (widget.node.downloadProgress?.speed ?? 0) == 0) {
+    if (widget.node.status != DownloadStatus.downloading) return widget.node.status;
+
+    final hasStartedTransfer = _hasStartedTransfer(widget.node);
+    // Container progress can be non-zero because some children have already
+    // completed. Its state is active only while a descendant is transferring.
+    if (widget.node.hasChildren) return hasStartedTransfer ? DownloadStatus.downloading : DownloadStatus.queued;
+
+    if (widget.node.progress == 0 && (widget.node.downloadProgress?.speed ?? 0) == 0 && !hasStartedTransfer) {
       return DownloadStatus.queued;
     }
     return widget.node.status;
@@ -736,13 +748,21 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               if (_effectiveStatus == DownloadStatus.downloading) ...[
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
-                  value: widget.node.progress,
+                  value: (widget.node.downloadProgress?.totalBytes ?? 0) > 0 ? widget.node.progress : null,
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 ),
-                if (widget.node.downloadProgress != null) ...[
+                if ((widget.node.downloadProgress?.totalBytes ?? 0) > 0) ...[
                   const SizedBox(height: 4),
                   Text(
                     '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ] else ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    t.downloads.downloadingTooltip,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),

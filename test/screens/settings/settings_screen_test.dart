@@ -208,6 +208,12 @@ void main() {
     final harness = await _pumpSettingsScreen(tester);
     addTearDown(() => harness.dispose(tester));
 
+    expect(find.text(t.settings.plexDownloadQuality), findsOneWidget);
+    expect(
+      find.text(t.settings.plexDownloadQualityDescription(quality: t.videoControls.qualityOriginal)),
+      findsOneWidget,
+    );
+
     if (Platform.isIOS) {
       expect(find.text(t.settings.downloadLocationDefault), findsNothing);
     } else {

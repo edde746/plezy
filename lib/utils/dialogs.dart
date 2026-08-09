@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
@@ -362,6 +363,7 @@ Future<T?> showOptionPickerDialog<T>(
   required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
   OptionPickerToggle? toggle,
+  bool Function(T value)? isSelected,
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
   return showScopedDialog<T>(
@@ -372,6 +374,7 @@ Future<T?> showOptionPickerDialog<T>(
       focusFirstItem: focusFirstItem,
       onBeforeClose: onBeforeClose,
       toggle: toggle,
+      isSelected: isSelected,
     ),
   );
 }
@@ -382,6 +385,7 @@ class _OptionPickerDialog<T> extends StatefulWidget {
   final bool focusFirstItem;
   final Future<T?> Function(T value)? onBeforeClose;
   final OptionPickerToggle? toggle;
+  final bool Function(T value)? isSelected;
 
   const _OptionPickerDialog({
     required this.title,
@@ -389,6 +393,7 @@ class _OptionPickerDialog<T> extends StatefulWidget {
     this.focusFirstItem = false,
     this.onBeforeClose,
     this.toggle,
+    this.isSelected,
   });
 
   @override
@@ -462,10 +467,15 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
         ...List.generate(widget.options.length, (index) {
           final option = widget.options[index];
           final icon = option.icon;
+          final selected = widget.isSelected?.call(option.value) ?? false;
           return FocusableListTile(
             focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
             leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
             title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
+            trailing: selected
+                ? AppIcon(Symbols.check_rounded, fill: 1, color: Theme.of(context).colorScheme.primary)
+                : null,
+            selected: selected,
             contentPadding: rowPadding,
             horizontalTitleGap: rowHorizontalTitleGap,
             minLeadingWidth: rowMinLeadingWidth,

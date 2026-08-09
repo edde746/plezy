@@ -323,6 +323,7 @@ android {
   compileSdk = flutter.compileSdkVersion
   buildToolsVersion = "36.1.0"
   ndkVersion = "29.0.14206865"
+  buildFeatures { buildConfig = true }
 
   // Android Automotive OS driver-distraction state (CarUxRestrictionsManager). This is a platform
   // stub, not a shipped dependency: the classes exist only on AAOS images, so every use is guarded
@@ -385,6 +386,9 @@ android {
   }
 
   buildTypes {
+    debug {
+      applicationIdSuffix = ".dev"
+    }
     release {
       // Only use release signing if key.properties exists (not in CI/CD)
       val keystorePropertiesFile = rootProject.file("key.properties")
@@ -514,6 +518,8 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders"
 dependencies {
   implementation(files(File(mpvDir, mpvAar)))
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+  // App-owned WorkerFactory scopes foreground execution to Plex progressive downloads.
+  implementation("androidx.work:work-runtime-ktx:2.11.0")
 
   // Android TV Watch Next integration
   implementation("androidx.tvprovider:tvprovider:1.1.0")

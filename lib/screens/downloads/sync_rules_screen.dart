@@ -11,8 +11,12 @@ import '../../media/media_item.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/sync_rule_executor.dart';
+import '../../services/settings_service.dart';
+import '../../models/transcode_quality_preset.dart';
+import '../../media/media_backend.dart';
 import '../../utils/content_utils.dart';
 import '../../utils/download_utils.dart';
+import '../../utils/quality_preset_labels.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/app_icon.dart';
 import '../libraries/state_messages.dart';
@@ -81,8 +85,9 @@ class _SyncRulesScreenState extends State<SyncRulesScreen> {
 class _RuleServerInfo {
   final String label;
   final bool isKnown;
+  final bool? isPlex;
 
-  const _RuleServerInfo({required this.label, required this.isKnown});
+  const _RuleServerInfo({required this.label, required this.isKnown, required this.isPlex});
 }
 
 class _SyncRuleTile extends StatefulWidget {
@@ -148,16 +153,17 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
   }
 
   _RuleServerInfo _serverLabelForRule() {
-    final activeName = multiServerProvider.getClientForServer(ServerId(rule.serverId))?.serverName;
+    final activeClient = multiServerProvider.getClientForServer(ServerId(rule.serverId));
+    final activeName = activeClient?.serverName;
     if (activeName != null && activeName.isNotEmpty) {
-      return _RuleServerInfo(label: activeName, isKnown: true);
+      return _RuleServerInfo(label: activeName, isKnown: true, isPlex: activeClient?.backend == MediaBackend.plex);
     }
 
     final publicGlobalKey = '${rule.serverId}:${rule.ratingKey}';
     final meta = metadata[rule.globalKey] ?? metadata[publicGlobalKey];
     final metadataName = meta?.serverName;
     if (metadataName != null && metadataName.isNotEmpty) {
-      return _RuleServerInfo(label: metadataName, isKnown: true);
+      return _RuleServerInfo(label: metadataName, isKnown: true, isPlex: meta?.backend == MediaBackend.plex);
     }
 
     for (final connection in connections) {
@@ -165,17 +171,46 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
         case PlexAccountConnection(:final servers):
           for (final server in servers) {
             if (server.clientIdentifier == rule.serverId && server.name.isNotEmpty) {
-              return _RuleServerInfo(label: server.name, isKnown: true);
+              return _RuleServerInfo(label: server.name, isKnown: true, isPlex: true);
             }
           }
         case JellyfinConnection(:final serverMachineId, :final serverName):
           if (serverMachineId == rule.serverId && serverName.isNotEmpty) {
-            return _RuleServerInfo(label: serverName, isKnown: true);
+            return _RuleServerInfo(label: serverName, isKnown: true, isPlex: false);
           }
       }
     }
 
-    return _RuleServerInfo(label: rule.serverId, isKnown: false);
+    return _RuleServerInfo(label: rule.serverId, isKnown: false, isPlex: null);
+  }
+
+  String _qualityLabel() {
+    final override = rule.downloadQualityPreset == null
+        ? null
+        : TranscodeQualityPreset.fromStorage(rule.downloadQualityPreset);
+    final TranscodeQualityPreset resolved =
+        override ??
+        SettingsService.instanceOrNull?.read(SettingsService.defaultDownloadQualityPreset) ??
+        TranscodeQualityPreset.original;
+    final label = override == null
+        ? t.downloads.defaultQualityOption(quality: qualityPresetLabel(resolved))
+        : qualityPresetLabel(resolved);
+    return t.downloads.syncRuleQuality(quality: label);
+  }
+
+  Future<void> _editQuality(BuildContext context) async {
+    final settings = await SettingsService.getInstance();
+    if (!context.mounted) return;
+    final selected = await showDownloadQualityPickerDialog(
+      context,
+      defaultPreset: settings.read(SettingsService.defaultDownloadQualityPreset),
+      currentOverride: rule.downloadQualityPreset == null
+          ? null
+          : TranscodeQualityPreset.fromStorage(rule.downloadQualityPreset),
+    );
+    if (selected == null || !context.mounted) return;
+    await downloadProvider.updateSyncRuleDownloadQuality(rule.globalKey, selected.override);
+    await downloadProvider.executeSyncRuleFor(rule.globalKey, multiServerProvider.serverManager);
   }
 
   String _serverStatusForRule(_RuleServerInfo serverInfo) {
@@ -256,20 +291,45 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
                 children: [
                   Text(_subtitle(), maxLines: 1, overflow: .ellipsis),
                   Text(serverLine, maxLines: 1, overflow: .ellipsis),
+                  if (serverInfo.isPlex == true) Text(_qualityLabel(), maxLines: 1, overflow: .ellipsis),
+                  if (serverInfo.isPlex == null)
+                    Text(t.downloads.syncRuleQualityPlexOnly, maxLines: 1, overflow: .ellipsis),
                 ],
               ),
-              trailing: FocusableWrapper(
-                focusNode: _switchFocusNode,
-                disableScale: true,
-                useBackgroundFocus: true,
-                descendantsAreFocusable: false,
-                borderRadius: 20,
-                onSelect: () => downloadProvider.setSyncRuleEnabled(rule.globalKey, !rule.enabled),
-                onNavigateLeft: () => _rowFocusNode.requestFocus(),
-                child: Switch(
-                  value: rule.enabled,
-                  onChanged: (value) => downloadProvider.setSyncRuleEnabled(rule.globalKey, value),
-                ),
+              trailing: Row(
+                mainAxisSize: .min,
+                children: [
+                  if (serverInfo.isPlex == true)
+                    IconButton(
+                      tooltip: t.downloads.downloadQuality,
+                      onPressed: () => _editQuality(context),
+                      icon: const AppIcon(Symbols.high_quality_rounded, size: 20),
+                    ),
+                  FocusableWrapper(
+                    focusNode: _switchFocusNode,
+                    disableScale: true,
+                    useBackgroundFocus: true,
+                    descendantsAreFocusable: false,
+                    borderRadius: 20,
+                    onSelect: () async {
+                      final enabled = !rule.enabled;
+                      await downloadProvider.setSyncRuleEnabled(rule.globalKey, enabled);
+                      if (enabled) {
+                        await downloadProvider.executeSyncRuleFor(rule.globalKey, multiServerProvider.serverManager);
+                      }
+                    },
+                    onNavigateLeft: () => _rowFocusNode.requestFocus(),
+                    child: Switch(
+                      value: rule.enabled,
+                      onChanged: (value) async {
+                        await downloadProvider.setSyncRuleEnabled(rule.globalKey, value);
+                        if (value) {
+                          await downloadProvider.executeSyncRuleFor(rule.globalKey, multiServerProvider.serverManager);
+                        }
+                      },
+                    ),
+                  ),
+                ],
               ),
               onTap: () => _onTap(context),
             ),

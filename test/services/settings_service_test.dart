@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/audio_quality_preset.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
@@ -144,6 +145,25 @@ void main() {
       settings = await SettingsService.getInstance();
 
       expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.medium);
+    });
+  });
+
+  group('SettingsService Plex download quality', () {
+    test('defaults to Original, persists, and resets independently of playback quality', () async {
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.defaultDownloadQualityPreset), TranscodeQualityPreset.original);
+
+      await settings.write(SettingsService.defaultDownloadQualityPreset, TranscodeQualityPreset.p720_3mbps);
+      expect(settings.prefs.getString(SettingsService.defaultDownloadQualityPreset.key), 'p720_3mbps');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.defaultDownloadQualityPreset), TranscodeQualityPreset.p720_3mbps);
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.defaultDownloadQualityPreset), TranscodeQualityPreset.original);
     });
   });
 

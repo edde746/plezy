@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -6,6 +8,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/widgets/download_tree_view.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/theme.dart';
 
 DownloadTreeNode _episodeNode(String globalKey) => DownloadTreeNode(
   key: globalKey,
@@ -46,6 +49,8 @@ MediaItem _episodeMeta({
 );
 
 void main() {
+  setUpAll(() => LocaleSettings.setLocaleSync(AppLocale.en));
+
   group('resolveDownloadContainerGlobalKey', () {
     test('show node: builds globalKey from leaf serverId + grandparentId', () {
       final ep = _episodeNode('plex1:ep100');
@@ -132,6 +137,154 @@ void main() {
       };
 
       expect(resolveDownloadContainerGlobalKey(show, metadata), 'plex1:42');
+    });
+  });
+
+  group('download progress presentation', () {
+    testWidgets('running transfer without a content length is indeterminate, not queued', (tester) async {
+      final movie = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'plex-1',
+      );
+      const progress = DownloadProgress(
+        globalKey: 'plex-1:movie-1',
+        status: DownloadStatus.downloading,
+        currentFile: 'video',
+      );
+
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MaterialApp(
+            theme: ThemeData.dark().copyWith(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: DownloadTreeView(
+                downloads: const {'plex-1:movie-1': progress},
+                metadata: {'plex-1:movie-1': movie},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text(t.downloads.downloadQueued), findsNothing);
+      expect(find.text(t.downloads.downloadingTooltip), findsOneWidget);
+      expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, isNull);
+    });
+
+    testWidgets('prepared transfer still appears queued until it starts', (tester) async {
+      final movie = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'plex-1',
+      );
+      const progress = DownloadProgress(globalKey: 'plex-1:movie-1', status: DownloadStatus.downloading);
+
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MaterialApp(
+            theme: ThemeData.dark().copyWith(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: DownloadTreeView(
+                downloads: const {'plex-1:movie-1': progress},
+                metadata: {'plex-1:movie-1': movie},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text(t.downloads.downloadQueued), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+    });
+
+    testWidgets('collapsed parents inherit an active indeterminate transfer', (tester) async {
+      final episode = _episodeMeta(
+        id: 'episode-1',
+        serverId: ServerId('plex-1'),
+        grandparentId: 'show-1',
+        parentId: 'season-1',
+      );
+      const progress = DownloadProgress(
+        globalKey: 'plex-1:episode-1',
+        status: DownloadStatus.downloading,
+        currentFile: 'video',
+      );
+
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MaterialApp(
+            theme: ThemeData.dark().copyWith(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: DownloadTreeView(
+                downloads: const {'plex-1:episode-1': progress},
+                metadata: {'plex-1:episode-1': episode},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text(t.downloads.downloadQueued), findsNothing);
+      expect(find.text(t.downloads.downloadingTooltip), findsOneWidget);
+      expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, isNull);
+    });
+
+    testWidgets('parents stay queued when completed siblings leave only prepared transfers', (tester) async {
+      final completed = _episodeMeta(
+        id: 'episode-1',
+        serverId: ServerId('plex-1'),
+        grandparentId: 'show-1',
+        parentId: 'season-1',
+      );
+      final prepared = _episodeMeta(
+        id: 'episode-2',
+        serverId: ServerId('plex-1'),
+        grandparentId: 'show-1',
+        parentId: 'season-1',
+      );
+
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MaterialApp(
+            theme: ThemeData.dark().copyWith(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: DownloadTreeView(
+                downloads: const {
+                  'plex-1:episode-1': DownloadProgress(
+                    globalKey: 'plex-1:episode-1',
+                    status: DownloadStatus.completed,
+                    progress: 100,
+                  ),
+                  'plex-1:episode-2': DownloadProgress(
+                    globalKey: 'plex-1:episode-2',
+                    status: DownloadStatus.downloading,
+                  ),
+                },
+                metadata: {'plex-1:episode-1': completed, 'plex-1:episode-2': prepared},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      // The collapsed show is queued even though its aggregate progress is
+      // non-zero from the completed sibling.
+      expect(find.text(t.downloads.downloadQueued), findsOneWidget);
+      expect(find.text(t.downloads.downloadingTooltip), findsNothing);
+
+      await tester.tap(find.text('Unknown Show'));
+      await tester.pump();
+
+      // The revealed season is queued for the same reason.
+      expect(find.text(t.downloads.downloadQueued), findsNWidgets(2));
+      expect(find.text(t.downloads.downloadingTooltip), findsNothing);
     });
   });
 }
