@@ -740,6 +740,8 @@
     "overrideStrip": "스타일 제거",
     "positionTop": "위",
     "positionBottom": "아래",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "굵게",
     "italic": "기울임꼴",
     "renderResolution": "렌더링 해상도",

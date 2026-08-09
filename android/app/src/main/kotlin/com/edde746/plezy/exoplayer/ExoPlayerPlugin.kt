@@ -1069,6 +1069,7 @@ class ExoPlayerPlugin :
     val subtitlePosition = call.argument<Number>("subtitlePosition")?.toInt() ?: 100
     val bold = call.argument<Boolean>("bold") ?: false
     val italic = call.argument<Boolean>("italic") ?: false
+    val anchorToScreen = call.argument<Boolean>("anchorToScreen") ?: false
 
     if (usingMpvFallback) {
       // MPV fallback handles styling via setProperty, no-op here
@@ -1076,7 +1077,7 @@ class ExoPlayerPlugin :
       return
     }
 
-    playerCore?.setSubtitleStyle(fontSize, textColor, borderSize, borderColor, bgColor, bgOpacity, subtitlePosition, bold, italic)
+    playerCore?.setSubtitleStyle(fontSize, textColor, borderSize, borderColor, bgColor, bgOpacity, subtitlePosition, bold, italic, anchorToScreen)
     result.success(null)
   }
 

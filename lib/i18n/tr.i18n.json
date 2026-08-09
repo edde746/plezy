@@ -744,6 +744,8 @@
     "overrideStrip": "Biçimlendirmeyi kaldır",
     "positionTop": "Üst",
     "positionBottom": "Alt",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Kalın",
     "italic": "İtalik",
     "renderResolution": "İşleme Çözünürlüğü",

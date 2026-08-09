@@ -752,6 +752,8 @@
     "overrideStrip": "Удалить стили",
     "positionTop": "Сверху",
     "positionBottom": "Снизу",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Жирный",
     "italic": "Курсив",
     "renderResolution": "Разрешение отрисовки",

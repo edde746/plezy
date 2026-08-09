@@ -13,12 +13,18 @@ internal object SubtitleViewLayout {
     videoHeight: Int,
     pixelRatio: Float,
     resizeMode: Int,
-    zoomScale: Float
+    zoomScale: Float,
+    anchorToScreen: Boolean = false
   ): SubtitleViewDimensions? {
     val videoAspect = videoAspect(videoWidth, videoHeight, pixelRatio) ?: return null
     if (containerWidth <= 0 || containerHeight <= 0) return null
 
-    if (resizeMode != AspectRatioFrameLayout.RESIZE_MODE_FIT) {
+    // Anchor-to-screen (#1730): size the text view to the full container so
+    // media3's fractional text size and bottom-anchored cue placement compute
+    // against the physical screen, letting subtitles render in the letterbox
+    // bars instead of inside the video rect. Same geometry the non-FIT modes
+    // below already use.
+    if (anchorToScreen || resizeMode != AspectRatioFrameLayout.RESIZE_MODE_FIT) {
       return SubtitleViewDimensions(containerWidth, containerHeight)
     }
 

@@ -740,6 +740,8 @@
     "overrideStrip": "移除樣式",
     "positionTop": "頂部",
     "positionBottom": "底部",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "粗體",
     "italic": "斜體",
     "renderResolution": "渲染解析度",

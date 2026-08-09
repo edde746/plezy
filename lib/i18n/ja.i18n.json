@@ -740,6 +740,8 @@
     "overrideStrip": "スタイルを削除",
     "positionTop": "上",
     "positionBottom": "下",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "太字",
     "italic": "斜体",
     "renderResolution": "レンダリング解像度",

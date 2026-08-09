@@ -744,6 +744,8 @@
     "overrideStrip": "Quitar estilos",
     "positionTop": "Arriba",
     "positionBottom": "Abajo",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Negrita",
     "italic": "Cursiva",
     "renderResolution": "Resolución de renderizado",

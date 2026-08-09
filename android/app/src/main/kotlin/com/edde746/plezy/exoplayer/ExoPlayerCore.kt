@@ -215,6 +215,7 @@ class ExoPlayerCore(private val activity: Activity) :
   @Volatile private var assVideoLatencyFrames = 0
   private var subtitlePositionPercent: Int = 100
   private var subtitleFontSize: Float = 55f
+  private var subtitleAnchorToScreen: Boolean = false
   private var lastSubtitleCues: List<Cue> = emptyList()
 
   // Tracks whether a text track was selected on the previous onTracksChanged so we
@@ -1757,7 +1758,8 @@ class ExoPlayerCore(private val activity: Activity) :
       videoHeight,
       pixelRatio,
       resizeMode,
-      videoZoomScale
+      videoZoomScale,
+      subtitleAnchorToScreen
     )
     val bitmapDimensions = SubtitleViewLayout.bitmapDimensions(
       containerWidth,
@@ -3911,7 +3913,8 @@ class ExoPlayerCore(private val activity: Activity) :
     bgOpacity: Int,
     subtitlePosition: Int = 100,
     bold: Boolean = false,
-    italic: Boolean = false
+    italic: Boolean = false,
+    anchorToScreen: Boolean = false
   ) {
     activity.runOnUiThread {
       // 1. Non-ASS subtitles: CaptionStyleCompat on SubtitleView
@@ -3959,6 +3962,18 @@ class ExoPlayerCore(private val activity: Activity) :
       subtitlePositionPercent = clampedPosition
       subtitleFontSize = fontSize
 
+      // Anchor-to-screen (#1730): resize the text SubtitleView to the full
+      // container so default-placed cues land in the letterbox bars.
+      val anchorChanged = subtitleAnchorToScreen != anchorToScreen
+      subtitleAnchorToScreen = anchorToScreen
+      if (anchorChanged) {
+        lastVideoSize?.let { vs ->
+          if (vs.width > 0 && vs.height > 0) {
+            updateSubtitleViewSize(vs.width, vs.height, vs.pixelWidthHeightRatio)
+          }
+        }
+      }
+
       // Cue-level positioning handles default VTT/SRT placement, whose line
       // numbers bypass SubtitleView bottom padding. Authored VTT line positions
       // are preserved in applySubtitlePosition().
@@ -3980,7 +3995,7 @@ class ExoPlayerCore(private val activity: Activity) :
         Log.w(TAG, "Failed to set ASS font scale: ${e.message}")
       }
 
-      Log.d(TAG, "setSubtitleStyle: fontSize=$fontSize, textColor=$textColor, borderSize=$borderSize, bgOpacity=$bgOpacity, position=$subtitlePosition, bold=$bold, italic=$italic, assScale=$scale")
+      Log.d(TAG, "setSubtitleStyle: fontSize=$fontSize, textColor=$textColor, borderSize=$borderSize, bgOpacity=$bgOpacity, position=$subtitlePosition, bold=$bold, italic=$italic, anchorToScreen=$anchorToScreen, assScale=$scale")
     }
   }
 

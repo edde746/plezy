@@ -744,6 +744,8 @@
     "overrideStrip": "Ta bort formatering",
     "positionTop": "Överst",
     "positionBottom": "Nederst",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Fet",
     "italic": "Kursiv",
     "renderResolution": "Renderingsupplösning",

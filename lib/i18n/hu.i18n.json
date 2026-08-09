@@ -744,6 +744,8 @@
     "overrideStrip": "Stílus eltávolítása",
     "positionTop": "Fent",
     "positionBottom": "Lent",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Félkövér",
     "italic": "Dőlt",
     "renderResolution": "Renderelési felbontás",

@@ -368,6 +368,7 @@ class FakePlayer implements Player {
     int subtitlePosition = 100,
     bool bold = false,
     bool italic = false,
+    bool anchorToScreen = false,
   }) async {}
 
   @override

@@ -744,6 +744,8 @@
     "overrideStrip": "Opmaak verwijderen",
     "positionTop": "Bovenaan",
     "positionBottom": "Onderaan",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Vet",
     "italic": "Cursief",
     "renderResolution": "Renderresolutie",

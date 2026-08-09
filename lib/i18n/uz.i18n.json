@@ -744,6 +744,8 @@
     "overrideStrip": "Formatlashni olib tashlash",
     "positionTop": "Yuqori",
     "positionBottom": "Pastki",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Qalin",
     "italic": "Qiya",
     "renderResolution": "Renderlash oʻlchamlari",

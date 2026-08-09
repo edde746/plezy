@@ -744,6 +744,8 @@
     "overrideStrip": "Fjern formatering",
     "positionTop": "Øverst",
     "positionBottom": "Nederst",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Fed",
     "italic": "Kursiv",
     "renderResolution": "Gengivelsesopløsning",

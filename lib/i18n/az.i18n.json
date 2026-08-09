@@ -744,6 +744,8 @@
     "overrideStrip": "Formatlaşdırmanı sil",
     "positionTop": "Yuxarı",
     "positionBottom": "Aşağı",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Qalın",
     "italic": "Kursiv",
     "renderResolution": "Emal imkanı (Resolution)",

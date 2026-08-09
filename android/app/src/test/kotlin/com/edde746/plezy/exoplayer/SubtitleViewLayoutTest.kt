@@ -45,9 +45,49 @@ class SubtitleViewLayoutTest {
     assertAspectCloseTo16By9(bitmap!!)
   }
 
+  @Test
+  fun anchorToScreenSizesTextToContainerAndKeepsBitmapOnVideoRect() {
+    val text = textDimensions(resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT, anchorToScreen = true)
+    val bitmap = bitmapDimensions(resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT)
+
+    assertEquals(SubtitleViewDimensions(2424, 1080), text)
+    assertEquals(SubtitleViewDimensions(1920, 1080), bitmap)
+    assertAspectCloseTo16By9(bitmap!!)
+  }
+
+  @Test
+  fun anchorToScreenReachesBelowLetterboxedWideVideo() {
+    // 2.37:1 video on a 16:9 screen — the #1730 use case. Without the anchor
+    // the text view stops at the bottom letterbox bar; with it the view spans
+    // the physical screen height.
+    val unanchored = SubtitleViewLayout.textDimensions(
+      containerWidth = 1920,
+      containerHeight = 1080,
+      videoWidth = 2560,
+      videoHeight = 1080,
+      pixelRatio = 1f,
+      resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT,
+      zoomScale = 1f
+    )
+    val anchored = SubtitleViewLayout.textDimensions(
+      containerWidth = 1920,
+      containerHeight = 1080,
+      videoWidth = 2560,
+      videoHeight = 1080,
+      pixelRatio = 1f,
+      resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT,
+      zoomScale = 1f,
+      anchorToScreen = true
+    )
+
+    assertEquals(SubtitleViewDimensions(1920, 810), unanchored)
+    assertEquals(SubtitleViewDimensions(1920, 1080), anchored)
+  }
+
   private fun textDimensions(
     resizeMode: Int,
-    zoomScale: Float = 1f
+    zoomScale: Float = 1f,
+    anchorToScreen: Boolean = false
   ): SubtitleViewDimensions? = SubtitleViewLayout.textDimensions(
     containerWidth = 2424,
     containerHeight = 1080,
@@ -55,7 +95,8 @@ class SubtitleViewLayoutTest {
     videoHeight = 1080,
     pixelRatio = 1f,
     resizeMode = resizeMode,
-    zoomScale = zoomScale
+    zoomScale = zoomScale,
+    anchorToScreen = anchorToScreen
   )
 
   private fun bitmapDimensions(

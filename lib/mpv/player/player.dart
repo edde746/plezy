@@ -314,6 +314,7 @@ abstract class Player {
     int subtitlePosition = 100,
     bool bold = false,
     bool italic = false,
+    bool anchorToScreen = false,
   });
 
   /// Apply the box-fit mode to the native video layer

@@ -744,6 +744,8 @@
     "overrideStrip": "Премахване на стиловете",
     "positionTop": "Горе",
     "positionBottom": "Долу",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Получер",
     "italic": "Курсив",
     "renderResolution": "Резолюция на изобразяване",

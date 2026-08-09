@@ -744,6 +744,8 @@
     "overrideStrip": "Форматтауды жою",
     "positionTop": "Жоғары",
     "positionBottom": "Төмен",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Қалың",
     "italic": "Көлбеу",
     "renderResolution": "Рендеринг ажыратымдылығы",

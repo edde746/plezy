@@ -2212,6 +2212,12 @@ class Translations$subtitlingStyling$en {
 	/// en: 'Bottom'
 	String get positionBottom => 'Bottom';
 
+	/// en: 'Anchor to Screen'
+	String get anchorToScreen => 'Anchor to Screen';
+
+	/// en: 'Show text subtitles in the black bars below widescreen video'
+	String get anchorToScreenDescription => 'Show text subtitles in the black bars below widescreen video';
+
 	/// en: 'Bold'
 	String get bold => 'Bold';
 
@@ -6762,6 +6768,8 @@ extension on Translations {
 			'subtitlingStyling.overrideStrip' => 'Remove styling',
 			'subtitlingStyling.positionTop' => 'Top',
 			'subtitlingStyling.positionBottom' => 'Bottom',
+			'subtitlingStyling.anchorToScreen' => 'Anchor to Screen',
+			'subtitlingStyling.anchorToScreenDescription' => 'Show text subtitles in the black bars below widescreen video',
 			'subtitlingStyling.bold' => 'Bold',
 			'subtitlingStyling.italic' => 'Italic',
 			'subtitlingStyling.renderResolution' => 'Render Resolution',
@@ -7091,10 +7099,10 @@ extension on Translations {
 			'explore.stats.favorited' => ({required Object n}) => '${n} favorites',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} dropped it',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} comment', other: '${n} comments', ), 
-			'explore.stats.votes' => ({required Object n}) => '${n} votes',
-			'explore.stats.watching' => ({required Object n}) => '${n} watching it',
 			_ => null,
 		} ?? switch (path) {
+			'explore.stats.votes' => ({required Object n}) => '${n} votes',
+			'explore.stats.watching' => ({required Object n}) => '${n} watching it',
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
@@ -7605,10 +7613,10 @@ extension on Translations {
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',
 			'externalPlayer.selectPlayer' => 'Select Player',
 			'externalPlayer.customPlayers' => 'Custom Players',
-			'externalPlayer.systemDefault' => 'System Default',
-			'externalPlayer.addCustomPlayer' => 'Add Custom Player',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.systemDefault' => 'System Default',
+			'externalPlayer.addCustomPlayer' => 'Add Custom Player',
 			'externalPlayer.playerName' => 'Player Name',
 			'externalPlayer.playerNameHint' => 'My Player',
 			'externalPlayer.playerCommand' => 'Command',

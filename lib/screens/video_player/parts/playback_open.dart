@@ -432,6 +432,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       subtitlePosition: settingsService.read(SettingsService.subtitlePosition),
       bold: settingsService.read(SettingsService.subtitleBold),
       italic: settingsService.read(SettingsService.subtitleItalic),
+      anchorToScreen: settingsService.read(SettingsService.subtitleAnchorToScreen),
     );
   }
 

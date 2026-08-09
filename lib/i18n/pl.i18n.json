@@ -752,6 +752,8 @@
     "overrideStrip": "Usuń style",
     "positionTop": "Góra",
     "positionBottom": "Dół",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Pogrubienie",
     "italic": "Kursywa",
     "renderResolution": "Rozdzielczość renderowania",

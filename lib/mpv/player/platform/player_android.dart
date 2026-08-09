@@ -542,6 +542,7 @@ class PlayerAndroid extends PlayerBase {
     int subtitlePosition = 100,
     bool bold = false,
     bool italic = false,
+    bool anchorToScreen = false,
   }) async {
     if (disposed || !initialized) return;
     await invoke('setSubtitleStyle', {
@@ -554,6 +555,7 @@ class PlayerAndroid extends PlayerBase {
       'subtitlePosition': subtitlePosition,
       'bold': bold,
       'italic': italic,
+      'anchorToScreen': anchorToScreen,
     });
   }
 

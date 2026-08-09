@@ -744,6 +744,8 @@
     "overrideStrip": "Formatierung entfernen",
     "positionTop": "Oben",
     "positionBottom": "Unten",
+    "anchorToScreen": "",
+    "anchorToScreenDescription": "",
     "bold": "Fett",
     "italic": "Kursiv",
     "renderResolution": "Render-Auflösung",

@@ -744,6 +744,8 @@
     "overrideStrip": "Remove styling",
     "positionTop": "Top",
     "positionBottom": "Bottom",
+    "anchorToScreen": "Anchor to Screen",
+    "anchorToScreenDescription": "Show text subtitles in the black bars below widescreen video",
     "bold": "Bold",
     "italic": "Italic",
     "renderResolution": "Render Resolution",
