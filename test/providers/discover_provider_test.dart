@@ -363,6 +363,37 @@ void main() {
     expect(calls, isEmpty);
   });
 
+  test('each shelf drain pass publishes online server sources before shelf items', () async {
+    final events = <String>[];
+    final sourceClients = <List<MediaServerClient>>[];
+    final scoped = DiscoverProvider(
+      multiServer,
+      hiddenLibraries,
+      libraries,
+      profileId: 'profile-a',
+      isProfileBinding: () => isBinding,
+      syncSystemShelf: (owner, items) async => events.add('sync:$owner'),
+      syncServerSources: (owner, clients) async {
+        events.add('sources:$owner');
+        sourceClients.add(clients);
+      },
+    );
+    addTearDown(scoped.dispose);
+    aggregation.onDeckResult = () => [_item('a')];
+    aggregation.hubsResult = () => [_hub('hub-1')];
+
+    await scoped.load();
+    await pumpEventQueue();
+
+    expect(events, isNotEmpty);
+    expect(events.length.isEven, isTrue);
+    for (var i = 0; i < events.length; i += 2) {
+      expect(events[i], 'sources:profile-a');
+      expect(events[i + 1], 'sync:profile-a');
+    }
+    expect(sourceClients.first.single, same(client));
+  });
+
   test('sub-threshold progress patches the row without refetching', () async {
     final playing = _item('ep-1').copyWith(durationMs: 100000, viewOffsetMs: 10000, viewCount: 0);
     aggregation.onDeckResult = () => [playing, for (var i = 2; i <= 21; i++) _item('ep-$i')];

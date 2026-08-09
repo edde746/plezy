@@ -291,7 +291,7 @@ class WatchNextProviderTest {
       MethodCall(
         "sync",
         mapOf(
-          "schemaVersion" to 2,
+          "schemaVersion" to 3,
           "ownerId" to "active-owner",
           "generation" to 1L,
           "items" to listOf(mapOf("contentId" to "active", "title" to "Active"))
@@ -308,7 +308,7 @@ class WatchNextProviderTest {
         MethodCall(
           "sync",
           mapOf(
-            "schemaVersion" to 2,
+            "schemaVersion" to 3,
             "ownerId" to "queued-owner",
             "generation" to 2L,
             "items" to listOf(mapOf("contentId" to "queued", "title" to "Queued"))
@@ -1281,7 +1281,7 @@ class WatchNextProviderTest {
   private fun syncCall(ownerId: String, generation: Long) = MethodCall(
     "sync",
     mapOf(
-      "schemaVersion" to 2,
+      "schemaVersion" to 3,
       "ownerId" to ownerId,
       "generation" to generation,
       "items" to emptyList<Map<String, Any?>>()

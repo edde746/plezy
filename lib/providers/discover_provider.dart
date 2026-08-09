@@ -82,10 +82,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required this.isProfileBinding,
     WatchStateStore? watchStateStore,
     Future<void> Function(String profileId, List<MediaItem>)? syncSystemShelf,
+    Future<void> Function(String profileId, List<MediaServerClient> clients)? syncServerSources,
     // A private field cannot be a named initializing formal callers can pass.
     // ignore: prefer_initializing_formals
   }) : _watchStateStore = watchStateStore,
-       _syncSystemShelfOverride = syncSystemShelf {
+       _syncSystemShelfOverride = syncSystemShelf,
+       _syncServerSourcesOverride = syncServerSources {
     _loadCoordinator = CoalescedLoadCoordinator<String>(onFull: _loadOnce, onDelta: _loadDeltaOnce);
     // Late server connects (reconnect after outage, slow wave) refresh
     // discover the same way they refresh libraries. Removed in [dispose] so a
@@ -162,6 +164,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// load once binding settles).
   final bool Function() isProfileBinding;
   final Future<void> Function(String profileId, List<MediaItem>)? _syncSystemShelfOverride;
+  final Future<void> Function(String profileId, List<MediaServerClient> clients)? _syncServerSourcesOverride;
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
@@ -938,7 +941,16 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         if (isDisposed) return;
 
         try {
+          // tvOS pulls Continue Watching itself; hand the Top Shelf extension
+          // the current online server sources before publishing items.
+          final sourcesOverride = _syncServerSourcesOverride;
           final syncOverride = _syncSystemShelfOverride;
+          if (sourcesOverride != null) {
+            await sourcesOverride(owner, _onlineShelfSourceClients());
+          } else if (syncOverride == null) {
+            await SystemShelfService().syncServerSources(owner, _onlineShelfSourceClients());
+          }
+          if (isDisposed) return;
           if (syncOverride != null) {
             await syncOverride(owner, onDeck);
             continue;
@@ -971,6 +983,9 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (direct != null) return direct;
     throw Exception('No owning client available for $serverId');
   }
+
+  List<MediaServerClient> _onlineShelfSourceClients() =>
+      _multiServer.serverManager.onlineClients.values.toList(growable: false);
 
   @override
   void dispose() {

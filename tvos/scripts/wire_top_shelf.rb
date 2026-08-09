@@ -84,6 +84,11 @@ project.files.select { |file| file.display_name == 'Foundation.framework' }.each
 end
 RUNNER_TESTS_DIR = File.expand_path('../RunnerTests', __dir__)
 COMPILED_TEST_EXTENSIONS = %w[.swift .m .mm].freeze
+# Extension sources without a Flutter import; compiled into both the
+# TopShelfExtension target and the Runner app so the hosted RunnerTests bundle
+# reaches them via `@testable import Runner` — the test Sources phase itself
+# must only contain files under RunnerTests/ (scripts/check_tvos_test_wiring.py).
+EXTENSION_SHARED_SOURCES = %w[ShelfFetcher.swift ShelfItemMapper.swift ShelfSources.swift].freeze
 runner_test_files = Dir.children(RUNNER_TESTS_DIR).reject { |name| name.start_with?('.') }.sort
 runner_test_sources = runner_test_files.select { |name| COMPILED_TEST_EXTENSIONS.include?(File.extname(name)) }
 raise "No RunnerTests sources found in #{RUNNER_TESTS_DIR}" if runner_test_sources.empty?
@@ -128,6 +133,11 @@ end
 extension_target.product_type = 'com.apple.product-type.app-extension'
 
 ensure_source(extension_target, top_shelf_ref)
+EXTENSION_SHARED_SOURCES.each do |filename|
+  shared_ref = ensure_file(extension_group, filename)
+  ensure_source(extension_target, shared_ref)
+  ensure_source(runner, shared_ref)
+end
 
 removed_framework_refs = []
 extension_target.frameworks_build_phase.files.delete_if do |build_file|
