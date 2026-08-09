@@ -207,7 +207,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     // Membership reads each source's session snapshot — no per-open API
     // call. Filled when the item is on ANY source's watchlist; with several
     // candidates the press opens a source chooser.
-    // Not in the compact tiers: it drops away first on narrow screens.
+    // Not in the compact tiers: on narrow screens it drops away first and
+    // stays reachable through the ⋮ menu's watchlist entry.
     final watchlistStates = [
       for (final candidate in _watchlistCandidates) candidate.source.isOnWatchlist(metadata.kind, candidate.ids),
     ];
@@ -343,24 +344,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     // shows that source's current membership.
     final renderBox = _watchlistButtonKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
-    final choice = await showAppMenu<WatchlistCandidate>(
+    final choice = await showWatchlistSourceChooser(
       context,
+      kind: metadata.kind,
+      candidates: candidates,
       anchorRect: renderBox.localToGlobal(Offset.zero) & renderBox.size,
       focusFirstItem: true,
-      entries: [
-        for (final candidate in candidates)
-          AppMenuItem(
-            value: candidate,
-            leading: CatalogSourceLogo(candidate.source.id),
-            label: candidate.source.displayName,
-            subtitle: (candidate.source.isOnWatchlist(metadata.kind, candidate.ids) ?? false)
-                ? t.explore.removeFromWatchlist
-                : t.explore.addToWatchlist,
-            trailing: (candidate.source.isOnWatchlist(metadata.kind, candidate.ids) ?? false)
-                ? const AppIcon(Symbols.bookmark_added_rounded, fill: 1)
-                : const AppIcon(Symbols.bookmark_add_rounded),
-          ),
-      ],
     );
     if (choice == null || !mounted) return;
     await _toggleWatchlistOn(metadata, choice);
@@ -373,11 +362,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     try {
       // Optimistic inside the source; the row/screens listening to
       // watchlistChanges (including this one) rebuild immediately.
-      if (current) {
-        await candidate.source.removeFromWatchlist(metadata.kind, candidate.ids);
-      } else {
-        await candidate.source.addToWatchlist(metadata.kind, candidate.ids);
-      }
+      await mutateWatchlistMembership(metadata.kind, candidate, add: !current);
     } catch (_) {
       if (mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
     } finally {

@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../i18n/strings.g.dart';
 import '../models/catalog/catalog_item.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/catalog_navigation_helper.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
@@ -24,11 +25,6 @@ class _CatalogMenuAction {
   static const viewDetails = _CatalogMenuAction(_CatalogMenuActionType.viewDetails);
   static const toggleWatchlist = _CatalogMenuAction(_CatalogMenuActionType.toggleWatchlist);
 }
-
-/// Watchlist mutations keyed by source+item so a re-opened menu can't
-/// double-fire while one is still in flight (the detail screens keep their
-/// own per-screen guards).
-final Set<String> _watchlistMutationsInFlight = {};
 
 /// Context menu for catalog stand-in cards (Explore tab). Replaces
 /// [MediaContextMenu], whose entries are all server-backed and would break on
@@ -87,18 +83,12 @@ Future<void> showCatalogItemMenu(BuildContext context, CatalogItem item, {Offset
       // Re-read membership: it can have changed while the menu was open
       // (snapshot load, another surface's toggle).
       final current = source!.isOnWatchlist(item.kind, item.ids) ?? onWatchlist ?? false;
-      final mutationKey = '${source.id.name}/${item.kind.id}/${item.ids.canonicalKey ?? item.title}';
-      if (!_watchlistMutationsInFlight.add(mutationKey)) return;
       try {
-        if (current) {
-          await source.removeFromWatchlist(item.kind, item.ids);
-        } else {
-          await source.addToWatchlist(item.kind, item.ids);
-        }
+        // The shared guard keys by source+item so a re-opened menu can't
+        // double-fire while one mutation is still in flight.
+        await mutateWatchlistMembership(item.kind, (source: source, ids: item.ids), add: !current);
       } catch (_) {
         if (context.mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
-      } finally {
-        _watchlistMutationsInFlight.remove(mutationKey);
       }
     case _CatalogMenuActionType.openUrl:
       final url = action.url;

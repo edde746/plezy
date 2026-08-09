@@ -58,12 +58,12 @@ import '../services/settings_service.dart';
 import '../services/watch_actions.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/layout_constants.dart';
-import '../models/catalog/catalog_item.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../services/catalog/catalog_source.dart';
+import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import '../utils/scroll_utils.dart';
@@ -71,12 +71,11 @@ import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../widgets/app_bar_back_button.dart';
-import '../widgets/app_menu.dart';
-import '../widgets/catalog_source_logo.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/media_context_menu.dart';
+import '../widgets/watchlist_source_chooser.dart';
 import 'libraries/state_messages.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/placeholder_container.dart';
@@ -117,10 +116,6 @@ const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
 
 enum _SyncRuleAction { edit, remove, delete }
-
-/// A watchlist-capable catalog source paired with this item's ids in that
-/// source's terms (see `_resolveWatchlistIds`).
-typedef WatchlistCandidate = ({CatalogSource source, CatalogItemIds ids});
 
 class _SeasonEpisodePager {
   final Map<String, PagedMediaListState<MediaItem>> _states = {};
@@ -685,37 +680,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// and for non-movie/show kinds.
   void _initWatchlistState() {
     if (widget.isOffline || (!_metadata.isMovie && !_metadata.isShow)) return;
-    final sources = Provider.of<CatalogSourcesProvider?>(context, listen: false)?.watchlistCapableSources;
-    if (sources == null || sources.isEmpty) return;
+    final catalogSources = Provider.of<CatalogSourcesProvider?>(context, listen: false);
+    final sources = catalogSources?.watchlistCapableSources ?? const <CatalogSource>[];
+    if (catalogSources == null || sources.isEmpty) return;
     _watchlistListenedSources = sources;
     for (final source in sources) {
       source.watchlistChanges.addListener(_onWatchlistSourceChanged);
       unawaited(source.ensureWatchlistLoaded());
     }
-    unawaited(_resolveWatchlistIds(sources));
+    unawaited(_resolveWatchlistIds(catalogSources));
   }
 
-  Future<void> _resolveWatchlistIds(List<CatalogSource> sources) async {
+  Future<void> _resolveWatchlistIds(CatalogSourcesProvider catalogSources) async {
     try {
-      final ids = await _getMediaClientForMetadata(context)?.fetchExternalIds(_metadata.id);
-      if (!mounted || ids == null || !ids.hasAny) return;
-      // Sources can require their own id forms (MAL maps external ids to an
-      // anime id via Fribb); null means the item is outside that source's
-      // domain. The action shows for the sources that resolved; with more
-      // than one, the toggle opens a source chooser.
-      final candidates = <WatchlistCandidate>[];
-      for (final source in sources) {
-        try {
-          final resolved = await source.resolveItemIds(_metadata.kind, ids);
-          if (resolved != null) candidates.add((source: source, ids: resolved));
-        } catch (e, stackTrace) {
-          appLogger.d(
-            'Watchlist external-id resolution failed for ${source.id.name}',
-            error: e,
-            stackTrace: stackTrace,
-          );
-        }
-      }
+      // Session-cached on the provider and shared with the card context
+      // menus; null means the item is outside a source's domain and the
+      // action shows for the sources that resolved.
+      final candidates = await catalogSources.watchlistCandidatesFor(
+        _metadata,
+        client: _getMediaClientForMetadata(context),
+      );
       if (!mounted || candidates.isEmpty) return;
       setState(() => _watchlistCandidates = candidates);
     } catch (e) {

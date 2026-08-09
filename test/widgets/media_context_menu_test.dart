@@ -27,9 +27,11 @@ import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/metadata_edit/metadata_edit_adapters.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/models/plex/plex_config.dart';
+import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/providers/download_provider.dart';
+import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/providers/offline_mode_provider.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
@@ -43,7 +45,9 @@ import 'package:plezy/services/music/music_playback_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
+import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
@@ -1195,6 +1199,111 @@ void main() {
       expect(harness.client.fileInfoRequests, isEmpty);
     });
   });
+
+  group('watchlist entry', () {
+    testWidgets('cold open offers Add and adds to the single capable source', (tester) async {
+      final source = _MenuWatchlistSource(CatalogSourceId.trakt, 'Trakt', resolveTo: const CatalogItemIds(imdb: 'tt1'));
+      final harness = await _pumpWatchlistMenu(tester, sources: [source], guids: ['imdb://tt1']);
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('watchlist target')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.explore.addToWatchlist), findsOneWidget);
+      expect(find.text(t.explore.removeFromWatchlist), findsNothing);
+
+      await tester.tap(find.text(t.explore.addToWatchlist));
+      await tester.pumpAndSettle();
+
+      expect(source.mutations.map((m) => m.add), [true]);
+      expect(source.mutations.single.ids.imdb, 'tt1');
+      expect(find.text(t.explore.addedToWatchlist), findsOneWidget);
+      // Opening also kicked the membership snapshot load for the next open.
+      expect(source.ensureLoadedCalls, greaterThan(0));
+    });
+
+    testWidgets('offers Remove once cached membership is known, and removes', (tester) async {
+      final source = _MenuWatchlistSource(CatalogSourceId.trakt, 'Trakt', resolveTo: const CatalogItemIds(imdb: 'tt1'))
+        ..membership = true;
+      final harness = await _pumpWatchlistMenu(tester, sources: [source]);
+      await harness.catalogSources.watchlistCandidatesFor(
+        harness.item,
+        client: _SeedIdsClient(const ExternalIds(imdb: 'tt1')),
+      );
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('watchlist target')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.explore.removeFromWatchlist), findsOneWidget);
+
+      await tester.tap(find.text(t.explore.removeFromWatchlist));
+      await tester.pumpAndSettle();
+
+      expect(source.mutations.map((m) => m.add), [false]);
+      expect(find.text(t.explore.removedFromWatchlist), findsOneWidget);
+    });
+
+    testWidgets('hides the entry when the item resolved in no capable source', (tester) async {
+      final source = _MenuWatchlistSource(CatalogSourceId.mal, 'MAL'); // resolves null: out of domain
+      final harness = await _pumpWatchlistMenu(tester, sources: [source]);
+      await harness.catalogSources.watchlistCandidatesFor(
+        harness.item,
+        client: _SeedIdsClient(const ExternalIds(imdb: 'tt1')),
+      );
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('watchlist target')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.mediaMenu.markAsWatched), findsOneWidget);
+      expect(find.text(t.explore.addToWatchlist), findsNothing);
+      expect(find.text(t.explore.removeFromWatchlist), findsNothing);
+    });
+
+    testWidgets('reports when the tapped item matches no watchlist', (tester) async {
+      final source = _MenuWatchlistSource(CatalogSourceId.trakt, 'Trakt', resolveTo: const CatalogItemIds(imdb: 'tt1'));
+      // The metadata answer carries no Guid entries: no external ids.
+      final harness = await _pumpWatchlistMenu(tester, sources: [source]);
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('watchlist target')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text(t.explore.addToWatchlist));
+      await tester.pumpAndSettle();
+
+      expect(source.mutations, isEmpty);
+      expect(find.text(t.explore.watchlistNoMatch), findsOneWidget);
+    });
+
+    testWidgets('several capable sources open a per-source chooser', (tester) async {
+      final trakt = _MenuWatchlistSource(CatalogSourceId.trakt, 'Trakt', resolveTo: const CatalogItemIds(imdb: 'tt1'));
+      final simkl = _MenuWatchlistSource(CatalogSourceId.simkl, 'Simkl', resolveTo: const CatalogItemIds(imdb: 'tt1'))
+        ..membership = true;
+      final harness = await _pumpWatchlistMenu(tester, sources: [trakt, simkl]);
+      await harness.catalogSources.watchlistCandidatesFor(
+        harness.item,
+        client: _SeedIdsClient(const ExternalIds(imdb: 'tt1')),
+      );
+
+      harness.menuKey.currentState!.showContextMenu(tester.element(find.text('watchlist target')));
+      await tester.pumpAndSettle();
+
+      // Membership known-true on one source labels the entry Remove.
+      await tester.tap(find.text(t.explore.removeFromWatchlist));
+      await tester.pumpAndSettle();
+
+      // The chooser names each source with its own pending action.
+      expect(find.text('Trakt'), findsOneWidget);
+      expect(find.text('Simkl'), findsOneWidget);
+      expect(find.text(t.explore.addToWatchlist), findsOneWidget);
+      expect(find.text(t.explore.removeFromWatchlist), findsOneWidget);
+
+      await tester.tap(find.text('Simkl'));
+      await tester.pumpAndSettle();
+
+      expect(simkl.mutations.map((m) => m.add), [false]);
+      expect(trakt.mutations, isEmpty);
+      expect(find.text(t.explore.removedFromWatchlist), findsOneWidget);
+    });
+  });
 }
 
 Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
@@ -1760,4 +1869,142 @@ JellyfinConnection _jellyfinConnection() {
     isAdministrator: true,
     createdAt: DateTime.fromMillisecondsSinceEpoch(0),
   );
+}
+
+class _MenuWatchlistSource implements CatalogSource {
+  _MenuWatchlistSource(this.id, this.displayName, {this.resolveTo});
+
+  @override
+  final CatalogSourceId id;
+
+  @override
+  final String displayName;
+
+  final CatalogItemIds? resolveTo;
+  bool? membership;
+  int ensureLoadedCalls = 0;
+  final List<({MediaKind kind, CatalogItemIds ids, bool add})> mutations = [];
+
+  @override
+  bool get supportsWatchlist => true;
+
+  @override
+  Future<void> ensureWatchlistLoaded() async {
+    ensureLoadedCalls++;
+  }
+
+  @override
+  bool? isOnWatchlist(MediaKind kind, CatalogItemIds ids) => membership;
+
+  @override
+  Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async => resolveTo;
+
+  @override
+  Future<void> addToWatchlist(MediaKind kind, CatalogItemIds ids) async =>
+      mutations.add((kind: kind, ids: ids, add: true));
+
+  @override
+  Future<void> removeFromWatchlist(MediaKind kind, CatalogItemIds ids) async =>
+      mutations.add((kind: kind, ids: ids, add: false));
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _WatchlistSourcesProvider extends CatalogSourcesProvider {
+  _WatchlistSourcesProvider(this.sources);
+
+  final List<CatalogSource> sources;
+
+  @override
+  List<CatalogSource> get connectedSources => sources;
+}
+
+class _SeedIdsClient implements MediaServerClient {
+  _SeedIdsClient(this.ids);
+
+  final ExternalIds ids;
+
+  @override
+  Future<ExternalIds> fetchExternalIds(String itemId) async => ids;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Pumps a Plex movie's context menu with [sources] connected as catalog
+/// sources. The Plex MockClient answers the external-id metadata fetch with
+/// [guids] (empty: the item carries no external ids).
+Future<({GlobalKey<MediaContextMenuState> menuKey, MediaItem item, CatalogSourcesProvider catalogSources})>
+_pumpWatchlistMenu(WidgetTester tester, {required List<CatalogSource> sources, List<String> guids = const []}) async {
+  LocaleSettings.setLocaleSync(AppLocale.en);
+  TvDetectionService.debugSetAppleTVOverride(true);
+  addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  PlexApiCache.initialize(db);
+  final client = testPlexClient(
+    serverId: ServerId('plex-1'),
+    httpClient: MockClient((request) async {
+      if (request.url.path == '/library/metadata/movie-1') {
+        return jsonResponse({
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': 'movie-1',
+                'type': 'movie',
+                'title': 'Movie',
+                if (guids.isNotEmpty)
+                  'Guid': [
+                    for (final guid in guids) {'id': guid},
+                  ],
+              },
+            ],
+          },
+        });
+      }
+      return http.Response('not found', 404);
+    }),
+  );
+  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final multiServerProvider = testMultiServerProvider(manager);
+  final offlineMode = OfflineModeProvider(manager);
+  final catalogSources = _WatchlistSourcesProvider(sources);
+  final stack = await ProfileStack.create(db: db, withStorage: false);
+  addTearDown(() async {
+    await stack.dispose();
+    catalogSources.dispose();
+    offlineMode.dispose();
+    multiServerProvider.dispose();
+    manager.dispose();
+    await db.close();
+  });
+
+  final menuKey = GlobalKey<MediaContextMenuState>();
+  final item = testMediaItem(id: 'movie-1', kind: MediaKind.movie, title: 'Movie', serverId: 'plex-1');
+  await tester.pumpWidget(
+    TranslationProvider(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+          ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineMode),
+          ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
+        ],
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: Center(
+              child: MediaContextMenu(
+                key: menuKey,
+                item: item,
+                child: const SizedBox(width: 120, height: 80, child: Text('watchlist target')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  return (menuKey: menuKey, item: item, catalogSources: catalogSources);
 }

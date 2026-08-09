@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
+import '../media/media_item.dart';
+import '../media/media_server_client.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/catalog/catalog_item.dart';
@@ -11,6 +13,7 @@ import '../profiles/active_profile_provider.dart';
 import '../profiles/profile_connection_registry.dart';
 import '../profiles/profile.dart';
 import '../services/base_shared_preferences_service.dart';
+import '../services/catalog/library_watchlist_candidates.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/anilist_catalog_source.dart';
 import '../services/catalog/mal_catalog_source.dart';
@@ -18,6 +21,7 @@ import '../services/catalog/plex_catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/catalog/simkl_catalog_source.dart';
 import '../services/catalog/trakt_catalog_source.dart';
+import '../services/trackers/future_coalescer.dart';
 import '../services/plex_discover_client.dart';
 import '../services/seerr/seerr_client.dart';
 import '../services/trackers/anilist/anilist_client.dart';
@@ -115,6 +119,14 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   CatalogSourceId? _preferredSourceId;
   String _activeUserUuid = '';
 
+  // Per-item watchlist candidates (see [watchlistCandidatesFor]): the future
+  // cache dedups/retries loads, the results map gives menu surfaces
+  // synchronous access for labeling, and the generation guard keeps a load
+  // that outlives a source rebind from repopulating disposed sources.
+  final KeyedFutureCache<String, List<WatchlistCandidate>> _watchlistCandidateLoads = KeyedFutureCache();
+  final Map<String, List<WatchlistCandidate>> _watchlistCandidateResults = {};
+  int _watchlistCandidateGeneration = 0;
+
   List<CatalogSource> get connectedSources => [
     ?_trakt.source,
     ?_mal.source,
@@ -160,6 +172,40 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     return watchlistCapableSource;
   }
 
+  static String _watchlistItemKey(MediaItem item) => '${item.serverId ?? ''}/${item.id}';
+
+  /// Session-cached [resolveWatchlistCandidates] for a library item: every
+  /// watchlist-capable source the item exists in, with its per-source ids.
+  /// Shared by the detail screen and card context menus so an item resolves
+  /// its external ids at most once per session. Failures are not cached (the
+  /// next call retries); a null [client] (server offline) resolves to
+  /// nothing without caching the miss. Invalidated when sources rebind.
+  Future<List<WatchlistCandidate>> watchlistCandidatesFor(MediaItem item, {required MediaServerClient? client}) {
+    final cached = _watchlistCandidateResults[_watchlistItemKey(item)];
+    if (cached != null) return Future.value(cached);
+    if (client == null) return Future.value(const []);
+    final generation = _watchlistCandidateGeneration;
+    return _watchlistCandidateLoads.run(_watchlistItemKey(item), () async {
+      final candidates = await resolveWatchlistCandidates(client: client, item: item, sources: watchlistCapableSources);
+      if (!isDisposed && generation == _watchlistCandidateGeneration) {
+        _watchlistCandidateResults[_watchlistItemKey(item)] = candidates;
+      }
+      return candidates;
+    });
+  }
+
+  /// The already-resolved candidates for [item], or null when never resolved
+  /// this session. Menu surfaces label from this without awaiting; an empty
+  /// list means no connected source can hold the item.
+  List<WatchlistCandidate>? cachedWatchlistCandidatesFor(MediaItem item) =>
+      _watchlistCandidateResults[_watchlistItemKey(item)];
+
+  void _invalidateWatchlistCandidates() {
+    _watchlistCandidateGeneration++;
+    _watchlistCandidateLoads.clear();
+    _watchlistCandidateResults.clear();
+  }
+
   /// Hydrate the per-profile active-source preference and Plex session.
   Future<void> onActiveProfileChanged(String? userUuid) async {
     final generation = ++_profileBindingGeneration;
@@ -196,6 +242,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
           expectedProfileGeneration == _profileBindingGeneration &&
           sessionGeneration == _plexSessionGeneration &&
           _plex.update(null)) {
+        _invalidateWatchlistCandidates();
         safeNotifyListeners();
       }
       return;
@@ -205,7 +252,10 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
         sessionGeneration != _plexSessionGeneration) {
       return;
     }
-    if (_plex.update(session)) safeNotifyListeners();
+    if (_plex.update(session)) {
+      _invalidateWatchlistCandidates();
+      safeNotifyListeners();
+    }
   }
 
   Future<void> setActiveSource(CatalogSourceId id) async {
@@ -225,7 +275,10 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     changed = _anilist.update(trackers.anilistCatalogClient) || changed;
     changed = _simkl.update(trackers.simklCatalogClient) || changed;
     changed = _seerr.update(seerr.catalogClient) || changed;
-    if (changed) safeNotifyListeners();
+    if (changed) {
+      _invalidateWatchlistCandidates();
+      safeNotifyListeners();
+    }
   }
 
   @override

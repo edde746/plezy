@@ -23,6 +23,7 @@ import '../services/music/music_playback_service.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/watch_actions.dart';
+import '../services/catalog/library_watchlist_candidates.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
@@ -34,6 +35,7 @@ import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
+import '../providers/catalog_sources_provider.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
@@ -62,6 +64,7 @@ import '../widgets/file_info_bottom_sheet.dart';
 import 'pill_input_decoration.dart';
 import '../widgets/focusable_list_tile.dart';
 import '../widgets/overlay_sheet.dart';
+import 'watchlist_source_chooser.dart';
 import '../widgets/rating_bottom_sheet.dart';
 import '../i18n/strings.g.dart';
 
@@ -314,6 +317,40 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _itemServerId != null && multiServerProvider.serverManager.isClientOnline(ServerId(_itemServerId!));
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
     final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
+
+    // Watchlist (movies and shows), backed by the connected catalog sources
+    // (Trakt, Plex, MAL, ...). Whether THIS item resolves in a source needs
+    // its external ids, which load lazily: the entry defaults to "Add" — an
+    // idempotent no-op when the item turns out to be listed already — and
+    // only offers "Remove" once cached candidates prove membership, so a
+    // cold cache can never turn a press into a surprise removal. Opening
+    // the menu warms both caches for the tap and the next open.
+    final catalogSources = Provider.of<CatalogSourcesProvider?>(context, listen: false);
+    var showWatchlistEntry = false;
+    var watchlistRemoveOffered = false;
+    if (mediaItem != null &&
+        (mediaKind == MediaKind.movie || mediaKind == MediaKind.show) &&
+        catalogSources != null &&
+        catalogSources.watchlistCapableSources.isNotEmpty &&
+        itemServerOnline &&
+        !context.read<OfflineModeProvider>().isOffline) {
+      final cachedCandidates = catalogSources.cachedWatchlistCandidatesFor(mediaItem);
+      // Resolved-and-empty means no connected source can hold this item.
+      showWatchlistEntry = cachedCandidates == null || cachedCandidates.isNotEmpty;
+      watchlistRemoveOffered =
+          cachedCandidates?.any((c) => c.source.isOnWatchlist(mediaItem.kind, c.ids) == true) ?? false;
+      if (showWatchlistEntry) {
+        unawaited(
+          catalogSources.watchlistCandidatesFor(mediaItem, client: mediaClient).catchError((Object e, StackTrace st) {
+            appLogger.d('Watchlist candidate warm-up failed', error: e, stackTrace: st);
+            return const <WatchlistCandidate>[];
+          }),
+        );
+        for (final source in catalogSources.watchlistCapableSources) {
+          unawaited(source.ensureWatchlistLoaded());
+        }
+      }
+    }
 
     // Deletion is the one gate that asks the server per item; see
     // [isMediaDeletionAllowed]. Only kinds that can actually be deleted pay
@@ -620,6 +657,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
       }
 
+      if (showWatchlistEntry) {
+        menuActions.add(
+          _MenuAction(
+            value: 'toggle_watchlist',
+            icon: watchlistRemoveOffered ? Symbols.bookmark_remove_rounded : Symbols.bookmark_add_rounded,
+            label: watchlistRemoveOffered ? t.explore.removeFromWatchlist : t.explore.addToWatchlist,
+          ),
+        );
+      }
+
       // Add to... (for episodes, movies, shows, and seasons). Plex-only —
       // uses `buildMetadataUri` + `addToPlaylist` / `addToCollection`. The
       // MediaBrowser item-add APIs are different and not wired here yet.
@@ -833,6 +880,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _showAddToSubmenu(context);
           break;
 
+        case 'toggle_watchlist':
+          await _handleWatchlistToggle(
+            context,
+            mediaItem!,
+            catalogSources!,
+            mediaClient,
+            removeOffered: watchlistRemoveOffered,
+            position: position,
+            openedFromKeyboard: openedFromKeyboard,
+          );
+          break;
+
         case 'shuffle_play':
           await _handleShufflePlayWithQueue(context);
           break;
@@ -942,6 +1001,65 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           destructive: action.destructive,
         ),
     ];
+  }
+
+  /// Resolve-then-mutate for the watchlist entry. [removeOffered] pins the
+  /// intent the user saw: an entry labeled "Add" always adds (idempotent
+  /// when the item was already listed) — resolution finishing after the
+  /// menu was built must not flip a press into a removal. With several
+  /// capable sources a chooser opens and the picked source toggles by its
+  /// own (by now resolved) membership, mirroring the detail screen.
+  Future<void> _handleWatchlistToggle(
+    BuildContext context,
+    MediaItem item,
+    CatalogSourcesProvider catalogSources,
+    MediaServerClient? client, {
+    required bool removeOffered,
+    required Offset? position,
+    required bool openedFromKeyboard,
+  }) async {
+    List<WatchlistCandidate> candidates;
+    try {
+      candidates = await catalogSources.watchlistCandidatesFor(item, client: client);
+    } catch (e, st) {
+      appLogger.w('Watchlist candidate resolution failed', error: e, stackTrace: st);
+      if (context.mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
+      return;
+    }
+    if (!context.mounted) return;
+    if (candidates.isEmpty) {
+      showAppSnackBar(context, t.explore.watchlistNoMatch);
+      return;
+    }
+
+    final WatchlistCandidate candidate;
+    final bool add;
+    if (candidates.length == 1) {
+      candidate = candidates.single;
+      add = !removeOffered;
+    } else {
+      final choice = await showWatchlistSourceChooser(
+        context,
+        kind: item.kind,
+        candidates: candidates,
+        position: position,
+        focusFirstItem: openedFromKeyboard,
+      );
+      if (choice == null || !context.mounted) return;
+      candidate = choice;
+      add = !(choice.source.isOnWatchlist(item.kind, choice.ids) ?? false);
+    }
+
+    try {
+      // Membership updates optimistically inside the source; Explore rows
+      // and open detail screens listening to watchlistChanges follow.
+      if (!await mutateWatchlistMembership(item.kind, candidate, add: add)) return;
+      if (!context.mounted) return;
+      showSuccessSnackBar(context, add ? t.explore.addedToWatchlist : t.explore.removedFromWatchlist);
+    } catch (e, st) {
+      appLogger.w('Watchlist update failed', error: e, stackTrace: st);
+      if (context.mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
+    }
   }
 
   /// Execute an action with error handling and refresh

@@ -1,8 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/plex_discover_client.dart';
+import 'package:plezy/utils/external_ids.dart';
 
+import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -78,4 +85,132 @@ void main() {
     expect(calls, 3);
     expect(provider.connectedSources, isEmpty);
   });
+
+  group('watchlist candidate cache', () {
+    final item = testMediaItem(id: 'movie-1', serverId: 'server-1');
+
+    test('resolves an item once per session and hands menus the cached result', () async {
+      final source = _FakeWatchlistSource(CatalogSourceId.trakt);
+      final provider = _FakeSourcesProvider([source]);
+      addTearDown(provider.dispose);
+      final client = _ExternalIdsClient(const ExternalIds(imdb: 'tt1'));
+
+      expect(provider.cachedWatchlistCandidatesFor(item), isNull);
+      final first = await provider.watchlistCandidatesFor(item, client: client);
+      final second = await provider.watchlistCandidatesFor(item, client: client);
+
+      expect(client.calls, 1);
+      expect(first.single.source, same(source));
+      expect(second, same(first));
+      expect(provider.cachedWatchlistCandidatesFor(item), same(first));
+    });
+
+    test('concurrent loads for the same item coalesce into one resolution', () async {
+      final provider = _FakeSourcesProvider([_FakeWatchlistSource(CatalogSourceId.trakt)]);
+      addTearDown(provider.dispose);
+      final gate = Completer<void>();
+      final client = _ExternalIdsClient(const ExternalIds(imdb: 'tt1'), gate: gate);
+
+      final first = provider.watchlistCandidatesFor(item, client: client);
+      final second = provider.watchlistCandidatesFor(item, client: client);
+      gate.complete();
+
+      expect(await second, same(await first));
+      expect(client.calls, 1);
+    });
+
+    test('a failed resolution is retried instead of cached', () async {
+      final provider = _FakeSourcesProvider([_FakeWatchlistSource(CatalogSourceId.trakt)]);
+      addTearDown(provider.dispose);
+      final client = _ExternalIdsClient(const ExternalIds(imdb: 'tt1'), error: StateError('unreachable'));
+
+      await expectLater(provider.watchlistCandidatesFor(item, client: client), throwsStateError);
+      expect(provider.cachedWatchlistCandidatesFor(item), isNull);
+
+      client.error = null;
+      final candidates = await provider.watchlistCandidatesFor(item, client: client);
+      expect(candidates, hasLength(1));
+      expect(client.calls, 2);
+    });
+
+    test('a null client resolves to nothing without caching the miss', () async {
+      final provider = _FakeSourcesProvider([_FakeWatchlistSource(CatalogSourceId.trakt)]);
+      addTearDown(provider.dispose);
+
+      expect(await provider.watchlistCandidatesFor(item, client: null), isEmpty);
+      expect(provider.cachedWatchlistCandidatesFor(item), isNull);
+
+      final candidates = await provider.watchlistCandidatesFor(
+        item,
+        client: _ExternalIdsClient(const ExternalIds(imdb: 'tt1')),
+      );
+      expect(candidates, hasLength(1));
+    });
+
+    test('a source rebind invalidates cached candidates', () async {
+      PlexDiscoverSession? session = const PlexDiscoverSession(accessToken: 'a', clientIdentifier: 'client-id');
+      final provider = _FakeSourcesProvider([
+        _FakeWatchlistSource(CatalogSourceId.trakt),
+      ], plexSessionSupplier: () async => session);
+      addTearDown(provider.dispose);
+      await provider.onActiveProfileChanged('profile-1');
+
+      await provider.watchlistCandidatesFor(item, client: _ExternalIdsClient(const ExternalIds(imdb: 'tt1')));
+      expect(provider.cachedWatchlistCandidatesFor(item), isNotNull);
+
+      await provider.onProfileBindingStateChanged(true);
+      session = const PlexDiscoverSession(accessToken: 'b', clientIdentifier: 'client-id');
+      await provider.onProfileBindingStateChanged(false);
+
+      expect(provider.cachedWatchlistCandidatesFor(item), isNull);
+    });
+  });
+}
+
+class _ExternalIdsClient implements MediaServerClient {
+  _ExternalIdsClient(this.ids, {this.error, this.gate});
+
+  final ExternalIds ids;
+  Object? error;
+  final Completer<void>? gate;
+  int calls = 0;
+
+  @override
+  Future<ExternalIds> fetchExternalIds(String itemId) async {
+    calls++;
+    await gate?.future;
+    if (error != null) throw error!;
+    return ids;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeWatchlistSource implements CatalogSource {
+  _FakeWatchlistSource(this.id);
+
+  @override
+  final CatalogSourceId id;
+
+  @override
+  bool get supportsWatchlist => true;
+
+  @override
+  Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async =>
+      CatalogItemIds(imdb: external.imdb);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Overrides the bound-client source list so the cache can be exercised with
+/// fake sources; the invalidation paths (Plex session rebinds) stay real.
+class _FakeSourcesProvider extends CatalogSourcesProvider {
+  _FakeSourcesProvider(this.sources, {super.plexSessionSupplier});
+
+  final List<CatalogSource> sources;
+
+  @override
+  List<CatalogSource> get connectedSources => sources;
 }

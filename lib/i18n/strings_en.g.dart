@@ -3054,8 +3054,17 @@ class Translations$explore$en {
 	/// en: 'Remove from Watchlist'
 	String get removeFromWatchlist => 'Remove from Watchlist';
 
+	/// en: 'Added to watchlist'
+	String get addedToWatchlist => 'Added to watchlist';
+
+	/// en: 'Removed from watchlist'
+	String get removedFromWatchlist => 'Removed from watchlist';
+
 	/// en: 'Couldn't update watchlist'
 	String get watchlistUpdateFailed => 'Couldn\'t update watchlist';
+
+	/// en: 'Couldn't match this item to a watchlist'
+	String get watchlistNoMatch => 'Couldn\'t match this item to a watchlist';
 
 	/// en: 'Not in your library'
 	String get notInLibrary => 'Not in your library';
@@ -7065,7 +7074,10 @@ extension on Translations {
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
 			'explore.removeFromWatchlist' => 'Remove from Watchlist',
+			'explore.addedToWatchlist' => 'Added to watchlist',
+			'explore.removedFromWatchlist' => 'Removed from watchlist',
 			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
+			'explore.watchlistNoMatch' => 'Couldn\'t match this item to a watchlist',
 			'explore.notInLibrary' => 'Not in your library',
 			'explore.inTheseLibraries' => 'In these libraries',
 			'explore.checkingLibrary' => 'Checking your library...',
@@ -7102,11 +7114,11 @@ extension on Translations {
 			'explore.stats.viewersWeek' => ({required Object n}) => '${n} watched this week',
 			'explore.stats.viewersMonth' => ({required Object n}) => '${n} watched this month',
 			'explore.stats.viewersYear' => ({required Object n}) => '${n} watched this year',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.viewersAllTime' => ({required Object n}) => '${n} viewers',
 			'explore.stats.planning' => ({required Object n}) => '${n} planning to watch',
 			'explore.stats.favorited' => ({required Object n}) => '${n} favorites',
-			_ => null,
-		} ?? switch (path) {
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} dropped it',
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} comment', other: '${n} comments', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} votes',
@@ -7616,11 +7628,11 @@ extension on Translations {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.selectPlayer' => 'Select Player',
 			'externalPlayer.customPlayers' => 'Custom Players',
 			'externalPlayer.systemDefault' => 'System Default',
