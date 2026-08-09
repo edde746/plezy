@@ -33,7 +33,6 @@ void main() {
       p.dispose();
     });
 
-
     test('setPreset persists, updates current/saved, and notifies', () async {
       final p = ShaderProvider();
       await Future.delayed(Duration.zero);

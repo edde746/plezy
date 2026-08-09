@@ -34,7 +34,6 @@ void main() {
     });
   });
 
-
   group('MediaBrowserDialect.detectFromPublicSystemInfo', () {
     test('identifies a real Jellyfin 10.10.7 body by ProductName', () {
       expect(

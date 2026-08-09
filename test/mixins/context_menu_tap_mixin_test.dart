@@ -44,7 +44,6 @@ void main() {
       expect(state.isContextMenuOpen, isFalse);
     });
 
-
     testWidgets('showContextMenuFromTap and showContextMenu are no-ops without a mounted menu', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s));

@@ -78,7 +78,6 @@ void main() {
   // ============================================================
 
   group('PlayQueueResult', () {
-
     test('PlayQueueCancelled is a distinct re-exported result', () {
       const PlayQueueResult result = PlayQueueCancelled();
       expect(result, isA<PlayQueueCancelled>());

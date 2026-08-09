@@ -93,7 +93,6 @@ void main() {
       );
     });
 
-
     test('exits a standalone movie after adjacency resolves unavailable', () {
       expect(
         completionNavigationAction(hasNext: false, adjacentStatus: QueueNavigationStatus.unavailable),

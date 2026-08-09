@@ -30,7 +30,6 @@ void main() {
       expect(fired, 0);
     });
 
-
     test('multiple safeNotifyListeners calls succeed before dispose', () {
       final n = _Probe();
       var fired = 0;

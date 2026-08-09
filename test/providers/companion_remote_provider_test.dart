@@ -24,11 +24,6 @@ void main() {
   setUp(resetSharedPreferencesForTest);
 
   group('CompanionRemoteProvider — initial state', () {
-
-
-
-
-
     test('discoverHosts returns null when crypto is not ready', () {
       final p = CompanionRemoteProvider();
       expect(p.discoverHosts(), isNull);

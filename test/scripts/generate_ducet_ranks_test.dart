@@ -20,7 +20,6 @@ void main() {
     }
   });
 
-
   test('bundled gzip inputs have deterministic normalized headers and bytes', () {
     final allKeys = File('scripts/data/${allKeysSource.bundledFileName}').readAsBytesSync();
     final fractional = File('scripts/data/${fractionalUcaSource.bundledFileName}').readAsBytesSync();

@@ -27,7 +27,6 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
   });
 
-
   testWidgets('the TV player route opens with the chrome down and unpresented', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
 

@@ -12,7 +12,6 @@ import 'package:plezy/services/image_cache_service.dart';
 void main() {
   const timeout = Duration(seconds: 5);
 
-
   http.Request get(String path) => http.Request('GET', Uri.parse('https://example.invalid$path'));
 
   MockClient mixedClient() => MockClient((request) async {

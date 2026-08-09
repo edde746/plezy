@@ -19,7 +19,6 @@ void main() {
   setUp(resetSharedPreferencesForTest);
 
   group('UserProfileProvider (settings-only)', () {
-
     test('refreshProfileSettings without a stored token is a no-op', () async {
       final p = UserProfileProvider();
       var notified = 0;

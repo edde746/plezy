@@ -29,7 +29,6 @@ import '../test_helpers/theme.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-
   group('hidden-chrome frame quiescence', () {
     late _IdlePlayer player;
     late PlayerChromeController chrome;

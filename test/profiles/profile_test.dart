@@ -3,9 +3,6 @@ import 'package:plezy/profiles/profile.dart';
 
 void main() {
   group('Profile', () {
-
-
-
     test('local PIN hash is round-tripped via configJson', () {
       final p = Profile.local(
         id: 'local-1',

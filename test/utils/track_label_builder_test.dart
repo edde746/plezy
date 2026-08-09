@@ -3,8 +3,6 @@ import 'package:plezy/utils/track_label_builder.dart';
 
 void main() {
   group('TrackLabel', () {
-
-
     test('equality compares both parts', () {
       expect(const TrackLabel('A', 'B'), const TrackLabel('A', 'B'));
       expect(const TrackLabel('A'), isNot(const TrackLabel('A', 'B')));

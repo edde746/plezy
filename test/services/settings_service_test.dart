@@ -72,7 +72,6 @@ void main() {
     });
   });
 
-
   group('SettingsService mute volume restoration', () {
     test('keeps 37 persisted across mute and restores it on unmute', () async {
       final settings = await SettingsService.getInstance();
@@ -116,7 +115,6 @@ void main() {
       expect(unmute.persistedVolume, 100);
     });
   });
-
 
   group('SettingsService episode action', () {
     test('defaults to play and resets to play', () async {

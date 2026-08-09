@@ -45,8 +45,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('ServerBoundMediaMixin', () {
-
-
     testWidgets('toServerBoundGlobalKey uses the metadata serverId by default', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(

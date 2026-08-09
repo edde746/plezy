@@ -85,7 +85,6 @@ void main() {
       expect(sorted.map((server) => server.id), ['srv-1', 'srv-2', 'srv-3']);
     });
 
-
     test('listenDatagrams receives queued loopback datagrams', () async {
       final receiver = await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0);
       final sender = await RawDatagramSocket.bind(InternetAddress.loopbackIPv4, 0);

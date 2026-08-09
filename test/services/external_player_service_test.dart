@@ -81,7 +81,6 @@ MediaItem _item({int? durationMs}) {
 }
 
 void main() {
-
   test('Android external progress preserves null duration and still stops after start failure', () async {
     final client = _RecordingClient()..failStart = true;
 

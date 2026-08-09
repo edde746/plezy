@@ -97,5 +97,4 @@ void main() {
     // The synthetic property is init-only; losing it would silently restore the native Auto tier.
     expect(args['bufferTier'], 'extra_large');
   });
-
 }

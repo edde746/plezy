@@ -118,7 +118,6 @@ void main() {
     });
   });
 
-
   group('MediaPlaylist.globalKey', () {
     test('uses "<serverId>:<id>" when serverId is set', () {
       final pl = _playlist(id: 'pl-42', serverId: 'srv-9');
