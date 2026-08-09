@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/screens/profile/add_local_profile_screen.dart';
@@ -63,7 +62,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Cancel');
   });
 
-  testWidgets('Android TV virtual keyboard done leaves profile name input', (tester) async {
+  testWidgets('Android TV native keyboard done leaves profile name input', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
     TvDetectionService.setForceTVSync(true);
@@ -75,9 +74,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+    // The native IME opens in place: focus stays on the field, no overlay.
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Name');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
-    await tester.tap(find.byIcon(Symbols.check_rounded));
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pumpAndSettle();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:SetPin');

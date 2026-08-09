@@ -499,9 +499,10 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       FocusableTextFormField(
         controller: _urlController,
         focusNode: _urlFocus,
-        tvTextInputPresentation: PlatformDetector.isAppleTV()
-            ? TvTextInputPresentation.platform
-            : TvTextInputPresentation.automatic,
+        // Native on every TV: `automatic` would route this wrap-to-4-lines
+        // field to the Flutter overlay, but it is logically single-line URL
+        // input and the platform IME handles it (#1051, #1079).
+        tvTextInputPresentation: TvTextInputPresentation.platform,
         autofocus: true,
         tvTextInputAutoOpenBehavior: deferredUrlFieldAutoOpen,
         keyboardType: TextInputType.url,
