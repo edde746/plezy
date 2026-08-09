@@ -421,30 +421,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => '다운믹스 시 음량 정규화';
 	@override String get audioDownmixNormalizeDescription => '클리핑을 방지하기 위해 믹스 음량을 낮춥니다. 원래 음량을 유지하려면 끄세요(큰 소리 장면에서 왜곡될 수 있음).';
-	@override String get atmosDiagnostics => 'Atmos 출력 테스트';
-	@override String get atmosDiagnosticsDescription => '시스템 플레이어로 테스트 신호를 재생하여 Dolby Atmos 출력을 진단합니다';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos 스트림';
-	@override String get atmosTestHlsAtmosDescription => '검증된 Dolby Atmos 스트림입니다. 리시버에 Dolby Atmos가 표시되어야 합니다.';
-	@override String get atmosTestHlsControl => 'Apple 서라운드 스트림';
-	@override String get atmosTestHlsControlDescription => 'Atmos 없는 대조용 스트림입니다. 리시버에 Atmos 없는 서라운드가 표시되어야 합니다.';
-	@override String get atmosTestRawStream => '원시 EAC3 스트림';
-	@override String get atmosTestRawStreamDescription => '플레이어 내 Atmos 재생과 동일한 방식으로 테스트 파일을 스트리밍합니다. 테스트 파일 URL이 필요합니다.';
-	@override String get atmosTestRawFile => '원시 EAC3 파일';
-	@override String get atmosTestRawFileDescription => '길이가 알려진 테스트 파일을 재생합니다. 테스트 파일 URL이 필요합니다.';
-	@override String get atmosTestAsbarNative => '샘플 버퍼 렌더러(네이티브)';
-	@override String get atmosTestAsbarNativeDescription => '파일의 압축 오디오를 그대로 시스템 렌더러에 전달합니다. 테스트 파일 URL이 필요합니다.';
-	@override String get atmosTestAsbarGenerated => '샘플 버퍼 렌더러(재구성)';
-	@override String get atmosTestAsbarGeneratedDescription => '동일하지만 오디오 설명을 재생과 같은 방식으로 재구성합니다. 테스트 파일 URL이 필요합니다.';
-	@override String get atmosTestSessionMode => '동영상 재생 세션 모드 사용';
-	@override String get atmosTestSessionModeDescription => '끄면 Dolby가 문서화한 모드를 사용합니다. 켜면 이전 모드를 사용합니다.';
-	@override String get atmosTestShowRoutePicker => 'AirPlay 출력 선택';
-	@override String get atmosTestHideRoutePicker => 'AirPlay 출력 선택기 숨기기';
-	@override String get atmosTestRoutePickerDescription => '테스트를 AirPlay 수신기로 보냅니다. 확인된 오디오 모드는 AirPlay에서만 보고됩니다.';
-	@override String get atmosTestStop => '테스트 중지';
-	@override String get atmosTestUrl => '테스트 파일 URL';
-	@override String get atmosTestUrlDescription => '원시 .ec3 Dolby Atmos 파일의 HTTP URL(예: ffmpeg로 추출)';
-	@override String get atmosTestUrlMissing => '먼저 테스트 파일 URL을 설정하세요';
-	@override String get atmosTestStatus => '상태';
 	@override String get dvConversionMode => 'Dolby Vision 변환';
 	@override String get dvConversionModeDescription => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.';
 	@override String get dvConversionAuto => '자동';
@@ -2873,30 +2849,6 @@ extension on TranslationsKo {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => '다운믹스 시 음량 정규화',
 			'settings.audioDownmixNormalizeDescription' => '클리핑을 방지하기 위해 믹스 음량을 낮춥니다. 원래 음량을 유지하려면 끄세요(큰 소리 장면에서 왜곡될 수 있음).',
-			'settings.atmosDiagnostics' => 'Atmos 출력 테스트',
-			'settings.atmosDiagnosticsDescription' => '시스템 플레이어로 테스트 신호를 재생하여 Dolby Atmos 출력을 진단합니다',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos 스트림',
-			'settings.atmosTestHlsAtmosDescription' => '검증된 Dolby Atmos 스트림입니다. 리시버에 Dolby Atmos가 표시되어야 합니다.',
-			'settings.atmosTestHlsControl' => 'Apple 서라운드 스트림',
-			'settings.atmosTestHlsControlDescription' => 'Atmos 없는 대조용 스트림입니다. 리시버에 Atmos 없는 서라운드가 표시되어야 합니다.',
-			'settings.atmosTestRawStream' => '원시 EAC3 스트림',
-			'settings.atmosTestRawStreamDescription' => '플레이어 내 Atmos 재생과 동일한 방식으로 테스트 파일을 스트리밍합니다. 테스트 파일 URL이 필요합니다.',
-			'settings.atmosTestRawFile' => '원시 EAC3 파일',
-			'settings.atmosTestRawFileDescription' => '길이가 알려진 테스트 파일을 재생합니다. 테스트 파일 URL이 필요합니다.',
-			'settings.atmosTestAsbarNative' => '샘플 버퍼 렌더러(네이티브)',
-			'settings.atmosTestAsbarNativeDescription' => '파일의 압축 오디오를 그대로 시스템 렌더러에 전달합니다. 테스트 파일 URL이 필요합니다.',
-			'settings.atmosTestAsbarGenerated' => '샘플 버퍼 렌더러(재구성)',
-			'settings.atmosTestAsbarGeneratedDescription' => '동일하지만 오디오 설명을 재생과 같은 방식으로 재구성합니다. 테스트 파일 URL이 필요합니다.',
-			'settings.atmosTestSessionMode' => '동영상 재생 세션 모드 사용',
-			'settings.atmosTestSessionModeDescription' => '끄면 Dolby가 문서화한 모드를 사용합니다. 켜면 이전 모드를 사용합니다.',
-			'settings.atmosTestShowRoutePicker' => 'AirPlay 출력 선택',
-			'settings.atmosTestHideRoutePicker' => 'AirPlay 출력 선택기 숨기기',
-			'settings.atmosTestRoutePickerDescription' => '테스트를 AirPlay 수신기로 보냅니다. 확인된 오디오 모드는 AirPlay에서만 보고됩니다.',
-			'settings.atmosTestStop' => '테스트 중지',
-			'settings.atmosTestUrl' => '테스트 파일 URL',
-			'settings.atmosTestUrlDescription' => '원시 .ec3 Dolby Atmos 파일의 HTTP URL(예: ffmpeg로 추출)',
-			'settings.atmosTestUrlMissing' => '먼저 테스트 파일 URL을 설정하세요',
-			'settings.atmosTestStatus' => '상태',
 			'settings.dvConversionMode' => 'Dolby Vision 변환',
 			'settings.dvConversionModeDescription' => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.',
 			'settings.dvConversionAuto' => '자동',
@@ -3097,8 +3049,6 @@ extension on TranslationsKo {
 			'mediaMenu.deleteMovieTitle' => '이 영화를 삭제할까요?',
 			'mediaMenu.deleteEpisodeConfirm' => '에피소드 삭제',
 			'mediaMenu.deleteSeasonConfirm' => '시즌 삭제',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => '프로그램 삭제',
 			'mediaMenu.deleteMovieConfirm' => '영화 삭제',
 			'mediaMenu.deleteAnyway' => '그래도 삭제',
@@ -3123,6 +3073,8 @@ extension on TranslationsKo {
 			'rateSheet.noConnectedServices' => '평가하려면 설정에서 서비스를 연결하세요.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 영화',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV 프로그램',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => '시청 완료',
@@ -3611,8 +3563,6 @@ extension on TranslationsKo {
 			'explore.badge.requested' => '요청됨',
 			'explore.badge.pendingApproval' => '승인 대기 중',
 			'explore.badge.processing' => '처리 중',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => '거절됨',
 			'explore.badge.requestFailed' => '요청 실패',
 			'explore.badge.requested4k' => '4K 요청됨',
@@ -3637,6 +3587,8 @@ extension on TranslationsKo {
 			'explore.stats.completed' => ({required Object n}) => '완료 ${n}명',
 			'explore.stats.onHold' => ({required Object n}) => '보류 ${n}명',
 			'explore.stats.dropped' => ({required Object n}) => '하차 ${n}명',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => '겨울',
 			'explore.season.spring' => '봄',
 			'explore.season.summer' => '여름',
@@ -4125,8 +4077,6 @@ extension on TranslationsKo {
 			'performanceOverlay.dropped' => '드롭됨',
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 평균',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV 샘플 평균',
 			'performanceOverlay.maxLuma' => '최대 휘도',
 			'performanceOverlay.minLuma' => '최소 휘도',
@@ -4151,6 +4101,8 @@ extension on TranslationsKo {
 			'externalPlayer.playerPackage' => '패키지 이름',
 			'externalPlayer.playerUrlScheme' => 'URL 스킴',
 			'externalPlayer.off' => '꺼짐',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
 			'externalPlayer.playInExternalPlayer' => '외부 플레이어에서 재생',

@@ -421,30 +421,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => 'Oʻtkazishda ovozni meʼyorlashtirish';
 	@override String get audioDownmixNormalizeDescription => 'Ovoz buzilishining oldini olish uchun darajani tushirish.';
-	@override String get atmosDiagnostics => 'Atmos chiqishini tekshirish';
-	@override String get atmosDiagnosticsDescription => 'Dolby Atmos chiqishini tekshirish';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos oqimi';
-	@override String get atmosTestHlsAtmosDescription => 'Toʻgʻri ishlaydigan Dolby Atmos oqimi.';
-	@override String get atmosTestHlsControl => 'Apple atroflicha ovoz oqimi';
-	@override String get atmosTestHlsControlDescription => 'Atmos boʻlmagan nazorat oqimi.';
-	@override String get atmosTestRawStream => 'Ishlov berilmagan EAC3 oqimi';
-	@override String get atmosTestRawStreamDescription => 'Test faylini ichki Atmos sifatida uzatish.';
-	@override String get atmosTestRawFile => 'Ishlov berilmagan EAC3 fayli';
-	@override String get atmosTestRawFileDescription => 'Test faylini ijro etish.';
-	@override String get atmosTestAsbarNative => 'Sempl-bufer renderer (nativ)';
-	@override String get atmosTestAsbarNativeDescription => 'Faylning oʻzgartirilmagan siqilgan audiosini toʻgʻridan-toʻgʻri tizim rendereriga uzatadi. Test fayli URL-manzili kerak.';
-	@override String get atmosTestAsbarGenerated => 'Sempl-bufer renderer (qayta qurilgan)';
-	@override String get atmosTestAsbarGeneratedDescription => 'Xuddi shu, lekin audio tavsifi ijro paytida qanday qurilsa, shunday qayta quriladi. Test fayli URL-manzili kerak.';
-	@override String get atmosTestSessionMode => 'Film ijrosi seansi rejimidan foydalanish';
-	@override String get atmosTestSessionModeDescription => 'Oʻchirilgan holatda Dolby hujjatlashtirgan rejim qoʻllanadi. Yoqilgan holatda avval ishlatilgan rejim qoʻllanadi.';
-	@override String get atmosTestShowRoutePicker => 'AirPlay chiqishini tanlash';
-	@override String get atmosTestHideRoutePicker => 'AirPlay chiqishi tanlagichini yashirish';
-	@override String get atmosTestRoutePickerDescription => 'Testni AirPlay qabul qilgichiga yuboradi. Aniqlangan audio rejimi haqida faqat AirPlay xabar beradi.';
-	@override String get atmosTestStop => 'Testni toʻxtatish';
-	@override String get atmosTestUrl => 'Test fayli URL-manzili';
-	@override String get atmosTestUrlDescription => 'Ishlov berilmagan .ec3 faylining HTTP URL-manzili';
-	@override String get atmosTestUrlMissing => 'Avval test fayli URL-manzilini oʻrnating';
-	@override String get atmosTestStatus => 'Holati';
 	@override String get dvConversionMode => 'Dolby Vision oʻtkazmasi';
 	@override String get dvConversionModeDescription => 'ExoPlayer-ning Dolby Vision Profile 7 fayllarini qayta ishlash rejimini tanlang.';
 	@override String get dvConversionAuto => 'Avtomatik';
@@ -2882,30 +2858,6 @@ extension on TranslationsUz {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => 'Oʻtkazishda ovozni meʼyorlashtirish',
 			'settings.audioDownmixNormalizeDescription' => 'Ovoz buzilishining oldini olish uchun darajani tushirish.',
-			'settings.atmosDiagnostics' => 'Atmos chiqishini tekshirish',
-			'settings.atmosDiagnosticsDescription' => 'Dolby Atmos chiqishini tekshirish',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos oqimi',
-			'settings.atmosTestHlsAtmosDescription' => 'Toʻgʻri ishlaydigan Dolby Atmos oqimi.',
-			'settings.atmosTestHlsControl' => 'Apple atroflicha ovoz oqimi',
-			'settings.atmosTestHlsControlDescription' => 'Atmos boʻlmagan nazorat oqimi.',
-			'settings.atmosTestRawStream' => 'Ishlov berilmagan EAC3 oqimi',
-			'settings.atmosTestRawStreamDescription' => 'Test faylini ichki Atmos sifatida uzatish.',
-			'settings.atmosTestRawFile' => 'Ishlov berilmagan EAC3 fayli',
-			'settings.atmosTestRawFileDescription' => 'Test faylini ijro etish.',
-			'settings.atmosTestAsbarNative' => 'Sempl-bufer renderer (nativ)',
-			'settings.atmosTestAsbarNativeDescription' => 'Faylning oʻzgartirilmagan siqilgan audiosini toʻgʻridan-toʻgʻri tizim rendereriga uzatadi. Test fayli URL-manzili kerak.',
-			'settings.atmosTestAsbarGenerated' => 'Sempl-bufer renderer (qayta qurilgan)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'Xuddi shu, lekin audio tavsifi ijro paytida qanday qurilsa, shunday qayta quriladi. Test fayli URL-manzili kerak.',
-			'settings.atmosTestSessionMode' => 'Film ijrosi seansi rejimidan foydalanish',
-			'settings.atmosTestSessionModeDescription' => 'Oʻchirilgan holatda Dolby hujjatlashtirgan rejim qoʻllanadi. Yoqilgan holatda avval ishlatilgan rejim qoʻllanadi.',
-			'settings.atmosTestShowRoutePicker' => 'AirPlay chiqishini tanlash',
-			'settings.atmosTestHideRoutePicker' => 'AirPlay chiqishi tanlagichini yashirish',
-			'settings.atmosTestRoutePickerDescription' => 'Testni AirPlay qabul qilgichiga yuboradi. Aniqlangan audio rejimi haqida faqat AirPlay xabar beradi.',
-			'settings.atmosTestStop' => 'Testni toʻxtatish',
-			'settings.atmosTestUrl' => 'Test fayli URL-manzili',
-			'settings.atmosTestUrlDescription' => 'Ishlov berilmagan .ec3 faylining HTTP URL-manzili',
-			'settings.atmosTestUrlMissing' => 'Avval test fayli URL-manzilini oʻrnating',
-			'settings.atmosTestStatus' => 'Holati',
 			'settings.dvConversionMode' => 'Dolby Vision oʻtkazmasi',
 			'settings.dvConversionModeDescription' => 'ExoPlayer-ning Dolby Vision Profile 7 fayllarini qayta ishlash rejimini tanlang.',
 			'settings.dvConversionAuto' => 'Avtomatik',
@@ -3106,8 +3058,6 @@ extension on TranslationsUz {
 			'mediaMenu.deleteMovieTitle' => 'Ushbu film oʻchirilsinmi?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Qismni oʻchirish',
 			'mediaMenu.deleteSeasonConfirm' => 'Mavsumni oʻchirish',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Shouni oʻchirish',
 			'mediaMenu.deleteMovieConfirm' => 'Filmni oʻchirish',
 			'mediaMenu.deleteAnyway' => 'Baribir oʻchirish',
@@ -3132,6 +3082,8 @@ extension on TranslationsUz {
 			'rateSheet.noConnectedServices' => 'Baho berish uchun Sozlamalardan xizmatni ulang.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV shou',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'koʻrilgan',
@@ -3620,8 +3572,6 @@ extension on TranslationsUz {
 			'explore.badge.requested' => 'Soʻralgan',
 			'explore.badge.pendingApproval' => 'Tasdiq kutilmoqda',
 			'explore.badge.processing' => 'Ishlanmoqda',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => 'Rad etilgan',
 			'explore.badge.requestFailed' => 'Soʻrov amalga oshmadi',
 			'explore.badge.requested4k' => '4K soʻralgan',
@@ -3646,6 +3596,8 @@ extension on TranslationsUz {
 			'explore.stats.completed' => ({required Object n}) => '${n} kishi yakunlagan',
 			'explore.stats.onHold' => ({required Object n}) => '${n} kishi toʻxtatib turibdi',
 			'explore.stats.dropped' => ({required Object n}) => '${n} kishi toʻxtatgan',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Qish',
 			'explore.season.spring' => 'Bahor',
 			'explore.season.summer' => 'Yoz',
@@ -4134,8 +4086,6 @@ extension on TranslationsUz {
 			'performanceOverlay.dropped' => 'Tushirib qoldirilgan kadrlar',
 			'performanceOverlay.dvRpus' => 'DV RPU-lar',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Oʻrt.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV Namuna Oʻrt.',
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
@@ -4160,6 +4110,8 @@ extension on TranslationsUz {
 			'externalPlayer.playerPackage' => 'Paket nomi',
 			'externalPlayer.playerUrlScheme' => 'URL sxemasi',
 			'externalPlayer.off' => 'Oʻchirilgan',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Tashqi pleyerni ishga tushirib boʻlmadi',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} oʻrnatilmagan',
 			'externalPlayer.playInExternalPlayer' => 'Tashqi pleyerda ijro etish',

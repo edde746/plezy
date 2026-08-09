@@ -421,30 +421,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => 'Dönüştürmede Sesi Normalleştir';
 	@override String get audioDownmixNormalizeDescription => 'Ses patlamalarını önlemek için karışımı düşürün. Orijinal sesi korumak için kapatın (yüksek sesli sahnelerde bozulma yapabilir).';
-	@override String get atmosDiagnostics => 'Atmos Çıkış Testi';
-	@override String get atmosDiagnosticsDescription => 'Sistem oynatıcısı üzerinden test sinyalleri çalarak Dolby Atmos çıkışını teşhis edin';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos akışı';
-	@override String get atmosTestHlsAtmosDescription => 'Düzgün çalıştığı bilinen Dolby Atmos akışı. Alıcıda Dolby Atmos görünmelidir.';
-	@override String get atmosTestHlsControl => 'Apple çevreleyen ses akışı';
-	@override String get atmosTestHlsControlDescription => 'Atmos olmayan kontrol akışı. Alıcıda Atmos olmadan çevreleyen ses görünmelidir.';
-	@override String get atmosTestRawStream => 'Ham EAC3 akışı';
-	@override String get atmosTestRawStreamDescription => 'Test dosyasını aynen oynatıcı içi Atmos oynatımı gibi akış yapar. Test dosyası URL\'si gerektirir.';
-	@override String get atmosTestRawFile => 'Ham EAC3 dosyası';
-	@override String get atmosTestRawFileDescription => 'Test dosyasını bilinen bir uzunlukta oynatır. Test dosyası URL\'si gerektirir.';
-	@override String get atmosTestAsbarNative => 'Örnek arabellek işleyicisi (yerel)';
-	@override String get atmosTestAsbarNativeDescription => 'Dosyanın değiştirilmemiş sıkıştırılmış sesini doğrudan sistem işleyicisine iletir. Test dosyası URL\'si gerektirir.';
-	@override String get atmosTestAsbarGenerated => 'Örnek arabellek işleyicisi (yeniden oluşturulmuş)';
-	@override String get atmosTestAsbarGeneratedDescription => 'Aynısı, ancak ses tanımı oynatmanın oluşturduğu biçimde yeniden oluşturulur. Test dosyası URL\'si gerektirir.';
-	@override String get atmosTestSessionMode => 'Film oynatma oturumu modunu kullan';
-	@override String get atmosTestSessionModeDescription => 'Kapalı, Dolby\'nin belgelediği modu kullanır. Açık, oynatmanın daha önce kullandığı modu kullanır.';
-	@override String get atmosTestShowRoutePicker => 'AirPlay çıkışını seç';
-	@override String get atmosTestHideRoutePicker => 'AirPlay çıkış seçicisini gizle';
-	@override String get atmosTestRoutePickerDescription => 'Testi bir AirPlay alıcısına gönderir. Çözümlenen ses modunu yalnızca AirPlay bildirir.';
-	@override String get atmosTestStop => 'Testi durdur';
-	@override String get atmosTestUrl => 'Test dosyası URL\'si';
-	@override String get atmosTestUrlDescription => 'Ham bir .ec3 Dolby Atmos dosyasının HTTP URL\'si (ör. ffmpeg ile ayıklanmış)';
-	@override String get atmosTestUrlMissing => 'Önce test dosyası URL\'sini ayarlayın';
-	@override String get atmosTestStatus => 'Durum';
 	@override String get dvConversionMode => 'Dolby Vision Dönüştürme';
 	@override String get dvConversionModeDescription => 'ExoPlayer\'ın Dolby Vision Profile 7 dosyalarını nasıl işleyeceğini seçin.';
 	@override String get dvConversionAuto => 'Otomatik';
@@ -2882,30 +2858,6 @@ extension on TranslationsTr {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => 'Dönüştürmede Sesi Normalleştir',
 			'settings.audioDownmixNormalizeDescription' => 'Ses patlamalarını önlemek için karışımı düşürün. Orijinal sesi korumak için kapatın (yüksek sesli sahnelerde bozulma yapabilir).',
-			'settings.atmosDiagnostics' => 'Atmos Çıkış Testi',
-			'settings.atmosDiagnosticsDescription' => 'Sistem oynatıcısı üzerinden test sinyalleri çalarak Dolby Atmos çıkışını teşhis edin',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos akışı',
-			'settings.atmosTestHlsAtmosDescription' => 'Düzgün çalıştığı bilinen Dolby Atmos akışı. Alıcıda Dolby Atmos görünmelidir.',
-			'settings.atmosTestHlsControl' => 'Apple çevreleyen ses akışı',
-			'settings.atmosTestHlsControlDescription' => 'Atmos olmayan kontrol akışı. Alıcıda Atmos olmadan çevreleyen ses görünmelidir.',
-			'settings.atmosTestRawStream' => 'Ham EAC3 akışı',
-			'settings.atmosTestRawStreamDescription' => 'Test dosyasını aynen oynatıcı içi Atmos oynatımı gibi akış yapar. Test dosyası URL\'si gerektirir.',
-			'settings.atmosTestRawFile' => 'Ham EAC3 dosyası',
-			'settings.atmosTestRawFileDescription' => 'Test dosyasını bilinen bir uzunlukta oynatır. Test dosyası URL\'si gerektirir.',
-			'settings.atmosTestAsbarNative' => 'Örnek arabellek işleyicisi (yerel)',
-			'settings.atmosTestAsbarNativeDescription' => 'Dosyanın değiştirilmemiş sıkıştırılmış sesini doğrudan sistem işleyicisine iletir. Test dosyası URL\'si gerektirir.',
-			'settings.atmosTestAsbarGenerated' => 'Örnek arabellek işleyicisi (yeniden oluşturulmuş)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'Aynısı, ancak ses tanımı oynatmanın oluşturduğu biçimde yeniden oluşturulur. Test dosyası URL\'si gerektirir.',
-			'settings.atmosTestSessionMode' => 'Film oynatma oturumu modunu kullan',
-			'settings.atmosTestSessionModeDescription' => 'Kapalı, Dolby\'nin belgelediği modu kullanır. Açık, oynatmanın daha önce kullandığı modu kullanır.',
-			'settings.atmosTestShowRoutePicker' => 'AirPlay çıkışını seç',
-			'settings.atmosTestHideRoutePicker' => 'AirPlay çıkış seçicisini gizle',
-			'settings.atmosTestRoutePickerDescription' => 'Testi bir AirPlay alıcısına gönderir. Çözümlenen ses modunu yalnızca AirPlay bildirir.',
-			'settings.atmosTestStop' => 'Testi durdur',
-			'settings.atmosTestUrl' => 'Test dosyası URL\'si',
-			'settings.atmosTestUrlDescription' => 'Ham bir .ec3 Dolby Atmos dosyasının HTTP URL\'si (ör. ffmpeg ile ayıklanmış)',
-			'settings.atmosTestUrlMissing' => 'Önce test dosyası URL\'sini ayarlayın',
-			'settings.atmosTestStatus' => 'Durum',
 			'settings.dvConversionMode' => 'Dolby Vision Dönüştürme',
 			'settings.dvConversionModeDescription' => 'ExoPlayer\'ın Dolby Vision Profile 7 dosyalarını nasıl işleyeceğini seçin.',
 			'settings.dvConversionAuto' => 'Otomatik',
@@ -3106,8 +3058,6 @@ extension on TranslationsTr {
 			'mediaMenu.deleteMovieTitle' => 'Bu film silinsin mi?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Bölümü Sil',
 			'mediaMenu.deleteSeasonConfirm' => 'Sezonu Sil',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Diziyi Sil',
 			'mediaMenu.deleteMovieConfirm' => 'Filmi Sil',
 			'mediaMenu.deleteAnyway' => 'Yine de Sil',
@@ -3132,6 +3082,8 @@ extension on TranslationsTr {
 			'rateSheet.noConnectedServices' => 'Orada oylamak için Ayarlar\'dan bir servis bağlayın.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV dizisi',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'izlendi',
@@ -3620,8 +3572,6 @@ extension on TranslationsTr {
 			'explore.badge.requested' => 'İstendi',
 			'explore.badge.pendingApproval' => 'Onay bekliyor',
 			'explore.badge.processing' => 'İşleniyor',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => 'Reddedildi',
 			'explore.badge.requestFailed' => 'İstek başarısız oldu',
 			'explore.badge.requested4k' => '4K istendi',
@@ -3646,6 +3596,8 @@ extension on TranslationsTr {
 			'explore.stats.completed' => ({required Object n}) => '${n} tamamladı',
 			'explore.stats.onHold' => ({required Object n}) => '${n} bekletiyor',
 			'explore.stats.dropped' => ({required Object n}) => '${n} bıraktı',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Kış',
 			'explore.season.spring' => 'İlkbahar',
 			'explore.season.summer' => 'Yaz',
@@ -4134,8 +4086,6 @@ extension on TranslationsTr {
 			'performanceOverlay.dropped' => 'Kare Kaybı',
 			'performanceOverlay.dvRpus' => 'DV RPU\'ları',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Ort.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV Örnek Ort.',
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
@@ -4160,6 +4110,8 @@ extension on TranslationsTr {
 			'externalPlayer.playerPackage' => 'Paket Adı',
 			'externalPlayer.playerUrlScheme' => 'URL Şeması',
 			'externalPlayer.off' => 'Kapalı',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Harici oynatıcı açılamadı',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} yüklü değil',
 			'externalPlayer.playInExternalPlayer' => 'Harici Oynatıcıda Oynat',

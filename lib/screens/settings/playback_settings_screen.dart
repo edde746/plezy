@@ -18,7 +18,6 @@ import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
-import 'atmos_diagnostics_screen.dart';
 import 'external_player_screen.dart';
 import 'mpv_config_screen.dart';
 import 'settings_utils.dart';
@@ -88,7 +87,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 _audioDownmixTile(),
                 if (downmixOn) _downmixCenterBoostTile(),
                 if (downmixOn) _downmixNormalizeTile(),
-                if (PlatformDetector.isAppleTV()) _atmosDiagnosticsTile(),
                 if (exoActive) _dvConversionModeTile(),
                 _bufferSizeTile(),
                 if (exoActive) _playbackBufferTile(),
@@ -367,13 +365,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     icon: Symbols.graphic_eq_rounded,
     title: t.settings.audioDownmixNormalize,
     subtitle: t.settings.audioDownmixNormalizeDescription,
-  );
-
-  Widget _atmosDiagnosticsTile() => SettingNavigationTile(
-    icon: Symbols.spatial_audio_rounded,
-    title: t.settings.atmosDiagnostics,
-    subtitle: t.settings.atmosDiagnosticsDescription,
-    destinationBuilder: (_) => const AtmosDiagnosticsScreen(),
   );
 
   // Visibility for this and the three tiles below is decided by the hoisted

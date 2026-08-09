@@ -421,30 +421,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => 'Normalisera ljudstyrka vid nedmixning';
 	@override String get audioDownmixNormalizeDescription => 'Sänk ljudnivån för att förhindra klippning. Stäng av för att behålla originalvolymen (starka ljud kan då bli förvrängda).';
-	@override String get atmosDiagnostics => 'Atmos-utgångstest';
-	@override String get atmosDiagnosticsDescription => 'Diagnostisera Dolby Atmos-utgången genom att spela testsignaler via systemspelaren';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos-ström';
-	@override String get atmosTestHlsAtmosDescription => 'Känd fungerande Dolby Atmos-ström. Receivern bör visa Dolby Atmos.';
-	@override String get atmosTestHlsControl => 'Apple surround-ström';
-	@override String get atmosTestHlsControlDescription => 'Kontrollström utan Atmos. Receivern bör visa surround utan Atmos.';
-	@override String get atmosTestRawStream => 'Rå EAC3-ström';
-	@override String get atmosTestRawStreamDescription => 'Strömmar testfilen precis som Atmos-uppspelning i spelaren. Kräver testfilens URL.';
-	@override String get atmosTestRawFile => 'Rå EAC3-fil';
-	@override String get atmosTestRawFileDescription => 'Spelar upp testfilen med känd längd. Kräver testfilens URL.';
-	@override String get atmosTestAsbarNative => 'Sample-buffer-renderare (nativ)';
-	@override String get atmosTestAsbarNativeDescription => 'Skickar filens orörda komprimerade ljud direkt till systemets renderare. Kräver testfilens URL.';
-	@override String get atmosTestAsbarGenerated => 'Sample-buffer-renderare (ombyggd)';
-	@override String get atmosTestAsbarGeneratedDescription => 'Samma sak, men med ljudbeskrivningen byggd som vid uppspelning. Kräver testfilens URL.';
-	@override String get atmosTestSessionMode => 'Använd filmuppspelningsläge';
-	@override String get atmosTestSessionModeDescription => 'Av använder läget som Dolby dokumenterar. På använder det tidigare läget.';
-	@override String get atmosTestShowRoutePicker => 'Välj AirPlay-utgång';
-	@override String get atmosTestHideRoutePicker => 'Dölj AirPlay-utgångsväljare';
-	@override String get atmosTestRoutePickerDescription => 'Skickar testet till en AirPlay-mottagare. Endast AirPlay rapporterar det valda ljudläget.';
-	@override String get atmosTestStop => 'Stoppa test';
-	@override String get atmosTestUrl => 'Testfilens URL';
-	@override String get atmosTestUrlDescription => 'HTTP-URL till en rå .ec3 Dolby Atmos-fil (t.ex. extraherad med ffmpeg)';
-	@override String get atmosTestUrlMissing => 'Ange testfilens URL först';
-	@override String get atmosTestStatus => 'Status';
 	@override String get dvConversionMode => 'Dolby Vision-konvertering';
 	@override String get dvConversionModeDescription => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.';
 	@override String get dvConversionAuto => 'Auto';
@@ -2882,30 +2858,6 @@ extension on TranslationsSv {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => 'Normalisera ljudstyrka vid nedmixning',
 			'settings.audioDownmixNormalizeDescription' => 'Sänk ljudnivån för att förhindra klippning. Stäng av för att behålla originalvolymen (starka ljud kan då bli förvrängda).',
-			'settings.atmosDiagnostics' => 'Atmos-utgångstest',
-			'settings.atmosDiagnosticsDescription' => 'Diagnostisera Dolby Atmos-utgången genom att spela testsignaler via systemspelaren',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos-ström',
-			'settings.atmosTestHlsAtmosDescription' => 'Känd fungerande Dolby Atmos-ström. Receivern bör visa Dolby Atmos.',
-			'settings.atmosTestHlsControl' => 'Apple surround-ström',
-			'settings.atmosTestHlsControlDescription' => 'Kontrollström utan Atmos. Receivern bör visa surround utan Atmos.',
-			'settings.atmosTestRawStream' => 'Rå EAC3-ström',
-			'settings.atmosTestRawStreamDescription' => 'Strömmar testfilen precis som Atmos-uppspelning i spelaren. Kräver testfilens URL.',
-			'settings.atmosTestRawFile' => 'Rå EAC3-fil',
-			'settings.atmosTestRawFileDescription' => 'Spelar upp testfilen med känd längd. Kräver testfilens URL.',
-			'settings.atmosTestAsbarNative' => 'Sample-buffer-renderare (nativ)',
-			'settings.atmosTestAsbarNativeDescription' => 'Skickar filens orörda komprimerade ljud direkt till systemets renderare. Kräver testfilens URL.',
-			'settings.atmosTestAsbarGenerated' => 'Sample-buffer-renderare (ombyggd)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'Samma sak, men med ljudbeskrivningen byggd som vid uppspelning. Kräver testfilens URL.',
-			'settings.atmosTestSessionMode' => 'Använd filmuppspelningsläge',
-			'settings.atmosTestSessionModeDescription' => 'Av använder läget som Dolby dokumenterar. På använder det tidigare läget.',
-			'settings.atmosTestShowRoutePicker' => 'Välj AirPlay-utgång',
-			'settings.atmosTestHideRoutePicker' => 'Dölj AirPlay-utgångsväljare',
-			'settings.atmosTestRoutePickerDescription' => 'Skickar testet till en AirPlay-mottagare. Endast AirPlay rapporterar det valda ljudläget.',
-			'settings.atmosTestStop' => 'Stoppa test',
-			'settings.atmosTestUrl' => 'Testfilens URL',
-			'settings.atmosTestUrlDescription' => 'HTTP-URL till en rå .ec3 Dolby Atmos-fil (t.ex. extraherad med ffmpeg)',
-			'settings.atmosTestUrlMissing' => 'Ange testfilens URL först',
-			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Dolby Vision-konvertering',
 			'settings.dvConversionModeDescription' => 'Välj hur ExoPlayer hanterar Dolby Vision Profile 7-filer.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -3106,8 +3058,6 @@ extension on TranslationsSv {
 			'mediaMenu.deleteMovieTitle' => 'Ta bort den här filmen?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Ta bort avsnitt',
 			'mediaMenu.deleteSeasonConfirm' => 'Ta bort säsong',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Ta bort serie',
 			'mediaMenu.deleteMovieConfirm' => 'Ta bort film',
 			'mediaMenu.deleteAnyway' => 'Ta bort ändå',
@@ -3132,6 +3082,8 @@ extension on TranslationsSv {
 			'rateSheet.noConnectedServices' => 'Anslut en tjänst i Inställningar för att betygsätta där.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'sedd',
@@ -3620,8 +3572,6 @@ extension on TranslationsSv {
 			'explore.badge.requested' => 'Begärd',
 			'explore.badge.pendingApproval' => 'Väntar på godkännande',
 			'explore.badge.processing' => 'Bearbetas',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => 'Avvisad',
 			'explore.badge.requestFailed' => 'Begäran misslyckades',
 			'explore.badge.requested4k' => '4K begärd',
@@ -3646,6 +3596,8 @@ extension on TranslationsSv {
 			'explore.stats.completed' => ({required Object n}) => '${n} avslutade',
 			'explore.stats.onHold' => ({required Object n}) => '${n} på paus',
 			'explore.stats.dropped' => ({required Object n}) => '${n} hoppade av',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Vinter',
 			'explore.season.spring' => 'Vår',
 			'explore.season.summer' => 'Sommar',
@@ -4134,8 +4086,6 @@ extension on TranslationsSv {
 			'performanceOverlay.dropped' => 'Tappade bildrutor',
 			'performanceOverlay.dvRpus' => 'DV-RPU:er',
 			'performanceOverlay.dvRpuAverage' => 'DV-RPU, genomsnitt',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV-sampling, genomsnitt',
 			'performanceOverlay.maxLuma' => 'Max luma',
 			'performanceOverlay.minLuma' => 'Min luma',
@@ -4160,6 +4110,8 @@ extension on TranslationsSv {
 			'externalPlayer.playerPackage' => 'Paketnamn',
 			'externalPlayer.playerUrlScheme' => 'URL-schema',
 			'externalPlayer.off' => 'Av',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
 			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',

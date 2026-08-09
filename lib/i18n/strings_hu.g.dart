@@ -421,30 +421,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => 'Hangerő normalizálása lekeveréskor';
 	@override String get audioDownmixNormalizeDescription => 'A keverés szintjének csökkentése a torzítás elkerülésére. Kapcsold ki az eredeti hangerő megőrzéséhez (a hangos jelenetek torzíthatnak).';
-	@override String get atmosDiagnostics => 'Atmos kimeneti teszt';
-	@override String get atmosDiagnosticsDescription => 'Dolby Atmos kimenet diagnosztizálása tesztjelek lejátszásával a rendszerlejátszón keresztül';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos folyam';
-	@override String get atmosTestHlsAtmosDescription => 'Igazoltan működő Dolby Atmos-adatfolyam. Az erősítő kijelzőjén a Dolby Atmos formátumnak kell megjelennie.';
-	@override String get atmosTestHlsControl => 'Apple térhangzású folyam';
-	@override String get atmosTestHlsControlDescription => 'Atmos nélküli ellenőrző adatfolyam. Az erősítő kijelzőjén térhangzásnak kell megjelennie, Atmos nélkül.';
-	@override String get atmosTestRawStream => 'Nyers EAC3 folyam';
-	@override String get atmosTestRawStreamDescription => 'A tesztfájlt pontosan úgy közvetíti, mint a lejátszón belüli Atmos lejátszás. Szükséges a tesztfájl URL-je.';
-	@override String get atmosTestRawFile => 'Nyers EAC3 fájl';
-	@override String get atmosTestRawFileDescription => 'Ismert hosszúságú tesztfájlt játszik le. Szükséges a tesztfájl URL-je.';
-	@override String get atmosTestAsbarNative => 'Mintapuffer-megjelenítő (natív)';
-	@override String get atmosTestAsbarNativeDescription => 'A fájl érintetlen tömörített hangját közvetlenül a rendszer megjelenítőjének adja. Szükséges a tesztfájl URL-je.';
-	@override String get atmosTestAsbarGenerated => 'Mintapuffer-megjelenítő (újraépített)';
-	@override String get atmosTestAsbarGeneratedDescription => 'Ugyanaz, de a lejátszás módján felépített hangleírással. Szükséges a tesztfájl URL-je.';
-	@override String get atmosTestSessionMode => 'Filmlejátszási mód használata';
-	@override String get atmosTestSessionModeDescription => 'Kikapcsolva a Dolby által dokumentált módot használja. Bekapcsolva a korábbi módot.';
-	@override String get atmosTestShowRoutePicker => 'AirPlay kimenet választása';
-	@override String get atmosTestHideRoutePicker => 'AirPlay kimenetválasztó elrejtése';
-	@override String get atmosTestRoutePickerDescription => 'Elküldi a tesztet egy AirPlay vevőnek. Csak az AirPlay jelzi a feloldott hangmódot.';
-	@override String get atmosTestStop => 'Teszt leállítása';
-	@override String get atmosTestUrl => 'Tesztfájl URL-je';
-	@override String get atmosTestUrlDescription => 'Nyers .ec3 Dolby Atmos fájl HTTP URL-je (pl. ffmpeg-gel kinyerve)';
-	@override String get atmosTestUrlMissing => 'Először állítsd be a tesztfájl URL-jét';
-	@override String get atmosTestStatus => 'Állapot';
 	@override String get dvConversionMode => 'Dolby Vision-átalakítás';
 	@override String get dvConversionModeDescription => 'Válaszd ki, hogyan kezelje az ExoPlayer a Dolby Vision Profile 7 fájlokat.';
 	@override String get dvConversionAuto => 'Automatikus';
@@ -2882,30 +2858,6 @@ extension on TranslationsHu {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => 'Hangerő normalizálása lekeveréskor',
 			'settings.audioDownmixNormalizeDescription' => 'A keverés szintjének csökkentése a torzítás elkerülésére. Kapcsold ki az eredeti hangerő megőrzéséhez (a hangos jelenetek torzíthatnak).',
-			'settings.atmosDiagnostics' => 'Atmos kimeneti teszt',
-			'settings.atmosDiagnosticsDescription' => 'Dolby Atmos kimenet diagnosztizálása tesztjelek lejátszásával a rendszerlejátszón keresztül',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos folyam',
-			'settings.atmosTestHlsAtmosDescription' => 'Igazoltan működő Dolby Atmos-adatfolyam. Az erősítő kijelzőjén a Dolby Atmos formátumnak kell megjelennie.',
-			'settings.atmosTestHlsControl' => 'Apple térhangzású folyam',
-			'settings.atmosTestHlsControlDescription' => 'Atmos nélküli ellenőrző adatfolyam. Az erősítő kijelzőjén térhangzásnak kell megjelennie, Atmos nélkül.',
-			'settings.atmosTestRawStream' => 'Nyers EAC3 folyam',
-			'settings.atmosTestRawStreamDescription' => 'A tesztfájlt pontosan úgy közvetíti, mint a lejátszón belüli Atmos lejátszás. Szükséges a tesztfájl URL-je.',
-			'settings.atmosTestRawFile' => 'Nyers EAC3 fájl',
-			'settings.atmosTestRawFileDescription' => 'Ismert hosszúságú tesztfájlt játszik le. Szükséges a tesztfájl URL-je.',
-			'settings.atmosTestAsbarNative' => 'Mintapuffer-megjelenítő (natív)',
-			'settings.atmosTestAsbarNativeDescription' => 'A fájl érintetlen tömörített hangját közvetlenül a rendszer megjelenítőjének adja. Szükséges a tesztfájl URL-je.',
-			'settings.atmosTestAsbarGenerated' => 'Mintapuffer-megjelenítő (újraépített)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'Ugyanaz, de a lejátszás módján felépített hangleírással. Szükséges a tesztfájl URL-je.',
-			'settings.atmosTestSessionMode' => 'Filmlejátszási mód használata',
-			'settings.atmosTestSessionModeDescription' => 'Kikapcsolva a Dolby által dokumentált módot használja. Bekapcsolva a korábbi módot.',
-			'settings.atmosTestShowRoutePicker' => 'AirPlay kimenet választása',
-			'settings.atmosTestHideRoutePicker' => 'AirPlay kimenetválasztó elrejtése',
-			'settings.atmosTestRoutePickerDescription' => 'Elküldi a tesztet egy AirPlay vevőnek. Csak az AirPlay jelzi a feloldott hangmódot.',
-			'settings.atmosTestStop' => 'Teszt leállítása',
-			'settings.atmosTestUrl' => 'Tesztfájl URL-je',
-			'settings.atmosTestUrlDescription' => 'Nyers .ec3 Dolby Atmos fájl HTTP URL-je (pl. ffmpeg-gel kinyerve)',
-			'settings.atmosTestUrlMissing' => 'Először állítsd be a tesztfájl URL-jét',
-			'settings.atmosTestStatus' => 'Állapot',
 			'settings.dvConversionMode' => 'Dolby Vision-átalakítás',
 			'settings.dvConversionModeDescription' => 'Válaszd ki, hogyan kezelje az ExoPlayer a Dolby Vision Profile 7 fájlokat.',
 			'settings.dvConversionAuto' => 'Automatikus',
@@ -3106,8 +3058,6 @@ extension on TranslationsHu {
 			'mediaMenu.deleteMovieTitle' => 'Töröljük ezt a filmet?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Epizód törlése',
 			'mediaMenu.deleteSeasonConfirm' => 'Évad törlése',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Sorozat törlése',
 			'mediaMenu.deleteMovieConfirm' => 'Film törlése',
 			'mediaMenu.deleteAnyway' => 'Törlés mindenképp',
@@ -3132,6 +3082,8 @@ extension on TranslationsHu {
 			'rateSheet.noConnectedServices' => 'Az értékeléshez csatlakoztass egy szolgáltatást a Beállításokban.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-sorozat',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'megtekintve',
@@ -3620,8 +3572,6 @@ extension on TranslationsHu {
 			'explore.badge.requested' => 'Kérve',
 			'explore.badge.pendingApproval' => 'Jóváhagyásra vár',
 			'explore.badge.processing' => 'Feldolgozás alatt',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => 'Elutasítva',
 			'explore.badge.requestFailed' => 'A kérés nem sikerült',
 			'explore.badge.requested4k' => '4K kérve',
@@ -3646,6 +3596,8 @@ extension on TranslationsHu {
 			'explore.stats.completed' => ({required Object n}) => '${n} befejezte',
 			'explore.stats.onHold' => ({required Object n}) => '${n} szünetelteti',
 			'explore.stats.dropped' => ({required Object n}) => '${n} felhagyott vele',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Tél',
 			'explore.season.spring' => 'Tavasz',
 			'explore.season.summer' => 'Nyár',
@@ -4134,8 +4086,6 @@ extension on TranslationsHu {
 			'performanceOverlay.dropped' => 'Eldobva',
 			'performanceOverlay.dvRpus' => 'DV RPU-k',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU-átlag',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV-mintaátlag',
 			'performanceOverlay.maxLuma' => 'Maximális luma',
 			'performanceOverlay.minLuma' => 'Minimális luma',
@@ -4160,6 +4110,8 @@ extension on TranslationsHu {
 			'externalPlayer.playerPackage' => 'Csomagnév',
 			'externalPlayer.playerUrlScheme' => 'URL-séma',
 			'externalPlayer.off' => 'Ki',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Nem sikerült megnyitni a külső lejátszót',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => 'A(z) ${name} nincs telepítve',
 			'externalPlayer.playInExternalPlayer' => 'Lejátszás külső lejátszóban',

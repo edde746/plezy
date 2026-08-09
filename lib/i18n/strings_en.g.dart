@@ -978,78 +978,6 @@ class Translations$settings$en {
 	/// en: 'Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).'
 	String get audioDownmixNormalizeDescription => 'Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).';
 
-	/// en: 'Atmos Output Test'
-	String get atmosDiagnostics => 'Atmos Output Test';
-
-	/// en: 'Diagnose Dolby Atmos output by playing test signals through the system player'
-	String get atmosDiagnosticsDescription => 'Diagnose Dolby Atmos output by playing test signals through the system player';
-
-	/// en: 'Apple Atmos stream'
-	String get atmosTestHlsAtmos => 'Apple Atmos stream';
-
-	/// en: 'Known-good Dolby Atmos stream. The receiver should show Dolby Atmos.'
-	String get atmosTestHlsAtmosDescription => 'Known-good Dolby Atmos stream. The receiver should show Dolby Atmos.';
-
-	/// en: 'Apple surround stream'
-	String get atmosTestHlsControl => 'Apple surround stream';
-
-	/// en: 'Non-Atmos control stream. The receiver should show surround without Atmos.'
-	String get atmosTestHlsControlDescription => 'Non-Atmos control stream. The receiver should show surround without Atmos.';
-
-	/// en: 'Raw EAC3 stream'
-	String get atmosTestRawStream => 'Raw EAC3 stream';
-
-	/// en: 'Streams the test file exactly like in-player Atmos playback. Needs the test file URL.'
-	String get atmosTestRawStreamDescription => 'Streams the test file exactly like in-player Atmos playback. Needs the test file URL.';
-
-	/// en: 'Raw EAC3 file'
-	String get atmosTestRawFile => 'Raw EAC3 file';
-
-	/// en: 'Plays the test file with a known length. Needs the test file URL.'
-	String get atmosTestRawFileDescription => 'Plays the test file with a known length. Needs the test file URL.';
-
-	/// en: 'Sample-buffer renderer (native)'
-	String get atmosTestAsbarNative => 'Sample-buffer renderer (native)';
-
-	/// en: 'Feeds the file's untouched compressed audio straight to the system renderer. Needs the test file URL.'
-	String get atmosTestAsbarNativeDescription => 'Feeds the file\'s untouched compressed audio straight to the system renderer. Needs the test file URL.';
-
-	/// en: 'Sample-buffer renderer (rebuilt)'
-	String get atmosTestAsbarGenerated => 'Sample-buffer renderer (rebuilt)';
-
-	/// en: 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.'
-	String get atmosTestAsbarGeneratedDescription => 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.';
-
-	/// en: 'Use movie playback session mode'
-	String get atmosTestSessionMode => 'Use movie playback session mode';
-
-	/// en: 'Off uses the mode Dolby documents. On uses the mode playback used previously.'
-	String get atmosTestSessionModeDescription => 'Off uses the mode Dolby documents. On uses the mode playback used previously.';
-
-	/// en: 'Choose AirPlay output'
-	String get atmosTestShowRoutePicker => 'Choose AirPlay output';
-
-	/// en: 'Hide AirPlay output picker'
-	String get atmosTestHideRoutePicker => 'Hide AirPlay output picker';
-
-	/// en: 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.'
-	String get atmosTestRoutePickerDescription => 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.';
-
-	/// en: 'Stop test'
-	String get atmosTestStop => 'Stop test';
-
-	/// en: 'Test file URL'
-	String get atmosTestUrl => 'Test file URL';
-
-	/// en: 'HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)'
-	String get atmosTestUrlDescription => 'HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)';
-
-	/// en: 'Set the test file URL first'
-	String get atmosTestUrlMissing => 'Set the test file URL first';
-
-	/// en: 'Status'
-	String get atmosTestStatus => 'Status';
-
 	/// en: 'Dolby Vision Conversion'
 	String get dvConversionMode => 'Dolby Vision Conversion';
 
@@ -6427,30 +6355,6 @@ extension on Translations {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => 'Normalize Volume on Downmix',
 			'settings.audioDownmixNormalizeDescription' => 'Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).',
-			'settings.atmosDiagnostics' => 'Atmos Output Test',
-			'settings.atmosDiagnosticsDescription' => 'Diagnose Dolby Atmos output by playing test signals through the system player',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos stream',
-			'settings.atmosTestHlsAtmosDescription' => 'Known-good Dolby Atmos stream. The receiver should show Dolby Atmos.',
-			'settings.atmosTestHlsControl' => 'Apple surround stream',
-			'settings.atmosTestHlsControlDescription' => 'Non-Atmos control stream. The receiver should show surround without Atmos.',
-			'settings.atmosTestRawStream' => 'Raw EAC3 stream',
-			'settings.atmosTestRawStreamDescription' => 'Streams the test file exactly like in-player Atmos playback. Needs the test file URL.',
-			'settings.atmosTestRawFile' => 'Raw EAC3 file',
-			'settings.atmosTestRawFileDescription' => 'Plays the test file with a known length. Needs the test file URL.',
-			'settings.atmosTestAsbarNative' => 'Sample-buffer renderer (native)',
-			'settings.atmosTestAsbarNativeDescription' => 'Feeds the file\'s untouched compressed audio straight to the system renderer. Needs the test file URL.',
-			'settings.atmosTestAsbarGenerated' => 'Sample-buffer renderer (rebuilt)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.',
-			'settings.atmosTestSessionMode' => 'Use movie playback session mode',
-			'settings.atmosTestSessionModeDescription' => 'Off uses the mode Dolby documents. On uses the mode playback used previously.',
-			'settings.atmosTestShowRoutePicker' => 'Choose AirPlay output',
-			'settings.atmosTestHideRoutePicker' => 'Hide AirPlay output picker',
-			'settings.atmosTestRoutePickerDescription' => 'Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.',
-			'settings.atmosTestStop' => 'Stop test',
-			'settings.atmosTestUrl' => 'Test file URL',
-			'settings.atmosTestUrlDescription' => 'HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)',
-			'settings.atmosTestUrlMissing' => 'Set the test file URL first',
-			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Dolby Vision Conversion',
 			'settings.dvConversionModeDescription' => 'Choose how ExoPlayer handles Dolby Vision Profile 7 files.',
 			'settings.dvConversionAuto' => 'Auto',
@@ -6651,8 +6555,6 @@ extension on Translations {
 			'mediaMenu.deleteMovieTitle' => 'Delete this movie?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Delete episode',
 			'mediaMenu.deleteSeasonConfirm' => 'Delete season',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Delete show',
 			'mediaMenu.deleteMovieConfirm' => 'Delete movie',
 			'mediaMenu.deleteAnyway' => 'Delete anyway',
@@ -6677,6 +6579,8 @@ extension on Translations {
 			'rateSheet.noConnectedServices' => 'Connect a service in Settings to rate there.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'watched',
@@ -7165,8 +7069,6 @@ extension on Translations {
 			'explore.badge.available' => 'Available',
 			'explore.badge.partiallyAvailable' => 'Partly available',
 			'explore.badge.availableIn4k' => '4K available',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.requested' => 'Requested',
 			'explore.badge.pendingApproval' => 'Pending approval',
 			'explore.badge.processing' => 'Processing',
@@ -7191,6 +7093,8 @@ extension on Translations {
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} comment', other: '${n} comments', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} votes',
 			'explore.stats.watching' => ({required Object n}) => '${n} watching it',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
@@ -7679,8 +7583,6 @@ extension on Translations {
 			'performanceOverlay.matrix' => 'Matrix',
 			'performanceOverlay.primaries' => 'Primaries',
 			'performanceOverlay.transfer' => 'Transfer',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.renderFps' => 'Render FPS',
 			'performanceOverlay.displayFps' => 'Display FPS',
 			'performanceOverlay.avSync' => 'A/V Sync',
@@ -7705,6 +7607,8 @@ extension on Translations {
 			'externalPlayer.customPlayers' => 'Custom Players',
 			'externalPlayer.systemDefault' => 'System Default',
 			'externalPlayer.addCustomPlayer' => 'Add Custom Player',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Player Name',
 			'externalPlayer.playerNameHint' => 'My Player',
 			'externalPlayer.playerCommand' => 'Command',

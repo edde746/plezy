@@ -421,30 +421,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'дБ';
 	@override String get audioDownmixNormalize => 'Нормализация громкости при микшировании';
 	@override String get audioDownmixNormalizeDescription => 'Снижает уровень микса во избежание клиппинга. Отключите, чтобы сохранить исходную громкость (возможны искажения в громких сценах).';
-	@override String get atmosDiagnostics => 'Тест вывода Atmos';
-	@override String get atmosDiagnosticsDescription => 'Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель';
-	@override String get atmosTestHlsAtmos => 'Atmos-поток Apple';
-	@override String get atmosTestHlsAtmosDescription => 'Заведомо рабочий поток Dolby Atmos. Ресивер должен показать Dolby Atmos.';
-	@override String get atmosTestHlsControl => 'Surround-поток Apple';
-	@override String get atmosTestHlsControlDescription => 'Контрольный поток без Atmos. Ресивер должен показать объёмный звук без Atmos.';
-	@override String get atmosTestRawStream => 'Сырой поток EAC3';
-	@override String get atmosTestRawStreamDescription => 'Транслирует тестовый файл точно так же, как Atmos-воспроизведение в проигрывателе. Требуется URL тестового файла.';
-	@override String get atmosTestRawFile => 'Сырой файл EAC3';
-	@override String get atmosTestRawFileDescription => 'Воспроизводит тестовый файл с известной длиной. Требуется URL тестового файла.';
-	@override String get atmosTestAsbarNative => 'Рендерер сэмпл-буфера (нативный)';
-	@override String get atmosTestAsbarNativeDescription => 'Передаёт неизменённый сжатый звук файла прямо в системный рендерер. Требуется URL тестового файла.';
-	@override String get atmosTestAsbarGenerated => 'Рендерер сэмпл-буфера (пересобранный)';
-	@override String get atmosTestAsbarGeneratedDescription => 'То же, но с описанием звука, собранным как при воспроизведении. Требуется URL тестового файла.';
-	@override String get atmosTestSessionMode => 'Использовать режим воспроизведения фильмов';
-	@override String get atmosTestSessionModeDescription => 'Выключено — режим, описанный Dolby. Включено — прежний режим.';
-	@override String get atmosTestShowRoutePicker => 'Выбрать выход AirPlay';
-	@override String get atmosTestHideRoutePicker => 'Скрыть выбор выхода AirPlay';
-	@override String get atmosTestRoutePickerDescription => 'Отправляет тест на приёмник AirPlay. Только AirPlay сообщает определённый режим звука.';
-	@override String get atmosTestStop => 'Остановить тест';
-	@override String get atmosTestUrl => 'URL тестового файла';
-	@override String get atmosTestUrlDescription => 'HTTP-URL сырого файла .ec3 Dolby Atmos (например, извлечённого через ffmpeg)';
-	@override String get atmosTestUrlMissing => 'Сначала укажите URL тестового файла';
-	@override String get atmosTestStatus => 'Статус';
 	@override String get dvConversionMode => 'Преобразование Dolby Vision';
 	@override String get dvConversionModeDescription => 'Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Авто';
@@ -2900,30 +2876,6 @@ extension on TranslationsRu {
 			'settings.downmixCenterBoostShort' => 'дБ',
 			'settings.audioDownmixNormalize' => 'Нормализация громкости при микшировании',
 			'settings.audioDownmixNormalizeDescription' => 'Снижает уровень микса во избежание клиппинга. Отключите, чтобы сохранить исходную громкость (возможны искажения в громких сценах).',
-			'settings.atmosDiagnostics' => 'Тест вывода Atmos',
-			'settings.atmosDiagnosticsDescription' => 'Диагностика вывода Dolby Atmos воспроизведением тестовых сигналов через системный проигрыватель',
-			'settings.atmosTestHlsAtmos' => 'Atmos-поток Apple',
-			'settings.atmosTestHlsAtmosDescription' => 'Заведомо рабочий поток Dolby Atmos. Ресивер должен показать Dolby Atmos.',
-			'settings.atmosTestHlsControl' => 'Surround-поток Apple',
-			'settings.atmosTestHlsControlDescription' => 'Контрольный поток без Atmos. Ресивер должен показать объёмный звук без Atmos.',
-			'settings.atmosTestRawStream' => 'Сырой поток EAC3',
-			'settings.atmosTestRawStreamDescription' => 'Транслирует тестовый файл точно так же, как Atmos-воспроизведение в проигрывателе. Требуется URL тестового файла.',
-			'settings.atmosTestRawFile' => 'Сырой файл EAC3',
-			'settings.atmosTestRawFileDescription' => 'Воспроизводит тестовый файл с известной длиной. Требуется URL тестового файла.',
-			'settings.atmosTestAsbarNative' => 'Рендерер сэмпл-буфера (нативный)',
-			'settings.atmosTestAsbarNativeDescription' => 'Передаёт неизменённый сжатый звук файла прямо в системный рендерер. Требуется URL тестового файла.',
-			'settings.atmosTestAsbarGenerated' => 'Рендерер сэмпл-буфера (пересобранный)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'То же, но с описанием звука, собранным как при воспроизведении. Требуется URL тестового файла.',
-			'settings.atmosTestSessionMode' => 'Использовать режим воспроизведения фильмов',
-			'settings.atmosTestSessionModeDescription' => 'Выключено — режим, описанный Dolby. Включено — прежний режим.',
-			'settings.atmosTestShowRoutePicker' => 'Выбрать выход AirPlay',
-			'settings.atmosTestHideRoutePicker' => 'Скрыть выбор выхода AirPlay',
-			'settings.atmosTestRoutePickerDescription' => 'Отправляет тест на приёмник AirPlay. Только AirPlay сообщает определённый режим звука.',
-			'settings.atmosTestStop' => 'Остановить тест',
-			'settings.atmosTestUrl' => 'URL тестового файла',
-			'settings.atmosTestUrlDescription' => 'HTTP-URL сырого файла .ec3 Dolby Atmos (например, извлечённого через ffmpeg)',
-			'settings.atmosTestUrlMissing' => 'Сначала укажите URL тестового файла',
-			'settings.atmosTestStatus' => 'Статус',
 			'settings.dvConversionMode' => 'Преобразование Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Выберите, как ExoPlayer обрабатывает файлы Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Авто',
@@ -3124,8 +3076,6 @@ extension on TranslationsRu {
 			'mediaMenu.deleteMovieTitle' => 'Удалить этот фильм?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Удалить эпизод',
 			'mediaMenu.deleteSeasonConfirm' => 'Удалить сезон',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Удалить сериал',
 			'mediaMenu.deleteMovieConfirm' => 'Удалить фильм',
 			'mediaMenu.deleteAnyway' => 'Всё равно удалить',
@@ -3150,6 +3100,8 @@ extension on TranslationsRu {
 			'rateSheet.noConnectedServices' => 'Подключите сервис в настройках, чтобы выставлять оценки в нём.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, фильм',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, сериал',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'просмотрено',
@@ -3638,8 +3590,6 @@ extension on TranslationsRu {
 			'explore.badge.requested' => 'Запрошено',
 			'explore.badge.pendingApproval' => 'Ожидает одобрения',
 			'explore.badge.processing' => 'В обработке',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => 'Отклонено',
 			'explore.badge.requestFailed' => 'Запрос не удался',
 			'explore.badge.requested4k' => 'Запрошено в 4K',
@@ -3664,6 +3614,8 @@ extension on TranslationsRu {
 			'explore.stats.completed' => ({required Object n}) => '${n} завершили',
 			'explore.stats.onHold' => ({required Object n}) => '${n} отложили',
 			'explore.stats.dropped' => ({required Object n}) => '${n} бросили',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Зима',
 			'explore.season.spring' => 'Весна',
 			'explore.season.summer' => 'Лето',
@@ -4152,8 +4104,6 @@ extension on TranslationsRu {
 			'performanceOverlay.dropped' => 'Пропущено',
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Сред. DV RPU',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'Сред. сэмпл DV',
 			'performanceOverlay.maxLuma' => 'Макс. яркость',
 			'performanceOverlay.minLuma' => 'Мин. яркость',
@@ -4178,6 +4128,8 @@ extension on TranslationsRu {
 			'externalPlayer.playerPackage' => 'Имя пакета',
 			'externalPlayer.playerUrlScheme' => 'URL-схема',
 			'externalPlayer.off' => 'Выкл.',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Не удалось открыть внешний плеер',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не установлен',
 			'externalPlayer.playInExternalPlayer' => 'Воспроизвести во внешнем плеере',

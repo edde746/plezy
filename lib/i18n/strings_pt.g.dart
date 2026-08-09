@@ -421,30 +421,6 @@ class _Translations$settings$pt extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => 'Normalizar volume na conversão para estéreo';
 	@override String get audioDownmixNormalizeDescription => 'Reduzir o volume da mixagem para evitar saturação. Desative para manter o volume original, que pode distorcer em cenas muito altas.';
-	@override String get atmosDiagnostics => 'Teste de saída Atmos';
-	@override String get atmosDiagnosticsDescription => 'Diagnosticar a saída Dolby Atmos reproduzindo sinais de teste pelo reprodutor do sistema';
-	@override String get atmosTestHlsAtmos => 'Transmissão Atmos da Apple';
-	@override String get atmosTestHlsAtmosDescription => 'Transmissão Dolby Atmos comprovadamente compatível. O receptor deve indicar Dolby Atmos.';
-	@override String get atmosTestHlsControl => 'Transmissão surround da Apple';
-	@override String get atmosTestHlsControlDescription => 'Transmissão de controle sem Atmos. O receptor deve indicar surround sem Atmos.';
-	@override String get atmosTestRawStream => 'Transmissão EAC3 bruta';
-	@override String get atmosTestRawStreamDescription => 'Transmite o arquivo de teste exatamente como na reprodução Atmos pelo reprodutor. Requer a URL do arquivo de teste.';
-	@override String get atmosTestRawFile => 'Arquivo EAC3 bruto';
-	@override String get atmosTestRawFileDescription => 'Reproduz o arquivo de teste com duração conhecida. Requer a URL do arquivo de teste.';
-	@override String get atmosTestAsbarNative => 'Renderizador de buffer de amostras (nativo)';
-	@override String get atmosTestAsbarNativeDescription => 'Envia o áudio comprimido intacto do ficheiro diretamente para o renderizador do sistema. Requer o URL do ficheiro de teste.';
-	@override String get atmosTestAsbarGenerated => 'Renderizador de buffer de amostras (reconstruído)';
-	@override String get atmosTestAsbarGeneratedDescription => 'O mesmo, mas com a descrição de áudio construída como na reprodução. Requer o URL do ficheiro de teste.';
-	@override String get atmosTestSessionMode => 'Usar modo de reprodução de filmes';
-	@override String get atmosTestSessionModeDescription => 'Desativado usa o modo documentado pela Dolby. Ativado usa o modo anterior.';
-	@override String get atmosTestShowRoutePicker => 'Escolher saída AirPlay';
-	@override String get atmosTestHideRoutePicker => 'Ocultar seletor de saída AirPlay';
-	@override String get atmosTestRoutePickerDescription => 'Envia o teste para um recetor AirPlay. Só o AirPlay comunica o modo de áudio resolvido.';
-	@override String get atmosTestStop => 'Parar teste';
-	@override String get atmosTestUrl => 'URL do arquivo de teste';
-	@override String get atmosTestUrlDescription => 'URL HTTP de um arquivo .ec3 Dolby Atmos bruto (ex.: extraído com ffmpeg)';
-	@override String get atmosTestUrlMissing => 'Defina primeiro a URL do arquivo de teste';
-	@override String get atmosTestStatus => 'Status';
 	@override String get dvConversionMode => 'Conversão Dolby Vision';
 	@override String get dvConversionModeDescription => 'Escolha como o ExoPlayer lida com arquivos Dolby Vision Profile 7.';
 	@override String get dvConversionAuto => 'Automático';
@@ -2882,30 +2858,6 @@ extension on TranslationsPt {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => 'Normalizar volume na conversão para estéreo',
 			'settings.audioDownmixNormalizeDescription' => 'Reduzir o volume da mixagem para evitar saturação. Desative para manter o volume original, que pode distorcer em cenas muito altas.',
-			'settings.atmosDiagnostics' => 'Teste de saída Atmos',
-			'settings.atmosDiagnosticsDescription' => 'Diagnosticar a saída Dolby Atmos reproduzindo sinais de teste pelo reprodutor do sistema',
-			'settings.atmosTestHlsAtmos' => 'Transmissão Atmos da Apple',
-			'settings.atmosTestHlsAtmosDescription' => 'Transmissão Dolby Atmos comprovadamente compatível. O receptor deve indicar Dolby Atmos.',
-			'settings.atmosTestHlsControl' => 'Transmissão surround da Apple',
-			'settings.atmosTestHlsControlDescription' => 'Transmissão de controle sem Atmos. O receptor deve indicar surround sem Atmos.',
-			'settings.atmosTestRawStream' => 'Transmissão EAC3 bruta',
-			'settings.atmosTestRawStreamDescription' => 'Transmite o arquivo de teste exatamente como na reprodução Atmos pelo reprodutor. Requer a URL do arquivo de teste.',
-			'settings.atmosTestRawFile' => 'Arquivo EAC3 bruto',
-			'settings.atmosTestRawFileDescription' => 'Reproduz o arquivo de teste com duração conhecida. Requer a URL do arquivo de teste.',
-			'settings.atmosTestAsbarNative' => 'Renderizador de buffer de amostras (nativo)',
-			'settings.atmosTestAsbarNativeDescription' => 'Envia o áudio comprimido intacto do ficheiro diretamente para o renderizador do sistema. Requer o URL do ficheiro de teste.',
-			'settings.atmosTestAsbarGenerated' => 'Renderizador de buffer de amostras (reconstruído)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'O mesmo, mas com a descrição de áudio construída como na reprodução. Requer o URL do ficheiro de teste.',
-			'settings.atmosTestSessionMode' => 'Usar modo de reprodução de filmes',
-			'settings.atmosTestSessionModeDescription' => 'Desativado usa o modo documentado pela Dolby. Ativado usa o modo anterior.',
-			'settings.atmosTestShowRoutePicker' => 'Escolher saída AirPlay',
-			'settings.atmosTestHideRoutePicker' => 'Ocultar seletor de saída AirPlay',
-			'settings.atmosTestRoutePickerDescription' => 'Envia o teste para um recetor AirPlay. Só o AirPlay comunica o modo de áudio resolvido.',
-			'settings.atmosTestStop' => 'Parar teste',
-			'settings.atmosTestUrl' => 'URL do arquivo de teste',
-			'settings.atmosTestUrlDescription' => 'URL HTTP de um arquivo .ec3 Dolby Atmos bruto (ex.: extraído com ffmpeg)',
-			'settings.atmosTestUrlMissing' => 'Defina primeiro a URL do arquivo de teste',
-			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Conversão Dolby Vision',
 			'settings.dvConversionModeDescription' => 'Escolha como o ExoPlayer lida com arquivos Dolby Vision Profile 7.',
 			'settings.dvConversionAuto' => 'Automático',
@@ -3106,8 +3058,6 @@ extension on TranslationsPt {
 			'mediaMenu.deleteMovieTitle' => 'Excluir este filme?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Excluir episódio',
 			'mediaMenu.deleteSeasonConfirm' => 'Excluir temporada',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Excluir série',
 			'mediaMenu.deleteMovieConfirm' => 'Excluir filme',
 			'mediaMenu.deleteAnyway' => 'Excluir mesmo assim',
@@ -3132,6 +3082,8 @@ extension on TranslationsPt {
 			'rateSheet.noConnectedServices' => 'Conecte um serviço nas Configurações para avaliar por lá.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, filme',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, série de TV',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'assistido',
@@ -3620,8 +3572,6 @@ extension on TranslationsPt {
 			'explore.badge.requested' => 'Solicitado',
 			'explore.badge.pendingApproval' => 'Aguardando aprovação',
 			'explore.badge.processing' => 'Processando',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => 'Recusado',
 			'explore.badge.requestFailed' => 'Falha na solicitação',
 			'explore.badge.requested4k' => '4K solicitado',
@@ -3646,6 +3596,8 @@ extension on TranslationsPt {
 			'explore.stats.completed' => ({required Object n}) => '${n} concluíram',
 			'explore.stats.onHold' => ({required Object n}) => '${n} em pausa',
 			'explore.stats.dropped' => ({required Object n}) => '${n} abandonaram',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Inverno',
 			'explore.season.spring' => 'Primavera',
 			'explore.season.summer' => 'Verão',
@@ -4134,8 +4086,6 @@ extension on TranslationsPt {
 			'performanceOverlay.dropped' => 'Descartados',
 			'performanceOverlay.dvRpus' => 'DV RPUs',
 			'performanceOverlay.dvRpuAverage' => 'Média DV RPU',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'Média amostra DV',
 			'performanceOverlay.maxLuma' => 'Luma máx.',
 			'performanceOverlay.minLuma' => 'Luma mín.',
@@ -4160,6 +4110,8 @@ extension on TranslationsPt {
 			'externalPlayer.playerPackage' => 'Nome do pacote',
 			'externalPlayer.playerUrlScheme' => 'Esquema de URL',
 			'externalPlayer.off' => 'Desativado',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Falha ao abrir o reprodutor externo',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} não está instalado',
 			'externalPlayer.playInExternalPlayer' => 'Reproduzir no reprodutor externo',

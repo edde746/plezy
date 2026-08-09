@@ -421,30 +421,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => '下混时音量标准化';
 	@override String get audioDownmixNormalizeDescription => '降低混音电平以防止削波。关闭可保持原始音量（大音量场景可能失真）。';
-	@override String get atmosDiagnostics => 'Atmos 输出测试';
-	@override String get atmosDiagnosticsDescription => '通过系统播放器播放测试信号，诊断 Dolby Atmos 输出';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos 流';
-	@override String get atmosTestHlsAtmosDescription => '已知正常的 Dolby Atmos 流。功放应显示 Dolby Atmos。';
-	@override String get atmosTestHlsControl => 'Apple 环绕声流';
-	@override String get atmosTestHlsControlDescription => '不含 Atmos 的对照流。功放应显示不带 Atmos 的环绕声。';
-	@override String get atmosTestRawStream => '原始 EAC3 流';
-	@override String get atmosTestRawStreamDescription => '以与播放器内 Atmos 播放完全相同的方式流式传输测试文件。需要测试文件 URL。';
-	@override String get atmosTestRawFile => '原始 EAC3 文件';
-	@override String get atmosTestRawFileDescription => '以已知长度播放测试文件。需要测试文件 URL。';
-	@override String get atmosTestAsbarNative => '采样缓冲渲染器（原生）';
-	@override String get atmosTestAsbarNativeDescription => '将文件未经改动的压缩音频直接交给系统渲染器。需要测试文件 URL。';
-	@override String get atmosTestAsbarGenerated => '采样缓冲渲染器（重建）';
-	@override String get atmosTestAsbarGeneratedDescription => '相同，但音频描述按播放时的方式重建。需要测试文件 URL。';
-	@override String get atmosTestSessionMode => '使用影片播放会话模式';
-	@override String get atmosTestSessionModeDescription => '关闭时使用 Dolby 文档所述的模式。开启时使用先前的模式。';
-	@override String get atmosTestShowRoutePicker => '选择 AirPlay 输出';
-	@override String get atmosTestHideRoutePicker => '隐藏 AirPlay 输出选择器';
-	@override String get atmosTestRoutePickerDescription => '将测试发送到 AirPlay 接收器。只有 AirPlay 会报告已确定的音频模式。';
-	@override String get atmosTestStop => '停止测试';
-	@override String get atmosTestUrl => '测试文件 URL';
-	@override String get atmosTestUrlDescription => '原始 .ec3 Dolby Atmos 文件的 HTTP URL（例如用 ffmpeg 提取）';
-	@override String get atmosTestUrlMissing => '请先设置测试文件 URL';
-	@override String get atmosTestStatus => '状态';
 	@override String get dvConversionMode => 'Dolby Vision 转换';
 	@override String get dvConversionModeDescription => '选择 ExoPlayer 如何处理 Dolby Vision Profile 7 文件。';
 	@override String get dvConversionAuto => '自动';
@@ -2873,30 +2849,6 @@ extension on TranslationsZh {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => '下混时音量标准化',
 			'settings.audioDownmixNormalizeDescription' => '降低混音电平以防止削波。关闭可保持原始音量（大音量场景可能失真）。',
-			'settings.atmosDiagnostics' => 'Atmos 输出测试',
-			'settings.atmosDiagnosticsDescription' => '通过系统播放器播放测试信号，诊断 Dolby Atmos 输出',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos 流',
-			'settings.atmosTestHlsAtmosDescription' => '已知正常的 Dolby Atmos 流。功放应显示 Dolby Atmos。',
-			'settings.atmosTestHlsControl' => 'Apple 环绕声流',
-			'settings.atmosTestHlsControlDescription' => '不含 Atmos 的对照流。功放应显示不带 Atmos 的环绕声。',
-			'settings.atmosTestRawStream' => '原始 EAC3 流',
-			'settings.atmosTestRawStreamDescription' => '以与播放器内 Atmos 播放完全相同的方式流式传输测试文件。需要测试文件 URL。',
-			'settings.atmosTestRawFile' => '原始 EAC3 文件',
-			'settings.atmosTestRawFileDescription' => '以已知长度播放测试文件。需要测试文件 URL。',
-			'settings.atmosTestAsbarNative' => '采样缓冲渲染器（原生）',
-			'settings.atmosTestAsbarNativeDescription' => '将文件未经改动的压缩音频直接交给系统渲染器。需要测试文件 URL。',
-			'settings.atmosTestAsbarGenerated' => '采样缓冲渲染器（重建）',
-			'settings.atmosTestAsbarGeneratedDescription' => '相同，但音频描述按播放时的方式重建。需要测试文件 URL。',
-			'settings.atmosTestSessionMode' => '使用影片播放会话模式',
-			'settings.atmosTestSessionModeDescription' => '关闭时使用 Dolby 文档所述的模式。开启时使用先前的模式。',
-			'settings.atmosTestShowRoutePicker' => '选择 AirPlay 输出',
-			'settings.atmosTestHideRoutePicker' => '隐藏 AirPlay 输出选择器',
-			'settings.atmosTestRoutePickerDescription' => '将测试发送到 AirPlay 接收器。只有 AirPlay 会报告已确定的音频模式。',
-			'settings.atmosTestStop' => '停止测试',
-			'settings.atmosTestUrl' => '测试文件 URL',
-			'settings.atmosTestUrlDescription' => '原始 .ec3 Dolby Atmos 文件的 HTTP URL（例如用 ffmpeg 提取）',
-			'settings.atmosTestUrlMissing' => '请先设置测试文件 URL',
-			'settings.atmosTestStatus' => '状态',
 			'settings.dvConversionMode' => 'Dolby Vision 转换',
 			'settings.dvConversionModeDescription' => '选择 ExoPlayer 如何处理 Dolby Vision Profile 7 文件。',
 			'settings.dvConversionAuto' => '自动',
@@ -3097,8 +3049,6 @@ extension on TranslationsZh {
 			'mediaMenu.deleteMovieTitle' => '删除这部电影？',
 			'mediaMenu.deleteEpisodeConfirm' => '删除单集',
 			'mediaMenu.deleteSeasonConfirm' => '删除季度',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => '删除剧集',
 			'mediaMenu.deleteMovieConfirm' => '删除电影',
 			'mediaMenu.deleteAnyway' => '仍然删除',
@@ -3123,6 +3073,8 @@ extension on TranslationsZh {
 			'rateSheet.noConnectedServices' => '在设置中连接服务，即可在此评分。',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, 电影',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, 电视剧',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => '已观看',
@@ -3611,8 +3563,6 @@ extension on TranslationsZh {
 			'explore.badge.requested' => '已请求',
 			'explore.badge.pendingApproval' => '待批准',
 			'explore.badge.processing' => '处理中',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => '已拒绝',
 			'explore.badge.requestFailed' => '请求失败',
 			'explore.badge.requested4k' => '已请求 4K',
@@ -3637,6 +3587,8 @@ extension on TranslationsZh {
 			'explore.stats.completed' => ({required Object n}) => '${n} 人已看完',
 			'explore.stats.onHold' => ({required Object n}) => '${n} 人搁置',
 			'explore.stats.dropped' => ({required Object n}) => '${n} 人弃番',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => '冬季',
 			'explore.season.spring' => '春季',
 			'explore.season.summer' => '夏季',
@@ -4125,8 +4077,6 @@ extension on TranslationsZh {
 			'performanceOverlay.dropped' => '丢帧',
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV 采样平均',
 			'performanceOverlay.maxLuma' => '最大亮度',
 			'performanceOverlay.minLuma' => '最小亮度',
@@ -4151,6 +4101,8 @@ extension on TranslationsZh {
 			'externalPlayer.playerPackage' => '包名',
 			'externalPlayer.playerUrlScheme' => 'URL 方案',
 			'externalPlayer.off' => '关闭',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => '无法打开外部播放器',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
 			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',

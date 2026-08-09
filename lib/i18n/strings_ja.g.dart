@@ -421,30 +421,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => 'ダウンミックス時の音量正規化';
 	@override String get audioDownmixNormalizeDescription => 'クリッピングを防ぐためにミックス音量を下げます。オフにすると元の音量を維持します（大音量シーンで歪む場合があります）。';
-	@override String get atmosDiagnostics => 'Atmos出力テスト';
-	@override String get atmosDiagnosticsDescription => 'システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します';
-	@override String get atmosTestHlsAtmos => 'Apple Atmosストリーム';
-	@override String get atmosTestHlsAtmosDescription => '動作確認済みのDolby Atmosストリーム。レシーバーにDolby Atmosと表示されるはずです。';
-	@override String get atmosTestHlsControl => 'Appleサラウンドストリーム';
-	@override String get atmosTestHlsControlDescription => 'Atmosなしの比較用ストリーム。レシーバーにAtmosなしのサラウンドが表示されるはずです。';
-	@override String get atmosTestRawStream => '生EAC3ストリーム';
-	@override String get atmosTestRawStreamDescription => 'プレイヤー内のAtmos再生と同じ方式でテストファイルをストリーミングします。テストファイルのURLが必要です。';
-	@override String get atmosTestRawFile => '生EAC3ファイル';
-	@override String get atmosTestRawFileDescription => '長さが既知のテストファイルを再生します。テストファイルのURLが必要です。';
-	@override String get atmosTestAsbarNative => 'サンプルバッファレンダラー（ネイティブ）';
-	@override String get atmosTestAsbarNativeDescription => 'ファイルの圧縮音声をそのままシステムのレンダラーに渡します。テストファイルのURLが必要です。';
-	@override String get atmosTestAsbarGenerated => 'サンプルバッファレンダラー（再構築）';
-	@override String get atmosTestAsbarGeneratedDescription => '同じですが、再生時と同じ方法で音声記述を再構築します。テストファイルのURLが必要です。';
-	@override String get atmosTestSessionMode => 'ムービー再生モードを使用';
-	@override String get atmosTestSessionModeDescription => 'オフはDolbyが文書化したモードを使用します。オンは以前のモードを使用します。';
-	@override String get atmosTestShowRoutePicker => 'AirPlay出力を選択';
-	@override String get atmosTestHideRoutePicker => 'AirPlay出力の選択を隠す';
-	@override String get atmosTestRoutePickerDescription => 'テストをAirPlayレシーバーに送信します。解決された音声モードを報告するのはAirPlayのみです。';
-	@override String get atmosTestStop => 'テストを停止';
-	@override String get atmosTestUrl => 'テストファイルのURL';
-	@override String get atmosTestUrlDescription => '生の.ec3 Dolby AtmosファイルのHTTP URL（例: ffmpegで抽出）';
-	@override String get atmosTestUrlMissing => '先にテストファイルのURLを設定してください';
-	@override String get atmosTestStatus => 'ステータス';
 	@override String get dvConversionMode => 'Dolby Vision 変換';
 	@override String get dvConversionModeDescription => 'ExoPlayer が Dolby Vision Profile 7 ファイルを処理する方法を選択します。';
 	@override String get dvConversionAuto => '自動';
@@ -2873,30 +2849,6 @@ extension on TranslationsJa {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => 'ダウンミックス時の音量正規化',
 			'settings.audioDownmixNormalizeDescription' => 'クリッピングを防ぐためにミックス音量を下げます。オフにすると元の音量を維持します（大音量シーンで歪む場合があります）。',
-			'settings.atmosDiagnostics' => 'Atmos出力テスト',
-			'settings.atmosDiagnosticsDescription' => 'システムプレイヤーでテスト信号を再生してDolby Atmos出力を診断します',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmosストリーム',
-			'settings.atmosTestHlsAtmosDescription' => '動作確認済みのDolby Atmosストリーム。レシーバーにDolby Atmosと表示されるはずです。',
-			'settings.atmosTestHlsControl' => 'Appleサラウンドストリーム',
-			'settings.atmosTestHlsControlDescription' => 'Atmosなしの比較用ストリーム。レシーバーにAtmosなしのサラウンドが表示されるはずです。',
-			'settings.atmosTestRawStream' => '生EAC3ストリーム',
-			'settings.atmosTestRawStreamDescription' => 'プレイヤー内のAtmos再生と同じ方式でテストファイルをストリーミングします。テストファイルのURLが必要です。',
-			'settings.atmosTestRawFile' => '生EAC3ファイル',
-			'settings.atmosTestRawFileDescription' => '長さが既知のテストファイルを再生します。テストファイルのURLが必要です。',
-			'settings.atmosTestAsbarNative' => 'サンプルバッファレンダラー（ネイティブ）',
-			'settings.atmosTestAsbarNativeDescription' => 'ファイルの圧縮音声をそのままシステムのレンダラーに渡します。テストファイルのURLが必要です。',
-			'settings.atmosTestAsbarGenerated' => 'サンプルバッファレンダラー（再構築）',
-			'settings.atmosTestAsbarGeneratedDescription' => '同じですが、再生時と同じ方法で音声記述を再構築します。テストファイルのURLが必要です。',
-			'settings.atmosTestSessionMode' => 'ムービー再生モードを使用',
-			'settings.atmosTestSessionModeDescription' => 'オフはDolbyが文書化したモードを使用します。オンは以前のモードを使用します。',
-			'settings.atmosTestShowRoutePicker' => 'AirPlay出力を選択',
-			'settings.atmosTestHideRoutePicker' => 'AirPlay出力の選択を隠す',
-			'settings.atmosTestRoutePickerDescription' => 'テストをAirPlayレシーバーに送信します。解決された音声モードを報告するのはAirPlayのみです。',
-			'settings.atmosTestStop' => 'テストを停止',
-			'settings.atmosTestUrl' => 'テストファイルのURL',
-			'settings.atmosTestUrlDescription' => '生の.ec3 Dolby AtmosファイルのHTTP URL（例: ffmpegで抽出）',
-			'settings.atmosTestUrlMissing' => '先にテストファイルのURLを設定してください',
-			'settings.atmosTestStatus' => 'ステータス',
 			'settings.dvConversionMode' => 'Dolby Vision 変換',
 			'settings.dvConversionModeDescription' => 'ExoPlayer が Dolby Vision Profile 7 ファイルを処理する方法を選択します。',
 			'settings.dvConversionAuto' => '自動',
@@ -3097,8 +3049,6 @@ extension on TranslationsJa {
 			'mediaMenu.deleteMovieTitle' => 'この映画を削除しますか？',
 			'mediaMenu.deleteEpisodeConfirm' => 'エピソードを削除',
 			'mediaMenu.deleteSeasonConfirm' => 'シーズンを削除',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => '番組を削除',
 			'mediaMenu.deleteMovieConfirm' => '映画を削除',
 			'mediaMenu.deleteAnyway' => 'それでも削除',
@@ -3123,6 +3073,8 @@ extension on TranslationsJa {
 			'rateSheet.noConnectedServices' => '評価するには、設定でサービスを接続してください。',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}、映画',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}、テレビ番組',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}、${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}、${seasonInfo}',
 			'accessibility.mediaCardWatched' => '視聴済み',
@@ -3611,8 +3563,6 @@ extension on TranslationsJa {
 			'explore.badge.requested' => 'リクエスト済み',
 			'explore.badge.pendingApproval' => '承認待ち',
 			'explore.badge.processing' => '処理中',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => '却下',
 			'explore.badge.requestFailed' => 'リクエスト失敗',
 			'explore.badge.requested4k' => '4Kリクエスト済み',
@@ -3637,6 +3587,8 @@ extension on TranslationsJa {
 			'explore.stats.completed' => ({required Object n}) => '${n}人が視聴済み',
 			'explore.stats.onHold' => ({required Object n}) => '${n}人が保留中',
 			'explore.stats.dropped' => ({required Object n}) => '${n}人が視聴中止',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => '冬',
 			'explore.season.spring' => '春',
 			'explore.season.summer' => '夏',
@@ -4125,8 +4077,6 @@ extension on TranslationsJa {
 			'performanceOverlay.dropped' => 'ドロップ',
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV サンプル平均',
 			'performanceOverlay.maxLuma' => '最大輝度',
 			'performanceOverlay.minLuma' => '最小輝度',
@@ -4151,6 +4101,8 @@ extension on TranslationsJa {
 			'externalPlayer.playerPackage' => 'パッケージ名',
 			'externalPlayer.playerUrlScheme' => 'URLスキーム',
 			'externalPlayer.off' => 'オフ',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => '外部プレーヤーの起動に失敗しました',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}がインストールされていません',
 			'externalPlayer.playInExternalPlayer' => '外部プレーヤーで再生',

@@ -421,30 +421,6 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'dB';
 	@override String get audioDownmixNormalize => 'Çevirmədə səsi normallaşdır';
 	@override String get audioDownmixNormalizeDescription => 'Səs kəsilmələrinin qarşısını almaq üçün səviyyəni endirin.';
-	@override String get atmosDiagnostics => 'Atmos çıxış testi';
-	@override String get atmosDiagnosticsDescription => 'Sistem oynadıcısı vasitəsilə test siqnalları çalan Dolby Atmos çıxışını yoxlayın';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos axını';
-	@override String get atmosTestHlsAtmosDescription => 'Düzgün işlədiyi məlum olan Dolby Atmos axını. Qəbuledici Dolby Atmos göstərməlidir.';
-	@override String get atmosTestHlsControl => 'Apple əhatəli səs axını';
-	@override String get atmosTestHlsControlDescription => 'Atmos olmayan idarəetmə axını.';
-	@override String get atmosTestRawStream => 'Xam EAC3 axını';
-	@override String get atmosTestRawStreamDescription => 'Test faylını eynilə oynadıcı daxili Atmos kimi yayımlayır.';
-	@override String get atmosTestRawFile => 'Xam EAC3 faylı';
-	@override String get atmosTestRawFileDescription => 'Məlum uzunluqda test faylını oynadır.';
-	@override String get atmosTestAsbarNative => 'Nümunə bufer rendereri (daxili)';
-	@override String get atmosTestAsbarNativeDescription => 'Faylın dəyişdirilməmiş sıxılmış səsini birbaşa sistem rendererinə ötürür. Test faylının URL-i tələb olunur.';
-	@override String get atmosTestAsbarGenerated => 'Nümunə bufer rendereri (yenidən qurulmuş)';
-	@override String get atmosTestAsbarGeneratedDescription => 'Eyni, lakin səs təsviri oynatmanın qurduğu kimi yenidən qurulur. Test faylının URL-i tələb olunur.';
-	@override String get atmosTestSessionMode => 'Film oynatma seansı rejimindən istifadə et';
-	@override String get atmosTestSessionModeDescription => 'Söndürüldükdə Dolby-nin sənədləşdirdiyi rejim işlədilir. Yandırıldıqda oynatmanın əvvəl istifadə etdiyi rejim işlədilir.';
-	@override String get atmosTestShowRoutePicker => 'AirPlay çıxışını seç';
-	@override String get atmosTestHideRoutePicker => 'AirPlay çıxış seçicisini gizlət';
-	@override String get atmosTestRoutePickerDescription => 'Testi AirPlay qəbuledicisinə göndərir. Müəyyən edilmiş səs rejimini yalnız AirPlay bildirir.';
-	@override String get atmosTestStop => 'Testi saxla';
-	@override String get atmosTestUrl => 'Test faylı URL-i';
-	@override String get atmosTestUrlDescription => 'Xam .ec3 Dolby Atmos faylının HTTP URL-i';
-	@override String get atmosTestUrlMissing => 'Əvvəlcə test faylı URL-ini təyin edin';
-	@override String get atmosTestStatus => 'Status';
 	@override String get dvConversionMode => 'Dolby Vision çevrilməsi';
 	@override String get dvConversionModeDescription => 'ExoPlayer-in Dolby Vision Profile 7 fayllarını necə emal edəcəyini seçin.';
 	@override String get dvConversionAuto => 'Avtomatik';
@@ -2882,30 +2858,6 @@ extension on TranslationsAz {
 			'settings.downmixCenterBoostShort' => 'dB',
 			'settings.audioDownmixNormalize' => 'Çevirmədə səsi normallaşdır',
 			'settings.audioDownmixNormalizeDescription' => 'Səs kəsilmələrinin qarşısını almaq üçün səviyyəni endirin.',
-			'settings.atmosDiagnostics' => 'Atmos çıxış testi',
-			'settings.atmosDiagnosticsDescription' => 'Sistem oynadıcısı vasitəsilə test siqnalları çalan Dolby Atmos çıxışını yoxlayın',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos axını',
-			'settings.atmosTestHlsAtmosDescription' => 'Düzgün işlədiyi məlum olan Dolby Atmos axını. Qəbuledici Dolby Atmos göstərməlidir.',
-			'settings.atmosTestHlsControl' => 'Apple əhatəli səs axını',
-			'settings.atmosTestHlsControlDescription' => 'Atmos olmayan idarəetmə axını.',
-			'settings.atmosTestRawStream' => 'Xam EAC3 axını',
-			'settings.atmosTestRawStreamDescription' => 'Test faylını eynilə oynadıcı daxili Atmos kimi yayımlayır.',
-			'settings.atmosTestRawFile' => 'Xam EAC3 faylı',
-			'settings.atmosTestRawFileDescription' => 'Məlum uzunluqda test faylını oynadır.',
-			'settings.atmosTestAsbarNative' => 'Nümunə bufer rendereri (daxili)',
-			'settings.atmosTestAsbarNativeDescription' => 'Faylın dəyişdirilməmiş sıxılmış səsini birbaşa sistem rendererinə ötürür. Test faylının URL-i tələb olunur.',
-			'settings.atmosTestAsbarGenerated' => 'Nümunə bufer rendereri (yenidən qurulmuş)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'Eyni, lakin səs təsviri oynatmanın qurduğu kimi yenidən qurulur. Test faylının URL-i tələb olunur.',
-			'settings.atmosTestSessionMode' => 'Film oynatma seansı rejimindən istifadə et',
-			'settings.atmosTestSessionModeDescription' => 'Söndürüldükdə Dolby-nin sənədləşdirdiyi rejim işlədilir. Yandırıldıqda oynatmanın əvvəl istifadə etdiyi rejim işlədilir.',
-			'settings.atmosTestShowRoutePicker' => 'AirPlay çıxışını seç',
-			'settings.atmosTestHideRoutePicker' => 'AirPlay çıxış seçicisini gizlət',
-			'settings.atmosTestRoutePickerDescription' => 'Testi AirPlay qəbuledicisinə göndərir. Müəyyən edilmiş səs rejimini yalnız AirPlay bildirir.',
-			'settings.atmosTestStop' => 'Testi saxla',
-			'settings.atmosTestUrl' => 'Test faylı URL-i',
-			'settings.atmosTestUrlDescription' => 'Xam .ec3 Dolby Atmos faylının HTTP URL-i',
-			'settings.atmosTestUrlMissing' => 'Əvvəlcə test faylı URL-ini təyin edin',
-			'settings.atmosTestStatus' => 'Status',
 			'settings.dvConversionMode' => 'Dolby Vision çevrilməsi',
 			'settings.dvConversionModeDescription' => 'ExoPlayer-in Dolby Vision Profile 7 fayllarını necə emal edəcəyini seçin.',
 			'settings.dvConversionAuto' => 'Avtomatik',
@@ -3106,8 +3058,6 @@ extension on TranslationsAz {
 			'mediaMenu.deleteMovieTitle' => 'Bu kino silinsin?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Seriyanı sil',
 			'mediaMenu.deleteSeasonConfirm' => 'Mövsümü sil',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Serialı sil',
 			'mediaMenu.deleteMovieConfirm' => 'Kinonu sil',
 			'mediaMenu.deleteAnyway' => 'Yenə də sil',
@@ -3132,6 +3082,8 @@ extension on TranslationsAz {
 			'rateSheet.noConnectedServices' => 'Orada qiymətləndirmək üçün Tənzimləmələrdən xidmət qoşun.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, kino',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV şou',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'baxılıb',
@@ -3620,8 +3572,6 @@ extension on TranslationsAz {
 			'explore.badge.requested' => 'Sorğu göndərildi',
 			'explore.badge.pendingApproval' => 'Təsdiq gözlənilir',
 			'explore.badge.processing' => 'Emal edilir',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => 'Rədd edildi',
 			'explore.badge.requestFailed' => 'Sorğu uğursuz oldu',
 			'explore.badge.requested4k' => '4K sorğu göndərildi',
@@ -3646,6 +3596,8 @@ extension on TranslationsAz {
 			'explore.stats.completed' => ({required Object n}) => '${n} tamamladı',
 			'explore.stats.onHold' => ({required Object n}) => '${n} fasilədə',
 			'explore.stats.dropped' => ({required Object n}) => '${n} izləməyi dayandırdı',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Qış',
 			'explore.season.spring' => 'Yaz',
 			'explore.season.summer' => 'Yay',
@@ -4134,8 +4086,6 @@ extension on TranslationsAz {
 			'performanceOverlay.dropped' => 'İtirilmiş kadrlar',
 			'performanceOverlay.dvRpus' => 'DV RPU-ları',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Ort.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV Nümunə Ort.',
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
@@ -4160,6 +4110,8 @@ extension on TranslationsAz {
 			'externalPlayer.playerPackage' => 'Paket adı',
 			'externalPlayer.playerUrlScheme' => 'URL sxemi',
 			'externalPlayer.off' => 'Söndürülüb',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Xarici oynadıcı açıla bilmədi',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} quraşdırılmayıb',
 			'externalPlayer.playInExternalPlayer' => 'Xarici oynadıcıda oynat',

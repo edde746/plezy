@@ -421,30 +421,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get downmixCenterBoostShort => 'дБ';
 	@override String get audioDownmixNormalize => 'Түрлендіруде дыбысты нормалау';
 	@override String get audioDownmixNormalizeDescription => 'Дыбыс бұзылуын болдырмау үшін деңгейді төмендету.';
-	@override String get atmosDiagnostics => 'Atmos шығысын тексеру';
-	@override String get atmosDiagnosticsDescription => 'Dolby Atmos шығысын тексеру';
-	@override String get atmosTestHlsAtmos => 'Apple Atmos ағыны';
-	@override String get atmosTestHlsAtmosDescription => 'Дұрыс жұмыс істейтін Dolby Atmos ағыны.';
-	@override String get atmosTestHlsControl => 'Apple көлемді дыбыс ағыны';
-	@override String get atmosTestHlsControlDescription => 'Atmos емес бақылау ағыны.';
-	@override String get atmosTestRawStream => 'Өңделмеген EAC3 ағыны';
-	@override String get atmosTestRawStreamDescription => 'Тест файлын ішкі Atmos ретінде тарату.';
-	@override String get atmosTestRawFile => 'Өңделмеген EAC3 файлы';
-	@override String get atmosTestRawFileDescription => 'Тест файлын ойнату.';
-	@override String get atmosTestAsbarNative => 'Сэмпл-буфер рендерері (нативті)';
-	@override String get atmosTestAsbarNativeDescription => 'Файлдың өзгертілмеген сығылған дыбысын тікелей жүйелік рендерерге береді. Тест файлының URL-і қажет.';
-	@override String get atmosTestAsbarGenerated => 'Сэмпл-буфер рендерері (қайта құрылған)';
-	@override String get atmosTestAsbarGeneratedDescription => 'Сол сияқты, бірақ дыбыс сипаттамасы ойнату кезіндегідей қайта құрылады. Тест файлының URL-і қажет.';
-	@override String get atmosTestSessionMode => 'Фильмді ойнату сеансы режимін пайдалану';
-	@override String get atmosTestSessionModeDescription => 'Өшірулі — Dolby құжаттаған режим. Қосулы — бұрын пайдаланылған режим.';
-	@override String get atmosTestShowRoutePicker => 'AirPlay шығысын таңдау';
-	@override String get atmosTestHideRoutePicker => 'AirPlay шығысын таңдау терезесін жасыру';
-	@override String get atmosTestRoutePickerDescription => 'Тестті AirPlay қабылдағышына жібереді. Анықталған дыбыс режимін тек AirPlay хабарлайды.';
-	@override String get atmosTestStop => 'Тестті тоқтату';
-	@override String get atmosTestUrl => 'Тест файлының URL-і';
-	@override String get atmosTestUrlDescription => 'Өңделмеген .ec3 файлының HTTP URL-і';
-	@override String get atmosTestUrlMissing => 'Алдымен тест файлының URL-ін орнатыңыз';
-	@override String get atmosTestStatus => 'Мәртебесі';
 	@override String get dvConversionMode => 'Dolby Vision түрлендіруі';
 	@override String get dvConversionModeDescription => 'ExoPlayer-дің Dolby Vision Profile 7 файлдарын өңдеу әдісін таңдаңыз.';
 	@override String get dvConversionAuto => 'Автоматты';
@@ -2882,30 +2858,6 @@ extension on TranslationsKk {
 			'settings.downmixCenterBoostShort' => 'дБ',
 			'settings.audioDownmixNormalize' => 'Түрлендіруде дыбысты нормалау',
 			'settings.audioDownmixNormalizeDescription' => 'Дыбыс бұзылуын болдырмау үшін деңгейді төмендету.',
-			'settings.atmosDiagnostics' => 'Atmos шығысын тексеру',
-			'settings.atmosDiagnosticsDescription' => 'Dolby Atmos шығысын тексеру',
-			'settings.atmosTestHlsAtmos' => 'Apple Atmos ағыны',
-			'settings.atmosTestHlsAtmosDescription' => 'Дұрыс жұмыс істейтін Dolby Atmos ағыны.',
-			'settings.atmosTestHlsControl' => 'Apple көлемді дыбыс ағыны',
-			'settings.atmosTestHlsControlDescription' => 'Atmos емес бақылау ағыны.',
-			'settings.atmosTestRawStream' => 'Өңделмеген EAC3 ағыны',
-			'settings.atmosTestRawStreamDescription' => 'Тест файлын ішкі Atmos ретінде тарату.',
-			'settings.atmosTestRawFile' => 'Өңделмеген EAC3 файлы',
-			'settings.atmosTestRawFileDescription' => 'Тест файлын ойнату.',
-			'settings.atmosTestAsbarNative' => 'Сэмпл-буфер рендерері (нативті)',
-			'settings.atmosTestAsbarNativeDescription' => 'Файлдың өзгертілмеген сығылған дыбысын тікелей жүйелік рендерерге береді. Тест файлының URL-і қажет.',
-			'settings.atmosTestAsbarGenerated' => 'Сэмпл-буфер рендерері (қайта құрылған)',
-			'settings.atmosTestAsbarGeneratedDescription' => 'Сол сияқты, бірақ дыбыс сипаттамасы ойнату кезіндегідей қайта құрылады. Тест файлының URL-і қажет.',
-			'settings.atmosTestSessionMode' => 'Фильмді ойнату сеансы режимін пайдалану',
-			'settings.atmosTestSessionModeDescription' => 'Өшірулі — Dolby құжаттаған режим. Қосулы — бұрын пайдаланылған режим.',
-			'settings.atmosTestShowRoutePicker' => 'AirPlay шығысын таңдау',
-			'settings.atmosTestHideRoutePicker' => 'AirPlay шығысын таңдау терезесін жасыру',
-			'settings.atmosTestRoutePickerDescription' => 'Тестті AirPlay қабылдағышына жібереді. Анықталған дыбыс режимін тек AirPlay хабарлайды.',
-			'settings.atmosTestStop' => 'Тестті тоқтату',
-			'settings.atmosTestUrl' => 'Тест файлының URL-і',
-			'settings.atmosTestUrlDescription' => 'Өңделмеген .ec3 файлының HTTP URL-і',
-			'settings.atmosTestUrlMissing' => 'Алдымен тест файлының URL-ін орнатыңыз',
-			'settings.atmosTestStatus' => 'Мәртебесі',
 			'settings.dvConversionMode' => 'Dolby Vision түрлендіруі',
 			'settings.dvConversionModeDescription' => 'ExoPlayer-дің Dolby Vision Profile 7 файлдарын өңдеу әдісін таңдаңыз.',
 			'settings.dvConversionAuto' => 'Автоматты',
@@ -3106,8 +3058,6 @@ extension on TranslationsKk {
 			'mediaMenu.deleteMovieTitle' => 'Осы фильм өшірілсін бе?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Бөлімді өшіру',
 			'mediaMenu.deleteSeasonConfirm' => 'Маусымды өшіру',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Сериалды өшіру',
 			'mediaMenu.deleteMovieConfirm' => 'Фильмді өшіру',
 			'mediaMenu.deleteAnyway' => 'Бәрібір өшіру',
@@ -3132,6 +3082,8 @@ extension on TranslationsKk {
 			'rateSheet.noConnectedServices' => 'Бағалау үшін Баптаулардан қызметті қосыңыз.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, фильм',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV шоу',
+			_ => null,
+		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'көрілген',
@@ -3620,8 +3572,6 @@ extension on TranslationsKk {
 			'explore.badge.requested' => 'Сұралған',
 			'explore.badge.pendingApproval' => 'Растау күтілуде',
 			'explore.badge.processing' => 'Өңделуде',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.declined' => 'Қабылданбады',
 			'explore.badge.requestFailed' => 'Сұрау сәтсіз аяқталды',
 			'explore.badge.requested4k' => '4K сұралған',
@@ -3646,6 +3596,8 @@ extension on TranslationsKk {
 			'explore.stats.completed' => ({required Object n}) => '${n} аяқтады',
 			'explore.stats.onHold' => ({required Object n}) => '${n} кейінге қалдырды',
 			'explore.stats.dropped' => ({required Object n}) => '${n} тастады',
+			_ => null,
+		} ?? switch (path) {
 			'explore.season.winter' => 'Қыс',
 			'explore.season.spring' => 'Көктем',
 			'explore.season.summer' => 'Жаз',
@@ -4134,8 +4086,6 @@ extension on TranslationsKk {
 			'performanceOverlay.dropped' => 'Өткізілген кадрлар',
 			'performanceOverlay.dvRpus' => 'DV RPU-лар',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Орт.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvSampleAverage' => 'DV Үлгі Орт.',
 			'performanceOverlay.maxLuma' => 'Макс Luma',
 			'performanceOverlay.minLuma' => 'Мин Luma',
@@ -4160,6 +4110,8 @@ extension on TranslationsKk {
 			'externalPlayer.playerPackage' => 'Пакет атауы',
 			'externalPlayer.playerUrlScheme' => 'URL схемасы',
 			'externalPlayer.off' => 'Өшірулі',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Сыртқы ойнатқышты іске қосу мүмкін болмады',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} орнатылмаған',
 			'externalPlayer.playInExternalPlayer' => 'Сыртқы ойнатқышта ойнату',
