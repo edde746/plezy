@@ -518,6 +518,10 @@ dependencies {
   // Android TV Watch Next integration
   implementation("androidx.tvprovider:tvprovider:1.1.0")
 
+  // Periodic Watch Next background refresh (ShelfRefreshWorker). Same version
+  // background_downloader pins, so the merged classpath stays coherent.
+  implementation("androidx.work:work-runtime-ktx:2.11.0")
+
   // Media3 ExoPlayer for Android
   implementation("androidx.media3:media3-decoder:$media3Version")
   implementation("androidx.media3:media3-exoplayer:$media3Version")
@@ -537,6 +541,7 @@ dependencies {
   // Real android.util.* implementations for tests exercising media3 classes
   // (MatroskaExtractor uses SparseArray, which is a no-op stub on plain JVM)
   testImplementation("org.robolectric:robolectric:4.16.1")
+  testImplementation("androidx.work:work-testing:2.11.0")
   androidTestImplementation("androidx.test:runner:1.7.0")
   androidTestImplementation("androidx.test.ext:junit:1.3.0")
 }
