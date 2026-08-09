@@ -172,18 +172,28 @@ class AppleTvRemoteTouchService {
 
     final deltaX = _anchorX - x;
     final deltaY = _anchorY - y;
-    final axis = _resolveSwipeAxis(x: x, y: y, deltaX: deltaX, deltaY: deltaY);
-    if (axis == null) return;
 
     final now = _now();
     final lastSwipeAt = _lastSwipeAt;
     if (lastSwipeAt != null && now.difference(lastSwipeAt) < swipeRepeatInterval) {
+      // Travel during the repeat cooldown never counts toward the next step:
+      // re-anchor on every frame so a fast flick's deceleration tail is
+      // discarded instead of banked. Without this, the first post-cooldown
+      // move frame — even a stationary or lift-drift one — released the
+      // banked delta as a second focus step for a single intentional swipe.
+      // A deliberate continuous drag still repeats because it covers a fresh
+      // swipe threshold after each cooldown expires.
+      _anchorX = x;
+      _anchorY = y;
       final age = now.difference(lastSwipeAt).inMilliseconds;
       _log(
         'suppress swipe reason=repeat-cooldown age=${age}ms dx=${_formatDouble(deltaX)} dy=${_formatDouble(deltaY)}',
       );
       return;
     }
+
+    final axis = _resolveSwipeAxis(x: x, y: y, deltaX: deltaX, deltaY: deltaY);
+    if (axis == null) return;
 
     final logicalKey = axis == _SwipeAxis.horizontal
         ? (deltaX >= 0 ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight)

@@ -6,7 +6,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AppleTvRemoteTouchService', () {
-    test('emits repeated horizontal swipes only after the repeat interval', () async {
+    test('a single fast flick emits exactly one swipe', () async {
       final harness = _Harness();
 
       await harness.send('started', x: 500, y: 500);
@@ -15,8 +15,44 @@ void main() {
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
 
+      // The flick's tail travel landed inside the repeat cooldown and must be
+      // discarded: a near-stationary frame after the cooldown expires must not
+      // release it as a second focus step.
       harness.advance(const Duration(milliseconds: 141));
-      await harness.send('move', x: 260, y: 490);
+      await harness.send('move', x: 259, y: 490);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('sub-threshold cooldown travel plus lift drift does not fire a second swipe', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 390, y: 500);
+      // 80pt tail inside the cooldown: below threshold, but banked it would
+      // combine with the 70pt lift drift below to cross the 100pt threshold.
+      await harness.send('move', x: 310, y: 500);
+
+      harness.advance(const Duration(milliseconds: 141));
+      await harness.send('move', x: 240, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('a sustained drag keeps repeating after each repeat interval', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 900, y: 500);
+      await harness.send('move', x: 780, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+
+      harness.advance(const Duration(milliseconds: 70));
+      await harness.send('move', x: 700, y: 500);
+
+      // A full fresh threshold is covered after the cooldown expires.
+      harness.advance(const Duration(milliseconds: 71));
+      await harness.send('move', x: 580, y: 500);
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
     });
