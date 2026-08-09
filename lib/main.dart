@@ -350,9 +350,6 @@ StartupFailureRecord describeStartupFailure(Object error, StackTrace stackTrace)
 /// that anything was sent.
 var _crashReporterReady = false;
 
-@visibleForTesting
-void debugSetCrashReporterReady(bool ready) => _crashReporterReady = ready;
-
 /// Sends a persisted startup failure to the crash reporter, once.
 ///
 /// Reporting cannot happen where the failure is caught. The gate opens
@@ -1749,7 +1746,7 @@ class _AppShell extends StatelessWidget {
                       const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
                       const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
                     },
-                    builder: (context, child) => _rootShell(child),
+                    builder: (context, child) => rootShell(child),
                   ),
                 ),
               );
@@ -1767,8 +1764,8 @@ class _AppShell extends StatelessWidget {
 /// Flutter presents a messenger's snackbars on the rootmost registered scaffold, so anything
 /// below would leave global snackbars at the car's native density while the rest of the
 /// interface grew.
-Widget _rootShell(Widget? child) {
-  return _FormFactorScale(
+Widget rootShell(Widget? child) {
+  return FormFactorScale(
     child: ScaffoldMessenger(
       key: rootScaffoldMessengerKey,
       child: Scaffold(backgroundColor: Colors.transparent, body: child),
@@ -1780,9 +1777,9 @@ Widget _rootShell(Widget? child) {
 /// report a very low display density. Both make otherwise comfortable controls
 /// physically too small, so render through a smaller, self-consistent logical
 /// viewport and scale the result back to the physical surface.
-class _FormFactorScale extends StatelessWidget {
+class FormFactorScale extends StatelessWidget {
   final Widget? child;
-  const _FormFactorScale({required this.child});
+  const FormFactorScale({super.key, required this.child});
 
   static const double _appleTvScale = 2.0;
 
@@ -1847,13 +1844,6 @@ class _FormFactorScale extends StatelessWidget {
     );
   }
 }
-
-@visibleForTesting
-Widget formFactorScaleForTesting({required Widget? child}) => _FormFactorScale(child: child);
-
-/// The real root shell, so a test can assert what the scale actually encloses.
-@visibleForTesting
-Widget rootShellForTesting({required Widget? child}) => _rootShell(child);
 
 @visibleForTesting
 bool shouldBypassSetupForDatabaseRecovery(TvosDatabaseRecoveryOutcome outcome) {

@@ -43,7 +43,7 @@ void main() {
         child: MaterialApp(
           theme: ThemeData(extensions: const [testMonoTokens]),
           home: const SizedBox.expand(),
-          builder: (context, child) => app.rootShellForTesting(child: child),
+          builder: (context, child) => app.rootShell(child),
         ),
       ),
     );
@@ -142,7 +142,7 @@ Future<void> _pumpScaleHarness(WidgetTester tester, {required ValueChanged<Media
     TranslationProvider(
       child: MaterialApp(
         theme: ThemeData(extensions: const [testMonoTokens]),
-        home: app.formFactorScaleForTesting(
+        home: app.FormFactorScale(
           child: Builder(
             builder: (context) {
               onMediaQuery(MediaQuery.of(context));
