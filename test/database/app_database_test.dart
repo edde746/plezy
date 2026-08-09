@@ -69,6 +69,7 @@ class _AppDatabaseTestSuite {
       test('all tables are accessible and start empty', () async {
         expect(await db.select(db.downloadedMedia).get(), isEmpty);
         expect(await db.select(db.downloadOwners).get(), isEmpty);
+        expect(await db.select(db.downloadQualityDemands).get(), isEmpty);
         expect(await db.select(db.downloadQueue).get(), isEmpty);
         expect(await db.select(db.apiCache).get(), isEmpty);
         expect(await db.select(db.offlineWatchProgress).get(), isEmpty);
@@ -130,7 +131,13 @@ class _AppDatabaseTestSuite {
         final names = rows.map((r) => r.read<String>('name')).toSet();
         expect(
           names,
-          containsAll(['idx_profiles_kind', 'idx_profile_connections_profile_id', 'idx_offline_watch_progress_server']),
+          containsAll([
+            'idx_profiles_kind',
+            'idx_profile_connections_profile_id',
+            'idx_offline_watch_progress_server',
+            'idx_download_quality_demands_global_key',
+            'idx_download_quality_demands_source',
+          ]),
         );
       });
 
@@ -930,6 +937,50 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
+
+      test('v21 migration seeds known Plex video demands as Default with Original artifacts', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v21_quality_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.insertDownload(
+            serverId: ServerId('plex-server'),
+            clientScopeId: 'plex-server/~plex-profile/profile-a',
+            ratingKey: 'movie-1',
+            globalKey: 'plex-server:movie-1',
+            type: 'movie',
+            status: DownloadStatus.completed.index,
+          );
+          await seeded.addDownloadOwner(
+            profileId: 'profile-a',
+            globalKey: 'plex-server:movie-1',
+            backendId: 'plex',
+            clientScopeId: 'plex-server/~plex-profile/profile-a',
+          );
+          await seeded.customStatement('DELETE FROM download_quality_demands');
+          await seeded.customStatement('PRAGMA user_version = 20');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final row = await reopened.getDownloadedMedia('plex-server:movie-1');
+          final demands = await reopened.getDownloadQualityDemands('plex-server:movie-1');
+          expect(row?.downloadQualityPreset, 'original');
+          expect(demands, hasLength(1));
+          expect(demands.single.profileId, 'profile-a');
+          expect(demands.single.sourceKey, 'legacy');
+          expect(demands.single.qualityPreset, isNull);
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
     });
 
     _registerLegacyDesktopMigrationTests();
@@ -1466,6 +1517,10 @@ class _AppDatabaseTestSuite {
 
         await db.adoptLegacyDownloadsForProfile('profile-a');
         expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv1:profile-a-item'});
+        final demands = await db.getDownloadQualityDemands('srv1:profile-a-item');
+        expect(demands, hasLength(1));
+        expect(demands.single.sourceKey, 'legacy');
+        expect(demands.single.qualityPreset, isNull);
       });
     });
   }
@@ -2103,7 +2158,24 @@ class _AppDatabaseTestSuite {
         expect(rules.first.downloadFilter, 'unwatched'); // default
         expect(rules.first.mediaIndex, 0); // default
         expect(rules.first.includeSpecials, isTrue); // default
+        expect(rules.first.downloadQualityPreset, isNull); // follows the app default
         expect(rules.first.lastExecutedAt, isNull);
+      });
+
+      test('sync-rule quality override round-trips and can return to Default', () async {
+        await db.insertSyncRule(
+          profileId: 'profile-a',
+          serverId: ServerId('srv'),
+          ratingKey: '10',
+          globalKey: 'profile-a|srv:10',
+          targetType: 'show',
+          episodeCount: 5,
+          downloadQualityPreset: 'p720_3mbps',
+        );
+
+        expect((await db.getSyncRule('profile-a|srv:10'))?.downloadQualityPreset, 'p720_3mbps');
+        await db.updateSyncRuleDownloadQuality('profile-a|srv:10', null);
+        expect((await db.getSyncRule('profile-a|srv:10'))?.downloadQualityPreset, isNull);
       });
 
       test('insertSyncRule upserts on the UNIQUE globalKey instead of crashing', () async {

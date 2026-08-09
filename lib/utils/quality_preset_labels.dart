@@ -98,3 +98,34 @@ Future<TranscodeQualityPreset?> showQualityPickerDialog(
     options: TranscodeQualityPreset.displayOrder.map((p) => (icon: null, label: labelFor(p), value: p)).toList(),
   );
 }
+
+/// A nullable preset is a real choice here ("Default"), so the dialog result
+/// needs a wrapper to distinguish it from dismissal.
+class DownloadQualitySelection {
+  final TranscodeQualityPreset? override;
+
+  const DownloadQualitySelection(this.override);
+}
+
+Future<DownloadQualitySelection?> showDownloadQualityPickerDialog(
+  BuildContext context, {
+  required TranscodeQualityPreset defaultPreset,
+  TranscodeQualityPreset? currentOverride,
+}) {
+  final options = <({IconData? icon, String label, DownloadQualitySelection value})>[
+    (
+      icon: null,
+      label: t.downloads.defaultQualityOption(quality: qualityPresetLabel(defaultPreset)),
+      value: const DownloadQualitySelection(null),
+    ),
+    ...TranscodeQualityPreset.displayOrder.map(
+      (preset) => (icon: null, label: qualityPresetLabel(preset), value: DownloadQualitySelection(preset)),
+    ),
+  ];
+  return showOptionPickerDialog<DownloadQualitySelection>(
+    context,
+    title: t.downloads.downloadQuality,
+    options: options,
+    isSelected: (selection) => selection.override == currentOverride,
+  );
+}

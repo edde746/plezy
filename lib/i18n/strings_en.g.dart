@@ -873,6 +873,12 @@ class Translations$settings$en {
 	/// en: 'Prevent downloads when on cellular data'
 	String get downloadOnWifiOnlyDescription => 'Prevent downloads when on cellular data';
 
+	/// en: 'Plex download quality'
+	String get plexDownloadQuality => 'Plex download quality';
+
+	/// en: '${quality} • System quality for Plex video downloads; changing it replaces downloads set to System'
+	String plexDownloadQualityDescription({required Object quality}) => '${quality} • System quality for Plex video downloads; changing it replaces downloads set to System';
+
 	/// en: 'Auto-remove watched downloads'
 	String get autoRemoveWatchedDownloads => 'Auto-remove watched downloads';
 
@@ -3892,6 +3898,18 @@ class Translations$downloads$en {
 	/// en: 'Select Version'
 	String get selectVersion => 'Select Version';
 
+	/// en: 'Download quality'
+	String get downloadQuality => 'Download quality';
+
+	/// en: 'System (${quality})'
+	String defaultQualityOption({required Object quality}) => 'System (${quality})';
+
+	/// en: 'Quality: ${quality}'
+	String syncRuleQuality({required Object quality}) => 'Quality: ${quality}';
+
+	/// en: 'Download quality is available for Plex rules only'
+	String get syncRuleQualityPlexOnly => 'Download quality is available for Plex rules only';
+
 	/// en: 'All episodes'
 	String get allEpisodes => 'All episodes';
 
@@ -6341,6 +6359,8 @@ extension on Translations {
 			'settings.downloadLocationPickerUnavailable' => 'Folder selection is not available on this device',
 			'settings.downloadOnWifiOnly' => 'Download on Wi-Fi only',
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
+			'settings.plexDownloadQuality' => 'Plex download quality',
+			'settings.plexDownloadQualityDescription' => ({required Object quality}) => '${quality} • System quality for Plex video downloads; changing it replaces downloads set to System',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
 			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
@@ -6598,10 +6618,10 @@ extension on Translations {
 			'rateSheet.favorite' => 'Favorite',
 			'rateSheet.favorited' => 'Favorited',
 			'rateSheet.saved' => 'Saved',
-			'rateSheet.notAvailable' => 'No match found',
-			'rateSheet.noConnectedServices' => 'Connect a service in Settings to rate there.',
 			_ => null,
 		} ?? switch (path) {
+			'rateSheet.notAvailable' => 'No match found',
+			'rateSheet.noConnectedServices' => 'Connect a service in Settings to rate there.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, movie',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV show',
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
@@ -7112,10 +7132,10 @@ extension on Translations {
 			'explore.stats.listed' => ({required Object n}) => '${n} listed',
 			'explore.stats.viewersDay' => ({required Object n}) => '${n} watched today',
 			'explore.stats.viewersWeek' => ({required Object n}) => '${n} watched this week',
-			'explore.stats.viewersMonth' => ({required Object n}) => '${n} watched this month',
-			'explore.stats.viewersYear' => ({required Object n}) => '${n} watched this year',
 			_ => null,
 		} ?? switch (path) {
+			'explore.stats.viewersMonth' => ({required Object n}) => '${n} watched this month',
+			'explore.stats.viewersYear' => ({required Object n}) => '${n} watched this year',
 			'explore.stats.viewersAllTime' => ({required Object n}) => '${n} viewers',
 			'explore.stats.planning' => ({required Object n}) => '${n} planning to watch',
 			'explore.stats.favorited' => ({required Object n}) => '${n} favorites',
@@ -7434,6 +7454,10 @@ extension on Translations {
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
+			'downloads.downloadQuality' => 'Download quality',
+			'downloads.defaultQualityOption' => ({required Object quality}) => 'System (${quality})',
+			'downloads.syncRuleQuality' => ({required Object quality}) => 'Quality: ${quality}',
+			'downloads.syncRuleQualityPlexOnly' => 'Download quality is available for Plex rules only',
 			'downloads.allEpisodes' => 'All episodes',
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
@@ -7622,14 +7646,14 @@ extension on Translations {
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
 			'performanceOverlay.maxFall' => 'MaxFALL',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',

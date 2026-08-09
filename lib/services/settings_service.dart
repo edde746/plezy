@@ -400,6 +400,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const customDownloadPathType = NullableStringPref('custom_download_path_type');
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
+  static const defaultDownloadQualityPreset = EnumPref<TranscodeQualityPreset>(
+    'default_download_quality_preset',
+    values: TranscodeQualityPreset.values,
+    defaultValue: TranscodeQualityPreset.original,
+  );
 
   /// Set once the user has seen the pre-flight "background downloads are
   /// blocked" dialog. The persistent Downloads-screen banner covers repeat
@@ -910,6 +915,7 @@ class SettingsService extends BaseSharedPreferencesService {
     followServerTrackSelections,
     downloadOnWifiOnly,
     backgroundDownloadWarningAcknowledged,
+    defaultDownloadQualityPreset,
     downloadIncludeSpecials,
     autoCheckUpdatesOnStartup,
     showPerformanceOverlay,

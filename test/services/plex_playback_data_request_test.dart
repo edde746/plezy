@@ -1399,6 +1399,63 @@ void main() {
     expect(requestCount, 0);
   });
 
+  test('download transcode targets progressive MKV with H.264, AAC, and the selected audio stream', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final params = client.buildDownloadTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 1,
+      partIndex: 2,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'download-session',
+      transcodeSessionId: 'download-transcode',
+      audioStreamId: 301,
+    );
+
+    expect(params['protocol'], 'http');
+    expect(params['offset'], '0');
+    expect(params['directPlay'], '0');
+    expect(params['directStream'], '0');
+    expect(params['copyts'], '1');
+    expect(params['waitForSegments'], '1');
+    expect(params['canThrottle'], '0');
+    expect(params['subtitles'], 'none');
+    expect(params['maxVideoBitrate'], '3000');
+    expect(params['videoResolution'], '1280x720');
+    expect(params['videoQuality'], '75');
+    expect(params['mediaIndex'], '1');
+    expect(params['partIndex'], '2');
+    expect(params['audioStreamID'], '301');
+    expect(
+      params['X-Plex-Client-Profile-Extra'],
+      contains('protocol=http&container=mkv&videoCodec=h264&audioCodec=aac'),
+    );
+
+    final startPath = client.buildTranscodeStartPathFromParamsForTesting(
+      params,
+      endpoint: '/video/:/transcode/universal/start.mkv',
+    );
+    expect(startPath, startsWith('/video/:/transcode/universal/start.mkv?'));
+    expect(startPath, isNot(contains('X-Plex-Token')));
+  });
+
+  test('download transcode rejects Original instead of changing paths', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    expect(
+      () => client.buildDownloadTranscodeParamsForTesting(
+        ratingKey: '42',
+        mediaIndex: 0,
+        preset: TranscodeQualityPreset.original,
+        sessionIdentifier: 'download-session',
+        transcodeSessionId: 'download-transcode',
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('transcode params preserve resolved media and part indices', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);

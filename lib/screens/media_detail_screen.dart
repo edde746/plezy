@@ -33,6 +33,7 @@ import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
+import '../media/media_backend.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
@@ -51,9 +52,12 @@ import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../utils/content_utils.dart';
 import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
 import '../services/download_storage_service.dart';
+import '../services/downloaded_file_info_service.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
+import '../utils/quality_preset_labels.dart';
 import '../services/settings_service.dart';
 import '../services/watch_actions.dart';
 import '../widgets/settings_builder.dart';
@@ -116,6 +120,8 @@ const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
 
 enum _SyncRuleAction { edit, remove, delete }
+
+enum _DownloadedMovieAction { quality, delete }
 
 class _SeasonEpisodePager {
   final Map<String, PagedMediaListState<MediaItem>> _states = {};
@@ -314,6 +320,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // (same isolation pattern as DiscoverScreen._spotlightItem).
   final ValueNotifier<MediaItem?> _tvDetailFocusedEpisode = ValueNotifier(null);
   bool _tvDetailActionRowHasFocus = false;
+  String? _downloadedMovieLabelsKey;
+  Future<List<String>?>? _downloadedMovieLabelsFuture;
 
   // Watchlist action (external catalog sources: Trakt, MAL). External ids
   // resolve once via the owning server, then per capable source; membership
@@ -4167,6 +4175,68 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildHeroHeaderContent(BuildContext context, MediaItem metadata) {
+    final serverLabels = buildMediaQualityLabels(metadata);
+    final downloads = Provider.of<DownloadProvider?>(context, listen: false);
+    if (metadata.backend != MediaBackend.plex || !metadata.isMovie || downloads == null) {
+      return _buildHeroHeaderContentWithQualityLabels(context, metadata, serverLabels);
+    }
+
+    return Selector<DownloadProvider, DownloadStatus?>(
+      selector: (_, provider) => provider.getProgress(metadata.globalKey)?.status,
+      builder: (context, status, _) {
+        if (status != DownloadStatus.completed) {
+          _downloadedMovieLabelsKey = null;
+          _downloadedMovieLabelsFuture = null;
+          return _buildHeroHeaderContentWithQualityLabels(context, metadata, serverLabels);
+        }
+
+        if (_downloadedMovieLabelsKey != metadata.globalKey || _downloadedMovieLabelsFuture == null) {
+          _downloadedMovieLabelsKey = metadata.globalKey;
+          _downloadedMovieLabelsFuture = _loadDownloadedMovieLabels(downloads, metadata);
+        }
+
+        return FutureBuilder<List<String>?>(
+          future: _downloadedMovieLabelsFuture,
+          builder: (context, snapshot) =>
+              _buildHeroHeaderContentWithQualityLabels(context, metadata, snapshot.data ?? serverLabels),
+        );
+      },
+    );
+  }
+
+  Future<List<String>?> _loadDownloadedMovieLabels(DownloadProvider downloads, MediaItem metadata) async {
+    final row = await downloads.getCompletedDownload(metadata.globalKey);
+    if (row == null) return null;
+
+    final quality = TranscodeQualityPreset.fromStorage(row.downloadQualityPreset);
+    if (quality.isOriginal) return null;
+
+    final filePath = await downloads.getVideoFilePath(
+      metadata.globalKey,
+      mediaIndex: row.mediaIndex,
+      mediaSourceId: row.mediaSourceId,
+    );
+    if (filePath == null) return null;
+
+    final fileInfo = await getTranscodedDownloadFileInfo(
+      filePath: filePath,
+      qualityPreset: quality,
+      durationMs: metadata.durationMs,
+    );
+    if (fileInfo == null || fileInfo.versions.isEmpty) return null;
+
+    final version = fileInfo.versions.first;
+    return [
+      if (version.resolutionFormatted != null) version.resolutionFormatted!,
+      if (version.audioCodec != null) version.audioCodec!.toUpperCase(),
+    ];
+  }
+
+  Widget _buildHeroHeaderContentWithQualityLabels(
+    BuildContext context,
+    MediaItem metadata,
+    List<String> qualityLabels,
+  ) {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxHeight <= 0 || constraints.maxWidth <= 0) return const SizedBox.shrink();
@@ -4180,7 +4250,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           if (metadata case PlexMediaItem(:final editionTitle?)) _buildMetadataChip(editionTitle),
           if (metadata.contentRating != null) _buildMetadataChip(formatContentRating(metadata.contentRating!)),
           if (metadata.durationMs != null) _buildMetadataChip(formatDurationTextual(metadata.durationMs!)),
-          for (final label in buildMediaQualityLabels(metadata)) _buildMetadataChip(label),
+          for (final label in qualityLabels) _buildMetadataChip(label),
           ..._buildRatingChips(metadata),
         ];
         // Genres render on their own line below the metadata chips.

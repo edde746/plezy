@@ -61,6 +61,7 @@ class DownloadedMedia extends Table {
   TextColumn get bgTaskId => text().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get mediaSourceId => text().nullable()();
+  TextColumn get downloadQualityPreset => text().withDefault(const Constant('original'))();
 }
 
 /// Profile ownership for shared physical downloads.
@@ -80,6 +81,21 @@ class DownloadOwners extends Table {
 
   @override
   Set<Column> get primaryKey => {profileId, globalKey};
+}
+
+/// Per-profile reasons a shared physical download must exist at a particular
+/// quality. A null preset follows the app-wide Plex download-quality default.
+@DataClassName('DownloadQualityDemandItem')
+@TableIndex(name: 'idx_download_quality_demands_global_key', columns: {#globalKey})
+@TableIndex(name: 'idx_download_quality_demands_source', columns: {#profileId, #sourceKey})
+class DownloadQualityDemands extends Table {
+  TextColumn get profileId => text()();
+  TextColumn get globalKey => text()();
+  TextColumn get sourceKey => text()();
+  TextColumn get qualityPreset => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {profileId, globalKey, sourceKey};
 }
 
 /// Persistent sync rules for auto-downloading unwatched episodes.
@@ -105,6 +121,7 @@ class SyncRules extends Table {
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
+  TextColumn get downloadQualityPreset => text().nullable()();
 
   /// Gates collection/playlist backfill into [SyncRuleDownloads] before
   /// destructive cleanup. Show/season coverage is re-derived from

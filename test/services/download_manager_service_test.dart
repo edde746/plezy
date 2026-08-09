@@ -20,8 +20,10 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/download_artwork_helpers.dart';
 import 'package:plezy/services/download_artwork_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -40,6 +42,59 @@ import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
 void main() {
+  group('download task failures', () {
+    test('formats HTTP failures without exposing an HTML response body', () {
+      final error = TaskHttpException(
+        '<html><head><title>Bad Request</title></head><body><h1>400 Bad Request</h1></body></html>',
+        400,
+      );
+
+      expect(downloadTaskErrorMessage(error), 'HTTP 400');
+      expect(isRetryableDownloadTaskFailure(error), isFalse);
+    });
+
+    test('keeps transient HTTP failures retryable', () {
+      expect(isRetryableDownloadTaskFailure(TaskHttpException('Request Timeout', 408)), isTrue);
+      expect(isRetryableDownloadTaskFailure(TaskHttpException('Too Many Requests', 429)), isTrue);
+      expect(isRetryableDownloadTaskFailure(TaskHttpException('Server Error', 500)), isTrue);
+    });
+  });
+
+  group('download quality replacement', () {
+    test('keeps an Original file that already fits the selected quality ceiling', () async {
+      final fixture = await _createSupplementaryFixture(
+        mediaVersions: const [MediaVersion(id: '10', bitrate: 817, width: 716, height: 480)],
+      );
+      final videoFile = File(p.join(fixture.tempDir.path, 'original.mkv'));
+      await videoFile.writeAsBytes([1, 2, 3]);
+      await fixture.db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: fixture.metadata.id,
+        globalKey: fixture.metadata.globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+        mediaSourceId: '10',
+      );
+      await fixture.db.updateVideoFilePath(fixture.metadata.globalKey, videoFile.path);
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (_, {clientScopeId}) => null,
+        downloadsSupportedOverride: true,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.replaceDownloadQuality(fixture.metadata.globalKey, TranscodeQualityPreset.p720_2mbps);
+
+      final row = await fixture.db.getDownloadedMedia(fixture.metadata.globalKey);
+      expect(videoFile.existsSync(), isTrue);
+      expect(row?.status, DownloadStatus.completed.index);
+      expect(row?.videoFilePath, videoFile.path);
+      expect(row?.downloadQualityPreset, TranscodeQualityPreset.original.storageKey);
+      expect(await fixture.db.getNextQueueItem(), isNull);
+    });
+  });
+
   group('downloadExtensionFromUrl', () {
     test('uses path extension when present', () {
       expect(downloadExtensionFromUrl('https://example.com/movie.mkv?Container=mp4'), 'mkv');
@@ -281,6 +336,39 @@ void main() {
       expect(row?.status, DownloadStatus.downloading.index);
       expect(row?.bgTaskId, 'task-a');
       expect(await db.getNextQueueItem(), isNull);
+    });
+
+    test('restores the active video marker from a running native record', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, DownloadStatus.downloading, taskId: 'task-a');
+      final liveDir = p.join(
+        await DownloadStorageService.instance.baseAppDirectoryPath(),
+        'downloads',
+        'srv',
+        'item-1',
+      );
+      final task = _rootTask('task-a', 'srv:item-1', liveDir);
+      final manager = await managerFor(db, nativeTasks: [task], records: [TaskRecord(task, TaskStatus.running, 0, -1)]);
+      final events = <DownloadProgress>[];
+      final subscription = manager.progressStream.listen(events.add);
+      addTearDown(subscription.cancel);
+
+      await manager.debugRecoverRelocatedDownloads();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(manager.isVideoTransferActive('srv:item-1'), isTrue);
+      expect(
+        events,
+        contains(
+          predicate<DownloadProgress>(
+            (event) =>
+                event.globalKey == 'srv:item-1' &&
+                event.status == DownloadStatus.downloading &&
+                event.currentFile == 'video',
+          ),
+        ),
+      );
     });
 
     test('cancels a stale task for a finished download without disturbing the row', () async {
@@ -1720,6 +1808,41 @@ void main() {
       expect(events.single.progress, 50);
     });
 
+    test('running task emits an active transfer when content length is unknown', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+      final events = <DownloadProgress>[];
+      final sub = manager.progressStream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', globalKey), TaskStatus.running),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(events, hasLength(1));
+      expect(events.single.status, DownloadStatus.downloading);
+      expect(events.single.currentFile, 'video');
+      expect(events.single.totalBytes, 0);
+    });
+
     test('ignores terminal status from stale native task ids', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       addTearDown(db.close);
@@ -2186,7 +2309,10 @@ void main() {
   });
 }
 
-Future<_SupplementaryFixture> _createSupplementaryFixture({String? thumbPath}) async {
+Future<_SupplementaryFixture> _createSupplementaryFixture({
+  String? thumbPath,
+  List<MediaVersion>? mediaVersions,
+}) async {
   resetSharedPreferencesForTest();
   SettingsService.resetForTesting();
   DownloadStorageService.resetForTesting();
@@ -2209,13 +2335,32 @@ Future<_SupplementaryFixture> _createSupplementaryFixture({String? thumbPath}) a
       serverId: ServerId('srv'),
       title: 'Movie',
       thumbPath: thumbPath,
+      mediaVersions: mediaVersions,
     ),
   );
   fixture.initializeCaches();
   await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/item-1', {
     'MediaContainer': {
       'Metadata': [
-        {'ratingKey': 'item-1', 'type': 'movie', 'title': 'Movie', 'thumb': ?thumbPath},
+        {
+          'ratingKey': 'item-1',
+          'type': 'movie',
+          'title': 'Movie',
+          'thumb': ?thumbPath,
+          'Media': ?mediaVersions
+              ?.map(
+                (version) => {
+                  'id': version.id,
+                  'bitrate': ?version.bitrate,
+                  'width': ?version.width,
+                  'height': ?version.height,
+                  'videoResolution': ?version.videoResolution,
+                  'videoCodec': ?version.videoCodec,
+                  'container': ?version.container,
+                },
+              )
+              .toList(),
+        },
       ],
     },
   });
