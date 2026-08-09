@@ -42,6 +42,17 @@ Package managers:
   ```bash
   yay -S plezy-bin
   ```
+- [Fedora/Red Hat](https://github.com/aldobarr/plezy-rpm) - Community package by [@aldobarr](https://github.com/aldobarr):
+  ```bash
+  # For DNF v5
+  sudo dnf config-manager addrepo --from-repofile=https://aldobarr.github.io/plezy-rpm/plezy.repo
+  sudo dnf install plezy
+
+  # For DNF v4
+  sudo dnf config-manager --add-repo https://aldobarr.github.io/plezy-rpm/plezy.repo
+  sudo dnf install plezy
+  ```
+
 - **WinGet** (Windows):
   ```bash
   winget install edde746.Plezy
