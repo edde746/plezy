@@ -24,7 +24,6 @@ typedef TrackPreferencePersister =
 /// automatic track selection, server preference sync, and cycling.
 ///
 /// Follows the same manager pattern as [VideoFilterManager]:
-/// constructed with a [Player] + callbacks, mutated via public setters,
 /// disposed when the player screen tears down.
 class TrackManager {
   final Player player;
@@ -53,6 +52,10 @@ class TrackManager {
   AudioTrack? preferredAudioTrack;
   SubtitlePreference? preferredSubtitleTrack;
   SubtitlePreference? preferredSecondarySubtitleTrack;
+
+  /// The primary subtitle is burned into the video by the server, so it needs no native track and
+  /// none is ever coming. Set on a transcode whose selected row has no sidecar.
+  bool primarySubtitleIsServerRendered = false;
 
   // ── Internal state ─────────────────────────────────────────────────
 
@@ -99,6 +102,7 @@ class TrackManager {
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
     this.preferredSecondarySubtitleTrack,
+    this.primarySubtitleIsServerRendered = false,
     this.showMessage,
   });
 
@@ -269,21 +273,67 @@ class TrackManager {
   }
 
   bool _tracksReadyForSelection(Tracks tracks) {
+    final realSubtitleTracks = tracks.subtitle
+        .where((track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id)
+        .toList(growable: false);
+    final service = TrackSelectionService(metadata: metadata, plexMediaInfo: mediaInfo);
+
+    // A burned-in primary is already in the picture, so no native track is ever coming for it.
+    // Waiting for one holds up audio and rate setup for the five-second fallback and then logs a
+    // missed deadline twenty-five seconds later, for a selection already on screen.
+    //
+    // Answered before the empty-list guard below: a silent video whose primary is burned and whose
+    // secondary is unset legitimately exposes no tracks at all, and treating that as "not ready"
+    // spent both waits plus selection's own ten seconds on a catalog that was already complete.
+    //
+    // A carried *secondary* is a real native track that may still be on its way, though, and only
+    // one selection pass ever runs - so retiring the wait here would drop it for good. Neither is
+    // audio: the source can advertise tracks the native catalog has not published yet, and answering
+    // "ready" on the subtitle question alone retired the listener before they arrived, leaving the
+    // preferred track unselected and playback on the engine's default.
+    if (primarySubtitleIsServerRendered) {
+      if (!_secondaryPreferenceResolves(service, realSubtitleTracks)) return false;
+      return !_awaitingAdvertisedAudio(tracks);
+    }
+
     final hasAnyTracks = tracks.audio.isNotEmpty || tracks.subtitle.isNotEmpty;
     if (!hasAnyTracks) return false;
 
     final realAudioTracks = tracks.audio
         .where((track) => track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id)
         .toList(growable: false);
-    final realSubtitleTracks = tracks.subtitle
-        .where((track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id)
-        .toList(growable: false);
-    final service = TrackSelectionService(metadata: metadata, plexMediaInfo: mediaInfo);
     final selectedAudioTrack = service.selectAudioTrack(realAudioTracks, preferredAudioTrack)?.track;
 
     // Selection owns the catalog-completeness decision. A null subtitle result
     // is the only state in which a requested source track can still arrive.
     return service.selectSubtitleTrack(realSubtitleTracks, preferredSubtitleTrack, selectedAudioTrack) != null;
+  }
+
+  /// Whether the carried secondary subtitle, if there is one, has a native track to land on.
+  /// Vacuously true when none is wanted, or when the backend has no secondary lane at all.
+  bool _secondaryPreferenceResolves(TrackSelectionService service, List<SubtitleTrack> realSubtitleTracks) {
+    final preference = preferredSecondarySubtitleTrack;
+    if (preference == null || preference is SubtitleOffPreference) return true;
+    if (!player.supportsSecondarySubtitles) return true;
+    final match = switch (preference) {
+      SubtitleOffPreference() => null,
+      SubtitleTrackPreference(:final track) =>
+        track.id == 'no' ? null : service.findBestSubtitleMatch(realSubtitleTracks, track),
+      SubtitleIntentPreference(:final intent) => findNativeTrackForIntent(intent, realSubtitleTracks),
+    };
+    return match != null && match.id != 'no';
+  }
+
+  /// Whether the source advertises audio the native catalog has not published yet.
+  ///
+  /// Only asked on the burned-subtitle shortcut, which otherwise answers the
+  /// subtitle question alone and would retire the track listener while audio was
+  /// still arriving - leaving the preferred track unselected. A source that
+  /// advertises none (a genuinely silent video) is never waited for.
+  bool _awaitingAdvertisedAudio(Tracks tracks) {
+    final sourceAdvertisesAudio = mediaInfo?.audioTracks.isNotEmpty ?? false;
+    if (!sourceAdvertisesAudio) return false;
+    return !tracks.audio.any((track) => track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id);
   }
 
   /// Core track selection: delegates to [TrackSelectionService]. Returns
@@ -337,6 +387,7 @@ class TrackManager {
         isActive: selectionIsActive,
         onPlayerMutationDispatched: _trackDispatchedPlayerMutation,
         waitForPendingSource: waitForPendingSource,
+        primarySubtitleIsServerRendered: primarySubtitleIsServerRendered,
       );
     } catch (e) {
       appLogger.w('Failed to apply track selection', error: e);

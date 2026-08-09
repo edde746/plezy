@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Jurnallar yuklandi",
     "logsUploadFailed": "Jurnallarni yuklab boʻlmadi",
-    "logId": "Jurnal ID-si"
+    "logId": "Jurnal ID-si",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Matn",

@@ -74,6 +74,7 @@ import 'plex_lyrics_parser.dart';
 import 'plex_mappers.dart';
 import 'plex_playback_mapper.dart';
 import 'playback_initialization_types.dart';
+import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
 
 part 'plex_client/parts/live_tv.dart';
@@ -2603,9 +2604,10 @@ class PlexClient
 
   /// Build an HLS VOD transcode stream URL (decision + start path).
   ///
-  /// Subtitle delivery stays outside the HLS video stream. Callers attach
-  /// Plex subtitle sources independently, so changing subtitle tracks never
-  /// restarts the video transcode.
+  /// [selectedSubtitleTrack] is burned into the picture by the server, so
+  /// switching to a different embedded track needs a new transcode session.
+  /// Real external subtitle files are unaffected — they ride alongside as
+  /// sidecars the client fetches directly.
   ///
   /// [transcodeSessionId] and [sessionIdentifier] should be reused across
   /// seeks + quality/version/audio switches within one playback so the
@@ -2619,8 +2621,11 @@ class PlexClient
     required String transcodeSessionId,
     int? audioStreamId,
     Duration? offset,
+    MediaSubtitleTrack? selectedSubtitleTrack,
+    int? partId,
   }) async {
     try {
+      await selectSubtitleStreamForBurn(partId: partId, track: selectedSubtitleTrack);
       final allParams = _buildTranscodeParams(
         ratingKey: ratingKey,
         mediaIndex: mediaIndex,
@@ -2630,6 +2635,7 @@ class PlexClient
         transcodeSessionId: transcodeSessionId,
         audioStreamId: audioStreamId,
         offset: offset,
+        selectedSubtitleTrack: selectedSubtitleTrack,
       );
       return await _runTranscodeDecision(
         startEndpoint: _plexVideoHlsStartEndpoint,
@@ -2841,6 +2847,36 @@ class PlexClient
     return false;
   }
 
+  /// Point the part's server-side subtitle selection at [track] so an imminent
+  /// `subtitles=burn` transcode burns *that* stream.
+  ///
+  /// The universal transcoder decides what to burn from the part's stored
+  /// selection and ignores a `subtitleStreamID` passed alongside `subtitles`:
+  /// asking a real PMS to burn a non-selected stream burned the selected one
+  /// instead. Selection therefore has to happen first, on the part itself.
+  ///
+  /// A no-op unless a burnable embedded track is actually being requested —
+  /// external subtitle files ride along as sidecars and must not disturb the
+  /// server's selection, and nothing is burned when no track is chosen.
+  ///
+  /// Throws when a burn *is* wanted but the selection cannot be confirmed, so
+  /// [buildTranscodeStartPath] reports `failed` and playback falls back to
+  /// direct play. That is deliberately the better outcome: direct play lets the
+  /// native player read the embedded track itself, whereas burning against an
+  /// unconfirmed selection paints whatever the server had stored — a wrong
+  /// language welded into the picture that the viewer cannot switch off.
+  @visibleForTesting
+  Future<void> selectSubtitleStreamForBurn({required int? partId, required MediaSubtitleTrack? track}) async {
+    final burnTarget = _selectedInternalSubtitleForHls(track);
+    if (burnTarget == null) return;
+    if (partId == null) {
+      throw StateError('Cannot burn subtitle stream ${burnTarget.id}: no part id to select it on');
+    }
+    if (!await selectStreams(partId, subtitleStreamID: burnTarget.id)) {
+      throw StateError('Server refused to select subtitle stream ${burnTarget.id} on part $partId for burn-in');
+    }
+  }
+
   /// Build a music transcode stream URL (decision + start path).
   ///
   /// Mirrors [buildTranscodeStartPath] for audio tracks: the same
@@ -2939,8 +2975,10 @@ class PlexClient
     required String transcodeSessionId,
     int? audioStreamId,
     Duration? offset,
+    MediaSubtitleTrack? selectedSubtitleTrack,
   }) {
     final isOriginal = preset.isOriginal;
+    final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
     final clientProfileExtra = _buildPlexHlsClientProfileExtra(
       maxVideoBitrateKbps: !isOriginal ? preset.videoBitrateKbps : null,
     );
@@ -2952,7 +2990,13 @@ class PlexClient
       'partIndex': partIndex.toString(),
       'protocol': _plexVideoHlsProtocol,
       'fastSeek': '1',
-      'directPlay': isOriginal ? '1' : '0',
+      // A burn is a re-encode, so it contradicts direct play. Asking for both
+      // at once is rejected outright: measured against a real PMS,
+      // `directPlay=1` with `subtitles=burn` answers HTTP 400 for text and
+      // image subtitles alike, while `directPlay=0` answers
+      // `decision=transcode` on the video stream and `decision=burn` on the
+      // subtitle.
+      'directPlay': selectedInternalSubtitle == null && isOriginal ? '1' : '0',
       'directStream': isOriginal ? '1' : '0',
       'subtitleSize': '100',
       'audioBoost': '100',
@@ -2964,7 +3008,14 @@ class PlexClient
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
       if (offset != null && offset > Duration.zero) 'offset': (offset.inMilliseconds / 1000).toStringAsFixed(6),
-      'subtitles': 'none',
+      // `subtitles` is the only subtitle knob this endpoint honours. Which
+      // stream gets burned comes from the part's server-side selection, not
+      // from here: measured against a real PMS, passing `subtitleStreamID` for
+      // a non-selected stream burned the already-selected one instead and the
+      // requested stream was absent from the decision entirely. See
+      // [selectSubtitleStreamForBurn], which is why the burn targets the
+      // caller's track at all.
+      'subtitles': selectedInternalSubtitle != null ? 'burn' : 'none',
       if (audioStreamId != null) 'audioStreamID': audioStreamId.toString(),
       'Accept-Language': 'en',
       'X-Plex-Session-Identifier': sessionIdentifier,
@@ -2994,6 +3045,7 @@ class PlexClient
     required String transcodeSessionId,
     int? audioStreamId,
     Duration? offset,
+    MediaSubtitleTrack? selectedSubtitleTrack,
   }) {
     return _buildTranscodeParams(
       ratingKey: ratingKey,
@@ -3004,6 +3056,7 @@ class PlexClient
       transcodeSessionId: transcodeSessionId,
       audioStreamId: audioStreamId,
       offset: offset,
+      selectedSubtitleTrack: selectedSubtitleTrack,
     );
   }
 
@@ -3528,6 +3581,7 @@ class PlexClient
         final resolvedAudioId = carriedAudioTrack == null
             ? _resolveAudioStreamId(options.selectedAudioStreamId, data.mediaInfo)
             : carriedAudioStreamId;
+        final requestedSubtitleTrack = _resolveTranscodeSubtitleTrack(data.mediaInfo, options.preferredSubtitleTrack);
         final result = await buildTranscodeStartPath(
           ratingKey: options.metadata.id,
           mediaIndex: data.selectedMediaIndex,
@@ -3537,11 +3591,21 @@ class PlexClient
           transcodeSessionId: options.transcodeSessionId!,
           audioStreamId: resolvedAudioId,
           offset: options.transcodeOffset,
+          selectedSubtitleTrack: requestedSubtitleTrack,
+          partId: data.mediaInfo?.getPartId(),
         );
 
-        if (result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
+        // A transcode that cannot carry the requested caption is not the outcome we asked for. The
+        // burn path refuses codecs like `dvb_teletext`, so the decision went out as
+        // `subtitles=none`; accepting the stream anyway left the row selected with nothing drawing
+        // it and no sidecar to fall back on. Falling through reports the refusal and direct play
+        // delivers it, which is what the burn-refusal fallback below already does.
+        final burnUndeliverable =
+            _requestsSubtitleBurn(requestedSubtitleTrack) &&
+            _selectedInternalSubtitleForHls(requestedSubtitleTrack) == null;
+        if (!burnUndeliverable && result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
           final transcodeUrl = '${config.baseUrl}${result.startPath}'.withPlexToken(config.token);
-          final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo, data.videoUrl!);
+          final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo);
           return PlaybackInitializationResult(
             availableVersions: data.availableVersions,
             videoUrl: transcodeUrl,
@@ -3618,6 +3682,65 @@ class PlexClient
     return tracks.first.id;
   }
 
+  MediaSubtitleTrack? _selectedSubtitleTrack(MediaSourceInfo? info) {
+    if (info == null) return null;
+    for (final track in info.subtitleTracks) {
+      if (track.selected) return track;
+    }
+    return null;
+  }
+
+  /// Pick the subtitle stream the transcode should carry. An explicit
+  /// [preferred] wins; otherwise the server's own selection stands.
+  MediaSubtitleTrack? _resolveTranscodeSubtitleTrack(MediaSourceInfo? info, SubtitlePreference? preferred) {
+    if (info == null) return null;
+    switch (preferred) {
+      case null:
+        return _selectedSubtitleTrack(info);
+      case SubtitleOffPreference():
+        return null;
+      case SubtitleIntentPreference(:final intent):
+        return findSourceTrackForIntent(intent, info.subtitleTracks) ?? _selectedSubtitleTrack(info);
+      case SubtitleTrackPreference(:final track):
+        const sourcePrefix = 'source:';
+        MediaSubtitleTrack? matched;
+        if (track.id.startsWith(sourcePrefix)) {
+          final sourceId = int.tryParse(track.id.substring(sourcePrefix.length));
+          if (sourceId != null) {
+            for (final row in info.subtitleTracks) {
+              if (row.id == sourceId) {
+                matched = row;
+                break;
+              }
+            }
+          }
+        }
+        matched ??= findPlexTrackForMpvSubtitle(track, info.subtitleTracks);
+        return matched ?? _selectedSubtitleTrack(info);
+    }
+  }
+
+  @visibleForTesting
+  MediaSubtitleTrack? resolveTranscodeSubtitleTrackForTesting(MediaSourceInfo? info, SubtitlePreference? preferred) {
+    return _resolveTranscodeSubtitleTrack(info, preferred);
+  }
+
+  /// The embedded stream a transcode must burn in, or null when there is
+  /// nothing to burn. A track carrying a `key` is a real external subtitle
+  /// file the client fetches directly, so it stays a sidecar instead.
+  MediaSubtitleTrack? _selectedInternalSubtitleForHls(MediaSubtitleTrack? track) {
+    if (track == null) return null;
+    if (track.key != null && track.key!.isNotEmpty) return null;
+    return CodecUtils.isTranscodableSubtitleCodec(track.codec) ? track : null;
+  }
+
+  /// Whether [track] is a row a transcode would have to burn, whatever its codec.
+  ///
+  /// [_selectedInternalSubtitleForHls] answers the narrower question of what can
+  /// actually be burned; a row it rejects still cannot survive a transcode, so the
+  /// two must not be confused where the decision is about what was *asked* for.
+  bool _requestsSubtitleBurn(MediaSubtitleTrack? track) => track != null && (track.key == null || track.key!.isEmpty);
+
   /// Build the absolute URL for an external subtitle track on this Plex
   /// server. Returns `null` for tracks that aren't external (no `/library/
   /// streams/{id}` key) or when the server has no auth token.
@@ -3658,39 +3781,25 @@ class PlexClient
     );
   }
 
-  SubtitleTrack _containerSubtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
-    return SubtitleTrack(
-      id: 'container:${track.id}',
-      title: track.displayTitle ?? track.title ?? track.language ?? 'Track ${track.id}',
-      language: track.languageCode,
-      codec: track.codec,
-      isDefault: track.selected,
-      isForced: track.forced,
-      isExternal: true,
-      isContainer: true,
-      uri: url,
-    );
-  }
-
-  /// Build the complete subtitle catalog for Plex transcode playback.
+  /// Build the subtitle sidecars for Plex transcode playback.
   ///
-  /// Real sidecar files keep their direct stream URL. Embedded subtitle
-  /// streams share the original media container as a subtitle-only source;
-  /// player backends filter that source to text tracks. Every entry is
-  /// preloaded so changing subtitles is a local track selection.
-  List<PlaybackSubtitleSidecar> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo, String sourceUrl) {
+  /// Only real external subtitle files belong here: they are small, have a
+  /// direct stream URL, and cost nothing to fetch. Embedded streams are burned
+  /// into the picture by the transcoder, so handing the client the original
+  /// media container to demux would mean range-reading the whole source over
+  /// HTTP alongside the transcode it was meant to avoid.
+  List<PlaybackSubtitleSidecar> _buildTranscodeSidecarSubtitles(MediaSourceInfo? mediaInfo) {
     if (mediaInfo == null) return const [];
 
     final tracks = <PlaybackSubtitleSidecar>[];
     for (final sub in mediaInfo.subtitleTracks) {
       try {
         final directUrl = _buildSidecarSubtitleUrl(sub);
+        if (directUrl == null) continue;
         tracks.add(
           PlaybackSubtitleSidecar(
             sourceStreamId: sub.id,
-            track: directUrl == null
-                ? _containerSubtitleTrackFromMediaTrack(sub, sourceUrl)
-                : _subtitleTrackFromMediaTrack(sub, directUrl),
+            track: _subtitleTrackFromMediaTrack(sub, directUrl),
             preload: true,
           ),
         );
@@ -3702,8 +3811,8 @@ class PlexClient
   }
 
   @visibleForTesting
-  List<PlaybackSubtitleSidecar> buildTranscodeSidecarSubtitlesForTesting(MediaSourceInfo? mediaInfo, String sourceUrl) {
-    return _buildTranscodeSidecarSubtitles(mediaInfo, sourceUrl);
+  List<PlaybackSubtitleSidecar> buildTranscodeSidecarSubtitlesForTesting(MediaSourceInfo? mediaInfo) {
+    return _buildTranscodeSidecarSubtitles(mediaInfo);
   }
 
   /// Build list of external subtitle tracks from media info

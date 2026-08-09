@@ -99,6 +99,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
       preserveSourceIdentity: preserveSubtitleSourceIdentity,
+      isTranscoding: result.isTranscoding,
     );
   }
 
@@ -467,6 +468,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     AudioTrack? preferredAudioTrack,
     SubtitlePreference? preferredSubtitleTrack,
     SubtitlePreference? preferredSecondarySubtitleTrack,
+    bool primarySubtitleIsServerRendered = false,
   }) {
     return TrackManager(
       player: forPlayer,
@@ -481,6 +483,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
+      primarySubtitleIsServerRendered: primarySubtitleIsServerRendered,
       showMessage: (message, {duration}) {
         if (mounted) showAppSnackBar(context, message, duration: duration);
       },

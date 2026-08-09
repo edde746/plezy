@@ -65,6 +65,9 @@ void main() {
         'dvdsub',
         'vobsub',
         'dvb_sub',
+        // Jellyfin's own spelling. The transcode profile asks it to burn `dvbsub`, so a picker that
+        // does not recognise the name never offers the track it just negotiated.
+        'dvbsub',
         'dvb_subtitle',
         'PGS',
       ]) {

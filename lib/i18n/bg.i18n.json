@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Логовете са качени",
     "logsUploadFailed": "Неуспешно качване на логовете",
-    "logId": "ID на лога"
+    "logId": "ID на лога",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Текст",

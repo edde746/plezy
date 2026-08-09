@@ -916,6 +916,23 @@ class TrackSelectionService {
     }
 
     if (preferred.id.startsWith('source:')) {
+      // A source row delivered as its own *file* carries that file's URL on the preference, and the
+      // loaded track is external. `findMpvTrackForPlexSubtitle` pairs a source row with the
+      // container's own tracks by metadata, so it cannot see that external track at all - which
+      // left an extracted secondary waiting out the deadline and never appearing. The URL is both
+      // stronger and unambiguous, so it is tried first; a unique hit is the same file by
+      // definition, whatever id either side chose for it.
+      //
+      // Container tracks are excluded on purpose: several source rows share one container URL, so a
+      // URL hit there says nothing about *which* row it is, and the metadata matcher below is what
+      // waits for the intended one to be discovered.
+      final sidecarUri = preferred.uri;
+      if (sidecarUri != null && sidecarUri.isNotEmpty) {
+        final uriMatches = availableTracks
+            .where((track) => track.uri == sidecarUri && !track.isContainer)
+            .toList(growable: false);
+        if (uriMatches.length == 1) return uriMatches.single;
+      }
       final sourceTrack = _sourceSubtitleTrack(preferred.id);
       if (sourceTrack == null) return null;
       return findMpvTrackForPlexSubtitle(sourceTrack, availableTracks, allPlexTracks: plexMediaInfo?.subtitleTracks);
@@ -1234,6 +1251,11 @@ class TrackSelectionService {
     bool Function()? isActive,
     void Function(Future<void> mutation)? onPlayerMutationDispatched,
     bool waitForPendingSource = true,
+
+    /// The primary is painted into the picture, so no native subtitle track is
+    /// coming for it. With no secondary wanted either, a silent video legitimately
+    /// exposes no tracks at all and the wait below can only time out.
+    bool primarySubtitleIsServerRendered = false,
   }) async {
     final player = this.player;
     if (player == null) {
@@ -1243,8 +1265,14 @@ class TrackSelectionService {
 
     if (!canMutatePlayer()) return false;
 
-    // Wait for tracks to be loaded
-    if (player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty) {
+    // Wait for tracks to be loaded, unless nothing can arrive: a burned-in primary with no
+    // secondary wanted has a complete catalog at zero tracks, and waiting ten seconds for one
+    // held the saved playback rate back with it. An explicit off is as settled as an absent
+    // preference, which is how `TrackManager._secondaryPreferenceResolves` reads it too.
+    final nothingToWaitFor =
+        primarySubtitleIsServerRendered &&
+        (preferredSecondarySubtitleTrack == null || preferredSecondarySubtitleTrack is SubtitleOffPreference);
+    if (!nothingToWaitFor && player.state.tracks.audio.isEmpty && player.state.tracks.subtitle.isEmpty) {
       try {
         await player.streams.tracks
             .where((t) => t.audio.isNotEmpty || t.subtitle.isNotEmpty)

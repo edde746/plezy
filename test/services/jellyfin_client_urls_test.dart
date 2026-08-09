@@ -828,14 +828,444 @@ void main() {
       expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.mediaInfo!.subtitleTracks.single.isExternalFile, isFalse);
-      expect(result.mediaInfo!.subtitleTracks.single.usesExternalDelivery, isTrue);
-      expect(result.externalSubtitles, hasLength(1));
+      // Nothing is selected and the fixture declares no default, so the server burns nothing and
+      // this embedded row stays fetchable as an extracted file.
       expect(result.subtitleSidecars.single.sourceStreamId, 2);
       expect(result.externalSubtitles.single.title, 'English');
       expect(result.externalSubtitles.single.language, 'eng');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/2/Stream.srt');
-      expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    /// Jellyfin picks a subtitle's delivery from the profile, and matches an external profile on
+    /// text-vs-image format without ever consulting whether the stream is embedded or a real file.
+    /// So withholding `External` is the only lever that makes it burn, and offering it at all is
+    /// what made an embedded stream arrive as a sidecar on a transcode.
+    test('subtitle delivery profile withholds External only when a transcode is requested', () async {
+      Future<List<Map<String, Object?>>> profileFor({required bool original}) async {
+        final bodies = <String>[];
+        final scoped = JellyfinClient.forTesting(
+          connection: _conn(),
+          httpClient: MockClient((request) async {
+            if (request.url.path == '/Users/user-1/Items/item-1') {
+              return jsonResponse({
+                'Id': 'item-1',
+                'Type': 'Movie',
+                'Name': 'Movie',
+                'MediaSources': [
+                  {'Id': 'src-1', 'Container': 'mkv', 'MediaStreams': []},
+                ],
+              });
+            }
+            if (request.url.path == '/Items/item-1/PlaybackInfo') {
+              bodies.add(request.body);
+              return jsonResponse({
+                'MediaSources': [
+                  {'Id': 'src-1', 'Container': 'mkv', 'MediaStreams': []},
+                ],
+              });
+            }
+            return http.Response('not used', 500);
+          }),
+        );
+        addTearDown(scoped.close);
+        await scoped.getPlaybackInitialization(
+          PlaybackInitializationOptions(
+            metadata: testMediaItem(
+              id: 'item-1',
+              backend: MediaBackend.jellyfin,
+              kind: MediaKind.movie,
+              serverId: 'srv-1',
+            ),
+            selectedMediaIndex: 0,
+            qualityPreset: original ? TranscodeQualityPreset.original : TranscodeQualityPreset.p720_2mbps,
+          ),
+        );
+        final body = jsonDecode(bodies.single) as Map<String, dynamic>;
+        final profile = body['DeviceProfile'] as Map<String, dynamic>;
+        return (profile['SubtitleProfiles'] as List).cast<Map<String, Object?>>();
+      }
+
+      final capped = await profileFor(original: false);
+      expect(
+        capped.where((entry) => entry['Method'] == 'External'),
+        isEmpty,
+        reason: 'a transcode must find no external profile so it falls through to Encode',
+      );
+      expect(capped.where((entry) => entry['Method'] == 'Embed'), isNotEmpty);
+
+      final untouched = await profileFor(original: true);
+      expect(
+        untouched.where((entry) => entry['Method'] == 'External').map((entry) => entry['Format']),
+        containsAll(<String>['srt', 'ass', 'ssa', 'vtt']),
+        reason: 'direct playback keeps text External, which is how a real file is delivered',
+      );
+      expect(
+        untouched.where((entry) => entry['Method'] == 'External').map((entry) => entry['Format']),
+        isNot(contains('pgssub')),
+        reason: 'an image format the client cannot render is never offered as a file',
+      );
+    });
+
+    /// The two rules are only expressible per request, so the selection decides: an embedded
+    /// stream is burned, a real external file is still delivered as a file. Both on a transcode.
+    test('a selected external file keeps External and is still sidecarred on a transcode', () async {
+      final bodies = <String>[];
+      const externalStream = {
+        'Index': 3,
+        'Type': 'Subtitle',
+        'Codec': 'srt',
+        'Language': 'eng',
+        'DisplayTitle': 'English - SRT',
+        'IsExternal': true,
+        'DeliveryMethod': 'External',
+        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+      };
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'Movie',
+              'MediaSources': [
+                {
+                  'Id': 'src-1',
+                  'Container': 'mkv',
+                  'MediaStreams': [externalStream],
+                },
+              ],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            bodies.add(request.body);
+            return jsonResponse({
+              'MediaSources': [
+                {
+                  'Id': 'src-1',
+                  'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=s1',
+                  'MediaStreams': [externalStream],
+                },
+              ],
+            });
+          }
+          return http.Response('not used', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.p720_2mbps,
+          preferredSubtitleTrack: const SubtitlePreference.intent(
+            SubtitleIntent(language: 'eng', forced: false, title: 'English - SRT', codec: 'srt', isExternal: true),
+          ),
+        ),
+      );
+
+      expect(result.isTranscoding, isTrue);
+      final profile =
+          ((jsonDecode(bodies.single) as Map<String, dynamic>)['DeviceProfile']
+                  as Map<String, dynamic>)['SubtitleProfiles']
+              as List;
+      expect(
+        profile.cast<Map<String, Object?>>().where((entry) => entry['Method'] == 'External'),
+        isNotEmpty,
+        reason: 'burning a file the client already holds would be a re-encode for nothing',
+      );
+      expect(result.subtitleSidecars.single.sourceStreamId, 3);
+    });
+
+    /// The normal launch path sends no preferred track and lets the server's default decide, so the
+    /// burn decision has to read the effective selection. Reading only the explicit request burned
+    /// a default that is a real file *and* fetched it as a sidecar -- the same subtitle twice, over
+    /// a transcode nobody needed.
+    test('a defaulted external file is not burned and is not duplicated', () async {
+      final bodies = <String>[];
+      const externalStream = {
+        'Index': 3,
+        'Type': 'Subtitle',
+        'Codec': 'srt',
+        'Language': 'eng',
+        'DisplayTitle': 'English - SRT',
+        'IsExternal': true,
+        'DeliveryMethod': 'External',
+        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+      };
+      const source = {
+        'Id': 'src-1',
+        'Container': 'mkv',
+        'DefaultSubtitleStreamIndex': 3,
+        'MediaStreams': [externalStream],
+      };
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'Movie',
+              'MediaSources': [source],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            bodies.add(request.body);
+            return jsonResponse({
+              'MediaSources': [
+                {...source, 'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=s1'},
+              ],
+            });
+          }
+          return http.Response('not used', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.p720_2mbps,
+        ),
+      );
+
+      expect(result.isTranscoding, isTrue);
+      final profile =
+          ((jsonDecode(bodies.single) as Map<String, dynamic>)['DeviceProfile']
+                  as Map<String, dynamic>)['SubtitleProfiles']
+              as List;
+      expect(
+        profile.cast<Map<String, Object?>>().where((entry) => entry['Method'] == 'External'),
+        isNotEmpty,
+        reason: 'the default selection is a real file, so it must not be burned',
+      );
+      expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [3]);
+    });
+
+    /// The profile only ever offers `External` for text, so a bitmap falls through to `Encode` and
+    /// is burned whatever the client asks for -- an external bitmap *file* included. Treating one as
+    /// externally delivered left the client fetching a copy of pixels already in the video, and let
+    /// "off" stay local over a burn.
+    test('an external bitmap file is treated as burned, not fetched', () async {
+      final bodies = <String>[];
+      const externalBitmap = {
+        'Index': 3,
+        'Type': 'Subtitle',
+        'Codec': 'pgssub',
+        'Language': 'eng',
+        'DisplayTitle': 'English - PGS',
+        'IsExternal': true,
+        'DeliveryMethod': 'External',
+        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.sup',
+      };
+      const source = {
+        'Id': 'src-1',
+        'Container': 'mkv',
+        'DefaultSubtitleStreamIndex': 3,
+        'MediaStreams': [externalBitmap],
+      };
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'Movie',
+              'MediaSources': [source],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            bodies.add(request.body);
+            return jsonResponse({
+              'MediaSources': [
+                {...source, 'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=s1'},
+              ],
+            });
+          }
+          return http.Response('not used', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.p720_2mbps,
+        ),
+      );
+
+      expect(result.isTranscoding, isTrue);
+      final profile =
+          ((jsonDecode(bodies.single) as Map<String, dynamic>)['DeviceProfile']
+                  as Map<String, dynamic>)['SubtitleProfiles']
+              as List;
+      expect(
+        profile.cast<Map<String, Object?>>().where((entry) => entry['Method'] == 'External'),
+        isEmpty,
+        reason: 'a bitmap cannot be delivered externally, so nothing is gained by offering it',
+      );
+      expect(
+        result.subtitleSidecars,
+        isEmpty,
+        reason: 'the server burns it in, so fetching the file would draw it twice',
+      );
+    });
+
+    /// Unburned embedded rows are fetchable so a secondary track can still render, but only text
+    /// ones: a separate bitmap stream is not renderable alongside a transcode, which is exactly why
+    /// the profile withholds `External` for those formats in the first place.
+    test('an unburned embedded bitmap row is not offered as a sidecar', () async {
+      const textRow = {
+        'Index': 2,
+        'Type': 'Subtitle',
+        'Codec': 'ass',
+        'Language': 'eng',
+        'DisplayTitle': 'English - ASS',
+      };
+      const bitmapRow = {
+        'Index': 3,
+        'Type': 'Subtitle',
+        'Codec': 'pgssub',
+        'Language': 'swe',
+        'DisplayTitle': 'Swedish - PGS',
+      };
+      const source = {
+        'Id': 'src-1',
+        'Container': 'mkv',
+        'DefaultSubtitleStreamIndex': 2,
+        'MediaStreams': [textRow, bitmapRow],
+      };
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'Movie',
+              'MediaSources': [source],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            return jsonResponse({
+              'MediaSources': [
+                {...source, 'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=s1'},
+              ],
+            });
+          }
+          return http.Response('not used', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.p720_2mbps,
+        ),
+      );
+
+      expect(result.isTranscoding, isTrue);
+      expect(
+        result.subtitleSidecars,
+        isEmpty,
+        reason: 'stream 2 is burned in and stream 3 is a bitmap nothing could draw',
+      );
+    });
+
+    /// Jellyfin reports SRT as `subrip` and WebVTT as `webvtt`, but its extraction endpoint keys off
+    /// the format, so the raw codec name asks for a file that does not exist. Only load-bearing
+    /// since extracted rows without a `DeliveryUrl` started being fetched.
+    test('an extracted row uses the endpoint format, not the reported codec name', () async {
+      const burnedPrimary = {
+        'Index': 2,
+        'Type': 'Subtitle',
+        'Codec': 'ass',
+        'Language': 'eng',
+        'DisplayTitle': 'English - ASS',
+      };
+      const aliasedSecondary = {
+        'Index': 3,
+        'Type': 'Subtitle',
+        'Codec': 'subrip',
+        'Language': 'swe',
+        'DisplayTitle': 'Swedish - SRT',
+      };
+      const source = {
+        'Id': 'src-1',
+        'Container': 'mkv',
+        'DefaultSubtitleStreamIndex': 2,
+        'MediaStreams': [burnedPrimary, aliasedSecondary],
+      };
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'Movie',
+              'MediaSources': [source],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            return jsonResponse({
+              'MediaSources': [
+                {...source, 'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=s1'},
+              ],
+            });
+          }
+          return http.Response('not used', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.p720_2mbps,
+        ),
+      );
+
+      expect(result.subtitleSidecars.single.sourceStreamId, 3);
+      expect(
+        Uri.parse(result.externalSubtitles.single.uri!).path,
+        '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+        reason: '`subrip` is the codec name; `srt` is what the endpoint serves',
+      );
     });
 
     test('getPlaybackInitialization strips sidecar identity from direct-played embedded subtitles', () async {
@@ -1185,13 +1615,11 @@ void main() {
 
       expect(result.playMethod, 'Transcode');
       expect(result.mediaInfo!.subtitleTracks, hasLength(3));
-      expect(result.mediaInfo!.subtitleTracks.every((track) => track.usesExternalDelivery), isTrue);
-      expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [3, 4, 5]);
-      expect(result.externalSubtitles.map((subtitle) => Uri.parse(subtitle.uri!).path), [
-        '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
-        '/Videos/item-1/src-1/Subtitles/4/Stream.srt',
-        '/Videos/item-1/src-1/Subtitles/5/Stream.srt',
-      ]);
+      // The last request matched no row, so the effective selection is the server's default
+      // (`DefaultSubtitleStreamIndex: 4`) and that is the stream the server burns in. It is the
+      // one row not fetched: a sidecar for it would paint a second copy over the burned pixels.
+      // The other two stay fetchable, which is what keeps a secondary track renderable.
+      expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [3, 5]);
     });
 
     test('getPlaybackInitialization ignores TranscodingUrl for original playback static fallback', () async {
@@ -1736,6 +2164,32 @@ void main() {
       expect(Uri.parse(result.videoUrl!).queryParameters['MediaSourceId'], 'src-1');
     });
 
+    test('a source above the cap without a transcode is still a refusal', () async {
+      final scoped = _clientWithPlaybackInfo(
+        (_) async => jsonResponse({
+          'MediaSources': [
+            {'Id': 'src-1', 'Bitrate': 8000000},
+          ],
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          qualityPreset: TranscodeQualityPreset.p720_2mbps,
+        ),
+      );
+
+      expect(result.fallbackReason, TranscodeFallbackReason.directPlayOnly);
+    });
+
     test('video download rejects authentication and cancellation', () async {
       final cases = <(String, Future<http.Response> Function(http.Request))>[
         ('401', (_) async => http.Response('{}', 401, headers: {'content-type': 'application/json'})),
@@ -1855,7 +2309,7 @@ void main() {
       expect(capturedUri.toString(), contains('/Items/folder%2Fitem%20%231%3Fx/PlaybackInfo'));
     });
 
-    test('getPlaybackInfo advertises embedded and external subtitle delivery', () async {
+    test('getPlaybackInfo advertises embedded delivery for every format, external for text only', () async {
       Uri? capturedUri;
       String? capturedBody;
       final scoped = JellyfinClient.forTesting(
@@ -1894,25 +2348,79 @@ void main() {
       expect(directPlayProfile['AudioCodec'], contains('mp2'));
       expect(profile['TranscodingProfiles'], isNotEmpty);
       expect(profile['CodecProfiles'], isEmpty);
-      const subtitleFormats = ['srt', 'ass', 'ssa', 'vtt', 'pgssub', 'dvdsub', 'dvbsub'];
+      const textSubtitleFormats = ['srt', 'ass', 'ssa', 'vtt'];
+      const imageSubtitleFormats = ['pgssub', 'dvdsub', 'dvbsub'];
       final subtitleProfiles = [
         for (final entry in profile['SubtitleProfiles'] as List<dynamic>) entry as Map<String, dynamic>,
       ];
-      // Every format is offered both ways, Embed first: the server picks per
-      // play method, so direct play reports its container streams as embedded
-      // while a remux or transcode still hands back sidecar URLs.
-      expect(
-        subtitleProfiles.where((entry) => entry['Method'] == 'Embed').map((entry) => entry['Format']),
-        subtitleFormats,
-      );
+      // Embed is offered for every format and listed first, so a direct play
+      // or mkv remux reports its container streams as embedded. External is
+      // text-only: the server extracts those into a small subtitle file, while
+      // an image format finds no external match and gets burned in instead.
+      expect(subtitleProfiles.where((entry) => entry['Method'] == 'Embed').map((entry) => entry['Format']), [
+        ...textSubtitleFormats,
+        ...imageSubtitleFormats,
+      ]);
       expect(
         subtitleProfiles.where((entry) => entry['Method'] == 'External').map((entry) => entry['Format']),
-        subtitleFormats,
+        textSubtitleFormats,
       );
       expect(
         subtitleProfiles.indexWhere((entry) => entry['Method'] == 'Embed'),
         lessThan(subtitleProfiles.indexWhere((entry) => entry['Method'] == 'External')),
       );
+    });
+
+    test('image subtitle formats are declared Embed-only so a transcode burns them in', () async {
+      String? capturedBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedBody = request.body;
+          return jsonResponse({'MediaSources': []});
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.getPlaybackInfo('item-1');
+
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      final profile = body['DeviceProfile'] as Map<String, dynamic>;
+      final subtitleProfiles = [
+        for (final entry in profile['SubtitleProfiles'] as List<dynamic>) entry as Map<String, dynamic>,
+      ];
+      final externalFormats = subtitleProfiles
+          .where((entry) => entry['Method'] == 'External')
+          .map((entry) => entry['Format'])
+          .toSet();
+      final embedFormats = subtitleProfiles
+          .where((entry) => entry['Method'] == 'Embed')
+          .map((entry) => entry['Format'])
+          .toSet();
+
+      for (final format in ['pgssub', 'dvdsub', 'dvbsub']) {
+        expect(
+          externalFormats,
+          isNot(contains(format)),
+          reason:
+              'Declaring $format as External makes Jellyfin match it as an external image '
+              'subtitle and hand back a stream the client cannot render on a transcode. '
+              'With no image entry the server falls through to Encode and burns it in, '
+              'which is the only way a bitmap subtitle reaches the viewer while transcoding.',
+        );
+        expect(
+          embedFormats,
+          contains(format),
+          reason: 'Direct play and mkv remux read $format out of the container, so Embed must stay.',
+        );
+      }
+      for (final format in ['srt', 'ass', 'ssa', 'vtt']) {
+        expect(
+          externalFormats,
+          contains(format),
+          reason: 'The server extracts $format into a small subtitle file; that path is cheap and must stay.',
+        );
+      }
     });
 
     test('path-encodes reserved ids for browse and watch-state endpoints', () async {

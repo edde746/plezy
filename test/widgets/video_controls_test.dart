@@ -133,15 +133,7 @@ void main() {
 
     test('returns the full list unchanged when not transcoding', () {
       final tracks = [sub(1, codec: 'srt'), sub(2, codec: 'pgs'), sub(3, codec: 'weird')];
-      expect(
-        selectableSourceSubtitleTracks(
-          tracks,
-          isTranscoding: false,
-          sidecarSourceIds: const {},
-          supportsEmbeddedTranscodeSelection: false,
-        ),
-        tracks,
-      );
+      expect(selectableSourceSubtitleTracks(tracks, isTranscoding: false, sidecarSourceIds: const {}), tracks);
     });
 
     test('keeps text, image and keyed tracks while transcoding', () {
@@ -152,7 +144,6 @@ void main() {
         [text, image, keyed],
         isTranscoding: true,
         sidecarSourceIds: {keyed.id},
-        supportsEmbeddedTranscodeSelection: true,
       );
       expect(result, [text, image, keyed]);
     });
@@ -164,24 +155,47 @@ void main() {
         [text, unsupported],
         isTranscoding: true,
         sidecarSourceIds: const {},
-        supportsEmbeddedTranscodeSelection: true,
       );
       expect(result, [text]);
     });
 
-    test('only offers resolved sidecars when embedded transcode selection is unsupported', () {
-      final external = sub(1, codec: 'srt', key: '/Videos/item/source/Subtitles/1/Stream.srt');
+    test('drops a keyed external row whose sidecar never resolved while transcoding', () {
+      // The client fetches this one itself, and on a transcode an external file is never a burn
+      // target - so with no sidecar built, nothing can draw it and reloading cannot help. Offering
+      // it left a selection that silently showed no caption. Its codec is text, which is exactly why
+      // the codec fallback must not cover keyed rows.
+      final unresolved = sub(1, codec: 'srt', key: '/library/streams/1');
       final embedded = sub(2, codec: 'srt');
-      final unavailableExternal = sub(3, codec: 'srt', key: '/missing');
+      final result = selectableSourceSubtitleTracks(
+        [unresolved, embedded],
+        isTranscoding: true,
+        sidecarSourceIds: const {},
+      );
+      expect(result, [embedded], reason: 'the embedded row can still be burned');
+    });
+
+    test('offers a burnable embedded image track that has no sidecar of its own', () {
+      // The regression this pins: a transcode burns PGS server-side, so the
+      // track deliberately has no sidecar. Gating selection on a sidecar - or on
+      // the backend - dropped it from the menu entirely, which is issue #1738's
+      // "PGS subtitles wont appear at all while transcoding". Every backend can
+      // be asked to burn, so the codec is the only thing that may exclude it.
+      final image = sub(1, codec: 'pgssub');
+      final result = selectableSourceSubtitleTracks([image], isTranscoding: true, sidecarSourceIds: const {});
+      expect(result, [image]);
+    });
+
+    test('still offers an unresolved external file only once its sidecar exists', () {
+      final resolved = sub(1, codec: 'srt', key: '/Videos/item/source/Subtitles/1/Stream.srt');
+      final unresolved = sub(2, codec: 'weird', key: '/missing');
 
       final result = selectableSourceSubtitleTracks(
-        [external, embedded, unavailableExternal],
+        [resolved, unresolved],
         isTranscoding: true,
-        sidecarSourceIds: {external.id},
-        supportsEmbeddedTranscodeSelection: false,
+        sidecarSourceIds: {resolved.id},
       );
 
-      expect(result, [external]);
+      expect(result, [resolved], reason: 'an unresolved key with an unburnable codec has no delivery route');
     });
 
     test('only offers resolved file sidecars during direct play', () {
@@ -193,7 +207,6 @@ void main() {
         [embedded, availableExternal, unavailableExternal],
         isTranscoding: false,
         sidecarSourceIds: {availableExternal.id},
-        supportsEmbeddedTranscodeSelection: false,
       );
 
       expect(result, [embedded, availableExternal]);
@@ -213,7 +226,6 @@ void main() {
         [deliveryExternalEmbedded],
         isTranscoding: false,
         sidecarSourceIds: const {},
-        supportsEmbeddedTranscodeSelection: false,
       );
 
       expect(result, [deliveryExternalEmbedded]);

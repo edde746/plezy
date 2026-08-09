@@ -69,6 +69,7 @@ import 'scrub_preview_source.dart';
 import 'subtitle_preference.dart';
 import 'track_selection_service.dart';
 import '../mpv/mpv.dart';
+import '../utils/codec_utils.dart';
 
 part 'jellyfin_client/parts/browse.dart';
 part 'jellyfin_client/parts/music.dart';

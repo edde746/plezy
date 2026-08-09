@@ -756,7 +756,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Логи загружены",
     "logsUploadFailed": "Не удалось загрузить логи",
-    "logId": "ID лога"
+    "logId": "ID лога",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Текст",

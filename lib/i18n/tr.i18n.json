@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Günlükler yüklendi",
     "logsUploadFailed": "Günlükler yüklenemedi",
-    "logId": "Günlük Kimliği (ID)"
+    "logId": "Günlük Kimliği (ID)",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Metin",

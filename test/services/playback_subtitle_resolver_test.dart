@@ -228,6 +228,33 @@ void main() {
     expect(result.sidecarsAtOpen.single.uri, 'https://example.test/subtitles/2.srt');
   });
 
+  test('a transcode drops a carried secondary it cannot deliver', () {
+    // The burn covers the primary, and an embedded secondary has neither a sidecar to fetch nor a
+    // native track to land on. Kept selected, it made `TrackManager` wait out its thirty-second
+    // deadline and then read as active while nothing was on screen.
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([_sourceSubtitle(2, selected: true), _sourceSubtitle(3, language: 'swe')]),
+      sidecars: const [],
+      preferredSecondarySubtitleTrack: SubtitlePreference.track(const SubtitleTrack(id: 'source:3', language: 'swe')),
+      isTranscoding: true,
+    );
+
+    expect(result.secondaryTrack, isNull, reason: 'nothing can carry it, so it must not stay selected');
+    expect(result.secondarySourceStreamId, isNull);
+  });
+
+  test('a direct play keeps a carried secondary the player can select natively', () {
+    final result = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: _mediaInfo([_sourceSubtitle(2, selected: true), _sourceSubtitle(3, language: 'swe')]),
+      sidecars: const [],
+      preferredSecondarySubtitleTrack: SubtitlePreference.track(const SubtitleTrack(id: 'source:3', language: 'swe')),
+    );
+
+    expect(result.secondarySourceStreamId, 3, reason: 'the container still carries it');
+  });
+
   test('explicit off produces an open with zero sidecars', () {
     final result = PlaybackSubtitleResolver.resolve(
       metadata: metadata,
@@ -709,6 +736,59 @@ void main() {
     expect(track.title, 'Commentary');
     expect(track.language, 'eng');
     expect(track.channels, 6);
+  });
+
+  group('burned-in subtitles force a renegotiation', () {
+    bool needsServer({
+      bool isTranscoding = true,
+      int? currentSourceStreamId,
+      bool currentSelectionHasSidecar = false,
+      bool targetIsOff = false,
+      bool targetIsExternalFile = false,
+    }) => PlaybackSubtitleResolver.burnRequiresRenegotiation(
+      isTranscoding: isTranscoding,
+      currentSourceStreamId: currentSourceStreamId,
+      currentSelectionHasSidecar: currentSelectionHasSidecar,
+      targetIsOff: targetIsOff,
+      targetIsExternalFile: targetIsExternalFile,
+    );
+
+    // Burned pixels are not a track: off leaves them on screen, anything else is drawn over them.
+    // So from a burned selection the target is irrelevant - every change goes back to the server.
+    test('every change from a burned selection goes back to the server', () {
+      expect(needsServer(currentSourceStreamId: 3, targetIsOff: true), isTrue);
+      expect(needsServer(currentSourceStreamId: 3, targetIsExternalFile: true), isTrue);
+      expect(needsServer(currentSourceStreamId: 3), isTrue, reason: 'another embedded track');
+    });
+
+    // The other direction: nothing is burned yet, but the target can only arrive burned.
+    test('an embedded target has to be negotiated even with nothing burned', () {
+      expect(
+        needsServer(currentSourceStreamId: null),
+        isTrue,
+        reason: 'applying it locally attaches nothing and reports success over an unchanged picture',
+      );
+      expect(
+        needsServer(currentSourceStreamId: 3, currentSelectionHasSidecar: true),
+        isTrue,
+        reason: 'a sidecar-backed current selection does not make an embedded target local',
+      );
+    });
+
+    test('what the client already holds stays local', () {
+      expect(needsServer(currentSourceStreamId: null, targetIsOff: true), isFalse);
+      expect(needsServer(currentSourceStreamId: null, targetIsExternalFile: true), isFalse);
+      expect(
+        needsServer(currentSourceStreamId: 3, currentSelectionHasSidecar: true, targetIsOff: true),
+        isFalse,
+        reason: 'a sidecar was delivered as a file, so turning it off is a real local change',
+      );
+    });
+
+    test('a direct play never burns, whatever is selected', () {
+      expect(needsServer(isTranscoding: false, currentSourceStreamId: 3), isFalse);
+      expect(needsServer(isTranscoding: false), isFalse);
+    });
   });
 
   test('selected embedded subtitle keeps sidecars out of the open', () {

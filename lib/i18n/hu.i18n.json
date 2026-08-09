@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Naplók feltöltve",
     "logsUploadFailed": "Nem sikerült a naplók feltöltése",
-    "logId": "Naplóazonosító"
+    "logId": "Naplóazonosító",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Szöveg",

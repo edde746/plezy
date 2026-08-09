@@ -105,13 +105,15 @@ part 'parts/visibility.dart';
 /// Subtitle tracks offered in the player's "source" subtitle list.
 ///
 /// Direct play exposes embedded tracks in the native player and can attach
-/// arbitrary sidecars itself. A transcode can only deliver external sidecars
-/// or embedded codecs that the server can convert/burn into the rendition.
+/// arbitrary sidecars itself. A transcode can only deliver a resolved sidecar or
+/// an embedded codec the server can burn into the rendition — which every
+/// backend can be asked to do (Plex `subtitles=burn`, Jellyfin/Emby an `Encode`
+/// subtitle profile plus `SubtitleStreamIndex`), so the codec is the only
+/// discriminator here.
 List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
   List<MediaSubtitleTrack> tracks, {
   required bool isTranscoding,
   required Set<int> sidecarSourceIds,
-  required bool supportsEmbeddedTranscodeSelection,
 }) {
   if (!isTranscoding) {
     return tracks
@@ -123,11 +125,24 @@ List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
         .toList(growable: false);
   }
   return tracks
-      .where(
-        (track) =>
-            sidecarSourceIds.contains(track.id) ||
-            (supportsEmbeddedTranscodeSelection && CodecUtils.isTranscodableSubtitleCodec(track.codec)),
-      )
+      .where((track) {
+        if (sidecarSourceIds.contains(track.id)) return true;
+        // A row the client has to fetch itself is selectable only once its sidecar resolved: when that
+        // build failed nothing can put it on screen and reloading cannot help.
+        //
+        // Bitmaps are not fetched at all. The transcode profile offers image formats as `Embed` with
+        // no `External` entry, so the server burns them into the picture - external files included -
+        // and they never get a sidecar by design. Gating those on one made the active track vanish
+        // from the picker while its captions were still burned into the video, with no row left to
+        // switch or turn off. So burn eligibility is decided by the codec, not by where the row came
+        // from.
+        final burnedByServer = CodecUtils.isImageSubtitleCodec(track.codec);
+        final requiresSidecar =
+            !burnedByServer &&
+            (track.isExternalFile || (!track.usesExternalDelivery && track.key != null && track.key!.isNotEmpty));
+        if (requiresSidecar) return false;
+        return CodecUtils.isTranscodableSubtitleCodec(track.codec);
+      })
       .toList(growable: false);
 }
 

@@ -744,7 +744,8 @@
     "serverBusyBody": "",
     "logsUploaded": "日誌已上傳",
     "logsUploadFailed": "上傳日誌失敗",
-    "logId": "日誌 ID"
+    "logId": "日誌 ID",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "文字",

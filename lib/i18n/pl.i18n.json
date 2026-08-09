@@ -756,7 +756,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
-    "logId": "ID logu"
+    "logId": "ID logu",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Tekst",

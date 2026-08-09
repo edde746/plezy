@@ -12,11 +12,42 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       return;
     }
 
+    // A burned-in subtitle is pixels rather than a track: there is nothing selected to hide, and
+    // `setSubtitleVisibility` could not remove painted pixels anyway. Only a new negotiation can,
+    // and that is a real subtitle *choice* - it re-encodes the stream and the server remembers it.
+    // Doing that behind a transient visibility shortcut would silently overwrite the viewer's saved
+    // selection with Off, so the shortcut says where the control actually lives instead of
+    // pretending to work or doing nothing at all.
+    if (_hasBurnedSourceSubtitle()) {
+      showAppSnackBar(context, t.messages.burnedSubtitlesUseMenu);
+      return;
+    }
+
     final currentTrack = widget.player.state.track.subtitle;
     // Nothing to hide when no subtitle track is selected.
     if (currentTrack == null || currentTrack.id == SubtitleTrack.off.id) return;
 
     _setSubtitleVisibility(false);
+  }
+
+  /// Whether the server burned the selected subtitle into the picture.
+  ///
+  /// The same rule the player screen applies to a subtitle *change*, asked with an off target: only
+  /// a burned current selection forces the server's hand, and a selection delivered as a file stays
+  /// an ordinary native track the player can hide itself. Shared rather than restated so the two
+  /// cannot drift.
+  bool _hasBurnedSourceSubtitle() {
+    final choice = widget.selectedSubtitleChoice;
+    final sourceStreamId = choice != null && !choice.isOff ? choice.sourceStreamId : null;
+    return PlaybackSubtitleResolver.burnRequiresRenegotiation(
+      isTranscoding: widget.isTranscoding,
+      currentSourceStreamId: sourceStreamId,
+      currentSelectionHasSidecar:
+          sourceStreamId != null &&
+          widget.sourceSubtitleSidecars.any((sidecar) => sidecar.sourceStreamId == sourceStreamId),
+      targetIsOff: true,
+      targetIsExternalFile: false,
+    );
   }
 
   void _onSubtitleTrackChanged(SubtitleTrack track) {

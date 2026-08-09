@@ -361,6 +361,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           preferredSubtitleTrack:
               subtitleSelection.declinedPreference ?? SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
           preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
+          // Same rule as the reload flow: a source-backed primary with no sidecar on a transcode is
+          // burned into the picture, so nothing native is coming for it.
+          primarySubtitleIsServerRendered:
+              _isTranscoding &&
+              subtitleSelection.primarySourceStreamId != null &&
+              subtitleSelection.primarySidecar == null,
         );
 
         // Store only the active sidecars for re-use after backend fallback.

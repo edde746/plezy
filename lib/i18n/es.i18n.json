@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Registros subidos",
     "logsUploadFailed": "Error al subir registros",
-    "logId": "ID de registro"
+    "logId": "ID de registro",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Texto",

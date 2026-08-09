@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Журналдар жүктелді",
     "logsUploadFailed": "Журналдарды жүктеу мүмкін болмады",
-    "logId": "Журнал ID-сі"
+    "logId": "Журнал ID-сі",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Мәтін",

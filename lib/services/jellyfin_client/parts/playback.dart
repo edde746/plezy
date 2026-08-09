@@ -163,7 +163,6 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     );
     var effectiveSourceId = bundle.selectedSourceId;
     var effectiveContainer = bundle.container;
-    var includeExternalSubtitleDelivery = false;
 
     String? videoUrl;
     String? playSessionId;
@@ -186,6 +185,32 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
               : findSourceAudioTrackForIntent(options.preferredAudioTrack!, mediaInfo.audioTracks)?.id
         : _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
     final requestedSubtitleStreamId = _validJellyfinSubtitleStreamId(options.preferredSubtitleTrack, mediaInfo);
+    // A real external subtitle file stays a file the client fetches, on a transcode as much as on
+    // a direct play - it is the one case where the client genuinely holds it. Jellyfin decides
+    // delivery from the profile and matches on format alone, never on whether a stream is embedded
+    // or a file, so the two rules are only expressible per request: withhold `External` when the
+    // selected stream is embedded (the server then burns it in), and offer it when the selection is
+    // a file. Deciding it per selection is what lets both hold at once.
+    //
+    // The *effective* selection, not just an explicit one: the normal launch path sends no
+    // preferred track and lets the server's `DefaultSubtitleStreamIndex` decide. Reading only the
+    // explicit request would withhold `External` for a default that is a real file, so the server
+    // would burn it while the client still fetched the same file as a sidecar - two copies on
+    // screen, and a transcode nobody needed.
+    final effectiveSubtitleStreamId = requestedSubtitleStreamId == -1
+        ? null
+        : requestedSubtitleStreamId ?? mediaInfo.defaultSubtitleStreamIndex;
+    // Text only, because that is all the profile can actually deliver externally: a bitmap file
+    // falls through to `Encode` and gets burned in whatever we ask for, so classifying one as
+    // externally delivered would leave the client fetching a copy of pixels already in the video.
+    final requestedSubtitleIsExternalFile =
+        effectiveSubtitleStreamId != null &&
+        mediaInfo.subtitleTracks.any(
+          (track) =>
+              track.id == effectiveSubtitleStreamId &&
+              track.isExternalFile &&
+              CodecUtils.isTextSubtitleCodec(track.codec),
+        );
     final int? maxStreamingBitrate = wantsOriginal
         ? null
         : isTrack
@@ -207,6 +232,11 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         audioStreamIndex: requestedAudioStreamId,
         subtitleStreamIndex: requestedSubtitleStreamId,
         audioProfile: isTrack,
+        // A capped preset is the only way a transcode is asked for, and on one the server
+        // burns the selected embedded stream in rather than serving it as a file the client
+        // would fetch as well. A selected external *file* keeps `External`, so it is still
+        // delivered as a file - the one case where the client genuinely holds it.
+        burnSubtitles: !wantsOriginal && !requestedSubtitleIsExternalFile,
       );
       chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
     } catch (error, stackTrace) {
@@ -249,7 +279,6 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         videoUrl = _withApiKey(transcodingUrl);
         playMethod = 'Transcode';
         isTranscoding = true;
-        includeExternalSubtitleDelivery = true;
       } else if (!wantsOriginal) {
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
@@ -259,13 +288,26 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
     // Tracks have no subtitle streams to assemble (a `Lyric` stream may be
     // present, but lyrics flow through fetchLyrics, not the subtitle path).
+    //
+    // The burned row is excluded so it cannot be painted twice; the rest stay fetchable, which is
+    // what keeps a secondary track renderable over a transcode.
+    //
+    // Recomputed against the negotiated `mediaInfo`: the request's own view came from the
+    // pre-negotiation source, and when nothing was explicitly asked for it is the *server's*
+    // default that decides, which the response can report differently. An explicit request still
+    // wins, and an off request still burns nothing.
+    final negotiatedSubtitleStreamId = requestedSubtitleStreamId == -1
+        ? null
+        : requestedSubtitleStreamId ?? mediaInfo.defaultSubtitleStreamIndex;
+    final burnedSourceStreamId = isTranscoding && !requestedSubtitleIsExternalFile ? negotiatedSubtitleStreamId : null;
     final subtitleSidecars = isTrack
         ? const <PlaybackSubtitleSidecar>[]
         : _buildExternalSubtitles(
             metadata.id,
             effectiveSourceId,
             mediaInfo,
-            includeExternalDelivery: includeExternalSubtitleDelivery,
+            isTranscoding: isTranscoding,
+            burnedSourceStreamId: burnedSourceStreamId,
           );
     mediaInfo = _withSidecarBackedSubtitleIdentity(mediaInfo, subtitleSidecars);
     // Jellyfin's streaming endpoint resolves a blank MediaSourceId to its own
@@ -381,9 +423,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// Restrict sidecar identity to the subtitle rows this open actually fetched
   /// as sidecars.
   ///
-  /// Plezy's device profile declares every subtitle format with
+  /// Plezy's device profile declares every *text* subtitle format with
   /// `Method: External`, so Jellyfin returns `DeliveryMethod: External` and a
-  /// `DeliveryUrl` even for streams embedded in a direct-played container.
+  /// `DeliveryUrl` even for text streams embedded in a direct-played container
+  /// whose container cannot carry subtitles in the delivered form.
   /// [_buildExternalSubtitles] correctly skips those, and the native player
   /// reads them out of the container instead — but the leftover delivery URL
   /// makes the shared track matchers demand a sidecar that will never load,
@@ -411,23 +454,44 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final streamIndex = track.index ?? track.id;
     final codec = track.codec;
     if (sourceId == null || codec == null || codec.isEmpty) return null;
+    // The endpoint keys off the *format*, not the codec name Jellyfin reports: it calls SRT streams
+    // `subrip` and WebVTT ones `webvtt`, so the raw name would ask for `Stream.subrip` and get
+    // nothing. Only load-bearing since extracted rows without a `DeliveryUrl` started coming
+    // through here.
+    final extension = CodecUtils.getSubtitleExtension(codec);
     final path = Uri(
-      pathSegments: ['Videos', itemId, sourceId, 'Subtitles', streamIndex.toString(), 'Stream.$codec'],
+      pathSegments: ['Videos', itemId, sourceId, 'Subtitles', streamIndex.toString(), 'Stream.$extension'],
     ).path;
     return path.startsWith('/') ? path : '/$path';
   }
 
+  /// Sidecars this open should fetch.
+  ///
+  /// Never the row the server burned in, whatever its source: those pixels are already in the
+  /// video, and fetching a copy would draw it twice.
+  ///
+  /// Never a bitmap on a transcode either. The profile only ever offers `External` for text, so a
+  /// bitmap falls through to `Encode` and is burned whatever we ask for - an external bitmap *file*
+  /// included, which is why this is not just an embedded-row rule.
+  ///
+  /// Otherwise: a real external file always, since it is a file whether the video is transcoded or
+  /// not; and an embedded text row only on a transcode, where Jellyfin can extract it on demand.
+  /// That is how a *secondary* track still renders over a transcode whose primary is painted into
+  /// the picture. On a direct play embedded rows are absent on purpose - the native player reads
+  /// them out of the container itself.
   List<PlaybackSubtitleSidecar> _buildExternalSubtitles(
     String itemId,
     String? mediaSourceId,
     MediaSourceInfo mediaInfo, {
-    bool includeExternalDelivery = false,
+    bool isTranscoding = false,
+    int? burnedSourceStreamId,
   }) {
     final externalSubtitles = <PlaybackSubtitleSidecar>[];
     for (final track in mediaInfo.subtitleTracks) {
-      if (!track.isExternalFile && !(includeExternalDelivery && track.usesExternalDelivery)) {
-        continue;
-      }
+      if (burnedSourceStreamId != null && track.id == burnedSourceStreamId) continue;
+      final isText = CodecUtils.isTextSubtitleCodec(track.codec);
+      if (isTranscoding && !isText) continue;
+      if (!track.isExternalFile && !isTranscoding) continue;
       final path = track.key ?? _jellyfinSubtitleFallbackPath(itemId, mediaSourceId, track);
       if (path == null) continue;
       // Jellyfin's subtitle URL is a path relative to baseUrl; build the
@@ -601,6 +665,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
     bool audioProfile = false,
+
+    /// Drop `External` subtitle delivery from the profile, so the server burns
+    /// the selected subtitle into a transcode instead of serving it alongside.
+    bool burnSubtitles = false,
   }) async {
     final query = <String, String>{
       'userId': connection.userId,
@@ -683,27 +751,40 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
                 'AudioCodec': 'flac,mp3,aac,alac,opus,vorbis,wav,wma',
               },
           ],
-          // Embed is listed first so a direct-played container reports its
-          // subtitle streams as `DeliveryMethod: Embed`, matching what the
-          // native player actually reads. External stays declared for every
-          // format because a remux or transcode drops those streams from the
-          // rendition and the server must hand us sidecar URLs instead; the
-          // server picks per play method, so both entries are required.
-          'SubtitleProfiles': const <Map<String, Object?>>[
-            {'Format': 'srt', 'Method': 'Embed'},
-            {'Format': 'ass', 'Method': 'Embed'},
-            {'Format': 'ssa', 'Method': 'Embed'},
-            {'Format': 'vtt', 'Method': 'Embed'},
-            {'Format': 'pgssub', 'Method': 'Embed'},
-            {'Format': 'dvdsub', 'Method': 'Embed'},
-            {'Format': 'dvbsub', 'Method': 'Embed'},
-            {'Format': 'srt', 'Method': 'External'},
-            {'Format': 'ass', 'Method': 'External'},
-            {'Format': 'ssa', 'Method': 'External'},
-            {'Format': 'vtt', 'Method': 'External'},
-            {'Format': 'pgssub', 'Method': 'External'},
-            {'Format': 'dvdsub', 'Method': 'External'},
-            {'Format': 'dvbsub', 'Method': 'External'},
+          // `Embed` covers direct play and an mkv remux, where the native
+          // player reads the subtitle stream straight out of the container.
+          // Jellyfin only offers it when the delivered container can carry
+          // subtitles, so it is unreachable on an HLS transcode (ts/mp4) and
+          // is listed for every format purely for the direct paths.
+          //
+          // `External` asks the server to extract a stream and serve it as a
+          // subtitle file. It is offered only when the caller is not asking for
+          // a transcode: on a transcode the owner decision is that the server
+          // delivers the picture complete, so every subtitle is burned in and
+          // the client fetches nothing alongside it. Jellyfin matches an
+          // external profile by text-vs-image format and never consults whether
+          // the stream is embedded or a real file, so the list cannot express
+          // "files as files, embedded burned" - offering text `External` at all
+          // is what made embedded text arrive as a sidecar.
+          //
+          // With no matching `External` entry the server finds no external
+          // profile and falls through to `Encode`, which is also why image
+          // formats never appear here: a bitmap handed over as a separate
+          // stream alongside a transcode is not something the client can render.
+          'SubtitleProfiles': <Map<String, Object?>>[
+            const {'Format': 'srt', 'Method': 'Embed'},
+            const {'Format': 'ass', 'Method': 'Embed'},
+            const {'Format': 'ssa', 'Method': 'Embed'},
+            const {'Format': 'vtt', 'Method': 'Embed'},
+            const {'Format': 'pgssub', 'Method': 'Embed'},
+            const {'Format': 'dvdsub', 'Method': 'Embed'},
+            const {'Format': 'dvbsub', 'Method': 'Embed'},
+            if (!burnSubtitles) ...const [
+              {'Format': 'srt', 'Method': 'External'},
+              {'Format': 'ass', 'Method': 'External'},
+              {'Format': 'ssa', 'Method': 'External'},
+              {'Format': 'vtt', 'Method': 'External'},
+            ],
           ],
         },
       },

@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Journaux envoyés",
     "logsUploadFailed": "Échec de l’envoi des journaux",
-    "logId": "Identifiant du journal"
+    "logId": "Identifiant du journal",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Texte",

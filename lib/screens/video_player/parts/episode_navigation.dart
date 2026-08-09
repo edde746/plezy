@@ -387,6 +387,38 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     PlaybackSourceSubtitleChoice choice, {
     required bool Function() shouldContinue,
   }) async {
+    // On a transcode the server owns the picture: a burned subtitle cannot be removed or covered
+    // locally, and an embedded target can only arrive by being burned in. Either way the change
+    // goes back to the server rather than being applied to the running player.
+    final burnSession = _playbackSession;
+    final burnedSourceStreamId = burnSession?.subtitleSelection.primarySourceStreamId;
+    final targetSourceStreamId = choice.sourceStreamId;
+    if (PlaybackSubtitleResolver.burnRequiresRenegotiation(
+      isTranscoding: _isTranscoding,
+      currentSourceStreamId: burnedSourceStreamId,
+      currentSelectionHasSidecar:
+          burnSession != null &&
+          burnedSourceStreamId != null &&
+          _sidecarForSourceStreamId(burnSession, burnedSourceStreamId) != null,
+      targetIsOff: choice.isOff,
+      // "A file the client fetches for itself", which the two backends mark differently: Jellyfin
+      // flags the row `IsExternal`, while Plex never sets that and instead gives a real external
+      // subtitle a `/library/streams/{id}` key - the same test `_selectedInternalSubtitleForHls`
+      // uses to decide what it must not burn. Reading only `isExternalFile` classified every Plex
+      // external file as an embedded target and sent an already-loaded track switch to the server.
+      targetIsExternalFile:
+          targetSourceStreamId != null &&
+          (_currentMediaInfo?.subtitleTracks.any(
+                (track) =>
+                    track.id == targetSourceStreamId &&
+                    (track.isExternalFile ||
+                        (_currentMetadata.backend == MediaBackend.plex && (track.key?.isNotEmpty ?? false))),
+              ) ??
+              false),
+    )) {
+      return false;
+    }
+
     if (choice.isOff) {
       await currentPlayer.selectSecondarySubtitleTrack(SubtitleTrack.off);
       if (!shouldContinue()) return false;
@@ -850,6 +882,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           preferredSubtitleTrack:
               subtitleSelection.declinedPreference ?? SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
           preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
+          // A source-backed primary with no sidecar on a transcode is one the server burned into
+          // the picture: it is already visible, and no native track will ever arrive to match it.
+          primarySubtitleIsServerRendered:
+              result.isTranscoding &&
+              subtitleSelection.primarySourceStreamId != null &&
+              subtitleSelection.primarySidecar == null,
         );
         _trackManager = trackManager;
         trackManager.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);

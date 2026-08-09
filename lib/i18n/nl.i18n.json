@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Logbestanden geüpload",
     "logsUploadFailed": "Uploaden van logbestanden mislukt",
-    "logId": "Logboek-ID"
+    "logId": "Logboek-ID",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Tekst",

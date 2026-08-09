@@ -744,7 +744,8 @@
     "serverBusyBody": "",
     "logsUploaded": "로그 업로드 완료",
     "logsUploadFailed": "로그 업로드 실패",
-    "logId": "로그 ID"
+    "logId": "로그 ID",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "텍스트",

@@ -56,6 +56,8 @@ class CodecUtils {
       'dvdsub' ||
       'vobsub' ||
       'dvb_sub' ||
+      // Jellyfin's own spelling, which is what the transcode profile asks it to burn.
+      'dvbsub' ||
       'dvb_subtitle' => true,
       _ => false,
     };

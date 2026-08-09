@@ -134,6 +134,16 @@ class _FakePlayer with PlayerStreamControllersMixin implements Player {
   }
 
   @override
+  bool get supportsSecondarySubtitles => true;
+
+  final List<SubtitleTrack> selectedSecondarySubtitle = [];
+
+  @override
+  Future<void> selectSecondarySubtitleTrack(SubtitleTrack t) async {
+    selectedSecondarySubtitle.add(t);
+  }
+
+  @override
   Future<void> setRate(double rate) async {
     rates.add(rate);
   }
@@ -153,6 +163,8 @@ TrackManager _make({
   SubtitleTrack? preferredSubtitleTrack,
   void Function(String, {Duration? duration})? showMessage,
   TrackPreferencePersister? persister,
+  bool primarySubtitleIsServerRendered = false,
+  SubtitleTrack? preferredSecondarySubtitleTrack,
 }) {
   return TrackManager(
     player: player,
@@ -164,6 +176,8 @@ TrackManager _make({
     mediaInfo: mediaInfo,
     preferredAudioTrack: preferredAudioTrack,
     preferredSubtitleTrack: SubtitlePreference.trackOrNull(preferredSubtitleTrack),
+    primarySubtitleIsServerRendered: primarySubtitleIsServerRendered,
+    preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(preferredSecondarySubtitleTrack),
     showMessage: showMessage,
   );
 }
@@ -184,6 +198,17 @@ MediaSourceInfo _metadataFreeDirectMediaInfo({bool selected = true}) {
     videoUrl: 'https://example.com/video.mp4',
     audioTracks: [MediaAudioTrack(id: 1, languageCode: 'eng', selected: true)],
     subtitleTracks: [MediaSubtitleTrack(id: 20, codec: 'ass', selected: selected, forced: false)],
+    chapters: const [],
+  );
+}
+
+/// A source with no audio at all: the only shape for which a burned primary and no
+/// secondary really means "the catalog is already complete".
+MediaSourceInfo _silentBurnedMediaInfo() {
+  return MediaSourceInfo(
+    videoUrl: 'https://example.com/video.mp4',
+    audioTracks: const [],
+    subtitleTracks: [MediaSubtitleTrack(id: 20, codec: 'ass', selected: true, forced: false)],
     chapters: const [],
   );
 }
@@ -383,6 +408,125 @@ void main() {
       expect(player.selectedSubtitle.single.id, 'no');
     });
 
+    test('a server-rendered primary does not wait for a native subtitle track', () async {
+      // The burned-in case: the row stays advertised and selected, but the picture already carries
+      // it and the transcode exposes no subtitle track for it. Waiting held audio and rate setup
+      // for the five-second fallback and then logged a missed deadline twenty-five seconds later.
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
+
+      fakeAsync((async) {
+        final player = _FakePlayer(
+          tracks: const Tracks(
+            audio: [AudioTrack(id: 'native-audio', language: 'eng')],
+          ),
+        );
+        final mgr = _make(
+          player: player,
+          mediaInfo: _mediaInfoWithSubtitles(selected: true),
+          primarySubtitleIsServerRendered: true,
+        );
+
+        mgr.applyTrackSelectionWhenReady();
+        async.flushMicrotasks();
+
+        expect(player.rates, [1.5], reason: 'rate setup ran immediately instead of waiting');
+        expect(
+          async.nonPeriodicTimerCount,
+          0,
+          reason: 'no five-second fallback is armed for a track that is never coming',
+        );
+        mgr.dispose();
+      });
+    });
+
+    test('a server-rendered primary still waits for a carried secondary', () async {
+      // Only one selection pass ever runs, so treating a burned primary as "ready" while a carried
+      // secondary is still in flight retires the subscription and drops the secondary for good.
+      await SettingsService.getInstance();
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+        ),
+      );
+      final mgr = _make(
+        player: player,
+        mediaInfo: _mediaInfoWithSubtitles(selected: true),
+        primarySubtitleIsServerRendered: true,
+        preferredSecondarySubtitleTrack: const SubtitleTrack(id: '10', language: 'eng'),
+      );
+      addTearDown(mgr.dispose);
+
+      mgr.applyTrackSelectionWhenReady();
+      await _drainAsync();
+      expect(player.selectedSecondarySubtitle, isEmpty, reason: 'the secondary has not arrived yet');
+
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+          subtitle: [SubtitleTrack(id: '10', language: 'eng')],
+        ),
+      );
+      await _drainAsync();
+
+      expect(
+        player.selectedSecondarySubtitle.map((track) => track.id),
+        ['10'],
+        reason: 'the wait stayed armed, so the late secondary still landed',
+      );
+    });
+
+    test('a sidecar-backed secondary source row resolves against its loaded track', () async {
+      // The realistic Jellyfin transcode shape: the secondary is an embedded row delivered as a
+      // server-extracted file, so the preference carries a `source:` id while the loaded track is
+      // external. A `source:` id skips URI matching entirely, so this pins that the source-row
+      // matcher still pairs the two - if it did not, the carried secondary would wait out the
+      // deadline and never appear.
+      await SettingsService.getInstance();
+      final player = _FakePlayer(
+        tracks: const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+        ),
+      );
+      final mgr = _make(
+        player: player,
+        mediaInfo: _mediaInfoWithSubtitles(selected: true),
+        primarySubtitleIsServerRendered: true,
+        preferredSecondarySubtitleTrack: const SubtitleTrack(
+          id: 'source:10',
+          uri: 'https://example.com/Subtitles/10/Stream.srt',
+          language: 'eng',
+          codec: 'srt',
+        ),
+      );
+      addTearDown(mgr.dispose);
+
+      mgr.applyTrackSelectionWhenReady();
+      await _drainAsync();
+
+      player.emitTracks(
+        const Tracks(
+          audio: [AudioTrack(id: '1', language: 'eng')],
+          subtitle: [
+            SubtitleTrack(
+              id: '1',
+              uri: 'https://example.com/Subtitles/10/Stream.srt',
+              language: 'eng',
+              codec: 'srt',
+              isExternal: true,
+            ),
+          ],
+        ),
+      );
+      await _drainAsync();
+
+      expect(
+        player.selectedSecondarySubtitle.map((track) => track.id),
+        ['1'],
+        reason: 'the extracted file is the secondary row, however the two sides label it',
+      );
+    });
+
     test('complete metadata-free direct catalog applies tracks without the five-second fallback', () async {
       final settings = await SettingsService.getInstance();
       await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
@@ -431,6 +575,83 @@ void main() {
         expect(player.selectedSubtitle.map((track) => track.id), ['native-ass']);
         expect(player.rates, [1.25]);
         expect(async.nonPeriodicTimerCount, 0);
+        mgr.dispose();
+      });
+    });
+
+    test('a burned primary with no tracks at all is ready immediately', () async {
+      // A silent video transcoded with its primary burned in exposes neither audio nor subtitle
+      // tracks. The empty-list guard used to answer first, so selection spent the five-second
+      // fallback, then a twenty-five-second deadline, on a catalog that was already complete -
+      // holding the saved playback rate back with it.
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
+
+      fakeAsync((async) {
+        final player = _FakePlayer(tracks: const Tracks());
+        final mgr = _make(player: player, mediaInfo: _silentBurnedMediaInfo(), primarySubtitleIsServerRendered: true);
+
+        mgr.applyTrackSelectionWhenReady();
+        async.flushMicrotasks();
+
+        expect(player.rates, [1.5], reason: 'the rate must not wait for tracks that cannot arrive');
+        expect(async.nonPeriodicTimerCount, 0, reason: 'no five-second fallback should be armed');
+        mgr.dispose();
+      });
+    });
+
+    test('a burned primary with an explicit secondary off is ready immediately too', () async {
+      // An explicit off is as settled as an absent preference: nothing is wanted, so nothing is
+      // coming. Treating only null that way left this case in the ten-second track-loading wait.
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
+
+      fakeAsync((async) {
+        final player = _FakePlayer(tracks: const Tracks());
+        final mgr = _make(
+          player: player,
+          mediaInfo: _silentBurnedMediaInfo(),
+          primarySubtitleIsServerRendered: true,
+          preferredSecondarySubtitleTrack: SubtitleTrack.off,
+        );
+
+        mgr.applyTrackSelectionWhenReady();
+        async.flushMicrotasks();
+
+        expect(player.rates, [1.5], reason: 'an explicit off has nothing to wait for either');
+        mgr.dispose();
+      });
+    });
+
+    test('a burned primary still waits for audio the source advertises', () async {
+      // The burned subtitle needs no native track, but audio does: answering "ready" on the subtitle
+      // question alone retired the track listener while the catalog was still filling, and the
+      // preferred audio track was never selected - playback stayed on the engine's default.
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.5);
+
+      fakeAsync((async) {
+        final player = _FakePlayer(tracks: const Tracks());
+        final mgr = _make(
+          player: player,
+          mediaInfo: _metadataFreeDirectMediaInfo(),
+          primarySubtitleIsServerRendered: true,
+          preferredAudioTrack: const AudioTrack(id: 'native-audio', language: 'eng'),
+        );
+
+        mgr.applyTrackSelectionWhenReady();
+        async.flushMicrotasks();
+        expect(player.rates, isEmpty, reason: 'the advertised audio track has not arrived yet');
+
+        player.emitTracks(
+          const Tracks(
+            audio: [AudioTrack(id: 'native-audio', language: 'eng')],
+          ),
+        );
+        async.flushMicrotasks();
+
+        expect(player.selectedAudio.map((track) => track.id), ['native-audio']);
+        expect(player.rates, [1.5], reason: 'selection runs once the catalog is complete');
         mgr.dispose();
       });
     });

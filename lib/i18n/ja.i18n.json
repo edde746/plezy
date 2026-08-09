@@ -744,7 +744,8 @@
     "serverBusyBody": "",
     "logsUploaded": "ログをアップロードしました",
     "logsUploadFailed": "ログのアップロードに失敗しました",
-    "logId": "ログID"
+    "logId": "ログID",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "テキスト",

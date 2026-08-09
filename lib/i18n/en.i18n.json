@@ -748,7 +748,8 @@
     "serverBusyBody": "The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file's storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file's storage.",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logId": "Log ID",
+    "burnedSubtitlesUseMenu": "Subtitles are burned into this stream. Change them from the subtitle menu."
   },
   "subtitlingStyling": {
     "text": "Text",

@@ -680,8 +680,18 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
         'directStreamAudio': directStreamAudio ? '1' : '0',
         'mediaBufferSize': '157286',
         'session': transcodeSessionId,
-        // Prevent Plex from auto-selecting and burning tuner captions into the video.
-        // Captions that survive direct stream remain player-selectable text tracks.
+        // Deliberately NOT the VOD policy, which burns the selected embedded
+        // stream. This path sets `directStream: 1` above, so Plex copies the
+        // video rather than re-encoding it: burning here would force a full
+        // re-encode of a live stream for a caption track that already arrives
+        // for free. Broadcast captions (CEA-608/708) ride inside the copied
+        // video bitstream and stay player-selectable, so there is nothing to
+        // deliver and no stream id to send. Asking for a burn would also let
+        // Plex auto-select a caption track the viewer never chose.
+        //
+        // Not covered: a DVB tuner's bitmap subtitles are separate streams
+        // rather than in-band, so whether they survive the remux is unverified
+        // and needs a DVB source to check.
         'subtitles': 'none',
         'copyts': '0',
         'Accept-Language': 'en',

@@ -2223,6 +2223,9 @@ class Translations$messages$en {
 
 	/// en: 'Log ID'
 	String get logId => 'Log ID';
+
+	/// en: 'Subtitles are burned into this stream. Change them from the subtitle menu.'
+	String get burnedSubtitlesUseMenu => 'Subtitles are burned into this stream. Change them from the subtitle menu.';
 }
 
 // Path: subtitlingStyling
@@ -6829,6 +6832,7 @@ extension on Translations {
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
+			'messages.burnedSubtitlesUseMenu' => 'Subtitles are burned into this stream. Change them from the subtitle menu.',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Border',
 			'subtitlingStyling.background' => 'Background',
@@ -7152,9 +7156,9 @@ extension on Translations {
 			'explore.badge.available' => 'Available',
 			'explore.badge.partiallyAvailable' => 'Partly available',
 			'explore.badge.availableIn4k' => '4K available',
-			'explore.badge.requested' => 'Requested',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.requested' => 'Requested',
 			'explore.badge.pendingApproval' => 'Pending approval',
 			'explore.badge.processing' => 'Processing',
 			'explore.badge.declined' => 'Declined',
@@ -7666,9 +7670,9 @@ extension on Translations {
 			'performanceOverlay.renderFps' => 'Render FPS',
 			'performanceOverlay.displayFps' => 'Display FPS',
 			'performanceOverlay.avSync' => 'A/V Sync',
-			'performanceOverlay.dropped' => 'Dropped',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.dropped' => 'Dropped',
 			'performanceOverlay.dvRpus' => 'DV RPUs',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
 			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',

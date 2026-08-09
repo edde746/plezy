@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Logger lastet opp",
     "logsUploadFailed": "Kunne ikke laste opp logger",
-    "logId": "Logg-ID"
+    "logId": "Logg-ID",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Tekst",

@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Protokolle hochgeladen",
     "logsUploadFailed": "Protokolle konnten nicht hochgeladen werden",
-    "logId": "Protokoll-ID"
+    "logId": "Protokoll-ID",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Text",

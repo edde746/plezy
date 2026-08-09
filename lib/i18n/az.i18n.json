@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Jurnallar yükləndi",
     "logsUploadFailed": "Jurnallar yüklənə bilmədi",
-    "logId": "Jurnal ID-si"
+    "logId": "Jurnal ID-si",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Mətn",

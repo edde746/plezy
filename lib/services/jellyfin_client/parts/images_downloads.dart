@@ -31,6 +31,7 @@ mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
     bool audioProfile,
+    bool burnSubtitles,
   });
   String _withApiKey(String urlOrPath);
 

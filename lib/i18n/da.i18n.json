@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Logfilerne blev uploadet",
     "logsUploadFailed": "Logfilerne kunne ikke uploades",
-    "logId": "Log-ID"
+    "logId": "Log-ID",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Tekst",

@@ -748,7 +748,8 @@
     "serverBusyBody": "",
     "logsUploaded": "Loggarna har laddats upp",
     "logsUploadFailed": "Det gick inte att ladda upp loggarna",
-    "logId": "Logg-ID"
+    "logId": "Logg-ID",
+    "burnedSubtitlesUseMenu": ""
   },
   "subtitlingStyling": {
     "text": "Text",
