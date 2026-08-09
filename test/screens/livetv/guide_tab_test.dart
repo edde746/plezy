@@ -215,11 +215,117 @@ void main() {
     expect(find.text('Slot 12'), findsOneWidget);
     expect(find.ancestor(of: find.text('Slot 12'), matching: focusedMaterial), findsOneWidget);
   });
+
+  testWidgets('vertical navigation follows displayed source-group order, not flat channel order', (tester) async {
+    // Flat list mirrors live_tv_screen ordering: number-sorted across servers,
+    // which interleaves the two source groups when numbers overlap.
+    final harness = _GuideHarness.twoServersWithChannels([
+      _guideChannel(serverId: 'server-a', stationId: 'st-a1', callSign: 'A1', number: '1'),
+      _guideChannel(serverId: 'server-a', stationId: 'st-a2', callSign: 'A2', number: '2'),
+      _guideChannel(serverId: 'server-b', stationId: 'st-b21', callSign: 'B21', number: '2.1'),
+      _guideChannel(serverId: 'server-a', stationId: 'st-a3', callSign: 'A3', number: '3'),
+      _guideChannel(serverId: 'server-a', stationId: 'st-a4', callSign: 'A4', number: '4'),
+      _guideChannel(serverId: 'server-b', stationId: 'st-b41', callSign: 'B41', number: '4.1'),
+      _guideChannel(serverId: 'server-b', stationId: 'st-b43', callSign: 'B43', number: '4.3'),
+      _guideChannel(serverId: 'server-b', stationId: 'st-b44', callSign: 'B44', number: '4.4'),
+      _guideChannel(serverId: 'server-a', stationId: 'st-a5', callSign: 'A5', number: '5'),
+      _guideChannel(serverId: 'server-b', stationId: 'st-b51', callSign: 'B51', number: '5.1'),
+    ]);
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await harness.completeInitialEmpty(tester);
+
+    await _focusGrid(tester);
+    _expectFocusedChannel(tester, 'A1');
+
+    const displayOrder = ['A1', 'A2', 'A3', 'A4', 'A5', 'B21', 'B41', 'B43', 'B44', 'B51'];
+    for (final callSign in displayOrder.skip(1)) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      _expectFocusedChannel(tester, callSign);
+    }
+
+    // Down on the last displayed row is a no-op.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    _expectFocusedChannel(tester, 'B51');
+
+    for (final callSign in displayOrder.reversed.skip(1)) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      _expectFocusedChannel(tester, callSign);
+    }
+  });
+
+  testWidgets('down reaches the last displayed row when the flat-last channel sits mid-guide', (tester) async {
+    // Flat order: 1 (A), 2 (B), 10 (A). Displayed order groups by source:
+    // A1, A10, then B2 — the flat-last channel is not the displayed-last row.
+    final harness = _GuideHarness.twoServersWithChannels([
+      _guideChannel(serverId: 'server-a', stationId: 'st-a1', callSign: 'A1', number: '1'),
+      _guideChannel(serverId: 'server-b', stationId: 'st-b2', callSign: 'B2', number: '2'),
+      _guideChannel(serverId: 'server-a', stationId: 'st-a10', callSign: 'A10', number: '10'),
+    ]);
+    addTearDown(harness.dispose);
+    await harness.pump(tester);
+    await harness.completeInitialEmpty(tester);
+
+    await _focusGrid(tester);
+    _expectFocusedChannel(tester, 'A1');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    _expectFocusedChannel(tester, 'A10');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    _expectFocusedChannel(tester, 'B2');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    _expectFocusedChannel(tester, 'B2');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    _expectFocusedChannel(tester, 'A10');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    _expectFocusedChannel(tester, 'A1');
+
+    // Up on the first displayed row exits the grid to the time navigation.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(_focusedCellFinder(tester), findsNothing);
+  });
 }
 
 Finder _rightTimeButton() {
   final icon = find.byWidgetPredicate((widget) => widget is AppIcon && widget.icon == Symbols.chevron_right_rounded);
   return find.ancestor(of: icon, matching: find.byType(IconButton));
+}
+
+Future<void> _focusGrid(WidgetTester tester) async {
+  final guideFocus = tester.widget<Focus>(
+    find.byWidgetPredicate((widget) => widget is Focus && widget.focusNode?.debugLabel == 'guide_tab'),
+  );
+  guideFocus.focusNode!.requestFocus();
+  await tester.pump();
+  // Enters the grid from the time navigation zone.
+  await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+  await tester.pumpAndSettle();
+}
+
+Finder _focusedCellFinder(WidgetTester tester) {
+  final primary = Theme.of(tester.element(find.byType(GuideTab))).colorScheme.primary;
+  return find.byWidgetPredicate((widget) => widget is Material && widget.color == primary);
+}
+
+void _expectFocusedChannel(WidgetTester tester, String callSign) {
+  expect(
+    find.ancestor(of: find.text(callSign), matching: _focusedCellFinder(tester)),
+    findsOneWidget,
+    reason: 'expected focused channel $callSign',
+  );
 }
 
 final class _GuideHarness {
@@ -229,7 +335,10 @@ final class _GuideHarness {
 
   factory _GuideHarness.twoServers() => _GuideHarness._create(includeServerB: true);
 
-  factory _GuideHarness._create({required bool includeServerB}) {
+  factory _GuideHarness.twoServersWithChannels(List<LiveTvChannel> channels) =>
+      _GuideHarness._create(includeServerB: true, channels: channels);
+
+  factory _GuideHarness._create({required bool includeServerB, List<LiveTvChannel>? channels}) {
     final serverA = _FakeMediaServerClient(serverId: 'server-a', stationId: 'station-a');
     final serverB = includeServerB ? _FakeMediaServerClient(serverId: 'server-b', stationId: 'station-b') : null;
     final manager = MultiServerManager()..debugRegisterClientForTesting(serverA);
@@ -243,10 +352,12 @@ final class _GuideHarness {
       serverA: serverA,
       serverB: serverB,
       provider: provider,
-      channels: [
-        _guideChannel(serverId: 'server-a', stationId: 'station-a', callSign: 'A'),
-        if (serverB != null) _guideChannel(serverId: 'server-b', stationId: 'station-b', callSign: 'B'),
-      ],
+      channels:
+          channels ??
+          [
+            _guideChannel(serverId: 'server-a', stationId: 'station-a', callSign: 'A'),
+            if (serverB != null) _guideChannel(serverId: 'server-b', stationId: 'station-b', callSign: 'B'),
+          ],
     );
   }
 
@@ -292,17 +403,33 @@ final class _GuideHarness {
     if (serverB != null) expect(find.text('Initial B'), findsOneWidget);
   }
 
+  Future<void> completeInitialEmpty(WidgetTester tester) async {
+    serverA.schedule.completeEmpty(0);
+    await tester.pump();
+    final serverB = this.serverB;
+    if (serverB != null) {
+      expect(serverB.schedule.requests, hasLength(1));
+      serverB.schedule.completeEmpty(0);
+    }
+    await tester.pumpAndSettle();
+  }
+
   void dispose() => provider.dispose();
 }
 
-LiveTvChannel _guideChannel({required String serverId, required String stationId, required String callSign}) =>
-    LiveTvChannel(
-      key: 'channel-$stationId',
-      identifier: stationId,
-      callSign: callSign,
-      serverId: serverId,
-      liveDvrKey: 'dvr-$serverId',
-    );
+LiveTvChannel _guideChannel({
+  required String serverId,
+  required String stationId,
+  required String callSign,
+  String? number,
+}) => LiveTvChannel(
+  key: 'channel-$stationId',
+  identifier: stationId,
+  callSign: callSign,
+  serverId: serverId,
+  liveDvrKey: 'dvr-$serverId',
+  number: number,
+);
 
 final class _FakeMediaServerClient implements MediaServerClient {
   _FakeMediaServerClient({required String serverId, required String stationId})
@@ -360,6 +487,8 @@ final class _ControllableLiveTvSupport implements LiveTvSupport {
       ),
     ]);
   }
+
+  void completeEmpty(int index) => requests[index].completer.complete(const []);
 
   void completeSlots(int index, int count) {
     final request = requests[index];

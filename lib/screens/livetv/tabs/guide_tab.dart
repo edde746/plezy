@@ -585,6 +585,14 @@ class GuideTabState extends State<GuideTab>
     ];
   }
 
+  /// Flat [GuideTab.channels] indexes in displayed row order. Differs from
+  /// ascending index order when multiple source groups exist: the flat list is
+  /// number-sorted across sources, while rows are grouped by source.
+  List<int> get _displayOrderChannelIndexes => [
+    for (final row in _guideRows)
+      if (row is _GuideChannelRow) row.channelIndex,
+  ];
+
   double _guideRowHeight(_GuideRow row) {
     return switch (row) {
       _GuideSourceHeaderRow() => _sourceHeaderRowHeight,
@@ -791,25 +799,20 @@ class GuideTabState extends State<GuideTab>
   }
 
   KeyEventResult _handleGridKey(LogicalKeyboardKey key) {
-    if (key.isUpKey) {
-      if (_gridChannelIndex > 0) {
-        _updateFocus(() {
-          _gridChannelIndex--;
-          if (_gridColumn == 1) _focusedProgram = _findCurrentProgram(_gridChannelIndex);
-        });
-        _scrollToChannel(_gridChannelIndex);
-      } else {
+    if (key.isUpKey || key.isDownKey) {
+      // Move through rows in displayed (source-grouped) order. Stepping the
+      // flat channel index would interleave sources whose channel numbers
+      // overlap and could dead-end before the last displayed row.
+      final order = _displayOrderChannelIndexes;
+      final position = order.indexOf(_gridChannelIndex);
+      if (key.isUpKey && position <= 0) {
         _updateFocus(() {
           _focusZone = _GuideZone.timeNav;
           _timeNavIndex = 1;
         });
-      }
-      return KeyEventResult.handled;
-    }
-    if (key.isDownKey) {
-      if (_gridChannelIndex < widget.channels.length - 1) {
+      } else if (key.isUpKey || (position != -1 && position < order.length - 1)) {
         _updateFocus(() {
-          _gridChannelIndex++;
+          _gridChannelIndex = order[key.isUpKey ? position - 1 : position + 1];
           if (_gridColumn == 1) _focusedProgram = _findCurrentProgram(_gridChannelIndex);
         });
         _scrollToChannel(_gridChannelIndex);
