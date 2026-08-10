@@ -1100,7 +1100,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> setBoxFitMode(int mode) async {}
 
   @override
-  // ignore: no-empty-block - base no-op, mpv zooms via the video-zoom property
+  // ignore: no-empty-block - base no-op, non-Apple mpv zooms via the video-zoom property
   Future<void> setVideoZoom(double scale) async {}
 
   @override

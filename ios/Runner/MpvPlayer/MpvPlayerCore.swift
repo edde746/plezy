@@ -86,14 +86,12 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     withoutLayerAnimations {
       if let frame {
         containerView.frame = frame
-        videoLayer.frame = containerView.bounds
       } else if let superview = containerView.superview {
         containerView.frame = superview.bounds
-        videoLayer.frame = containerView.bounds
       } else if let window {
         containerView.frame = window.bounds
-        videoLayer.frame = containerView.bounds
       }
+      fitVideoLayer(videoLayer, in: containerView)
 
       mainBlankView?.frame = window?.bounds ?? .zero
 
@@ -105,6 +103,46 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #if os(iOS)
       updateEDRMode(sigPeak: lastSigPeak)
     #endif
+  }
+
+  /// Size the video layer to the container via bounds/position, never `frame`:
+  /// `frame` is undefined while the custom-zoom transform is non-identity.
+  private func fitVideoLayer(_ layer: MpvVideoLayer, in container: UIView) {
+    layer.bounds = CGRect(origin: .zero, size: container.bounds.size)
+    layer.position = CGPoint(x: container.bounds.midX, y: container.bounds.midY)
+  }
+
+  /// Apply custom viewer zoom by scaling the video layer about its center.
+  ///
+  /// Zoom must never reach mpv's `video-zoom` on this VO: any nonzero zoom
+  /// flips vo_avfoundation into a Core Image re-render of every frame, which
+  /// destroys HDR/Dolby Vision passthrough (DV frames render near-black on
+  /// tvOS). A CALayer transform keeps the sample-buffer scanout path intact.
+  /// The transform must sit on the display layer itself — a
+  /// `sublayerTransform` on the container is ignored by the video plane.
+  /// The layer's bounds never change, so the VO's bounds KVO stays quiet, and
+  /// the inline OSD sibling layer keeps its own geometry. PiP is unaffected:
+  /// the Dart side resets zoom before entry, and the system presents the
+  /// layer's buffers, not its on-screen transform.
+  func setVideoZoom(_ scale: Double) {
+    let clamped = min(max(scale, 0.25), 4.0)
+    Self.log("setVideoZoom(\(scale)) -> \(clamped)")
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let container = self.containerView, let videoLayer = self.videoLayer else {
+        return
+      }
+      let zoomed = abs(clamped - 1.0) >= 0.0005
+      self.withoutLayerAnimations {
+        // Clip only while zoomed: at 100% the layer tree stays identical to a
+        // build without custom zoom, so the unzoomed path cannot regress
+        // (e.g. hardware-plane promotion of the sample-buffer layer).
+        container.clipsToBounds = zoomed
+        videoLayer.transform =
+          zoomed
+          ? CATransform3DMakeScale(CGFloat(clamped), CGFloat(clamped), 1)
+          : CATransform3DIdentity
+      }
+    }
   }
 
   func externalDisplayDidChange() {

@@ -1013,6 +1013,17 @@ class PlayerNative extends PlayerBase {
     }
   }
 
+  /// iOS/tvOS scale the native video container instead of mpv's `video-zoom`:
+  /// on the avfoundation VO a nonzero zoom re-renders every frame through
+  /// Core Image, which destroys HDR/Dolby Vision passthrough (DV renders
+  /// near-black on tvOS). macOS keeps the property path — gpu-next zooms
+  /// losslessly in-shader.
+  @override
+  Future<void> setVideoZoom(double scale) async {
+    if (_nativeCoreUnavailable || audioOnly || !Platform.isIOS || !initialized) return;
+    await invoke('setVideoZoom', {'scale': scale});
+  }
+
   @override
   Future<bool> setVideoFrameRate(
     double fps,

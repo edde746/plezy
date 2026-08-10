@@ -326,8 +326,12 @@ abstract class Player {
   /// here and scale via `panscan`/`video-aspect-override` properties instead.
   Future<void> setBoxFitMode(int mode);
 
-  /// Apply custom zoom to the native video layer. No-op on mpv backends,
-  /// which zoom via the `video-zoom` property.
+  /// Apply custom zoom to the native video layer.
+  ///
+  /// ExoPlayer scales its frame layout; iOS/tvOS scale the AVFoundation video
+  /// container (mpv's `video-zoom` would force vo_avfoundation's Core Image
+  /// path and destroy HDR/Dolby Vision passthrough). Other mpv backends are a
+  /// no-op here and zoom via the `video-zoom` property.
   Future<void> setVideoZoom(double scale);
 
   /// Aggregated native playback stats (codecs, dimensions, dropped frames…).

@@ -77,6 +77,29 @@ void main() {
     expect(player.writes.single.value, VideoFilterManager.videoZoomPropertyForScale(1.5).toString());
   });
 
+  test('native zoom keeps mpv video-zoom at zero and forwards the scale', () async {
+    final player = _RecordingPlayer();
+    final manager = VideoFilterManager(player: player, nativeVideoZoom: true);
+    addTearDown(manager.dispose);
+
+    await manager.updateVideoFilter();
+    player.clearRecords();
+
+    manager.setZoomScale(1.5);
+    await Future<void>.delayed(Duration.zero);
+
+    // The native layer gets the real scale; mpv must never see a nonzero
+    // video-zoom — on vo_avfoundation it would trigger the Core Image
+    // re-render that destroys HDR/Dolby Vision passthrough.
+    expect(player.zoomCalls, [1.5]);
+    expect(player.writes.where((write) => write.key == 'video-zoom'), isEmpty);
+
+    // Margin forcing still follows the zoom state.
+    final marginWrites = player.writes.where((write) => write.key == 'sub-ass-force-margins').toList();
+    expect(marginWrites, hasLength(1));
+    expect(marginWrites.single.value, 'yes');
+  });
+
   test('repeated run with unchanged state writes nothing', () async {
     final player = _RecordingPlayer();
     final manager = VideoFilterManager(player: player);

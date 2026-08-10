@@ -91,6 +91,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleSetDisplayCriteria(call: call, result: result)
     case "setVisible":
       handleSetVisible(call: call, result: result)
+    case "setVideoZoom":
+      handleSetVideoZoom(call: call, result: result)
     case "isInitialized":
       result(playerCore?.isInitialized ?? false)
     case "updateFrame":
@@ -449,6 +451,17 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
         result(nil)
       }
     }
+  }
+
+  private func handleSetVideoZoom(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+      let scale = doubleValue(args["scale"])
+    else {
+      result(FlutterError(code: "INVALID_ARGS", message: "setVideoZoom requires scale", details: nil))
+      return
+    }
+    playerCore?.setVideoZoom(scale)
+    result(nil)
   }
 
   private func int64Value(_ value: Any?) -> Int64? {
