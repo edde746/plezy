@@ -131,10 +131,21 @@ class FakePlayer implements Player {
     return gate;
   }
 
+  /// Emits a gapless advance. Deliberately leaves `state.position`/`duration`
+  /// untouched: the real player announces the transition on the event flow,
+  /// which is not ordered against the property flow — at that instant the live
+  /// state can still carry the *finished* track's playhead (#1849). Tests
+  /// model that handover with [setOutgoingPlayhead] before emitting.
   void emitTransition(String uri) {
     _armedMedia = null; // the backend advanced into the armed entry
-    _state = _state.copyWith(completed: false, position: Duration.zero, duration: _trackDuration);
+    _state = _state.copyWith(completed: false);
     trackTransitionCtrl.add(uri);
+  }
+
+  /// Backdates the live state to the finished track's playhead, as the real
+  /// player still reads when a gapless transition is announced.
+  void setOutgoingPlayhead({required Duration position, required Duration duration}) {
+    _state = _state.copyWith(position: position, duration: duration);
   }
 
   void emitCompleted() {
@@ -394,11 +405,12 @@ class RecordedReport {
   final String state;
   final String itemId;
   final Duration position;
+  final Duration? duration;
 
-  const RecordedReport(this.state, this.itemId, this.position);
+  const RecordedReport(this.state, this.itemId, this.position, this.duration);
 
   @override
-  String toString() => '$state($itemId @ ${position.inSeconds}s)';
+  String toString() => '$state($itemId @ ${position.inSeconds}s/${duration?.inSeconds}s)';
 }
 
 /// Records the progress-report surface; everything else is unimplemented
@@ -439,7 +451,7 @@ class FakeMediaServerClient extends Fake with PlaybackReportRecorder implements 
       PlaybackReportKind.progress => call.isPaused ? 'paused' : 'progress',
       PlaybackReportKind.stopped => 'stopped',
     };
-    reports.add(RecordedReport(state, call.itemId, call.position));
+    reports.add(RecordedReport(state, call.itemId, call.position, call.duration));
   }
 }
 
@@ -974,6 +986,37 @@ void main() {
     expect(h.client.markedWatched, ['t1']);
     // New session started for the new track.
     expect(h.client.reportsFor('started').map((r) => r.itemId), ['t1', 't2']);
+  });
+
+  test('a gaplessly advanced track reports its own start, not the finished track\'s playhead (#1849)', () async {
+    final long = testMediaItem(
+      id: 'long',
+      backend: MediaBackend.plex,
+      kind: MediaKind.track,
+      title: 'Long opener',
+      parentTitle: 'Album',
+      grandparentTitle: 'Artist',
+      durationMs: const Duration(minutes: 7).inMilliseconds,
+      serverId: 'srv',
+    );
+    await h.playTracks([long, t2]);
+
+    // When the advance is announced, the live player state still carries the
+    // finished track's playhead — the new file has not reported yet. Reporting
+    // that as the new track's first sample told Plex it was already at ~100%,
+    // which recorded a play (and a Last.fm scrobble) at track start on top of
+    // the real one (#1849).
+    h.player.setOutgoingPlayhead(position: const Duration(minutes: 7), duration: const Duration(minutes: 7));
+    h.player.emitTransition(_urlFor(t2));
+    await pumpEventQueue();
+
+    final started = h.client.reportsFor('started').toList();
+    expect(started.map((r) => r.itemId), ['long', 't2']);
+    expect(started.last.position, Duration.zero);
+    expect(started.last.duration, _trackDuration, reason: 'the initial report carries t2\'s own duration');
+    // The finished track is the only one whose watch settles; t2 must not be
+    // latched watched off the stale ~100% sample.
+    expect(h.client.markedWatched, ['long']);
   });
 
   test('a track with no metadata duration is reported stopped where the source actually got to', () async {

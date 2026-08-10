@@ -1641,6 +1641,39 @@ void main() {
       });
     });
 
+    test('startTracking overrides only the initial report with the caller-supplied start state (#1849)', () {
+      fakeAsync((async) {
+        final client = _FakePlexClient();
+        // At bind time the player state can still carry the *previous* item's
+        // playhead (gapless music advance) — reporting it as this item's first
+        // sample told the backend playback was already at ~100%.
+        final player = _FakePlayer(position: const Duration(minutes: 7), duration: const Duration(minutes: 7));
+        final tracker = PlaybackProgressTracker(
+          client: client,
+          metadata: _meta(),
+          player: player,
+          isOffline: false,
+          updateInterval: const Duration(seconds: 1),
+        );
+
+        tracker.startTracking(initialPosition: Duration.zero, initialDuration: const Duration(minutes: 3));
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls.single.time, 0);
+        expect(client.updateProgressCalls.single.duration, const Duration(minutes: 3).inMilliseconds);
+        expect(client.markWatchedCalls, isEmpty);
+
+        // The player has since reported the real source state; ticks read live.
+        player.position = const Duration(seconds: 30);
+        player.duration = const Duration(minutes: 3);
+        async.elapse(const Duration(seconds: 1));
+        async.flushMicrotasks();
+        expect(client.updateProgressCalls.last.time, 30000);
+        expect(client.updateProgressCalls.last.duration, const Duration(minutes: 3).inMilliseconds);
+
+        tracker.dispose();
+      });
+    });
+
     test('coalesces timer ticks while a progress report is in flight', () {
       fakeAsync((async) {
         final client = _DelayedProgressClient();

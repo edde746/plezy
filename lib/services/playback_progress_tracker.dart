@@ -213,7 +213,17 @@ class PlaybackProgressTracker {
           );
   }
 
-  void startTracking() {
+  /// Starts the periodic report timer and sends the initial report.
+  ///
+  /// [initialPosition] and [initialDuration] override the live player state
+  /// for that initial report only. Music binds a new tracker the instant a
+  /// gapless advance is announced, when `player.state.position`/`duration`
+  /// still hold the *outgoing* track's values — reporting those told Plex the
+  /// new track was already at ~100%, which recorded a play (and a Last.fm
+  /// scrobble) at track start on top of the real one (#1849). Callers that
+  /// know where the item truly starts pass it here; timer ticks always read
+  /// live state.
+  void startTracking({Duration? initialPosition, Duration? initialDuration}) {
     if (_progressTimer != null) {
       appLogger.w('Progress tracking already started');
       return;
@@ -229,7 +239,7 @@ class PlaybackProgressTracker {
 
     // Send initial progress immediately (don't wait for first timer tick)
     if (player.state.isActive) {
-      _sendProgress('playing');
+      _sendProgress('playing', positionOverride: initialPosition, durationOverride: initialDuration);
     }
 
     _progressTimer = Timer.periodic(updateInterval, (timer) {
@@ -290,7 +300,7 @@ class PlaybackProgressTracker {
     _stoppedProgressServerAcknowledged = false;
   }
 
-  Future<void> _sendProgress(String state, {Duration? positionOverride}) async {
+  Future<void> _sendProgress(String state, {Duration? positionOverride, Duration? durationOverride}) async {
     Duration? attemptedPosition;
     Duration? attemptedDuration;
     try {
@@ -298,7 +308,7 @@ class PlaybackProgressTracker {
       final hasRenderedOutput = hasRenderedPlayback?.call() ?? canReport;
       if (state != 'stopped' && !canReport) return;
       final isSuppressedStop = state == 'stopped' && !canReport;
-      final duration = player.state.duration;
+      final duration = durationOverride ?? player.state.duration;
       final positionSource = isSuppressedStop
           ? _lastReportablePosition ?? Duration(milliseconds: metadata.viewOffsetMs ?? 0)
           : positionOverride ?? player.state.position;

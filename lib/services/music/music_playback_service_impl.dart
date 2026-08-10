@@ -833,6 +833,14 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final player = _player;
     if (player == null) return;
 
+    // Every music bind starts its track at the top, but on a gapless advance
+    // the player's state still carries the *finished* track's position and
+    // duration when the transition is announced. Reporting that told Plex the
+    // new track was already at ~100% and double-counted the play (#1849), so
+    // the initial report is pinned to the track's own start instead of live
+    // player state.
+    final initialDuration = track.durationMs != null ? Duration(milliseconds: track.durationMs!) : null;
+
     final client = source.reportingClient;
     if (client != null) {
       _tracker = PlaybackProgressTracker(
@@ -846,7 +854,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         playMethod: source.playMethod ?? 'DirectPlay',
         playSessionId: source.playSessionId,
         mediaInfo: source.mediaInfo,
-      )..startTracking();
+      )..startTracking(initialPosition: Duration.zero, initialDuration: initialDuration);
     } else if (source.isOffline && _offlineWatchService != null) {
       _tracker = PlaybackProgressTracker(
         client: null,
@@ -854,7 +862,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         player: player,
         isOffline: true,
         offlineWatchService: _offlineWatchService,
-      )..startTracking();
+      )..startTracking(initialPosition: Duration.zero, initialDuration: initialDuration);
     }
 
     final controls = _mediaControls;
