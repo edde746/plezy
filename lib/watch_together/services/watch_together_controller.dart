@@ -354,7 +354,7 @@ class WatchTogetherController {
         break;
 
       case SyncMessageType.pong:
-        if (message.pingId != null && !_session.isHost) {
+        if (!_session.isHost && senderId == _session.hostPeerId && message.pingId != null) {
           _clockSync?.onPong(message.pingId!, message.timestamp);
         }
         break;
