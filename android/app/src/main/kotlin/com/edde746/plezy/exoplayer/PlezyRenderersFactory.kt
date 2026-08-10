@@ -208,7 +208,7 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     return TrueHdCarrierSink(
       defaultSink = processedSink,
       carrierSink = buildCarrierSink(context, bufferSizeProvider),
-      carrierRouteAvailable = { supportsTrueHdMatCarrier(context) },
+      carrierRouteAvailable = { supportsTrueHdMatCarrier() },
       directOutputBlocked = { format -> shouldBlockDirectAudioOutput?.invoke(format) == true },
       log = audioDiagnosticsLogger
     ).also { trueHdCarrierSink = it }
