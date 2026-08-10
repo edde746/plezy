@@ -6,14 +6,12 @@ import shutil
 import sys
 from pathlib import Path
 
-# Paths
 SCRIPT_DIR = Path(__file__).parent.resolve()
 PROJECT_ROOT = SCRIPT_DIR.parent.parent
 BUILD_DIR = Path(os.environ["BUILD_DIR"]) if "BUILD_DIR" in os.environ else PROJECT_ROOT / "build/linux/x64/release/bundle"
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", PROJECT_ROOT))
 ARCH_SUFFIX = os.environ.get("ARCH_SUFFIX", "x64")
 
-# Package metadata
 METADATA = {
     "name": "plezy",
     "license": "GPL-3.0",
@@ -23,16 +21,13 @@ METADATA = {
     "description": "A modern Plex and Jellyfin client for desktop and mobile",
 }
 
-# Icon sizes to generate
 ICON_SIZES = [16, 32, 48, 64, 128, 256, 512]
 
-# Architecture mappings per package format
 ARCH_MAP = {
     "x64": {"deb": "amd64", "rpm": "x86_64", "pacman": "x86_64"},
     "arm64": {"deb": "arm64", "rpm": "aarch64", "pacman": "aarch64"},
 }
 
-# Distro-specific configuration
 DISTROS = {
     "deb": {
         "type": "deb",

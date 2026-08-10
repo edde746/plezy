@@ -52,7 +52,6 @@ class RawPositionAudioOutputTest {
     return output to listener
   }
 
-  // Release reporting
 
   /**
    * A parked track is never going to release, so its flush has to be answered at once. Deferring
@@ -116,7 +115,6 @@ class RawPositionAudioOutputTest {
     assertEquals(1, listener.releasedCount)
   }
 
-  // Reuse
 
   @Test
   fun aParkedOutputIsHandedBackForAnIdenticalConfig() {
@@ -178,7 +176,6 @@ class RawPositionAudioOutputTest {
     assertEquals(1, secondListener.underrunCount)
   }
 
-  // Eviction — the overlap media3 itself tolerates, kept tolerable
 
   /**
    * The replacement is deliberately built while the evicted track is still going away. Refusing
@@ -221,7 +218,6 @@ class RawPositionAudioOutputTest {
     assertEquals(1, listener.releasedCount)
   }
 
-  // Fakes
 
   private class RecordingListener : AudioOutput.Listener {
     var releasedCount = 0

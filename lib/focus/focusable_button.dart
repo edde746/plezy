@@ -51,7 +51,6 @@ class _FocusableButtonState extends State<FocusableButton> {
     final showFocus = _isFocused && isKeyboard;
     final duration = FocusTheme.getAnimationDuration(context);
     final enabled = widget.onPressed != null;
-    // In dpad mode: focused = full opacity, unfocused = dimmed
     final opacity = isKeyboard && !_isFocused ? 0.6 : 1.0;
 
     return FocusableWrapper(

@@ -49,9 +49,7 @@ func TestGeneratedRelayProtocolVersionsMatchSpec(t *testing.T) {
 	}
 }
 
-// newTestServer builds a Server wired for tests: no goroutines and no network.
-// Its snapshotter is not started; storage tests drive the narrow synchronous
-// write entry directly.
+// newTestServer builds a goroutine-free, network-free test server.
 func newTestServer(t *testing.T, stateFile string) *Server {
 	t.Helper()
 	s := &Server{
@@ -135,7 +133,7 @@ func TestSnapshotRoundTrip(t *testing.T) {
 		t.Fatalf("snapshot persisted process-local client identity: %s", data)
 	}
 
-	// Reconstruct into a fresh Server and verify identity.
+	// Reload from disk into a fresh server.
 	s2 := newTestServer(t, path)
 	if _, err := s2.loadSnapshot(path); err != nil {
 		t.Fatalf("loadSnapshot: %v", err)
@@ -229,7 +227,7 @@ func TestLoadHandlesCorrupt(t *testing.T) {
 	if len(s.rooms) != 0 {
 		t.Fatalf("expected empty rooms after corrupt load, got %d", len(s.rooms))
 	}
-	// File should be preserved for debugging.
+	// Corrupt snapshots remain available for diagnosis.
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("corrupt file should NOT be deleted: %v", err)
 	}
@@ -270,7 +268,7 @@ func TestCleanupUsesIdleNotAge(t *testing.T) {
 	s := newTestServer(t, filepath.Join(t.TempDir(), "rooms.json"))
 	now := time.Now()
 
-	// 2h-old room that has activity 1min ago — must NOT be cleaned up.
+	// Recent activity keeps this old room.
 	s.rooms["KEEP"] = &Room{
 		SessionID:      "KEEP",
 		HostPeerID:     "h",
@@ -278,7 +276,7 @@ func TestCleanupUsesIdleNotAge(t *testing.T) {
 		CreatedAt:      now.Add(-2 * time.Hour),
 		LastActivityAt: now.Add(-1 * time.Minute),
 	}
-	// 2h-old room that emptied 10min ago — MUST be cleaned up.
+	// Idle rooms are removed.
 	s.rooms["GONE"] = &Room{
 		SessionID:      "GONE",
 		HostPeerID:     "h",
@@ -286,11 +284,11 @@ func TestCleanupUsesIdleNotAge(t *testing.T) {
 		CreatedAt:      now.Add(-2 * time.Hour),
 		LastActivityAt: now.Add(-10 * time.Minute),
 	}
-	// 25h-old room — absolute TTL nukes it even if recently active.
+	// The absolute TTL removes this room despite recent activity.
 	s.rooms["OLD"] = &Room{
 		SessionID:      "OLD",
 		HostPeerID:     "h",
-		Peers:          map[string]*Client{}, // empty anyway
+		Peers:          map[string]*Client{},
 		CreatedAt:      now.Add(-25 * time.Hour),
 		LastActivityAt: now.Add(-10 * time.Second),
 	}
@@ -352,7 +350,7 @@ func TestSnapshotAtomicWriteSurvivesRenameFailure(t *testing.T) {
 	path := filepath.Join(dir, "rooms.json")
 	s := newTestServer(t, path)
 
-	// Seed a valid snapshot on disk.
+	// Seed the on-disk snapshot.
 	s.rooms["ORIG"] = &Room{
 		SessionID:      "ORIG",
 		HostPeerID:     "h",
@@ -368,8 +366,7 @@ func TestSnapshotAtomicWriteSurvivesRenameFailure(t *testing.T) {
 		t.Fatalf("read orig: %v", err)
 	}
 
-	// Block the temporary-file open with a directory at the same path. This
-	// deterministically fails before rename on every supported platform.
+	// A directory at the temporary path makes the open fail before rename.
 	if err := os.Mkdir(path+".tmp", 0755); err != nil {
 		t.Fatalf("create blocking temporary directory: %v", err)
 	}
@@ -598,7 +595,7 @@ func TestSnapshotDebounceCoalesces(t *testing.T) {
 	go sn.run()
 	t.Cleanup(func() { _ = sn.flushAndStop(time.Second) })
 
-	// Fire a burst — should collapse into one write due to debounce.
+	// A burst should collapse into one debounced write.
 	for i := 0; i < 20; i++ {
 		sn.recordMutation()
 	}
@@ -1132,11 +1129,6 @@ func TestSnapshotDirectorySyncWarningIsThrottled(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// Integration harness — boots a real Server behind httptest with the full
-// HTTP mux. Each dial sets X-Forwarded-For so tests control the perceived
-// client IP independently of the rate limiters.
-// ======================================================================
 
 type relayHarness struct {
 	srv     *Server
@@ -1171,8 +1163,7 @@ func newRelayHarnessNoTrust(t *testing.T) *relayHarness {
 	)
 }
 
-// newRelayHarnessAt lets a test control the stateFile path so two harnesses
-// can share a snapshot across a simulated restart.
+// newRelayHarnessAt allows two harnesses to share a snapshot across restarts.
 func newRelayHarnessAt(t *testing.T, logDir, stateFile string) *relayHarness {
 	t.Helper()
 	return newRelayHarnessAtWithResolver(t, logDir, stateFile, mustClientIPResolver(t, "127.0.0.0/8"))
@@ -1501,8 +1492,7 @@ func (c *testConn) expectAuthority(typ, hostPeerID string) serverMsg {
 	return message
 }
 
-// recvNothing asserts no message arrives within the given window. Used to
-// verify silent paths (sender not receiving own broadcast, stale-peer skip).
+// recvNothing asserts that no frame arrives within the window.
 func (c *testConn) recvNothing(within time.Duration) {
 	c.t.Helper()
 	c.conn.SetReadDeadline(time.Now().Add(within))
@@ -1515,8 +1505,7 @@ func (c *testConn) recvNothing(within time.Duration) {
 	}
 }
 
-// recvUntilClosed consumes any frames already queued on the wire and requires
-// a permanent terminal read error before the absolute deadline.
+// recvUntilClosed drains queued frames and waits for terminal closure.
 func (c *testConn) recvUntilClosed(within time.Duration) ([]serverMsg, error) {
 	c.t.Helper()
 	if err := c.conn.SetReadDeadline(time.Now().Add(within)); err != nil {
@@ -1681,9 +1670,6 @@ func TestClientWriteFailureClosesConnection(t *testing.T) {
 	client.close()
 }
 
-// ======================================================================
-// Unit tests — pure logic
-// ======================================================================
 
 func TestRateLimiterBurstExhausts(t *testing.T) {
 	rl := newRateLimiter(5, 10)
@@ -1698,7 +1684,7 @@ func TestRateLimiterBurstExhausts(t *testing.T) {
 }
 
 func TestRateLimiterRefillsOverTime(t *testing.T) {
-	rl := newRateLimiter(5, 10) // 10 tokens/sec
+	rl := newRateLimiter(5, 10)
 	for i := 0; i < 5; i++ {
 		rl.allow()
 	}
@@ -1734,8 +1720,7 @@ func TestRateLimiterAllowRace(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	// Real assertion is that -race finds no data race. Spot-check the
-	// result is within plausible bounds.
+	// Spot-check the result bounds; -race checks synchronization.
 	if got := successes.Load(); got <= 0 || got > 500 {
 		t.Fatalf("unexpected successes count %d (want 1..500)", got)
 	}
@@ -1775,9 +1760,6 @@ func TestCleanupRateWindowsUsesWindowBoundary(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// connTracker unit tests
-// ======================================================================
 
 func TestConnTrackerPerIPLimit(t *testing.T) {
 	ct := newConnTracker()
@@ -1821,7 +1803,7 @@ func TestConnTrackerDisconnectFrees(t *testing.T) {
 		t.Errorf("globalCount=%d, want 0", ct.globalCount)
 	}
 	ct.mu.Unlock()
-	// Extra disconnect is a no-op (doesn't panic).
+	// Extra disconnect is a no-op.
 	ct.disconnect(ip)
 }
 
@@ -1881,9 +1863,7 @@ func TestConnTrackerConnectRateLimit(t *testing.T) {
 			t.Fatalf("warmup tryConnect %d: expected true", i)
 		}
 	}
-	// Free one slot so the perIP check won't be what rejects us.
-	ct.disconnect(ip)
-	// Rate-limit bucket is empty now; this should be the denial path.
+	// Free a slot so the next denial comes from the rate limiter.
 	if ct.tryConnect(ip) {
 		t.Fatal("expected false from rate-limit bucket, not per-IP cap")
 	}
@@ -1990,9 +1970,6 @@ func TestPosterUploadLimiterAdmissionPolicy(t *testing.T) {
 	})
 }
 
-// ======================================================================
-// clientIPResolver unit tests
-// ======================================================================
 
 func TestClientIPResolverTrustChains(t *testing.T) {
 	tests := []struct {
@@ -2088,12 +2065,8 @@ func TestParseTrustedProxyCIDRs(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// generateLogID
-// ======================================================================
 
-// Random ids may legitimately repeat, so shape is the only contract here;
-// collision retry is covered deterministically by
+// Random IDs may repeat; this test checks shape. Collision retry is covered by
 // TestLogStorePersistsAcrossRestartAndAvoidsIDCollisions.
 func TestGenerateLogIDShape(t *testing.T) {
 	for range 200 {
@@ -2109,9 +2082,6 @@ func TestGenerateLogIDShape(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// handleWS — create case
-// ======================================================================
 
 func TestCreateSucceeds(t *testing.T) {
 	h := newRelayHarness(t)
@@ -2144,7 +2114,7 @@ func TestCreateDuplicateReturnsRoomExists(t *testing.T) {
 	c1.send(clientMsg{Type: "create", SessionID: "SAME", PeerID: "host-1"})
 	c1.expect("created")
 
-	// Different IP to avoid the per-IP rooms quota interfering.
+	// Use a different IP so the rooms quota does not interfere.
 	c2 := h.dial(t, "1.1.1.5")
 	c2.send(clientMsg{Type: "create", SessionID: "SAME", PeerID: "host-2"})
 	c2.expectError("room_exists")
@@ -2308,8 +2278,7 @@ func TestCreateReclaimsAbandonedEmptyRoom(t *testing.T) {
 		t.Fatal("abandoned room identity survived the reclaim")
 	}
 
-	// The previous owner's capability died with the room it belonged to, and
-	// the live replacement is not reclaimable by anyone, owner included.
+	// The former capability cannot reclaim the live replacement.
 	former := h.dial(t, "1.1.1.60")
 	former.send(clientMsg{
 		Type:            relayTypeCreate,
@@ -2321,9 +2290,7 @@ func TestCreateReclaimsAbandonedEmptyRoom(t *testing.T) {
 	former.expectError(relayErrorRoomExists)
 }
 
-// The recent-rooms flow: a host restarts its app, so it presents a fresh
-// reconnect capability for a code the relay still holds. The abandoned code
-// must come back as a hosted room instead of a ghost room with no host.
+// A restarted host presents a fresh capability for an abandoned room code.
 func TestAbandonedCodeIsRecreatableByARestartedHost(t *testing.T) {
 	h := newRelayHarness(t)
 	firstToken, _ := mustReconnectToken(t)
@@ -2339,8 +2306,7 @@ func TestAbandonedCodeIsRecreatableByARestartedHost(t *testing.T) {
 	host.conn.Close()
 	h.waitRoomPeers(t, "REUSE", 0)
 
-	// A restarted app mints a new capability, so it cannot prove the previous
-	// ownership even when it reuses its own peer ID.
+	// A fresh capability cannot prove previous ownership, even with the same peer ID.
 	restartToken, _ := mustReconnectToken(t)
 	restarted := h.dial(t, "6.4.0.2")
 	restarted.send(clientMsg{
@@ -2423,7 +2389,7 @@ func TestCreateHitsRoomsPerIPLimit(t *testing.T) {
 		c.send(clientMsg{Type: "create", SessionID: fmt.Sprintf("R%d", i), PeerID: "host"})
 		c.expect("created")
 	}
-	// 4th create from same IP exceeds the quota.
+	// The fourth room from this IP exceeds the quota.
 	c := h.dial(t, ip)
 	c.send(clientMsg{Type: "create", SessionID: "ROVERFLOW", PeerID: "host"})
 	c.expectError("rate_limited")
@@ -2782,9 +2748,6 @@ func TestConnectionCannotRetainMultipleRoomMemberships(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// handleWS — join case
-// ======================================================================
 
 func TestJoinSucceedsAndBroadcastsPeerJoined(t *testing.T) {
 	h := newRelayHarness(t)
@@ -3345,9 +3308,6 @@ func TestJoinAdmissionIsAtomicWithReservedRoomCreate(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// handleWS — broadcast / sendTo
-// ======================================================================
 
 func TestBroadcastDeliversToOthersNotSender(t *testing.T) {
 	h := newRelayHarness(t)
@@ -3381,7 +3341,7 @@ func TestBroadcastDeliversToOthersNotSender(t *testing.T) {
 		t.Errorf("g2 From=%q want G1", g2Msg.From)
 	}
 
-	// Sender should not receive its own broadcast.
+	// Broadcasts exclude the sender.
 	g1.recvNothing(200 * time.Millisecond)
 }
 
@@ -3490,9 +3450,6 @@ func TestSendToNotInRoomRejected(t *testing.T) {
 	c.expectError("not_in_room")
 }
 
-// ======================================================================
-// handleWS — ping / misc / rate limits
-// ======================================================================
 
 func TestPingReturnsPong(t *testing.T) {
 	h := newRelayHarness(t)
@@ -3521,7 +3478,7 @@ func TestPerConnectionMessageRateLimit(t *testing.T) {
 	c.send(clientMsg{Type: "create", SessionID: "RL", PeerID: "H"})
 	c.expect("created")
 
-	// The per-connection bucket is rateBurst=30. After ~30 pings we start seeing rate_limited.
+	// Exceed the per-connection bucket and observe rate limiting.
 	sawRateLimit := false
 	for i := 0; i < rateBurst+10; i++ {
 		c.send(clientMsg{Type: "ping"})
@@ -3538,9 +3495,6 @@ func TestPerConnectionMessageRateLimit(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// handleWS — disconnect lifecycle
-// ======================================================================
 
 func TestDisconnectBroadcastsPeerLeft(t *testing.T) {
 	h := newRelayHarness(t)
@@ -5364,9 +5318,7 @@ func TestHostEndDeliversEndedAfterConcurrentGuestTraffic(t *testing.T) {
 		t.Fatal("ending room remained discoverable before terminal delivery")
 	}
 
-	// WebSocket frames are processed in order. Receiving pong proves the
-	// preceding membership-sensitive traffic was handled while ended delivery
-	// was blocked, without closing the guest as a stale client.
+	// Ordered frames prove membership traffic completed while ended delivery waited.
 	guest.send(clientMsg{
 		Type:    relayTypeBroadcast,
 		Payload: json.RawMessage(`{"during":"end"}`),
@@ -5543,9 +5495,6 @@ func TestCleanupDisconnectsPeersBeforeRemovingExpiredOccupiedRoom(t *testing.T) 
 	}
 }
 
-// ======================================================================
-// Logs endpoints
-// ======================================================================
 
 func postLog(t *testing.T, baseURL, ip string, body []byte) *http.Response {
 	t.Helper()
@@ -5579,8 +5528,6 @@ func getLog(t *testing.T, baseURL, ip, id string) *http.Response {
 	return resp
 }
 
-// postLogAndGetID uploads a log and returns the generated id, asserting the
-// POST succeeded.
 func postLogAndGetID(t *testing.T, baseURL, ip string, body []byte) string {
 	t.Helper()
 	resp := postLog(t, baseURL, ip, body)
@@ -6082,7 +6029,7 @@ func TestLogsUploadDoesNotWriteCapabilityToOperationalLog(t *testing.T) {
 func TestLogStoreRetiresLegacyCapabilitiesOnStartup(t *testing.T) {
 	dir := t.TempDir()
 	now := time.Now().Add(-time.Minute)
-	legacyID := strings.Repeat("a", 25) // capability shape used before ids went back to logIDLength
+	legacyID := strings.Repeat("a", 25) // legacy capability length
 	currentID := strings.Repeat("a", logIDLength)
 	legacyPath := filepath.Join(dir, legacyID+".log")
 	currentPath := filepath.Join(dir, currentID+".log")
@@ -6365,7 +6312,6 @@ func TestLogsGetExpiredIs404(t *testing.T) {
 	h := newRelayHarness(t)
 	id := postLogAndGetID(t, h.baseURL, "7.3.0.1", []byte("temp"))
 
-	// Poison the entry's ExpiresAt into the past.
 	h.srv.logs.mu.Lock()
 	entry := h.srv.logs.entries[id]
 	entry.ExpiresAt = time.Now().Add(-time.Minute)
@@ -6394,9 +6340,6 @@ func TestLogsMethodNotAllowed(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// Poster endpoints
-// ======================================================================
 
 var minimalPNG = []byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02, 0x03}
 
@@ -7687,9 +7630,6 @@ func TestRemovalFailureLogDoesNotExposeCapabilityPath(t *testing.T) {
 	}
 }
 
-// ======================================================================
-// End-to-end: rooms survive a process restart
-// ======================================================================
 
 func TestSnapshotSurvivesRestartWithHostAuthority(t *testing.T) {
 	stateFile := filepath.Join(t.TempDir(), "rooms.json")

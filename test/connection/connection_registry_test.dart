@@ -194,10 +194,8 @@ void main() {
     test('setDefault flips the flag and clears it on others', () async {
       await registry.upsert(_jellyfin(id: 'a'));
       await registry.upsert(_jellyfin(id: 'b'));
-      // First is default by default; explicitly switch to b.
       await registry.setDefault('b');
       expect(await _defaultConnectionId(db), 'b');
-      // Switch back to a.
       await registry.setDefault('a');
       expect(await _defaultConnectionId(db), 'a');
     });
@@ -205,11 +203,8 @@ void main() {
     test('remove deletes a row and re-elects a default when needed', () async {
       await registry.upsert(_jellyfin(id: 'a'));
       await registry.upsert(_jellyfin(id: 'b'));
-      // a is default (first one in).
       await registry.remove('a');
-      // b should now be the default.
       expect(await _defaultConnectionId(db), 'b');
-      // Removing the last clears the default cleanly.
       await registry.remove('b');
       expect(await _defaultConnectionId(db), isNull);
     });
@@ -222,11 +217,9 @@ void main() {
       await registry.upsert(_jellyfin(id: 'b'));
       expect(await _defaultConnectionId(db), 'a');
 
-      // Re-upsert the default with refreshed credentials.
       await registry.upsert(_jellyfin(id: 'a', userName: 'refreshed'));
       expect(await _defaultConnectionId(db), 'a');
 
-      // And re-upserting a non-default row doesn't accidentally promote it.
       await registry.upsert(_jellyfin(id: 'b', userName: 'refreshed'));
       expect(await _defaultConnectionId(db), 'a');
     });

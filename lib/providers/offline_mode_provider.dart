@@ -175,7 +175,6 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     if (_isInitialized) return;
     _isInitialized = true;
 
-    // Check initial connectivity
     await _updateConnectionFlags();
 
     // Monitor connectivity changes — runZonedGuarded catches async errors from

@@ -11,39 +11,9 @@ import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/services/track_selection_service.dart';
 import '../test_helpers/media_items.dart';
 
-// NOTE on coverage scope:
-// `TrackSelectionService` is a large pure logic surface with one async
-// integration point (`selectAndApplyTracks`). We cover:
-//
-//   - `languageMatches` — direct, base-code, and ISO 639 variation matching.
-//   - `findBestTrackMatch` / `findBestSubtitleMatch` —
-//     id+title+language exact, title+language, language-only, and the
-//     "auto"/"no" filtering rule.
-//   - `findAudioTrackByProfile` — picks the first preferred-language match,
-//     respects autoSelectAudio, falls back across the language list.
-//   - `selectAudioTrack` — full priority cascade:
-//       Priority 1 (preferred from navigation),
-//       Priority 2 (Plex-selected via media info),
-//       Priority 3 (per-media metadata.audioLanguage),
-//       Priority 4 (user profile),
-//       Priority 5 (default / first track),
-//       and the empty-list null return.
-//   - `selectSubtitleTrack` — preferred=off, preferred=tracked,
-//       Plex-selected, Plex-server-explicit-no-subtitles, default fallback,
-//       and the off-by-default branch.
-//
-// Top-level subtitle matching helpers are exercised directly for complete,
-// partial, unique, ambiguous, and container catalogs. Audio helpers are
-// exercised through `selectAudioTrack` (Priority 2) and their focused
-// disambiguation tests below.
-//
-// What's NOT covered:
-//   - `selectAndApplyTracks` — depends on a real Player + SettingsService
-//     singleton + `player.streams.tracks`. Out of scope for a unit test.
-
-// ============================================================
-// Fixtures
-// ============================================================
+// Covers the pure language, track-matching, and audio/subtitle priority helpers,
+// including fallback and ambiguity rules. `selectAndApplyTracks` is excluded
+// because it requires a real Player and SettingsService singleton.
 
 MediaItem _meta({MediaBackend backend = MediaBackend.plex, String? audioLanguage, String? subtitleLanguage}) =>
     testMediaItem(
@@ -192,10 +162,6 @@ TrackSelectionService _svc({MediaItem? metadata, MediaServerUserProfile? profile
 }
 
 void main() {
-  // ============================================================
-  // languageMatches
-  // ============================================================
-
   group('languageMatches', () {
     final svc = _svc();
 
@@ -228,10 +194,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // findBestTrackMatch (via the audio/subtitle wrappers)
-  // ============================================================
-
   group('findBestSubtitleMatch', () {
     final svc = _svc();
 
@@ -250,10 +212,6 @@ void main() {
       expect(svc.findBestSubtitleMatch([_sub('1', lang: 'fre')], _sub('1', lang: 'eng')), isNull);
     });
   });
-
-  // ============================================================
-  // findAudioTrackByProfile
-  // ============================================================
 
   group('findAudioTrackByProfile', () {
     final svc = _svc();
@@ -291,10 +249,6 @@ void main() {
       expect(svc.findAudioTrackByProfile(const [], profile), isNull);
     });
   });
-
-  // ============================================================
-  // selectAudioTrack — the priority cascade
-  // ============================================================
 
   group('selectAudioTrack', () {
     test('returns null on empty available tracks', () {
@@ -461,10 +415,6 @@ void main() {
       expect(result!.priority, TrackSelectionPriority.defaultTrack);
     });
   });
-
-  // ============================================================
-  // selectSubtitleTrack
-  // ============================================================
 
   group('selectSubtitleTrack', () {
     test('Priority 1: preferred id="no" forces subtitles off', () {
@@ -1029,13 +979,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // findPlexTrackForMpvSubtitle / findPlexTrackForMpvAudio — same-language
-  // disambiguation (regression for #1443). The player reports null titles for
-  // MKV tracks that carry only a forced flag, so the forced flag (+2) and the
-  // ordinal tiebreaker (+1) must separate two tracks that share a language.
-  // ============================================================
-
   group('findPlexTrackForMpvSubtitle - forced disambiguation', () {
     // Disposition-flagged forced track: forced is set in the container, so both
     // Plex and the player carry forced=true on the forced track.
@@ -1102,12 +1045,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Cross-item intent matching (#1716/#1717): language and effective
-  // forced-ness are hard requirements — the intent's class is preserved or
-  // the match declines so the ladder falls to the server's own selection.
-  // ============================================================
-
   group('findSourceTrackForIntent', () {
     const forcedIntent = SubtitleIntent(language: 'fre', forced: true, title: 'FR Forced [ASS]', codec: 'ass');
     const fullIntent = SubtitleIntent(language: 'fre', forced: false, title: 'French', codec: 'srt');
@@ -1156,12 +1093,6 @@ void main() {
       const intent = SubtitleIntent(forced: false, title: 'French', codec: 'srt');
       expect(findSourceTrackForIntent(intent, [_plexSub(1, languageCode: 'fre')]), isNull);
     });
-
-    // ============================================================
-    // #1785 — missing language tags must not turn the carry off when a
-    // unique real title identifies the row; codec parity alone is never
-    // evidence, and ambiguity declines rather than guesses.
-    // ============================================================
 
     test('title-only intent matches the row with the same title when tags are missing (#1785)', () {
       const intent = SubtitleIntent(forced: false, title: 'Swedish', codec: 'subrip');

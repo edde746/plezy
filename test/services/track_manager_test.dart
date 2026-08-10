@@ -226,10 +226,6 @@ void main() {
   // could leak across tests — reset to be safe.
   setUp(resetSharedPreferencesForTest);
 
-  // ============================================================
-  // External subtitle cache
-  // ============================================================
-
   group('cacheExternalSubtitles', () {
     test('round-trips through the lastExternalSubtitles getter', () {
       final mgr = _make(player: _FakePlayer());
@@ -249,10 +245,6 @@ void main() {
       expect(mgr.lastExternalSubtitles, isEmpty);
     });
   });
-
-  // ============================================================
-  // addExternalSubtitles
-  // ============================================================
 
   group('addExternalSubtitles', () {
     test('returns immediately on empty input', () async {
@@ -375,10 +367,6 @@ void main() {
       expect(player.addSubtitleCalls.single.uri, 'https://example/ready.srt');
     });
   });
-
-  // ============================================================
-  // applyTrackSelectionWhenReady
-  // ============================================================
 
   group('applyTrackSelectionWhenReady', () {
     test('waits for player subtitle tracks when Plex metadata advertises subtitles', () async {
@@ -1262,10 +1250,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Explicit user selection vs. the pending automatic pass
-  // ============================================================
-
   group('explicit user selection', () {
     test('user audio choice survives the advertised-subtitle deadline', () async {
       await SettingsService.getInstance();
@@ -1570,10 +1554,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Track cycling early-return paths
-  // ============================================================
-
   group('cycleSubtitleTrack', () {
     test('no-op when no real subtitle tracks exist', () {
       // Tracks contains only auto/none (filtered out).
@@ -1653,10 +1633,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Misc handlers
-  // ============================================================
-
   group('onPlaybackRestart', () {
     test('no-op when not waiting for external subs', () {
       final mgr = _make(player: _FakePlayer());
@@ -1722,10 +1698,6 @@ void main() {
       expect(player.addSubtitleCalls, isEmpty);
     });
   });
-
-  // ============================================================
-  // onSubtitleTrackChanged — same-language stream mapping (#1443)
-  // ============================================================
 
   group('onSubtitleTrackChanged', () {
     // Reproduces the #1443 MKVToolNix screenshot: the "forced" French subtitle
@@ -1833,10 +1805,6 @@ void main() {
       expect(persistCalls, 1);
     });
   });
-
-  // ============================================================
-  // Lifecycle
-  // ============================================================
 
   group('dispose', () {
     test('is idempotent', () {

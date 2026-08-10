@@ -615,13 +615,11 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             mainAxisSize: .min,
             crossAxisAlignment: .start,
             children: [
-              // Poster with overlay
               if (posterHeight != null)
                 SizedBox(width: double.infinity, height: posterHeight, child: poster)
               else
                 Expanded(child: poster),
               const SizedBox(height: 2),
-              // Title (flattened — no inner Column)
               if (widget.onTap == null && item is MediaItem && _hasClickableTitle(item))
                 _ClickableText(
                   text: item.displayTitle,
@@ -637,7 +635,6 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                     style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
                   ),
                 ),
-              // Subtitle
               if (item is MediaPlaylist)
                 _MediaCardHelpers.buildPlaylistMeta(context, item)
               else if (item is MediaItem)
@@ -1131,7 +1128,6 @@ class _MediaCardHelpers {
       }
     }
 
-    // For collections, show item count
     if (mi.kind == MediaKind.collection) {
       final count = mi.childCount ?? mi.leafCount;
       if (count != null && count > 0) {
@@ -1146,14 +1142,12 @@ class _MediaCardHelpers {
       }
     }
 
-    // For albums, show the album artist
     if (mi.kind == MediaKind.album && mi.albumArtistTitle != null) {
       return ExcludeSemantics(
         child: Text(mi.albumArtistTitle!, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),
       );
     }
 
-    // For tracks, show "Artist • duration"
     if (mi.kind == MediaKind.track) {
       final parts = [?mi.trackArtistTitle, if (mi.durationMs case final durationMs?) formatDurationTextual(durationMs)];
       if (parts.isNotEmpty) {
@@ -1163,7 +1157,6 @@ class _MediaCardHelpers {
       }
     }
 
-    // For episodes, show "S# · Episode Title" with clickable season link
     if (mi.isEpisode && mi.parentIndex != null) {
       if (enableDetailLinks && mi.parentId != null) {
         return _buildEpisodeSubtitleRow(
@@ -1185,7 +1178,6 @@ class _MediaCardHelpers {
       );
     }
 
-    // For other media types, show subtitle/parent/year
     if (mi.displaySubtitle != null) {
       return ExcludeSemantics(
         child: Text(mi.displaySubtitle!, maxLines: 1, overflow: .ellipsis, style: subtitleStyle),

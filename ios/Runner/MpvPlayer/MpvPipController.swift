@@ -39,19 +39,13 @@ import UIKit
 
   /// Delegate to notify the plugin of PiP lifecycle events
   protocol MpvPipDelegate: AnyObject {
-    /// Called when PiP is about to start (system or app-initiated)
     func pipWillStart()
     func pipDidStart()
-    /// Called when PiP stops. `restored` is true if the user pressed maximize (restore UI).
     func pipDidStop(restored: Bool)
     func pipDidFailToStart(error: Error?)
-    /// Forward play/pause commands from PiP overlay to mpv
     func pipSetPlaying(_ playing: Bool)
-    /// Forward skip forward/backward commands from PiP overlay to mpv
     func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void)
-    /// Query whether mpv is currently playing
     var isPipPlaying: Bool { get }
-    /// Get total duration in seconds
     var pipDuration: Double { get }
   }
   protocol MpvPictureInPictureControlling: AnyObject {
@@ -151,7 +145,6 @@ import UIKit
       createPipController()
     }
 
-    /// Helper that conforms to the iOS 15+ delegate protocols
     private var delegateHelper: AnyObject?
 
     private func createPipController() {

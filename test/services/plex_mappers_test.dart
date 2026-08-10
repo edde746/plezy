@@ -299,11 +299,9 @@ void main() {
       expect(item.roles![0].thumbPath, '/library/metadata/role/1/thumb');
       expect(item.roles![1].thumbPath, isNull);
 
-      // Library identification.
       expect(item.libraryId, '1');
       expect(item.libraryTitle, 'Movies');
 
-      // Server-tagging.
       expect(item.serverId, _serverId);
       expect(item.serverName, _serverName);
     });

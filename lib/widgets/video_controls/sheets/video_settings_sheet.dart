@@ -770,7 +770,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           },
         ),
 
-        // Audio Sync
         _SettingsMenuItem(
           icon: Symbols.sync_rounded,
           title: t.videoSettings.audioSync,
@@ -779,7 +778,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onTap: () => _navigateTo(_SettingsView.audioSync),
         ),
 
-        // Subtitle Sync
         _SettingsMenuItem(
           icon: Symbols.subtitles_rounded,
           title: t.videoSettings.subtitleSync,
@@ -788,7 +786,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onTap: () => _navigateTo(_SettingsView.subtitleSync),
         ),
 
-        // HDR Toggle
         if (_supportsHdrControl)
           _SettingsToggleItem(
             pref: SettingsService.enableHDR,
@@ -808,14 +805,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             onTap: () => _navigateTo(_SettingsView.hdrToneMapping),
           ),
 
-        // Auto-Play Next Episode Toggle
         _SettingsToggleItem(
           pref: SettingsService.autoPlayNextEpisode,
           icon: Symbols.skip_next_rounded,
           title: t.videoControls.autoPlayNext,
         ),
 
-        // Audio Output Device (Desktop only)
         if (isDesktop)
           StreamBuilder<AudioDevice>(
             stream: widget.player.streams.audioDevice,
@@ -845,7 +840,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         // "not Dolby" when the system reports notApplicable.
         if (PlatformDetector.isAppleTV()) _AudioRenderingModeItem(player: widget.player),
 
-        // Audio Normalization
         _SettingsToggleItem(
           pref: SettingsService.audioNormalization,
           icon: Symbols.graphic_eq_rounded,
@@ -853,7 +847,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onAfterWrite: widget.player.setAudioNormalization,
         ),
 
-        // Stereo Downmix
         _SettingsToggleItem(
           pref: SettingsService.audioDownmix,
           icon: Symbols.headphones_rounded,

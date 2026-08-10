@@ -14,14 +14,6 @@ import (
 	"time"
 )
 
-// --- Artifact store ---
-//
-// Uploaded logs and posters are the same on-disk artifact store: a flat
-// directory of `<id><ext>` files whose mtime carries the creation time, written
-// through a temp file, capped by a quota and swept for expiry. Files that
-// cannot be deleted become pending debt so a failed removal never silently
-// frees quota. artifactStore implements all of that once; the two flavours
-// differ only in the policy fields below.
 
 type artifactRemovalError struct {
 	err error
@@ -117,8 +109,8 @@ func validID(id string, length int) bool {
 	return true
 }
 
-// pendingRemoval is an artifact file that could not be deleted yet. Its size is
-// unknown when the file could not be stat'ed or is not a regular file.
+// pendingRemoval tracks an artifact that could not be deleted. Size is unknown
+// when stat fails or the path is not a regular file.
 type pendingRemoval struct {
 	size      int64
 	sizeKnown bool
@@ -140,27 +132,22 @@ type artifactStore struct {
 	maxAge          time.Duration
 	removeFile      func(string) error
 
-	// Policy. generateID is a field so tests can force ID collisions.
+	// Policy hooks and quota behavior.
 	generateID     func() string
 	idFromFilename func(filename string) (string, bool)
-	// acceptLoaded reports whether a file found on disk is a usable artifact
-	// and returns the content type recorded for it.
+	// acceptLoaded returns the content type for a usable on-disk artifact.
 	acceptLoaded func(filename string, size int64) (string, bool)
-	// limit caps accountedLocked, measured in the units cost returns:
-	// one per artifact for logs, bytes for posters.
+	// limit uses cost units: one per log, bytes per poster.
 	limit       int64
 	cost        func(size int64) int64
 	pendingCost func(pending pendingRemoval) int64
-	// evictToFit admits a new artifact by evicting the oldest live ones;
-	// stores that leave it false reject the upload with errFull instead.
+	// evictToFit evicts oldest entries instead of rejecting when full.
 	evictToFit bool
-	// retryKnownDebtOnPut retries only debt whose size is accounted, leaving
-	// unknown debt to periodic cleanup.
+	// retryKnownDebtOnPut retries only size-accounted pending removals.
 	retryKnownDebtOnPut bool
 	errFull             error
 
-	// Pending removals whose cost is not accounted (pendingCost returns 0) are
-	// tracked only by their pendingRemovals entry; no separate counter exists.
+	// Unaccounted pending removals are tracked only in pendingRemovals.
 	used        int64 // accounted cost of live entries
 	pendingDebt int64 // accounted cost of pending removals
 	startupErr  error
@@ -170,10 +157,10 @@ type artifactStore struct {
 func (as *artifactStore) filePath(filename string) string {
 	return filepath.Join(as.dir, filename)
 }
-
 func (as *artifactStore) accountedLocked() int64 {
 	return as.used + as.pendingDebt
 }
+
 
 func (as *artifactStore) loadExisting(now time.Time) error {
 	as.mu.Lock()
@@ -230,7 +217,7 @@ func (as *artifactStore) loadExisting(now time.Time) error {
 	return removalErr
 }
 
-// put writes data as `<id><ext>` once the quota allows it.
+// put writes data to a quota-approved `<id><ext>` file.
 func (as *artifactStore) put(data []byte, ext, contentType string, now time.Time) (string, artifactEntry, error) {
 	as.mu.Lock()
 	defer as.mu.Unlock()
@@ -287,9 +274,7 @@ func (as *artifactStore) put(data []byte, ext, contentType string, now time.Time
 	return id, entry, nil
 }
 
-// lookupEntry returns the live entry for id, dropping it when it has expired.
-// match, when set, rejects entries the caller did not ask for before expiry is
-// considered, so a mismatched request never triggers a removal.
+// lookupEntry returns a live matching entry, deleting it if expired.
 func (as *artifactStore) lookupEntry(
 	id string,
 	now time.Time,
@@ -363,8 +348,8 @@ func (as *artifactStore) deleteEntryLocked(id string) error {
 	return nil
 }
 
-// removeUntrackedLocked deletes a file the index does not own, recording it as
-// pending debt when the removal fails.
+// removeUntrackedLocked deletes an unindexed file and records failed removal
+// as pending debt.
 func (as *artifactStore) removeUntrackedLocked(filename string, size int64, sizeKnown bool) error {
 	if err := removeArtifact(as.removeFile, as.dir, as.filePath(filename)); err != nil {
 		as.addPendingLocked(filename, size, sizeKnown)

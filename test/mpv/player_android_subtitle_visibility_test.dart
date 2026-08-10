@@ -137,7 +137,6 @@ void main() {
       ]);
 
       await player.selectSubtitleTrack(const SubtitleTrack(id: '3', language: 'swe'));
-      // A redundant show is a no-op rather than a replayed selection.
       await player.setProperty('sub-visibility', 'yes');
 
       expect(harness.subtitleSelections, ['3']);

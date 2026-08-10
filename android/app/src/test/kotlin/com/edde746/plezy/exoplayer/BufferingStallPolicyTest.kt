@@ -28,7 +28,6 @@ class BufferingStallPolicyTest {
     loading = loading
   )
 
-  // The loader's own state, for the case media3 never answers
 
   @Test
   fun aLoaderThatStoppedAskingForDataCountsAsEnoughBuffer() {
@@ -51,7 +50,6 @@ class BufferingStallPolicyTest {
     assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = 2_000L, loading = false, loadControlReady = false))
   }
 
-  // The load control's own verdict
 
   @Test
   fun aByteCappedBufferBelowTheDurationBarIsStillIndicted() {
@@ -83,7 +81,6 @@ class BufferingStallPolicyTest {
     )
   }
 
-  // Playback speed
 
   @Test
   fun aFastForwardNeedsProportionallyMoreMediaBeforeItIsIndicted() {
@@ -107,7 +104,6 @@ class BufferingStallPolicyTest {
     assertEquals(Verdict.STALLED, evaluate(playbackSpeed = -1f))
   }
 
-  // Progress
 
   @Test
   fun advancingPositionIsHealthy() {
@@ -138,7 +134,6 @@ class BufferingStallPolicyTest {
     assertEquals(Verdict.STALLED, evaluate(currentPositionMs = position - 5_000))
   }
 
-  // Timeout
 
   @Test
   fun frozenPositionWaitsOutTheTimeout() {
@@ -151,7 +146,6 @@ class BufferingStallPolicyTest {
     assertEquals(Verdict.STALLED, evaluate())
   }
 
-  // Starvation — the loader's problem, not the renderer's
 
   @Test
   fun emptyBufferIsStarved() {
@@ -203,7 +197,6 @@ class BufferingStallPolicyTest {
     )
   }
 
-  // Stall clock ownership
 
   @Test
   fun starvationAndProgressBothRestartTheStallClock() {

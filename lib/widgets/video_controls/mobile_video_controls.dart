@@ -354,7 +354,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
           mainAxisAlignment: .center,
           children: [
             if (!widget.isLive) ...[
-              // Previous episode button (greyed out when unavailable)
               CircularControlButton(
                 semanticLabel: t.videoControls.previousButton,
                 icon: Symbols.skip_previous_rounded,
@@ -378,7 +377,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
             ),
             if (!widget.isLive) ...[
               const SizedBox(width: 24),
-              // Next episode button (greyed out when unavailable)
               CircularControlButton(
                 semanticLabel: t.videoControls.nextButton,
                 icon: Symbols.skip_next_rounded,

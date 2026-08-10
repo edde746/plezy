@@ -104,17 +104,8 @@ class _LoopbackJellyfinServer {
   }
 }
 
-// Coverage includes status and lifecycle changes, endpoint exhaustion,
-// in-place and fresh scoped Plex profile binding, endpoint persistence and
-// promotion ownership, connectivity monitoring/debounce teardown, Jellyfin
-// reuse/update, and selected registered-client health outcomes.
-
 void main() {
   setUp(resetSharedPreferencesForTest);
-
-  // ============================================================
-  // Initial state
-  // ============================================================
 
   group('initial state', () {
     test('a freshly constructed manager has no servers, clients, or status', () {
@@ -135,10 +126,6 @@ void main() {
       expect(m.isServerOnline(ServerId('nope')), isFalse);
     });
   });
-
-  // ============================================================
-  // updateServerStatus + status stream
-  // ============================================================
 
   group('updateServerStatus + statusStream', () {
     test('emits a snapshot when status flips for a tracked server', () async {
@@ -1436,10 +1423,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // addJellyfinConnection reuse
-  // ============================================================
-
   group('addJellyfinConnection reuse', () {
     // The reuse branch is what keeps a passive rebind (re-adding the same
     // persisted connection) from tearing down a live client and aborting its
@@ -1543,10 +1526,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // removeServer
-  // ============================================================
-
   group('removeServer', () {
     test('removes a tracked server\'s status entry and emits a snapshot', () async {
       final m = MultiServerManager();
@@ -1602,10 +1581,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // disconnectAll
-  // ============================================================
-
   group('disconnectAll', () {
     test('clears all status and emits an empty snapshot', () async {
       final m = MultiServerManager();
@@ -1641,10 +1616,6 @@ void main() {
       expect(m.getJellyfinClientByCompoundId('jf-machine/user-b'), isNull);
     });
   });
-
-  // ============================================================
-  // dispose
-  // ============================================================
 
   group('dispose', () {
     test('disposing without connectivity monitoring does not throw', () {

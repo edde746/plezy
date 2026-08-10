@@ -1,15 +1,8 @@
 #!/usr/bin/env bash
-# Workflow and script regression guards.
-#
-# Single source of truth for the guard roster, shared by the "Verify workflow
-# and script guards" step in .github/workflows/ci.yml and section 4 of
-# scripts/ci_checks.sh. The checkers are named explicitly because a few of them
-# belong to other jobs (check_bun_audit.py needs Bun, check_codegen.py runs via
-# codegen.sh, and linux/packaging/check-bundle-host-deps.py and
-# check-package-deps.py need a built bundle and built packages, so both run in
-# the linux-packages job and again in the release build), but their regression
-# tests are discovered by glob so a newly added scripts/test_*.py is picked up
-# automatically instead of having to be remembered in two places.
+# Single source of truth for workflow/script guards, shared by CI and
+# scripts/ci_checks.sh. Regression tests use a glob so new test_checkers are
+# picked up automatically; checkers requiring Bun or built packages run in
+# their owning jobs as well.
 set -euo pipefail
 shopt -s nullglob
 

@@ -24,11 +24,9 @@ PROGUARD_RULES = Path("android/app/proguard-rules.pro")
 APP_JAVA_ROOT = Path("android/app/src/main/java")
 CPP_ROOT = Path("android/app/src/main/cpp")
 NATIVE_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp"}
-# Namespaces the app borrows from a dependency purely so that dependency can reflect on
-# them. A class under one of these has no direct caller by construction.
+# Dependency namespaces reached only through reflection have no direct callers.
 REFLECTED_NAMESPACES = ("androidx/media3/",)
-# Framework types live on the bootclasspath, never in the app's dex, so R8 cannot rename
-# them and they need no keep.
+# Bootclasspath framework types are not in the app dex and need no keep rule.
 PLATFORM_PREFIXES = ("java.", "javax.", "android.")
 
 _STRING_LITERAL = re.compile(r'"((?:[^"\\]|\\.)*)"')
@@ -42,9 +40,7 @@ _MEMBER_LOOKUP = re.compile(
     + r"\s*\)"
 )
 _DESCRIPTOR_CLASS = re.compile(r"L([\w/$]+);")
-# Only -keep and -keepclasseswithmembers protect a class from both shrinking and
-# renaming. -keepclassmembers/-keepclassmembernames cover members alone, and the
-# -keepnames family allows shrinking, so none of them save a class nothing references.
+# Only -keep variants without allowshrinking/allowobfuscation keep classes and names.
 _KEEP = re.compile(
     r"^-(?:keep|keepclasseswithmembers)((?:\s*,\s*\w+)*)\s+(?:class|interface|enum)\s+(\S+)"
     r"(?:\s*\{(.*?)\})?",
@@ -62,7 +58,7 @@ class Keep:
         self.members = members
         self._regex = re.compile(
             "".join(
-                # ** spans package separators, * does not, ? is a single character.
+                # ** crosses package separators; * and ? match within a segment.
                 {"**": r".*", "*": r"[^.]*", "?": r"."}.get(token, re.escape(token))
                 for token in re.findall(r"\*\*|[*?]|[^*?]+", pattern)
             )

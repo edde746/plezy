@@ -24,7 +24,6 @@ class EndOfStreamPolicyTest {
     frameStallMs = frameStallMs
   )
 
-  // isFinishedFile
 
   @Test
   fun stuckPastDurationWithNoPictureIsTheEndOfTheFile() {
@@ -65,7 +64,6 @@ class EndOfStreamPolicyTest {
     assertFalse(isFinishedFile(hasPlaybackOutput = false))
   }
 
-  // fallbackStartPositionMs
 
   @Test
   fun fallbackResumesStrictlyInsideTheMedia() {

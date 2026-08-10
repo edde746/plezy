@@ -271,13 +271,11 @@ jobs:
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
-          # Create temporary keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-          # Import certificate to keychain
           CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
           echo "$MACOS_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
           security import $CERTIFICATE_PATH -k $KEYCHAIN_PATH -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign

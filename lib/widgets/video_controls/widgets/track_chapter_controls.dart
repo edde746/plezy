@@ -69,7 +69,6 @@ class TrackChapterControls extends StatelessWidget {
 
     final key = event.logicalKey;
 
-    // LEFT arrow - move to previous button or exit to volume
     if (key == LogicalKeyboardKey.arrowLeft) {
       if (index > 0 && focusNodes != null && focusNodes!.length > index - 1) {
         focusNodes![index - 1].requestFocus();
@@ -81,23 +80,19 @@ class TrackChapterControls extends StatelessWidget {
       return KeyEventResult.handled;
     }
 
-    // RIGHT arrow - move to next button
     if (key == LogicalKeyboardKey.arrowRight) {
       if (index < totalButtons - 1 && focusNodes != null && focusNodes!.length > index + 1) {
         focusNodes![index + 1].requestFocus();
         return KeyEventResult.handled;
       }
-      // At end, consume to prevent bubbling
       return KeyEventResult.handled;
     }
 
-    // UP arrow - navigate up (e.g., to timeline)
     if (key == LogicalKeyboardKey.arrowUp) {
       onNavigateUp?.call();
       return KeyEventResult.handled;
     }
 
-    // DOWN arrow - navigate down (e.g., to content strip)
     if (key == LogicalKeyboardKey.arrowDown) {
       onNavigateDown?.call();
       return KeyEventResult.handled;
@@ -146,11 +141,9 @@ class TrackChapterControls extends StatelessWidget {
         final isMobile = PlatformDetector.isMobile(context);
         final isDesktop = PlatformDetector.isDesktopOS();
 
-        // Build list of buttons dynamically to track indices
         final buttons = <Widget>[];
         int buttonIndex = 0;
 
-        // Settings button (always shown)
         buttons.add(
           ListenableBuilder(
             listenable: SleepTimerService(),
@@ -193,7 +186,6 @@ class TrackChapterControls extends StatelessWidget {
         );
         buttonIndex++;
 
-        // Combined audio & subtitles button
         {
           final currentIndex = buttonIndex;
           buttons.add(
@@ -232,7 +224,6 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
-        // Chapters button (hidden on mobile when content strip is available)
         if (chapters.isNotEmpty && !hideChaptersAndQueue) {
           final currentIndex = buttonIndex;
           buttons.add(
@@ -264,7 +255,6 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
-        // Queue button (hidden on mobile when content strip is available)
         if (state.showQueueButton && state.onQueueItemSelected != null && !hideChaptersAndQueue) {
           final currentIndex = buttonIndex;
           buttons.add(
@@ -286,7 +276,6 @@ class TrackChapterControls extends StatelessWidget {
           buttonIndex++;
         }
 
-        // Picture-in-Picture mode
         if (state.onTogglePIPMode != null) {
           final currentIndex = buttonIndex;
           buttons.add(

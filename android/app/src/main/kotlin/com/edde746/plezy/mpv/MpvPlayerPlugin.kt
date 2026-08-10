@@ -74,7 +74,6 @@ open class MpvPlayerPlugin(
   private var initAttemptCounter = 0
   private var activeInitAttempt: Int? = null
 
-  // FlutterPlugin
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     applicationContext = binding.applicationContext
@@ -104,7 +103,6 @@ open class MpvPlayerPlugin(
     takeCoreForTeardown()?.dispose()
   }
 
-  // ActivityAware
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     activity = binding.activity
@@ -141,7 +139,6 @@ open class MpvPlayerPlugin(
     Log.d(tag, "Detached from activity for config changes")
   }
 
-  // EventChannel.StreamHandler
 
   override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
     channels.listen(events)
@@ -151,7 +148,6 @@ open class MpvPlayerPlugin(
     channels.cancel()
   }
 
-  // MethodChannel.MethodCallHandler
 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {

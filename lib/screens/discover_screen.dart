@@ -103,18 +103,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final TvSpotlightController _spotlight = TvSpotlightController();
   bool _isTabVisible = true;
 
-  // Track initial load so we can focus hero when content first appears
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
 
-  // Hub navigation keys
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final _hubFocusMemory = HubFocusMemory();
 
-  // Hero and app bar focus
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
   final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
@@ -155,7 +152,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
   }
 
-  /// Get all hub states (continue watching + other hubs)
   List<GlobalKey<HubSectionState>> get _allHubKeys {
     final keys = <GlobalKey<HubSectionState>>[];
     if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
@@ -935,7 +931,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               if (_isLoading) LoadingIndicatorBox.sliver,
               if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
               if (!_isLoading && _errorMessage == null) ...[
-                // On Deck / Continue Watching
                 if (continueWatchingHub != null)
                   SliverToBoxAdapter(
                     child: HubSection(
@@ -1259,14 +1254,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
     );
 
-    // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
-    // Spoiler protection
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
 
-    // Build semantic label for hero item
     final heroLabel = isEpisode ? "${heroItem.grandparentTitle}, ${heroItem.title}" : heroItem.title;
 
     return Semantics(
@@ -1420,10 +1412,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             ),
                           ],
 
-                          // On small screens: show button before summary
                           if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
 
-                          // Summary with episode info (Apple TV style)
                           if (heroItem.summary != null && !shouldHideSpoiler) ...[
                             const SizedBox(height: 12),
                             RichText(
@@ -1468,7 +1458,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             ),
                           ],
 
-                          // On large screens: show button after summary
                           if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
                         ],
                       ),

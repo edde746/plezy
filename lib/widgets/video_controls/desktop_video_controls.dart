@@ -173,7 +173,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   bool get _canControl => _trackControlsState.canControl;
   bool get _isLive => _trackControlsState.isLive;
 
-  // Focus nodes for playback control buttons
   late final FocusNode _prevItemFocusNode;
   late final FocusNode _prevChapterFocusNode;
   late final FocusNode _skipBackFocusNode;
@@ -184,30 +183,23 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   late final FocusNode _goToLiveFocusNode;
   late final FocusNode _timelineFocusNode;
 
-  // Focus node for volume control
   late final FocusNode _volumeFocusNode;
 
-  // Focus nodes for track/chapter controls (max 8 buttons possible)
   late final List<FocusNode> _trackControlFocusNodes;
 
-  // List of button focus nodes for horizontal navigation
   late final List<FocusNode> _buttonFocusNodes;
 
-  // Progressive seek acceleration state
   LogicalKeyboardKey? _seekDirection; // Current direction being held
   int _seekRepeatCount = 0; // Consecutive key repeats for acceleration
 
-  // Preview thumbnail during sustained dpad/keyboard seeking
   bool _showKeyRepeatThumbnail = false;
   Timer? _keyRepeatThumbnailTimer;
   late final DebouncedSeekAccumulator _timelineSeek;
   static const _keyRepeatThumbnailTimeout = Duration(milliseconds: 400);
 
-  // Content strip state
   bool _contentStripVisible = false;
   final GlobalKey<ContentStripState> _contentStripKey = GlobalKey<ContentStripState>();
 
-  // Track which button was last focused (for returning from content strip)
   FocusNode? _lastFocusedButtonNode;
 
   /// Whether the content strip has any content to show
@@ -714,7 +706,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Column(
         children: [
-          // Row 1: Timeline (LiveTimelineBar for time-shifted live, VideoTimelineBar for VOD)
           if (_isLive && widget.captureBuffer != null) ...[
             LiveTimelineBar(
               player: widget.player,
@@ -748,14 +739,12 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               previewPosition: _timelineSeek.pendingPosition,
             ),
           ],
-          // Row 2: Playback controls and options
           Focus(
             onFocusChange: _onButtonRowFocusChange,
             skipTraversal: true,
             child: Row(
               children: [
                 if (!_isLive) ...[
-                  // Previous item
                   Opacity(
                     opacity: _canControl ? 1.0 : 0.5,
                     child: _buildFocusableButton(

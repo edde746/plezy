@@ -25,15 +25,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-/** SafUtilPlugin */
 class SafUtilPlugin :
   FlutterPlugin,
   MethodCallHandler,
   ActivityAware {
-  // / The MethodChannel that will the communication between Flutter and native Android
-  // /
-  // / This local reference serves to register the plugin with the Flutter Engine and unregister it
-  // / when the Flutter Engine is detached from the Activity
   private lateinit var channel: MethodChannel
 
   private lateinit var context: Context
@@ -138,10 +133,8 @@ class SafUtilPlugin :
               val lastModified = cursor.getLong(4)
               val documentUri = DocumentsContract.buildDocumentUriUsingTree(mUri, documentId)
 
-              // Determine if the file is a directory based on the MIME type
               val isDirectory = DocumentsContract.Document.MIME_TYPE_DIR == mimeType
 
-              // Create a dictionary (map) for each file with its details
               val fileInfo =
                 fileObjMap(
                   documentUri,
@@ -325,8 +318,7 @@ class SafUtilPlugin :
               if (findRes == null) {
                 val createRes = curDocument.createDirectory(curName)
                 if (createRes != null && createRes.name != curName) {
-                  // There are cases where the created directory has a different name due to concurrent operations.
-                  // In this case, we need to find the directory with the correct name again.
+                  // SAF may rename a concurrently created directory; resolve the requested name.
                   val findRes2 = findDirectChild(curDocument.uri, curName)
                   nextDocument =
                     if (findRes2 != null) {
@@ -504,7 +496,6 @@ class SafUtilPlugin :
             return
           }
 
-          // Store the result to return the URI later
           pendingResult = result
           pendingArguments = PendingDirArguments(writePermission, persistablePermission)
           val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
@@ -548,7 +539,6 @@ class SafUtilPlugin :
             return
           }
 
-          // Store the result to return the URI later
           pendingResult = result
           val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
           intent.addCategory(Intent.CATEGORY_OPENABLE)
@@ -772,7 +762,6 @@ class SafUtilPlugin :
     }
   }
 
-  // Handle folder/file/media picker results; unrelated request codes are not ours.
   private fun onActivityResult(
     requestCode: Int,
     resultCode: Int,

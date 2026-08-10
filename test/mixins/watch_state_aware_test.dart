@@ -158,7 +158,6 @@ void main() {
       WatchStateNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '42'));
       await tester.pump(Duration.zero);
 
-      // No second delivery — subscription cancelled.
       expect(state.events, hasLength(1));
     });
   });

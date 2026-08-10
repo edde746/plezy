@@ -37,7 +37,6 @@
 <svelte:window onclick={() => { linuxOpen = false; }} />
 
 <div class="download-buttons">
-  <!-- Primary row -->
   <div class="store-buttons">
     <a
       href={storeOptions.ios.url}
@@ -70,7 +69,6 @@
     </a>
   </div>
 
-  <!-- Desktop row -->
   <div class="desktop-buttons">
     <a
       href={MICROSOFT_STORE_URL}
@@ -90,7 +88,6 @@
       macOS
     </a>
 
-    <!-- Linux dropdown -->
     <div class="linux-control" use:hoverDisclosure>
       <button
         type="button"

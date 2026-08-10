@@ -54,10 +54,6 @@ void main() {
     },
   };
 
-  // ============================================================
-  // Singleton
-  // ============================================================
-
   group('singleton', () {
     test('initialize swaps the underlying database', () async {
       final newDb = AppDatabase.forTesting(NativeDatabase.memory());
@@ -112,10 +108,6 @@ void main() {
       expect(decoded['last']?.id, 'last');
     });
   });
-
-  // ============================================================
-  // get / put — cache hit and miss
-  // ============================================================
 
   group('get / put', () {
     test('miss returns null for an unknown key', () async {
@@ -196,10 +188,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // deleteForServer / deleteForItem / clearAll
-  // ============================================================
-
   group('deletion', () {
     test('deleteForServer wipes only the targeted serverId', () async {
       await cache.put(ServerId('srv-a'), '/library/metadata/1', mediaContainer(ratingKey: '1'));
@@ -246,10 +234,6 @@ void main() {
       expect(await cache.get(ServerId('srv-a'), '/library/metadata/2'), isNull);
     });
   });
-
-  // ============================================================
-  // Pinning
-  // ============================================================
 
   group('pinning', () {
     test('isPinned defaults to false for a freshly cached item', () async {
@@ -315,10 +299,6 @@ void main() {
       expect(keys, equals({'abc-123'}));
     });
   });
-
-  // ============================================================
-  // getMetadata / getAllPinnedMetadata
-  // ============================================================
 
   group('metadata extraction', () {
     test('getMetadata returns null when the key is not cached', () async {

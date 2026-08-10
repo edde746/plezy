@@ -24,7 +24,6 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
     }
 
     final currentTrack = widget.player.state.track.subtitle;
-    // Nothing to hide when no subtitle track is selected.
     if (currentTrack == null || currentTrack.id == SubtitleTrack.off.id) return;
 
     _setSubtitleVisibility(false);
@@ -51,7 +50,6 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
   }
 
   void _onSubtitleTrackChanged(SubtitleTrack track) {
-    // Reset visibility when user explicitly picks a new subtitle track
     if (track.id != 'no' && !_subtitlesVisible) {
       _setSubtitleVisibility(true);
     }

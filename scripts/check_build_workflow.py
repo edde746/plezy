@@ -15,9 +15,8 @@ FLUTTER_COMMIT = "559ffa3f75e7402d65a8def9c28389a9b2e6fe42"
 if len(sys.argv) > 2:
     raise SystemExit(f"Usage: {Path(sys.argv[0]).name} [workflow-path]")
 WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFLOW
-# The shared bootstrap both windows-arm jobs call, and the pins it must keep.
-# Resolved beside the workflow rather than from ROOT so that checking a fixture
-# tree exercises this rule instead of silently re-reading the real action.
+# Resolve the shared bootstrap beside the workflow so fixture checks use their
+# local action rather than the checkout's real action.
 SETUP_FLUTTER_GIT = WORKFLOW.parents[1] / "actions/setup-flutter-git/action.yml"
 text = WORKFLOW.read_text(encoding="utf-8")
 errors: list[str] = []
@@ -168,9 +167,7 @@ require(bool(setup_flutter_git), "missing .github/actions/setup-flutter-git/acti
 for expected in (
     f'$version = "{FLUTTER_VERSION}"',
     f'$expectedCommit = "{FLUTTER_COMMIT}"',
-    # Fetch the release tag rather than the bare commit: the commit is only
-    # reachable through the tag, and the tag is what makes the SDK report its
-    # own version. Both halves are then verified, so a moved tag fails the job.
+    # Fetch and verify the release tag so moved tags cannot change the SDK.
     'git -C $root fetch --depth 1 origin "refs/tags/${version}:refs/tags/${version}"',
     'git -C $root checkout --detach "refs/tags/$version"',
     "$actualCommit = git -C $root rev-parse HEAD",
@@ -336,10 +333,8 @@ require(
     "every Flutter SDK cache must define its trusted cache key",
 )
 
-# check_workflow_action_pins.py owns the SHA-pin rule for every workflow, this
-# one included; build.yml only adds the credential invariant on top, because it
-# is workflow_dispatch-only and so escapes the pull-request rule in
-# check_workflow_security.py.
+# Action-pin checks run elsewhere; this guard adds the checkout credential
+# invariant for the workflow-dispatch-only build.
 remote_actions = [
     reference.rpartition("@")[0]
     for _, reference in iter_uses_references(text)

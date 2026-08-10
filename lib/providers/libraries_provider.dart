@@ -303,10 +303,8 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       return libraries;
     }
 
-    // Create a map for quick lookup
     final libraryMap = {for (final lib in libraries) lib.globalKey: lib};
 
-    // Build ordered list based on saved order
     final orderedLibraries = <MediaLibrary>[];
     for (final key in savedOrder) {
       final lib = libraryMap.remove(key);
@@ -315,7 +313,6 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       }
     }
 
-    // Add any new libraries that weren't in the saved order
     orderedLibraries.addAll(libraryMap.values);
 
     return orderedLibraries;

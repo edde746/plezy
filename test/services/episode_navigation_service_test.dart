@@ -513,10 +513,6 @@ void main() {
     });
   });
 
-  // ===========================================================
-  // loadAdjacentEpisodes: shuffled same-series queue (#1466)
-  // ===========================================================
-
   group('loadAdjacentEpisodes with a shuffled same-series queue', () {
     // Mirrors JellyfinSequentialLauncher.launchShuffledShow: the full series
     // episode list, locally shuffled, published with contextKey == seriesId.

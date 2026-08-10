@@ -119,7 +119,6 @@ class MainActivity : FlutterActivity() {
     }
   }
 
-  // Auto PiP state
   private var autoPipReady = false
   private var autoPipWidth: Int = 16
   private var autoPipHeight: Int = 9

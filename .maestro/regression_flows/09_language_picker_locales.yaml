@@ -7,16 +7,9 @@ tags:
   - settings
   - i18n
 ---
-# Guards 7677d159 and 100d7729. AppLocale is switched over exhaustively in
-# appearance_settings_screen.dart, so a missing arm is a compile error, but a
-# locale whose JSON never reached the generator ships a picker entry that falls
-# back to English. Selecting Turkish and reading root-level navigation labels
-# proves the generated locale is wired end to end.
-#
-# This flow mutates a persisted pref, and the app language decides every
-# selector after the tap, so it starts from a cleared install rather than
-# ensure_onboarded: a run that dies mid-flow must not leave the next flow
-# hunting for English strings in a Turkish tree.
+# Guards 7677d159 and 100d7729: selecting Turkish and reading root navigation
+# labels proves the generated locale is wired end to end. Start clean because
+# the language preference persists and affects every later selector.
 - runFlow: ../subflows/onboard_jellyfin.yaml
 - runFlow: ../subflows/open_settings.yaml
 - tapOn: "(?s)^Appearance.*"
@@ -54,9 +47,7 @@ tags:
 - assertVisible: "Keşfet"
 - assertNotVisible: "(?s)^Libraries.*"
 - assertNotVisible: "Discover"
-# Walk back through the Turkish tree and restore English. The pref outlives a
-# plain launchApp, so leaving the device in Turkish would break every later
-# flow in the suite.
+# Restore English before leaving the device; the locale preference outlives launchApp.
 - repeat:
     times: 3
     while:

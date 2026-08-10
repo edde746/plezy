@@ -27,13 +27,8 @@ import '../test_helpers/playback_report_fakes.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
-// Direct `syncPendingItems` coverage exercises retry retention, Plex/Jellyfin
-// progress replay, profile interruption, and scoped Jellyfin routing. Direct
-// `syncWatchStatesFromServer` coverage exercises active-profile and
-// active-scope routing plus selected watched outcomes. Trigger coalescing and
-// throttle sequencing inside `_performBidirectionalSync`, direct cache-row and
-// refresh-callback assertions, and non-default watched-threshold sources remain
-// outside this suite.
+// Direct calls cover retry retention, progress replay, profile interruption, and
+// scoped routing; trigger coalescing and cache/refresh seams remain out of scope.
 
 /// Minimal [OfflineModeSource] that lets tests flip the offline flag and
 /// observe `addListener`/`removeListener` traffic via the protected
@@ -162,10 +157,6 @@ JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
 void main() {
   setUp(resetSharedPreferencesForTest);
 
-  // ============================================================
-  // Initial state
-  // ============================================================
-
   group('initial state', () {
     test('a freshly constructed service is not syncing and has no pending count', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
@@ -212,10 +203,6 @@ void main() {
       expect(svc.getWatchedThreshold(ServerId('unknown-server')), 0.9);
     });
   });
-
-  // ============================================================
-  // queueMarkWatched / queueMarkUnwatched
-  // ============================================================
 
   group('queueMarkWatched / queueMarkUnwatched', () {
     test('queueMarkWatched persists a "watched" action and bumps pending count', () async {
@@ -466,11 +453,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // queueProgressUpdate (also exercised so we can test the progress branches
-  // of getLocalWatchStatus / getLocalViewOffset).
-  // ============================================================
-
   group('syncPendingItems profile scoping', () {
     test('defers entirely when no profile is active', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
@@ -604,10 +586,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Superseded queued progress (#1812)
-  // ============================================================
-
   group('queued progress superseded by a watch-state write', () {
     MediaItem itemFor(String id) =>
         testMediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv');
@@ -709,10 +687,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // getLocalWatchStatus
-  // ============================================================
-
   group('getLocalWatchStatus', () {
     test('returns null when no local action exists', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
@@ -763,10 +737,6 @@ void main() {
       expect(await svc.getLocalWatchStatus('srv:2'), isTrue);
     });
   });
-
-  // ============================================================
-  // getLocalViewOffset
-  // ============================================================
 
   group('getLocalViewOffset', () {
     test('returns null when no local action exists', () async {
@@ -825,10 +795,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // getPendingSyncCount
-  // ============================================================
-
   group('getPendingSyncCount', () {
     test('counts every queued action (manual + progress)', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
@@ -859,10 +825,6 @@ void main() {
       expect(await svc.getPendingSyncCount(), 1);
     });
   });
-
-  // ============================================================
-  // getLocalWatchStatusesBatched
-  // ============================================================
 
   group('getLocalWatchStatusesBatched', () {
     test('empty input returns empty map without touching the DB', () async {
@@ -1488,10 +1450,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // clearAll
-  // ============================================================
-
   group('clearAll', () {
     test('removes every queued action and notifies listeners', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
@@ -1513,10 +1471,6 @@ void main() {
       expect(notifications, 1);
     });
   });
-
-  // ============================================================
-  // startConnectivityMonitoring + dispose
-  // ============================================================
 
   group('startConnectivityMonitoring + dispose', () {
     test('attaches a listener to the source', () {

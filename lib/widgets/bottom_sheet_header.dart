@@ -68,7 +68,6 @@ class BottomSheetHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final usesBackButton = leading == null && onBack != null;
 
-    // Determine the leading widget based on priority: leading > onBack > icon
     Widget? resolvedLeading;
     if (leading != null) {
       resolvedLeading = leading;

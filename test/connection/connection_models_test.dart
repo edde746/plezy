@@ -3,11 +3,8 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
 
-/// Backend-agnostic [Connection] sealed-class tests. The
-/// `connection_registry_test` already covers DB persistence; these focus on
-/// the model layer's `toConfigJson` / `fromConfigJson` round-trip and the
-/// derived `kind` / `backend` mappings — the bits the registry treats as a
-/// black box.
+/// Backend-agnostic [Connection] model tests pin config round-trips and derived
+/// kind/backend mappings; registry persistence is covered separately.
 void main() {
   group('ConnectionKind', () {
     test('id round-trips through fromId', () {

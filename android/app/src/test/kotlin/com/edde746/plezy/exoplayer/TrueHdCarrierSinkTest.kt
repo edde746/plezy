@@ -51,7 +51,6 @@ class TrueHdCarrierSinkTest {
     blocked: Boolean = false
   ) = TrueHdCarrierSink(normal, carrier, { routeAvailable }, { blocked })
 
-  // --- Selection ---
 
   /**
    * TrueHD is the carrier or it is decoded. Falling through to the normal sink would hand media3
@@ -154,7 +153,6 @@ class TrueHdCarrierSinkTest {
     assertEquals(0, listener.capabilityInvalidations)
   }
 
-  // --- Rate-family mismatch discovered mid-stream ---
 
   /**
    * Selection reads Format.sampleRate; the rate family is only certain once a major sync is parsed.
@@ -289,7 +287,6 @@ class TrueHdCarrierSinkTest {
     assertTrue(carrierSink.supportsFormat(ac3))
   }
 
-  // --- Back pressure ---
 
   /**
    * The regression this exists for: a delegate that refuses a burst part-way through a sample must
@@ -336,7 +333,6 @@ class TrueHdCarrierSinkTest {
     assertTrue(carrierSink.hasPendingData())
   }
 
-  // --- Routing of controls ---
 
   @Test
   fun persistentControlsReachBothDelegates() {

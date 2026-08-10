@@ -289,7 +289,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   final ScrollController _dialogScrollController = ScrollController();
   final ScrollController _sheetScrollController = ScrollController();
 
-  // Keyboard navigation: column 0 = row, 1 = visibility button, 2 = options button.
   @override
   List<MediaLibrary> get reorderItems => _tempLibraries;
 
@@ -468,16 +467,13 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
     final isHidden = hiddenLibraryKeys.contains(library.globalKey);
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Determine background color based on state
     Color? tileColor;
     if (isMoving) {
       tileColor = colorScheme.primaryContainer;
     } else if (isFocused && focusedColumn == 0) {
-      // Only highlight row when row itself is focused (column 0)
       tileColor = colorScheme.surfaceContainerHighest;
     }
 
-    // Button focus states
     final isVisibilityButtonFocused = isFocused && focusedColumn == 1;
     final isOptionsButtonFocused = isFocused && focusedColumn == 2;
 

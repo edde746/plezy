@@ -36,18 +36,14 @@ PUBSPEC = ROOT / "pubspec.yaml"
 WORKFLOW = ROOT / ".github/workflows/build.yml"
 MSIX_STEP = "Build Store package (MSIX)"
 BUNDLE = "plezy-windows.msixbundle"
-# The identity reserved in Partner Center. All three are pinned here because a
-# character of drift in any of them fails Store validation, and the first two
-# derive the package family name edde746.Plezy_13q3sv6jzathm that installed
-# copies are keyed by.
+# Partner Center reserves these identity values and derives the package family name.
 IDENTITY_NAME = "edde746.Plezy"
 PUBLISHER = "CN=AA9C53CB-AD3C-48DA-B3E3-D1E8986D4E25"
 PUBLISHER_DISPLAY_NAME = "edde746"
 PACKAGE_FAMILY_SUFFIX = "13q3sv6jzathm"
 FOUNDATION = "http://schemas.microsoft.com/appx/manifest/foundation/windows10"
 ASSET_REFERENCE = re.compile(r"assets\\([A-Za-z0-9._-]+\.png)")
-# Package's child order is fixed by the foundation schema. A manifest may use a
-# subset of these, but never a different order.
+# Package child order is fixed by the foundation schema.
 SCHEMA_ORDER = (
     "Identity",
     "PhoneIdentity",
@@ -68,12 +64,10 @@ REQUIRED_ELEMENTS = (
     "Applications",
 )
 REQUIRED_CAPABILITIES = ("runFullTrust", "internetClient", "privateNetworkClientServer")
-# Certification requires these three. The optional tile and splash assets are
-# only checked once referenced, since dropping them is a legitimate choice.
+# Certification requires these capabilities; optional assets are checked only when referenced.
 REQUIRED_ASSETS = ("StoreLogo.png", "Square150x150Logo.png", "Square44x44Logo.png")
 
-# Normalized so that every pattern below can anchor on \n and $ regardless of
-# whether this checkout stores the PowerShell scripts with CRLF endings.
+# Normalize line endings so subsequent patterns are portable.
 text = SCRIPT.read_text(encoding="utf-8").replace("\r\n", "\n")
 errors: list[str] = []
 
@@ -144,8 +138,7 @@ require(
 prelude = declarations()
 manifest_template = template()
 
-# build-installer.ps1 once carried one whole .iss per architecture shape and the
-# copies drifted apart. Anything that appears twice here has drifted too.
+# A single manifest template prevents architecture copies from drifting.
 for once in (
     r'^    return @"$',
     r"^<Package ",
@@ -158,9 +151,7 @@ for once in (
         f"{once} must match exactly one line; a second copy of the template will drift",
     )
 
-# The two values the caller supplies, plus every identity string the function
-# declares. Together they must cover the whole template, so an interpolation
-# added there has to be declared here before it can pass.
+# Caller parameters and declared identity values must cover every interpolation.
 for parameter in ("MsixVersion", "Architecture"):
     require(
         f"[Parameter(Mandatory)][string]${parameter}" in prelude,
@@ -198,8 +189,7 @@ if package is not None:
     if identity is None:
         require(False, "the manifest must declare an Identity element")
     else:
-        # Both patterns are schema constraints: makeappx refuses the package
-        # before reading a single payload file when either is violated.
+        # makeappx rejects either schema violation before reading payloads.
         require(
             re.fullmatch(r"[-.A-Za-z0-9]{3,50}", identity.get("Name") or "") is not None,
             "Identity/@Name must match the schema's [-.A-Za-z0-9]+ pattern; an underscore "
@@ -263,8 +253,7 @@ if package is not None:
             "a packaged Win32 app must enter through Windows.FullTrustApplication",
         )
 
-    # Assets are named in attributes (the tile logos) and in element text (the
-    # Properties/Logo), so both are scanned.
+    # Asset paths appear in attributes and element text.
     referenced = {
         match.group(1)
         for element in package.iter()
@@ -280,9 +269,7 @@ if package is not None:
             "tree; packaging fails on a missing asset",
         )
 
-# Independent of the manifest: Partner Center reports the package family name,
-# so recomputing it from the pinned publisher proves that string is byte-exact.
-# A mistyped publisher otherwise only surfaces as a rejected upload.
+# Recompute the Partner Center package-family suffix to catch publisher drift.
 require(
     package_family_suffix(PUBLISHER) == PACKAGE_FAMILY_SUFFIX,
     f"the pinned publisher must hash to the package family name reported by Partner "
@@ -314,8 +301,7 @@ require(
     "a version that is not major.minor.patch must be rejected instead of packaged",
 )
 
-# Native exit codes are invisible to $ErrorActionPreference, so the one
-# invocation that checks $LASTEXITCODE has to be the only one.
+# PowerShell does not surface native exit codes; centralize the $LASTEXITCODE check.
 require(
     len(re.findall(r"(?m)^    & \$Tool @Arguments$", text)) == 1
     and "& $MakeAppx" not in text
@@ -324,11 +310,7 @@ require(
     "every SDK tool call must go through the single invocation that checks $LASTEXITCODE",
 )
 
-# The taskbar, task view and Alt-Tab draw the small logo on a plate filled with
-# BackgroundColor, and the manifest's transparent background leaves the shell
-# painting the user's accent colour behind the icon. Only an altform-unplated
-# variant suppresses that plate, and qualified variants resolve solely through
-# resources.pri - as plain payload files they are inert.
+# Unplated variants prevent the shell's accent-colored plate; resources.pri resolves them.
 for form in ("altform-unplated", "altform-lightunplated"):
     require(
         any(ASSETS.glob(f"Square44x44Logo.targetsize-*_{form}.png")),
@@ -351,8 +333,7 @@ require(
     "fails publisher-identity validation",
 )
 
-# The version the manifest carries is passed in by the workflow, so the link
-# back to pubspec.yaml lives there rather than in the script.
+# The workflow supplies the manifest version from pubspec.yaml.
 workflow = WORKFLOW.read_text(encoding="utf-8")
 package_windows = job_block(workflow, "package-windows")
 require(bool(package_windows), "missing package-windows job")

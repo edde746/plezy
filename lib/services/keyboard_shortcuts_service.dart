@@ -250,16 +250,13 @@ class KeyboardShortcutsService extends ChangeNotifier {
             if (!isMetaPressed) modifiersMatch = false;
             break;
           case HotKeyModifier.capsLock:
-            // CapsLock is typically not used for shortcuts, ignore for now
             break;
           case HotKeyModifier.fn:
-            // Fn key is typically not used for shortcuts, ignore for now
             break;
         }
         if (!modifiersMatch) break;
       }
 
-      // Check that no extra modifiers are pressed
       if (modifiersMatch) {
         final hasShift = requiredModifiers.contains(HotKeyModifier.shift);
         final hasControl = requiredModifiers.contains(HotKeyModifier.control);
@@ -372,7 +369,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     return shortcut.label(seekTimeSmall: _seekTimeSmall, seekTimeLarge: _seekTimeLarge);
   }
 
-  // Check if a hotkey is already assigned to another action
   String? getActionForHotkey(HotKey hotkey) {
     for (final entry in _hotkeys.entries) {
       final assignedHotkey = entry.value;
@@ -383,7 +379,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     return null;
   }
 
-  // Helper method to compare two HotKey objects
   bool _hotkeyEquals(HotKey a, HotKey b) {
     if (a.key != b.key) return false;
 

@@ -578,12 +578,8 @@ class MaestroRunner:
             check=False,
             quiet=True,
         )
-        # Maestro waits for the view hierarchy to settle after every tap, input,
-        # and key press. With animations at their default 1.0 scale each of
-        # those waits pays for a real transition, which dominates a flow: taps
-        # measured 3-5s apiece on a physical Pixel 7. CI's emulator gets this
-        # from the runner's disable-animations flag; nothing was setting it for
-        # a real device. cleanup() restores the captured values.
+        # Disable animations to avoid Maestro's per-action transition waits;
+        # cleanup() restores the captured settings.
         for key in ANIMATION_SCALES:
             self._adb_run("shell", "settings", "put", "global", key, "0", check=False, quiet=True)
         self._adb_run("shell", "input", "keyevent", "KEYCODE_BACK", check=False, quiet=True)
@@ -621,7 +617,7 @@ class MaestroRunner:
                     ) as response:
                         output.write(response.read().decode(errors="replace"))
                         output.write("\n")
-                except Exception as error:  # Diagnostics must not hide the original failure.
+                except Exception as error:  # Keep diagnostics from masking the failure.
                     output.write(f"health_error={error}\n")
 
             if self.container_name:

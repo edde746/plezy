@@ -130,7 +130,7 @@ class MediaContextMenu extends StatefulWidget {
   final Object item;
   final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
-  final VoidCallback? onListRefresh; // For refreshing list after deletion
+  final VoidCallback? onListRefresh;
   final VoidCallback? onTap;
 
   /// Plays the item's trailer. When non-null a "Play trailer" item is added to

@@ -40,11 +40,7 @@ _UI_ARGUMENT_RE = re.compile(r"(?<![A-Za-z0-9_])(?:" + "|".join(_UI_ARGUMENTS) +
 _TEXT_RE = re.compile(r"(?:\bText|\bSelectableText)\s*\(\s*$")
 _EXCLUDED_ARGUMENT_RE = re.compile(r"(?:debugLabel|fontFamily)\s*:\s*$")
 _KEY_RE = re.compile(r"(?:\bKey|\bValueKey)\s*\(\s*$")
-# `createdLog:`/`log:` name a diagnostic sink, never rendered copy. Matched
-# unanchored because the literal is usually behind a lambda
-# (`createdLog: (playlist) => 'Created ...'`), so the argument name is not
-# the text immediately preceding the literal. The `[a-z]Log` arm keeps
-# innocent names such as `catalog:` out of the exclusion.
+# `log:`/`createdLog:` are diagnostic sinks, including inside lambdas.
 _DIAGNOSTIC_RE = re.compile(
     r"(?:\bappLogger\.|\bSentry\.|\bassert\s*\(|\bthrow\b|(?:\blog|[a-z]Log)\s*:)"
 )
@@ -52,17 +48,9 @@ _TRANSLATION_INTERPOLATION_RE = re.compile(
     r"\$\{\s*(?:t\.|context\.t\b|Translations\.of\s*\()"
 )
 _T_PARAMETER_RE = re.compile(r"(?:\(\s*t\s*\)|\bt)\s*=>[^;]*$")
-# Rule 4 support: a literal bound to a name or returned, rather than handed
-# straight to a widget. This is the shape issue #1856 actually had --
-# `baseButtonText = 'Skip Intro';` a few lines above the `Text(buttonText)`
-# that renders it -- which rules 1-3 structurally cannot see.
-#
-# Restricted to phrase-shaped literals: at least two letter-words separated by
-# whitespace. Without that restriction the rule cannot tell display copy from
-# the identifier strings this codebase binds constantly ('cast_row', 'auto',
-# 'liveTv', 'HDR_UNSUPPORTED'), and it drowns in false positives. The cost is
-# that a bound single-word label ('Software', 'Stereo') slips through; those
-# are indistinguishable from an identifier without dataflow analysis.
+# Rule 4 catches phrases assigned or returned before a widget renders them.
+# Restrict it to multi-word phrases to avoid confusing identifiers with UI copy;
+# single-word labels remain indistinguishable without dataflow analysis.
 _PHRASE_RE = re.compile(r"[A-Za-z]\s+[A-Za-z]")
 _BOUND_LITERAL_RE = re.compile(r"(?:\breturn|=>|(?<![=!<>+\-*/%&|^~])=)\s*$")
 _RENDERS_UI_RE = re.compile(
@@ -326,7 +314,7 @@ def scan(
     seen_literals: dict[str, set[str]] = {}
     for path in sorted(lib_dir.rglob("*.dart")):
         relative = path.relative_to(root).as_posix()
-        # lib/dev is a separate measurement entrypoint, explicitly "NOT part of the app".
+        # lib/dev is a separate, non-app measurement entrypoint.
         if (
             relative.startswith(("lib/i18n/", "lib/dev/"))
             or path.name.endswith((".g.dart", ".freezed.dart"))

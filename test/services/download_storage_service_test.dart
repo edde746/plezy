@@ -51,10 +51,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // SAF mode (Android-only). On host (macOS/Linux) it is always false.
-  // ============================================================
-
   group('SAF mode', () {
     test('isUsingSaf is false on the host (non-Android)', () async {
       final settings = await SettingsService.getInstance();
@@ -80,10 +76,6 @@ void main() {
       expect(dss.isSafUri('file:///tmp/foo'), isFalse);
     });
   });
-
-  // ============================================================
-  // Default download directory + custom-path switching
-  // ============================================================
 
   group('downloads directory resolution', () {
     test('defaults to <appSupport>/downloads on desktop hosts', () async {
@@ -176,10 +168,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Artwork directory
-  // ============================================================
-
   group('artwork directory', () {
     test('initializes alongside support directory by default and caches sync path', () async {
       final settings = await SettingsService.getInstance();
@@ -249,10 +237,6 @@ void main() {
       expect(await dss.artworkExists(ServerId('srv'), '/thumb/1'), isTrue);
     });
   });
-
-  // ============================================================
-  // Path resolution helpers (relative <-> absolute)
-  // ============================================================
 
   group('toRelativePath / toAbsolutePath', () {
     test('strips a single base-dir prefix to make a path relative', () async {
@@ -399,10 +383,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // ensureAbsolutePath / getReadablePath
-  // ============================================================
-
   group('ensureAbsolutePath', () {
     test('keeps an existing absolute path that points at a real file', () async {
       final settings = await SettingsService.getInstance();
@@ -502,10 +482,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // SAF path-component helpers (no platform calls — pure formatting)
-  // ============================================================
-
   group('SAF path components & names', () {
     test('movie components/filename use sanitized "Title (Year)"', () async {
       final dss = DownloadStorageService.instance;
@@ -568,10 +544,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Real on-disk media directory helpers
-  // ============================================================
-
   group('media directories on disk', () {
     test('getMediaDirectory creates serverId/ratingKey under downloads', () async {
       final settings = await SettingsService.getInstance();
@@ -622,10 +594,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // DownloadStorageException
-  // ============================================================
-
   group('DownloadStorageException', () {
     test('toString embeds message, path, and cause', () {
       final ex = DownloadStorageException('boom', '/tmp/x', StateError('inner'));
@@ -636,10 +604,6 @@ void main() {
     });
   });
 }
-
-// ============================================================
-// MediaItem fixtures (only the fields the SUT actually reads)
-// ============================================================
 
 MediaItem _movie({required String title, int? year}) {
   return testMediaItem(

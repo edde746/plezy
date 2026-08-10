@@ -114,13 +114,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   DownloadProvider({required this._downloadManager, required this._database})
     : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
     _metadataStore = _DownloadMetadataStore(_downloadManager, _database)..addListener(_onMetadataStoreChanged);
-    // Listen to progress updates from the download manager
     _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
 
-    // Listen to deletion progress updates
     _deletionProgressSubscription = _downloadManager.deletionProgressStream.listen(_onDeletionProgressUpdate);
 
-    // Load persisted downloads from database
     _initFuture = _loadPersistedDownloads();
 
     // Lets the diagnostics service score whether downloads actually advance
@@ -400,7 +397,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // Initialize artwork directory path for synchronous access
       await storageService.getArtworkDirectory();
 
-      // Load all downloads from database
       final downloads = await _downloadManager.getAllDownloads();
 
       // Bulk-load all pinned metadata across every backend in a single pass
@@ -427,7 +423,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         }
       }
 
-      // Load sync rules from database
       await _loadSyncRules();
 
       // Apply queued offline watch actions on top of the server-time metadata
@@ -844,7 +839,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return null;
     }
 
-    // Calculate aggregate statistics
     int completedCount = 0;
     int downloadingCount = 0;
     int queuedCount = 0;
@@ -867,7 +861,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
     }
 
-    // Determine overall status
     final DownloadStatus overallStatus;
     if (completedCount == totalEpisodes) {
       overallStatus = DownloadStatus.completed;
@@ -912,22 +905,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// For shows/seasons, returns aggregate progress of all child episodes
   /// For episodes/movies, returns direct progress
   DownloadProgress? getProgress(String globalKey) {
-    // First check if we have direct progress (for episodes/movies)
     final directProgress = _downloads[globalKey];
     if (directProgress != null) {
       if (!_ownsDownloadKey(globalKey)) return null;
       return directProgress;
     }
 
-    // If no direct progress, check if this is a show or season
-    // and calculate aggregate progress from episodes
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return null;
 
     final serverId = parsed.serverId;
     final ratingKey = parsed.ratingKey;
 
-    // Try to get metadata to determine type
     final meta = _metadata[globalKey];
     if (meta == null) {
       // No metadata stored yet, might be a container (show/season/artist/
@@ -1294,11 +1283,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _claimDownloadForProfile(globalKey, ownership, client);
     if (!_isQueueOwnershipCurrent(ownership)) return false;
 
-    // Update local state immediately for UI feedback
     _downloads[globalKey] = DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued);
     safeNotifyListeners();
 
-    // Actually trigger download via DownloadManagerService
     if (!_isQueueOwnershipCurrent(ownership)) return false;
     await _downloadManager.queueDownload(metadata: metadataToStore, client: client, mediaIndex: resolvedIndex);
     return true;

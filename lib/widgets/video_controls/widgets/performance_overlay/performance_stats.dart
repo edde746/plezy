@@ -5,10 +5,8 @@ import '../../../../i18n/strings.g.dart';
 /// Contains metrics queried from the video player (MPV or ExoPlayer)
 /// including video/audio codec info, playback performance, and buffer state.
 class PerformanceStats {
-  // Player info
-  final String playerType; // 'mpv' or 'exoplayer'
+  final String playerType;
 
-  // Video metrics
   final String? videoCodec;
   final int? videoWidth;
   final int? videoHeight;
@@ -19,38 +17,32 @@ class PerformanceStats {
   final int? rotate;
   final String? videoDecoderName;
 
-  // Color/Format metrics
   final String? pixelformat;
   final String? hwPixelformat;
   final String? colormatrix;
   final String? primaries;
   final String? gamma;
 
-  // HDR metadata
   final double? maxLuma;
   final double? minLuma;
   final double? maxCll;
   final double? maxFall;
 
-  // Audio metrics
   final String? audioCodec;
   final int? audioSamplerate;
   final String? audioChannels;
   final int? audioBitrate;
   final String? audioDecoderName;
 
-  // Tunneling
   final bool tunneledPlayback;
   final String? tunnelingStatus;
 
-  // Performance metrics
   final double? actualFps;
   final double? avsyncChange;
   final double? displayFps;
   final int? frameDropCount;
   final int? decoderFrameDropCount;
 
-  // Buffer metrics
   final int? cacheUsed;
   final int? cacheLimit;
   final double? cacheSpeed;
@@ -58,9 +50,8 @@ class PerformanceStats {
   final int? bufferTargetBytes;
   final int? bufferMaxMs;
 
-  // DV conversion
   final bool dvConversionActive;
-  final String dvConversionMode; // "DV81", "HEVC_STRIP", "DISABLED"
+  final String dvConversionMode;
   final int? dvConvertedRpus;
   final int? dvRpuConversionFailures;
   final int? dvRpuOutputTooSmall;
@@ -70,7 +61,6 @@ class PerformanceStats {
   final String? dvPlaybackPath;
   final String? dvPlaybackReason;
 
-  // App metrics
   final int? appMemoryBytes;
   final double? uiFps;
 

@@ -65,15 +65,8 @@ void main() {
   _poisonedCacheRegression();
 }
 
-/// A repair that quarantines the store and then cannot reopen it must not
-/// leave the process permanently unable to try again.
-///
-/// Before #1732's fix the repaired future was built straight from the cache
-/// loader, bypassing the self-healing `onError` reset that `sharedCache`
-/// installs. A reopen failure therefore parked a rejected future in
-/// `_cacheFuture`, and every later attempt replayed that stale error for the
-/// rest of the process — with the damaged file already moved aside, so a
-/// restart would have booted cleanly.
+/// A failed reopen after repair must reset the cached future so a later attempt
+/// can retry instead of replaying the stale error (#1732).
 void _poisonedCacheRegression() {
   group('repairCorruptStore', () {
     late Directory root;

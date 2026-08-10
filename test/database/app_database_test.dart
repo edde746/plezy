@@ -61,10 +61,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerSchemaTests() {
-    // ============================================================
-    // Schema sanity
-    // ============================================================
-
     group('schema', () {
       test('all tables are accessible and start empty', () async {
         expect(await db.select(db.downloadedMedia).get(), isEmpty);
@@ -936,13 +932,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerLegacyDesktopMigrationTests() {
-    // ============================================================
-    // Legacy desktop DB-file relocation (Documents → AppSupport).
-    // Regression coverage for #1022: cross-drive rename (e.g. OneDrive
-    // Documents on X:, AppData on C:) used to throw an uncaught
-    // FileSystemException out of _openConnection and strand the splash.
-    // ============================================================
-
     group('legacy desktop DB migration', () {
       late Directory tempDir;
 
@@ -1133,10 +1122,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerApiCacheTests() {
-    // ============================================================
-    // ApiCache schema defaults and constraints
-    // ============================================================
-
     group('ApiCache', () {
       test('default pinned=false, custom pinned=true is honored', () async {
         await db.into(db.apiCache).insert(ApiCacheCompanion.insert(cacheKey: 'k1', data: 'a'));
@@ -1159,10 +1144,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerDownloadedMediaTests() {
-    // ============================================================
-    // DownloadedMedia: persistence, defaults, constraints, and helpers
-    // ============================================================
-
     group('DownloadedMedia', () {
       Future<int> insertMovie({
         String serverId = 'srv1',
@@ -1471,10 +1452,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerOfflineWatchProgressTests() {
-    // ============================================================
-    // OfflineWatchProgress helpers
-    // ============================================================
-
     group('OfflineWatchProgress', () {
       Future<int> insertAction({
         String serverId = 's',
@@ -2080,10 +2057,6 @@ class _AppDatabaseTestSuite {
   }
 
   void _registerSyncRulesTests() {
-    // ============================================================
-    // Sync Rules helpers
-    // ============================================================
-
     group('SyncRules', () {
       test('insertSyncRule + getSyncRules round-trip with defaults', () async {
         await db.insertSyncRule(

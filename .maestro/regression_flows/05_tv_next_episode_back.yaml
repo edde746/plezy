@@ -7,10 +7,8 @@ tags:
   - playback
 ---
 - runFlow: ../subflows/onboard_jellyfin_tv.yaml
-# Reach Search with the D-pad, the way 10_tv_settings_navigation.yaml does. A
-# tap here flips InputModeTracker into pointer mode, which collapses the rail
-# to icons and leaves no "Search" label to hit — and a percentage coordinate
-# does not survive the jump from a phone in forced TV mode to a 4K television.
+# Reach Search by D-pad: taps switch to pointer mode and hide the TV rail label,
+# while percentage coordinates are not portable across TV sizes.
 - pressKey: "Remote Dpad Left"
 - extendedWaitUntil:
     visible: "Search"
@@ -38,11 +36,8 @@ tags:
 - waitForAnimationToEnd:
     timeout: 5000
 - tapOn: "(?s)^Play S1E1$"
-# The TV player opens with its chrome down (#1765), so the Pause button can no
-# longer stand in for "the player has finished loading". Wait for the detail
-# screen to go first: the labelled spinner is necessarily up the moment the
-# player route owns the frame, and it only clears once playback reports its
-# first frame or gives up, so this can never advance before the media opens.
+# The player starts with chrome hidden (#1765); wait for its loading label
+# rather than using Pause as readiness.
 - extendedWaitUntil:
     notVisible: "(?s)^Play S1E1$"
     timeout: 30000
@@ -51,9 +46,7 @@ tags:
     timeout: 30000
 - pressKey: "Remote Media Fast Forward"
 - pressKey: "Remote Media Fast Forward"
-# Gate on the prompt's own Cancel action, the label the iOS branch below taps.
-# "Next Episode" is the credits skip button at this point in the episode, so
-# waiting on it would let Back fire before the prompt ever opened.
+# Wait for Cancel, not Next Episode (the credits-skip action), before pressing Back.
 - extendedWaitUntil:
     visible: "(?s)^Cancel$"
     timeout: 20000

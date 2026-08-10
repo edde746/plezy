@@ -106,7 +106,6 @@ internal class TrueHdCarrierSink(
   @Volatile
   private var mismatchGeneration = -1
 
-  // --- Selection ---
 
   /**
    * True when this format should ride the carrier.
@@ -193,7 +192,6 @@ internal class TrueHdCarrierSink(
     }
   }
 
-  // --- Stream path: active delegate only ---
 
   override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
     if (!carrierActive) return defaultSink.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)

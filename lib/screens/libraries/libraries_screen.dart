@@ -62,7 +62,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ItemUpdatable,
         TickerProviderStateMixin,
         TabNavigationMixin {
-  // GlobalKeys for tabs to enable refresh
   final _recommendedTabKey = GlobalKey();
   final _browseTabKey = GlobalKey();
   final _collectionsTabKey = GlobalKey();
@@ -84,7 +83,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Key for the library dropdown menu button.
   final _libraryDropdownKey = GlobalKey<AppMenuButtonState<String>>();
 
-  // Dynamic visible tabs and their focus nodes
   List<LibraryTabType> _visibleTabs = LibraryTabType.values;
   List<FocusNode> _tabFocusNodes = List.generate(
     LibraryTabType.values.length,
@@ -94,10 +92,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   List<FocusNode> get tabChipFocusNodes => _tabFocusNodes;
 
-  // App bar action bar
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
-  // Scroll controller for the outer CustomScrollView
   final ScrollController _outerScrollController = ScrollController();
 
   /// Reveal the floating header by jumping the outer NestedScrollView back
@@ -153,25 +149,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       return;
     }
 
-    // Compute visible libraries for initial load
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
     final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
 
-    // Load saved preferences
     final storage = await StorageService.getInstance();
     final savedLibraryKey = storage.getSelectedLibraryKey();
 
-    // Find the library by key in visible libraries
     String? libraryGlobalKeyToLoad;
     if (savedLibraryKey != null) {
-      // Check if saved library exists and is visible
       final libraryExists = visibleLibraries.any((lib) => lib.globalKey == savedLibraryKey);
       if (libraryExists) {
         libraryGlobalKeyToLoad = savedLibraryKey;
       }
     }
 
-    // Fallback to first visible library if saved key not found
     if (libraryGlobalKeyToLoad == null && visibleLibraries.isNotEmpty) {
       libraryGlobalKeyToLoad = visibleLibraries.first.globalKey;
     }
@@ -183,16 +174,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   @override
   void onTabChanged() {
-    // Save tab name when changed (but not when restoring from storage)
     if (_selectedLibraryGlobalKey != null && !tabController.indexIsChanging) {
-      // Only save if this was a user-initiated tab change, not a restore
       if (!_isRestoringTab) {
         StorageService.getInstance().then((storage) {
           storage.saveLibraryTab(_selectedLibraryGlobalKey!, _visibleTabs[tabController.index].name);
         });
 
-        // Focus first item in the current tab (only for user-initiated changes)
-        // But not when navigating via tab bar (suppressAutoFocus is true)
         if (!suppressAutoFocus) {
           _focusCurrentTab();
         }
@@ -306,15 +293,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   /// Handle when a tab's data has finished loading
   void _handleTabDataLoaded(int tabIndex) {
-    // Track that this tab has loaded
     _loadedTabs.add(tabIndex);
 
-    // Don't auto-focus if suppressed (e.g., when navigating via tab bar)
     if (suppressAutoFocus) return;
 
-    // Only focus if this is the currently active tab
     if (tabController.index == tabIndex && mounted) {
-      // Use post-frame callback to ensure the widget tree is fully built
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && tabController.index == tabIndex && !suppressAutoFocus) {
           _focusCurrentTab();
@@ -352,21 +335,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   void _updateVisibleTabs(List<LibraryTabType> newTabs) {
     if (listEquals(_visibleTabs, newTabs)) return;
 
-    // Save current tab type before changing
     final currentTabType = _visibleTabs.length > tabController.index ? _visibleTabs[tabController.index] : null;
 
-    // Dispose old focus nodes and controller
     for (final node in _tabFocusNodes) {
       node.dispose();
     }
     disposeTabNavigation();
 
-    // Build new
     _visibleTabs = newTabs;
     _tabFocusNodes = List.generate(newTabs.length, (i) => FocusNode(debugLabel: 'tab_chip_${newTabs[i].name}'));
     initTabNavigation();
 
-    // Restore tab position: find current tab type in new set, default to first
     final newIndex = currentTabType != null ? newTabs.indexOf(currentTabType) : -1;
     if (newIndex > 0) {
       tabController.index = newIndex;

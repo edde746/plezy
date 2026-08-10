@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// --- Rate limiter (token bucket) ---
 
 type rateLimiter struct {
 	tokens     float64
@@ -65,8 +64,7 @@ func (rl *rateLimiter) refillAtLocked(now time.Time) {
 	}
 }
 
-// reclaimable reports whether discarding this limiter would preserve its
-// behavior: enough idle time has passed for the bucket to be full again.
+// reclaimable is true when the bucket has refilled completely.
 func (rl *rateLimiter) reclaimable(now time.Time) bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
@@ -90,7 +88,6 @@ func cleanupRateWindows(windows map[string]time.Time, now time.Time, duration ti
 	}
 }
 
-// --- Poster upload admission (global, per-IP, and concurrency) ---
 
 type posterUploadLimiter struct {
 	mu             sync.Mutex
@@ -152,7 +149,6 @@ func (pl *posterUploadLimiter) cleanup(now time.Time) {
 	cleanupRateLimiters(pl.perIP, now, nil)
 }
 
-// --- Connection tracker (per-IP limits) ---
 
 type connTracker struct {
 	mu          sync.Mutex
@@ -186,8 +182,7 @@ func (ct *connTracker) tryConnect(ip string) bool {
 		rl = newRateLimiter(connRateBurst, connRateSustained)
 		ct.ipRate[ip] = rl
 	}
-	// Unlock ct.mu before calling rl.allow() would be cleaner,
-	// but since rl has its own mutex this is safe (no deadlock).
+	// rl has its own mutex, so holding ct.mu here cannot deadlock.
 	if !rl.allow() {
 		return false
 	}
@@ -210,9 +205,7 @@ func (ct *connTracker) disconnect(ip string) {
 	}
 }
 
-// tryCreateRoom reserves capacity for a retained room created in this process.
-// The reservation survives creator disconnect and is released only when the
-// authoritative room is removed from Server.rooms.
+// tryCreateRoom reserves capacity until the retained room is removed.
 func (ct *connTracker) tryCreateRoom(ip string) bool {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()
@@ -223,9 +216,8 @@ func (ct *connTracker) tryCreateRoom(ip string) bool {
 	return true
 }
 
-// tryCreateRoomReplacing reserves a room while accounting for the reservation
-// that removeRoomLocked will immediately release from an empty same-ID room.
-// Server.mu serializes this paired reservation/removal transaction.
+// tryCreateRoomReplacing accounts for removal of an empty same-ID room.
+// Server.mu serializes the reservation/removal transaction.
 func (ct *connTracker) tryCreateRoomReplacing(ip, replacedOwnerKey string) bool {
 	ct.mu.Lock()
 	defer ct.mu.Unlock()

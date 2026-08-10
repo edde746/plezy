@@ -46,7 +46,6 @@ void main() {
       expect(p.isShaderEnabled, isTrue);
       expect(notified, 1);
 
-      // Verify persisted via the SettingsService directly.
       final svc = await SettingsService.getInstance();
       expect(svc.read(SettingsService.globalShaderPreset), ShaderPreset.nvscalerDefault.id);
 
@@ -67,7 +66,6 @@ void main() {
       expect(p.savedPreset, ShaderPreset.nvscalerDefault);
       expect(notified, 1);
 
-      // Same id → no notify.
       p.setCurrentPreset(ShaderPreset.none);
       expect(notified, 1);
 
@@ -267,7 +265,6 @@ void main() {
       final p = ShaderProvider();
       await Future.delayed(Duration.zero);
       p.dispose();
-      // Should not throw — setPreset calls safeNotifyListeners under the hood.
       await p.setPreset(ShaderPreset.none);
     });
   });

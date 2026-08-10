@@ -202,7 +202,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     setState(() {
       _filteredItems = List.from(_items);
 
-      // Apply sorting
       if (_selectedSort != null) {
         final sortKey = _selectedSort!.key;
         _filteredItems.sort((a, b) {
@@ -540,21 +539,16 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                       final libraryDensity = svc.read(SettingsService.libraryDensity);
                       final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
 
-                      // Determine hub content type for layout decisions
                       final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
                       final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
 
-                      // Mixed hub = has both episodes AND non-episodes
                       final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-                      // Episode-only = all items are episodes with thumbnails
                       final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
-                      // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
                       final useWideLayout =
                           episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
-                      // Music hubs render square album/artist artwork
                       final isSquareHub =
                           _filteredItems.isNotEmpty &&
                           _filteredItems.every((item) => item.cardShape(episodePosterMode) == CardShape.square);

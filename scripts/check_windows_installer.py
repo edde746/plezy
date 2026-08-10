@@ -40,8 +40,7 @@ require(
 )
 iss = template()
 
-# The script used to carry two near-identical copies of the whole .iss, one per
-# architecture shape. Anything that appears twice again has drifted apart.
+# A single template prevents architecture copies from drifting.
 for once in (
     r"^\[Setup\]$",
     r"^\[Code\]$",
@@ -76,9 +75,7 @@ require(
     "the dual-architecture [Files] entries must keep their architecture checks",
 )
 
-# A fresh install stays per-user and prompts for nothing; only an existing
-# machine-wide copy pulls in elevation, and only via /ALLUSERS, which Inno
-# ignores unless the commandline override is allowed.
+# Fresh installs stay per-user; only /ALLUSERS may trigger elevation.
 require(
     re.search(r"(?m)^PrivilegesRequired=lowest\s*$", iss) is not None,
     "a fresh install must stay per-user; PrivilegesRequired=lowest",
@@ -93,7 +90,7 @@ require(
     "allowing dialog makes a silent install with no previous copy prompt; winget installs that way",
 )
 
-# The elevation path itself.
+# Verify the elevation path.
 require(
     "IsAdminInstallMode" in iss,
     "the elevation path must be skipped once Setup already runs in administrative install mode",
@@ -125,7 +122,7 @@ require(
     "a refused elevation must explain itself instead of failing silently",
 )
 
-# Behavior other tooling already depends on.
+# Preserve behavior required by release tooling.
 require(
     "{param:WINGET|0}" in iss and "{app}\\.winget" in iss,
     "the winget marker file gates UpdateService.useNativeUpdater",

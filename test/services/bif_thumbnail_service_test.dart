@@ -4,18 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/bif_thumbnail_service.dart';
 import 'package:plezy/services/plex_client.dart';
 
-// BIF (Roku Base Index Format) is a binary container for video timeline
-// thumbnails. The service exposes [BifThumbnailService] which downloads + parses
-// a file (network-bound), but the parser itself is reachable through
-// [BifThumbnailService.load] when paired with a fake [PlexClient] that returns
-// hand-crafted bytes.
-//
-// What's NOT covered (by design):
-//   - The 50MiB size guard — verifying it would mean producing a 50MiB
-//     `Uint8List`, which is wasteful for unit tests.
-//   - The download-throws path — `BifThumbnailService.load` swallows errors
-//     into a "no thumbnails" state, and the only observable difference between
-//     "download failed" and "valid 0-image BIF" is `isAvailable=false`.
+// BIF parser coverage uses a fake client with hand-crafted bytes. Size-limit and
+// download-failure behavior are intentionally left to integration coverage.
 
 /// Build a minimal valid BIF byte buffer.
 ///
@@ -85,10 +75,6 @@ class _FakePlexClient implements PlexClient {
 }
 
 void main() {
-  // ============================================================
-  // Initial state
-  // ============================================================
-
   group('initial state', () {
     test('isAvailable is false before load()', () {
       final svc = BifThumbnailService();
@@ -103,10 +89,6 @@ void main() {
       expect(svc.getThumbnail(const Duration(seconds: 5)), isNull);
     });
   });
-
-  // ============================================================
-  // Pure parser (via load + getThumbnail)
-  // ============================================================
 
   group('valid BIF parsing', () {
     test('parses a 3-entry BIF with default 1000ms multiplier', () async {
@@ -168,10 +150,6 @@ void main() {
       expect(svc.getThumbnail(const Duration(seconds: 7)), Uint8List.fromList([0x02]));
     });
   });
-
-  // ============================================================
-  // Malformed input
-  // ============================================================
 
   group('malformed BIF input', () {
     test('rejects bytes shorter than the 64-byte header', () async {
@@ -238,10 +216,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Empty / null input
-  // ============================================================
-
   group('empty input', () {
     test('null download keeps the service in unavailable state', () async {
       final svc = BifThumbnailService();
@@ -270,10 +244,6 @@ void main() {
       expect(svc.getThumbnail(Duration.zero), isNull);
     });
   });
-
-  // ============================================================
-  // Reload + dispose
-  // ============================================================
 
   group('reload + dispose', () {
     test('a second load() replaces prior entries', () async {

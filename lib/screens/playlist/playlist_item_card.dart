@@ -23,12 +23,11 @@ class PlaylistItemCard extends StatefulWidget {
   final VoidCallback? onRemove;
   final VoidCallback? onTap;
   final void Function(MediaItem source)? onRefresh;
-  final bool canReorder; // Whether drag handle should be shown
+  final bool canReorder;
 
-  // Focus state for keyboard/D-pad navigation
   final bool isFocused;
-  final int? focusedColumn; // 0=row, 1=drag handle, 2=remove button
-  final bool isMoving; // Whether this item is being moved/reordered
+  final int? focusedColumn;
+  final bool isMoving;
 
   const PlaylistItemCard({
     super.key,
@@ -56,20 +55,16 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
     final colorScheme = Theme.of(context).colorScheme;
     final textMuted = tokens(context).textMuted;
 
-    // Determine if row is focused (main content area)
     final isRowFocused = widget.isFocused && widget.focusedColumn == 0;
 
-    // Focus states for individual elements
     final isDragHandleFocused = widget.isFocused && widget.focusedColumn == 1;
     final isRemoveButtonFocused = widget.isFocused && widget.focusedColumn == 2;
 
-    // Determine card styling based on focus/move state
     Color? cardColor;
     ShapeBorder? cardShape;
     if (widget.isMoving) {
       cardColor = colorScheme.primaryContainer;
     } else if (isRowFocused) {
-      // Row is focused - use visible border like FocusableWrapper
       cardColor = colorScheme.surfaceContainerHighest;
       cardShape = RoundedRectangleBorder(
         borderRadius: const BorderRadius.all(Radius.circular(12)),
@@ -126,18 +121,15 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                     ),
                   ),
 
-                // Poster thumbnail
                 _buildPosterImage(context, item),
 
                 const SizedBox(width: 12),
 
-                // Title and metadata
                 Expanded(
                   child: Column(
                     crossAxisAlignment: .start,
                     mainAxisSize: .min,
                     children: [
-                      // Title
                       Text(
                         item.displayTitle,
                         style: const TextStyle(fontSize: 15, fontWeight: .w500),
@@ -147,7 +139,6 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
 
                       const SizedBox(height: 4),
 
-                      // Subtitle (episode info or type)
                       Text(
                         _buildSubtitle(item),
                         style: TextStyle(fontSize: 13, color: textMuted),
@@ -160,13 +151,11 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
 
                 const SizedBox(width: 12),
 
-                // Duration
                 if (item.durationMs != null)
                   Text(formatDurationTextual(item.durationMs!), style: TextStyle(fontSize: 13, color: textMuted)),
 
                 const SizedBox(width: 8),
 
-                // Remove button
                 Container(
                   decoration: isRemoveButtonFocused
                       ? BoxDecoration(

@@ -7,7 +7,6 @@ import org.junit.Test
 
 class ResumeStallPolicyTest {
 
-  // checkWindowMs
 
   @Test
   fun windowFloorsAtDefaultForNormalFrameRates() {
@@ -39,7 +38,6 @@ class ResumeStallPolicyTest {
     assertEquals(1000L, ResumeStallPolicy.checkWindowMs(formatFps = null, detectedFps = null, speed = 1f))
   }
 
-  // evaluate
 
   @Test
   fun advancingFramesAreHealthy() {

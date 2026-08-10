@@ -15,8 +15,7 @@ linter:
     prefer_final_in_for_each: true
     avoid_print: true
 
-# Do not register DCL as an analyzer plugin: its analyzer 10 integration crashes
-# on Linux. CI invokes the supported check-unused commands explicitly.
+# DCL's analyzer 10 plugin crashes on Linux; CI runs check-unused commands directly.
 dart_code_linter:
   rules-exclude:
     - "test/**"
@@ -27,7 +26,7 @@ dart_code_linter:
     - package:dart_code_linter/presets/recommended.yaml
 
   rules:
-    # --- Flutter rules (on top of recommended) ---
+    # Flutter-specific rules.
     - avoid-border-all
     - avoid-shrink-wrap-in-lists
     - avoid-expanded-as-spacer
@@ -37,7 +36,7 @@ dart_code_linter:
     - prefer-define-hero-tag
     - use-setstate-synchronously
 
-    # --- Additional useful Dart rules ---
+    # Additional Dart rules.
     - avoid-cascade-after-if-null
     - avoid-collection-methods-with-unrelated-types
     - avoid-unnecessary-type-assertions
@@ -48,7 +47,7 @@ dart_code_linter:
     - prefer-enums-by-name
     - prefer-commenting-analyzer-ignores
 
-    # --- Disable noisy rules from recommended preset ---
+    # Disabled noisy rules.
     - no-magic-number: false
     - avoid-dynamic: false
     - format-comment: false

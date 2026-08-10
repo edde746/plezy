@@ -44,11 +44,9 @@ void main() {
       expect(p.themeMode, next);
       expect(notified, 1);
 
-      // Same value → no notify.
       await p.setThemeMode(next);
       expect(notified, 1);
 
-      // Verify persisted via SettingsService.
       final svc = await settings.SettingsService.getInstance();
       expect(svc.read(settings.SettingsService.themeMode), next);
 
@@ -178,7 +176,6 @@ void main() {
       final p = ThemeProvider();
       await Future.delayed(Duration.zero);
       p.dispose();
-      // Should not throw — reload calls safeNotifyListeners under the hood.
       await p.reload();
     });
   });

@@ -42,7 +42,6 @@ class DownloadsScreen extends StatefulWidget {
 
 class DownloadsScreenState extends State<DownloadsScreen>
     with TickerProviderStateMixin, TabNavigationMixin, FocusableTab {
-  // Focus nodes for tab chips
   final _queueTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_queue');
   final _tvShowsTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_tv_shows');
   final _moviesTabChipFocusNode = FocusNode(debugLabel: 'tab_chip_movies');
@@ -60,7 +59,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
   @override
   void initState() {
     super.initState();
-    suppressAutoFocus = true; // Start suppressed
     initTabNavigation();
   }
 
@@ -92,7 +90,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
 
   /// Focus the first item in the currently active tab
   void _focusCurrentTab() {
-    // Re-enable auto-focus since user is navigating into tab content
     setState(() {
       suppressAutoFocus = false;
     });
@@ -115,7 +112,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
 
   /// Build the app bar title - either tabs on desktop or simple title on mobile
   Widget _buildAppBarTitle() {
-    // On desktop/TV with side nav, show tabs in app bar
     if (PlatformDetector.shouldUseSideNavigation(context)) {
       return TabChipStrip(
         children: [
@@ -130,7 +126,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
       );
     }
 
-    // On mobile, show simple title
     return Text(t.downloads.title);
   }
 
@@ -177,7 +172,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
                   builder: (context, hasPendingDownloads, _) =>
                       BackgroundDownloadWarningBanner(hasPendingDownloads: hasPendingDownloads),
                 ),
-                // Tab selector chips (only on mobile - desktop has them in app bar)
                 if (!PlatformDetector.shouldUseSideNavigation(context))
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -197,7 +191,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
                       ),
                     ),
                   ),
-                // Tab content
                 Expanded(
                   child: TabBarView(
                     controller: tabController,

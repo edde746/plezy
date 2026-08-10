@@ -1,4 +1,3 @@
-# Project-level configuration.
 cmake_minimum_required(VERSION 3.13)
 project(runner LANGUAGES CXX)
 
@@ -6,8 +5,6 @@ project(runner LANGUAGES CXX)
 # registered by the runner subdirectory.
 include(CTest)
 
-# The name of the executable created for the application. Change this to change
-# the on-disk name of your application.
 set(BINARY_NAME "plezy")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
@@ -30,7 +27,6 @@ if(FLUTTER_TARGET_PLATFORM_SYSROOT)
   set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 endif()
 
-# Define build configuration options.
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(CMAKE_BUILD_TYPE "Debug" CACHE
     STRING "Flutter build mode" FORCE)
@@ -63,7 +59,6 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_definitions(${TARGET} PRIVATE "$<$<NOT:$<CONFIG:Debug>>:NDEBUG>")
 endfunction()
 
-# Flutter library and tool build rules.
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
 

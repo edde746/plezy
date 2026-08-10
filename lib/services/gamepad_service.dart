@@ -192,25 +192,20 @@ class GamepadService with WindowListener {
     _tabNavigationHandlers.clear();
   }
 
-  // Deadzone for analog sticks (0.0 to 1.0)
   static const double _stickDeadzone = 0.5;
 
-  // Auto-repeat timing for held directional inputs (D-pad / stick)
   static const Duration _repeatInitialDelay = Duration(milliseconds: 400);
   static const Duration _repeatInterval = Duration(milliseconds: 80);
 
   key_sim.KeyEventSimulatorController? _keyEventSimulator;
 
-  // Track stick state to detect deadzone crossings
   bool _leftStickUp = false;
   bool _leftStickDown = false;
   bool _leftStickLeft = false;
   bool _leftStickRight = false;
 
-  // Track button states to prevent repeated events from button holds
   final Set<GamepadButton> _pressedButtons = {};
   final Set<GamepadButton> _suppressedButtons = {};
-  // Whether the app window is currently focused — ignore gamepad input when false
   bool _windowFocused = true;
   bool _nativeKeyHandlerRegistered = false;
   bool _nativeTextInputFocused = false;

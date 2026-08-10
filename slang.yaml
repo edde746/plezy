@@ -2,8 +2,5 @@ input_directory: lib/i18n
 input_file_pattern: .i18n.json
 output_directory: lib/i18n
 timestamp: false
-# Fall back to base (en) when a non-base key is missing or still has the
-# translation cleanup placeholder (`""`). Without this, every locale would
-# need every key translated up-front and empty placeholders would render
-# without meaningful text.
+# Use English for missing keys and empty translation placeholders.
 fallback_strategy: base_locale_empty_string

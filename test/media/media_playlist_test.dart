@@ -2,14 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_playlist.dart';
 
-/// Backend-agnostic [MediaPlaylist] tests. Mappers (`plex_mappers_test` /
-/// `jellyfin_mappers_test`) cover JSON → model translation; this file pins
-/// the neutral model's surface so a future mapper swap can't silently
-/// regress its derived getters.
-///
-/// Note: [MediaPlaylist] does **not** override `==` / `hashCode`, so this
-/// file deliberately avoids equality tests that would exercise default
-/// identity behavior.
+/// Backend-agnostic [MediaPlaylist] tests pin the neutral model's getters
+/// separately from mapper coverage. The model uses identity equality, so these
+/// tests intentionally avoid equality assertions.
 MediaPlaylist _playlist({
   String id = 'pl1',
   MediaBackend backend = MediaBackend.plex,
@@ -55,7 +50,6 @@ void main() {
       final renamed = original.copyWith(title: 'Renamed', smart: true);
       expect(renamed.title, 'Renamed');
       expect(renamed.smart, isTrue);
-      // Source untouched — copyWith must be non-mutating.
       expect(original.title, 'Original');
       expect(original.smart, isFalse);
     });
@@ -148,7 +142,6 @@ void main() {
       expect(minimal.serverName, isNull);
       expect(minimal.displayImagePath, isNull);
       expect(minimal.displayTitle, 'Min');
-      // Without a serverId, globalKey reduces to the bare id.
       expect(minimal.globalKey, 'pl');
     });
   });

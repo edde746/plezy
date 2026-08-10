@@ -118,12 +118,8 @@ import wakelock_plus
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Dolby's sequence diagram prescribes exactly this at app launch: the
-    // long-form playback profile, then activation, so the session is eligible
-    // for the system's Dolby decode/render path and its rendering capabilities
-    // can be read before any content is chosen. The mpv AVFoundation audio
-    // output reconfigures and re-activates the same shared session at playback
-    // start; this establishes the launch-time state the guide expects.
+    // Set the long-form profile before activation so Dolby capabilities are
+    // available before playback.
     do {
       let session = AVAudioSession.sharedInstance()
       try session.setCategory(

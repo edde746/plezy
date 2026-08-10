@@ -10,7 +10,6 @@ class DvBitstreamSanitizerTest {
 
   private val sanitizer = DvBitstreamSanitizer()
 
-  // --- HDR10+ SEI stripping (native DV codec path) ---
 
   @Test
   fun stripsHdr10PlusPrefixSeiBetweenVclNals() {
@@ -85,7 +84,6 @@ class DvBitstreamSanitizerTest {
     assertArrayEquals(original, remainingBytes(buffer))
   }
 
-  // --- DV RPU/EL stripping (HEVC fallback path) ---
 
   @Test
   fun rpuModeStripsRpuAndElButKeepsHdr10PlusSei() {
@@ -111,7 +109,6 @@ class DvBitstreamSanitizerTest {
     assertArrayEquals(concat(vcl1, vcl2), remainingBytes(buffer))
   }
 
-  // --- Buffer handling ---
 
   @Test
   fun respectsPositionAndRestoresIt() {
@@ -245,7 +242,6 @@ class DvBitstreamSanitizerTest {
     assertArrayEquals(concat(vcl1, vcl2), remainingBytes(buffer))
   }
 
-  // --- Helpers ---
 
   /** Builds an HEVC NAL unit: start code + 2-byte NAL header encoding [nalUnitType] + payload. */
   private fun annexBNal(nalUnitType: Int, payload: ByteArray, startCodeLen: Int = 4): ByteArray {

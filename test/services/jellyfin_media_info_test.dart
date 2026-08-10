@@ -69,7 +69,6 @@ void main() {
       expect(eng.channels, 6);
       expect(eng.selected, isTrue);
 
-      // Non-default audio
       final jpn = info.audioTracks[1];
       expect(jpn.id, 2);
       expect(jpn.languageCode, 'jpn');
@@ -105,7 +104,6 @@ void main() {
 
       expect(info.defaultSubtitleStreamIndex, isNull);
       expect(info.subtitleTracks.map((track) => track.selected), [false, false]);
-      // The row metadata itself is untouched; only the selection claim is.
       expect(info.subtitleTracks.first.forced, isTrue);
       // Audio keeps the container default: something always has to play.
       expect(info.audioTracks.single.selected, isTrue);

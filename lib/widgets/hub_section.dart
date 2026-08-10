@@ -275,7 +275,6 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       }
     }
 
-    // Handle key down and repeat events
     if (!event.isActionable) {
       return KeyEventResult.ignored;
     }

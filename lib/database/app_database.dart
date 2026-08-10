@@ -119,7 +119,6 @@ class AppDatabase extends _$AppDatabase {
         // migrations while failures are still covered by this close/rethrow
         // boundary and the caller's startup download-recovery decision.
         await database.customSelect('SELECT 1').get();
-        // It deliberately does not claim capacity for a later write.
       }
       final outcome = await _tvosRecoveryQueue.run(
         () => store.reconcile(

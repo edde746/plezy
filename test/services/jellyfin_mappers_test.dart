@@ -82,7 +82,6 @@ void main() {
       expect(item.viewOffsetMs, 3000000); // 3000s in ms
       expect(item.viewCount, 1);
 
-      // Image paths.
       expect(item.thumbPath, '/Items/abc123/Images/Primary?tag=thumbtag');
       expect(item.artPath, '/Items/abc123/Images/Backdrop/0?tag=backtag');
       expect(item.backdropPaths, [
@@ -92,7 +91,6 @@ void main() {
       ]);
       expect(item.clearLogoPath, '/Items/abc123/Images/Logo?tag=logotag');
 
-      // Multi-server fields.
       expect(item.serverId, _serverId);
       expect(item.serverName, 'Home');
     });

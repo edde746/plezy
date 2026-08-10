@@ -12,12 +12,10 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   private weak var registrar: FlutterPluginRegistrar?
   var nameToId: [String: Int] = [:]
 
-  // MpvPluginShared conformance
   var coreBase: MpvPlayerCoreBase? { playerCore }
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible _: Bool) { playerCore?.setVisible(visible) }
   func updatePlayerFrame() { playerCore?.updateFrame() }
 
-  // PiP
   private var pipController: MpvPipController?
   private var pipChannel: FlutterMethodChannel?
   private var autoPipEnabled = false
@@ -207,7 +205,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
               return
             }
             pip.setAutoStart(true)
-            // Warm the layer so the system considers PiP possible
             if let pc = self.playerCore {
               pip.warmLayer(currentTime: pc.timePos, isPlaying: !pc.isPaused)
             }
@@ -287,7 +284,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  /// Unified cleanup for all PiP exit paths
   private func cleanupPip(notify: Bool, pause: Bool = false) {
     playerCore?.setPipSubtitleCompositing(false)
     playerCore?.isPipStarting = false

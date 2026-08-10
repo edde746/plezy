@@ -15,9 +15,8 @@ ANDROID_15_INSTRUMENTATION_CLASSES = (
     "com.edde746.plezy.exoplayer.PlezyAudioModePlaybackTest"
 )
 ANDROID_15_INSTRUMENTATION_TARGET = "android-15-instrumentation"
-# Kept separate from the suites above: only one build type can host androidTest, and
-# those suites drive media3 builder APIs the app itself never calls, which R8 shrinks
-# legitimately. This class asserts only name-based reachability (#1703).
+# Separate R8 reachability from instrumentation: these suites exercise APIs the app
+# does not call directly, so shrinking them is expected. Covers name-based reachability (#1703).
 ANDROID_R8_REACHABILITY_CLASSES = "androidx.media3.decoder.ffmpeg.FfmpegDecoderReachabilityTest"
 ANDROID_R8_REACHABILITY_TARGET = "android-r8-reachability"
 
@@ -126,9 +125,7 @@ GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
     "android-9": (
         (
             "basic",
-            # API 28's emulator routing to the 10.0.2.2 host alias is unreliable
-            # on this image, so reach Jellyfin over an adb reverse mapping the
-            # way the media suite already does.
+            # API 28 uses adb reverse because 10.0.2.2 routing is unreliable here.
             "--adb-reverse",
             "--flow",
             ".maestro/flows/05_playback.yaml",
@@ -138,13 +135,7 @@ GROUPS: dict[str, tuple[tuple[str, ...], ...]] = {
             "build/maestro-legacy/diagnostics",
         ),
     ),
-    # Real Android TV hardware only, so no workflow dispatches it. The three
-    # `tv` regressions above run on a phone emulator that `onboard_jellyfin_tv`
-    # forces into TV mode; this drives the rail layout a device reports on its
-    # own. The D-pad-only path is also the only way to reach the TV number
-    # spinner, which InputModeTracker hides as soon as a tap arrives. Run as
-    # `python3 scripts/run_maestro_ci.py android-tv-device` with
-    # MAESTRO_DEVICE_ID set to the box.
+    # Manual Android TV hardware target; workflow runs phone-emulator TV regressions.
     "android-tv-device": (
         (
             "basic",
@@ -201,12 +192,8 @@ def run_android_15_instrumentation() -> None:
 
 def run_android_r8_reachability() -> None:
     print("==> Android R8 reachability", flush=True)
-    # The `minified` build type runs R8 over the app under test, so a keep rule that stops
-    # covering a reflective lookup, a JNI callback or a native library load fails here
-    # instead of shipping. No other gate in this repository runs R8 at all.
-    #
-    # compileFlutterBuildMinified is deliberately not excluded: CI only prebuilds the
-    # debug APK, so this variant has no Flutter outputs to reuse.
+    # Run minified instrumentation to catch reflective, JNI, and native-load keep
+    # regressions. Do not exclude the Flutter build; CI only prebuilds debug.
     run_maestro._run_checked(
         (
             "android/gradlew",

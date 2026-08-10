@@ -23,7 +23,6 @@
   />
 
   <div class="bento-grid">
-    <!-- HERO: Wide Codec Support — 2col × 2row -->
     <ScrollReveal class="bento-codec">
       <div class="flat-card feature-card codec-card">
         <div class="card-content">
@@ -57,7 +56,6 @@
       </div>
     </ScrollReveal>
 
-    <!-- HDR -->
     <ScrollReveal delay={50} class="bento-hdr">
       <div class="flat-card feature-card hdr-card">
         <div class="hdr-orb" aria-hidden="true"></div>
@@ -71,10 +69,8 @@
       </div>
     </ScrollReveal>
 
-    <!-- Advanced Subtitles -->
     <ScrollReveal delay={100} class="bento-sub">
       <div class="flat-card feature-card sub-card">
-        <!-- Fake subtitle lines -->
         <div class="subtitle-lines" aria-hidden="true">
           <div class="subtitle-line wide"></div>
           <div class="subtitle-line short"></div>
@@ -86,7 +82,6 @@
       </div>
     </ScrollReveal>
 
-    <!-- Cross-Platform — 1col × 2row tall -->
     <ScrollReveal delay={80} class="bento-cross">
       <div class="flat-card feature-card cross-card">
         <p class="card-title with-gap">Cross-Platform</p>
@@ -119,7 +114,6 @@
       </div>
     </ScrollReveal>
 
-    <!-- Offline Downloads -->
     <ScrollReveal delay={150} class="bento-offline">
       <div class="flat-card feature-card offline-card">
         <div>
@@ -135,7 +129,6 @@
       </div>
     </ScrollReveal>
 
-    <!-- Watch Together -->
     <ScrollReveal delay={180} class="bento-watch">
       <div class="flat-card feature-card watch-card">
         <div>
@@ -160,7 +153,6 @@
       </div>
     </ScrollReveal>
 
-    <!-- Tracker Sync -->
     <ScrollReveal delay={210} class="bento-trackers">
       <div class="flat-card feature-card tracker-card">
         <div class="tracker-copy">
@@ -188,7 +180,6 @@
       </div>
     </ScrollReveal>
 
-    <!-- Much More — full width banner -->
     <ScrollReveal delay={270} class="bento-more">
       <div class="flat-card feature-card more-card">
         <div>

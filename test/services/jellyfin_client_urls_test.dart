@@ -131,11 +131,8 @@ _initializeJellyfinAudioCarry({int? selectedAudioStreamId, AudioTrack? preferred
   return (client: client, requests: requests);
 }
 
-/// URL-builder smoke tests. We can't unit-test a network round-trip without
-/// spinning up a Jellyfin server, but the URL shape is a clear unit-of-work:
-/// query parameters must include the right keys and the auth token. These
-/// tests pin the contract so the next iteration of the player (Task 8 wiring)
-/// has something to point at.
+/// URL-builder smoke tests. Without a live Jellyfin server, pin query keys and
+/// authentication parameters directly.
 void main() {
   // Pin device identity so JellyfinClient.create's MediaBrowser header falls
   // back to Device="Plezy" instead of resolving the host machine's name.
