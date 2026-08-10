@@ -695,7 +695,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
             preferredSubtitleTrack: initializationSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
-            transcodeOffset: openResumePosition,
           ),
           offlineLibraryMode: _offlineLibraryMode,
         );
@@ -801,12 +800,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           externalSubtitles: subtitleSelection.sidecarsAtOpen,
         );
         var effectiveExternalSubtitlePlan = externalSubtitlePlan;
-        await _awaitTranscodeReadiness(
-          client: mediaClient,
-          isTranscoding: result.isTranscoding,
-          videoUrl: result.videoUrl!,
-        );
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
         final openResult = await _openMediaOnPlayer(
           player: currentPlayer,
           settingsService: settingsService,

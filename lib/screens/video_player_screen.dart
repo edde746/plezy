@@ -75,7 +75,6 @@ import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
-import '../utils/media_server_http_client.dart' show AbortController;
 import '../utils/log_redaction_manager.dart';
 import '../utils/live_tv_player_navigation.dart';
 import '../utils/player_utils.dart';
@@ -473,9 +472,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Completer<void>? _playbackTransitionIdleCompleter;
   bool _playbackIntentShouldPlay = true;
 
-  /// In-flight transcode readiness probe, aborted by the next probe or by
-  /// dispose so a superseded open never leaves it polling out its window.
-  AbortController? _transcodeReadinessAbort;
   int _pendingSubtitleCycleCount = 0;
   bool _subtitleCycleDrainActive = false;
 
@@ -1307,13 +1303,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
-            // The initial resume position is the server view offset (the
-            // online open resolves the same value later), so a resumed
-            // transcode starts producing at the resume point instead of
-            // seeking a stream that begins at zero.
-            transcodeOffset: _currentMetadata.viewOffsetMs != null
-                ? Duration(milliseconds: _currentMetadata.viewOffsetMs!)
-                : null,
           ),
           offlineLibraryMode: false,
         );
@@ -1828,7 +1817,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void dispose() {
     unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.mainScreen));
-    _transcodeReadinessAbort?.abort();
     _playerInitializationGeneration++;
     _frameRate.dispose();
     WidgetsBinding.instance.removeObserver(this);

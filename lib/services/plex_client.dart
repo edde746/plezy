@@ -1,7 +1,6 @@
 import 'dart:async';
 import '../utils/isolate_helper.dart';
 import '../utils/json_utils.dart';
-import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
@@ -2648,6 +2647,16 @@ class PlexClient
   /// [transcodeSessionId] and [sessionIdentifier] should be reused across
   /// seeks + quality/version/audio switches within one playback so the
   /// server-side transcode session is preserved.
+  ///
+  /// Deliberately no `offset` request parameter: the start URL always
+  /// describes the full title and the player seeks in-band by requesting the
+  /// segment at the resume position (`Media(start:)`). Pre-warming the
+  /// transcoder at the resume point looked cheaper but never was — mpv's
+  /// stream probing reads segment zero first, which is itself a Plex seek, so
+  /// an offset start forced the transcoder through seek→0→seek within a
+  /// couple of seconds. PMS can leave the segment response that races such a
+  /// restart open without data or error, which the player waits out as
+  /// endless buffering (#1859).
   Future<({String? startPath, TranscodeDecisionOutcome outcome})> buildTranscodeStartPath({
     required String ratingKey,
     required int mediaIndex,
@@ -2656,7 +2665,6 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    Duration? offset,
     MediaSubtitleTrack? selectedSubtitleTrack,
     int? partId,
   }) async {
@@ -2670,7 +2678,6 @@ class PlexClient
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
         audioStreamId: audioStreamId,
-        offset: offset,
         selectedSubtitleTrack: selectedSubtitleTrack,
         useTsFallbackTarget: useTsFallbackTarget,
       );
@@ -2705,205 +2712,6 @@ class PlexClient
       appLogger.e('Failed to build transcode start path', error: e, stackTrace: st);
       return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
     }
-  }
-
-  /// Absolute media position a transcode start URL was requested at, or null
-  /// when the URL is not an offset HLS start request. Matched on decoded
-  /// path segments so a percent-encoded spelling of the same URL cannot
-  /// silently switch the readiness probe off.
-  static Duration? transcodeStreamOffsetFromUrl(String videoUrl) {
-    final uri = Uri.tryParse(videoUrl);
-    if (uri == null || !'/${uri.pathSegments.join('/')}'.endsWith('/video/:/transcode/universal/start.m3u8')) {
-      return null;
-    }
-    final offsetSeconds = double.tryParse(uri.queryParameters['offset'] ?? '');
-    if (offsetSeconds == null || offsetSeconds <= 0) return null;
-    return Duration(microseconds: (offsetSeconds * Duration.microsecondsPerSecond).round());
-  }
-
-  /// Picks the playlist entry the readiness probe should touch: the segment
-  /// whose duration window contains [offset].
-  ///
-  /// Plex media playlists always cover the full title from segment zero, so
-  /// probing the first entry would steer the transcoder back to the start —
-  /// requesting a segment is how a client seeks a Plex HLS session. A master
-  /// playlist (no `#EXTINF` durations) descends into its first variant. A
-  /// media playlist whose durations never cross [offset] returns null: it
-  /// cannot say where the offset lives, and a probe aimed at the wrong
-  /// segment would seek the session, so the caller skips probing instead.
-  @visibleForTesting
-  static String? selectReadinessProbeTarget(String body, Duration offset) {
-    String? firstEntry;
-    var sawSegmentDurations = false;
-    var cumulative = Duration.zero;
-    var pending = Duration.zero;
-    for (final raw in body.split(RegExp(r'\r?\n'))) {
-      final line = raw.trim();
-      if (line.isEmpty) continue;
-      if (line.startsWith('#')) {
-        if (line.startsWith('#EXTINF:')) {
-          sawSegmentDurations = true;
-          final seconds = double.tryParse(line.substring('#EXTINF:'.length).split(',').first);
-          if (seconds != null) pending = Duration(microseconds: (seconds * Duration.microsecondsPerSecond).round());
-        }
-        continue;
-      }
-      firstEntry ??= line;
-      cumulative += pending;
-      pending = Duration.zero;
-      if (sawSegmentDurations && cumulative > offset) return line;
-    }
-    return sawSegmentDurations ? null : (firstEntry ?? '');
-  }
-
-  /// Waits for a just-started Plex offset HLS session to serve the segment at
-  /// the requested offset before a native player opens its playlist. Plex can
-  /// return a manifest before the segment is ready; mpv treats that 404 as an
-  /// HLS error and races through the rest of the manifest.
-  ///
-  /// Best-effort by design: the probe never fails an open, it only stops
-  /// waiting, and callers ignore the returned bool — it exists for tests. The
-  /// player then sees whatever the server is actually doing and the existing
-  /// log-stream classification applies unchanged. To that end a 500 stops the
-  /// wait immediately — a persistent 500 must keep failing fast so the
-  /// server-limit dialog appears promptly — whether it arrives as a response
-  /// or inside a decode exception, and a cancellation ([abort] fired or the
-  /// owning client closing) stops it too rather than sleeping out the window.
-  /// URLs without an offset return immediately: probing a no-offset playlist
-  /// would touch segment zero, and requesting a segment is how a client seeks
-  /// a Plex HLS session.
-  ///
-  /// Other non-2xx responses are the expected not-ready signal. `_http.get`
-  /// does not throw on the status, though its body decode can throw carrying
-  /// one — both paths share [handOffStatus] so they cannot drift. Every
-  /// not-ready round waits [pollInterval], doubling up to 4x after three
-  /// consecutive failed round-trips so a stalled transcode is not hammered;
-  /// the accepted trade is that a session whose segments 404 for real
-  /// reaches the player, and its media-unreadable dialog, one probe window
-  /// later than an unprobed open would. The probe carries this retry budget
-  /// itself, so its requests bypass endpoint failover, and each request has a
-  /// hard timeout (5s, shrinking as the overall deadline approaches) so a
-  /// single hung request cannot consume the entire window.
-  Future<bool> waitForTranscodeReady(
-    String videoUrl, {
-    Duration timeout = const Duration(seconds: 15),
-    Duration pollInterval = const Duration(milliseconds: 500),
-    AbortController? abort,
-  }) async {
-    final startUri = Uri.tryParse(videoUrl);
-    final probeOffset = transcodeStreamOffsetFromUrl(videoUrl);
-    if (startUri == null || probeOffset == null) return true;
-
-    // One rule for terminal statuses, applied to responses and to
-    // status-bearing exceptions alike.
-    bool handOffStatus(int? statusCode) {
-      if (statusCode != 500) return false;
-      // Hand off without classifying: mpv opens the URL, hits the same 500,
-      // and the log-stream path raises the server-limit dialog.
-      appLogger.i('Plex transcode readiness probe handing off on HTTP 500');
-      return true;
-    }
-
-    final deadline = clock.now().add(timeout);
-    var candidate = startUri;
-    var playlistDepth = 0;
-    var consecutiveFailures = 0;
-    int? lastStatus;
-    while (true) {
-      final remaining = deadline.difference(clock.now());
-      if (remaining <= Duration.zero) break;
-      if (abort?.isAborted ?? false) return false;
-      try {
-        final requestTimeout = remaining < const Duration(seconds: 5) ? remaining : const Duration(seconds: 5);
-        final isPlaylist = candidate.path.toLowerCase().endsWith('.m3u8');
-        // The default Accept is application/json (PlexConfig.headers); the
-        // probe mirrors the player's request shape instead. Segments go
-        // through getStatus so a server that ignores Range never routes a
-        // full media segment through text decoding.
-        final int statusCode;
-        var body = '';
-        Uri? effectiveUri;
-        if (isPlaylist) {
-          final response = await _http.get(
-            candidate.toString(),
-            headers: const {'Accept': '*/*'},
-            timeout: requestTimeout,
-            abort: abort,
-            allowEndpointFailover: false,
-          );
-          statusCode = response.statusCode;
-          body = response.data?.toString() ?? '';
-          effectiveUri = response.effectiveUri;
-        } else {
-          final response = await _http.getStatus(
-            candidate.toString(),
-            headers: const {'Range': 'bytes=0-0', 'Accept': '*/*'},
-            timeout: requestTimeout,
-            abort: abort,
-          );
-          statusCode = response.statusCode;
-        }
-        lastStatus = statusCode;
-        if (statusCode >= 200 && statusCode < 300) {
-          consecutiveFailures = 0;
-          if (body.trimLeft().startsWith('#EXTM3U')) {
-            final child = selectReadinessProbeTarget(body, probeOffset);
-            if (child == null) {
-              // The playlist has segments but its durations never reach the
-              // offset — a playlist shape this client has never observed
-              // against a real PMS. It cannot say where the offset lives,
-              // and a probe aimed at the wrong segment would seek the
-              // session, so skip probing and let the player negotiate.
-              return true;
-            }
-            if (child.isNotEmpty) {
-              candidate = (effectiveUri ?? candidate).resolve(child);
-              playlistDepth++;
-              if (playlistDepth > 4) {
-                appLogger.w('Plex transcode readiness exceeded the HLS playlist depth limit');
-                return false;
-              }
-              // Descending into a child playlist is progress, not a poll.
-              continue;
-            }
-            // A manifest with no media entries yet: not ready, poll again.
-          } else if (!isPlaylist) {
-            // The segment at the offset answered: the session is ready.
-            return true;
-          }
-        } else if (handOffStatus(statusCode)) {
-          return false;
-        } else {
-          consecutiveFailures++;
-        }
-      } on MediaServerHttpException catch (e) {
-        if (e.isCancellation) {
-          // Cancellation is not a not-ready signal, so stop instead of
-          // sleeping out the window.
-          return false;
-        }
-        lastStatus = e.statusCode ?? lastStatus;
-        if (handOffStatus(e.statusCode)) return false;
-        // Transport failure — same treatment as a not-ready response.
-        consecutiveFailures++;
-        appLogger.d('Plex transcode readiness probe transport failure', error: e);
-      } catch (e) {
-        consecutiveFailures++;
-        appLogger.d('Plex transcode readiness probe transport failure', error: e);
-      }
-      var delay = pollInterval;
-      if (consecutiveFailures > 3) {
-        delay = pollInterval * (1 << (consecutiveFailures - 3).clamp(0, 2));
-      }
-      final timeLeft = deadline.difference(clock.now());
-      if (timeLeft <= Duration.zero) break;
-      await Future<void>.delayed(delay < timeLeft ? delay : timeLeft);
-    }
-    appLogger.w(
-      'Plex transcode did not become ready within ${timeout.inMilliseconds}ms '
-      '(playlistDepth=$playlistDepth, lastStatus=${lastStatus ?? 'none'}, consecutiveFailures=$consecutiveFailures)',
-    );
-    return false;
   }
 
   /// Point the part's server-side subtitle selection at [track] so an imminent
@@ -3067,7 +2875,6 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    Duration? offset,
     MediaSubtitleTrack? selectedSubtitleTrack,
     bool useTsFallbackTarget = false,
   }) {
@@ -3108,7 +2915,6 @@ class PlexClient
       'directStreamAudio': '1',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
-      if (offset != null && offset > Duration.zero) 'offset': (offset.inMilliseconds / 1000).toStringAsFixed(6),
       // `subtitles` is the only subtitle knob this endpoint honours. Which
       // stream gets burned comes from the part's server-side selection, not
       // from here: measured against a real PMS, passing `subtitleStreamID` for
@@ -3145,7 +2951,6 @@ class PlexClient
     required String sessionIdentifier,
     required String transcodeSessionId,
     int? audioStreamId,
-    Duration? offset,
     MediaSubtitleTrack? selectedSubtitleTrack,
     bool useTsFallbackTarget = false,
   }) {
@@ -3157,7 +2962,6 @@ class PlexClient
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,
       audioStreamId: audioStreamId,
-      offset: offset,
       selectedSubtitleTrack: selectedSubtitleTrack,
       useTsFallbackTarget: useTsFallbackTarget,
     );
@@ -3696,7 +3500,6 @@ class PlexClient
           sessionIdentifier: options.sessionIdentifier!,
           transcodeSessionId: options.transcodeSessionId!,
           audioStreamId: resolvedAudioId,
-          offset: options.transcodeOffset,
           selectedSubtitleTrack: requestedSubtitleTrack,
           partId: data.mediaInfo?.getPartId(),
         );

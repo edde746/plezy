@@ -548,7 +548,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
   /// mpv stream ring buffer for poorly interleaved MP4/MOV direct play (the
   /// ring absorbs the demuxer's audio↔video byte ping-pong so HTTP reads stay
   /// linear instead of dropping the connection on every byte seek — see
-  /// [networkStreamRingBytes]). Both properties are always written, set or
+  /// [networkStreamRingBytes]). Every property is always written, set or
   /// reset, so a reused player never carries one item's tuning into the next
   /// open. On Android with ExoPlayer active they are stashed natively and
   /// replayed on the exo→mpv fallback, so keep them unconditional.
@@ -579,6 +579,25 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       await player.setProperty('stream-lavf-o', '');
     }
 
+    // Transcode (HLS) segment fetches happen inside ffmpeg's hls demuxer, not
+    // mpv's stream layer, so the reconnect options above never reach them and
+    // mpv's default network-timeout is inert there: a segment response PMS
+    // leaves open without data or error — observed when the request races a
+    // transcoder seek/restart — buffers forever (#1859). An explicit
+    // network-timeout bounds each stalled read and the demuxer-level
+    // reconnect options re-request the same segment instead of skipping its
+    // content. 20s sits above the segment-serve latency of a struggling
+    // transcode (reads that deliver any bytes reset the clock) and a false
+    // trip is a Range-resumed reconnect, not an error.
+    if (isNetworkVod && isTranscoding) {
+      await player.setProperty('network-timeout', '20');
+      await player.setProperty('demuxer-lavf-o', 'reconnect=1,reconnect_streamed=1,reconnect_on_network_error=1');
+    } else {
+      // mpv's documented default network-timeout.
+      await player.setProperty('network-timeout', '60');
+      await player.setProperty('demuxer-lavf-o', '');
+    }
+
     int? ringBytes;
     if (isNetworkVod && !isTranscoding) {
       // Transcode (HLS) playback only uses the mpv stream layer for the
@@ -604,24 +623,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       );
     }
     await player.setProperty('stream-buffer-size', '${ringBytes ?? mpvDefaultStreamBufferBytes}');
-  }
-
-  /// Best-effort wait for an offset transcode session's segment at the
-  /// resume point, run immediately before the player opens the URL so the
-  /// wait hides behind the other pre-open work and the guarantee is fresh
-  /// when the player attaches. A not-ready session still opens — mpv
-  /// classifies whatever the server actually returns — and no-offset URLs
-  /// return immediately. Starting a new probe aborts the previous one so a
-  /// superseded open never leaves it polling out its window.
-  Future<void> _awaitTranscodeReadiness({
-    required MediaServerClient? client,
-    required bool isTranscoding,
-    required String videoUrl,
-  }) async {
-    if (!isTranscoding || client is! PlexClient) return;
-    _transcodeReadinessAbort?.abort();
-    final abort = _transcodeReadinessAbort = AbortController();
-    await client.waitForTranscodeReady(videoUrl, abort: abort);
   }
 
   /// Open [videoUrl] on [player]: stream tuning → open → native subtitle style.

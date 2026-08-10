@@ -261,11 +261,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           resumePosition: resumePosition,
           durationMs: _currentMetadata.durationMs,
         );
-        await _awaitTranscodeReadiness(
-          client: playbackContext.reportingClient,
-          isTranscoding: result.isTranscoding,
-          videoUrl: result.videoUrl!,
-        );
         if (!attempt.isCurrent) return;
         final openResult = await _openMediaOnPlayer(
           player: currentPlayer,
