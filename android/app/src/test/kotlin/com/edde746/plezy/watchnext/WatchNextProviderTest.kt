@@ -17,6 +17,13 @@ import android.database.MatrixCursor
 import android.net.Uri
 import android.os.ParcelFileDescriptor.AutoCloseInputStream
 import androidx.tvprovider.media.tv.TvContractCompat
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
+import androidx.work.WorkManager
+import androidx.work.Worker
+import androidx.work.WorkerParameters
+import androidx.work.testing.WorkManagerTestInitHelper
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -718,6 +725,26 @@ class WatchNextProviderTest {
 
     assertEquals(1, tvProvider.deleteCount)
     assertFalse(context.cacheDir.resolve("system_shelf_artwork").exists())
+  }
+
+  @Test
+  fun packageUpdateCancelsLegacyShelfRefreshWork() {
+    WorkManagerTestInitHelper.initializeTestWorkManager(context)
+    val workManager = WorkManager.getInstance(context)
+    workManager.enqueueUniquePeriodicWork(
+      SystemShelfUpdateReceiver.LEGACY_SHELF_REFRESH_WORK,
+      ExistingPeriodicWorkPolicy.KEEP,
+      PeriodicWorkRequestBuilder<LegacyShelfRefreshStandIn>(6, TimeUnit.HOURS).build()
+    ).result.get()
+
+    SystemShelfUpdateReceiver(Executor { command -> command.run() })
+      .onReceive(context, Intent(Intent.ACTION_MY_PACKAGE_REPLACED))
+
+    val states = workManager
+      .getWorkInfosForUniqueWork(SystemShelfUpdateReceiver.LEGACY_SHELF_REFRESH_WORK)
+      .get()
+      .map { it.state }
+    assertEquals(listOf(WorkInfo.State.CANCELLED), states)
   }
 
   @Test
@@ -1604,4 +1631,16 @@ private class ManualExecutorService : AbstractExecutorService() {
   fun runNext() {
     tasks.removeFirst().run()
   }
+}
+
+/**
+ * Stands in for the removed ShelfRefreshWorker so the legacy periodic job can
+ * be enqueued. Public because WorkManager's default factory instantiates
+ * workers reflectively and cannot access a package-private class.
+ */
+class LegacyShelfRefreshStandIn(
+  context: Context,
+  params: WorkerParameters
+) : Worker(context, params) {
+  override fun doWork(): Result = Result.success()
 }

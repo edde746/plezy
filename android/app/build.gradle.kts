@@ -516,8 +516,10 @@ dependencies {
   // Android TV Watch Next integration
   implementation("androidx.tvprovider:tvprovider:1.1.0")
 
-  // Periodic Watch Next background refresh (ShelfRefreshWorker). Same version
-  // background_downloader pins, so the merged classpath stays coherent.
+  // Only used to cancel the legacy periodic shelf refresh job (2.13.0's
+  // removed ShelfRefreshWorker) that WorkManager persisted on updated
+  // devices. Same version background_downloader pins, so the merged
+  // classpath stays coherent.
   implementation("androidx.work:work-runtime-ktx:2.11.0")
 
   // Media3 ExoPlayer for Android
