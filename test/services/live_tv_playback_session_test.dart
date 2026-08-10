@@ -134,7 +134,14 @@ void main() {
       expect(liveEdgeUri.queryParameters['protocol'], 'hls');
       expect(liveEdgeUri.queryParameters['X-Plex-Incomplete-Segments'], '1');
       expect(liveEdgeUri.queryParameters.containsKey('X-Plex-Chunked'), isFalse);
+      // Live TV deliberately keeps the TS target with the broadcast codecs:
+      // live sessions copy hevc/mpeg2video channels, unlike the VOD target
+      // which moved to fMP4 (issue #1859).
       expect(liveEdgeUri.queryParameters['X-Plex-Client-Profile-Extra'], contains('protocol=hls&container=mpegts'));
+      expect(
+        liveEdgeUri.queryParameters['X-Plex-Client-Profile-Extra'],
+        contains('videoCodec=h264%2Chevc%2Cmpeg2video'),
+      );
       expect(liveEdgeUri.queryParameters['subtitles'], 'none');
       expect(liveEdgeUri.queryParameters.containsKey('subtitleStreamID'), isFalse);
       expect(liveEdgeUri.queryParameters.containsKey('advancedSubtitles'), isFalse);

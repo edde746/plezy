@@ -86,15 +86,51 @@ part 'plex_client/parts/metadata_edit.dart';
 const _plexVideoTranscodeBaseEndpoint = '/video/:/transcode/universal';
 const _plexVideoHlsStartEndpoint = '$_plexVideoTranscodeBaseEndpoint/start.m3u8';
 const _plexVideoHlsProtocol = 'hls';
-const _plexHlsVideoTranscodeTarget =
+
+/// VOD transcode target: HLS with fragmented-MP4 segments.
+///
+/// Every non-Original request pins `directStream=0`, so this codec list is a
+/// menu of *encode* outputs, never copy targets. HEVC must not be offered in
+/// an mpegts target: a Plex Pass server with HEVC encoding enabled obliges,
+/// and its hardware HEVC encode → TS segmenter path emits parameter sets mpv
+/// rejects ("PPS changed between slices", issue #1859). Apple's HLS spec
+/// likewise requires fMP4 for HEVC. fMP4 decisions and segment output were
+/// verified against PMS 1.22 through 1.43; servers older than 1.22 fail the
+/// decision request itself regardless of container, so no version gate.
+const _plexHlsVodVideoTranscodeTarget =
+    'add-transcode-target(type=videoProfile&context=streaming'
+    '&protocol=hls&container=mp4&videoCodec=h264%2Chevc'
+    '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
+
+/// Fallback VOD target for a server whose decision does not honour the fMP4
+/// container: H.264-only MPEG-TS, the combination Plex's own legacy clients
+/// request. HEVC stays out — in a TS target it is reachable only as the
+/// broken encode output described on [_plexHlsVodVideoTranscodeTarget].
+const _plexHlsVodTsVideoTranscodeTarget =
+    'add-transcode-target(type=videoProfile&context=streaming'
+    '&protocol=hls&container=mpegts&videoCodec=h264'
+    '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
+
+/// Live TV target: MPEG-TS with the broadcast codecs. Live sessions are
+/// copy-dominant (TS→TS remux — hevc/mpeg2video here are copy targets, and
+/// HEVC *copy* into TS is verified clean), so this deliberately does not
+/// follow the VOD target to fMP4. Residual risk accepted: a Plex Pass server
+/// electing to HEVC-*encode* a live channel would hit the same TS bug.
+const _plexHlsLiveVideoTranscodeTarget =
     'add-transcode-target(type=videoProfile&context=streaming'
     '&protocol=hls&container=mpegts&videoCodec=h264%2Chevc%2Cmpeg2video'
     '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)';
+
 const _plexHlsSubtitleTranscodeTarget =
     'add-transcode-target(type=subtitleProfile&context=streaming'
     '&protocol=hls&container=webvtt&subtitleCodec=webvtt)';
 
-String _buildPlexHlsClientProfileExtra({int? maxVideoBitrateKbps}) {
+/// Containers the VOD decision must echo back before a start path is handed
+/// to the player (see `requiredContainer` on [_runTranscodeDecision]).
+const _plexHlsVodContainer = 'mp4';
+const _plexHlsVodTsContainer = 'mpegts';
+
+String _buildPlexHlsClientProfileExtra({required String videoTranscodeTarget, int? maxVideoBitrateKbps}) {
   final clauses = <String>['add-settings(DirectPlayStreamSelection=true)'];
   if (maxVideoBitrateKbps != null) {
     clauses.add(
@@ -103,7 +139,7 @@ String _buildPlexHlsClientProfileExtra({int? maxVideoBitrateKbps}) {
     );
   }
   clauses
-    ..add(_plexHlsVideoTranscodeTarget)
+    ..add(videoTranscodeTarget)
     ..add(_plexHlsSubtitleTranscodeTarget);
   return clauses.join('+');
 }
@@ -2626,7 +2662,7 @@ class PlexClient
   }) async {
     try {
       await selectSubtitleStreamForBurn(partId: partId, track: selectedSubtitleTrack);
-      final allParams = _buildTranscodeParams(
+      Map<String, String> paramsFor({required bool useTsFallbackTarget}) => _buildTranscodeParams(
         ratingKey: ratingKey,
         mediaIndex: mediaIndex,
         partIndex: partIndex,
@@ -2636,12 +2672,35 @@ class PlexClient
         audioStreamId: audioStreamId,
         offset: offset,
         selectedSubtitleTrack: selectedSubtitleTrack,
+        useTsFallbackTarget: useTsFallbackTarget,
       );
-      return await _runTranscodeDecision(
+
+      final primary = await _runTranscodeDecision(
         startEndpoint: _plexVideoHlsStartEndpoint,
-        allParams: allParams,
+        allParams: paramsFor(useTsFallbackTarget: false),
         isOriginal: preset.isOriginal,
+        requiredContainer: _plexHlsVodContainer,
       );
+      if (primary.containerHonored) {
+        return (startPath: primary.startPath, outcome: primary.outcome);
+      }
+
+      // The decision succeeded but ignored the fMP4 target. Never hand the
+      // player a container it did not negotiate — a mis-declared stream is
+      // exactly the corruption mode of issue #1859 — so re-ask with the
+      // TS/H.264 fallback profile before giving up.
+      appLogger.i('Retrying transcode decision with the TS fallback profile');
+      final fallback = await _runTranscodeDecision(
+        startEndpoint: _plexVideoHlsStartEndpoint,
+        allParams: paramsFor(useTsFallbackTarget: true),
+        isOriginal: preset.isOriginal,
+        requiredContainer: _plexHlsVodTsContainer,
+      );
+      if (fallback.containerHonored) {
+        return (startPath: fallback.startPath, outcome: fallback.outcome);
+      }
+      appLogger.w('Transcode decision honoured neither requested container; falling back to direct play');
+      return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
     } catch (e, st) {
       appLogger.e('Failed to build transcode start path', error: e, stackTrace: st);
       return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
@@ -2899,11 +2958,12 @@ class PlexClient
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
       );
-      return await _runTranscodeDecision(
+      final result = await _runTranscodeDecision(
         startEndpoint: _musicTranscodeStartEndpoint,
         allParams: allParams,
         isOriginal: preset.isOriginal,
       );
+      return (startPath: result.startPath, outcome: result.outcome);
     } catch (e, st) {
       appLogger.e('Failed to build music transcode start path', error: e, stackTrace: st);
       return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
@@ -2917,10 +2977,17 @@ class PlexClient
   /// outcome via [_parseTranscodeDecisionOutcome], and hand back the start
   /// path (token stripped) on success. [startEndpoint] includes the container
   /// extension (`start.m3u8` / `start.mp3`).
-  Future<({String? startPath, TranscodeDecisionOutcome outcome})> _runTranscodeDecision({
+  ///
+  /// When [requiredContainer] is set and the decision converts, the selected
+  /// media entry must echo that container back; `containerHonored: false`
+  /// otherwise. PMS applies whatever transcode target the client profile
+  /// names, so a mismatch means the server substituted a container the
+  /// player never negotiated — the caller must not open that stream.
+  Future<({String? startPath, TranscodeDecisionOutcome outcome, bool containerHonored})> _runTranscodeDecision({
     required String startEndpoint,
     required Map<String, String> allParams,
     required bool isOriginal,
+    String? requiredContainer,
   }) async {
     final decisionEndpoint = '${startEndpoint.substring(0, startEndpoint.lastIndexOf('/'))}/decision';
 
@@ -2938,15 +3005,41 @@ class PlexClient
 
     if (decisionResponse.statusCode != 200) {
       appLogger.w('Transcode decision returned ${decisionResponse.statusCode}');
-      return (startPath: null, outcome: TranscodeDecisionOutcome.failed);
+      return (startPath: null, outcome: TranscodeDecisionOutcome.failed, containerHonored: true);
     }
 
     final outcome = _parseTranscodeDecisionOutcome(decisionResponse.data, isOriginal: isOriginal);
     if (outcome == TranscodeDecisionOutcome.failed) {
-      return (startPath: null, outcome: outcome);
+      return (startPath: null, outcome: outcome, containerHonored: true);
     }
 
-    return (startPath: _buildTranscodeStartPathFromParams(allParams, endpoint: startEndpoint), outcome: outcome);
+    var containerHonored = true;
+    if (requiredContainer != null && outcome == TranscodeDecisionOutcome.transcodeOk) {
+      final selected = _decisionSelectedContainer(decisionResponse.data);
+      containerHonored = selected == requiredContainer;
+      if (!containerHonored) {
+        appLogger.w('Transcode decision did not honour container=$requiredContainer (got ${selected ?? 'none'})');
+      }
+    }
+
+    return (
+      startPath: _buildTranscodeStartPathFromParams(allParams, endpoint: startEndpoint),
+      outcome: outcome,
+      containerHonored: containerHonored,
+    );
+  }
+
+  /// Container of the selected media entry in a transcode decision body, or
+  /// null when the decision carries no media selection.
+  static String? _decisionSelectedContainer(dynamic data) {
+    if (data is! Map) return null;
+    final container = data['MediaContainer'];
+    final metadata = container is Map ? container['Metadata'] : null;
+    final media = metadata is List && metadata.isNotEmpty && metadata.first is Map
+        ? (metadata.first as Map)['Media']
+        : null;
+    final selected = media is List && media.isNotEmpty && media.first is Map ? media.first as Map : null;
+    return selected?['container']?.toString();
   }
 
   String _buildTranscodeStartPathFromParams(
@@ -2976,10 +3069,12 @@ class PlexClient
     int? audioStreamId,
     Duration? offset,
     MediaSubtitleTrack? selectedSubtitleTrack,
+    bool useTsFallbackTarget = false,
   }) {
     final isOriginal = preset.isOriginal;
     final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
     final clientProfileExtra = _buildPlexHlsClientProfileExtra(
+      videoTranscodeTarget: useTsFallbackTarget ? _plexHlsVodTsVideoTranscodeTarget : _plexHlsVodVideoTranscodeTarget,
       maxVideoBitrateKbps: !isOriginal ? preset.videoBitrateKbps : null,
     );
 
@@ -3003,6 +3098,13 @@ class PlexClient
       'location': 'lan',
       'addDebugOverlay': '0',
       'autoAdjustQuality': '0',
+      // The preset's resolution/quality caps ride as plain query params — the
+      // bitrate limitation clause alone leaves a 4K source at 2160p, starving
+      // the encode and breaking the picker's "1080p" promise (issue #1859).
+      // Both are honoured by the decision and start endpoints on a real PMS.
+      // Null exactly for the original preset.
+      if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+      if (preset.videoQuality != null) 'videoQuality': preset.videoQuality!.toString(),
       'directStreamAudio': '1',
       'mediaBufferSize': '102400',
       'session': transcodeSessionId,
@@ -3045,6 +3147,7 @@ class PlexClient
     int? audioStreamId,
     Duration? offset,
     MediaSubtitleTrack? selectedSubtitleTrack,
+    bool useTsFallbackTarget = false,
   }) {
     return _buildTranscodeParams(
       ratingKey: ratingKey,
@@ -3056,6 +3159,7 @@ class PlexClient
       audioStreamId: audioStreamId,
       offset: offset,
       selectedSubtitleTrack: selectedSubtitleTrack,
+      useTsFallbackTarget: useTsFallbackTarget,
     );
   }
 

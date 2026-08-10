@@ -97,7 +97,19 @@ void main() {
         decisionUri = request.url;
         return http.Response(
           jsonEncode({
-            'MediaContainer': {'generalDecisionCode': 1001, 'transcodeDecisionCode': 1001},
+            'MediaContainer': {
+              'generalDecisionCode': 1001,
+              'transcodeDecisionCode': 1001,
+              // Real decisions echo the honoured target container back; the
+              // client refuses a transcode whose container it never asked for.
+              'Metadata': [
+                {
+                  'Media': [
+                    {'container': 'mp4', 'protocol': 'hls', 'selected': true},
+                  ],
+                },
+              ],
+            },
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -302,7 +314,17 @@ void main() {
       if (request.url.path == '/video/:/transcode/universal/decision') {
         return http.Response(
           jsonEncode({
-            'MediaContainer': {'generalDecisionCode': 1001, 'transcodeDecisionCode': 1001},
+            'MediaContainer': {
+              'generalDecisionCode': 1001,
+              'transcodeDecisionCode': 1001,
+              'Metadata': [
+                {
+                  'Media': [
+                    {'container': 'mp4', 'protocol': 'hls', 'selected': true},
+                  ],
+                },
+              ],
+            },
           }),
           200,
           headers: {'content-type': 'application/json'},
@@ -871,7 +893,8 @@ void main() {
       profile,
       contains(
         'add-transcode-target(type=videoProfile&context=streaming'
-        '&protocol=hls&container=mpegts',
+        '&protocol=hls&container=mp4&videoCodec=h264%2Chevc'
+        '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)',
       ),
     );
     expect(
@@ -882,6 +905,161 @@ void main() {
       ),
     );
     expect(profile, isNot(contains('protocol=http&container=mkv')));
+    // HEVC-in-TS is the mis-mux of issue #1859; the VOD profile must never
+    // reintroduce it.
+    expect(profile, isNot(contains('container=mpegts')));
+    expect(profile, isNot(contains('mpeg2video')));
+  });
+
+  test('non-original presets send the resolution and quality caps their labels promise', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final capped = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 0,
+      preset: TranscodeQualityPreset.p1080_8mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+    expect(capped['videoResolution'], '1920x1080');
+    expect(capped['videoQuality'], '60');
+
+    final original = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 0,
+      preset: TranscodeQualityPreset.original,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+    expect(original.containsKey('videoResolution'), isFalse);
+    expect(original.containsKey('videoQuality'), isFalse);
+  });
+
+  test('the TS fallback profile offers only H.264, never HEVC-in-TS', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final params = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 0,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+      useTsFallbackTarget: true,
+    );
+
+    final profile = params['X-Plex-Client-Profile-Extra'];
+    expect(
+      profile,
+      contains(
+        'add-transcode-target(type=videoProfile&context=streaming'
+        '&protocol=hls&container=mpegts&videoCodec=h264'
+        '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)',
+      ),
+    );
+    expect(profile, isNot(contains('hevc')));
+    expect(profile, isNot(contains('container=mp4')));
+  });
+
+  Future<({({String? startPath, TranscodeDecisionOutcome outcome}) result, List<Uri> decisions})> runGuardedDecision(
+    String Function(int decisionNumber) containerFor,
+  ) async {
+    final decisions = <Uri>[];
+    final client = makeClient((request) async {
+      decisions.add(request.url);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'transcodeDecisionCode': 1001,
+            'Metadata': [
+              {
+                'Media': [
+                  {'container': containerFor(decisions.length), 'protocol': 'hls', 'selected': true},
+                ],
+              },
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final result = await client.buildTranscodeStartPath(
+      ratingKey: '42',
+      mediaIndex: 0,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+    return (result: result, decisions: decisions);
+  }
+
+  test('a decision that honours the fMP4 container is used without a retry', () async {
+    final run = await runGuardedDecision((_) => 'mp4');
+
+    expect(run.result.outcome, TranscodeDecisionOutcome.transcodeOk);
+    expect(run.decisions, hasLength(1));
+    final profile = Uri.parse(run.result.startPath!).queryParameters['X-Plex-Client-Profile-Extra']!;
+    expect(profile, contains('container=mp4&videoCodec=h264%2Chevc'));
+  });
+
+  test('a decision that ignores the fMP4 container is retried once with the TS/h264 profile', () async {
+    final run = await runGuardedDecision((decisionNumber) => decisionNumber == 1 ? 'mkv' : 'mpegts');
+
+    expect(run.result.outcome, TranscodeDecisionOutcome.transcodeOk);
+    expect(run.decisions, hasLength(2));
+    final retryProfile = run.decisions[1].queryParameters['X-Plex-Client-Profile-Extra']!;
+    expect(retryProfile, contains('container=mpegts&videoCodec=h264&audioCodec'));
+    // The start path must carry the profile the server actually honoured,
+    // not the fMP4 one it ignored.
+    final startProfile = Uri.parse(run.result.startPath!).queryParameters['X-Plex-Client-Profile-Extra']!;
+    expect(startProfile, contains('container=mpegts&videoCodec=h264&audioCodec'));
+  });
+
+  test('a server honouring neither container falls back to direct play instead of a mis-mux', () async {
+    final run = await runGuardedDecision((_) => 'mkv');
+
+    expect(run.result.outcome, TranscodeDecisionOutcome.failed);
+    expect(run.result.startPath, isNull);
+    expect(run.decisions, hasLength(2));
+  });
+
+  test('a direct-play-only decision passes through without a container retry', () async {
+    final decisions = <Uri>[];
+    final client = makeClient((request) async {
+      decisions.add(request.url);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'transcodeDecisionCode': 1000,
+            'Metadata': [
+              {
+                'Media': [
+                  {'container': 'mkv', 'selected': true},
+                ],
+              },
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final result = await client.buildTranscodeStartPath(
+      ratingKey: '42',
+      mediaIndex: 0,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+
+    expect(result.outcome, TranscodeDecisionOutcome.directPlayOnly);
+    expect(decisions, hasLength(1));
   });
 
   test('transcode start path uses the HLS manifest endpoint without token', () {
