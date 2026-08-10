@@ -377,6 +377,81 @@ void main() {
     expect(result.subtitleSidecars.single.track.uri, contains('/library/streams/402.srt'));
   });
 
+  test('direct play preloads every external subtitle file, not just the selected one', () async {
+    // Two sidecar files next to the video: only one is selected, but both must
+    // load with the media so the other stays selectable as a secondary
+    // subtitle without a reopen (#1860). The embedded row is the container's
+    // job on direct play and gets no sidecar.
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/metadata/42') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Metadata': [
+                {
+                  'ratingKey': '42',
+                  'type': 'movie',
+                  'title': 'Movie',
+                  'Media': [
+                    {
+                      'id': 7,
+                      'container': 'mp4',
+                      'Part': [
+                        {
+                          'id': 99,
+                          'key': '/library/parts/99/file.mp4',
+                          'Stream': [
+                            {'streamType': 1, 'id': 300, 'codec': 'h264'},
+                            {'streamType': 2, 'id': 301, 'index': 0, 'languageCode': 'eng', 'selected': true},
+                            {
+                              'streamType': 3,
+                              'id': 401,
+                              'index': 1,
+                              'codec': 'srt',
+                              'languageCode': 'deu',
+                              'key': '/library/streams/401',
+                              'external': true,
+                              'selected': true,
+                            },
+                            {
+                              'streamType': 3,
+                              'id': 402,
+                              'index': 2,
+                              'codec': 'srt',
+                              'languageCode': 'fra',
+                              'key': '/library/streams/402',
+                              'external': true,
+                            },
+                            {'streamType': 3, 'id': 403, 'index': 3, 'codec': 'ass', 'languageCode': 'eng'},
+                          ],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('unexpected request', 500);
+    });
+    addTearDown(client.close);
+
+    final result = await client.getPlaybackInitialization(
+      PlaybackInitializationOptions(
+        metadata: testMediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id'),
+        selectedMediaIndex: 0,
+      ),
+    );
+
+    expect(result.playMethod, 'DirectPlay');
+    expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [401, 402]);
+    expect(result.subtitleSidecars.map((sidecar) => sidecar.preload), everyElement(isTrue));
+  });
+
   test('playback uses metadata availability flags without probing part URLs', () async {
     final requests = <http.Request>[];
     final client = makeClient((request) async {

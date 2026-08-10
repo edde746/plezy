@@ -828,6 +828,11 @@ void main() {
       // Nothing is selected and the fixture declares no default, so the server burns nothing and
       // this embedded row stays fetchable as an extracted file.
       expect(result.subtitleSidecars.single.sourceStreamId, 2);
+      expect(
+        result.subtitleSidecars.single.preload,
+        isFalse,
+        reason: 'an extracted embedded row stays lazy: extraction can stall behind the transcoder (#1738)',
+      );
       expect(result.externalSubtitles.single.title, 'English');
       expect(result.externalSubtitles.single.language, 'eng');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
@@ -1367,6 +1372,11 @@ void main() {
       expect(sidecarRow.key, '/Videos/item-1/src-1/Subtitles/5/0/Stream.srt');
       expect(sidecarRow.isExternalFile, isTrue);
       expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [5]);
+      expect(
+        result.subtitleSidecars.single.preload,
+        isTrue,
+        reason: 'a real file loads with the media so it stays selectable as secondary (#1860)',
+      );
 
       // The server default survives normalization so selection can honour it.
       expect(result.mediaInfo!.defaultSubtitleStreamIndex, 3);
@@ -1465,6 +1475,7 @@ void main() {
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.externalSubtitles, hasLength(1));
       expect(result.subtitleSidecars.single.sourceStreamId, 3);
+      expect(result.subtitleSidecars.single.preload, isTrue);
       expect(result.externalSubtitles.single.title, 'English');
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
@@ -1617,6 +1628,11 @@ void main() {
       // one row not fetched: a sidecar for it would paint a second copy over the burned pixels.
       // The other two stay fetchable, which is what keeps a secondary track renderable.
       expect(result.subtitleSidecars.map((sidecar) => sidecar.sourceStreamId), [3, 5]);
+      expect(
+        result.subtitleSidecars.map((sidecar) => sidecar.preload),
+        everyElement(isFalse),
+        reason: 'extraction-backed rows must not gate the open on the transcoder',
+      );
     });
 
     test('getPlaybackInitialization ignores TranscodingUrl for original playback static fallback', () async {

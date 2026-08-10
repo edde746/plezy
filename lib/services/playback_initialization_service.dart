@@ -246,6 +246,9 @@ class PlaybackInitializationService {
         subtitles.add(
           PlaybackSubtitleSidecar(
             sourceStreamId: trackId,
+            // Local files cost nothing to attach, and preloading keeps every
+            // downloaded sidecar selectable as a secondary subtitle (#1860).
+            preload: true,
             track: SubtitleTrack.uri(
               Uri.file(entity.path).toString(),
               title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? t.videoControls.subtitleFile(name: fileName),

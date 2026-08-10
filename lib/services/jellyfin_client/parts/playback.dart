@@ -500,6 +500,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       externalSubtitles.add(
         PlaybackSubtitleSidecar(
           sourceStreamId: track.id,
+          // A real external file is a cheap static fetch, so it loads with the
+          // media whether or not it is selected — that is what lets the track
+          // sheet offer it as a secondary subtitle without a reopen (#1860).
+          // An embedded row extracted on a transcode stays lazy: extraction can
+          // stall while the transcoder spins up, which is exactly what used to
+          // trip the sidecar open guard (#1738).
+          preload: track.isExternalFile,
           track: SubtitleTrack.uri(
             url,
             title:

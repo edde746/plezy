@@ -3946,6 +3946,10 @@ class PlexClient
         externalSubtitles.add(
           PlaybackSubtitleSidecar(
             sourceStreamId: plexTrack.id,
+            // Every row here is a real external file: preload it with the
+            // media so the non-selected tracks stay selectable as secondary
+            // subtitles without a reopen (#1860).
+            preload: true,
             track: SubtitleTrack.uri(
               url,
               title:
