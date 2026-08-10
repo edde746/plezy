@@ -883,7 +883,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   void _handleDeviceInfo(RemoteCommand command) {
     if (command.data != null) {
       final id = command.data!['id'] as String? ?? 'unknown';
-      final name = command.data!['name'] as String? ?? 'Unknown Device';
+      final name = command.data!['name'] as String? ?? t.companionRemote.unknownDevice;
       final platform = command.data!['platform'] as String? ?? 'unknown';
       final role = command.data!['role'] as String?;
 

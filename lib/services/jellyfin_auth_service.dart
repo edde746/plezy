@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 
 import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_browser_dialect.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
@@ -143,8 +144,10 @@ class JellyfinConnectionAuthService {
         ),
         rejectedStatusCodes: const {401, 403},
         rejectionMessage: 'Invalid username or password',
+        rejectionDisplay: t.addServer.invalidCredentials,
         responseLabel: 'Authentication response',
         notJsonMessage: 'Authentication response was not JSON',
+        notJsonDisplay: t.addServer.authResponseNotJson,
       );
 
       return _buildConnection(
@@ -209,22 +212,33 @@ class JellyfinConnectionAuthService {
         response = await client.post('/QuickConnect/Initiate', timeout: MediaServerTimeouts.jellyfinProbe);
       }
       if (response.statusCode == 401 || response.statusCode == 403) {
-        throw MediaServerAuthException('Quick Connect rejected by server', statusCode: response.statusCode);
+        throw MediaServerAuthException(
+          'Quick Connect rejected by server',
+          statusCode: response.statusCode,
+          display: t.addServer.quickConnectRejected,
+        );
       }
       throwIfHttpError(response);
       final data = response.data;
       if (data is! Map<String, dynamic>) {
-        throw MediaServerAuthException('Quick Connect response was not JSON');
+        throw MediaServerAuthException('Quick Connect response was not JSON', display: t.addServer.quickConnectNotJson);
       }
       final code = data['Code'] as String?;
       final secret = data['Secret'] as String?;
       if (code == null || secret == null) {
-        throw MediaServerAuthException('Quick Connect response missing Code or Secret');
+        throw MediaServerAuthException(
+          'Quick Connect response missing Code or Secret',
+          display: t.addServer.quickConnectMissingFields,
+        );
       }
       return JellyfinQuickConnectInitiation(code: code, secret: secret);
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 403) {
-        throw MediaServerAuthException('Quick Connect rejected by server', statusCode: e.statusCode);
+        throw MediaServerAuthException(
+          'Quick Connect rejected by server',
+          statusCode: e.statusCode,
+          display: t.addServer.quickConnectRejected,
+        );
       }
       rethrow;
     } finally {
@@ -276,7 +290,11 @@ class JellyfinConnectionAuthService {
             // 404 mid-poll = secret expired or revoked server-side. Terminal.
             if (response.statusCode == 404) throw const PollTerminatedSignal();
             if (response.statusCode == 401 || response.statusCode == 403) {
-              throw MediaServerAuthException('Quick Connect poll rejected by server', statusCode: response.statusCode);
+              throw MediaServerAuthException(
+                'Quick Connect poll rejected by server',
+                statusCode: response.statusCode,
+                display: t.addServer.quickConnectPollRejected,
+              );
             }
             throwIfHttpError(response);
             final data = response.data;
@@ -287,7 +305,11 @@ class JellyfinConnectionAuthService {
           } on MediaServerHttpException catch (e) {
             if (e.statusCode == 404) throw const PollTerminatedSignal();
             if (e.statusCode == 401 || e.statusCode == 403) {
-              throw MediaServerAuthException('Quick Connect poll rejected by server', statusCode: e.statusCode);
+              throw MediaServerAuthException(
+                'Quick Connect poll rejected by server',
+                statusCode: e.statusCode,
+                display: t.addServer.quickConnectPollRejected,
+              );
             }
             // Transient network blip — let the backoff handle it. The outer
             // timeout is the safety net if the server is durably broken.
@@ -315,8 +337,10 @@ class JellyfinConnectionAuthService {
         ),
         rejectedStatusCodes: const {400, 401, 403},
         rejectionMessage: 'Quick Connect exchange rejected by server',
+        rejectionDisplay: t.addServer.quickConnectRejected,
         responseLabel: 'Quick Connect exchange',
         notJsonMessage: 'Quick Connect exchange response was not JSON',
+        notJsonDisplay: t.addServer.quickConnectNotJson,
       );
 
       return _buildConnection(
@@ -383,7 +407,7 @@ class JellyfinConnectionAuthService {
   /// implements.
   void _requireQuickConnectSupport() {
     if (!dialect.supportsQuickConnect) {
-      throw MediaServerAuthException('Quick Connect rejected by server');
+      throw MediaServerAuthException('Quick Connect rejected by server', display: t.addServer.quickConnectRejected);
     }
   }
 
@@ -412,19 +436,21 @@ class JellyfinConnectionAuthService {
     Future<MediaServerResponse> responseFuture, {
     required Set<int> rejectedStatusCodes,
     required String rejectionMessage,
+    required String rejectionDisplay,
     required String responseLabel,
     required String notJsonMessage,
+    required String notJsonDisplay,
   }) async {
     try {
       final response = await responseFuture;
       if (rejectedStatusCodes.contains(response.statusCode)) {
-        throw MediaServerAuthException(rejectionMessage, statusCode: response.statusCode);
+        throw MediaServerAuthException(rejectionMessage, statusCode: response.statusCode, display: rejectionDisplay);
       }
       throwIfHttpError(response);
 
       final data = response.data;
       if (data is! Map<String, dynamic>) {
-        throw MediaServerAuthException(notJsonMessage);
+        throw MediaServerAuthException(notJsonMessage, display: notJsonDisplay);
       }
       final accessToken = data['AccessToken'] as String?;
       final user = data['User'] as Map<String, dynamic>?;
@@ -447,11 +473,11 @@ class JellyfinConnectionAuthService {
     } on TimeoutException {
       // MediaServerHttpClient normally wraps timeouts, but keep raw client
       // implementations aligned with the same auth policy.
-      throw MediaServerUrlException('Server did not respond in time');
+      throw MediaServerUrlException('Server did not respond in time', display: t.addServer.serverTimedOut);
     } on MediaServerHttpException catch (e) {
       final status = e.statusCode;
       if (status != null && rejectedStatusCodes.contains(status)) {
-        throw MediaServerAuthException(rejectionMessage, statusCode: status);
+        throw MediaServerAuthException(rejectionMessage, statusCode: status, display: rejectionDisplay);
       }
       rethrow;
     }

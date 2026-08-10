@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 
 import '../../database/app_database.dart';
+import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
@@ -22,6 +23,7 @@ import '../media_controls_manager.dart';
 import '../multi_server_manager.dart';
 import '../offline_watch_sync_service.dart';
 import '../playback_coordinator.dart';
+import '../playback_initialization_service.dart';
 import '../playback_progress_tracker.dart';
 import '../settings_service.dart';
 import 'music_playback_service.dart';
@@ -293,7 +295,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final client = _clientFor(seed);
     if (client == null) {
       if (isPlayIntentCurrent(intent)) {
-        _errorsController.add(StateError('No server available for instant mix'));
+        _errorsController.add(
+          PlaybackException(t.music.instantMixNoServer, reason: PlaybackFailureReason.serverUnavailable),
+        );
       }
       return;
     }

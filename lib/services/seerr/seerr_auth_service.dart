@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 
+import '../../i18n/strings.g.dart';
 import '../../models/seerr/seerr_public_settings.dart';
 import '../../models/seerr/seerr_session.dart';
 import '../../models/seerr/seerr_user.dart';
@@ -29,15 +30,21 @@ class SeerrAuthService {
       try {
         res = await client.send('GET', '/settings/public', timeout: SeerrConstants.probeTimeout, authenticated: false);
       } catch (e) {
-        throw SeerrUrlException('Could not reach $baseUrl: $e');
+        throw SeerrUrlException(
+          'Could not reach $baseUrl: $e',
+          display: t.seerr.couldNotReach(url: baseUrl, error: e),
+        );
       }
       final data = res.data;
       if (res.statusCode >= 400 || data is! Map<String, dynamic>) {
-        throw SeerrUrlException('No Seerr instance at $baseUrl (HTTP ${res.statusCode})');
+        throw SeerrUrlException(
+          'No Seerr instance at $baseUrl (HTTP ${res.statusCode})',
+          display: t.seerr.noInstanceAtUrl(url: baseUrl, status: res.statusCode),
+        );
       }
       final settings = SeerrPublicSettings.fromJson(data);
       if (!settings.initialized) {
-        throw const SeerrUrlException('Seerr instance has not completed first-run setup');
+        throw SeerrUrlException('Seerr instance has not completed first-run setup', display: t.seerr.notInitialized);
       }
       return settings;
     } finally {
@@ -98,7 +105,10 @@ class SeerrAuthService {
       // must not unlink the session. An empty stored secret below is the
       // opposite: those credentials are gone for good, so re-linking is the
       // only way forward and unlinking is honest.
-      SeerrAuthMethod.plex => throw const SeerrReauthUnavailableException('No Plex token available for silent re-auth'),
+      SeerrAuthMethod.plex => throw SeerrReauthUnavailableException(
+        'No Plex token available for silent re-auth',
+        display: t.seerr.noPlexTokenForReauth,
+      ),
       SeerrAuthMethod.jellyfin || SeerrAuthMethod.emby when session.secret.isNotEmpty => signInWithJellyfin(
         baseUrl: session.baseUrl,
         username: session.identifier,
@@ -110,7 +120,7 @@ class SeerrAuthService {
         email: session.identifier,
         password: session.secret,
       ),
-      _ => throw const SeerrAuthException('No stored credentials for silent re-auth'),
+      _ => throw SeerrAuthException('No stored credentials for silent re-auth', display: t.seerr.noStoredCredentials),
     };
     return session.copyWith(cookie: fresh.cookie, permissions: fresh.permissions, displayName: fresh.displayName);
   }
@@ -148,11 +158,15 @@ class SeerrAuthService {
         final message = res.data is Map<String, dynamic>
             ? (res.data as Map<String, dynamic>)['message'] as String?
             : null;
-        throw SeerrAuthException(message ?? 'Sign-in rejected', statusCode: res.statusCode);
+        throw SeerrAuthException(
+          message ?? 'Sign-in rejected',
+          statusCode: res.statusCode,
+          display: t.seerr.signInRejected,
+        );
       }
       SeerrHttpClient.throwForStatus(res);
       if (!client.captureSessionCookie(res.response)) {
-        throw const SeerrAuthException('Seerr did not issue a session cookie');
+        throw SeerrAuthException('Seerr did not issue a session cookie', display: t.seerr.noSessionCookie);
       }
       final user = await _resolveUser(client, res.data);
       return SeerrSession(
@@ -187,11 +201,15 @@ class SeerrAuthService {
     // here it means the fresh cookie was rejected — an auth failure, not a
     // malformed-user-payload crash further down.
     if (res.statusCode == 401 || res.statusCode == 403) {
-      throw SeerrAuthException('Seerr rejected the fresh session cookie', statusCode: res.statusCode);
+      throw SeerrAuthException(
+        'Seerr rejected the fresh session cookie',
+        statusCode: res.statusCode,
+        display: t.seerr.freshCookieRejected,
+      );
     }
     SeerrHttpClient.throwForStatus(res);
     final data = res.data;
     if (data is Map<String, dynamic>) return SeerrUser.fromJson(data);
-    throw const SeerrAuthException('Seerr did not return user information');
+    throw SeerrAuthException('Seerr did not return user information', display: t.seerr.noUserInformation);
   }
 }

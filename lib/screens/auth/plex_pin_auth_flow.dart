@@ -206,9 +206,10 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
 
   String _authErrorMessage(Object error) {
     if (error is MediaServerPinExpiredException) return t.addServer.pinExpired;
-    if (error is MediaServerAuthException) return error.message;
+    if (error is MediaServerAuthException) return error.display ?? error.message;
     if (error is MediaServerHttpException) {
-      return t.addServer.couldNotReachServer(error: error.message.isEmpty ? error.toString() : error.message);
+      return error.display ??
+          t.addServer.couldNotReachServer(error: error.message.isEmpty ? error.toString() : error.message);
     }
     return error.toString();
   }

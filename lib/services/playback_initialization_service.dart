@@ -2,6 +2,7 @@ import 'dart:io';
 import '../media/ids.dart';
 
 import 'package:path/path.dart' as p;
+import '../i18n/strings.g.dart';
 
 import '../database/app_database.dart';
 import '../media/media_item.dart';
@@ -142,7 +143,9 @@ class PlaybackInitializationService {
       );
     }
 
-    if (client == null) throw PlaybackException('No video URL available');
+    if (client == null) {
+      throw PlaybackException(t.messages.noVideoUrl, reason: PlaybackFailureReason.noPlayableSource);
+    }
 
     PlaybackInitializationResult result;
     try {
@@ -245,7 +248,7 @@ class PlaybackInitializationService {
             sourceStreamId: trackId,
             track: SubtitleTrack.uri(
               Uri.file(entity.path).toString(),
-              title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? 'Subtitle $fileName',
+              title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? t.videoControls.subtitleFile(name: fileName),
               language: cachedTrack?.languageCode,
               codec: cachedTrack?.codec,
               isDefault: cachedTrack?.selected ?? false,

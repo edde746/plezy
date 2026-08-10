@@ -1,3 +1,5 @@
+import '../i18n/strings.g.dart';
+
 import 'codec_utils.dart';
 import 'language_codes.dart';
 
@@ -143,7 +145,7 @@ class TrackLabelBuilder {
       displayTitle: cleanTrackMetadataValue(displayTitle),
       rawLanguageValues: [language, languageCode],
       techParts: tech,
-      fallbackPrefix: 'Audio Track',
+      fallbackLabel: (n) => t.audioTracks.track(n: n),
       index: index,
     );
   }
@@ -164,13 +166,13 @@ class TrackLabelBuilder {
       displayTitle: cleanSubtitleTitle(displayTitle, codec: codec),
       rawLanguageValues: [language, languageCode],
       techParts: [if (codec != null && codec.isNotEmpty) CodecUtils.formatSubtitleCodec(codec)],
-      fallbackPrefix: 'Track',
+      fallbackLabel: (n) => t.videoControls.subtitleTrack(n: n),
       index: index,
       forced: forced || titleSaysForced(cleanedTitle),
     );
   }
 
-  /// Primary ladder: language → title → displayTitle → `'<prefix> N'`. The
+  /// Primary ladder: language → title → displayTitle → localized fallback. The
   /// title joins the secondary line only when the language took the primary
   /// slot and the title says more than the language/forced flag already do.
   static TrackLabel _compose({
@@ -179,7 +181,7 @@ class TrackLabelBuilder {
     required String? displayTitle,
     required List<String?> rawLanguageValues,
     required List<String> techParts,
-    required String fallbackPrefix,
+    required String Function(int number) fallbackLabel,
     required int index,
     bool forced = false,
   }) {
@@ -197,11 +199,11 @@ class TrackLabelBuilder {
     } else if (displayTitle != null) {
       primary = displayTitle;
     } else {
-      primary = '$fallbackPrefix ${index + 1}';
+      primary = fallbackLabel(index + 1);
     }
 
     if (forced && !titleSaysForced(primary)) {
-      primary = '$primary (Forced)';
+      primary = t.videoControls.forcedTrack(label: primary);
     }
 
     final secondaryParts = [?secondaryTitle, ...techParts];

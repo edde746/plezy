@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'storage_service.dart';
 import 'plex_client.dart';
 import '../exceptions/media_server_exceptions.dart';
+import '../i18n/strings.g.dart';
 import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
 import '../models/plex/plex_home_user.dart';
@@ -179,7 +180,11 @@ class PlexAuthService {
       throw const MediaServerPinExpiredException();
     }
     if (response.statusCode == 401 || response.statusCode == 403) {
-      throw MediaServerAuthException('Plex PIN check rejected', statusCode: response.statusCode);
+      throw MediaServerAuthException(
+        'Plex PIN check rejected',
+        statusCode: response.statusCode,
+        display: t.auth.pinCheckRejected,
+      );
     }
     _checkStatus(response);
 

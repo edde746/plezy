@@ -1,3 +1,5 @@
+import '../i18n/strings.g.dart';
+
 import '../utils/formatters.dart';
 
 /// Backend-neutral file-info payload rendered by `FileInfoBottomSheet`.
@@ -322,7 +324,8 @@ class MediaDolbyVisionInfo {
   String? get profileFormatted {
     if (profile == null) return title;
     final compatibility = blCompatibilityId;
-    return compatibility == null || compatibility == 0 ? 'Profile $profile' : 'Profile $profile.$compatibility';
+    final numericProfile = compatibility == null || compatibility == 0 ? '$profile' : '$profile.$compatibility';
+    return t.fileInfo.dolbyVisionProfile(profile: numericProfile);
   }
 }
 

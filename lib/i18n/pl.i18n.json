@@ -17,7 +17,8 @@
     "quickConnectWaiting": "Oczekiwanie na zatwierdzenie…",
     "quickConnectCancel": "Anuluj",
     "quickConnectExpired": "Quick Connect wygasł. Spróbuj ponownie.",
-    "localDataRecoveryRequired": "Plezy nie mogło bezpiecznie odzyskać lokalnych danych logowania ani oczekujących danych odtwarzania. Zaloguj się ponownie."
+    "localDataRecoveryRequired": "Plezy nie mogło bezpiecznie odzyskać lokalnych danych logowania ani oczekujących danych odtwarzania. Zaloguj się ponownie.",
+    "pinCheckRejected": "Sprawdzenie kodu PIN Plex zostało odrzucone"
   },
   "common": {
     "cancel": "Anuluj",
@@ -77,7 +78,10 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Krytycy Rotten Tomatoes",
       "rottenTomatoesAudience": "Widzowie Rotten Tomatoes"
-    }
+    },
+    "notAvailable": "N/D",
+    "url": "URL",
+    "letterKeys": "ABC"
   },
   "screens": {
     "licenses": "Licencje",
@@ -323,8 +327,8 @@
     "showNavBarLabels": "Pokaż etykiety paska nawigacji",
     "showNavBarLabelsDescription": "Wyświetl tekstowe etykiety pod ikonami paska nawigacji",
     "startupSection": "Sekcja startowa",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "Pokaż kartę Odkryj",
+    "showExploreTabDescription": "Wyświetlaj kartę Odkryj z treściami z Plex Discover i połączonych serwisów śledzących",
     "liveTvDefaultFavorites": "Domyślnie ulubione kanały",
     "liveTvDefaultFavoritesDescription": "Pokaż tylko ulubione kanały po otwarciu telewizji na żywo",
     "display": "Ekran",
@@ -335,7 +339,8 @@
     "player": "Odtwarzacz",
     "subtitlesAndConfig": "Napisy i konfiguracja",
     "seekAndTiming": "Przewijanie i czas",
-    "behavior": "Zachowanie"
+    "behavior": "Zachowanie",
+    "exportDialogTitle": "Eksport ustawień Plezy"
   },
   "search": {
     "hint": "Szukaj filmów, seriali, muzyki...",
@@ -491,7 +496,9 @@
     "flagExternal": "Zewnętrzne",
     "flagHearingImpaired": "Dla niesłyszących",
     "flagDub": "Dubbing",
-    "flagOriginal": "Oryginalna"
+    "flagOriginal": "Oryginalna",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profil ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Oznacz jako obejrzane",
@@ -574,7 +581,12 @@
     "alphabetNavigation": "Nawigacja alfabetyczna",
     "alphabetScrollHint": "Przesuń w górę lub w dół, aby przejść o literę",
     "rowColumnPosition": "Wiersz ${row} z ${rowCount}, kolumna ${column} z ${columnCount}",
-    "rowPosition": "Wiersz ${row} z ${rowCount}"
+    "rowPosition": "Wiersz ${row} z ${rowCount}",
+    "autoScrollPlay": "Uruchom automatyczne przewijanie",
+    "autoScrollPause": "Wstrzymaj automatyczne przewijanie",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Odtwarzanie losowe",
@@ -672,7 +684,16 @@
     "subtitleDownloaded": "Napisy pobrane",
     "subtitleDownloadedNotApplied": "Napisy zostały pobrane, ale nie można ich było wybrać",
     "subtitleDownloadFailed": "Nie udało się pobrać napisów",
-    "searchLanguages": "Szukaj języków..."
+    "searchLanguages": "Szukaj języków...",
+    "skipIntro": "Pomiń intro",
+    "skipCredits": "Pomiń napisy końcowe",
+    "nextEpisode": "Następny odcinek",
+    "subtitleTrack": "Ścieżka ${n}",
+    "subtitleFile": "Napisy ${name}",
+    "forcedTrack": "${label} (wymuszone)",
+    "osdSubtitlesOff": "Napisy: wył.",
+    "osdSubtitles": "Napisy: ${track}",
+    "osdAudio": "Audio: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -730,12 +751,18 @@
     "serverLimitBody": "Błąd serwera (HTTP 500). Limit przepustowości/transkodowania prawdopodobnie odrzucił tę sesję. Poproś właściciela o zmianę.",
     "mediaUnreadableTitle": "Plik niedostępny",
     "mediaUnreadableBody": "Serwer znalazł ten element, ale nie mógł odczytać jego pliku (HTTP 404). Plik został prawdopodobnie przeniesiony, usunięty albo jego pamięć masowa jest niedostępna. Poproś właściciela serwera o sprawdzenie pliku i ponowne przeskanowanie biblioteki.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "Strumień niedostępny",
+    "serverBusyBody": "Serwer wielokrotnie odmawiał strumieniowania tego pliku (HTTP 503). Być może jest ponownie uruchamiany lub zajęty albo magazyn danych zawierający plik jest offline. Spróbuj ponownie za chwilę — jeśli problem będzie się powtarzać, poproś właściciela serwera o sprawdzenie serwera i magazynu danych zawierającego plik.",
     "logsUploaded": "Logi przesłane",
     "logsUploadFailed": "Nie udało się przesłać logów",
     "logId": "ID logu",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "Napisy są wtopione w ten strumień. Zmień je w menu napisów.",
+    "noVideoUrl": "Brak dostępnego adresu URL wideo",
+    "playbackNoMediaSources": "Serwer nie zwrócił żadnych możliwych do odtworzenia źródeł multimediów",
+    "playbackDataNotPrepared": "Odtwarzanie rozpoczęło się, zanim dane były gotowe",
+    "streamSelectionUnavailable": "Wybór strumieni nie jest dostępny dla tego źródła",
+    "streamSelectionFailed": "Nie udało się zastosować wybranych strumieni",
+    "serverUnavailableForProfile": "Brak dostępnego serwera dla aktywnego profilu"
   },
   "subtitlingStyling": {
     "text": "Tekst",
@@ -754,8 +781,8 @@
     "overrideStrip": "Usuń style",
     "positionTop": "Góra",
     "positionBottom": "Dół",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Zakotwicz na ekranie",
+    "anchorToScreenDescription": "Wyświetlaj napisy tekstowe na czarnych pasach poniżej obrazu panoramicznego",
     "bold": "Pogrubienie",
     "italic": "Kursywa",
     "renderResolution": "Rozdzielczość renderowania",
@@ -843,7 +870,8 @@
     "pinProtectionOptional": "Ochrona PIN-em (opcjonalnie)",
     "pinExplain": "Do przełączania profili wymagany jest 4-cyfrowy PIN.",
     "continueButton": "Kontynuuj",
-    "pinsDontMatch": "PIN-y nie pasują"
+    "pinsDontMatch": "PIN-y nie pasują",
+    "tokenIdentityMismatch": "Token profilu Plex został powiązany z nieoczekiwanym serwerem"
   },
   "connections": {
     "sectionTitle": "Połączenia",
@@ -880,7 +908,13 @@
     "movie": "Film",
     "tvShow": "Serial TV",
     "minutesLeft": "Pozostało ${minutes} min",
-    "moreLikeThis": "Więcej podobnych"
+    "moreLikeThis": "Więcej podobnych",
+    "titleCount": {
+      "one": "${n} tytuł",
+      "few": "${n} tytuły",
+      "many": "${n} tytułów",
+      "other": "${n} tytułu"
+    }
   },
   "errors": {
     "searchFailed": "Wyszukiwanie nie powiodło się: ${error}",
@@ -1090,10 +1124,10 @@
     "characters": "Postacie",
     "addToWatchlist": "Dodaj do listy do obejrzenia",
     "removeFromWatchlist": "Usuń z listy do obejrzenia",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Dodano do listy do obejrzenia",
+    "removedFromWatchlist": "Usunięto z listy do obejrzenia",
     "watchlistUpdateFailed": "Nie udało się zaktualizować listy do obejrzenia",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Nie udało się dopasować tej pozycji do listy do obejrzenia",
     "notInLibrary": "Nie ma tego w Twojej bibliotece",
     "inTheseLibraries": "W tych bibliotekach",
     "checkingLibrary": "Sprawdzanie Twojej biblioteki...",
@@ -1269,9 +1303,9 @@
     "watchChannel": "Oglądaj kanał",
     "favorites": "Ulubione",
     "reorderFavorites": "Zmień kolejność ulubionych",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Brak ulubionych kanałów",
+    "noFavoriteChannelsHint": "Pokaż wszystkie kanały, a następnie naciśnij i przytrzymaj kanał, aby dodać go do ulubionych.",
+    "showAllChannels": "Pokaż wszystkie kanały",
     "favoritesLoadFailed": "Nie udało się wczytać ulubionych. Sprawdź połączenie i spróbuj ponownie.",
     "favoritesUpdateFailed": "Nie udało się zaktualizować ulubionych. Sprawdź połączenie i spróbuj ponownie.",
     "joinSession": "Dołącz do trwającej sesji",
@@ -1310,7 +1344,12 @@
     "recordingRuleUpdated": "Reguła nagrywania zaktualizowana",
     "guideReloadRequested": "Zażądano odświeżenia przewodnika",
     "rulesProcessRequested": "Zażądano ponownej oceny reguł",
-    "recordShow": "Nagraj program"
+    "recordShow": "Nagraj program",
+    "startingInMinutes": "Rozpocznie się za ${minutes} min",
+    "dayAtTime": "${day} o ${time}",
+    "invalidPlaybackData": "${product} zwrócił nieprawidłowe dane odtwarzania TV na żywo",
+    "failedToStartChannel": "Nie udało się uruchomić kanału na żywo",
+    "failedToBuildStreamUrl": "Nie udało się utworzyć adresu URL strumienia"
   },
   "collections": {
     "title": "Kolekcje",
@@ -1389,7 +1428,9 @@
     "nextTrack": "Następny utwór",
     "repeat": "Powtarzaj",
     "repeatAll": "Powtarzaj wszystko",
-    "repeatOne": "Powtarzaj jeden"
+    "repeatOne": "Powtarzaj jeden",
+    "instantMixNoServer": "Brak dostępnego serwera dla szybkiego miksu",
+    "noAudioUrl": "Brak dostępnego adresu URL audio dla utworu ${track}"
   },
   "watchTogether": {
     "title": "Oglądaj razem",
@@ -1456,7 +1497,8 @@
     "renameRoom": "Zmień nazwę pokoju",
     "removeRoom": "Usuń",
     "guestSwitchUnavailable": "Nie można przełączyć — serwer niedostępny do synchronizacji",
-    "guestSwitchFailed": "Nie można przełączyć — nie znaleziono treści na tym serwerze"
+    "guestSwitchFailed": "Nie można przełączyć — nie znaleziono treści na tym serwerze",
+    "defaultDisplayName": "Użytkownik"
   },
   "downloads": {
     "title": "Pobrania",
@@ -1560,7 +1602,17 @@
       "statusUnknown": "Jeszcze nie sprawdzono",
       "settingsUnavailable": "Nie udało się otworzyć ustawień systemowych na tym urządzeniu",
       "linkUnavailable": "Nie udało się otworzyć dontkillmyapp.com na tym urządzeniu"
-    }
+    },
+    "unknownShow": "Nieznany serial",
+    "unknownSeason": "Nieznany sezon",
+    "unknownAlbum": "Nieznany album",
+    "completedOfTotal": "Ukończono ${completed}/${total}",
+    "errorFileNotFound": "Nie znaleziono pliku (404)",
+    "errorDownloadFailed": "Pobieranie nie powiodło się",
+    "errorPostProcessing": "Przetwarzanie końcowe nie powiodło się: ${error}",
+    "notificationDownloading": "Pobieranie...",
+    "notificationComplete": "Pobieranie zakończone",
+    "notificationPaused": "Pobieranie wstrzymane"
   },
   "shaders": {
     "title": "Shadery",
@@ -1651,7 +1703,8 @@
       "failedToConnectAnyAddress": "Nie udało się połączyć z żadnym adresem",
       "connectionLostAfterAttempts": "Połączenie utracone po ${attempts} próbach",
       "connectionLost": "Połączenie utracone"
-    }
+    },
+    "closedBeforeAuth": "Połączenie zostało zamknięte przed uwierzytelnieniem"
   },
   "videoSettings": {
     "playbackSpeed": "Prędkość odtwarzania",
@@ -1662,13 +1715,13 @@
     "audioSync": "Synchronizacja audio",
     "subtitleSync": "Synchronizacja napisów",
     "hdr": "HDR",
-    "hdrUnsupported": "",
-    "hdrToneMapping": "",
-    "hdrToneMappingCompositor": "",
-    "hdrToneMappingCompositorDescription": "",
-    "hdrToneMappingPlayer": "",
-    "hdrToneMappingPlayerDescription": "",
-    "hdrToneMappingFailed": "",
+    "hdrUnsupported": "HDR nie jest tutaj dostępny — ten kompozytor pulpitu lub wyjście wideo nie może go przesyłać.",
+    "hdrToneMapping": "Mapowanie tonów HDR",
+    "hdrToneMappingCompositor": "Kompozytor",
+    "hdrToneMappingCompositorDescription": "Przekazuj metadane HDR źródła bez zmian i pozwól kompozytorowi pulpitu je zmapować.",
+    "hdrToneMappingPlayer": "Odtwarzacz",
+    "hdrToneMappingPlayerDescription": "Mapuj w odtwarzaczu do szczytowej jasności wyświetlacza, a następnie przekaż kompozytorowi informację o wyniku.",
+    "hdrToneMappingFailed": "Nie udało się zmienić mapowania tonów HDR — poprzedni tryb nadal jest aktywny.",
     "audioOutput": "Wyjście audio",
     "performanceOverlay": "Nakładka wydajności",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1714,7 +1767,17 @@
     "speed": "Szybkość",
     "player": "Odtwarzacz",
     "memory": "Pamięć",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android (sprzętowy)",
+    "decoderNvidiaHw": "NVIDIA (sprzętowy)",
+    "decoderQualcommHw": "Qualcomm (sprzętowy)",
+    "decoderMediatekHw": "MediaTek (sprzętowy)",
+    "decoderExynosHw": "Exynos (sprzętowy)",
+    "decoderSoftware": "Programowy",
+    "decoderHardware": "Sprzętowy",
+    "tunnelingActive": "Aktywne",
+    "dvRpuFailed": "${converted} (niepowodzenia: ${failures})"
   },
   "externalPlayer": {
     "title": "Zewnętrzny odtwarzacz",
@@ -1872,7 +1935,17 @@
     "statusAvailable": "Dostępne",
     "statusPartiallyAvailable": "Częściowo dostępne",
     "statusRequested": "Zamówione",
-    "statusProcessing": "Przetwarzanie"
+    "statusProcessing": "Przetwarzanie",
+    "couldNotReach": "Nie udało się połączyć z ${url}: ${error}",
+    "noInstanceAtUrl": "Pod adresem ${url} nie ma instancji Seerr (HTTP ${status})",
+    "notInitialized": "Ta instancja Seerr nie ukończyła konfiguracji początkowej",
+    "noPlexTokenForReauth": "Brak tokenu Plex umożliwiającego ponowne zalogowanie",
+    "noStoredCredentials": "Brak zapisanych danych logowania umożliwiających ponowne zalogowanie",
+    "signInRejected": "Logowanie zostało odrzucone",
+    "noSessionCookie": "Seerr nie utworzył pliku cookie sesji",
+    "freshCookieRejected": "Seerr odrzucił nowy plik cookie sesji",
+    "noUserInformation": "Seerr nie zwrócił informacji o użytkowniku",
+    "sessionRejectedAfterReauth": "Sesja została odrzucona po ponownym zalogowaniu"
   },
   "services": {
     "title": "Usługi",
@@ -1893,7 +1966,7 @@
     },
     "deviceCode": {
       "title": "Aktywuj Plezy w ${service}",
-      "instructions": "",
+      "instructions": "Zeskanuj kod QR albo przejdź pod poniższy adres i wprowadź ten kod:",
       "openToActivate": "Otwórz ${service}, aby aktywować",
       "copyCode": "Skopiuj kod aktywacyjny",
       "waitingForAuthorization": "Oczekiwanie na autoryzację…",
@@ -1951,6 +2024,24 @@
     "connectToMediaBrowserCardSubtitle": "Podaj adres URL serwera, nazwę użytkownika i hasło.",
     "connectToMediaBrowserCardSubtitleScoped": "Zaloguj się do serwera ${product}. Powiązane z ${name}.",
     "borrowFromAnotherProfile": "Pożycz z innego profilu",
-    "borrowFromAnotherProfileSubtitle": "Użyj połączenia innego profilu. Profile chronione PIN-em wymagają podania PIN-u."
+    "borrowFromAnotherProfileSubtitle": "Użyj połączenia innego profilu. Profile chronione PIN-em wymagają podania PIN-u.",
+    "invalidCredentials": "Nieprawidłowa nazwa użytkownika lub hasło",
+    "authResponseNotJson": "Odpowiedź uwierzytelniania ma nieprawidłowy format JSON",
+    "quickConnectRejected": "Quick Connect został odrzucony przez serwer",
+    "quickConnectNotJson": "Odpowiedź Quick Connect ma nieprawidłowy format JSON",
+    "quickConnectMissingFields": "W odpowiedzi Quick Connect brakuje kodu lub sekretu",
+    "quickConnectPollRejected": "Odpytywanie Quick Connect zostało odrzucone przez serwer",
+    "serverTimedOut": "Serwer nie odpowiedział w wymaganym czasie",
+    "responseNotJson": "Odpowiedź serwera ma nieprawidłowy format JSON",
+    "responseMissingIdentity": "W odpowiedzi brakuje identyfikatora lub nazwy serwera — czy to serwer ${product}?",
+    "probeFailed": "Nie udało się połączyć z serwerem: ${error}",
+    "enterAtLeastOneUrl": "Wprowadź co najmniej jeden adres URL serwera ${product}",
+    "noReachableServer": "Nie znaleziono żadnego osiągalnego serwera ${product}",
+    "urlsPointToDifferentServers": "Te adresy URL wskazują różne serwery ${product}",
+    "urlDoesNotMatchServer": "Ten adres URL nie odpowiada serwerowi ${product}",
+    "redirectUnsupported": "Serwer przekierował do nieobsługiwanego adresu URL",
+    "redirectDifferentHost": "Serwer przekierował do innego hosta. Wprowadź bezpośrednio docelowy adres URL serwera ${product}.",
+    "redirectInsecure": "Serwer przekierował z HTTPS do niezabezpieczonego adresu URL",
+    "redirectUnsupportedEnterFinal": "Serwer przekierował do nieobsługiwanego adresu URL. Wprowadź bezpośrednio docelowy adres URL serwera ${product}."
   }
 }

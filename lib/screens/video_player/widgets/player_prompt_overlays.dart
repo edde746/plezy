@@ -258,7 +258,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
                   return Row(
                     children: [
                       Text(
-                        'Next Episode',
+                        t.videoControls.nextEpisode,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
                       ),
                       if (isShuffleActive) ...[

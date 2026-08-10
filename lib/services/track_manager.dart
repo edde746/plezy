@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 
 import '../media/media_item.dart';
@@ -452,8 +453,16 @@ class TrackManager {
 
     if (isActive()) {
       final label = next.id == 'no'
-          ? 'Subtitles: Off'
-          : 'Subtitles: ${TrackLabelBuilder.subtitleLabel(title: next.title, language: next.language, codec: next.codec, forced: next.isForced, index: nextIndex).joined}';
+          ? t.videoControls.osdSubtitlesOff
+          : t.videoControls.osdSubtitles(
+              track: TrackLabelBuilder.subtitleLabel(
+                title: next.title,
+                language: next.language,
+                codec: next.codec,
+                forced: next.isForced,
+                index: nextIndex,
+              ).joined,
+            );
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
     return next;
@@ -472,8 +481,15 @@ class TrackManager {
     unawaited(onAudioTrackSelectedByUser(next));
 
     if (isActive()) {
-      final label =
-          'Audio: ${TrackLabelBuilder.audioLabel(title: next.title, language: next.language, codec: next.codec, channels: next.channelsCount, index: nextIndex).joined}';
+      final label = t.videoControls.osdAudio(
+        track: TrackLabelBuilder.audioLabel(
+          title: next.title,
+          language: next.language,
+          codec: next.codec,
+          channels: next.channelsCount,
+          index: nextIndex,
+        ).joined,
+      );
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
   }

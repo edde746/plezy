@@ -1733,7 +1733,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       try {
         appLogger.i('Auto-deleting watched download: ${meta.title} ($globalKey)');
         await deleteDownload(globalKey);
-        deletedTitles.add(meta.title ?? 'Unknown');
+        deletedTitles.add(meta.title ?? t.common.unknown);
       } catch (e) {
         appLogger.w('Failed to auto-delete watched download $globalKey: $e');
       }
@@ -2091,7 +2091,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     );
 
     return results.where((r) => r.queuedCount > 0).map((r) {
-      final title = r.title ?? 'Unknown';
+      final title = r.title ?? t.common.unknown;
       return '$title (${r.queuedCount})';
     }).toList();
   }

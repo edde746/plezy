@@ -123,6 +123,7 @@ class _Translations$auth$sv extends Translations$auth$en {
 	@override String get quickConnectCancel => 'Avbryt';
 	@override String get quickConnectExpired => 'Quick Connect har gått ut. Försök igen.';
 	@override String get localDataRecoveryRequired => 'Plezy kunde inte återställa lokala inloggningsuppgifter och väntande uppspelningsdata på ett säkert sätt. Logga in igen.';
+	@override String get pinCheckRejected => 'Plex PIN-kontrollen avvisades';
 }
 
 // Path: common
@@ -178,6 +179,9 @@ class _Translations$common$sv extends Translations$common$en {
 	@override String get exitFullscreen => 'Avsluta helskärm';
 	@override String get pressBackAgainToExit => 'Tryck bakåt igen för att avsluta';
 	@override late final _Translations$common$ratingSource$sv ratingSource = _Translations$common$ratingSource$sv._(_root);
+	@override String get notAvailable => 'N/A';
+	@override String get url => 'URL';
+	@override String get letterKeys => 'ABC';
 }
 
 // Path: screens
@@ -444,6 +448,8 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get showNavBarLabels => 'Visa navigeringsfältets etiketter';
 	@override String get showNavBarLabelsDescription => 'Visa textetiketter under navigeringsfältets ikoner';
 	@override String get startupSection => 'Startsida';
+	@override String get showExploreTab => 'Visa fliken Utforska';
+	@override String get showExploreTabDescription => 'Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster';
 	@override String get liveTvDefaultFavorites => 'Öppna med favoriter';
 	@override String get liveTvDefaultFavoritesDescription => 'Visa endast favoritkanaler när Live-TV öppnas';
 	@override String get display => 'Skärm';
@@ -455,6 +461,7 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Undertexter och konfiguration';
 	@override String get seekAndTiming => 'Spolning och tidsinställningar';
 	@override String get behavior => 'Beteende';
+	@override String get exportDialogTitle => 'Exportera Plezy-inställningar';
 }
 
 // Path: search
@@ -606,6 +613,8 @@ class _Translations$fileInfo$sv extends Translations$fileInfo$en {
 	@override String get flagHearingImpaired => 'Hörselskadade';
 	@override String get flagDub => 'Dubbad';
 	@override String get flagOriginal => 'Original';
+	@override String get channelsMono => 'Mono';
+	@override String dolbyVisionProfile({required Object profile}) => 'Profil ${profile}';
 }
 
 // Path: mediaMenu
@@ -704,6 +713,11 @@ class _Translations$accessibility$sv extends Translations$accessibility$en {
 	@override String get alphabetScrollHint => 'Svep uppåt eller nedåt för att gå mellan bokstäver';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Rad ${row} av ${rowCount}, kolumn ${column} av ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'Rad ${row} av ${rowCount}';
+	@override String get autoScrollPlay => 'Starta automatisk rullning';
+	@override String get autoScrollPause => 'Pausa automatisk rullning';
+	@override String get hueShort => 'H';
+	@override String get saturationShort => 'S';
+	@override String get valueShort => 'V';
 }
 
 // Path: tooltips
@@ -815,6 +829,15 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	@override String get subtitleDownloadedNotApplied => 'Undertexten laddades ned men kunde inte väljas';
 	@override String get subtitleDownloadFailed => 'Det gick inte att ladda ned undertexten';
 	@override String get searchLanguages => 'Sök språk...';
+	@override String get skipIntro => 'Hoppa över intro';
+	@override String get skipCredits => 'Hoppa över eftertexter';
+	@override String get nextEpisode => 'Nästa avsnitt';
+	@override String subtitleTrack({required Object n}) => 'Spår ${n}';
+	@override String subtitleFile({required Object name}) => 'Undertext ${name}';
+	@override String forcedTrack({required Object label}) => '${label} (Forcerad)';
+	@override String get osdSubtitlesOff => 'Undertexter: Av';
+	@override String osdSubtitles({required Object track}) => 'Undertexter: ${track}';
+	@override String osdAudio({required Object track}) => 'Ljud: ${track}';
 }
 
 // Path: messages
@@ -876,9 +899,18 @@ class _Translations$messages$sv extends Translations$messages$en {
 	@override String get serverLimitBody => 'Serverfel (HTTP 500). En bandbredds-/transkodningsgräns avvisade troligen sessionen. Be ägaren justera den.';
 	@override String get mediaUnreadableTitle => 'Filen är otillgänglig';
 	@override String get mediaUnreadableBody => 'Servern hittade objektet men kunde inte läsa dess fil (HTTP 404). Filen har troligen flyttats, tagits bort eller så är dess lagring offline. Be serverägaren kontrollera filen och skanna om biblioteket.';
+	@override String get serverBusyTitle => 'Strömmen är inte tillgänglig';
+	@override String get serverBusyBody => 'Servern nekade upprepade gånger att strömma den här filen (HTTP 503). Den kan hålla på att startas om eller vara upptagen, eller så kan lagringen där filen finns vara offline. Försök igen om en stund – om det fortsätter, be serverns ägare att kontrollera servern och lagringen där filen finns.';
 	@override String get logsUploaded => 'Loggarna har laddats upp';
 	@override String get logsUploadFailed => 'Det gick inte att ladda upp loggarna';
 	@override String get logId => 'Logg-ID';
+	@override String get burnedSubtitlesUseMenu => 'Undertexterna är inbrända i den här strömmen. Ändra dem via undertextmenyn.';
+	@override String get noVideoUrl => 'Ingen video-URL är tillgänglig';
+	@override String get playbackNoMediaSources => 'Servern returnerade inga spelbara mediekällor';
+	@override String get playbackDataNotPrepared => 'Uppspelningen startades innan uppspelningsinformationen var klar';
+	@override String get streamSelectionUnavailable => 'Val av ström är inte tillgängligt för den här källan';
+	@override String get streamSelectionFailed => 'Kunde inte tillämpa de valda strömmarna';
+	@override String get serverUnavailableForProfile => 'Ingen server är tillgänglig för den aktiva profilen';
 }
 
 // Path: subtitlingStyling
@@ -904,6 +936,8 @@ class _Translations$subtitlingStyling$sv extends Translations$subtitlingStyling$
 	@override String get overrideStrip => 'Ta bort formatering';
 	@override String get positionTop => 'Överst';
 	@override String get positionBottom => 'Nederst';
+	@override String get anchorToScreen => 'Förankra vid skärmen';
+	@override String get anchorToScreenDescription => 'Visa textbaserade undertexter i de svarta fälten under bredbildsvideon';
 	@override String get bold => 'Fet';
 	@override String get italic => 'Kursiv';
 	@override String get renderResolution => 'Renderingsupplösning';
@@ -1013,6 +1047,7 @@ class _Translations$profiles$sv extends Translations$profiles$en {
 	@override String get pinExplain => 'En fyrsiffrig PIN-kod krävs för att byta profil.';
 	@override String get continueButton => 'Fortsätt';
 	@override String get pinsDontMatch => 'PIN-koderna stämmer inte överens';
+	@override String get tokenIdentityMismatch => 'Plex-profiltoken kopplades till en oväntad server';
 }
 
 // Path: connections
@@ -1064,6 +1099,10 @@ class _Translations$discover$sv extends Translations$discover$en {
 	@override String get tvShow => 'TV-serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} min kvar';
 	@override String get moreLikeThis => 'Mer liknande innehåll';
+	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n,
+		one: '${n} titel',
+		other: '${n} titlar',
+	);
 }
 
 // Path: errors
@@ -1276,7 +1315,10 @@ class _Translations$explore$sv extends Translations$explore$en {
 	@override String get characters => 'Karaktärer';
 	@override String get addToWatchlist => 'Lägg till i bevakningslista';
 	@override String get removeFromWatchlist => 'Ta bort från bevakningslista';
+	@override String get addedToWatchlist => 'Tillagd i bevakningslistan';
+	@override String get removedFromWatchlist => 'Borttagen från bevakningslistan';
 	@override String get watchlistUpdateFailed => 'Det gick inte att uppdatera bevakningslistan';
+	@override String get watchlistNoMatch => 'Det gick inte att matcha det här objektet mot en bevakningslista';
 	@override String get notInLibrary => 'Finns inte i ditt bibliotek';
 	@override String get inTheseLibraries => 'I dessa bibliotek';
 	@override String get checkingLibrary => 'Kontrollerar ditt bibliotek...';
@@ -1337,6 +1379,9 @@ class _Translations$liveTv$sv extends Translations$liveTv$en {
 	@override String get watchChannel => 'Titta på kanal';
 	@override String get favorites => 'Favoriter';
 	@override String get reorderFavorites => 'Ordna om favoriter';
+	@override String get noFavoriteChannels => 'Inga favoritkanaler';
+	@override String get noFavoriteChannelsHint => 'Visa alla kanaler och tryck sedan länge på en kanal för att lägga till den som favorit.';
+	@override String get showAllChannels => 'Visa alla kanaler';
 	@override String get favoritesLoadFailed => 'Det gick inte att läsa in favoriter. Kontrollera anslutningen och försök igen.';
 	@override String get favoritesUpdateFailed => 'Det gick inte att uppdatera favoriterna. Kontrollera anslutningen och försök igen.';
 	@override String get joinSession => 'Gå med i pågående session';
@@ -1376,6 +1421,11 @@ class _Translations$liveTv$sv extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Uppdatering av programguiden har begärts';
 	@override String get rulesProcessRequested => 'Ny regelutvärdering har begärts';
 	@override String get recordShow => 'Spela in program';
+	@override String startingInMinutes({required Object minutes}) => 'Börjar om ${minutes} min';
+	@override String dayAtTime({required Object day, required Object time}) => '${day} kl. ${time}';
+	@override String invalidPlaybackData({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV';
+	@override String get failedToStartChannel => 'Kunde inte starta livekanalen';
+	@override String get failedToBuildStreamUrl => 'Kunde inte skapa strömmens URL';
 }
 
 // Path: collections
@@ -1474,6 +1524,8 @@ class _Translations$music$sv extends Translations$music$en {
 	@override String get repeat => 'Upprepa';
 	@override String get repeatAll => 'Upprepa alla';
 	@override String get repeatOne => 'Upprepa en låt';
+	@override String get instantMixNoServer => 'Ingen server är tillgänglig för en snabbmix';
+	@override String noAudioUrl({required Object track}) => 'Ingen ljud-URL är tillgänglig för ${track}';
 }
 
 // Path: watchTogether
@@ -1548,6 +1600,7 @@ class _Translations$watchTogether$sv extends Translations$watchTogether$en {
 	@override String get removeRoom => 'Ta bort';
 	@override String get guestSwitchUnavailable => 'Kunde inte byta — server inte tillgänglig för synkronisering';
 	@override String get guestSwitchFailed => 'Kunde inte byta — innehåll hittades inte på denna server';
+	@override String get defaultDisplayName => 'Användare';
 }
 
 // Path: downloads
@@ -1632,6 +1685,16 @@ class _Translations$downloads$sv extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Okänd server';
 	@override String get syncRuleListCreated => 'Synkroniseringsregel skapad';
 	@override late final _Translations$downloads$backgroundWarning$sv backgroundWarning = _Translations$downloads$backgroundWarning$sv._(_root);
+	@override String get unknownShow => 'Okänd serie';
+	@override String get unknownSeason => 'Okänd säsong';
+	@override String get unknownAlbum => 'Okänt album';
+	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} slutförda';
+	@override String get errorFileNotFound => 'Filen hittades inte (404)';
+	@override String get errorDownloadFailed => 'Nedladdningen misslyckades';
+	@override String errorPostProcessing({required Object error}) => 'Efterbehandlingen misslyckades: ${error}';
+	@override String get notificationDownloading => 'Laddar ned...';
+	@override String get notificationComplete => 'Nedladdningen är klar';
+	@override String get notificationPaused => 'Nedladdningen har pausats';
 }
 
 // Path: shaders
@@ -1672,6 +1735,7 @@ class _Translations$companionRemote$sv extends Translations$companionRemote$en {
 	@override late final _Translations$companionRemote$pairing$sv pairing = _Translations$companionRemote$pairing$sv._(_root);
 	@override late final _Translations$companionRemote$remote$sv remote = _Translations$companionRemote$remote$sv._(_root);
 	@override late final _Translations$companionRemote$errors$sv errors = _Translations$companionRemote$errors$sv._(_root);
+	@override String get closedBeforeAuth => 'Anslutningen stängdes före autentiseringen';
 }
 
 // Path: videoSettings
@@ -1689,6 +1753,13 @@ class _Translations$videoSettings$sv extends Translations$videoSettings$en {
 	@override String get audioSync => 'Ljudsynkronisering';
 	@override String get subtitleSync => 'Undertextsynkronisering';
 	@override String get hdr => 'HDR';
+	@override String get hdrUnsupported => 'HDR kan inte användas här – skrivbordets kompositionshanterare eller videoutgången kan inte överföra det.';
+	@override String get hdrToneMapping => 'HDR-tonmappning';
+	@override String get hdrToneMappingCompositor => 'Kompositionshanterare';
+	@override String get hdrToneMappingCompositorDescription => 'Vidarebefordra källans HDR-metadata och låt skrivbordets kompositionshanterare tonmappa dem.';
+	@override String get hdrToneMappingPlayer => 'Spelare';
+	@override String get hdrToneMappingPlayerDescription => 'Tonmappa till skärmens maximala ljusstyrka i spelaren och informera sedan kompositionshanteraren om resultatet.';
+	@override String get hdrToneMappingFailed => 'Det gick inte att ändra HDR-tonmappningen – det föregående läget är fortfarande aktivt.';
 	@override String get audioOutput => 'Ljudutgång';
 	@override String get performanceOverlay => 'Prestandaöverlägg';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
@@ -1742,6 +1813,16 @@ class _Translations$performanceOverlay$sv extends Translations$performanceOverla
 	@override String get player => 'Spelare';
 	@override String get memory => 'Minne';
 	@override String get uiFps => 'UI FPS';
+	@override String get fps => 'FPS';
+	@override String get decoderAndroidHw => 'Android HW';
+	@override String get decoderNvidiaHw => 'NVIDIA HW';
+	@override String get decoderQualcommHw => 'Qualcomm HW';
+	@override String get decoderMediatekHw => 'MediaTek HW';
+	@override String get decoderExynosHw => 'Exynos HW';
+	@override String get decoderSoftware => 'Programvara';
+	@override String get decoderHardware => 'Maskinvara';
+	@override String get tunnelingActive => 'Aktiv';
+	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)';
 }
 
 // Path: externalPlayer
@@ -1942,6 +2023,16 @@ class _Translations$seerr$sv extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Delvis tillgänglig';
 	@override String get statusRequested => 'Begärd';
 	@override String get statusProcessing => 'Bearbetas';
+	@override String couldNotReach({required Object url, required Object error}) => 'Kunde inte nå ${url}: ${error}';
+	@override String noInstanceAtUrl({required Object url, required Object status}) => 'Det finns ingen Seerr-instans på ${url} (HTTP ${status})';
+	@override String get notInitialized => 'Den här Seerr-instansen har inte slutfört den inledande konfigurationen';
+	@override String get noPlexTokenForReauth => 'Det finns ingen Plex-token tillgänglig för att logga in igen';
+	@override String get noStoredCredentials => 'Det finns inga sparade inloggningsuppgifter för att logga in igen';
+	@override String get signInRejected => 'Inloggningen avvisades';
+	@override String get noSessionCookie => 'Seerr skapade ingen sessionscookie';
+	@override String get freshCookieRejected => 'Seerr avvisade den nya sessionscookien';
+	@override String get noUserInformation => 'Seerr returnerade ingen användarinformation';
+	@override String get sessionRejectedAfterReauth => 'Sessionen avvisades efter den nya inloggningen';
 }
 
 // Path: services
@@ -2002,6 +2093,24 @@ class _Translations$addServer$sv extends Translations$addServer$en {
 	@override String connectToMediaBrowserCardSubtitleScoped({required Object product, required Object name}) => 'Logga in på din ${product}-server. Knyts till ${name}.';
 	@override String get borrowFromAnotherProfile => 'Låna från en annan profil';
 	@override String get borrowFromAnotherProfileSubtitle => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.';
+	@override String get invalidCredentials => 'Ogiltigt användarnamn eller lösenord';
+	@override String get authResponseNotJson => 'Autentiseringssvaret var inte ett giltigt JSON-svar';
+	@override String get quickConnectRejected => 'Quick Connect avvisades av servern';
+	@override String get quickConnectNotJson => 'Quick Connect-svaret var inte ett giltigt JSON-svar';
+	@override String get quickConnectMissingFields => 'Quick Connect-svaret saknar en kod eller hemlig nyckel';
+	@override String get quickConnectPollRejected => 'Servern avvisade avsökningen för Quick Connect';
+	@override String get serverTimedOut => 'Servern svarade inte i tid';
+	@override String get responseNotJson => 'Serversvaret var inte ett giltigt JSON-svar';
+	@override String responseMissingIdentity({required Object product}) => 'Svaret saknar ett ID eller servernamn – är det här en ${product}-server?';
+	@override String probeFailed({required Object error}) => 'Kunde inte nå servern: ${error}';
+	@override String enterAtLeastOneUrl({required Object product}) => 'Ange minst en server-URL för ${product}';
+	@override String noReachableServer({required Object product}) => 'Ingen nåbar ${product}-server hittades';
+	@override String urlsPointToDifferentServers({required Object product}) => 'De här URL:erna pekar på olika servrar för ${product}';
+	@override String urlDoesNotMatchServer({required Object product}) => 'Den här URL:en stämmer inte överens med ${product}-servern';
+	@override String get redirectUnsupported => 'Servern omdirigerade till en URL som inte stöds';
+	@override String redirectDifferentHost({required Object product}) => 'Servern omdirigerade till en annan värd. Ange den slutliga URL:en för ${product} direkt.';
+	@override String get redirectInsecure => 'Servern omdirigerade från HTTPS till en osäker URL';
+	@override String redirectUnsupportedEnterFinal({required Object product}) => 'Servern omdirigerade till en URL som inte stöds. Ange den slutliga URL:en för ${product} direkt.';
 }
 
 // Path: common.ratingSource
@@ -2521,6 +2630,7 @@ class _Translations$services$deviceCode$sv extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Aktivera Plezy på ${service}';
+	@override String get instructions => 'Skanna QR-koden eller gå till adressen nedan och ange den här koden:';
 	@override String openToActivate({required Object service}) => 'Öppna ${service} för att aktivera';
 	@override String get copyCode => 'Kopiera aktiveringskod';
 	@override String get waitingForAuthorization => 'Väntar på auktorisering…';
@@ -2595,6 +2705,7 @@ extension on TranslationsSv {
 			'auth.quickConnectCancel' => 'Avbryt',
 			'auth.quickConnectExpired' => 'Quick Connect har gått ut. Försök igen.',
 			'auth.localDataRecoveryRequired' => 'Plezy kunde inte återställa lokala inloggningsuppgifter och väntande uppspelningsdata på ett säkert sätt. Logga in igen.',
+			'auth.pinCheckRejected' => 'Plex PIN-kontrollen avvisades',
 			'common.cancel' => 'Avbryt',
 			'common.save' => 'Spara',
 			'common.close' => 'Stäng',
@@ -2651,6 +2762,9 @@ extension on TranslationsSv {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes-kritiker',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes-publik',
+			'common.notAvailable' => 'N/A',
+			'common.url' => 'URL',
+			'common.letterKeys' => 'ABC',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Utseende för undertexter',
@@ -2890,6 +3004,8 @@ extension on TranslationsSv {
 			'settings.showNavBarLabels' => 'Visa navigeringsfältets etiketter',
 			'settings.showNavBarLabelsDescription' => 'Visa textetiketter under navigeringsfältets ikoner',
 			'settings.startupSection' => 'Startsida',
+			'settings.showExploreTab' => 'Visa fliken Utforska',
+			'settings.showExploreTabDescription' => 'Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster',
 			'settings.liveTvDefaultFavorites' => 'Öppna med favoriter',
 			'settings.liveTvDefaultFavoritesDescription' => 'Visa endast favoritkanaler när Live-TV öppnas',
 			'settings.display' => 'Skärm',
@@ -2901,6 +3017,7 @@ extension on TranslationsSv {
 			'settings.subtitlesAndConfig' => 'Undertexter och konfiguration',
 			'settings.seekAndTiming' => 'Spolning och tidsinställningar',
 			'settings.behavior' => 'Beteende',
+			'settings.exportDialogTitle' => 'Exportera Plezy-inställningar',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -3049,6 +3166,8 @@ extension on TranslationsSv {
 			'fileInfo.flagHearingImpaired' => 'Hörselskadade',
 			'fileInfo.flagDub' => 'Dubbad',
 			'fileInfo.flagOriginal' => 'Original',
+			'fileInfo.channelsMono' => 'Mono',
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			'mediaMenu.markAsWatched' => 'Markera som sedd',
 			'mediaMenu.markAsUnwatched' => 'Markera som osedd',
 			'mediaMenu.removeFromContinueWatching' => 'Ta bort från Fortsätt titta',
@@ -3082,6 +3201,8 @@ extension on TranslationsSv {
 			'mediaMenu.rate' => 'Betygsätt',
 			'mediaMenu.playFromBeginning' => 'Spela från början',
 			'mediaMenu.playVersion' => 'Spela version...',
+			_ => null,
+		} ?? switch (path) {
 			'rateSheet.title' => 'Betygsätt',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Favorit',
@@ -3091,8 +3212,6 @@ extension on TranslationsSv {
 			'rateSheet.noConnectedServices' => 'Anslut en tjänst i Inställningar för att betygsätta där.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, film',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV-serie',
-			_ => null,
-		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'sedd',
@@ -3113,6 +3232,11 @@ extension on TranslationsSv {
 			'accessibility.alphabetScrollHint' => 'Svep uppåt eller nedåt för att gå mellan bokstäver',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Rad ${row} av ${rowCount}, kolumn ${column} av ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Rad ${row} av ${rowCount}',
+			'accessibility.autoScrollPlay' => 'Starta automatisk rullning',
+			'accessibility.autoScrollPause' => 'Pausa automatisk rullning',
+			'accessibility.hueShort' => 'H',
+			'accessibility.saturationShort' => 'S',
+			'accessibility.valueShort' => 'V',
 			'tooltips.shufflePlay' => 'Blanda uppspelning',
 			'tooltips.playTrailer' => 'Spela trailer',
 			'tooltips.markAsWatched' => 'Markera som sedd',
@@ -3203,6 +3327,15 @@ extension on TranslationsSv {
 			'videoControls.subtitleDownloadedNotApplied' => 'Undertexten laddades ned men kunde inte väljas',
 			'videoControls.subtitleDownloadFailed' => 'Det gick inte att ladda ned undertexten',
 			'videoControls.searchLanguages' => 'Sök språk...',
+			'videoControls.skipIntro' => 'Hoppa över intro',
+			'videoControls.skipCredits' => 'Hoppa över eftertexter',
+			'videoControls.nextEpisode' => 'Nästa avsnitt',
+			'videoControls.subtitleTrack' => ({required Object n}) => 'Spår ${n}',
+			'videoControls.subtitleFile' => ({required Object name}) => 'Undertext ${name}',
+			'videoControls.forcedTrack' => ({required Object label}) => '${label} (Forcerad)',
+			'videoControls.osdSubtitlesOff' => 'Undertexter: Av',
+			'videoControls.osdSubtitles' => ({required Object track}) => 'Undertexter: ${track}',
+			'videoControls.osdAudio' => ({required Object track}) => 'Ljud: ${track}',
 			'messages.markedAsWatched' => 'Markerad som sedd',
 			'messages.markedAsUnwatched' => 'Markerad som osedd',
 			'messages.markedAsWatchedOffline' => 'Markerad som sedd (synkroniseras när online)',
@@ -3252,9 +3385,18 @@ extension on TranslationsSv {
 			'messages.serverLimitBody' => 'Serverfel (HTTP 500). En bandbredds-/transkodningsgräns avvisade troligen sessionen. Be ägaren justera den.',
 			'messages.mediaUnreadableTitle' => 'Filen är otillgänglig',
 			'messages.mediaUnreadableBody' => 'Servern hittade objektet men kunde inte läsa dess fil (HTTP 404). Filen har troligen flyttats, tagits bort eller så är dess lagring offline. Be serverägaren kontrollera filen och skanna om biblioteket.',
+			'messages.serverBusyTitle' => 'Strömmen är inte tillgänglig',
+			'messages.serverBusyBody' => 'Servern nekade upprepade gånger att strömma den här filen (HTTP 503). Den kan hålla på att startas om eller vara upptagen, eller så kan lagringen där filen finns vara offline. Försök igen om en stund – om det fortsätter, be serverns ägare att kontrollera servern och lagringen där filen finns.',
 			'messages.logsUploaded' => 'Loggarna har laddats upp',
 			'messages.logsUploadFailed' => 'Det gick inte att ladda upp loggarna',
 			'messages.logId' => 'Logg-ID',
+			'messages.burnedSubtitlesUseMenu' => 'Undertexterna är inbrända i den här strömmen. Ändra dem via undertextmenyn.',
+			'messages.noVideoUrl' => 'Ingen video-URL är tillgänglig',
+			'messages.playbackNoMediaSources' => 'Servern returnerade inga spelbara mediekällor',
+			'messages.playbackDataNotPrepared' => 'Uppspelningen startades innan uppspelningsinformationen var klar',
+			'messages.streamSelectionUnavailable' => 'Val av ström är inte tillgängligt för den här källan',
+			'messages.streamSelectionFailed' => 'Kunde inte tillämpa de valda strömmarna',
+			'messages.serverUnavailableForProfile' => 'Ingen server är tillgänglig för den aktiva profilen',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrund',
@@ -3271,6 +3413,8 @@ extension on TranslationsSv {
 			'subtitlingStyling.overrideStrip' => 'Ta bort formatering',
 			'subtitlingStyling.positionTop' => 'Överst',
 			'subtitlingStyling.positionBottom' => 'Nederst',
+			'subtitlingStyling.anchorToScreen' => 'Förankra vid skärmen',
+			'subtitlingStyling.anchorToScreenDescription' => 'Visa textbaserade undertexter i de svarta fälten under bredbildsvideon',
 			'subtitlingStyling.bold' => 'Fet',
 			'subtitlingStyling.italic' => 'Kursiv',
 			'subtitlingStyling.renderResolution' => 'Renderingsupplösning',
@@ -3353,6 +3497,7 @@ extension on TranslationsSv {
 			'profiles.pinExplain' => 'En fyrsiffrig PIN-kod krävs för att byta profil.',
 			'profiles.continueButton' => 'Fortsätt',
 			'profiles.pinsDontMatch' => 'PIN-koderna stämmer inte överens',
+			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
 			'connections.sectionTitle' => 'Anslutningar',
 			'connections.addConnection' => 'Lägg till anslutning',
 			'connections.addConnectionSubtitleNoProfile' => 'Logga in med Plex eller anslut en Jellyfin-server',
@@ -3386,6 +3531,7 @@ extension on TranslationsSv {
 			'discover.tvShow' => 'TV-serie',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min kvar',
 			'discover.moreLikeThis' => 'Mer liknande innehåll',
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('sv'))(n, one: '${n} titel', other: '${n} titlar', ), 
 			'errors.searchFailed' => ({required Object error}) => 'Sökningen misslyckades: ${error}',
 			'errors.searchUnavailable' => 'Sökningen kunde inte nå någon medieserver.',
 			'errors.connectionTimeout' => ({required Object context}) => 'Anslutningen tog för lång tid när ${context} lästes in',
@@ -3558,7 +3704,10 @@ extension on TranslationsSv {
 			'explore.characters' => 'Karaktärer',
 			'explore.addToWatchlist' => 'Lägg till i bevakningslista',
 			'explore.removeFromWatchlist' => 'Ta bort från bevakningslista',
+			'explore.addedToWatchlist' => 'Tillagd i bevakningslistan',
+			'explore.removedFromWatchlist' => 'Borttagen från bevakningslistan',
 			'explore.watchlistUpdateFailed' => 'Det gick inte att uppdatera bevakningslistan',
+			'explore.watchlistNoMatch' => 'Det gick inte att matcha det här objektet mot en bevakningslista',
 			'explore.notInLibrary' => 'Finns inte i ditt bibliotek',
 			'explore.inTheseLibraries' => 'I dessa bibliotek',
 			'explore.checkingLibrary' => 'Kontrollerar ditt bibliotek...',
@@ -3566,6 +3715,8 @@ extension on TranslationsSv {
 			'explore.emptyMessage' => ({required Object source}) => 'Rader från ${source} visas här när de har innehåll.',
 			'explore.searchHint' => ({required Object source}) => 'Sök i ${source}',
 			'explore.searchEmpty' => ({required Object query}) => 'Inga resultat för "${query}"',
+			_ => null,
+		} ?? switch (path) {
 			'explore.searchPrompt' => ({required Object source}) => 'Sök efter filmer och serier på ${source}.',
 			'explore.searchFailed' => 'Sökningen misslyckades. Kontrollera din anslutning och försök igen.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populär',
@@ -3605,8 +3756,6 @@ extension on TranslationsSv {
 			'explore.stats.completed' => ({required Object n}) => '${n} avslutade',
 			'explore.stats.onHold' => ({required Object n}) => '${n} på paus',
 			'explore.stats.dropped' => ({required Object n}) => '${n} hoppade av',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Vinter',
 			'explore.season.spring' => 'Vår',
 			'explore.season.summer' => 'Sommar',
@@ -3703,6 +3852,9 @@ extension on TranslationsSv {
 			'liveTv.watchChannel' => 'Titta på kanal',
 			'liveTv.favorites' => 'Favoriter',
 			'liveTv.reorderFavorites' => 'Ordna om favoriter',
+			'liveTv.noFavoriteChannels' => 'Inga favoritkanaler',
+			'liveTv.noFavoriteChannelsHint' => 'Visa alla kanaler och tryck sedan länge på en kanal för att lägga till den som favorit.',
+			'liveTv.showAllChannels' => 'Visa alla kanaler',
 			'liveTv.favoritesLoadFailed' => 'Det gick inte att läsa in favoriter. Kontrollera anslutningen och försök igen.',
 			'liveTv.favoritesUpdateFailed' => 'Det gick inte att uppdatera favoriterna. Kontrollera anslutningen och försök igen.',
 			'liveTv.joinSession' => 'Gå med i pågående session',
@@ -3742,6 +3894,11 @@ extension on TranslationsSv {
 			'liveTv.guideReloadRequested' => 'Uppdatering av programguiden har begärts',
 			'liveTv.rulesProcessRequested' => 'Ny regelutvärdering har begärts',
 			'liveTv.recordShow' => 'Spela in program',
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Börjar om ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} kl. ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returnerade ogiltiga uppspelningsdata för Live-TV',
+			'liveTv.failedToStartChannel' => 'Kunde inte starta livekanalen',
+			'liveTv.failedToBuildStreamUrl' => 'Kunde inte skapa strömmens URL',
 			'collections.title' => 'Samlingar',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen är tom',
@@ -3810,6 +3967,8 @@ extension on TranslationsSv {
 			'music.repeat' => 'Upprepa',
 			'music.repeatAll' => 'Upprepa alla',
 			'music.repeatOne' => 'Upprepa en låt',
+			'music.instantMixNoServer' => 'Ingen server är tillgänglig för en snabbmix',
+			'music.noAudioUrl' => ({required Object track}) => 'Ingen ljud-URL är tillgänglig för ${track}',
 			'watchTogether.title' => 'Titta tillsammans',
 			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
 			'watchTogether.createSession' => 'Skapa session',
@@ -3875,6 +4034,7 @@ extension on TranslationsSv {
 			'watchTogether.removeRoom' => 'Ta bort',
 			'watchTogether.guestSwitchUnavailable' => 'Kunde inte byta — server inte tillgänglig för synkronisering',
 			'watchTogether.guestSwitchFailed' => 'Kunde inte byta — innehåll hittades inte på denna server',
+			'watchTogether.defaultDisplayName' => 'Användare',
 			'downloads.title' => 'Nedladdningar',
 			'downloads.manage' => 'Hantera',
 			'downloads.tvShows' => 'TV-serier',
@@ -3975,6 +4135,16 @@ extension on TranslationsSv {
 			'downloads.backgroundWarning.statusUnknown' => 'Inte kontrollerat än',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Det gick inte att öppna systeminställningarna på den här enheten',
 			'downloads.backgroundWarning.linkUnavailable' => 'Det gick inte att öppna dontkillmyapp.com på den här enheten',
+			'downloads.unknownShow' => 'Okänd serie',
+			'downloads.unknownSeason' => 'Okänd säsong',
+			'downloads.unknownAlbum' => 'Okänt album',
+			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} slutförda',
+			'downloads.errorFileNotFound' => 'Filen hittades inte (404)',
+			'downloads.errorDownloadFailed' => 'Nedladdningen misslyckades',
+			'downloads.errorPostProcessing' => ({required Object error}) => 'Efterbehandlingen misslyckades: ${error}',
+			'downloads.notificationDownloading' => 'Laddar ned...',
+			'downloads.notificationComplete' => 'Nedladdningen är klar',
+			'downloads.notificationPaused' => 'Nedladdningen har pausats',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Ingen videoförbättring',
 			'shaders.nvscalerDescription' => 'NVIDIA-bildskalning för skarpare video',
@@ -4054,14 +4224,24 @@ extension on TranslationsSv {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Det gick inte att ansluta till någon adress',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Anslutningen bröts efter ${attempts} försök',
 			'companionRemote.errors.connectionLost' => 'Anslutningen bröts',
+			'companionRemote.closedBeforeAuth' => 'Anslutningen stängdes före autentiseringen',
 			'videoSettings.playbackSpeed' => 'Uppspelningshastighet',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktiv (${duration})',
 			'videoSettings.zoom' => 'Zoom',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.sleepTimer' => 'Sovtimer',
 			'videoSettings.audioSync' => 'Ljudsynkronisering',
 			'videoSettings.subtitleSync' => 'Undertextsynkronisering',
 			'videoSettings.hdr' => 'HDR',
+			'videoSettings.hdrUnsupported' => 'HDR kan inte användas här – skrivbordets kompositionshanterare eller videoutgången kan inte överföra det.',
+			'videoSettings.hdrToneMapping' => 'HDR-tonmappning',
+			'videoSettings.hdrToneMappingCompositor' => 'Kompositionshanterare',
+			'videoSettings.hdrToneMappingCompositorDescription' => 'Vidarebefordra källans HDR-metadata och låt skrivbordets kompositionshanterare tonmappa dem.',
+			'videoSettings.hdrToneMappingPlayer' => 'Spelare',
+			'videoSettings.hdrToneMappingPlayerDescription' => 'Tonmappa till skärmens maximala ljusstyrka i spelaren och informera sedan kompositionshanteraren om resultatet.',
+			'videoSettings.hdrToneMappingFailed' => 'Det gick inte att ändra HDR-tonmappningen – det föregående läget är fortfarande aktivt.',
 			'videoSettings.audioOutput' => 'Ljudutgång',
 			'videoSettings.performanceOverlay' => 'Prestandaöverlägg',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
@@ -4106,6 +4286,16 @@ extension on TranslationsSv {
 			'performanceOverlay.player' => 'Spelare',
 			'performanceOverlay.memory' => 'Minne',
 			'performanceOverlay.uiFps' => 'UI FPS',
+			'performanceOverlay.fps' => 'FPS',
+			'performanceOverlay.decoderAndroidHw' => 'Android HW',
+			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
+			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
+			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Programvara',
+			'performanceOverlay.decoderHardware' => 'Maskinvara',
+			'performanceOverlay.tunnelingActive' => 'Aktiv',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} misslyckades)',
 			'externalPlayer.title' => 'Extern spelare',
 			'externalPlayer.useExternalPlayer' => 'Använd extern spelare',
 			'externalPlayer.useExternalPlayerDescription' => 'Öppna videor i en annan app',
@@ -4119,8 +4309,6 @@ extension on TranslationsSv {
 			'externalPlayer.playerPackage' => 'Paketnamn',
 			'externalPlayer.playerUrlScheme' => 'URL-schema',
 			'externalPlayer.off' => 'Av',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
 			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',
@@ -4254,6 +4442,16 @@ extension on TranslationsSv {
 			'seerr.statusPartiallyAvailable' => 'Delvis tillgänglig',
 			'seerr.statusRequested' => 'Begärd',
 			'seerr.statusProcessing' => 'Bearbetas',
+			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Kunde inte nå ${url}: ${error}',
+			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'Det finns ingen Seerr-instans på ${url} (HTTP ${status})',
+			'seerr.notInitialized' => 'Den här Seerr-instansen har inte slutfört den inledande konfigurationen',
+			'seerr.noPlexTokenForReauth' => 'Det finns ingen Plex-token tillgänglig för att logga in igen',
+			'seerr.noStoredCredentials' => 'Det finns inga sparade inloggningsuppgifter för att logga in igen',
+			'seerr.signInRejected' => 'Inloggningen avvisades',
+			'seerr.noSessionCookie' => 'Seerr skapade ingen sessionscookie',
+			'seerr.freshCookieRejected' => 'Seerr avvisade den nya sessionscookien',
+			'seerr.noUserInformation' => 'Seerr returnerade ingen användarinformation',
+			'seerr.sessionRejectedAfterReauth' => 'Sessionen avvisades efter den nya inloggningen',
 			'services.title' => 'Tjänster',
 			'services.hubSubtitle' => 'Synkronisera visningsstatus och begär nya titlar.',
 			'services.notConnected' => 'Inte ansluten',
@@ -4269,6 +4467,7 @@ extension on TranslationsSv {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Aktivera Plezy på ${service}',
+			'services.deviceCode.instructions' => 'Skanna QR-koden eller gå till adressen nedan och ange den här koden:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Öppna ${service} för att aktivera',
 			'services.deviceCode.copyCode' => 'Kopiera aktiveringskod',
 			'services.deviceCode.waitingForAuthorization' => 'Väntar på auktorisering…',
@@ -4318,6 +4517,24 @@ extension on TranslationsSv {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Logga in på din ${product}-server. Knyts till ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Låna från en annan profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.',
+			'addServer.invalidCredentials' => 'Ogiltigt användarnamn eller lösenord',
+			'addServer.authResponseNotJson' => 'Autentiseringssvaret var inte ett giltigt JSON-svar',
+			'addServer.quickConnectRejected' => 'Quick Connect avvisades av servern',
+			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var inte ett giltigt JSON-svar',
+			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret saknar en kod eller hemlig nyckel',
+			'addServer.quickConnectPollRejected' => 'Servern avvisade avsökningen för Quick Connect',
+			'addServer.serverTimedOut' => 'Servern svarade inte i tid',
+			'addServer.responseNotJson' => 'Serversvaret var inte ett giltigt JSON-svar',
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'Svaret saknar ett ID eller servernamn – är det här en ${product}-server?',
+			'addServer.probeFailed' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
+			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Ange minst en server-URL för ${product}',
+			'addServer.noReachableServer' => ({required Object product}) => 'Ingen nåbar ${product}-server hittades',
+			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'De här URL:erna pekar på olika servrar för ${product}',
+			'addServer.urlDoesNotMatchServer' => ({required Object product}) => 'Den här URL:en stämmer inte överens med ${product}-servern',
+			'addServer.redirectUnsupported' => 'Servern omdirigerade till en URL som inte stöds',
+			'addServer.redirectDifferentHost' => ({required Object product}) => 'Servern omdirigerade till en annan värd. Ange den slutliga URL:en för ${product} direkt.',
+			'addServer.redirectInsecure' => 'Servern omdirigerade från HTTPS till en osäker URL',
+			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'Servern omdirigerade till en URL som inte stöds. Ange den slutliga URL:en för ${product} direkt.',
 			_ => null,
 		};
 	}

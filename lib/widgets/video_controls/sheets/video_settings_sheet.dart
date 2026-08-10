@@ -602,7 +602,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       case _SettingsView.shader:
         return t.shaders.title;
       case _SettingsView.dvConversion:
-        return 'DV Conversion Mode';
+        return t.settings.dvConversionMode;
       case _SettingsView.hdrToneMapping:
         return t.videoSettings.hdrToneMapping;
     }

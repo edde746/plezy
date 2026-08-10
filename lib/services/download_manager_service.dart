@@ -858,10 +858,10 @@ class DownloadManagerService {
         )
         .configureNotificationForGroup(
           _downloadGroup,
-          running: const TaskNotification('{displayName}', 'Downloading...'),
-          complete: const TaskNotification('{displayName}', 'Download complete'),
-          error: const TaskNotification('{displayName}', 'Download failed'),
-          paused: const TaskNotification('{displayName}', 'Download paused'),
+          running: TaskNotification('{displayName}', t.downloads.notificationDownloading),
+          complete: TaskNotification('{displayName}', t.downloads.notificationComplete),
+          error: TaskNotification('{displayName}', t.downloads.errorDownloadFailed),
+          paused: TaskNotification('{displayName}', t.downloads.notificationPaused),
           progressBar: true,
         );
 
@@ -2196,7 +2196,7 @@ class DownloadManagerService {
         case TaskStatus.failed:
           await _onDownloadFailed(globalKey, update.task.taskId, update.exception);
         case TaskStatus.notFound:
-          await _onDownloadPermanentlyFailed(globalKey, update.task.taskId, 'File not found (404)');
+          await _onDownloadPermanentlyFailed(globalKey, update.task.taskId, t.downloads.errorFileNotFound);
         case TaskStatus.canceled:
           if (_pausingKeys.contains(globalKey) || _cancellingKeys.contains(globalKey)) break;
           await _onDownloadCanceled(globalKey, update.task.taskId);
@@ -2339,7 +2339,7 @@ class DownloadManagerService {
       await _handleStorageFullFailure(globalKey, taskId);
       return;
     }
-    final errorMessage = exception?.description ?? 'Download failed';
+    final errorMessage = exception?.description ?? t.downloads.errorDownloadFailed;
     final retryCount = existing.retryCount;
 
     // DNS/connection errors fail instantly and exhaust native retries in milliseconds,
@@ -2585,7 +2585,11 @@ class DownloadManagerService {
       appLogger.i('Download completed for $globalKey');
     } catch (e) {
       appLogger.e('Post-download processing failed for $globalKey', error: e);
-      await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: 'Post-processing failed: $e');
+      await _transitionStatus(
+        globalKey,
+        DownloadStatus.failed,
+        errorMessage: t.downloads.errorPostProcessing(error: e),
+      );
       await _database.removeFromQueue(globalKey);
     } finally {
       _completingKeys.remove(globalKey);

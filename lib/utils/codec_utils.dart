@@ -1,3 +1,5 @@
+import '../i18n/strings.g.dart';
+
 /// Utility class for codec-related operations.
 ///
 /// Provides centralized codec name mappings, file extension lookups,
@@ -107,8 +109,8 @@ class CodecUtils {
   static String? formatAudioChannels(int? channels) {
     if (channels == null || channels <= 0) return null;
     return switch (channels) {
-      1 => 'Mono',
-      2 => 'Stereo',
+      1 => t.fileInfo.channelsMono,
+      2 => t.videoSettings.audioOutputStereo,
       3 => '3.0',
       4 => '4.0',
       5 => '4.1',

@@ -17,7 +17,8 @@
     "quickConnectWaiting": "Təsdiq gözlənilir…",
     "quickConnectCancel": "Ləğv et",
     "quickConnectExpired": "Sürətli Qoşulmanın vaxtı bitdi. Təzədən cəhd edin.",
-    "localDataRecoveryRequired": "Plezy yerli daxil olma və gözləyən oxutma məlumatlarını təhlükəsiz bərpa edə bilmədi. Lütfən təzədən daxil olun."
+    "localDataRecoveryRequired": "Plezy yerli daxil olma və gözləyən oxutma məlumatlarını təhlükəsiz bərpa edə bilmədi. Lütfən təzədən daxil olun.",
+    "pinCheckRejected": "Plex PIN yoxlaması rədd edildi"
   },
   "common": {
     "cancel": "Ləğv et",
@@ -77,7 +78,10 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes tənqidçiləri",
       "rottenTomatoesAudience": "Rotten Tomatoes tamaşaçıları"
-    }
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC"
   },
   "screens": {
     "licenses": "Lisenziyalar",
@@ -323,8 +327,8 @@
     "showNavBarLabels": "Naviqasiya paneli yazılarını göstər",
     "showNavBarLabelsDescription": "Naviqasiya paneli ikonlarının altında mətni göstər",
     "startupSection": "Başlanğıc bölməsi",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "Kəşf et nişanını göstər",
+    "showExploreTabDescription": "Plex Discover və qoşulmuş izləmə xidmətlərindəki məzmunla Kəşf et nişanını göstər",
     "liveTvDefaultFavorites": "Canlı TV-də sevimli kanalları defolt et",
     "liveTvDefaultFavoritesDescription": "Canlı TV açıldıqda yalnız sevimli kanalları göstər",
     "display": "Ekran",
@@ -335,7 +339,8 @@
     "player": "Oynadıcı",
     "subtitlesAndConfig": "Altyazılar və konfiqurasiya",
     "seekAndTiming": "Sarğı və vaxt tənzimləməsi",
-    "behavior": "Davranış"
+    "behavior": "Davranış",
+    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et"
   },
   "search": {
     "hint": "Kino, serial, musiqi axtar...",
@@ -491,7 +496,9 @@
     "flagExternal": "Xarici",
     "flagHearingImpaired": "Eşitmə qüsurlu üçün",
     "flagDub": "Dublyaj",
-    "flagOriginal": "Orijinal"
+    "flagOriginal": "Orijinal",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profil ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Baxıldı olaraq işarələ",
@@ -568,7 +575,12 @@
     "alphabetNavigation": "Əlifba naviqasiyası",
     "alphabetScrollHint": "Hərflərə görə keçmək üçün yuxarı və ya aşağı sürüşdürün",
     "rowColumnPosition": "Sətir ${row} / ${rowCount}, sütun ${column} / ${columnCount}",
-    "rowPosition": "Sətir ${row} / ${rowCount}"
+    "rowPosition": "Sətir ${row} / ${rowCount}",
+    "autoScrollPlay": "Avtomatik sürüşdürməni başlat",
+    "autoScrollPause": "Avtomatik sürüşdürməyə fasilə ver",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Qarışıq oynat",
@@ -666,7 +678,16 @@
     "subtitleDownloaded": "Altyazı yükləndi",
     "subtitleDownloadedNotApplied": "Altyazı yükləndi, lakin seçilə bilmədi",
     "subtitleDownloadFailed": "Altyazı yüklənə bilmədi",
-    "searchLanguages": "Dillərdə axtar..."
+    "searchLanguages": "Dillərdə axtar...",
+    "skipIntro": "Girişi keç",
+    "skipCredits": "Titrləri keç",
+    "nextEpisode": "Növbəti seriya",
+    "subtitleTrack": "Zolaq ${n}",
+    "subtitleFile": "Altyazı ${name}",
+    "forcedTrack": "${label} (Məcburi)",
+    "osdSubtitlesOff": "Altyazı: Söndürülüb",
+    "osdSubtitles": "Altyazı: ${track}",
+    "osdAudio": "Səs: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -722,12 +743,18 @@
     "serverLimitBody": "Server xətası (HTTP 500). Məhdudiyyət bu seansı rədd etdi.",
     "mediaUnreadableTitle": "Fayl əlçatan deyil",
     "mediaUnreadableBody": "Server bu elementi tapdı, lakin onun faylını oxuya bilmədi (HTTP 404). Fayl yəqin ki, köçürülüb, silinib və ya onun saxlanma yeri oflayndır. Server sahibindən faylı yoxlamasını və kitabxananı yenidən skan etməsini xahiş edin.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "Yayım əlçatan deyil",
+    "serverBusyBody": "Server bu faylı yayımlamaqdan dəfələrlə imtina etdi (HTTP 503). Server yenidən başladılır və ya məşğul ola bilər, yaxud faylın yerləşdiyi yaddaş oflayn ola bilər. Bir az sonra təzədən cəhd edin — problem davam edərsə, server sahibindən serveri və faylın yerləşdiyi yaddaşı yoxlamasını istəyin.",
     "logsUploaded": "Jurnallar yükləndi",
     "logsUploadFailed": "Jurnallar yüklənə bilmədi",
     "logId": "Jurnal ID-si",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "Altyazılar bu yayıma həkk edilib. Onları altyazı menyusundan dəyişin.",
+    "noVideoUrl": "Video URL-i mövcud deyil",
+    "playbackNoMediaSources": "Server oynadıla bilən media mənbəyi qaytarmadı",
+    "playbackDataNotPrepared": "Məlumatları hazır olmadan oynatma başladıldı",
+    "streamSelectionUnavailable": "Bu mənbə üçün yayım seçimi mövcud deyil",
+    "streamSelectionFailed": "Seçilmiş yayımları tətbiq etmək olmadı",
+    "serverUnavailableForProfile": "Aktiv profil üçün heç bir server mövcud deyil"
   },
   "subtitlingStyling": {
     "text": "Mətn",
@@ -746,8 +773,8 @@
     "overrideStrip": "Formatlaşdırmanı sil",
     "positionTop": "Yuxarı",
     "positionBottom": "Aşağı",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Ekrana bərkit",
+    "anchorToScreenDescription": "Mətn altyazılarını geniş ekranlı videonun altındakı qara zolaqlarda göstər",
     "bold": "Qalın",
     "italic": "Kursiv",
     "renderResolution": "Emal imkanı (Resolution)",
@@ -835,7 +862,8 @@
     "pinProtectionOptional": "PIN mühafizəsi (istəyə bağlı)",
     "pinExplain": "Profillər arası keçid üçün 4 rəqəmli PIN tələb olunur.",
     "continueButton": "Davam et",
-    "pinsDontMatch": "PIN-lər uyğun gəlmir"
+    "pinsDontMatch": "PIN-lər uyğun gəlmir",
+    "tokenIdentityMismatch": "Plex profil tokeni gözlənilməyən serveri müəyyən etdi"
   },
   "connections": {
     "sectionTitle": "Qoşulmalar",
@@ -872,7 +900,11 @@
     "movie": "Kino",
     "tvShow": "TV Şou",
     "minutesLeft": "${minutes} dəq qaldı",
-    "moreLikeThis": "Buna bənzərlər"
+    "moreLikeThis": "Buna bənzərlər",
+    "titleCount": {
+      "one": "${n} başlıq",
+      "other": "${n} başlıq"
+    }
   },
   "errors": {
     "searchFailed": "Axtarış uğursuz oldu: ${error}",
@@ -1080,10 +1112,10 @@
     "characters": "Personajlar",
     "addToWatchlist": "İzləmə siyahısına əlavə et",
     "removeFromWatchlist": "İzləmə siyahısından sil",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Baxış siyahısına əlavə edildi",
+    "removedFromWatchlist": "Baxış siyahısından silindi",
     "watchlistUpdateFailed": "İzləmə siyahısı yenilənə bilmədi",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Bu elementi heç bir baxış siyahısı ilə uyğunlaşdırmaq olmadı",
     "notInLibrary": "Kitabxananızda yoxdur",
     "inTheseLibraries": "Bu kitabxanalarda var",
     "checkingLibrary": "Kitabxananız yoxlanılır...",
@@ -1253,9 +1285,9 @@
     "watchChannel": "Kanala bax",
     "favorites": "Sevimlilər",
     "reorderFavorites": "Sevimliləri yenidən sırala",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Sevimli kanal yoxdur",
+    "noFavoriteChannelsHint": "Bütün kanalları göstərin, sonra kanalı sevimlilərə əlavə etmək üçün üzərinə uzun basın.",
+    "showAllChannels": "Bütün kanalları göstər",
     "favoritesLoadFailed": "Sevimlilər yüklənə bilmədi.",
     "favoritesUpdateFailed": "Sevimlilər yenilənə bilmədi.",
     "joinSession": "Davam edən seansa qoşul",
@@ -1294,7 +1326,12 @@
     "recordingRuleUpdated": "Yazma qaydası yeniləndi",
     "guideReloadRequested": "Bələdçi yenilənməsi tələb olundu",
     "rulesProcessRequested": "Qaydaların yenidən qiymətləndirilməsi tələb olundu",
-    "recordShow": "Şounu yaz"
+    "recordShow": "Şounu yaz",
+    "startingInMinutes": "${minutes} dəq sonra başlayır",
+    "dayAtTime": "${day}, saat ${time}",
+    "invalidPlaybackData": "${product} etibarsız Canlı TV oynatma məlumatı qaytardı",
+    "failedToStartChannel": "Canlı kanalı başlatmaq olmadı",
+    "failedToBuildStreamUrl": "Yayım URL-i yaratmaq olmadı"
   },
   "collections": {
     "title": "Kolleksiyalar",
@@ -1371,7 +1408,9 @@
     "nextTrack": "Növbəti mahnı",
     "repeat": "Təkrarla",
     "repeatAll": "Hamısını təkrarla",
-    "repeatOne": "Birini təkrarla"
+    "repeatOne": "Birini təkrarla",
+    "instantMixNoServer": "Ani miks üçün heç bir server mövcud deyil",
+    "noAudioUrl": "${track} üçün səs URL-i mövcud deyil"
   },
   "watchTogether": {
     "title": "Birlikdə İzlə",
@@ -1438,7 +1477,8 @@
     "renameRoom": "Otağın adını dəyişdir",
     "removeRoom": "Sil",
     "guestSwitchUnavailable": "Keçid etmək olmadı — eyniləşdirmə üçün server əlçatan deyil",
-    "guestSwitchFailed": "Keçid etmək olmadı — məzmun tapılmadı"
+    "guestSwitchFailed": "Keçid etmək olmadı — məzmun tapılmadı",
+    "defaultDisplayName": "İstifadəçi"
   },
   "downloads": {
     "title": "Yükləmələr",
@@ -1542,7 +1582,17 @@
       "statusUnknown": "Hələ yoxlanılmayıb",
       "settingsUnavailable": "Bu cihazda sistem tənzimləmələri açıla bilmədi",
       "linkUnavailable": "Bu cihazda dontkillmyapp.com açıla bilmədi"
-    }
+    },
+    "unknownShow": "Məlum olmayan serial",
+    "unknownSeason": "Məlum olmayan mövsüm",
+    "unknownAlbum": "Məlum olmayan albom",
+    "completedOfTotal": "${completed}/${total} tamamlandı",
+    "errorFileNotFound": "Fayl tapılmadı (404)",
+    "errorDownloadFailed": "Yükləmə uğursuz oldu",
+    "errorPostProcessing": "Sonrakı emal uğursuz oldu: ${error}",
+    "notificationDownloading": "Yüklənir...",
+    "notificationComplete": "Yükləmə tamamlandı",
+    "notificationPaused": "Yükləmə dayandırıldı"
   },
   "shaders": {
     "title": "Şeyderlər",
@@ -1633,7 +1683,8 @@
       "failedToConnectAnyAddress": "Heç bir ünvana qoşuluna bilmədi",
       "connectionLostAfterAttempts": "${attempts} cəhddən sonra əlaqə kəsildi",
       "connectionLost": "Əlaqə kəsildi"
-    }
+    },
+    "closedBeforeAuth": "Bağlantı autentifikasiyadan əvvəl bağlandı"
   },
   "videoSettings": {
     "playbackSpeed": "Oynatma sürəti",
@@ -1644,13 +1695,13 @@
     "audioSync": "Səs sinxronizasiyası",
     "subtitleSync": "Altyazı sinxronizasiyası",
     "hdr": "HDR",
-    "hdrUnsupported": "",
-    "hdrToneMapping": "",
-    "hdrToneMappingCompositor": "",
-    "hdrToneMappingCompositorDescription": "",
-    "hdrToneMappingPlayer": "",
-    "hdrToneMappingPlayerDescription": "",
-    "hdrToneMappingFailed": "",
+    "hdrUnsupported": "HDR burada əlçatan deyil — bu masaüstü kompozitoru və ya video çıxışı onu ötürə bilmir.",
+    "hdrToneMapping": "HDR ton uyğunlaşdırması",
+    "hdrToneMappingCompositor": "Kompozitor",
+    "hdrToneMappingCompositorDescription": "Mənbənin HDR metaməlumatlarını dəyişmədən ötür və ton uyğunlaşdırmasını masaüstü kompozitoruna həvalə et.",
+    "hdrToneMappingPlayer": "Oynadıcı",
+    "hdrToneMappingPlayerDescription": "Oynadıcıda tonları ekranın pik parlaqlığına uyğunlaşdır, sonra nəticəni kompozitora bildir.",
+    "hdrToneMappingFailed": "HDR ton uyğunlaşdırmasını dəyişmək olmadı — əvvəlki rejim hələ də aktivdir.",
     "audioOutput": "Səs çıxışı",
     "performanceOverlay": "Məhsuldarlıq paneli",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1696,7 +1747,17 @@
     "speed": "Sürət",
     "player": "Oynadıcı",
     "memory": "Yaddaş",
-    "uiFps": "Arayüz (UI) FPS-i"
+    "uiFps": "Arayüz (UI) FPS-i",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Proqram təminatı",
+    "decoderHardware": "Aparat təminatı",
+    "tunnelingActive": "Aktiv",
+    "dvRpuFailed": "${converted} (${failures} uğursuz)"
   },
   "externalPlayer": {
     "title": "Xarici oynadıcı",
@@ -1854,7 +1915,17 @@
     "statusAvailable": "Əlçatandır",
     "statusPartiallyAvailable": "Hissəvi əlçatandır",
     "statusRequested": "Sorğu göndərildi",
-    "statusProcessing": "Emal edilir"
+    "statusProcessing": "Emal edilir",
+    "couldNotReach": "${url} ünvanına çatmaq olmadı: ${error}",
+    "noInstanceAtUrl": "${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})",
+    "notInitialized": "Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb",
+    "noPlexTokenForReauth": "Yenidən daxil olmaq üçün Plex tokeni mövcud deyil",
+    "noStoredCredentials": "Yenidən daxil olmaq üçün yadda saxlanmış giriş məlumatları mövcud deyil",
+    "signInRejected": "Daxil olma rədd edildi",
+    "noSessionCookie": "Seerr sessiya kukisi yaratmadı",
+    "freshCookieRejected": "Seerr yeni sessiya kukisini rədd etdi",
+    "noUserInformation": "Seerr istifadəçi məlumatlarını qaytarmadı",
+    "sessionRejectedAfterReauth": "Yenidən daxil olduqdan sonra sessiya rədd edildi"
   },
   "services": {
     "title": "Xidmətlər",
@@ -1875,7 +1946,7 @@
     },
     "deviceCode": {
       "title": "Plezy-ni ${service} üzərində aktivləşdirin",
-      "instructions": "",
+      "instructions": "QR kodunu skan edin və ya aşağıdakı ünvana keçib bu kodu daxil edin:",
       "openToActivate": "Aktivləşdirmək üçün ${service} açın",
       "copyCode": "Aktivləşdirmə kodunu kopyala",
       "waitingForAuthorization": "Səlahiyyət gözlənilir…",
@@ -1933,6 +2004,24 @@
     "connectToMediaBrowserCardSubtitle": "Server URL-inizi, istifadəçi adınızı və şifrənizi daxil edin.",
     "connectToMediaBrowserCardSubtitleScoped": "${product} serverinizə daxil olun. ${name} ilə əlaqələndirilir.",
     "borrowFromAnotherProfile": "Başqa profildən götür",
-    "borrowFromAnotherProfileSubtitle": "Başqa profilin qoşulmasını yenidən istifadə edin."
+    "borrowFromAnotherProfileSubtitle": "Başqa profilin qoşulmasını yenidən istifadə edin.",
+    "invalidCredentials": "İstifadəçi adı və ya şifrə yanlışdır",
+    "authResponseNotJson": "Autentifikasiya cavabı etibarlı JSON deyildi",
+    "quickConnectRejected": "Quick Connect server tərəfindən rədd edildi",
+    "quickConnectNotJson": "Quick Connect cavabı etibarlı JSON deyildi",
+    "quickConnectMissingFields": "Quick Connect cavabında kod və ya məxfi açar yoxdur",
+    "quickConnectPollRejected": "Quick Connect sorğulaması server tərəfindən rədd edildi",
+    "serverTimedOut": "Server vaxtında cavab vermədi",
+    "responseNotJson": "Server cavabı etibarlı JSON deyildi",
+    "responseMissingIdentity": "Cavabda ID və ya server adı yoxdur — bu, ${product} serveridir?",
+    "probeFailed": "Serverə çatmaq olmadı: ${error}",
+    "enterAtLeastOneUrl": "Ən azı bir ${product} server URL-i daxil edin",
+    "noReachableServer": "Əlçatan ${product} serveri tapılmadı",
+    "urlsPointToDifferentServers": "Bu URL-lər fərqli ${product} serverlərinə aiddir",
+    "urlDoesNotMatchServer": "Bu URL ${product} serverinə uyğun gəlmir",
+    "redirectUnsupported": "Server dəstəklənməyən URL-ə yönləndirdi",
+    "redirectDifferentHost": "Server başqa hosta yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.",
+    "redirectInsecure": "Server HTTPS-dən təhlükəsiz olmayan URL-ə yönləndirdi",
+    "redirectUnsupportedEnterFinal": "Server dəstəklənməyən URL-ə yönləndirdi. Son ${product} URL-ni birbaşa daxil edin."
   }
 }

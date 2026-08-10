@@ -5,7 +5,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     final raw = error.toString();
     final redacted = LogRedactionManager.redact(raw);
     if (raw.contains('No client registered')) {
-      return t.messages.errorLoading(error: 'Server is unavailable for the active profile');
+      return t.messages.errorLoading(error: t.messages.serverUnavailableForProfile);
     }
     return t.messages.errorLoading(error: redacted);
   }
@@ -87,7 +87,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       'Server kept answering the stream with HTTP 503 for '
       '${openHttp503Patience.inSeconds}s without a first frame — giving up on this open',
     );
-    _onPlayerError(const PlayerError('HTTP 503', cause: PlayerError.serverHttp503));
+    _onPlayerError(PlayerError(t.messages.serverBusyTitle, cause: PlayerError.serverHttp503));
   }
 
   String _redactPlayerError(String message) => LogRedactionManager.redact(message);

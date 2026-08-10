@@ -17,7 +17,8 @@
     "quickConnectWaiting": "Waiting for approval…",
     "quickConnectCancel": "Cancel",
     "quickConnectExpired": "Quick Connect expired. Try again.",
-    "localDataRecoveryRequired": "Plezy could not safely recover local sign-in and pending playback data. Please sign in again."
+    "localDataRecoveryRequired": "Plezy could not safely recover local sign-in and pending playback data. Please sign in again.",
+    "pinCheckRejected": "The Plex PIN check was rejected"
   },
   "common": {
     "cancel": "Cancel",
@@ -77,7 +78,10 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes critics",
       "rottenTomatoesAudience": "Rotten Tomatoes audience"
-    }
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC"
   },
   "screens": {
     "licenses": "Licenses",
@@ -335,7 +339,8 @@
     "player": "Player",
     "subtitlesAndConfig": "Subtitles & Configuration",
     "seekAndTiming": "Seek & Timing",
-    "behavior": "Behavior"
+    "behavior": "Behavior",
+    "exportDialogTitle": "Export Plezy settings"
   },
   "search": {
     "hint": "Search movies, shows, music...",
@@ -491,7 +496,9 @@
     "flagExternal": "External",
     "flagHearingImpaired": "Hearing impaired",
     "flagDub": "Dub",
-    "flagOriginal": "Original"
+    "flagOriginal": "Original",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profile ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Mark as Watched",
@@ -568,7 +575,12 @@
     "alphabetNavigation": "Alphabet navigation",
     "alphabetScrollHint": "Swipe up or down to move by letter",
     "rowColumnPosition": "Row ${row} of ${rowCount}, column ${column} of ${columnCount}",
-    "rowPosition": "Row ${row} of ${rowCount}"
+    "rowPosition": "Row ${row} of ${rowCount}",
+    "autoScrollPlay": "Play auto-scroll",
+    "autoScrollPause": "Pause auto-scroll",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Shuffle play",
@@ -666,7 +678,16 @@
     "subtitleDownloaded": "Subtitle downloaded",
     "subtitleDownloadedNotApplied": "Subtitle downloaded, but it could not be selected",
     "subtitleDownloadFailed": "Failed to download subtitle",
-    "searchLanguages": "Search languages..."
+    "searchLanguages": "Search languages...",
+    "skipIntro": "Skip Intro",
+    "skipCredits": "Skip Credits",
+    "nextEpisode": "Next Episode",
+    "subtitleTrack": "Track ${n}",
+    "subtitleFile": "Subtitle ${name}",
+    "forcedTrack": "${label} (Forced)",
+    "osdSubtitlesOff": "Subtitles: Off",
+    "osdSubtitles": "Subtitles: ${track}",
+    "osdAudio": "Audio: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -727,7 +748,13 @@
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
     "logId": "Log ID",
-    "burnedSubtitlesUseMenu": "Subtitles are burned into this stream. Change them from the subtitle menu."
+    "burnedSubtitlesUseMenu": "Subtitles are burned into this stream. Change them from the subtitle menu.",
+    "noVideoUrl": "No video URL available",
+    "playbackNoMediaSources": "The server returned no playable media sources",
+    "playbackDataNotPrepared": "Playback was started before its data was ready",
+    "streamSelectionUnavailable": "Stream selection is not available for this source",
+    "streamSelectionFailed": "Could not apply the selected streams",
+    "serverUnavailableForProfile": "No server is available for the active profile"
   },
   "subtitlingStyling": {
     "text": "Text",
@@ -835,7 +862,8 @@
     "pinProtectionOptional": "PIN protection (optional)",
     "pinExplain": "4-digit PIN required to switch profiles.",
     "continueButton": "Continue",
-    "pinsDontMatch": "PINs don't match"
+    "pinsDontMatch": "PINs don't match",
+    "tokenIdentityMismatch": "The Plex profile token resolved to an unexpected server"
   },
   "connections": {
     "sectionTitle": "Connections",
@@ -872,7 +900,11 @@
     "movie": "Movie",
     "tvShow": "TV Show",
     "minutesLeft": "${minutes} min left",
-    "moreLikeThis": "More Like This"
+    "moreLikeThis": "More Like This",
+    "titleCount": {
+      "one": "${n} title",
+      "other": "${n} titles"
+    }
   },
   "errors": {
     "searchFailed": "Search failed: ${error}",
@@ -1294,7 +1326,12 @@
     "recordingRuleUpdated": "Recording rule updated",
     "guideReloadRequested": "Guide refresh requested",
     "rulesProcessRequested": "Rule re-evaluation requested",
-    "recordShow": "Record show"
+    "recordShow": "Record show",
+    "startingInMinutes": "Starting in ${minutes} min",
+    "dayAtTime": "${day} at ${time}",
+    "invalidPlaybackData": "${product} returned invalid Live TV playback data",
+    "failedToStartChannel": "Could not start the live channel",
+    "failedToBuildStreamUrl": "Could not build the stream URL"
   },
   "collections": {
     "title": "Collections",
@@ -1371,7 +1408,9 @@
     "nextTrack": "Next track",
     "repeat": "Repeat",
     "repeatAll": "Repeat all",
-    "repeatOne": "Repeat one"
+    "repeatOne": "Repeat one",
+    "instantMixNoServer": "No server is available for an instant mix",
+    "noAudioUrl": "No audio URL is available for ${track}"
   },
   "watchTogether": {
     "title": "Watch Together",
@@ -1438,7 +1477,8 @@
     "renameRoom": "Rename Room",
     "removeRoom": "Remove",
     "guestSwitchUnavailable": "Couldn't switch — server unavailable for sync",
-    "guestSwitchFailed": "Couldn't switch — content not found on this server"
+    "guestSwitchFailed": "Couldn't switch — content not found on this server",
+    "defaultDisplayName": "User"
   },
   "downloads": {
     "title": "Downloads",
@@ -1542,7 +1582,17 @@
       "statusUnknown": "Not checked yet",
       "settingsUnavailable": "Couldn't open system settings on this device",
       "linkUnavailable": "Couldn't open dontkillmyapp.com on this device"
-    }
+    },
+    "unknownShow": "Unknown Show",
+    "unknownSeason": "Unknown Season",
+    "unknownAlbum": "Unknown Album",
+    "completedOfTotal": "${completed}/${total} completed",
+    "errorFileNotFound": "File not found (404)",
+    "errorDownloadFailed": "Download failed",
+    "errorPostProcessing": "Post-processing failed: ${error}",
+    "notificationDownloading": "Downloading...",
+    "notificationComplete": "Download complete",
+    "notificationPaused": "Download paused"
   },
   "shaders": {
     "title": "Shaders",
@@ -1633,7 +1683,8 @@
       "failedToConnectAnyAddress": "Failed to connect to any address",
       "connectionLostAfterAttempts": "Connection lost after ${attempts} attempts",
       "connectionLost": "Connection lost"
-    }
+    },
+    "closedBeforeAuth": "The connection closed before authentication"
   },
   "videoSettings": {
     "playbackSpeed": "Playback Speed",
@@ -1650,7 +1701,7 @@
     "hdrToneMappingCompositorDescription": "Pass the source's HDR metadata through and let the desktop compositor map it.",
     "hdrToneMappingPlayer": "Player",
     "hdrToneMappingPlayerDescription": "Map to the display's peak brightness in the player, then tell the compositor the result.",
-    "hdrToneMappingFailed": "Couldn't change HDR tone mapping \u2014 the previous mode is still active.",
+    "hdrToneMappingFailed": "Couldn't change HDR tone mapping — the previous mode is still active.",
     "audioOutput": "Audio Output",
     "performanceOverlay": "Performance Overlay",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1696,7 +1747,17 @@
     "speed": "Speed",
     "player": "Player",
     "memory": "Memory",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Software",
+    "decoderHardware": "Hardware",
+    "tunnelingActive": "Active",
+    "dvRpuFailed": "${converted} (${failures} failed)"
   },
   "externalPlayer": {
     "title": "External Player",
@@ -1854,7 +1915,17 @@
     "statusAvailable": "Available",
     "statusPartiallyAvailable": "Partially available",
     "statusRequested": "Requested",
-    "statusProcessing": "Processing"
+    "statusProcessing": "Processing",
+    "couldNotReach": "Could not reach ${url}: ${error}",
+    "noInstanceAtUrl": "No Seerr instance at ${url} (HTTP ${status})",
+    "notInitialized": "This Seerr instance has not completed first-run setup",
+    "noPlexTokenForReauth": "No Plex token is available to sign in again",
+    "noStoredCredentials": "No stored credentials are available to sign in again",
+    "signInRejected": "Sign-in was rejected",
+    "noSessionCookie": "Seerr did not issue a session cookie",
+    "freshCookieRejected": "Seerr rejected the new session cookie",
+    "noUserInformation": "Seerr did not return user information",
+    "sessionRejectedAfterReauth": "The session was rejected after signing in again"
   },
   "services": {
     "title": "Services",
@@ -1933,6 +2004,24 @@
     "connectToMediaBrowserCardSubtitle": "Enter your server URL, username, and password.",
     "connectToMediaBrowserCardSubtitleScoped": "Sign in to your ${product} server. Binds to ${name}.",
     "borrowFromAnotherProfile": "Borrow from another profile",
-    "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN."
+    "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN.",
+    "invalidCredentials": "Invalid username or password",
+    "authResponseNotJson": "The authentication response was not valid JSON",
+    "quickConnectRejected": "Quick Connect was rejected by the server",
+    "quickConnectNotJson": "The Quick Connect response was not valid JSON",
+    "quickConnectMissingFields": "The Quick Connect response is missing a code or secret",
+    "quickConnectPollRejected": "Quick Connect polling was rejected by the server",
+    "serverTimedOut": "The server did not respond in time",
+    "responseNotJson": "The server response was not valid JSON",
+    "responseMissingIdentity": "The response is missing an ID or server name — is this a ${product} server?",
+    "probeFailed": "Could not reach the server: ${error}",
+    "enterAtLeastOneUrl": "Enter at least one ${product} server URL",
+    "noReachableServer": "No reachable ${product} server was found",
+    "urlsPointToDifferentServers": "These URLs point to different ${product} servers",
+    "urlDoesNotMatchServer": "This URL does not match the ${product} server",
+    "redirectUnsupported": "The server redirected to an unsupported URL",
+    "redirectDifferentHost": "The server redirected to a different host. Enter the final ${product} URL directly.",
+    "redirectInsecure": "The server redirected from HTTPS to an insecure URL",
+    "redirectUnsupportedEnterFinal": "The server redirected to an unsupported URL. Enter the final ${product} URL directly."
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../focus/focusable_wrapper.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../media/media_source_info.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../app_icon.dart';
@@ -41,11 +42,11 @@ class SkipMarkerButton extends StatelessWidget {
     final showNextEpisode = creditsAtEnd && hasNextEpisode;
     String baseButtonText;
     if (showNextEpisode) {
-      baseButtonText = 'Next Episode';
+      baseButtonText = t.videoControls.nextEpisode;
     } else if (isCredits) {
-      baseButtonText = 'Skip Credits';
+      baseButtonText = t.videoControls.skipCredits;
     } else {
-      baseButtonText = 'Skip Intro';
+      baseButtonText = t.videoControls.skipIntro;
     }
 
     final remainingSeconds = isAutoSkipActive && shouldShowAutoSkip

@@ -181,7 +181,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     final firstSource = sources.first;
     if (firstSource is! Map<String, dynamic>) {
       throw PlaybackException(
-        '${_client.dialect.productName} returned invalid Live TV playback data',
+        t.liveTv.invalidPlaybackData(product: _client.dialect.productName),
         reason: PlaybackFailureReason.invalidPlaybackData,
       );
     }

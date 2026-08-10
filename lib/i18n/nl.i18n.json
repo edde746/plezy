@@ -17,7 +17,8 @@
     "quickConnectWaiting": "Wachten op goedkeuring…",
     "quickConnectCancel": "Annuleren",
     "quickConnectExpired": "Quick Connect is verlopen. Probeer opnieuw.",
-    "localDataRecoveryRequired": "Plezy kon lokale aanmeldings- en openstaande afspeelgegevens niet veilig herstellen. Meld je opnieuw aan."
+    "localDataRecoveryRequired": "Plezy kon lokale aanmeldings- en openstaande afspeelgegevens niet veilig herstellen. Meld je opnieuw aan.",
+    "pinCheckRejected": "De controle van de Plex-pincode is geweigerd"
   },
   "common": {
     "cancel": "Annuleren",
@@ -77,7 +78,10 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes-critici",
       "rottenTomatoesAudience": "Rotten Tomatoes-publiek"
-    }
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC"
   },
   "screens": {
     "licenses": "Licenties",
@@ -323,8 +327,8 @@
     "showNavBarLabels": "Labels op navigatiebalk tonen",
     "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen op de navigatiebalk weergeven",
     "startupSection": "Opstartsectie",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "Tabblad Ontdekken tonen",
+    "showExploreTabDescription": "Toon het tabblad Ontdekken met content uit Plex Discover en gekoppelde trackers",
     "liveTvDefaultFavorites": "Standaard favoriete zenders",
     "liveTvDefaultFavoritesDescription": "Toon alleen favoriete zenders bij het openen van Live TV",
     "display": "Weergave",
@@ -335,7 +339,8 @@
     "player": "Speler",
     "subtitlesAndConfig": "Ondertitels en instellingen",
     "seekAndTiming": "Spoelen en timing",
-    "behavior": "Gedrag"
+    "behavior": "Gedrag",
+    "exportDialogTitle": "Plezy-instellingen exporteren"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",
@@ -491,7 +496,9 @@
     "flagExternal": "Extern",
     "flagHearingImpaired": "Slechthorend",
     "flagDub": "Nasynchronisatie",
-    "flagOriginal": "Origineel"
+    "flagOriginal": "Origineel",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profiel ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Als bekeken markeren",
@@ -568,7 +575,12 @@
     "alphabetNavigation": "Alfabetische navigatie",
     "alphabetScrollHint": "Veeg omhoog of omlaag om per letter te bewegen",
     "rowColumnPosition": "Rij ${row} van ${rowCount}, kolom ${column} van ${columnCount}",
-    "rowPosition": "Rij ${row} van ${rowCount}"
+    "rowPosition": "Rij ${row} van ${rowCount}",
+    "autoScrollPlay": "Automatisch scrollen starten",
+    "autoScrollPause": "Automatisch scrollen pauzeren",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Willekeurig afspelen",
@@ -666,7 +678,16 @@
     "subtitleDownloaded": "Ondertitel gedownload",
     "subtitleDownloadedNotApplied": "De ondertiteling is gedownload, maar kon niet worden geselecteerd",
     "subtitleDownloadFailed": "Ondertitel downloaden mislukt",
-    "searchLanguages": "Talen zoeken..."
+    "searchLanguages": "Talen zoeken...",
+    "skipIntro": "Intro overslaan",
+    "skipCredits": "Aftiteling overslaan",
+    "nextEpisode": "Volgende aflevering",
+    "subtitleTrack": "Spoor ${n}",
+    "subtitleFile": "Ondertitel ${name}",
+    "forcedTrack": "${label} (Geforceerd)",
+    "osdSubtitlesOff": "Ondertitels: uit",
+    "osdSubtitles": "Ondertitels: ${track}",
+    "osdAudio": "Audio: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -722,12 +743,18 @@
     "serverLimitBody": "Serverfout (HTTP 500). Waarschijnlijk weigerde een bandbreedte-/transcodeerlimiet deze sessie. Vraag de eigenaar dit aan te passen.",
     "mediaUnreadableTitle": "Bestand niet beschikbaar",
     "mediaUnreadableBody": "De server heeft dit item gevonden maar kon het bestand niet lezen (HTTP 404). Het bestand is waarschijnlijk verplaatst of verwijderd, of de opslag is offline. Vraag de serverbeheerder om het bestand te controleren en de bibliotheek opnieuw te scannen.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "Stream niet beschikbaar",
+    "serverBusyBody": "De server bleef weigeren dit bestand te streamen (HTTP 503). Mogelijk wordt de server opnieuw opgestart, is deze bezet of is de opslag van het bestand offline. Probeer het over een moment opnieuw — als dit blijft gebeuren, vraag dan de servereigenaar om de server en de opslag van het bestand te controleren.",
     "logsUploaded": "Logbestanden geüpload",
     "logsUploadFailed": "Uploaden van logbestanden mislukt",
     "logId": "Logboek-ID",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "De ondertitels zijn in deze stream ingebrand. Wijzig ze via het ondertitelmenu.",
+    "noVideoUrl": "Geen video-URL beschikbaar",
+    "playbackNoMediaSources": "De server heeft geen afspeelbare mediabronnen geretourneerd",
+    "playbackDataNotPrepared": "Het afspelen is gestart voordat de gegevens gereed waren",
+    "streamSelectionUnavailable": "Streamselectie is niet beschikbaar voor deze bron",
+    "streamSelectionFailed": "Kon de geselecteerde streams niet toepassen",
+    "serverUnavailableForProfile": "Er is geen server beschikbaar voor het actieve profiel"
   },
   "subtitlingStyling": {
     "text": "Tekst",
@@ -746,8 +773,8 @@
     "overrideStrip": "Opmaak verwijderen",
     "positionTop": "Bovenaan",
     "positionBottom": "Onderaan",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Aan scherm verankeren",
+    "anchorToScreenDescription": "Toon tekstondertitels in de zwarte balken onder breedbeeldvideo",
     "bold": "Vet",
     "italic": "Cursief",
     "renderResolution": "Renderresolutie",
@@ -835,7 +862,8 @@
     "pinProtectionOptional": "Pincodebeveiliging (optioneel)",
     "pinExplain": "Een viercijferige pincode is vereist om van profiel te wisselen.",
     "continueButton": "Doorgaan",
-    "pinsDontMatch": "De pincodes komen niet overeen"
+    "pinsDontMatch": "De pincodes komen niet overeen",
+    "tokenIdentityMismatch": "Het token van het Plex-profiel bleek bij een onverwachte server te horen"
   },
   "connections": {
     "sectionTitle": "Verbindingen",
@@ -872,7 +900,11 @@
     "movie": "Film",
     "tvShow": "Tv-serie",
     "minutesLeft": "nog ${minutes} min",
-    "moreLikeThis": "Meer zoals dit"
+    "moreLikeThis": "Meer zoals dit",
+    "titleCount": {
+      "one": "${n} titel",
+      "other": "${n} titels"
+    }
   },
   "errors": {
     "searchFailed": "Zoeken mislukt: ${error}",
@@ -1080,10 +1112,10 @@
     "characters": "Personages",
     "addToWatchlist": "Toevoegen aan kijklijst",
     "removeFromWatchlist": "Verwijderen uit kijklijst",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Aan kijklijst toegevoegd",
+    "removedFromWatchlist": "Uit kijklijst verwijderd",
     "watchlistUpdateFailed": "Kon kijklijst niet bijwerken",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Kon dit item niet aan een kijklijst koppelen",
     "notInLibrary": "Niet in je bibliotheek",
     "inTheseLibraries": "In deze bibliotheken",
     "checkingLibrary": "Je bibliotheek controleren...",
@@ -1253,9 +1285,9 @@
     "watchChannel": "Kanaal bekijken",
     "favorites": "Favorieten",
     "reorderFavorites": "Favorieten herordenen",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Geen favoriete zenders",
+    "noFavoriteChannelsHint": "Toon alle zenders en houd daarna een zender ingedrukt om deze aan je favorieten toe te voegen.",
+    "showAllChannels": "Alle zenders tonen",
     "favoritesLoadFailed": "Favorieten konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.",
     "favoritesUpdateFailed": "Favorieten konden niet worden bijgewerkt. Controleer je verbinding en probeer het opnieuw.",
     "joinSession": "Deelnemen aan lopende sessie",
@@ -1294,7 +1326,12 @@
     "recordingRuleUpdated": "Opnameregel bijgewerkt",
     "guideReloadRequested": "Vernieuwing van de gids aangevraagd",
     "rulesProcessRequested": "Nieuwe evaluatie van regels aangevraagd",
-    "recordShow": "Programma opnemen"
+    "recordShow": "Programma opnemen",
+    "startingInMinutes": "Begint over ${minutes} min",
+    "dayAtTime": "${day} om ${time}",
+    "invalidPlaybackData": "${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd",
+    "failedToStartChannel": "Kon de livezender niet starten",
+    "failedToBuildStreamUrl": "Kon de stream-URL niet samenstellen"
   },
   "collections": {
     "title": "Collecties",
@@ -1371,7 +1408,9 @@
     "nextTrack": "Volgend nummer",
     "repeat": "Herhalen",
     "repeatAll": "Alles herhalen",
-    "repeatOne": "Eén herhalen"
+    "repeatOne": "Eén herhalen",
+    "instantMixNoServer": "Er is geen server beschikbaar voor een instantmix",
+    "noAudioUrl": "Er is geen audio-URL beschikbaar voor ${track}"
   },
   "watchTogether": {
     "title": "Samen kijken",
@@ -1438,7 +1477,8 @@
     "renameRoom": "Kamer hernoemen",
     "removeRoom": "Verwijderen",
     "guestSwitchUnavailable": "Kon niet schakelen — server niet beschikbaar voor synchronisatie",
-    "guestSwitchFailed": "Kon niet schakelen — inhoud niet gevonden op deze server"
+    "guestSwitchFailed": "Kon niet schakelen — inhoud niet gevonden op deze server",
+    "defaultDisplayName": "Gebruiker"
   },
   "downloads": {
     "title": "Downloads",
@@ -1542,7 +1582,17 @@
       "statusUnknown": "Nog niet gecontroleerd",
       "settingsUnavailable": "Kan de systeeminstellingen niet openen op dit apparaat",
       "linkUnavailable": "Kan dontkillmyapp.com niet openen op dit apparaat"
-    }
+    },
+    "unknownShow": "Onbekende serie",
+    "unknownSeason": "Onbekend seizoen",
+    "unknownAlbum": "Onbekend album",
+    "completedOfTotal": "${completed}/${total} voltooid",
+    "errorFileNotFound": "Bestand niet gevonden (404)",
+    "errorDownloadFailed": "Download mislukt",
+    "errorPostProcessing": "Nabewerking mislukt: ${error}",
+    "notificationDownloading": "Downloaden...",
+    "notificationComplete": "Download voltooid",
+    "notificationPaused": "Download gepauzeerd"
   },
   "shaders": {
     "title": "Shaders",
@@ -1633,7 +1683,8 @@
       "failedToConnectAnyAddress": "Er kon met geen enkel adres verbinding worden gemaakt",
       "connectionLostAfterAttempts": "Verbinding verbroken na ${attempts} pogingen",
       "connectionLost": "Verbinding verloren"
-    }
+    },
+    "closedBeforeAuth": "De verbinding is vóór de authenticatie gesloten"
   },
   "videoSettings": {
     "playbackSpeed": "Afspeelsnelheid",
@@ -1644,13 +1695,13 @@
     "audioSync": "Audiosynchronisatie",
     "subtitleSync": "Ondertitelsynchronisatie",
     "hdr": "HDR",
-    "hdrUnsupported": "",
-    "hdrToneMapping": "",
-    "hdrToneMappingCompositor": "",
-    "hdrToneMappingCompositorDescription": "",
-    "hdrToneMappingPlayer": "",
-    "hdrToneMappingPlayerDescription": "",
-    "hdrToneMappingFailed": "",
+    "hdrUnsupported": "HDR is hier niet beschikbaar — deze desktopcompositor of video-uitvoer kan HDR niet doorgeven.",
+    "hdrToneMapping": "HDR-tonemapping",
+    "hdrToneMappingCompositor": "Compositor",
+    "hdrToneMappingCompositorDescription": "Geef de HDR-metadata van de bron ongewijzigd door en laat de desktopcompositor de mapping uitvoeren.",
+    "hdrToneMappingPlayer": "Speler",
+    "hdrToneMappingPlayerDescription": "Laat de speler de mapping naar de piekhelderheid van het scherm uitvoeren en geef het resultaat vervolgens door aan de compositor.",
+    "hdrToneMappingFailed": "Kon HDR-tonemapping niet wijzigen — de vorige modus is nog actief.",
     "audioOutput": "Audio-uitvoer",
     "performanceOverlay": "Prestatie-overlay",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1696,7 +1747,17 @@
     "speed": "Snelheid",
     "player": "Speler",
     "memory": "Geheugen",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Software",
+    "decoderHardware": "Hardware",
+    "tunnelingActive": "Actief",
+    "dvRpuFailed": "${converted} (${failures} mislukt)"
   },
   "externalPlayer": {
     "title": "Externe speler",
@@ -1854,7 +1915,17 @@
     "statusAvailable": "Beschikbaar",
     "statusPartiallyAvailable": "Gedeeltelijk beschikbaar",
     "statusRequested": "Aangevraagd",
-    "statusProcessing": "Verwerken"
+    "statusProcessing": "Verwerken",
+    "couldNotReach": "Kon ${url} niet bereiken: ${error}",
+    "noInstanceAtUrl": "Geen Seerr-instantie op ${url} (HTTP ${status})",
+    "notInitialized": "De eerste configuratie van deze Seerr-instantie is niet voltooid",
+    "noPlexTokenForReauth": "Er is geen Plex-token beschikbaar om opnieuw in te loggen",
+    "noStoredCredentials": "Er zijn geen opgeslagen inloggegevens beschikbaar om opnieuw in te loggen",
+    "signInRejected": "Inloggen is geweigerd",
+    "noSessionCookie": "Seerr heeft geen sessiecookie verstrekt",
+    "freshCookieRejected": "Seerr heeft de nieuwe sessiecookie geweigerd",
+    "noUserInformation": "Seerr heeft geen gebruikersgegevens geretourneerd",
+    "sessionRejectedAfterReauth": "De sessie is na het opnieuw inloggen geweigerd"
   },
   "services": {
     "title": "Diensten",
@@ -1875,7 +1946,7 @@
     },
     "deviceCode": {
       "title": "Plezy activeren op ${service}",
-      "instructions": "",
+      "instructions": "Scan de QR-code of ga naar het onderstaande adres en voer deze code in:",
       "openToActivate": "Open ${service} om te activeren",
       "copyCode": "Activeringscode kopiëren",
       "waitingForAuthorization": "Wachten op autorisatie…",
@@ -1933,6 +2004,24 @@
     "connectToMediaBrowserCardSubtitle": "Voer je server-URL, gebruikersnaam en wachtwoord in.",
     "connectToMediaBrowserCardSubtitleScoped": "Meld je aan bij je ${product}-server. Wordt gekoppeld aan ${name}.",
     "borrowFromAnotherProfile": "Van een ander profiel lenen",
-    "borrowFromAnotherProfileSubtitle": "Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist."
+    "borrowFromAnotherProfileSubtitle": "Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.",
+    "invalidCredentials": "Ongeldige gebruikersnaam of ongeldig wachtwoord",
+    "authResponseNotJson": "Het authenticatieantwoord was geen geldige JSON",
+    "quickConnectRejected": "Quick Connect is door de server geweigerd",
+    "quickConnectNotJson": "Het Quick Connect-antwoord was geen geldige JSON",
+    "quickConnectMissingFields": "In het Quick Connect-antwoord ontbreekt een code of geheim",
+    "quickConnectPollRejected": "Quick Connect-polling is door de server geweigerd",
+    "serverTimedOut": "De server heeft niet op tijd gereageerd",
+    "responseNotJson": "Het serverantwoord was geen geldige JSON",
+    "responseMissingIdentity": "In het antwoord ontbreekt een ID of servernaam — is dit een ${product}-server?",
+    "probeFailed": "Kon de server niet bereiken: ${error}",
+    "enterAtLeastOneUrl": "Voer ten minste één URL van een ${product}-server in",
+    "noReachableServer": "Er is geen bereikbare ${product}-server gevonden",
+    "urlsPointToDifferentServers": "Deze URL's verwijzen naar verschillende ${product}-servers",
+    "urlDoesNotMatchServer": "Deze URL komt niet overeen met de ${product}-server",
+    "redirectUnsupported": "De server heeft doorgestuurd naar een niet-ondersteunde URL",
+    "redirectDifferentHost": "De server heeft doorgestuurd naar een andere host. Voer de uiteindelijke ${product}-URL rechtstreeks in.",
+    "redirectInsecure": "De server heeft van HTTPS doorgestuurd naar een onbeveiligde URL",
+    "redirectUnsupportedEnterFinal": "De server heeft doorgestuurd naar een niet-ondersteunde URL. Voer de uiteindelijke ${product}-URL rechtstreeks in."
   }
 }

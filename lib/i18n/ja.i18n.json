@@ -17,7 +17,8 @@
     "quickConnectWaiting": "承認を待っています…",
     "quickConnectCancel": "キャンセル",
     "quickConnectExpired": "Quick Connectの有効期限が切れました。もう一度お試しください。",
-    "localDataRecoveryRequired": "ローカルのサインイン情報と保留中の再生データを安全に復元できませんでした。もう一度サインインしてください。"
+    "localDataRecoveryRequired": "ローカルのサインイン情報と保留中の再生データを安全に復元できませんでした。もう一度サインインしてください。",
+    "pinCheckRejected": "Plex PINの確認が拒否されました"
   },
   "common": {
     "cancel": "キャンセル",
@@ -77,7 +78,10 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes 批評家",
       "rottenTomatoesAudience": "Rotten Tomatoes 観客"
-    }
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC"
   },
   "screens": {
     "licenses": "ライセンス",
@@ -323,8 +327,8 @@
     "showNavBarLabels": "ナビゲーションバーのラベルを表示",
     "showNavBarLabelsDescription": "ナビゲーションバーのアイコンの下にテキストラベルを表示",
     "startupSection": "起動時のセクション",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "「探す」タブを表示",
+    "showExploreTabDescription": "Plex Discoverと接続済みのトラッカーのコンテンツを「探す」タブに表示します",
     "liveTvDefaultFavorites": "お気に入りチャンネルをデフォルトに",
     "liveTvDefaultFavoritesDescription": "ライブTVを開いたときにお気に入りチャンネルのみ表示",
     "display": "ディスプレイ",
@@ -335,7 +339,8 @@
     "player": "プレーヤー",
     "subtitlesAndConfig": "字幕と設定",
     "seekAndTiming": "シークとタイミング",
-    "behavior": "動作"
+    "behavior": "動作",
+    "exportDialogTitle": "Plezyの設定をエクスポート"
   },
   "search": {
     "hint": "映画、番組、音楽を検索…",
@@ -491,7 +496,9 @@
     "flagExternal": "外部",
     "flagHearingImpaired": "聴覚障害者向け",
     "flagDub": "吹替",
-    "flagOriginal": "オリジナル"
+    "flagOriginal": "オリジナル",
+    "channelsMono": "モノラル",
+    "dolbyVisionProfile": "プロファイル${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "視聴済みにする",
@@ -565,7 +572,12 @@
     "alphabetNavigation": "アルファベットナビゲーション",
     "alphabetScrollHint": "上下にスワイプして文字ごとに移動",
     "rowColumnPosition": "${rowCount}行中${row}行、${columnCount}列中${column}列",
-    "rowPosition": "${rowCount}行中${row}行"
+    "rowPosition": "${rowCount}行中${row}行",
+    "autoScrollPlay": "自動スクロールを再生",
+    "autoScrollPause": "自動スクロールを一時停止",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "シャッフル再生",
@@ -663,7 +675,16 @@
     "subtitleDownloaded": "字幕をダウンロードしました",
     "subtitleDownloadedNotApplied": "字幕はダウンロードされましたが、選択できませんでした",
     "subtitleDownloadFailed": "字幕のダウンロードに失敗しました",
-    "searchLanguages": "言語を検索…"
+    "searchLanguages": "言語を検索…",
+    "skipIntro": "イントロをスキップ",
+    "skipCredits": "クレジットをスキップ",
+    "nextEpisode": "次のエピソード",
+    "subtitleTrack": "トラック${n}",
+    "subtitleFile": "字幕${name}",
+    "forcedTrack": "${label}（強制）",
+    "osdSubtitlesOff": "字幕: オフ",
+    "osdSubtitles": "字幕: ${track}",
+    "osdAudio": "音声: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -718,12 +739,18 @@
     "serverLimitBody": "サーバーエラー（HTTP 500）。帯域幅/トランスコード制限により拒否された可能性があります。所有者に調整を依頼してください。",
     "mediaUnreadableTitle": "ファイルを利用できません",
     "mediaUnreadableBody": "サーバーはこのアイテムを見つけましたが、そのファイルを読み取れませんでした（HTTP 404）。ファイルが移動・削除されたか、ストレージがオフラインの可能性があります。サーバーの管理者にファイルの確認とライブラリの再スキャンを依頼してください。",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "ストリームを利用できません",
+    "serverBusyBody": "サーバーがこのファイルのストリーミングを繰り返し拒否しました（HTTP 503）。サーバーが再起動中またはビジー状態か、ファイルのストレージがオフラインの可能性があります。しばらくしてからもう一度お試しください。問題が続く場合は、サーバーの所有者にサーバーとファイルのストレージを確認するよう依頼してください。",
     "logsUploaded": "ログをアップロードしました",
     "logsUploadFailed": "ログのアップロードに失敗しました",
     "logId": "ログID",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "字幕はこのストリームに焼き付けられています。字幕メニューから変更してください。",
+    "noVideoUrl": "利用可能な動画URLがありません",
+    "playbackNoMediaSources": "サーバーから再生可能なメディアソースが返されませんでした",
+    "playbackDataNotPrepared": "再生データの準備が完了する前に再生が開始されました",
+    "streamSelectionUnavailable": "このソースではストリームを選択できません",
+    "streamSelectionFailed": "選択したストリームを適用できませんでした",
+    "serverUnavailableForProfile": "現在のプロフィールで利用可能なサーバーがありません"
   },
   "subtitlingStyling": {
     "text": "テキスト",
@@ -742,8 +769,8 @@
     "overrideStrip": "スタイルを削除",
     "positionTop": "上",
     "positionBottom": "下",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "画面に固定",
+    "anchorToScreenDescription": "ワイドスクリーン映像の下にある黒帯にテキスト字幕を表示します",
     "bold": "太字",
     "italic": "斜体",
     "renderResolution": "レンダリング解像度",
@@ -831,7 +858,8 @@
     "pinProtectionOptional": "PIN保護（オプション）",
     "pinExplain": "プロフィール切り替えには4桁のPINが必要です。",
     "continueButton": "続ける",
-    "pinsDontMatch": "PINが一致しません"
+    "pinsDontMatch": "PINが一致しません",
+    "tokenIdentityMismatch": "Plexプロフィールのトークンから予期しないサーバーが特定されました"
   },
   "connections": {
     "sectionTitle": "接続",
@@ -868,7 +896,10 @@
     "movie": "映画",
     "tvShow": "テレビ番組",
     "minutesLeft": "残り${minutes}分",
-    "moreLikeThis": "似ている作品"
+    "moreLikeThis": "似ている作品",
+    "titleCount": {
+      "other": "${n}作品"
+    }
   },
   "errors": {
     "searchFailed": "検索に失敗しました: ${error}",
@@ -1075,10 +1106,10 @@
     "characters": "キャラクター",
     "addToWatchlist": "ウォッチリストに追加",
     "removeFromWatchlist": "ウォッチリストから削除",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "ウォッチリストに追加しました",
+    "removedFromWatchlist": "ウォッチリストから削除しました",
     "watchlistUpdateFailed": "ウォッチリストを更新できませんでした",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "このアイテムに一致するウォッチリスト項目が見つかりませんでした",
     "notInLibrary": "ライブラリにありません",
     "inTheseLibraries": "これらのライブラリにあります",
     "checkingLibrary": "ライブラリを確認中…",
@@ -1245,9 +1276,9 @@
     "watchChannel": "チャンネルを視聴",
     "favorites": "お気に入り",
     "reorderFavorites": "お気に入りを並べ替え",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "お気に入りのチャンネルがありません",
+    "noFavoriteChannelsHint": "すべてのチャンネルを表示し、チャンネルを長押ししてお気に入りに追加してください。",
+    "showAllChannels": "すべてのチャンネルを表示",
     "favoritesLoadFailed": "お気に入りを読み込めませんでした。接続を確認してもう一度お試しください。",
     "favoritesUpdateFailed": "お気に入りを更新できませんでした。接続を確認してもう一度お試しください。",
     "joinSession": "進行中のセッションに参加",
@@ -1286,7 +1317,12 @@
     "recordingRuleUpdated": "録画ルールを更新しました",
     "guideReloadRequested": "番組表の更新をリクエストしました",
     "rulesProcessRequested": "録画ルールの再評価をリクエストしました",
-    "recordShow": "番組を録画"
+    "recordShow": "番組を録画",
+    "startingInMinutes": "${minutes}分後に開始",
+    "dayAtTime": "${day} ${time}",
+    "invalidPlaybackData": "${product}から無効なライブTV再生データが返されました",
+    "failedToStartChannel": "ライブチャンネルを開始できませんでした",
+    "failedToBuildStreamUrl": "ストリームURLを生成できませんでした"
   },
   "collections": {
     "title": "コレクション",
@@ -1362,7 +1398,9 @@
     "nextTrack": "次の曲",
     "repeat": "リピート",
     "repeatAll": "全曲リピート",
-    "repeatOne": "1曲リピート"
+    "repeatOne": "1曲リピート",
+    "instantMixNoServer": "インスタントミックスに利用できるサーバーがありません",
+    "noAudioUrl": "${track}で利用可能な音声URLがありません"
   },
   "watchTogether": {
     "title": "一緒に見る",
@@ -1429,7 +1467,8 @@
     "renameRoom": "ルーム名を変更",
     "removeRoom": "削除",
     "guestSwitchUnavailable": "切り替えられません — 同期に必要なサーバーを利用できません",
-    "guestSwitchFailed": "切り替えられません — このサーバーにコンテンツが見つかりません"
+    "guestSwitchFailed": "切り替えられません — このサーバーにコンテンツが見つかりません",
+    "defaultDisplayName": "ユーザー"
   },
   "downloads": {
     "title": "ダウンロード",
@@ -1533,7 +1572,17 @@
       "statusUnknown": "未確認",
       "settingsUnavailable": "この端末ではシステム設定を開けませんでした",
       "linkUnavailable": "この端末ではdontkillmyapp.comを開けませんでした"
-    }
+    },
+    "unknownShow": "不明な番組",
+    "unknownSeason": "不明なシーズン",
+    "unknownAlbum": "不明なアルバム",
+    "completedOfTotal": "${completed}/${total}完了",
+    "errorFileNotFound": "ファイルが見つかりません（404）",
+    "errorDownloadFailed": "ダウンロードに失敗しました",
+    "errorPostProcessing": "後処理に失敗しました: ${error}",
+    "notificationDownloading": "ダウンロード中…",
+    "notificationComplete": "ダウンロードが完了しました",
+    "notificationPaused": "ダウンロードを一時停止しました"
   },
   "shaders": {
     "title": "シェーダー",
@@ -1624,7 +1673,8 @@
       "failedToConnectAnyAddress": "どのアドレスにも接続できませんでした",
       "connectionLostAfterAttempts": "${attempts}回試行後に接続が切断されました",
       "connectionLost": "接続が切断されました"
-    }
+    },
+    "closedBeforeAuth": "認証前に接続が切断されました"
   },
   "videoSettings": {
     "playbackSpeed": "再生速度",
@@ -1635,13 +1685,13 @@
     "audioSync": "音声同期",
     "subtitleSync": "字幕同期",
     "hdr": "HDR",
-    "hdrUnsupported": "",
-    "hdrToneMapping": "",
-    "hdrToneMappingCompositor": "",
-    "hdrToneMappingCompositorDescription": "",
-    "hdrToneMappingPlayer": "",
-    "hdrToneMappingPlayerDescription": "",
-    "hdrToneMappingFailed": "",
+    "hdrUnsupported": "ここではHDRを利用できません。このデスクトップコンポジターまたは映像出力はHDRに対応していません。",
+    "hdrToneMapping": "HDRトーンマッピング",
+    "hdrToneMappingCompositor": "コンポジター",
+    "hdrToneMappingCompositorDescription": "ソースのHDRメタデータをそのまま渡し、デスクトップコンポジターにマッピングさせます。",
+    "hdrToneMappingPlayer": "プレーヤー",
+    "hdrToneMappingPlayerDescription": "プレーヤーでディスプレイのピーク輝度に合わせてマッピングし、その結果をコンポジターに通知します。",
+    "hdrToneMappingFailed": "HDRトーンマッピングを変更できませんでした。以前のモードが引き続き有効です。",
     "audioOutput": "音声出力",
     "performanceOverlay": "パフォーマンスオーバーレイ",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1687,7 +1737,17 @@
     "speed": "速度",
     "player": "プレーヤー",
     "memory": "メモリ",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "ソフトウェア",
+    "decoderHardware": "ハードウェア",
+    "tunnelingActive": "有効",
+    "dvRpuFailed": "${converted}（${failures}件失敗）"
   },
   "externalPlayer": {
     "title": "外部プレーヤー",
@@ -1845,7 +1905,17 @@
     "statusAvailable": "利用可能",
     "statusPartiallyAvailable": "一部利用可能",
     "statusRequested": "リクエスト済み",
-    "statusProcessing": "処理中"
+    "statusProcessing": "処理中",
+    "couldNotReach": "${url}に接続できませんでした: ${error}",
+    "noInstanceAtUrl": "${url}にSeerrインスタンスがありません（HTTP ${status}）",
+    "notInitialized": "このSeerrインスタンスでは初回セットアップが完了していません",
+    "noPlexTokenForReauth": "再サインインに使用できるPlexトークンがありません",
+    "noStoredCredentials": "再サインインに使用できる保存済みの認証情報がありません",
+    "signInRejected": "サインインが拒否されました",
+    "noSessionCookie": "Seerrからセッションクッキーが発行されませんでした",
+    "freshCookieRejected": "Seerrが新しいセッションクッキーを拒否しました",
+    "noUserInformation": "Seerrからユーザー情報が返されませんでした",
+    "sessionRejectedAfterReauth": "再サインイン後にセッションが拒否されました"
   },
   "services": {
     "title": "サービス",
@@ -1866,7 +1936,7 @@
     },
     "deviceCode": {
       "title": "${service} で Plezy を有効化",
-      "instructions": "",
+      "instructions": "QRコードをスキャンするか、以下のアドレスにアクセスしてこのコードを入力してください:",
       "openToActivate": "${service} を開いて有効化",
       "copyCode": "アクティベーションコードをコピー",
       "waitingForAuthorization": "認証を待っています…",
@@ -1924,6 +1994,24 @@
     "connectToMediaBrowserCardSubtitle": "サーバーのURL、ユーザー名、パスワードを入力してください。",
     "connectToMediaBrowserCardSubtitleScoped": "${product}サーバーにサインインします。「${name}」に紐付けられます。",
     "borrowFromAnotherProfile": "別のプロフィールの接続を利用",
-    "borrowFromAnotherProfileSubtitle": "別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。"
+    "borrowFromAnotherProfileSubtitle": "別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。",
+    "invalidCredentials": "ユーザー名またはパスワードが正しくありません",
+    "authResponseNotJson": "認証レスポンスが有効なJSONではありません",
+    "quickConnectRejected": "Quick Connectがサーバーに拒否されました",
+    "quickConnectNotJson": "Quick Connectのレスポンスが有効なJSONではありません",
+    "quickConnectMissingFields": "Quick Connectのレスポンスにコードまたはシークレットがありません",
+    "quickConnectPollRejected": "Quick Connectのポーリングがサーバーに拒否されました",
+    "serverTimedOut": "サーバーが時間内に応答しませんでした",
+    "responseNotJson": "サーバーのレスポンスが有効なJSONではありません",
+    "responseMissingIdentity": "レスポンスにIDまたはサーバー名がありません。これは${product}サーバーですか？",
+    "probeFailed": "サーバーに接続できませんでした: ${error}",
+    "enterAtLeastOneUrl": "${product}サーバーのURLを1つ以上入力してください",
+    "noReachableServer": "接続可能な${product}サーバーが見つかりませんでした",
+    "urlsPointToDifferentServers": "これらのURLは異なる${product}サーバーを指しています",
+    "urlDoesNotMatchServer": "このURLは${product}サーバーと一致しません",
+    "redirectUnsupported": "サーバーからサポートされていないURLにリダイレクトされました",
+    "redirectDifferentHost": "サーバーから別のホストにリダイレクトされました。最終的な${product}のURLを直接入力してください。",
+    "redirectInsecure": "サーバーからHTTPSではない安全でないURLにリダイレクトされました",
+    "redirectUnsupportedEnterFinal": "サーバーからサポートされていないURLにリダイレクトされました。最終的な${product}のURLを直接入力してください。"
   }
 }

@@ -943,7 +943,7 @@ void main() {
         onActivate: () => activateCount++,
       );
 
-      expect(find.text('Skip Intro (3)'), findsOneWidget);
+      expect(find.text('${t.videoControls.skipIntro} (3)'), findsOneWidget);
 
       await tester.tap(find.byType(InkWell));
       await tester.pump();
@@ -1006,12 +1006,25 @@ void main() {
         onActivate: () => activateCount++,
       );
 
-      expect(find.text('Skip Intro'), findsOneWidget);
+      expect(find.text(t.videoControls.skipIntro), findsOneWidget);
 
       await tester.tap(find.byType(InkWell));
       await tester.pump();
 
       expect(activateCount, 1);
+    });
+
+    testWidgets('uses the localized marker label', (tester) async {
+      await tester.runAsync(() => LocaleSettings.setLocale(AppLocale.pt));
+      addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+
+      await _pumpSkipMarkerButton(tester, focusNode: focusNode, isAutoSkipActive: false, onActivate: () {});
+
+      expect(t.videoControls.skipIntro, 'Pular abertura');
+      expect(find.text('Pular abertura'), findsOneWidget);
+      expect(find.text('Skip Intro'), findsNothing);
     });
   });
 

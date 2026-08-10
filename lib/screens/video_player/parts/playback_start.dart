@@ -22,7 +22,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // spinner covers Plex's tune / Jellyfin's stream negotiation).
         final channel = widget.live!.channel;
         final session = await _startLiveSession(channel);
-        if (session == null) throw Exception('Failed to start live channel');
+        if (session == null) {
+          throw PlaybackException(t.liveTv.failedToStartChannel, reason: PlaybackFailureReason.serverUnavailable);
+        }
         if (!mounted || !attempt.isCurrent) {
           _abandonLiveSession(session);
           return;
@@ -59,7 +61,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Build the stream URL (with optional offset for time-shift)
         final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
         if (streamUrl == null || !mounted) {
-          throw Exception('Failed to build stream path');
+          throw PlaybackException(t.liveTv.failedToBuildStreamUrl, reason: PlaybackFailureReason.noPlayableSource);
         }
 
         // Track stream start epoch for position calculations
@@ -141,7 +143,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // headers were resolved there too. Just await the result.
         final playbackDataFuture = _playbackDataFuture;
         if (playbackDataFuture == null) {
-          throw StateError('Playback data was not prepared before playback start');
+          throw PlaybackException(t.messages.playbackDataNotPrepared);
         }
         playbackContext = await playbackDataFuture;
         if (!mounted || player != currentPlayer) return;

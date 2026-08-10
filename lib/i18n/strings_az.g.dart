@@ -123,6 +123,7 @@ class _Translations$auth$az extends Translations$auth$en {
 	@override String get quickConnectCancel => 'Ləğv et';
 	@override String get quickConnectExpired => 'Sürətli Qoşulmanın vaxtı bitdi. Təzədən cəhd edin.';
 	@override String get localDataRecoveryRequired => 'Plezy yerli daxil olma və gözləyən oxutma məlumatlarını təhlükəsiz bərpa edə bilmədi. Lütfən təzədən daxil olun.';
+	@override String get pinCheckRejected => 'Plex PIN yoxlaması rədd edildi';
 }
 
 // Path: common
@@ -178,6 +179,9 @@ class _Translations$common$az extends Translations$common$en {
 	@override String get exitFullscreen => 'Tam ekrandan çıx';
 	@override String get pressBackAgainToExit => 'Çıxmaq üçün geri düyməsinə bir daha basın';
 	@override late final _Translations$common$ratingSource$az ratingSource = _Translations$common$ratingSource$az._(_root);
+	@override String get notAvailable => 'N/A';
+	@override String get url => 'URL';
+	@override String get letterKeys => 'ABC';
 }
 
 // Path: screens
@@ -444,6 +448,8 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get showNavBarLabels => 'Naviqasiya paneli yazılarını göstər';
 	@override String get showNavBarLabelsDescription => 'Naviqasiya paneli ikonlarının altında mətni göstər';
 	@override String get startupSection => 'Başlanğıc bölməsi';
+	@override String get showExploreTab => 'Kəşf et nişanını göstər';
+	@override String get showExploreTabDescription => 'Plex Discover və qoşulmuş izləmə xidmətlərindəki məzmunla Kəşf et nişanını göstər';
 	@override String get liveTvDefaultFavorites => 'Canlı TV-də sevimli kanalları defolt et';
 	@override String get liveTvDefaultFavoritesDescription => 'Canlı TV açıldıqda yalnız sevimli kanalları göstər';
 	@override String get display => 'Ekran';
@@ -455,6 +461,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Altyazılar və konfiqurasiya';
 	@override String get seekAndTiming => 'Sarğı və vaxt tənzimləməsi';
 	@override String get behavior => 'Davranış';
+	@override String get exportDialogTitle => 'Plezy tənzimləmələrini ixrac et';
 }
 
 // Path: search
@@ -606,6 +613,8 @@ class _Translations$fileInfo$az extends Translations$fileInfo$en {
 	@override String get flagHearingImpaired => 'Eşitmə qüsurlu üçün';
 	@override String get flagDub => 'Dublyaj';
 	@override String get flagOriginal => 'Orijinal';
+	@override String get channelsMono => 'Mono';
+	@override String dolbyVisionProfile({required Object profile}) => 'Profil ${profile}';
 }
 
 // Path: mediaMenu
@@ -704,6 +713,11 @@ class _Translations$accessibility$az extends Translations$accessibility$en {
 	@override String get alphabetScrollHint => 'Hərflərə görə keçmək üçün yuxarı və ya aşağı sürüşdürün';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Sətir ${row} / ${rowCount}, sütun ${column} / ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'Sətir ${row} / ${rowCount}';
+	@override String get autoScrollPlay => 'Avtomatik sürüşdürməni başlat';
+	@override String get autoScrollPause => 'Avtomatik sürüşdürməyə fasilə ver';
+	@override String get hueShort => 'H';
+	@override String get saturationShort => 'S';
+	@override String get valueShort => 'V';
 }
 
 // Path: tooltips
@@ -815,6 +829,15 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String get subtitleDownloadedNotApplied => 'Altyazı yükləndi, lakin seçilə bilmədi';
 	@override String get subtitleDownloadFailed => 'Altyazı yüklənə bilmədi';
 	@override String get searchLanguages => 'Dillərdə axtar...';
+	@override String get skipIntro => 'Girişi keç';
+	@override String get skipCredits => 'Titrləri keç';
+	@override String get nextEpisode => 'Növbəti seriya';
+	@override String subtitleTrack({required Object n}) => 'Zolaq ${n}';
+	@override String subtitleFile({required Object name}) => 'Altyazı ${name}';
+	@override String forcedTrack({required Object label}) => '${label} (Məcburi)';
+	@override String get osdSubtitlesOff => 'Altyazı: Söndürülüb';
+	@override String osdSubtitles({required Object track}) => 'Altyazı: ${track}';
+	@override String osdAudio({required Object track}) => 'Səs: ${track}';
 }
 
 // Path: messages
@@ -876,9 +899,18 @@ class _Translations$messages$az extends Translations$messages$en {
 	@override String get serverLimitBody => 'Server xətası (HTTP 500). Məhdudiyyət bu seansı rədd etdi.';
 	@override String get mediaUnreadableTitle => 'Fayl əlçatan deyil';
 	@override String get mediaUnreadableBody => 'Server bu elementi tapdı, lakin onun faylını oxuya bilmədi (HTTP 404). Fayl yəqin ki, köçürülüb, silinib və ya onun saxlanma yeri oflayndır. Server sahibindən faylı yoxlamasını və kitabxananı yenidən skan etməsini xahiş edin.';
+	@override String get serverBusyTitle => 'Yayım əlçatan deyil';
+	@override String get serverBusyBody => 'Server bu faylı yayımlamaqdan dəfələrlə imtina etdi (HTTP 503). Server yenidən başladılır və ya məşğul ola bilər, yaxud faylın yerləşdiyi yaddaş oflayn ola bilər. Bir az sonra təzədən cəhd edin — problem davam edərsə, server sahibindən serveri və faylın yerləşdiyi yaddaşı yoxlamasını istəyin.';
 	@override String get logsUploaded => 'Jurnallar yükləndi';
 	@override String get logsUploadFailed => 'Jurnallar yüklənə bilmədi';
 	@override String get logId => 'Jurnal ID-si';
+	@override String get burnedSubtitlesUseMenu => 'Altyazılar bu yayıma həkk edilib. Onları altyazı menyusundan dəyişin.';
+	@override String get noVideoUrl => 'Video URL-i mövcud deyil';
+	@override String get playbackNoMediaSources => 'Server oynadıla bilən media mənbəyi qaytarmadı';
+	@override String get playbackDataNotPrepared => 'Məlumatları hazır olmadan oynatma başladıldı';
+	@override String get streamSelectionUnavailable => 'Bu mənbə üçün yayım seçimi mövcud deyil';
+	@override String get streamSelectionFailed => 'Seçilmiş yayımları tətbiq etmək olmadı';
+	@override String get serverUnavailableForProfile => 'Aktiv profil üçün heç bir server mövcud deyil';
 }
 
 // Path: subtitlingStyling
@@ -904,6 +936,8 @@ class _Translations$subtitlingStyling$az extends Translations$subtitlingStyling$
 	@override String get overrideStrip => 'Formatlaşdırmanı sil';
 	@override String get positionTop => 'Yuxarı';
 	@override String get positionBottom => 'Aşağı';
+	@override String get anchorToScreen => 'Ekrana bərkit';
+	@override String get anchorToScreenDescription => 'Mətn altyazılarını geniş ekranlı videonun altındakı qara zolaqlarda göstər';
 	@override String get bold => 'Qalın';
 	@override String get italic => 'Kursiv';
 	@override String get renderResolution => 'Emal imkanı (Resolution)';
@@ -1013,6 +1047,7 @@ class _Translations$profiles$az extends Translations$profiles$en {
 	@override String get pinExplain => 'Profillər arası keçid üçün 4 rəqəmli PIN tələb olunur.';
 	@override String get continueButton => 'Davam et';
 	@override String get pinsDontMatch => 'PIN-lər uyğun gəlmir';
+	@override String get tokenIdentityMismatch => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi';
 }
 
 // Path: connections
@@ -1064,6 +1099,10 @@ class _Translations$discover$az extends Translations$discover$en {
 	@override String get tvShow => 'TV Şou';
 	@override String minutesLeft({required Object minutes}) => '${minutes} dəq qaldı';
 	@override String get moreLikeThis => 'Buna bənzərlər';
+	@override String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n,
+		one: '${n} başlıq',
+		other: '${n} başlıq',
+	);
 }
 
 // Path: errors
@@ -1276,7 +1315,10 @@ class _Translations$explore$az extends Translations$explore$en {
 	@override String get characters => 'Personajlar';
 	@override String get addToWatchlist => 'İzləmə siyahısına əlavə et';
 	@override String get removeFromWatchlist => 'İzləmə siyahısından sil';
+	@override String get addedToWatchlist => 'Baxış siyahısına əlavə edildi';
+	@override String get removedFromWatchlist => 'Baxış siyahısından silindi';
 	@override String get watchlistUpdateFailed => 'İzləmə siyahısı yenilənə bilmədi';
+	@override String get watchlistNoMatch => 'Bu elementi heç bir baxış siyahısı ilə uyğunlaşdırmaq olmadı';
 	@override String get notInLibrary => 'Kitabxananızda yoxdur';
 	@override String get inTheseLibraries => 'Bu kitabxanalarda var';
 	@override String get checkingLibrary => 'Kitabxananız yoxlanılır...';
@@ -1337,6 +1379,9 @@ class _Translations$liveTv$az extends Translations$liveTv$en {
 	@override String get watchChannel => 'Kanala bax';
 	@override String get favorites => 'Sevimlilər';
 	@override String get reorderFavorites => 'Sevimliləri yenidən sırala';
+	@override String get noFavoriteChannels => 'Sevimli kanal yoxdur';
+	@override String get noFavoriteChannelsHint => 'Bütün kanalları göstərin, sonra kanalı sevimlilərə əlavə etmək üçün üzərinə uzun basın.';
+	@override String get showAllChannels => 'Bütün kanalları göstər';
 	@override String get favoritesLoadFailed => 'Sevimlilər yüklənə bilmədi.';
 	@override String get favoritesUpdateFailed => 'Sevimlilər yenilənə bilmədi.';
 	@override String get joinSession => 'Davam edən seansa qoşul';
@@ -1376,6 +1421,11 @@ class _Translations$liveTv$az extends Translations$liveTv$en {
 	@override String get guideReloadRequested => 'Bələdçi yenilənməsi tələb olundu';
 	@override String get rulesProcessRequested => 'Qaydaların yenidən qiymətləndirilməsi tələb olundu';
 	@override String get recordShow => 'Şounu yaz';
+	@override String startingInMinutes({required Object minutes}) => '${minutes} dəq sonra başlayır';
+	@override String dayAtTime({required Object day, required Object time}) => '${day}, saat ${time}';
+	@override String invalidPlaybackData({required Object product}) => '${product} etibarsız Canlı TV oynatma məlumatı qaytardı';
+	@override String get failedToStartChannel => 'Canlı kanalı başlatmaq olmadı';
+	@override String get failedToBuildStreamUrl => 'Yayım URL-i yaratmaq olmadı';
 }
 
 // Path: collections
@@ -1474,6 +1524,8 @@ class _Translations$music$az extends Translations$music$en {
 	@override String get repeat => 'Təkrarla';
 	@override String get repeatAll => 'Hamısını təkrarla';
 	@override String get repeatOne => 'Birini təkrarla';
+	@override String get instantMixNoServer => 'Ani miks üçün heç bir server mövcud deyil';
+	@override String noAudioUrl({required Object track}) => '${track} üçün səs URL-i mövcud deyil';
 }
 
 // Path: watchTogether
@@ -1548,6 +1600,7 @@ class _Translations$watchTogether$az extends Translations$watchTogether$en {
 	@override String get removeRoom => 'Sil';
 	@override String get guestSwitchUnavailable => 'Keçid etmək olmadı — eyniləşdirmə üçün server əlçatan deyil';
 	@override String get guestSwitchFailed => 'Keçid etmək olmadı — məzmun tapılmadı';
+	@override String get defaultDisplayName => 'İstifadəçi';
 }
 
 // Path: downloads
@@ -1632,6 +1685,16 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String get syncRuleUnknownServer => 'Bilinməyən server';
 	@override String get syncRuleListCreated => 'Eyniləşdirmə qaydası yaradıldı';
 	@override late final _Translations$downloads$backgroundWarning$az backgroundWarning = _Translations$downloads$backgroundWarning$az._(_root);
+	@override String get unknownShow => 'Məlum olmayan serial';
+	@override String get unknownSeason => 'Məlum olmayan mövsüm';
+	@override String get unknownAlbum => 'Məlum olmayan albom';
+	@override String completedOfTotal({required Object completed, required Object total}) => '${completed}/${total} tamamlandı';
+	@override String get errorFileNotFound => 'Fayl tapılmadı (404)';
+	@override String get errorDownloadFailed => 'Yükləmə uğursuz oldu';
+	@override String errorPostProcessing({required Object error}) => 'Sonrakı emal uğursuz oldu: ${error}';
+	@override String get notificationDownloading => 'Yüklənir...';
+	@override String get notificationComplete => 'Yükləmə tamamlandı';
+	@override String get notificationPaused => 'Yükləmə dayandırıldı';
 }
 
 // Path: shaders
@@ -1672,6 +1735,7 @@ class _Translations$companionRemote$az extends Translations$companionRemote$en {
 	@override late final _Translations$companionRemote$pairing$az pairing = _Translations$companionRemote$pairing$az._(_root);
 	@override late final _Translations$companionRemote$remote$az remote = _Translations$companionRemote$remote$az._(_root);
 	@override late final _Translations$companionRemote$errors$az errors = _Translations$companionRemote$errors$az._(_root);
+	@override String get closedBeforeAuth => 'Bağlantı autentifikasiyadan əvvəl bağlandı';
 }
 
 // Path: videoSettings
@@ -1689,6 +1753,13 @@ class _Translations$videoSettings$az extends Translations$videoSettings$en {
 	@override String get audioSync => 'Səs sinxronizasiyası';
 	@override String get subtitleSync => 'Altyazı sinxronizasiyası';
 	@override String get hdr => 'HDR';
+	@override String get hdrUnsupported => 'HDR burada əlçatan deyil — bu masaüstü kompozitoru və ya video çıxışı onu ötürə bilmir.';
+	@override String get hdrToneMapping => 'HDR ton uyğunlaşdırması';
+	@override String get hdrToneMappingCompositor => 'Kompozitor';
+	@override String get hdrToneMappingCompositorDescription => 'Mənbənin HDR metaməlumatlarını dəyişmədən ötür və ton uyğunlaşdırmasını masaüstü kompozitoruna həvalə et.';
+	@override String get hdrToneMappingPlayer => 'Oynadıcı';
+	@override String get hdrToneMappingPlayerDescription => 'Oynadıcıda tonları ekranın pik parlaqlığına uyğunlaşdır, sonra nəticəni kompozitora bildir.';
+	@override String get hdrToneMappingFailed => 'HDR ton uyğunlaşdırmasını dəyişmək olmadı — əvvəlki rejim hələ də aktivdir.';
 	@override String get audioOutput => 'Səs çıxışı';
 	@override String get performanceOverlay => 'Məhsuldarlıq paneli';
 	@override String get audioOutputDolbyAtmos => 'Dolby Atmos';
@@ -1742,6 +1813,16 @@ class _Translations$performanceOverlay$az extends Translations$performanceOverla
 	@override String get player => 'Oynadıcı';
 	@override String get memory => 'Yaddaş';
 	@override String get uiFps => 'Arayüz (UI) FPS-i';
+	@override String get fps => 'FPS';
+	@override String get decoderAndroidHw => 'Android HW';
+	@override String get decoderNvidiaHw => 'NVIDIA HW';
+	@override String get decoderQualcommHw => 'Qualcomm HW';
+	@override String get decoderMediatekHw => 'MediaTek HW';
+	@override String get decoderExynosHw => 'Exynos HW';
+	@override String get decoderSoftware => 'Proqram təminatı';
+	@override String get decoderHardware => 'Aparat təminatı';
+	@override String get tunnelingActive => 'Aktiv';
+	@override String dvRpuFailed({required Object converted, required Object failures}) => '${converted} (${failures} uğursuz)';
 }
 
 // Path: externalPlayer
@@ -1942,6 +2023,16 @@ class _Translations$seerr$az extends Translations$seerr$en {
 	@override String get statusPartiallyAvailable => 'Hissəvi əlçatandır';
 	@override String get statusRequested => 'Sorğu göndərildi';
 	@override String get statusProcessing => 'Emal edilir';
+	@override String couldNotReach({required Object url, required Object error}) => '${url} ünvanına çatmaq olmadı: ${error}';
+	@override String noInstanceAtUrl({required Object url, required Object status}) => '${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})';
+	@override String get notInitialized => 'Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb';
+	@override String get noPlexTokenForReauth => 'Yenidən daxil olmaq üçün Plex tokeni mövcud deyil';
+	@override String get noStoredCredentials => 'Yenidən daxil olmaq üçün yadda saxlanmış giriş məlumatları mövcud deyil';
+	@override String get signInRejected => 'Daxil olma rədd edildi';
+	@override String get noSessionCookie => 'Seerr sessiya kukisi yaratmadı';
+	@override String get freshCookieRejected => 'Seerr yeni sessiya kukisini rədd etdi';
+	@override String get noUserInformation => 'Seerr istifadəçi məlumatlarını qaytarmadı';
+	@override String get sessionRejectedAfterReauth => 'Yenidən daxil olduqdan sonra sessiya rədd edildi';
 }
 
 // Path: services
@@ -2002,6 +2093,24 @@ class _Translations$addServer$az extends Translations$addServer$en {
 	@override String connectToMediaBrowserCardSubtitleScoped({required Object product, required Object name}) => '${product} serverinizə daxil olun. ${name} ilə əlaqələndirilir.';
 	@override String get borrowFromAnotherProfile => 'Başqa profildən götür';
 	@override String get borrowFromAnotherProfileSubtitle => 'Başqa profilin qoşulmasını yenidən istifadə edin.';
+	@override String get invalidCredentials => 'İstifadəçi adı və ya şifrə yanlışdır';
+	@override String get authResponseNotJson => 'Autentifikasiya cavabı etibarlı JSON deyildi';
+	@override String get quickConnectRejected => 'Quick Connect server tərəfindən rədd edildi';
+	@override String get quickConnectNotJson => 'Quick Connect cavabı etibarlı JSON deyildi';
+	@override String get quickConnectMissingFields => 'Quick Connect cavabında kod və ya məxfi açar yoxdur';
+	@override String get quickConnectPollRejected => 'Quick Connect sorğulaması server tərəfindən rədd edildi';
+	@override String get serverTimedOut => 'Server vaxtında cavab vermədi';
+	@override String get responseNotJson => 'Server cavabı etibarlı JSON deyildi';
+	@override String responseMissingIdentity({required Object product}) => 'Cavabda ID və ya server adı yoxdur — bu, ${product} serveridir?';
+	@override String probeFailed({required Object error}) => 'Serverə çatmaq olmadı: ${error}';
+	@override String enterAtLeastOneUrl({required Object product}) => 'Ən azı bir ${product} server URL-i daxil edin';
+	@override String noReachableServer({required Object product}) => 'Əlçatan ${product} serveri tapılmadı';
+	@override String urlsPointToDifferentServers({required Object product}) => 'Bu URL-lər fərqli ${product} serverlərinə aiddir';
+	@override String urlDoesNotMatchServer({required Object product}) => 'Bu URL ${product} serverinə uyğun gəlmir';
+	@override String get redirectUnsupported => 'Server dəstəklənməyən URL-ə yönləndirdi';
+	@override String redirectDifferentHost({required Object product}) => 'Server başqa hosta yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.';
+	@override String get redirectInsecure => 'Server HTTPS-dən təhlükəsiz olmayan URL-ə yönləndirdi';
+	@override String redirectUnsupportedEnterFinal({required Object product}) => 'Server dəstəklənməyən URL-ə yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.';
 }
 
 // Path: common.ratingSource
@@ -2521,6 +2630,7 @@ class _Translations$services$deviceCode$az extends Translations$services$deviceC
 
 	// Translations
 	@override String title({required Object service}) => 'Plezy-ni ${service} üzərində aktivləşdirin';
+	@override String get instructions => 'QR kodunu skan edin və ya aşağıdakı ünvana keçib bu kodu daxil edin:';
 	@override String openToActivate({required Object service}) => 'Aktivləşdirmək üçün ${service} açın';
 	@override String get copyCode => 'Aktivləşdirmə kodunu kopyala';
 	@override String get waitingForAuthorization => 'Səlahiyyət gözlənilir…';
@@ -2595,6 +2705,7 @@ extension on TranslationsAz {
 			'auth.quickConnectCancel' => 'Ləğv et',
 			'auth.quickConnectExpired' => 'Sürətli Qoşulmanın vaxtı bitdi. Təzədən cəhd edin.',
 			'auth.localDataRecoveryRequired' => 'Plezy yerli daxil olma və gözləyən oxutma məlumatlarını təhlükəsiz bərpa edə bilmədi. Lütfən təzədən daxil olun.',
+			'auth.pinCheckRejected' => 'Plex PIN yoxlaması rədd edildi',
 			'common.cancel' => 'Ləğv et',
 			'common.save' => 'Yadda saxla',
 			'common.close' => 'Bağla',
@@ -2651,6 +2762,9 @@ extension on TranslationsAz {
 			'common.ratingSource.trakt' => 'Trakt',
 			'common.ratingSource.rottenTomatoesCritic' => 'Rotten Tomatoes tənqidçiləri',
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes tamaşaçıları',
+			'common.notAvailable' => 'N/A',
+			'common.url' => 'URL',
+			'common.letterKeys' => 'ABC',
 			'screens.licenses' => 'Lisenziyalar',
 			'screens.switchProfile' => 'Profili dəyiş',
 			'screens.subtitleStyling' => 'Altyazı tənzimləmələri',
@@ -2890,6 +3004,8 @@ extension on TranslationsAz {
 			'settings.showNavBarLabels' => 'Naviqasiya paneli yazılarını göstər',
 			'settings.showNavBarLabelsDescription' => 'Naviqasiya paneli ikonlarının altında mətni göstər',
 			'settings.startupSection' => 'Başlanğıc bölməsi',
+			'settings.showExploreTab' => 'Kəşf et nişanını göstər',
+			'settings.showExploreTabDescription' => 'Plex Discover və qoşulmuş izləmə xidmətlərindəki məzmunla Kəşf et nişanını göstər',
 			'settings.liveTvDefaultFavorites' => 'Canlı TV-də sevimli kanalları defolt et',
 			'settings.liveTvDefaultFavoritesDescription' => 'Canlı TV açıldıqda yalnız sevimli kanalları göstər',
 			'settings.display' => 'Ekran',
@@ -2901,6 +3017,7 @@ extension on TranslationsAz {
 			'settings.subtitlesAndConfig' => 'Altyazılar və konfiqurasiya',
 			'settings.seekAndTiming' => 'Sarğı və vaxt tənzimləməsi',
 			'settings.behavior' => 'Davranış',
+			'settings.exportDialogTitle' => 'Plezy tənzimləmələrini ixrac et',
 			'search.hint' => 'Kino, serial, musiqi axtar...',
 			'search.tryDifferentTerm' => 'Fərqli axtarış sözü cəhd edin',
 			'search.searchYourMedia' => 'Mediyanızda axtarın',
@@ -3049,6 +3166,8 @@ extension on TranslationsAz {
 			'fileInfo.flagHearingImpaired' => 'Eşitmə qüsurlu üçün',
 			'fileInfo.flagDub' => 'Dublyaj',
 			'fileInfo.flagOriginal' => 'Orijinal',
+			'fileInfo.channelsMono' => 'Mono',
+			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profil ${profile}',
 			'mediaMenu.markAsWatched' => 'Baxıldı olaraq işarələ',
 			'mediaMenu.markAsUnwatched' => 'Baxılmadı olaraq işarələ',
 			'mediaMenu.removeFromContinueWatching' => 'İzləməyə davam et-dən sil',
@@ -3082,6 +3201,8 @@ extension on TranslationsAz {
 			'mediaMenu.rate' => 'Qiymətləndir',
 			'mediaMenu.playFromBeginning' => 'Əvvəldən oynat',
 			'mediaMenu.playVersion' => 'Versiyanı oynat...',
+			_ => null,
+		} ?? switch (path) {
 			'rateSheet.title' => 'Qiymətləndir',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Sevimli',
@@ -3091,8 +3212,6 @@ extension on TranslationsAz {
 			'rateSheet.noConnectedServices' => 'Orada qiymətləndirmək üçün Tənzimləmələrdən xidmət qoşun.',
 			'accessibility.mediaCardMovie' => ({required Object title}) => '${title}, kino',
 			'accessibility.mediaCardShow' => ({required Object title}) => '${title}, TV şou',
-			_ => null,
-		} ?? switch (path) {
 			'accessibility.mediaCardEpisode' => ({required Object title, required Object episodeInfo}) => '${title}, ${episodeInfo}',
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'baxılıb',
@@ -3113,6 +3232,11 @@ extension on TranslationsAz {
 			'accessibility.alphabetScrollHint' => 'Hərflərə görə keçmək üçün yuxarı və ya aşağı sürüşdürün',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Sətir ${row} / ${rowCount}, sütun ${column} / ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Sətir ${row} / ${rowCount}',
+			'accessibility.autoScrollPlay' => 'Avtomatik sürüşdürməni başlat',
+			'accessibility.autoScrollPause' => 'Avtomatik sürüşdürməyə fasilə ver',
+			'accessibility.hueShort' => 'H',
+			'accessibility.saturationShort' => 'S',
+			'accessibility.valueShort' => 'V',
 			'tooltips.shufflePlay' => 'Qarışıq oynat',
 			'tooltips.playTrailer' => 'Treyleri oynat',
 			'tooltips.markAsWatched' => 'Baxıldı olaraq işarələ',
@@ -3203,6 +3327,15 @@ extension on TranslationsAz {
 			'videoControls.subtitleDownloadedNotApplied' => 'Altyazı yükləndi, lakin seçilə bilmədi',
 			'videoControls.subtitleDownloadFailed' => 'Altyazı yüklənə bilmədi',
 			'videoControls.searchLanguages' => 'Dillərdə axtar...',
+			'videoControls.skipIntro' => 'Girişi keç',
+			'videoControls.skipCredits' => 'Titrləri keç',
+			'videoControls.nextEpisode' => 'Növbəti seriya',
+			'videoControls.subtitleTrack' => ({required Object n}) => 'Zolaq ${n}',
+			'videoControls.subtitleFile' => ({required Object name}) => 'Altyazı ${name}',
+			'videoControls.forcedTrack' => ({required Object label}) => '${label} (Məcburi)',
+			'videoControls.osdSubtitlesOff' => 'Altyazı: Söndürülüb',
+			'videoControls.osdSubtitles' => ({required Object track}) => 'Altyazı: ${track}',
+			'videoControls.osdAudio' => ({required Object track}) => 'Səs: ${track}',
 			'messages.markedAsWatched' => 'Baxıldı olaraq işarələndi',
 			'messages.markedAsUnwatched' => 'Baxılmadı olaraq işarələndi',
 			'messages.markedAsWatchedOffline' => 'Baxıldı olaraq işarələndi (onlayn olduqda eyniləşdiriləcək)',
@@ -3252,9 +3385,18 @@ extension on TranslationsAz {
 			'messages.serverLimitBody' => 'Server xətası (HTTP 500). Məhdudiyyət bu seansı rədd etdi.',
 			'messages.mediaUnreadableTitle' => 'Fayl əlçatan deyil',
 			'messages.mediaUnreadableBody' => 'Server bu elementi tapdı, lakin onun faylını oxuya bilmədi (HTTP 404). Fayl yəqin ki, köçürülüb, silinib və ya onun saxlanma yeri oflayndır. Server sahibindən faylı yoxlamasını və kitabxananı yenidən skan etməsini xahiş edin.',
+			'messages.serverBusyTitle' => 'Yayım əlçatan deyil',
+			'messages.serverBusyBody' => 'Server bu faylı yayımlamaqdan dəfələrlə imtina etdi (HTTP 503). Server yenidən başladılır və ya məşğul ola bilər, yaxud faylın yerləşdiyi yaddaş oflayn ola bilər. Bir az sonra təzədən cəhd edin — problem davam edərsə, server sahibindən serveri və faylın yerləşdiyi yaddaşı yoxlamasını istəyin.',
 			'messages.logsUploaded' => 'Jurnallar yükləndi',
 			'messages.logsUploadFailed' => 'Jurnallar yüklənə bilmədi',
 			'messages.logId' => 'Jurnal ID-si',
+			'messages.burnedSubtitlesUseMenu' => 'Altyazılar bu yayıma həkk edilib. Onları altyazı menyusundan dəyişin.',
+			'messages.noVideoUrl' => 'Video URL-i mövcud deyil',
+			'messages.playbackNoMediaSources' => 'Server oynadıla bilən media mənbəyi qaytarmadı',
+			'messages.playbackDataNotPrepared' => 'Məlumatları hazır olmadan oynatma başladıldı',
+			'messages.streamSelectionUnavailable' => 'Bu mənbə üçün yayım seçimi mövcud deyil',
+			'messages.streamSelectionFailed' => 'Seçilmiş yayımları tətbiq etmək olmadı',
+			'messages.serverUnavailableForProfile' => 'Aktiv profil üçün heç bir server mövcud deyil',
 			'subtitlingStyling.text' => 'Mətn',
 			'subtitlingStyling.border' => 'Haşiyə',
 			'subtitlingStyling.background' => 'Arxa fon',
@@ -3271,6 +3413,8 @@ extension on TranslationsAz {
 			'subtitlingStyling.overrideStrip' => 'Formatlaşdırmanı sil',
 			'subtitlingStyling.positionTop' => 'Yuxarı',
 			'subtitlingStyling.positionBottom' => 'Aşağı',
+			'subtitlingStyling.anchorToScreen' => 'Ekrana bərkit',
+			'subtitlingStyling.anchorToScreenDescription' => 'Mətn altyazılarını geniş ekranlı videonun altındakı qara zolaqlarda göstər',
 			'subtitlingStyling.bold' => 'Qalın',
 			'subtitlingStyling.italic' => 'Kursiv',
 			'subtitlingStyling.renderResolution' => 'Emal imkanı (Resolution)',
@@ -3353,6 +3497,7 @@ extension on TranslationsAz {
 			'profiles.pinExplain' => 'Profillər arası keçid üçün 4 rəqəmli PIN tələb olunur.',
 			'profiles.continueButton' => 'Davam et',
 			'profiles.pinsDontMatch' => 'PIN-lər uyğun gəlmir',
+			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
 			'connections.sectionTitle' => 'Qoşulmalar',
 			'connections.addConnection' => 'Qoşulma əlavə et',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin serverinə qoşulun',
@@ -3386,6 +3531,7 @@ extension on TranslationsAz {
 			'discover.tvShow' => 'TV Şou',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} dəq qaldı',
 			'discover.moreLikeThis' => 'Buna bənzərlər',
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n, one: '${n} başlıq', other: '${n} başlıq', ), 
 			'errors.searchFailed' => ({required Object error}) => 'Axtarış uğursuz oldu: ${error}',
 			'errors.searchUnavailable' => 'Axtarış heç bir media serverinə çata bilmədi.',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} yüklənərkən vaxt bitdi',
@@ -3558,7 +3704,10 @@ extension on TranslationsAz {
 			'explore.characters' => 'Personajlar',
 			'explore.addToWatchlist' => 'İzləmə siyahısına əlavə et',
 			'explore.removeFromWatchlist' => 'İzləmə siyahısından sil',
+			'explore.addedToWatchlist' => 'Baxış siyahısına əlavə edildi',
+			'explore.removedFromWatchlist' => 'Baxış siyahısından silindi',
 			'explore.watchlistUpdateFailed' => 'İzləmə siyahısı yenilənə bilmədi',
+			'explore.watchlistNoMatch' => 'Bu elementi heç bir baxış siyahısı ilə uyğunlaşdırmaq olmadı',
 			'explore.notInLibrary' => 'Kitabxananızda yoxdur',
 			'explore.inTheseLibraries' => 'Bu kitabxanalarda var',
 			'explore.checkingLibrary' => 'Kitabxananız yoxlanılır...',
@@ -3566,6 +3715,8 @@ extension on TranslationsAz {
 			'explore.emptyMessage' => ({required Object source}) => '${source} mənbəsindən olan sətirlər burada görünəcək.',
 			'explore.searchHint' => ({required Object source}) => '${source} daxilində axtar',
 			'explore.searchEmpty' => ({required Object query}) => '"${query}" üçün nəticə tapılmadı',
+			_ => null,
+		} ?? switch (path) {
 			'explore.searchPrompt' => ({required Object source}) => '${source} vasitəsilə kino və seriallar axtarın.',
 			'explore.searchFailed' => 'Axtarış uğursuz oldu. Bağlantınızı yoxlayın.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populyar',
@@ -3605,8 +3756,6 @@ extension on TranslationsAz {
 			'explore.stats.completed' => ({required Object n}) => '${n} tamamladı',
 			'explore.stats.onHold' => ({required Object n}) => '${n} fasilədə',
 			'explore.stats.dropped' => ({required Object n}) => '${n} izləməyi dayandırdı',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Qış',
 			'explore.season.spring' => 'Yaz',
 			'explore.season.summer' => 'Yay',
@@ -3703,6 +3852,9 @@ extension on TranslationsAz {
 			'liveTv.watchChannel' => 'Kanala bax',
 			'liveTv.favorites' => 'Sevimlilər',
 			'liveTv.reorderFavorites' => 'Sevimliləri yenidən sırala',
+			'liveTv.noFavoriteChannels' => 'Sevimli kanal yoxdur',
+			'liveTv.noFavoriteChannelsHint' => 'Bütün kanalları göstərin, sonra kanalı sevimlilərə əlavə etmək üçün üzərinə uzun basın.',
+			'liveTv.showAllChannels' => 'Bütün kanalları göstər',
 			'liveTv.favoritesLoadFailed' => 'Sevimlilər yüklənə bilmədi.',
 			'liveTv.favoritesUpdateFailed' => 'Sevimlilər yenilənə bilmədi.',
 			'liveTv.joinSession' => 'Davam edən seansa qoşul',
@@ -3742,6 +3894,11 @@ extension on TranslationsAz {
 			'liveTv.guideReloadRequested' => 'Bələdçi yenilənməsi tələb olundu',
 			'liveTv.rulesProcessRequested' => 'Qaydaların yenidən qiymətləndirilməsi tələb olundu',
 			'liveTv.recordShow' => 'Şounu yaz',
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dəq sonra başlayır',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, saat ${time}',
+			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} etibarsız Canlı TV oynatma məlumatı qaytardı',
+			'liveTv.failedToStartChannel' => 'Canlı kanalı başlatmaq olmadı',
+			'liveTv.failedToBuildStreamUrl' => 'Yayım URL-i yaratmaq olmadı',
 			'collections.title' => 'Kolleksiyalar',
 			'collections.collection' => 'Kolleksiya',
 			'collections.empty' => 'Kolleksiya boşdur',
@@ -3810,6 +3967,8 @@ extension on TranslationsAz {
 			'music.repeat' => 'Təkrarla',
 			'music.repeatAll' => 'Hamısını təkrarla',
 			'music.repeatOne' => 'Birini təkrarla',
+			'music.instantMixNoServer' => 'Ani miks üçün heç bir server mövcud deyil',
+			'music.noAudioUrl' => ({required Object track}) => '${track} üçün səs URL-i mövcud deyil',
 			'watchTogether.title' => 'Birlikdə İzlə',
 			'watchTogether.description' => 'Dostlarınız və ailənizlə eyni vaxtda baxın',
 			'watchTogether.createSession' => 'Seans yarat',
@@ -3875,6 +4034,7 @@ extension on TranslationsAz {
 			'watchTogether.removeRoom' => 'Sil',
 			'watchTogether.guestSwitchUnavailable' => 'Keçid etmək olmadı — eyniləşdirmə üçün server əlçatan deyil',
 			'watchTogether.guestSwitchFailed' => 'Keçid etmək olmadı — məzmun tapılmadı',
+			'watchTogether.defaultDisplayName' => 'İstifadəçi',
 			'downloads.title' => 'Yükləmələr',
 			'downloads.manage' => 'İdarə et',
 			'downloads.tvShows' => 'TV Şoular',
@@ -3975,6 +4135,16 @@ extension on TranslationsAz {
 			'downloads.backgroundWarning.statusUnknown' => 'Hələ yoxlanılmayıb',
 			'downloads.backgroundWarning.settingsUnavailable' => 'Bu cihazda sistem tənzimləmələri açıla bilmədi',
 			'downloads.backgroundWarning.linkUnavailable' => 'Bu cihazda dontkillmyapp.com açıla bilmədi',
+			'downloads.unknownShow' => 'Məlum olmayan serial',
+			'downloads.unknownSeason' => 'Məlum olmayan mövsüm',
+			'downloads.unknownAlbum' => 'Məlum olmayan albom',
+			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} tamamlandı',
+			'downloads.errorFileNotFound' => 'Fayl tapılmadı (404)',
+			'downloads.errorDownloadFailed' => 'Yükləmə uğursuz oldu',
+			'downloads.errorPostProcessing' => ({required Object error}) => 'Sonrakı emal uğursuz oldu: ${error}',
+			'downloads.notificationDownloading' => 'Yüklənir...',
+			'downloads.notificationComplete' => 'Yükləmə tamamlandı',
+			'downloads.notificationPaused' => 'Yükləmə dayandırıldı',
 			'shaders.title' => 'Şeyderlər',
 			'shaders.noShaderDescription' => 'Video təkmilləşdirməsi yoxdur',
 			'shaders.nvscalerDescription' => 'Daha kəskin video üçün NVIDIA miqyaslaması',
@@ -4054,14 +4224,24 @@ extension on TranslationsAz {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Heç bir ünvana qoşuluna bilmədi',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} cəhddən sonra əlaqə kəsildi',
 			'companionRemote.errors.connectionLost' => 'Əlaqə kəsildi',
+			'companionRemote.closedBeforeAuth' => 'Bağlantı autentifikasiyadan əvvəl bağlandı',
 			'videoSettings.playbackSpeed' => 'Oynatma sürəti',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktivdir (${duration})',
 			'videoSettings.zoom' => 'Miqyas',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.sleepTimer' => 'Yuxu taymeri',
 			'videoSettings.audioSync' => 'Səs sinxronizasiyası',
 			'videoSettings.subtitleSync' => 'Altyazı sinxronizasiyası',
 			'videoSettings.hdr' => 'HDR',
+			'videoSettings.hdrUnsupported' => 'HDR burada əlçatan deyil — bu masaüstü kompozitoru və ya video çıxışı onu ötürə bilmir.',
+			'videoSettings.hdrToneMapping' => 'HDR ton uyğunlaşdırması',
+			'videoSettings.hdrToneMappingCompositor' => 'Kompozitor',
+			'videoSettings.hdrToneMappingCompositorDescription' => 'Mənbənin HDR metaməlumatlarını dəyişmədən ötür və ton uyğunlaşdırmasını masaüstü kompozitoruna həvalə et.',
+			'videoSettings.hdrToneMappingPlayer' => 'Oynadıcı',
+			'videoSettings.hdrToneMappingPlayerDescription' => 'Oynadıcıda tonları ekranın pik parlaqlığına uyğunlaşdır, sonra nəticəni kompozitora bildir.',
+			'videoSettings.hdrToneMappingFailed' => 'HDR ton uyğunlaşdırmasını dəyişmək olmadı — əvvəlki rejim hələ də aktivdir.',
 			'videoSettings.audioOutput' => 'Səs çıxışı',
 			'videoSettings.performanceOverlay' => 'Məhsuldarlıq paneli',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
@@ -4106,6 +4286,16 @@ extension on TranslationsAz {
 			'performanceOverlay.player' => 'Oynadıcı',
 			'performanceOverlay.memory' => 'Yaddaş',
 			'performanceOverlay.uiFps' => 'Arayüz (UI) FPS-i',
+			'performanceOverlay.fps' => 'FPS',
+			'performanceOverlay.decoderAndroidHw' => 'Android HW',
+			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
+			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
+			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Proqram təminatı',
+			'performanceOverlay.decoderHardware' => 'Aparat təminatı',
+			'performanceOverlay.tunnelingActive' => 'Aktiv',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} uğursuz)',
 			'externalPlayer.title' => 'Xarici oynadıcı',
 			'externalPlayer.useExternalPlayer' => 'Xarici oynadıcı istifadə et',
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başqa tətbiqdə açın',
@@ -4119,8 +4309,6 @@ extension on TranslationsAz {
 			'externalPlayer.playerPackage' => 'Paket adı',
 			'externalPlayer.playerUrlScheme' => 'URL sxemi',
 			'externalPlayer.off' => 'Söndürülüb',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Xarici oynadıcı açıla bilmədi',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} quraşdırılmayıb',
 			'externalPlayer.playInExternalPlayer' => 'Xarici oynadıcıda oynat',
@@ -4254,6 +4442,16 @@ extension on TranslationsAz {
 			'seerr.statusPartiallyAvailable' => 'Hissəvi əlçatandır',
 			'seerr.statusRequested' => 'Sorğu göndərildi',
 			'seerr.statusProcessing' => 'Emal edilir',
+			'seerr.couldNotReach' => ({required Object url, required Object error}) => '${url} ünvanına çatmaq olmadı: ${error}',
+			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => '${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})',
+			'seerr.notInitialized' => 'Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb',
+			'seerr.noPlexTokenForReauth' => 'Yenidən daxil olmaq üçün Plex tokeni mövcud deyil',
+			'seerr.noStoredCredentials' => 'Yenidən daxil olmaq üçün yadda saxlanmış giriş məlumatları mövcud deyil',
+			'seerr.signInRejected' => 'Daxil olma rədd edildi',
+			'seerr.noSessionCookie' => 'Seerr sessiya kukisi yaratmadı',
+			'seerr.freshCookieRejected' => 'Seerr yeni sessiya kukisini rədd etdi',
+			'seerr.noUserInformation' => 'Seerr istifadəçi məlumatlarını qaytarmadı',
+			'seerr.sessionRejectedAfterReauth' => 'Yenidən daxil olduqdan sonra sessiya rədd edildi',
 			'services.title' => 'Xidmətlər',
 			'services.hubSubtitle' => 'İzləmə tərəqqisini eyniləşdirin və yeni başlıqlar sorğulayın.',
 			'services.notConnected' => 'Qoşulmayıb',
@@ -4269,6 +4467,7 @@ extension on TranslationsAz {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy-ni ${service} üzərində aktivləşdirin',
+			'services.deviceCode.instructions' => 'QR kodunu skan edin və ya aşağıdakı ünvana keçib bu kodu daxil edin:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Aktivləşdirmək üçün ${service} açın',
 			'services.deviceCode.copyCode' => 'Aktivləşdirmə kodunu kopyala',
 			'services.deviceCode.waitingForAuthorization' => 'Səlahiyyət gözlənilir…',
@@ -4318,6 +4517,24 @@ extension on TranslationsAz {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serverinizə daxil olun. ${name} ilə əlaqələndirilir.',
 			'addServer.borrowFromAnotherProfile' => 'Başqa profildən götür',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başqa profilin qoşulmasını yenidən istifadə edin.',
+			'addServer.invalidCredentials' => 'İstifadəçi adı və ya şifrə yanlışdır',
+			'addServer.authResponseNotJson' => 'Autentifikasiya cavabı etibarlı JSON deyildi',
+			'addServer.quickConnectRejected' => 'Quick Connect server tərəfindən rədd edildi',
+			'addServer.quickConnectNotJson' => 'Quick Connect cavabı etibarlı JSON deyildi',
+			'addServer.quickConnectMissingFields' => 'Quick Connect cavabında kod və ya məxfi açar yoxdur',
+			'addServer.quickConnectPollRejected' => 'Quick Connect sorğulaması server tərəfindən rədd edildi',
+			'addServer.serverTimedOut' => 'Server vaxtında cavab vermədi',
+			'addServer.responseNotJson' => 'Server cavabı etibarlı JSON deyildi',
+			'addServer.responseMissingIdentity' => ({required Object product}) => 'Cavabda ID və ya server adı yoxdur — bu, ${product} serveridir?',
+			'addServer.probeFailed' => ({required Object error}) => 'Serverə çatmaq olmadı: ${error}',
+			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Ən azı bir ${product} server URL-i daxil edin',
+			'addServer.noReachableServer' => ({required Object product}) => 'Əlçatan ${product} serveri tapılmadı',
+			'addServer.urlsPointToDifferentServers' => ({required Object product}) => 'Bu URL-lər fərqli ${product} serverlərinə aiddir',
+			'addServer.urlDoesNotMatchServer' => ({required Object product}) => 'Bu URL ${product} serverinə uyğun gəlmir',
+			'addServer.redirectUnsupported' => 'Server dəstəklənməyən URL-ə yönləndirdi',
+			'addServer.redirectDifferentHost' => ({required Object product}) => 'Server başqa hosta yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.',
+			'addServer.redirectInsecure' => 'Server HTTPS-dən təhlükəsiz olmayan URL-ə yönləndirdi',
+			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'Server dəstəklənməyən URL-ə yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.',
 			_ => null,
 		};
 	}

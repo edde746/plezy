@@ -171,7 +171,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
       // Get show metadata from first episode
       final firstEpisode = widget.metadata[episodes.first.key];
-      final showTitle = firstEpisode?.grandparentTitle ?? 'Unknown Show';
+      final showTitle = firstEpisode?.grandparentTitle ?? t.downloads.unknownShow;
 
       // Group episodes by season
       final Map<String, List<MapEntry<String, DownloadProgress>>> seasonGroups = {};
@@ -199,7 +199,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             ? firstEpisode!.parentTitle!
             : seasonNumber != null
             ? t.common.seasonNumber(number: seasonNumber)
-            : 'Unknown Season';
+            : t.downloads.unknownSeason;
 
         // Build episode nodes
         final List<DownloadTreeNode> episodeNodes = [];
@@ -289,7 +289,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
       // Album/artist names from any track's parent fields
       final firstTrack = widget.metadata[tracks.first.key];
-      final albumTitle = firstTrack?.albumTitle ?? 'Unknown Album';
+      final albumTitle = firstTrack?.albumTitle ?? t.downloads.unknownAlbum;
       final artistTitle = firstTrack?.albumArtistTitle;
       final albumNodeTitle = artistTitle != null && artistTitle.isNotEmpty ? '$artistTitle - $albumTitle' : albumTitle;
 
@@ -779,7 +779,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   String _getNodeSummary() {
     final total = widget.node.children.length;
     final completed = widget.node.completedChildrenCount;
-    return '$completed/$total completed';
+    return t.downloads.completedOfTotal(completed: completed, total: total);
   }
 
   /// The actions this row offers, in render order. Single source of truth:

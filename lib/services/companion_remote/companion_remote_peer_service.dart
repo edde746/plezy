@@ -973,7 +973,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
             completer.completeError(
               RemotePeerError(
                 type: RemotePeerErrorType.connectionFailed,
-                message: t.companionRemote.pairing.failedToConnect(error: 'Connection closed before authentication'),
+                message: t.companionRemote.pairing.failedToConnect(error: t.companionRemote.closedBeforeAuth),
               ),
             );
           }

@@ -429,12 +429,7 @@ class TrackChapterControls extends StatelessWidget {
         channels: audio.channelsCount,
         index: visibleIndex,
       );
-      final fallback = 'Audio Track ${visibleIndex + 1}';
-      values.add(
-        label.primary == fallback
-            ? _joinTrackLabel(t.audioTracks.track(n: visibleIndex + 1), label.secondary)
-            : label.joined,
-      );
+      values.add(label.joined);
     }
 
     final subtitle = selection.subtitle;
@@ -452,10 +447,6 @@ class TrackChapterControls extends StatelessWidget {
     }
 
     return values.isEmpty ? null : values.join(', ');
-  }
-
-  String _joinTrackLabel(String primary, String? secondary) {
-    return secondary == null ? primary : '$primary · $secondary';
   }
 
   /// Calculate total button count for navigation

@@ -324,7 +324,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       if ((isSubtitleChange && isPlexBacked) || (isAudioChange && isPlexBacked)) {
         final partId = _currentMediaInfo?.partId;
         if (streamSelectClient == null || partId == null) {
-          throw StateError('No Plex part available for stream selection');
+          throw PlaybackException(
+            t.messages.streamSelectionUnavailable,
+            reason: PlaybackFailureReason.invalidPlaybackData,
+          );
         }
         final saved = await streamSelectClient.selectStreams(
           partId,
@@ -339,7 +342,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           allParts: true,
         );
         if (!saved) {
-          throw StateError('Failed to select streams');
+          throw PlaybackException(t.messages.streamSelectionFailed);
         }
         if (!isCurrentSourceSwitch()) return PlaybackSourceChangeOutcome.superseded;
       }
@@ -703,7 +706,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         final streamHeaders = playbackContext.streamHeaders;
 
         if (result.videoUrl == null) {
-          throw PlaybackException('No video URL available');
+          throw PlaybackException(t.messages.noVideoUrl, reason: PlaybackFailureReason.noPlayableSource);
         }
         if (result.isOffline && !_offlineLibraryMode) {
           // The pre-resolve lookup assumed an online source; a download won

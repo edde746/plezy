@@ -14,6 +14,7 @@
 import 'package:json_annotation/json_annotation.dart';
 import '../media/ids.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import '../i18n/strings.g.dart';
 
 import '../media/media_backend.dart';
 import '../media/media_display_criteria.dart';
@@ -238,7 +239,7 @@ List<MediaPart> _mediaPartsFromReadValue(Object? raw) {
 }
 
 String _hubTitleFromJson(Object? raw) {
-  final title = raw as String? ?? 'Unknown';
+  final title = raw as String? ?? t.common.unknown;
   return kBlurArtwork ? obfuscateText(title) : title;
 }
 

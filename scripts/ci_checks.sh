@@ -80,7 +80,16 @@ else
   FAILED=1
 fi
 
-# 4. Workflow and script regression guards
+# 4. Hardcoded user-facing strings
+section "hardcoded UI strings"
+if python3 scripts/check_hardcoded_strings.py; then
+  ok "user-facing strings use the translation layer"
+else
+  fail "hardcoded user-facing English strings found"
+  FAILED=1
+fi
+
+# 5. Workflow and script regression guards
 section "workflow and script guards"
 if bash scripts/ci_guard_checks.sh; then
   ok "workflow and script guards passed"
@@ -89,7 +98,7 @@ else
   FAILED=1
 fi
 
-# 5. Icon consistency
+# 6. Icon consistency
 section "icon consistency"
 if dart run scripts/check_icon_consistency.dart; then
   ok "production icons use AppIcon and rounded Symbols"
@@ -98,7 +107,7 @@ else
   FAILED=1
 fi
 
-# 3. Native formatting
+# 7. Native formatting
 section "native format"
 out="$(mktemp)"
 if scripts/format_native.sh --check >"$out" 2>&1; then
@@ -110,7 +119,7 @@ else
 fi
 rm -f "$out"
 
-# 3. Dart analyzer (mirrors ci.yml "Analyze code")
+# 8. Dart analyzer (mirrors ci.yml "Analyze code")
 section "Dart analyzer"
 if dart run scripts/check_analyzer.dart; then
   ok "no unapproved diagnostics"
@@ -119,7 +128,7 @@ else
   FAILED=1
 fi
 
-# 4. Unused code (mirrors ci.yml "Check for unused code")
+# 9. Unused code (mirrors ci.yml "Check for unused code")
 section "dart_code_linter: unused code"
 if ! have_dart_code_linter; then
   skip "dart_code_linter unresolved — run 'flutter pub get'"
@@ -136,7 +145,7 @@ else
   rm -f "$out"
 fi
 
-# 5. Unused files (mirrors ci.yml "Check for unused files")
+# 10. Unused files (mirrors ci.yml "Check for unused files")
 section "dart_code_linter: unused files"
 if ! have_dart_code_linter; then
   skip "dart_code_linter unresolved — run 'flutter pub get'"

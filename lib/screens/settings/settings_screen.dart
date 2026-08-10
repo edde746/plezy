@@ -914,7 +914,7 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
       content: FocusableTextField(
         controller: _controller,
         decoration: InputDecoration(
-          labelText: 'URL',
+          labelText: t.common.url,
           hintText: t.settings.watchTogetherRelayHint,
           errorText: _relayUrlInvalid ? t.settings.watchTogetherRelayInvalid : null,
         ),

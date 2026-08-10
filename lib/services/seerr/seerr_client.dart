@@ -211,7 +211,11 @@ class SeerrClient {
       res = await _http.send(method, path, query: query, body: body);
       if (res.statusCode == 401) {
         onSessionInvalidated();
-        throw const SeerrAuthException('Session rejected after successful re-auth', statusCode: 401);
+        throw SeerrAuthException(
+          'Session rejected after successful re-auth',
+          statusCode: 401,
+          display: t.seerr.sessionRejectedAfterReauth,
+        );
       }
     }
     SeerrHttpClient.throwForStatus(res);

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:http/http.dart' as http;
 
+import '../i18n/strings.g.dart';
+
 import '../exceptions/media_server_exceptions.dart';
 import '../media/media_browser_dialect.dart';
 import '../utils/endpoint_race.dart';
@@ -141,12 +143,15 @@ class JellyfinEndpointDiscovery {
       }
       final data = response.data;
       if (data is! Map<String, dynamic>) {
-        throw MediaServerUrlException('Server response was not JSON');
+        throw MediaServerUrlException('Server response was not JSON', display: t.addServer.responseNotJson);
       }
       final id = data['Id'];
       final name = data['ServerName'] ?? data['LocalAddress'];
       if (id is! String || name is! String) {
-        throw MediaServerUrlException('Server response missing Id/ServerName — not a ${dialect.productName} server?');
+        throw MediaServerUrlException(
+          'Server response missing Id/ServerName — not a ${dialect.productName} server?',
+          display: t.addServer.responseMissingIdentity(product: dialect.productName),
+        );
       }
       return (
         serverInfo: JellyfinServerInfo(
@@ -161,11 +166,14 @@ class JellyfinEndpointDiscovery {
       rethrow;
     } on MediaServerHttpException catch (e) {
       if (e.isCancellation) rethrow;
-      throw MediaServerUrlException('Server probe failed: ${e.message}');
+      throw MediaServerUrlException(
+        'Server probe failed: ${e.message}',
+        display: t.addServer.probeFailed(error: e.message),
+      );
     } on TimeoutException {
-      throw MediaServerUrlException('Server did not respond in time');
+      throw MediaServerUrlException('Server did not respond in time', display: t.addServer.serverTimedOut);
     } catch (e) {
-      throw MediaServerUrlException('Server probe failed: $e');
+      throw MediaServerUrlException('Server probe failed: $e', display: t.addServer.probeFailed(error: e));
     } finally {
       client.close();
     }
@@ -186,7 +194,10 @@ class JellyfinEndpointDiscovery {
   }) async {
     final urls = normalizeBaseUrls(baseUrls);
     if (urls.isEmpty) {
-      throw MediaServerUrlException('Enter at least one ${dialect.productName} server URL');
+      throw MediaServerUrlException(
+        'Enter at least one ${dialect.productName} server URL',
+        display: t.addServer.enterAtLeastOneUrl(product: dialect.productName),
+      );
     }
 
     final persistUrls = baseUrlsToPersist == null ? urls : normalizeBaseUrls(baseUrlsToPersist);
@@ -243,7 +254,10 @@ class JellyfinEndpointDiscovery {
 
     final selected = bestSelection ?? firstSelection;
     if (selected == null || selected.result.serverInfo == null) {
-      throw MediaServerUrlException('No reachable ${dialect.productName} server found');
+      throw MediaServerUrlException(
+        'No reachable ${dialect.productName} server found',
+        display: t.addServer.noReachableServer(product: dialect.productName),
+      );
     }
 
     final Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult> successfulResults =
@@ -267,7 +281,10 @@ class JellyfinEndpointDiscovery {
 
     final selectedInfo = selectedResult.serverInfo;
     if (selectedInfo == null) {
-      throw MediaServerUrlException('No reachable ${dialect.productName} server found');
+      throw MediaServerUrlException(
+        'No reachable ${dialect.productName} server found',
+        display: t.addServer.noReachableServer(product: dialect.productName),
+      );
     }
 
     final expected = hasExpectedMachineId ? expectedMachineIdTrimmed! : selectedInfo.machineId;
@@ -281,7 +298,10 @@ class JellyfinEndpointDiscovery {
           final candidate = _selectValidationCandidate(groupResults, expectedMachineId: expectedMachineIdTrimmed);
           final info = candidate == null ? null : groupResults[candidate]?.serverInfo;
           if (info != null && info.machineId != expected) {
-            throw MediaServerUrlException('The URLs point to different ${dialect.productName} servers');
+            throw MediaServerUrlException(
+              'The URLs point to different ${dialect.productName} servers',
+              display: t.addServer.urlsPointToDifferentServers(product: dialect.productName),
+            );
           }
         }
       }
@@ -290,13 +310,19 @@ class JellyfinEndpointDiscovery {
         if (!validateUrlSet.contains(entry.key.url)) continue;
         final info = entry.value.serverInfo;
         if (info != null && info.machineId != expected) {
-          throw MediaServerUrlException('The URLs point to different ${dialect.productName} servers');
+          throw MediaServerUrlException(
+            'The URLs point to different ${dialect.productName} servers',
+            display: t.addServer.urlsPointToDifferentServers(product: dialect.productName),
+          );
         }
       }
     }
 
     if (selectedInfo.machineId != expected) {
-      throw MediaServerUrlException('The URL does not match this ${dialect.productName} server');
+      throw MediaServerUrlException(
+        'The URL does not match this ${dialect.productName} server',
+        display: t.addServer.urlDoesNotMatchServer(product: dialect.productName),
+      );
     }
 
     final effectiveUrls = <String, String>{};
@@ -415,21 +441,29 @@ class JellyfinEndpointDiscovery {
     if (requestedBaseUri == null ||
         requestedBaseUri.host.isEmpty ||
         (effectiveScheme != 'http' && effectiveScheme != 'https')) {
-      throw MediaServerUrlException('Server redirected to an unsupported URL');
+      throw MediaServerUrlException(
+        'Server redirected to an unsupported URL',
+        display: t.addServer.redirectUnsupported,
+      );
     }
     if (requestedBaseUri.host.toLowerCase() != effectiveUri.host.toLowerCase()) {
       throw MediaServerUrlException(
         'Server redirected to a different host. Enter the final ${dialect.productName} URL directly',
+        display: t.addServer.redirectDifferentHost(product: dialect.productName),
       );
     }
     if (requestedBaseUri.scheme.toLowerCase() == 'https' && effectiveScheme != 'https') {
-      throw MediaServerUrlException('Server redirected from HTTPS to an insecure URL');
+      throw MediaServerUrlException(
+        'Server redirected from HTTPS to an insecure URL',
+        display: t.addServer.redirectInsecure,
+      );
     }
 
     const publicInfoPath = '/System/Info/Public';
     if (!effectiveUri.path.endsWith(publicInfoPath)) {
       throw MediaServerUrlException(
         'Server redirected to an unsupported URL. Enter the final ${dialect.productName} URL directly',
+        display: t.addServer.redirectUnsupportedEnterFinal(product: dialect.productName),
       );
     }
     final basePath = effectiveUri.path.substring(0, effectiveUri.path.length - publicInfoPath.length);

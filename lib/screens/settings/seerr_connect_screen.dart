@@ -113,7 +113,9 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
     await runAsync<void>(() async {
       final account = context.read<SeerrAccountProvider>();
       final token = await account.resolvePlexToken();
-      if (token == null || token.isEmpty) throw const SeerrAuthException('No Plex token available');
+      if (token == null || token.isEmpty) {
+        throw SeerrAuthException('No Plex token available', display: t.seerr.noPlexTokenForReauth);
+      }
       final session = await account.authService.signInWithPlex(baseUrl: _baseUrl, plexToken: token);
       await _finish(account, session);
     }, errorMapper: _describeError);
@@ -151,8 +153,8 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
   }
 
   String _describeError(Object e) => switch (e) {
-    SeerrUrlException(:final message) => message,
-    SeerrAuthException(:final message) => message,
+    SeerrUrlException(:final message, :final display) => display ?? message,
+    SeerrAuthException(:final message, :final display) => display ?? message,
     _ => t.addServer.couldNotReachServer(error: e.toString()),
   };
 

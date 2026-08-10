@@ -208,7 +208,7 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
         .deleteDownload(globalKey)
         .then(
           (_) {
-            showMainSnackBar(t.messages.autoRemovedWatchedDownload(title: meta.title ?? 'Unknown'));
+            showMainSnackBar(t.messages.autoRemovedWatchedDownload(title: meta.title ?? t.common.unknown));
           },
           onError: (e) {
             appLogger.w('Failed to auto-delete locally-watched download $globalKey: $e');

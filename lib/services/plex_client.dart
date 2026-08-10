@@ -3242,7 +3242,10 @@ class PlexClient
       );
       final machineIdentifier = _getMediaContainer(identityResponse)?['machineIdentifier']?.toString();
       if (machineIdentifier != serverId) {
-        throw MediaServerUrlException('Plex profile token resolved to an unexpected server identity');
+        throw MediaServerUrlException(
+          'Plex profile token resolved to an unexpected server identity',
+          display: t.profiles.tokenIdentityMismatch,
+        );
       }
       if (generation != _profileUpdateGeneration) return false;
 
@@ -3770,7 +3773,7 @@ class PlexClient
   SubtitleTrack _subtitleTrackFromMediaTrack(MediaSubtitleTrack track, String url) {
     return SubtitleTrack(
       id: 'external:$url',
-      title: track.displayTitle ?? track.title ?? track.language ?? 'Track ${track.id}',
+      title: track.displayTitle ?? track.title ?? track.language ?? t.videoControls.subtitleTrack(n: track.id),
       language: track.languageCode,
       codec: track.codec,
       isDefault: track.selected,
@@ -3841,7 +3844,11 @@ class PlexClient
             sourceStreamId: plexTrack.id,
             track: SubtitleTrack.uri(
               url,
-              title: plexTrack.displayTitle ?? plexTrack.title ?? plexTrack.language ?? 'Track ${plexTrack.id}',
+              title:
+                  plexTrack.displayTitle ??
+                  plexTrack.title ??
+                  plexTrack.language ??
+                  t.videoControls.subtitleTrack(n: plexTrack.id),
               language: plexTrack.languageCode,
               codec: plexTrack.codec,
               isDefault: plexTrack.selected,

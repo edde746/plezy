@@ -154,7 +154,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       preferredSignature: options.preferredVersionSignature,
     );
     if (bundle == null) {
-      throw PlaybackException('Item ${metadata.id} returned no MediaSources');
+      throw PlaybackException(t.messages.playbackNoMediaSources, reason: PlaybackFailureReason.noPlayableSource);
     }
     var mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
       bundle.selectedSource,

@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 import '../../mpv/mpv.dart';
+import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/sync_message.dart';
@@ -47,7 +48,7 @@ class WatchTogetherProvider with ChangeNotifier {
   bool _isWaitingForPeers = false;
   List<String> _waitingOnPeerIds = const [];
   PlaybackPhase? _playbackPhase;
-  String _displayName = 'User';
+  String _displayName = t.watchTogether.defaultDisplayName;
   final CurrentPlaybackDispatcher _playbackDispatcher = CurrentPlaybackDispatcher();
 
   // Coalesce rapid-fire notifyListeners() calls into a single rebuild per frame.

@@ -1166,7 +1166,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fill: 1,
                             color: Theme.of(context).colorScheme.onSurface,
                             size: 18,
-                            semanticLabel: '${_isAutoScrollPaused ? t.common.play : t.common.pause} auto-scroll',
+                            semanticLabel: _isAutoScrollPaused
+                                ? t.accessibility.autoScrollPlay
+                                : t.accessibility.autoScrollPause,
                           ),
                         ),
                       ),

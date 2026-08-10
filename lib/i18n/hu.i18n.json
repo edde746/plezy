@@ -17,7 +17,8 @@
     "quickConnectWaiting": "Várakozás a jóváhagyásra…",
     "quickConnectCancel": "Mégse",
     "quickConnectExpired": "A Quick Connect kód lejárt. Próbáld újra.",
-    "localDataRecoveryRequired": "A Plezy nem tudta biztonságosan helyreállítani a helyi bejelentkezés és a függőben lévő lejátszás adatait. Jelentkezz be újra."
+    "localDataRecoveryRequired": "A Plezy nem tudta biztonságosan helyreállítani a helyi bejelentkezés és a függőben lévő lejátszás adatait. Jelentkezz be újra.",
+    "pinCheckRejected": "A Plex PIN ellenőrzését elutasították"
   },
   "common": {
     "cancel": "Mégse",
@@ -77,7 +78,10 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes kritikusok",
       "rottenTomatoesAudience": "Rotten Tomatoes közönség"
-    }
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC"
   },
   "screens": {
     "licenses": "Licencek",
@@ -323,8 +327,8 @@
     "showNavBarLabels": "Navigációs sáv címkéinek megjelenítése",
     "showNavBarLabelsDescription": "Szöveges címkék megjelenítése a navigációs sáv ikonjai alatt",
     "startupSection": "Indítási oldal",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "Felfedezés lap megjelenítése",
+    "showExploreTabDescription": "A Plex Discover és a csatlakoztatott követők tartalmait megjelenítő Felfedezés lap megjelenítése",
     "liveTvDefaultFavorites": "Kedvenc csatornák alapértelmezés szerint",
     "liveTvDefaultFavoritesDescription": "Csak a kedvenc csatornák megjelenítése az Élő TV megnyitásakor",
     "display": "Kijelző",
@@ -335,7 +339,8 @@
     "player": "Lejátszó",
     "subtitlesAndConfig": "Feliratok és konfiguráció",
     "seekAndTiming": "Tekerés és időzítés",
-    "behavior": "Viselkedés"
+    "behavior": "Viselkedés",
+    "exportDialogTitle": "Plezy-beállítások exportálása"
   },
   "search": {
     "hint": "Keresés filmek, sorozatok és zenék között...",
@@ -491,7 +496,9 @@
     "flagExternal": "Külső",
     "flagHearingImpaired": "Nagyothallóknak",
     "flagDub": "Szinkron",
-    "flagOriginal": "Eredeti"
+    "flagOriginal": "Eredeti",
+    "channelsMono": "Monó",
+    "dolbyVisionProfile": "${profile} profil"
   },
   "mediaMenu": {
     "markAsWatched": "Megjelölés megtekintettként",
@@ -568,7 +575,12 @@
     "alphabetNavigation": "Ábécé szerinti navigáció",
     "alphabetScrollHint": "A betűnkénti léptetéshez pöccints felfelé vagy lefelé",
     "rowColumnPosition": "${row}. sor a(z) ${rowCount} sorból, ${column}. oszlop a(z) ${columnCount} oszlopból",
-    "rowPosition": "${row}. sor a(z) ${rowCount} sorból"
+    "rowPosition": "${row}. sor a(z) ${rowCount} sorból",
+    "autoScrollPlay": "Automatikus görgetés indítása",
+    "autoScrollPause": "Automatikus görgetés szüneteltetése",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Véletlenszerű lejátszás",
@@ -666,7 +678,16 @@
     "subtitleDownloaded": "Felirat letöltve",
     "subtitleDownloadedNotApplied": "Felirat letöltve, de nem sikerült kiválasztani",
     "subtitleDownloadFailed": "Nem sikerült a felirat letöltése",
-    "searchLanguages": "Nyelvek keresése..."
+    "searchLanguages": "Nyelvek keresése...",
+    "skipIntro": "Főcím átugrása",
+    "skipCredits": "Stáblista átugrása",
+    "nextEpisode": "Következő epizód",
+    "subtitleTrack": "${n}. sáv",
+    "subtitleFile": "${name} felirat",
+    "forcedTrack": "${label} (kényszerített)",
+    "osdSubtitlesOff": "Feliratok: ki",
+    "osdSubtitles": "Feliratok: ${track}",
+    "osdAudio": "Hang: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -722,12 +743,18 @@
     "serverLimitBody": "Szerverhiba (HTTP 500). A munkamenetet valószínűleg egy sávszélességi vagy átkódolási korlát utasította el. Kérd meg a tulajdonost a korlát módosítására.",
     "mediaUnreadableTitle": "A fájl nem érhető el",
     "mediaUnreadableBody": "A szerver megtalálta ezt az elemet, de nem tudta beolvasni a fájlját (HTTP 404). A fájl valószínűleg áthelyezésre vagy törlésre került, vagy a tárhelye offline. Kérje meg a szerver tulajdonosát, hogy ellenőrizze a fájlt, és vizsgálja újra a könyvtárat.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "A stream nem érhető el",
+    "serverBusyBody": "A szerver ismételten megtagadta ennek a fájlnak a streamelését (HTTP 503). Lehet, hogy újraindul, túlterhelt, vagy a fájl tárhelye nem érhető el. Próbáld újra egy kis idő múlva – ha a probléma továbbra is fennáll, kérd meg a szerver tulajdonosát, hogy ellenőrizze a szervert és a fájl tárhelyét.",
     "logsUploaded": "Naplók feltöltve",
     "logsUploadFailed": "Nem sikerült a naplók feltöltése",
     "logId": "Naplóazonosító",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "A feliratok bele vannak égetve ebbe a streambe. A feliratmenüben módosíthatod őket.",
+    "noVideoUrl": "Nem érhető el videó-URL",
+    "playbackNoMediaSources": "A szerver nem adott vissza lejátszható médiaforrást",
+    "playbackDataNotPrepared": "A lejátszás az adatok elkészülte előtt indult el",
+    "streamSelectionUnavailable": "Ehhez a forráshoz nem érhető el a streamek kiválasztása",
+    "streamSelectionFailed": "Nem sikerült alkalmazni a kiválasztott streameket",
+    "serverUnavailableForProfile": "Az aktív profilhoz nem érhető el szerver"
   },
   "subtitlingStyling": {
     "text": "Szöveg",
@@ -746,8 +773,8 @@
     "overrideStrip": "Stílus eltávolítása",
     "positionTop": "Fent",
     "positionBottom": "Lent",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Képernyőhöz rögzítés",
+    "anchorToScreenDescription": "A szöveges feliratok megjelenítése a szélesvásznú videó alatti fekete sávban",
     "bold": "Félkövér",
     "italic": "Dőlt",
     "renderResolution": "Renderelési felbontás",
@@ -835,7 +862,8 @@
     "pinProtectionOptional": "PIN-védelem (opcionális)",
     "pinExplain": "4 jegyű PIN-kód szükséges a profilváltáshoz.",
     "continueButton": "Folytatás",
-    "pinsDontMatch": "A PIN-kódok nem egyeznek"
+    "pinsDontMatch": "A PIN-kódok nem egyeznek",
+    "tokenIdentityMismatch": "A Plex-profil tokenje nem a várt szerverhez tartozik"
   },
   "connections": {
     "sectionTitle": "Kapcsolatok",
@@ -872,7 +900,11 @@
     "movie": "Film",
     "tvShow": "TV-sorozat",
     "minutesLeft": "${minutes} perc van hátra",
-    "moreLikeThis": "Hasonló tartalmak"
+    "moreLikeThis": "Hasonló tartalmak",
+    "titleCount": {
+      "one": "${n} cím",
+      "other": "${n} cím"
+    }
   },
   "errors": {
     "searchFailed": "Keresés sikertelen: ${error}",
@@ -1080,10 +1112,10 @@
     "characters": "Karakterek",
     "addToWatchlist": "Hozzáadás a Néznivalókhoz",
     "removeFromWatchlist": "Eltávolítás a Néznivalókból",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Hozzáadva a figyelőlistához",
+    "removedFromWatchlist": "Eltávolítva a figyelőlistáról",
     "watchlistUpdateFailed": "Nem sikerült a Néznivalók frissítése",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Nem sikerült ezt az elemet figyelőlistához társítani",
     "notInLibrary": "Nincs a könyvtáradban",
     "inTheseLibraries": "Ezekben a könyvtárakban",
     "checkingLibrary": "Könyvtár ellenőrzése...",
@@ -1253,9 +1285,9 @@
     "watchChannel": "Csatorna nézése",
     "favorites": "Kedvencek",
     "reorderFavorites": "Kedvencek rendezése",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Nincsenek kedvenc csatornák",
+    "noFavoriteChannelsHint": "Jelenítsd meg az összes csatornát, majd hosszan nyomj meg egy csatornát, hogy hozzáadd a kedvenceidhez.",
+    "showAllChannels": "Összes csatorna megjelenítése",
     "favoritesLoadFailed": "Nem sikerült a kedvencek betöltése. Ellenőrizd a kapcsolatot és próbáld újra.",
     "favoritesUpdateFailed": "Nem sikerült frissíteni a kedvenceket. Ellenőrizd a kapcsolatot, majd próbáld újra.",
     "joinSession": "Csatlakozás a folyamatban lévő adáshoz",
@@ -1294,7 +1326,12 @@
     "recordingRuleUpdated": "Felvételi szabály frissítve",
     "guideReloadRequested": "Műsorújság frissítése kérve",
     "rulesProcessRequested": "Szabályok újraértékelése kérve",
-    "recordShow": "Műsor rögzítése"
+    "recordShow": "Műsor rögzítése",
+    "startingInMinutes": "${minutes} perc múlva kezdődik",
+    "dayAtTime": "${day}, ${time}",
+    "invalidPlaybackData": "A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza",
+    "failedToStartChannel": "Nem sikerült elindítani az élő csatornát",
+    "failedToBuildStreamUrl": "Nem sikerült összeállítani a stream URL-címét"
   },
   "collections": {
     "title": "Gyűjtemények",
@@ -1371,7 +1408,9 @@
     "nextTrack": "Következő szám",
     "repeat": "Ismétlés",
     "repeatAll": "Összes ismétlése",
-    "repeatOne": "Egy szám ismétlése"
+    "repeatOne": "Egy szám ismétlése",
+    "instantMixNoServer": "Nem érhető el szerver az azonnali mixhez",
+    "noAudioUrl": "Nem érhető el hang-URL ehhez: ${track}"
   },
   "watchTogether": {
     "title": "Watch Together (Közös nézés)",
@@ -1438,7 +1477,8 @@
     "renameRoom": "Szoba átnevezése",
     "removeRoom": "Eltávolítás",
     "guestSwitchUnavailable": "Nem sikerült a váltás — a szerver nem érhető el szinkronizáláshoz",
-    "guestSwitchFailed": "Nem sikerült a váltás — a tartalom nem található ezen a szerveren"
+    "guestSwitchFailed": "Nem sikerült a váltás — a tartalom nem található ezen a szerveren",
+    "defaultDisplayName": "Felhasználó"
   },
   "downloads": {
     "title": "Letöltések",
@@ -1542,7 +1582,17 @@
       "statusUnknown": "Még nincs ellenőrizve",
       "settingsUnavailable": "Ezen az eszközön nem sikerült megnyitni a rendszerbeállításokat",
       "linkUnavailable": "Ezen az eszközön nem sikerült megnyitni a dontkillmyapp.com webhelyet"
-    }
+    },
+    "unknownShow": "Ismeretlen sorozat",
+    "unknownSeason": "Ismeretlen évad",
+    "unknownAlbum": "Ismeretlen album",
+    "completedOfTotal": "${completed}/${total} kész",
+    "errorFileNotFound": "A fájl nem található (404)",
+    "errorDownloadFailed": "A letöltés nem sikerült",
+    "errorPostProcessing": "Az utófeldolgozás nem sikerült: ${error}",
+    "notificationDownloading": "Letöltés...",
+    "notificationComplete": "Letöltés kész",
+    "notificationPaused": "Letöltés szüneteltetve"
   },
   "shaders": {
     "title": "Shaderek",
@@ -1633,7 +1683,8 @@
       "failedToConnectAnyAddress": "Egyetlen címhez sem sikerült csatlakozni",
       "connectionLostAfterAttempts": "A kapcsolat megszakadt ${attempts} próbálkozás után",
       "connectionLost": "A kapcsolat megszakadt"
-    }
+    },
+    "closedBeforeAuth": "A kapcsolat a hitelesítés előtt megszakadt"
   },
   "videoSettings": {
     "playbackSpeed": "Lejátszási sebesség",
@@ -1644,13 +1695,13 @@
     "audioSync": "Hang szinkronizálása",
     "subtitleSync": "Felirat szinkronizálása",
     "hdr": "HDR",
-    "hdrUnsupported": "",
-    "hdrToneMapping": "",
-    "hdrToneMappingCompositor": "",
-    "hdrToneMappingCompositorDescription": "",
-    "hdrToneMappingPlayer": "",
-    "hdrToneMappingPlayerDescription": "",
-    "hdrToneMappingFailed": "",
+    "hdrUnsupported": "A HDR itt nem érhető el – ez az asztali kompozitor vagy videókimenet nem képes továbbítani.",
+    "hdrToneMapping": "HDR-tónusleképezés",
+    "hdrToneMappingCompositor": "Kompozitor",
+    "hdrToneMappingCompositorDescription": "Továbbítja a forrás HDR-metaadatait, és az asztali kompozitorra bízza a tónusleképezést.",
+    "hdrToneMappingPlayer": "Lejátszó",
+    "hdrToneMappingPlayerDescription": "A lejátszóban a kijelző maximális fényerejéhez igazítja a képet, majd közli az eredményt a kompozitorral.",
+    "hdrToneMappingFailed": "Nem sikerült módosítani a HDR-tónusleképezést – továbbra is az előző mód aktív.",
     "audioOutput": "Hangkimenet",
     "performanceOverlay": "Teljesítményadatok",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1696,7 +1747,17 @@
     "speed": "Sebesség",
     "player": "Lejátszó",
     "memory": "Memória",
-    "uiFps": "Felület-FPS"
+    "uiFps": "Felület-FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Szoftveres",
+    "decoderHardware": "Hardveres",
+    "tunnelingActive": "Aktív",
+    "dvRpuFailed": "${converted} (${failures} sikertelen)"
   },
   "externalPlayer": {
     "title": "Külső lejátszó",
@@ -1854,7 +1915,17 @@
     "statusAvailable": "Elérhető",
     "statusPartiallyAvailable": "Részben elérhető",
     "statusRequested": "Igényelve",
-    "statusProcessing": "Feldolgozás alatt"
+    "statusProcessing": "Feldolgozás alatt",
+    "couldNotReach": "Nem sikerült elérni ezt: ${url}: ${error}",
+    "noInstanceAtUrl": "Nem található Seerr-példány ezen a címen: ${url} (HTTP ${status})",
+    "notInitialized": "Ennek a Seerr-példánynak a kezdeti beállítása még nem fejeződött be",
+    "noPlexTokenForReauth": "Nem áll rendelkezésre Plex-token az újbóli bejelentkezéshez",
+    "noStoredCredentials": "Nem állnak rendelkezésre mentett hitelesítő adatok az újbóli bejelentkezéshez",
+    "signInRejected": "A bejelentkezést elutasították",
+    "noSessionCookie": "A Seerr nem adott ki munkamenet-sütit",
+    "freshCookieRejected": "A Seerr elutasította az új munkamenet-sütit",
+    "noUserInformation": "A Seerr nem adott vissza felhasználói adatokat",
+    "sessionRejectedAfterReauth": "A munkamenetet az újbóli bejelentkezés után elutasították"
   },
   "services": {
     "title": "Szolgáltatások",
@@ -1875,7 +1946,7 @@
     },
     "deviceCode": {
       "title": "Plezy aktiválása a következőn: ${service}",
-      "instructions": "",
+      "instructions": "Olvasd be a QR-kódot, vagy nyisd meg az alábbi címet, és írd be ezt a kódot:",
       "openToActivate": "Nyisd meg a(z) ${service} oldalt az aktiváláshoz",
       "copyCode": "Aktiválási kód másolása",
       "waitingForAuthorization": "Várakozás az engedélyezésre…",
@@ -1933,6 +2004,24 @@
     "connectToMediaBrowserCardSubtitle": "Adja meg a szerver URL-jét, felhasználónevét és jelszavát.",
     "connectToMediaBrowserCardSubtitleScoped": "Jelentkezzen be a(z) ${product} szerverére. A(z) ${name} szolgáltatáshoz kötődik.",
     "borrowFromAnotherProfile": "Kapcsolat használata másik profilból",
-    "borrowFromAnotherProfileSubtitle": "Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges."
+    "borrowFromAnotherProfileSubtitle": "Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.",
+    "invalidCredentials": "Érvénytelen felhasználónév vagy jelszó",
+    "authResponseNotJson": "A hitelesítési válasz nem érvényes JSON",
+    "quickConnectRejected": "A szerver elutasította a Quick Connect-kérést",
+    "quickConnectNotJson": "A Quick Connect válasza nem érvényes JSON",
+    "quickConnectMissingFields": "A Quick Connect válaszából hiányzik a kód vagy a titkos kulcs",
+    "quickConnectPollRejected": "A szerver elutasította a Quick Connect lekérdezését",
+    "serverTimedOut": "A szerver nem válaszolt időben",
+    "responseNotJson": "A szerver válasza nem érvényes JSON",
+    "responseMissingIdentity": "A válaszból hiányzik az azonosító vagy a szerver neve – ez valóban ${product}-szerver?",
+    "probeFailed": "Nem sikerült elérni a szervert: ${error}",
+    "enterAtLeastOneUrl": "Adj meg legalább egy ${product}-szerverhez tartozó URL-t",
+    "noReachableServer": "Nem található elérhető ${product}-szerver",
+    "urlsPointToDifferentServers": "Ezek az URL-ek különböző ${product}-szerverekre mutatnak",
+    "urlDoesNotMatchServer": "Ez az URL nem egyezik a(z) ${product}-szerverrel",
+    "redirectUnsupported": "A szerver nem támogatott URL-re irányított át",
+    "redirectDifferentHost": "A szerver egy másik gazdagépre irányított át. Add meg közvetlenül a végleges ${product} URL-t.",
+    "redirectInsecure": "A szerver HTTPS-ről nem biztonságos URL-re irányított át",
+    "redirectUnsupportedEnterFinal": "A szerver nem támogatott URL-re irányított át. Add meg közvetlenül a végleges ${product} URL-t."
   }
 }

@@ -17,7 +17,8 @@
     "quickConnectWaiting": "Venter på godkjenning…",
     "quickConnectCancel": "Avbryt",
     "quickConnectExpired": "Quick Connect er utløpt. Prøv igjen.",
-    "localDataRecoveryRequired": "Plezy kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt."
+    "localDataRecoveryRequired": "Plezy kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt.",
+    "pinCheckRejected": "Kontrollen av Plex-PIN-koden ble avvist"
   },
   "common": {
     "cancel": "Avbryt",
@@ -77,7 +78,10 @@
       "trakt": "Trakt",
       "rottenTomatoesCritic": "Rotten Tomatoes-kritikere",
       "rottenTomatoesAudience": "Rotten Tomatoes-publikum"
-    }
+    },
+    "notAvailable": "I/T",
+    "url": "URL",
+    "letterKeys": "ABC"
   },
   "screens": {
     "licenses": "Lisenser",
@@ -323,8 +327,8 @@
     "showNavBarLabels": "Vis etiketter i navigasjonsfeltet",
     "showNavBarLabelsDescription": "Vis tekstetiketter under ikonene i navigasjonsfeltet",
     "startupSection": "Startseksjon",
-    "showExploreTab": "",
-    "showExploreTabDescription": "",
+    "showExploreTab": "Vis Oppdag-fanen",
+    "showExploreTabDescription": "Vis Oppdag-fanen med innhold fra Plex Discover og tilkoblede sporingstjenester",
     "liveTvDefaultFavorites": "Vis favorittkanaler som standard",
     "liveTvDefaultFavoritesDescription": "Vis bare favorittkanaler når du åpner Direkte-TV",
     "display": "Skjerm",
@@ -335,7 +339,8 @@
     "player": "Spiller",
     "subtitlesAndConfig": "Undertekster og konfigurasjon",
     "seekAndTiming": "Spoling og tidsinnstillinger",
-    "behavior": "Oppførsel"
+    "behavior": "Oppførsel",
+    "exportDialogTitle": "Eksporter Plezy-innstillinger"
   },
   "search": {
     "hint": "Søk i filmer, serier, musikk...",
@@ -491,7 +496,9 @@
     "flagExternal": "Ekstern",
     "flagHearingImpaired": "Hørselshemmet",
     "flagDub": "Dub",
-    "flagOriginal": "Original"
+    "flagOriginal": "Original",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profil ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Merk som sett",
@@ -568,7 +575,12 @@
     "alphabetNavigation": "Alfabetisk navigasjon",
     "alphabetScrollHint": "Sveip opp eller ned for å gå én bokstav om gangen",
     "rowColumnPosition": "Rad ${row} av ${rowCount}, kolonne ${column} av ${columnCount}",
-    "rowPosition": "Rad ${row} av ${rowCount}"
+    "rowPosition": "Rad ${row} av ${rowCount}",
+    "autoScrollPlay": "Start automatisk rulling",
+    "autoScrollPause": "Sett automatisk rulling på pause",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Tilfeldig avspilling",
@@ -666,7 +678,16 @@
     "subtitleDownloaded": "Undertekst lastet ned",
     "subtitleDownloadedNotApplied": "Underteksten ble lastet ned, men kunne ikke velges",
     "subtitleDownloadFailed": "Kunne ikke laste ned undertekst",
-    "searchLanguages": "Søk etter språk..."
+    "searchLanguages": "Søk etter språk...",
+    "skipIntro": "Hopp over intro",
+    "skipCredits": "Hopp over rulletekst",
+    "nextEpisode": "Neste episode",
+    "subtitleTrack": "Spor ${n}",
+    "subtitleFile": "Undertekst ${name}",
+    "forcedTrack": "${label} (tvunget)",
+    "osdSubtitlesOff": "Undertekster: Av",
+    "osdSubtitles": "Undertekster: ${track}",
+    "osdAudio": "Lyd: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -722,12 +743,18 @@
     "serverLimitBody": "Serverfeil (HTTP 500). En båndbredde-/transkodingsgrense avviste trolig økten. Be eieren justere den.",
     "mediaUnreadableTitle": "Fil utilgjengelig",
     "mediaUnreadableBody": "Serveren fant dette elementet, men kunne ikke lese filen (HTTP 404). Filen er sannsynligvis flyttet, slettet, eller lagringen er frakoblet. Be serverens eier om å sjekke filen og skanne biblioteket på nytt.",
-    "serverBusyTitle": "",
-    "serverBusyBody": "",
+    "serverBusyTitle": "Strømmen er utilgjengelig",
+    "serverBusyBody": "Serveren fortsatte å nekte å strømme denne filen (HTTP 503). Den kan være i ferd med å starte på nytt eller være opptatt, eller lagringsstedet til filen kan være frakoblet. Prøv igjen om litt – hvis det fortsetter å skje, kan du be eieren av serveren om å kontrollere serveren og lagringsstedet til filen.",
     "logsUploaded": "Logger lastet opp",
     "logsUploadFailed": "Kunne ikke laste opp logger",
     "logId": "Logg-ID",
-    "burnedSubtitlesUseMenu": ""
+    "burnedSubtitlesUseMenu": "Undertekstene er brent inn i denne strømmen. Endre dem fra undertekstmenyen.",
+    "noVideoUrl": "Ingen video-URL er tilgjengelig",
+    "playbackNoMediaSources": "Serveren returnerte ingen avspillbare mediekilder",
+    "playbackDataNotPrepared": "Avspillingen ble startet før dataene var klare",
+    "streamSelectionUnavailable": "Valg av strømmer er ikke tilgjengelig for denne kilden",
+    "streamSelectionFailed": "Kunne ikke bruke de valgte strømmene",
+    "serverUnavailableForProfile": "Ingen server er tilgjengelig for den aktive profilen"
   },
   "subtitlingStyling": {
     "text": "Tekst",
@@ -746,8 +773,8 @@
     "overrideStrip": "Fjern formatering",
     "positionTop": "Øverst",
     "positionBottom": "Nederst",
-    "anchorToScreen": "",
-    "anchorToScreenDescription": "",
+    "anchorToScreen": "Forankre til skjermen",
+    "anchorToScreenDescription": "Vis tekstundertekster i de svarte feltene under video i bredformat",
     "bold": "Fet",
     "italic": "Kursiv",
     "renderResolution": "Gjengivelsesoppløsning",
@@ -835,7 +862,8 @@
     "pinProtectionOptional": "PIN-beskyttelse (valgfri)",
     "pinExplain": "4-sifret PIN kreves for å bytte profiler.",
     "continueButton": "Fortsett",
-    "pinsDontMatch": "PIN-ene samsvarer ikke"
+    "pinsDontMatch": "PIN-ene samsvarer ikke",
+    "tokenIdentityMismatch": "Plex-profiltokenet ble knyttet til en uventet server"
   },
   "connections": {
     "sectionTitle": "Tilkoblinger",
@@ -872,7 +900,11 @@
     "movie": "Film",
     "tvShow": "TV-serie",
     "minutesLeft": "${minutes} min igjen",
-    "moreLikeThis": "Mer som dette"
+    "moreLikeThis": "Mer som dette",
+    "titleCount": {
+      "one": "${n} tittel",
+      "other": "${n} titler"
+    }
   },
   "errors": {
     "searchFailed": "Søk mislyktes: ${error}",
@@ -1080,10 +1112,10 @@
     "characters": "Figurer",
     "addToWatchlist": "Legg til i ønskeliste",
     "removeFromWatchlist": "Fjern fra ønskeliste",
-    "addedToWatchlist": "",
-    "removedFromWatchlist": "",
+    "addedToWatchlist": "Lagt til i overvåkningslisten",
+    "removedFromWatchlist": "Fjernet fra overvåkningslisten",
     "watchlistUpdateFailed": "Kunne ikke oppdatere ønskelisten",
-    "watchlistNoMatch": "",
+    "watchlistNoMatch": "Kunne ikke koble dette elementet til en overvåkningsliste",
     "notInLibrary": "Ikke i biblioteket ditt",
     "inTheseLibraries": "I disse bibliotekene",
     "checkingLibrary": "Sjekker biblioteket ditt...",
@@ -1253,9 +1285,9 @@
     "watchChannel": "Se kanal",
     "favorites": "Favoritter",
     "reorderFavorites": "Endre rekkefølge på favoritter",
-    "noFavoriteChannels": "",
-    "noFavoriteChannelsHint": "",
-    "showAllChannels": "",
+    "noFavoriteChannels": "Ingen favorittkanaler",
+    "noFavoriteChannelsHint": "Vis alle kanaler, og trykk deretter lenge på en kanal for å legge den til i favorittene dine.",
+    "showAllChannels": "Vis alle kanaler",
     "favoritesLoadFailed": "Kunne ikke laste inn favoritter. Kontroller tilkoblingen og prøv på nytt.",
     "favoritesUpdateFailed": "Kunne ikke oppdatere favorittene. Kontroller tilkoblingen og prøv på nytt.",
     "joinSession": "Bli med i pågående økt",
@@ -1294,7 +1326,12 @@
     "recordingRuleUpdated": "Opptaksregel oppdatert",
     "guideReloadRequested": "Oppdatering av programguiden er forespurt",
     "rulesProcessRequested": "Ny vurdering av reglene er forespurt",
-    "recordShow": "Ta opp program"
+    "recordShow": "Ta opp program",
+    "startingInMinutes": "Starter om ${minutes} min",
+    "dayAtTime": "${day} kl. ${time}",
+    "invalidPlaybackData": "${product} returnerte ugyldige avspillingsdata for direkte-TV",
+    "failedToStartChannel": "Kunne ikke starte direktekanalen",
+    "failedToBuildStreamUrl": "Kunne ikke opprette strømme-URL-en"
   },
   "collections": {
     "title": "Samlinger",
@@ -1371,7 +1408,9 @@
     "nextTrack": "Neste spor",
     "repeat": "Gjenta",
     "repeatAll": "Gjenta alle",
-    "repeatOne": "Gjenta ett spor"
+    "repeatOne": "Gjenta ett spor",
+    "instantMixNoServer": "Ingen server er tilgjengelig for en hurtigmiks",
+    "noAudioUrl": "Ingen lyd-URL er tilgjengelig for ${track}"
   },
   "watchTogether": {
     "title": "Se sammen",
@@ -1438,7 +1477,8 @@
     "renameRoom": "Gi nytt navn til rom",
     "removeRoom": "Fjern",
     "guestSwitchUnavailable": "Kunne ikke bytte — server ikke tilgjengelig for synkronisering",
-    "guestSwitchFailed": "Kunne ikke bytte — innhold ble ikke funnet på denne serveren"
+    "guestSwitchFailed": "Kunne ikke bytte — innhold ble ikke funnet på denne serveren",
+    "defaultDisplayName": "Bruker"
   },
   "downloads": {
     "title": "Nedlastinger",
@@ -1542,7 +1582,17 @@
       "statusUnknown": "Ikke sjekket ennå",
       "settingsUnavailable": "Kunne ikke åpne systeminnstillingene på denne enheten",
       "linkUnavailable": "Kunne ikke åpne dontkillmyapp.com på denne enheten"
-    }
+    },
+    "unknownShow": "Ukjent serie",
+    "unknownSeason": "Ukjent sesong",
+    "unknownAlbum": "Ukjent album",
+    "completedOfTotal": "${completed}/${total} fullført",
+    "errorFileNotFound": "Filen ble ikke funnet (404)",
+    "errorDownloadFailed": "Nedlastingen mislyktes",
+    "errorPostProcessing": "Etterbehandlingen mislyktes: ${error}",
+    "notificationDownloading": "Laster ned...",
+    "notificationComplete": "Nedlastingen er fullført",
+    "notificationPaused": "Nedlastingen er satt på pause"
   },
   "shaders": {
     "title": "Shadere",
@@ -1633,7 +1683,8 @@
       "failedToConnectAnyAddress": "Kunne ikke koble til noen adresse",
       "connectionLostAfterAttempts": "Tilkobling mistet etter ${attempts} forsøk",
       "connectionLost": "Tilkobling mistet"
-    }
+    },
+    "closedBeforeAuth": "Tilkoblingen ble lukket før autentisering"
   },
   "videoSettings": {
     "playbackSpeed": "Avspillingshastighet",
@@ -1644,13 +1695,13 @@
     "audioSync": "Lydsynkronisering",
     "subtitleSync": "Undertekstsynkronisering",
     "hdr": "HDR",
-    "hdrUnsupported": "",
-    "hdrToneMapping": "",
-    "hdrToneMappingCompositor": "",
-    "hdrToneMappingCompositorDescription": "",
-    "hdrToneMappingPlayer": "",
-    "hdrToneMappingPlayerDescription": "",
-    "hdrToneMappingFailed": "",
+    "hdrUnsupported": "HDR er ikke tilgjengelig her – denne skrivebordskompositoren eller videoutgangen kan ikke overføre HDR.",
+    "hdrToneMapping": "HDR-tonekartlegging",
+    "hdrToneMappingCompositor": "Kompositor",
+    "hdrToneMappingCompositorDescription": "Send kildens HDR-metadata videre, og la skrivebordskompositoren utføre tonekartleggingen.",
+    "hdrToneMappingPlayer": "Spiller",
+    "hdrToneMappingPlayerDescription": "Tilpass til skjermens maksimale lysstyrke i spilleren, og send deretter resultatet til kompositoren.",
+    "hdrToneMappingFailed": "Kunne ikke endre HDR-tonekartleggingen – den forrige modusen er fortsatt aktiv.",
     "audioOutput": "Lydutgang",
     "performanceOverlay": "Ytelsesoverlegg",
     "audioOutputDolbyAtmos": "Dolby Atmos",
@@ -1696,7 +1747,17 @@
     "speed": "Hastighet",
     "player": "Spiller",
     "memory": "Minne",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android-maskinvare",
+    "decoderNvidiaHw": "NVIDIA-maskinvare",
+    "decoderQualcommHw": "Qualcomm-maskinvare",
+    "decoderMediatekHw": "MediaTek-maskinvare",
+    "decoderExynosHw": "Exynos-maskinvare",
+    "decoderSoftware": "Programvare",
+    "decoderHardware": "Maskinvare",
+    "tunnelingActive": "Aktiv",
+    "dvRpuFailed": "${converted} (${failures} mislyktes)"
   },
   "externalPlayer": {
     "title": "Ekstern spiller",
@@ -1854,7 +1915,17 @@
     "statusAvailable": "Tilgjengelig",
     "statusPartiallyAvailable": "Delvis tilgjengelig",
     "statusRequested": "Forespurt",
-    "statusProcessing": "Behandler"
+    "statusProcessing": "Behandler",
+    "couldNotReach": "Kunne ikke nå ${url}: ${error}",
+    "noInstanceAtUrl": "Ingen Seerr-instans på ${url} (HTTP ${status})",
+    "notInitialized": "Denne Seerr-instansen har ikke fullført førstegangsoppsettet",
+    "noPlexTokenForReauth": "Ingen Plex-token er tilgjengelig for å logge inn på nytt",
+    "noStoredCredentials": "Ingen lagret påloggingsinformasjon er tilgjengelig for å logge inn på nytt",
+    "signInRejected": "Innloggingen ble avvist",
+    "noSessionCookie": "Seerr utstedte ingen øktinformasjonskapsel",
+    "freshCookieRejected": "Seerr avviste den nye øktinformasjonskapselen",
+    "noUserInformation": "Seerr returnerte ingen brukerinformasjon",
+    "sessionRejectedAfterReauth": "Økten ble avvist etter ny innlogging"
   },
   "services": {
     "title": "Tjenester",
@@ -1875,7 +1946,7 @@
     },
     "deviceCode": {
       "title": "Aktiver Plezy på ${service}",
-      "instructions": "",
+      "instructions": "Skann QR-koden, eller gå til adressen nedenfor og skriv inn denne koden:",
       "openToActivate": "Åpne ${service} for å aktivere",
       "copyCode": "Kopier aktiveringskode",
       "waitingForAuthorization": "Venter på godkjenning…",
@@ -1933,6 +2004,24 @@
     "connectToMediaBrowserCardSubtitle": "Skriv inn server-URL-en, brukernavnet og passordet ditt.",
     "connectToMediaBrowserCardSubtitleScoped": "Logg på ${product}-serveren din. Knyttes til ${name}.",
     "borrowFromAnotherProfile": "Lån fra en annen profil",
-    "borrowFromAnotherProfileSubtitle": "Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN."
+    "borrowFromAnotherProfileSubtitle": "Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN.",
+    "invalidCredentials": "Ugyldig brukernavn eller passord",
+    "authResponseNotJson": "Autentiseringssvaret var ikke gyldig JSON",
+    "quickConnectRejected": "Quick Connect ble avvist av serveren",
+    "quickConnectNotJson": "Quick Connect-svaret var ikke gyldig JSON",
+    "quickConnectMissingFields": "Quick Connect-svaret mangler en kode eller hemmelighet",
+    "quickConnectPollRejected": "Quick Connect-spørringen ble avvist av serveren",
+    "serverTimedOut": "Serveren svarte ikke i tide",
+    "responseNotJson": "Serversvaret var ikke gyldig JSON",
+    "responseMissingIdentity": "Svaret mangler en ID eller et servernavn – er dette en ${product}-server?",
+    "probeFailed": "Kunne ikke nå serveren: ${error}",
+    "enterAtLeastOneUrl": "Angi minst én URL til en ${product}-server",
+    "noReachableServer": "Fant ingen tilgjengelig ${product}-server",
+    "urlsPointToDifferentServers": "Disse URL-ene peker til forskjellige ${product}-servere",
+    "urlDoesNotMatchServer": "Denne URL-en samsvarer ikke med ${product}-serveren",
+    "redirectUnsupported": "Serveren omdirigerte til en URL som ikke støttes",
+    "redirectDifferentHost": "Serveren omdirigerte til en annen vert. Angi den endelige ${product}-URL-en direkte.",
+    "redirectInsecure": "Serveren omdirigerte fra HTTPS til en usikker URL",
+    "redirectUnsupportedEnterFinal": "Serveren omdirigerte til en URL som ikke støttes. Angi den endelige ${product}-URL-en direkte."
   }
 }
