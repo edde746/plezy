@@ -78,14 +78,14 @@ import '../watch_together/watch_together.dart';
 // browse rail can import the scope without an import cycle through this file.
 
 @visibleForTesting
-bool shouldHandleMacOsRootEscape({
-  required bool isMacOS,
+bool shouldHandleDesktopRootEscape({
+  required bool isDesktop,
   required bool isPhysicalKeyboardEvent,
   required LogicalKeyboardKey logicalKey,
   required bool isCurrentRoute,
   required bool isHomeTab,
 }) {
-  return isMacOS && isPhysicalKeyboardEvent && logicalKey == LogicalKeyboardKey.escape && isCurrentRoute && isHomeTab;
+  return isDesktop && isPhysicalKeyboardEvent && logicalKey == LogicalKeyboardKey.escape && isCurrentRoute && isHomeTab;
 }
 
 @visibleForTesting
@@ -1348,13 +1348,16 @@ class _MainScreenState extends State<MainScreen>
     return KeyEventResult.handled;
   }
 
-  /// On macOS, native fullscreen is window state shared by every route.
-  /// Player Escape therefore leaves it alone; only root Home owns the
-  /// conventional Escape-to-leave-fullscreen behavior.
-  KeyEventResult _handleMacOsRootEscape(KeyEvent event) {
+  /// Desktop physical-keyboard Escape at root Home is reserved for leaving
+  /// window fullscreen; it never arms the press-back-again quit, so an Escape
+  /// aimed at fullscreen can't close the app (#1748). Remotes, gamepad B, and
+  /// system back keep the double-press exit path. On macOS this also keeps
+  /// player Escape away from native fullscreen, which is window state shared
+  /// by every route.
+  KeyEventResult _handleDesktopRootEscape(KeyEvent event) {
     final tabs = _getVisibleTabs(_isOffline);
-    final shouldHandle = shouldHandleMacOsRootEscape(
-      isMacOS: Platform.isMacOS,
+    final shouldHandle = shouldHandleDesktopRootEscape(
+      isDesktop: PlatformDetector.isDesktopOS(),
       isPhysicalKeyboardEvent: event.isPhysicalKeyboardEvent,
       logicalKey: event.logicalKey,
       isCurrentRoute: ModalRoute.of(context)?.isCurrent == true,
@@ -1750,7 +1753,7 @@ class _MainScreenState extends State<MainScreen>
             canPop: false,
             child: Focus(
               onKeyEvent: (node, event) {
-                final rootEscapeResult = _handleMacOsRootEscape(event);
+                final rootEscapeResult = _handleDesktopRootEscape(event);
                 if (rootEscapeResult == KeyEventResult.handled) return rootEscapeResult;
                 final fullscreenResult = _handleFullscreenShortcut(event);
                 if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
