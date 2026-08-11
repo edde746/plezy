@@ -1636,6 +1636,39 @@ void main() {
       expect(data.videoUrl, contains('/library/parts/10/file.mkv'));
     });
 
+    test('fetchItem primes the row a transiently failing playback fetch falls back to (#1867)', () async {
+      var failNetwork = false;
+      final client = makeClient((request) async {
+        if (failNetwork) {
+          throw MediaServerHttpException(
+            type: MediaServerHttpErrorType.connectionTimeout,
+            message: 'connect timed out',
+          );
+        }
+        return http.Response(jsonEncode(playableBody()), 200, headers: {'content-type': 'application/json'});
+      });
+      addTearDown(client.close);
+
+      // Cold row: a connectivity blip at the transition surfaces as a
+      // transient failure — this is the dead-end from the issue.
+      failNetwork = true;
+      await expectLater(
+        client.getVideoPlaybackData('42'),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.isTransient, 'isTransient', isTrue)),
+      );
+
+      // Adjacency discovery primes the row through fetchItem: same cache key,
+      // same full playback query shape.
+      failNetwork = false;
+      expect(await client.fetchItem('42'), isNotNull);
+
+      // The same blip now falls back to the primed row and playback proceeds.
+      failNetwork = true;
+      final data = await client.getVideoPlaybackData('42');
+      expect(data.hasValidVideoUrl, isTrue);
+      expect(data.videoUrl, contains('/library/parts/10/file.mkv'));
+    });
+
     test('external URL and download resolution propagate typed request failures', () async {
       final client = makeClient((_) async => http.Response('{}', 401, headers: {'content-type': 'application/json'}));
       addTearDown(client.close);

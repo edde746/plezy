@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/screens/video_player/completion_latch.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 
 void main() {
   CompletionLatch latch() => CompletionLatch(rearmWindowMs: 2000);
@@ -158,6 +159,61 @@ void main() {
         classify(2520000 - spuriousEofToleranceMs - 1, playerDurationMs: 2520000, metadataDurationMs: null),
         EofSignalClass.spurious,
       );
+    });
+  });
+
+  group('playNextRetryPresentation', () {
+    PlayNextRetryPresentation resolve({
+      bool wasAtCompletion = true,
+      PlaybackFailureReason? failureReason = PlaybackFailureReason.serverUnavailable,
+      bool hasNext = true,
+      bool autoPlayEnabled = true,
+      bool inWatchTogetherSession = false,
+      int autoRetriesUsed = 0,
+    }) {
+      return playNextRetryPresentation(
+        wasAtCompletion: wasAtCompletion,
+        failureReason: failureReason,
+        hasNext: hasNext,
+        autoPlayEnabled: autoPlayEnabled,
+        inWatchTogetherSession: inWatchTogetherSession,
+        autoRetriesUsed: autoRetriesUsed,
+      );
+    }
+
+    test('transient failure at EOF re-presents with a countdown', () {
+      expect(resolve(), PlayNextRetryPresentation.countdown);
+    });
+
+    test('a mid-episode Next press keeps the plain failure handling', () {
+      // The rolled-back stream is still valid and playing there — no prompt.
+      expect(resolve(wasAtCompletion: false), PlayNextRetryPresentation.none);
+    });
+
+    test('non-transient failures never retry-loop', () {
+      for (final reason in PlaybackFailureReason.values) {
+        if (reason == PlaybackFailureReason.serverUnavailable) continue;
+        expect(resolve(failureReason: reason), PlayNextRetryPresentation.none, reason: '$reason');
+      }
+      // Pre-classification throws carry no reason at all.
+      expect(resolve(failureReason: null), PlayNextRetryPresentation.none);
+    });
+
+    test('no next episode means nothing to re-present', () {
+      expect(resolve(hasNext: false), PlayNextRetryPresentation.none);
+    });
+
+    test('the countdown budget exhausts into a manual prompt', () {
+      expect(resolve(autoRetriesUsed: maxPlayNextTransientRetries - 1), PlayNextRetryPresentation.countdown);
+      expect(resolve(autoRetriesUsed: maxPlayNextTransientRetries), PlayNextRetryPresentation.manual);
+    });
+
+    test('auto-play off presents the prompt without a countdown', () {
+      expect(resolve(autoPlayEnabled: false), PlayNextRetryPresentation.manual);
+    });
+
+    test('Watch Together sessions never auto-retry but keep the manual prompt', () {
+      expect(resolve(inWatchTogetherSession: true), PlayNextRetryPresentation.manual);
     });
   });
 }

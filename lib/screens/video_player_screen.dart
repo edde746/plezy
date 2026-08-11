@@ -461,6 +461,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // Retryable sentinel until the fire-and-forget initial adjacency load
   // commits found, boundary, or unavailable.
   QueueNavigationStatus _nextEpisodeStatus = QueueNavigationStatus.failed;
+  // globalKey of the adjacent episode whose playback metadata row was last
+  // prefetched into the API cache — see _primeNextEpisodePlaybackMetadata.
+  String? _primedNextEpisodeGlobalKey;
   bool _isResolvingCompletionAdjacency = false;
   bool _isLoadingNext = false;
   bool _isLoadingPrevious = false;
@@ -567,6 +570,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   Timer? _autoPlayTimer;
   int _autoPlayCountdown = 5;
+
+  // Transient episode-transition failure retry (#1867). A failed in-place
+  // reload records the classified reason here so _playNext can distinguish
+  // "server momentarily unreachable" (re-present the Play Next prompt,
+  // optionally with an auto-retry countdown) from terminal failures.
+  // _navigateToEpisode clears the field before each attempt; the counter
+  // resets when a reload succeeds.
+  PlaybackFailureReason? _lastMediaReloadFailureReason;
+  int _playNextTransientRetryCount = 0;
 
   // End-of-video Play Next latch. Completion comes from the player EOF signal;
   // position ticks only re-arm once playback is more than 2s from the end.

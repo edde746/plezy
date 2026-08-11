@@ -227,5 +227,35 @@ void main() {
       expect(bundle!.chapters, isEmpty);
       client.close();
     });
+
+    test('fetchItem-primed row serves fetchPlaybackBundle across a transport failure (#1867)', () async {
+      final body = jsonEncode({
+        'Id': 'item-9',
+        'Type': 'Movie',
+        'MediaSources': [
+          {'Id': 'src-9', 'Container': 'mkv'},
+        ],
+      });
+      var failNetwork = false;
+      final client = testJellyfinClient(
+        connection: _conn(),
+        handler: (_) async {
+          if (failNetwork) throw http.ClientException('connect refused');
+          return http.Response(body, 200, headers: {'content-type': 'application/json'});
+        },
+      );
+      addTearDown(client.close);
+
+      // Adjacency discovery primes the per-item row.
+      expect(await client.fetchItem('item-9'), isNotNull);
+
+      // A pure transport failure (wrapped by the HTTP layer into a
+      // status-less MediaServerHttpException) must fall back to that row
+      // instead of failing the transition.
+      failNetwork = true;
+      final bundle = await client.fetchPlaybackBundle('item-9');
+      expect(bundle, isNotNull);
+      expect(bundle!.selectedSourceId, 'src-9');
+    });
   });
 }

@@ -53,6 +53,13 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     if (!mounted) return;
     if (_nextEpisode == null || _isLoadingNext) return;
 
+    // EOF-driven advances (prompt confirm, auto-play countdown, PiP) run with
+    // the completion latch set; a mid-episode Next press does not. Captured
+    // before the prompt state below is cleared — a transiently failed advance
+    // from EOF re-presents the Play Next prompt instead of parking on the
+    // finished episode's last frame (#1867).
+    final wasAtCompletion = _completionLatch.triggered;
+
     _autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
     _dismissStillWatching();
@@ -64,7 +71,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       _showPlayNextDialog = false;
     });
 
-    await _navigateToEpisode(_nextEpisode!);
+    final outcome = await _navigateToEpisode(_nextEpisode!);
+    if (outcome == _MediaReloadOutcome.failed) {
+      _presentPlayNextRetryPrompt(wasAtCompletion: wasAtCompletion);
+    }
   }
 
   Future<void> _playPrevious() async {
@@ -132,11 +142,17 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   }
 
   /// Navigates to a new episode by reusing the current player whenever possible.
-  Future<void> _navigateToEpisode(MediaItem episodeMetadata) async {
+  ///
+  /// Returns the reload outcome so [_playNext] can distinguish a failed
+  /// in-place swap (previous session still on screen) from rejected or
+  /// superseded attempts. The screen-replacement fallback reports
+  /// [_MediaReloadOutcome.rejected]: no in-place reload ran.
+  Future<_MediaReloadOutcome> _navigateToEpisode(MediaItem episodeMetadata) async {
+    _lastMediaReloadFailureReason = null;
     final currentPlayer = player;
     if (currentPlayer == null) {
       if (mounted) unawaited(_replaceScreenWithPlayer(episodeMetadata));
-      return;
+      return _MediaReloadOutcome.rejected;
     }
 
     // Callers fire this without awaiting (auto-play countdown, PiP, the prompt), so an escaping
@@ -174,7 +190,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
               nativeTrack: currentPlayer.state.track.secondarySubtitle,
               sessionPreference: _sessionSecondarySubtitlePreference,
             );
-      await _reloadMediaInPlace(
+      return await _reloadMediaInPlace(
         metadata: episodeMetadata,
         selectedMediaIndex: _effectiveSelectedMediaIndex,
         selectedMediaSourceId: null,
@@ -193,6 +209,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       appLogger.e('Failed to navigate to the next item', error: e, stackTrace: stackTrace);
       _clearEpisodeLoadingFlags();
       if (mounted) showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      return _MediaReloadOutcome.failed;
     }
   }
 
@@ -939,6 +956,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           _nextEpisode = null;
           _previousEpisode = null;
           _nextEpisodeStatus = QueueNavigationStatus.failed;
+          // A successful swap restores the transient-retry budget for the
+          // next transition (#1867).
+          _playNextTransientRetryCount = 0;
         });
 
         try {
@@ -956,6 +976,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         return _MediaReloadOutcome.opened;
       } catch (e) {
         if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        // Record the classified reason so _playNext can re-present the Play
+        // Next prompt when an EOF-driven advance merely hit a transient
+        // server blip (#1867). Non-PlaybackException throws stay null —
+        // they never qualify for a retry prompt.
+        _lastMediaReloadFailureReason = e is PlaybackException ? e.reason : null;
         _completionLatch.reset();
         if (!didOpenReplacement) {
           // Nothing was opened: the previous session is still committed, so

@@ -758,18 +758,37 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       return _mapItem(data);
     } on MediaServerHttpException catch (e) {
       if (e.statusCode == 404) return null;
+      // An answered request (401/403/5xx) or a client-side cancellation must
+      // surface as-is. Pure transport failures (dead socket, DNS, connect
+      // timeout) carry no status code — and the HTTP layer wraps them into
+      // [MediaServerHttpException], so they arrive here rather than in the
+      // generic catch below. Apply the documented cache fallback (#1867).
+      if (e.statusCode != null || e.isCancellation) rethrow;
+      appLogger.w('JellyfinClient.fetchItem network call failed', error: e);
+      final cached = await _cachedItemFallback(endpoint);
+      if (cached != null) return cached;
       rethrow;
     } catch (e) {
-      // Transport-layer failure: socket error, DNS, TLS, etc. Try cache.
+      // Non-HTTP failure while handling the response (e.g. mapping). Same
+      // best-effort fallback before surfacing.
       appLogger.w('JellyfinClient.fetchItem network call failed', error: e);
-      try {
-        final cached = await cache.get(ServerId(cacheServerId), endpoint);
-        if (cached is Map<String, dynamic>) return _mapItem(cached);
-      } catch (cacheError, st) {
-        appLogger.w('JellyfinClient.fetchItem cache fallback failed', error: cacheError, stackTrace: st);
-      }
+      final cached = await _cachedItemFallback(endpoint);
+      if (cached != null) return cached;
       rethrow;
     }
+  }
+
+  /// Best-effort cached-row read for [_fetchItemOnce]'s failure fallbacks.
+  /// Returns null on miss or on a cache/mapping error (logged) so the caller
+  /// rethrows its original failure.
+  Future<MediaItem?> _cachedItemFallback(String endpoint) async {
+    try {
+      final cached = await cache.get(ServerId(cacheServerId), endpoint);
+      if (cached is Map<String, dynamic>) return _mapItem(cached);
+    } catch (e, st) {
+      appLogger.w('JellyfinClient.fetchItem cache fallback failed', error: e, stackTrace: st);
+    }
+    return null;
   }
 
   @override

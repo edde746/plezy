@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import '../../providers/playback_state_provider.dart';
+import '../../services/playback_initialization_types.dart';
 
 /// Position must be within this many ms of the best-known duration for a
 /// player EOF signal to count as the real end of the media.
@@ -26,6 +27,54 @@ CompletionNavigationAction completionNavigationAction({
     return CompletionNavigationAction.retryAdjacent;
   }
   return CompletionNavigationAction.exit;
+}
+
+/// How many times an auto-play countdown may re-fire a transiently failed
+/// EOF advance before the Play Next prompt goes manual-only (#1867). Retries
+/// are spaced by the countdown plus the failed attempt itself (connect
+/// timeout + endpoint failover), so two retries cover a short connectivity
+/// blip without looping against a server that is genuinely down.
+const int maxPlayNextTransientRetries = 2;
+
+/// How a failed EOF-driven advance should be re-presented to the user.
+enum PlayNextRetryPresentation {
+  /// Keep the existing failure handling (rollback + error snackbar).
+  none,
+
+  /// Re-present the Play Next prompt without a countdown — retry is the
+  /// user's move.
+  manual,
+
+  /// Re-present the Play Next prompt with the auto-play countdown so the
+  /// advance retries by itself.
+  countdown,
+}
+
+/// Decide whether a failed episode advance re-presents the Play Next prompt.
+///
+/// A transient server blip at the exact moment of an EOF transition used to
+/// park the screen on the finished episode's last frame with no way forward
+/// but the transport controls (#1867) — while a retry seconds later
+/// typically succeeds. Only EOF-driven advances qualify: a mid-episode Next
+/// press rolls back to a still-valid playing stream, and non-transient
+/// failures (missing file, auth) must not retry-loop. Watch Together
+/// sessions never auto-retry — the sync layer owns transitions — but the
+/// manual prompt remains available, matching the Next button.
+PlayNextRetryPresentation playNextRetryPresentation({
+  required bool wasAtCompletion,
+  required PlaybackFailureReason? failureReason,
+  required bool hasNext,
+  required bool autoPlayEnabled,
+  required bool inWatchTogetherSession,
+  required int autoRetriesUsed,
+  int maxAutoRetries = maxPlayNextTransientRetries,
+}) {
+  if (!wasAtCompletion || !hasNext) return PlayNextRetryPresentation.none;
+  if (failureReason != PlaybackFailureReason.serverUnavailable) {
+    return PlayNextRetryPresentation.none;
+  }
+  final autoRetry = autoPlayEnabled && !inWatchTogetherSession && autoRetriesUsed < maxAutoRetries;
+  return autoRetry ? PlayNextRetryPresentation.countdown : PlayNextRetryPresentation.manual;
 }
 
 /// Classify a player EOF signal against the best-known media duration.

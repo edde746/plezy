@@ -149,5 +149,34 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
       _previousEpisode = adjacentEpisodes.previous;
       _nextEpisodeStatus = adjacentEpisodes.nextStatus;
     });
+    _primeNextEpisodePlaybackMetadata(adjacentEpisodes.next);
+  }
+
+  /// Best-effort prefetch of the next episode's full metadata row into the
+  /// API cache while the current episode plays (#1867).
+  ///
+  /// Adjacency comes from queue containers, so the per-item metadata row
+  /// (Plex `/library/metadata/{id}`, Jellyfin `/Users/{uid}/Items/{id}`) is
+  /// cold at the exact moment the transition needs it. Both backends'
+  /// [MediaServerClient.fetchItem] fetch network-first and write that same
+  /// row — the one playback initialization falls back to when the server is
+  /// transiently unreachable — so a warm row turns a connectivity blip at
+  /// the transition into a normal start instead of a failed advance.
+  ///
+  /// Documented best-effort: the transition path performs its own fetch and
+  /// error handling, so a failed prime costs nothing.
+  void _primeNextEpisodePlaybackMetadata(MediaItem? next) {
+    if (next == null || _offlineLibraryMode || !mounted) return;
+    if (_primedNextEpisodeGlobalKey == next.globalKey) return;
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(next.serverId));
+    if (client == null) return;
+    _primedNextEpisodeGlobalKey = next.globalKey;
+    unawaited(() async {
+      try {
+        await client.fetchItem(next.id);
+      } catch (e) {
+        appLogger.d('Next-episode metadata prime failed', error: e);
+      }
+    }());
   }
 }
