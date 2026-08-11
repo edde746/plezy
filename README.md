@@ -40,7 +40,7 @@ Package managers:
   ```
 - [Pacman](https://archlinux.org/packages/extra/x86_64/plezy/) (Arch Linux) - Official package:
   ```bash
-  pacman -S plezy
+  sudo pacman -S plezy
   ```
 - **WinGet** (Windows):
   ```bash
