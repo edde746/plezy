@@ -38,9 +38,9 @@ Package managers:
   brew tap edde746/plezy https://github.com/edde746/plezy
   brew install --cask plezy
   ```
-- [AUR](https://aur.archlinux.org/packages/plezy-bin) (Arch Linux) - Community maintained by [@jianglai](https://github.com/jianglai):
+- [Pacman](https://archlinux.org/packages/extra/x86_64/plezy/) (Arch Linux) - Official package:
   ```bash
-  yay -S plezy-bin
+  pacman -S plezy
   ```
 - **WinGet** (Windows):
   ```bash
