@@ -335,6 +335,10 @@ class WaylandVideoSurface {
   int32_t width_ = 0;
   int32_t height_ = 0;
   int32_t scale_ = 1;
+  // The buffer_scale actually on the wire. A change is deferred until the
+  // first frame is presented: the compositor must never see a scale > 1
+  // while the EGL surface's pre-allocated 1x1 back buffer is still live.
+  int32_t scale_sent_ = 1;
   // The view's own offset inside the toplevel, which is the frame
   // wl_subsurface_set_position uses. Non-zero under client-side decorations.
   int32_t view_x_ = 0;

@@ -1161,7 +1161,15 @@ void WaylandVideoSurface::SetRect(int32_t x, int32_t y, int32_t width, int32_t h
 
   if (surface_ == nullptr || subsurface_ == nullptr || egl_window_ == nullptr) return;
 
-  if (scale_changed) wl_surface_set_buffer_scale(surface_, scale_);
+  // A buffer_scale change must not reach the wire before the first frame:
+  // mesa commits the EGL surface's pre-allocated 1x1 back buffer on the
+  // first swap regardless of wl_egl_window_resize, and a 1x1 buffer at
+  // scale > 1 is a fatal protocol error (the compositor disconnects us).
+  // Present() flushes the deferred scale right after the first commit.
+  if (scale_changed && buffer_attached_ && scale_ != scale_sent_) {
+    wl_surface_set_buffer_scale(surface_, scale_);
+    scale_sent_ = scale_;
+  }
   if (size_changed || scale_changed) wl_egl_window_resize(egl_window_, width_, height_, 0, 0);
   // Both axes are floored into surface-local units and then offset by the
   // view's position inside the toplevel; PlaneSurfacePosition explains why.
@@ -1217,6 +1225,13 @@ bool WaylandVideoSurface::Present() {
   }
   if (!buffer_attached_) {
     buffer_attached_ = true;
+    // First frame published at scale 1; the real scale may now go out. It
+    // applies to the next commit, whose buffer mesa allocates at the resized
+    // window size (a multiple of the scale).
+    if (scale_ != scale_sent_) {
+      wl_surface_set_buffer_scale(surface_, scale_);
+      scale_sent_ = scale_;
+    }
     // The first buffer changes what the plane occludes; make sure the parent's
     // view of the subsurface is up to date.
     RequestParentCommit();
