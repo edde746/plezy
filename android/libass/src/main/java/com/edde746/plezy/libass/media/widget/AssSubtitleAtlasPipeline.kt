@@ -58,9 +58,11 @@ internal object AssAtlasPipelineConfig {
    * Hard cap on vertically-stacked atlas pages per slot. A frame whose packed
    * sub-pixels exceed one [ATLAS_PIXEL_BUDGET] texture (a 4K-rendered full-screen
    * typeset sign) spills into extra pages so nothing is dropped (#1436); the atlas
-   * buffer grows on demand toward this cap. 4 covers the worst frame measured (a 4K
-   * letter needs 3); past it tiles are dropped and counted in `truncated`. Must match
-   * MAX_ATLAS_PAGES in AssKt.c.
+   * buffer grows on demand toward this cap. 4 covers the worst frame measured for
+   * ordinary typesetting (a 4K letter needs 3); frames too dense even for that
+   * (overlapping paint-stroke signs, #1868) flatten into a single RGBA composite
+   * ([AssAtlasFrame.MODE_COMPOSITE]) instead of dropping tiles. Must match
+   * ASS_PACK_MAX_PAGES in AssPack.h.
    */
   internal const val MAX_ATLAS_PAGES = 4
 
@@ -718,8 +720,9 @@ private class AtlasLibassThread(
     var frame = render.renderFrameAtlas(timeMs, payload.atlasBuf, slots.atlasW, slots.atlasH, payload.vertexBuf)
       ?: return null
     // A frame overflows one atlas page only on dense full-screen typesetting. When it
-    // does, grow this slot's buffer to the pages it needs (capped) and render once more
-    // — libass's caches make the re-render cheap, and the slot keeps the larger buffer
+    // does — multi-page atlas or an RGBA composite rect needing more than one page —
+    // grow this slot's buffer to the pages it needs (capped) and render once more:
+    // libass's caches make the re-render cheap, and the slot keeps the larger buffer
     // so the same density never re-grows. The truncated first result is never handed off.
     if (frame.requiredPages > payload.pageCapacity && payload.pageCapacity < AssAtlasPipelineConfig.MAX_ATLAS_PAGES) {
       payload.growAtlas(
@@ -794,7 +797,8 @@ private class AtlasLibassThread(
               "releaseLeadMs=${request.releaseLeadNs / 1_000_000} seq=${payload.contentSeq} waitMs=$waitMs budgetMs=$budgetMs " +
               "libassMs=$lastLibassMs lockWaitMs=${assHandler.render?.lastLockWaitMs} " +
               "specHit=${outcome.specHit} changed=${payload.frame.changed} output=${payload.frame.hasOutput} quads=${payload.frame.quadCount} " +
-              "atlas=${payload.frame.atlasWidth}x${payload.frame.atlasHeight} truncated=${payload.frame.truncated}"
+              "atlas=${payload.frame.atlasWidth}x${payload.frame.atlasHeight} truncated=${payload.frame.truncated} " +
+              "mode=${payload.frame.mode}"
           )
         }
       }
@@ -1403,15 +1407,19 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
         }
   """.trimIndent()
 
+  // u_Rgba switches the sampling mode: 0 = ALPHA_8 atlas mask tinted by the per-vertex
+  // color (the common path), 1 = premultiplied RGBA composite sampled directly
+  // (AssAtlasFrame.MODE_COMPOSITE). Both end premultiplied, matching the blend state.
   private val fragmentShaderCode = """
         precision mediump float;
         varying vec2 v_TexCoord;
         varying vec4 v_Color;
         uniform sampler2D u_Texture;
+        uniform float u_Rgba;
         void main() {
-            float mask = texture2D(u_Texture, v_TexCoord).a;
-            float alpha = v_Color.a * mask;
-            gl_FragColor = vec4(v_Color.rgb * alpha, alpha);
+            vec4 texel = texture2D(u_Texture, v_TexCoord);
+            float alpha = v_Color.a * texel.a;
+            gl_FragColor = mix(vec4(v_Color.rgb * alpha, alpha), texel, u_Rgba);
         }
   """.trimIndent()
 
@@ -1423,11 +1431,18 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
   private var allocatedPages = 0
   private var vertexBufferId = 0
 
+  // Texture for MODE_COMPOSITE frames (premultiplied RGBA rect); allocated lazily on
+  // the first composite frame and re-specced when the rect outgrows it.
+  private var rgbaTexId = 0
+  private var rgbaAllocW = 0
+  private var rgbaAllocH = 0
+
   private var aPosition = 0
   private var aTexCoord = 0
   private var aColor = 0
   private var uTexture = 0
   private var uSurfaceSize = 0
+  private var uRgba = 0
 
   private var atlasAllocatedW = 0
   private var atlasAllocatedH = 0
@@ -1477,6 +1492,7 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
     aColor = glProgram.getAttributeArrayLocationAndEnable("a_Color")
     uTexture = glProgram.getUniformLocation("u_Texture")
     uSurfaceSize = glProgram.getUniformLocation("u_SurfaceSize")
+    uRgba = glProgram.getUniformLocation("u_Rgba")
 
     GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
     GLES20.glUniform1i(uTexture, 0)
@@ -1527,11 +1543,22 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
     GLES20.glVertexAttribPointer(aPosition, 2, GLES20.GL_FLOAT, false, stride, 0)
     GLES20.glVertexAttribPointer(aTexCoord, 2, GLES20.GL_FLOAT, false, stride, 8)
     GLES20.glVertexAttribPointer(aColor, 4, GLES20.GL_FLOAT, false, stride, 16)
+    GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
 
+    if (frame.mode == AssAtlasFrame.MODE_COMPOSITE) {
+      // The whole frame is one premultiplied RGBA rect (atlasWidth × pageHeights[0])
+      // at the start of the atlas buffer, drawn as the single emitted quad.
+      GLES20.glUniform1f(uRgba, 1f)
+      bindCompositeTexture()
+      if (!reuseUploads) uploadComposite(payload.atlasBuf, frame.atlasWidth, frame.pageHeights[0])
+      GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, quadCount * 6)
+      return
+    }
+
+    GLES20.glUniform1f(uRgba, 0f)
     // Each atlas page is its own texture; its quads are one contiguous run in the
     // stream (page assignment is monotonic in painter order). Upload + draw each in
     // turn, which reproduces the libass blend order across pages.
-    GLES20.glActiveTexture(GLES20.GL_TEXTURE0)
     var quadOffset = 0
     for (p in 0 until frame.pageCount) {
       val pageQuads = frame.pageQuadCounts[p]
@@ -1542,6 +1569,48 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, quadOffset * 6, pageQuads * 6)
       }
       quadOffset += pageQuads
+    }
+  }
+
+  /** Generates (once) and binds the RGBA composite texture. */
+  private fun bindCompositeTexture() {
+    if (rgbaTexId == 0) {
+      val tex = IntArray(1)
+      GLES20.glGenTextures(1, tex, 0)
+      rgbaTexId = tex[0]
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, rgbaTexId)
+      GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE)
+      GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE)
+      GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR)
+      GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR)
+      rgbaAllocW = 0
+      rgbaAllocH = 0
+    } else {
+      GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, rgbaTexId)
+    }
+  }
+
+  /** Uploads the composite RGBA rect from the start of the stacked atlas buffer into
+   *  the bound composite texture. GLES2 has no UNPACK_ROW_LENGTH, so a sub-image
+   *  update is only stride-correct at the allocated width; otherwise re-spec. */
+  private fun uploadComposite(atlasBuf: ByteBuffer, width: Int, height: Int) {
+    if (width <= 0 || height <= 0) return
+    atlasBuf.clear()
+    atlasBuf.limit(width * height * 4)
+    atlasBuf.position(0)
+    if (width == rgbaAllocW && height <= rgbaAllocH) {
+      GLES20.glTexSubImage2D(
+        GLES20.GL_TEXTURE_2D, 0, 0, 0, width, height,
+        GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, atlasBuf
+      )
+    } else {
+      GLES20.glTexImage2D(
+        GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA,
+        width, height, 0,
+        GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, atlasBuf
+      )
+      rgbaAllocW = width
+      rgbaAllocH = height
     }
   }
 
@@ -1577,6 +1646,13 @@ private class AtlasRenderer(private val assHandler: AssHandler) {
       GLES20.glDeleteTextures(allocatedPages, atlasTexIds, 0)
       atlasTexIds.fill(0)
       allocatedPages = 0
+    }
+    if (rgbaTexId != 0) {
+      val tex = intArrayOf(rgbaTexId)
+      GLES20.glDeleteTextures(1, tex, 0)
+      rgbaTexId = 0
+      rgbaAllocW = 0
+      rgbaAllocH = 0
     }
     if (vertexBufferId != 0) {
       val buf = intArrayOf(vertexBufferId)

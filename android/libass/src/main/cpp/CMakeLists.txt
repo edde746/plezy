@@ -44,7 +44,7 @@ set_target_properties(ass PROPERTIES
     IMPORTED_LOCATION "${LIBASS_ARCHIVE}")
 target_include_directories(ass INTERFACE "${LIBASS_ROOT}/include")
 
-add_library(${CMAKE_PROJECT_NAME} SHARED AssKt.c SurfaceTxProbe.c)
+add_library(${CMAKE_PROJECT_NAME} SHARED AssKt.c AssPack.c SurfaceTxProbe.c)
 add_dependencies(${CMAKE_PROJECT_NAME} libass_prebuilt_${LIBASS_ABI_TARGET})
 # HarfBuzz brings C++; link the shared STL that the app already packages.
 # (SurfaceTxProbe resolves its libandroid/libsync entry points via dlsym, so no extra link.)

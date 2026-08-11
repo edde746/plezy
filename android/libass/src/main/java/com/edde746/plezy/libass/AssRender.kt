@@ -8,9 +8,9 @@ class AssRender(nativeAss: Long, private val lock: ReentrantLock) {
 
   companion object {
 
-    /** Must match MAX_ATLAS_PAGES + the header layout in AssKt.c (`writeAtlasHeader`). */
+    /** Must match ASS_PACK_MAX_PAGES + the header layout in AssPack.h/AssKt.c (`writeAtlasHeader`). */
     private const val MAX_ATLAS_PAGES = 4
-    private const val HEADER_INTS = 7 + 2 * MAX_ATLAS_PAGES
+    private const val HEADER_INTS = 7 + 2 * MAX_ATLAS_PAGES + 1
 
     @JvmStatic
     external fun nativeAssRenderInit(ass: Long): Long
@@ -175,7 +175,8 @@ class AssRender(nativeAss: Long, private val lock: ReentrantLock) {
         changed = header[2],
         truncated = header[3],
         requiredPages = header[4],
-        hasOutput = header[5] != 0
+        hasOutput = header[5] != 0,
+        mode = header[7 + 2 * MAX_ATLAS_PAGES]
       )
     }
   }
