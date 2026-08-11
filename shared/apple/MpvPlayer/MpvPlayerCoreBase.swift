@@ -878,6 +878,7 @@ class MpvPlayerCoreBase: NSObject {
         // doesn't dim the video, so skip the per-frame CI composite that
         // round-trips BT.2020/PQ through linear P3.
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
+        checkError(mpv_set_option_string(mpv, "avfoundation-queue-lead-ms", "500"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
       #else
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
