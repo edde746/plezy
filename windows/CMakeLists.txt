@@ -153,6 +153,17 @@ set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")
 install(TARGETS ${BINARY_NAME} RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}"
   COMPONENT Runtime)
 
+# Bundle the MSVC C++ runtime next to the executable. MSVC requires the
+# runtime on the target machine to be at least as new as the toolset that
+# built the app; a stale system-wide msvcp140.dll (e.g. 14.29 from a 2021
+# redist) faults at startup inside the DLL under the VS 2022 17.10+
+# constexpr std::mutex layout, so the app never opens. App-local copies
+# precede System32 in the DLL search order, removing the dependency on the
+# machine-wide redistributable entirely.
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${INSTALL_BUNDLE_LIB_DIR}")
+set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT "Runtime")
+include(InstallRequiredSystemLibraries)
+
 install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
   COMPONENT Runtime)
 

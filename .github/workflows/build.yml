@@ -492,6 +492,11 @@ jobs:
             "data/app.so"
             "data/icudtl.dat"
             "data/flutter_assets/NativeAssetsManifest.json"
+            # MSVC runtime bundled by InstallRequiredSystemLibraries in
+            # windows/CMakeLists.txt; without it the app crashes at startup on
+            # machines whose system-wide redist is older than the CI toolset.
+            "msvcp140.dll"
+            "vcruntime140.dll"
           )
           $forbiddenFiles = @(
             "plezy.lib"
