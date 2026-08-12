@@ -10,8 +10,10 @@ import '../../widgets/catalog_source_logo.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_section.dart';
+import '../../services/settings_service.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
+import 'the_intro_db_settings_screen.dart';
 import 'tracker_service_info.dart';
 
 /// Unified hub for all connected services: the watch-progress trackers
@@ -36,7 +38,11 @@ class ServicesSettingsScreen extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
-            SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
+            SettingsGroup(children: [
+              for (final info in TrackerServiceInfo.all) _TrackerHubRow(info),
+              _seerr(),
+              _theIntroDb(context),
+            ]),
             const SizedBox(height: 24),
           ]),
         ),
@@ -59,6 +65,28 @@ class ServicesSettingsScreen extends StatelessWidget {
       },
     ),
   );
+
+  Widget _theIntroDb(BuildContext context) {
+    final apiKey = SettingsService.instance.read(SettingsService.theIntroDbApiKey);
+    final hasKey = apiKey != null && apiKey.trim().isNotEmpty;
+    return _ServiceHubRow(
+      leading: AppIcon(
+        Symbols.skip_next_rounded,
+        size: 24,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      title: t.services.names.theIntroDb,
+      username: hasKey ? t.services.theIntroDb.apiKey : t.services.theIntroDb.publicAccess,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const TheIntroDbSettingsScreen(),
+          ),
+        );
+      },
+    );
+  }
 }
 
 /// Hub row for a watch tracker. Owns the `watch` on that service's account

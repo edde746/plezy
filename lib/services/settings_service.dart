@@ -417,6 +417,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const autoSkipDelay = IntPref('auto_skip_delay', defaultValue: 5);
   static const introPattern = StringPref('intro_pattern', defaultValue: defaultIntroPattern);
   static const creditsPattern = StringPref('credits_pattern', defaultValue: defaultCreditsPattern);
+  static const theIntroDbApiKey = NullableStringPref('the_intro_db_api_key');
   static const customDownloadPathType = NullableStringPref('custom_download_path_type');
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');

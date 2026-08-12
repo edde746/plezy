@@ -2052,6 +2052,7 @@ class _Translations$services$tr extends Translations$services$en {
 	@override String disconnectConfirmBody({required Object service}) => 'Plezy, ${service} güncellemeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.';
 	@override String connectFailed({required Object service}) => '${service} ile bağlantı kurulamadı. Tekrar deneyin.';
 	@override late final _Translations$services$names$tr names = _Translations$services$names$tr._(_root);
+	@override late final _Translations$services$theIntroDb$tr theIntroDb = _Translations$services$theIntroDb$tr._(_root);
 	@override late final _Translations$services$deviceCode$tr deviceCode = _Translations$services$deviceCode$tr._(_root);
 	@override late final _Translations$services$oauthProxy$tr oauthProxy = _Translations$services$oauthProxy$tr._(_root);
 	@override late final _Translations$services$pendingAuth$tr pendingAuth = _Translations$services$pendingAuth$tr._(_root);
@@ -2619,7 +2620,27 @@ class _Translations$services$names$tr extends Translations$services$names$en {
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
 	@override String get seerr => 'Seerr';
+	@override String get theIntroDb => 'The Intro DB';
 	@override String get mdblist => 'MDBList';
+}
+
+// Path: services.theIntroDb
+class _Translations$services$theIntroDb$tr extends Translations$services$theIntroDb$en {
+	_Translations$services$theIntroDb$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'The Intro DB';
+	@override String get subtitle => 'Film ve diziler için akıllı intro ve jenerik tespiti servisi.';
+	@override String get apiKey => 'API Anahtarı';
+	@override String get apiKeyHint => 'API anahtarınızı girin (örn. theintrodb:user_...)';
+	@override String get publicAccess => 'Kamu / Anonim Erişim (Sınırlı İstek)';
+	@override String get testConnection => 'Bağlantıyı Test Et';
+	@override String get connectionSuccess => 'The Intro DB bağlantısı başarılı!';
+	@override String get connectionFailed => 'Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.';
+	@override String get infoText => 'The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.';
+	@override String get getKeyInfo => 'theintrodb.org adresinden API Anahtarı Alın';
 }
 
 // Path: services.deviceCode
@@ -4465,7 +4486,18 @@ extension on TranslationsTr {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
+			'services.names.theIntroDb' => 'The Intro DB',
 			'services.names.mdblist' => 'MDBList',
+			'services.theIntroDb.title' => 'The Intro DB',
+			'services.theIntroDb.subtitle' => 'Film ve diziler için akıllı intro ve jenerik tespiti servisi.',
+			'services.theIntroDb.apiKey' => 'API Anahtarı',
+			'services.theIntroDb.apiKeyHint' => 'API anahtarınızı girin (örn. theintrodb:user_...)',
+			'services.theIntroDb.publicAccess' => 'Kamu / Anonim Erişim (Sınırlı İstek)',
+			'services.theIntroDb.testConnection' => 'Bağlantıyı Test Et',
+			'services.theIntroDb.connectionSuccess' => 'The Intro DB bağlantısı başarılı!',
+			'services.theIntroDb.connectionFailed' => 'Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.',
+			'services.theIntroDb.infoText' => 'The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.',
+			'services.theIntroDb.getKeyInfo' => 'theintrodb.org adresinden API Anahtarı Alın',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy\'yi ${service} üzerinde etkinleştirin',
 			'services.deviceCode.instructions' => 'QR kodunu tarayın veya aşağıdaki adresi ziyaret edip bu kodu girin:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Etkinleştirmek için ${service} servisini açın',

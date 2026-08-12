@@ -1942,7 +1942,20 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
+      "theIntroDb": "The Intro DB",
       "mdblist": "MDBList"
+    },
+    "theIntroDb": {
+      "title": "The Intro DB",
+      "subtitle": "Film ve diziler için akıllı intro ve jenerik tespiti servisi.",
+      "apiKey": "API Anahtarı",
+      "apiKeyHint": "API anahtarınızı girin (örn. theintrodb:user_...)",
+      "publicAccess": "Kamu / Anonim Erişim (Sınırlı İstek)",
+      "testConnection": "Bağlantıyı Test Et",
+      "connectionSuccess": "The Intro DB bağlantısı başarılı!",
+      "connectionFailed": "Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.",
+      "infoText": "The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.",
+      "getKeyInfo": "theintrodb.org adresinden API Anahtarı Alın"
     },
     "deviceCode": {
       "title": "Plezy'yi ${service} üzerinde etkinleştirin",

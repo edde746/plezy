@@ -5013,6 +5013,7 @@ class Translations$services$en {
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
 	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
+	late final Translations$services$theIntroDb$en theIntroDb = Translations$services$theIntroDb$en.internal(_root);
 	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
 	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
 	late final Translations$services$pendingAuth$en pendingAuth = Translations$services$pendingAuth$en.internal(_root);
@@ -6263,8 +6264,50 @@ class Translations$services$names$en {
 	/// en: 'Seerr'
 	String get seerr => 'Seerr';
 
+	/// en: 'The Intro DB'
+	String get theIntroDb => 'The Intro DB';
+
 	/// en: 'MDBList'
 	String get mdblist => 'MDBList';
+}
+
+// Path: services.theIntroDb
+class Translations$services$theIntroDb$en {
+	Translations$services$theIntroDb$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'The Intro DB'
+	String get title => 'The Intro DB';
+
+	/// en: 'Smart intro and credits detection for movies and TV episodes.'
+	String get subtitle => 'Smart intro and credits detection for movies and TV episodes.';
+
+	/// en: 'API Key'
+	String get apiKey => 'API Key';
+
+	/// en: 'Enter your API key (e.g. theintrodb:user_...)'
+	String get apiKeyHint => 'Enter your API key (e.g. theintrodb:user_...)';
+
+	/// en: 'Public Access (Rate Limited)'
+	String get publicAccess => 'Public Access (Rate Limited)';
+
+	/// en: 'Test Connection'
+	String get testConnection => 'Test Connection';
+
+	/// en: 'Successfully connected to The Intro DB!'
+	String get connectionSuccess => 'Successfully connected to The Intro DB!';
+
+	/// en: 'Connection failed. Please check your API key.'
+	String get connectionFailed => 'Connection failed. Please check your API key.';
+
+	/// en: 'The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.'
+	String get infoText => 'The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.';
+
+	/// en: 'Get an API Key at theintrodb.org'
+	String get getKeyInfo => 'Get an API Key at theintrodb.org';
 }
 
 // Path: services.deviceCode
@@ -8156,7 +8199,18 @@ extension on Translations {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
+			'services.names.theIntroDb' => 'The Intro DB',
 			'services.names.mdblist' => 'MDBList',
+			'services.theIntroDb.title' => 'The Intro DB',
+			'services.theIntroDb.subtitle' => 'Smart intro and credits detection for movies and TV episodes.',
+			'services.theIntroDb.apiKey' => 'API Key',
+			'services.theIntroDb.apiKeyHint' => 'Enter your API key (e.g. theintrodb:user_...)',
+			'services.theIntroDb.publicAccess' => 'Public Access (Rate Limited)',
+			'services.theIntroDb.testConnection' => 'Test Connection',
+			'services.theIntroDb.connectionSuccess' => 'Successfully connected to The Intro DB!',
+			'services.theIntroDb.connectionFailed' => 'Connection failed. Please check your API key.',
+			'services.theIntroDb.infoText' => 'The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.',
+			'services.theIntroDb.getKeyInfo' => 'Get an API Key at theintrodb.org',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',

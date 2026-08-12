@@ -4,6 +4,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
 
@@ -13,15 +14,35 @@ class TheIntroDbService {
   static final TheIntroDbService instance = TheIntroDbService._();
   TheIntroDbService._();
 
-  static const String _apiKey = 'theintrodb:user_3HMEKRdDrvYYqRqDqTyP42ggA1y:cEKHUzSrWd6cYlDtMpaLcyrdldRAhk-a4sfP0qhZLNM';
   static const String _baseUrl = 'https://api.theintrodb.org/v3/media';
+
+  /// Tests connection to The Intro DB using specified [apiKey] or configured settings.
+  Future<bool> testConnection([String? apiKey]) async {
+    try {
+      final keyToUse = apiKey ?? SettingsService.instance.read(SettingsService.theIntroDbApiKey);
+      final uri = Uri.parse('$_baseUrl?tmdb_id=1396&season=1&episode=1');
+      final headers = <String, String>{
+        'Accept': 'application/json',
+        if (keyToUse != null && keyToUse.trim().isNotEmpty) ...{
+          'Authorization': 'Bearer ${keyToUse.trim()}',
+          'x-api-key': keyToUse.trim(),
+        },
+      };
+      final response = await http.get(uri, headers: headers).timeout(const Duration(seconds: 4));
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
+    }
+  }
 
   /// Fetches media timestamps from The Intro DB and maps them to [MediaMarker] instances.
   Future<List<MediaMarker>> fetchMarkers(
     MediaItem metadata, {
     MediaServerClient? client,
     int? durationMs,
+    String? apiKey,
   }) async {
+    final keyToUse = apiKey ?? SettingsService.instance.read(SettingsService.theIntroDbApiKey);
     try {
       ExternalIds? ids;
 
@@ -111,14 +132,14 @@ class TheIntroDbService {
       Future<http.Response> doFetch(Map<String, String> params) {
         final uri = Uri.parse(_baseUrl).replace(queryParameters: params);
         appLogger.d('TheIntroDbService: Fetching $uri');
-        return http.get(
-          uri,
-          headers: {
-            'Authorization': 'Bearer $_apiKey',
-            'x-api-key': _apiKey,
-            'Accept': 'application/json',
+        final headers = <String, String>{
+          'Accept': 'application/json',
+          if (keyToUse != null && keyToUse.trim().isNotEmpty) ...{
+            'Authorization': 'Bearer ${keyToUse.trim()}',
+            'x-api-key': keyToUse.trim(),
           },
-        ).timeout(const Duration(seconds: 4));
+        };
+        return http.get(uri, headers: headers).timeout(const Duration(seconds: 4));
       }
 
       var response = await doFetch(queryParams);
