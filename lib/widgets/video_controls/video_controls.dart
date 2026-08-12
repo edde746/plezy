@@ -634,6 +634,12 @@ class PlexVideoControls extends StatefulWidget {
   @visibleForTesting
   final List<MediaChapter>? initialChapters;
 
+  /// Seeds the marker list so widget tests can exercise skip-marker behaviour
+  /// without a media-server client. Production always loads through
+  /// [VideoControlsPlaybackExtrasLoader].
+  @visibleForTesting
+  final List<MediaMarker>? initialMarkers;
+
   const PlexVideoControls({
     super.key,
     required this.player,
@@ -641,6 +647,7 @@ class PlexVideoControls extends StatefulWidget {
     required this.metadata,
     required this.toastController,
     this.initialChapters,
+    this.initialMarkers,
     this.onNext,
     this.onPrevious,
     this.availableVersions = const [],
@@ -788,8 +795,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _hiddenSeekRepeatCount = 0;
   // Current marker state
   MediaMarker? _currentMarker;
-  List<MediaMarker> _markers = [];
-  bool _markersLoaded = false;
+  late List<MediaMarker> _markers = widget.initialMarkers ?? [];
+  late bool _markersLoaded = widget.initialMarkers != null;
   // Playback state subscription for auto-hide timer
   StreamSubscription<bool>? _playingSubscription;
   // Completed subscription to show controls when video ends
