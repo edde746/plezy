@@ -450,28 +450,33 @@ class PlaybackProgressTracker {
     final c = client;
     final session = _reportSession;
     if (c == null || session == null) return false;
-    if (!SettingsService.instance.read(SettingsService.syncWatchStateWithServer)) return false;
 
-    final snapshot = PlaybackReportSnapshot(
-      state: state,
-      position: position,
-      duration: duration,
-      resolveStreamSelection: state == 'stopped'
-          ? _currentStreamSelectionForStopped
-          : _currentStreamSelectionForProgress,
-    );
-    final accepted = await session.report(snapshot);
+    final syncWithServer = SettingsService.instance.read(SettingsService.syncWatchStateWithServer);
+    var accepted = false;
 
-    if (accepted && allowScrobble) {
+    if (syncWithServer) {
+      final snapshot = PlaybackReportSnapshot(
+        state: state,
+        position: position,
+        duration: duration,
+        resolveStreamSelection: state == 'stopped'
+            ? _currentStreamSelectionForStopped
+            : _currentStreamSelectionForProgress,
+      );
+      accepted = await session.report(snapshot);
+
+      if (!snapshot.isStopped) {
+        final serverAcknowledged = _deliveredProgressAcknowledgements.remove(snapshot);
+        if (serverAcknowledged != null) {
+          _notifyProgressIfNeeded(position, duration, serverAcknowledged: serverAcknowledged);
+        }
+      }
+    }
+
+    if (allowScrobble) {
       await _maybeScrobble(c, position, duration);
     }
 
-    if (!snapshot.isStopped) {
-      final serverAcknowledged = _deliveredProgressAcknowledgements.remove(snapshot);
-      if (serverAcknowledged != null) {
-        _notifyProgressIfNeeded(position, duration, serverAcknowledged: serverAcknowledged);
-      }
-    }
     return accepted;
   }
 
@@ -543,6 +548,12 @@ class PlaybackProgressTracker {
   /// answer.
   Future<void> _settleServerMark(MediaServerClient? c) async {
     if (c == null || !_scrobbled || _serverMarkSettled) return;
+    if (!SettingsService.instance.read(SettingsService.syncWatchStateWithServer)) {
+      _serverMarkSettled = true;
+      _promoteWatchedPatch();
+      await _runScrobbledHook();
+      return;
+    }
     // Backends that mark played from the playback-stopped report do it there,
     // and the terminal stop is always sent. An explicit mark on top would
     // double-scrobble through the Jellyfin Trakt plugin (#1287).

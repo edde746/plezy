@@ -645,11 +645,11 @@ class Translations$settings$en {
 	/// en: '${minutes} minutes'
 	String minutesUnit({required Object minutes}) => '${minutes} minutes';
 
-	/// en: 'Sync watch state with server'
-	String get syncWatchStateWithServer => 'Sync watch state with server';
+	/// en: 'Sync watch state with media server'
+	String get syncWatchStateWithServer => 'Sync watch state with media server';
 
-	/// en: 'Report playback progress and watched status to your media server'
-	String get syncWatchStateWithServerDescription => 'Report playback progress and watched status to your media server';
+	/// en: 'Report playback progress and watched status to Plex, Jellyfin, or Emby'
+	String get syncWatchStateWithServerDescription => 'Report playback progress and watched status to Plex, Jellyfin, or Emby';
 
 	/// en: 'Remember track selections per show/movie'
 	String get rememberTrackSelections => 'Remember track selections per show/movie';
@@ -6606,8 +6606,8 @@ extension on Translations {
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconds',
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
-			'settings.syncWatchStateWithServer' => 'Sync watch state with server',
-			'settings.syncWatchStateWithServerDescription' => 'Report playback progress and watched status to your media server',
+			'settings.syncWatchStateWithServer' => 'Sync watch state with media server',
+			'settings.syncWatchStateWithServerDescription' => 'Report playback progress and watched status to Plex, Jellyfin, or Emby',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.rememberTrackSelectionsDescription' => 'Remember audio and subtitle choices per title',
 			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
