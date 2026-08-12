@@ -16,6 +16,7 @@ import '../../services/settings_service.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
 import 'the_intro_db_settings_screen.dart';
+import 'tmdb_settings_screen.dart';
 import 'tracker_service_info.dart';
 
 /// Unified hub for all connected services: the watch-progress trackers
@@ -53,6 +54,7 @@ class ServicesSettingsScreen extends StatelessWidget {
               for (final info in TrackerServiceInfo.all) _TrackerHubRow(info),
               _seerr(),
               _theIntroDb(context),
+              _tmdb(context),
             ]),
             const SizedBox(height: 24),
           ]),
@@ -89,6 +91,24 @@ class ServicesSettingsScreen extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (_) => const TheIntroDbSettingsScreen(),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _tmdb(BuildContext context) {
+    final apiKey = SettingsService.instance.read(SettingsService.tmdbApiKey);
+    final hasKey = apiKey != null && apiKey.trim().isNotEmpty;
+    return _ServiceHubRow(
+      leading: const CatalogSourceLogo(CatalogSourceId.tmdb, size: 24),
+      title: t.services.names.tmdb,
+      username: hasKey ? t.services.tmdb.apiKey : t.services.tmdb.publicAccess,
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const TmdbSettingsScreen(),
           ),
         );
       },

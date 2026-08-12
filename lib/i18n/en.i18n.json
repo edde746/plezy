@@ -1945,6 +1945,7 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "theIntroDb": "The Intro DB",
+      "tmdb": "TMDB",
       "mdblist": "MDBList"
     },
     "theIntroDb": {
@@ -1958,6 +1959,18 @@
       "connectionFailed": "Connection failed. Please check your API key.",
       "infoText": "The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.",
       "getKeyInfo": "Get an API Key at theintrodb.org"
+    },
+    "tmdb": {
+      "title": "TMDB (The Movie Database)",
+      "subtitle": "Metadata, poster, backdrop, and discovery catalog source.",
+      "apiKey": "API Key",
+      "apiKeyHint": "Enter your TMDB API key (v3 / v4)",
+      "publicAccess": "Default Access",
+      "testConnection": "Test Connection",
+      "connectionSuccess": "Successfully connected to TMDB!",
+      "connectionFailed": "Connection failed. Please check your API key.",
+      "infoText": "The Movie Database (TMDB) provides rich media details and metadata. Entering a custom API key avoids shared API rate limits.",
+      "getKeyInfo": "Get an API Key at themoviedb.org"
     },
     "deviceCode": {
       "title": "Activate Plezy on ${service}",

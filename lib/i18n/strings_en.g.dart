@@ -5020,6 +5020,7 @@ class Translations$services$en {
 
 	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
 	late final Translations$services$theIntroDb$en theIntroDb = Translations$services$theIntroDb$en.internal(_root);
+	late final Translations$services$tmdb$en tmdb = Translations$services$tmdb$en.internal(_root);
 	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
 	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
 	late final Translations$services$pendingAuth$en pendingAuth = Translations$services$pendingAuth$en.internal(_root);
@@ -6273,6 +6274,9 @@ class Translations$services$names$en {
 	/// en: 'The Intro DB'
 	String get theIntroDb => 'The Intro DB';
 
+	/// en: 'TMDB'
+	String get tmdb => 'TMDB';
+
 	/// en: 'MDBList'
 	String get mdblist => 'MDBList';
 }
@@ -6314,6 +6318,45 @@ class Translations$services$theIntroDb$en {
 
 	/// en: 'Get an API Key at theintrodb.org'
 	String get getKeyInfo => 'Get an API Key at theintrodb.org';
+}
+
+// Path: services.tmdb
+class Translations$services$tmdb$en {
+	Translations$services$tmdb$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'TMDB (The Movie Database)'
+	String get title => 'TMDB (The Movie Database)';
+
+	/// en: 'Metadata, poster, backdrop, and discovery catalog source.'
+	String get subtitle => 'Metadata, poster, backdrop, and discovery catalog source.';
+
+	/// en: 'API Key'
+	String get apiKey => 'API Key';
+
+	/// en: 'Enter your TMDB API key (v3 / v4)'
+	String get apiKeyHint => 'Enter your TMDB API key (v3 / v4)';
+
+	/// en: 'Default Access'
+	String get publicAccess => 'Default Access';
+
+	/// en: 'Test Connection'
+	String get testConnection => 'Test Connection';
+
+	/// en: 'Successfully connected to TMDB!'
+	String get connectionSuccess => 'Successfully connected to TMDB!';
+
+	/// en: 'Connection failed. Please check your API key.'
+	String get connectionFailed => 'Connection failed. Please check your API key.';
+
+	/// en: 'The Movie Database (TMDB) provides rich media details and metadata. Entering a custom API key avoids shared API rate limits.'
+	String get infoText => 'The Movie Database (TMDB) provides rich media details and metadata. Entering a custom API key avoids shared API rate limits.';
+
+	/// en: 'Get an API Key at themoviedb.org'
+	String get getKeyInfo => 'Get an API Key at themoviedb.org';
 }
 
 // Path: services.deviceCode
@@ -8208,6 +8251,7 @@ extension on Translations {
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.theIntroDb' => 'The Intro DB',
+			'services.names.tmdb' => 'TMDB',
 			'services.names.mdblist' => 'MDBList',
 			'services.theIntroDb.title' => 'The Intro DB',
 			'services.theIntroDb.subtitle' => 'Smart intro and credits detection for movies and TV episodes.',
@@ -8219,6 +8263,16 @@ extension on Translations {
 			'services.theIntroDb.connectionFailed' => 'Connection failed. Please check your API key.',
 			'services.theIntroDb.infoText' => 'The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.',
 			'services.theIntroDb.getKeyInfo' => 'Get an API Key at theintrodb.org',
+			'services.tmdb.title' => 'TMDB (The Movie Database)',
+			'services.tmdb.subtitle' => 'Metadata, poster, backdrop, and discovery catalog source.',
+			'services.tmdb.apiKey' => 'API Key',
+			'services.tmdb.apiKeyHint' => 'Enter your TMDB API key (v3 / v4)',
+			'services.tmdb.publicAccess' => 'Default Access',
+			'services.tmdb.testConnection' => 'Test Connection',
+			'services.tmdb.connectionSuccess' => 'Successfully connected to TMDB!',
+			'services.tmdb.connectionFailed' => 'Connection failed. Please check your API key.',
+			'services.tmdb.infoText' => 'The Movie Database (TMDB) provides rich media details and metadata. Entering a custom API key avoids shared API rate limits.',
+			'services.tmdb.getKeyInfo' => 'Get an API Key at themoviedb.org',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',

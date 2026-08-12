@@ -2055,6 +2055,7 @@ class _Translations$services$tr extends Translations$services$en {
 	@override String connectFailed({required Object service}) => '${service} ile bağlantı kurulamadı. Tekrar deneyin.';
 	@override late final _Translations$services$names$tr names = _Translations$services$names$tr._(_root);
 	@override late final _Translations$services$theIntroDb$tr theIntroDb = _Translations$services$theIntroDb$tr._(_root);
+	@override late final _Translations$services$tmdb$tr tmdb = _Translations$services$tmdb$tr._(_root);
 	@override late final _Translations$services$deviceCode$tr deviceCode = _Translations$services$deviceCode$tr._(_root);
 	@override late final _Translations$services$oauthProxy$tr oauthProxy = _Translations$services$oauthProxy$tr._(_root);
 	@override late final _Translations$services$pendingAuth$tr pendingAuth = _Translations$services$pendingAuth$tr._(_root);
@@ -2623,6 +2624,7 @@ class _Translations$services$names$tr extends Translations$services$names$en {
 	@override String get simkl => 'Simkl';
 	@override String get seerr => 'Seerr';
 	@override String get theIntroDb => 'The Intro DB';
+	@override String get tmdb => 'TMDB';
 	@override String get mdblist => 'MDBList';
 }
 
@@ -2643,6 +2645,25 @@ class _Translations$services$theIntroDb$tr extends Translations$services$theIntr
 	@override String get connectionFailed => 'Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.';
 	@override String get infoText => 'The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.';
 	@override String get getKeyInfo => 'theintrodb.org adresinden API Anahtarı Alın';
+}
+
+// Path: services.tmdb
+class _Translations$services$tmdb$tr extends Translations$services$tmdb$en {
+	_Translations$services$tmdb$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'TMDB (The Movie Database)';
+	@override String get subtitle => 'Medya bilgisi, afiş, arka plan ve keşif kataloğu kaynağı.';
+	@override String get apiKey => 'API Anahtarı';
+	@override String get apiKeyHint => 'TMDB API anahtarınızı girin (v3 / v4)';
+	@override String get publicAccess => 'Varsayılan Erişim';
+	@override String get testConnection => 'Bağlantıyı Test Et';
+	@override String get connectionSuccess => 'TMDB sunucularına başarıyla bağlandı!';
+	@override String get connectionFailed => 'Bağlantı başarısız. Lütfen API anahtarınızı kontrol edin.';
+	@override String get infoText => 'The Movie Database (TMDB) zengin dizi ve film bilgileri sunar. Kendi API anahtarınızı girmek ortak istek limitlerinden etkilenmenizi önler.';
+	@override String get getKeyInfo => 'themoviedb.org adresinden API anahtarı edinin';
 }
 
 // Path: services.deviceCode
@@ -4491,6 +4512,7 @@ extension on TranslationsTr {
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.theIntroDb' => 'The Intro DB',
+			'services.names.tmdb' => 'TMDB',
 			'services.names.mdblist' => 'MDBList',
 			'services.theIntroDb.title' => 'The Intro DB',
 			'services.theIntroDb.subtitle' => 'Film ve diziler için akıllı intro ve jenerik tespiti servisi.',
@@ -4502,6 +4524,16 @@ extension on TranslationsTr {
 			'services.theIntroDb.connectionFailed' => 'Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.',
 			'services.theIntroDb.infoText' => 'The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.',
 			'services.theIntroDb.getKeyInfo' => 'theintrodb.org adresinden API Anahtarı Alın',
+			'services.tmdb.title' => 'TMDB (The Movie Database)',
+			'services.tmdb.subtitle' => 'Medya bilgisi, afiş, arka plan ve keşif kataloğu kaynağı.',
+			'services.tmdb.apiKey' => 'API Anahtarı',
+			'services.tmdb.apiKeyHint' => 'TMDB API anahtarınızı girin (v3 / v4)',
+			'services.tmdb.publicAccess' => 'Varsayılan Erişim',
+			'services.tmdb.testConnection' => 'Bağlantıyı Test Et',
+			'services.tmdb.connectionSuccess' => 'TMDB sunucularına başarıyla bağlandı!',
+			'services.tmdb.connectionFailed' => 'Bağlantı başarısız. Lütfen API anahtarınızı kontrol edin.',
+			'services.tmdb.infoText' => 'The Movie Database (TMDB) zengin dizi ve film bilgileri sunar. Kendi API anahtarınızı girmek ortak istek limitlerinden etkilenmenizi önler.',
+			'services.tmdb.getKeyInfo' => 'themoviedb.org adresinden API anahtarı edinin',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy\'yi ${service} üzerinde etkinleştirin',
 			'services.deviceCode.instructions' => 'QR kodunu tarayın veya aşağıdaki adresi ziyaret edip bu kodu girin:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Etkinleştirmek için ${service} servisini açın',

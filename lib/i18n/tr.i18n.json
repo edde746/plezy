@@ -1945,6 +1945,7 @@
       "simkl": "Simkl",
       "seerr": "Seerr",
       "theIntroDb": "The Intro DB",
+      "tmdb": "TMDB",
       "mdblist": "MDBList"
     },
     "theIntroDb": {
@@ -1958,6 +1959,18 @@
       "connectionFailed": "Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.",
       "infoText": "The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.",
       "getKeyInfo": "theintrodb.org adresinden API Anahtarı Alın"
+    },
+    "tmdb": {
+      "title": "TMDB (The Movie Database)",
+      "subtitle": "Medya bilgisi, afiş, arka plan ve keşif kataloğu kaynağı.",
+      "apiKey": "API Anahtarı",
+      "apiKeyHint": "TMDB API anahtarınızı girin (v3 / v4)",
+      "publicAccess": "Varsayılan Erişim",
+      "testConnection": "Bağlantıyı Test Et",
+      "connectionSuccess": "TMDB sunucularına başarıyla bağlandı!",
+      "connectionFailed": "Bağlantı başarısız. Lütfen API anahtarınızı kontrol edin.",
+      "infoText": "The Movie Database (TMDB) zengin dizi ve film bilgileri sunar. Kendi API anahtarınızı girmek ortak istek limitlerinden etkilenmenizi önler.",
+      "getKeyInfo": "themoviedb.org adresinden API anahtarı edinin"
     },
     "deviceCode": {
       "title": "Plezy'yi ${service} üzerinde etkinleştirin",
