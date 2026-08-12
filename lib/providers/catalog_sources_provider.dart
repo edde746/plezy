@@ -21,6 +21,7 @@ import '../services/catalog/plex_catalog_source.dart';
 import '../services/catalog/seerr_catalog_source.dart';
 import '../services/catalog/simkl_catalog_source.dart';
 import '../services/catalog/trakt_catalog_source.dart';
+import '../services/catalog/tmdb_catalog_source.dart';
 import '../services/trackers/future_coalescer.dart';
 import '../services/plex_discover_client.dart';
 import '../services/seerr/seerr_client.dart';
@@ -112,6 +113,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   );
   final _CatalogSourceBinding<SimklClient, SimklCatalogSource> _simkl = _CatalogSourceBinding(SimklCatalogSource.new);
   final _CatalogSourceBinding<SeerrClient, SeerrCatalogSource> _seerr = _CatalogSourceBinding(SeerrCatalogSource.new);
+  late final TmdbCatalogSource _tmdbSource = TmdbCatalogSource();
   int _profileBindingGeneration = 0;
   int _plexSessionGeneration = 0;
   bool? _lastProfileBindingState;
@@ -134,6 +136,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     ?_simkl.source,
     ?_plex.source,
     ?_seerr.source,
+    _tmdbSource,
   ];
 
   bool get hasAnySource => connectedSources.isNotEmpty;
@@ -289,6 +292,7 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     _anilist.dispose();
     _simkl.dispose();
     _seerr.dispose();
+    _tmdbSource.dispose();
     super.dispose();
   }
 }
