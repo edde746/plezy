@@ -1088,9 +1088,12 @@ void WaylandVideoSurface::Destroy() {
   width_ = 0;
   height_ = 0;
   scale_ = 1;
+  // A fresh wl_surface starts at buffer_scale 1; a stale scale_sent_ would
+  // suppress the first scale request after recreation.
+  scale_sent_ = 1;
   visible_ = false;
   rect_valid_ = false;
-  buffer_attached_ = false;
+  first_frame_presented_ = false;
 }
 
 void WaylandVideoSurface::RequestParentCommit() {
@@ -1161,12 +1164,15 @@ void WaylandVideoSurface::SetRect(int32_t x, int32_t y, int32_t width, int32_t h
 
   if (surface_ == nullptr || subsurface_ == nullptr || egl_window_ == nullptr) return;
 
-  // A buffer_scale change must not reach the wire before the first frame:
-  // mesa commits the EGL surface's pre-allocated 1x1 back buffer on the
-  // first swap regardless of wl_egl_window_resize, and a 1x1 buffer at
+  // A buffer_scale change must not reach the wire before the first frame is
+  // presented: mesa commits the EGL surface's pre-allocated 1x1 back buffer
+  // on the first swap regardless of wl_egl_window_resize, and a 1x1 buffer at
   // scale > 1 is a fatal protocol error (the compositor disconnects us).
-  // Present() flushes the deferred scale right after the first commit.
-  if (scale_changed && buffer_attached_ && scale_ != scale_sent_) {
+  // Present() flushes the deferred scale right after that first commit. The
+  // gate is the first-frame latch rather than buffer attachment: the committed
+  // scale survives a detach, so once a frame has been presented the scale must
+  // be updatable with no buffer attached.
+  if (scale_changed && first_frame_presented_ && scale_ != scale_sent_) {
     wl_surface_set_buffer_scale(surface_, scale_);
     scale_sent_ = scale_;
   }
@@ -1188,7 +1194,6 @@ void WaylandVideoSurface::DetachBuffer() {
   ClearFrameCallback();
   wl_surface_attach(surface_, nullptr, 0, 0);
   wl_surface_commit(surface_);
-  buffer_attached_ = false;
 }
 
 void WaylandVideoSurface::SetVisible(bool visible) {
@@ -1223,11 +1228,14 @@ bool WaylandVideoSurface::Present() {
     g_warning("MPV video plane: eglSwapBuffers failed: 0x%x", eglGetError());
     return false;
   }
-  if (!buffer_attached_) {
-    buffer_attached_ = true;
+  if (!first_frame_presented_) {
     // First frame published at scale 1; the real scale may now go out. It
     // applies to the next commit, whose buffer mesa allocates at the resized
-    // window size (a multiple of the scale).
+    // window size (a multiple of the scale). The latch is deliberately not
+    // buffer attachment: DetachBuffer() clears that while the committed scale
+    // stays on the wire, and once a frame has been presented SetRect() must be
+    // free to change the scale with no buffer attached.
+    first_frame_presented_ = true;
     if (scale_ != scale_sent_) {
       wl_surface_set_buffer_scale(surface_, scale_);
       scale_sent_ = scale_;
