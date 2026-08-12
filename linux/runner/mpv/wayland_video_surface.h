@@ -335,6 +335,12 @@ class WaylandVideoSurface {
   int32_t width_ = 0;
   int32_t height_ = 0;
   int32_t scale_ = 1;
+  // The buffer_scale actually on the wire. A change is deferred until the
+  // first frame is presented: the compositor must never see a scale > 1
+  // while the EGL surface's pre-allocated 1x1 back buffer is still live.
+  // Reset to 1 in Destroy(): a freshly created wl_surface starts at scale 1,
+  // and a stale value would suppress the first scale request after recreation.
+  int32_t scale_sent_ = 1;
   // The view's own offset inside the toplevel, which is the frame
   // wl_subsurface_set_position uses. Non-zero under client-side decorations.
   int32_t view_x_ = 0;
@@ -343,7 +349,14 @@ class WaylandVideoSurface {
   // Set from the size Dart asked for, before SetRect rounds it into a whole
   // number of scale-sized blocks. See has_size().
   bool rect_valid_ = false;
-  bool buffer_attached_ = false;
+  // Set once a frame has been presented at the current scale, cleared only
+  // when the wl_surface is torn down. While false, the EGL surface's
+  // pre-allocated 1x1 back buffer is still live, so scale changes must be
+  // deferred; once true the wire scale may change at any time, because the
+  // next buffer mesa allocates matches the current window size. Deliberately
+  // not "a buffer is attached": a detach keeps the committed scale on the
+  // wire, so the scale gate must not depend on attachment.
+  bool first_frame_presented_ = false;
   bool frame_pending_ = false;
   wl_callback* frame_callback_ = nullptr;
   std::function<void()> on_frame_;
