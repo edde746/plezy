@@ -310,6 +310,8 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String secondsUnit({required Object seconds}) => '${seconds} saniye';
 	@override String get defaultSleepTimer => 'Varsayılan Uyku Zamanlayıcısı';
 	@override String minutesUnit({required Object minutes}) => '${minutes} dakika';
+	@override String get syncWatchStateWithServer => 'İzleme durumunu sunucuyla eşitle';
+	@override String get syncWatchStateWithServerDescription => 'Oynatılan video ilerlemesini ve izlendi bilgisini sunucunuza iletin';
 	@override String get rememberTrackSelections => 'Dizi/film başına ses/altyazı seçimlerini hatırla';
 	@override String get rememberTrackSelectionsDescription => 'İçerik başına ses ve altyazı tercihlerini hatırla';
 	@override String get followServerTrackSelections => 'Sunucunun bölüm başına parça seçimlerini kullan';
@@ -2887,6 +2889,8 @@ extension on TranslationsTr {
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} saniye',
 			'settings.defaultSleepTimer' => 'Varsayılan Uyku Zamanlayıcısı',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} dakika',
+			'settings.syncWatchStateWithServer' => 'İzleme durumunu sunucuyla eşitle',
+			'settings.syncWatchStateWithServerDescription' => 'Oynatılan video ilerlemesini ve izlendi bilgisini sunucunuza iletin',
 			'settings.rememberTrackSelections' => 'Dizi/film başına ses/altyazı seçimlerini hatırla',
 			'settings.rememberTrackSelectionsDescription' => 'İçerik başına ses ve altyazı tercihlerini hatırla',
 			'settings.followServerTrackSelections' => 'Sunucunun bölüm başına parça seçimlerini kullan',
@@ -3220,10 +3224,10 @@ extension on TranslationsTr {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medya ögesi başarıyla silindi',
 			'mediaMenu.mediaFailedToDelete' => 'Medya ögesi silinemedi',
 			'mediaMenu.rate' => 'Oyla',
-			'mediaMenu.playFromBeginning' => 'Baştan Oynat',
-			'mediaMenu.playVersion' => 'Sürümü Oynat...',
 			_ => null,
 		} ?? switch (path) {
+			'mediaMenu.playFromBeginning' => 'Baştan Oynat',
+			'mediaMenu.playVersion' => 'Sürümü Oynat...',
 			'rateSheet.title' => 'Oyla',
 			'rateSheet.server' => 'Sunucu',
 			'rateSheet.favorite' => 'Favori',
@@ -3734,10 +3738,10 @@ extension on TranslationsTr {
 			'explore.checkingLibrary' => 'Kitaplığınız kontrol ediliyor...',
 			'explore.emptyTitle' => 'Henüz burada bir şey yok',
 			'explore.emptyMessage' => ({required Object source}) => '${source} kaynağındaki satırlar içerik bulunduğunda burada görünecektir.',
-			'explore.searchHint' => ({required Object source}) => '${source} üzerinde ara',
-			'explore.searchEmpty' => ({required Object query}) => '"${query}" için sonuç bulunamadı',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchHint' => ({required Object source}) => '${source} üzerinde ara',
+			'explore.searchEmpty' => ({required Object query}) => '"${query}" için sonuç bulunamadı',
 			'explore.searchPrompt' => ({required Object source}) => '${source} üzerinde film ve dizileri arayın.',
 			'explore.searchFailed' => 'Arama başarısız. Bağlantınızı kontrol edip tekrar deneyin.',
 			'explore.badge.rankPopular' => ({required Object n}) => 'Popülerde #${n}',
@@ -4248,10 +4252,10 @@ extension on TranslationsTr {
 			'companionRemote.closedBeforeAuth' => 'Bağlantı, kimlik doğrulamadan önce kapandı',
 			'videoSettings.playbackSpeed' => 'Oynatma Hızı',
 			'videoSettings.normalSpeed' => 'Normal',
-			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktif (${duration})',
-			'videoSettings.zoom' => 'Yakınlaştırma',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktif (${duration})',
+			'videoSettings.zoom' => 'Yakınlaştırma',
 			'videoSettings.sleepTimer' => 'Uyku Zamanlayıcısı',
 			'videoSettings.audioSync' => 'Ses Senkronizasyonu',
 			'videoSettings.subtitleSync' => 'Altyazı Senkronizasyonu',

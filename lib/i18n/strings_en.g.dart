@@ -645,6 +645,12 @@ class Translations$settings$en {
 	/// en: '${minutes} minutes'
 	String minutesUnit({required Object minutes}) => '${minutes} minutes';
 
+	/// en: 'Sync watch state with server'
+	String get syncWatchStateWithServer => 'Sync watch state with server';
+
+	/// en: 'Report playback progress and watched status to your media server'
+	String get syncWatchStateWithServerDescription => 'Report playback progress and watched status to your media server';
+
 	/// en: 'Remember track selections per show/movie'
 	String get rememberTrackSelections => 'Remember track selections per show/movie';
 
@@ -6600,6 +6606,8 @@ extension on Translations {
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconds',
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
+			'settings.syncWatchStateWithServer' => 'Sync watch state with server',
+			'settings.syncWatchStateWithServerDescription' => 'Report playback progress and watched status to your media server',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.rememberTrackSelectionsDescription' => 'Remember audio and subtitle choices per title',
 			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
@@ -6933,10 +6941,10 @@ extension on Translations {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
-			'mediaMenu.playFromBeginning' => 'Play from Beginning',
-			'mediaMenu.playVersion' => 'Play Version...',
 			_ => null,
 		} ?? switch (path) {
+			'mediaMenu.playFromBeginning' => 'Play from Beginning',
+			'mediaMenu.playVersion' => 'Play Version...',
 			'rateSheet.title' => 'Rate',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Favorite',
@@ -7447,10 +7455,10 @@ extension on Translations {
 			'explore.checkingLibrary' => 'Checking your library...',
 			'explore.emptyTitle' => 'Nothing here yet',
 			'explore.emptyMessage' => ({required Object source}) => 'Rows from ${source} will appear here once they have content.',
-			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
+			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Search for movies and shows on ${source}.',
 			'explore.searchFailed' => 'Search failed. Check your connection and try again.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} popular',
@@ -7961,10 +7969,10 @@ extension on Translations {
 			'companionRemote.closedBeforeAuth' => 'The connection closed before authentication',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',
-			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
-			'videoSettings.zoom' => 'Zoom',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',

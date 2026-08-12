@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import '../../widgets/catalog_source_logo.dart';
+import '../../models/catalog/catalog_item.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -73,11 +74,7 @@ class _TheIntroDbSettingsScreenState extends State<TheIntroDbSettingsScreen> wit
       title: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SvgPicture.asset(
-            'assets/theintrodb_mark.svg',
-            width: 24,
-            height: 24,
-          ),
+          const CatalogSourceLogo(CatalogSourceId.theIntroDb, size: 24),
           const SizedBox(width: 12),
           Text(t.services.theIntroDb.title),
         ],

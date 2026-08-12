@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import 'package:flutter_svg/flutter_svg.dart';
-
 import '../../i18n/strings.g.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/seerr_account_provider.dart';
@@ -12,6 +10,8 @@ import '../../widgets/catalog_source_logo.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/settings_section.dart';
+import '../../widgets/setting_tile.dart';
+
 import '../../services/settings_service.dart';
 import 'seerr_connect_screen.dart';
 import 'seerr_settings_screen.dart';
@@ -40,6 +40,15 @@ class ServicesSettingsScreen extends StatelessWidget {
                 ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
+            SettingsGroup(children: [
+              SettingSwitchTile(
+                pref: SettingsService.syncWatchStateWithServer,
+                icon: Symbols.sync_rounded,
+                title: t.settings.syncWatchStateWithServer,
+                subtitle: t.settings.syncWatchStateWithServerDescription,
+              ),
+            ]),
+            const SizedBox(height: 16),
             SettingsGroup(children: [
               for (final info in TrackerServiceInfo.all) _TrackerHubRow(info),
               _seerr(),
@@ -72,11 +81,7 @@ class ServicesSettingsScreen extends StatelessWidget {
     final apiKey = SettingsService.instance.read(SettingsService.theIntroDbApiKey);
     final hasKey = apiKey != null && apiKey.trim().isNotEmpty;
     return _ServiceHubRow(
-      leading: SvgPicture.asset(
-        'assets/theintrodb_mark.svg',
-        width: 24,
-        height: 24,
-      ),
+      leading: const CatalogSourceLogo(CatalogSourceId.theIntroDb, size: 24),
       title: t.services.names.theIntroDb,
       username: hasKey ? t.services.theIntroDb.apiKey : t.services.theIntroDb.publicAccess,
       onTap: () {

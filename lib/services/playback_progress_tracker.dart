@@ -450,6 +450,7 @@ class PlaybackProgressTracker {
     final c = client;
     final session = _reportSession;
     if (c == null || session == null) return false;
+    if (!SettingsService.instance.read(SettingsService.syncWatchStateWithServer)) return false;
 
     final snapshot = PlaybackReportSnapshot(
       state: state,
