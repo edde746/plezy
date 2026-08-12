@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../i18n/strings.g.dart';
 import '../../models/catalog/catalog_item.dart';
 import '../../providers/seerr_account_provider.dart';
@@ -70,10 +72,10 @@ class ServicesSettingsScreen extends StatelessWidget {
     final apiKey = SettingsService.instance.read(SettingsService.theIntroDbApiKey);
     final hasKey = apiKey != null && apiKey.trim().isNotEmpty;
     return _ServiceHubRow(
-      leading: AppIcon(
-        Symbols.skip_next_rounded,
-        size: 24,
-        color: Theme.of(context).colorScheme.primary,
+      leading: SvgPicture.asset(
+        'assets/theintrodb_mark.svg',
+        width: 24,
+        height: 24,
       ),
       title: t.services.names.theIntroDb,
       username: hasKey ? t.services.theIntroDb.apiKey : t.services.theIntroDb.publicAccess,
