@@ -17,6 +17,7 @@ import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/download_provider.dart';
@@ -130,8 +131,9 @@ void main() {
     expect(information, findsOneWidget);
     final node = tester.getSemantics(information);
     expect(node.label, contains('Semantic Movie'));
-    expect(node.label, contains('Movie'));
-    expect(node.label, contains('2025'));
+    // The year follows the title directly: the line leads with it instead of
+    // the redundant "Movie" type label.
+    expect(node.label, contains('Semantic Movie, 2025'));
     expect(node.label, contains('Drama, Mystery'));
     expect(node.label, contains('One concise detail announcement.'));
     expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
@@ -214,6 +216,8 @@ void main() {
     expect(find.text('7.4'), findsOneWidget);
     expect(find.byType(SvgPicture), findsNWidgets(3));
     expect(find.textContaining('★ 6.2', findRichText: true), findsNothing);
+    // The redundant type label no longer opens the line.
+    expect(find.text('Movie'), findsNothing);
   });
 
   testWidgets('TV detail metadata line still renders a single available rating', (tester) async {
@@ -247,6 +251,66 @@ void main() {
 
     expect(find.text('87%'), findsOneWidget);
     expect(find.byType(SvgPicture), findsOneWidget);
+  });
+
+  testWidgets('TV detail metadata line keeps quality labels visible beside a full set of scores', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    // The #1893 shape: a Plex detail response with all four attributed scores
+    // used to push the quality labels past the right edge of the line.
+    const movie = MediaItem.plex(
+      id: 'movie_1',
+      kind: MediaKind.movie,
+      title: 'Quality Movie',
+      summary: 'The quality labels stay visible next to the scores.',
+      year: 2017,
+      contentRating: 'PG-13',
+      durationMs: 6360000,
+      mediaVersions: [MediaVersion(id: 'v1', videoResolution: '1080')],
+      ratings: [
+        MediaRatingSource(source: 'rottenTomatoesCritic', value: 9.2),
+        MediaRatingSource(source: 'rottenTomatoesAudience', value: 8.1),
+        MediaRatingSource(source: 'imdb', value: 7.4),
+        MediaRatingSource(source: 'tmdb', value: 6.4),
+      ],
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // Year opens the line; the type label is gone.
+    expect(find.text('Movie'), findsNothing);
+    expect(find.text('2017'), findsOneWidget);
+    expect(find.text('1080p'), findsOneWidget);
+
+    // The quality label sits fully on screen. Under the old clip-at-the-edge
+    // line the widget still existed but was painted past the right edge.
+    expect(tester.getBottomRight(find.text('1080p')).dx, lessThanOrEqualTo(1280));
+
+    // Desktop chip order: year, certification, runtime, quality.
+    final fieldXs = [
+      for (final text in ['2017', 'PG-13', '1h 46min', '1080p']) tester.getTopLeft(find.text(text)).dx,
+    ];
+    expect(fieldXs, orderedEquals([...fieldXs]..sort()));
+
+    // The test font's 1 em/char advance roughly doubles text width, so at this
+    // viewport the whole ratings slot legitimately gives way — dropped as the
+    // least useful part instead of shoving the quality label off the line.
+    expect(find.byType(SvgPicture), findsNothing);
   });
 
   testWidgets('TV detail defaults to first regular season when specials precede it', (tester) async {

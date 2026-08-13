@@ -45,9 +45,19 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
         _skipButtonDismissed = false;
       });
     }
-    if (_skipMarkerFocusNode.hasFocus) _skipMarkerFocusNode.unfocus();
+    _releaseSkipMarkerFocusToSurface();
     _cancelAutoSkipTimer();
     _cancelSkipButtonDismissTimer();
+  }
+
+  /// Hands the remote back to the player surface when the skip button is
+  /// about to leave the tree while holding focus. Without this, focus falls
+  /// out of the controls subtree, the enclosing screen reclaims it onto its
+  /// own node, and the next Select raises the chrome instead of toggling
+  /// playback (#1890).
+  void _releaseSkipMarkerFocusToSurface() {
+    if (!_skipMarkerFocusNode.hasFocus) return;
+    _claimPlayerSurfaceFocus();
   }
 
   /// Updates the current marker and manages auto-skip/focus behavior.
@@ -94,7 +104,8 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     final duration = widget.player.state.duration;
     final isAtEnd = duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
 
-    if (marker.isCredits && isAtEnd) {
+    final handsOffToCompletion = marker.isCredits && isAtEnd;
+    if (handsOffToCompletion) {
       if (!skipAutoPlayCountdown && widget.onNext != null) {
         _abandoningBurst(widget.onNext)!.call();
       } else {
@@ -111,6 +122,9 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     _setControlsState(() {
       _currentMarker = null;
     });
+    // The play-next flow requests its own focus; claiming the surface here
+    // would race it.
+    if (!handsOffToCompletion) _releaseSkipMarkerFocusToSurface();
     _cancelAutoSkipTimer();
     _cancelSkipButtonDismissTimer();
   }
@@ -178,6 +192,9 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
       _setControlsState(() {
         _skipButtonDismissed = true;
       });
+      // The dismissed flag only hides the button while the chrome is down;
+      // with the chrome up the button stays visible and keeps its focus.
+      if (!_showControls) _releaseSkipMarkerFocusToSurface();
       _cancelAutoSkipTimer();
     });
   }

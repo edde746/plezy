@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -80,6 +83,7 @@ void main() {
     watchTogether.dispose();
     chrome.dispose();
     toast.dispose();
+    await player.close();
     await database.close();
   });
 
@@ -108,7 +112,7 @@ void main() {
     ),
   );
 
-  Future<void> pumpPlayer(WidgetTester tester) async {
+  Future<void> pumpPlayer(WidgetTester tester, {List<MediaMarker>? markers}) async {
     await tester.pumpWidget(shell(const SizedBox.expand()));
     await tester.pump();
     expect(screenFocusNode.hasPrimaryFocus, isTrue, reason: 'precondition: the screen node owns the remote');
@@ -119,6 +123,7 @@ void main() {
           player: player,
           volumeController: volume,
           metadata: testMediaItem(id: 'select-key'),
+          initialMarkers: markers,
           toastController: toast,
           chromeController: chrome,
           hasFirstFrame: hasFirstFrame,
@@ -144,9 +149,9 @@ void main() {
 
   /// Mounts the player, runs [body], then unmounts and disarms the auto-hide
   /// timer so the harness's pending-timer check stays honest.
-  void playerTest(String description, Future<void> Function(WidgetTester tester) body) {
+  void playerTest(String description, Future<void> Function(WidgetTester tester) body, {List<MediaMarker>? markers}) {
     testWidgets(description, (tester) async {
-      await pumpPlayer(tester);
+      await pumpPlayer(tester, markers: markers);
       await body(tester);
       chrome.cancelAutoHide();
       await tester.pumpWidget(const SizedBox.shrink());
@@ -311,12 +316,58 @@ void main() {
       expect(focusLabel(), 'PlayerSurface');
     });
   });
+
+  group('skip intro on a television', () {
+    setUp(() async {
+      TvDetectionService.debugSetAppleTVOverride(true);
+      PlatformDetector.debugSetIsDesktopOSOverride(false);
+      await setNavigationEnabled(true);
+    });
+
+    // Selecting Skip Intro removes the focused button from the tree. The
+    // remote must land back on the player surface — otherwise focus falls out
+    // of the controls subtree, the screen node reclaims it, and its self-heal
+    // turns the next Select into a chrome-raise, so pausing takes two presses
+    // (#1890).
+    playerTest(
+      'Select toggles playback on the first press after skipping the intro',
+      markers: [MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000)],
+      (tester) async {
+        // A remote is non-pointer input, so the app is already in keyboard
+        // mode when the marker appears — the combination that autofocuses the
+        // skip button on TV.
+        InputModeTracker.reportNonPointerInput();
+        player.emitPosition(const Duration(seconds: 15));
+        await tester.pumpAndSettle();
+        expect(focusLabel(), 'SkipMarkerButton', reason: 'precondition: TV autofocuses the sole affordance');
+
+        await press(tester, LogicalKeyboardKey.select);
+
+        expect(player.state.position, const Duration(seconds: 45), reason: 'Select activated the skip');
+        expect(focusLabel(), 'PlayerSurface', reason: 'the vanished button must hand the remote back');
+
+        await press(tester, LogicalKeyboardKey.select);
+
+        expect(toggles, 1, reason: 'one press must toggle playback, not merely raise the chrome');
+      },
+    );
+  });
 }
 
 /// Minimal [Player] reporting steady playback; transport is routed to the
 /// widget's `onPlayPauseRequested` callback so the test can count toggles.
 class _TogglePlayer implements Player {
   Duration _position = const Duration(minutes: 5);
+  final StreamController<Duration> _positionController = StreamController<Duration>.broadcast();
+
+  /// Moves the playhead and announces it on the position stream, the way a
+  /// real player drives marker detection.
+  void emitPosition(Duration position) {
+    _position = position;
+    _positionController.add(position);
+  }
+
+  Future<void> close() => _positionController.close();
 
   @override
   String get playerType => 'mpv';
@@ -325,15 +376,17 @@ class _TogglePlayer implements Player {
   PlayerState get state =>
       PlayerState(playing: true, position: _position, duration: const Duration(minutes: 45), seekable: true);
 
+  /// A real player announces the new playhead right after a seek; marker
+  /// detection (and its focus handling) rides on that event.
   @override
-  Future<void> seek(Duration position) async => _position = position;
+  Future<void> seek(Duration position) async => emitPosition(position);
 
   @override
   PlayerStreams get streams => PlayerStreams(
     playing: const Stream<bool>.empty(),
     completed: const Stream<bool>.empty(),
     buffering: const Stream<bool>.empty(),
-    position: const Stream<Duration>.empty(),
+    position: _positionController.stream,
     duration: const Stream<Duration>.empty(),
     seekable: const Stream<bool>.empty(),
     buffer: const Stream<Duration>.empty(),
