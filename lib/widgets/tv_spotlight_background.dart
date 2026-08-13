@@ -17,6 +17,7 @@ import '../services/settings_service.dart';
 import 'app_icon.dart';
 import 'cycling_media_backdrop.dart';
 import 'fitting_title_text.dart';
+import 'fitted_metadata_line.dart';
 import 'settings_builder.dart';
 import 'media_rating_badge.dart';
 import 'optimized_media_image.dart' show ClearLogoImage, blurArtwork;
@@ -306,57 +307,52 @@ class TvSpotlightBackground extends StatelessWidget {
       fontWeight: .w700,
       letterSpacing: 0.1,
     );
-    final children = <Widget>[];
 
-    void addSeparator() {
-      if (children.isNotEmpty) children.add(Text('  •  ', maxLines: 1, style: textStyle));
-    }
-
-    void addTextPart(String text) {
-      addSeparator();
-      children.add(Text(text, maxLines: 1, style: textStyle));
-    }
-
-    void addWidgetPart(Widget widget) {
-      addSeparator();
-      children.add(widget);
-    }
-
-    if (media.isEpisode && episodeLabel != null) addTextPart(episodeLabel);
+    final parts = <MetadataLinePart>[];
+    if (media.isEpisode && episodeLabel != null) parts.add(MetadataLineText(episodeLabel, dropPriority: 0));
     if (media.isMovie) {
-      addTextPart(t.discover.movie);
+      parts.add(MetadataLineText(t.discover.movie, dropPriority: 3));
     } else if (media.isShow) {
-      addTextPart(t.discover.tvShow);
+      parts.add(MetadataLineText(t.discover.tvShow, dropPriority: 3));
     }
     // Hub listings carry the scalar rating pair, so the dashboard spotlight
     // shows every score the shelf request already returned — no per-item
     // hydration to lengthen it.
-    final ratingBadge = MediaRatingBadgeGroup.inlineForMedia(
-      item: media,
-      foregroundColor: textStyle.color,
-      iconSize: textStyle.fontSize,
-      spacing: 4 * scale,
-      entrySpacing: 12 * scale,
-      textStyle: textStyle,
-    );
-    if (ratingBadge != null) {
-      addWidgetPart(ratingBadge);
+    final ratings = mediaRatingsFor(media);
+    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
+    if (media.contentRating != null) {
+      parts.add(MetadataLineText(formatContentRating(media.contentRating!), dropPriority: 2));
     }
-    if (media.contentRating != null) addTextPart(formatContentRating(media.contentRating!));
-    if (media.durationMs != null) addTextPart(formatDurationTextual(media.durationMs!));
+    if (media.durationMs != null) {
+      parts.add(MetadataLineText(formatDurationTextual(media.durationMs!), dropPriority: 1));
+    }
     if (media.isEpisode && media.originallyAvailableAt != null) {
-      addTextPart(formatFullDate(media.originallyAvailableAt!));
+      parts.add(MetadataLineText(formatFullDate(media.originallyAvailableAt!), dropPriority: 0));
     } else if (media.year != null) {
-      addTextPart(media.year.toString());
+      parts.add(MetadataLineText(media.year.toString(), dropPriority: 0));
     }
-    if (metadataTrailing case final metadata?) addWidgetPart(metadata);
 
-    if (children.isEmpty) return const SizedBox.shrink();
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
+    final line = parts.isEmpty
+        ? null
+        : FittedMetadataLine(
+            textStyle: textStyle,
+            parts: parts,
+            ratingIconSize: textStyle.fontSize,
+            ratingSpacing: 4 * scale,
+            ratingEntrySpacing: 12 * scale,
+          );
+    final trailing = metadataTrailing;
+    if (trailing == null) return line ?? const SizedBox.shrink();
+    if (line == null) return trailing;
+    // The trailing fact is caller-owned and always shown; the line fits
+    // itself into whatever width the trailing widget leaves over.
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        Flexible(child: line),
+        Text(FittedMetadataLine.separator, maxLines: 1, style: textStyle),
+        trailing,
+      ],
     );
   }
 
