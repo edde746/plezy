@@ -3441,6 +3441,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 context,
                                 metadata,
                                 width: logoWidth,
+                                titleWidth: constraints.maxWidth,
                                 height: logoHeight,
                                 titleBuilder: (context, title) => _buildDetailTitle(
                                   context,
@@ -3585,11 +3586,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     required double width,
     required double height,
     required Widget Function(BuildContext context, String title) titleBuilder,
+    double? titleWidth,
   }) {
     Widget titleFallback(BuildContext context) => titleBuilder(context, metadata.displayTitle);
 
     if (metadata.clearLogoPath == null) {
-      return SizedBox(width: width, height: height, child: titleFallback(context));
+      // A clear-logo image is capped at [width] so it doesn't stretch across a
+      // wide hero, but the text-title fallback for logo-less media wants the
+      // full available width — otherwise FittingTitleText shrinks and clips a
+      // long title inside the logo box even when the display could fit it (#1796).
+      return SizedBox(width: titleWidth ?? width, height: height, child: titleFallback(context));
     }
 
     return SizedBox(
@@ -4209,6 +4215,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           context,
                           metadata,
                           width: logoWidth,
+                          titleWidth: constraints.maxWidth,
                           height: logoHeight,
                           titleBuilder: (context, title) => _buildDetailTitle(
                             context,
