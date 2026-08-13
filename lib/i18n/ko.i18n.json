@@ -1716,6 +1716,8 @@
     "dvPath": "DV 경로",
     "p7Conversion": "P7 변환",
     "sampleRate": "샘플 레이트",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "픽셀 형식",
     "hwFormat": "HW 형식",
     "matrix": "매트릭스",

@@ -1716,6 +1716,8 @@
     "dvPath": "DV 路徑",
     "p7Conversion": "P7 轉換",
     "sampleRate": "取樣率",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "像素格式",
     "hwFormat": "硬體格式",
     "matrix": "矩陣",

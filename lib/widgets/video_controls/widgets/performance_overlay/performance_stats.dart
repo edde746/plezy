@@ -34,6 +34,13 @@ class PerformanceStats {
   final int? audioBitrate;
   final String? audioDecoderName;
 
+  // `audioChannels` above is the decoded layout; these are what the output
+  // driver took. They differ when mpv downmixes ahead of it.
+  final String? audioOutputDriver;
+  final String? audioOutChannels;
+  final int? audioOutSamplerate;
+  final String? audioOutFormat;
+
   final bool tunneledPlayback;
   final String? tunnelingStatus;
 
@@ -89,6 +96,10 @@ class PerformanceStats {
     this.audioChannels,
     this.audioBitrate,
     this.audioDecoderName,
+    this.audioOutputDriver,
+    this.audioOutChannels,
+    this.audioOutSamplerate,
+    this.audioOutFormat,
     this.tunneledPlayback = false,
     this.tunnelingStatus,
     this.actualFps,
@@ -142,6 +153,10 @@ class PerformanceStats {
       audioChannels = null,
       audioBitrate = null,
       audioDecoderName = null,
+      audioOutputDriver = null,
+      audioOutChannels = null,
+      audioOutSamplerate = null,
+      audioOutFormat = null,
       tunneledPlayback = false,
       tunnelingStatus = null,
       actualFps = null,
@@ -204,6 +219,18 @@ class PerformanceStats {
     if (audioSamplerate == null) return t.common.notAvailable;
     final khz = audioSamplerate! / 1000;
     return '${khz.toStringAsFixed(1)} kHz';
+  }
+
+  /// The negotiated output layout, with its format and rate when they are
+  /// known. Unavailable until an audio output driver has been initialised.
+  String get audioOutputFormatted {
+    if (audioOutChannels == null || audioOutChannels!.isEmpty) return t.common.notAvailable;
+    final detail = [
+      if (audioOutFormat != null && audioOutFormat!.isNotEmpty) audioOutFormat!,
+      if (audioOutSamplerate != null) '${(audioOutSamplerate! / 1000).toStringAsFixed(1)} kHz',
+    ];
+    if (detail.isEmpty) return audioOutChannels!;
+    return '${audioOutChannels!} (${detail.join(', ')})';
   }
 
   /// Format FPS with 2 decimal places.

@@ -1726,6 +1726,8 @@
     "dvPath": "DV-sti",
     "p7Conversion": "P7-konv.",
     "sampleRate": "Samplingsrate",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Pikselformat",
     "hwFormat": "HW-format",
     "matrix": "Matrise",

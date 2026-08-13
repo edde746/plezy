@@ -1726,6 +1726,8 @@
     "dvPath": "DV Yolu",
     "p7Conversion": "P7 Dönüştürme",
     "sampleRate": "Örnekleme Hızı",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Piksel Biçimi",
     "hwFormat": "HW Biçimi",
     "matrix": "Matris",

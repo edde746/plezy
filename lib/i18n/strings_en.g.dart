@@ -4358,6 +4358,12 @@ class Translations$performanceOverlay$en {
 	/// en: 'Sample Rate'
 	String get sampleRate => 'Sample Rate';
 
+	/// en: 'Output'
+	String get audioOutput => 'Output';
+
+	/// en: 'Output Driver'
+	String get audioOutputDriver => 'Output Driver';
+
 	/// en: 'Pixel Fmt'
 	String get pixelFormat => 'Pixel Fmt';
 
@@ -7955,6 +7961,8 @@ extension on Translations {
 			'performanceOverlay.dvPath' => 'DV Path',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
+			'performanceOverlay.audioOutput' => 'Output',
+			'performanceOverlay.audioOutputDriver' => 'Output Driver',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
 			'performanceOverlay.hwFormat' => 'HW Fmt',
 			'performanceOverlay.matrix' => 'Matrix',

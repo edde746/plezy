@@ -1746,6 +1746,8 @@
     "dvPath": "Путь DV",
     "p7Conversion": "Конв. P7",
     "sampleRate": "Частота дискр.",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Формат пикселей",
     "hwFormat": "Формат HW",
     "matrix": "Матрица",

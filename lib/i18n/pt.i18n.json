@@ -1726,6 +1726,8 @@
     "dvPath": "Caminho DV",
     "p7Conversion": "Conv. P7",
     "sampleRate": "Taxa de amostragem",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Formato de pixel",
     "hwFormat": "Formato HW",
     "matrix": "Matriz",

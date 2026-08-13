@@ -1726,6 +1726,8 @@
     "dvPath": "DV Path",
     "p7Conversion": "P7 Conv",
     "sampleRate": "Sample Rate",
+    "audioOutput": "Output",
+    "audioOutputDriver": "Output Driver",
     "pixelFormat": "Pixel Fmt",
     "hwFormat": "HW Fmt",
     "matrix": "Matrix",

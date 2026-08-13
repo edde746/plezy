@@ -1726,6 +1726,8 @@
     "dvPath": "DV yoʻli",
     "p7Conversion": "P7 oʻtkazmasi",
     "sampleRate": "Diskretlash chastotasi",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Piksel formati",
     "hwFormat": "HW formati",
     "matrix": "Matritsa",

@@ -1726,6 +1726,8 @@
     "dvPath": "Ruta DV",
     "p7Conversion": "Conv. P7",
     "sampleRate": "Frecuencia de muestreo",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Formato de píxel",
     "hwFormat": "Formato HW",
     "matrix": "Matriz",

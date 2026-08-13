@@ -1726,6 +1726,8 @@
     "dvPath": "DV жолы",
     "p7Conversion": "P7 түрлендіруі",
     "sampleRate": "Дискретизация жиілігі",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Пиксель форматы",
     "hwFormat": "HW форматы",
     "matrix": "Матрица",

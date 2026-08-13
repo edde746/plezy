@@ -1726,6 +1726,8 @@
     "dvPath": "Chemin DV",
     "p7Conversion": "Conv. P7",
     "sampleRate": "Fréquence d’échantillonnage",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Fmt pixel",
     "hwFormat": "Fmt HW",
     "matrix": "Matrice",

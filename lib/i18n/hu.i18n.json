@@ -1726,6 +1726,8 @@
     "dvPath": "DV-útvonal",
     "p7Conversion": "P7-átalakítás",
     "sampleRate": "Mintavételezési frekvencia",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Képpontformátum",
     "hwFormat": "Hardverformátum",
     "matrix": "Mátrix",

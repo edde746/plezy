@@ -70,6 +70,9 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         if (_stats.audioCodec != null) _metric(t.fileInfo.codec, _stats.audioCodec!),
         _metric(t.performanceOverlay.sampleRate, _stats.sampleRateFormatted),
         _metric(t.fileInfo.channels, _stats.audioChannels ?? t.common.notAvailable),
+        if (isMpv) _metric(t.performanceOverlay.audioOutput, _stats.audioOutputFormatted),
+        if (isMpv && _stats.audioOutputDriver != null && _stats.audioOutputDriver!.isNotEmpty)
+          _metric(t.performanceOverlay.audioOutputDriver, _stats.audioOutputDriver!),
         if (_stats.hasValidAudioBitrate) _metric(t.fileInfo.bitrate, _stats.audioBitrateFormatted),
         if (!isMpv && _stats.audioDecoderName != null)
           _metric(t.performanceOverlay.decoder, _stats.audioDecoderFormatted),

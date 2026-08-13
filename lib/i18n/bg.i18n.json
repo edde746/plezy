@@ -1726,6 +1726,8 @@
     "dvPath": "DV път",
     "p7Conversion": "P7 конв.",
     "sampleRate": "Честота",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Пикселен формат",
     "hwFormat": "HW формат",
     "matrix": "Матрица",

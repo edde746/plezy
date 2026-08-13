@@ -1716,6 +1716,8 @@
     "dvPath": "DV パス",
     "p7Conversion": "P7 変換",
     "sampleRate": "サンプルレート",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "ピクセル形式",
     "hwFormat": "HW 形式",
     "matrix": "マトリクス",

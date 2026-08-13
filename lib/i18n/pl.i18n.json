@@ -1746,6 +1746,8 @@
     "dvPath": "Ścieżka DV",
     "p7Conversion": "Konw. P7",
     "sampleRate": "Częstotliwość próbkowania",
+    "audioOutput": "",
+    "audioOutputDriver": "",
     "pixelFormat": "Format pikseli",
     "hwFormat": "Format HW",
     "matrix": "Macierz",

@@ -161,6 +161,12 @@ class PerformanceStatsService {
         audioSamplerate: _parseInt(statsMap['audio-params/samplerate'] as String?),
         audioChannels: statsMap['audio-params/hr-channels'] as String?,
         audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
+        // Absent until the Android native stats map carries them; a missing
+        // key reads null and the overlay omits the row.
+        audioOutputDriver: statsMap['current-ao'] as String?,
+        audioOutChannels: statsMap['audio-out-params/hr-channels'] as String?,
+        audioOutSamplerate: _parseInt(statsMap['audio-out-params/samplerate'] as String?),
+        audioOutFormat: statsMap['audio-out-params/format'] as String?,
         avsyncChange: _parseDouble(statsMap['total-avsync-change'] as String?),
         cacheUsed: _parseInt(statsMap['cache-used'] as String?),
         cacheLimit: _parseInt(statsMap['demuxer-max-bytes'] as String?),
@@ -254,6 +260,11 @@ class PerformanceStatsService {
       player.getProperty('frame-drop-count'), // 15
       player.getProperty('decoder-frame-drop-count'), // 16
       player.getProperty('demuxer-cache-duration'), // 17
+      // The negotiated output side; `audio-params/*` above is the decoder.
+      player.getProperty('current-ao'), // 18
+      player.getProperty('audio-out-params/hr-channels'), // 19
+      player.getProperty('audio-out-params/samplerate'), // 20
+      player.getProperty('audio-out-params/format'), // 21
     ]);
 
     final hasVideo = results[1] != null;
@@ -309,6 +320,10 @@ class PerformanceStatsService {
       frameDropCount: _parseInt(results[15]),
       decoderFrameDropCount: _parseInt(results[16]),
       cacheDuration: _parseDouble(results[17]),
+      audioOutputDriver: results[18],
+      audioOutChannels: results[19],
+      audioOutSamplerate: _parseInt(results[20]),
+      audioOutFormat: results[21],
       // Video-dependent properties
       displayFps: _parseDouble(videoResults?.first),
       pixelformat: videoResults?[1],
