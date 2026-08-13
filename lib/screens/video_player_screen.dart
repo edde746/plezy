@@ -649,6 +649,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// (assistant overlay, HDMI-CEC events) so quick app switches don't churn
   /// codecs.
   static const Duration _tvBackgroundPlayerSuspendGrace = Duration(seconds: 30);
+
+  /// Redelivery schedule for the suspend-time stopped report. Standby entry
+  /// can drop Wi-Fi into power-save and stall exactly that connect, and
+  /// mutations deliberately never fail over ([FailoverHttpClient]), so the
+  /// one report the suspend exists for gets a bounded retry window instead
+  /// of a single fail-fast attempt.
+  static const Duration _tvBackgroundStopReportRetryDelay = Duration(seconds: 10);
+  static const int _tvBackgroundStopReportMaxRetries = 5;
   Timer? _tvBackgroundPlayerSuspendTimer;
   bool _playerSuspendedForTvBackground = false;
   Duration? _tvBackgroundSuspendPosition;

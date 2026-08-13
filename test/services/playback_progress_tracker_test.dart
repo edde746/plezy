@@ -601,6 +601,32 @@ void main() {
       expect(client.updateProgressCalls.map((call) => call.state), ['stopped']);
     });
 
+    test('stoppedReportDelivered gates the TV-suspend retry and overrides survive a reset player (#1911)', () async {
+      final client = _FakePlexClient()..throwOnNextCall = Exception('connect timed out');
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      await tracker.sendStoppedProgressOnce(positionOverride: const Duration(seconds: 5));
+      expect(tracker.stoppedReportDelivered, isFalse, reason: 'transport failure is not delivery');
+      expect(client.updateProgressCalls, isEmpty);
+
+      // The redelivery runs after stop() released the native pipeline, when
+      // live player state is reset — the report must ride the overrides.
+      player.position = Duration.zero;
+      player.duration = Duration.zero;
+      await tracker.sendProgress(
+        'stopped',
+        positionOverride: const Duration(seconds: 5),
+        durationOverride: const Duration(seconds: 100),
+      );
+
+      expect(tracker.stoppedReportDelivered, isTrue);
+      expect(client.updateProgressCalls.map((call) => call.state), ['stopped']);
+      expect(client.updateProgressCalls.single.time, 5000);
+      expect(client.updateProgressCalls.single.duration, 100000);
+    });
+
     test('maps current player tracks to server stream indexes for progress reports', () async {
       final client = _FakePlexClient();
       const selectedAudio = AudioTrack(id: 'audio_1', language: 'jpn');

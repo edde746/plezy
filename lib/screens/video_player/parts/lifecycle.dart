@@ -262,12 +262,14 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
   /// Grace expired while still backgrounded: release the native AV pipeline
   /// (MediaCodec decoders + AudioTrack, tunneled passthrough included) so a
-  /// parked Plezy can't starve other apps on shared-hardware TV SoCs. stop()
-  /// retains Dart-side position/duration/track state on both Android
-  /// backends, and the progress tracker keeps sending paused heartbeats at
-  /// the retained position, so the server session stays alive and resumable.
-  /// Position and track selections are latched here because the reload on
-  /// restore reads them after the native state is gone.
+  /// parked Plezy can't starve other apps on shared-hardware TV SoCs, and end
+  /// the backend playback session. Fire OS standby never freezes the process,
+  /// so paused heartbeats would pin the session in the server dashboard for
+  /// as long as the device sits dark (#1911) — and they buy nothing here: the
+  /// restore path performs a fresh playback decision and rebuilds progress
+  /// reporting anyway. stop() retains Dart-side position/duration/track state
+  /// on both Android backends; position and track selections are latched here
+  /// because the reload on restore reads them after the native state is gone.
   Future<void> _suspendPlayerForTvBackground() async {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
@@ -284,11 +286,22 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       return;
     }
 
-    _tvBackgroundSuspendPosition = currentPlayer.state.position;
+    final suspendPosition = currentPlayer.state.position;
+    final suspendDuration = currentPlayer.state.duration;
+    _tvBackgroundSuspendPosition = suspendPosition;
     _tvBackgroundSuspendAudioTrack = currentPlayer.state.track.audio;
     _tvBackgroundSuspendSubtitleTrack = currentPlayer.state.track.subtitle;
     _tvBackgroundSuspendSecondarySubtitleTrack = currentPlayer.state.track.secondarySubtitle;
     _playerSuspendedForTvBackground = true;
+    // Stop the heartbeat timer first: its paused tick also pings any Plex
+    // transcode session, which would keep that alive past the stop report.
+    // Start the stopped report before releasing the native stream — the same
+    // ordering as the live background path and the reload flow, because
+    // stop() resets player state the report would otherwise read. The
+    // one-shot latch coalesces this stop with the one the restore reload
+    // sends before re-resolving the source.
+    _progressTracker?.stopTracking();
+    final stoppedReport = _sendStoppedProgressOnce(positionOverride: suspendPosition);
     try {
       await currentPlayer.stop();
       _recordLifecycleState('hidden', action: 'tv_background_suspend');
@@ -298,14 +311,45 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       _tvBackgroundSuspendAudioTrack = null;
       _tvBackgroundSuspendSubtitleTrack = null;
       _tvBackgroundSuspendSecondarySubtitleTrack = null;
+      // The player still holds its native state, so re-arm reporting: the
+      // next paused heartbeat re-opens a server session at the same position
+      // and the pause stays resumable in place.
+      await stoppedReport;
+      _progressTracker?.resumeAfterStoppedReport();
+      _progressTracker?.startTracking();
       appLogger.w('TV background suspend failed; player left paused', error: e);
+      return;
+    }
+    await stoppedReport;
+    if (!(_progressTracker?.stoppedReportDelivered ?? true)) {
+      unawaited(_redeliverTvBackgroundStopReport(position: suspendPosition, duration: suspendDuration));
+    }
+  }
+
+  /// Bounded redelivery of the suspend-time stopped report. Standby entry can
+  /// drop Wi-Fi into power-save and stall exactly that connect, and mutations
+  /// deliberately never fail over ([FailoverHttpClient]) — a lost terminal
+  /// report would leave the server session pinned, the very state the suspend
+  /// exists to clear (#1911). Runs detached from the lifecycle transition
+  /// queue so a wake-up is never blocked behind a backoff sleep; each attempt
+  /// re-checks that the suspend is still standing, because the restore path
+  /// clears [_playerSuspendedForTvBackground] before it rebuilds a live
+  /// session that a late retry must not report stopped.
+  Future<void> _redeliverTvBackgroundStopReport({required Duration position, required Duration duration}) async {
+    for (var attempt = 0; attempt < VideoPlayerScreenState._tvBackgroundStopReportMaxRetries; attempt++) {
+      await Future<void>.delayed(VideoPlayerScreenState._tvBackgroundStopReportRetryDelay);
+      final tracker = _progressTracker;
+      if (!mounted || tracker == null || !_playerSuspendedForTvBackground) return;
+      if (tracker.stoppedReportDelivered) return;
+      await tracker.sendProgress('stopped', positionOverride: position, durationOverride: duration);
     }
   }
 
   /// Rebuild the playback session after a TV background suspend released the
-  /// native pipeline. VOD reloads in place through the regular reload flow —
-  /// a fresh playback decision, since the suspended stream URL may have
-  /// expired server-side — and comes back paused; the caller's
+  /// native pipeline and reported the backend session stopped. VOD reloads in
+  /// place through the regular reload flow — a fresh playback decision, since
+  /// the old session is closed and its stream URL may have expired
+  /// server-side — and comes back paused; the caller's
   /// [_restoreMediaControlsAfterResume] then resumes it (with
   /// rewind-on-resume) exactly like a plain background pause. Live sessions
   /// never enter this flow because their tuned session and capture-buffer

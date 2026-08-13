@@ -273,9 +273,12 @@ class PlaybackProgressTracker {
     appLogger.d('Stopped progress tracking');
   }
 
-  /// [state] can be 'playing', 'paused', or 'stopped'.
-  Future<void> sendProgress(String state, {Duration? positionOverride}) async {
-    await _sendProgress(state, positionOverride: positionOverride);
+  /// [state] can be 'playing', 'paused', or 'stopped'. The overrides exist
+  /// for reports that must not read live player state — a terminal report
+  /// retried after stop() has released the native pipeline would otherwise
+  /// read a reset position/duration (see the zero-duration guard below).
+  Future<void> sendProgress(String state, {Duration? positionOverride, Duration? durationOverride}) async {
+    await _sendProgress(state, positionOverride: positionOverride, durationOverride: durationOverride);
   }
 
   Future<void> sendStoppedProgressOnce({Duration? positionOverride}) {
@@ -285,6 +288,15 @@ class PlaybackProgressTracker {
     _stoppedProgressFuture = future;
     return future;
   }
+
+  /// Whether the terminal stopped report actually reached the backend.
+  ///
+  /// [sendStoppedProgressOnce] resolving is not delivery — the report is
+  /// best-effort and its transport errors are swallowed. Callers that must
+  /// retry a failed terminal report (the TV background suspend, whose whole
+  /// purpose is closing the server session, #1911) key on this instead.
+  /// Offline trackers have no backend session and report `true`.
+  bool get stoppedReportDelivered => _reportSession?.isStopped ?? true;
 
   void resumeAfterStoppedReport() {
     _stoppedProgressFuture = null;
