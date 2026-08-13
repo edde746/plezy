@@ -150,14 +150,14 @@ class PerformanceStatsService {
       // Parse MPV stats format (returned when in fallback mode)
       final stats = PerformanceStats(
         playerType: 'mpv',
-        videoCodec: _formatCodecName(statsMap['video-codec'] as String?),
+        videoCodec: _formatVideoCodecName(statsMap['video-codec'] as String?),
         videoWidth: _parseInt(statsMap['video-params/w'] as String?),
         videoHeight: _parseInt(statsMap['video-params/h'] as String?),
         videoFps: _parseDouble(statsMap['container-fps'] as String?),
         actualFps: _parseDouble(statsMap['estimated-vf-fps'] as String?),
         videoBitrate: _parseInt(statsMap['video-bitrate'] as String?),
         hwdecCurrent: statsMap['hwdec-current'] as String?,
-        audioCodec: _formatCodecName(statsMap['audio-codec-name'] as String?),
+        audioCodec: _formatAudioCodecName(statsMap['audio-codec-name'] as String?),
         audioSamplerate: _parseInt(statsMap['audio-params/samplerate'] as String?),
         audioChannels: statsMap['audio-params/hr-channels'] as String?,
         audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
@@ -192,14 +192,14 @@ class PerformanceStatsService {
       final stats = PerformanceStats(
         playerType: 'exoplayer',
         // Video metrics
-        videoCodec: _formatCodecName(statsMap['videoCodec'] as String?),
+        videoCodec: _formatVideoCodecName(statsMap['videoCodec'] as String?),
         videoWidth: statsMap['videoWidth'] as int?,
         videoHeight: statsMap['videoHeight'] as int?,
         videoFps: (statsMap['videoFps'] as num?)?.toDouble(),
         videoBitrate: statsMap['videoBitrate'] as int?,
         videoDecoderName: statsMap['videoDecoderName'] as String?,
         // Audio metrics
-        audioCodec: _formatCodecName(statsMap['audioCodec'] as String?),
+        audioCodec: _formatAudioCodecName(statsMap['audioCodec'] as String?),
         audioSamplerate: statsMap['audioSampleRate'] as int?,
         audioChannels: CodecUtils.formatAudioChannels(statsMap['audioChannels'] as int?),
         audioBitrate: statsMap['audioBitrate'] as int?,
@@ -291,14 +291,14 @@ class PerformanceStatsService {
 
     final stats = PerformanceStats(
       playerType: 'mpv',
-      videoCodec: _formatCodecName(results.first),
+      videoCodec: _formatVideoCodecName(results.first),
       videoWidth: _parseInt(results[1]),
       videoHeight: _parseInt(results[2]),
       videoFps: _parseDouble(results[3]),
       actualFps: _parseDouble(results[4]),
       videoBitrate: _parseInt(results[5]),
       hwdecCurrent: results[6],
-      audioCodec: _formatCodecName(results[7]),
+      audioCodec: _formatAudioCodecName(results[7]),
       audioSamplerate: _parseInt(results[8]),
       audioChannels: results[9],
       audioBitrate: _parseInt(results[10]),
@@ -345,25 +345,26 @@ class PerformanceStatsService {
     return double.tryParse(value);
   }
 
-  /// Format codec name for display (uppercase common codecs).
-  String? _formatCodecName(String? codec) {
+  /// Format a video codec name for display. Handles mpv's descriptive
+  /// strings ('hevc (Main 10)') and ExoPlayer's RFC 6381 codec IDs
+  /// ('hvc1.2.4.L153.B0', 'av01.0.08M.10').
+  String? _formatVideoCodecName(String? codec) {
     if (codec == null || codec.isEmpty) return null;
-    // Common codec name mappings
     final upper = codec.toUpperCase();
-    if (upper.contains('HEVC') || upper.contains('H265')) return 'HEVC';
+    if (upper.contains('HEVC') || upper.contains('H265') || upper.contains('HVC1') || upper.contains('HEV1')) {
+      return 'HEVC';
+    }
     if (upper.contains('H264') || upper.contains('AVC')) return 'H.264';
-    if (upper.contains('AV1')) return 'AV1';
-    if (upper.contains('VP9')) return 'VP9';
-    if (upper.contains('AAC')) return 'AAC';
-    if (upper.contains('AC3') || upper.contains('AC-3')) return 'AC3';
-    if (upper.contains('EAC3') || upper.contains('E-AC-3')) return 'EAC3';
-    if (upper.contains('DTS')) return 'DTS';
-    if (upper.contains('TRUEHD')) return 'TrueHD';
-    if (upper.contains('FLAC')) return 'FLAC';
-    if (upper.contains('OPUS')) return 'Opus';
-    if (upper.contains('VORBIS')) return 'Vorbis';
-    if (upper.contains('MP3')) return 'MP3';
+    if (upper.contains('AV1') || upper.contains('AV01')) return 'AV1';
+    if (upper.contains('VP9') || upper.contains('VP09')) return 'VP9';
     return codec;
+  }
+
+  /// Format an audio codec name for display. Both mpv's ffmpeg names and
+  /// ExoPlayer's RFC 6381 codec IDs go through the shared mapping.
+  String? _formatAudioCodecName(String? codec) {
+    if (codec == null || codec.isEmpty) return null;
+    return CodecUtils.formatAudioCodec(codec);
   }
 
   /// Dispose of the service and release resources.

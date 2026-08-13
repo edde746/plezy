@@ -122,16 +122,25 @@ class CodecUtils {
   }
 
   /// Formats an audio codec name to a user-friendly display format.
+  ///
+  /// Accepts both ffmpeg-style names as reported by mpv and the media
+  /// servers ('aac', 'eac3') and RFC 6381 codec IDs as reported by
+  /// ExoPlayer's `Format.codecs` ('mp4a.40.2', 'ec-3', 'dtsc').
   static String formatAudioCodec(String codec) {
     final lower = codec.toLowerCase();
+    // MP4 object types 0x69/0x6B under the mp4a prefix are MPEG layer
+    // audio; every other mp4a object type in the wild is an AAC variant.
+    if (lower == 'mp4a.69' || lower == 'mp4a.6b') return 'MP3';
+    if (lower == 'mp4a' || lower.startsWith('mp4a.')) return 'AAC';
+    if (lower == 'ac-4' || lower.startsWith('ac-4.')) return 'AC4';
     return switch (lower) {
       'aac' => 'AAC',
-      'ac3' => 'AC3',
-      'eac3' || 'ec3' => 'E-AC3',
-      'truehd' => 'TrueHD',
-      'dts' => 'DTS',
-      'dca' => 'DTS',
-      'dtshd' || 'dts-hd' => 'DTS-HD',
+      'ac3' || 'ac-3' => 'AC3',
+      'eac3' || 'ec3' || 'ec-3' => 'E-AC3',
+      'truehd' || 'mlpa' => 'TrueHD',
+      'dts' || 'dca' || 'dtsc' || 'dtse' => 'DTS',
+      'dtshd' || 'dts-hd' || 'dtsh' || 'dtsl' => 'DTS-HD',
+      'dtsx' => 'DTS:X',
       'flac' => 'FLAC',
       'mp3' || 'mp3float' => 'MP3',
       'opus' => 'Opus',
