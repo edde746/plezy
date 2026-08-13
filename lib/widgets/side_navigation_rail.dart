@@ -233,7 +233,10 @@ class SideNavigationRail extends StatefulWidget {
 }
 
 class SideNavigationRailState extends State<SideNavigationRail> with MountedSetStateMixin {
-  bool _librariesExpanded = true;
+  /// Libraries section expansion, held in settings rather than widget state so
+  /// it survives relaunch, remount and layout switches (#1896). The rail's
+  /// [ListenableBuilder] below listens to the pref, so the toggle just writes.
+  bool get _librariesExpanded => SettingsService.instance.read(SettingsService.librariesSectionExpanded);
 
   bool _isHovered = false;
   bool _isTouchExpanded = false;
@@ -661,12 +664,14 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final nowPlayingTrack = widget.isOfflineMode || !PlatformDetector.isTV() ? null : musicService?.currentTrack;
 
     // Listen to fullscreen + the groupLibrariesByServer / showExploreTab
-    // settings so the rail rebuilds when they are toggled in Appearance.
+    // settings so the rail rebuilds when they are toggled in Appearance, and to
+    // librariesSectionExpanded so the Libraries header toggle repaints.
     return ListenableBuilder(
       listenable: Listenable.merge([
         FullscreenStateManager(),
         SettingsService.instance.listenable(SettingsService.groupLibrariesByServer),
         SettingsService.instance.listenable(SettingsService.showExploreTab),
+        SettingsService.instance.listenable(SettingsService.librariesSectionExpanded),
       ]),
       builder: (context, _) {
         final hasExplore = hasExploreSource && SettingsService.instance.read(SettingsService.showExploreTab);
@@ -1022,7 +1027,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           ),
           isSelected: isLibrariesTabSelected,
           isCollapsed: isCollapsed,
-          onTap: () => setState(() => _librariesExpanded = !_librariesExpanded),
+          onTap: () =>
+              unawaited(SettingsService.instance.write(SettingsService.librariesSectionExpanded, !_librariesExpanded)),
           focusNode: _focusTracker.get(_kLibraries),
           borderRadius: BorderRadius.circular(tokens(context).radiusMd),
           horizontalPadding: itemHorizontalPadding,

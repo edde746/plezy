@@ -470,6 +470,10 @@ class SettingsService extends BaseSharedPreferencesService {
   /// keep working while the tab is hidden.
   static const showExploreTab = BoolPref('show_explore_tab', defaultValue: true);
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
+
+  /// Sidebar Libraries section expansion. Persisted so a collapsed section
+  /// stays collapsed across launches instead of springing back open (#1896).
+  static const librariesSectionExpanded = BoolPref('libraries_section_expanded', defaultValue: true);
   static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
   static const showSeasonPostersOnTabs = BoolPref('show_season_posters_on_tabs');
@@ -948,6 +952,7 @@ class SettingsService extends BaseSharedPreferencesService {
     startupSection,
     showExploreTab,
     alwaysKeepSidebarOpen,
+    librariesSectionExpanded,
     showUnwatchedCount,
     showEpisodeNumberOnCards,
     showSeasonPostersOnTabs,
