@@ -624,9 +624,9 @@ bool MpvPlayer::InitRenderContext() {
 
   auto restore_flutter = [&]() {
     const EGLBoolean api_restored = previous_api == EGL_NONE ? EGL_TRUE : eglBindAPI(previous_api);
-    const EGLBoolean restored =
-        api_restored == EGL_TRUE ? eglMakeCurrent(flutter_display, flutter_draw, flutter_read, flutter_context)
-                                 : EGL_FALSE;
+    const EGLBoolean restored = api_restored == EGL_TRUE
+                                    ? eglMakeCurrent(flutter_display, flutter_draw, flutter_read, flutter_context)
+                                    : EGL_FALSE;
     return restored == EGL_TRUE && api_restored == EGL_TRUE;
   };
 

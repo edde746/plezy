@@ -270,8 +270,8 @@ bool WaylandVideoSurface::InitEgl(std::string* error, bool prefer_deep) {
   // render-context failure on a deep config (see Create's `prefer_deep`): the
   // retry is about matching the configuration hardware decode demonstrably
   // worked against, so only the 8-bit unorm tier is offered.
-  for (const ConfigTier tier :
-       prefer_deep ? std::vector<ConfigTier>{{10, false}, {16, true}, {8, false}} : std::vector<ConfigTier>{{8, false}}) {
+  for (const ConfigTier tier : prefer_deep ? std::vector<ConfigTier>{{10, false}, {16, true}, {8, false}}
+                                           : std::vector<ConfigTier>{{8, false}}) {
     if (tier.floating && !has_float_configs) continue;
     for (const EGLint renderable : {EGL_OPENGL_ES3_BIT, EGL_OPENGL_ES2_BIT}) {
       const EGLint attributes[] = {
@@ -1013,9 +1013,7 @@ void WaylandVideoSurface::ArmFrameAckWatchdog() {
               self->consecutive_frame_acks_missed_);
           return G_SOURCE_REMOVE;
         }
-        g_message(
-            "MPV video plane: frame not acknowledged within %d ms; re-presenting",
-            kFrameAckTimeoutMs);
+        g_message("MPV video plane: frame not acknowledged within %d ms; re-presenting", kFrameAckTimeoutMs);
         if (self->on_frame_) self->on_frame_();
         return G_SOURCE_REMOVE;
       },
