@@ -962,6 +962,7 @@ class _Translations$mpvConfig$ko extends Translations$mpvConfig$en {
 	@override String get presetDeleted => '프리셋이 삭제되었습니다';
 	@override String get confirmDeletePreset => '이 프리셋을 삭제하시겠습니까?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'Linux에서는 vo, gpu-context, gpu-api가 무시됩니다. 내장 동영상은 항상 비디오 평면에서 vo=libmpv로 렌더링되며, gpu-next(ArtCNN 같은 컴퓨트 셰이더에 필요)는 내장 방식으로 실행할 수 없습니다.';
 }
 
 // Path: dialog
@@ -3424,6 +3425,7 @@ extension on TranslationsKo {
 			'mpvConfig.presetDeleted' => '프리셋이 삭제되었습니다',
 			'mpvConfig.confirmDeletePreset' => '이 프리셋을 삭제하시겠습니까?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'Linux에서는 vo, gpu-context, gpu-api가 무시됩니다. 내장 동영상은 항상 비디오 평면에서 vo=libmpv로 렌더링되며, gpu-next(ArtCNN 같은 컴퓨트 셰이더에 필요)는 내장 방식으로 실행할 수 없습니다.',
 			'dialog.confirmAction' => '작업 확인',
 			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
 			'profiles.switchingProfile' => '프로필 전환 중…',
@@ -3704,9 +3706,9 @@ extension on TranslationsKo {
 			'explore.emptyTitle' => '아직 아무것도 없습니다',
 			'explore.emptyMessage' => ({required Object source}) => '${source}에 콘텐츠가 추가되면 여기에 표시됩니다.',
 			'explore.searchHint' => ({required Object source}) => '${source}에서 검색',
-			'explore.searchEmpty' => ({required Object query}) => '「${query}」에 대한 결과가 없습니다',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => '「${query}」에 대한 결과가 없습니다',
 			'explore.searchPrompt' => ({required Object source}) => '${source}에서 영화와 TV 프로그램을 검색하세요.',
 			'explore.searchFailed' => '검색에 실패했습니다. 연결을 확인하고 다시 시도하세요.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} 인기',
@@ -4218,9 +4220,9 @@ extension on TranslationsKo {
 			'videoSettings.playbackSpeed' => '재생 속도',
 			'videoSettings.normalSpeed' => '보통',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '활성 (${duration})',
-			'videoSettings.zoom' => '확대/축소',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => '확대/축소',
 			'videoSettings.sleepTimer' => '취침 타이머',
 			'videoSettings.audioSync' => '오디오 동기화',
 			'videoSettings.subtitleSync' => '자막 동기화',

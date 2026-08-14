@@ -795,7 +795,8 @@
     "presetLoaded": "Preset loaded",
     "presetDeleted": "Preset deleted",
     "confirmDeletePreset": "Are you sure you want to delete this preset?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "embeddedVoHint": "vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded."
   },
   "dialog": {
     "confirmAction": "Confirm Action"

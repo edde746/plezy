@@ -2370,6 +2370,9 @@ class Translations$mpvConfig$en {
 
 	/// en: 'gpu-api=vulkan hwdec=auto # comment'
 	String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+
+	/// en: 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.'
+	String get embeddedVoHint => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.';
 }
 
 // Path: dialog
@@ -7125,6 +7128,7 @@ extension on Translations {
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.',
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
@@ -7405,9 +7409,9 @@ extension on Translations {
 			'explore.emptyTitle' => 'Nothing here yet',
 			'explore.emptyMessage' => ({required Object source}) => 'Rows from ${source} will appear here once they have content.',
 			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Search for movies and shows on ${source}.',
 			'explore.searchFailed' => 'Search failed. Check your connection and try again.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} popular',
@@ -7919,9 +7923,9 @@ extension on Translations {
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
-			'videoSettings.zoom' => 'Zoom',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',

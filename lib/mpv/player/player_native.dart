@@ -330,22 +330,31 @@ class PlayerNative extends PlayerBase {
       }
     }
 
-    // 'start' must be set before loadfile.
-    if (startPosition.inSeconds > 0) {
-      await setProperty('start', (startPosition.inMilliseconds / 1000.0).toString());
-    } else {
-      await setProperty('start', 'none');
-    }
+    // 'start' must be set before loadfile. These are playback defaults, not
+    // user track selection, and mpv refuses a property write with
+    // MPV_ERROR_PROPERTY_FORMAT when the value fails its option parser — the
+    // same refusal that surfaces as SET_PROPERTY_FAILED on the channel. A
+    // refused default must degrade to mpv's own behaviour, not abort the
+    // open: the loadfile below is what actually starts playback.
+    try {
+      if (startPosition.inSeconds > 0) {
+        await setProperty('start', (startPosition.inMilliseconds / 1000.0).toString());
+      } else {
+        await setProperty('start', 'none');
+      }
 
-    // Prevents race condition that can freeze the video decoder on Android (issue #226).
-    if (!play) {
-      await setProperty('pause', 'yes');
-    }
+      // Prevents race condition that can freeze the video decoder on Android (issue #226).
+      if (!play) {
+        await setProperty('pause', 'yes');
+      }
 
-    // Prevent mpv's own default subtitle selection from racing the
-    // server-backed TrackManager decision applied after tracks are discovered.
-    await setProperty('sid', 'no');
-    await setProperty('secondary-sid', 'no');
+      // Prevent mpv's own default subtitle selection from racing the
+      // server-backed TrackManager decision applied after tracks are discovered.
+      await setProperty('sid', 'no');
+      await setProperty('secondary-sid', 'no');
+    } catch (e) {
+      appLogger.w('MPV: pre-open playback defaults not applied', error: e);
+    }
 
     // Convert content:// URIs to fdclose:// for MPV on Android (SAF SD card
     // downloads). The immediate `loadfile replace` consumes the fd, so no

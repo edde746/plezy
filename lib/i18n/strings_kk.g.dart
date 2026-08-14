@@ -966,6 +966,7 @@ class _Translations$mpvConfig$kk extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Баптау өшірілді';
 	@override String get confirmDeletePreset => 'Осы баптауды өшіргіңіз келетініне сенімдісіз бе?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# түсініктеме';
+	@override String get embeddedVoHint => 'vo, gpu-context және gpu-api Linux-те еленбейді: ендірілген бейне әрқашан бейне жазықтығында vo=libmpv арқылы көрсетіледі, ал gpu-next (ArtCNN сияқты compute шейдерлеріне қажет) ендірілген режимде жұмыс істей алмайды.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsKk {
 			'mpvConfig.presetDeleted' => 'Баптау өшірілді',
 			'mpvConfig.confirmDeletePreset' => 'Осы баптауды өшіргіңіз келетініне сенімдісіз бе?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# түсініктеме',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context және gpu-api Linux-те еленбейді: ендірілген бейне әрқашан бейне жазықтығында vo=libmpv арқылы көрсетіледі, ал gpu-next (ArtCNN сияқты compute шейдерлеріне қажет) ендірілген режимде жұмыс істей алмайды.',
 			'dialog.confirmAction' => 'Әрекетті растау',
 			'profiles.addPlezyProfile' => 'Plezy профилін қосу',
 			'profiles.switchingProfile' => 'Профильді ауыстыру…',
@@ -3714,9 +3716,9 @@ extension on TranslationsKk {
 			'explore.emptyTitle' => 'Әлі де мұнда ештеңе жоқ',
 			'explore.emptyMessage' => ({required Object source}) => '${source} дереккөзінен алынған қатарлар мұнда көрінеді.',
 			'explore.searchHint' => ({required Object source}) => '${source} ішінен іздеу',
-			'explore.searchEmpty' => ({required Object query}) => '"${query}" бойынша нәтиже табылмады',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => '"${query}" бойынша нәтиже табылмады',
 			'explore.searchPrompt' => ({required Object source}) => '${source} арқылы фильмдер мен сериалдарды іздеңіз.',
 			'explore.searchFailed' => 'Іздеу қатесі. Қосылымды тексеріңіз.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} танымал',
@@ -4228,9 +4230,9 @@ extension on TranslationsKk {
 			'videoSettings.playbackSpeed' => 'Ойнату жылдамдығы',
 			'videoSettings.normalSpeed' => 'Қалыпты',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Белсенді (${duration})',
-			'videoSettings.zoom' => 'Масштаб',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Масштаб',
 			'videoSettings.sleepTimer' => 'Ұйқы таймері',
 			'videoSettings.audioSync' => 'Аудио синхрондау',
 			'videoSettings.subtitleSync' => 'Субтитр синхрондау',

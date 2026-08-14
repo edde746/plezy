@@ -795,7 +795,8 @@
     "presetLoaded": "Forhåndsinnstilling lastet inn",
     "presetDeleted": "Forhåndsinnstilling slettet",
     "confirmDeletePreset": "Er du sikker på at du vil slette denne forhåndsinnstillingen?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# kommentar"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# kommentar",
+    "embeddedVoHint": "vo, gpu-context og gpu-api ignoreres på Linux: innebygd video renderes alltid via vo=libmpv på videoplanet, og gpu-next (som compute-shadere som ArtCNN trenger) kan ikke kjøre innebygd."
   },
   "dialog": {
     "confirmAction": "Bekreft handling"

@@ -795,7 +795,8 @@
     "presetLoaded": "Förval laddat",
     "presetDeleted": "Förval borttaget",
     "confirmDeletePreset": "Är du säker på att du vill ta bort detta förval?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "embeddedVoHint": "vo, gpu-context och gpu-api ignoreras på Linux: inbäddad video renderas alltid via vo=libmpv på videoplanet, och gpu-next (som compute-shaders som ArtCNN behöver) kan inte köras inbäddat."
   },
   "dialog": {
     "confirmAction": "Bekräfta åtgärd"

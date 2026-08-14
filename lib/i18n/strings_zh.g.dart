@@ -962,6 +962,7 @@ class Translations$mpvConfig$zh extends Translations$mpvConfig$en {
 	@override String get presetDeleted => '预设已删除';
 	@override String get confirmDeletePreset => '确定要删除此预设吗？';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'Linux 上会忽略 vo、gpu-context 和 gpu-api：嵌入式视频始终通过视频平面上的 vo=libmpv 渲染，而 gpu-next（ArtCNN 等计算着色器需要它）无法以嵌入式方式运行。';
 }
 
 // Path: dialog
@@ -3424,6 +3425,7 @@ extension on TranslationsZh {
 			'mpvConfig.presetDeleted' => '预设已删除',
 			'mpvConfig.confirmDeletePreset' => '确定要删除此预设吗？',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'Linux 上会忽略 vo、gpu-context 和 gpu-api：嵌入式视频始终通过视频平面上的 vo=libmpv 渲染，而 gpu-next（ArtCNN 等计算着色器需要它）无法以嵌入式方式运行。',
 			'dialog.confirmAction' => '确认操作',
 			'profiles.addPlezyProfile' => '添加 Plezy 用户资料',
 			'profiles.switchingProfile' => '正在切换用户资料…',
@@ -3704,9 +3706,9 @@ extension on TranslationsZh {
 			'explore.emptyTitle' => '这里还什么都没有',
 			'explore.emptyMessage' => ({required Object source}) => '当 ${source} 有内容时，相关内容将显示在这里。',
 			'explore.searchHint' => ({required Object source}) => '搜索 ${source}',
-			'explore.searchEmpty' => ({required Object query}) => '没有“${query}”的结果',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => '没有“${query}”的结果',
 			'explore.searchPrompt' => ({required Object source}) => '在 ${source} 上搜索电影和剧集。',
 			'explore.searchFailed' => '搜索失败。请检查网络连接后重试。',
 			'explore.badge.rankPopular' => ({required Object n}) => '热门榜第 #${n} 名',
@@ -4218,9 +4220,9 @@ extension on TranslationsZh {
 			'videoSettings.playbackSpeed' => '播放速度',
 			'videoSettings.normalSpeed' => '正常',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '运行中（${duration}）',
-			'videoSettings.zoom' => '缩放',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => '缩放',
 			'videoSettings.sleepTimer' => '睡眠定时器',
 			'videoSettings.audioSync' => '音频同步',
 			'videoSettings.subtitleSync' => '字幕同步',

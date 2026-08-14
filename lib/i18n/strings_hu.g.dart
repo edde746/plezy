@@ -966,6 +966,7 @@ class _Translations$mpvConfig$hu extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Előbeállítás törölve';
 	@override String get confirmDeletePreset => 'Biztosan törölni szeretnéd ezt az előbeállítást?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# megjegyzés';
+	@override String get embeddedVoHint => 'A vo, gpu-context és gpu-api beállítások Linuxon figyelmen kívül maradnak: a beágyazott videó mindig a vo=libmpv-n keresztül jelenik meg a videósíkon, a gpu-next (amelyre az ArtCNN-hez hasonló compute shadereknek szükségük van) pedig nem futhat beágyazva.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsHu {
 			'mpvConfig.presetDeleted' => 'Előbeállítás törölve',
 			'mpvConfig.confirmDeletePreset' => 'Biztosan törölni szeretnéd ezt az előbeállítást?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# megjegyzés',
+			'mpvConfig.embeddedVoHint' => 'A vo, gpu-context és gpu-api beállítások Linuxon figyelmen kívül maradnak: a beágyazott videó mindig a vo=libmpv-n keresztül jelenik meg a videósíkon, a gpu-next (amelyre az ArtCNN-hez hasonló compute shadereknek szükségük van) pedig nem futhat beágyazva.',
 			'dialog.confirmAction' => 'Művelet megerősítése',
 			'profiles.addPlezyProfile' => 'Plezy profil hozzáadása',
 			'profiles.switchingProfile' => 'Profilváltás…',
@@ -3714,9 +3716,9 @@ extension on TranslationsHu {
 			'explore.emptyTitle' => 'Még nincs itt semmi',
 			'explore.emptyMessage' => ({required Object source}) => 'A(z) ${source} forrásból származó sorok itt fognak megjelenni, amint van tartalmuk.',
 			'explore.searchHint' => ({required Object source}) => 'Keresés itt: ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'Nincs találat a következőre: "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'Nincs találat a következőre: "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Filmek és sorozatok keresése a következőn: ${source}.',
 			'explore.searchFailed' => 'A keresés nem sikerült. Ellenőrizd a kapcsolatot és próbáld újra.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} népszerű',
@@ -4228,9 +4230,9 @@ extension on TranslationsHu {
 			'videoSettings.playbackSpeed' => 'Lejátszási sebesség',
 			'videoSettings.normalSpeed' => 'Normál',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktív (${duration})',
-			'videoSettings.zoom' => 'Nagyítás',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Nagyítás',
 			'videoSettings.sleepTimer' => 'Elalvási időzítő',
 			'videoSettings.audioSync' => 'Hang szinkronizálása',
 			'videoSettings.subtitleSync' => 'Felirat szinkronizálása',

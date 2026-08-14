@@ -795,7 +795,8 @@
     "presetLoaded": "Préréglage chargé",
     "presetDeleted": "Préréglage supprimé",
     "confirmDeletePreset": "Êtes-vous sûr de vouloir supprimer ce préréglage ?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "embeddedVoHint": "vo, gpu-context et gpu-api sont ignorés sous Linux : la vidéo intégrée est toujours rendue via vo=libmpv sur le plan vidéo, et gpu-next (dont les shaders de calcul comme ArtCNN ont besoin) ne peut pas fonctionner en mode intégré."
   },
   "dialog": {
     "confirmAction": "Confirmer l'action"

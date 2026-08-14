@@ -966,6 +966,7 @@ class _Translations$mpvConfig$nl extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Voorinstelling verwijderd';
 	@override String get confirmDeletePreset => 'Weet je zeker dat je deze voorinstelling wilt verwijderen?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'vo, gpu-context en gpu-api worden genegeerd op Linux: ingebedde video wordt altijd weergegeven via vo=libmpv op het videovlak, en gpu-next (nodig voor compute-shaders zoals ArtCNN) kan niet ingebed draaien.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsNl {
 			'mpvConfig.presetDeleted' => 'Voorinstelling verwijderd',
 			'mpvConfig.confirmDeletePreset' => 'Weet je zeker dat je deze voorinstelling wilt verwijderen?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context en gpu-api worden genegeerd op Linux: ingebedde video wordt altijd weergegeven via vo=libmpv op het videovlak, en gpu-next (nodig voor compute-shaders zoals ArtCNN) kan niet ingebed draaien.',
 			'dialog.confirmAction' => 'Bevestig actie',
 			'profiles.addPlezyProfile' => 'Plezy-profiel toevoegen',
 			'profiles.switchingProfile' => 'Profiel wisselen…',
@@ -3714,9 +3716,9 @@ extension on TranslationsNl {
 			'explore.emptyTitle' => 'Hier is nog niets',
 			'explore.emptyMessage' => ({required Object source}) => 'Rijen van ${source} verschijnen hier zodra ze inhoud hebben.',
 			'explore.searchHint' => ({required Object source}) => 'Zoeken in ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'Geen resultaten voor "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'Geen resultaten voor "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Zoek naar films en series op ${source}.',
 			'explore.searchFailed' => 'Zoeken mislukt. Controleer je verbinding en probeer opnieuw.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populair',
@@ -4228,9 +4230,9 @@ extension on TranslationsNl {
 			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
 			'videoSettings.normalSpeed' => 'Normaal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Actief (${duration})',
-			'videoSettings.zoom' => 'Zoom',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Slaaptimer',
 			'videoSettings.audioSync' => 'Audiosynchronisatie',
 			'videoSettings.subtitleSync' => 'Ondertitelsynchronisatie',

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -248,6 +249,18 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
                     _buildConfigEditor(),
+                    if (Platform.isLinux) ...[
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        child: Text(
+                          t.mpvConfig.embeddedVoHint,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     _buildPresetsCard(),
                     const SizedBox(height: 24),

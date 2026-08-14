@@ -795,7 +795,8 @@
     "presetLoaded": "Пресетът е зареден",
     "presetDeleted": "Пресетът е изтрит",
     "confirmDeletePreset": "Сигурни ли сте, че искате да изтриете този пресет?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "embeddedVoHint": "vo, gpu-context и gpu-api се игнорират на Linux: вграденото видео винаги се рендерира през vo=libmpv върху видео равнината, а gpu-next (който е нужен за compute шейдъри като ArtCNN) не може да работи вградено."
   },
   "dialog": {
     "confirmAction": "Потвърждение на действие"

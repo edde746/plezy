@@ -966,6 +966,7 @@ class _Translations$mpvConfig$tr extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Önayar silindi';
 	@override String get confirmDeletePreset => 'Bu önayarı silmek istediğinizden emin misiniz?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# yorum';
+	@override String get embeddedVoHint => 'vo, gpu-context ve gpu-api Linux\'ta yok sayılır: gömülü video her zaman video düzleminde vo=libmpv üzerinden işlenir ve gpu-next (ArtCNN gibi compute shader\'ların ihtiyaç duyduğu) gömülü olarak çalışamaz.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsTr {
 			'mpvConfig.presetDeleted' => 'Önayar silindi',
 			'mpvConfig.confirmDeletePreset' => 'Bu önayarı silmek istediğinizden emin misiniz?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# yorum',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context ve gpu-api Linux\'ta yok sayılır: gömülü video her zaman video düzleminde vo=libmpv üzerinden işlenir ve gpu-next (ArtCNN gibi compute shader\'ların ihtiyaç duyduğu) gömülü olarak çalışamaz.',
 			'dialog.confirmAction' => 'Eylemi Onayla',
 			'profiles.addPlezyProfile' => 'Plezy profili ekle',
 			'profiles.switchingProfile' => 'Profil değiştiriliyor…',
@@ -3714,9 +3716,9 @@ extension on TranslationsTr {
 			'explore.emptyTitle' => 'Henüz burada bir şey yok',
 			'explore.emptyMessage' => ({required Object source}) => '${source} kaynağındaki satırlar içerik bulunduğunda burada görünecektir.',
 			'explore.searchHint' => ({required Object source}) => '${source} üzerinde ara',
-			'explore.searchEmpty' => ({required Object query}) => '"${query}" için sonuç bulunamadı',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => '"${query}" için sonuç bulunamadı',
 			'explore.searchPrompt' => ({required Object source}) => '${source} üzerinde film ve dizileri arayın.',
 			'explore.searchFailed' => 'Arama başarısız. Bağlantınızı kontrol edip tekrar deneyin.',
 			'explore.badge.rankPopular' => ({required Object n}) => 'Popülerde #${n}',
@@ -4228,9 +4230,9 @@ extension on TranslationsTr {
 			'videoSettings.playbackSpeed' => 'Oynatma Hızı',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktif (${duration})',
-			'videoSettings.zoom' => 'Yakınlaştırma',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Yakınlaştırma',
 			'videoSettings.sleepTimer' => 'Uyku Zamanlayıcısı',
 			'videoSettings.audioSync' => 'Ses Senkronizasyonu',
 			'videoSettings.subtitleSync' => 'Altyazı Senkronizasyonu',

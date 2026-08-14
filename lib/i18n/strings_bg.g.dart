@@ -966,6 +966,7 @@ class _Translations$mpvConfig$bg extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Пресетът е изтрит';
 	@override String get confirmDeletePreset => 'Сигурни ли сте, че искате да изтриете този пресет?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'vo, gpu-context и gpu-api се игнорират на Linux: вграденото видео винаги се рендерира през vo=libmpv върху видео равнината, а gpu-next (който е нужен за compute шейдъри като ArtCNN) не може да работи вградено.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsBg {
 			'mpvConfig.presetDeleted' => 'Пресетът е изтрит',
 			'mpvConfig.confirmDeletePreset' => 'Сигурни ли сте, че искате да изтриете този пресет?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context и gpu-api се игнорират на Linux: вграденото видео винаги се рендерира през vo=libmpv върху видео равнината, а gpu-next (който е нужен за compute шейдъри като ArtCNN) не може да работи вградено.',
 			'dialog.confirmAction' => 'Потвърждение на действие',
 			'profiles.addPlezyProfile' => 'Добави Plezy профил',
 			'profiles.switchingProfile' => 'Смяна на профил…',
@@ -3714,9 +3716,9 @@ extension on TranslationsBg {
 			'explore.emptyTitle' => 'Тук все още няма нищо',
 			'explore.emptyMessage' => ({required Object source}) => 'Редовете от ${source} ще се появят тук, когато има съдържание.',
 			'explore.searchHint' => ({required Object source}) => 'Търсене в ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'Няма резултати за "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'Няма резултати за "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Търси филми и сериали в ${source}.',
 			'explore.searchFailed' => 'Търсенето се провали. Провери връзката си и опитай отново.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} популярен',
@@ -4228,9 +4230,9 @@ extension on TranslationsBg {
 			'videoSettings.playbackSpeed' => 'Скорост на възпроизвеждане',
 			'videoSettings.normalSpeed' => 'Нормална',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Активен (${duration})',
-			'videoSettings.zoom' => 'Мащаб',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Мащаб',
 			'videoSettings.sleepTimer' => 'Таймер за заспиване',
 			'videoSettings.audioSync' => 'Синхронизация на аудио',
 			'videoSettings.subtitleSync' => 'Синхронизация на субтитри',

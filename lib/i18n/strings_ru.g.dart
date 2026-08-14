@@ -974,6 +974,7 @@ class _Translations$mpvConfig$ru extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Пресет удалён';
 	@override String get confirmDeletePreset => 'Вы уверены, что хотите удалить этот пресет?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'vo, gpu-context и gpu-api игнорируются в Linux: встроенное видео всегда отображается через vo=libmpv на видеоплоскости, а gpu-next (нужный для compute-шейдеров вроде ArtCNN) не может работать во встроенном режиме.';
 }
 
 // Path: dialog
@@ -3454,6 +3455,7 @@ extension on TranslationsRu {
 			'mpvConfig.presetDeleted' => 'Пресет удалён',
 			'mpvConfig.confirmDeletePreset' => 'Вы уверены, что хотите удалить этот пресет?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context и gpu-api игнорируются в Linux: встроенное видео всегда отображается через vo=libmpv на видеоплоскости, а gpu-next (нужный для compute-шейдеров вроде ArtCNN) не может работать во встроенном режиме.',
 			'dialog.confirmAction' => 'Подтвердить действие',
 			'profiles.addPlezyProfile' => 'Добавить профиль Plezy',
 			'profiles.switchingProfile' => 'Переключение профиля…',
@@ -3734,9 +3736,9 @@ extension on TranslationsRu {
 			'explore.emptyTitle' => 'Здесь пока ничего нет',
 			'explore.emptyMessage' => ({required Object source}) => 'Разделы из ${source} появятся здесь, когда в них появится контент.',
 			'explore.searchHint' => ({required Object source}) => 'Поиск в ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'Нет результатов по запросу "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'Нет результатов по запросу "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Ищите фильмы и сериалы в ${source}.',
 			'explore.searchFailed' => 'Ошибка поиска. Проверьте подключение и повторите попытку.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} по популярности',
@@ -4248,9 +4250,9 @@ extension on TranslationsRu {
 			'videoSettings.playbackSpeed' => 'Скорость воспроизведения',
 			'videoSettings.normalSpeed' => 'Обычная',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Активен (${duration})',
-			'videoSettings.zoom' => 'Масштаб',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Масштаб',
 			'videoSettings.sleepTimer' => 'Таймер сна',
 			'videoSettings.audioSync' => 'Синхронизация аудио',
 			'videoSettings.subtitleSync' => 'Синхронизация субтитров',

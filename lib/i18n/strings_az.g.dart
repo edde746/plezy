@@ -966,6 +966,7 @@ class _Translations$mpvConfig$az extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Ön ayar silindi';
 	@override String get confirmDeletePreset => 'Bu ön ayarı silmək istədiyinizə əminsiniz?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# şərh';
+	@override String get embeddedVoHint => 'vo, gpu-context və gpu-api Linux-da nəzərə alınmır: daxili video həmişə video müstəvisində vo=libmpv vasitəsilə göstərilir və gpu-next (ArtCNN kimi hesablama şeyderlərinə lazımdır) daxili işləyə bilməz.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsAz {
 			'mpvConfig.presetDeleted' => 'Ön ayar silindi',
 			'mpvConfig.confirmDeletePreset' => 'Bu ön ayarı silmək istədiyinizə əminsiniz?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# şərh',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context və gpu-api Linux-da nəzərə alınmır: daxili video həmişə video müstəvisində vo=libmpv vasitəsilə göstərilir və gpu-next (ArtCNN kimi hesablama şeyderlərinə lazımdır) daxili işləyə bilməz.',
 			'dialog.confirmAction' => 'Əməliyyatı təsdiqlə',
 			'profiles.addPlezyProfile' => 'Plezy profili əlavə et',
 			'profiles.switchingProfile' => 'Profil dəyişdirilir…',
@@ -3714,9 +3716,9 @@ extension on TranslationsAz {
 			'explore.emptyTitle' => 'Hələlik burada heç nə yoxdur',
 			'explore.emptyMessage' => ({required Object source}) => '${source} mənbəsindən olan sətirlər burada görünəcək.',
 			'explore.searchHint' => ({required Object source}) => '${source} daxilində axtar',
-			'explore.searchEmpty' => ({required Object query}) => '"${query}" üçün nəticə tapılmadı',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => '"${query}" üçün nəticə tapılmadı',
 			'explore.searchPrompt' => ({required Object source}) => '${source} vasitəsilə kino və seriallar axtarın.',
 			'explore.searchFailed' => 'Axtarış uğursuz oldu. Bağlantınızı yoxlayın.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populyar',
@@ -4228,9 +4230,9 @@ extension on TranslationsAz {
 			'videoSettings.playbackSpeed' => 'Oynatma sürəti',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktivdir (${duration})',
-			'videoSettings.zoom' => 'Miqyas',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Miqyas',
 			'videoSettings.sleepTimer' => 'Yuxu taymeri',
 			'videoSettings.audioSync' => 'Səs sinxronizasiyası',
 			'videoSettings.subtitleSync' => 'Altyazı sinxronizasiyası',

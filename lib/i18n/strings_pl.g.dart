@@ -974,6 +974,7 @@ class _Translations$mpvConfig$pl extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Usunięto ustawienie wstępne';
 	@override String get confirmDeletePreset => 'Czy na pewno chcesz usunąć to ustawienie wstępne?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'vo, gpu-context i gpu-api są ignorowane w systemie Linux: wbudowane wideo jest zawsze renderowane przez vo=libmpv na płaszczyźnie wideo, a gpu-next (wymagany przez shadery obliczeniowe takie jak ArtCNN) nie może działać w trybie wbudowanym.';
 }
 
 // Path: dialog
@@ -3454,6 +3455,7 @@ extension on TranslationsPl {
 			'mpvConfig.presetDeleted' => 'Usunięto ustawienie wstępne',
 			'mpvConfig.confirmDeletePreset' => 'Czy na pewno chcesz usunąć to ustawienie wstępne?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context i gpu-api są ignorowane w systemie Linux: wbudowane wideo jest zawsze renderowane przez vo=libmpv na płaszczyźnie wideo, a gpu-next (wymagany przez shadery obliczeniowe takie jak ArtCNN) nie może działać w trybie wbudowanym.',
 			'dialog.confirmAction' => 'Potwierdź działanie',
 			'profiles.addPlezyProfile' => 'Dodaj profil Plezy',
 			'profiles.switchingProfile' => 'Przełączanie profilu…',
@@ -3734,9 +3736,9 @@ extension on TranslationsPl {
 			'explore.emptyTitle' => 'Jeszcze nic tu nie ma',
 			'explore.emptyMessage' => ({required Object source}) => 'Wiersze z ${source} pojawią się tutaj, gdy będą zawierać treści.',
 			'explore.searchHint' => ({required Object source}) => 'Szukaj w ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'Brak wyników dla "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'Brak wyników dla "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Szukaj filmów i seriali w ${source}.',
 			'explore.searchFailed' => 'Wyszukiwanie nie powiodło się. Sprawdź połączenie i spróbuj ponownie.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} popularne',
@@ -4248,9 +4250,9 @@ extension on TranslationsPl {
 			'videoSettings.playbackSpeed' => 'Prędkość odtwarzania',
 			'videoSettings.normalSpeed' => 'Normalna',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktywny (${duration})',
-			'videoSettings.zoom' => 'Powiększenie',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Powiększenie',
 			'videoSettings.sleepTimer' => 'Wyłącznik czasowy',
 			'videoSettings.audioSync' => 'Synchronizacja audio',
 			'videoSettings.subtitleSync' => 'Synchronizacja napisów',

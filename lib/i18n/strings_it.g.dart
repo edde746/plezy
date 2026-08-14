@@ -966,6 +966,7 @@ class _Translations$mpvConfig$it extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Preset eliminato';
 	@override String get confirmDeletePreset => 'Sei sicuro di voler eliminare questo preset?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'vo, gpu-context e gpu-api vengono ignorati su Linux: il video incorporato viene sempre renderizzato tramite vo=libmpv sul piano video e gpu-next (che gli shader di calcolo come ArtCNN richiedono) non può essere eseguito in modalità incorporata.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsIt {
 			'mpvConfig.presetDeleted' => 'Preset eliminato',
 			'mpvConfig.confirmDeletePreset' => 'Sei sicuro di voler eliminare questo preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context e gpu-api vengono ignorati su Linux: il video incorporato viene sempre renderizzato tramite vo=libmpv sul piano video e gpu-next (che gli shader di calcolo come ArtCNN richiedono) non può essere eseguito in modalità incorporata.',
 			'dialog.confirmAction' => 'Conferma azione',
 			'profiles.addPlezyProfile' => 'Aggiungi profilo Plezy',
 			'profiles.switchingProfile' => 'Cambio profilo…',
@@ -3714,9 +3716,9 @@ extension on TranslationsIt {
 			'explore.emptyTitle' => 'Ancora niente qui',
 			'explore.emptyMessage' => ({required Object source}) => 'Le sezioni di ${source} appariranno qui quando saranno disponibili dei contenuti.',
 			'explore.searchHint' => ({required Object source}) => 'Cerca su ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'Nessun risultato per "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'Nessun risultato per "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Cerca film e serie TV su ${source}.',
 			'explore.searchFailed' => 'Ricerca fallita. Controlla la connessione e riprova.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} popolari',
@@ -4228,9 +4230,9 @@ extension on TranslationsIt {
 			'videoSettings.playbackSpeed' => 'Velocità di riproduzione',
 			'videoSettings.normalSpeed' => 'Normale',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Attivo (${duration})',
-			'videoSettings.zoom' => 'Zoom',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Timer di spegnimento',
 			'videoSettings.audioSync' => 'Sincronizzazione audio',
 			'videoSettings.subtitleSync' => 'Sincronizzazione sottotitoli',

@@ -161,8 +161,19 @@ const _appInterceptedMpvProperties = {'hdr-enabled', 'hdr-tone-mapping'};
 /// everywhere else, nothing caches them there, and no other platform exposes a
 /// UI control for them - so withholding them off Linux would remove the user's
 /// only way to set them and point the log at a control they do not have.
+/// The windowed-VO family. Embedded video is pinned to vo=libmpv (the render
+/// API the plane and every other embedded surface are created against); a
+/// config line switching `vo` — or the `gpu-context`/`gpu-api` it rides on —
+/// makes mpv re-create its output as a separate, uncontrollable window and
+/// orphans the embedded render context. vo=gpu-next is windowed by
+/// construction and compute shaders (ArtCNN) need it, so no embedded vo is
+/// worth accepting; the skip log for these names says that instead of pointing
+/// at the HDR settings.
+const _appEmbeddedOwnedMpvProperties = {'vo', 'gpu-context', 'gpu-api'};
+
 const _appOwnedMpvProperties = {
   ..._appInterceptedMpvProperties,
+  ..._appEmbeddedOwnedMpvProperties,
   'target-trc',
   'target-prim',
   'target-peak',
@@ -1405,29 +1416,55 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
       await currentPlayer.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
-      await currentPlayer.setProperty(
-        'sub-font-size',
-        settingsService.read(SettingsService.subtitleFontSize).toString(),
-      );
-      await currentPlayer.setProperty('sub-color', settingsService.read(SettingsService.subtitleTextColor));
-      await currentPlayer.setProperty(
-        'sub-border-size',
-        settingsService.read(SettingsService.subtitleBorderSize).toString(),
-      );
-      await currentPlayer.setProperty('sub-border-color', settingsService.read(SettingsService.subtitleBorderColor));
-      await currentPlayer.setProperty('sub-bold', settingsService.read(SettingsService.subtitleBold) ? 'yes' : 'no');
-      await currentPlayer.setProperty(
-        'sub-italic',
-        settingsService.read(SettingsService.subtitleItalic) ? 'yes' : 'no',
-      );
-      final bgOpacity = (settingsService.read(SettingsService.subtitleBackgroundOpacity) * 255 / 100).toInt();
-      final bgColor = settingsService.read(SettingsService.subtitleBackgroundColor).replaceFirst('#', '');
-      await currentPlayer.setProperty(
-        'sub-back-color',
-        '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
-      );
-      if (settingsService.read(SettingsService.subtitleBackgroundOpacity) > 0) {
-        await currentPlayer.setProperty('sub-border-style', 'background-box');
+      // Subtitle styling is a preference, never a reason to fail playback.
+      // mpv 0.40's OPT_COLOR parser accepts only #RRGGBB/#AARRGGBB (or
+      // r/g/b/a floats), so a stored colour that does not parse would make
+      // mpv refuse the write - and, unwrapped, that refusal aborts player
+      // initialization on every open. Values are sanitized first, and
+      // whatever is left is a logged warning with mpv keeping its own
+      // default styling.
+      try {
+        await currentPlayer.setProperty(
+          'sub-font-size',
+          settingsService.read(SettingsService.subtitleFontSize).toString(),
+        );
+        await currentPlayer.setProperty(
+          'sub-color',
+          _sanitizedSubtitleColor(
+            settingsService.read(SettingsService.subtitleTextColor),
+            SettingsService.subtitleTextColor.defaultValue,
+          ),
+        );
+        await currentPlayer.setProperty(
+          'sub-border-size',
+          settingsService.read(SettingsService.subtitleBorderSize).toString(),
+        );
+        await currentPlayer.setProperty(
+          'sub-border-color',
+          _sanitizedSubtitleColor(
+            settingsService.read(SettingsService.subtitleBorderColor),
+            SettingsService.subtitleBorderColor.defaultValue,
+          ),
+        );
+        await currentPlayer.setProperty('sub-bold', settingsService.read(SettingsService.subtitleBold) ? 'yes' : 'no');
+        await currentPlayer.setProperty(
+          'sub-italic',
+          settingsService.read(SettingsService.subtitleItalic) ? 'yes' : 'no',
+        );
+        final bgOpacity = (settingsService.read(SettingsService.subtitleBackgroundOpacity) * 255 / 100).toInt();
+        final bgColor = _sanitizedSubtitleColor(
+          settingsService.read(SettingsService.subtitleBackgroundColor),
+          SettingsService.subtitleBackgroundColor.defaultValue,
+        ).replaceFirst('#', '');
+        await currentPlayer.setProperty(
+          'sub-back-color',
+          '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
+        );
+        if (settingsService.read(SettingsService.subtitleBackgroundOpacity) > 0) {
+          await currentPlayer.setProperty('sub-border-style', 'background-box');
+        }
+      } catch (e) {
+        appLogger.w('VideoPlayerScreen: subtitle styling not applied', error: e);
       }
       await currentPlayer.setProperty('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name);
       await currentPlayer.setProperty('sub-ass-video-aspect-override', '1');
@@ -1581,10 +1618,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // unapplied and where to set it instead, at the same level as the other
         // skipped or failed startup writes below.
         if (ownedHere.contains(entry.key)) {
-          appLogger.w(
-            'Skipped custom MPV property ${entry.key}=${entry.value}: the app owns it, '
-            'set it in the player HDR settings instead',
-          );
+          if (_appEmbeddedOwnedMpvProperties.contains(entry.key)) {
+            appLogger.w(
+              'Skipped custom MPV property ${entry.key}=${entry.value}: the app owns the video '
+              'output on this platform (embedded rendering is vo=libmpv); a windowed VO such as '
+              'gpu-next cannot be used inside the app, so compute shaders like ArtCNN cannot run '
+              'embedded either',
+            );
+          } else {
+            appLogger.w(
+              'Skipped custom MPV property ${entry.key}=${entry.value}: the app owns it, '
+              'set it in the player HDR settings instead',
+            );
+          }
           continue;
         }
         try {
@@ -1596,7 +1642,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       final maxVolume = settingsService.read(SettingsService.maxVolume);
-      await currentPlayer.setProperty('volume-max', maxVolume.toString());
+      try {
+        await currentPlayer.setProperty('volume-max', maxVolume.toString());
+      } catch (e) {
+        appLogger.w('VideoPlayerScreen: volume-max not applied', error: e);
+      }
 
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
       await currentPlayer.setVolume(savedVolume);
@@ -2401,6 +2451,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       ),
     );
   }
+}
+
+/// mpv's OPT_COLOR parser accepts only #RRGGBB / #AARRGGBB (plus r/g/b/a
+/// floats). The stored subtitle colours are free-form strings, so a legacy,
+/// tampered or foreign value (named colour, 3-digit hex, ARGB-int text) makes
+/// mpv refuse the write with MPV_ERROR_PROPERTY_FORMAT. Sanitized here so a
+/// bad preference degrades to the default colour instead of failing playback.
+String _sanitizedSubtitleColor(String value, String fallback) {
+  final cleaned = value.replaceFirst('#', '').toUpperCase();
+  if (RegExp(r'^[0-9A-F]{6}([0-9A-F]{2})?$').hasMatch(cleaned)) {
+    return '#$cleaned';
+  }
+  return fallback;
 }
 
 /// Returns the appropriate hwdec value based on platform and user preference.

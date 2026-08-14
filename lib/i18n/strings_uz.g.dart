@@ -966,6 +966,7 @@ class _Translations$mpvConfig$uz extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Sozlama oʻchirildi';
 	@override String get confirmDeletePreset => 'Ushbu sozlamani oʻchirishga ishonchingiz komilmi?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# izoh';
+	@override String get embeddedVoHint => 'Linux-da vo, gpu-context va gpu-api e\'tiborga olinmaydi: ichki video har doim video tekisligida vo=libmpv orqali ko\'rsatiladi va gpu-next (ArtCNN kabi compute shaderlar uchun zarur) ichki rejimda ishlay olmaydi.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsUz {
 			'mpvConfig.presetDeleted' => 'Sozlama oʻchirildi',
 			'mpvConfig.confirmDeletePreset' => 'Ushbu sozlamani oʻchirishga ishonchingiz komilmi?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# izoh',
+			'mpvConfig.embeddedVoHint' => 'Linux-da vo, gpu-context va gpu-api e\'tiborga olinmaydi: ichki video har doim video tekisligida vo=libmpv orqali ko\'rsatiladi va gpu-next (ArtCNN kabi compute shaderlar uchun zarur) ichki rejimda ishlay olmaydi.',
 			'dialog.confirmAction' => 'Harakatni tasdiqlash',
 			'profiles.addPlezyProfile' => 'Plezy profilini qoʻshish',
 			'profiles.switchingProfile' => 'Profil almashtirilmoqda…',
@@ -3714,9 +3716,9 @@ extension on TranslationsUz {
 			'explore.emptyTitle' => 'Hali bu yerda hech narsa yoʻq',
 			'explore.emptyMessage' => ({required Object source}) => '${source} manbasidan olingan qatorlar bu yerda koʻrinadi.',
 			'explore.searchHint' => ({required Object source}) => '${source} ichidan qidirish',
-			'explore.searchEmpty' => ({required Object query}) => '"${query}" boʻyicha natija topilmadi',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => '"${query}" boʻyicha natija topilmadi',
 			'explore.searchPrompt' => ({required Object source}) => '${source} orqali filmlar va seriallarni qidiring.',
 			'explore.searchFailed' => 'Qidiruv xatoligi. Ulanishni tekshiring.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} mashhur',
@@ -4228,9 +4230,9 @@ extension on TranslationsUz {
 			'videoSettings.playbackSpeed' => 'Ijro tezligi',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Faol (${duration})',
-			'videoSettings.zoom' => 'Masshtab',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Masshtab',
 			'videoSettings.sleepTimer' => 'Uyqu taymeri',
 			'videoSettings.audioSync' => 'Audio sinxronlash',
 			'videoSettings.subtitleSync' => 'Subtitr sinxronlash',

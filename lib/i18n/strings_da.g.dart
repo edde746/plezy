@@ -966,6 +966,7 @@ class _Translations$mpvConfig$da extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Forudindstilling slettet';
 	@override String get confirmDeletePreset => 'Er du sikker på, at du vil slette denne forudindstilling?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# comment';
+	@override String get embeddedVoHint => 'vo, gpu-context og gpu-api ignoreres på Linux: indlejret video renderes altid via vo=libmpv på videoplanen, og gpu-next (som compute-shaders som ArtCNN kræver) kan ikke køre indlejret.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsDa {
 			'mpvConfig.presetDeleted' => 'Forudindstilling slettet',
 			'mpvConfig.confirmDeletePreset' => 'Er du sikker på, at du vil slette denne forudindstilling?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context og gpu-api ignoreres på Linux: indlejret video renderes altid via vo=libmpv på videoplanen, og gpu-next (som compute-shaders som ArtCNN kræver) kan ikke køre indlejret.',
 			'dialog.confirmAction' => 'Bekræft handling',
 			'profiles.addPlezyProfile' => 'Tilføj Plezy-profil',
 			'profiles.switchingProfile' => 'Skifter profil…',
@@ -3714,9 +3716,9 @@ extension on TranslationsDa {
 			'explore.emptyTitle' => 'Der er ikke noget her endnu',
 			'explore.emptyMessage' => ({required Object source}) => 'Indholdsrækker fra ${source} vises her, når de har indhold.',
 			'explore.searchHint' => ({required Object source}) => 'Søg i ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'Ingen resultater for "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'Ingen resultater for "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Søg efter film og serier på ${source}.',
 			'explore.searchFailed' => 'Søgningen mislykkedes. Tjek din forbindelse, og prøv igen.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populær',
@@ -4228,9 +4230,9 @@ extension on TranslationsDa {
 			'videoSettings.playbackSpeed' => 'Afspilningshastighed',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktiv (${duration})',
-			'videoSettings.zoom' => 'Zoom',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sove-timer',
 			'videoSettings.audioSync' => 'Lydsynkronisering',
 			'videoSettings.subtitleSync' => 'Undertekstsynkronisering',

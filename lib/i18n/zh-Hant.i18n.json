@@ -791,7 +791,8 @@
     "presetLoaded": "預設組已載入",
     "presetDeleted": "預設組已刪除",
     "confirmDeletePreset": "確定要刪除此預設組嗎？",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# 註解"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# 註解",
+    "embeddedVoHint": "在 Linux 上會忽略 vo、gpu-context 和 gpu-api：嵌入式影片一律透過影片平面上的 vo=libmpv 轉譯，而 gpu-next（ArtCNN 等計算著色器需要它）無法以嵌入式方式執行。"
   },
   "dialog": {
     "confirmAction": "確認操作"

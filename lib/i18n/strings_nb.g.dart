@@ -966,6 +966,7 @@ class _Translations$mpvConfig$nb extends Translations$mpvConfig$en {
 	@override String get presetDeleted => 'Forhåndsinnstilling slettet';
 	@override String get confirmDeletePreset => 'Er du sikker på at du vil slette denne forhåndsinnstillingen?';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# kommentar';
+	@override String get embeddedVoHint => 'vo, gpu-context og gpu-api ignoreres på Linux: innebygd video renderes alltid via vo=libmpv på videoplanet, og gpu-next (som compute-shadere som ArtCNN trenger) kan ikke kjøre innebygd.';
 }
 
 // Path: dialog
@@ -3434,6 +3435,7 @@ extension on TranslationsNb {
 			'mpvConfig.presetDeleted' => 'Forhåndsinnstilling slettet',
 			'mpvConfig.confirmDeletePreset' => 'Er du sikker på at du vil slette denne forhåndsinnstillingen?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# kommentar',
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context og gpu-api ignoreres på Linux: innebygd video renderes alltid via vo=libmpv på videoplanet, og gpu-next (som compute-shadere som ArtCNN trenger) kan ikke kjøre innebygd.',
 			'dialog.confirmAction' => 'Bekreft handling',
 			'profiles.addPlezyProfile' => 'Legg til Plezy-profil',
 			'profiles.switchingProfile' => 'Bytter profil…',
@@ -3714,9 +3716,9 @@ extension on TranslationsNb {
 			'explore.emptyTitle' => 'Ingenting her ennå',
 			'explore.emptyMessage' => ({required Object source}) => 'Rader fra ${source} vises her når de har innhold.',
 			'explore.searchHint' => ({required Object source}) => 'Søk i ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'Ingen treff for "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => 'Ingen treff for "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Søk etter filmer og serier på ${source}.',
 			'explore.searchFailed' => 'Søk mislyktes. Sjekk tilkoblingen og prøv igjen.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populær',
@@ -4228,9 +4230,9 @@ extension on TranslationsNb {
 			'videoSettings.playbackSpeed' => 'Avspillingshastighet',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktiv (${duration})',
-			'videoSettings.zoom' => 'Zoom',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Innsovningstimer',
 			'videoSettings.audioSync' => 'Lydsynkronisering',
 			'videoSettings.subtitleSync' => 'Undertekstsynkronisering',

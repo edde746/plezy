@@ -963,6 +963,7 @@ class _Translations$mpvConfig$zh_Hant extends Translations$mpvConfig$zh {
 	@override String get presetDeleted => '預設組已刪除';
 	@override String get confirmDeletePreset => '確定要刪除此預設組嗎？';
 	@override String get configPlaceholder => 'gpu-api=vulkan\nhwdec=auto\n# 註解';
+	@override String get embeddedVoHint => '在 Linux 上會忽略 vo、gpu-context 和 gpu-api：嵌入式影片一律透過影片平面上的 vo=libmpv 轉譯，而 gpu-next（ArtCNN 等計算著色器需要它）無法以嵌入式方式執行。';
 }
 
 // Path: dialog
@@ -3425,6 +3426,7 @@ extension on TranslationsZhHant {
 			'mpvConfig.presetDeleted' => '預設組已刪除',
 			'mpvConfig.confirmDeletePreset' => '確定要刪除此預設組嗎？',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# 註解',
+			'mpvConfig.embeddedVoHint' => '在 Linux 上會忽略 vo、gpu-context 和 gpu-api：嵌入式影片一律透過影片平面上的 vo=libmpv 轉譯，而 gpu-next（ArtCNN 等計算著色器需要它）無法以嵌入式方式執行。',
 			'dialog.confirmAction' => '確認操作',
 			'profiles.addPlezyProfile' => '新增 Plezy 使用者設定檔',
 			'profiles.switchingProfile' => '正在切換使用者設定檔…',
@@ -3705,9 +3707,9 @@ extension on TranslationsZhHant {
 			'explore.emptyTitle' => '這裡還沒有任何內容',
 			'explore.emptyMessage' => ({required Object source}) => '當 ${source} 有內容時，相關資訊將顯示在此處。',
 			'explore.searchHint' => ({required Object source}) => '搜尋 ${source}',
-			'explore.searchEmpty' => ({required Object query}) => '沒有「${query}」的結果',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchEmpty' => ({required Object query}) => '沒有「${query}」的結果',
 			'explore.searchPrompt' => ({required Object source}) => '在 ${source} 搜尋電影與影集。',
 			'explore.searchFailed' => '搜尋失敗。請檢查網路連線後重試。',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} 熱門',
@@ -4219,9 +4221,9 @@ extension on TranslationsZhHant {
 			'videoSettings.playbackSpeed' => '播放速度',
 			'videoSettings.normalSpeed' => '正常速度',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '執行中（${duration}）',
-			'videoSettings.zoom' => '縮放',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => '縮放',
 			'videoSettings.sleepTimer' => '睡眠計時器',
 			'videoSettings.audioSync' => '音訊同步調整',
 			'videoSettings.subtitleSync' => '字幕同步調整',
