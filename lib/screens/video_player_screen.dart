@@ -927,6 +927,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       dismissPrompt: _dismissPlaybackPromptForBack,
       isChromePresented: () =>
           _isPlayerInitialized && player != null && _hasFirstFrame.value && _chromeController.controlsPresented,
+      // On phones a Back must exit the player even with the controls up
+      // (#1938); the staged chrome handling is TV/desktop behavior (#4443b761
+      // applied it to the phone system-back path too, so back stopped
+      // closing the player).
+      exitPlayerBeforeChrome: () => PlatformDetector.isMobile(context),
       exitFullscreenIfActive: FullscreenStateManager().exitFullscreenIfActive,
       // macOS fullscreen belongs to the app window, while HTPC-style player
       // navigation treats physical Escape as semantic Back. In both cases the

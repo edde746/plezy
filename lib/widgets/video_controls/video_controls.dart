@@ -300,6 +300,7 @@ class PlayerNavigationCoordinator {
   final bool Function() isChromePresented;
   final Future<bool> Function() exitFullscreenIfActive;
   final bool Function() _physicalEscapeExitsFullscreen;
+  final bool Function() _exitPlayerBeforeChrome;
   final VoidCallback exitPlayer;
   final VoidCallback navigateHome;
   final bool Function() isActive;
@@ -313,14 +314,17 @@ class PlayerNavigationCoordinator {
     required this.isChromePresented,
     required this.exitFullscreenIfActive,
     bool Function()? physicalEscapeExitsFullscreen,
+    bool Function()? exitPlayerBeforeChrome,
     required this.exitPlayer,
     required this.navigateHome,
     bool Function()? isActive,
   }) : _physicalEscapeExitsFullscreen = physicalEscapeExitsFullscreen ?? _alwaysTrue,
+       _exitPlayerBeforeChrome = exitPlayerBeforeChrome ?? _alwaysFalse,
        isActive = isActive ?? _alwaysActive;
 
   static bool _alwaysActive() => true;
   static bool _alwaysTrue() => true;
+  static bool _alwaysFalse() => false;
 
   void handle(PlayerNavigationKey navigationKey) {
     if (navigationKey == PlayerNavigationKey.home) {
@@ -329,6 +333,12 @@ class PlayerNavigationCoordinator {
     }
     if (isPromptOpen()) {
       dismissPrompt();
+      return;
+    }
+    if (navigationKey == PlayerNavigationKey.back && _exitPlayerBeforeChrome()) {
+      // Mobile Back exits even with the chrome up (#1938); the staged
+      // strip/fullscreen/hide/exit chain is TV and desktop behavior.
+      exitPlayer();
       return;
     }
     final disposition = resolvePlayerBackDisposition(

@@ -570,6 +570,7 @@ void main() {
       Future<bool> Function()? exitFullscreenIfActive,
       bool physicalEscapeExitsFullscreen = true,
       bool Function()? physicalEscapeExitsFullscreenProvider,
+      bool Function()? exitPlayerBeforeChrome,
       VoidCallback? exitPlayer,
       VoidCallback? navigateHome,
       bool Function()? isActive,
@@ -581,6 +582,7 @@ void main() {
         isChromePresented: isChromePresented ?? () => chromeController.controlsPresented,
         exitFullscreenIfActive: exitFullscreenIfActive ?? () async => false,
         physicalEscapeExitsFullscreen: physicalEscapeExitsFullscreenProvider ?? () => physicalEscapeExitsFullscreen,
+        exitPlayerBeforeChrome: exitPlayerBeforeChrome,
         exitPlayer: exitPlayer ?? () {},
         navigateHome: navigateHome ?? () {},
         isActive: isActive,
@@ -633,6 +635,43 @@ void main() {
 
       expect(chromeController.controlsVisible, isTrue);
       expect(exits, 1);
+    });
+
+    testWidgets('mobile Back exits on the first press even with the chrome up (#1938)', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        exitPlayerBeforeChrome: () => true,
+        exitPlayer: () => exits++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(exits, 1, reason: 'a phone back must close the player even while the controls are up');
+      expect(chromeController.controlsVisible, isTrue, reason: 'no staged hide: the player leaves directly');
+    });
+
+    testWidgets('mobile Back dismisses an open prompt before exiting', (tester) async {
+      final chromeController = PlayerChromeController();
+      addTearDown(chromeController.dispose);
+      var promptDismissals = 0;
+      var exits = 0;
+      final coordinator = coordinatorFor(
+        chromeController,
+        isPromptOpen: () => true,
+        dismissPrompt: () => promptDismissals++,
+        exitPlayerBeforeChrome: () => true,
+        exitPlayer: () => exits++,
+      );
+      await pumpNavigationFocus(tester, coordinator);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+
+      expect(promptDismissals, 1, reason: 'prompts keep priority over the mobile exit policy');
+      expect(exits, 0);
     });
 
     testWidgets('Back exits on the first press when the route opened with no chrome', (tester) async {
