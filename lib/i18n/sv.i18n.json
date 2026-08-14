@@ -340,11 +340,7 @@
     "subtitlesAndConfig": "Undertexter och konfiguration",
     "seekAndTiming": "Spolning och tidsinställningar",
     "behavior": "Beteende",
-    "exportDialogTitle": "Exportera Plezy-inställningar",
-    "linuxVideoRenderMode": "Videorenderingsläge",
-    "linuxVideoRenderModeDescription": "Automatiskt föredrar det inbyggda Wayland-planet (HDR-kompatibelt); Texture tvingar SDR-reservvägen.",
-    "linuxVideoRenderModeAuto": "Automatiskt",
-    "linuxVideoRenderModeTexture": "Texture (SDR)"
+    "exportDialogTitle": "Exportera Plezy-inställningar"
   },
   "search": {
     "hint": "Sök filmer, serier, musik...",

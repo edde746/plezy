@@ -462,10 +462,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get seekAndTiming => '跳转与计时';
 	@override String get behavior => '行为';
 	@override String get exportDialogTitle => '导出 Plezy 设置';
-	@override String get linuxVideoRenderMode => '视频渲染模式';
-	@override String get linuxVideoRenderModeDescription => '自动优先使用原生 Wayland 平面（支持 HDR）；纹理强制使用 SDR 回退路径。';
-	@override String get linuxVideoRenderModeAuto => '自动';
-	@override String get linuxVideoRenderModeTexture => '纹理（SDR）';
 }
 
 // Path: search
@@ -3013,10 +3009,6 @@ extension on TranslationsZh {
 			'settings.seekAndTiming' => '跳转与计时',
 			'settings.behavior' => '行为',
 			'settings.exportDialogTitle' => '导出 Plezy 设置',
-			'settings.linuxVideoRenderMode' => '视频渲染模式',
-			'settings.linuxVideoRenderModeDescription' => '自动优先使用原生 Wayland 平面（支持 HDR）；纹理强制使用 SDR 回退路径。',
-			'settings.linuxVideoRenderModeAuto' => '自动',
-			'settings.linuxVideoRenderModeTexture' => '纹理（SDR）',
 			'search.hint' => '搜索电影、剧集、音乐…',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -3196,12 +3188,12 @@ extension on TranslationsZh {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy 无法确认此操作会删除哪些文件，因此删除范围可能超出上面提到的项目。请取消后重试，或仍然删除。',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => '你的服务器没有提供此项目的文件详情，因此 Plezy 无法确认此操作会删除哪些文件。删除范围可能超出上面提到的项目。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => '删除媒体项失败',
 			'mediaMenu.rate' => '评分',
 			'mediaMenu.playFromBeginning' => '从头播放',
 			'mediaMenu.playVersion' => '播放版本…',
+			_ => null,
+		} ?? switch (path) {
 			'rateSheet.title' => '评分',
 			'rateSheet.server' => '服务器',
 			'rateSheet.favorite' => '收藏',
@@ -3710,12 +3702,12 @@ extension on TranslationsZh {
 			'explore.watchlistNoMatch' => '无法将此项目与待看列表匹配',
 			'explore.notInLibrary' => '不在你的媒体库中',
 			'explore.inTheseLibraries' => '在这些媒体库中',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => '正在检查你的媒体库…',
 			'explore.emptyTitle' => '这里还什么都没有',
 			'explore.emptyMessage' => ({required Object source}) => '当 ${source} 有内容时，相关内容将显示在这里。',
 			'explore.searchHint' => ({required Object source}) => '搜索 ${source}',
+			_ => null,
+		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '没有“${query}”的结果',
 			'explore.searchPrompt' => ({required Object source}) => '在 ${source} 上搜索电影和剧集。',
 			'explore.searchFailed' => '搜索失败。请检查网络连接后重试。',
@@ -4224,12 +4216,12 @@ extension on TranslationsZh {
 			'companionRemote.errors.failedToConnectAnyAddress' => '无法连接到任何地址',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} 次尝试后连接丢失',
 			'companionRemote.errors.connectionLost' => '连接丢失',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => '连接在身份验证前已关闭',
 			'videoSettings.playbackSpeed' => '播放速度',
 			'videoSettings.normalSpeed' => '正常',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '运行中（${duration}）',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.zoom' => '缩放',
 			'videoSettings.sleepTimer' => '睡眠定时器',
 			'videoSettings.audioSync' => '音频同步',

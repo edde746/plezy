@@ -340,11 +340,7 @@
     "subtitlesAndConfig": "Legendas e configuração",
     "seekAndTiming": "Busca e tempo",
     "behavior": "Comportamento",
-    "exportDialogTitle": "Exportar configurações do Plezy",
-    "linuxVideoRenderMode": "Modo de renderização de vídeo",
-    "linuxVideoRenderModeDescription": "Automático prefere o plano Wayland nativo (compatível com HDR); Texture força o caminho de reserva SDR.",
-    "linuxVideoRenderModeAuto": "Automático",
-    "linuxVideoRenderModeTexture": "Texture (SDR)"
+    "exportDialogTitle": "Exportar configurações do Plezy"
   },
   "search": {
     "hint": "Buscar filmes, séries, músicas...",

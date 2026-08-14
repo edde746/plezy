@@ -462,10 +462,6 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get seekAndTiming => '탐색 및 타이밍';
 	@override String get behavior => '동작';
 	@override String get exportDialogTitle => 'Plezy 설정 내보내기';
-	@override String get linuxVideoRenderMode => '동영상 렌더링 모드';
-	@override String get linuxVideoRenderModeDescription => '자동은 네이티브 Wayland 평면(HDR 지원)을 선호하고, Texture는 SDR 대체 경로를 강제합니다.';
-	@override String get linuxVideoRenderModeAuto => '자동';
-	@override String get linuxVideoRenderModeTexture => 'Texture(SDR)';
 }
 
 // Path: search
@@ -3013,10 +3009,6 @@ extension on TranslationsKo {
 			'settings.seekAndTiming' => '탐색 및 타이밍',
 			'settings.behavior' => '동작',
 			'settings.exportDialogTitle' => 'Plezy 설정 내보내기',
-			'settings.linuxVideoRenderMode' => '동영상 렌더링 모드',
-			'settings.linuxVideoRenderModeDescription' => '자동은 네이티브 Wayland 평면(HDR 지원)을 선호하고, Texture는 SDR 대체 경로를 강제합니다.',
-			'settings.linuxVideoRenderModeAuto' => '자동',
-			'settings.linuxVideoRenderModeTexture' => 'Texture(SDR)',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -3196,12 +3188,12 @@ extension on TranslationsKo {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy가 어떤 파일이 삭제될지 확인하지 못해 위 항목보다 더 많은 파일이 삭제될 수 있습니다. 취소하고 다시 시도하거나 그래도 삭제하세요.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => '서버가 이 항목의 파일 정보를 제공하지 않아 Plezy가 어떤 파일이 삭제될지 확인할 수 없습니다. 위 항목보다 더 많은 파일이 삭제될 수 있습니다.',
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => '미디어 항목 삭제 실패',
 			'mediaMenu.rate' => '평가',
 			'mediaMenu.playFromBeginning' => '처음부터 재생',
 			'mediaMenu.playVersion' => '버전 재생...',
+			_ => null,
+		} ?? switch (path) {
 			'rateSheet.title' => '평가',
 			'rateSheet.server' => '서버',
 			'rateSheet.favorite' => '즐겨찾기',
@@ -3710,12 +3702,12 @@ extension on TranslationsKo {
 			'explore.watchlistNoMatch' => '이 항목을 관심 목록과 연결할 수 없습니다',
 			'explore.notInLibrary' => '라이브러리에 없음',
 			'explore.inTheseLibraries' => '이 라이브러리에 있음',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => '라이브러리 확인 중...',
 			'explore.emptyTitle' => '아직 아무것도 없습니다',
 			'explore.emptyMessage' => ({required Object source}) => '${source}에 콘텐츠가 추가되면 여기에 표시됩니다.',
 			'explore.searchHint' => ({required Object source}) => '${source}에서 검색',
+			_ => null,
+		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '「${query}」에 대한 결과가 없습니다',
 			'explore.searchPrompt' => ({required Object source}) => '${source}에서 영화와 TV 프로그램을 검색하세요.',
 			'explore.searchFailed' => '검색에 실패했습니다. 연결을 확인하고 다시 시도하세요.',
@@ -4224,12 +4216,12 @@ extension on TranslationsKo {
 			'companionRemote.errors.failedToConnectAnyAddress' => '어떤 주소에도 연결하지 못했습니다',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts}회 시도 후 연결이 끊어졌습니다',
 			'companionRemote.errors.connectionLost' => '연결이 끊어졌습니다',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => '인증 전에 연결이 종료되었습니다',
 			'videoSettings.playbackSpeed' => '재생 속도',
 			'videoSettings.normalSpeed' => '보통',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '활성 (${duration})',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.zoom' => '확대/축소',
 			'videoSettings.sleepTimer' => '취침 타이머',
 			'videoSettings.audioSync' => '오디오 동기화',

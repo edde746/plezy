@@ -340,11 +340,7 @@
     "subtitlesAndConfig": "Subtitrlar va konfiguratsiya",
     "seekAndTiming": "Oʻtkazish va vaqt sozlamalari",
     "behavior": "Xatti-harakat",
-    "exportDialogTitle": "Plezy sozlamalarini eksport qilish",
-    "linuxVideoRenderMode": "Video ko'rsatish rejimi",
-    "linuxVideoRenderModeDescription": "Avtomatik rejim mahalliy Wayland tekisligini afzal ko'radi (HDR qo'llab-quvvatlaydi); Texture SDR zaxira yo'lini majbur qiladi.",
-    "linuxVideoRenderModeAuto": "Avtomatik",
-    "linuxVideoRenderModeTexture": "Texture (SDR)"
+    "exportDialogTitle": "Plezy sozlamalarini eksport qilish"
   },
   "search": {
     "hint": "Filmlar, seriallar, musiqa qidirish...",

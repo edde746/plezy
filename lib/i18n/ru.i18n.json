@@ -340,11 +340,7 @@
     "subtitlesAndConfig": "Субтитры и конфигурация",
     "seekAndTiming": "Перемотка и время",
     "behavior": "Поведение",
-    "exportDialogTitle": "Экспорт настроек Plezy",
-    "linuxVideoRenderMode": "Режим рендеринга видео",
-    "linuxVideoRenderModeDescription": "Автоматический режим предпочитает нативную плоскость Wayland (поддержка HDR); Texture принудительно использует запасной путь SDR.",
-    "linuxVideoRenderModeAuto": "Автоматически",
-    "linuxVideoRenderModeTexture": "Texture (SDR)"
+    "exportDialogTitle": "Экспорт настроек Plezy"
   },
   "search": {
     "hint": "Поиск фильмов, сериалов, музыки...",

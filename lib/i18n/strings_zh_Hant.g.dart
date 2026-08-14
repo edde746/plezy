@@ -463,10 +463,6 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get seekAndTiming => '跳轉與計時';
 	@override String get behavior => '行為';
 	@override String get exportDialogTitle => '匯出 Plezy 設定';
-	@override String get linuxVideoRenderMode => '影片轉譯模式';
-	@override String get linuxVideoRenderModeDescription => '自動偏好原生 Wayland 平面（支援 HDR）；紋理強制使用 SDR 備援路徑。';
-	@override String get linuxVideoRenderModeAuto => '自動';
-	@override String get linuxVideoRenderModeTexture => '紋理（SDR）';
 }
 
 // Path: search
@@ -3014,10 +3010,6 @@ extension on TranslationsZhHant {
 			'settings.seekAndTiming' => '跳轉與計時',
 			'settings.behavior' => '行為',
 			'settings.exportDialogTitle' => '匯出 Plezy 設定',
-			'settings.linuxVideoRenderMode' => '影片轉譯模式',
-			'settings.linuxVideoRenderModeDescription' => '自動偏好原生 Wayland 平面（支援 HDR）；紋理強制使用 SDR 備援路徑。',
-			'settings.linuxVideoRenderModeAuto' => '自動',
-			'settings.linuxVideoRenderModeTexture' => '紋理（SDR）',
 			'search.hint' => '搜尋電影、影集、音樂…',
 			'search.tryDifferentTerm' => '嘗試不同的關鍵字',
 			'search.searchYourMedia' => '搜尋媒體庫',
@@ -3197,12 +3189,12 @@ extension on TranslationsZhHant {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy 無法確認此操作會刪除哪些檔案，因此刪除範圍可能超出上方所列的項目。請取消後重試，或仍要刪除。',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => '您的伺服器未提供此項目的檔案資訊，因此 Plezy 無法確認此操作會刪除哪些檔案。刪除範圍可能超出上方所列的項目。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒體已成功刪除',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => '刪除媒體失敗',
 			'mediaMenu.rate' => '評分',
 			'mediaMenu.playFromBeginning' => '從頭播放',
 			'mediaMenu.playVersion' => '播放版本…',
+			_ => null,
+		} ?? switch (path) {
 			'rateSheet.title' => '評分',
 			'rateSheet.server' => '伺服器',
 			'rateSheet.favorite' => '最愛',
@@ -3711,12 +3703,12 @@ extension on TranslationsZhHant {
 			'explore.watchlistNoMatch' => '無法將此項目與待看清單配對',
 			'explore.notInLibrary' => '不在您的媒體庫中',
 			'explore.inTheseLibraries' => '在這些媒體庫中',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => '正在檢查您的媒體庫…',
 			'explore.emptyTitle' => '這裡還沒有任何內容',
 			'explore.emptyMessage' => ({required Object source}) => '當 ${source} 有內容時，相關資訊將顯示在此處。',
 			'explore.searchHint' => ({required Object source}) => '搜尋 ${source}',
+			_ => null,
+		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '沒有「${query}」的結果',
 			'explore.searchPrompt' => ({required Object source}) => '在 ${source} 搜尋電影與影集。',
 			'explore.searchFailed' => '搜尋失敗。請檢查網路連線後重試。',
@@ -4225,12 +4217,12 @@ extension on TranslationsZhHant {
 			'companionRemote.errors.failedToConnectAnyAddress' => '無法連線至任何位址',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '嘗試 ${attempts} 次後連線中斷',
 			'companionRemote.errors.connectionLost' => '連線已中斷',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => '連線在驗證前已關閉',
 			'videoSettings.playbackSpeed' => '播放速度',
 			'videoSettings.normalSpeed' => '正常速度',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '執行中（${duration}）',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.zoom' => '縮放',
 			'videoSettings.sleepTimer' => '睡眠計時器',
 			'videoSettings.audioSync' => '音訊同步調整',

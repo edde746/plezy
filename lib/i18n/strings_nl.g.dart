@@ -462,10 +462,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get seekAndTiming => 'Spoelen en timing';
 	@override String get behavior => 'Gedrag';
 	@override String get exportDialogTitle => 'Plezy-instellingen exporteren';
-	@override String get linuxVideoRenderMode => 'Videoweergavemodus';
-	@override String get linuxVideoRenderModeDescription => 'Automatisch geeft de voorkeur aan het native Wayland-vlak (HDR-compatibel); Texture dwingt het SDR-reservepad af.';
-	@override String get linuxVideoRenderModeAuto => 'Automatisch';
-	@override String get linuxVideoRenderModeTexture => 'Texture (SDR)';
 }
 
 // Path: search
@@ -3023,10 +3019,6 @@ extension on TranslationsNl {
 			'settings.seekAndTiming' => 'Spoelen en timing',
 			'settings.behavior' => 'Gedrag',
 			'settings.exportDialogTitle' => 'Plezy-instellingen exporteren',
-			'settings.linuxVideoRenderMode' => 'Videoweergavemodus',
-			'settings.linuxVideoRenderModeDescription' => 'Automatisch geeft de voorkeur aan het native Wayland-vlak (HDR-compatibel); Texture dwingt het SDR-reservepad af.',
-			'settings.linuxVideoRenderModeAuto' => 'Automatisch',
-			'settings.linuxVideoRenderModeTexture' => 'Texture (SDR)',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -3206,12 +3198,12 @@ extension on TranslationsNl {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy kon niet controleren welke bestanden hiermee worden verwijderd, dus het kan meer verwijderen dan het hierboven genoemde item. Annuleer en probeer het opnieuw, of verwijder toch.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Je server heeft geen bestandsgegevens voor dit item verstrekt, dus Plezy kan niet controleren welke bestanden hiermee worden verwijderd. Het kan meer verwijderen dan het hierboven genoemde item.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media-item succesvol verwijderd',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Verwijderen van media-item mislukt',
 			'mediaMenu.rate' => 'Beoordelen',
 			'mediaMenu.playFromBeginning' => 'Afspelen vanaf het begin',
 			'mediaMenu.playVersion' => 'Versie afspelen...',
+			_ => null,
+		} ?? switch (path) {
 			'rateSheet.title' => 'Beoordelen',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Favoriet',
@@ -3720,12 +3712,12 @@ extension on TranslationsNl {
 			'explore.watchlistNoMatch' => 'Kon dit item niet aan een kijklijst koppelen',
 			'explore.notInLibrary' => 'Niet in je bibliotheek',
 			'explore.inTheseLibraries' => 'In deze bibliotheken',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Je bibliotheek controleren...',
 			'explore.emptyTitle' => 'Hier is nog niets',
 			'explore.emptyMessage' => ({required Object source}) => 'Rijen van ${source} verschijnen hier zodra ze inhoud hebben.',
 			'explore.searchHint' => ({required Object source}) => 'Zoeken in ${source}',
+			_ => null,
+		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'Geen resultaten voor "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Zoek naar films en series op ${source}.',
 			'explore.searchFailed' => 'Zoeken mislukt. Controleer je verbinding en probeer opnieuw.',
@@ -4234,12 +4226,12 @@ extension on TranslationsNl {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Er kon met geen enkel adres verbinding worden gemaakt',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Verbinding verbroken na ${attempts} pogingen',
 			'companionRemote.errors.connectionLost' => 'Verbinding verloren',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'De verbinding is vóór de authenticatie gesloten',
 			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
 			'videoSettings.normalSpeed' => 'Normaal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Actief (${duration})',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Slaaptimer',
 			'videoSettings.audioSync' => 'Audiosynchronisatie',

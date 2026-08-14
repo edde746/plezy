@@ -219,9 +219,6 @@ class FakePlayer implements Player {
   String get playerType => 'fake';
 
   @override
-  int? get textureId => null;
-
-  @override
   Future<void> open(
     Media media, {
     bool play = true,

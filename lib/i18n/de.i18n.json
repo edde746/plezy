@@ -340,11 +340,7 @@
     "subtitlesAndConfig": "Untertitel und Konfiguration",
     "seekAndTiming": "Spulen & Timing",
     "behavior": "Verhalten",
-    "exportDialogTitle": "Plezy-Einstellungen exportieren",
-    "linuxVideoRenderMode": "Video-Rendermodus",
-    "linuxVideoRenderModeDescription": "Automatisch bevorzugt die native Wayland-Ebene (HDR-fähig); Texture erzwingt den SDR-Fallback-Pfad.",
-    "linuxVideoRenderModeAuto": "Automatisch",
-    "linuxVideoRenderModeTexture": "Texture (SDR)"
+    "exportDialogTitle": "Plezy-Einstellungen exportieren"
   },
   "search": {
     "hint": "Filme, Serien und Musik suchen …",

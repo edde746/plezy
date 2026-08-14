@@ -377,14 +377,6 @@ class SettingsService extends BaseSharedPreferencesService {
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
-
-  /// Linux video rendering mode. 'auto' prefers the native Wayland plane and
-  /// falls back to the Flutter-texture path when the plane cannot be brought
-  /// up (X11/XWayland sessions, failed plane bootstrap); 'texture' forces the
-  /// texture path (SDR only) — the user-visible workaround for plane-only
-  /// trouble, and the exact environment hardware decode worked in before the
-  /// plane existed.
-  static const linuxVideoRenderMode = StringPref('linux_video_render_mode', defaultValue: 'auto');
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
   static const subtitleFontSize = IntPref('subtitle_font_size', defaultValue: 38);
@@ -976,7 +968,6 @@ class SettingsService extends BaseSharedPreferencesService {
     audioNormalization,
     audioDownmix,
     audioDownmixNormalize,
-    linuxVideoRenderMode,
     appLocale,
     autoPip,
     maxVolume,

@@ -340,11 +340,7 @@
     "subtitlesAndConfig": "Altyazılar ve Yapılandırma",
     "seekAndTiming": "Sarılma ve Zamanlama",
     "behavior": "Davranış",
-    "exportDialogTitle": "Plezy ayarlarını dışa aktar",
-    "linuxVideoRenderMode": "Video işleme modu",
-    "linuxVideoRenderModeDescription": "Otomatik, yerel Wayland düzlemini tercih eder (HDR destekli); Texture, SDR yedek yolunu zorlar.",
-    "linuxVideoRenderModeAuto": "Otomatik",
-    "linuxVideoRenderModeTexture": "Texture (SDR)"
+    "exportDialogTitle": "Plezy ayarlarını dışa aktar"
   },
   "search": {
     "hint": "Film, dizi, müzik ara...",

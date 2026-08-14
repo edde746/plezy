@@ -462,10 +462,6 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get seekAndTiming => 'Sarğı və vaxt tənzimləməsi';
 	@override String get behavior => 'Davranış';
 	@override String get exportDialogTitle => 'Plezy tənzimləmələrini ixrac et';
-	@override String get linuxVideoRenderMode => 'Video göstərmə rejimi';
-	@override String get linuxVideoRenderModeDescription => 'Avtomatik yerli Wayland müstəvisinə üstünlük verir (HDR dəstəkləyir); Texture SDR ehtiyat yolunu məcbur edir.';
-	@override String get linuxVideoRenderModeAuto => 'Avtomatik';
-	@override String get linuxVideoRenderModeTexture => 'Texture (SDR)';
 }
 
 // Path: search
@@ -3023,10 +3019,6 @@ extension on TranslationsAz {
 			'settings.seekAndTiming' => 'Sarğı və vaxt tənzimləməsi',
 			'settings.behavior' => 'Davranış',
 			'settings.exportDialogTitle' => 'Plezy tənzimləmələrini ixrac et',
-			'settings.linuxVideoRenderMode' => 'Video göstərmə rejimi',
-			'settings.linuxVideoRenderModeDescription' => 'Avtomatik yerli Wayland müstəvisinə üstünlük verir (HDR dəstəkləyir); Texture SDR ehtiyat yolunu məcbur edir.',
-			'settings.linuxVideoRenderModeAuto' => 'Avtomatik',
-			'settings.linuxVideoRenderModeTexture' => 'Texture (SDR)',
 			'search.hint' => 'Kino, serial, musiqi axtar...',
 			'search.tryDifferentTerm' => 'Fərqli axtarış sözü cəhd edin',
 			'search.searchYourMedia' => 'Mediyanızda axtarın',
@@ -3206,12 +3198,12 @@ extension on TranslationsAz {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy bunun hansı faylları siləcəyini yoxlaya bilmədi, ona görə də yuxarıda adı çəkilən elementdən daha çoxunu silə bilər. Ləğv edib təzədən cəhd edin və ya yenə də silin.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Serveriniz bu element üçün fayl təfərrüatlarını təqdim etmədi, ona görə Plezy bunun hansı faylları siləcəyini yoxlaya bilmir. Yuxarıda adı çəkilən elementdən daha çoxunu silə bilər.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media elementi uğurla silindi',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Media elementi silinə bilmədi',
 			'mediaMenu.rate' => 'Qiymətləndir',
 			'mediaMenu.playFromBeginning' => 'Əvvəldən oynat',
 			'mediaMenu.playVersion' => 'Versiyanı oynat...',
+			_ => null,
+		} ?? switch (path) {
 			'rateSheet.title' => 'Qiymətləndir',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Sevimli',
@@ -3720,12 +3712,12 @@ extension on TranslationsAz {
 			'explore.watchlistNoMatch' => 'Bu elementi heç bir baxış siyahısı ilə uyğunlaşdırmaq olmadı',
 			'explore.notInLibrary' => 'Kitabxananızda yoxdur',
 			'explore.inTheseLibraries' => 'Bu kitabxanalarda var',
-			_ => null,
-		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Kitabxananız yoxlanılır...',
 			'explore.emptyTitle' => 'Hələlik burada heç nə yoxdur',
 			'explore.emptyMessage' => ({required Object source}) => '${source} mənbəsindən olan sətirlər burada görünəcək.',
 			'explore.searchHint' => ({required Object source}) => '${source} daxilində axtar',
+			_ => null,
+		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '"${query}" üçün nəticə tapılmadı',
 			'explore.searchPrompt' => ({required Object source}) => '${source} vasitəsilə kino və seriallar axtarın.',
 			'explore.searchFailed' => 'Axtarış uğursuz oldu. Bağlantınızı yoxlayın.',
@@ -4234,12 +4226,12 @@ extension on TranslationsAz {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Heç bir ünvana qoşuluna bilmədi',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} cəhddən sonra əlaqə kəsildi',
 			'companionRemote.errors.connectionLost' => 'Əlaqə kəsildi',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'Bağlantı autentifikasiyadan əvvəl bağlandı',
 			'videoSettings.playbackSpeed' => 'Oynatma sürəti',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktivdir (${duration})',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.zoom' => 'Miqyas',
 			'videoSettings.sleepTimer' => 'Yuxu taymeri',
 			'videoSettings.audioSync' => 'Səs sinxronizasiyası',

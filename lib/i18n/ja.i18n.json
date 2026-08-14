@@ -340,11 +340,7 @@
     "subtitlesAndConfig": "字幕と設定",
     "seekAndTiming": "シークとタイミング",
     "behavior": "動作",
-    "exportDialogTitle": "Plezyの設定をエクスポート",
-    "linuxVideoRenderMode": "動画レンダリングモード",
-    "linuxVideoRenderModeDescription": "自動はネイティブの Wayland プレーン（HDR 対応）を優先し、Texture は SDR フォールバック経路を強制します。",
-    "linuxVideoRenderModeAuto": "自動",
-    "linuxVideoRenderModeTexture": "Texture（SDR）"
+    "exportDialogTitle": "Plezyの設定をエクスポート"
   },
   "search": {
     "hint": "映画、番組、音楽を検索…",

@@ -4,10 +4,8 @@ project(runner LANGUAGES CXX)
 add_executable(${BINARY_NAME}
   "main.cc"
   "my_application.cc"
-  "mpv/mpv_gpu_bootstrap.cc"
   "mpv/mpv_player.cc"
   "mpv/mpv_plugin.cc"
-  "mpv/mpv_texture.cc"
   "mpv/wayland_video_surface.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
