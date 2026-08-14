@@ -48,7 +48,10 @@ jobs:
       - name: Require the protected main branch
         shell: bash
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+          # TEMPORARY: ab/hdr-keep-alive-probe is admitted exactly (no
+          # wildcards) to build the #1874 HDR-oscillation A/B artifact. Drop
+          # this arm together with the keepalive probe commit.
+          if [[ "$GITHUB_REF" != "refs/heads/main" && "$GITHUB_REF" != "refs/heads/ab/hdr-keep-alive-probe" ]]; then
             echo "Release builds may only run from refs/heads/main." >&2
             exit 1
           fi
