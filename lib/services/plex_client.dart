@@ -3838,7 +3838,7 @@ class PlexClient
     if (partId == null) return null;
     final service = BifThumbnailService();
     try {
-      await service.load(this, partId, aspectRatio: mediaSource.videoAspectRatio);
+      await service.load(() => downloadBifFile(partId), aspectRatio: mediaSource.videoAspectRatio);
       return service;
     } catch (e, st) {
       appLogger.w('BIF thumbnail load failed for part $partId', error: e, stackTrace: st);

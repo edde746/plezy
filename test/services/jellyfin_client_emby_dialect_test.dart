@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +11,8 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/services/bif_thumbnail_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
@@ -1575,7 +1578,7 @@ void main() {
       expect(extras.markers.single.endTimeOffset, 45000);
     });
 
-    test('Emby disables scrub thumbnails while Jellyfin keeps them enabled without network traffic', () {
+    test('Emby and Jellyfin both expose scrub thumbnails without network traffic', () {
       final embyRequests = _RequestCapture((_) => http.Response('unexpected', 500));
       final jellyfinRequests = _RequestCapture((_) => http.Response('unexpected', 500));
       final emby = testEmbyClient(handler: embyRequests.handle);
@@ -1583,7 +1586,9 @@ void main() {
       addTearDown(emby.close);
       addTearDown(jellyfin.close);
 
-      expect(emby.capabilities.scrubThumbnails, isFalse);
+      // Reading the capability is pure metadata — Emby previews ride the BIF
+      // transport now, but neither dialect touches the network to say so.
+      expect(emby.capabilities.scrubThumbnails, isTrue);
       expect(jellyfin.capabilities.scrubThumbnails, isTrue);
       expect(embyRequests.log, isEmpty);
       expect(jellyfinRequests.log, isEmpty);
@@ -1623,4 +1628,87 @@ void main() {
       });
     }
   });
+
+  group('Emby scrub preview BIF transport', () {
+    final mediaInfo = MediaSourceInfo(
+      videoUrl: '',
+      audioTracks: <MediaAudioTrack>[],
+      subtitleTracks: <MediaSubtitleTrack>[],
+      chapters: <MediaChapter>[],
+    );
+    test('fetches /Videos/{id}/index.bif?Width=320 and parses Roku BIF bytes', () async {
+      final bif = _bifWith(imageBytes: const [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0xFF, 0xD9]);
+      late http.Request sent;
+      final client = testEmbyClient(
+        handler: (request) async {
+          sent = request;
+          return http.Response.bytes(bif, 200);
+        },
+      );
+      addTearDown(client.close);
+
+      final service = await client.createScrubPreviewSource(item: _item(MediaBackend.emby), mediaSource: mediaInfo);
+      addTearDown(() => service?.dispose());
+
+      expect(service, isA<BifThumbnailService>());
+      expect(service!.isAvailable, isTrue);
+      expect(service.getFrame(Duration.zero), isNotNull);
+
+      expect(sent.method, 'GET');
+      expect(sent.url.path, '/Videos/item-1/index.bif');
+      expect(sent.url.queryParameters, {'Width': '320'});
+      // Auth rides the MediaBrowser headers, not a query token.
+      expect(sent.url.queryParameters.containsKey('api_key'), isFalse);
+      expect(sent.headers['X-Emby-Token'], 'token');
+    });
+
+    test('a header-only BIF (extraction never ran) keeps the service unavailable', () async {
+      // Emby's measured 4.9.5 answer for an item without previews: 72 bytes,
+      // valid magic, zero frames.
+      final client = testEmbyClient(handler: (_) async => http.Response.bytes(_bifWith(imageBytes: const []), 200));
+      addTearDown(client.close);
+
+      final service = await client.createScrubPreviewSource(item: _item(MediaBackend.emby), mediaSource: mediaInfo);
+      addTearDown(() => service?.dispose());
+
+      expect(service, isA<BifThumbnailService>());
+      expect(service!.isAvailable, isFalse);
+      expect(service.getFrame(Duration.zero), isNull);
+    });
+
+    test('a failed download leaves the service unavailable without throwing', () async {
+      final client = testEmbyClient(handler: (_) async => http.Response('', 404));
+      addTearDown(client.close);
+
+      final service = await client.createScrubPreviewSource(item: _item(MediaBackend.emby), mediaSource: mediaInfo);
+      addTearDown(() => service?.dispose());
+
+      expect(service, isA<BifThumbnailService>());
+      expect(service!.isAvailable, isFalse);
+    });
+  });
+}
+
+/// Minimal Roku BIF: 64-byte header, one index entry and sentinel, then
+/// [imageBytes] as the (optional) single frame. Timestamps are milliseconds.
+Uint8List _bifWith({required List<int> imageBytes}) {
+  final imageCount = imageBytes.isEmpty ? 0 : 1;
+  final indexBytes = (imageCount + 1) * 8;
+  final buf = Uint8List(64 + indexBytes + imageBytes.length);
+  final view = ByteData.sublistView(buf);
+  const magic = [0x89, 0x42, 0x49, 0x46, 0x0D, 0x0A, 0x1A, 0x0A];
+  for (var i = 0; i < magic.length; i++) {
+    buf[i] = magic[i];
+  }
+  view.setUint32(12, imageCount, Endian.little);
+  view.setUint32(16, 1000, Endian.little);
+  if (imageCount > 0) {
+    view.setUint32(64, 0, Endian.little);
+    view.setUint32(68, 64 + indexBytes, Endian.little);
+  }
+  // Sentinel entry: timestamp 0xFFFFFFFF, offset = end of data.
+  view.setUint32(64 + imageCount * 8, 0xFFFFFFFF, Endian.little);
+  view.setUint32(64 + imageCount * 8 + 4, 64 + indexBytes + imageBytes.length, Endian.little);
+  buf.setRange(64 + indexBytes, 64 + indexBytes + imageBytes.length, imageBytes);
+  return buf;
 }

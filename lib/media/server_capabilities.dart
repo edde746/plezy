@@ -122,21 +122,13 @@ class ServerCapabilities {
   /// Watching while keeping its resume position, and Jellyfin 10.11 has no
   /// equivalent route.
   ///
-  /// Otherwise identical to [jellyfin] except [scrubThumbnails]: seek-bar
-  /// previews come
-  /// from Jellyfin's `/Videos/{id}/Trickplay` sprite sheets, which Emby (the
-  /// pre-fork ancestor) never gained — it 404s and never populates the
-  /// `Trickplay` item field. With the flag off the player never attempts the
-  /// load; see [MediaBrowserDialect.supportsTrickplay].
-  ///
-  /// Emby does expose two *other* preview transports, `/Videos/{id}/index.bif`
-  /// (the same BIF format Plex uses, so [BifThumbnailService] could parse it)
-  /// and `/Items/{id}/ThumbnailSet`. Neither is wired: on Emby 4.9.5 both
-  /// answer 200 with an empty payload — a 72-byte header-only BIF and
-  /// `{"Thumbnails": []}` — even after a full metadata+image refresh, because
-  /// Emby only fills them once its own extraction task has run. Wiring them
-  /// needs a server that has actually generated the frames, so the flag stays
-  /// `false` rather than shipping a path that cannot be verified.
+  /// Scrub thumbnails take a different transport than Jellyfin's: Emby has no
+  /// `Trickplay` item field or sprite-sheet route, so the player loads a
+  /// Roku-format BIF from `/Videos/{id}/index.bif` instead — the same wire
+  /// format Plex serves, parsed by the same `BifThumbnailService`. Emby only
+  /// fills the endpoint once its own preview-extraction task has run; a server
+  /// that has not generated frames answers with a header-only BIF, which
+  /// parses to zero frames and keeps the seek-bar tooltip suppressed.
   static const ServerCapabilities emby = ServerCapabilities(
     liveTv: true,
     liveTvDvr: false,
@@ -147,7 +139,7 @@ class ServerCapabilities {
     continueWatchingRemoval: true,
     externalSubtitleSearch: false,
     richMetadataEdit: true,
-    scrubThumbnails: false,
+    scrubThumbnails: true,
     folderGrouping: true,
     instantMix: true,
   );

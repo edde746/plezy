@@ -81,8 +81,10 @@ enum MediaBrowserDialect {
 
   /// `/Videos/{id}/Trickplay/{width}/{n}.jpg` sprite sheets and the
   /// `Trickplay` item field (Jellyfin 10.9+). Emby 404s on the route and never
-  /// fills the field; its own preview transports are unwired — see
-  /// [ServerCapabilities.emby].
+  /// fills the field; its scrub previews ride a Roku-format BIF at
+  /// `/Videos/{id}/index.bif` instead (see [ServerCapabilities.emby]), parsed
+  /// by the shared BIF service. This flag gates only the Jellyfin manifest
+  /// transport, not Emby scrub previews.
   bool get supportsTrickplay => this == MediaBrowserDialect.jellyfin;
 
   /// `/MediaSegments/{itemId}` intro/outro/credit markers (Jellyfin 10.10+).

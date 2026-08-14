@@ -352,6 +352,24 @@ void main() {
       expect(info.mediaSourceId, 'src-abc');
     });
 
+    test('derives videoAspectRatio from the video stream dimensions', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'MediaStreams': [
+          {'Index': 0, 'Type': 'Video', 'Width': 1920, 'Height': 1080},
+        ],
+      });
+      expect(info.videoAspectRatio, closeTo(16 / 9, 0.001));
+    });
+
+    test('videoAspectRatio stays null without a sized video stream', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'MediaStreams': [
+          {'Index': 0, 'Type': 'Audio', 'Codec': 'aac'},
+        ],
+      });
+      expect(info.videoAspectRatio, isNull);
+    });
+
     test('parses flat trickplay manifest (per OpenAPI shape)', () {
       // BaseItemDto.Trickplay shape per Jellyfin OpenAPI: keys are resolution
       // widths (often strings in the JSON), values are TrickplayInfoDto.
