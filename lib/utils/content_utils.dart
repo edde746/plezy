@@ -15,6 +15,11 @@ class ContentTypes {
   static const String playlist = 'playlist';
   static const String clip = 'clip';
 
+  /// Sync-rule-only target type: not a real media content type, but a
+  /// convenient shared string constant for a sync rule's targetType column,
+  /// alongside [collection]/[playlist] which serve the same dual purpose.
+  static const String continueWatching = 'continueWatching';
+
   static const Set<String> musicTypes = {artist, album, track};
   static const Set<String> videoTypes = {movie, show, season, episode};
 }
