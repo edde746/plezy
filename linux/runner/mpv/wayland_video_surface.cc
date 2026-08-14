@@ -1050,7 +1050,9 @@ void WaylandVideoSurface::HandleFrameDone(void* data, wl_callback* callback, uin
   }
   self->frame_pending_ = false;
   self->consecutive_frame_acks_missed_ = 0;
-  CancelFrameAckWatchdog();
+  // A real acknowledgement is the watchdog's success case; it has no more
+  // work to do (this is a static handler, so the call goes through `self`).
+  self->CancelFrameAckWatchdog();
   // Rendering resumes from here, not from mpv: its redraw latch is still set
   // from the update we declined to serve, so it will not notify again.
   if (self->on_frame_) self->on_frame_();

@@ -272,6 +272,14 @@ class MpvPlayer {
   /// Sets the MPV log message level (e.g., "warn", "v", "debug").
   void SetLogLevel(const std::string& level);
 
+  /// Whether there is anything to send the output-colour-space properties to.
+  /// Named rather than spelled out at both entry points because the focused
+  /// test substitutes the write primitive and so answers this differently; see
+  /// ConfigurePropertyWritesForTesting. Public because the plugin's kUnknown
+  /// handling distinguishes a live core (present undescribed) from one that is
+  /// genuinely going away (hide the plane).
+  bool CanCommandOutputProperties() const;
+
   /// Retries process-owned native teardown work on the managed EGL teardown
   /// thread. Primarily useful before creating another render context.
   static void RetryPendingNativeTeardown();
@@ -402,12 +410,6 @@ class MpvPlayer {
   /// Runs the next queued HDR output request. One sequence at a time; the next
   /// starts only after the previous has finished, rollbacks included.
   void RunPendingHdrOutput();
-
-  /// Whether there is anything to send the output-colour-space properties to.
-  /// Named rather than spelled out at both entry points because the focused
-  /// test substitutes the write primitive and so answers this differently; see
-  /// ConfigurePropertyWritesForTesting.
-  bool CanCommandOutputProperties() const;
 
   /// A desired output colour space, waiting its turn, with the callback that
   /// asked for it. SetHdrOutput explains why each keeps its own callback.

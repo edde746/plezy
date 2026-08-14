@@ -157,6 +157,8 @@ G_DEFINE_TYPE(MpvPlugin, mpv_plugin, G_TYPE_OBJECT)
 
 // Forward declarations
 static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall* method_call, gpointer user_data);
+// The texture bootstrap's failure arms call this; it is defined below.
+static void release_video_resources(MpvPlugin* self);
 
 static mpv::HdrMetadata read_source_hdr_metadata(MpvPlugin* self);
 static void apply_hdr_state(MpvPlugin* self, bool allow, mpv::HdrToneMapping mode, std::function<void(int)> done);
@@ -597,7 +599,7 @@ static void apply_hdr_state(MpvPlugin* self, bool allow, mpv::HdrToneMapping mod
         // `done`; the loser sees a stale token and self-heals through
         // request_hdr_reapply.
         auto leg_finished = std::make_shared<bool>(false);
-        auto finish_leg = [self, done, leg_finished](int error) {
+        auto finish_leg = [done, leg_finished](int error) {
           if (*leg_finished) return;
           *leg_finished = true;
           if (done) done(error);
@@ -778,8 +780,9 @@ static void apply_hdr_state(MpvPlugin* self, bool allow, mpv::HdrToneMapping mod
               }
               // Answers the transaction (and with it the queued HDR method
               // calls) exactly once; a late reply from mpv is swallowed by the
-              // shared latch in the callback above.
-              ctx->finish_leg(MPV_ERROR_UNKNOWN);
+              // shared latch in the callback above. The error code is any
+              // non-success - the timeout's log line is what names the reason.
+              ctx->finish_leg(MPV_ERROR_UNSUPPORTED);
               return G_SOURCE_REMOVE;
             },
             timeout_ctx,
@@ -1140,11 +1143,12 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
           mpv_texture_set_ready_callback(self->texture, on_texture_ready, ready_context, destroy_texture_ready_context);
 
           if (!fl_texture_registrar_register_texture(self->texture_registrar, FL_TEXTURE(self->texture))) {
-            self->bootstrap_state = VideoBootstrapState::kFailed;
-            self->bootstrap_error = g_strdup("Failed to register video texture");
-            release_video_resources(self);
+            // Literal message: the response is encoded when the handler
+            // responds below, after release_video_resources has run, so
+            // nothing heap-allocated may back it.
             response =
-                FL_METHOD_RESPONSE(fl_method_error_response_new("INIT_FAILED", self->bootstrap_error, nullptr));
+                FL_METHOD_RESPONSE(fl_method_error_response_new("INIT_FAILED", "Failed to register video texture", nullptr));
+            release_video_resources(self);
           } else {
             self->texture_registered = TRUE;
             MpvTexture* texture = self->texture;
@@ -1266,8 +1270,12 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
             // native and Dart - which does not persist on failure - in agreement.
             self->hdr_tone_mapping_desired = requested;
             const uint64_t serial = ++self->hdr_mode_request_serial;
+            // Owned copy: the transaction completes asynchronously, after the
+            // handler's FlValue args are gone.
+            const std::string mode_string = mode;
             g_object_ref(method_call);
-            submit_hdr_transaction(self, self->hdr_wanted != FALSE, requested, [self, method_call, serial](int error) {
+            submit_hdr_transaction(
+                self, self->hdr_wanted != FALSE, requested, [self, method_call, serial, mode_string](int error) {
               g_autoptr(FlMethodResponse) async_response = nullptr;
               if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
                 async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
@@ -1284,10 +1292,9 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
                 // error string. This transaction has no single property: it
                 // moves mpv's whole output colour space. The name is still
                 // worth having - it says which side of the plane refused.
-                const char* mode_text = fl_value_get_string(value_value);
                 async_response = FL_METHOD_RESPONSE(fl_method_error_response_new(
                     plezy::mpv_common::kSetPropertyFailedCode,
-                    (std::string("hdr-tone-mapping='") + mode_text + "' failed: " + mpv_error_string(error)).c_str(),
+                    (std::string("hdr-tone-mapping='") + mode_string + "' failed: " + mpv_error_string(error)).c_str(),
                     nullptr));
               }
               fl_method_call_respond(method_call, async_response, nullptr);
