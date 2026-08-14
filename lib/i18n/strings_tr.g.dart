@@ -310,6 +310,8 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String secondsUnit({required Object seconds}) => '${seconds} saniye';
 	@override String get defaultSleepTimer => 'Varsayılan Uyku Zamanlayıcısı';
 	@override String minutesUnit({required Object minutes}) => '${minutes} dakika';
+	@override String get syncWatchStateWithServer => 'İzleme durumunu medya sunucusuyla eşitle';
+	@override String get syncWatchStateWithServerDescription => 'Oynatılan video ilerlemesini ve izlendi bilgisini Plex, Jellyfin veya Emby sunucunuza iletin';
 	@override String get rememberTrackSelections => 'Dizi/film başına ses/altyazı seçimlerini hatırla';
 	@override String get rememberTrackSelectionsDescription => 'İçerik başına ses ve altyazı tercihlerini hatırla';
 	@override String get followServerTrackSelections => 'Sunucunun bölüm başına parça seçimlerini kullan';
@@ -2052,6 +2054,8 @@ class _Translations$services$tr extends Translations$services$en {
 	@override String disconnectConfirmBody({required Object service}) => 'Plezy, ${service} güncellemeyi durduracak. İstediğiniz zaman yeniden bağlanabilirsiniz.';
 	@override String connectFailed({required Object service}) => '${service} ile bağlantı kurulamadı. Tekrar deneyin.';
 	@override late final _Translations$services$names$tr names = _Translations$services$names$tr._(_root);
+	@override late final _Translations$services$theIntroDb$tr theIntroDb = _Translations$services$theIntroDb$tr._(_root);
+	@override late final _Translations$services$tmdb$tr tmdb = _Translations$services$tmdb$tr._(_root);
 	@override late final _Translations$services$deviceCode$tr deviceCode = _Translations$services$deviceCode$tr._(_root);
 	@override late final _Translations$services$oauthProxy$tr oauthProxy = _Translations$services$oauthProxy$tr._(_root);
 	@override late final _Translations$services$pendingAuth$tr pendingAuth = _Translations$services$pendingAuth$tr._(_root);
@@ -2619,7 +2623,47 @@ class _Translations$services$names$tr extends Translations$services$names$en {
 	@override String get anilist => 'AniList';
 	@override String get simkl => 'Simkl';
 	@override String get seerr => 'Seerr';
+	@override String get theIntroDb => 'The Intro DB';
+	@override String get tmdb => 'TMDB';
 	@override String get mdblist => 'MDBList';
+}
+
+// Path: services.theIntroDb
+class _Translations$services$theIntroDb$tr extends Translations$services$theIntroDb$en {
+	_Translations$services$theIntroDb$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'The Intro DB';
+	@override String get subtitle => 'Film ve diziler için akıllı intro ve jenerik tespiti servisi.';
+	@override String get apiKey => 'API Anahtarı';
+	@override String get apiKeyHint => 'API anahtarınızı girin (örn. theintrodb:user_...)';
+	@override String get publicAccess => 'Kamu / Anonim Erişim (Sınırlı İstek)';
+	@override String get testConnection => 'Bağlantıyı Test Et';
+	@override String get connectionSuccess => 'The Intro DB bağlantısı başarılı!';
+	@override String get connectionFailed => 'Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.';
+	@override String get infoText => 'The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.';
+	@override String get getKeyInfo => 'theintrodb.org adresinden API Anahtarı Alın';
+}
+
+// Path: services.tmdb
+class _Translations$services$tmdb$tr extends Translations$services$tmdb$en {
+	_Translations$services$tmdb$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'TMDB (The Movie Database)';
+	@override String get subtitle => 'Medya bilgisi, afiş, arka plan ve keşif kataloğu kaynağı.';
+	@override String get apiKey => 'API Anahtarı';
+	@override String get apiKeyHint => 'TMDB API anahtarınızı girin (v3 / v4)';
+	@override String get publicAccess => 'Varsayılan Erişim';
+	@override String get testConnection => 'Bağlantıyı Test Et';
+	@override String get connectionSuccess => 'TMDB sunucularına başarıyla bağlandı!';
+	@override String get connectionFailed => 'Bağlantı başarısız. Lütfen API anahtarınızı kontrol edin.';
+	@override String get infoText => 'The Movie Database (TMDB) zengin dizi ve film bilgileri sunar. Kendi API anahtarınızı girmek ortak istek limitlerinden etkilenmenizi önler.';
+	@override String get getKeyInfo => 'themoviedb.org adresinden API anahtarı edinin';
 }
 
 // Path: services.deviceCode
@@ -2866,6 +2910,8 @@ extension on TranslationsTr {
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} saniye',
 			'settings.defaultSleepTimer' => 'Varsayılan Uyku Zamanlayıcısı',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} dakika',
+			'settings.syncWatchStateWithServer' => 'İzleme durumunu medya sunucusuyla eşitle',
+			'settings.syncWatchStateWithServerDescription' => 'Oynatılan video ilerlemesini ve izlendi bilgisini Plex, Jellyfin veya Emby sunucunuza iletin',
 			'settings.rememberTrackSelections' => 'Dizi/film başına ses/altyazı seçimlerini hatırla',
 			'settings.rememberTrackSelectionsDescription' => 'İçerik başına ses ve altyazı tercihlerini hatırla',
 			'settings.followServerTrackSelections' => 'Sunucunun bölüm başına parça seçimlerini kullan',
@@ -3199,10 +3245,10 @@ extension on TranslationsTr {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Medya ögesi başarıyla silindi',
 			'mediaMenu.mediaFailedToDelete' => 'Medya ögesi silinemedi',
 			'mediaMenu.rate' => 'Oyla',
-			'mediaMenu.playFromBeginning' => 'Baştan Oynat',
-			'mediaMenu.playVersion' => 'Sürümü Oynat...',
 			_ => null,
 		} ?? switch (path) {
+			'mediaMenu.playFromBeginning' => 'Baştan Oynat',
+			'mediaMenu.playVersion' => 'Sürümü Oynat...',
 			'rateSheet.title' => 'Oyla',
 			'rateSheet.server' => 'Sunucu',
 			'rateSheet.favorite' => 'Favori',
@@ -3713,10 +3759,10 @@ extension on TranslationsTr {
 			'explore.checkingLibrary' => 'Kitaplığınız kontrol ediliyor...',
 			'explore.emptyTitle' => 'Henüz burada bir şey yok',
 			'explore.emptyMessage' => ({required Object source}) => '${source} kaynağındaki satırlar içerik bulunduğunda burada görünecektir.',
-			'explore.searchHint' => ({required Object source}) => '${source} üzerinde ara',
-			'explore.searchEmpty' => ({required Object query}) => '"${query}" için sonuç bulunamadı',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchHint' => ({required Object source}) => '${source} üzerinde ara',
+			'explore.searchEmpty' => ({required Object query}) => '"${query}" için sonuç bulunamadı',
 			'explore.searchPrompt' => ({required Object source}) => '${source} üzerinde film ve dizileri arayın.',
 			'explore.searchFailed' => 'Arama başarısız. Bağlantınızı kontrol edip tekrar deneyin.',
 			'explore.badge.rankPopular' => ({required Object n}) => 'Popülerde #${n}',
@@ -4227,10 +4273,10 @@ extension on TranslationsTr {
 			'companionRemote.closedBeforeAuth' => 'Bağlantı, kimlik doğrulamadan önce kapandı',
 			'videoSettings.playbackSpeed' => 'Oynatma Hızı',
 			'videoSettings.normalSpeed' => 'Normal',
-			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktif (${duration})',
-			'videoSettings.zoom' => 'Yakınlaştırma',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktif (${duration})',
+			'videoSettings.zoom' => 'Yakınlaştırma',
 			'videoSettings.sleepTimer' => 'Uyku Zamanlayıcısı',
 			'videoSettings.audioSync' => 'Ses Senkronizasyonu',
 			'videoSettings.subtitleSync' => 'Altyazı Senkronizasyonu',
@@ -4465,7 +4511,29 @@ extension on TranslationsTr {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
+			'services.names.theIntroDb' => 'The Intro DB',
+			'services.names.tmdb' => 'TMDB',
 			'services.names.mdblist' => 'MDBList',
+			'services.theIntroDb.title' => 'The Intro DB',
+			'services.theIntroDb.subtitle' => 'Film ve diziler için akıllı intro ve jenerik tespiti servisi.',
+			'services.theIntroDb.apiKey' => 'API Anahtarı',
+			'services.theIntroDb.apiKeyHint' => 'API anahtarınızı girin (örn. theintrodb:user_...)',
+			'services.theIntroDb.publicAccess' => 'Kamu / Anonim Erişim (Sınırlı İstek)',
+			'services.theIntroDb.testConnection' => 'Bağlantıyı Test Et',
+			'services.theIntroDb.connectionSuccess' => 'The Intro DB bağlantısı başarılı!',
+			'services.theIntroDb.connectionFailed' => 'Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.',
+			'services.theIntroDb.infoText' => 'The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.',
+			'services.theIntroDb.getKeyInfo' => 'theintrodb.org adresinden API Anahtarı Alın',
+			'services.tmdb.title' => 'TMDB (The Movie Database)',
+			'services.tmdb.subtitle' => 'Medya bilgisi, afiş, arka plan ve keşif kataloğu kaynağı.',
+			'services.tmdb.apiKey' => 'API Anahtarı',
+			'services.tmdb.apiKeyHint' => 'TMDB API anahtarınızı girin (v3 / v4)',
+			'services.tmdb.publicAccess' => 'Varsayılan Erişim',
+			'services.tmdb.testConnection' => 'Bağlantıyı Test Et',
+			'services.tmdb.connectionSuccess' => 'TMDB sunucularına başarıyla bağlandı!',
+			'services.tmdb.connectionFailed' => 'Bağlantı başarısız. Lütfen API anahtarınızı kontrol edin.',
+			'services.tmdb.infoText' => 'The Movie Database (TMDB) zengin dizi ve film bilgileri sunar. Kendi API anahtarınızı girmek ortak istek limitlerinden etkilenmenizi önler.',
+			'services.tmdb.getKeyInfo' => 'themoviedb.org adresinden API anahtarı edinin',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy\'yi ${service} üzerinde etkinleştirin',
 			'services.deviceCode.instructions' => 'QR kodunu tarayın veya aşağıdaki adresi ziyaret edip bu kodu girin:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Etkinleştirmek için ${service} servisini açın',

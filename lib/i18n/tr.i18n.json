@@ -189,6 +189,8 @@
     "secondsUnit": "${seconds} saniye",
     "defaultSleepTimer": "Varsayılan Uyku Zamanlayıcısı",
     "minutesUnit": "${minutes} dakika",
+    "syncWatchStateWithServer": "İzleme durumunu medya sunucusuyla eşitle",
+    "syncWatchStateWithServerDescription": "Oynatılan video ilerlemesini ve izlendi bilgisini Plex, Jellyfin veya Emby sunucunuza iletin",
     "rememberTrackSelections": "Dizi/film başına ses/altyazı seçimlerini hatırla",
     "rememberTrackSelectionsDescription": "İçerik başına ses ve altyazı tercihlerini hatırla",
     "followServerTrackSelections": "Sunucunun bölüm başına parça seçimlerini kullan",
@@ -1942,7 +1944,33 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
+      "theIntroDb": "The Intro DB",
+      "tmdb": "TMDB",
       "mdblist": "MDBList"
+    },
+    "theIntroDb": {
+      "title": "The Intro DB",
+      "subtitle": "Film ve diziler için akıllı intro ve jenerik tespiti servisi.",
+      "apiKey": "API Anahtarı",
+      "apiKeyHint": "API anahtarınızı girin (örn. theintrodb:user_...)",
+      "publicAccess": "Kamu / Anonim Erişim (Sınırlı İstek)",
+      "testConnection": "Bağlantıyı Test Et",
+      "connectionSuccess": "The Intro DB bağlantısı başarılı!",
+      "connectionFailed": "Bağlantı testi başarısız. Lütfen internet bağlantınızı veya API anahtarınızı kontrol edin.",
+      "infoText": "The Intro DB, doğru intro, özet ve jenerik zaman damgaları sağlar. Kendi API anahtarınızı girmek günlük istek sınırını artırır.",
+      "getKeyInfo": "theintrodb.org adresinden API Anahtarı Alın"
+    },
+    "tmdb": {
+      "title": "TMDB (The Movie Database)",
+      "subtitle": "Medya bilgisi, afiş, arka plan ve keşif kataloğu kaynağı.",
+      "apiKey": "API Anahtarı",
+      "apiKeyHint": "TMDB API anahtarınızı girin (v3 / v4)",
+      "publicAccess": "Varsayılan Erişim",
+      "testConnection": "Bağlantıyı Test Et",
+      "connectionSuccess": "TMDB sunucularına başarıyla bağlandı!",
+      "connectionFailed": "Bağlantı başarısız. Lütfen API anahtarınızı kontrol edin.",
+      "infoText": "The Movie Database (TMDB) zengin dizi ve film bilgileri sunar. Kendi API anahtarınızı girmek ortak istek limitlerinden etkilenmenizi önler.",
+      "getKeyInfo": "themoviedb.org adresinden API anahtarı edinin"
     },
     "deviceCode": {
       "title": "Plezy'yi ${service} üzerinde etkinleştirin",

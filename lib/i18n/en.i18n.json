@@ -189,6 +189,8 @@
     "secondsUnit": "${seconds} seconds",
     "defaultSleepTimer": "Default Sleep Timer",
     "minutesUnit": "${minutes} minutes",
+    "syncWatchStateWithServer": "Sync watch state with media server",
+    "syncWatchStateWithServerDescription": "Report playback progress and watched status to Plex, Jellyfin, or Emby",
     "rememberTrackSelections": "Remember track selections per show/movie",
     "rememberTrackSelectionsDescription": "Remember audio and subtitle choices per title",
     "followServerTrackSelections": "Use server's per-episode track selections",
@@ -1942,7 +1944,33 @@
       "anilist": "AniList",
       "simkl": "Simkl",
       "seerr": "Seerr",
+      "theIntroDb": "The Intro DB",
+      "tmdb": "TMDB",
       "mdblist": "MDBList"
+    },
+    "theIntroDb": {
+      "title": "The Intro DB",
+      "subtitle": "Smart intro and credits detection for movies and TV episodes.",
+      "apiKey": "API Key",
+      "apiKeyHint": "Enter your API key (e.g. theintrodb:user_...)",
+      "publicAccess": "Public Access (Rate Limited)",
+      "testConnection": "Test Connection",
+      "connectionSuccess": "Successfully connected to The Intro DB!",
+      "connectionFailed": "Connection failed. Please check your API key.",
+      "infoText": "The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.",
+      "getKeyInfo": "Get an API Key at theintrodb.org"
+    },
+    "tmdb": {
+      "title": "TMDB (The Movie Database)",
+      "subtitle": "Metadata, poster, backdrop, and discovery catalog source.",
+      "apiKey": "API Key",
+      "apiKeyHint": "Enter your TMDB API key (v3 / v4)",
+      "publicAccess": "Default Access",
+      "testConnection": "Test Connection",
+      "connectionSuccess": "Successfully connected to TMDB!",
+      "connectionFailed": "Connection failed. Please check your API key.",
+      "infoText": "The Movie Database (TMDB) provides rich media details and metadata. Entering a custom API key avoids shared API rate limits.",
+      "getKeyInfo": "Get an API Key at themoviedb.org"
     },
     "deviceCode": {
       "title": "Activate Plezy on ${service}",

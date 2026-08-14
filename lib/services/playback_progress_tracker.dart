@@ -346,19 +346,22 @@ class PlaybackProgressTracker {
         // Stopped must complete before disposal. When reporting was disabled
         // by a fatal error, use the last position captured while output was
         // healthy rather than the still-advancing native media clock.
-        final accepted = await _sendOnlineProgress(state, position, duration, allowScrobble: canCommitStoppedProgress);
+        await _sendOnlineProgress(state, position, duration, allowScrobble: canCommitStoppedProgress);
         // The explicit mark is resolved at session end, so it has to ride the
         // terminal report's future — callers that await the stop before tearing
         // the player down would otherwise drop it.
         await _pendingSettle;
         _resetBackoff();
-        if (accepted && canCommitStoppedProgress) {
+        if (canCommitStoppedProgress) {
           _notifyProgressIfNeeded(
             position,
             duration,
             force: true,
             serverAcknowledged: _stoppedProgressServerAcknowledged,
           );
+          if (!SettingsService.instance.read(SettingsService.syncWatchStateWithServer) && offlineWatchService != null) {
+            await _sendOfflineProgress(position, duration);
+          }
         }
       } else {
         // Fire-and-forget for playing/paused — avoid blocking the Dart event loop
@@ -463,26 +466,36 @@ class PlaybackProgressTracker {
     final session = _reportSession;
     if (c == null || session == null) return false;
 
-    final snapshot = PlaybackReportSnapshot(
-      state: state,
-      position: position,
-      duration: duration,
-      resolveStreamSelection: state == 'stopped'
-          ? _currentStreamSelectionForStopped
-          : _currentStreamSelectionForProgress,
-    );
-    final accepted = await session.report(snapshot);
+    final syncWithServer = SettingsService.instance.read(SettingsService.syncWatchStateWithServer);
+    var accepted = false;
 
-    if (accepted && allowScrobble) {
+    if (syncWithServer) {
+      final snapshot = PlaybackReportSnapshot(
+        state: state,
+        position: position,
+        duration: duration,
+        resolveStreamSelection: state == 'stopped'
+            ? _currentStreamSelectionForStopped
+            : _currentStreamSelectionForProgress,
+      );
+      accepted = await session.report(snapshot);
+
+      if (!snapshot.isStopped) {
+        final serverAcknowledged = _deliveredProgressAcknowledgements.remove(snapshot);
+        if (serverAcknowledged != null) {
+          _notifyProgressIfNeeded(position, duration, serverAcknowledged: serverAcknowledged);
+        }
+      }
+    } else {
+      if (state != 'stopped') {
+        _notifyProgressIfNeeded(position, duration, serverAcknowledged: false);
+      }
+    }
+
+    if (allowScrobble) {
       await _maybeScrobble(c, position, duration);
     }
 
-    if (!snapshot.isStopped) {
-      final serverAcknowledged = _deliveredProgressAcknowledgements.remove(snapshot);
-      if (serverAcknowledged != null) {
-        _notifyProgressIfNeeded(position, duration, serverAcknowledged: serverAcknowledged);
-      }
-    }
     return accepted;
   }
 
@@ -554,6 +567,12 @@ class PlaybackProgressTracker {
   /// answer.
   Future<void> _settleServerMark(MediaServerClient? c) async {
     if (c == null || !_scrobbled || _serverMarkSettled) return;
+    if (!SettingsService.instance.read(SettingsService.syncWatchStateWithServer)) {
+      _serverMarkSettled = true;
+      _promoteWatchedPatch();
+      await _runScrobbledHook();
+      return;
+    }
     // Backends that mark played from the playback-stopped report do it there,
     // and the terminal stop is always sent. An explicit mark on top would
     // double-scrobble through the Jellyfin Trakt plugin (#1287).

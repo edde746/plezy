@@ -145,6 +145,8 @@ flutter:
     - assets/simkl_mark.svg
     - assets/seerr_mark.svg
     - assets/mdblist_mark.svg
+    - assets/theintrodb_mark.svg
+    - assets/tmdb_mark.svg
     - assets/go-noto-current-regular.ttf
     - assets/go-noto-kurrent-hangul.ttf
     - assets/shaders/nvscaler/

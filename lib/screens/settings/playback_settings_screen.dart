@@ -196,6 +196,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
           onAfterWrite: (v) => applyCompanionRemoteServerSetting(context, v),
         ),
       SettingSwitchTile(
+        pref: SettingsService.syncWatchStateWithServer,
+        icon: Symbols.sync_rounded,
+        title: t.settings.syncWatchStateWithServer,
+        subtitle: t.settings.syncWatchStateWithServerDescription,
+      ),
+      SettingSwitchTile(
         pref: SettingsService.rememberTrackSelections,
         icon: Symbols.bookmark_rounded,
         title: t.settings.rememberTrackSelections,

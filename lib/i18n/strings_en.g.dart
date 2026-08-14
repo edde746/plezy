@@ -645,6 +645,12 @@ class Translations$settings$en {
 	/// en: '${minutes} minutes'
 	String minutesUnit({required Object minutes}) => '${minutes} minutes';
 
+	/// en: 'Sync watch state with media server'
+	String get syncWatchStateWithServer => 'Sync watch state with media server';
+
+	/// en: 'Report playback progress and watched status to Plex, Jellyfin, or Emby'
+	String get syncWatchStateWithServerDescription => 'Report playback progress and watched status to Plex, Jellyfin, or Emby';
+
 	/// en: 'Remember track selections per show/movie'
 	String get rememberTrackSelections => 'Remember track selections per show/movie';
 
@@ -5013,6 +5019,8 @@ class Translations$services$en {
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
 	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
+	late final Translations$services$theIntroDb$en theIntroDb = Translations$services$theIntroDb$en.internal(_root);
+	late final Translations$services$tmdb$en tmdb = Translations$services$tmdb$en.internal(_root);
 	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
 	late final Translations$services$oauthProxy$en oauthProxy = Translations$services$oauthProxy$en.internal(_root);
 	late final Translations$services$pendingAuth$en pendingAuth = Translations$services$pendingAuth$en.internal(_root);
@@ -6263,8 +6271,92 @@ class Translations$services$names$en {
 	/// en: 'Seerr'
 	String get seerr => 'Seerr';
 
+	/// en: 'The Intro DB'
+	String get theIntroDb => 'The Intro DB';
+
+	/// en: 'TMDB'
+	String get tmdb => 'TMDB';
+
 	/// en: 'MDBList'
 	String get mdblist => 'MDBList';
+}
+
+// Path: services.theIntroDb
+class Translations$services$theIntroDb$en {
+	Translations$services$theIntroDb$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'The Intro DB'
+	String get title => 'The Intro DB';
+
+	/// en: 'Smart intro and credits detection for movies and TV episodes.'
+	String get subtitle => 'Smart intro and credits detection for movies and TV episodes.';
+
+	/// en: 'API Key'
+	String get apiKey => 'API Key';
+
+	/// en: 'Enter your API key (e.g. theintrodb:user_...)'
+	String get apiKeyHint => 'Enter your API key (e.g. theintrodb:user_...)';
+
+	/// en: 'Public Access (Rate Limited)'
+	String get publicAccess => 'Public Access (Rate Limited)';
+
+	/// en: 'Test Connection'
+	String get testConnection => 'Test Connection';
+
+	/// en: 'Successfully connected to The Intro DB!'
+	String get connectionSuccess => 'Successfully connected to The Intro DB!';
+
+	/// en: 'Connection failed. Please check your API key.'
+	String get connectionFailed => 'Connection failed. Please check your API key.';
+
+	/// en: 'The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.'
+	String get infoText => 'The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.';
+
+	/// en: 'Get an API Key at theintrodb.org'
+	String get getKeyInfo => 'Get an API Key at theintrodb.org';
+}
+
+// Path: services.tmdb
+class Translations$services$tmdb$en {
+	Translations$services$tmdb$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'TMDB (The Movie Database)'
+	String get title => 'TMDB (The Movie Database)';
+
+	/// en: 'Metadata, poster, backdrop, and discovery catalog source.'
+	String get subtitle => 'Metadata, poster, backdrop, and discovery catalog source.';
+
+	/// en: 'API Key'
+	String get apiKey => 'API Key';
+
+	/// en: 'Enter your TMDB API key (v3 / v4)'
+	String get apiKeyHint => 'Enter your TMDB API key (v3 / v4)';
+
+	/// en: 'Default Access'
+	String get publicAccess => 'Default Access';
+
+	/// en: 'Test Connection'
+	String get testConnection => 'Test Connection';
+
+	/// en: 'Successfully connected to TMDB!'
+	String get connectionSuccess => 'Successfully connected to TMDB!';
+
+	/// en: 'Connection failed. Please check your API key.'
+	String get connectionFailed => 'Connection failed. Please check your API key.';
+
+	/// en: 'The Movie Database (TMDB) provides rich media details and metadata. Entering a custom API key avoids shared API rate limits.'
+	String get infoText => 'The Movie Database (TMDB) provides rich media details and metadata. Entering a custom API key avoids shared API rate limits.';
+
+	/// en: 'Get an API Key at themoviedb.org'
+	String get getKeyInfo => 'Get an API Key at themoviedb.org';
 }
 
 // Path: services.deviceCode
@@ -6557,6 +6649,8 @@ extension on Translations {
 			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconds',
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
+			'settings.syncWatchStateWithServer' => 'Sync watch state with media server',
+			'settings.syncWatchStateWithServerDescription' => 'Report playback progress and watched status to Plex, Jellyfin, or Emby',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.rememberTrackSelectionsDescription' => 'Remember audio and subtitle choices per title',
 			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
@@ -6890,10 +6984,10 @@ extension on Translations {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
-			'mediaMenu.playFromBeginning' => 'Play from Beginning',
-			'mediaMenu.playVersion' => 'Play Version...',
 			_ => null,
 		} ?? switch (path) {
+			'mediaMenu.playFromBeginning' => 'Play from Beginning',
+			'mediaMenu.playVersion' => 'Play Version...',
 			'rateSheet.title' => 'Rate',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Favorite',
@@ -7404,10 +7498,10 @@ extension on Translations {
 			'explore.checkingLibrary' => 'Checking your library...',
 			'explore.emptyTitle' => 'Nothing here yet',
 			'explore.emptyMessage' => ({required Object source}) => 'Rows from ${source} will appear here once they have content.',
-			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
-			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
 			_ => null,
 		} ?? switch (path) {
+			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
+			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Search for movies and shows on ${source}.',
 			'explore.searchFailed' => 'Search failed. Check your connection and try again.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} popular',
@@ -7918,10 +8012,10 @@ extension on Translations {
 			'companionRemote.closedBeforeAuth' => 'The connection closed before authentication',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',
-			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
-			'videoSettings.zoom' => 'Zoom',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
@@ -8156,7 +8250,29 @@ extension on Translations {
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
+			'services.names.theIntroDb' => 'The Intro DB',
+			'services.names.tmdb' => 'TMDB',
 			'services.names.mdblist' => 'MDBList',
+			'services.theIntroDb.title' => 'The Intro DB',
+			'services.theIntroDb.subtitle' => 'Smart intro and credits detection for movies and TV episodes.',
+			'services.theIntroDb.apiKey' => 'API Key',
+			'services.theIntroDb.apiKeyHint' => 'Enter your API key (e.g. theintrodb:user_...)',
+			'services.theIntroDb.publicAccess' => 'Public Access (Rate Limited)',
+			'services.theIntroDb.testConnection' => 'Test Connection',
+			'services.theIntroDb.connectionSuccess' => 'Successfully connected to The Intro DB!',
+			'services.theIntroDb.connectionFailed' => 'Connection failed. Please check your API key.',
+			'services.theIntroDb.infoText' => 'The Intro DB provides accurate intro, recap, and credits timestamps. Entering your own API key increases daily rate limits.',
+			'services.theIntroDb.getKeyInfo' => 'Get an API Key at theintrodb.org',
+			'services.tmdb.title' => 'TMDB (The Movie Database)',
+			'services.tmdb.subtitle' => 'Metadata, poster, backdrop, and discovery catalog source.',
+			'services.tmdb.apiKey' => 'API Key',
+			'services.tmdb.apiKeyHint' => 'Enter your TMDB API key (v3 / v4)',
+			'services.tmdb.publicAccess' => 'Default Access',
+			'services.tmdb.testConnection' => 'Test Connection',
+			'services.tmdb.connectionSuccess' => 'Successfully connected to TMDB!',
+			'services.tmdb.connectionFailed' => 'Connection failed. Please check your API key.',
+			'services.tmdb.infoText' => 'The Movie Database (TMDB) provides rich media details and metadata. Entering a custom API key avoids shared API rate limits.',
+			'services.tmdb.getKeyInfo' => 'Get an API Key at themoviedb.org',
 			'services.deviceCode.title' => ({required Object service}) => 'Activate Plezy on ${service}',
 			'services.deviceCode.instructions' => 'Scan the QR code, or visit the address below and enter this code:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
