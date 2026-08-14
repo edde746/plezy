@@ -1677,8 +1677,17 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             // only re-evaluate rules that actually cover the watched item —
             // leaves unrelated collection/playlist rules alone. Debounced so
             // binge-watching coalesces into one pass.
+            //
+            // Limited to `watched` and `removedFromContinueWatching` — the two
+            // change types that can shrink a rule's target set (an episode
+            // rule's deficit, or the continueWatching rule's shelf membership).
+            // `progressUpdate` is excluded deliberately: it fires on every
+            // playback tick, which would turn this into a per-second poll.
             _watchStateSubscription = WatchStateNotifier().stream.listen((event) {
-              if (event.changeType != WatchStateChangeType.watched) return;
+              final relevant =
+                  event.changeType == WatchStateChangeType.watched ||
+                  event.changeType == WatchStateChangeType.removedFromContinueWatching;
+              if (!relevant) return;
               if (VideoPlayerScreenState.activeGlobalKey == event.globalKey) return;
 
               _pendingSyncKeys.addAll(downloadProvider.syncRuleKeysForWatchEvent(event));
