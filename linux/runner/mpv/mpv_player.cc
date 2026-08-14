@@ -520,6 +520,27 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
       gl_version ? reinterpret_cast<const char*>(gl_version) : "(null)",
       eglGetProcAddress("glDispatchCompute") ? "yes" : "no", eglGetProcAddress("glBindImageTexture") ? "yes" : "no");
 
+  // Pre-flight the VAAPI dmabuf interop prerequisites. mpv's probe
+  // (dmabuf_interop_gl_init) runs inside mpv_render_context_create below, and
+  // when it fails, hwdec=auto quietly decodes in software - the "silent
+  // fallback" with no visible symptom. Naming which prerequisite is missing
+  // turns that into a diagnosable one-liner. The three extensions are the ones
+  // the probe requires on the current display/context; EGL_EXT_image_dma_buf_import
+  // is the display-level one, GL_OES_EGL_image is context-level.
+  const char* egl_exts = eglQueryString(display, EGL_EXTENSIONS);
+  const GLubyte* gl_exts = glGetString(GL_EXTENSIONS);
+  const bool has_dma_buf = egl_exts != nullptr && strstr(egl_exts, "EGL_EXT_image_dma_buf_import") != nullptr;
+  const bool has_image_base = egl_exts != nullptr && strstr(egl_exts, "EGL_KHR_image_base") != nullptr;
+  const bool has_oes_egl_image =
+      gl_exts != nullptr && strstr(reinterpret_cast<const char*>(gl_exts), "GL_OES_EGL_image") != nullptr;
+  if (!has_dma_buf || !has_image_base || !has_oes_egl_image) {
+    g_warning(
+        "MPV video plane: VAAPI dmabuf interop prerequisites missing "
+        "(EGL_EXT_image_dma_buf_import=%d EGL_KHR_image_base=%d GL_OES_EGL_image=%d); "
+        "hardware decoding may silently fall back to software",
+        has_dma_buf, has_image_base, has_oes_egl_image);
+  }
+
   // Now that a context is current, the surface's swap interval can be set.
   // eglSwapBuffers runs on the GTK main thread and must never block: at the
   // default interval Mesa throttles it on the compositor's frame callback,
