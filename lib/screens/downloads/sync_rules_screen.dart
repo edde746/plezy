@@ -38,7 +38,13 @@ class _SyncRulesScreenState extends State<SyncRulesScreen> {
   Widget build(BuildContext context) {
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
-        final syncRules = downloadProvider.syncRules;
+        // System-managed continueWatching rules are created/removed entirely by
+        // the "Auto-download Continue Watching" setting — they have no
+        // per-show configuration to show here and shouldn't be individually
+        // deletable, so this screen only lists user-authored rules.
+        final syncRules = Map<String, SyncRuleItem>.fromEntries(
+          downloadProvider.syncRules.entries.where((e) => e.value.targetType != ContentTypes.continueWatching),
+        );
         final multiServerProvider = context.watch<MultiServerProvider>();
 
         return StreamBuilder<List<Connection>>(
