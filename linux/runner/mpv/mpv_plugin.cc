@@ -932,8 +932,16 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
                 if (self->hdr_mode_request_serial == serial) {
                   self->hdr_tone_mapping_desired = self->hdr_tone_mapping;
                 }
+                // The refused write is named so a failure lands in the log as
+                // "hdr-tone-mapping=<mode> failed", not as an unattributable
+                // error string. This transaction has no single property: it
+                // moves mpv's whole output colour space. The name is still
+                // worth having - it says which side of the plane refused.
+                const char* mode_text = fl_value_get_string(value_value);
                 async_response = FL_METHOD_RESPONSE(fl_method_error_response_new(
-                    plezy::mpv_common::kSetPropertyFailedCode, mpv_error_string(error), nullptr));
+                    plezy::mpv_common::kSetPropertyFailedCode,
+                    (std::string("hdr-tone-mapping='") + mode_text + "' failed: " + mpv_error_string(error)).c_str(),
+                    nullptr));
               }
               fl_method_call_respond(method_call, async_response, nullptr);
               g_object_unref(method_call);
@@ -968,34 +976,70 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         } else {
           g_object_ref(method_call);
           const uint64_t serial = ++self->hdr_enable_request_serial;
-          submit_hdr_transaction(self, enabled, std::nullopt, [self, method_call, serial, previous_wanted](int error) {
-            g_autoptr(FlMethodResponse) async_response = nullptr;
-            if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
-              async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
-            } else {
-              // Only if no newer request has claimed the field since, for the
-              // same reason the tone-mapping path checks its serial.
-              if (self->hdr_enable_request_serial == serial) self->hdr_wanted = previous_wanted;
-              async_response = FL_METHOD_RESPONSE(fl_method_error_response_new(
-                  plezy::mpv_common::kSetPropertyFailedCode, mpv_error_string(error), nullptr));
+          submit_hdr_transaction(
+              self, enabled, std::nullopt, [self, method_call, serial, previous_wanted, enabled](int error) {
+                g_autoptr(FlMethodResponse) async_response = nullptr;
+                if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
+                  async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+                } else {
+                  // Only if no newer request has claimed the field since, for the
+                  // same reason the tone-mapping path checks its serial.
+                  if (self->hdr_enable_request_serial == serial) self->hdr_wanted = previous_wanted;
+                  // The requested value is named, not the restored one: the
+                  // refusal is about the request that failed.
+                  async_response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+                      plezy::mpv_common::kSetPropertyFailedCode,
+                      (std::string("hdr-enabled='") + (enabled ? "yes" : "no") + "' failed: " +
+                       mpv_error_string(error))
+                          .c_str(),
+                      nullptr));
             }
             fl_method_call_respond(method_call, async_response, nullptr);
             g_object_unref(method_call);
           });
           return;
         }
+      } else if (!self->audio_only && g_strcmp0(fl_value_get_string(name_value), "vo") == 0 &&
+                 g_strcmp0(fl_value_get_string(value_value), "libmpv") != 0) {
+        // Embedded rendering is authoritative: the render context was created
+        // against vo=libmpv, and a runtime vo switch makes mpv re-create its
+        // output as a separate window, orphaning the plane. vo=gpu-next is
+        // windowed by construction - the libmpv render API is OpenGL-only -
+        // so there is no embedded alternative worth accepting. This guard is
+        // the native invariant beneath the Dart-side filter: it is the last
+        // line, and it names why.
+        response = FL_METHOD_RESPONSE(fl_method_error_response_new(
+            plezy::mpv_common::kSetPropertyFailedCode,
+            "vo is owned by Plezy: embedded video renders through vo=libmpv and a windowed VO "
+            "(gpu-next) cannot be used inside the app",
+            nullptr));
       } else {
+        // The property name and value travel with the error so a refusal is
+        // attributable: mpv's own text ("unsupported format for accessing
+        // property", MPV_ERROR_PROPERTY_FORMAT) names the failure mode, not
+        // the property, and without this every report of a refused write is
+        // a guessing game. The value is truncated the same way
+        // SetPropertyErrorDescription truncates the description, so a token
+        // or URL that sneaks into a property value is bounded in the log.
+        const std::string property_name = fl_value_get_string(name_value);
+        const std::string property_value = fl_value_get_string(value_value);
         g_object_ref(method_call);
-        self->player->SetPropertyAsync(
-            fl_value_get_string(name_value), fl_value_get_string(value_value), [method_call](int error) {
+        self->player->SetPropertyAsync(property_name, property_value, [method_call, property_name, property_value](int error) {
               g_autoptr(FlMethodResponse) async_response = nullptr;
               if (plezy::mpv_common::SetPropertyStatusSucceeded(error)) {
                 async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
               } else {
                 const char* error_code = plezy::mpv_common::SetPropertyErrorCode(error);
-                const std::string description = error == MPV_ERROR_UNINITIALIZED
-                                                    ? std::string("Player not initialized")
-                                                    : plezy::mpv_common::SetPropertyErrorDescription(error);
+                std::string description;
+                if (error == MPV_ERROR_UNINITIALIZED) {
+                  description = "Player not initialized";
+                } else {
+                  description = "setProperty '" + property_name + "'='" + property_value + "' failed: " +
+                                plezy::mpv_common::SetPropertyErrorDescription(error);
+                  if (description.size() > plezy::mpv_common::kSetPropertyErrorDescriptionLimit) {
+                    description.resize(plezy::mpv_common::kSetPropertyErrorDescriptionLimit);
+                  }
+                }
                 async_response =
                     FL_METHOD_RESPONSE(fl_method_error_response_new(error_code, description.c_str(), nullptr));
               }
