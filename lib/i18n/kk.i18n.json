@@ -340,7 +340,11 @@
     "subtitlesAndConfig": "Субтитрлер мен конфигурация",
     "seekAndTiming": "Айналдыру және уақытты реттеу",
     "behavior": "Мінез-құлық",
-    "exportDialogTitle": "Plezy параметрлерін экспорттау"
+    "exportDialogTitle": "Plezy параметрлерін экспорттау",
+    "linuxVideoRenderMode": "Бейнені көрсету режимі",
+    "linuxVideoRenderModeDescription": "Автоматты режим жергілікті Wayland жазықтығын қалайды (HDR қолдайды); Texture SDR резервтік жолды мәжбүрлейді.",
+    "linuxVideoRenderModeAuto": "Автоматты",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Фильмдер, сериалдар, музыка іздеу...",

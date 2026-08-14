@@ -462,6 +462,10 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get seekAndTiming => 'Tekerés és időzítés';
 	@override String get behavior => 'Viselkedés';
 	@override String get exportDialogTitle => 'Plezy-beállítások exportálása';
+	@override String get linuxVideoRenderMode => 'Videó megjelenítési mód';
+	@override String get linuxVideoRenderModeDescription => 'Az Automatikus a natív Wayland síkot részesíti előnyben (HDR-képes); a Texture az SDR tartalék utat kényszeríti ki.';
+	@override String get linuxVideoRenderModeAuto => 'Automatikus';
+	@override String get linuxVideoRenderModeTexture => 'Texture (SDR)';
 }
 
 // Path: search
@@ -3019,6 +3023,10 @@ extension on TranslationsHu {
 			'settings.seekAndTiming' => 'Tekerés és időzítés',
 			'settings.behavior' => 'Viselkedés',
 			'settings.exportDialogTitle' => 'Plezy-beállítások exportálása',
+			'settings.linuxVideoRenderMode' => 'Videó megjelenítési mód',
+			'settings.linuxVideoRenderModeDescription' => 'Az Automatikus a natív Wayland síkot részesíti előnyben (HDR-képes); a Texture az SDR tartalék utat kényszeríti ki.',
+			'settings.linuxVideoRenderModeAuto' => 'Automatikus',
+			'settings.linuxVideoRenderModeTexture' => 'Texture (SDR)',
 			'search.hint' => 'Keresés filmek, sorozatok és zenék között...',
 			'search.tryDifferentTerm' => 'Próbálj másik keresési kifejezést',
 			'search.searchYourMedia' => 'Keresés a saját médiatartalmak között',
@@ -3198,12 +3206,12 @@ extension on TranslationsHu {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'A Plezy nem tudta ellenőrizni, mely fájlokat távolítja el ez, ezért a fent nevezett elemnél többet is törölhet. Szakítsa meg és próbálja újra, vagy töröljön mindenképp.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'A szerver nem szolgáltatott fájladatokat ehhez az elemhez, ezért a Plezy nem tudja ellenőrizni, mely fájlokat távolít el. A fent nevezett elemnél többet is törölhet.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Médiaelem sikeresen törölve',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Nem sikerült a médiaelem törlése',
 			'mediaMenu.rate' => 'Értékelés',
 			'mediaMenu.playFromBeginning' => 'Lejátszás az elejétől',
 			'mediaMenu.playVersion' => 'Verzió lejátszása...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Értékelés',
 			'rateSheet.server' => 'Szerver',
 			'rateSheet.favorite' => 'Kedvenc',
@@ -3712,12 +3720,12 @@ extension on TranslationsHu {
 			'explore.watchlistNoMatch' => 'Nem sikerült ezt az elemet figyelőlistához társítani',
 			'explore.notInLibrary' => 'Nincs a könyvtáradban',
 			'explore.inTheseLibraries' => 'Ezekben a könyvtárakban',
+			_ => null,
+		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Könyvtár ellenőrzése...',
 			'explore.emptyTitle' => 'Még nincs itt semmi',
 			'explore.emptyMessage' => ({required Object source}) => 'A(z) ${source} forrásból származó sorok itt fognak megjelenni, amint van tartalmuk.',
 			'explore.searchHint' => ({required Object source}) => 'Keresés itt: ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'Nincs találat a következőre: "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Filmek és sorozatok keresése a következőn: ${source}.',
 			'explore.searchFailed' => 'A keresés nem sikerült. Ellenőrizd a kapcsolatot és próbáld újra.',
@@ -4226,12 +4234,12 @@ extension on TranslationsHu {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Egyetlen címhez sem sikerült csatlakozni',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'A kapcsolat megszakadt ${attempts} próbálkozás után',
 			'companionRemote.errors.connectionLost' => 'A kapcsolat megszakadt',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'A kapcsolat a hitelesítés előtt megszakadt',
 			'videoSettings.playbackSpeed' => 'Lejátszási sebesség',
 			'videoSettings.normalSpeed' => 'Normál',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktív (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Nagyítás',
 			'videoSettings.sleepTimer' => 'Elalvási időzítő',
 			'videoSettings.audioSync' => 'Hang szinkronizálása',

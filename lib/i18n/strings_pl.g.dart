@@ -462,6 +462,10 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get seekAndTiming => 'Przewijanie i czas';
 	@override String get behavior => 'Zachowanie';
 	@override String get exportDialogTitle => 'Eksport ustawień Plezy';
+	@override String get linuxVideoRenderMode => 'Tryb renderowania wideo';
+	@override String get linuxVideoRenderModeDescription => 'Automatyczny preferuje natywną płaszczyznę Wayland (zgodną z HDR); Texture wymusza ścieżkę zapasową SDR.';
+	@override String get linuxVideoRenderModeAuto => 'Automatyczny';
+	@override String get linuxVideoRenderModeTexture => 'Texture (SDR)';
 }
 
 // Path: search
@@ -3039,6 +3043,10 @@ extension on TranslationsPl {
 			'settings.seekAndTiming' => 'Przewijanie i czas',
 			'settings.behavior' => 'Zachowanie',
 			'settings.exportDialogTitle' => 'Eksport ustawień Plezy',
+			'settings.linuxVideoRenderMode' => 'Tryb renderowania wideo',
+			'settings.linuxVideoRenderModeDescription' => 'Automatyczny preferuje natywną płaszczyznę Wayland (zgodną z HDR); Texture wymusza ścieżkę zapasową SDR.',
+			'settings.linuxVideoRenderModeAuto' => 'Automatyczny',
+			'settings.linuxVideoRenderModeTexture' => 'Texture (SDR)',
 			'search.hint' => 'Szukaj filmów, seriali, muzyki...',
 			'search.tryDifferentTerm' => 'Spróbuj innego wyszukiwania',
 			'search.searchYourMedia' => 'Przeszukaj swoje media',
@@ -3218,12 +3226,12 @@ extension on TranslationsPl {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy nie mogło sprawdzić, które pliki zostaną usunięte, więc może usunąć więcej niż element wymieniony powyżej. Anuluj i spróbuj ponownie albo usuń mimo to.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Twój serwer nie podał informacji o plikach tego elementu, więc Plezy nie może sprawdzić, które pliki zostaną usunięte. Może usunąć więcej niż element wymieniony powyżej.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Usunięto element multimedialny',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Nie udało się usunąć elementu multimedialnego',
 			'mediaMenu.rate' => 'Oceń',
 			'mediaMenu.playFromBeginning' => 'Odtwórz od początku',
 			'mediaMenu.playVersion' => 'Odtwórz wersję...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Oceń',
 			'rateSheet.server' => 'Serwer',
 			'rateSheet.favorite' => 'Dodaj do ulubionych',
@@ -3732,12 +3740,12 @@ extension on TranslationsPl {
 			'explore.watchlistNoMatch' => 'Nie udało się dopasować tej pozycji do listy do obejrzenia',
 			'explore.notInLibrary' => 'Nie ma tego w Twojej bibliotece',
 			'explore.inTheseLibraries' => 'W tych bibliotekach',
+			_ => null,
+		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Sprawdzanie Twojej biblioteki...',
 			'explore.emptyTitle' => 'Jeszcze nic tu nie ma',
 			'explore.emptyMessage' => ({required Object source}) => 'Wiersze z ${source} pojawią się tutaj, gdy będą zawierać treści.',
 			'explore.searchHint' => ({required Object source}) => 'Szukaj w ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'Brak wyników dla "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Szukaj filmów i seriali w ${source}.',
 			'explore.searchFailed' => 'Wyszukiwanie nie powiodło się. Sprawdź połączenie i spróbuj ponownie.',
@@ -4246,12 +4254,12 @@ extension on TranslationsPl {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Nie udało się połączyć z żadnym adresem',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Połączenie utracone po ${attempts} próbach',
 			'companionRemote.errors.connectionLost' => 'Połączenie utracone',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'Połączenie zostało zamknięte przed uwierzytelnieniem',
 			'videoSettings.playbackSpeed' => 'Prędkość odtwarzania',
 			'videoSettings.normalSpeed' => 'Normalna',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktywny (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Powiększenie',
 			'videoSettings.sleepTimer' => 'Wyłącznik czasowy',
 			'videoSettings.audioSync' => 'Synchronizacja audio',

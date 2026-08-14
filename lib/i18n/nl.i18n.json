@@ -340,7 +340,11 @@
     "subtitlesAndConfig": "Ondertitels en instellingen",
     "seekAndTiming": "Spoelen en timing",
     "behavior": "Gedrag",
-    "exportDialogTitle": "Plezy-instellingen exporteren"
+    "exportDialogTitle": "Plezy-instellingen exporteren",
+    "linuxVideoRenderMode": "Videoweergavemodus",
+    "linuxVideoRenderModeDescription": "Automatisch geeft de voorkeur aan het native Wayland-vlak (HDR-compatibel); Texture dwingt het SDR-reservepad af.",
+    "linuxVideoRenderModeAuto": "Automatisch",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Zoek films, series, muziek...",

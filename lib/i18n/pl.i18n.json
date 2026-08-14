@@ -340,7 +340,11 @@
     "subtitlesAndConfig": "Napisy i konfiguracja",
     "seekAndTiming": "Przewijanie i czas",
     "behavior": "Zachowanie",
-    "exportDialogTitle": "Eksport ustawień Plezy"
+    "exportDialogTitle": "Eksport ustawień Plezy",
+    "linuxVideoRenderMode": "Tryb renderowania wideo",
+    "linuxVideoRenderModeDescription": "Automatyczny preferuje natywną płaszczyznę Wayland (zgodną z HDR); Texture wymusza ścieżkę zapasową SDR.",
+    "linuxVideoRenderModeAuto": "Automatyczny",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Szukaj filmów, seriali, muzyki...",

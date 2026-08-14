@@ -12,7 +12,9 @@
 // On Wayland the mpv video plane is a wl_subsurface stacked *below* this
 // window's surface, so the window needs an alpha channel for it to show
 // through. Harmless when the plane is unavailable: the Flutter UI paints
-// opaque anyway, and X11 sessions refuse video at initialize by design.
+// opaque anyway, and sessions that cannot host the plane (X11/XWayland)
+// fall back to the Flutter-texture path, which composites through Flutter
+// and needs no alpha channel.
 static void enable_video_plane_transparency(GtkWindow* window, FlView* view) {
 #ifdef GDK_WINDOWING_WAYLAND
   GdkDisplay* display = gtk_widget_get_display(GTK_WIDGET(window));
@@ -85,8 +87,9 @@ static void my_application_activate(GApplication* application) {
   // Register Flutter plugins.
   fl_register_plugins(FL_PLUGIN_REGISTRY(self->flutter_view));
 
-  // Register the MPV plugin. Video goes to the native Wayland plane; there is no other path, so a session that
-  // cannot host one is refused by name rather than played into nothing.
+  // Register the MPV plugin. Video prefers the native Wayland plane; sessions
+  // that cannot host one (X11/XWayland, or a failed plane bootstrap) fall back
+  // to the Flutter-texture path in SDR.
   FlPluginRegistrar* registrar =
       fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvPlugin");
   mpv_plugin_register_with_registrar(registrar);

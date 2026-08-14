@@ -8,6 +8,9 @@
 #ifdef GDK_WINDOWING_WAYLAND
 #include <gdk/gdkwayland.h>
 #endif
+#ifdef GDK_WINDOWING_X11
+#include <gdk/gdkx.h>
+#endif
 #include <locale.h>
 
 // EGL 1.5 names; EGL_KHR_create_context introduced the same values earlier.
@@ -587,6 +590,190 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, callback_context_.get());
   g_message("MPV: Render context created on the Wayland video plane");
   return true;
+}
+
+bool MpvPlayer::InitRenderContext() {
+  RetryPendingNativeTeardown();
+
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  if (audio_only_ || disposed_) {
+    g_warning("MPV: Render context requested for an unavailable player");
+    return false;
+  }
+  if (mpv_gl_) return true;
+  if (!mpv_) {
+    g_warning("MPV: Cannot create render context - mpv not initialized");
+    return false;
+  }
+
+  // The texture path rides Flutter's EGL display and derives an isolated
+  // context from Flutter's config, exactly as 2.11.0 did: the mpv FBO is
+  // sampled by Flutter via an EGL image, so both sides must speak the same
+  // display's formats. The caller (FlTextureGL::populate) has Flutter's
+  // context current; capture it and restore it around every GL/EGL step
+  // below, since mpv's render context creation may bind its own.
+  const EGLDisplay flutter_display = eglGetCurrentDisplay();
+  const EGLContext flutter_context = eglGetCurrentContext();
+  const EGLSurface flutter_draw = eglGetCurrentSurface(EGL_DRAW);
+  const EGLSurface flutter_read = eglGetCurrentSurface(EGL_READ);
+  const EGLenum previous_api = eglQueryAPI();
+  if (flutter_display == EGL_NO_DISPLAY || flutter_context == EGL_NO_CONTEXT || previous_api == EGL_NONE) {
+    g_warning("MPV: No Flutter EGL context available for the texture render path");
+    return false;
+  }
+
+  auto restore_flutter = [&]() {
+    const EGLBoolean api_restored = previous_api == EGL_NONE ? EGL_TRUE : eglBindAPI(previous_api);
+    const EGLBoolean restored =
+        api_restored == EGL_TRUE ? eglMakeCurrent(flutter_display, flutter_draw, flutter_read, flutter_context)
+                                 : EGL_FALSE;
+    return restored == EGL_TRUE && api_restored == EGL_TRUE;
+  };
+
+  EGLint config_id = 0;
+  if (!eglQueryContext(flutter_display, flutter_context, EGL_CONFIG_ID, &config_id)) {
+    g_warning("MPV: Failed to query Flutter EGL config: 0x%x", eglGetError());
+    return false;
+  }
+  EGLConfig config = nullptr;
+  EGLint num_configs = 0;
+  const EGLint config_attribs[] = {EGL_CONFIG_ID, config_id, EGL_NONE};
+  if (!eglChooseConfig(flutter_display, config_attribs, &config, 1, &num_configs) || num_configs != 1) {
+    g_warning("MPV: Failed to select Flutter EGL config: 0x%x", eglGetError());
+    return false;
+  }
+  if (!eglBindAPI(EGL_OPENGL_ES_API)) {
+    g_warning("MPV: Failed to bind OpenGL ES API: 0x%x", eglGetError());
+    return false;
+  }
+
+  // ES 2.0, as 2.11.0 shipped: this path exists to reproduce a configuration
+  // hardware decode demonstrably worked against, not to push the driver.
+  const EGLint context_attribs[] = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL_NONE};
+  EGLContext candidate_context = eglCreateContext(flutter_display, config, EGL_NO_CONTEXT, context_attribs);
+  if (candidate_context == EGL_NO_CONTEXT) {
+    g_warning("MPV: Failed to create isolated EGL context: 0x%x", eglGetError());
+    if (previous_api != EGL_NONE && !eglBindAPI(previous_api)) {
+      g_warning("MPV: Failed to restore EGL client API: 0x%x", eglGetError());
+    }
+    return false;
+  }
+
+  auto destroy_candidate_context = [&]() {
+    const EGLenum api_before_cleanup = eglQueryAPI();
+    if (eglGetCurrentContext() == candidate_context) {
+      if (!eglBindAPI(EGL_OPENGL_ES_API) ||
+          !eglMakeCurrent(flutter_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+        g_warning("MPV: Failed to release rejected EGL context: 0x%x", eglGetError());
+        return;
+      }
+    }
+    if (!eglDestroyContext(flutter_display, candidate_context)) {
+      g_warning("MPV: Failed to destroy rejected EGL context: 0x%x", eglGetError());
+    }
+    if (api_before_cleanup != EGL_NONE && !eglBindAPI(api_before_cleanup)) {
+      g_warning("MPV: Failed to restore EGL API after context cleanup: 0x%x", eglGetError());
+    }
+  };
+
+  if (!eglMakeCurrent(flutter_display, EGL_NO_SURFACE, EGL_NO_SURFACE, candidate_context)) {
+    g_warning("MPV: Failed to activate isolated EGL context: 0x%x", eglGetError());
+    destroy_candidate_context();
+    if (previous_api != EGL_NONE && !eglBindAPI(previous_api)) {
+      g_warning("MPV: Failed to restore EGL client API: 0x%x", eglGetError());
+    }
+    return false;
+  }
+
+  mpv_opengl_init_params gl_init_params{};
+  gl_init_params.get_proc_address = get_opengl_proc_address;
+  gl_init_params.get_proc_address_ctx = nullptr;
+  mpv_render_param params[] = {
+      {MPV_RENDER_PARAM_API_TYPE, const_cast<char*>(MPV_RENDER_API_TYPE_OPENGL)},
+      {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
+      {MPV_RENDER_PARAM_INVALID, nullptr},
+      {MPV_RENDER_PARAM_INVALID, nullptr},
+  };
+
+  // The display handle for hwdec interop, whichever session this is: the
+  // texture path is display-agnostic and must work under both X11 and
+  // Wayland, so both slots are offered exactly as 2.11.0 did.
+  GdkDisplay* gdk_display = gdk_display_get_default();
+#ifdef GDK_WINDOWING_WAYLAND
+  if (gdk_display != nullptr && GDK_IS_WAYLAND_DISPLAY(gdk_display)) {
+    params[2].type = MPV_RENDER_PARAM_WL_DISPLAY;
+    params[2].data = gdk_wayland_display_get_wl_display(gdk_display);
+  }
+#endif
+#ifdef GDK_WINDOWING_X11
+  if (gdk_display != nullptr && GDK_IS_X11_DISPLAY(gdk_display)) {
+    params[2].type = MPV_RENDER_PARAM_X11_DISPLAY;
+    params[2].data = gdk_x11_display_get_xdisplay(gdk_display);
+  }
+#endif
+
+  mpv_render_context* candidate_gl = nullptr;
+  const int error = mpv_render_context_create(&candidate_gl, mpv_, params);
+  const bool restored = restore_flutter();
+  if (error < 0 || candidate_gl == nullptr || !restored) {
+    if (error < 0) {
+      g_warning("MPV: mpv_render_context_create() failed for the texture path: %s", mpv_error_string(error));
+    } else if (!restored) {
+      g_warning("MPV: Failed to restore Flutter EGL state: 0x%x", eglGetError());
+    } else {
+      g_warning("MPV: mpv returned a null render context for the texture path");
+    }
+    if (candidate_gl) mpv_render_context_free(candidate_gl);
+    destroy_candidate_context();
+    return false;
+  }
+
+  egl_display_ = flutter_display;
+  egl_context_ = candidate_context;
+  // The texture path renders into an 8-bit RGBA FBO; tell mpv the depth is 8
+  // so it dithers for the format it actually draws into.
+  surface_depth_bits_ = 8;
+  mpv_gl_ = candidate_gl;
+  mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, callback_context_.get());
+  g_message("MPV: Render context created on the Flutter-texture path");
+  return true;
+}
+
+bool MpvPlayer::HasRenderContext() const {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  return mpv_gl_ != nullptr;
+}
+
+EGLDisplay MpvPlayer::GetEglDisplay() const {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  return egl_display_;
+}
+
+EGLContext MpvPlayer::GetEglContext() const {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  return egl_context_;
+}
+
+void MpvPlayer::Render(int width, int height, int fbo) {
+  std::lock_guard<std::mutex> lock(native_mutex_);
+  if (disposed_ || !mpv_gl_) return;
+
+  mpv_opengl_fbo mpv_fbo{};
+  mpv_fbo.fbo = fbo;
+  mpv_fbo.w = width;
+  mpv_fbo.h = height;
+  // 2.11.0 shipped this path with internal_format 0 and no flip: the FBO is
+  // sampled by Flutter as a GL texture, and the orientation was correct with
+  // these exact values. Keep them.
+  mpv_fbo.internal_format = 0;
+
+  int flip_y = 0;
+  mpv_render_param params[] = {
+      {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
+      {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
+      {MPV_RENDER_PARAM_INVALID, nullptr},
+  };
+  mpv_render_context_render(mpv_gl_, params);
 }
 
 bool MpvPlayer::RenderToSurface(EGLSurface surface, int width, int height) {

@@ -77,6 +77,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (Platform.isAndroid) _playerBackendSelector(),
                 if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
                 _hardwareDecodingTile(),
+                if (Platform.isLinux) _linuxVideoRenderModeTile(),
                 if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
                 if (Platform.isAndroid) _matchContentFrameRateTile(),
                 if (Platform.isWindows) _matchRefreshRateTile(),
@@ -403,6 +404,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     DvConversionModePreference.dv81 => t.settings.dvConversionDv81,
     DvConversionModePreference.hevcStrip => t.settings.dvConversionHevcStrip,
   };
+
+  Widget _linuxVideoRenderModeTile() => SettingSelectionTile<String>(
+    pref: SettingsService.linuxVideoRenderMode,
+    icon: Symbols.video_settings_rounded,
+    title: t.settings.linuxVideoRenderMode,
+    subtitleBuilder: (mode) =>
+        '${mode == 'texture' ? t.settings.linuxVideoRenderModeTexture : t.settings.linuxVideoRenderModeAuto}'
+        ' · ${t.settings.linuxVideoRenderModeDescription}',
+    options: [
+      DialogOption(value: 'auto', title: t.settings.linuxVideoRenderModeAuto),
+      DialogOption(value: 'texture', title: t.settings.linuxVideoRenderModeTexture),
+    ],
+  );
 
   Widget _bufferSizeTile() {
     final bufferOptions = const [0, 64, 128, 256, 512, 1024];

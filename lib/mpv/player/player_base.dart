@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' show protected, visibleForTesting;
+import 'package:flutter/foundation.dart' show ValueListenable, ValueNotifier, protected, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
@@ -29,6 +29,23 @@ import 'player_streams.dart';
 /// - Common lifecycle methods
 abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   PlayerState _state = const PlayerState();
+
+  /// The Flutter GL texture id published by the platform when video is
+  /// composited as a texture (the Linux SDR fallback path). Null everywhere
+  /// else and before publication; [video.dart] keys its render surface off it.
+  final ValueNotifier<int?> _textureId = ValueNotifier<int?>(null);
+
+  @override
+  int? get textureId => _textureId.value;
+
+  /// Listenable form of [textureId] for widgets that rebuild on publication.
+  ValueListenable<int?> get textureIdListenable => _textureId;
+
+  /// Publishes (or clears) the Flutter texture id backing this player.
+  @protected
+  void setTextureId(int? value) {
+    if (!_disposed) _textureId.value = value;
+  }
 
   @override
   PlayerState get state => _state;
@@ -1379,6 +1396,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   Future<void> dispose({bool preserveDisplayMode = false}) async {
     if (_disposed) return;
     _disposed = true;
+    // The texture is going away with the player; clear the id first so a
+    // still-mounted Video widget stops keying off it before the notifier is
+    // disposed below.
+    _textureId.value = null;
 
     final channelName = eventChannel.name;
     if (identical(_eventChannelOwners[channelName], this)) {
@@ -1428,6 +1449,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       );
     }
     await closeStreamControllers();
+    _textureId.dispose();
   }
 }
 

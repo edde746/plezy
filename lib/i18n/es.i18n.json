@@ -340,7 +340,11 @@
     "subtitlesAndConfig": "Subtítulos y configuración",
     "seekAndTiming": "Desplazamiento y tiempos",
     "behavior": "Comportamiento",
-    "exportDialogTitle": "Exportar ajustes de Plezy"
+    "exportDialogTitle": "Exportar ajustes de Plezy",
+    "linuxVideoRenderMode": "Modo de renderizado de vídeo",
+    "linuxVideoRenderModeDescription": "Automático prefiere el plano Wayland nativo (compatible con HDR); Texture fuerza la ruta de reserva SDR.",
+    "linuxVideoRenderModeAuto": "Automático",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Buscar películas, series, música...",

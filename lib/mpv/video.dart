@@ -123,6 +123,24 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
+    final player = widget.player;
+    if (player is PlayerBase) {
+      // The texture id can appear after the widget is built (the Linux SDR
+      // fallback publishes it once the native side registers the texture), so
+      // the surface must rebuild on publication.
+      return ValueListenableBuilder<int?>(
+        valueListenable: player.textureIdListenable,
+        builder: (context, textureId, _) => _buildVideoSurfaceForId(textureId),
+      );
+    }
+    return _buildVideoSurfaceForId(player.textureId);
+  }
+
+  Widget _buildVideoSurfaceForId(int? textureId) {
+    if (textureId != null) {
+      // Linux SDR fallback: video arrives as a GL texture Flutter composites.
+      return Texture(textureId: textureId);
+    }
     if (widget.player is VideoRectSupport) {
       return LayoutBuilder(
         builder: (context, constraints) {

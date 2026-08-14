@@ -462,6 +462,10 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get seekAndTiming => 'Oʻtkazish va vaqt sozlamalari';
 	@override String get behavior => 'Xatti-harakat';
 	@override String get exportDialogTitle => 'Plezy sozlamalarini eksport qilish';
+	@override String get linuxVideoRenderMode => 'Video ko\'rsatish rejimi';
+	@override String get linuxVideoRenderModeDescription => 'Avtomatik rejim mahalliy Wayland tekisligini afzal ko\'radi (HDR qo\'llab-quvvatlaydi); Texture SDR zaxira yo\'lini majbur qiladi.';
+	@override String get linuxVideoRenderModeAuto => 'Avtomatik';
+	@override String get linuxVideoRenderModeTexture => 'Texture (SDR)';
 }
 
 // Path: search
@@ -3019,6 +3023,10 @@ extension on TranslationsUz {
 			'settings.seekAndTiming' => 'Oʻtkazish va vaqt sozlamalari',
 			'settings.behavior' => 'Xatti-harakat',
 			'settings.exportDialogTitle' => 'Plezy sozlamalarini eksport qilish',
+			'settings.linuxVideoRenderMode' => 'Video ko\'rsatish rejimi',
+			'settings.linuxVideoRenderModeDescription' => 'Avtomatik rejim mahalliy Wayland tekisligini afzal ko\'radi (HDR qo\'llab-quvvatlaydi); Texture SDR zaxira yo\'lini majbur qiladi.',
+			'settings.linuxVideoRenderModeAuto' => 'Avtomatik',
+			'settings.linuxVideoRenderModeTexture' => 'Texture (SDR)',
 			'search.hint' => 'Filmlar, seriallar, musiqa qidirish...',
 			'search.tryDifferentTerm' => 'Boshqa qidiruv soʻzini kiriting',
 			'search.searchYourMedia' => 'Medialaringizdan qidiring',
@@ -3198,12 +3206,12 @@ extension on TranslationsUz {
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy qaysi fayllar olib tashlanishini tekshira olmadi, shuning uchun u yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin. Bekor qilib qaytadan urining yoki baribir oʻchiring.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Serveringiz ushbu element uchun fayl tafsilotlarini taqdim etmadi, shuning uchun Plezy qaysi fayllar olib tashlanishini tekshira olmaydi. U yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media elementi muvaffaqiyatli oʻchirildi',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.mediaFailedToDelete' => 'Media elementini oʻchirib boʻlmadi',
 			'mediaMenu.rate' => 'Baho berish',
 			'mediaMenu.playFromBeginning' => 'Boshidan ijro etish',
 			'mediaMenu.playVersion' => 'Versiyani ijro etish...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Baho berish',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Tanlangan',
@@ -3712,12 +3720,12 @@ extension on TranslationsUz {
 			'explore.watchlistNoMatch' => 'Bu elementni tomosha roʻyxatiga moslab boʻlmadi',
 			'explore.notInLibrary' => 'Kutubxonangizda yoʻq',
 			'explore.inTheseLibraries' => 'Ushbu kutubxonalarda bor',
+			_ => null,
+		} ?? switch (path) {
 			'explore.checkingLibrary' => 'Kutubxona tekshirilmoqda...',
 			'explore.emptyTitle' => 'Hali bu yerda hech narsa yoʻq',
 			'explore.emptyMessage' => ({required Object source}) => '${source} manbasidan olingan qatorlar bu yerda koʻrinadi.',
 			'explore.searchHint' => ({required Object source}) => '${source} ichidan qidirish',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '"${query}" boʻyicha natija topilmadi',
 			'explore.searchPrompt' => ({required Object source}) => '${source} orqali filmlar va seriallarni qidiring.',
 			'explore.searchFailed' => 'Qidiruv xatoligi. Ulanishni tekshiring.',
@@ -4226,12 +4234,12 @@ extension on TranslationsUz {
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Hech bir manzilga ulanib boʻlmadi',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => '${attempts} urinishdan keyin aloqa uzildi',
 			'companionRemote.errors.connectionLost' => 'Aloqa uzildi',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.closedBeforeAuth' => 'Ulanish autentifikatsiyadan oldin yopildi',
 			'videoSettings.playbackSpeed' => 'Ijro tezligi',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Faol (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Masshtab',
 			'videoSettings.sleepTimer' => 'Uyqu taymeri',
 			'videoSettings.audioSync' => 'Audio sinxronlash',

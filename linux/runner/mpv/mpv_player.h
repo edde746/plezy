@@ -98,6 +98,36 @@ class MpvPlayer {
   /// @return true if render context creation succeeded.
   bool InitRenderContextForSurface(EGLDisplay display, EGLConfig config, EGLSurface surface, int depth_bits);
 
+  /// Creates the mpv render context on an isolated ES 2.0 context derived
+  /// from Flutter's current EGL display and config — the 2.11.0 texture path,
+  /// restored as the SDR fallback for sessions that cannot host the Wayland
+  /// plane (X11, XWayland, or a plane that failed to initialize). Shares
+  /// nothing with Flutter's own context beyond the display (the isolated-
+  /// context design from 3d9c6b20), and must be called while Flutter's EGL
+  /// context is current — the texture's populate path is what guarantees
+  /// that. The texture mode also passes the X11 display handle where present,
+  /// which is what makes hwdec interop work under XWayland exactly as it did
+  /// in 2.11.0. No-op once a render context exists in either mode.
+  /// @return true if render context creation succeeded.
+  bool InitRenderContext();
+
+  /// Whether a render context exists (either mode).
+  bool HasRenderContext() const;
+
+  /// The EGL display/context backing the render context, for callers that
+  /// need to activate it (the texture path renders into an offscreen FBO
+  /// created in this context).
+  EGLDisplay GetEglDisplay() const;
+  EGLContext GetEglContext() const;
+
+  /// Renders one frame into the caller's FBO (texture mode). The caller owns
+  /// the current EGL context and FBO binding; this mirrors the 2.11.0
+  /// contract exactly — it does not make the context current and does not
+  /// consume the redraw latch (MpvTexturePopulate clears the latch first, and
+  /// the latch is what keeps Flutter's populate from being invoked
+  /// needlessly).
+  void Render(int width, int height, int fbo);
+
   /// Renders one frame into |surface|'s default framebuffer. The caller
   /// presents it (eglSwapBuffers) once this returns.
   /// @return true if the frame was rendered.

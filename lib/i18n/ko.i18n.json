@@ -340,7 +340,11 @@
     "subtitlesAndConfig": "자막 및 구성",
     "seekAndTiming": "탐색 및 타이밍",
     "behavior": "동작",
-    "exportDialogTitle": "Plezy 설정 내보내기"
+    "exportDialogTitle": "Plezy 설정 내보내기",
+    "linuxVideoRenderMode": "동영상 렌더링 모드",
+    "linuxVideoRenderModeDescription": "자동은 네이티브 Wayland 평면(HDR 지원)을 선호하고, Texture는 SDR 대체 경로를 강제합니다.",
+    "linuxVideoRenderModeAuto": "자동",
+    "linuxVideoRenderModeTexture": "Texture(SDR)"
   },
   "search": {
     "hint": "영화, 시리즈, 음악 등을 검색하세요...",

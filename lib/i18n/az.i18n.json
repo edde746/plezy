@@ -340,7 +340,11 @@
     "subtitlesAndConfig": "Altyazılar və konfiqurasiya",
     "seekAndTiming": "Sarğı və vaxt tənzimləməsi",
     "behavior": "Davranış",
-    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et"
+    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et",
+    "linuxVideoRenderMode": "Video göstərmə rejimi",
+    "linuxVideoRenderModeDescription": "Avtomatik yerli Wayland müstəvisinə üstünlük verir (HDR dəstəkləyir); Texture SDR ehtiyat yolunu məcbur edir.",
+    "linuxVideoRenderModeAuto": "Avtomatik",
+    "linuxVideoRenderModeTexture": "Texture (SDR)"
   },
   "search": {
     "hint": "Kino, serial, musiqi axtar...",

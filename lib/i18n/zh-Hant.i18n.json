@@ -340,7 +340,11 @@
     "subtitlesAndConfig": "字幕與設定",
     "seekAndTiming": "跳轉與計時",
     "behavior": "行為",
-    "exportDialogTitle": "匯出 Plezy 設定"
+    "exportDialogTitle": "匯出 Plezy 設定",
+    "linuxVideoRenderMode": "影片轉譯模式",
+    "linuxVideoRenderModeDescription": "自動偏好原生 Wayland 平面（支援 HDR）；紋理強制使用 SDR 備援路徑。",
+    "linuxVideoRenderModeAuto": "自動",
+    "linuxVideoRenderModeTexture": "紋理（SDR）"
   },
   "search": {
     "hint": "搜尋電影、影集、音樂…",

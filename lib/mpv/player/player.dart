@@ -70,6 +70,12 @@ abstract class Player {
   /// The type of player backend being used (e.g., 'mpv', 'exoplayer').
   String get playerType;
 
+  /// The Flutter texture ID video renders through, when the platform
+  /// composites video as a GL texture (the Linux SDR fallback path). Null
+  /// when the platform presents through its own surface (the Wayland plane,
+  /// a child HWND) or no texture has been published yet.
+  int? get textureId;
+
   /// Open a media source for playback.
   ///
   /// [media] - The media source to open.
