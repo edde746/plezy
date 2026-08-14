@@ -17,6 +17,7 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/sync_rule_executor.dart';
+import 'package:plezy/utils/content_utils.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/prefs.dart';
@@ -112,6 +113,7 @@ void main() {
         queued.add((item: item, client: client));
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -184,6 +186,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -230,6 +233,7 @@ void main() {
       metadata: const {},
       associateDownload: (_, _) async {},
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async => true,
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -296,6 +300,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -346,6 +351,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -388,6 +394,7 @@ void main() {
       queueSingleDownload: (_, _, {int mediaIndex = 0}) async {
         fail('an already-downloaded playlist member must not be queued');
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -441,6 +448,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -498,6 +506,143 @@ void main() {
     expect((await db.getSyncRule(ruleKey))!.downloadLinksInitialized, isTrue);
   });
 
+  test('continueWatching sync rule queues shelf items it does not already have', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _ContinueWatchingClient([
+      testMediaItem(id: 'ep-1', backend: MediaBackend.plex, kind: MediaKind.episode, title: 'Ep 1'),
+      testMediaItem(id: 'ep-2', backend: MediaBackend.plex, kind: MediaKind.episode, title: 'Ep 2'),
+    ]);
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:__continue_watching__';
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: '__continue_watching__',
+      globalKey: ruleKey,
+      targetType: ContentTypes.continueWatching,
+      episodeCount: 0,
+      downloadLinksInitialized: true,
+    );
+    final rule = (await db.getSyncRule(ruleKey))!;
+
+    final queued = <String>[];
+    final deleted = <String>[];
+    final executor = SyncRuleExecutor(database: db);
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: const {},
+      associateDownload: (r, globalKey) async => db.associateSyncRuleDownload(r, globalKey),
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item.id);
+        return true;
+      },
+      deleteSyncRuleDownload: (globalKey) async => deleted.add(globalKey),
+      isOffline: false,
+      force: true,
+    );
+
+    expect(results.single.queuedCount, 2);
+    expect(queued, ['ep-1', 'ep-2']);
+    expect(deleted, isEmpty);
+    final links = (await db.getSyncRuleDownloadLinks(rule.id)).map((l) => l.downloadGlobalKey);
+    expect(links, containsAll(['plex-machine:ep-1', 'plex-machine:ep-2']));
+  });
+
+  test('continueWatching sync rule removes shelf drop-offs unless still needed elsewhere', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _ContinueWatchingClient([]);
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:__continue_watching__';
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: '__continue_watching__',
+      globalKey: ruleKey,
+      targetType: ContentTypes.continueWatching,
+      episodeCount: 0,
+      downloadLinksInitialized: true,
+    );
+    final rule = (await db.getSyncRule(ruleKey))!;
+
+    // A second, disabled rule that also covers 'ep-old-shared' — it never
+    // executes itself, but its coverage still counts toward exclusivity.
+    const otherRuleKey = 'profile-a|plex-machine:other-show';
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: 'other-show',
+      globalKey: otherRuleKey,
+      targetType: 'show',
+      episodeCount: 1,
+    );
+    await db.updateSyncRuleEnabled(otherRuleKey, false);
+    final otherRule = (await db.getSyncRule(otherRuleKey))!;
+
+    await db.associateSyncRuleDownload(rule, 'plex-machine:ep-old-exclusive');
+    await db.associateSyncRuleDownload(rule, 'plex-machine:ep-old-shared');
+    await db.associateSyncRuleDownload(otherRule, 'plex-machine:ep-old-shared');
+
+    // Both "old" episodes have left the shelf; only 'ep-keep' remains.
+    client.shelf = [testMediaItem(id: 'ep-keep', backend: MediaBackend.plex, kind: MediaKind.episode, title: 'Keep')];
+
+    final queued = <String>[];
+    final deleted = <String>[];
+    final executor = SyncRuleExecutor(database: db);
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {
+        'plex-machine:ep-old-exclusive': DownloadProgress(
+          globalKey: 'plex-machine:ep-old-exclusive',
+          status: DownloadStatus.completed,
+        ),
+        'plex-machine:ep-old-shared': DownloadProgress(
+          globalKey: 'plex-machine:ep-old-shared',
+          status: DownloadStatus.completed,
+        ),
+      },
+      metadata: const {},
+      associateDownload: (r, globalKey) async => db.associateSyncRuleDownload(r, globalKey),
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item.id);
+        return true;
+      },
+      deleteSyncRuleDownload: (globalKey) async {
+        deleted.add(globalKey);
+        await db.removeSyncRuleDownloadLink(rule.id, globalKey);
+      },
+      isOffline: false,
+      force: true,
+    );
+
+    expect(results.single.queuedCount, 1);
+    expect(queued, ['ep-keep']);
+    // Only the download exclusively covered by this rule gets removed.
+    expect(deleted, ['plex-machine:ep-old-exclusive']);
+
+    final ruleLinks = (await db.getSyncRuleDownloadLinks(rule.id)).map((l) => l.downloadGlobalKey);
+    expect(ruleLinks, ['plex-machine:ep-keep']);
+    // The other rule's coverage of the shared download is untouched.
+    final otherLinks = (await db.getSyncRuleDownloadLinks(otherRule.id)).map((l) => l.downloadGlobalKey);
+    expect(otherLinks, ['plex-machine:ep-old-shared']);
+  });
+
   test('collectListLeaves accepts tracks and expands albums/artists', () async {
     final albumTracks = [_track('album-track-1'), _track('album-track-2', played: true)];
     final client = _PlayableDescendantsClient(albumTracks);
@@ -542,6 +687,39 @@ MediaItem _episode(String id, {required int parentIndex, required int index, Str
     index: index,
     originallyAvailableAt: originallyAvailableAt,
   );
+}
+
+class _ContinueWatchingClient implements MediaServerClient {
+  _ContinueWatchingClient(this.shelf);
+
+  List<MediaItem> shelf;
+
+  @override
+  ServerId get serverId => ServerId('plex-machine');
+
+  @override
+  String? get serverName => 'Plex';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  ServerCapabilities get capabilities => ServerCapabilities.plex;
+
+  @override
+  bool get isOfflineMode => false;
+
+  @override
+  void close() {}
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => null;
+
+  @override
+  Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => shelf;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _PlayableDescendantsClient implements MediaServerClient {

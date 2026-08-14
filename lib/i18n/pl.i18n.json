@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Blokuj pobieranie na danych komórkowych",
     "autoRemoveWatchedDownloads": "Automatycznie usuwaj obejrzane pobrania",
     "autoRemoveWatchedDownloadsDescription": "Automatycznie usuwaj obejrzane pobrania",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Pobieranie przez sieć komórkową jest zablokowane. Użyj Wi-Fi lub zmień ustawienie.",
     "maxVolume": "Maksymalna głośność",
     "maxVolumeDescription": "Pozwól na wzmocnienie głośności powyżej 100% dla cichych multimediów",

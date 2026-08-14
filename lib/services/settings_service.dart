@@ -482,6 +482,12 @@ class SettingsService extends BaseSharedPreferencesService {
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
 
+  /// Keeps whatever is currently on the Continue Watching shelf downloaded:
+  /// new items are queued, items that fall off are removed (unless still
+  /// needed by a manual download or another sync rule). See
+  /// [ContentTypes.continueWatching].
+  static const autoDownloadContinueWatching = BoolPref('auto_download_continue_watching');
+
   /// Set once the user has seen the pre-flight "background downloads are
   /// blocked" dialog. The persistent Downloads-screen banner covers repeat
   /// offenders, so the interrupting dialog is shown exactly once.
@@ -1142,6 +1148,7 @@ class SettingsService extends BaseSharedPreferencesService {
     introPattern,
     creditsPattern,
     autoRemoveWatchedDownloads,
+    autoDownloadContinueWatching,
     defaultQualityPreset,
     musicQualityPreset,
     liveTvDefaultFavorites,

@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Предотвратявай изтегляния през мобилни данни",
     "autoRemoveWatchedDownloads": "Автоматично премахвай изгледаните изтегляния",
     "autoRemoveWatchedDownloadsDescription": "Изтривай изгледаните изтегляния автоматично",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Изтеглянията през мобилни данни са блокирани. Използвайте Wi-Fi или променете настройката.",
     "maxVolume": "Максимална сила на звука",
     "maxVolumeDescription": "Позволи усилване на звука над 100% за тихи медии",

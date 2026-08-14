@@ -1142,6 +1142,16 @@ class AppDatabase extends _$AppDatabase {
     return (select(syncRuleDownloads)..where((t) => t.syncRuleId.equals(syncRuleId))).get();
   }
 
+  /// Drops one rule's coverage of a download without deleting the download
+  /// itself — for when a download falls out of a rule's membership (e.g. it
+  /// left the Continue Watching shelf) but another rule or a manual download
+  /// still needs the file.
+  Future<void> removeSyncRuleDownloadLink(int syncRuleId, String downloadGlobalKey) {
+    return (delete(
+      syncRuleDownloads,
+    )..where((t) => t.syncRuleId.equals(syncRuleId) & t.downloadGlobalKey.equals(downloadGlobalKey))).go();
+  }
+
   Future<List<String>> getOwnedDownloadKeysForAncestorRule({
     required String profileId,
     required ServerId serverId,
@@ -1197,12 +1207,22 @@ class AppDatabase extends _$AppDatabase {
     int mediaIndex = 0,
     String downloadFilter = 'unwatched',
     bool includeSpecials = true,
+    // Only applied on first insert (see below) — a continueWatching rule
+    // never adopts pre-existing downloads, so it has nothing to backfill and
+    // can skip the uninitialized-rule cleanup gate from the start. Other
+    // target types must keep the column's default (false) so their normal
+    // backfill-before-cleanup path still runs.
+    bool downloadLinksInitialized = false,
   }) async {
     // [insertOnConflictUpdate] defaults the conflict target to the primary
     // key (`id`), which is auto-incremented — the conflict never triggers
     // and the row's UNIQUE [globalKey] constraint blows up instead. Drive
     // the upsert off the public [globalKey] so re-creating a rule for the same
     // shared target updates the existing row.
+    //
+    // [downloadLinksInitialized] is intentionally omitted from the onConflict
+    // companion below: it must only ever be set on first insert, never reset
+    // by a later re-create/update call for an existing rule.
     await into(syncRules).insert(
       SyncRulesCompanion.insert(
         serverId: serverId,
@@ -1215,6 +1235,7 @@ class AppDatabase extends _$AppDatabase {
         mediaIndex: Value(mediaIndex),
         downloadFilter: Value(downloadFilter),
         includeSpecials: Value(includeSpecials),
+        downloadLinksInitialized: Value(downloadLinksInitialized),
       ),
       onConflict: DoUpdate(
         (_) => SyncRulesCompanion(

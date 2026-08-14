@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Letöltések megakadályozása mobiladat-használat esetén",
     "autoRemoveWatchedDownloads": "Megnézett letöltések automatikus eltávolítása",
     "autoRemoveWatchedDownloadsDescription": "A megnézett letöltések automatikus törlése",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "A letöltések mobilhálózaton le vannak tiltva. Használj Wi-Fi-t, vagy módosítsd a beállítást.",
     "maxVolume": "Maximális hangerő",
     "maxVolumeDescription": "A hangerő 100% fölé emelésének engedélyezése halk tartalmak esetén",

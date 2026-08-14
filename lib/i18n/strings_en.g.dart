@@ -912,6 +912,12 @@ class Translations$settings$en {
 	/// en: 'Delete watched downloads automatically'
 	String get autoRemoveWatchedDownloadsDescription => 'Delete watched downloads automatically';
 
+	/// en: 'Auto-download Continue Watching'
+	String get autoDownloadContinueWatching => 'Auto-download Continue Watching';
+
+	/// en: 'Keep items on your Continue Watching shelf downloaded, and remove them once they're no longer on it'
+	String get autoDownloadContinueWatchingDescription => 'Keep items on your Continue Watching shelf downloaded, and remove them once they\'re no longer on it';
+
 	/// en: 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.'
 	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.';
 
@@ -7098,6 +7104,8 @@ extension on Translations {
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
+			'settings.autoDownloadContinueWatching' => 'Auto-download Continue Watching',
+			'settings.autoDownloadContinueWatchingDescription' => 'Keep items on your Continue Watching shelf downloaded, and remove them once they\'re no longer on it',
 			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
@@ -7331,10 +7339,10 @@ extension on Translations {
 			'fileInfo.flagExternal' => 'External',
 			'fileInfo.flagHearingImpaired' => 'Hearing impaired',
 			'fileInfo.flagDub' => 'Dub',
-			'fileInfo.flagOriginal' => 'Original',
-			'fileInfo.channelsMono' => 'Mono',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.flagOriginal' => 'Original',
+			'fileInfo.channelsMono' => 'Mono',
 			'fileInfo.dolbyVisionProfile' => ({required Object profile}) => 'Profile ${profile}',
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
@@ -7845,10 +7853,10 @@ extension on Translations {
 			'libraries.sortLabels.random' => 'Random',
 			'libraries.sortLabels.dateShared' => 'Date Shared',
 			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
-			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
-			'about.title' => 'About',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sortLabels.lastEpisodeDateAdded' => 'Last Episode Date Added',
+			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
@@ -8359,10 +8367,10 @@ extension on Translations {
 			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while Plezy was in the background. Check Plezy\'s battery or background usage settings.',
 			'downloads.backgroundWarning.openSettings' => 'Open settings',
 			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
-			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
-			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
+			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
 			'downloads.backgroundWarning.dialogFixFirst' => 'Fix this first',
 			'downloads.backgroundWarning.statusTile' => 'Background downloads',

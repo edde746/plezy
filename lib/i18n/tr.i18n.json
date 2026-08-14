@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Hücresel verideyken indirmeleri engelle",
     "autoRemoveWatchedDownloads": "İzlenen indirmeleri otomatik kaldır",
     "autoRemoveWatchedDownloadsDescription": "İzlenen indirmeleri otomatik olarak sil",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Hücresel veride indirmeler engellendi. Wi-Fi kullanın veya ayarı değiştirin.",
     "maxVolume": "Maksimum Ses",
     "maxVolumeDescription": "Kısık sesli medyalar için %100'ün üzerinde ses yükseltmeye izin ver",

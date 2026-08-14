@@ -20,6 +20,7 @@ import '../services/download_storage_service.dart';
 import '../services/downloaded_video_source.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
+import '../services/settings_service.dart';
 import '../services/watch_state_resolver.dart';
 import 'watch_state_store.dart';
 import '../media/media_server_client.dart';
@@ -1772,6 +1773,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     for (final parentKey in event.parentChain) {
       add(parentKey);
     }
+    // A watch/progress/removal event is exactly when the Continue Watching
+    // shelf for this server is likely to have changed. [add] only produces a
+    // candidate key — `main.dart` skips it via [hasSyncRule] unless that
+    // server actually has one (i.e. the setting is on).
+    add(_continueWatchingRatingKey);
     return keys;
   }
 
@@ -1846,6 +1852,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     String downloadFilter = SyncRuleFilter.unwatched,
     bool includeSpecials = true,
     MediaItem? targetMetadata,
+    bool downloadLinksInitialized = false,
   }) async {
     final profileId = _requireActiveProfileId();
     final publicGlobalKey = buildGlobalKey(ServerId(serverId), ratingKey);
@@ -1860,6 +1867,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       mediaIndex: mediaIndex,
       downloadFilter: downloadFilter,
       includeSpecials: includeSpecials,
+      downloadLinksInitialized: downloadLinksInitialized,
     );
 
     if (targetMetadata != null) {
@@ -1934,8 +1942,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final ownership = _captureQueueOwnership();
     final existing = await _database.getSyncRule(globalKey);
     if (existing == null || existing.profileId != profileId) return;
-    if (existing.targetType != ContentTypes.collection && existing.targetType != ContentTypes.playlist) {
-      throw ArgumentError.value(existing.targetType, 'targetType', 'Only collection/playlist rules support cleanup');
+    if (existing.targetType != ContentTypes.collection &&
+        existing.targetType != ContentTypes.playlist &&
+        existing.targetType != ContentTypes.continueWatching) {
+      throw ArgumentError.value(
+        existing.targetType,
+        'targetType',
+        'Only collection/playlist/continueWatching rules support cleanup',
+      );
     }
 
     var stateChanged = false;
@@ -1983,6 +1997,56 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _removingSyncRuleKeys.remove(globalKey);
       _syncRuleCleanupInProgress = false;
       if (stateChanged) safeNotifyListeners();
+    }
+  }
+
+  /// Sentinel `ratingKey` for the system-managed "Continue Watching" sync
+  /// rule — one per connected server, never user-authored. Not a real item id.
+  static const _continueWatchingRatingKey = '__continue_watching__';
+
+  /// Keeps the system-managed Continue Watching sync rules in step with
+  /// [SettingsService.autoDownloadContinueWatching]: creates one per
+  /// currently-online server when the setting is on (self-healing — a
+  /// newly connected or reconnected server picks one up on the next call),
+  /// and removes them all (with their exclusively-owned downloads) when off.
+  ///
+  /// Call this from the same triggers that already drive [executeSyncRules]
+  /// so the rules stay current without a dedicated scheduler.
+  Future<void> syncContinueWatchingRulesWithSetting(MultiServerManager serverManager) async {
+    final profileId = _activeProfileId;
+    if (profileId == null || profileId.isEmpty) return;
+
+    final settings = SettingsService.instanceOrNull;
+    final enabled = settings != null && settings.read(SettingsService.autoDownloadContinueWatching);
+
+    final existingRules = _syncRules.values.where((r) => r.targetType == ContentTypes.continueWatching).toList();
+
+    if (!enabled) {
+      for (final rule in existingRules) {
+        try {
+          await deleteSyncRuleAndDownloads(rule.globalKey, serverManager);
+        } catch (e) {
+          appLogger.w('Failed to remove continue-watching sync rule ${rule.globalKey}: $e');
+        }
+      }
+      return;
+    }
+
+    final existingServerIds = existingRules.map((r) => r.serverId).toSet();
+    for (final serverIdStr in serverManager.onlineServerIds) {
+      if (existingServerIds.contains(serverIdStr)) continue;
+      try {
+        await createSyncRule(
+          serverId: ServerId(serverIdStr),
+          ratingKey: _continueWatchingRatingKey,
+          targetType: ContentTypes.continueWatching,
+          episodeCount: 0,
+          downloadLinksInitialized: true,
+        );
+        appLogger.i('Created continue-watching sync rule for server $serverIdStr');
+      } catch (e) {
+        appLogger.w('Failed to create continue-watching sync rule for server $serverIdStr: $e');
+      }
     }
   }
 
@@ -2090,12 +2154,19 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           mediaIndex: mediaIndex,
         );
       },
+      deleteSyncRuleDownload: (downloadGlobalKey) async {
+        if (!_isQueueOwnershipCurrent(ownership)) return;
+        await _deleteDownload(downloadGlobalKey, notify: true);
+      },
       isOffline: _offlineSource?.isOffline ?? false,
       force: force,
     );
 
     return results.where((r) => r.queuedCount > 0).map((r) {
-      final title = r.title ?? t.common.unknown;
+      // The continueWatching rule has no single target item to title itself
+      // after, unlike show/season/collection/playlist rules.
+      final isContinueWatching = _syncRules[r.globalKey]?.targetType == ContentTypes.continueWatching;
+      final title = r.title ?? (isContinueWatching ? t.discover.continueWatching : t.common.unknown);
       return '$title (${r.queuedCount})';
     }).toList();
   }
@@ -2126,6 +2197,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         relatedContext: relatedContext,
         mediaIndex: mediaIndex,
       ),
+      deleteSyncRuleDownload: (downloadGlobalKey) async {
+        if (!_isQueueOwnershipCurrent(ownership)) return;
+        await _deleteDownload(downloadGlobalKey, notify: true);
+      },
       isOffline: _offlineSource?.isOffline ?? false,
     );
   }

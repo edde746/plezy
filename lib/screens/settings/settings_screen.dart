@@ -100,6 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
+  static const _kAutoDownloadContinueWatching = 'auto_download_continue_watching';
   static const _kBackgroundDownloads = 'background_downloads';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
@@ -416,6 +417,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           icon: Symbols.delete_sweep_rounded,
           title: t.settings.autoRemoveWatchedDownloads,
           subtitle: t.settings.autoRemoveWatchedDownloadsDescription,
+        ),
+        SettingSwitchTile(
+          focusNode: _focusTracker.get(_kAutoDownloadContinueWatching),
+          pref: settings.SettingsService.autoDownloadContinueWatching,
+          icon: Symbols.sync_rounded,
+          title: t.settings.autoDownloadContinueWatching,
+          subtitle: t.settings.autoDownloadContinueWatchingDescription,
         ),
         if (_backgroundWorkDiagnostics.isSupported) _buildBackgroundDownloadsTile(),
       ],

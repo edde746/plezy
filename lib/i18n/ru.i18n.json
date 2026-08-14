@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Запретить загрузку по мобильным данным",
     "autoRemoveWatchedDownloads": "Автоудаление просмотренных загрузок",
     "autoRemoveWatchedDownloadsDescription": "Автоматически удалять просмотренные загрузки",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Загрузки через мобильную сеть заблокированы. Используйте Wi-Fi или измените настройку.",
     "maxVolume": "Максимальная громкость",
     "maxVolumeDescription": "Разрешить усиление громкости выше 100% для тихих медиа",

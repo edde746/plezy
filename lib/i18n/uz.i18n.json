@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Mobil tarmoqdan foydalanilganda yuklashni toʻxtatib turish",
     "autoRemoveWatchedDownloads": "Koʻrilgan yuklamalarni avtomatik oʻchirish",
     "autoRemoveWatchedDownloadsDescription": "Koʻrib boʻlingan yuklamalarni avtomatik oʻchirish",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Mobil tarmoqda yuklash taqiqlangan. Wi-Fi-dan foydalaning.",
     "maxVolume": "Maksimal ovoz",
     "maxVolumeDescription": "Pastroq ovozli videolar uchun ovozni 100%-dan oshirishga ruxsat berish",

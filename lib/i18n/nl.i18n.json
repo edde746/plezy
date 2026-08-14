@@ -291,6 +291,8 @@
     "downloadOnWifiOnlyDescription": "Voorkom downloads bij gebruik van mobiele data",
     "autoRemoveWatchedDownloads": "Bekeken downloads automatisch verwijderen",
     "autoRemoveWatchedDownloadsDescription": "Bekeken downloads automatisch verwijderen",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
     "cellularDownloadBlocked": "Downloads via een mobiel netwerk zijn geblokkeerd. Gebruik wifi of wijzig de instelling.",
     "maxVolume": "Maximaal volume",
     "maxVolumeDescription": "Volume boven 100% toestaan voor stille media",
