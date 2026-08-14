@@ -934,24 +934,9 @@ static gboolean start_video_plane(MpvPlugin* self, FlView* view, std::string* er
   if (!surface->Create(widget, error)) return FALSE;
   if (!self->player->InitRenderContextForSurface(
           surface->egl_display(), surface->egl_config(), surface->egl_surface(), surface->depth_bits())) {
-    // Retry once on the 8-bit config tier. hwdec's dmabuf interop probe runs
-    // at mpv_render_context_create time against the plane's fresh EGL
-    // display/context, and some drivers fail the probe on a deep (10-bit or
-    // fp16) config, which makes hwdec=auto silently decode in software - the
-    // exact regression reported against 2.13.0. The 8-bit tier is the
-    // 2.12.1-equivalent configuration; HDR stays off there (depth-gated in
-    // Create), which is the right trade when the alternative is losing
-    // hardware decode on every source.
-    g_warning("MPV video plane: render context creation failed on the deep config; retrying on an 8-bit one");
     surface->Destroy();
-    if (!surface->Create(widget, error, /*prefer_deep=*/false)) return FALSE;
-    if (!self->player->InitRenderContextForSurface(
-            surface->egl_display(), surface->egl_config(), surface->egl_surface(), surface->depth_bits())) {
-      surface->Destroy();
-      *error = "The GPU driver would not create a render context for the video plane";
-      return FALSE;
-    }
-    g_message("MPV video plane: render context created on the 8-bit config fallback");
+    *error = "The GPU driver would not create a render context for the video plane";
+    return FALSE;
   }
 
   self->video_surface = std::move(surface);

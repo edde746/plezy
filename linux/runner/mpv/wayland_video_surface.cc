@@ -228,7 +228,7 @@ bool WaylandVideoSurface::BindGlobals(GdkDisplay* display, std::string* error) {
   return true;
 }
 
-bool WaylandVideoSurface::InitEgl(std::string* error, bool prefer_deep) {
+bool WaylandVideoSurface::InitEgl(std::string* error) {
   // The plane's EGL stack is deliberately independent of Flutter's: nothing is
   // shared, so the context is free to be ES 3.x (mpv wants compute shaders for
   // hdr-compute-peak, and the >8-bit render targets the 10-bit config chosen
@@ -266,12 +266,7 @@ bool WaylandVideoSurface::InitEgl(std::string* error, bool prefer_deep) {
     EGLint bits;    // per-channel size requested, and the depth then reported
     bool floating;  // half-float rather than unorm
   };
-  // The deep tiers are skipped entirely when the caller retries after a
-  // render-context failure on a deep config (see Create's `prefer_deep`): the
-  // retry is about matching the configuration hardware decode demonstrably
-  // worked against, so only the 8-bit unorm tier is offered.
-  for (const ConfigTier tier : prefer_deep ? std::vector<ConfigTier>{{10, false}, {16, true}, {8, false}}
-                                           : std::vector<ConfigTier>{{8, false}}) {
+  for (const ConfigTier tier : std::vector<ConfigTier>{{10, false}, {16, true}, {8, false}}) {
     if (tier.floating && !has_float_configs) continue;
     for (const EGLint renderable : {EGL_OPENGL_ES3_BIT, EGL_OPENGL_ES2_BIT}) {
       const EGLint attributes[] = {
@@ -300,7 +295,7 @@ bool WaylandVideoSurface::InitEgl(std::string* error, bool prefer_deep) {
   return Fail(error, "No matching EGL config for the video plane");
 }
 
-bool WaylandVideoSurface::Create(GtkWidget* view, std::string* error, bool prefer_deep) {
+bool WaylandVideoSurface::Create(GtkWidget* view, std::string* error) {
   if (view == nullptr) return Fail(error, "Video plane requires a realized view");
   GdkDisplay* display = gtk_widget_get_display(view);
   if (!IsSupported(display)) return Fail(error, "Not a Wayland display");
@@ -309,7 +304,7 @@ bool WaylandVideoSurface::Create(GtkWidget* view, std::string* error, bool prefe
   if (parent == nullptr) return Fail(error, "Toplevel has no Wayland surface yet");
 
   view_ = view;
-  if (!BindGlobals(display, error) || !InitEgl(error, prefer_deep)) {
+  if (!BindGlobals(display, error) || !InitEgl(error)) {
     Destroy();
     return false;
   }

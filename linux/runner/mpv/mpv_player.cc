@@ -524,11 +524,12 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
       eglGetProcAddress("glDispatchCompute") ? "yes" : "no", eglGetProcAddress("glBindImageTexture") ? "yes" : "no");
 
   // Pre-flight the VAAPI dmabuf interop prerequisites. mpv's probe
-  // (dmabuf_interop_gl_init) runs inside mpv_render_context_create below, and
-  // when it fails, hwdec=auto quietly decodes in software - the "silent
-  // fallback" with no visible symptom. Naming which prerequisite is missing
-  // turns that into a diagnosable one-liner. The three extensions are the ones
-  // the probe requires on the current display/context; EGL_EXT_image_dma_buf_import
+  // (dmabuf_interop_gl_init) does not run here - it is lazy, on the first
+  // hardware decode attempt - and its failure never fails
+  // mpv_render_context_create, so a driver that lacks the pieces quietly
+  // decodes everything in software. Naming which prerequisite is missing on
+  // this display/context turns that into a diagnosable one-liner. The three
+  // extensions are the ones the probe requires; EGL_EXT_image_dma_buf_import
   // is the display-level one, GL_OES_EGL_image is context-level.
   const char* egl_exts = eglQueryString(display, EGL_EXTENSIONS);
   const GLubyte* gl_exts = glGetString(GL_EXTENSIONS);

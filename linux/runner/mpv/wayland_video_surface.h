@@ -85,15 +85,7 @@ class WaylandVideoSurface {
   // window config, then half-float (NVIDIA offers no 10-bit unorm configs on
   // Wayland), falling back to 8. Returns false and fills `error` on any
   // failure — the caller reports it; there is no other video path.
-  //
-  // `prefer_deep` (default true) controls the EGL config tier: with false,
-  // only the 8-bit unorm tier is tried. The caller retries that way once when
-  // the mpv render context failed against a deep config — hwdec's dmabuf
-  // interop probe runs at render-context creation and some drivers fail it on
-  // a 10-bit/fp16 config, silently landing every source on software decoding.
-  // An 8-bit plane is the 2.12.1-equivalent configuration, and HDR stays off
-  // there by the depth gate in Create().
-  bool Create(GtkWidget* view, std::string* error, bool prefer_deep = true);
+  bool Create(GtkWidget* view, std::string* error);
 
   // Releases the EGL surface, subsurface and Wayland objects. Idempotent.
   void Destroy();
@@ -259,7 +251,7 @@ class WaylandVideoSurface {
  private:
   bool BindGlobals(GdkDisplay* display, std::string* error);
   void BuildImageDescription();
-  bool InitEgl(std::string* error, bool prefer_deep);
+  bool InitEgl(std::string* error);
   void RequestParentCommit();
   void ClearFrameCallback();
   /// Takes the current buffer off screen and drops any pending frame callback.
