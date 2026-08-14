@@ -981,6 +981,12 @@ class Translations$settings$en {
 	/// en: 'Delete watched downloads automatically'
 	String get autoRemoveWatchedDownloadsDescription => 'Delete watched downloads automatically';
 
+	/// en: 'Auto-download Continue Watching'
+	String get autoDownloadContinueWatching => 'Auto-download Continue Watching';
+
+	/// en: 'Keep items on your Continue Watching shelf downloaded, and remove them once they're no longer on it'
+	String get autoDownloadContinueWatchingDescription => 'Keep items on your Continue Watching shelf downloaded, and remove them once they\'re no longer on it';
+
 	/// en: 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.'
 	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.';
 
@@ -7520,6 +7526,8 @@ extension on Translations {
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
+			'settings.autoDownloadContinueWatching' => 'Auto-download Continue Watching',
+			'settings.autoDownloadContinueWatchingDescription' => 'Keep items on your Continue Watching shelf downloaded, and remove them once they\'re no longer on it',
 			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
@@ -7730,10 +7738,10 @@ extension on Translations {
 			'fileInfo.provider' => 'Provider',
 			'fileInfo.matchScore' => 'Match Score',
 			'fileInfo.externalDelivery' => 'Can Be Served Separately',
-			'fileInfo.sidecarPath' => 'Sidecar Path',
-			'fileInfo.sourceStream' => 'Copied From',
 			_ => null,
 		} ?? switch (path) {
+			'fileInfo.sidecarPath' => 'Sidecar Path',
+			'fileInfo.sourceStream' => 'Copied From',
 			'fileInfo.temporary' => 'Temporary',
 			'fileInfo.timeBase' => 'Time Base',
 			'fileInfo.overallBitrate' => 'Overall Bitrate',
@@ -8244,10 +8252,10 @@ extension on Translations {
 			'libraries.resetFilters' => 'Reset filters',
 			'libraries.all' => 'All',
 			'libraries.clearAll' => 'Clear All',
-			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
-			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
+			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
 			'libraries.manageLibraries' => 'Manage Libraries',
@@ -8758,10 +8766,10 @@ extension on Translations {
 			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
 			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
 			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
 			_ => null,
 		} ?? switch (path) {
+			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
+			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} changed the playback position',
 			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} set the speed to ${speed}',
@@ -9272,10 +9280,10 @@ extension on Translations {
 			'addServer.addConnectionTitle' => 'Add connection',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Add to ${name}',
 			'addServer.signInWithPlexCard' => 'Sign in with Plex',
-			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
-			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
+			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.',
