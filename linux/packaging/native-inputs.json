@@ -17,6 +17,15 @@
       "sha256": "40973d44970dbc83ef302b0609f2e74982be2d85916dd2ee7472d30678a7abe6",
       "provenance": "FFmpeg release archive verified against ffmpeg-7.1.tar.xz.asc with the official ffmpeg-devel.asc full fingerprint FCF986EA15E6E293A5644F10B4322F04D67658D8 before recording this digest."
     },
+    "dav1d": {
+      "kind": "git",
+      "version": "1.5.4",
+      "url": "https://code.videolan.org/videolan/dav1d.git",
+      "mirror": "https://github.com/videolan/dav1d.git",
+      "ref": "1.5.4",
+      "commit": "54706fc6bc0cdecab7e9593974a4039cc038fca7",
+      "provenance": "Official VideoLAN GitLab tag record 1.5.4 dereferences to this root commit; upstream's own GitHub mirror (videolan/dav1d, not a fork) reports the same annotated tag object 191bdda98ec3c68137754dc97da1db34043d7cd4 dereferencing to that same commit. The tag is annotated by the dav1d maintainers but not GPG-verified by GitHub; the two independent remotes agreeing on the tag object and root commit is the pinning evidence. The mirror is consulted only after the primary fails, and the commit pin is verified identically either way."
+    },
     "shaderc": {
       "kind": "git",
       "version": "2024.4",

@@ -657,7 +657,7 @@ jobs:
             libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev \
             libharfbuzz-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev \
             libva-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev \
-            libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev \
+            libdisplay-info-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev \
             liblua5.2-dev rpm libarchive-tools imagemagick ruby-dev build-essential
           sudo gem install fpm --version 1.17.0 --no-document
 

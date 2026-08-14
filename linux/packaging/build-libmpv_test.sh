@@ -100,6 +100,7 @@ mkdir -p "$stub_bin" "$stub_extra" "$records" "$temporary/tmp"
 # Deliberately unlike the pinned versions: every path below is derived from the
 # manifest, so a stub that matched by accident would prove nothing.
 ffmpeg_version="9.9.9"
+dav1d_version="2.2.2"
 shaderc_version="6.6.6"
 libplacebo_version="7.7.7"
 mpv_version="8.8.8"
@@ -172,6 +173,14 @@ git -C "$shaderc_repository" commit --quiet -m shaderc
 git -C "$shaderc_repository" tag release
 shaderc_commit="$(git -C "$shaderc_repository" rev-parse HEAD)"
 
+dav1d_repository="$temporary/dav1d-source"
+init_repository "$dav1d_repository"
+printf 'stub dav1d\n' >"$dav1d_repository/meson.build"
+git -C "$dav1d_repository" add meson.build
+git -C "$dav1d_repository" commit --quiet -m dav1d
+git -C "$dav1d_repository" tag release
+dav1d_commit="$(git -C "$dav1d_repository" rev-parse HEAD)"
+
 libplacebo_repository="$temporary/libplacebo-source"
 init_repository "$libplacebo_repository"
 printf 'stub libplacebo\n' >"$libplacebo_repository/meson.build"
@@ -188,6 +197,12 @@ cat >"$manifest" <<JSON
       "version": "$ffmpeg_version",
       "url": "https://stub.invalid/ffmpeg.tar.xz",
       "sha256": "$payload_sha256"
+    },
+    "dav1d": {
+      "version": "$dav1d_version",
+      "url": "file://$dav1d_repository",
+      "ref": "release",
+      "commit": "$dav1d_commit"
     },
     "shaderc": {
       "version": "$shaderc_version",
@@ -255,11 +270,32 @@ assert_argument "$mpv_meson" "-Dwayland=enabled" "mpv's meson setup"
 assert_argument "$mpv_meson" "-Dx11=disabled" "mpv's meson setup"
 assert_argument "$mpv_meson" "-Dvaapi=enabled" "mpv's meson setup"
 assert_argument "$mpv_meson" "-Dgl=enabled" "mpv's meson setup"
+assert_argument "$mpv_meson" "-Degl=enabled" "mpv's meson setup"
 
-# vaapi has to reach ffmpeg too, or mpv's hwdec has no decoder behind it.
+# The DRM-derived providers are the ones that keep hardware decoding alive when
+# the Wayland VA display cannot be had: vaapi-copy opens the render node on its
+# own, and the GL dmabuf interop gives direct vaapi a display-independent
+# path. mpv auto-disables the whole `drm` feature when libdisplay-info is
+# missing, so these are pinned enabled and asserted here.
+assert_argument "$mpv_meson" "-Ddrm=enabled" "mpv's meson setup"
+assert_argument "$mpv_meson" "-Dvaapi-drm=enabled" "mpv's meson setup"
+assert_argument "$mpv_meson" "-Dvaapi-wayland=enabled" "mpv's meson setup"
+
+# vaapi has to reach ffmpeg too, or mpv's hwdec has no decoder behind it. And
+# the bundled ffmpeg needs a software AV1 decoder: its native av1 codec is
+# hardware-accelerated only, so without dav1d an AV1 source on a machine whose
+# GPU cannot decode it fails every packet and plays black video with audio.
 ffmpeg_configure="$(recorded_call configure "ffmpeg-$ffmpeg_version")" ||
   fail "the build plan never configured ffmpeg"
 assert_argument "$ffmpeg_configure" "--enable-vaapi" "ffmpeg's configure"
+assert_argument "$ffmpeg_configure" "--enable-libdav1d" "ffmpeg's configure"
+
+# dav1d must be built static so ffmpeg absorbs it into the bundled libmpv:
+# a shared dav1d would have to travel in the bundle and be kept version-true
+# with the host, which is exactly the coupling the rest of the plan avoids.
+dav1d_meson="$(recorded_call meson "dav1d-v$dav1d_version")" ||
+  fail "the build plan never ran meson in the dav1d source tree"
+assert_argument "$dav1d_meson" "--default-library=static" "dav1d's meson setup"
 
 # libplacebo runs meson as well, and its call carries no Wayland flag: finding
 # it separately is what proves the directory above really discriminated.

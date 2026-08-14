@@ -38,6 +38,11 @@ PY
 FFMPEG_VERSION="$(manifest_value ffmpeg version)"
 FFMPEG_URL="$(manifest_value ffmpeg url)"
 FFMPEG_SHA256="$(manifest_value ffmpeg sha256)"
+DAV1D_VERSION="$(manifest_value dav1d version)"
+DAV1D_URL="$(manifest_value dav1d url)"
+DAV1D_MIRROR="$(manifest_optional dav1d mirror)"
+DAV1D_REF="$(manifest_value dav1d ref)"
+DAV1D_COMMIT="$(manifest_value dav1d commit)"
 SHADERC_VERSION="$(manifest_value shaderc version)"
 SHADERC_URL="$(manifest_value shaderc url)"
 SHADERC_REF="$(manifest_value shaderc ref)"
@@ -183,7 +188,37 @@ main() {
   echo "==> Install prefix: $prefix"
   echo ""
 
-  # ─── Step 1: ffmpeg (static libraries) ─────────────────────────────────────
+  # ─── Step 1: dav1d (static library) ────────────────────────────────────────
+  # The bundled ffmpeg has no AV1 software decoder: its native av1 decoder is
+  # hardware-accelerated only, and no libaom/libdav1d is linked in. When hwdec
+  # is unavailable or cannot serve the source (an AV1 file on a GPU without AV1
+  # decode), AV1 has no path at all - every packet fails, video hits EOF and
+  # the plane goes black while audio keeps playing. dav1d is the software
+  # floor under AV1, exactly as libass is for subtitles. It must come before
+  # ffmpeg, whose configure resolves --enable-libdav1d against dav1d's
+  # pkg-config file.
+  echo "==> Building dav1d $DAV1D_VERSION (static)..."
+  checkout_verified_ref \
+    "$DAV1D_URL" "$DAV1D_REF" "$DAV1D_COMMIT" \
+    "$srcdir/dav1d-v${DAV1D_VERSION}" "$DAV1D_MIRROR"
+  cd "dav1d-v${DAV1D_VERSION}"
+
+  meson setup build \
+    --prefix="$prefix" \
+    --default-library=static \
+    -Denable_tools=false \
+    -Denable_tests=false \
+    -Denable_examples=false \
+    -Denable_docs=false
+
+  ninja -C build -j"$jobs"
+  ninja -C build install
+  cd "$srcdir"
+  echo ""
+  echo "==> dav1d done."
+  echo ""
+
+  # ─── Step 2: ffmpeg (static libraries) ─────────────────────────────────────
   echo "==> Building ffmpeg $FFMPEG_VERSION (static, decoder-only)..."
   download_verified "$FFMPEG_URL" "$FFMPEG_SHA256" "$srcdir/ffmpeg.tar.xz"
   tar -xJf "$srcdir/ffmpeg.tar.xz"
@@ -208,6 +243,7 @@ main() {
     --enable-filter=aformat,aresample,format,null,scale \
     --enable-gnutls \
     --enable-vaapi \
+    --enable-libdav1d \
     --disable-vdpau \
     --disable-debug \
     --disable-stripping
@@ -219,7 +255,7 @@ main() {
   echo "==> ffmpeg done."
   echo ""
 
-  # ─── Step 2: shaderc (static library) ───────────────────────────────────────
+  # ─── Step 3: shaderc (static library) ───────────────────────────────────────
   echo "==> Building shaderc $SHADERC_VERSION (static)..."
   checkout_verified_ref \
     "$SHADERC_URL" "$SHADERC_REF" "$SHADERC_COMMIT" \
@@ -243,7 +279,7 @@ main() {
   echo "==> shaderc done."
   echo ""
 
-  # ─── Step 3: libplacebo (static library) ───────────────────────────────────
+  # ─── Step 4: libplacebo (static library) ───────────────────────────────────
   echo "==> Building libplacebo $LIBPLACEBO_VERSION (static)..."
   checkout_verified_ref \
     "$LIBPLACEBO_URL" "$LIBPLACEBO_REF" "$LIBPLACEBO_COMMIT" \
@@ -266,7 +302,7 @@ main() {
   echo "==> libplacebo done."
   echo ""
 
-  # ─── Step 4: mpv (shared libmpv) ───────────────────────────────────────────
+  # ─── Step 5: mpv (shared libmpv) ───────────────────────────────────────────
   echo "==> Building mpv $MPV_VERSION (shared libmpv only)..."
   download_verified "$MPV_URL" "$MPV_SHA256" "$srcdir/mpv.tar.gz"
   tar -xzf "$srcdir/mpv.tar.gz"
@@ -276,6 +312,14 @@ main() {
   # MPV_RENDER_PARAM_WL_DISPLAY so VAAPI can find the device instead of falling
   # back to software decoding. A libmpv built without Wayland cannot use that.
   # VDPAU goes with X11 - it has no Wayland backend at all.
+  #
+  # drm/vaapi-drm/egl are pinned enabled, not left on auto: mpv's `drm` feature
+  # silently drops to disabled when libdisplay-info is missing, and every VAAPI
+  # path that does not depend on a display server - vaapi-copy's standalone
+  # render-node device and the GL dmabuf interop - is derived from it. Shipping
+  # that build quietly lands every source on software decoding (the 2.13.0
+  # Fedora report). Enabled means the configure fails when the pieces are
+  # absent instead of degrading in silence.
   meson setup build \
     --prefix="$prefix" \
     -Dlibmpv=true \
@@ -289,7 +333,11 @@ main() {
     -Dvulkan=disabled \
     -Dd3d11=disabled \
     -Dgl=enabled \
+    -Degl=enabled \
+    -Ddrm=enabled \
     -Dvaapi=enabled \
+    -Dvaapi-drm=enabled \
+    -Dvaapi-wayland=enabled \
     -Dalsa=enabled \
     -Dpulse=enabled \
     -Dpipewire=enabled \

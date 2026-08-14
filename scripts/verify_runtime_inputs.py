@@ -13,7 +13,7 @@ from typing import Any
 
 HEX_256 = re.compile(r"^[0-9a-f]{64}$")
 HEX_COMMIT = re.compile(r"^[0-9a-f]{40}$")
-NATIVE_NAMES = {"ffmpeg", "shaderc", "libplacebo", "mpv", "simdutf"}
+NATIVE_NAMES = {"dav1d", "ffmpeg", "shaderc", "libplacebo", "mpv", "simdutf"}
 BINDING_ARTIFACTS = {
     "pigeons/messages.dart",
     "android/src/main/kotlin/dev/fluttercommunity/plus/wakelock/WakelockPlusMessages.g.kt",
@@ -103,8 +103,12 @@ def _validate_native(root: Path, errors: list[str]) -> None:
         elif kind == "git":
             ref = value.get("ref")
             commit = value.get("commit")
-            if not isinstance(ref, str) or ref != f"v{version}":
-                errors.append(f"{label}.ref: must be v{version}")
+            # dav1d tags releases as bare versions ("1.5.4"); the other pinned
+            # Git inputs tag them "v{version}". Either way the ref is verified
+            # against the recorded commit, which is the actual pin.
+            expected_ref = version if name == "dav1d" else f"v{version}"
+            if not isinstance(ref, str) or ref != expected_ref:
+                errors.append(f"{label}.ref: must be {expected_ref}")
             if not isinstance(commit, str) or HEX_COMMIT.fullmatch(commit) is None:
                 errors.append(f"{label}.commit: must be a lowercase full Git commit")
         else:
@@ -139,6 +143,7 @@ def _validate_native(root: Path, errors: list[str]) -> None:
         "native-inputs.json",
         'download_verified "$FFMPEG_URL" "$FFMPEG_SHA256"',
         'download_verified "$MPV_URL" "$MPV_SHA256"',
+        '"$DAV1D_URL" "$DAV1D_REF" "$DAV1D_COMMIT"',
         '"$SHADERC_URL" "$SHADERC_REF" "$SHADERC_COMMIT"',
         '"$LIBPLACEBO_URL" "$LIBPLACEBO_REF" "$LIBPLACEBO_COMMIT"',
         'git submodule update --init --recursive',
