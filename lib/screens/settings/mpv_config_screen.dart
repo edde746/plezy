@@ -255,9 +255,9 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: Text(
                           t.mpvConfig.embeddedVoHint,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                         ),
                       ),
                     ],
