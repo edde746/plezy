@@ -195,16 +195,30 @@ class PlexAuthService {
   /// Poll the PIN until it's claimed or timeout.
   ///
   /// Uses an exponential backoff (1s → 2s → 4s, capped at 5s) so a stalled
-  /// claim doesn't hammer plex.tv every second for two minutes.
+  /// claim doesn't hammer plex.tv every second for two minutes. Transient
+  /// transport failures are treated as an inconclusive probe: the browser
+  /// sign-in may still be in progress, so one dropped request must not abort
+  /// the entire attempt.
   Future<String?> pollPinUntilClaimed(
     int pinId, {
     Duration timeout = const Duration(minutes: 2),
     bool Function()? shouldCancel,
+    Duration initialBackoff = const Duration(seconds: 1),
+    Duration maxBackoff = const Duration(seconds: 5),
   }) {
     return pollWithBackoff<String>(
-      probe: () => checkPin(pinId),
+      probe: () async {
+        try {
+          return await checkPin(pinId);
+        } on MediaServerHttpException catch (error) {
+          if (!error.isTransient) rethrow;
+          return null;
+        }
+      },
       endTime: DateTime.now().add(timeout),
       shouldCancel: shouldCancel,
+      initial: initialBackoff,
+      maxBackoff: maxBackoff,
     );
   }
 

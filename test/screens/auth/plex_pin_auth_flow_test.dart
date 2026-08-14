@@ -31,6 +31,8 @@ class _StalledPlexAuthService extends PlexAuthService {
     int pinId, {
     Duration timeout = const Duration(minutes: 2),
     bool Function()? shouldCancel,
+    Duration initialBackoff = const Duration(seconds: 1),
+    Duration maxBackoff = const Duration(seconds: 5),
   }) => Completer<String?>().future;
 }
 

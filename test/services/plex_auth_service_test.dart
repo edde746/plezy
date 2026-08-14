@@ -47,6 +47,35 @@ void main() {
       expect(hosts, ['clients.plex.tv']);
     });
 
+    test('pollPinUntilClaimed retries a transient transport failure while sign-in completes', () async {
+      var pollCount = 0;
+      final client = MediaServerHttpClient(
+        client: MockClient((request) async {
+          pollCount++;
+          if (pollCount == 1) {
+            throw http.ClientException('The Internet connection appears to be offline.', request.url);
+          }
+          return http.Response(
+            jsonEncode({'authToken': 'claimed-token'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+      final auth = PlexAuthService.forTesting(http: client);
+
+      final token = await auth.pollPinUntilClaimed(
+        1,
+        timeout: const Duration(seconds: 1),
+        initialBackoff: Duration.zero,
+        maxBackoff: Duration.zero,
+      );
+
+      expect(token, 'claimed-token');
+      expect(pollCount, 2);
+    });
+
     test('switchToUser tolerates drifted field shapes on the 201 body (#1488)', () async {
       final client = MediaServerHttpClient(
         client: MockClient((request) async {
