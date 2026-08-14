@@ -228,7 +228,7 @@ bool WaylandVideoSurface::BindGlobals(GdkDisplay* display, std::string* error) {
   return true;
 }
 
-bool WaylandVideoSurface::InitEgl(std::string* error) {
+bool WaylandVideoSurface::InitEgl(std::string* error, bool prefer_deep) {
   // The plane's EGL stack is deliberately independent of Flutter's: nothing is
   // shared, so the context is free to be ES 3.x (mpv wants compute shaders for
   // hdr-compute-peak, and the >8-bit render targets the 10-bit config chosen
@@ -266,7 +266,12 @@ bool WaylandVideoSurface::InitEgl(std::string* error) {
     EGLint bits;    // per-channel size requested, and the depth then reported
     bool floating;  // half-float rather than unorm
   };
-  for (const ConfigTier tier : {ConfigTier{10, false}, ConfigTier{16, true}, ConfigTier{8, false}}) {
+  // The deep tiers are skipped entirely when the caller retries after a
+  // render-context failure on a deep config (see Create's `prefer_deep`): the
+  // retry is about matching the configuration hardware decode demonstrably
+  // worked against, so only the 8-bit unorm tier is offered.
+  for (const ConfigTier tier :
+       prefer_deep ? std::vector<ConfigTier>{{10, false}, {16, true}, {8, false}} : std::vector<ConfigTier>{{8, false}}) {
     if (tier.floating && !has_float_configs) continue;
     for (const EGLint renderable : {EGL_OPENGL_ES3_BIT, EGL_OPENGL_ES2_BIT}) {
       const EGLint attributes[] = {
@@ -295,7 +300,7 @@ bool WaylandVideoSurface::InitEgl(std::string* error) {
   return Fail(error, "No matching EGL config for the video plane");
 }
 
-bool WaylandVideoSurface::Create(GtkWidget* view, std::string* error) {
+bool WaylandVideoSurface::Create(GtkWidget* view, std::string* error, bool prefer_deep) {
   if (view == nullptr) return Fail(error, "Video plane requires a realized view");
   GdkDisplay* display = gtk_widget_get_display(view);
   if (!IsSupported(display)) return Fail(error, "Not a Wayland display");
@@ -304,7 +309,7 @@ bool WaylandVideoSurface::Create(GtkWidget* view, std::string* error) {
   if (parent == nullptr) return Fail(error, "Toplevel has no Wayland surface yet");
 
   view_ = view;
-  if (!BindGlobals(display, error) || !InitEgl(error)) {
+  if (!BindGlobals(display, error) || !InitEgl(error, prefer_deep)) {
     Destroy();
     return false;
   }
@@ -982,7 +987,50 @@ void WaylandVideoSurface::BuildImageDescription() {
   wp_image_description_v1_add_listener(staged_description_, &kDescriptionListener, this);
 }
 
+void WaylandVideoSurface::ArmFrameAckWatchdog() {
+  // One watchdog per outstanding callback. Present() re-arms after each
+  // acknowledgement or timeout, so a source that is already set means the
+  // previous timer is still waiting on a callback that has not been answered.
+  if (frame_ack_source_ != 0 || !frame_pending_ || !visible_) return;
+  frame_ack_source_ = g_timeout_add(
+      kFrameAckTimeoutMs,
+      +[](gpointer data) -> gboolean {
+        auto* self = static_cast<WaylandVideoSurface*>(data);
+        self->frame_ack_source_ = 0;
+        if (!self->frame_pending_) return G_SOURCE_REMOVE;
+        // A real acknowledgement arriving later cannot retroactively answer
+        // this callback, so the callback has to go; ClearFrameCallback also
+        // clears frame_pending_. Rendering resumes from the same place
+        // HandleFrameDone would have started it - the frame callback fires
+        // once per display refresh and the plugin's handler skips without
+        // either a new mpv frame or a forced render, so calling on_frame_
+        // directly is what makes the next present happen at all.
+        self->ClearFrameCallback();
+        if (++self->consecutive_frame_acks_missed_ > kMaxConsecutiveFrameAckMisses) {
+          g_warning(
+              "MPV video plane: compositor is not acknowledging frames (%d misses); "
+              "stopping re-present attempts until a frame or visibility change",
+              self->consecutive_frame_acks_missed_);
+          return G_SOURCE_REMOVE;
+        }
+        g_message(
+            "MPV video plane: frame not acknowledged within %d ms; re-presenting",
+            kFrameAckTimeoutMs);
+        if (self->on_frame_) self->on_frame_();
+        return G_SOURCE_REMOVE;
+      },
+      this);
+}
+
+void WaylandVideoSurface::CancelFrameAckWatchdog() {
+  if (frame_ack_source_ != 0) {
+    g_source_remove(frame_ack_source_);
+    frame_ack_source_ = 0;
+  }
+}
+
 void WaylandVideoSurface::ClearFrameCallback() {
+  CancelFrameAckWatchdog();
   if (frame_callback_ != nullptr) {
     wl_callback_destroy(frame_callback_);
     frame_callback_ = nullptr;
@@ -1001,16 +1049,19 @@ void WaylandVideoSurface::HandleFrameDone(void* data, wl_callback* callback, uin
     self->frame_callback_ = nullptr;
   }
   self->frame_pending_ = false;
+  self->consecutive_frame_acks_missed_ = 0;
+  CancelFrameAckWatchdog();
   // Rendering resumes from here, not from mpv: its redraw latch is still set
   // from the update we declined to serve, so it will not notify again.
   if (self->on_frame_) self->on_frame_();
 }
 
 void WaylandVideoSurface::Destroy() {
-  // Unconditionally, ahead of everything: the timeout closure captures `this`,
-  // and DiscardTransition below only cancels it when a transition is actually
-  // staged.
+  // Unconditionally, ahead of everything: both timeout closures capture
+  // `this`, and the transition watchdog is only cancelled below when a
+  // transition is actually staged.
   CancelTransitionWatchdog();
+  CancelFrameAckWatchdog();
   if (egl_surface_ != EGL_NO_SURFACE) {
     if (eglGetCurrentSurface(EGL_DRAW) == egl_surface_ || eglGetCurrentSurface(EGL_READ) == egl_surface_) {
       eglMakeCurrent(egl_display_, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
@@ -1094,6 +1145,7 @@ void WaylandVideoSurface::Destroy() {
   visible_ = false;
   rect_valid_ = false;
   first_frame_presented_ = false;
+  consecutive_frame_acks_missed_ = 0;
 }
 
 void WaylandVideoSurface::RequestParentCommit() {
@@ -1244,6 +1296,10 @@ bool WaylandVideoSurface::Present() {
     // view of the subsurface is up to date.
     RequestParentCommit();
   }
+  // The acknowledgement for this commit is now owed; bound the wait so a
+  // compositor that never pays it cannot freeze the plane (see
+  // ArmFrameAckWatchdog).
+  ArmFrameAckWatchdog();
   return true;
 }
 

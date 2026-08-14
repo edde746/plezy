@@ -85,7 +85,15 @@ class WaylandVideoSurface {
   // window config, then half-float (NVIDIA offers no 10-bit unorm configs on
   // Wayland), falling back to 8. Returns false and fills `error` on any
   // failure — the caller reports it; there is no other video path.
-  bool Create(GtkWidget* view, std::string* error);
+  //
+  // `prefer_deep` (default true) controls the EGL config tier: with false,
+  // only the 8-bit unorm tier is tried. The caller retries that way once when
+  // the mpv render context failed against a deep config — hwdec's dmabuf
+  // interop probe runs at render-context creation and some drivers fail it on
+  // a 10-bit/fp16 config, silently landing every source on software decoding.
+  // An 8-bit plane is the 2.12.1-equivalent configuration, and HDR stays off
+  // there by the depth gate in Create().
+  bool Create(GtkWidget* view, std::string* error, bool prefer_deep = true);
 
   // Releases the EGL surface, subsurface and Wayland objects. Idempotent.
   void Destroy();
@@ -117,6 +125,14 @@ class WaylandVideoSurface {
   // acknowledging frames for an occluded or minimized surface, and rendering
   // regardless would queue work that can never drain.
   bool frame_pending() const { return frame_pending_; }
+
+  // Whether any buffer has been presented since the surface was created. The
+  // caller uses this to refuse the very first present until mpv has actually
+  // produced a frame: presenting an empty buffer (the pre-allocated 1x1 or a
+  // black frame) is exactly the commit an occluded surface is entitled to
+  // ignore, and the frame callback it arms would then be the one a stalled
+  // plane waits on forever.
+  bool first_frame_presented() const { return first_frame_presented_; }
 
   // Invoked on the GTK main thread when the compositor acknowledges a frame.
   // This is what resumes rendering after the plane becomes visible again, so
@@ -226,10 +242,24 @@ class WaylandVideoSurface {
   // being told this plane carries an HDR curve.
   bool hdr_active() const { return hdr_active_; }
 
+  // Bounds each half of a staged transition: first the compositor's verdict on
+  // the image description, then the caller's mpv leg deciding to commit or
+  // abort. Present() and the plugin's render path are held across *both*, so it
+  // is re-armed rather than cancelled when the compositor answers - the second
+  // wait is the longer one and has no timeout of its own. Public because the
+  // plugin's own mpv-leg timeout (mpv_plugin.cc) shares this horizon: the two
+  // halves of the transaction must give up together or the surface would
+  // resume presenting while the HDR method call stayed unanswered.
+  static constexpr int kTransitionTimeoutSeconds = 5;
+  // How many roundtrips a synchronous bootstrap waits for its answer. Ready,
+  // then the info burst, then done is three at worst, plus one spare for a
+  // compositor that splits them differently.
+  static constexpr int kBootstrapRoundtrips = 4;
+
  private:
   bool BindGlobals(GdkDisplay* display, std::string* error);
   void BuildImageDescription();
-  bool InitEgl(std::string* error);
+  bool InitEgl(std::string* error, bool prefer_deep);
   void RequestParentCommit();
   void ClearFrameCallback();
   /// Takes the current buffer off screen and drops any pending frame callback.
@@ -257,19 +287,26 @@ class WaylandVideoSurface {
   static void HandleImageDescriptionFailed(
       void* data, wp_image_description_v1* desc, uint32_t cause, const char* message);
 
-  // Bounds each half of a staged transition: first the compositor's verdict on
-  // the image description, then the caller's mpv leg deciding to commit or
-  // abort. Present() and the plugin's render path are held across *both*, so it
-  // is re-armed rather than cancelled when the compositor answers - the second
-  // wait is the longer one and has no timeout of its own.
-  static constexpr int kTransitionTimeoutSeconds = 5;
-  // How many roundtrips a synchronous bootstrap waits for its answer. Ready,
-  // then the info burst, then done is three at worst, plus one spare for a
-  // compositor that splits them differently.
-  static constexpr int kBootstrapRoundtrips = 4;
   void ArmTransitionWatchdog();
   void CancelTransitionWatchdog();
   guint watchdog_source_ = 0;
+
+  // Bounds the frame-acknowledgement wait. A compositor is entitled to stop
+  // acknowledging frames for an occluded or minimized surface - wlroots
+  // lineage compositors (Hyprland) do exactly that - and frame_pending_ is the
+  // only latch between Present() and the frame callback. Without a bound, one
+  // missed wl_callback freezes the plane on its last buffer for good: every
+  // later render bails on frame_pending(), and nothing else clears it. The
+  // watchdog withdraws the dead callback and asks for a fresh present, which
+  // re-arms the callback; a compositor that keeps ignoring the surface (still
+  // minimized) hits the miss budget and stops being poked until a real
+  // acknowledgement or a new frame turns up.
+  static constexpr int kFrameAckTimeoutMs = 500;
+  static constexpr int kMaxConsecutiveFrameAckMisses = 5;
+  void ArmFrameAckWatchdog();
+  void CancelFrameAckWatchdog();
+  guint frame_ack_source_ = 0;
+  int consecutive_frame_acks_missed_ = 0;
 
   // Creates the preferred-description query. The returned description is ready
   // immediately per the protocol, so get_information follows on ready, and the
