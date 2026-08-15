@@ -218,6 +218,9 @@ class ExoPlayerCore(private val activity: Activity) :
   private var subtitleAnchorToScreen: Boolean = false
   private var lastSubtitleCues: List<Cue> = emptyList()
 
+  // Retain the inferred composition-plane aspect across empty cue groups.
+  private var bitmapSubtitlePlaneAspect: Float? = null
+
   // Tracks whether a text track was selected on the previous onTracksChanged so we
   // can detect the transition to "no subtitle" and clear the painted overlays (#1387).
   private var hadSelectedTextTrack: Boolean = false
@@ -1110,9 +1113,29 @@ class ExoPlayerCore(private val activity: Activity) :
   private fun renderSubtitleCues(cues: List<Cue>) {
     val textCues = cues.filter { it.bitmap == null }
     val bitmapCues = cues.filter { it.bitmap != null }
+    updateBitmapSubtitlePlaneAspect(bitmapCues)
     val outgoing = SubtitleCueLayout.layout(textCues, subtitlePositionPercent, subtitleFontSize)
     subtitleView?.setCues(outgoing)
     bitmapSubtitleView?.setCues(bitmapCues)
+  }
+
+  private fun updateBitmapSubtitlePlaneAspect(bitmapCues: List<Cue>) {
+    val inferredAspect = bitmapCues.firstNotNullOfOrNull { cue ->
+      val bitmap = cue.bitmap ?: return@firstNotNullOfOrNull null
+      SubtitleViewLayout.bitmapPlaneAspect(
+        bitmap.width,
+        bitmap.height,
+        cue.size,
+        cue.bitmapHeight
+      )
+    } ?: return
+    val previousAspect = bitmapSubtitlePlaneAspect
+    if (previousAspect != null && kotlin.math.abs(inferredAspect / previousAspect - 1f) <= 0.001f) return
+
+    bitmapSubtitlePlaneAspect = inferredAspect
+    lastVideoSize?.let {
+      updateSubtitleViewSize(it.width, it.height, it.pixelWidthHeightRatio)
+    }
   }
 
   private fun handleIsPlayingChanged(isPlaying: Boolean) {
@@ -1767,8 +1790,7 @@ class ExoPlayerCore(private val activity: Activity) :
       videoWidth,
       videoHeight,
       pixelRatio,
-      resizeMode,
-      videoZoomScale
+      bitmapSubtitlePlaneAspect
     )
 
     activity.runOnUiThread {
@@ -3381,6 +3403,7 @@ class ExoPlayerCore(private val activity: Activity) :
     externalSubtitleUris.clear()
     externalSubtitleContainerUris.clear()
     lastSubtitleCues = emptyList()
+    bitmapSubtitlePlaneAspect = null
     hadSelectedTextTrack = false
     audioTrackGroupMap.clear()
     subtitleTrackGroupMap.clear()
