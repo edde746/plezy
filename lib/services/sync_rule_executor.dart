@@ -58,6 +58,15 @@ class SyncRuleExecutor {
   static const Duration _cooldownWifi = Duration(minutes: 30);
   static const Duration _cooldownCellular = Duration(hours: 3);
 
+  /// Caps new downloads queued per continueWatching pass. Each queued item
+  /// costs several sequential, awaited round trips (full metadata, parent
+  /// show/season metadata, artwork) — queuing an entire freshly-adopted
+  /// shelf (a dozen-plus shows in progress is common) in one pass can stall
+  /// the app for the better part of a minute. Whatever doesn't fit this pass
+  /// simply stays un-queued and gets picked up on the next one; nothing is
+  /// lost, it just backfills over a few passes instead of one big burst.
+  static const int _continueWatchingMaxQueuePerPass = 3;
+
   SyncRuleExecutor({required this._database});
 
   bool get isExecuting => _isExecuting;
@@ -410,7 +419,8 @@ class SyncRuleExecutor {
   /// mirror the server's current Continue Watching shelf. Unlike the deficit
   /// top-up above, membership can *shrink* — an episode watched to the end,
   /// or superseded by the next one in its show's on-deck slot, drops off the
-  /// shelf — so this is a straight set diff: new shelf items get queued,
+  /// shelf — so this is a straight set diff: new shelf items get queued
+  /// (capped at [_continueWatchingMaxQueuePerPass] per pass — see there),
   /// items no longer on the shelf get their download removed, but only when
   /// this rule is their sole reason for existing (a manual download, or one
   /// also covered by a show/season sync rule, is left alone).
@@ -439,6 +449,12 @@ class SyncRuleExecutor {
       // the shelf right now is left alone, not adopted, so it's never at
       // risk of being removed later just because it eventually drops off.
       if (_isActiveDownload(downloads[gk])) continue;
+
+      // Per-pass cap (see _continueWatchingMaxQueuePerPass) — anything past
+      // it is still a legitimate shelf member (already added to
+      // currentKeys above, so it won't be mistaken for a drop) and gets
+      // queued on a later pass instead.
+      if (queued >= _continueWatchingMaxQueuePerPass) continue;
 
       final itemWithServer = item.serverId != null ? item : item.copyWith(serverId: rule.serverId);
       final ok = await queueSingleDownload(itemWithServer, client, mediaIndex: 0);
