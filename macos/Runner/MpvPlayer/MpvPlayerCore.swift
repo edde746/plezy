@@ -102,13 +102,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   override func configurePlatformMpvOptions(mpv: OpaquePointer) {
-    // AVFoundation stays the macOS output. Spatialization is only reachable
-    // through the AVFoundation renderer — allowedAudioSpatializationFormats is a
-    // property of AVSampleBufferAudioRenderer (macOS 12+), and the AO opts
-    // compressed playback into the multichannel format — and the E-AC3 JOC sink
-    // lives there too. CoreAudio writes straight to the HAL device and exposes no
-    // spatialization control at all, so it is a fallback, not an alternative.
+    // Keep AVFoundation first for PCM so macOS retains its native spatialization
+    // path. Compressed AC3/EAC3 must skip AVFoundation: its AVPlayer-backed sink
+    // glitches on macOS, while CoreAudio owns real device passthrough. Rejecting
+    // compressed formats here lets mpv continue to CoreAudio/CoreAudio-exclusive
+    // without changing the tvOS Dolby path in MPVKit.
     checkError(mpv_set_option_string(mpv, "ao", "avfoundation,coreaudio"))
+    checkError(mpv_set_option_string(mpv, "ao-avfoundation-accept-compressed", "no"))
     // Unbound the AO's PCM lookahead, restoring the renderer-owned queue depth
     // 2.9.1 shipped (#1711). The macOS-only 0.5s bound MPVKit 1.0.15 added is the
     // only change to this path between 2.9.1 and 2.10, and 2.10 skips audio at
