@@ -102,21 +102,10 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   override func configurePlatformMpvOptions(mpv: OpaquePointer) {
-    // Keep AVFoundation first for PCM so macOS retains its native spatialization
-    // path. Compressed AC3/EAC3 must skip AVFoundation: its AVPlayer-backed sink
-    // glitches on macOS, while CoreAudio owns real device passthrough. Rejecting
-    // compressed formats here lets mpv continue to CoreAudio/CoreAudio-exclusive
-    // without changing the tvOS Dolby path in MPVKit.
-    checkError(mpv_set_option_string(mpv, "ao", "avfoundation,coreaudio"))
-    checkError(mpv_set_option_string(mpv, "ao-avfoundation-accept-compressed", "no"))
-    // Unbound the AO's PCM lookahead, restoring the renderer-owned queue depth
-    // 2.9.1 shipped (#1711). The macOS-only 0.5s bound MPVKit 1.0.15 added is the
-    // only change to this path between 2.9.1 and 2.10, and 2.10 skips audio at
-    // roughly that cadence. Its purpose was making mpv's software --volume, which
-    // is baked into the samples handed to the AO, audible before the queue
-    // drains; that latency is back, and belongs to the AO's gain domain rather
-    // than to how far ahead it may buffer.
-    checkError(mpv_set_option_string(mpv, "ao-avfoundation-max-lookahead", "0"))
+    // Keep every macOS format on CoreAudio's HAL-backed path. This deliberately
+    // gives up AVFoundation spatialization so PCM and compressed streams share
+    // the same stable output implementation.
+    checkError(mpv_set_option_string(mpv, "ao", "coreaudio"))
   }
 
   func reattachMetalLayer() {

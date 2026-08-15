@@ -128,7 +128,7 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertFalse(core.isPaused, "The accepted pause write must commit before completion")
   }
 
-  func testMacOSVideoCoreDisablesAVFoundationCompressedAudio() {
+  func testMacOSVideoCoreUsesCoreAudioOutput() {
     guard let mpv = mpv_create() else {
       return XCTFail("mpv_create failed")
     }
@@ -147,11 +147,11 @@ final class MpvPlayerContractTests: XCTestCase {
     guard initializeResult >= 0 else { return }
     initialized = true
 
-    let optionValue = "options/ao-avfoundation-accept-compressed".withCString {
+    let optionValue = "options/ao".withCString {
       mpv_get_property_string(mpv, $0)
     }
     defer { mpv_free(optionValue) }
-    XCTAssertEqual(optionValue.map { String(cString: $0) }, "no")
+    XCTAssertEqual(optionValue.map { String(cString: $0) }, "coreaudio")
   }
 
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
