@@ -8,10 +8,12 @@ import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Timeline
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.analytics.PlayerId
 import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.source.MediaSource
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import org.junit.Assert.assertArrayEquals
@@ -43,6 +45,8 @@ class TrueHdCarrierSinkTest {
     .setChannelCount(6)
     .setSampleRate(sampleRate)
     .build()
+
+  private fun audioSinkConfig(format: Format = trueHdFormat()) = AudioSink.AudioSinkConfig.Builder(format).build()
 
   private fun sink(
     carrier: FakeSink = FakeSink(),
@@ -109,7 +113,7 @@ class TrueHdCarrierSinkTest {
     val carrierSink = sink(carrier = carrier)
     val listener = RecordingSinkListener()
     carrierSink.setListener(listener)
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
     assertTrue("carrier should be live before the speed change", carrierSink.isCarrierActive)
 
     carrierSink.setPlaybackParameters(PlaybackParameters(1.5f))
@@ -130,7 +134,7 @@ class TrueHdCarrierSinkTest {
     val carrierSink = sink()
     val listener = RecordingSinkListener()
     carrierSink.setListener(listener)
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
 
     carrierSink.setPlaybackParameters(PlaybackParameters(1.5f))
     carrierSink.setPlaybackParameters(PlaybackParameters(1f))
@@ -145,7 +149,7 @@ class TrueHdCarrierSinkTest {
     val carrierSink = sink()
     val listener = RecordingSinkListener()
     carrierSink.setListener(listener)
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
 
     carrierSink.setPlaybackParameters(PlaybackParameters(1f))
 
@@ -163,7 +167,7 @@ class TrueHdCarrierSinkTest {
     val carrierSink = sink(carrier = carrier)
     val listener = RecordingSinkListener()
     carrierSink.setListener(listener)
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
 
     val buffer = ByteBuffer.wrap(fortyFourFamilyAccessUnits())
     val accepted = carrierSink.handleBuffer(buffer, 0L, 1)
@@ -188,7 +192,7 @@ class TrueHdCarrierSinkTest {
   fun theMismatchLatchSurvivesTheResetThatAccompaniesTheHandover() {
     val carrierSink = sink()
     carrierSink.setListener(RecordingSinkListener())
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
     carrierSink.handleBuffer(ByteBuffer.wrap(fortyFourFamilyAccessUnits()), 0L, 1)
 
     carrierSink.flush()
@@ -206,7 +210,7 @@ class TrueHdCarrierSinkTest {
   fun releasingTheSinkClearsTheMismatchLatch() {
     val carrierSink = sink()
     carrierSink.setListener(RecordingSinkListener())
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
     carrierSink.handleBuffer(ByteBuffer.wrap(fortyFourFamilyAccessUnits()), 0L, 1)
 
     carrierSink.release()
@@ -236,7 +240,7 @@ class TrueHdCarrierSinkTest {
   fun aNewMediaItemClearsTheMismatchLatch() {
     val carrierSink = sink()
     carrierSink.setListener(RecordingSinkListener())
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
     carrierSink.handleBuffer(ByteBuffer.wrap(fortyFourFamilyAccessUnits()), 0L, 1)
     assertEquals(
       AudioSink.SINK_FORMAT_UNSUPPORTED,
@@ -261,7 +265,7 @@ class TrueHdCarrierSinkTest {
   fun aLateMismatchFromThePreviousItemDoesNotPoisonTheNewOne() {
     val carrierSink = sink()
     carrierSink.setListener(RecordingSinkListener())
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
 
     // The new item starts before the outgoing stream's last buffer is handled.
     carrierSink.beginMediaItem()
@@ -294,7 +298,7 @@ class TrueHdCarrierSinkTest {
   fun aRefusedBurstMidSampleLosesNoAccessUnits() {
     val carrier = FakeSink()
     val carrierSink = sink(carrier = carrier)
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
 
     // Refuse every third burst once, so rejections land inside samples rather than between them.
     carrier.refuseEveryNth = 3
@@ -309,7 +313,7 @@ class TrueHdCarrierSinkTest {
   fun theCarrierOutputMatchesTheGoldenStream() {
     val carrier = FakeSink()
     val carrierSink = sink(carrier = carrier)
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
 
     assertArrayEquals(golden, feedWholeStream(carrierSink))
   }
@@ -319,7 +323,7 @@ class TrueHdCarrierSinkTest {
   fun aPendingBurstIsPlacedBeforeMoreInputIsConsumed() {
     val carrier = FakeSink()
     val carrierSink = sink(carrier = carrier)
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(audioSinkConfig())
     carrier.refuseNext = true
 
     val buffer = ByteBuffer.wrap(accessUnits)
@@ -362,14 +366,22 @@ class TrueHdCarrierSinkTest {
   fun theCarrierDelegateIsConfiguredAsAFixedRatePcmCarrier() {
     val carrier = FakeSink()
     val carrierSink = sink(carrier = carrier)
+    val inputConfig = AudioSink.AudioSinkConfig.Builder(trueHdFormat())
+      .setPreferredBufferSizeOverride(4_096)
+      .setTimeline(Timeline.EMPTY)
+      .setMediaPeriodId(MediaSource.MediaPeriodId("period"))
+      .build()
 
-    carrierSink.configure(trueHdFormat(), 0, null)
+    carrierSink.configure(inputConfig)
 
-    val configured = checkNotNull(carrier.configuredFormat)
-    assertEquals(MimeTypes.AUDIO_RAW, configured.sampleMimeType)
-    assertEquals(C.ENCODING_PCM_16BIT, configured.pcmEncoding)
-    assertEquals(TrueHdMatPacker.CARRIER_SAMPLE_RATE, configured.sampleRate)
-    assertEquals(TrueHdMatPacker.CARRIER_CHANNEL_COUNT, configured.channelCount)
+    val configured = checkNotNull(carrier.configuredConfig)
+    assertEquals(inputConfig.preferredBufferSizeOverride, configured.preferredBufferSizeOverride)
+    assertSame(inputConfig.timeline, configured.timeline)
+    assertEquals(inputConfig.mediaPeriodId, configured.mediaPeriodId)
+    assertEquals(MimeTypes.AUDIO_RAW, configured.format.sampleMimeType)
+    assertEquals(C.ENCODING_PCM_16BIT, configured.format.pcmEncoding)
+    assertEquals(TrueHdMatPacker.CARRIER_SAMPLE_RATE, configured.format.sampleRate)
+    assertEquals(TrueHdMatPacker.CARRIER_CHANNEL_COUNT, configured.format.channelCount)
   }
 
   @Test
@@ -378,11 +390,13 @@ class TrueHdCarrierSinkTest {
     val normal = FakeSink()
     val carrierSink = sink(carrier = carrier, normal = normal)
     val ac3 = Format.Builder().setSampleMimeType(MimeTypes.AUDIO_AC3).setSampleRate(48_000).build()
+    val config = audioSinkConfig(ac3)
 
-    carrierSink.configure(ac3, 0, null)
+    carrierSink.configure(config)
 
-    assertSame(ac3, normal.configuredFormat)
-    assertEquals(null, carrier.configuredFormat)
+    assertSame(config, normal.configuredConfig)
+    assertSame(ac3, normal.configuredConfig?.format)
+    assertEquals(null, carrier.configuredConfig)
   }
 
   private fun feedWholeStream(carrierSink: TrueHdCarrierSink): ByteArray {
@@ -416,7 +430,7 @@ class TrueHdCarrierSinkTest {
   /** Minimal AudioSink that records what it was handed and can apply back pressure. */
   private class FakeSink : AudioSink {
     val written = ByteArrayOutputStream()
-    var configuredFormat: Format? = null
+    var configuredConfig: AudioSink.AudioSinkConfig? = null
     var formatSupport: Int = AudioSink.SINK_FORMAT_UNSUPPORTED
     var lastVolume: Float = -1f
     var sessionId: Int = -1
@@ -444,8 +458,8 @@ class TrueHdCarrierSinkTest {
       return true
     }
 
-    override fun configure(inputFormat: Format, specifiedBufferSize: Int, outputChannels: IntArray?) {
-      configuredFormat = inputFormat
+    override fun configure(audioSinkConfig: AudioSink.AudioSinkConfig) {
+      configuredConfig = audioSinkConfig
     }
 
     override fun supportsFormat(format: Format) = formatSupport == AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY

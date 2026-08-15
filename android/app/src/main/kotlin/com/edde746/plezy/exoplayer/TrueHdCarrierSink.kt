@@ -165,7 +165,8 @@ internal class TrueHdCarrierSink(
     else -> defaultSink.getFormatSupport(format)
   }
 
-  override fun configure(inputFormat: Format, specifiedBufferSize: Int, outputChannels: IntArray?) {
+  override fun configure(audioSinkConfig: AudioSink.AudioSinkConfig) {
+    val inputFormat = audioSinkConfig.format
     val useCarrier = shouldUseCarrier(inputFormat)
     if (useCarrier != carrierActive) {
       log?.invoke(
@@ -185,9 +186,14 @@ internal class TrueHdCarrierSink(
     discardCarrierState()
 
     if (useCarrier) {
-      carrierSink.configure(carrierFormat(), specifiedBufferSize, null)
+      val carrierConfig = AudioSink.AudioSinkConfig.Builder(carrierFormat())
+        .setPreferredBufferSizeOverride(audioSinkConfig.preferredBufferSizeOverride)
+        .setTimeline(audioSinkConfig.timeline)
+        .setMediaPeriodId(audioSinkConfig.mediaPeriodId)
+        .build()
+      carrierSink.configure(carrierConfig)
     } else {
-      defaultSink.configure(inputFormat, specifiedBufferSize, outputChannels)
+      defaultSink.configure(audioSinkConfig)
     }
   }
 

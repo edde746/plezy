@@ -166,16 +166,15 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     enableFloatOutput: Boolean,
     enableAudioOutputPlaybackParams: Boolean
   ): AudioSink {
-    AudioTrackAudioOutputProvider.failOnSpuriousAudioTimestamp = false
-
+    // Media3 1.11's replacement is fixed at 500ms; preserve the dynamic 500–1000ms PCM policy.
+    @Suppress("DEPRECATION")
     val bufferSizeProvider = DefaultAudioTrackBufferSizeProvider.Builder()
       .setMinPcmBufferDurationUs(500_000)
       .setMaxPcmBufferDurationUs(1_000_000)
       .setPcmBufferMultiplicationFactor(4)
-      // media3 defaults passthrough to 250ms, which the AC3 factor doubles to 500ms — 40000
-      // bytes at 640 kbps. Some HDMI routes reject a buffer that short outright and the only
-      // retry media3 1.10.1 has is to keep halving it (#1790). Ask for a second up front;
-      // upstream adopted the same 1s floor as its last-resort retry in #3207.
+      // Media3 defaults passthrough to 250ms, which the AC3 factor doubles to 500ms. Some
+      // HDMI routes reject a buffer that short (#1790). Ask for a second up front; Media3 1.11
+      // now uses the same one-second floor for its last-resort retry (#3207).
       .setPassthroughBufferDurationUs(500_000)
       .build()
 
