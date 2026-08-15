@@ -28,7 +28,6 @@ class BufferingStallPolicyTest {
     loading = loading
   )
 
-
   @Test
   fun aLoaderThatStoppedAskingForDataCountsAsEnoughBuffer() {
     // The #1790 shape on a high bitrate stream: the byte cap is full at a couple of seconds, the
@@ -49,7 +48,6 @@ class BufferingStallPolicyTest {
     // — so a `false` recorded before that must not outrank a loader that has since stopped.
     assertEquals(Verdict.STALLED, evaluate(bufferedAheadMs = 2_000L, loading = false, loadControlReady = false))
   }
-
 
   @Test
   fun aByteCappedBufferBelowTheDurationBarIsStillIndicted() {
@@ -81,7 +79,6 @@ class BufferingStallPolicyTest {
     )
   }
 
-
   @Test
   fun aFastForwardNeedsProportionallyMoreMediaBeforeItIsIndicted() {
     // Enough media to start at 1x, but the load control measures its bar in playout time, so at 2x
@@ -103,7 +100,6 @@ class BufferingStallPolicyTest {
     assertEquals(Verdict.STALLED, evaluate(playbackSpeed = 0f))
     assertEquals(Verdict.STALLED, evaluate(playbackSpeed = -1f))
   }
-
 
   @Test
   fun advancingPositionIsHealthy() {
@@ -134,7 +130,6 @@ class BufferingStallPolicyTest {
     assertEquals(Verdict.STALLED, evaluate(currentPositionMs = position - 5_000))
   }
 
-
   @Test
   fun frozenPositionWaitsOutTheTimeout() {
     assertEquals(Verdict.WAITING, evaluate(elapsedMs = BufferingStallPolicy.STALL_TIMEOUT_MS - 1))
@@ -145,7 +140,6 @@ class BufferingStallPolicyTest {
   fun bufferedButFrozenIsStalled() {
     assertEquals(Verdict.STALLED, evaluate())
   }
-
 
   @Test
   fun emptyBufferIsStarved() {
@@ -196,7 +190,6 @@ class BufferingStallPolicyTest {
       )
     )
   }
-
 
   @Test
   fun starvationAndProgressBothRestartTheStallClock() {

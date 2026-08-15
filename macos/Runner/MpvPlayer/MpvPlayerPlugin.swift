@@ -106,7 +106,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-
   private func ensurePipController() -> MpvPipController {
     if let existing = pipController { return existing }
     let controller = MpvPipController()

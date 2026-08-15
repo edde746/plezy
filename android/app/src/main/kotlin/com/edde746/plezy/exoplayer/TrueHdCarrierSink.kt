@@ -106,7 +106,6 @@ internal class TrueHdCarrierSink(
   @Volatile
   private var mismatchGeneration = -1
 
-
   /**
    * True when this format should ride the carrier.
    *
@@ -191,7 +190,6 @@ internal class TrueHdCarrierSink(
       defaultSink.configure(inputFormat, specifiedBufferSize, outputChannels)
     }
   }
-
 
   override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
     if (!carrierActive) return defaultSink.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)

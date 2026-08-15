@@ -9,7 +9,6 @@ private const val MIB = 1024 * 1024
 
 class LoadControlPolicyTest {
 
-
   @Test
   fun neverExceedsMedia3sOwnTargetEvenWithHugeMemory() {
     assertEquals(
@@ -63,7 +62,6 @@ class LoadControlPolicyTest {
     )
   }
 
-
   @Test
   fun readAheadReportsSecondsAtAKnownBitrate() {
     // 64MiB of the #1618 stream (103_341 kbps) is ~5.2s — under the 15s minBufferMs, so the
@@ -83,7 +81,6 @@ class LoadControlPolicyTest {
     assertNull(LoadControlPolicy.readAheadSeconds(64 * MIB, 0L))
     assertNull(LoadControlPolicy.readAheadSeconds(64 * MIB, -1L))
   }
-
 
   /**
    * media3 validates the ordering with Guava `Preconditions`, which is a plain throw rather than
@@ -168,7 +165,6 @@ class LoadControlPolicyTest {
       }
     }
   }
-
 
   @Test
   fun theWireNamesMatchTheDartNativeValues() {
