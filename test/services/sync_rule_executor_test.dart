@@ -557,6 +557,84 @@ void main() {
     expect(links, containsAll(['plex-machine:ep-1', 'plex-machine:ep-2']));
   });
 
+  test('continueWatching sync rule caps new downloads per pass so adopting a large shelf does not burst', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    // More shelf items than the per-pass cap (3) — simulates enabling the
+    // feature with a dozen-plus shows already in progress.
+    final client = _ContinueWatchingClient(
+      List.generate(
+        5,
+        (i) => testMediaItem(id: 'ep-$i', backend: MediaBackend.plex, kind: MediaKind.episode, title: 'Ep $i'),
+      ),
+    );
+    manager.debugRegisterClientForTesting(client);
+
+    const ruleKey = 'profile-a|plex-machine:__continue_watching__';
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: ServerId('plex-machine'),
+      ratingKey: '__continue_watching__',
+      globalKey: ruleKey,
+      targetType: ContentTypes.continueWatching,
+      episodeCount: 0,
+      downloadLinksInitialized: true,
+    );
+    final rule = (await db.getSyncRule(ruleKey))!;
+
+    final queued = <String>[];
+    final results = await SyncRuleExecutor(database: db).executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: const {},
+      associateDownload: (r, globalKey) async => db.associateSyncRuleDownload(r, globalKey),
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item.id);
+        return true;
+      },
+      deleteSyncRuleDownload: (_) async {},
+      isOffline: false,
+      force: true,
+    );
+
+    // Only the first 3 are queued this pass, not all 5.
+    expect(results.single.queuedCount, 3);
+    expect(queued, ['ep-0', 'ep-1', 'ep-2']);
+    final links = (await db.getSyncRuleDownloadLinks(rule.id)).map((l) => l.downloadGlobalKey).toSet();
+    expect(links, {'plex-machine:ep-0', 'plex-machine:ep-1', 'plex-machine:ep-2'});
+
+    // The remaining two weren't dropped from tracking either — they simply
+    // were never associated, so a later pass picks them up without mistaking
+    // them for something that left. Simulate the real progression: by the
+    // next pass the first 3 are actively downloading (as DownloadProvider's
+    // own `downloads` map would show by then), so only ep-3/ep-4 are new.
+    final secondPassQueued = <String>[];
+    await SyncRuleExecutor(database: db).executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: {
+        for (final id in ['ep-0', 'ep-1', 'ep-2'])
+          'plex-machine:$id': DownloadProgress(globalKey: 'plex-machine:$id', status: DownloadStatus.queued),
+      },
+      metadata: const {},
+      associateDownload: (r, globalKey) async => db.associateSyncRuleDownload(r, globalKey),
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        secondPassQueued.add(item.id);
+        return true;
+      },
+      deleteSyncRuleDownload: (_) async {},
+      isOffline: false,
+      force: true,
+    );
+    expect(secondPassQueued, ['ep-3', 'ep-4']);
+  });
+
   test('continueWatching sync rule removes shelf drop-offs unless still needed elsewhere', () async {
     final db = AppDatabase.forTesting(NativeDatabase.memory());
     final manager = MultiServerManager();
