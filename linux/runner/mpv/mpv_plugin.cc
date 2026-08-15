@@ -1122,8 +1122,9 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
               });
           return;
         }
-      } else if (!self->audio_only && g_strcmp0(fl_value_get_string(name_value), "vo") == 0 &&
-                 g_strcmp0(fl_value_get_string(value_value), "libmpv") != 0) {
+      } else if (
+          !self->audio_only && g_strcmp0(fl_value_get_string(name_value), "vo") == 0 &&
+          g_strcmp0(fl_value_get_string(value_value), "libmpv") != 0) {
         // Embedded rendering is authoritative: the render context was created
         // against vo=libmpv, and a runtime vo switch makes mpv re-create its
         // output as a separate window, orphaning the plane. vo=gpu-next is

@@ -72,7 +72,6 @@ DisplayModeManager::DisplayModeManager() {}
 
 DisplayModeManager::~DisplayModeManager() {}
 
-
 std::wstring DisplayModeManager::GetMonitorDeviceName(HWND window) {
   HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
   if (!monitor) return {};
@@ -138,7 +137,6 @@ bool DisplayModeManager::IsWin11_24H2OrNewer() {
 
   return VerifyVersionInfoW(&osvi, VER_BUILDNUMBER, condition_mask) != FALSE;
 }
-
 
 std::vector<DisplayMode> DisplayModeManager::EnumerateDisplayModes(HWND window) {
   std::wstring device_name = GetMonitorDeviceName(window);

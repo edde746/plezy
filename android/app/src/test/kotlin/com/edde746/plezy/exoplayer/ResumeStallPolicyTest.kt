@@ -7,7 +7,6 @@ import org.junit.Test
 
 class ResumeStallPolicyTest {
 
-
   @Test
   fun windowFloorsAtDefaultForNormalFrameRates() {
     // 24fps → 4 × 42ms = 168ms, floored to 1000ms
@@ -37,7 +36,6 @@ class ResumeStallPolicyTest {
     assertEquals(1000L, ResumeStallPolicy.checkWindowMs(formatFps = -1f, detectedFps = -1f, speed = 1f))
     assertEquals(1000L, ResumeStallPolicy.checkWindowMs(formatFps = null, detectedFps = null, speed = 1f))
   }
-
 
   @Test
   fun advancingFramesAreHealthy() {

@@ -24,7 +24,6 @@ class EndOfStreamPolicyTest {
     frameStallMs = frameStallMs
   )
 
-
   @Test
   fun stuckPastDurationWithNoPictureIsTheEndOfTheFile() {
     // The reported failure: the clock ran a minute past the last frame.
@@ -63,7 +62,6 @@ class EndOfStreamPolicyTest {
     assertFalse(isFinishedFile(isLive = true))
     assertFalse(isFinishedFile(hasPlaybackOutput = false))
   }
-
 
   @Test
   fun fallbackResumesStrictlyInsideTheMedia() {

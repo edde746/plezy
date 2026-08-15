@@ -52,7 +52,6 @@ class RawPositionAudioOutputTest {
     return output to listener
   }
 
-
   /**
    * A parked track is never going to release, so its flush has to be answered at once. Deferring
    * until the eviction would hold `DefaultAudioSink`'s process-wide pending-release count above
@@ -115,7 +114,6 @@ class RawPositionAudioOutputTest {
     assertEquals(1, listener.releasedCount)
   }
 
-
   @Test
   fun aParkedOutputIsHandedBackForAnIdenticalConfig() {
     val delegate = FakeOutputProvider()
@@ -176,7 +174,6 @@ class RawPositionAudioOutputTest {
     assertEquals(1, secondListener.underrunCount)
   }
 
-
   /**
    * The replacement is deliberately built while the evicted track is still going away. Refusing
    * until it confirms looks safer, but the refusal reaches media3 as an init failure with no
@@ -217,7 +214,6 @@ class RawPositionAudioOutputTest {
 
     assertEquals(1, listener.releasedCount)
   }
-
 
   private class RecordingListener : AudioOutput.Listener {
     var releasedCount = 0

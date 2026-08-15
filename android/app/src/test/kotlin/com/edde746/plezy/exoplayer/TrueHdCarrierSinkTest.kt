@@ -51,7 +51,6 @@ class TrueHdCarrierSinkTest {
     blocked: Boolean = false
   ) = TrueHdCarrierSink(normal, carrier, { routeAvailable }, { blocked })
 
-
   /**
    * TrueHD is the carrier or it is decoded. Falling through to the normal sink would hand media3
    * its raw ENCODING_DOLBY_TRUEHD path, which is the configuration that wedges on these devices.
@@ -152,7 +151,6 @@ class TrueHdCarrierSinkTest {
 
     assertEquals(0, listener.capabilityInvalidations)
   }
-
 
   /**
    * Selection reads Format.sampleRate; the rate family is only certain once a major sync is parsed.
@@ -287,7 +285,6 @@ class TrueHdCarrierSinkTest {
     assertTrue(carrierSink.supportsFormat(ac3))
   }
 
-
   /**
    * The regression this exists for: a delegate that refuses a burst part-way through a sample must
    * not cost the access units behind it. media3 re-delivers the same buffer after a false return,
@@ -332,7 +329,6 @@ class TrueHdCarrierSinkTest {
     assertTrue("expected a refusal to leave input unconsumed", buffer.hasRemaining())
     assertTrue(carrierSink.hasPendingData())
   }
-
 
   @Test
   fun persistentControlsReachBothDelegates() {
