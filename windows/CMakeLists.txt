@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(plezy LANGUAGES CXX)
 
-set(MPV_VERSION "20251228")
-set(MPV_GIT_HASH "a58dd8a")
+set(MPV_VERSION "20260809")
+set(MPV_GIT_HASH "dd5d17d328")
 
 if(CMAKE_SYSTEM_PROCESSOR STREQUAL "ARM64")
   # ARM64: use file(DOWNLOAD) + 7z extraction (CMake's built-in libarchive
