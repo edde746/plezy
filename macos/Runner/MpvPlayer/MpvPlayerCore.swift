@@ -102,10 +102,14 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   override func configurePlatformMpvOptions(mpv: OpaquePointer) {
-    // Keep every macOS format on CoreAudio's HAL-backed path. This deliberately
-    // gives up AVFoundation spatialization so PCM and compressed streams share
-    // the same stable output implementation.
-    checkError(mpv_set_option_string(mpv, "ao", "coreaudio"))
+    // CoreAudio first: every format normally plays through the one HAL-backed
+    // timing path, deliberately giving up AVFoundation spatialization. The
+    // avfoundation fallback mirrors upstream mpv's macOS probe order and only
+    // engages when CoreAudio's init fails outright — macOS 27 beta rejects
+    // ao_coreaudio's channel-layout setup with paramErr (-50), and a
+    // single-entry ao list would turn that into playback with no audio at
+    // all (#1964).
+    checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))
   }
 
   func reattachMetalLayer() {
