@@ -10,6 +10,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/media_subscription.dart';
+import 'package:plezy/models/livetv_channel.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
@@ -128,6 +129,28 @@ void main() {
       mutation,
       throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 503)),
     );
+  });
+
+  test('favorite write sends the JSON content type Plex cloud requires', () async {
+    late http.Request captured;
+    final client = makeClient((request) async {
+      captured = request;
+      return jsonResponse({'MediaContainer': <String, dynamic>{}});
+    });
+    addTearDown(client.close);
+
+    await client.liveTv.setFavoriteChannels([
+      FavoriteChannel(source: 'server://machine-1/provider-a', id: '2', title: 'Channel 2', vcn: '2'),
+    ]);
+
+    // Regression: without an explicit content type the body went out as
+    // text/plain and epg.provider.plex.tv rejected the PUT with 400 (#1878).
+    expect(captured.method, 'PUT');
+    expect(captured.url.toString(), 'https://epg.provider.plex.tv/settings/favoriteChannels');
+    expect(captured.headers['content-type'], startsWith('application/json'));
+    expect(jsonDecode(captured.body), [
+      {'source': 'server://machine-1/provider-a', 'id': '2', 'title': 'Channel 2', 'vcn': '2'},
+    ]);
   });
 
   test('DVR list applies root channel mapping to each DVR and parses string numbers', () async {
