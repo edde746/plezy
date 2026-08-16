@@ -46,9 +46,6 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
   int get itemCount => totalSize;
 
   @override
-  Future<List<T>> loadData() async => <T>[];
-
-  @override
   Future<void> loadItems() {
     return loadStandardPaginatedItems(
       pageSize: pageSize,

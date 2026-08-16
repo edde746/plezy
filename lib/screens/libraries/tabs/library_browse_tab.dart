@@ -368,15 +368,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
   }
 
-  // Override loadData to use our custom _loadContent
-  @override
-  Future<List<MediaItem>> loadData() async {
-    // This is called by base class loadItems(), but we override loadItems() entirely
-    // So this just returns empty - actual loading is done in _loadContent
-    return [];
-  }
-
-  // Override loadItems to use our custom loading with pagination
+  // Custom loading with pagination replaces the base runLoadTransaction path
   @override
   Future<void> loadItems() async {
     await _loadContent();
