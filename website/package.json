@@ -6,7 +6,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
-		"audit": "python3 ../scripts/check_bun_audit.py --project . --baseline bun_audit_baseline.json",
+		"audit": "python3 ../scripts/checks/check_bun_audit.py --project . --baseline bun_audit_baseline.json",
 		"preview": "vite preview",
 		"test": "bun test",
 		"prepare": "svelte-kit sync || echo ''",

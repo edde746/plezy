@@ -10,21 +10,21 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 for checker in \
-  scripts/check_build_workflow.py \
-  scripts/check_apple_spm_locks.py \
-  scripts/check_tvos_test_wiring.py \
-  scripts/check_shrinker_rules.py \
-  scripts/verify_runtime_inputs.py \
-  scripts/check_workflow_security.py \
-  scripts/check_workflow_action_pins.py \
-  scripts/check_container_image_pins.py \
-  scripts/check_update_packages_workflow.py \
-  scripts/check_linux_package_deps.py \
-  scripts/check_windows_installer.py \
-  scripts/check_windows_msix.py; do
+  scripts/checks/check_build_workflow.py \
+  scripts/checks/check_apple_spm_locks.py \
+  scripts/checks/check_tvos_test_wiring.py \
+  scripts/checks/check_shrinker_rules.py \
+  scripts/checks/verify_runtime_inputs.py \
+  scripts/checks/check_workflow_security.py \
+  scripts/checks/check_workflow_action_pins.py \
+  scripts/checks/check_container_image_pins.py \
+  scripts/checks/check_update_packages_workflow.py \
+  scripts/checks/check_linux_package_deps.py \
+  scripts/checks/check_windows_installer.py \
+  scripts/checks/check_windows_msix.py; do
   python3 "$checker"
 done
 
-for guard_test in scripts/test_*.py; do
+for guard_test in scripts/test_*.py scripts/*/test_*.py; do
   python3 "$guard_test"
 done

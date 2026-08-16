@@ -62,7 +62,7 @@ jobs:
         run: scripts/codegen.sh --check
 
       - name: Verify translation hygiene
-        run: python3 scripts/clean_translations.py --check --strict
+        run: python3 scripts/checks/clean_translations.py --check --strict
 
       - name: Verify workflow and script guards
         run: bash scripts/ci_guard_checks.sh
@@ -75,10 +75,10 @@ jobs:
             xargs -0 -r dart format --output=none --set-exit-if-changed
 
       - name: Verify icon consistency
-        run: dart run scripts/check_icon_consistency.dart
+        run: dart run scripts/checks/check_icon_consistency.dart
 
       - name: Analyze code
-        run: dart run scripts/check_analyzer.dart
+        run: dart run scripts/checks/check_analyzer.dart
 
       - name: Check for unused code
         run: |

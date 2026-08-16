@@ -66,7 +66,7 @@ fi
 rm -f "$out"
 
 section "translation hygiene"
-if python3 scripts/clean_translations.py --check --strict; then
+if python3 scripts/checks/clean_translations.py --check --strict; then
   ok "locale files normalized and no unused keys found"
 else
   fail "translation files need cleanup or contain unused keys"
@@ -74,7 +74,7 @@ else
 fi
 
 section "hardcoded UI strings"
-if python3 scripts/check_hardcoded_strings.py; then
+if python3 scripts/checks/check_hardcoded_strings.py; then
   ok "user-facing strings use the translation layer"
 else
   fail "hardcoded user-facing English strings found"
@@ -90,7 +90,7 @@ else
 fi
 
 section "icon consistency"
-if dart run scripts/check_icon_consistency.dart; then
+if dart run scripts/checks/check_icon_consistency.dart; then
   ok "production icons use AppIcon and rounded Symbols"
 else
   fail "icon consistency violations found"
@@ -109,7 +109,7 @@ fi
 rm -f "$out"
 
 section "Dart analyzer"
-if dart run scripts/check_analyzer.dart; then
+if dart run scripts/checks/check_analyzer.dart; then
   ok "no unapproved diagnostics"
 else
   fail "analyzer errors, warnings, unexpected infos, or tool failure"

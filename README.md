@@ -190,7 +190,7 @@ scripts/setup_hooks.sh
 End-to-end tests (Android emulator plus a Dockerized Jellyfin fixture):
 
 ```bash
-python3 scripts/run_maestro.py basic
+python3 scripts/maestro/run_maestro.py basic
 ```
 
 ## Contributing
