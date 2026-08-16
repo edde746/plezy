@@ -313,8 +313,9 @@ internal class AssAtlasPipeline(
 
   /**
    * Re-renders the last requested position — for renderer state changes (margins,
-   * use-margins) that must become visible while playback is paused. Safe during
-   * playback: the next video frame's [requestRender] supersedes it (latest-wins).
+   * use-margins, a disabled track) that must become visible while playback is
+   * paused. Safe during playback: the next video frame's [requestRender]
+   * supersedes it (latest-wins).
    */
   fun invalidate() {
     libassThread.invalidate()
@@ -582,6 +583,12 @@ private class AtlasLibassThread(
   @Volatile private var lastRequestedPtsUs = UNSET
   private var contentSeqCounter = 0L
 
+  /** True once any payload reached the GL thread — the overlay may be showing content. */
+  private var hasEverPosted = false
+
+  /** State generation a trackless blank clear was posted for; MIN_VALUE = none pending. */
+  private var tracklessClearedGeneration = Long.MIN_VALUE
+
   // Thread-confined; created on first render so non-ASS playback never allocates.
   private var engine: SpecRenderEngine? = null
   private var engineStateGeneration = Long.MIN_VALUE
@@ -760,7 +767,22 @@ private class AtlasLibassThread(
     val waitMs = (tDrain - request.enqueueNs) / 1_000_000
     // Before any ASS render exists (SRT/VTT or no subs) do nothing — this also
     // keeps the slot buffers unallocated for non-ASS playback.
-    if (assHandler.render == null) return
+    val render = assHandler.render ?: return
+    if (!render.hasTrack) {
+      // Subtitles were disabled mid-cue: every render now returns null, so no
+      // payload would ever reach the GL thread again and the last swapped cue
+      // would sit on the overlay until playback ends (#1884). Swap one explicit
+      // blank frame instead. Keyed on the state generation ([AssRender.setTrack]
+      // bumped it) so a clear the GL thread drops as stale is retried by the
+      // next request; reset below once a track is live again.
+      val tracklessGeneration = stateGeneration()
+      if (hasEverPosted && tracklessClearedGeneration != tracklessGeneration) {
+        tracklessClearedGeneration = tracklessGeneration
+        postBlankClear(request, tracklessGeneration)
+      }
+      return
+    }
+    tracklessClearedGeneration = Long.MIN_VALUE
     val slots = acquireSlots()
     val generation = stateGeneration()
     val engine = ensureEngine(slots, generation)
@@ -790,6 +812,7 @@ private class AtlasLibassThread(
         payload.requestSeq = request.sequence
         payload.stateGeneration = generation
         onFrameReady(payload)
+        hasEverPosted = true
         if (AssAtlasPipelineConfig.TIMING_LOGS) {
           Log.d(
             TAG,
@@ -826,6 +849,29 @@ private class AtlasLibassThread(
     }
 
     maybePrefetch(engine, slots, pts, pinned)
+  }
+
+  /**
+   * Hands the GL thread a zero-quad payload — [AtlasRenderer.onDrawFrame] clears
+   * and draws nothing — so a cue still on screen when its track is disabled goes
+   * away immediately instead of outliving the selection (#1884).
+   */
+  private fun postBlankClear(request: PendingFrame, generation: Long) {
+    val slots = acquireSlots()
+    // Never rewrite the slot the GL thread may still be reading (slotCount >= 2).
+    val payload = slots.payloads.first { it.slotIndex != glTakenSlot() }
+    payload.frame = AssAtlasFrame(0, 0, 0, 0, 0)
+    payload.contentSeq = ++contentSeqCounter
+    payload.sourcePresentationTimeUs = request.sourcePtsUs
+    payload.presentationTimeUs = request.ptsUs
+    payload.releaseTimeNs = request.releaseNs
+    payload.phaseLeadUs = request.phaseLeadUs
+    payload.requestSeq = request.sequence
+    payload.stateGeneration = generation
+    onFrameReady(payload)
+    if (AssAtlasPipelineConfig.TIMING_LOGS) {
+      Log.d(TAG, "trackless-clear req=${request.sequence} pts=${request.ptsUs / 1000}ms gen=$generation")
+    }
   }
 
   /** Start time of the last event boundary we cache-warmed (libass/track ms). */

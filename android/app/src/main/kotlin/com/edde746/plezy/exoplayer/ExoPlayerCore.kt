@@ -1253,12 +1253,13 @@ class ExoPlayerCore(private val activity: Activity) :
       }
     }
 
-    // Disabling the text track produces no trailing empty CueGroup, and no new
-    // video frame re-renders the libass overlay while paused, so the last SRT/VTT
-    // cue stays painted on the SubtitleViews and the last ASS frame stays on the
-    // overlay. AssHandler (registered before this listener) has already nulled the
-    // libass track by now, so re-rendering the last position clears it. Gate on the
-    // transition to avoid redundant clears on every track change. (#1387)
+    // Disabling the text track produces no trailing empty CueGroup, so the last
+    // SRT/VTT cue stays painted on the SubtitleViews. AssHandler (registered
+    // before this listener) has already nulled the libass track by now, so the
+    // invalidate pushes one request through the atlas pipeline, which swaps an
+    // explicit blank frame for a trackless render — required while paused, where
+    // no video frame triggers one. Gate on the transition to avoid redundant
+    // clears on every track change. (#1387, #1884)
     val hasSelectedText = hasSelectedTextTrack(tracks)
     if (!hasSelectedText && hadSelectedTextTrack) {
       lastSubtitleCues = emptyList()

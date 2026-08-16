@@ -89,6 +89,9 @@ class AssRender(nativeAss: Long, private val lock: ReentrantLock) {
     lock.withLock { this.track = track }
   }
 
+  /** False after [setTrack] with null (subtitles disabled) — renders would return null. */
+  val hasTrack: Boolean get() = lock.withLock { track != null }
+
   fun setFontScale(scale: Float) {
     generation.incrementAndGet()
     withNative { nativeAssRenderSetFontScale(it, scale) }
