@@ -437,6 +437,27 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     );
   }
 
+  /// Shared retry pipeline for failed/cancelled downloads: confirm download
+  /// restrictions, re-resolve the version, then replace the existing download
+  /// with a fresh queue entry.
+  Future<void> _retryDownload(DownloadProvider downloadProvider, MediaItem metadata, String globalKey) async {
+    if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
+
+    final client = _getMediaClientForMetadata(context);
+    if (client == null) return;
+
+    final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+    if (versionConfig == null || !mounted) return;
+
+    await downloadProvider.deleteDownload(globalKey);
+    try {
+      await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
+      if (mounted) showSuccessSnackBar(context, t.downloads.downloadQueued);
+    } on CellularDownloadBlockedException {
+      if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+    }
+  }
+
   Future<void> _handleDownloadButtonPressed(MediaItem metadata) async {
     final downloadProvider = context.read<DownloadProvider>();
     final globalKey = metadata.globalKey;
@@ -460,21 +481,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     if (progress?.status == DownloadStatus.failed) {
       // A failed download is the likeliest moment for the restriction to be
       // the actual cause, so check before spending another attempt on it.
-      if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
-
-      final client = _getMediaClientForMetadata(context);
-      if (client == null) return;
-
-      final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-      if (versionConfig == null || !mounted) return;
-
-      await downloadProvider.deleteDownload(globalKey);
-      try {
-        await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
-        if (mounted) showSuccessSnackBar(context, t.downloads.downloadQueued);
-      } on CellularDownloadBlockedException {
-        if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
+      await _retryDownload(downloadProvider, metadata, globalKey);
       return;
     }
 
@@ -491,20 +498,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         await downloadProvider.deleteDownload(globalKey);
         if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
       } else if (retry && mounted) {
-        if (!await confirmBackgroundDownloadRestrictions(context) || !mounted) return;
-        final client = _getMediaClientForMetadata(context);
-        if (client == null) return;
-
-        final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-        if (versionConfig == null || !mounted) return;
-
-        await downloadProvider.deleteDownload(globalKey);
-        try {
-          await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
-          if (mounted) showSuccessSnackBar(context, t.downloads.downloadQueued);
-        } on CellularDownloadBlockedException {
-          if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-        }
+        await _retryDownload(downloadProvider, metadata, globalKey);
       }
       return;
     }
