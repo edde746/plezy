@@ -287,6 +287,22 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     var hubFetchCompleted = false;
     var replacedOnDeck = false;
 
+    // Shared tail of every settled hub pass: classify the outcome, bump the
+    // load generation when a replaced on-deck committed, and mark the pass as
+    // having cleared the exception boundary.
+    void settlePassOutcome() {
+      outcome = _refreshOutcome(
+        succeededServerIds: succeededServerIds,
+        failedServerIds: failedServerIds,
+        cancelledServerIds: cancelledServerIds,
+        cancelled: isProfileBinding(),
+      );
+      if (replacedOnDeck && outcome != DiscoverRefreshOutcome.failed && outcome != DiscoverRefreshOutcome.cancelled) {
+        ++_loadGeneration;
+      }
+      passClearedExceptionBoundary = true;
+    }
+
     try {
       // Yield to the microtask queue before the first notify so a load()
       // kicked off during build (the screen's initState) doesn't mark
@@ -394,30 +410,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           fetchedHubs.cancelledServerIds,
         );
         safeNotifyListeners();
-        outcome = _refreshOutcome(
-          succeededServerIds: succeededServerIds,
-          failedServerIds: failedServerIds,
-          cancelledServerIds: cancelledServerIds,
-          cancelled: isProfileBinding(),
-        );
-        if (replacedOnDeck && outcome != DiscoverRefreshOutcome.failed && outcome != DiscoverRefreshOutcome.cancelled) {
-          ++_loadGeneration;
-        }
-        passClearedExceptionBoundary = true;
+        settlePassOutcome();
         return;
       }
       if (fetchedHubs.succeededServerIds.isEmpty && (fetchedHubs.cancelledServerIds.isNotEmpty || isProfileBinding())) {
         appLogger.d('DiscoverProvider: hub pass disrupted with no prior content; keeping loading state');
-        outcome = _refreshOutcome(
-          succeededServerIds: succeededServerIds,
-          failedServerIds: failedServerIds,
-          cancelledServerIds: cancelledServerIds,
-          cancelled: isProfileBinding(),
-        );
-        if (replacedOnDeck && outcome != DiscoverRefreshOutcome.failed && outcome != DiscoverRefreshOutcome.cancelled) {
-          ++_loadGeneration;
-        }
-        passClearedExceptionBoundary = true;
+        settlePassOutcome();
         return;
       }
 
@@ -433,16 +431,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         fetchedHubs.failedServerIds,
         fetchedHubs.cancelledServerIds,
       );
-      outcome = _refreshOutcome(
-        succeededServerIds: succeededServerIds,
-        failedServerIds: failedServerIds,
-        cancelledServerIds: cancelledServerIds,
-        cancelled: isProfileBinding(),
-      );
-      if (replacedOnDeck && outcome != DiscoverRefreshOutcome.failed && outcome != DiscoverRefreshOutcome.cancelled) {
-        ++_loadGeneration;
-      }
-      passClearedExceptionBoundary = true;
+      settlePassOutcome();
       safeNotifyListeners();
     } catch (e) {
       if (isDisposed) return;

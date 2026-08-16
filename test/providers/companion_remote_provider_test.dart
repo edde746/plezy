@@ -839,8 +839,16 @@ class _FakeCompanionRemotePeerService extends CompanionRemotePeerService {
     if (gate != null) await gate.future;
   }
 
+  Future<void>? _disposeInFlight;
+
+  /// Mirrors the real service's idempotent dispose (`_disposed` /
+  /// `_disposeInProgress` dedup): only the first call tears down, concurrent
+  /// and repeat calls join it. The provider relies on that contract instead of
+  /// memoizing disposals itself, so [disposeCalls] counts effective disposals.
   @override
-  Future<void> dispose() async {
+  Future<void> dispose() => _disposeInFlight ??= _disposeOnce();
+
+  Future<void> _disposeOnce() async {
     disposeCalls++;
     await disconnect();
     if (_streamsClosed) return;

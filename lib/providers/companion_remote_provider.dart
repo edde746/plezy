@@ -51,7 +51,6 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   RemoteSession? _session;
   CompanionRemotePeerService? _peerService;
   CompanionRemotePeerService? _pendingRemotePeer;
-  final Expando<Future<void>> _peerDisposals = Expando<Future<void>>('companion remote peer disposal');
   LanDiscoveryService? _discoveryService;
   String _deviceName = t.companionRemote.unknownDevice;
   String _platform = 'unknown';
@@ -477,19 +476,15 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     return (current: current, pending: pending);
   }
 
-  Future<void> _disposePeerOnce(CompanionRemotePeerService peer) {
-    final existing = _peerDisposals[peer];
-    if (existing != null) return existing;
-
-    final disposal = () async {
-      try {
-        await peer.dispose();
-      } catch (error, stackTrace) {
-        appLogger.d('CompanionRemote: Peer cleanup ignored', error: error, stackTrace: stackTrace);
-      }
-    }();
-    _peerDisposals[peer] = disposal;
-    return disposal;
+  /// Peer disposal is idempotent and self-deduplicating
+  /// ([CompanionRemotePeerService.dispose]); this wrapper only keeps cleanup
+  /// failures from escaping teardown paths.
+  Future<void> _disposePeer(CompanionRemotePeerService peer) async {
+    try {
+      await peer.dispose();
+    } catch (error, stackTrace) {
+      appLogger.d('CompanionRemote: Peer cleanup ignored', error: error, stackTrace: stackTrace);
+    }
   }
 
   Future<void> _disposeDetachedPeers(
@@ -498,10 +493,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     final current = peers.current;
     final pending = peers.pending;
     if (current != null) {
-      await _disposePeerOnce(current);
+      await _disposePeer(current);
     }
     if (pending != null && !identical(pending, current)) {
-      await _disposePeerOnce(pending);
+      await _disposePeer(pending);
     }
   }
 
@@ -634,7 +629,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         _cleanupSubscriptions();
       }
       if (peer != null) {
-        await _disposePeerOnce(peer);
+        await _disposePeer(peer);
       }
 
       // A newer remote request may start while the stopped peer's asynchronous
@@ -785,7 +780,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     try {
       await join(candidate);
       if (!_ownsPeer(candidate, generation)) {
-        await _disposePeerOnce(candidate);
+        await _disposePeer(candidate);
         return false;
       }
 
@@ -796,13 +791,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       return true;
     } catch (error, stackTrace) {
       if (!_ownsPeer(candidate, generation)) {
-        await _disposePeerOnce(candidate);
+        await _disposePeer(candidate);
         return false;
       }
 
       _pendingRemotePeer = null;
       _cleanupSubscriptions();
-      await _disposePeerOnce(candidate);
+      await _disposePeer(candidate);
       appLogger.e(failureLog, error: error, stackTrace: stackTrace);
       onFailure(error);
       if (rethrowOnFailure) rethrow;
@@ -988,7 +983,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _peerService = null;
     _cleanupSubscriptions();
     if (oldPeer != null) {
-      await _disposePeerOnce(oldPeer);
+      await _disposePeer(oldPeer);
     }
     if (generation != _remoteGeneration || isDisposed) return;
 
