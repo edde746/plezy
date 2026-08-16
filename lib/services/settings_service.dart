@@ -396,6 +396,75 @@ class SettingsService extends BaseSharedPreferencesService {
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
+
+  /// Per-media sync offsets (media globalKey → offset in ms).
+  static final subtitleSyncOffsets = JsonPref<Map<String, int>>(
+    'subtitle_sync_offsets_by_media',
+    defaultValue: const {},
+    encode: json.encode,
+    decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
+  );
+  static final audioSyncOffsets = JsonPref<Map<String, int>>(
+    'audio_sync_offsets_by_media',
+    defaultValue: const {},
+    encode: json.encode,
+    decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
+  );
+
+  /// Active media key for the currently playing item. When set, writes to
+  /// [subtitleSyncOffset] or [audioSyncOffset] automatically persist under
+  /// this key in [subtitleSyncOffsets] or [audioSyncOffsets].
+  String? activeMediaKey;
+
+  @override
+  Future<void> write<T>(Pref<T> pref, T value) async {
+    await super.write(pref, value);
+    final currentKey = activeMediaKey;
+    if (currentKey != null) {
+      if (identical(pref, subtitleSyncOffset) && value is int) {
+        final map = Map<String, int>.from(read(subtitleSyncOffsets));
+        if (value == 0) {
+          map.remove(currentKey);
+        } else {
+          map[currentKey] = value;
+        }
+        await super.write(subtitleSyncOffsets, map);
+      } else if (identical(pref, audioSyncOffset) && value is int) {
+        final map = Map<String, int>.from(read(audioSyncOffsets));
+        if (value == 0) {
+          map.remove(currentKey);
+        } else {
+          map[currentKey] = value;
+        }
+        await super.write(audioSyncOffsets, map);
+      }
+    }
+  }
+
+  int getSubtitleSyncOffset(String globalKey) => read(subtitleSyncOffsets)[globalKey] ?? 0;
+  int getAudioSyncOffset(String globalKey) => read(audioSyncOffsets)[globalKey] ?? 0;
+
+  Future<void> setSubtitleSyncOffset(String globalKey, int offset) async {
+    final map = Map<String, int>.from(read(subtitleSyncOffsets));
+    if (offset == 0) {
+      map.remove(globalKey);
+    } else {
+      map[globalKey] = offset;
+    }
+    await write(subtitleSyncOffsets, map);
+    await write(subtitleSyncOffset, offset);
+  }
+
+  Future<void> setAudioSyncOffset(String globalKey, int offset) async {
+    final map = Map<String, int>.from(read(audioSyncOffsets));
+    if (offset == 0) {
+      map.remove(globalKey);
+    } else {
+      map[globalKey] = offset;
+    }
+    await write(audioSyncOffsets, map);
+    await write(audioSyncOffset, offset);
+  }
   static const subtitleSearchLanguage = NullableStringPref('subtitle_search_language');
   static const volume = DoublePref('volume', defaultValue: 100.0);
   static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
@@ -953,6 +1022,8 @@ class SettingsService extends BaseSharedPreferencesService {
     sleepTimerDuration,
     audioSyncOffset,
     subtitleSyncOffset,
+    subtitleSyncOffsets,
+    audioSyncOffsets,
     subtitleSearchLanguage,
     volume,
     subtitleFontSize,

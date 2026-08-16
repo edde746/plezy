@@ -338,6 +338,41 @@ void main() {
       expect(settings.isLibraryAllowedForTracker(TrackerService.trakt, 'server:allowed'), isTrue);
     });
   });
+
+  group('SettingsService per-media sync offsets', () {
+    test('defaults to 0 for unrecorded media', () async {
+      final settings = await SettingsService.getInstance();
+      expect(settings.getSubtitleSyncOffset('movie_1'), 0);
+      expect(settings.getAudioSyncOffset('movie_1'), 0);
+    });
+
+    test('saves and retrieves per-media offsets independently', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.setSubtitleSyncOffset('ep_1', 500);
+      await settings.setAudioSyncOffset('ep_1', -200);
+
+      await settings.setSubtitleSyncOffset('ep_2', -300);
+
+      expect(settings.getSubtitleSyncOffset('ep_1'), 500);
+      expect(settings.getAudioSyncOffset('ep_1'), -200);
+      expect(settings.getSubtitleSyncOffset('ep_2'), -300);
+      expect(settings.getAudioSyncOffset('ep_2'), 0);
+      expect(settings.getSubtitleSyncOffset('ep_3'), 0);
+    });
+
+    test('removes entry from map when offset is set to 0', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.setSubtitleSyncOffset('ep_1', 500);
+      expect(settings.getSubtitleSyncOffset('ep_1'), 500);
+
+      await settings.setSubtitleSyncOffset('ep_1', 0);
+      expect(settings.getSubtitleSyncOffset('ep_1'), 0);
+      expect(settings.read(SettingsService.subtitleSyncOffsets), isEmpty);
+    });
+  });
+
   group('BaseSharedPreferencesService initialization generations', () {
     test('a reset-raced initialization resolves to the replacement backend', () async {
       resetSharedPreferencesForTest(initialAsync: const {'generation_marker': 'old'});

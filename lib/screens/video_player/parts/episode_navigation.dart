@@ -818,6 +818,17 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
               // loop guard.
               _spuriousEofRecoveryAttempts = 0;
               _spuriousEofRecoveryBaselineMs = null;
+              settingsService.activeMediaKey = metadata.globalKey;
+              final audioOffset = settingsService.getAudioSyncOffset(metadata.globalKey);
+              final subOffset = settingsService.getSubtitleSyncOffset(metadata.globalKey);
+              await settingsService.write(SettingsService.audioSyncOffset, audioOffset);
+              await settingsService.write(SettingsService.subtitleSyncOffset, subOffset);
+              try {
+                await currentPlayer.setProperty('audio-delay', (audioOffset / 1000.0).toString());
+                await currentPlayer.setProperty('sub-delay', (subOffset / 1000.0).toString());
+              } catch (e) {
+                appLogger.w('Failed to apply sync offsets on item change', error: e);
+              }
             }
 
             // Versions/mediaInfo come from the committed session; rebuild so

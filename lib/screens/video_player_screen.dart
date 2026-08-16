@@ -1581,13 +1581,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       }
 
-      final audioSyncOffset = settingsService.read(SettingsService.audioSyncOffset);
+      settingsService.activeMediaKey = _currentMetadata.globalKey;
+      final audioSyncOffset = settingsService.getAudioSyncOffset(_currentMetadata.globalKey);
+      await settingsService.write(SettingsService.audioSyncOffset, audioSyncOffset);
       if (audioSyncOffset != 0) {
         final offsetSeconds = audioSyncOffset / 1000.0;
         await currentPlayer.setProperty('audio-delay', offsetSeconds.toString());
       }
 
-      final subtitleSyncOffset = settingsService.read(SettingsService.subtitleSyncOffset);
+      final subtitleSyncOffset = settingsService.getSubtitleSyncOffset(_currentMetadata.globalKey);
+      await settingsService.write(SettingsService.subtitleSyncOffset, subtitleSyncOffset);
       if (subtitleSyncOffset != 0) {
         final offsetSeconds = subtitleSyncOffset / 1000.0;
         await currentPlayer.setProperty('sub-delay', offsetSeconds.toString());
@@ -1893,6 +1896,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @override
   void dispose() {
     unawaited(AndroidExitDiagnostics.markUiState(AndroidUiState.mainScreen));
+    SettingsService.instance.activeMediaKey = null;
     _playerInitializationGeneration++;
     _frameRate.dispose();
     WidgetsBinding.instance.removeObserver(this);
