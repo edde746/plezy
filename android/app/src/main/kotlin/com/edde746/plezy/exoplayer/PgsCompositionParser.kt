@@ -25,8 +25,7 @@ class PgsSubtitleParserFactory(private val delegate: SubtitleParser.Factory) : S
 
   override fun getCueReplacementBehavior(format: Format): Int = delegate.getCueReplacementBehavior(format)
 
-  override fun create(format: Format): SubtitleParser =
-    if (format.sampleMimeType == MimeTypes.APPLICATION_PGS) PgsCompositionParser() else delegate.create(format)
+  override fun create(format: Format): SubtitleParser = if (format.sampleMimeType == MimeTypes.APPLICATION_PGS) PgsCompositionParser() else delegate.create(format)
 }
 
 /**
@@ -118,7 +117,13 @@ class PgsCompositionParser : SubtitleParser {
     while (buffer.bytesLeft() >= 3) {
       readNextSection(cues)
     }
-    output.accept(CuesWithTiming(cues, /* startTimeUs= */ C.TIME_UNSET, /* durationUs= */ C.TIME_UNSET))
+    output.accept(
+      CuesWithTiming(
+        cues,
+        C.TIME_UNSET, // startTimeUs
+        C.TIME_UNSET // durationUs
+      )
+    )
   }
 
   private fun readNextSection(cues: MutableList<Cue>) {
