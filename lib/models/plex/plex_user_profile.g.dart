@@ -10,37 +10,19 @@ PlexUserProfile _$PlexUserProfileFromJson(
   Map<String, dynamic> json,
 ) => PlexUserProfile(
   autoSelectAudio: _boolOrTrue(json['autoSelectAudio']),
-  defaultAudioAccessibility: flexibleIntOrZero(
-    json['defaultAudioAccessibility'],
-  ),
   defaultAudioLanguage: _flexibleLanguage(json['defaultAudioLanguage']),
   defaultAudioLanguages: flexibleCsvStringList(json['defaultAudioLanguages']),
   defaultSubtitleLanguage: _flexibleLanguage(json['defaultSubtitleLanguage']),
   defaultSubtitleLanguages: flexibleCsvStringList(
     json['defaultSubtitleLanguages'],
   ),
-  autoSelectSubtitle: flexibleIntOrZero(json['autoSelectSubtitle']),
-  defaultSubtitleAccessibility: flexibleIntOrZero(
-    json['defaultSubtitleAccessibility'],
-  ),
-  defaultSubtitleForced: _intOr1(json['defaultSubtitleForced']),
-  watchedIndicator: _intOr1(json['watchedIndicator']),
-  mediaReviewsVisibility: flexibleIntOrZero(json['mediaReviewsVisibility']),
-  mediaReviewsLanguages: flexibleCsvStringList(json['mediaReviewsLanguages']),
 );
 
 Map<String, dynamic> _$PlexUserProfileToJson(PlexUserProfile instance) =>
     <String, dynamic>{
       'autoSelectAudio': instance.autoSelectAudio,
-      'defaultAudioAccessibility': instance.defaultAudioAccessibility,
       'defaultAudioLanguage': instance.defaultAudioLanguage,
       'defaultAudioLanguages': instance.defaultAudioLanguages,
       'defaultSubtitleLanguage': instance.defaultSubtitleLanguage,
       'defaultSubtitleLanguages': instance.defaultSubtitleLanguages,
-      'autoSelectSubtitle': instance.autoSelectSubtitle,
-      'defaultSubtitleAccessibility': instance.defaultSubtitleAccessibility,
-      'defaultSubtitleForced': instance.defaultSubtitleForced,
-      'watchedIndicator': instance.watchedIndicator,
-      'mediaReviewsVisibility': instance.mediaReviewsVisibility,
-      'mediaReviewsLanguages': instance.mediaReviewsLanguages,
     };

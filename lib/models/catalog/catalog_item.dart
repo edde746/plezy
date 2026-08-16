@@ -313,9 +313,6 @@ class CatalogItem {
   /// answer different questions and neither can be derived from the other.
   final double? recommendationPercent;
 
-  /// Play state the catalog provider itself reports.
-  final CatalogPlayState? playState;
-
   /// Provider search relevance. Ordering input only — never rendered.
   final double? relevance;
 
@@ -381,7 +378,6 @@ class CatalogItem {
     this.isAdult,
     this.recommendationCount,
     this.recommendationPercent,
-    this.playState,
     this.relevance,
     this.background,
     this.cast,
@@ -447,7 +443,6 @@ class CatalogItem {
     budget: detail.budget ?? budget,
     revenue: detail.revenue ?? revenue,
     isAdult: detail.isAdult ?? isAdult,
-    playState: detail.playState ?? playState,
     unairedEpisodeCount: detail.unairedEpisodeCount ?? unairedEpisodeCount,
     // Row-only context: a detail endpoint cannot know these.
     ranks: ranks ?? detail.ranks,
@@ -556,7 +551,6 @@ class CatalogItem {
     if (isAdult != null) 'isAdult': isAdult,
     if (recommendationCount != null) 'recommendationCount': recommendationCount,
     if (recommendationPercent != null) 'recommendationPercent': recommendationPercent,
-    if (playState != null) 'playState': playState!.toJson(),
     if (relevance != null) 'relevance': relevance,
     if (background != null) 'background': background,
     if (cast != null) 'cast': [for (final c in cast!) c.toJson()],
@@ -624,7 +618,6 @@ class CatalogItem {
     isAdult: json['isAdult'] as bool?,
     recommendationCount: json['recommendationCount'] as int?,
     recommendationPercent: (json['recommendationPercent'] as num?)?.toDouble(),
-    playState: _decodeObject(json['playState'], CatalogPlayState.fromJson),
     unairedEpisodeCount: json['unairedEpisodeCount'] as int?,
     recommenders: decodeCatalogList(json['recommenders'], CatalogRecommender.fromJson),
     relevance: (json['relevance'] as num?)?.toDouble(),

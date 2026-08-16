@@ -146,20 +146,14 @@ class MediaSubscriptionCreateRequest {
   final int? targetSectionLocationID;
   final int? type;
   final String? parameters;
-  final Map<String, Object?> hints;
   final Map<String, Object?> prefs;
-  final Map<String, Object?> params;
-  final String? providers;
 
   const MediaSubscriptionCreateRequest({
     this.targetLibrarySectionID,
     this.targetSectionLocationID,
     this.type,
     this.parameters,
-    this.hints = const {},
     this.prefs = const {},
-    this.params = const {},
-    this.providers,
   });
 
   factory MediaSubscriptionCreateRequest.fromTemplate(

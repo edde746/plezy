@@ -442,7 +442,6 @@ void main() {
           'MediaContainer': {
             'playQueueID': '42',
             'playQueueSelectedItemID': '7',
-            'playQueueSelectedItemOffset': '1',
             'playQueueTotalCount': '3',
             'playQueueVersion': '5',
             'size': '3',
@@ -459,9 +458,7 @@ void main() {
 
     expect(queue?.playQueueID, 42);
     expect(queue?.playQueueSelectedItemID, 7);
-    expect(queue?.playQueueSelectedItemOffset, 1);
     expect(queue?.playQueueTotalCount, 3);
-    expect(queue?.playQueueVersion, 5);
     expect(queue?.size, 3);
   });
 

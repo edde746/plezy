@@ -36,12 +36,8 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
     return PlayQueueResponse(
       playQueueID: playQueueID,
       playQueueSelectedItemID: flexibleInt(container['playQueueSelectedItemID']),
-      playQueueSelectedItemOffset: flexibleInt(container['playQueueSelectedItemOffset']),
-      playQueueSelectedMetadataItemID: container['playQueueSelectedMetadataItemID'] as String?,
       playQueueShuffled: flexibleBool(container['playQueueShuffled']),
-      playQueueSourceURI: container['playQueueSourceURI'] as String?,
       playQueueTotalCount: flexibleInt(container['playQueueTotalCount']),
-      playQueueVersion: playQueueVersion,
       size: flexibleInt(container['size']),
       items: items,
     );

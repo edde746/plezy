@@ -231,11 +231,6 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
     final nextAirDate = kind == MediaKind.show
         ? _date(metadata['nextEpisodeOriginallyAvailableAt']) ?? _date(metadata['nextSeasonOriginallyAvailableAt'])
         : null;
-    final playState = CatalogPlayState(
-      viewCount: flexibleInt(metadata['viewCount']),
-      viewOffsetMs: flexibleInt(metadata['viewOffset']),
-      viewedLeafCount: flexibleInt(metadata['viewedLeafCount']),
-    );
 
     String? coverPoster;
     String? coverArt;
@@ -301,7 +296,6 @@ class PlexCatalogSource with CatalogWatchlistMachinery implements CatalogSource,
       contentAdvisory: _contentAdvisoryFor(metadata),
       budget: flexibleInt(metadata['budget']),
       revenue: flexibleInt(metadata['revenue']),
-      playState: playState.isEmpty ? null : playState,
       relevance: relevance,
     );
   }

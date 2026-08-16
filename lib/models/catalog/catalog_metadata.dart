@@ -405,30 +405,6 @@ class CatalogLink {
   }
 }
 
-/// Play state the catalog provider itself knows about (Plex Discover
-/// `includeUserState=1`). Independent of any connected media server's state.
-class CatalogPlayState {
-  final int? viewCount;
-  final int? viewOffsetMs;
-  final int? viewedLeafCount;
-
-  const CatalogPlayState({this.viewCount, this.viewOffsetMs, this.viewedLeafCount});
-
-  bool get isEmpty => viewCount == null && viewOffsetMs == null && viewedLeafCount == null;
-
-  Map<String, Object?> toJson() => {
-    if (viewCount != null) 'viewCount': viewCount,
-    if (viewOffsetMs != null) 'viewOffsetMs': viewOffsetMs,
-    if (viewedLeafCount != null) 'viewedLeafCount': viewedLeafCount,
-  };
-
-  factory CatalogPlayState.fromJson(Map<String, Object?> json) => CatalogPlayState(
-    viewCount: json['viewCount'] as int?,
-    viewOffsetMs: json['viewOffsetMs'] as int?,
-    viewedLeafCount: json['viewedLeafCount'] as int?,
-  );
-}
-
 /// Decodes a JSON list of objects into value objects, dropping malformed
 /// siblings rather than failing the whole item — catalog payloads are
 /// best-effort API data, not a strict persisted discriminator.

@@ -65,7 +65,6 @@ PlayQueueResponse _queueWith(MediaItem item) {
     playQueueSelectedItemID: 41,
     playQueueShuffled: false,
     playQueueTotalCount: 1,
-    playQueueVersion: 1,
     items: [item],
   );
 }

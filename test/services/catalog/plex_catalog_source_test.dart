@@ -168,7 +168,6 @@ void main() {
       expect(absent.rating, isNull);
       expect(absent.ratings, isNull);
       expect(absent.releaseDate, isNull);
-      expect(absent.playState, isNull);
       expect(absent.posterVariants, isNull);
       expect(absent.backdropVariants, isNull);
     });
@@ -221,14 +220,7 @@ void main() {
               case '/hubs/sections/home/platforms':
                 return jsonResponse({
                   'MediaContainer': {
-                    'Metadata': [
-                      {
-                        ..._metadata(ratingKey: 'platform-1', title: 'A Platform Title'),
-                        'viewCount': 2,
-                        'viewOffset': 12345,
-                        'viewedLeafCount': 7,
-                      },
-                    ],
+                    'Metadata': [_metadata(ratingKey: 'platform-1', title: 'A Platform Title')],
                   },
                 });
               case '/hubs/sections/home/chris-nolan':
@@ -277,9 +269,7 @@ void main() {
       expect(show.endDate, isNull);
 
       final platformItem = hubs[1].page.items.single;
-      expect(platformItem.playState?.viewCount, 2);
-      expect(platformItem.playState?.viewOffsetMs, 12345);
-      expect(platformItem.playState?.viewedLeafCount, 7);
+      expect(platformItem.title, 'A Platform Title');
       expect(hubs.last.page.items.single.title, 'The Prestige');
       expect(hubs.last.page.hasMore, isFalse);
     });

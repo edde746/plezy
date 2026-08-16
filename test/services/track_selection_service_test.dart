@@ -30,20 +30,13 @@ PlexUserProfile _profile({
   List<String>? defaultAudioLanguages,
   String? defaultSubtitleLanguage,
   List<String>? defaultSubtitleLanguages,
-  int autoSelectSubtitle = 0,
 }) {
   return PlexUserProfile(
     autoSelectAudio: autoSelectAudio,
-    defaultAudioAccessibility: 0,
     defaultAudioLanguage: defaultAudioLanguage,
     defaultAudioLanguages: defaultAudioLanguages,
     defaultSubtitleLanguage: defaultSubtitleLanguage,
     defaultSubtitleLanguages: defaultSubtitleLanguages,
-    autoSelectSubtitle: autoSelectSubtitle,
-    defaultSubtitleAccessibility: 0,
-    defaultSubtitleForced: 1,
-    watchedIndicator: 1,
-    mediaReviewsVisibility: 0,
   );
 }
 
