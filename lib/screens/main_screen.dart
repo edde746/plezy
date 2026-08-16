@@ -153,33 +153,6 @@ bool shouldPassTvosMenuToSystem({
 }
 
 @visibleForTesting
-class TvosMenuPolicyPublisher {
-  TvosMenuPolicyPublisher(this._compute, this._publish);
-
-  final ValueGetter<bool> _compute;
-  final ValueChanged<bool> _publish;
-  int _transactionDepth = 0;
-
-  void run(VoidCallback transaction) {
-    _transactionDepth++;
-    try {
-      transaction();
-    } finally {
-      _transactionDepth--;
-      if (_transactionDepth == 0) {
-        _publish(_compute());
-      }
-    }
-  }
-
-  void update() {
-    if (_transactionDepth == 0) {
-      _publish(_compute());
-    }
-  }
-}
-
-@visibleForTesting
 enum ProfileInvalidationAction { none, invalidateNow }
 
 @visibleForTesting
@@ -282,7 +255,6 @@ class _MainScreenState extends State<MainScreen>
   bool _isSidebarFocused = false;
   bool _isSidebarInteractionExpanded = false;
   bool _isOverlaySheetOpen = false;
-  late final TvosMenuPolicyPublisher _tvosMenuPolicyPublisher;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
   /// the splash can await its first settle before navigating here. We just
@@ -329,7 +301,6 @@ class _MainScreenState extends State<MainScreen>
   @override
   void initState() {
     super.initState();
-    _tvosMenuPolicyPublisher = TvosMenuPolicyPublisher(() => _shouldPassTvosMenuToSystem, _setTvosMenuPassthrough);
     _isOffline = widget.isOfflineMode;
     _offlineUntilConnected = widget.isOfflineMode;
 
@@ -1235,13 +1206,9 @@ class _MainScreenState extends State<MainScreen>
     unawaited(TvosSystemNavigationService.setMenuPassthroughEnabled(enabled));
   }
 
-  void _runNavigationTransaction(VoidCallback transaction) {
-    _tvosMenuPolicyPublisher.run(transaction);
-  }
-
   void _updateTvosMenuPassthrough() {
     if (!mounted) return;
-    _tvosMenuPolicyPublisher.update();
+    _setTvosMenuPassthrough(_shouldPassTvosMenuToSystem);
   }
 
   /// Suppress stray back events after a child route pops.
@@ -1553,10 +1520,8 @@ class _MainScreenState extends State<MainScreen>
 
   void _openSettings() {
     if (PlatformDetector.shouldUseSideNavigation(context)) {
-      _runNavigationTransaction(() {
-        _selectTab(NavigationTabId.settings);
-        _focusContent(restorePreviousFocus: false);
-      });
+      _selectTab(NavigationTabId.settings);
+      _focusContent(restorePreviousFocus: false);
       return;
     }
 
@@ -1830,17 +1795,13 @@ class _MainScreenState extends State<MainScreen>
                                     isReconnecting: _isReconnecting,
                                     onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
                                     onDestinationSelected: (tab) {
-                                      _runNavigationTransaction(() {
-                                        final restorePreviousFocus = tab == _currentTab;
-                                        _selectTab(tab);
-                                        _focusContent(restorePreviousFocus: restorePreviousFocus);
-                                      });
+                                      final restorePreviousFocus = tab == _currentTab;
+                                      _selectTab(tab);
+                                      _focusContent(restorePreviousFocus: restorePreviousFocus);
                                     },
                                     onLibrarySelected: (key) {
-                                      _runNavigationTransaction(() {
-                                        _selectLibrary(key);
-                                        _focusContent(restorePreviousFocus: false);
-                                      });
+                                      _selectLibrary(key);
+                                      _focusContent(restorePreviousFocus: false);
                                     },
                                     onNavigateToContent: _focusContent,
                                     onReconnect: _triggerReconnect,

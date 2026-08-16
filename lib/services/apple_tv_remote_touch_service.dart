@@ -18,6 +18,14 @@ class AppleTvRemotePlayPauseAction {
   const AppleTvRemotePlayPauseAction({required this.source, this.detail});
 }
 
+const double _axisSwitchDominanceRatio = 1.5;
+const Duration _swipeRepeatInterval = Duration(milliseconds: 140);
+// Device-tuned on an Apple TV 4K against native focus feel: UIKit's
+// indirect-touch acceleration means roughly half an item's extent of
+// reported travel already reads as "one deliberate swipe".
+const double _swipeExtentGain = 0.55;
+const double _maxSwipeThreshold = 180;
+
 /// Bridges tvOS touch-surface events from Apple's iOS Remote app into the
 /// focus-tree key events Plezy already handles for D-pad navigation.
 ///
@@ -29,39 +37,22 @@ class AppleTvRemotePlayPauseAction {
 class AppleTvRemoteTouchService {
   static const String _channelName = 'flutter/gamepadtouchevent';
   static const double defaultSwipeThreshold = 180;
-  static const double defaultAxisSwitchDominanceRatio = 1.5;
-  static const Duration defaultSwipeRepeatInterval = Duration(milliseconds: 140);
-  // Device-tuned on an Apple TV 4K against native focus feel: UIKit's
-  // indirect-touch acceleration means roughly half an item's extent of
-  // reported travel already reads as "one deliberate swipe".
-  static const double defaultSwipeExtentGain = 0.55;
   static const double defaultMinSwipeThreshold = 50;
-  static const double defaultMaxSwipeThreshold = 180;
 
   static final AppleTvRemoteTouchService instance = AppleTvRemoteTouchService();
 
-  final BasicMessageChannel<dynamic> _channel;
+  final BasicMessageChannel<dynamic> _channel = const BasicMessageChannel<dynamic>(_channelName, JSONMessageCodec());
   final void Function(LogicalKeyboardKey logicalKey) _simulateKeyPress;
   final VoidCallback _scheduleFrame;
   final DateTime Function() _now;
   final GamepadDuplicateInputGuard _duplicateInputGuard;
 
-  /// Announces that a pointerless device produced input. Injected so tests can
-  /// observe it without a widget tree; defaults to the app-wide tracker.
-  final void Function() reportNonPointerInput;
   final StreamController<AppleTvRemotePlayPauseAction> _playPauseController =
       StreamController<AppleTvRemotePlayPauseAction>.broadcast();
 
   /// Fallback step distance when no usable focus geometry exists.
   final double swipeThreshold;
-  final double axisSwitchDominanceRatio;
-  final Duration swipeRepeatInterval;
-
-  /// Multiplier from the focused control's extent to the pan distance for one
-  /// step. Empirical; see the default constants for the device calibration.
-  final double swipeExtentGain;
   final double minSwipeThreshold;
-  final double maxSwipeThreshold;
 
   /// Global rect of the control that prices a focus step, or null when no
   /// usable geometry exists. Injected so tests can supply fake geometry.
@@ -78,30 +69,18 @@ class AppleTvRemoteTouchService {
   DateTime? _lastSwipeAt;
 
   AppleTvRemoteTouchService({
-    BasicMessageChannel<dynamic>? channel,
     void Function(LogicalKeyboardKey logicalKey)? simulateKeyPress,
     VoidCallback? scheduleFrame,
     DateTime Function()? now,
-    GamepadDuplicateInputGuard? duplicateInputGuard,
-    this.reportNonPointerInput = InputModeTracker.reportNonPointerInput,
-    Duration duplicateSuppressionWindow = GamepadDuplicateInputGuard.defaultSuppressionWindow,
     this.swipeThreshold = defaultSwipeThreshold,
-    this.axisSwitchDominanceRatio = defaultAxisSwitchDominanceRatio,
-    this.swipeRepeatInterval = defaultSwipeRepeatInterval,
-    this.swipeExtentGain = defaultSwipeExtentGain,
     this.minSwipeThreshold = defaultMinSwipeThreshold,
-    this.maxSwipeThreshold = defaultMaxSwipeThreshold,
     Rect? Function()? focusedItemRect,
-  }) : assert(axisSwitchDominanceRatio >= 1),
-       assert(swipeExtentGain > 0),
-       assert(minSwipeThreshold > 0 && minSwipeThreshold <= maxSwipeThreshold),
-       _channel = channel ?? const BasicMessageChannel<dynamic>(_channelName, JSONMessageCodec()),
+  }) : assert(minSwipeThreshold > 0 && minSwipeThreshold <= _maxSwipeThreshold),
        _simulateKeyPress = simulateKeyPress ?? key_sim.simulateKeyPress,
        _scheduleFrame = scheduleFrame ?? key_sim.scheduleFrameIfIdle,
        _now = now ?? DateTime.now,
        _focusedItemRect = focusedItemRect ?? _defaultFocusedItemRect,
-       _duplicateInputGuard =
-           duplicateInputGuard ?? GamepadDuplicateInputGuard(now: now, suppressionWindow: duplicateSuppressionWindow);
+       _duplicateInputGuard = GamepadDuplicateInputGuard(now: now);
 
   Stream<AppleTvRemotePlayPauseAction> get playPauseActions => _playPauseController.stream;
 
@@ -208,7 +187,7 @@ class AppleTvRemoteTouchService {
 
     final now = _now();
     final lastSwipeAt = _lastSwipeAt;
-    if (lastSwipeAt != null && now.difference(lastSwipeAt) < swipeRepeatInterval) {
+    if (lastSwipeAt != null && now.difference(lastSwipeAt) < _swipeRepeatInterval) {
       // Travel during the repeat cooldown never counts toward the next step:
       // re-anchor on every frame so a fast flick's deceleration tail is
       // discarded instead of banked. Without this, the first post-cooldown
@@ -272,8 +251,8 @@ class AppleTvRemoteTouchService {
     final lastAxisTotal = _axisValue(lastAxis, totalProgressX, totalProgressY);
     final candidateSegment = _axisValue(candidate, progressX, progressY);
     final lastAxisSegment = _axisValue(lastAxis, progressX, progressY);
-    if (candidateTotal >= lastAxisTotal * axisSwitchDominanceRatio &&
-        candidateSegment >= lastAxisSegment * axisSwitchDominanceRatio) {
+    if (candidateTotal >= lastAxisTotal * _axisSwitchDominanceRatio &&
+        candidateSegment >= lastAxisSegment * _axisSwitchDominanceRatio) {
       return candidate;
     }
 
@@ -292,7 +271,7 @@ class AppleTvRemoteTouchService {
 
   double _thresholdForExtent(double extent) {
     if (!extent.isFinite || extent <= 0) return swipeThreshold;
-    return (extent * swipeExtentGain).clamp(minSwipeThreshold, maxSwipeThreshold).toDouble();
+    return (extent * _swipeExtentGain).clamp(minSwipeThreshold, _maxSwipeThreshold).toDouble();
   }
 
   /// Reads the primary focus geometry, rejecting nodes whose rect cannot
@@ -317,14 +296,12 @@ class AppleTvRemoteTouchService {
       return false;
     }
 
-    reportNonPointerInput();
+    InputModeTracker.reportNonPointerInput();
     _scheduleFrame();
     _log('emit key=${_keyName(logicalKey)} source=$source${detail == null ? '' : ' $detail'}');
     _simulateKeyPress(logicalKey);
     return true;
   }
-
-  Duration get duplicateSuppressionWindow => _duplicateInputGuard.suppressionWindow;
 
   void _resetTouch() {
     _touchActive = false;
