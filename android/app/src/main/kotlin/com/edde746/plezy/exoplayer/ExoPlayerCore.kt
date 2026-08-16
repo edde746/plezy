@@ -730,7 +730,9 @@ class ExoPlayerCore(private val activity: Activity) :
       val handler = AssHandler()
       assHandler = handler
 
-      val assParserFactory = AssSubtitleParserFactory(handler)
+      // PGS goes through PgsCompositionParser; media3's parser drops all but one
+      // composition object and blanks palette-only fade updates (#1953).
+      val subtitleParserFactory = PgsSubtitleParserFactory(AssSubtitleParserFactory(handler))
 
       // Wrap extractors: replace MatroskaExtractor with ASS+DV variant,
       // wrap MP4 extractors with DV converter when enabled.
@@ -742,7 +744,7 @@ class ExoPlayerCore(private val activity: Activity) :
         extractorsFactory.createExtractors().map { extractor ->
           when {
             extractor is MatroskaExtractor -> {
-              val assExtractor = ZlibMatroskaExtractor(assParserFactory, handler)
+              val assExtractor = ZlibMatroskaExtractor(subtitleParserFactory, handler)
               val inner = if (doviEnabled) {
                 DoviExtractorWrapper(assExtractor, currentDvMode) { level, prefix, message ->
                   emitLog(level, prefix, message)
@@ -768,7 +770,7 @@ class ExoPlayerCore(private val activity: Activity) :
       }
 
       val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
-        .setSubtitleParserFactory(assParserFactory)
+        .setSubtitleParserFactory(subtitleParserFactory)
       playbackMediaSourceFactory = mediaSourceFactory
 
       // Wrap text renderers with subtitle delay support
