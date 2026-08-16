@@ -24,7 +24,8 @@ import '../../../media/media_server_client.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/app_logger.dart';
 import '../live_tv_actions_mixin.dart';
-import '../live_tv_refresh_lifecycle.dart';
+import '../live_tv_refresh_mixin.dart';
+import '../live_tv_server_iteration.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/live_tv_grouping.dart';
 import '../../../utils/live_tv_matching.dart';
@@ -108,7 +109,7 @@ final class _GuideChannelRow extends _GuideRow {
 }
 
 class GuideTabState extends State<GuideTab>
-    with LiveTvActionsMixin<GuideTab>, MountedSetStateMixin, WidgetsBindingObserver {
+    with LiveTvActionsMixin<GuideTab>, MountedSetStateMixin, WidgetsBindingObserver, LiveTvRefreshMixin<GuideTab> {
   static const _slotWidth = 180.0;
   static const _channelColumnWidth = 132.0;
   static const _rowHeight = 64.0;
@@ -135,14 +136,12 @@ class GuideTabState extends State<GuideTab>
   final ScrollController _gridVerticalController = ScrollController();
   bool _syncingScroll = false;
 
-  Timer? _timeIndicatorTimer;
   final _programSelectController = DpadSelectLongPressController();
   final _dayPickerKey = GlobalKey();
 
   // Stale-window catch-up state (#1297). The grid window is only auto
   // re-anchored when it was live-anchored and has drifted fully into the
   // past — deliberately picked day/time windows are never yanked.
-  bool _isGuideVisible = true;
   DateTime? _hiddenSince;
   bool _nowWasInWindow = true;
 
@@ -193,64 +192,41 @@ class GuideTabState extends State<GuideTab>
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _initTimeRange();
     _loadPrograms();
 
     _gridHorizontalController.addListener(_syncGridToHeader);
     _headerHorizontalController.addListener(_syncHeaderToGrid);
-
-    _startTimeIndicatorTimer();
   }
 
-  void _startTimeIndicatorTimer() {
-    _timeIndicatorTimer?.cancel();
-    _timeIndicatorTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      _checkWindowDrift();
-      // ignore: no-empty-block - setState triggers rebuild to update time indicator
-      setStateIfMounted(() {});
-    });
+  // Not the gated data-refresh timer the other tabs run: the tick is a
+  // per-minute UI ticker that advances the time indicator and re-anchors a
+  // live-anchored window that drifted fully into the past.
+  @override
+  Duration get refreshInterval => const Duration(minutes: 1);
+
+  @override
+  void onRefreshTick() {
+    _checkWindowDrift();
+    // ignore: no-empty-block - setState triggers rebuild to update time indicator
+    setStateIfMounted(() {});
   }
 
-  // Not the gated data-refresh timer the other tabs run: pause/resume drive the
-  // per-minute UI ticker, and pause has to stamp _hiddenSince on both a section
-  // hide and an app background so _catchUpIfStale can measure the absence.
-  void pauseRefresh() {
+  // Pause has to stamp _hiddenSince on a tab switch, a section hide, and an
+  // app background alike so _catchUpIfStale can measure the absence.
+  @override
+  void onRefreshPaused() {
     _hiddenSince ??= DateTime.now();
-    _timeIndicatorTimer?.cancel();
   }
 
-  void resumeRefresh() {
-    _startTimeIndicatorTimer();
+  @override
+  void onRefreshResumed(LiveTvRefreshResumeReason reason) {
     unawaited(_refreshScheduledRecordingKeys());
-    // Post-frame: resumeRefresh is invoked during tab transitions/build and
-    // the catch-up may setState (reload or scroll).
+    // Post-frame: resume fires during tab transitions/build and the catch-up
+    // may setState (reload or scroll).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _catchUpIfStale();
     });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Subscribes to TickerMode, so this fires whenever the guide is shown or
-    // hidden (main-screen IndexedStack section switch, opaque route push/pop).
-    final visible = TickerMode.valuesOf(context).enabled;
-    if (visible == _isGuideVisible) return;
-    _isGuideVisible = visible;
-    visible ? resumeRefresh() : pauseRefresh();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    switch (liveTvRefreshTransition(state)) {
-      case LiveTvRefreshLifecycleTransition.pause:
-        pauseRefresh();
-      case LiveTvRefreshLifecycleTransition.resume:
-        if (_isGuideVisible) resumeRefresh();
-      case LiveTvRefreshLifecycleTransition.ignore:
-        break;
-    }
   }
 
   @override
@@ -270,7 +246,6 @@ class GuideTabState extends State<GuideTab>
   @override
   void dispose() {
     _programLoadGeneration++;
-    WidgetsBinding.instance.removeObserver(this);
     _programSelectController.dispose();
     _guideFocusNode.dispose();
     _gridVerticalController.dispose();
@@ -279,7 +254,6 @@ class GuideTabState extends State<GuideTab>
     _headerHorizontalController.dispose();
     _gridHorizontalController.dispose();
     _channelVerticalController.dispose();
-    _timeIndicatorTimer?.cancel();
     _focusSnapshot.dispose();
     super.dispose();
   }
@@ -356,14 +330,14 @@ class GuideTabState extends State<GuideTab>
 
   /// Timer path: re-anchor only when a live-anchored window drifted fully past.
   void _checkWindowDrift() {
-    if (!_isGuideVisible || _isLoading) return;
+    if (!isRefreshSubtreeVisible || _isLoading) return;
     if (_nowWasInWindow && !_nowInWindow(DateTime.now())) _jumpToNow();
   }
 
   /// Active path (app resume / guide became visible): drift-jump, else
   /// realign the viewport to the live line after a meaningful absence (#1297).
   void _catchUpIfStale() {
-    if (!_isGuideVisible) return; // still hidden — keep _hiddenSince
+    if (!isRefreshSubtreeVisible) return; // still hidden — keep _hiddenSince
     final hiddenSince = _hiddenSince;
     _hiddenSince = null; // evaluated while visible — consume it
     if (_isLoading) return; // in-flight load already ends in _scrollToNow()
@@ -392,30 +366,27 @@ class GuideTabState extends State<GuideTab>
       final allPrograms = <LiveTvProgram>[];
       final scheduledRecordingKeys = <String>{};
       final multiServer = context.read<MultiServerProvider>();
-      final liveTvServers = List<LiveTvServerInfo>.of(multiServer.liveTvServers);
-      final queriedServers = <String>{};
 
-      for (final serverInfo in liveTvServers) {
-        if (!queriedServers.add(serverInfo.serverId)) continue;
-        try {
-          final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-          if (genericClient == null) continue;
-
-          final programs = await genericClient.liveTv.fetchSchedule(from: from, to: to);
+      await forEachLiveTvServer(
+        multiServer,
+        resolveClient: multiServer.getClientForServer,
+        isCurrent: () => _isCurrentProgramLoad(loadGeneration),
+        body: (client, serverInfo) async {
+          final programs = await client.liveTv.fetchSchedule(from: from, to: to);
           if (!_isCurrentProgramLoad(loadGeneration)) return;
           allPrograms.addAll(programs);
           await _addScheduledRecordingKeysForServer(
-            client: genericClient,
+            client: client,
             serverId: ServerId(serverInfo.serverId),
             keys: scheduledRecordingKeys,
             isCurrent: () => _isCurrentProgramLoad(loadGeneration),
           );
+        },
+        onError: (client, serverInfo, error, stackTrace) {
           if (!_isCurrentProgramLoad(loadGeneration)) return;
-        } catch (e) {
-          if (!_isCurrentProgramLoad(loadGeneration)) return;
-          appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: e);
-        }
-      }
+          appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: error);
+        },
+      );
 
       if (!_isCurrentProgramLoad(loadGeneration)) return;
       final shouldFocus = _pendingFocus;
@@ -455,18 +426,16 @@ class GuideTabState extends State<GuideTab>
     if (!mounted) return;
     final multiServer = context.read<MultiServerProvider>();
     final scheduledRecordingKeys = <String>{};
-    final queriedServers = <String>{};
 
-    for (final serverInfo in multiServer.liveTvServers) {
-      if (!queriedServers.add(serverInfo.serverId)) continue;
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null) continue;
-      await _addScheduledRecordingKeysForServer(
+    await forEachLiveTvServer(
+      multiServer,
+      resolveClient: multiServer.getClientForServer,
+      body: (client, serverInfo) => _addScheduledRecordingKeysForServer(
         client: client,
         serverId: ServerId(serverInfo.serverId),
         keys: scheduledRecordingKeys,
-      );
-    }
+      ),
+    );
 
     if (!mounted) return;
     setState(() => _scheduledRecordingKeys = scheduledRecordingKeys);

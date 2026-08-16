@@ -27,6 +27,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../libraries/state_messages.dart';
+import 'live_tv_server_iteration.dart';
 import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
 import 'tabs/recordings_tab.dart';
@@ -337,11 +338,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         }
       }
 
-      for (final serverInfo in liveTvServers) {
-        try {
-          final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-          if (genericClient == null) continue;
-
+      // One liveTvServers entry per DVR: visit them all; channels dedupe below.
+      await forEachLiveTvServer(
+        multiServer,
+        resolveClient: multiServer.getClientForServer,
+        dedupeByServerId: false,
+        body: (genericClient, serverInfo) async {
           final liveTv = genericClient.liveTv;
           final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
           final sourceTitle = _sourceTitleForServerInfo(serverInfo);
@@ -375,10 +377,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               allChannels.add(scopedChannel);
             }
           }
-        } catch (e) {
-          appLogger.e('Failed to load channels from server ${serverInfo.serverId}', error: e);
-        }
-      }
+        },
+        onError: (client, serverInfo, error, stackTrace) {
+          appLogger.e('Failed to load channels from server ${serverInfo.serverId}', error: error);
+        },
+      );
 
       allChannels.sort((a, b) {
         final aNum = double.tryParse(a.number ?? '') ?? 999999;
@@ -444,18 +447,21 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final failedStores = <String>{};
     final seenFavorites = <String>{};
 
-    for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null) continue;
-      final liveTv = client.liveTv;
-      final storeKey = liveTv.favoriteStoreKey;
-      final liveServerKey = _liveServerScopeKey(serverInfo);
+    // One liveTvServers entry per DVR: register every favorite scope, but
+    // fetch each favorite store only once.
+    await forEachLiveTvServer(
+      multiServer,
+      resolveClient: multiServer.getClientForServer,
+      dedupeByServerId: false,
+      body: (client, serverInfo) async {
+        final liveTv = client.liveTv;
+        final storeKey = liveTv.favoriteStoreKey;
+        final liveServerKey = _liveServerScopeKey(serverInfo);
 
-      try {
         final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
         scopeByLiveServer[liveServerKey] = (source: source, storeKey: storeKey, mode: liveTv.favoritePersistenceMode);
         storeBySource[source] = storeKey;
-        if (successfulStores.contains(storeKey)) continue;
+        if (successfulStores.contains(storeKey)) return;
 
         final serverFavorites = await liveTv.fetchFavoriteChannels();
         successfulStores.add(storeKey);
@@ -464,11 +470,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           storeBySource[favorite.source] = storeKey;
           if (seenFavorites.add(favorite.stableKey)) merged.add(favorite);
         }
-      } catch (error, stackTrace) {
+      },
+      onError: (client, serverInfo, error, stackTrace) {
+        final storeKey = client.liveTv.favoriteStoreKey;
         if (!successfulStores.contains(storeKey)) failedStores.add(storeKey);
         appLogger.e('Failed to load favorite channels for $storeKey', error: error, stackTrace: stackTrace);
-      }
-    }
+      },
+    );
 
     // A failed store keeps its last committed in-memory slice. Healthy stores
     // still refresh, but mutations stay disabled until every store has loaded
