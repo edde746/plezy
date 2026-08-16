@@ -107,8 +107,9 @@ class TrackChapterControls extends StatelessWidget {
     required IconData icon,
     required String semanticLabel,
     required VoidCallback? onPressed,
-    required bool isMobile,
-    required bool isDesktop,
+    // The row being built. Arrow-key navigation reads its length lazily, so
+    // by event time it reflects every button that build() actually added.
+    required List<Widget> buttons,
     String? tooltip,
     String? semanticValue,
     bool? checked,
@@ -123,7 +124,7 @@ class TrackChapterControls extends StatelessWidget {
       isActive: isActive,
       focusNode: focusNodes != null && focusNodes!.length > buttonIndex ? focusNodes![buttonIndex] : null,
       onKeyEvent: focusNodes != null
-          ? (node, event) => _handleButtonKeyEvent(node, event, buttonIndex, _getButtonCount(isMobile, isDesktop))
+          ? (node, event) => _handleButtonKeyEvent(node, event, buttonIndex, buttons.length)
           : null,
       onFocusChange: onFocusChange,
       onPressed: onPressed,
@@ -167,18 +168,14 @@ class TrackChapterControls extends StatelessWidget {
                 tooltip: t.videoControls.settingsButton,
                 semanticValue: _versionQualitySemanticValue(),
                 semanticLabel: t.videoControls.settingsButton,
-                isMobile: isMobile,
-                isDesktop: isDesktop,
+                buttons: buttons,
                 onPressed: () {
                   state.onCancelAutoHide?.call();
                   OverlaySheetController.of(context)
                       .show(
                         builder: (_) => VideoSettingsSheet(player: player, trackControlsState: state),
                       )
-                      .whenComplete(() {
-                        state.onStartAutoHide?.call();
-                        state.onLoadSeekTimes?.call();
-                      });
+                      .whenComplete(() => state.onStartAutoHide?.call());
                 },
               );
             },
@@ -207,8 +204,7 @@ class TrackChapterControls extends StatelessWidget {
                   tooltip: t.videoControls.tracksButton,
                   semanticLabel: t.videoControls.tracksButton,
                   semanticValue: _selectionSemanticValue(tracks, selection),
-                  isMobile: isMobile,
-                  isDesktop: isDesktop,
+                  buttons: buttons,
                   onPressed: () {
                     state.onCancelAutoHide?.call();
                     OverlaySheetController.of(context)
@@ -232,8 +228,7 @@ class TrackChapterControls extends StatelessWidget {
               icon: Symbols.bookmarks_rounded,
               tooltip: t.videoControls.chaptersButton,
               semanticLabel: t.videoControls.chaptersButton,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
+              buttons: buttons,
               onPressed: () {
                 state.onCancelAutoHide?.call();
                 OverlaySheetController.of(context)
@@ -263,8 +258,7 @@ class TrackChapterControls extends StatelessWidget {
               icon: Symbols.queue_rounded,
               tooltip: t.videoControls.queue,
               semanticLabel: t.videoControls.queue,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
+              buttons: buttons,
               onPressed: () {
                 state.onCancelAutoHide?.call();
                 OverlaySheetController.of(context)
@@ -284,8 +278,7 @@ class TrackChapterControls extends StatelessWidget {
               icon: Symbols.picture_in_picture_alt_rounded,
               tooltip: t.videoControls.pipButton,
               semanticLabel: t.videoControls.pipButton,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
+              buttons: buttons,
               onPressed: state.onTogglePIPMode,
             ),
           );
@@ -302,8 +295,7 @@ class TrackChapterControls extends StatelessWidget {
               tooltip: _getBoxFitTooltip(state.boxFitMode),
               semanticLabel: t.videoControls.aspectRatioButton,
               semanticValue: _getBoxFitTooltip(state.boxFitMode),
-              isMobile: isMobile,
-              isDesktop: isDesktop,
+              buttons: buttons,
               onPressed: state.onCycleBoxFitMode,
             ),
           );
@@ -320,8 +312,7 @@ class TrackChapterControls extends StatelessWidget {
               tooltip: state.isRotationLocked ? t.videoControls.unlockRotation : t.videoControls.lockRotation,
               semanticLabel: t.videoControls.rotationLockButton,
               checked: state.isRotationLocked,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
+              buttons: buttons,
               onPressed: state.onToggleRotationLock,
             ),
           );
@@ -337,8 +328,7 @@ class TrackChapterControls extends StatelessWidget {
               icon: Symbols.lock_rounded,
               tooltip: t.videoControls.lockScreen,
               semanticLabel: t.videoControls.screenLockButton,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
+              buttons: buttons,
               onPressed: state.onToggleScreenLock,
             ),
           );
@@ -356,8 +346,7 @@ class TrackChapterControls extends StatelessWidget {
               semanticLabel: t.videoControls.alwaysOnTopButton,
               isActive: state.isAlwaysOnTop,
               checked: state.isAlwaysOnTop,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
+              buttons: buttons,
               onPressed: state.onToggleAlwaysOnTop,
             ),
           );
@@ -376,8 +365,7 @@ class TrackChapterControls extends StatelessWidget {
                   ? t.videoControls.exitFullscreenButton
                   : t.videoControls.fullscreenButton,
               checked: state.isFullscreen,
-              isMobile: isMobile,
-              isDesktop: isDesktop,
+              buttons: buttons,
               onPressed: state.onToggleFullscreen,
             ),
           );
@@ -436,21 +424,6 @@ class TrackChapterControls extends StatelessWidget {
     }
 
     return values.isEmpty ? null : values.join(', ');
-  }
-
-  /// Calculate total button count for navigation
-  int _getButtonCount(bool isMobile, bool isDesktop) {
-    final state = trackControlsState;
-    int count = 1; // Settings button always shown
-    count++; // Audio & subtitles button always shown
-    if (chapters.isNotEmpty && !hideChaptersAndQueue) count++;
-    if (state.showQueueButton && state.onQueueItemSelected != null && !hideChaptersAndQueue) count++;
-    if (state.onTogglePIPMode != null) count++;
-    if (state.onCycleBoxFitMode != null) count++;
-    if (isMobile && !PlatformDetector.isTV()) count++; // Rotation lock (not on TV)
-    if (isDesktop && state.onToggleAlwaysOnTop != null) count++; // Always on top
-    if (isDesktop) count++; // Fullscreen
-    return count;
   }
 
   IconData _getBoxFitIcon(int mode) {
