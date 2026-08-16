@@ -18,6 +18,7 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../models/catalog/catalog_item.dart';
+import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/download_provider.dart';
 import '../providers/watch_state_store.dart';
@@ -1245,13 +1246,6 @@ Color? _parseCatalogAccent(String? value) {
   return rgb == null ? null : Color(0xff000000 | rgb);
 }
 
-String _catalogSeasonName(CatalogSeasonName season) => switch (season) {
-  CatalogSeasonName.winter => t.explore.season.winter,
-  CatalogSeasonName.spring => t.explore.season.spring,
-  CatalogSeasonName.summer => t.explore.season.summer,
-  CatalogSeasonName.fall => t.explore.season.fall,
-};
-
 String? _catalogRankBadge(CatalogItem item) {
   String? allTimeLabel;
   for (final rank in item.ranks ?? const <CatalogRank>[]) {
@@ -1260,26 +1254,24 @@ String? _catalogRankBadge(CatalogItem item) {
       final season = rank.season;
       final year = rank.year;
       if (season == null && year == null) continue;
-      final seasonLabel = season == null
+      final window = season == null
           ? '$year'
           : year == null
-          ? _catalogSeasonName(season)
-          : t.explore.season.withYear(season: _catalogSeasonName(season), year: year);
-      return t.explore.badge.rankSeasonal(n: rank.rank, season: seasonLabel);
+          ? seasonName(season)
+          : t.explore.season.withYear(season: seasonName(season), year: year);
+      return t.explore.badge.rankSeasonal(n: rank.rank, season: window);
     }
 
-    allTimeLabel ??= switch (rank.scope) {
-      CatalogRankScope.popular => t.explore.badge.rankPopular(n: rank.rank),
-      CatalogRankScope.airing => t.explore.badge.rankAiring(n: rank.rank),
-      CatalogRankScope.rated => t.explore.badge.rankRated(n: rank.rank),
-      CatalogRankScope.favorited => t.explore.badge.rankFavorited(n: rank.rank),
-      CatalogRankScope.trending => t.explore.badge.rankTrending(n: rank.rank),
-      CatalogRankScope.seasonal => null,
-    };
+    // Not contextual means an all-time rank with a non-seasonal scope, so
+    // rankLabel takes its all-time scope-switch path.
+    allTimeLabel ??= rankLabel(rank);
   }
   return allTimeLabel;
 }
 
+// Deliberately not availabilityLabel: the card ladder outranks partial with
+// the seasons count and maps a partially-available 4k tier to the generic
+// partial key, where the detail screen's 4k mapping renders nothing.
 String? _catalogAvailabilityBadge(CatalogServerState? state) {
   if (state == null) return null;
   if (state.availability4k == CatalogAvailability.available) return t.explore.badge.availableIn4k;
@@ -1299,16 +1291,12 @@ String? _catalogAvailabilityBadge(CatalogServerState? state) {
 
 String? _catalogRequestBadge(CatalogServerState? state) {
   if (state == null) return null;
-  final is4k = state.request4k != null;
   final request = state.request4k ?? state.request;
-  return switch (request) {
-    CatalogRequestState.pending => t.explore.badge.pendingApproval,
-    CatalogRequestState.approved => is4k ? t.explore.badge.requested4k : t.explore.badge.requested,
-    CatalogRequestState.processing => t.explore.badge.processing,
-    CatalogRequestState.declined => t.explore.badge.declined,
-    CatalogRequestState.failed => t.explore.badge.requestFailed,
-    null => null,
-  };
+  if (request == null) return null;
+  // Narrower 4k wording than requestStateLabel: on cards only an approved 4k
+  // request reads as requested4k; pending/processing keep their plain keys.
+  if (state.request4k != null && request == CatalogRequestState.approved) return t.explore.badge.requested4k;
+  return requestStateLabel(request, is4k: false);
 }
 
 String? _catalogNextEpisodeBadge(CatalogItem item, DateTime? now) {

@@ -24,6 +24,7 @@ import '../media/media_rating.dart';
 import '../media/media_version.dart';
 import '../models/catalog/catalog_cast_member.dart';
 import '../models/catalog/catalog_item.dart';
+import '../models/catalog/catalog_labels.dart';
 import '../models/catalog/catalog_metadata.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../services/catalog/catalog_library_matcher.dart';
@@ -618,68 +619,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     return parts.join(' • ');
   }
 
-  static String _statusLabel(CatalogAirStatus status) => switch (status) {
-    CatalogAirStatus.airing => t.explore.status.airing,
-    CatalogAirStatus.ended => t.explore.status.ended,
-    CatalogAirStatus.canceled => t.explore.status.canceled,
-    CatalogAirStatus.upcoming => t.explore.status.upcoming,
-  };
-
-  static String _seasonName(CatalogSeasonName season) => switch (season) {
-    CatalogSeasonName.winter => t.explore.season.winter,
-    CatalogSeasonName.spring => t.explore.season.spring,
-    CatalogSeasonName.summer => t.explore.season.summer,
-    CatalogSeasonName.fall => t.explore.season.fall,
-  };
-
-  static String _seasonLabel(CatalogSeasonInfo season) {
-    final name = _seasonName(season.name);
-    return season.year == null ? name : t.explore.season.withYear(season: name, year: season.year!);
-  }
-
-  static String _formatLabel(CatalogFormat format) => switch (format) {
-    CatalogFormat.tv => t.explore.format.tv,
-    CatalogFormat.tvShort => t.explore.format.tvShort,
-    CatalogFormat.movie => t.explore.format.movie,
-    CatalogFormat.special => t.explore.format.special,
-    CatalogFormat.ova => t.explore.format.ova,
-    CatalogFormat.ona => t.explore.format.ona,
-    CatalogFormat.music => t.explore.format.music,
-    CatalogFormat.other => t.explore.format.other,
-  };
-
-  static String _sourceMaterialLabel(CatalogSourceMaterial source) => switch (source) {
-    CatalogSourceMaterial.original => t.explore.sourceMaterial.original,
-    CatalogSourceMaterial.manga => t.explore.sourceMaterial.manga,
-    CatalogSourceMaterial.lightNovel => t.explore.sourceMaterial.lightNovel,
-    CatalogSourceMaterial.novel => t.explore.sourceMaterial.novel,
-    CatalogSourceMaterial.visualNovel => t.explore.sourceMaterial.visualNovel,
-    CatalogSourceMaterial.game => t.explore.sourceMaterial.game,
-    CatalogSourceMaterial.webComic => t.explore.sourceMaterial.webComic,
-    CatalogSourceMaterial.musicRelease => t.explore.sourceMaterial.musicRelease,
-    CatalogSourceMaterial.otherMedia => t.explore.sourceMaterial.otherMedia,
-  };
-
-  static String _creditRoleLabel(CatalogCreditRole role) => switch (role) {
-    CatalogCreditRole.director => t.explore.creditRole.director,
-    CatalogCreditRole.writer => t.explore.creditRole.writer,
-    CatalogCreditRole.producer => t.explore.creditRole.producer,
-    CatalogCreditRole.creator => t.explore.creditRole.creator,
-    CatalogCreditRole.composer => t.explore.creditRole.composer,
-  };
-
-  static String _relationLabel(CatalogRelationType type) => switch (type) {
-    CatalogRelationType.prequel => t.explore.relation.prequel,
-    CatalogRelationType.sequel => t.explore.relation.sequel,
-    CatalogRelationType.sideStory => t.explore.relation.sideStory,
-    CatalogRelationType.spinOff => t.explore.relation.spinOff,
-    CatalogRelationType.alternativeVersion => t.explore.relation.alternativeVersion,
-    CatalogRelationType.summary => t.explore.relation.summary,
-    CatalogRelationType.parentStory => t.explore.relation.parentStory,
-    CatalogRelationType.adaptation => t.explore.relation.adaptation,
-    CatalogRelationType.other => t.explore.relation.other,
-  };
-
   static String? _joinValues(Iterable<String>? raw, {String Function(String value)? displayName}) {
     if (raw == null) return null;
     final values = <String>[];
@@ -691,55 +630,6 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       if (displayed.trim().isNotEmpty && seen.add(displayed)) values.add(displayed);
     }
     return values.isEmpty ? null : values.join(' • ');
-  }
-
-  static String? _rankLabel(CatalogRank rank) {
-    if (!rank.allTime) {
-      final season = rank.season;
-      final window = switch ((season, rank.year)) {
-        (final CatalogSeasonName season, final int year) => t.explore.season.withYear(
-          season: _seasonName(season),
-          year: year,
-        ),
-        (final CatalogSeasonName season, null) => _seasonName(season),
-        (null, final int year) => '$year',
-        _ => null,
-      };
-      return window == null ? null : t.explore.badge.rankSeasonal(n: rank.rank, season: window);
-    }
-    return switch (rank.scope) {
-      CatalogRankScope.popular => t.explore.badge.rankPopular(n: rank.rank),
-      CatalogRankScope.airing => t.explore.badge.rankAiring(n: rank.rank),
-      CatalogRankScope.rated => t.explore.badge.rankRated(n: rank.rank),
-      CatalogRankScope.favorited => t.explore.badge.rankFavorited(n: rank.rank),
-      CatalogRankScope.trending => t.explore.badge.rankTrending(n: rank.rank),
-      CatalogRankScope.seasonal => null,
-    };
-  }
-
-  static String? _availabilityLabel(CatalogAvailability availability, {required bool is4k}) {
-    if (is4k) {
-      return availability == CatalogAvailability.available ? t.explore.badge.availableIn4k : null;
-    }
-    return switch (availability) {
-      CatalogAvailability.available => t.explore.badge.available,
-      CatalogAvailability.partiallyAvailable => t.explore.badge.partiallyAvailable,
-      CatalogAvailability.unavailable => null,
-    };
-  }
-
-  static String _requestStateLabel(CatalogRequestState request, {required bool is4k}) {
-    if (is4k &&
-        {CatalogRequestState.pending, CatalogRequestState.approved, CatalogRequestState.processing}.contains(request)) {
-      return t.explore.badge.requested4k;
-    }
-    return switch (request) {
-      CatalogRequestState.pending => t.explore.badge.pendingApproval,
-      CatalogRequestState.approved => t.explore.badge.requested,
-      CatalogRequestState.processing => t.explore.badge.processing,
-      CatalogRequestState.declined => t.explore.badge.declined,
-      CatalogRequestState.failed => t.explore.badge.requestFailed,
-    };
   }
 
   /// Headline score, leaderboard context, audience counts, availability and
@@ -762,19 +652,19 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       }
       add(score, icon: Symbols.star_rounded, iconColor: Colors.amber);
     }
-    if (item.airStatus case final status?) add(_statusLabel(status));
+    if (item.airStatus case final status?) add(statusLabel(status));
     if (item.episodeCount case final count?) add(t.explore.episodeCount(n: count));
     if (item.unairedEpisodeCount case final count?) add(t.explore.detail.unairedEpisodes(n: count));
     add(item.network);
-    if (item.broadcastSeason case final season?) add(_seasonLabel(season));
-    if (item.format case final format?) add(_formatLabel(format));
-    if (item.sourceMaterial case final source?) add(_sourceMaterialLabel(source));
+    if (item.broadcastSeason case final season?) add(seasonLabel(season));
+    if (item.format case final format?) add(formatLabel(format));
+    if (item.sourceMaterial case final source?) add(sourceMaterialLabel(source));
     if (item.isAdult == true) add(t.explore.badge.adult);
     if (item.addedAt case final addedAt?) {
       add(t.explore.detail.addedOn(date: DateFormat.yMMMd(locale).format(addedAt.toLocal())));
     }
     for (final rank in item.ranks ?? const <CatalogRank>[]) {
-      add(_rankLabel(rank));
+      add(rankLabel(rank));
     }
 
     final audience = item.audience;
@@ -806,13 +696,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final server = item.serverState;
     if (server != null) {
       if (server.availability case final availability?) {
-        add(_availabilityLabel(availability, is4k: false));
+        add(availabilityLabel(availability, is4k: false));
       }
       if (server.availability4k case final availability?) {
-        add(_availabilityLabel(availability, is4k: true));
+        add(availabilityLabel(availability, is4k: true));
       }
-      if (server.request case final request?) add(_requestStateLabel(request, is4k: false));
-      if (server.request4k case final request?) add(_requestStateLabel(request, is4k: true));
+      if (server.request case final request?) add(requestStateLabel(request, is4k: false));
+      if (server.request4k case final request?) add(requestStateLabel(request, is4k: true));
       if (server.availableSeasons case final available? when server.totalSeasons != null) {
         add(t.explore.badge.seasonsAvailable(available: available, total: server.totalSeasons!));
       }
@@ -1013,7 +903,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final rows = <({String label, String value})>[];
     for (final role in CatalogCreditRole.values) {
       final names = _joinValues(credits.where((credit) => credit.role == role).map((credit) => credit.name));
-      if (names != null) rows.add((label: _creditRoleLabel(role), value: names));
+      if (names != null) rows.add((label: creditRoleLabel(role), value: names));
     }
     if (rows.isEmpty) return null;
     return Column(
@@ -1183,7 +1073,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   Widget _buildRelationTile(ThemeData theme, int index, {required int columns, required int count}) {
     final entry = _relationEntries[index];
     final item = entry.item;
-    final label = _relationLabel(entry.type);
+    final label = relationLabel(entry.type);
     final year = item.year;
     void open() => unawaited(navigateToCatalogItem(context, item));
     return FocusableWrapper(
