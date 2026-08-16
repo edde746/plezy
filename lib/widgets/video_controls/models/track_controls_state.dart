@@ -52,10 +52,8 @@ class TrackControlsState {
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
-  final VoidCallback? onLoadSeekTimes;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
-  final void Function(String propertyName, int offset)? onSyncOffsetChanged;
   final String? serverId;
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
@@ -113,10 +111,8 @@ class TrackControlsState {
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
-    this.onLoadSeekTimes,
     this.onCancelAutoHide,
     this.onStartAutoHide,
-    this.onSyncOffsetChanged,
     this.serverId,
     this.shaderService,
     this.onShaderChanged,

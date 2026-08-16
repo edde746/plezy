@@ -550,18 +550,33 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.cancel());
   }
 
-  /// Timing-based double-click detection: avoids `onDoubleTap`'s ~300 ms
-  /// tap-resolution delay and the arena competition it introduces.
   void _handleOuterTap() {
-    if (PlatformDetector.isMobile(context) && _isTouchTapSuppressed) return;
+    if (PlatformDetector.isMobile(context)) {
+      if (_isTouchTapSuppressed) return;
+      // Mobile taps get the single-tap action only; the skip zones own touch
+      // double taps.
+      if (widget.canControl && _clickVideoTogglesPlayback) {
+        _playOrPause();
+      } else {
+        _toggleControls();
+      }
+      return;
+    }
 
+    _handleDesktopClickToggle();
+  }
+
+  /// Desktop click contract shared by the outer video surface and the controls
+  /// overlay: the single-click action fires immediately and a second click
+  /// within [kDoubleTapTimeout] toggles fullscreen. Timing-based detection
+  /// avoids `onDoubleTap`'s ~300 ms tap-resolution delay and the arena
+  /// competition it introduces.
+  void _handleDesktopClickToggle() {
     if (widget.canControl && _clickVideoTogglesPlayback) {
       _playOrPause();
     } else {
       _toggleControls();
     }
-
-    if (PlatformDetector.isMobile(context)) return;
 
     final now = DateTime.now();
     if (_lastSkipTapTime != null && now.difference(_lastSkipTapTime!) < kDoubleTapTimeout) {
@@ -737,30 +752,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   /// Handle tap on controls overlay - route to skip zones or toggle controls
   void _handleControlsOverlayTap(TapUpDetails details, Size size) {
-    final isMobile = PlatformDetector.isMobile(context);
-
-    if (!isMobile) {
-      final DateTime now = DateTime.now();
-
-      // Always perform the single-click behavior immediately
-      if (widget.canControl && _clickVideoTogglesPlayback) {
-        _playOrPause();
-      } else {
-        _toggleControls();
-      }
-
-      final bool isDoubleClick = _lastSkipTapTime != null && now.difference(_lastSkipTapTime!) < kDoubleTapTimeout;
-
-      if (isDoubleClick) {
-        _lastSkipTapTime = null;
-
-        _toggleFullscreen();
-
-        return;
-      }
-
-      // Record this click as a candidate for double-click detection
-      _lastSkipTapTime = now;
+    if (!PlatformDetector.isMobile(context)) {
+      _handleDesktopClickToggle();
       return;
     }
 

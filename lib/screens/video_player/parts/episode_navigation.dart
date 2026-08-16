@@ -45,7 +45,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   /// visuals are keyboard/dpad-gated).
   void _showChromeForSwappedItem() {
     if (!mounted) return;
-    _chromeController.show(focusTarget: PlayerChromeFocusTarget.playPause);
+    _chromeController.show(focusPlayPause: true);
   }
 
   Future<void> _playNext() async {

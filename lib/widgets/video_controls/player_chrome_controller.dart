@@ -7,12 +7,6 @@ import 'package:flutter/material.dart'
 /// Reasons that keep the video-player chrome visible and suppress auto-hide.
 enum PlayerChromeHold { pip, contentStrip, promptInteraction, scrub }
 
-/// Focus target to request after chrome has rebuilt visible controls.
-///
-/// Named rather than a bool so the call sites that hand the chrome focus say
-/// what they mean, and so adding a target forces every consumer to decide.
-enum PlayerChromeFocusTarget { playPause }
-
 /// Owns video-player chrome visibility and auto-hide policy for one player route.
 class PlayerChromeController extends ChangeNotifier implements ValueListenable<bool> {
   PlayerChromeController({bool initiallyVisible = true})
@@ -26,7 +20,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   bool _hasFirstFrame = true;
   Duration _hideDelay = const Duration(seconds: 3);
   Timer? _hideTimer;
-  PlayerChromeFocusTarget? _pendingFocusTarget;
+  bool _pendingPlayPauseFocus = false;
   final Set<PlayerChromeHold> _holds = <PlayerChromeHold>{};
   final Stopwatch _pointerActivityStopwatch = Stopwatch()..start();
   int _lastPointerActivityMs = -1000;
@@ -40,7 +34,7 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
   bool get controlsPresented => _controlsPresented;
   bool get contentStripVisible => _contentStripVisible;
   bool isHeld(PlayerChromeHold hold) => _holds.contains(hold);
-  PlayerChromeFocusTarget? get pendingFocusTarget => _pendingFocusTarget;
+  bool get pendingPlayPauseFocus => _pendingPlayPauseFocus;
 
   void configure({Duration? hideDelay, bool? hasFirstFrame}) {
     var restartTimer = false;
@@ -86,11 +80,11 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     }
   }
 
-  void show({bool restartAutoHide = true, PlayerChromeFocusTarget? focusTarget}) {
+  void show({bool restartAutoHide = true, bool focusPlayPause = false}) {
     _controlsPresented = true;
     var shouldNotify = false;
-    if (focusTarget != null) {
-      _pendingFocusTarget = focusTarget;
+    if (focusPlayPause) {
+      _pendingPlayPauseFocus = true;
       shouldNotify = true;
     }
     if (!_controlsVisible) {
@@ -101,10 +95,11 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     if (restartAutoHide) _startAutoHideForCurrentPlaybackState();
   }
 
-  PlayerChromeFocusTarget? takeFocusTarget() {
-    final target = _pendingFocusTarget;
-    _pendingFocusTarget = null;
-    return target;
+  /// Returns whether a play/pause focus request was queued by [show], and clears it.
+  bool takePlayPauseFocus() {
+    final requested = _pendingPlayPauseFocus;
+    _pendingPlayPauseFocus = false;
+    return requested;
   }
 
   bool hide({bool ignoreHolds = false}) {

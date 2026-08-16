@@ -559,6 +559,53 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<Map<String, bool>>? _serverStatusSubscription;
   bool _isHandlingBack = false;
 
+  /// Cancel-and-null scope for the screen's player-driven stream
+  /// subscriptions — the single authority consumed by [_wirePlayerStreams]
+  /// (re-wire: the nine player streams), [_tearDownFailedPlayerAttempt]
+  /// (rollback: player streams plus the five media-controls listeners created
+  /// in [_initializeServices]), and the screen's `dispose`. The
+  /// initState-owned `_sleepTimerSubscription` and
+  /// `_appleTvPlayPauseSubscription` are deliberately excluded: cancelling
+  /// them on a re-wire or rollback would kill the sleep-timer prompt and the
+  /// Apple TV remote for the rest of the screen's life.
+  List<Future<void>> _cancelPlayerStreamSubscriptions({required bool includeMediaControls}) {
+    final cancellations = <Future<void>>[
+      ?_playingSubscription?.cancel(),
+      ?_completedSubscription?.cancel(),
+      ?_errorSubscription?.cancel(),
+      ?_logSubscription?.cancel(),
+      ?_backendSwitchedSubscription?.cancel(),
+      ?_bufferingSubscription?.cancel(),
+      ?_serverStatusSubscription?.cancel(),
+      ?_playbackRestartSubscription?.cancel(),
+      ?_positionSubscription?.cancel(),
+      if (includeMediaControls) ...[
+        ?_mediaControlSubscription?.cancel(),
+        ?_mediaControlsPlayingSubscription?.cancel(),
+        ?_mediaControlsPositionSubscription?.cancel(),
+        ?_mediaControlsRateSubscription?.cancel(),
+        ?_mediaControlsSeekableSubscription?.cancel(),
+      ],
+    ];
+    _playingSubscription = null;
+    _completedSubscription = null;
+    _errorSubscription = null;
+    _logSubscription = null;
+    _backendSwitchedSubscription = null;
+    _bufferingSubscription = null;
+    _serverStatusSubscription = null;
+    _playbackRestartSubscription = null;
+    _positionSubscription = null;
+    if (includeMediaControls) {
+      _mediaControlSubscription = null;
+      _mediaControlsPlayingSubscription = null;
+      _mediaControlsPositionSubscription = null;
+      _mediaControlsRateSubscription = null;
+      _mediaControlsSeekableSubscription = null;
+    }
+    return cancellations;
+  }
+
   /// Set just before this screen replaces itself with another player route
   /// (the fallback pushReplacement paths). Dispose then skips the app-level
   /// player-exit side effects because the replacement continues the session.
@@ -1959,23 +2006,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Teardown scope: every subscription the screen ever owns, including the
     // initState-owned sleep-timer and Apple TV ones that the rollback path
     // must leave alive.
-    _playingSubscription?.cancel();
-    _completedSubscription?.cancel();
-    _errorSubscription?.cancel();
-    _mediaControlSubscription?.cancel();
+    _cancelPlayerStreamSubscriptions(includeMediaControls: true);
     _appleTvPlayPauseSubscription?.cancel();
-    _bufferingSubscription?.cancel();
-    _trackManager?.dispose();
-    _positionSubscription?.cancel();
-    _playbackRestartSubscription?.cancel();
-    _backendSwitchedSubscription?.cancel();
-    _logSubscription?.cancel();
     _sleepTimerSubscription?.cancel();
-    _mediaControlsPlayingSubscription?.cancel();
-    _mediaControlsPositionSubscription?.cancel();
-    _mediaControlsRateSubscription?.cancel();
-    _mediaControlsSeekableSubscription?.cancel();
-    _serverStatusSubscription?.cancel();
+    _trackManager?.dispose();
 
     _autoPlayTimer?.cancel();
     _tvBackgroundPlayerSuspendTimer?.cancel();
@@ -2435,7 +2469,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             // exactly while that setting is off.
             final navigating = eventRequestsFocusNavigation(event, focused: node);
             if (!event.logicalKey.isDpadDirection || navigating) {
-              _chromeController.show(focusTarget: navigating ? PlayerChromeFocusTarget.playPause : null);
+              _chromeController.show(focusPlayPause: navigating);
             }
           }
           return event.logicalKey.isReservedControlKey ? KeyEventResult.handled : KeyEventResult.ignored;

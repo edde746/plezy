@@ -293,8 +293,8 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
   ///
   /// Raw mechanism: it does not decide whether focus *should* enter the chrome.
   /// A key that raises the chrome makes that decision with
-  /// `eventRequestsFocusNavigation` before queueing a
-  /// [PlayerChromeFocusTarget]; internal hand-offs (the skip-marker button's
+  /// `eventRequestsFocusNavigation` before queueing a play/pause focus request
+  /// on the chrome; internal hand-offs (the skip-marker button's
   /// ArrowDown, an item swap) are already inside a focus session.
   void requestPlayPauseFocus() {
     _playPauseFocusNode.requestFocus();

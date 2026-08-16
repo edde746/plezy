@@ -556,7 +556,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               } else {
                 await settings.write(SettingsService.audioSyncOffset, offset);
               }
-              _state.onSyncOffsetChanged?.call(propertyName, offset);
             },
           ),
         )
@@ -1441,9 +1440,7 @@ class _CompactSyncBarState extends State<_CompactSyncBar> {
             player: widget.player,
             propertyName: widget.propertyName,
             initialOffset: widget.initialOffset,
-            labelText: widget.title,
             onOffsetChanged: widget.onOffsetChanged,
-            compact: true,
             sliderFocusNode: widget.sliderFocusNode,
             resetFocusNode: _resetFocusNode,
             closeFocusNode: _closeFocusNode,

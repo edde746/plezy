@@ -62,20 +62,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     required SettingsService settingsService,
     required bool useExoPlayer,
   }) async {
-    // Re-wire scope: exactly the nine subscriptions re-created below. The
-    // media-controls listeners belong to _setupMediaControls and the
-    // sleep-timer/Apple TV ones to initState; both outlive a re-wire.
-    await Future.wait<void>([
-      if (_playingSubscription != null) _playingSubscription!.cancel(),
-      if (_completedSubscription != null) _completedSubscription!.cancel(),
-      if (_errorSubscription != null) _errorSubscription!.cancel(),
-      if (_logSubscription != null) _logSubscription!.cancel(),
-      if (_backendSwitchedSubscription != null) _backendSwitchedSubscription!.cancel(),
-      if (_bufferingSubscription != null) _bufferingSubscription!.cancel(),
-      if (_serverStatusSubscription != null) _serverStatusSubscription!.cancel(),
-      if (_playbackRestartSubscription != null) _playbackRestartSubscription!.cancel(),
-      if (_positionSubscription != null) _positionSubscription!.cancel(),
-    ]);
+    // Re-wire scope: exactly the player-stream slice of
+    // [_cancelPlayerStreamSubscriptions]. The media-controls listeners belong
+    // to _initializeServices in this file and the sleep-timer/Apple TV ones to
+    // initState; both outlive a re-wire.
+    await Future.wait<void>(_cancelPlayerStreamSubscriptions(includeMediaControls: false));
     if (!mounted || player != currentPlayer) return;
     int? lastObservedPositionMs;
 
@@ -204,41 +195,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     final activePlayer = player;
     if (activePlayer != null && !identical(activePlayer, attemptPlayer)) return;
 
-    // Rollback scope: the nine player streams plus the five media-controls
-    // ones. _sleepTimerSubscription and _appleTvPlayPauseSubscription are
-    // initState-owned and never re-created — cancelling them here would kill
-    // the sleep-timer prompt and the Apple TV remote for the rest of the
-    // screen's life.
-    final cancellationFutures = <Future<void>>[
-      if (_playingSubscription != null) _playingSubscription!.cancel(),
-      if (_completedSubscription != null) _completedSubscription!.cancel(),
-      if (_errorSubscription != null) _errorSubscription!.cancel(),
-      if (_logSubscription != null) _logSubscription!.cancel(),
-      if (_backendSwitchedSubscription != null) _backendSwitchedSubscription!.cancel(),
-      if (_bufferingSubscription != null) _bufferingSubscription!.cancel(),
-      if (_serverStatusSubscription != null) _serverStatusSubscription!.cancel(),
-      if (_playbackRestartSubscription != null) _playbackRestartSubscription!.cancel(),
-      if (_positionSubscription != null) _positionSubscription!.cancel(),
-      if (_mediaControlSubscription != null) _mediaControlSubscription!.cancel(),
-      if (_mediaControlsPlayingSubscription != null) _mediaControlsPlayingSubscription!.cancel(),
-      if (_mediaControlsPositionSubscription != null) _mediaControlsPositionSubscription!.cancel(),
-      if (_mediaControlsRateSubscription != null) _mediaControlsRateSubscription!.cancel(),
-      if (_mediaControlsSeekableSubscription != null) _mediaControlsSeekableSubscription!.cancel(),
-    ];
-    _playingSubscription = null;
-    _completedSubscription = null;
-    _errorSubscription = null;
-    _logSubscription = null;
-    _backendSwitchedSubscription = null;
-    _bufferingSubscription = null;
-    _serverStatusSubscription = null;
-    _playbackRestartSubscription = null;
-    _positionSubscription = null;
-    _mediaControlSubscription = null;
-    _mediaControlsPlayingSubscription = null;
-    _mediaControlsPositionSubscription = null;
-    _mediaControlsRateSubscription = null;
-    _mediaControlsSeekableSubscription = null;
+    // Rollback scope: the player streams plus the five media-controls
+    // listeners — see [_cancelPlayerStreamSubscriptions] for the ownership
+    // boundary that keeps the sleep-timer and Apple TV subscriptions alive.
+    final cancellationFutures = _cancelPlayerStreamSubscriptions(includeMediaControls: true);
     try {
       await Future.wait(cancellationFutures);
     } catch (e, st) {

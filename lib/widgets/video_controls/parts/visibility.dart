@@ -255,7 +255,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     if (!mounted) return;
     final controlsVisible = widget.chromeController.controlsVisible;
     final visibilityChanged = controlsVisible != _lastControlsVisible;
-    final focusTarget = widget.chromeController.takeFocusTarget();
+    final focusPlayPause = widget.chromeController.takePlayPauseFocus();
     _lastControlsVisible = controlsVisible;
 
     if (visibilityChanged && !controlsVisible) {
@@ -290,8 +290,8 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       _updateTrafficLightVisibility();
     }
 
-    if (focusTarget != null) {
-      _requestFocusTarget(focusTarget);
+    if (focusPlayPause) {
+      _requestPlayPauseFocus();
     }
   }
 
@@ -313,16 +313,13 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   bool _sheetIsOpen() => OverlaySheetController.maybeOf(context)?.isOpen ?? false;
 
-  void _requestFocusTarget(PlayerChromeFocusTarget target) {
+  void _requestPlayPauseFocus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.chromeController.controlsVisible) return;
       // Never steal focus from an open sheet (same rule as
       // _claimPlayerSurfaceFocus).
       if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) return;
-      switch (target) {
-        case PlayerChromeFocusTarget.playPause:
-          _desktopControlsKey.currentState?.requestPlayPauseFocus();
-      }
+      _desktopControlsKey.currentState?.requestPlayPauseFocus();
     });
   }
 }
