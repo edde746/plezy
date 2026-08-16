@@ -30,7 +30,6 @@ import '../alpha_scroll_handle.dart';
 import '../library_browse_grouping.dart';
 import '../library_alpha_bar_strategy.dart';
 import '../library_alpha_scroll_metrics.dart';
-import '../library_filter_sort_loader.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
 import '../../../widgets/listenable_selector.dart';
@@ -513,7 +512,6 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // flow through [MediaServerClient.fetchLibraryFiltersWithValues].
     try {
       final client = context.getMediaClientForLibrary(library);
-      final loader = LibraryFilterSortLoader(clientFor: (_) => client);
       final storage = await StorageService.getInstance();
       if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
 
@@ -536,7 +534,17 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         // Plex filters+sorts must resolve before items so saved-sort restoration
         // can match a saved key against the just-loaded sort list, and so the
         // first item fetch already includes the restored sort param.
-        loaded = await loader.load(library, sortLibraryType: sortLibraryType);
+        final filtersFuture = client.fetchLibraryFiltersWithValues(library.id, libraryKind: library.kind);
+        final sortsFuture = client.fetchSortOptions(library.id, libraryType: sortLibraryType);
+        // Settle both before reading either so a dual failure can't leave an
+        // unhandled error; the first error propagates as-is.
+        await Future.wait([filtersFuture, sortsFuture]);
+        final filterResult = await filtersFuture;
+        loaded = LoadedFiltersAndSorts(
+          filters: filterResult.filters,
+          sorts: await sortsFuture,
+          cachedValues: filterResult.cachedValues,
+        );
       }
 
       if (!isCurrentLibraryLoad(generation, libraryGlobalKey)) return;
@@ -870,25 +878,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     controller
         .show<String>(
           showDragHandle: true,
-          builder: (sheetContext) => Column(
-            mainAxisSize: .min,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                child: Text(
-                  t.libraries.groupings.title,
-                  style: Theme.of(sheetContext).textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: .ellipsis,
-                ),
-              ),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(mainAxisSize: .min, children: _buildGroupingTiles((value) => controller.close(value))),
-                ),
-              ),
-            ],
-          ),
+          builder: (_) => _buildGroupingBottomSheet(onSelected: (value) => controller.close(value)),
         )
         .then(_handleGroupingSelection);
   }
@@ -2070,4 +2060,20 @@ class _ChipsBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _ChipsBarDelegate oldDelegate) =>
       builder != oldDelegate.builder || height != oldDelegate.height;
+}
+
+/// Combined filter + sort listing loaded for a [MediaLibrary].
+///
+/// Plex returns categories from `/library/sections/{id}/filters` and sort
+/// options from `/library/sections/{id}/sorts` separately, with values
+/// fetched lazily per-category via `FiltersBottomSheet`. Jellyfin returns
+/// categories *and* values together via `/Items/Filters` (so [cachedValues]
+/// is populated up-front) and has no sort-listing endpoint, so its sorts
+/// come from a client-side hardcoded list.
+class LoadedFiltersAndSorts {
+  final List<MediaFilter> filters;
+  final List<MediaSort> sorts;
+  final Map<String, List<MediaFilterValue>> cachedValues;
+
+  const LoadedFiltersAndSorts({required this.filters, required this.sorts, this.cachedValues = const {}});
 }
