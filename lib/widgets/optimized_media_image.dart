@@ -192,43 +192,6 @@ class OptimizedMediaImage extends StatelessWidget {
          artworkDim: artworkDim,
        );
 
-  /// Named constructor for playlist images.
-  const OptimizedMediaImage.playlist({
-    Key? key,
-    MediaServerClient? client,
-    required String? imagePath,
-    double? width,
-    double? height,
-    BoxFit fit = BoxFit.cover,
-    FilterQuality filterQuality = FilterQuality.medium,
-    Widget Function(BuildContext, String)? placeholder,
-    Widget Function(BuildContext, String, dynamic)? errorWidget,
-    Duration fadeInDuration = const Duration(milliseconds: 300),
-    bool enableTranscoding = true,
-    String? cacheKey,
-    Alignment alignment = Alignment.center,
-    String? localFilePath,
-    Animation<double>? artworkDim,
-  }) : this._(
-         key: key,
-         client: client,
-         imagePath: imagePath,
-         width: width,
-         height: height,
-         fit: fit,
-         filterQuality: filterQuality,
-         placeholder: placeholder,
-         errorWidget: errorWidget,
-         fadeInDuration: fadeInDuration,
-         enableTranscoding: enableTranscoding,
-         cacheKey: cacheKey,
-         alignment: alignment,
-         fallbackIcon: Symbols.playlist_play_rounded,
-         imageType: ImageType.poster,
-         localFilePath: localFilePath,
-         artworkDim: artworkDim,
-       );
-
   /// Whether both width and height are explicitly set to finite positive values,
   /// meaning we can skip the LayoutBuilder.
   bool get _hasKnownDimensions =>

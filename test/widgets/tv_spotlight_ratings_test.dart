@@ -33,7 +33,6 @@ Future<void> _pumpSpotlight(WidgetTester tester, MediaItem item) async {
               item: item,
               client: null,
               allowNetwork: false,
-              showPrimaryAction: false,
               compact: true,
               contentTop: 80,
               contentBottom: 200,

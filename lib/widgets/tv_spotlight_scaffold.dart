@@ -257,7 +257,6 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
       contentBottom: widget.contentBottom,
       contentLeft: widget.contentLeft,
       compact: true,
-      showPrimaryAction: false,
       metadataTrailing: _buildNextEpisodeMetadata(context),
     );
     if (accentColor == null) return background;

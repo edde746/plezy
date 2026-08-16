@@ -78,8 +78,6 @@ Future<T?> showAppMenu<T>(
   Rect? anchorRect,
   AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
   bool focusFirstItem = false,
-  double minWidth = 220,
-  double? maxWidth,
 }) {
   assert(position != null || anchorRect != null, 'showAppMenu requires a position or anchorRect');
 
@@ -95,8 +93,6 @@ Future<T?> showAppMenu<T>(
       anchorRect: anchorRect,
       anchorAlignment: anchorAlignment,
       focusFirstItem: focusFirstItem,
-      minWidth: minWidth,
-      maxWidth: maxWidth,
     ),
     transitionBuilder: (dialogContext, animation, _, child) {
       final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
@@ -127,8 +123,6 @@ Future<T?> showAdaptiveAppMenu<T>(
   Rect? anchorRect,
   AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
   bool focusFirstItem = false,
-  double minWidth = 220,
-  double? maxWidth,
   bool isScrollControlled = false,
 }) {
   // ThemeData.platform follows the real target platform by default, including
@@ -150,8 +144,6 @@ Future<T?> showAdaptiveAppMenu<T>(
     anchorRect: anchorRect,
     anchorAlignment: anchorAlignment,
     focusFirstItem: focusFirstItem,
-    minWidth: minWidth,
-    maxWidth: maxWidth,
   );
 }
 
@@ -172,10 +164,6 @@ class AppMenuButton<T> extends StatefulWidget {
   final AppMenuEntryBuilder<T> entriesBuilder;
   final ValueChanged<T>? onSelected;
   final AppMenuAnchorAlignment anchorAlignment;
-  final Offset alignmentOffset;
-  final double minWidth;
-  final double? maxWidth;
-  final EdgeInsetsGeometry? childPadding;
 
   const AppMenuButton({
     super.key,
@@ -186,10 +174,6 @@ class AppMenuButton<T> extends StatefulWidget {
     required this.entriesBuilder,
     this.onSelected,
     this.anchorAlignment = AppMenuAnchorAlignment.start,
-    this.alignmentOffset = Offset.zero,
-    this.minWidth = 220,
-    this.maxWidth,
-    this.childPadding,
   }) : assert(icon != null || child != null, 'AppMenuButton requires icon or child');
 
   @override
@@ -203,7 +187,7 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return null;
 
-    final topLeft = renderBox.localToGlobal(Offset.zero) + widget.alignmentOffset;
+    final topLeft = renderBox.localToGlobal(Offset.zero);
     final anchorRect = Rect.fromLTWH(topLeft.dx, topLeft.dy, renderBox.size.width, renderBox.size.height);
     final selected = await showAppMenu<T>(
       context,
@@ -211,8 +195,6 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
       anchorRect: anchorRect,
       anchorAlignment: widget.anchorAlignment,
       focusFirstItem: focusFirstItem,
-      minWidth: widget.minWidth,
-      maxWidth: widget.maxWidth,
     );
     if (!mounted || selected == null) return selected;
     widget.onSelected?.call(selected);
@@ -227,13 +209,12 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
   Widget build(BuildContext context) {
     final child = widget.child;
     if (child != null) {
-      final content = Padding(padding: widget.childPadding ?? EdgeInsets.zero, child: child);
       final button = ClickableCursor(
         enabled: widget.enabled,
         child: InkWell(
           onTap: widget.enabled ? _handlePressed : null,
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: content,
+          child: child,
         ),
       );
       final tooltip = widget.tooltip;
@@ -568,8 +549,6 @@ class _AppMenuPopup<T> extends StatefulWidget {
   final Rect? anchorRect;
   final AppMenuAnchorAlignment anchorAlignment;
   final bool focusFirstItem;
-  final double minWidth;
-  final double? maxWidth;
 
   const _AppMenuPopup({
     required this.entries,
@@ -577,8 +556,6 @@ class _AppMenuPopup<T> extends StatefulWidget {
     required this.anchorRect,
     required this.anchorAlignment,
     required this.focusFirstItem,
-    required this.minWidth,
-    required this.maxWidth,
   });
 
   @override
@@ -586,15 +563,14 @@ class _AppMenuPopup<T> extends StatefulWidget {
 }
 
 class _AppMenuPopupState<T> extends State<_AppMenuPopup<T>> {
+  static const double _minMenuWidth = 220;
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     const edgePadding = 8.0;
-    final desiredWidth = widget.maxWidth ?? math.max(widget.minWidth, _estimateMenuWidth(context));
-    final menuWidth = desiredWidth.clamp(
-      widget.minWidth,
-      math.max(widget.minWidth, screenSize.width - edgePadding * 2),
-    );
+    final desiredWidth = math.max(_minMenuWidth, _estimateMenuWidth(context));
+    final menuWidth = desiredWidth.clamp(_minMenuWidth, math.max(_minMenuWidth, screenSize.width - edgePadding * 2));
     final estimatedHeight = _estimateMenuHeight(widget.entries);
     final availableHeight = math.max(0.0, screenSize.height - edgePadding * 2);
     final menuHeight = estimatedHeight.clamp(0.0, availableHeight).toDouble();
@@ -682,7 +658,7 @@ class _AppMenuPopupState<T> extends State<_AppMenuPopup<T>> {
         longest = math.max(longest, entry.label?.length ?? 0);
       }
     }
-    return math.min(360, math.max(widget.minWidth, 96 + longest * 7.5));
+    return math.min(360, math.max(_minMenuWidth, 96 + longest * 7.5));
   }
 }
 

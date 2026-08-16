@@ -66,11 +66,12 @@ void main() {
       _TestApp(
         child: Builder(
           builder: (context) {
-            delegate = MediaGridDelegate.createDelegate(
+            delegate = MediaGridGeometry.resolve(
               context: context,
+              crossAxisExtent: 1280,
               density: LibraryDensity.defaultValue,
               fullBleedImage: true,
-            );
+            ).delegate;
             return const SizedBox.shrink();
           },
         ),
