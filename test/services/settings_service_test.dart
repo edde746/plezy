@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -174,8 +175,10 @@ void main() {
   });
 
   group('SettingsService platform gates', () {
-    test('audio passthrough stays available on desktop and Apple TV', () {
-      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
+    test('audio passthrough stays available on Apple TV and non-macOS desktop, never macOS', () {
+      // Platform.is* is unmockable, so the desktop expectation follows the
+      // test host: hidden on a macOS host (#1964), available elsewhere.
+      expect(PlatformDetector.supportsAudioPassthrough(), Platform.isMacOS ? isFalse : isTrue);
 
       TvDetectionService.debugSetAppleTVOverride(true);
 

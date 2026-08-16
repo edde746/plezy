@@ -866,7 +866,8 @@ class PlayerNative extends PlayerBase {
 
   /// Codecs the platform can take as a bitstream. On iOS/tvOS compressed
   /// audio goes through the system renderer, which only handles Dolby
-  /// Digital (Plus); desktop does real device passthrough for the full list.
+  /// Digital (Plus); Windows and Linux do real device passthrough for the
+  /// full list. Never applied on macOS (PlatformDetector.supportsAudioPassthrough).
   static final String _passthroughCodecs = Platform.isIOS ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
 
   _AudioStateRequest get _requestedAudioState => (
@@ -1009,8 +1010,8 @@ class PlayerNative extends PlayerBase {
     // audio-spdif is the authoritative transition. Publish only after mpv
     // accepts it; audio-exclusive below is an independent device-mode hint.
     _passthroughActive = enabled;
-    // audio-exclusive redirects coreaudio to coreaudio_exclusive on macOS
-    // (and exclusive WASAPI on Windows); on iOS/tvOS it is set once at
+    // audio-exclusive claims the device for bitstreaming (exclusive WASAPI on
+    // Windows); on iOS/tvOS it is set once at
     // playback start and must not be clobbered here.
     if (!Platform.isIOS) {
       try {

@@ -1489,8 +1489,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         );
       }
 
-      // Audio passthrough (desktop, Android TV, and Apple TV, where the native
-      // sample-buffer renderer handles AC3/EAC3, including JOC metadata).
+      // Audio passthrough (Windows/Linux, Android TV, and Apple TV, where the
+      // native sample-buffer renderer handles AC3/EAC3, including JOC metadata;
+      // never macOS — see PlatformDetector.supportsAudioPassthrough).
       if (PlatformDetector.supportsAudioPassthrough()) {
         await currentPlayer.setAudioPassthrough(settingsService.read(SettingsService.audioPassthrough));
       }

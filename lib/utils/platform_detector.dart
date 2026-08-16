@@ -307,7 +307,14 @@ class PlatformDetector {
   static bool supportsAudioPassthrough() {
     // Apple TV hands AC3/EAC3 access units to the native sample-buffer audio
     // renderer; unsupported streams and renderer failures fall back to PCM.
-    return isAppleTV() || isDesktopOS() || (Platform.isAndroid && isTV());
+    //
+    // macOS is deliberately excluded: its only audio output is CoreAudio
+    // (macos/Runner/MpvPlayer/MpvPlayerCore.swift), where forcing audio-spdif
+    // redirects to coreaudio_exclusive. That needs a device advertising IEC61937
+    // bitstream substreams — which Mac setups essentially never have — and with a
+    // restricted ao list mpv has no PCM fallback, so a failed AO init stalls
+    // playback with no audio at all (#1964).
+    return isAppleTV() || Platform.isWindows || Platform.isLinux || (Platform.isAndroid && isTV());
   }
 
   static bool supportsPictureInPicture() => pictureInPictureAllowed(
