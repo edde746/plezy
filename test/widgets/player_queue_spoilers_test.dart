@@ -327,7 +327,6 @@ PlaybackStateProvider _playbackWithQueue() {
   playback.setPlaybackFromLocalQueue(
     LocalPlayQueue(
       id: 'test-queue',
-      backendId: MediaBackend.plex.id,
       currentIndex: 0,
       items: [
         _episode('spoiler-episode', title: 'Spoiler Episode'),

@@ -226,13 +226,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
         return launchLocalQueuePlayback(
           context: context,
           playbackState: playbackState,
-          queue: LocalPlayQueue(
-            id: queueId,
-            items: items,
-            currentIndex: startIndex,
-            shuffled: shuffle,
-            backendId: client.backend.id,
-          ),
+          queue: LocalPlayQueue(id: queueId, items: items, currentIndex: startIndex, shuffled: shuffle),
           contextKey: contextKey,
           navigateForTesting: navigateForTesting,
         );

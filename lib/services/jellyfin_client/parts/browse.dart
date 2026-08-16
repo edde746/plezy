@@ -293,8 +293,10 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         .toList();
   }
 
-  @override
-  Future<LibraryPage<MediaItem>> fetchLibraryContent(
+  /// Shared `/Items` (or `/Artists/AlbumArtists`) query used by
+  /// [fetchLibraryPagedContent]; the [JellyfinLibraryQueryTranslator] handles
+  /// the actual query-parameter translation.
+  Future<LibraryPage<MediaItem>> _fetchLibraryContent(
     String libraryId,
     LibraryQuery query, {
     AbortController? abort,
@@ -590,7 +592,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   /// Jellyfin internalisation of the Plex-style filter map → [LibraryQuery]
-  /// translation. Routes through [fetchLibraryContent] so the
+  /// translation. Routes through [_fetchLibraryContent] so the
   /// [JellyfinLibraryQueryTranslator] handles the actual `/Items` query.
   ///
   /// [libraryKind] threads through so a "Shows" library returns Series rows
@@ -609,7 +611,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         (query.kind == null && query.includeKinds.isEmpty && libraryKind != null && libraryKind != MediaKind.unknown)
         ? query.copyWith(kind: libraryKind)
         : query;
-    return fetchLibraryContent(libraryId, effective, abort: abort);
+    return _fetchLibraryContent(libraryId, effective, abort: abort);
   }
 
   /// Synthesised 27-letter alphabet — Jellyfin has no equivalent of Plex's
@@ -1022,8 +1024,8 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
 
   /// Jellyfin folder browsing mirrors Jellyfin Web/Findroid/Swiftfin: query
   /// direct children of the library/folder with `Recursive=false`. This is
-  /// distinct from [fetchLibraryContent], which intentionally recurses through
-  /// a library to show metadata groupings like albums, artists, shows, etc.
+  /// distinct from [fetchLibraryPagedContent], which intentionally recurses
+  /// through a library to show metadata groupings like albums, artists, shows, etc.
   @override
   Future<List<MediaItem>> fetchLibraryFolders(String libraryId, {void Function(List<MediaItem> itemsSoFar)? onPage}) =>
       _fetchFolderChildren(libraryId, onPage: onPage);
@@ -2589,6 +2591,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _itemsArray(response.data);
   }
 
+  @override
   Future<List<Map<String, dynamic>>> _safeFetchItemsArray(
     String path,
     Map<String, dynamic> queryParameters, {

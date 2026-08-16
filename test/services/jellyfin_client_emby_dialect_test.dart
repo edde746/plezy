@@ -247,8 +247,8 @@ void main() {
       addTearDown(emby.close);
       addTearDown(jellyfin.close);
 
-      await emby.fetchLibraryContent('lib-1', const LibraryQuery(limit: 5));
-      await jellyfin.fetchLibraryContent('lib-1', const LibraryQuery(limit: 5));
+      await emby.fetchLibraryPagedContent('lib-1', query: const LibraryQuery(limit: 5));
+      await jellyfin.fetchLibraryPagedContent('lib-1', query: const LibraryQuery(limit: 5));
 
       final embyFields = embyRequests.requests.last.url.queryParameters['Fields']!.split(',');
       final jellyfinFields = jellyfinRequests.requests.last.url.queryParameters['Fields']!.split(',');
@@ -316,7 +316,7 @@ void main() {
       final client = testEmbyClient(handler: requests.handle);
       addTearDown(client.close);
 
-      await client.fetchLibraryContent('lib-1', const LibraryQuery(limit: 5));
+      await client.fetchLibraryPagedContent('lib-1', query: const LibraryQuery(limit: 5));
       await client.fetchChildren('season-1');
       await client.fetchContinueWatching(count: 5);
 
@@ -336,7 +336,7 @@ void main() {
       final client = testJellyfinClient(handler: requests.handle);
       addTearDown(client.close);
 
-      await client.fetchLibraryContent('lib-1', const LibraryQuery(limit: 5));
+      await client.fetchLibraryPagedContent('lib-1', query: const LibraryQuery(limit: 5));
       await client.fetchChildren('season-1');
 
       for (final request in requests.requests) {

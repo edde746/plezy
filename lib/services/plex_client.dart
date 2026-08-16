@@ -3260,17 +3260,6 @@ class PlexClient
   }
 
   @override
-  Future<LibraryPage<MediaItem>> fetchLibraryContent(String libraryId, LibraryQuery query) async {
-    final filters = const PlexLibraryQueryTranslator().toQueryParameters(query);
-    final result = await _getLibraryContent(libraryId, start: query.offset, size: query.limit, filters: filters);
-    return LibraryPage<MediaItem>(
-      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
-      totalCount: result.totalSize,
-      offset: query.offset,
-    );
-  }
-
-  @override
   Future<MediaItem?> fetchItem(String id) async {
     try {
       final metadata = await _getMetadataWithImages(id, shouldFallback: _shouldFallbackPlexItemLookup);

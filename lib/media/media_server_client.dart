@@ -141,10 +141,6 @@ abstract class MediaServerClient {
 
   Future<List<MediaLibrary>> fetchLibraries();
 
-  /// Page through items in [libraryId] using the neutral [query]. Backends
-  /// translate sort/filter clauses into their own DSL.
-  Future<LibraryPage<MediaItem>> fetchLibraryContent(String libraryId, LibraryQuery query);
-
   /// Backend-aware paginated content fetch.
   ///
   /// Pagination lives on [LibraryQuery.offset] / [LibraryQuery.limit].
