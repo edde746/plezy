@@ -21,6 +21,7 @@ import '../../services/settings_service.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
+import '../../mixins/unsuppress_focus_mixin.dart';
 import '../../mixins/refreshable.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/platform_detector.dart';
@@ -268,27 +269,13 @@ class _DownloadsGridContent extends StatefulWidget {
   State<_DownloadsGridContent> createState() => _DownloadsGridContentState();
 }
 
-class _DownloadsGridContentState extends State<_DownloadsGridContent> {
-  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'DownloadsGrid_firstItem');
+class _DownloadsGridContentState extends State<_DownloadsGridContent>
+    with UnsuppressFocusFirstMixin<_DownloadsGridContent> {
+  @override
+  String get firstItemFocusDebugLabel => 'DownloadsGrid_firstItem';
 
   @override
-  void dispose() {
-    _firstItemFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(_DownloadsGridContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // When suppressAutoFocus changes from true to false, focus the first item
-    if (oldWidget.suppressAutoFocus && !widget.suppressAutoFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _firstItemFocusNode.canRequestFocus) {
-          _firstItemFocusNode.requestFocus();
-        }
-      });
-    }
-  }
+  bool suppressAutoFocusOf(_DownloadsGridContent widget) => widget.suppressAutoFocus;
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
@@ -332,7 +319,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
                     final item = items[position.index];
                     return FocusableMediaCard(
                       item: item,
-                      focusNode: position.index == 0 ? _firstItemFocusNode : null,
+                      focusNode: position.index == 0 ? firstItemFocusNode : null,
                       disableScale: position.disableScale,
                       onBack: widget.onBack,
                       isOffline: true, // Downloaded content works without server
@@ -392,26 +379,13 @@ class _DownloadedMusicContent extends StatefulWidget {
   State<_DownloadedMusicContent> createState() => _DownloadedMusicContentState();
 }
 
-class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
-  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'DownloadsMusic_firstItem');
+class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
+    with UnsuppressFocusFirstMixin<_DownloadedMusicContent> {
+  @override
+  String get firstItemFocusDebugLabel => 'DownloadsMusic_firstItem';
 
   @override
-  void dispose() {
-    _firstItemFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(_DownloadedMusicContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.suppressAutoFocus && !widget.suppressAutoFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _firstItemFocusNode.canRequestFocus) {
-          _firstItemFocusNode.requestFocus();
-        }
-      });
-    }
-  }
+  bool suppressAutoFocusOf(_DownloadedMusicContent widget) => widget.suppressAutoFocus;
 
   Future<void> _playAlbumFrom(List<MediaItem> albumTracks, MediaItem track) async {
     final album = track.parentId;
@@ -541,7 +515,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent> {
                 isFirst: row.isFirst,
                 isLast: row.isLast,
                 showArtist: true,
-                focusNode: isFirstTrackRow ? _firstItemFocusNode : null,
+                focusNode: isFirstTrackRow ? firstItemFocusNode : null,
                 onBack: widget.onBack,
                 onTap: () => _playAlbumFrom(row.albumTracks, item),
               ),

@@ -1696,6 +1696,25 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
+  /// Deletes [globalKey] if it is a completed episode/movie download; returns
+  /// the deleted item's display title, or null when it is not an auto-remove
+  /// candidate.
+  ///
+  /// Shared core of the auto-remove-watched rule. The watched judgment stays
+  /// with the caller: the sweep in [autoDeleteWatchedDownloads] trusts server
+  /// metadata, while [OfflineWatchProvider] fires right after a local
+  /// mark-watched that metadata cannot reflect yet.
+  Future<String?> deleteWatchedDownloadCandidate(String globalKey, {required String logContext}) async {
+    final meta = _resolvedMetadata(globalKey);
+    if (meta == null) return null;
+    if (!meta.isEpisode && !meta.isMovie) return null;
+    if (_downloads[globalKey]?.status != DownloadStatus.completed) return null;
+
+    appLogger.i('Auto-deleting $logContext download: ${meta.title} ($globalKey)');
+    await deleteDownload(globalKey);
+    return meta.title ?? t.common.unknown;
+  }
+
   /// Auto-delete downloaded episodes/movies that are now marked as watched.
   ///
   /// Only deletes individual episodes and movies, never show/season containers.
@@ -1711,16 +1730,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     for (final globalKey in completedKeys) {
       final meta = _resolvedMetadata(globalKey);
       if (meta == null) continue;
-      if (!meta.isEpisode && !meta.isMovie) continue;
       if (!meta.isWatched) continue;
 
       // Don't delete the episode that's currently playing
       if (activeGlobalKey != null && meta.globalKey == activeGlobalKey) continue;
 
       try {
-        appLogger.i('Auto-deleting watched download: ${meta.title} ($globalKey)');
-        await deleteDownload(globalKey);
-        deletedTitles.add(meta.title ?? t.common.unknown);
+        final title = await deleteWatchedDownloadCandidate(globalKey, logContext: 'watched');
+        if (title != null) deletedTitles.add(title);
       } catch (e) {
         appLogger.w('Failed to auto-delete watched download $globalKey: $e');
       }

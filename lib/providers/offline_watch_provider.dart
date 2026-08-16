@@ -1,12 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import '../media/ids.dart';
 
 import '../i18n/strings.g.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item.dart';
-import '../media/media_item_types.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
-import '../models/download_models.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
@@ -18,69 +18,13 @@ import '../utils/global_key_utils.dart';
 /// Provider for offline watch status UI state.
 ///
 /// Provides:
-/// - Effective watch status (local changes + cached server data)
 /// - Offline "OnDeck" calculation for shows
 /// - Manual mark watched/unwatched while offline
 class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final OfflineWatchSyncService _syncService;
   final DownloadProvider _downloadProvider;
 
-  OfflineWatchProvider({required this._syncService, required this._downloadProvider}) {
-    _syncService.addListener(_onSyncServiceChanged);
-  }
-
-  void _onSyncServiceChanged() {
-    safeNotifyListeners();
-  }
-
-  /// Whether a sync is in progress
-  bool get isSyncing => _syncService.isSyncing;
-
-  /// Get count of pending sync items
-  Future<int> getPendingSyncCount() => _syncService.getPendingSyncCount();
-
-  /// Get the effective watch status for a media item.
-  ///
-  /// Priority:
-  /// 1. Local offline action (if exists)
-  /// 2. Cached server data from API cache
-  /// 3. Metadata from download provider
-  ///
-  /// Returns true if watched, false otherwise.
-  Future<bool> isWatched(String globalKey) async {
-    final localStatus = await _syncService.getLocalWatchStatus(globalKey);
-    if (localStatus != null) {
-      return localStatus;
-    }
-
-    final metadata = _downloadProvider.getMetadata(globalKey);
-    if (metadata != null) {
-      return metadata.isWatched;
-    }
-
-    return false;
-  }
-
-  /// Get the effective view offset (resume position) for a media item.
-  ///
-  /// Priority:
-  /// 1. Local offline progress (if exists)
-  /// 2. Metadata from download provider
-  ///
-  /// Returns null if no position is available.
-  @visibleForTesting
-  Future<int?> getViewOffset(String globalKey) async {
-    final localOffset = await _syncService.getLocalViewOffset(globalKey);
-    if (localOffset != null) {
-      return localOffset;
-    }
-
-    final localStatus = await _syncService.getLocalWatchStatus(globalKey);
-    if (localStatus == true) return null;
-
-    final metadata = _downloadProvider.getMetadata(globalKey);
-    return metadata?.viewOffsetMs;
-  }
+  OfflineWatchProvider({required this._syncService, required this._downloadProvider});
 
   /// Get episodes for a show in the shared [sortEpisodesByWatchOrder] order,
   /// so the offline watch order matches what "download next N" selects
@@ -181,33 +125,21 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
       patchId: WatchPatchId.offlineAction(profileId: queued.profileId, rowId: queued.rowId, revision: queued.revision),
     );
     safeNotifyListeners();
-    _autoDeleteIfWatched(serverId, itemId);
+    unawaited(_autoDeleteIfWatched(serverId, itemId));
   }
 
   /// Auto-delete a download if the auto-remove setting is enabled.
-  void _autoDeleteIfWatched(ServerId serverId, String itemId) {
+  Future<void> _autoDeleteIfWatched(ServerId serverId, String itemId) async {
     final settings = SettingsService.instanceOrNull;
     if (settings == null || !settings.read(SettingsService.autoRemoveWatchedDownloads)) return;
 
     final globalKey = buildGlobalKey(ServerId(serverId), itemId);
-    final meta = _downloadProvider.getMetadata(globalKey);
-    if (meta == null) return;
-    if (!meta.isEpisode && !meta.isMovie) return;
-
-    final progress = _downloadProvider.downloads[globalKey];
-    if (progress?.status != DownloadStatus.completed) return;
-
-    appLogger.i('Auto-deleting locally-watched download: ${meta.title} ($globalKey)');
-    _downloadProvider
-        .deleteDownload(globalKey)
-        .then(
-          (_) {
-            showMainSnackBar(t.messages.autoRemovedWatchedDownload(title: meta.title ?? t.common.unknown));
-          },
-          onError: (e) {
-            appLogger.w('Failed to auto-delete locally-watched download $globalKey: $e');
-          },
-        );
+    try {
+      final title = await _downloadProvider.deleteWatchedDownloadCandidate(globalKey, logContext: 'locally-watched');
+      if (title != null) showMainSnackBar(t.messages.autoRemovedWatchedDownload(title: title));
+    } catch (e) {
+      appLogger.w('Failed to auto-delete locally-watched download $globalKey: $e');
+    }
   }
 
   /// Mark an item as unwatched while offline.
@@ -224,24 +156,5 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
       patchId: WatchPatchId.offlineAction(profileId: queued.profileId, rowId: queued.rowId, revision: queued.revision),
     );
     safeNotifyListeners();
-  }
-
-  /// Get downloaded episodes for a show with their watch status.
-  ///
-  /// Returns a list of (episode, isWatched) pairs.
-  /// Uses batched database query for efficiency.
-  Future<List<(MediaItem episode, bool isWatched)>> getEpisodesWithWatchStatus(String showId) async {
-    final episodes = _downloadProvider.getDownloadedEpisodesForShow(showId);
-    if (episodes.isEmpty) return [];
-
-    final watchStatuses = await _resolveEpisodeWatchStatuses(episodes);
-
-    return [for (final episode in episodes) (episode, watchStatuses[episode.globalKey]!)];
-  }
-
-  @override
-  void dispose() {
-    _syncService.removeListener(_onSyncServiceChanged);
-    super.dispose();
   }
 }

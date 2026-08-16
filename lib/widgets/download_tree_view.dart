@@ -10,6 +10,7 @@ import '../media/media_kind.dart';
 import '../models/download_models.dart';
 import '../utils/dialogs.dart';
 import '../utils/global_key_utils.dart';
+import '../mixins/unsuppress_focus_mixin.dart';
 import 'download_status_icon.dart';
 
 /// Represents a node in the download tree
@@ -79,27 +80,14 @@ class DownloadTreeView extends StatefulWidget {
   State<DownloadTreeView> createState() => _DownloadTreeViewState();
 }
 
-class _DownloadTreeViewState extends State<DownloadTreeView> {
+class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocusFirstMixin<DownloadTreeView> {
   final Set<String> _expandedNodes = {};
-  final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'DownloadTreeView_firstItem');
 
   @override
-  void dispose() {
-    _firstItemFocusNode.dispose();
-    super.dispose();
-  }
+  String get firstItemFocusDebugLabel => 'DownloadTreeView_firstItem';
 
   @override
-  void didUpdateWidget(DownloadTreeView oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.suppressAutoFocus && !widget.suppressAutoFocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _firstItemFocusNode.canRequestFocus) {
-          _firstItemFocusNode.requestFocus();
-        }
-      });
-    }
-  }
+  bool suppressAutoFocusOf(DownloadTreeView widget) => widget.suppressAutoFocus;
 
   @override
   Widget build(BuildContext context) {
@@ -402,7 +390,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
       onDelete: widget.onDelete,
       onNavigateLeft: widget.onNavigateLeft,
       onBack: widget.onBack,
-      rowFocusNode: isFirst ? _firstItemFocusNode : null,
+      rowFocusNode: isFirst ? firstItemFocusNode : null,
       autofocus: isFirst && !widget.suppressAutoFocus,
       pauseAllChildren: _pauseAllChildren,
       resumeAllChildren: _resumeAllChildren,
