@@ -82,9 +82,9 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
     return metadata?.viewOffsetMs;
   }
 
-  /// Get sorted episodes for a show: regular seasons first, Specials last,
-  /// then season then episode — the shared [sortEpisodesByWatchOrder] order,
-  /// so the offline watch order matches what "download next N" selects (#1414).
+  /// Get episodes for a show in the shared [sortEpisodesByWatchOrder] order,
+  /// so the offline watch order matches what "download next N" selects
+  /// (#1414/#1416/#1952).
   List<MediaItem> _getSortedEpisodes(String showId) {
     final episodes = _downloadProvider.getDownloadedEpisodesForShow(showId);
     if (episodes.isEmpty) return episodes;

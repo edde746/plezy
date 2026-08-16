@@ -663,6 +663,21 @@ class Translations$settings$en {
 	/// en: 'Segment the seek bar at chapter boundaries'
 	String get showChapterMarkersOnTimelineDescription => 'Segment the seek bar at chapter boundaries';
 
+	/// en: 'Specials in episode order'
+	String get specialsOrdering => 'Specials in episode order';
+
+	/// en: 'Where specials play in a show's watch order'
+	String get specialsOrderingDescription => 'Where specials play in a show\'s watch order';
+
+	/// en: 'Follow server order'
+	String get specialsOrderingServer => 'Follow server order';
+
+	/// en: 'Interleave by air date'
+	String get specialsOrderingAirDate => 'Interleave by air date';
+
+	/// en: 'After regular seasons'
+	String get specialsOrderingLast => 'After regular seasons';
+
 	/// en: 'Click on video to toggle play/pause'
 	String get clickVideoTogglesPlayback => 'Click on video to toggle play/pause';
 
@@ -6566,6 +6581,11 @@ extension on Translations {
 			'settings.followServerTrackSelectionsDescription' => 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice',
 			'settings.showChapterMarkersOnTimeline' => 'Show chapter markers on seek bar',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segment the seek bar at chapter boundaries',
+			'settings.specialsOrdering' => 'Specials in episode order',
+			'settings.specialsOrderingDescription' => 'Where specials play in a show\'s watch order',
+			'settings.specialsOrderingServer' => 'Follow server order',
+			'settings.specialsOrderingAirDate' => 'Interleave by air date',
+			'settings.specialsOrderingLast' => 'After regular seasons',
 			'settings.clickVideoTogglesPlayback' => 'Click on video to toggle play/pause',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Click video to play/pause instead of showing controls.',
 			'settings.videoPlayerControls' => 'Video Player Controls',
@@ -6890,13 +6910,13 @@ extension on Translations {
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} other episode is stored in the same file and will be deleted too:', other: '${n} other episodes are stored in the same file and will be deleted too:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
 			'mediaMenu.playFromBeginning' => 'Play from Beginning',
 			'mediaMenu.playVersion' => 'Play Version...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Rate',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Favorite',
@@ -7404,13 +7424,13 @@ extension on Translations {
 			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
 			'explore.watchlistNoMatch' => 'Couldn\'t match this item to a watchlist',
 			'explore.notInLibrary' => 'Not in your library',
+			_ => null,
+		} ?? switch (path) {
 			'explore.inTheseLibraries' => 'In these libraries',
 			'explore.checkingLibrary' => 'Checking your library...',
 			'explore.emptyTitle' => 'Nothing here yet',
 			'explore.emptyMessage' => ({required Object source}) => 'Rows from ${source} will appear here once they have content.',
 			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'No results for "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Search for movies and shows on ${source}.',
 			'explore.searchFailed' => 'Search failed. Check your connection and try again.',
@@ -7918,13 +7938,13 @@ extension on Translations {
 			'companionRemote.errors.joinTimedOut' => 'Timed out joining session',
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Failed to connect to any address',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.connectionLost' => 'Connection lost',
 			'companionRemote.closedBeforeAuth' => 'The connection closed before authentication',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',

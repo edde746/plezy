@@ -146,7 +146,7 @@ const _baseMusicTrackRowFields = 'UserData,PremiereDate,OriginalTitle,SortName';
 /// index, watched state, and the air date that drives the watch order.
 /// Title + indices come back without any `Fields` request; we ask for
 /// `UserData` (watched indicator) and `PremiereDate` (air-date sort, so
-/// Specials interleave — see [compareEpisodesByWatchOrder]). Drops
+/// Specials can interleave — see [sortEpisodesByWatchOrder]). Drops
 /// `Overview` etc. so even a thousand-episode shounen show fits in one
 /// response.
 const _baseQueueFields = 'UserData,PremiereDate';
@@ -1219,13 +1219,21 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
-  /// All episodes of a series in the app's **aired watch order** — primarily by
-  /// air date, so Specials interleave between regular episodes the way Plex's
-  /// own play queue does — so the client-side next/previous queue matches
-  /// streaming, downloads, and offline playback (#1416/#1414). The server sort
-  /// ([_episodeOrderQueryParameters]) only keeps paging stable;
-  /// [sortEpisodesByWatchOrder] then orders the assembled list, leaving a single
-  /// definition of "episode order".
+  /// All episodes of a series in the watch order selected by the
+  /// `SettingsService.specialsOrdering` preference:
+  ///
+  /// - `respectServer` — the response order is preserved. `/Shows/{id}/Episodes`
+  ///   ignores `SortBy` (only `Random` is honored) and returns Jellyfin's
+  ///   native watch order: Specials placed into their aired seasons only via
+  ///   explicit `AirsBefore*` metadata (per the server-wide
+  ///   `DisplaySpecialsWithinSeasons` setting), unplaced Specials in a leading
+  ///   season-0 block that never interrupts the regular run (#1952).
+  /// - `airDate` / `specialsLast` — the assembled list is re-sorted by
+  ///   [sortEpisodesByWatchOrder] so online next/prev matches downloads and
+  ///   offline playback (#1416/#1414).
+  ///
+  /// Paging is stable in every mode: the server materializes the full episode
+  /// list before applying `StartIndex`/`Limit`.
   ///
   /// Uses [_queueFields] (`UserData` + `PremiereDate`) instead of the full
   /// browse field set so the response stays small even for shows with thousands
@@ -1270,9 +1278,10 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     }
 
     abort?.throwIfAborted();
-    // Server lists Specials first (ParentIndexNumber asc); reorder into the
-    // shared aired watch order so online next/prev matches offline + downloads.
-    sortEpisodesByWatchOrder(all);
+    final ordering = effectiveSpecialsOrdering();
+    if (ordering != SpecialsOrdering.respectServer) {
+      sortEpisodesByWatchOrder(all, ordering: ordering);
+    }
     return all;
   }
 

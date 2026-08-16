@@ -13,11 +13,13 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 void main() {
   late AppDatabase db;
@@ -461,6 +463,47 @@ void main() {
     expect(queue?.playQueueTotalCount, 3);
     expect(queue?.playQueueVersion, 5);
     expect(queue?.size, 3);
+  });
+
+  test('show play queue source URI honors the specials-ordering preference', () async {
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+
+    final uris = <String?>[];
+    final client = testPlexClient(
+      serverId: publicServerId,
+      profileScopeId: defaultProfileScopeId,
+      config: testPlexConfig(machineIdentifier: 'machine-1'),
+      handler: (request) async {
+        uris.add(request.url.queryParameters['uri']);
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {'playQueueID': '42', 'playQueueVersion': '5', 'Metadata': <dynamic>[]},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      },
+    );
+    addTearDown(client.close);
+
+    // Default (respectServer) and explicit airDate: `/allLeaves` so Plex
+    // orders the queue by aired episode order with Specials interleaved
+    // (#1416).
+    final serverOrder = await client.createShowPlayQueue(showRatingKey: 'show-1');
+    expect(serverOrder, isNotNull);
+    expect(uris.single, 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/allLeaves');
+
+    await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.airDate);
+    await client.createShowPlayQueue(showRatingKey: 'show-1');
+    expect(uris.last, 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/allLeaves');
+
+    // specialsLast: `/children` keeps the Specials folder out of the regular
+    // run (#1952).
+    await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.specialsLast);
+    final specialsApart = await client.createShowPlayQueue(showRatingKey: 'show-1');
+    expect(specialsApart, isNotNull);
+    expect(uris.last, 'server://machine-1/com.plexapp.plugins.library/library/metadata/show-1/children');
   });
 
   test('activities tolerate scalar drift and skip only malformed rows', () async {

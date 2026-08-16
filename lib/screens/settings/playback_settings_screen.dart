@@ -213,6 +213,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         title: t.settings.showChapterMarkersOnTimeline,
         subtitle: t.settings.showChapterMarkersOnTimelineDescription,
       ),
+      SettingSelectionTile<SpecialsOrdering>(
+        pref: SettingsService.specialsOrdering,
+        icon: Symbols.low_priority_rounded,
+        title: t.settings.specialsOrdering,
+        subtitleBuilder: (mode) => '${_specialsOrderingLabel(mode)} · ${t.settings.specialsOrderingDescription}',
+        options: SpecialsOrdering.values.map((m) => DialogOption(value: m, title: _specialsOrderingLabel(m))).toList(),
+      ),
       if (!isMobile)
         SettingSwitchTile(
           pref: SettingsService.clickVideoTogglesPlayback,
@@ -222,6 +229,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         ),
     ],
   );
+
+  String _specialsOrderingLabel(SpecialsOrdering mode) => switch (mode) {
+    SpecialsOrdering.respectServer => t.settings.specialsOrderingServer,
+    SpecialsOrdering.airDate => t.settings.specialsOrderingAirDate,
+    SpecialsOrdering.specialsLast => t.settings.specialsOrderingLast,
+  };
 
   Widget _autoSkipGroup() => SettingsGroup(
     title: t.settings.autoSkip,

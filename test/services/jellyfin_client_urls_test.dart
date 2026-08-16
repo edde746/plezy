@@ -20,11 +20,13 @@ import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/subtitle_preference.dart';
 import 'package:plezy/utils/device_identity.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/prefs.dart';
 
 JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'https://jf.example.com'}) =>
     testJellyfinConnection(
@@ -3252,6 +3254,66 @@ void main() {
       expect(starts, ['0', '200']);
       expect(sortBy, everyElement('ParentIndexNumber,IndexNumber,SortName'));
       expect(sortOrder, everyElement('Ascending,Ascending,Ascending'));
+    });
+
+    test('fetchClientSideEpisodeQueue orders per the specials-ordering preference', () async {
+      resetSharedPreferencesForTest();
+      await SettingsService.getInstance();
+
+      // Server response order mimics Jellyfin's native watch order for a show
+      // whose Specials carry no AirsBefore placement: the season-0 block leads
+      // (never interrupting the regular run), then the regular seasons.
+      // The special's air date falls between the two regular episodes, so
+      // air-date mode would interleave it.
+      final orderedClient = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient(
+          (req) async => jsonResponse({
+            'Items': [
+              {
+                'Id': 'special',
+                'Type': 'Episode',
+                'ParentIndexNumber': 0,
+                'IndexNumber': 1,
+                'PremiereDate': '2022-10-27T00:00:00Z',
+                'SeriesId': 'show-1',
+              },
+              {
+                'Id': 'ep-1',
+                'Type': 'Episode',
+                'ParentIndexNumber': 1,
+                'IndexNumber': 1,
+                'PremiereDate': '2022-10-05T00:00:00Z',
+                'SeriesId': 'show-1',
+              },
+              {
+                'Id': 'ep-2',
+                'Type': 'Episode',
+                'ParentIndexNumber': 1,
+                'IndexNumber': 2,
+                'PremiereDate': '2022-11-02T00:00:00Z',
+                'SeriesId': 'show-1',
+              },
+            ],
+            'TotalRecordCount': 3,
+          }),
+        ),
+      );
+      addTearDown(orderedClient.close);
+
+      // Default respectServer: the response order is preserved verbatim.
+      final serverOrder = await orderedClient.fetchClientSideEpisodeQueue('show-1');
+      expect(serverOrder!.map((e) => e.id), ['special', 'ep-1', 'ep-2']);
+
+      // airDate: re-sorted into the aired interleave (#1416).
+      await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.airDate);
+      final interleaved = await orderedClient.fetchClientSideEpisodeQueue('show-1');
+      expect(interleaved!.map((e) => e.id), ['ep-1', 'special', 'ep-2']);
+
+      // specialsLast: Specials strictly after the regular seasons (#1952).
+      await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.specialsLast);
+      final specialsApart = await orderedClient.fetchClientSideEpisodeQueue('show-1');
+      expect(specialsApart!.map((e) => e.id), ['ep-1', 'ep-2', 'special']);
     });
 
     test('fetchPersonMedia queries items by person id', () async {
