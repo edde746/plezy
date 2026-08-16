@@ -12,8 +12,8 @@ import 'profile.dart';
 /// Plex Home users are NOT stored here; Plex owns those, and
 /// [PlexHomeService] fetches them live and caches them in
 /// [StorageService] for cold-start UX. UI surfaces should subscribe to
-/// both this registry and [PlexHomeService] (typically via [ProfilesView]
-/// or [ActiveProfileProvider]) to render the merged picker list.
+/// both this registry and [PlexHomeService] (typically via
+/// [ActiveProfileProvider]) to render the merged picker list.
 class ProfileRegistry {
   ProfileRegistry(this._db);
 

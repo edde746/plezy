@@ -41,7 +41,7 @@ void main() {
     final connections = _FakeConnectionRegistry(db);
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -60,6 +60,8 @@ void main() {
       await db.close();
     });
 
+    // Boot initializes the provider before the picker is reachable; mirror that.
+    await activeProfile.initialize();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -105,7 +107,7 @@ void main() {
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
     await storage.markProfileUsed('local-kids', DateTime(2026, 1, 3));
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -124,6 +126,7 @@ void main() {
       await db.close();
     });
 
+    await activeProfile.initialize();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -173,7 +176,7 @@ void main() {
     final connections = _FakeConnectionRegistry(db, [jellyfin]);
     final profileConnections = _FakeProfileConnectionRegistry(db, [link]);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -192,6 +195,7 @@ void main() {
       await db.close();
     });
 
+    await activeProfile.initialize();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -236,7 +240,7 @@ void main() {
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
     await storage.markProfileUsed('local-kids', DateTime(2026, 1, 3));
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -255,6 +259,7 @@ void main() {
       await db.close();
     });
 
+    await activeProfile.initialize();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -304,7 +309,7 @@ void main() {
     final connections = _FakeConnectionRegistry(db);
     final profileConnections = _FakeProfileConnectionRegistry(db);
     final storage = await StorageService.getInstance();
-    final plexHome = PlexHomeService(
+    final plexHome = _NoTimerPlexHomeService(
       connections: connections,
       profileConnections: profileConnections,
       storage: storage,
@@ -324,6 +329,7 @@ void main() {
       await db.close();
     });
 
+    await activeProfile.initialize();
     await tester.pumpWidget(
       InputModeTracker(
         child: TranslationProvider(
@@ -490,7 +496,7 @@ Future<void> _pumpPicker(
   final connectionRegistry = _FakeConnectionRegistry(db, connections);
   final profileConnectionRegistry = _FakeProfileConnectionRegistry(db, profileConnections);
   final storage = await StorageService.getInstance();
-  final plexHome = PlexHomeService(
+  final plexHome = _NoTimerPlexHomeService(
     connections: connectionRegistry,
     profileConnections: profileConnectionRegistry,
     storage: storage,
@@ -514,6 +520,8 @@ Future<void> _pumpPicker(
     }
   }
 
+  // Boot initializes the provider before the picker is reachable; mirror that.
+  await activeProfile.initialize();
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
@@ -663,4 +671,20 @@ class _FakeProfileConnectionRegistry extends ProfileConnectionRegistry {
 
   @override
   Stream<List<ProfileConnection>> watchAll() => Stream.value(_profileConnections);
+}
+
+/// Real [PlexHomeService] cache/refresh behavior, minus `start()`'s periodic
+/// refresh timer: `ActiveProfileProvider.initialize` starts the service, and
+/// a pending `Timer.periodic` trips `testWidgets`' end-of-test invariant.
+/// Tests seed the cache explicitly through [PlexHomeService.refresh].
+class _NoTimerPlexHomeService extends PlexHomeService {
+  _NoTimerPlexHomeService({
+    required super.connections,
+    required super.profileConnections,
+    required super.storage,
+    super.plexHomeUserFetcher,
+  });
+
+  @override
+  Future<void> start() async {}
 }

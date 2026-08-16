@@ -73,6 +73,19 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   /// Derived picture URL for [profileId], or null when initials should render.
   String? avatarUrlFor(String profileId) => _avatarUrls[profileId];
 
+  /// Per-profile borrowed connections. Does **not** include the Plex Home
+  /// parent — that's implicit via [Profile.parentConnectionId]. Plex Home
+  /// profiles can have entries here too (e.g. borrowed Jellyfin servers).
+  Map<String, List<ProfileConnection>> get connectionsByProfile => _connectionsByProfile;
+
+  Map<String, Connection> get connectionsById => _connectionsById;
+
+  /// Live Plex Home users per account connection id. Chip/label UI needs it
+  /// to turn a [ProfileConnection.userIdentifier] uuid into the Home user's
+  /// name; without it a borrowed Plex connection can only name the account
+  /// owner, which reads as the wrong identity.
+  Map<String, List<PlexHomeUser>> get plexHomeByConnectionId => _plexHomeUsers;
+
   bool get hasMultipleProfiles => _profiles.length > 1;
   bool get isInitialized => _initialized;
 
