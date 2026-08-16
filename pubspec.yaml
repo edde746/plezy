@@ -60,7 +60,7 @@ dependencies:
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 021e2075260e324b7440a5c81b57bf0242d35020
+      ref: 12ef3ff758709e3ceab8eccd6d43e0dea1c68ca1
   sentry_flutter: ^9.25.0
   auto_updater:
     git:
