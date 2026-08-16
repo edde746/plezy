@@ -32,7 +32,8 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
   final Map<CatalogRowId, List<CatalogItem>> _rowCache = {};
   final Map<CatalogRowId, DateTime> _rowCacheLoadedAt = {};
   final KeyedFutureCoalescer<CatalogRowId, List<CatalogItem>> _rowLoads = KeyedFutureCoalescer();
-  final FutureCoalescer<SimklAllItems> _watchlistLoad = FutureCoalescer();
+  // Coalesces the Simkl all-items fetch; distinct from the mixin's `_watchlistLoad` (membership snapshot).
+  final FutureCoalescer<SimklAllItems> _simklAllItemsLoad = FutureCoalescer();
   final Set<int> _animeIds = {};
   SimklAllItems? _watchlistCache;
   int _watchlistCacheGeneration = 0;
@@ -147,7 +148,7 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     final cached = _watchlistCache;
     if (cached != null) return Future.value(cached);
     final generation = _watchlistCacheGeneration;
-    return _watchlistLoad.run(() async {
+    return _simklAllItemsLoad.run(() async {
       final response = await _client.getAllItems(extended: 'full');
       if (generation == _watchlistCacheGeneration) _watchlistCache = response;
       return response;
@@ -613,7 +614,7 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
   void _invalidateWatchlistCache() {
     _watchlistCacheGeneration++;
     _watchlistCache = null;
-    _watchlistLoad.reset();
+    _simklAllItemsLoad.reset();
     _rowCache.remove(CatalogRowId.watchlist);
     _rowCacheLoadedAt.remove(CatalogRowId.watchlist);
   }

@@ -30,8 +30,7 @@ typedef SeerrPlexTokenSupplier = Future<String?> Function();
 /// On 401 it re-logins silently via [SeerrAuthService.reauth] (password
 /// methods use the stored secret; plex uses [plexTokenSupplier]), swaps the
 /// cookie, and retries once. Concurrent re-auths coalesce per instance+user
-/// so a burst of in-flight 401s triggers a single login POST — the same
-/// shape as `TraktClient._refreshesByToken`.
+/// so a burst of in-flight 401s triggers a single login POST.
 class SeerrClient {
   static final KeyedFutureCoalescer<String, SeerrSession> _reauthsByIdentity = KeyedFutureCoalescer();
 

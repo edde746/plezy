@@ -242,7 +242,6 @@ void main() {
       final client = TraktTracker.instance.client!;
       final rotated = _session(username: 'alice', accessToken: 'rotated-at', refreshToken: 'rotated-rt');
 
-      client.updateSession(rotated);
       client.onSessionUpdated?.call(rotated);
       await Future<void>.delayed(Duration.zero);
 
