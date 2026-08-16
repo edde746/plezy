@@ -1,19 +1,14 @@
-import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
 import '../../connection/connection.dart';
 import '../../connection/connection_registry.dart';
 import '../../database/app_database.dart';
-import '../../media/ids.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
-import '../../providers/libraries_provider.dart';
-import '../../providers/multi_server_provider.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 
@@ -27,16 +22,14 @@ import '../../utils/app_logger.dart';
 /// error is rethrown.
 ///
 /// All durable collaborators are captured before the first await, so a route
-/// unmount cannot interrupt the command between artifacts. Runtime manager,
-/// visibility, and library-loading effects remain post-commit and mounted
-/// gated. The helper itself does not navigate.
-Future<bool> persistAndBindConnection({
+/// unmount cannot interrupt the command between artifacts. Runtime pickup is
+/// left to the active-profile binder on the next switch or rebind. The helper
+/// itself does not navigate.
+Future<void> persistAndBindConnection({
   required BuildContext context,
   required Connection connection,
   required ProfileConnection? bindToProfile,
-  required Future<bool> Function()? addToManager,
   Profile? firstRunProfile,
-  String? visibleServerId,
 }) async {
   final db = context.read<AppDatabase>();
   final profiles = context.read<ProfileRegistry>();
@@ -83,17 +76,6 @@ Future<bool> persistAndBindConnection({
       Error.throwWithStackTrace(error, stackTrace);
     }
   }
-
-  if (!context.mounted || addToManager == null) return false;
-  final added = await addToManager();
-  if (!context.mounted || !added) return added;
-
-  final mp = context.read<MultiServerProvider>();
-  if (visibleServerId != null) {
-    mp.addToVisibleServerIds(ServerId(visibleServerId));
-  }
-  unawaited(context.read<LibrariesProvider>().loadLibraries());
-  return true;
 }
 
 Future<void> _compensateFailedActivation({

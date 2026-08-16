@@ -431,7 +431,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         userIdentifier: connection.userId,
         tokenAcquiredAt: DateTime.now(),
       ),
-      addToManager: null,
       firstRunProfile: firstRunProfile,
     );
 

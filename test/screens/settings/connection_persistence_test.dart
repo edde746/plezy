@@ -131,10 +131,11 @@ Profile _profile(String id, {String name = 'Fixture Profile'}) {
   return Profile.local(id: id, displayName: name, createdAt: DateTime.utc(2026, 1, 1));
 }
 
-Future<Object?> _runProvisioning(WidgetTester tester, Future<bool> Function() command) {
+Future<Object?> _runProvisioning(WidgetTester tester, Future<void> Function() command) {
   return tester.runAsync<Object?>(() async {
     try {
-      return await command();
+      await command();
+      return null;
     } catch (error) {
       return error;
     }
@@ -244,7 +245,6 @@ void main() {
   testWidgets('profile statement failure rolls back the complete first-run bundle', (tester) async {
     final profile = _profile('fixture-new-profile');
     final connection = _connection();
-    var runtimeAdds = 0;
     await mountHost(tester, profileRegistry: _FailingProfileRegistry(db));
 
     final error = await _runProvisioning(
@@ -254,10 +254,6 @@ void main() {
         connection: connection,
         bindToProfile: _join(profile, connection),
         firstRunProfile: profile,
-        addToManager: () async {
-          runtimeAdds++;
-          return true;
-        },
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -265,7 +261,6 @@ void main() {
     await expectEmptyAttempt(profile, connection);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
-    expect(runtimeAdds, 0);
   });
 
   testWidgets('connection statement failure rolls back the complete first-run bundle', (tester) async {
@@ -280,7 +275,6 @@ void main() {
         connection: connection,
         bindToProfile: _join(profile, connection),
         firstRunProfile: profile,
-        addToManager: null,
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -302,7 +296,6 @@ void main() {
         connection: connection,
         bindToProfile: _join(profile, connection),
         firstRunProfile: profile,
-        addToManager: null,
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -327,7 +320,6 @@ void main() {
         context: hostContext!,
         connection: updatedConnection,
         bindToProfile: _join(target, updatedConnection),
-        addToManager: null,
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -367,7 +359,6 @@ void main() {
         connection: connection,
         bindToProfile: _join(newProfile, connection),
         firstRunProfile: newProfile,
-        addToManager: null,
       ),
     );
     expect(error, isA<StateError>());
@@ -409,7 +400,6 @@ void main() {
         connection: updatedConnection,
         bindToProfile: _join(newProfile, updatedConnection),
         firstRunProfile: newProfile,
-        addToManager: null,
       ),
     );
     expect(error, isA<_AfterStatementFailure>());
@@ -430,7 +420,6 @@ void main() {
     final profile = _profile('fixture-new-profile');
     final connection = _connection(token: '');
     final gated = _GatedProfileConnectionRegistry(db, fail: false);
-    var runtimeAdds = 0;
     await mountHost(tester, joinRegistry: gated);
 
     final pending = persistAndBindConnection(
@@ -438,21 +427,16 @@ void main() {
       connection: connection,
       bindToProfile: _join(profile, connection),
       firstRunProfile: profile,
-      addToManager: () async {
-        runtimeAdds++;
-        return true;
-      },
     );
     await gated.started.future;
     await tester.pumpWidget(const SizedBox.shrink());
     gated.release.complete();
 
-    expect(await pending, isFalse);
+    await pending;
     expect(await ProfileRegistry(db).get(profile.id), isNotNull);
     expect(await ConnectionRegistry(db).get(connection.id), isNotNull);
     expect(await ProfileConnectionRegistry(db).get(profile.id, connection.id), isNotNull);
     expect(storage.getActiveProfileId(), profile.id);
-    expect(runtimeAdds, 0);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
@@ -468,8 +452,7 @@ void main() {
       connection: connection,
       bindToProfile: _join(profile, connection),
       firstRunProfile: profile,
-      addToManager: null,
-    ).then<Object?>((value) => value, onError: (Object error, StackTrace _) => error);
+    ).then<Object?>((_) => null, onError: (Object error, StackTrace _) => error);
     await gated.started.future;
     await tester.pumpWidget(const SizedBox.shrink());
     gated.release.complete();
