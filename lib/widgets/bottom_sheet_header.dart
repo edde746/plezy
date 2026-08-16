@@ -87,7 +87,7 @@ class BottomSheetHeader extends StatelessWidget {
     final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 18, fontWeight: .bold, color: titleColor);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: showBorder
           ? BoxDecoration(
               border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
@@ -95,24 +95,30 @@ class BottomSheetHeader extends StatelessWidget {
           : null,
       child: Stack(
         children: [
-          Row(
-            children: [
-              if (resolvedLeading != null) ...[resolvedLeading, const SizedBox(width: 8)],
-              Expanded(child: Text(title, style: effectiveTitleStyle)),
-              ?action,
-              ExcludeFocusTraversal(
-                child: IconButton(
-                  focusNode: closeFocusNode,
-                  tooltip: t.common.close,
-                  icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
-                  onPressed: onClose ?? () => OverlaySheetController.closeAdaptive(context),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                if (resolvedLeading != null) ...[resolvedLeading, const SizedBox(width: 8)],
+                Expanded(child: Text(title, style: effectiveTitleStyle)),
+                ?action,
+                ExcludeFocusTraversal(
+                  child: IconButton(
+                    focusNode: closeFocusNode,
+                    tooltip: t.common.close,
+                    icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
+                    onPressed: onClose ?? () => OverlaySheetController.closeAdaptive(context),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           if (usesBackButton)
             PositionedDirectional(
-              start: 0,
+              // Center the hit target (and thus the circular hover/press
+              // highlight of the InkResponse) on the 24px arrow glyph, which
+              // sits at the row's leading edge inside the 16px padding.
+              start: 16 + 12 - kMinInteractiveDimension / 2,
               top: 0,
               bottom: 0,
               width: kMinInteractiveDimension,
