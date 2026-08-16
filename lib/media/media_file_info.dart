@@ -1,6 +1,9 @@
 import '../i18n/strings.g.dart';
 
 import '../utils/formatters.dart';
+import 'media_stream.dart' show MediaStreamKind;
+
+export 'media_stream.dart' show MediaStreamKind;
 
 /// Backend-neutral file-info payload rendered by `FileInfoBottomSheet`.
 ///
@@ -251,8 +254,6 @@ class MediaFileAttachment {
 
   const MediaFileAttachment({this.index, this.fileName, this.mimeType, this.codec});
 }
-
-enum MediaStreamKind { video, audio, subtitle, image, data, lyric, unknown }
 
 /// Colour/HDR classification of a video stream, normalised across backends.
 ///
