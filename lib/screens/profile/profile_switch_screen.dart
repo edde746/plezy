@@ -48,7 +48,6 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   final Map<String, FocusNode> _profileFocusNodes = {};
   final Map<String, FocusNode> _profileMenuFocusNodes = {};
   final Map<String, GlobalKey<AppMenuButtonState<_TileAction>>> _profileMenuKeys = {};
-  bool _focusRequested = false;
   bool _switching = false;
 
   @override
@@ -214,13 +213,6 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
               ? () => _signOutPlexAccount(profile)
               : null;
           final hasMenu = onManage != null || onDelete != null || onSignOut != null;
-
-          if (isFirstSelectable && !_focusRequested) {
-            _focusRequested = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) profileFocusNode.requestFocus();
-            });
-          }
 
           return Padding(
             key: ValueKey(profile.id),

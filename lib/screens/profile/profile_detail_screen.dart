@@ -163,11 +163,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     final scope = SessionTeardownScope.of(context);
     final endedOwner = scope.active.activeId == _profile.id ? _profile.id : null;
 
-    if (endedOwner != null) {
-      await scope.shelf.endProfileSession(endedOwner);
-    }
-
-    try {
+    await withEndedProfileSession(scope, endedOwner, () async {
       // Release downloads only for servers the profile actually loses — the
       // same server can stay reachable through another connection (a second
       // Plex account sharing the server, another Jellyfin user).
@@ -183,19 +179,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
       await scope.cleanup.removeProfileConnection(profileId: _profile.id, connection: conn);
       await scope.hiddenLibraries?.refresh();
       // Deliberately not `resumeFreshSystemShelf`: a rebind failure on the
-      // success path must reach the catch below so the recovery attempt —
+      // success path must reach the helper's catch so the recovery attempt —
       // and the rethrow — still run.
       await scope.binder.rebindIfActive(_profile.id);
       if (endedOwner != null && scope.active.activeId == endedOwner) {
         scope.shelf.beginProfileSession(endedOwner);
         if (scope.multiServer.hasConnectedServers) await scope.discover?.load();
       }
-    } catch (_) {
-      if (endedOwner != null) {
-        await resumeFreshSystemShelf(scope, endedOwner);
-      }
-      rethrow;
-    }
+    });
   }
 
   /// Server ids the profile keeps after removing [excludingConnectionId]:
