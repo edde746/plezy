@@ -1,21 +1,6 @@
 part of '../../jellyfin_client.dart';
 
 mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
-  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(
-    String path,
-    Map<String, dynamic> queryParameters, {
-    // ignore: unused_element_parameter
-    _HubRetryPolicy? retry,
-    // ignore: unused_element_parameter
-    AbortController? abort,
-    // ignore: unused_element_parameter
-    Duration? timeout,
-    // ignore: unused_element_parameter
-    bool allowEndpointFailover,
-    // ignore: unused_element_parameter
-    HubFetchDiagnostics? diagnostics,
-  });
-
   /// Returns `true` when this server has Live TV configured (channels
   /// available). Probes `/LiveTv/Channels?limit=1`. Used by [MultiServerProvider]
   /// to gate the Live TV menu.
@@ -165,8 +150,10 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
     return _client.fetchLiveTvPrograms(beginsAt: toEpoch(from), endsAt: toEpoch(to));
   }
 
-  @override
-  Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey}) async {
+  /// Negotiate the HLS transcode URL + session identity for [channelKey].
+  /// Jellyfin-only: Plex live URLs are only valid after a tune, so the shared
+  /// entry point is [startPlayback].
+  Future<LiveTvStreamResolution?> _resolveStreamUrl(String channelKey) async {
     final info = await _client.getPlaybackInfo(
       channelKey,
       autoOpenLiveStream: true,
@@ -218,7 +205,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
 
   @override
   Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey}) async {
-    final resolution = await resolveStreamUrl(channelKey, dvrKey: dvrKey);
+    final resolution = await _resolveStreamUrl(channelKey);
     if (resolution == null) return null;
     return _JellyfinLiveTvPlaybackSession(_client, channelKey, resolution);
   }

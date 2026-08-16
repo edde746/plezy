@@ -158,6 +158,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     }
   }
 
+  @override
   String _withApiKey(String urlOrPath) {
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: urlOrPath);
     final params = Map<String, String>.from(uri.queryParameters)..['api_key'] = connection.accessToken;
@@ -565,6 +566,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// [sourceId] wins when present because Jellyfin plugins may reorder merged
   /// `MediaSources` between requests. [sourceIndex] is clamped to the valid
   /// range as a fallback to mirror Plex's `parseVideoPlaybackDataFromJson`.
+  @override
   Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
     String itemId, {
     int sourceIndex = 0,
@@ -617,6 +619,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// item only has a single MediaSource, [mediaSourceId] equals [itemId] and
   /// can be omitted; for items with multiple versions Jellyfin uses the
   /// param to pick which file to serve.
+  @override
   String buildDirectStreamUrl(
     String itemId, {
     String? container,
@@ -641,6 +644,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// Audio sibling of [buildDirectStreamUrl]: `/Audio/{id}/stream` with the
   /// same `Static=true` + `api_key` + `DeviceId` self-authentication. Used
   /// for track direct-play fallback, downloads, and external players.
+  @override
   String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
@@ -690,6 +694,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// [audioProfile] extends the DeviceProfile with music direct-play and
   /// audio→mp3 transcode entries for track playback; the video profiles (and
   /// the request body when false) are untouched either way.
+  @override
   Future<Map<String, dynamic>> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,

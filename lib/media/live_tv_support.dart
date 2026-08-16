@@ -151,13 +151,6 @@ abstract class LiveTvSupport {
   /// `/livetv/dvrs/{dvrKey}/grid`; Jellyfin queries `/LiveTv/Programs`.
   Future<List<LiveTvProgram>> fetchSchedule({DateTime? from, DateTime? to});
 
-  /// Resolve a playable stream URL for [channelKey].
-  ///
-  /// Jellyfin returns a negotiated HLS stream URL plus the play session id. Plex
-  /// returns `null` because its stream URL is only valid after a tune;
-  /// playback callers use [startPlayback], which owns that difference.
-  Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey});
-
   /// Start a playback session for [channelKey] — the single entry the player
   /// uses for initial launch and channel switching. Plex requires [dvrKey]
   /// (tune + transcode-session setup); Jellyfin ignores it and negotiates an

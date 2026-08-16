@@ -1,40 +1,6 @@
 part of '../../jellyfin_client.dart';
 
 mixin _JellyfinImageDownloadMethods on _JellyfinClientInternals {
-  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
-    String itemId, {
-    int sourceIndex = 0,
-    String? sourceId,
-    String? preferredSignature,
-  });
-  String buildDirectStreamUrl(
-    String itemId, {
-    String? container,
-    String? mediaSourceId,
-    String? playSessionId,
-    String? liveStreamId,
-    int? audioStreamIndex,
-  });
-  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId});
-  Future<Map<String, dynamic>> getPlaybackInfo(
-    String itemId, {
-    int? maxStreamingBitrate = 100_000_000,
-    String? mediaSourceId,
-    String? liveStreamId,
-    int? startTimeTicks,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-    bool? autoOpenLiveStream,
-    bool? enableDirectPlay,
-    bool? enableDirectStream,
-    bool? enableTranscoding,
-    bool? allowVideoStreamCopy,
-    bool? allowAudioStreamCopy,
-    bool audioProfile,
-    bool burnSubtitles,
-  });
-  String _withApiKey(String urlOrPath);
-
   /// [cover] is accepted for interface parity and ignored: `maxWidth`/
   /// `maxHeight` already scale the long axis to fit inside the box, so
   /// Jellyfin never overshoots the way Plex's `minSize=1` transcode does.

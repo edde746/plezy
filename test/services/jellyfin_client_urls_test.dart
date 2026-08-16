@@ -2592,14 +2592,12 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('live TV stream resolution requires an HLS transcode', () async {
-      final requests = <Uri>[];
-      String? capturedBody;
+    test('live TV playback start negotiates an HLS transcode', () async {
+      final requests = <({Uri url, String body})>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
-          requests.add(request.url);
-          capturedBody = request.body;
+          requests.add((url: request.url, body: request.body));
           if (request.url.path == '/Items/channel-1/PlaybackInfo') {
             return jsonResponse({
               'PlaySessionId': 'live-session-1',
@@ -2613,40 +2611,51 @@ void main() {
               ],
             });
           }
-          return http.Response('{}', 404);
+          return http.Response('', 204);
         }),
       );
       addTearDown(scoped.close);
 
-      final resolution = await scoped.liveTv.resolveStreamUrl('channel-1');
+      final session = await scoped.liveTv.startPlayback('channel-1');
 
-      expect(requests.single.path, '/Items/channel-1/PlaybackInfo');
-      expect(requests.single.queryParameters['AutoOpenLiveStream'], 'true');
-      expect(requests.single.queryParameters['EnableTranscoding'], 'true');
-      expect(requests.single.queryParameters['EnableDirectPlay'], 'false');
-      expect(requests.single.queryParameters['EnableDirectStream'], 'false');
-      expect(requests.single.queryParameters['AllowVideoStreamCopy'], 'true');
-      expect(requests.single.queryParameters['AllowAudioStreamCopy'], 'true');
-      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      final negotiation = requests.single;
+      expect(negotiation.url.path, '/Items/channel-1/PlaybackInfo');
+      expect(negotiation.url.queryParameters['AutoOpenLiveStream'], 'true');
+      expect(negotiation.url.queryParameters['EnableTranscoding'], 'true');
+      expect(negotiation.url.queryParameters['EnableDirectPlay'], 'false');
+      expect(negotiation.url.queryParameters['EnableDirectStream'], 'false');
+      expect(negotiation.url.queryParameters['AllowVideoStreamCopy'], 'true');
+      expect(negotiation.url.queryParameters['AllowAudioStreamCopy'], 'true');
+      final body = jsonDecode(negotiation.body) as Map<String, dynamic>;
       expect(body['AutoOpenLiveStream'], isTrue);
       expect(body['EnableTranscoding'], isTrue);
       expect(body['EnableDirectPlay'], isFalse);
       expect(body['EnableDirectStream'], isFalse);
-      expect(resolution, isNotNull);
-      expect(resolution!.playSessionId, 'live-session-1');
-      expect(resolution.mediaSourceId, 'source-1');
-      expect(resolution.liveStreamId, 'open-stream-1');
-      expect(resolution.playMethod, 'Transcode');
-      final uri = Uri.parse(resolution.url);
+
+      expect(session, isNotNull);
+      final uri = Uri.parse((await session!.streamUrlAt())!);
       expect(uri.path, '/Videos/channel-1/live.m3u8');
       expect(uri.queryParameters['PlaySessionId'], 'live-session-1');
       expect(uri.queryParameters['api_key'], 'tok-abc');
+
+      // The negotiated session identity is only observable on the heartbeat
+      // wire, so drive one report and assert what reaches the server.
+      await session.reportTimeline(state: 'playing', positionMs: 0, durationMs: 0);
+      final heartbeat = requests.last;
+      expect(heartbeat.url.path, '/Sessions/Playing');
+      final heartbeatBody = jsonDecode(heartbeat.body) as Map<String, dynamic>;
+      expect(heartbeatBody['PlaySessionId'], 'live-session-1');
+      expect(heartbeatBody['MediaSourceId'], 'source-1');
+      expect(heartbeatBody['LiveStreamId'], 'open-stream-1');
+      expect(heartbeatBody['PlayMethod'], 'Transcode');
     });
 
-    test('live TV stream resolution recovers identity from a negotiated HLS URL', () async {
+    test('live TV playback start recovers identity from a negotiated HLS URL', () async {
+      final requests = <({Uri url, String body})>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
+          requests.add((url: request.url, body: request.body));
           if (request.url.path == '/Items/channel-1/PlaybackInfo') {
             return jsonResponse({
               'MediaSources': [
@@ -2658,21 +2667,25 @@ void main() {
               ],
             });
           }
-          return http.Response('{}', 404);
+          return http.Response('', 204);
         }),
       );
       addTearDown(scoped.close);
 
-      final resolution = await scoped.liveTv.resolveStreamUrl('channel-1');
+      final session = await scoped.liveTv.startPlayback('channel-1');
+      expect(session, isNotNull);
 
-      expect(resolution, isNotNull);
-      expect(resolution!.playSessionId, 'play-url');
-      expect(resolution.mediaSourceId, 'source-url');
-      expect(resolution.liveStreamId, 'live-url');
-      expect(resolution.playMethod, 'Transcode');
+      await session!.reportTimeline(state: 'playing', positionMs: 0, durationMs: 0);
+      final heartbeat = requests.last;
+      expect(heartbeat.url.path, '/Sessions/Playing');
+      final heartbeatBody = jsonDecode(heartbeat.body) as Map<String, dynamic>;
+      expect(heartbeatBody['PlaySessionId'], 'play-url');
+      expect(heartbeatBody['MediaSourceId'], 'source-url');
+      expect(heartbeatBody['LiveStreamId'], 'live-url');
+      expect(heartbeatBody['PlayMethod'], 'Transcode');
     });
 
-    test('live TV stream resolution rejects a non-HLS fallback URL', () async {
+    test('live TV playback start rejects a non-HLS fallback URL', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
@@ -2688,7 +2701,7 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      expect(await scoped.liveTv.resolveStreamUrl('channel-1'), isNull);
+      expect(await scoped.liveTv.startPlayback('channel-1'), isNull);
     });
 
     test('buildTrickplayTileUrl wires width, sheet index, api_key, and DeviceId', () {
@@ -2917,7 +2930,7 @@ void main() {
       expect(headers['Accept'], 'application/json');
     });
 
-    test('fetchLibraryContent sends a bounded paged Items request', () async {
+    test('fetchLibraryPagedContent sends a bounded paged Items request', () async {
       Uri? captured;
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -2938,9 +2951,9 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final page = await scoped.fetchLibraryContent(
+      final page = await scoped.fetchLibraryPagedContent(
         'lib-1',
-        const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
+        query: const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
       );
 
       expect(page.items.single.id, 'movie-1');
@@ -2973,8 +2986,14 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      await scoped.fetchLibraryContent('lib-1', const LibraryQuery(kind: MediaKind.album, offset: 0, limit: 20));
-      await scoped.fetchLibraryContent('lib-1', const LibraryQuery(kind: MediaKind.track, offset: 0, limit: 20));
+      await scoped.fetchLibraryPagedContent(
+        'lib-1',
+        query: const LibraryQuery(kind: MediaKind.album, offset: 0, limit: 20),
+      );
+      await scoped.fetchLibraryPagedContent(
+        'lib-1',
+        query: const LibraryQuery(kind: MediaKind.track, offset: 0, limit: 20),
+      );
       await scoped.fetchArtistAlbums(
         testMediaItem(id: 'artist-1', backend: MediaBackend.jellyfin, kind: MediaKind.artist),
       );
@@ -3040,7 +3059,7 @@ void main() {
       expect(result.cachedValues['year']!.map((value) => value.key), ['2024', '1999']);
     });
 
-    test('fetchLibraryContent uses sentinel total fallback when server omits total', () async {
+    test('fetchLibraryPagedContent uses sentinel total fallback when server omits total', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
@@ -3055,9 +3074,9 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final page = await scoped.fetchLibraryContent(
+      final page = await scoped.fetchLibraryPagedContent(
         'lib-1',
-        const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
+        query: const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
       );
 
       expect(page.items.length, 25);

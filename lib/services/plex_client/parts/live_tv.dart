@@ -66,10 +66,7 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       'targetLibrarySectionID': request.targetLibrarySectionID,
       'targetSectionLocationID': request.targetSectionLocationID,
       'type': request.type,
-      if (request.providers != null) 'providers': request.providers,
-      for (final entry in request.hints.entries) 'hints[${entry.key}]': entry.value,
       for (final entry in request.prefs.entries) 'prefs[${entry.key}]': entry.value,
-      for (final entry in request.params.entries) 'params[${entry.key}]': entry.value,
     };
     final encoded = encodeQueryParameters(flat);
     if (encoded.isNotEmpty) parts.add(encoded);
@@ -819,9 +816,6 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     int? toEpoch(DateTime? dt) => dt == null ? null : dt.millisecondsSinceEpoch ~/ 1000;
     return getEpgGrid(beginsAt: toEpoch(from), endsAt: toEpoch(to));
   }
-
-  @override
-  Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey}) async => null;
 
   @override
   Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey}) {

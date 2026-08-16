@@ -99,6 +99,44 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
   MediaItem? _mapItem(Map<String, dynamic> json);
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
   String? _absolutizeImagePath(String? path);
+  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
+    String itemId, {
+    int sourceIndex = 0,
+    String? sourceId,
+    String? preferredSignature,
+  });
+  String buildDirectStreamUrl(
+    String itemId, {
+    String? container,
+    String? mediaSourceId,
+    String? playSessionId,
+    String? liveStreamId,
+    int? audioStreamIndex,
+  });
+  String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId});
+  Future<Map<String, dynamic>> getPlaybackInfo(
+    String itemId, {
+    int? maxStreamingBitrate = 100_000_000,
+    String? mediaSourceId,
+    String? liveStreamId,
+    int? startTimeTicks,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+    bool? autoOpenLiveStream,
+    bool? enableDirectPlay,
+    bool? enableDirectStream,
+    bool? enableTranscoding,
+    bool? allowVideoStreamCopy,
+    bool? allowAudioStreamCopy,
+    bool audioProfile,
+    bool burnSubtitles,
+  });
+  String _withApiKey(String urlOrPath);
+
+  /// Positional core of the tolerant `/Items` array fetch. The browse part's
+  /// implementation widens it with optional retry/abort/diagnostics knobs that
+  /// only its own call sites pass.
+  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(String path, Map<String, dynamic> queryParameters);
 
   /// Row metadata Jellyfin volunteers on `/Items` list responses but Emby
   /// withholds unless it is named in `Fields`.
