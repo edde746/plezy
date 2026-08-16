@@ -57,11 +57,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         SettingsService.matchDynamicRange,
         SettingsService.matchContentFrameRate,
         SettingsService.audioDownmix,
+        SettingsService.autoPlayNextEpisode,
       ],
       builder: (context) {
         final svc = SettingsService.instance;
         final exoActive = Platform.isAndroid && svc.read(SettingsService.useExoPlayer);
         final downmixOn = svc.read(SettingsService.audioDownmix);
+        final autoPlayOn = svc.read(SettingsService.autoPlayNextEpisode);
         final showDisplaySwitchDelay =
             PlatformDetector.isAppleTV() ||
             (Platform.isWindows &&
@@ -109,7 +111,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             ),
 
             _seekAndTimingGroup(),
-            _behaviorGroup(context, isMobile),
+            _behaviorGroup(context, isMobile, autoPlayOn),
             _autoSkipGroup(),
             const SizedBox(height: 24),
           ],
@@ -176,7 +178,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     ],
   );
 
-  Widget _behaviorGroup(BuildContext context, bool isMobile) => SettingsGroup(
+  Widget _behaviorGroup(BuildContext context, bool isMobile, bool autoPlayOn) => SettingsGroup(
     title: t.settings.behavior,
     children: [
       if (DiscordRPCService.isAvailable)
@@ -195,6 +197,37 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
           subtitle: t.settings.companionRemoteServerDescription,
           onAfterWrite: (v) => applyCompanionRemoteServerSetting(context, v),
         ),
+      SettingSwitchTile(
+        pref: SettingsService.autoPlayNextEpisode,
+        icon: Symbols.skip_next_rounded,
+        title: t.settings.autoPlayNext,
+        subtitle: t.settings.autoPlayNextDescription,
+      ),
+      if (autoPlayOn) ...[
+        SettingNumberTile(
+          pref: SettingsService.autoPlayCountdown,
+          icon: Symbols.timer_rounded,
+          title: t.settings.playNextCountdown,
+          subtitleBuilder: (v) =>
+              v == 0 ? t.settings.playNextCountdownImmediate : t.settings.secondsUnit(seconds: v.toString()),
+          labelText: t.settings.secondsLabel,
+          suffixText: t.settings.secondsShort,
+          min: 0,
+          max: 20,
+        ),
+        SettingNumberTile(
+          pref: SettingsService.stillWatchingEpisodes,
+          icon: Symbols.visibility_rounded,
+          title: t.settings.stillWatchingEpisodes,
+          subtitleBuilder: (v) => v == 0
+              ? t.settings.stillWatchingEpisodesNever
+              : t.settings.stillWatchingEpisodesUnit(count: v.toString()),
+          labelText: t.settings.stillWatchingEpisodes,
+          suffixText: '',
+          min: 0,
+          max: 20,
+        ),
+      ],
       SettingSwitchTile(
         pref: SettingsService.rememberTrackSelections,
         icon: Symbols.bookmark_rounded,

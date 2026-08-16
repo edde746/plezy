@@ -337,6 +337,40 @@ void main() {
       expect(settings.isLibraryAllowedForTracker(TrackerService.trakt, null), isFalse);
       expect(settings.isLibraryAllowedForTracker(TrackerService.trakt, 'server:allowed'), isTrue);
     });
+
+    test('autoPlayCountdown defaults to 5 seconds and clamps to 0-20', () async {
+      final settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.autoPlayCountdown), 5);
+
+      await settings.write(SettingsService.autoPlayCountdown, 0);
+      expect(settings.read(SettingsService.autoPlayCountdown), 0);
+
+      await settings.write(SettingsService.autoPlayCountdown, 15);
+      expect(settings.read(SettingsService.autoPlayCountdown), 15);
+
+      await settings.write(SettingsService.autoPlayCountdown, -5);
+      expect(settings.read(SettingsService.autoPlayCountdown), 0);
+
+      await settings.write(SettingsService.autoPlayCountdown, 50);
+      expect(settings.read(SettingsService.autoPlayCountdown), 20);
+    });
+
+    test('stillWatchingEpisodes defaults to 3 episodes and clamps to 0-20', () async {
+      final settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.stillWatchingEpisodes), 3);
+
+      await settings.write(SettingsService.stillWatchingEpisodes, 0);
+      expect(settings.read(SettingsService.stillWatchingEpisodes), 0);
+
+      await settings.write(SettingsService.stillWatchingEpisodes, 5);
+      expect(settings.read(SettingsService.stillWatchingEpisodes), 5);
+
+      await settings.write(SettingsService.stillWatchingEpisodes, -3);
+      expect(settings.read(SettingsService.stillWatchingEpisodes), 0);
+
+      await settings.write(SettingsService.stillWatchingEpisodes, 45);
+      expect(settings.read(SettingsService.stillWatchingEpisodes), 20);
+    });
   });
   group('BaseSharedPreferencesService initialization generations', () {
     test('a reset-raced initialization resolves to the replacement backend', () async {

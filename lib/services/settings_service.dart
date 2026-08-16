@@ -553,6 +553,12 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
+  static final autoPlayCountdown = IntPref('auto_play_countdown', defaultValue: 5, transform: (v) => v.clamp(0, 20));
+  static final stillWatchingEpisodes = IntPref(
+    'still_watching_episodes',
+    defaultValue: 3,
+    transform: (v) => v.clamp(0, 20),
+  );
 
   static ThemeMode _tvAwareThemeModeDefault() => TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system;
   static const themeMode = EnumPref<ThemeMode>(
@@ -978,6 +984,8 @@ class SettingsService extends BaseSharedPreferencesService {
     dvConversionMode,
     musicVolume,
     autoPlayNextEpisode,
+    autoPlayCountdown,
+    stillWatchingEpisodes,
     specialsOrdering,
     useExoPlayer,
     startupSection,

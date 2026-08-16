@@ -41,4 +41,59 @@ void main() {
     expect(settings.prefs.getString(SettingsService.musicQualityPreset.key), 'low');
     expect(find.descendant(of: tile, matching: find.text('128 kbps')), findsOneWidget);
   });
+
+  testWidgets(
+    'shows and updates Play Next Countdown, Still Watching Check, and conditionally hides them when Auto-Play Next is disabled',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(1000, 1400);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+      await tester.pumpAndSettle();
+
+      final autoPlayTitle = find.text('Auto-Play Next');
+      await tester.scrollUntilVisible(autoPlayTitle, 500, scrollable: find.byType(Scrollable).first);
+      final autoPlayTile = find.widgetWithText(ListTile, 'Auto-Play Next');
+      expect(autoPlayTile, findsOneWidget);
+
+      final countdownTile = find.widgetWithText(ListTile, 'Play Next Countdown');
+      expect(find.descendant(of: countdownTile, matching: find.text('5 seconds')), findsOneWidget);
+
+      final stillWatchingTile = find.widgetWithText(ListTile, 'Still Watching Check');
+      expect(find.descendant(of: stillWatchingTile, matching: find.text('3 episodes')), findsOneWidget);
+
+      final settings = SettingsService.instance;
+
+      // Verify Immediate label when countdown is set to 0
+      await settings.write(SettingsService.autoPlayCountdown, 0);
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: countdownTile, matching: find.text('Immediate')), findsOneWidget);
+
+      // Verify Never label when still watching is set to 0
+      await settings.write(SettingsService.stillWatchingEpisodes, 0);
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: stillWatchingTile, matching: find.text('Never')), findsOneWidget);
+
+      // Tap Auto-Play Next switch to disable
+      final switchFinder = find.descendant(of: autoPlayTile, matching: find.byType(Switch));
+      expect(tester.widget<Switch>(switchFinder).value, isTrue);
+      await tester.tap(autoPlayTile);
+      await tester.pumpAndSettle();
+
+      expect(settings.read(SettingsService.autoPlayNextEpisode), isFalse);
+
+      // Verify dependent tiles are hidden when autoPlayNextEpisode is false
+      expect(find.widgetWithText(ListTile, 'Play Next Countdown'), findsNothing);
+      expect(find.widgetWithText(ListTile, 'Still Watching Check'), findsNothing);
+
+      // Re-enable Auto-Play Next
+      await tester.tap(autoPlayTile);
+      await tester.pumpAndSettle();
+      expect(settings.read(SettingsService.autoPlayNextEpisode), isTrue);
+      expect(find.widgetWithText(ListTile, 'Play Next Countdown'), findsOneWidget);
+      expect(find.widgetWithText(ListTile, 'Still Watching Check'), findsOneWidget);
+    },
+  );
 }

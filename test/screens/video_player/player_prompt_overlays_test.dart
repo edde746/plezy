@@ -2,6 +2,7 @@ import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
@@ -181,13 +182,121 @@ void main() {
 
     semantics.dispose();
   });
+
+  testWidgets('play next overlay renders countdown text when countdown is active', (tester) async {
+    PipService().isPipActive.value = false;
+    final chromeController = PlayerChromeController();
+    final cancelFocusNode = FocusNode(debugLabel: 'TestCancel');
+    final confirmFocusNode = FocusNode(debugLabel: 'TestConfirm');
+    addTearDown(chromeController.dispose);
+    addTearDown(cancelFocusNode.dispose);
+    addTearDown(confirmFocusNode.dispose);
+
+    var playNextTapped = false;
+    var cancelTapped = false;
+
+    await tester.pumpWidget(
+      _wrapPrompt(
+        VideoPlayerPlayNextOverlay(
+          visible: true,
+          nextEpisode: _episode(),
+          autoPlayCountdown: 5,
+          cancelFocusNode: cancelFocusNode,
+          confirmFocusNode: confirmFocusNode,
+          chromeController: chromeController,
+          onCancel: () => cancelTapped = true,
+          onPlayNext: () => playNextTapped = true,
+        ),
+      ),
+    );
+
+    expect(find.text('5'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+
+    await tester.tap(find.text('5'));
+    expect(playNextTapped, isTrue);
+
+    await tester.tap(find.text('Cancel'));
+    expect(cancelTapped, isTrue);
+  });
+
+  testWidgets('play next overlay renders Play Next label when countdown is disabled', (tester) async {
+    PipService().isPipActive.value = false;
+    final chromeController = PlayerChromeController();
+    final cancelFocusNode = FocusNode(debugLabel: 'TestCancel');
+    final confirmFocusNode = FocusNode(debugLabel: 'TestConfirm');
+    addTearDown(chromeController.dispose);
+    addTearDown(cancelFocusNode.dispose);
+    addTearDown(confirmFocusNode.dispose);
+
+    var playNextTapped = false;
+
+    await tester.pumpWidget(
+      _wrapPrompt(
+        VideoPlayerPlayNextOverlay(
+          visible: true,
+          nextEpisode: _episode(),
+          autoPlayCountdown: 0,
+          cancelFocusNode: cancelFocusNode,
+          confirmFocusNode: confirmFocusNode,
+          chromeController: chromeController,
+          onCancel: () {},
+          onPlayNext: () => playNextTapped = true,
+        ),
+      ),
+    );
+
+    expect(find.text('Play Next'), findsOneWidget);
+    await tester.tap(find.text('Play Next'));
+    expect(playNextTapped, isTrue);
+  });
+
+  testWidgets('still watching overlay renders and triggers callbacks', (tester) async {
+    PipService().isPipActive.value = false;
+    final chromeController = PlayerChromeController();
+    final pauseFocusNode = FocusNode(debugLabel: 'TestPause');
+    final continueFocusNode = FocusNode(debugLabel: 'TestContinue');
+    addTearDown(chromeController.dispose);
+    addTearDown(pauseFocusNode.dispose);
+    addTearDown(continueFocusNode.dispose);
+
+    var pauseTapped = false;
+    var continueTapped = false;
+
+    await tester.pumpWidget(
+      _wrapPrompt(
+        VideoPlayerStillWatchingOverlay(
+          visible: true,
+          countdown: 25,
+          pauseFocusNode: pauseFocusNode,
+          continueFocusNode: continueFocusNode,
+          chromeController: chromeController,
+          onPause: () => pauseTapped = true,
+          onContinue: () => continueTapped = true,
+        ),
+      ),
+    );
+
+    expect(find.text('Still watching?'), findsOneWidget);
+    expect(find.text('Pausing in 25s'), findsOneWidget);
+    expect(find.text('Continue'), findsOneWidget);
+    expect(find.text('Pause'), findsOneWidget);
+
+    await tester.tap(find.text('Continue'));
+    expect(continueTapped, isTrue);
+
+    await tester.tap(find.text('Pause'));
+    expect(pauseTapped, isTrue);
+  });
 }
 
 Widget _wrapPrompt(Widget child) {
-  return ChangeNotifierProvider(
-    create: (_) => PlaybackStateProvider(),
-    child: MaterialApp(
-      home: Scaffold(body: Stack(children: [child])),
+  return TranslationProvider(
+    child: ChangeNotifierProvider(
+      create: (_) => PlaybackStateProvider(),
+      child: MaterialApp(
+        home: Scaffold(body: Stack(children: [child])),
+      ),
     ),
   );
 }

@@ -335,7 +335,11 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
           onCancel: onPause,
           confirmFocusNode: continueFocusNode,
           onConfirm: onContinue,
-          confirmChildren: [Text('$countdown'), const SizedBox(width: 4), Text(t.videoControls.continueWatching)],
+          confirmChildren: [
+            Text('$countdown'),
+            const SizedBox(width: 4),
+            Flexible(child: Text(t.videoControls.continueWatching, overflow: TextOverflow.ellipsis)),
+          ],
         ),
       ],
     );
