@@ -507,40 +507,13 @@ class PlayerAndroid extends PlayerBase {
     }
   }
 
+  /// Raw mpv commands don't apply to the ExoPlayer backend. Every command
+  /// dispatched through the [Player] interface ('change-list', 'drop-buffers',
+  /// 'sub-seek', 'screenshot') targets an mpv core and has always been a
+  /// silent no-op here — including in the native MPV fallback mode.
   @override
-  Future<void> command(List<String> args) async {
-    if (disposed) return;
-    if (args.isEmpty) return;
-
-    switch (args.first) {
-      case 'loadfile':
-        if (args.length > 1) {
-          await open(Media(args[1]));
-        }
-        break;
-      case 'seek':
-        if (args.length > 1) {
-          final seconds = double.tryParse(args[1]) ?? 0;
-          final mode = args.length > 2 ? args[2] : 'relative';
-          if (mode == 'absolute') {
-            await seek(Duration(milliseconds: (seconds * 1000).toInt()));
-          } else {
-            final newPos = state.position + Duration(milliseconds: (seconds * 1000).toInt());
-            await seek(newPos);
-          }
-        }
-        break;
-      case 'stop':
-        await stop();
-        break;
-      case 'sub-add':
-        if (args.length > 1) {
-          final select = args.length > 2 && args[2] == 'select';
-          await addSubtitleTrack(uri: args[1], select: select);
-        }
-        break;
-    }
-  }
+  // ignore: no-empty-block - deliberate no-op, mpv commands target the mpv backend
+  Future<void> command(List<String> args) async {}
 
   /// Apply subtitle styling to the native ExoPlayer layer.
   ///
