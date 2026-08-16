@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/seerr/seerr_session.dart';
-import '../profiles/active_plex_identity.dart';
+import '../profiles/active_plex_token.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile_connection_registry.dart';
 import '../services/seerr/seerr_auth_service.dart';
@@ -22,18 +22,13 @@ SeerrPlexTokenSupplier buildSeerrPlexTokenSupplier({
   required ProfileConnectionRegistry profileConnections,
 }) {
   return () async {
-    final identity = await resolveActivePlexIdentity(
+    final resolved = await resolveActivePlexToken(
       activeProfile: activeProfile,
       connections: connections,
       profileConnections: profileConnections,
+      allowAccountTokenForHomeUser: true,
     );
-    if (identity == null) return null;
-    final profile = activeProfile.active;
-    if (profile != null) {
-      final pc = await profileConnections.get(profile.id, identity.account.id);
-      if (pc?.hasToken ?? false) return pc!.userToken;
-    }
-    return identity.account.accountToken;
+    return resolved?.token;
   };
 }
 

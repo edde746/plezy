@@ -7,6 +7,7 @@ import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
 import '../media/media_server_user_profile.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+import '../profiles/active_plex_token.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_connection.dart';
@@ -213,8 +214,9 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// identity boundaries.
   ///
   /// A Plex Home profile may use only the switched token stored on its exact
-  /// parent [ProfileConnection]. A missing or empty switched token returns
-  /// `null`; the parent account token represents a different user.
+  /// parent [ProfileConnection] — [resolveActivePlexToken] with the
+  /// account-token fallback disabled. A missing or empty switched token
+  /// returns `null`; the parent account token represents a different user.
   ///
   /// Local Plezy profiles keep their explicitly selected Plex account fallback
   /// because that account is the identity selected by the local profile.
@@ -232,14 +234,23 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final pcRegistry = _profileConnectionRegistry;
 
     if (profile.kind == ProfileKind.plexHome) {
+      // Divergent preconditions layered over the shared resolver: require the
+      // switched-user uuid and the exact parent account — never resolve a
+      // Home profile through some other bound account.
       final parentId = profile.parentConnectionId;
       final uuid = profile.plexHomeUserUuid;
       if (parentId == null || uuid == null) return null;
       if (!connectionList.whereType<PlexAccountConnection>().any((account) => account.id == parentId)) {
         return null;
       }
-      final pc = await pcRegistry?.get(profile.id, parentId);
-      return pc?.hasToken == true ? pc!.userToken : null;
+      if (pcRegistry == null) return null;
+      final resolved = await resolveActivePlexToken(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: pcRegistry,
+        allowAccountTokenForHomeUser: false,
+      );
+      return resolved?.token;
     }
 
     final plexAccounts = connectionList.whereType<PlexAccountConnection>().toList();

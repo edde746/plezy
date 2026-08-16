@@ -8,7 +8,7 @@ import '../media/media_server_client.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/catalog/catalog_item.dart';
-import '../profiles/active_plex_identity.dart';
+import '../profiles/active_plex_token.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile_connection_registry.dart';
 import '../profiles/profile.dart';
@@ -43,20 +43,18 @@ Future<PlexDiscoverSession?> resolvePlexDiscoverSession({
   required ConnectionRegistry connections,
   required ProfileConnectionRegistry profileConnections,
 }) async {
-  final identity = await resolveActivePlexIdentity(
+  final resolved = await resolveActivePlexToken(
     activeProfile: activeProfile,
     connections: connections,
     profileConnections: profileConnections,
+    allowAccountTokenForHomeUser: true,
   );
-  if (identity == null) return null;
+  if (resolved == null) return null;
 
-  var token = identity.account.accountToken;
-  final profile = activeProfile.active;
-  if (profile != null) {
-    final profileConnection = await profileConnections.get(profile.id, identity.account.id);
-    if (profileConnection?.hasToken ?? false) token = profileConnection!.userToken!;
-  }
-  final session = PlexDiscoverSession(accessToken: token, clientIdentifier: identity.account.clientIdentifier);
+  final session = PlexDiscoverSession(
+    accessToken: resolved.token,
+    clientIdentifier: resolved.identity.account.clientIdentifier,
+  );
   return session.isUsable ? session : null;
 }
 
