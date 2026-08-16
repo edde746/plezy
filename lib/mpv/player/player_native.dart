@@ -240,6 +240,15 @@ class PlayerNative extends PlayerBase {
         // setProperty() would await _ensureInitialized and deadlock on the
         // memoized future of this very _doInitialize call.
         await invoke('setProperty', {'name': 'gapless-audio', 'value': 'weak'});
+        // ao_audiounit requests mixWithOthers unless audio-exclusive is set,
+        // and a mixable session disqualifies the app from iOS Now Playing —
+        // no lock-screen/headphone controls (#1921). Same contract as the
+        // video path (VideoPlayerScreen sets it at playback start). iOS-only:
+        // elsewhere audio-exclusive means exclusive device access (hog-mode
+        // CoreAudio on macOS, exclusive WASAPI on Windows).
+        if (Platform.isIOS) {
+          await invoke('setProperty', {'name': 'audio-exclusive', 'value': 'yes'});
+        }
       }
 
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
