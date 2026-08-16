@@ -8,14 +8,12 @@ import '../connection/connection.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_browser_dialect.dart';
-import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/poll_with_backoff.dart';
 import 'jellyfin_auth_header.dart';
 import 'jellyfin_endpoint_discovery.dart';
-import 'media_browser_paths.dart';
 
 /// Result of `POST /QuickConnect/Initiate`. The [code] is shown to the user
 /// and entered in their Jellyfin web UI to approve sign-in; the [secret] is
@@ -42,15 +40,13 @@ class _JellyfinAuthenticationResponse {
   });
 }
 
-/// Auth flow for adding or refreshing a [JellyfinConnection].
+/// Auth flow for adding a [JellyfinConnection].
 ///
 /// Lifecycle for adding a server:
 ///   1. [probe] — validates the URL responds as a MediaBrowser server.
-///   2. [authenticateByName] (or future Quick Connect equivalent) — exchanges
+///   2. [authenticateByName] (or [authenticateByQuickConnect]) — exchanges
 ///      credentials for a long-lived access token and returns a built
 ///      [JellyfinConnection] ready to insert into [ConnectionRegistry].
-///   3. (later) [validate] / [refresh] / [signOut] to keep the stored
-///      connection current.
 class JellyfinConnectionAuthService {
   JellyfinConnectionAuthService({
     required this.clientName,
@@ -359,49 +355,6 @@ class JellyfinConnectionAuthService {
     }
   }
 
-  /// Best-effort check that an existing token still works. Returns false on
-  /// 401/403; throws on transport failures the caller should retry.
-  Future<bool> validate(Connection connection) async {
-    if (connection is! JellyfinConnection) return false;
-    final client = _authenticatedClient(connection);
-    final currentUser = MediaBrowserPaths(dialect: dialect, userId: connection.userId).currentUser;
-    try {
-      final response = await client.get(currentUser, timeout: MediaServerTimeouts.jellyfinProbe);
-      return response.statusCode == 200;
-    } on MediaServerHttpException catch (e) {
-      if (e.statusCode == 401 || e.statusCode == 403) return false;
-      rethrow;
-    } finally {
-      client.close();
-    }
-  }
-
-  /// Re-check the stored token and return the connection with its status
-  /// updated accordingly.
-  Future<Connection> refresh(Connection connection) async {
-    if (connection is! JellyfinConnection) return connection;
-    final ok = await validate(connection);
-    if (!ok) {
-      return connection.copyWith(status: ConnectionStatus.authError);
-    }
-    return connection.copyWith(status: ConnectionStatus.online, lastAuthenticatedAt: DateTime.now());
-  }
-
-  /// Revoke the token server-side and forget local credentials. The caller
-  /// is responsible for removing the row from [ConnectionRegistry].
-  Future<void> signOut(Connection connection) async {
-    if (connection is! JellyfinConnection) return;
-    final client = _authenticatedClient(connection);
-    try {
-      // Best-effort: server may already have invalidated the session.
-      await client.post('/Sessions/Logout', timeout: MediaServerTimeouts.jellyfinSignOut);
-    } catch (e) {
-      appLogger.d('JellyfinConnectionAuthService: signOut best-effort failed: $e');
-    } finally {
-      client.close();
-    }
-  }
-
   /// Emby 4.9.5 returns 404 for every `/QuickConnect/*` route. Emby Connect is
   /// a separate account-level product and is not an authentication flow Plezy
   /// implements.
@@ -409,23 +362,6 @@ class JellyfinConnectionAuthService {
     if (!dialect.supportsQuickConnect) {
       throw MediaServerAuthException('Quick Connect rejected by server', display: t.addServer.quickConnectRejected);
     }
-  }
-
-  MediaServerHttpClient _authenticatedClient(JellyfinConnection connection) {
-    LogRedactionManager.registerToken(connection.accessToken);
-    return _buildHttpClient(
-      baseUrl: connection.baseUrl,
-      headers: {
-        'X-Emby-Token': connection.accessToken,
-        'Authorization': buildJellyfinAuthHeader(
-          clientName: clientName,
-          clientVersion: clientVersion,
-          deviceName: deviceName,
-          deviceId: connection.deviceId,
-          accessToken: connection.accessToken,
-        ),
-      },
-    );
   }
 
   /// Strip any trailing slash so subsequent path joins (`/Users/...`) don't
@@ -511,7 +447,6 @@ class JellyfinConnectionAuthService {
       dialect: info.dialect ?? dialect,
       isAdministrator: isAdministrator,
       primaryImageTag: primaryImageTag,
-      status: ConnectionStatus.online,
       createdAt: now,
       lastAuthenticatedAt: now,
     );

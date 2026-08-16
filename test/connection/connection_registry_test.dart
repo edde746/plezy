@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/plex_auth_service.dart';
@@ -128,7 +129,7 @@ void main() {
       final row = await (db.select(db.connections)..where((table) => table.id.equals('e'))).getSingle();
 
       expect(restored.dialect, MediaBrowserDialect.emby);
-      expect(restored.kind, ConnectionKind.emby);
+      expect(restored.kind, MediaBackend.emby);
       expect(restored.kind.id, 'emby');
       expect(row.kind, 'emby');
     });
@@ -143,9 +144,9 @@ void main() {
       final kindById = {for (final row in rows) row.id: row.kind};
 
       expect(jellyfin.dialect, MediaBrowserDialect.jellyfin);
-      expect(jellyfin.kind, ConnectionKind.jellyfin);
+      expect(jellyfin.kind, MediaBackend.jellyfin);
       expect(emby.dialect, MediaBrowserDialect.emby);
-      expect(emby.kind, ConnectionKind.emby);
+      expect(emby.kind, MediaBackend.emby);
       expect(kindById, {'j': 'jellyfin', 'e': 'emby'});
     });
 

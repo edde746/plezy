@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
+import '../media/media_backend.dart';
 import '../services/credential_vault.dart';
 import '../utils/app_logger.dart';
 import 'connection.dart';
@@ -147,24 +148,22 @@ class ConnectionRegistry {
   Future<Connection?> _rowToConnection(ConnectionRow row) async {
     try {
       final json = jsonDecode(row.configJson) as Map<String, dynamic>;
-      final kind = ConnectionKind.fromId(row.kind);
+      final kind = MediaBackend.fromId(row.kind);
       final revealed = await CredentialVault.revealConnectionConfig(kind.id, json);
       final createdAt = DateTime.fromMillisecondsSinceEpoch(row.createdAt);
       final lastAuth = row.lastAuthenticatedAt == null
           ? null
           : DateTime.fromMillisecondsSinceEpoch(row.lastAuthenticatedAt!);
       final connection = switch (kind) {
-        ConnectionKind.plex => PlexAccountConnection.fromConfigJson(
+        MediaBackend.plex => PlexAccountConnection.fromConfigJson(
           id: row.id,
           json: revealed.config,
-          status: ConnectionStatus.unknown,
           createdAt: createdAt,
           lastAuthenticatedAt: lastAuth,
         ),
-        ConnectionKind.jellyfin || ConnectionKind.emby => JellyfinConnection.fromConfigJson(
+        MediaBackend.jellyfin || MediaBackend.emby => JellyfinConnection.fromConfigJson(
           id: row.id,
           json: revealed.config,
-          status: ConnectionStatus.unknown,
           createdAt: createdAt,
           lastAuthenticatedAt: lastAuth,
           dialect: kind.dialect!,

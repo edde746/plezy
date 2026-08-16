@@ -7,13 +7,12 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
 import 'package:plezy/services/jellyfin_endpoint_discovery.dart';
 import 'package:plezy/utils/log_redaction_manager.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
-
-import '../test_helpers/backend_client_fixtures.dart';
 
 /// Helpers for stubbing http responses keyed by request path.
 typedef _Handler = FutureOr<http.Response> Function(http.BaseRequest req);
@@ -22,17 +21,6 @@ http.Response _ok(Object json) => http.Response(jsonEncode(json), 200, headers: 
 http.Response _bareOk(String body) => http.Response(body, 200, headers: {'content-type': 'application/json'});
 http.Response _status(int code, [Object? json]) =>
     http.Response(json == null ? '' : jsonEncode(json), code, headers: {'content-type': 'application/json'});
-
-JellyfinConnection _existingConn({
-  String accessToken = 'tok-old',
-  MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
-}) => testJellyfinConnection(
-  userName: 'edde',
-  accessToken: accessToken,
-  deviceId: 'dev-xyz',
-  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-  dialect: dialect,
-);
 
 JellyfinConnectionAuthService _service({
   required _Handler handler,
@@ -672,127 +660,7 @@ void main() {
     });
   });
 
-  group('JellyfinConnectionAuthService.validate', () {
-    test('returns true when /Users/Me responds 200', () async {
-      final svc = _service(
-        handler: (req) {
-          expect(req.url.path, '/Users/Me');
-          return _ok({'Id': 'user-1'});
-        },
-      );
-
-      expect(await svc.validate(_existingConn()), isTrue);
-    });
-
-    test('returns false on 401/403', () async {
-      final svc = _service(handler: (_) => _status(401));
-      expect(await svc.validate(_existingConn()), isFalse);
-    });
-
-    test('returns false for non-Jellyfin connections', () async {
-      final svc = _service(handler: (_) => _ok({}));
-      // Use a Plex connection placeholder (any non-Jellyfin Connection works).
-      final notJellyfin = PlexAccountConnection(
-        id: 'plex-1',
-        accountToken: 'tok',
-        clientIdentifier: 'cid',
-        accountLabel: 'Plex',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      );
-      expect(await svc.validate(notJellyfin), isFalse);
-    });
-  });
-
-  group('JellyfinConnectionAuthService.refresh', () {
-    test('returns connection with online status + lastAuthenticatedAt on success', () async {
-      final svc = _service(handler: (_) => _ok({'Id': 'user-1'}));
-      final refreshed = await svc.refresh(_existingConn());
-      expect(refreshed, isA<JellyfinConnection>());
-      expect((refreshed as JellyfinConnection).status, ConnectionStatus.online);
-      expect(refreshed.lastAuthenticatedAt, isNotNull);
-    });
-
-    test('returns connection with authError status when validate fails', () async {
-      final svc = _service(handler: (_) => _status(401));
-      final refreshed = await svc.refresh(_existingConn());
-      expect((refreshed as JellyfinConnection).status, ConnectionStatus.authError);
-    });
-
-    test('returns the same Connection unchanged for non-Jellyfin', () async {
-      final svc = _service(handler: (_) => _ok({}));
-      final plex = PlexAccountConnection(
-        id: 'plex-1',
-        accountToken: 'tok',
-        clientIdentifier: 'cid',
-        accountLabel: 'Plex',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      );
-      expect(await svc.refresh(plex), same(plex));
-    });
-  });
-
-  group('JellyfinConnectionAuthService.signOut', () {
-    test('fires POST /Sessions/Logout against the right base URL', () async {
-      var sawLogout = false;
-      final svc = _service(
-        handler: (req) {
-          if (req.url.path == '/Sessions/Logout') {
-            sawLogout = true;
-            expect(req.method, 'POST');
-            return _ok({});
-          }
-          return _status(404);
-        },
-      );
-
-      await svc.signOut(_existingConn());
-      expect(sawLogout, isTrue);
-    });
-
-    test('does not throw when the server fails (best-effort)', () async {
-      final svc = _service(handler: (_) => _status(500));
-      await svc.signOut(_existingConn()); // expect: no throw
-    });
-
-    test('is a no-op for non-Jellyfin connections', () async {
-      var fired = false;
-      final svc = _service(
-        handler: (_) {
-          fired = true;
-          return _ok({});
-        },
-      );
-
-      final plex = PlexAccountConnection(
-        id: 'plex-1',
-        accountToken: 'tok',
-        clientIdentifier: 'cid',
-        accountLabel: 'Plex',
-        createdAt: DateTime.fromMillisecondsSinceEpoch(0),
-      );
-      await svc.signOut(plex);
-      expect(fired, isFalse);
-    });
-  });
-
   group('Emby dialect', () {
-    test('validate uses the user-scoped current-user route instead of /Users/Me', () async {
-      final paths = <String>[];
-      final svc = _service(
-        dialect: MediaBrowserDialect.emby,
-        handler: (req) {
-          paths.add(req.url.path);
-          if (req.url.path == '/Users/Me') {
-            return _status(500, {'error': 'Unrecognized Guid format'});
-          }
-          return _ok({'Id': 'user-1'});
-        },
-      );
-
-      expect(await svc.validate(_existingConn(dialect: MediaBrowserDialect.emby)), isTrue);
-      expect(paths, ['/Users/user-1']);
-    });
-
     test('checking Quick Connect support sends no unsupported Emby request', () async {
       final paths = <String>[];
       final svc = _service(
@@ -881,7 +749,7 @@ void main() {
       );
 
       expect(connection.dialect, MediaBrowserDialect.emby);
-      expect(connection.kind, ConnectionKind.emby);
+      expect(connection.kind, MediaBackend.emby);
       expect(connection.kind.id, 'emby');
     });
 
@@ -917,12 +785,12 @@ void main() {
       final unknown = await authenticate({'ServerName': 'Unknown Home', 'Id': 'unknown-server', 'Version': '4.9.5.0'});
 
       expect(detected.dialect, MediaBrowserDialect.emby);
-      expect(detected.kind, ConnectionKind.emby);
+      expect(detected.kind, MediaBackend.emby);
       expect(unknown.dialect, MediaBrowserDialect.jellyfin);
-      expect(unknown.kind, ConnectionKind.jellyfin);
+      expect(unknown.kind, MediaBackend.jellyfin);
     });
 
-    test('password authentication and logout remain wire-identical to Jellyfin', () async {
+    test('password authentication remains wire-identical to Jellyfin', () async {
       Future<List<(String, String, String)>> capture(MediaBrowserDialect dialect) async {
         final requests = <(String, String, String)>[];
         final svc = _service(
@@ -936,18 +804,16 @@ void main() {
                 'User': {'Id': 'user-7', 'Name': 'edde'},
               });
             }
-            if (request.url.path == '/Sessions/Logout') return _ok({});
             return _status(404);
           },
         );
-        final connection = await svc.authenticateByName(
+        await svc.authenticateByName(
           baseUrl: 'https://server.example.com',
           username: 'edde',
           password: 'pw',
           deviceId: 'dev-xyz',
           serverInfo: _serverInfo,
         );
-        await svc.signOut(connection);
         return requests;
       }
 
@@ -955,7 +821,6 @@ void main() {
       final embyRequests = await capture(MediaBrowserDialect.emby);
       final expected = <(String, String, String)>[
         ('POST', '/Users/AuthenticateByName', '{"Username":"edde","Pw":"pw"}'),
-        ('POST', '/Sessions/Logout', ''),
       ];
 
       expect(jellyfinRequests, expected);

@@ -22,8 +22,8 @@ enum MediaBrowserDialect {
   jellyfin,
   emby;
 
-  /// Stable wire/persistence id. Matches the [MediaBackend] and
-  /// `ConnectionKind` ids for the same server kind.
+  /// Stable wire/persistence id. Matches the [MediaBackend] ids for the
+  /// same server kind.
   String get id => switch (this) {
     MediaBrowserDialect.jellyfin => 'jellyfin',
     MediaBrowserDialect.emby => 'emby',

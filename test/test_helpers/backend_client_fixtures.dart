@@ -22,7 +22,6 @@ JellyfinConnection testJellyfinConnection({
   String accessToken = 'token',
   String deviceId = 'device-1',
   bool isAdministrator = false,
-  ConnectionStatus status = ConnectionStatus.unknown,
   DateTime? createdAt,
   DateTime? lastAuthenticatedAt,
   MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
@@ -39,7 +38,6 @@ JellyfinConnection testJellyfinConnection({
     deviceId: deviceId,
     dialect: dialect,
     isAdministrator: isAdministrator,
-    status: status,
     createdAt: createdAt ?? DateTime.utc(2024),
     lastAuthenticatedAt: lastAuthenticatedAt,
   );
@@ -59,7 +57,6 @@ JellyfinConnection testEmbyConnection({
   String accessToken = 'token',
   String deviceId = 'device-1',
   bool isAdministrator = false,
-  ConnectionStatus status = ConnectionStatus.unknown,
   DateTime? createdAt,
   DateTime? lastAuthenticatedAt,
 }) {
@@ -74,7 +71,6 @@ JellyfinConnection testEmbyConnection({
     accessToken: accessToken,
     deviceId: deviceId,
     isAdministrator: isAdministrator,
-    status: status,
     createdAt: createdAt,
     lastAuthenticatedAt: lastAuthenticatedAt,
     dialect: MediaBrowserDialect.emby,

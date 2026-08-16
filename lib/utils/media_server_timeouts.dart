@@ -85,8 +85,4 @@ class MediaServerTimeouts {
   /// instead downgrades the confirmation to its explicit "scope unverified"
   /// form.
   static const deleteImpactProbe = Duration(seconds: 10);
-
-  /// Best-effort `/Sessions/Logout` timeout — short because the call is
-  /// fire-and-forget; the token is removed locally regardless.
-  static const jellyfinSignOut = Duration(seconds: 5);
 }
