@@ -65,7 +65,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       final info = await deviceInfo.androidInfo;
       buffer.writeln('Android ${info.version.release} (API ${info.version.sdkInt})');
       buffer.writeln('${info.manufacturer} ${info.model}');
-      if (TvDetectionService.isTVSync()) {
+      if (PlatformDetector.isTV()) {
         final reasons = TvDetectionService.tvDetectionReasonsSync();
         final suffix = reasons.isEmpty ? '' : ' (${reasons.join(', ')})';
         buffer.writeln('TV mode: yes$suffix');

@@ -75,7 +75,7 @@ class InputModeTracker extends StatefulWidget {
 
 class _InputModeTrackerState extends State<InputModeTracker> {
   // Default to keyboard mode on Android TV, pointer mode elsewhere
-  InputMode _mode = TvDetectionService.isTVSync() ? InputMode.keyboard : InputMode.pointer;
+  InputMode _mode = PlatformDetector.isTV() ? InputMode.keyboard : InputMode.pointer;
 
   @override
   void initState() {
@@ -134,7 +134,7 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   Widget build(BuildContext context) {
     // Non-desktop TVs keep keyboard mode across synthetic pointer events, but
     // their controls remain pointer-reachable for engine-generated taps.
-    if (TvDetectionService.isTVSync() && !PlatformDetector.isDesktopOS()) {
+    if (PlatformDetector.isTV() && !PlatformDetector.isDesktopOS()) {
       return _InputModeProvider(mode: _mode, child: widget.child);
     }
 

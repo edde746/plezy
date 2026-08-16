@@ -36,7 +36,7 @@ class SafStorageService implements SafStorageOperations {
 
   /// Android TV distributions commonly have no DocumentsUI activity, so a
   /// custom SAF root cannot be selected there.
-  bool get supportsDirectoryPicker => isAvailable && !TvDetectionService.isTVSync();
+  bool get supportsDirectoryPicker => isAvailable && !PlatformDetector.isTV();
 
   /// Pick a directory using SAF.
   ///

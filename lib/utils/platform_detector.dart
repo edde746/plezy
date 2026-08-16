@@ -178,7 +178,10 @@ class TvDetectionService {
     _isTV = _detected || _forceTv;
   }
 
-  /// Synchronous access after initialization (returns false if not initialized)
+  /// Synchronous access after initialization (returns false if not initialized).
+  ///
+  /// App code goes through the [PlatformDetector] facade ([PlatformDetector.isTV]
+  /// and siblings); these raw accessors exist for the facade and tests.
   static bool isTVSync() => _debugAppleTVOverride ?? _singleton.instance?._isTV ?? false;
 
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).

@@ -380,7 +380,7 @@ class SettingsExportService {
 
     // Android TV has no document picker — write to the app docs dir and let
     // the caller surface the path.
-    if (Platform.isAndroid && TvDetectionService.isTVSync()) {
+    if (Platform.isAndroid && PlatformDetector.isTV()) {
       return _writeToAppDocuments(fileName, bytes);
     }
 
