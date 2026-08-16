@@ -58,13 +58,13 @@ final Expando<LatestAsyncWrite<String>> _syncOffsetWrites = Expando<LatestAsyncW
 
 class _SyncOffsetControlState extends State<SyncOffsetControl> {
   // Range constants
-  static const double _sliderMin = -60_000; // ±60s for slider
-  static const double _sliderMax = 60_000;
-  static const double _absoluteMin = -60_000; // ±60s absolute limit
+  static const double _sliderMin = -10_000; // ±10s slider range for fine control
+  static const double _sliderMax = 10_000;
+  static const double _absoluteMin = -60_000; // ±60s absolute limit, reachable via the step buttons
   static const double _absoluteMax = 60_000;
-  static const double _tapStep = 100; // 100ms per tap
+  static const double _tapStep = 50; // 50ms per tap
   static const double _longPressStep = 1000; // 1s per long-press tick
-  static const int _sliderDivisions = 1200; // 100ms steps for ±60s range
+  static const int _sliderDivisions = 400; // 50ms steps for ±10s range
 
   late double _currentOffset;
   late double _confirmedOffset;
@@ -345,6 +345,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   Widget _buildFull(BuildContext context) {
     // Clamp the slider value to its range, but display the actual offset
     final sliderValue = _currentOffset.clamp(_sliderMin, _sliderMax);
+    final rangeSeconds = (_sliderMax ~/ 1000).toString();
 
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -368,7 +369,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
               const SizedBox(width: 12),
               // Slider section
               Text(
-                t.videoControls.minusTime(amount: "60", unit: "s"),
+                t.videoControls.minusTime(amount: rangeSeconds, unit: "s"),
                 style: TextStyle(color: tokens(context).textMuted),
               ),
               Expanded(
@@ -393,7 +394,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                 ),
               ),
               Text(
-                t.videoControls.addTime(amount: "60", unit: "s"),
+                t.videoControls.addTime(amount: rangeSeconds, unit: "s"),
                 style: TextStyle(color: tokens(context).textMuted),
               ),
               const SizedBox(width: 12),
