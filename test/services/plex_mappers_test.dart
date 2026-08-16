@@ -5,13 +5,41 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_display_criteria.dart';
+import 'package:plezy/media/media_hub.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_library.dart';
+import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/plex_mappers.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 const _serverId = 'plex-machine-1';
 const _serverName = 'Home';
+
+PlexMediaItem _mediaItemFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
+  final dto = PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId, serverName: serverName);
+  return PlexMappers.mediaItem(dto);
+}
+
+MediaLibrary _mediaLibraryFromJson(
+  Map<String, dynamic> json, {
+  ServerId? serverId,
+  String? serverName,
+  bool isShared = false,
+}) {
+  final dto = PlexLibraryDto.fromJson(json).copyWith(serverId: serverId, serverName: serverName, isShared: isShared);
+  return PlexMappers.mediaLibrary(dto);
+}
+
+MediaHub _mediaHubFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
+  return PlexMappers.mediaHub(PlexHubDto.fromJson(json, serverId: serverId, serverName: serverName));
+}
+
+MediaPlaylist _mediaPlaylistFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
+  final dto = PlexPlaylistDto.fromJson(json).copyWith(serverId: serverId, serverName: serverName);
+  return PlexMappers.mediaPlaylist(dto);
+}
 
 void _expectSafePlexMapperEvent(
   SentryEvent event, {
@@ -111,7 +139,7 @@ void main() {
         'guid': 7,
       };
 
-      final hub = PlexMappers.mediaHubFromJson({
+      final hub = _mediaHubFromJson({
         'key': '/hubs/cc004',
         'title': 'Synthetic hub',
         'type': 'movie',
@@ -240,7 +268,7 @@ void main() {
         ],
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
 
       expect(item.id, '12345');
       expect(item.backend, MediaBackend.plex);
@@ -309,7 +337,7 @@ void main() {
     test('a section listing yields the scalar pair alone', () {
       // Plex sends no `Rating[]` outside /library/metadata/{id}, and no query
       // parameter adds it, so listing-backed cards get one or two scores.
-      final item = PlexMappers.mediaItemFromJson({
+      final item = _mediaItemFromJson({
         'ratingKey': 'listing-1',
         'type': 'movie',
         'rating': 9.4,
@@ -323,17 +351,14 @@ void main() {
     });
 
     test('an unrated item reports no ratings rather than an empty list', () {
-      final item = PlexMappers.mediaItemFromJson({
-        'ratingKey': 'unrated-1',
-        'type': 'movie',
-      }, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson({'ratingKey': 'unrated-1', 'type': 'movie'}, serverId: ServerId(_serverId));
 
       expect(item.rating, isNull);
       expect(item.ratings, isNull);
     });
 
     test('scores outside the reportable range are dropped, not folded', () {
-      final item = PlexMappers.mediaItemFromJson({
+      final item = _mediaItemFromJson({
         'ratingKey': 'noisy-1',
         'type': 'movie',
         'rating': 140,
@@ -349,7 +374,7 @@ void main() {
     });
 
     test('normalizes aggregate watch counts off leaf items', () {
-      final item = PlexMappers.mediaItemFromJson({
+      final item = _mediaItemFromJson({
         'ratingKey': 'leaf-with-counts',
         'type': 'movie',
         'viewCount': 0,
@@ -377,7 +402,7 @@ void main() {
         'year': 2008,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.show);
       expect(item.leafCount, 62);
       expect(item.viewedLeafCount, 62);
@@ -395,7 +420,7 @@ void main() {
         'flattenSeasons': '1',
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
 
       expect(item.raw, containsPair('key', '/library/metadata/500'));
       expect(item.raw, containsPair('skipChildren', true));
@@ -415,7 +440,7 @@ void main() {
         'viewedLeafCount': 3,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.season);
       expect(item.index, 1);
       expect(item.parentId, '500');
@@ -445,7 +470,7 @@ void main() {
         'viewOffset': 1410000,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.episode);
       expect(item.index, 1);
       expect(item.parentIndex, 1);
@@ -475,7 +500,7 @@ void main() {
         'leafCount': 13,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.album);
       expect(item.title, 'Random Access Memories');
       expect(item.parentId, '699');
@@ -499,7 +524,7 @@ void main() {
         'duration': 369000,
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.kind, MediaKind.track);
       expect(item.title, 'Get Lucky');
       expect(item.index, 8);
@@ -552,7 +577,7 @@ void main() {
         ],
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.mediaVersions, isNotNull);
       final v = item.mediaVersions!.single;
       expect(v.id, '1');
@@ -601,7 +626,7 @@ void main() {
         ],
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       final part = item.mediaVersions!.single.parts.single;
       final video = part.streams.firstWhere((stream) => stream.kind == MediaStreamKind.video);
       final audio = part.streams.firstWhere((stream) => stream.kind == MediaStreamKind.audio);
@@ -627,7 +652,7 @@ void main() {
         ],
       };
 
-      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
       expect(item.clearLogoPath, '/library/metadata/12345/clearLogo');
       expect(item.backgroundSquarePath, '/library/metadata/12345/squareBg');
     });
@@ -646,7 +671,7 @@ void main() {
         'hidden': 0,
       };
 
-      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
+      final lib = _mediaLibraryFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
       expect(lib.id, '1');
       expect(lib.backend, MediaBackend.plex);
       expect(lib.title, 'Movies');
@@ -662,13 +687,13 @@ void main() {
 
     test('shared library is marked isShared', () {
       final json = {'key': 'shared', 'title': 'Shared with you', 'type': 'movie'};
-      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: ServerId(_serverId), isShared: true);
+      final lib = _mediaLibraryFromJson(json, serverId: ServerId(_serverId), isShared: true);
       expect(lib.isShared, isTrue);
     });
 
     test('hidden=1 maps to true', () {
       final json = {'key': '2', 'title': 'Hidden', 'type': 'show', 'hidden': 1};
-      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: ServerId(_serverId));
+      final lib = _mediaLibraryFromJson(json, serverId: ServerId(_serverId));
       expect(lib.hidden, isTrue);
     });
 
@@ -701,7 +726,7 @@ void main() {
       // PlexLibraryDto.fromJson would throw TypeError when Plex omitted
       // either field. Confirms graceful degradation.
       final json = {'key': '99'};
-      final lib = PlexMappers.mediaLibraryFromJson(json, serverId: ServerId(_serverId));
+      final lib = _mediaLibraryFromJson(json, serverId: ServerId(_serverId));
       expect(lib.id, '99');
       expect(lib.title, '');
       expect(lib.kind, MediaKind.unknown);
@@ -723,7 +748,7 @@ void main() {
         ],
       };
 
-      final hub = PlexMappers.mediaHubFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
+      final hub = _mediaHubFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
       expect(hub.id, '/hubs/movie.recentlyAdded');
       expect(hub.identifier, 'movie.recentlyAdded.1');
       expect(hub.title, 'Recently Added Movies');
@@ -753,7 +778,7 @@ void main() {
         ],
       };
 
-      final hub = PlexMappers.mediaHubFromJson(json, serverId: ServerId(_serverId));
+      final hub = _mediaHubFromJson(json, serverId: ServerId(_serverId));
       expect(hub.items.length, 2);
       expect(hub.items[0].kind, MediaKind.show);
       expect(hub.items[1].kind, MediaKind.folder);
@@ -772,7 +797,7 @@ void main() {
         ],
       };
 
-      final hub = PlexMappers.mediaHubFromJson(json, serverId: ServerId(_serverId));
+      final hub = _mediaHubFromJson(json, serverId: ServerId(_serverId));
       expect(hub.items.length, 2);
       expect(hub.items[0].kind, MediaKind.movie);
       expect(hub.items[1].kind, MediaKind.show);
@@ -799,7 +824,7 @@ void main() {
         'thumb': '/playlists/999/thumb',
       };
 
-      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
+      final p = _mediaPlaylistFromJson(json, serverId: ServerId(_serverId), serverName: _serverName);
       expect(p.id, '999');
       expect(p.backend, MediaBackend.plex);
       expect(p.title, 'Date Night');
@@ -828,7 +853,7 @@ void main() {
         'playlistType': 'audio',
       };
 
-      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: ServerId(_serverId));
+      final p = _mediaPlaylistFromJson(json, serverId: ServerId(_serverId));
       expect(p.smart, isTrue);
       expect(p.playlistType, 'audio');
     });
@@ -838,7 +863,7 @@ void main() {
       // PlexPlaylistDto.fromJson would throw TypeError when Plex omitted
       // optional fields. Confirms graceful degradation.
       final json = {'ratingKey': '777', 'title': 'Bare', 'summary': null};
-      final p = PlexMappers.mediaPlaylistFromJson(json, serverId: ServerId(_serverId));
+      final p = _mediaPlaylistFromJson(json, serverId: ServerId(_serverId));
       expect(p.id, '777');
       expect(p.title, 'Bare');
       expect(p.smart, isFalse);

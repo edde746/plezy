@@ -8,14 +8,19 @@
 // dashboard shows fewer scores than the detail screen, and this suite pins it.
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
+import 'package:plezy/media/media_item.dart';
 import 'package:plezy/services/plex_mappers.dart';
 
 const _serverId = 'plex-machine-1';
 
+PlexMediaItem _mediaItemFromJson(Map<String, dynamic> json, {ServerId? serverId}) {
+  return PlexMappers.mediaItem(PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId));
+}
+
 void main() {
   group('live Plex payloads', () {
     test('detail response surfaces IMDb alongside Rotten Tomatoes and TMDB', () {
-      final item = PlexMappers.mediaItemFromJson({
+      final item = _mediaItemFromJson({
         'ratingKey': '2254',
         'type': 'show',
         'title': '【OSHI NO KO】',
@@ -35,7 +40,7 @@ void main() {
     });
 
     test('listing response carries only the scalar the server chose', () {
-      final item = PlexMappers.mediaItemFromJson({
+      final item = _mediaItemFromJson({
         'ratingKey': '2254',
         'type': 'show',
         'title': '【OSHI NO KO】',
