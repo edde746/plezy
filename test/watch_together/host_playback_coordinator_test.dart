@@ -17,7 +17,8 @@ class _Harness {
   _Harness(
     FakeAsync async, {
     ControlMode controlMode = ControlMode.hostOnly,
-    HostCoordinatorCallbacks callbacks = const HostCoordinatorCallbacks(),
+    void Function(List<String>)? onResumedWithout,
+    void Function(String, PlaybackActionHint)? onRemoteAction,
     Duration duration = const Duration(minutes: 45),
     bool seekable = true,
   }) {
@@ -27,7 +28,8 @@ class _Harness {
       myPeerId: 'host',
       controlMode: controlMode,
       sendState: (state, {toPeerId}) => sent.add((state, toPeerId)),
-      callbacks: callbacks,
+      onResumedWithout: onResumedWithout,
+      onRemoteAction: onRemoteAction,
       nowMs: nowMs,
     );
     attached = AttachedPlayer(player: player, onLost: () {}, nowMs: nowMs);
@@ -260,7 +262,7 @@ void main() {
     test('guest stall: room pauses, safety timeout excuses them, resume fires', () {
       fakeAsync((async) {
         final resumedWithout = <List<String>>[];
-        final h = _Harness(async, callbacks: HostCoordinatorCallbacks(onResumedWithout: resumedWithout.add));
+        final h = _Harness(async, onResumedWithout: resumedWithout.add);
         h.coordinator.onPeerJoined('guest', compatible: true);
         h.attachForMedia(async);
         h.guestReports(async);
@@ -418,7 +420,7 @@ void main() {
         final h = _Harness(
           async,
           controlMode: ControlMode.anyone,
-          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
         );
         h.coordinator.onPeerJoined('guest', compatible: true);
         h.attachForMedia(async);
@@ -456,7 +458,7 @@ void main() {
         final h = _Harness(
           async,
           controlMode: ControlMode.anyone,
-          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
         );
         h.attachForMedia(async);
         h.hostBecomesReady(async);
@@ -491,7 +493,7 @@ void main() {
         final h = _Harness(
           async,
           controlMode: ControlMode.anyone,
-          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
         );
         h.attachForMedia(async);
         h.hostBecomesReady(async);
@@ -538,7 +540,7 @@ void main() {
             controlMode: ControlMode.anyone,
             duration: config.duration,
             seekable: config.seekable,
-            callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+            onRemoteAction: (peer, hint) => actions.add((peer, hint)),
           );
           h.attachForMedia(async);
           h.hostBecomesReady(async);

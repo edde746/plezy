@@ -35,12 +35,10 @@ class WatchTogetherController {
         myPeerId: peerService.myPeerId ?? '',
         controlMode: session.controlMode,
         sendState: _sendState,
-        callbacks: HostCoordinatorCallbacks(
-          onPhaseChanged: (phase) => onPhaseChanged?.call(phase),
-          onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
-          onResumedWithout: (peers) => onResumedWithout?.call(peers),
-          onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
-        ),
+        onPhaseChanged: (phase) => onPhaseChanged?.call(phase),
+        onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
+        onResumedWithout: (peers) => onResumedWithout?.call(peers),
+        onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
         nowMs: _nowMs,
       );
     } else {
@@ -49,14 +47,12 @@ class WatchTogetherController {
         myPeerId: peerService.myPeerId ?? '',
         sendToHost: _sendToHost,
         clockSync: _clockSync!,
-        callbacks: GuestReconcilerCallbacks(
-          onMediaSwitchNeeded: (ratingKey, serverId, title) => onMediaStateReceived?.call(ratingKey, serverId, title),
-          onControlModeChanged: (mode) => onControlModeReceived?.call(mode),
-          onPhaseChanged: (phase) => onPhaseChanged?.call(phase),
-          onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
-          onCorrectingChanged: (correcting) => onCorrectingChanged?.call(correcting),
-          onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
-        ),
+        onMediaSwitchNeeded: (ratingKey, serverId, title) => onMediaStateReceived?.call(ratingKey, serverId, title),
+        onControlModeChanged: (mode) => onControlModeReceived?.call(mode),
+        onPhaseChanged: (phase) => onPhaseChanged?.call(phase),
+        onWaitingOnChanged: (peers) => onWaitingOnChanged?.call(peers),
+        onCorrectingChanged: (correcting) => onCorrectingChanged?.call(correcting),
+        onRemoteAction: (peer, hint) => onRemoteAction?.call(peer, hint),
         nowMs: _nowMs,
       );
       _clockSync!.start();
