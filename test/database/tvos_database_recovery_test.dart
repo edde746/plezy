@@ -164,8 +164,9 @@ Future<void> _seedCriticalRows(AppDatabase db) async {
       OfflineWatchProgressCompanion(createdAt: Value(3000 + index), updatedAt: Value(4000 + index)),
     );
   }
-  await db.updateSyncAttempt(rows.first.id, 'retry-without-protected-payload');
-  await db.updateSyncAttempt(rows.first.id, 'retry-without-protected-payload');
+  final revisedFirst = await (db.select(db.offlineWatchProgress)..where((t) => t.id.equals(rows.first.id))).getSingle();
+  await db.updateSyncAttemptIfUnchanged(revisedFirst.id, revisedFirst.updatedAt, 'retry-without-protected-payload');
+  await db.updateSyncAttemptIfUnchanged(revisedFirst.id, revisedFirst.updatedAt, 'retry-without-protected-payload');
 }
 
 void main() {
@@ -1023,8 +1024,8 @@ void main() {
       actionType: OfflineActionType.watched.id,
     );
     final rows = await result.database.getPendingWatchActions();
-    await result.database.updateSyncAttempt(rows.first.id, 'retry');
-    await result.database.deleteWatchAction(rows.last.id);
+    await result.database.updateSyncAttemptIfUnchanged(rows.first.id, rows.first.updatedAt, 'retry');
+    await result.database.deleteWatchActionIfUnchanged(rows.last.id, rows.last.updatedAt);
     await result.database.insertWatchAction(
       profileId: 'p2',
       serverId: ServerId('s1'),

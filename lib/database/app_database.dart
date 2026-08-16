@@ -81,7 +81,6 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase._withRecovery(super.e, this._recoveryStore);
 
   final TvosDatabaseRecoveryStore? _recoveryStore;
-  final SerialFutureQueue _durabilityQueue = SerialFutureQueue();
   static final Object _durabilityZoneKey = Object();
   static final SerialFutureQueue _tvosRecoveryQueue = SerialFutureQueue();
 
@@ -156,12 +155,10 @@ class AppDatabase extends _$AppDatabase {
     final store = _recoveryStore;
     if (store == null || !store.isTvos) return Future<void>.value();
 
-    return _durabilityQueue.run(
-      () => _tvosRecoveryQueue.run(
-        () => store.acknowledgeRecoveryRequired(
-          readIdentity: _readProtectedIdentityRecoveryRows,
-          readPending: _readPendingRecoveryRows,
-        ),
+    return _tvosRecoveryQueue.run(
+      () => store.acknowledgeRecoveryRequired(
+        readIdentity: _readProtectedIdentityRecoveryRows,
+        readPending: _readPendingRecoveryRows,
       ),
     );
   }
@@ -175,17 +172,15 @@ class AppDatabase extends _$AppDatabase {
     if (store == null || !store.isTvos) return mutation();
     if (Zone.current[_durabilityZoneKey] == this) return mutation();
 
-    return _durabilityQueue.run(
-      () => _tvosRecoveryQueue.run(
-        () => runZoned(
-          () => store.runDurableMutation(
-            group: group,
-            mutation: mutation,
-            readIdentity: _readProtectedIdentityRecoveryRows,
-            readPending: _readPendingRecoveryRows,
-          ),
-          zoneValues: {_durabilityZoneKey: this},
+    return _tvosRecoveryQueue.run(
+      () => runZoned(
+        () => store.runDurableMutation(
+          group: group,
+          mutation: mutation,
+          readIdentity: _readProtectedIdentityRecoveryRows,
+          readPending: _readPendingRecoveryRows,
         ),
+        zoneValues: {_durabilityZoneKey: this},
       ),
     );
   }
@@ -1054,25 +1049,6 @@ class AppDatabase extends _$AppDatabase {
             ),
           );
       return updated != 0;
-    });
-  }
-
-  /// Delete a specific watch action outside a snapshotted replay.
-  Future<void> deleteWatchAction(int id) {
-    return _runPendingMutation(() async {
-      await (delete(offlineWatchProgress)..where((t) => t.id.equals(id))).go();
-    });
-  }
-
-  /// Update retry state outside a snapshotted replay.
-  Future<void> updateSyncAttempt(int id, String? errorMessage) {
-    return _runPendingMutation(() async {
-      final existing = await (select(offlineWatchProgress)..where((t) => t.id.equals(id))).getSingleOrNull();
-      if (existing == null) return;
-
-      await (update(offlineWatchProgress)..where((t) => t.id.equals(id))).write(
-        OfflineWatchProgressCompanion(syncAttempts: Value(existing.syncAttempts + 1), lastError: Value(errorMessage)),
-      );
     });
   }
 

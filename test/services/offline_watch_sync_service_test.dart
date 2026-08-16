@@ -338,7 +338,7 @@ void main() {
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
       var action = await db.getLatestWatchAction('srv:42');
       for (var i = 0; i < OfflineWatchSyncService.maxSyncAttempts; i++) {
-        await db.updateSyncAttempt(action!.id, 'server error');
+        await db.updateSyncAttemptIfUnchanged(action!.id, action.updatedAt, 'server error');
         action = await db.getLatestWatchAction('srv:42');
       }
 

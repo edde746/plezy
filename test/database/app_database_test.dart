@@ -2008,33 +2008,33 @@ class _AppDatabaseTestSuite {
         expect(await db.getLatestWatchActionsForKeys({}), isEmpty);
       });
 
-      test('updateSyncAttempt increments syncAttempts and stores lastError', () async {
+      test('updateSyncAttemptIfUnchanged increments syncAttempts and stores lastError', () async {
         await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
         final inserted = (await db.select(db.offlineWatchProgress).get()).single;
 
-        await db.updateSyncAttempt(inserted.id, 'boom');
+        expect(await db.updateSyncAttemptIfUnchanged(inserted.id, inserted.updatedAt, 'boom'), isTrue);
         var row = (await db.select(db.offlineWatchProgress).get()).single;
         expect(row.syncAttempts, 1);
         expect(row.lastError, 'boom');
 
-        await db.updateSyncAttempt(inserted.id, null);
+        expect(await db.updateSyncAttemptIfUnchanged(row.id, row.updatedAt, null), isTrue);
         row = (await db.select(db.offlineWatchProgress).get()).single;
         expect(row.syncAttempts, 2);
         expect(row.lastError, isNull);
       });
 
-      test('updateSyncAttempt is a no-op when id does not exist', () async {
-        await db.updateSyncAttempt(999, 'irrelevant');
+      test('updateSyncAttemptIfUnchanged is a no-op when id does not exist', () async {
+        expect(await db.updateSyncAttemptIfUnchanged(999, 0, 'irrelevant'), isFalse);
         expect(await db.select(db.offlineWatchProgress).get(), isEmpty);
       });
 
-      test('deleteWatchAction removes only the matching row', () async {
+      test('deleteWatchActionIfUnchanged removes only the matching row', () async {
         await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '1', actionType: OfflineActionType.watched.id);
         await db.insertWatchAction(serverId: ServerId('s'), ratingKey: '2', actionType: OfflineActionType.watched.id);
         final rows = await db.select(db.offlineWatchProgress).get();
         expect(rows, hasLength(2));
 
-        await db.deleteWatchAction(rows.first.id);
+        expect(await db.deleteWatchActionIfUnchanged(rows.first.id, rows.first.updatedAt), isTrue);
         expect(await db.select(db.offlineWatchProgress).get(), hasLength(1));
       });
 
