@@ -1251,6 +1251,89 @@ void main() {
     expect(await PlexApiCache.instance.get(scopeA.cacheServerId, endpoint), payload('Profile A response', 101));
     expect(await PlexApiCache.instance.get(scopeB.cacheServerId, endpoint), isNull);
   });
+
+  group('Plex timeline termination contract', () {
+    // Response documented by the published PMS OpenAPI spec for /:/timeline
+    // (`adminTerminatedSession` example): the server signals a terminated
+    // session on the MediaContainer of the next timeline reply (#1916).
+    Map<String, dynamic> terminatedBody({Object code = 2006}) => {
+      'MediaContainer': {
+        'size': 0,
+        'terminationCode': code,
+        'terminationText': 'Admin terminated playback with reason: Go Away',
+      },
+    };
+
+    PlexClient timelineClient(Object? body, {void Function(http.Request request)? onRequest}) =>
+        makeClient((request) async {
+          expect(request.url.path, '/:/timeline');
+          onRequest?.call(request);
+          return http.Response(jsonEncode(body), 200, headers: const {'content-type': 'application/json'});
+        });
+
+    test('progress and started reports throw on a terminated session', () async {
+      final client = timelineClient(terminatedBody());
+      addTearDown(client.close);
+
+      await expectLater(
+        client.reportPlaybackProgress(
+          itemId: '42',
+          position: const Duration(minutes: 2),
+          duration: const Duration(minutes: 20),
+          isPaused: true,
+        ),
+        throwsA(
+          isA<PlaybackSessionTerminatedException>()
+              .having((e) => e.code, 'code', 2006)
+              .having((e) => e.reason, 'reason', 'Admin terminated playback with reason: Go Away'),
+        ),
+      );
+      await expectLater(
+        client.reportPlaybackStarted(itemId: '42', position: const Duration(minutes: 2)),
+        throwsA(isA<PlaybackSessionTerminatedException>()),
+      );
+    });
+
+    test('stopped report ignores termination: it is the cleanup call that clears the session', () async {
+      String? reportedState;
+      final client = timelineClient(
+        terminatedBody(),
+        onRequest: (request) => reportedState = request.url.queryParameters['state'],
+      );
+      addTearDown(client.close);
+
+      await client.reportPlaybackStopped(itemId: '42', position: const Duration(minutes: 2));
+      expect(reportedState, 'stopped');
+    });
+
+    test('tolerates a string terminationCode', () async {
+      final client = timelineClient(terminatedBody(code: '2006'));
+      addTearDown(client.close);
+
+      await expectLater(
+        client.reportPlaybackProgress(
+          itemId: '42',
+          position: const Duration(minutes: 2),
+          duration: const Duration(minutes: 20),
+        ),
+        throwsA(isA<PlaybackSessionTerminatedException>().having((e) => e.code, 'code', 2006)),
+      );
+    });
+
+    test('normal timeline reply does not throw', () async {
+      final client = timelineClient({
+        'MediaContainer': {'size': 0},
+      });
+      addTearDown(client.close);
+
+      await client.reportPlaybackProgress(
+        itemId: '42',
+        position: const Duration(minutes: 2),
+        duration: const Duration(minutes: 20),
+        isPaused: true,
+      );
+    });
+  });
 }
 
 class _AbortAwareActivitiesClient extends http.BaseClient {

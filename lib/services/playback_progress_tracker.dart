@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../exceptions/media_server_exceptions.dart';
 import '../media/ids.dart';
 
 import '../mpv/mpv.dart';
@@ -173,6 +174,12 @@ class PlaybackProgressTracker {
   /// Whether the final stopped progress event was already emitted locally.
   bool _stopProgressNotified = false;
 
+  /// The server explicitly terminated this playback session (#1916). While
+  /// set, paused heartbeats stay closed (the report session is terminal) and
+  /// the paused transcode keepalive is suppressed; the next playing report
+  /// clears it and legitimately opens a fresh server session.
+  bool _serverTerminatedSession = false;
+
   Future<void>? _stoppedProgressFuture;
 
   Duration? _lastProgressNotifiedPosition;
@@ -255,10 +262,13 @@ class PlaybackProgressTracker {
         // Report every tick while paused too — official clients do the
         // same (~10s); the timeline heartbeat is what keeps the server
         // session and its transcoder from being reaped during a long
-        // pause (#1520).
+        // pause (#1520). Not after the server terminated the session:
+        // pinging the reaped transcoder would only produce doomed requests.
         _sendProgress('paused');
-        final keepalive = onPausedKeepalive;
-        if (keepalive != null) unawaited(keepalive());
+        if (!_serverTerminatedSession) {
+          final keepalive = onPausedKeepalive;
+          if (keepalive != null) unawaited(keepalive());
+        }
       }
     });
 
@@ -301,6 +311,9 @@ class PlaybackProgressTracker {
   void resumeAfterStoppedReport() {
     _stoppedProgressFuture = null;
     _reportSession?.resetAfterStop();
+    // A server-side termination latched against the old session does not
+    // apply to the new one (and its fresh transcode needs its keepalive).
+    _serverTerminatedSession = false;
     // A re-armed session is a new server-side session: backends only act on a
     // threshold crossing observed within one, so it must earn its own
     // below-threshold report before we can rely on it again.
@@ -312,10 +325,35 @@ class PlaybackProgressTracker {
     _stoppedProgressServerAcknowledged = false;
   }
 
+  /// The server killed this playback session out from under the client
+  /// (Plex admin stop, paused-too-long auto-termination). Continuing the
+  /// heartbeat loop would re-register the session on PMS as a zombie row the
+  /// admin can no longer clear (#1916), so the local reporting session is
+  /// closed with one final stopped report at the current playhead — verified
+  /// against PMS 1.43 to remove the session row. No user-facing message and
+  /// no forced player stop: buffered playback drains on its own and its
+  /// eventual stall or exit rides the existing error/teardown paths.
+  ///
+  /// Deliberately not a failure: no backoff and no offline-queue write —
+  /// the server received the report and answered it.
+  void _handleServerTermination(PlaybackSessionTerminatedException e) {
+    if (_serverTerminatedSession) return;
+    _serverTerminatedSession = true;
+    appLogger.w('Closing reporting session for ${metadata.id}: terminated server-side', error: e);
+    unawaited(sendStoppedProgressOnce());
+  }
+
   Future<void> _sendProgress(String state, {Duration? positionOverride, Duration? durationOverride}) async {
     Duration? attemptedPosition;
     Duration? attemptedDuration;
     try {
+      // A playing report after a server-side termination is real consumption
+      // again (unpause, or playback still draining its buffer): re-arm so it
+      // opens a fresh, honest server session. Paused heartbeats never re-arm —
+      // that is exactly what created the zombie.
+      if (state == 'playing' && _serverTerminatedSession) {
+        resumeAfterStoppedReport();
+      }
       final canReport = canReportPlayback?.call() ?? true;
       final hasRenderedOutput = hasRenderedPlayback?.call() ?? canReport;
       if (state != 'stopped' && !canReport) return;
@@ -368,6 +406,10 @@ class PlaybackProgressTracker {
                 _resetBackoff();
               })
               .catchError((Object e) {
+                if (e is PlaybackSessionTerminatedException) {
+                  _handleServerTermination(e);
+                  return;
+                }
                 _recordProgressFailure(e);
                 unawaited(_queueOnlineFailureProgress(position, duration));
               }),

@@ -118,3 +118,25 @@ class MediaServerHttpException extends MediaServerException {
     return 'MediaServerHttpException(${parts.join(': ')})';
   }
 }
+
+/// The server explicitly terminated the client's playback session (admin
+/// "stop stream", paused-too-long auto-termination, concurrent-stream limit).
+///
+/// Plex signals this with `terminationCode`/`terminationText` on the
+/// MediaContainer of a timeline report response. The MediaBrowser backends
+/// deliver admin stops as a WebSocket remote-control command Plezy does not
+/// subscribe to, so they never throw this — intentionally unsupported there.
+///
+/// Progress reporting must stop when this is thrown: continuing the heartbeat
+/// loop re-registers the session server-side as a zombie row the admin can no
+/// longer clear (#1916).
+class PlaybackSessionTerminatedException extends MediaServerException {
+  /// Server-defined termination code (e.g. Plex 2006 for an admin stop).
+  final int code;
+
+  /// Human-readable server-supplied reason; may carry an admin message.
+  final String? reason;
+
+  PlaybackSessionTerminatedException({required this.code, this.reason})
+    : super('Server terminated playback session (code $code)${reason == null ? '' : ': $reason'}');
+}

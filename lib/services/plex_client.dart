@@ -2027,6 +2027,24 @@ class PlexClient
     // Surface non-2xx instead of swallowing — progress is the cornerstone
     // of resume/Continue Watching, so silent failures hurt the user later.
     throwIfHttpError(response);
+    // PMS answers a terminated session's next timeline report with
+    // terminationCode/terminationText on the MediaContainer (admin "stop
+    // stream", paused-too-long auto-termination — see the /:/timeline
+    // response schema in the published PMS OpenAPI spec). Keeping the
+    // heartbeat loop running would re-register the session server-side as a
+    // zombie row the admin can no longer clear (#1916). The terminal stopped
+    // report is exempt: it is the cleanup call that removes the session row
+    // (verified against PMS 1.43) and must never fail on the very signal it
+    // resolves.
+    if (state != 'stopped') {
+      final container = _getMediaContainer(response);
+      final terminationCode = flexibleInt(container?['terminationCode']);
+      if (terminationCode != null) {
+        final terminationText = container?['terminationText']?.toString();
+        appLogger.w('Plex terminated playback session for $ratingKey (code $terminationCode): $terminationText');
+        throw PlaybackSessionTerminatedException(code: terminationCode, reason: terminationText);
+      }
+    }
   }
 
   /// Keep a paused transcode session alive. Timeline updates alone have not
