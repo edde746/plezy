@@ -12,8 +12,13 @@ import '../test_helpers/watch_together_fakes.dart';
 const _epochMs = 1000000;
 
 /// Two live controllers (host + guest) bridged by an in-memory relay.
+///
+/// The guest session is seeded with the production default
+/// ([ControlMode.hostOnly], see [WatchSession.joinAsGuest]) unless
+/// [guestControlMode] says otherwise — guests only learn the room's real
+/// mode over the wire.
 class _Room {
-  _Room(this.async, {ControlMode controlMode = ControlMode.hostOnly}) {
+  _Room(this.async, {ControlMode controlMode = ControlMode.hostOnly, ControlMode? guestControlMode}) {
     hostService = hub.register('host');
     guestService = hub.register('guest');
 
@@ -33,7 +38,7 @@ class _Room {
       session: WatchSession(
         sessionId: 'ROOM1',
         role: SessionRole.guest,
-        controlMode: controlMode,
+        controlMode: guestControlMode ?? ControlMode.hostOnly,
         state: SessionState.connected,
         hostPeerId: 'host',
       ),
@@ -348,6 +353,73 @@ void main() {
       room.bothBecomeReady();
       expect(room.lastHostState().phase, PlaybackPhase.playing);
       room.dispose();
+    });
+  });
+
+  group('lobby control mode propagation', () {
+    test('a host join delivers the control mode to an idle-room guest', () {
+      fakeAsync((async) {
+        final room = _Room(async, controlMode: ControlMode.anyone);
+        final modes = <ControlMode>[];
+        room.guest.onControlModeReceived = modes.add;
+
+        // The room is idle: no media epoch, so no PlaybackState can carry
+        // the mode (issue #1950). The host's (re-)announce must.
+        room.host.announceJoin('Host');
+        async.flushMicrotasks();
+
+        expect(modes, [ControlMode.anyone]);
+        expect(room.hostService.outgoingLog.where((m) => m.type == SyncMessageType.state), isEmpty);
+        room.dispose();
+      });
+    });
+
+    test('a control mode claimed by a non-host join is ignored', () {
+      fakeAsync((async) {
+        final room = _Room(async);
+        final modes = <ControlMode>[];
+        room.guest.onControlModeReceived = modes.add;
+
+        // The relay stamps the real sender ID, so the forged isHost flag is
+        // the only claim — and it must not be believed.
+        final intruder = room.hub.register('intruder');
+        intruder.sendTo(
+          'guest',
+          SyncMessage.join(peerId: 'intruder', displayName: 'Intruder', isHost: true, controlMode: ControlMode.anyone),
+        );
+        async.flushMicrotasks();
+
+        expect(modes, isEmpty);
+        room.dispose();
+      });
+    });
+
+    test('a host join without a control mode (older client) changes nothing', () {
+      fakeAsync((async) {
+        final room = _Room(async, controlMode: ControlMode.anyone);
+        final modes = <ControlMode>[];
+        room.guest.onControlModeReceived = modes.add;
+
+        // A 2.13.0 host's join carries no cm key — parse the exact legacy
+        // wire shape.
+        room.hostService.sendTo(
+          'guest',
+          SyncMessage.fromJson(
+            SyncMessage(
+              type: SyncMessageType.join,
+              timestamp: room.nowMs(),
+              peerId: 'host',
+              displayName: 'Host',
+              isHost: true,
+              version: SyncMessage.protocolVersion,
+            ).toJson(),
+          ),
+        );
+        async.flushMicrotasks();
+
+        expect(modes, isEmpty);
+        room.dispose();
+      });
     });
   });
 

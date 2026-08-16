@@ -222,7 +222,14 @@ class WatchTogetherController {
   void announceJoin(String displayName) {
     final peerId = _peerService.myPeerId;
     if (peerId == null) return;
-    _peerService.broadcast(SyncMessage.join(peerId: peerId, displayName: displayName, isHost: _session.isHost));
+    _peerService.broadcast(
+      SyncMessage.join(
+        peerId: peerId,
+        displayName: displayName,
+        isHost: _session.isHost,
+        controlMode: _session.isHost ? _session.controlMode : null,
+      ),
+    );
   }
 
   void announceLeave() {
@@ -394,7 +401,17 @@ class WatchTogetherController {
 
     if (_session.isHost) {
       _coordinator?.onPeerJoined(senderId, compatible: compatible);
-    } else if (senderId == _session.hostPeerId && firstSighting) {
+      return;
+    }
+
+    if (senderId != _session.hostPeerId) return;
+    // The host's join carries the room's control mode — the lobby-safe
+    // carrier, since PlaybackState only flows once a media epoch exists.
+    // Authenticated by the relay-derived host peer ID, not the join's own
+    // spoofable isHost flag.
+    final controlMode = message.controlMode;
+    if (controlMode != null) onControlModeReceived?.call(controlMode);
+    if (firstSighting) {
       // A fresh host join can mean a restarted host app with a reset
       // sequence counter — accept its numbering from scratch.
       _reconciler?.resetSequence();
