@@ -41,6 +41,7 @@ import '../../mpv/mpv.dart';
 import '../overlay_sheet.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_navigation_intent.dart';
+import '../../focus/transport_keys.dart';
 
 import '../../database/app_database.dart';
 import '../../media/media_backend.dart';
@@ -487,20 +488,6 @@ KeyEventResult handlePlayerNavigationKeyAction(
 @visibleForTesting
 bool shouldSkipDuplicateTimelineSeek({required Duration? lastDispatchedSeek, required Duration finalSeek}) {
   return lastDispatchedSeek == finalSeek;
-}
-
-/// A user transport intent. `play`/`pause` are *directed* — a remote with
-/// dedicated buttons must not flip the state it explicitly asked for.
-enum TransportCommand { play, pause, toggle }
-
-/// Maps hardware media transport keys to their intent. Returns null for keys
-/// that are not transport keys (including the configured play/pause hotkey,
-/// which callers resolve to [TransportCommand.toggle] themselves).
-TransportCommand? classifyTransportKey(LogicalKeyboardKey key) {
-  if (key == LogicalKeyboardKey.mediaPlay) return TransportCommand.play;
-  if (key == LogicalKeyboardKey.mediaPause) return TransportCommand.pause;
-  if (key == LogicalKeyboardKey.mediaPlayPause) return TransportCommand.toggle;
-  return null;
 }
 
 /// Directional seeking with the chrome hidden owns the whole key burst —

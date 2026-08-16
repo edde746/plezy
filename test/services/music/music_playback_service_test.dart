@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:plezy/media/ids.dart';
@@ -657,6 +658,10 @@ class _Harness {
 }
 
 void main() {
+  // The impl registers a HardwareKeyboard handler for foreground media keys
+  // (#1948), which needs the services binding.
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   final t1 = _track('t1');
   final t2 = _track('t2');
   final t3 = _track('t3');
@@ -1492,5 +1497,29 @@ void main() {
     await pumpEventQueue();
 
     expect(jumps, [const Duration(minutes: 2), isNull]);
+  });
+
+  group('foreground hardware media keys (#1948)', () {
+    test('transport keys drive the live session and stop unregisters the handler', () async {
+      await h.playTracks([t1, t2]);
+
+      // Consumed and routed: next advances the queue.
+      expect(await simulateKeyDownEvent(LogicalKeyboardKey.mediaTrackNext, platform: 'android'), isTrue);
+      expect(await simulateKeyUpEvent(LogicalKeyboardKey.mediaTrackNext, platform: 'android'), isTrue);
+      await pumpEventQueue();
+      expect(h.service.currentTrack?.id, 't2');
+
+      // A directed pause reaches the player.
+      expect(await simulateKeyDownEvent(LogicalKeyboardKey.mediaPause, platform: 'android'), isTrue);
+      expect(await simulateKeyUpEvent(LogicalKeyboardKey.mediaPause, platform: 'android'), isTrue);
+      await pumpEventQueue();
+      expect(h.player.pauseCalls, 1);
+
+      // No session, no claim on the keys: back to normal dispatch.
+      await h.service.stop();
+      await pumpEventQueue();
+      expect(await simulateKeyDownEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
+      expect(await simulateKeyUpEvent(LogicalKeyboardKey.mediaPlayPause, platform: 'android'), isFalse);
+    });
   });
 }

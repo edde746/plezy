@@ -26,6 +26,7 @@ import '../playback_coordinator.dart';
 import '../playback_initialization_service.dart';
 import '../playback_progress_tracker.dart';
 import '../settings_service.dart';
+import 'music_hardware_transport.dart';
 import 'music_playback_service.dart';
 import 'music_queue_controller.dart';
 import 'music_source_resolver.dart';
@@ -132,6 +133,11 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   MediaControlsManager? _mediaControls;
   StreamSubscription<MediaControlEvent>? _controlEventsSub;
+
+  /// Foreground hardware media keys (Android HID remotes, #1948). Same
+  /// lifecycle as [_mediaControls]; routes to the same methods as
+  /// [_mediaControlRouter].
+  MusicHardwareTransportHandler? _hardwareTransport;
 
   MusicPlaybackStatus _status = MusicPlaybackStatus.idle;
   MediaItem? _currentTrack;
@@ -902,6 +908,17 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     final controls = _mediaControlsFactory();
     _mediaControls = controls;
     _controlEventsSub = controls.controlEvents.listen(_onControlEvent);
+    _hardwareTransport ??= MusicHardwareTransportHandler(
+      hasActiveSession: () => !_disposed && _currentTrack != null,
+      onPlay: () => unawaited(play()),
+      onPause: () => unawaited(pause()),
+      onTogglePlayPause: () => unawaited(togglePlayPause()),
+      onNext: () => unawaited(next()),
+      onPrevious: () => unawaited(previous()),
+      onStop: () => unawaited(stop()),
+      onSkipForward: () => unawaited(_seekRelative(_defaultSkipInterval)),
+      onSkipBackward: () => unawaited(_seekRelative(-_defaultSkipInterval)),
+    )..register();
   }
 
   void _syncControlsAvailability() {
@@ -1507,6 +1524,11 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// suspend: [dispose] is a synchronous override and needs the whole teardown
   /// to run in the caller's turn, before `super.dispose()`.
   Future<void> _teardownPlayerAndControls({required bool awaitStop}) async {
+    // Before any await: the session is already inert (guards check
+    // [_currentTrack]/[_disposed]), and the handler must not outlive the turn
+    // that tears the session down.
+    _hardwareTransport?.unregister();
+    _hardwareTransport = null;
     for (final sub in _playerSubs) {
       unawaited(sub.cancel());
     }
