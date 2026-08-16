@@ -112,14 +112,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   Future<void> _openArtist() async {
     final parentId = widget.album.parentId;
     if (parentId == null) return;
-    MediaItem? artist;
-    try {
-      artist = await mediaClient.fetchItem(parentId);
-    } catch (e) {
-      appLogger.w('Failed to fetch artist $parentId for album ${widget.album.id}', error: e);
-    }
-    if (artist == null || !mounted) return;
-    await navigateToArtist(context, artist);
+    await openArtistById(context, mediaClient, parentId);
   }
 
   void _showOverflowMenuAt(BuildContext buttonContext) {
