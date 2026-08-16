@@ -1313,7 +1313,7 @@ class ExoPlayerPlugin :
     val bufferSize = configuredBufferSizeBytes
 
     core.setProperty("hwdec", "mediacodec,mediacodec-copy")
-    core.setProperty("vo", "gpu")
+    core.setProperty("vo", "gpu-next,gpu")
     core.setProperty("ao", "audiotrack")
 
     if (bufferSize != null && bufferSize > 0) {

@@ -293,10 +293,17 @@ class MpvPlayerCore private constructor(
               setOption("audio-display", "no")
               setOption("gapless-audio", "weak")
             } else {
-              setOption("vo", "gpu")
+              // gpu-next (libplacebo) is mpv 0.41's default VO and the only
+              // Android path that applies Dolby Vision RPU reshaping — vo=gpu
+              // renders the raw base layer, which for DV Profile 5 means
+              // pink/purple IPTPQc2 output (#1902). Keep the explicit chain so
+              // a device where gpu-next cannot initialize still gets the
+              // legacy renderer instead of no video output. Film grain is left
+              // on its `auto` default: applied by the VO under gpu-next, by
+              // the decoder on the fallback path.
+              setOption("vo", "gpu-next,gpu")
               setOption("gpu-context", "android")
               setOption("opengl-es", "yes")
-              setOption("vd-lavc-film-grain", "cpu")
               if (displayFpsOverride != null) {
                 setOption("display-fps-override", displayFpsOverride)
               }
@@ -1038,6 +1045,7 @@ class MpvPlayerCore private constructor(
       "estimated-vf-fps" to getProperty("estimated-vf-fps"),
       "video-bitrate" to getProperty("video-bitrate"),
       "hwdec-current" to getProperty("hwdec-current"),
+      "current-vo" to getProperty("current-vo"),
       "audio-codec-name" to getProperty("audio-codec-name"),
       "audio-params/samplerate" to getProperty("audio-params/samplerate"),
       "audio-params/hr-channels" to getProperty("audio-params/hr-channels"),
