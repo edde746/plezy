@@ -423,6 +423,20 @@ class PlayerNative extends PlayerBase {
     await _clearArmedNext();
     if (media == null) return;
 
+    // Let mpv open the armed entry while the current track still plays
+    // (prefetch starts once the current demuxer is fully read) so the
+    // network open never sits on the gapless boundary: with a boundary
+    // open, any server whose connect+probe outlasts the AO's buffered
+    // tail (~0.5s) produces an audible gap on every transition (#1869).
+    // A failed or superseded prefetch is discarded by mpv and the entry
+    // reopens normally at the boundary, so this can only remove latency.
+    // Off for local arms: a prefetch would consume an fdclose:// fd while
+    // playlist-pos still reads 0, breaking _clearArmedNext's "provably
+    // never opened" proof (double close) — and local opens are instant
+    // anyway. Set before the fd claim so a property failure cannot leak it.
+    final networkArm = media.uri.startsWith('http://') || media.uri.startsWith('https://');
+    await setProperty('prefetch-playlist', networkArm ? 'yes' : 'no');
+
     final (loadUri, fd) = await _toPlayableUri(media.uri, strict: true);
 
     // Per-entry options are the 4th loadfile argument on mpv >= 0.38
