@@ -75,27 +75,41 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         !_completionLatch.triggered) {
       _completionLatch.latch();
 
-      // PiP: skip dialog (user can't interact), auto-play immediately
-      if (PipService().isPipActive.value) {
-        unawaited(_playNext());
-        return;
-      }
-
       // Capture keyboard mode before async gap
       final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false);
 
       final settings = await SettingsService.getInstance();
       if (!mounted) return;
       final autoPlayEnabled = settings.read(SettingsService.autoPlayNextEpisode);
+      final autoPlayCountdown = settings.read(SettingsService.autoPlayCountdown);
+      final stillWatchingLimit = settings.read(SettingsService.stillWatchingEpisodes);
 
-      if (skipAutoPlayCountdown && autoPlayEnabled) {
+      if (!autoPlayEnabled) {
+        unawaited(_handleBackButton());
+        return;
+      }
+
+      _consecutiveAutoPlayedEpisodes++;
+
+      if (stillWatchingLimit > 0 && _consecutiveAutoPlayedEpisodes >= stillWatchingLimit) {
+        _showStillWatchingDialog(atCompletion: true);
+        return;
+      }
+
+      // PiP: skip dialog (user can't interact), auto-play immediately
+      if (PipService().isPipActive.value) {
+        unawaited(_playNext());
+        return;
+      }
+
+      if (skipAutoPlayCountdown || autoPlayCountdown <= 0) {
         unawaited(_playNext());
         return;
       }
 
       _setPlayerState(() {
         _showPlayNextDialog = true;
-        _autoPlayCountdown = autoPlayEnabled ? 5 : -1;
+        _autoPlayCountdown = autoPlayCountdown;
       });
 
       // Auto-focus Play Next button on TV when dialog appears (only in keyboard/TV mode)
@@ -107,7 +121,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         });
       }
 
-      if (autoPlayEnabled) {
+      if (autoPlayCountdown > 0) {
         _startAutoPlayTimer();
       }
     } else if (navigationAction == CompletionNavigationAction.exit && !_completionLatch.triggered) {
@@ -172,9 +186,12 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     final countdown = presentation == PlayNextRetryPresentation.countdown;
     if (countdown) _playNextTransientRetryCount++;
 
+    final configuredCountdown = settings.read(SettingsService.autoPlayCountdown);
+    final retryCountdown = configuredCountdown > 0 ? configuredCountdown : 5;
+
     _setPlayerState(() {
       _showPlayNextDialog = true;
-      _autoPlayCountdown = countdown ? 5 : -1;
+      _autoPlayCountdown = countdown ? retryCountdown : -1;
     });
 
     if (isKeyboardMode) {
@@ -188,6 +205,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _cancelAutoPlay() {
     _autoPlayTimer?.cancel();
+    _consecutiveAutoPlayedEpisodes = 0;
     _unfocusPlayNextPrompt();
     _progressTracker?.resumeAfterStoppedReport();
     // Keep the latch set while playback is still parked at EOF, so duplicate
@@ -204,6 +222,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       return;
     }
     if (_showStillWatchingPrompt) {
+      _consecutiveAutoPlayedEpisodes = 0;
       _dismissStillWatching();
     }
   }
@@ -219,9 +238,11 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     );
   }
 
-  void _showStillWatchingDialog() {
+  void _showStillWatchingDialog({bool atCompletion = false}) {
     // Don't show if auto-play dialog is already visible
     if (_showPlayNextDialog) return;
+
+    _stillWatchingAtCompletion = atCompletion;
 
     final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context, listen: false);
 
@@ -254,6 +275,8 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _onStillWatchingTimeout() {
     _unfocusStillWatchingPrompt();
+    _consecutiveAutoPlayedEpisodes = 0;
+    _stillWatchingAtCompletion = false;
     final currentPlayer = player;
     if (currentPlayer != null) unawaited(_pauseWithPlaybackIntent(currentPlayer));
     _setPlayerState(() {
@@ -264,15 +287,23 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _onStillWatchingContinue() {
     _stillWatchingTimer?.cancel();
     _unfocusStillWatchingPrompt();
+    _consecutiveAutoPlayedEpisodes = 0;
     SleepTimerService().restartTimer();
+    final atCompletion = _stillWatchingAtCompletion;
+    _stillWatchingAtCompletion = false;
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
     });
+    if (atCompletion) {
+      unawaited(_playNext());
+    }
   }
 
   void _onStillWatchingPause() {
     _stillWatchingTimer?.cancel();
     _unfocusStillWatchingPrompt();
+    _consecutiveAutoPlayedEpisodes = 0;
+    _stillWatchingAtCompletion = false;
     final currentPlayer = player;
     if (currentPlayer != null) unawaited(_pauseWithPlaybackIntent(currentPlayer));
     _setPlayerState(() {
@@ -282,6 +313,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _dismissStillWatching() {
     _stillWatchingTimer?.cancel();
+    _stillWatchingAtCompletion = false;
     if (_showStillWatchingPrompt) {
       _unfocusStillWatchingPrompt();
       _setPlayerState(() {

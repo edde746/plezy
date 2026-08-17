@@ -619,6 +619,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _showStillWatchingPrompt = false;
   int _stillWatchingCountdown = 30;
   Timer? _stillWatchingTimer;
+  bool _stillWatchingAtCompletion = false;
+  int _consecutiveAutoPlayedEpisodes = 0;
   late final FocusNode _stillWatchingPauseFocusNode;
   late final FocusNode _stillWatchingContinueFocusNode;
 

@@ -59,6 +59,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     // from EOF re-presents the Play Next prompt instead of parking on the
     // finished episode's last frame (#1867).
     final wasAtCompletion = _completionLatch.triggered;
+    if (!wasAtCompletion) _consecutiveAutoPlayedEpisodes = 0;
 
     _autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
@@ -81,6 +82,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     if (!_canNavigateMediaItems()) return;
     if (_previousEpisode == null || _isLoadingPrevious) return;
 
+    _consecutiveAutoPlayedEpisodes = 0;
     _notifyWatchTogetherMediaChange(metadata: _previousEpisode);
 
     _setPlayerState(() {

@@ -69,11 +69,11 @@ PlayNextRetryPresentation playNextRetryPresentation({
   required int autoRetriesUsed,
   int maxAutoRetries = maxPlayNextTransientRetries,
 }) {
-  if (!wasAtCompletion || !hasNext) return PlayNextRetryPresentation.none;
+  if (!wasAtCompletion || !hasNext || !autoPlayEnabled) return PlayNextRetryPresentation.none;
   if (failureReason != PlaybackFailureReason.serverUnavailable) {
     return PlayNextRetryPresentation.none;
   }
-  final autoRetry = autoPlayEnabled && !inWatchTogetherSession && autoRetriesUsed < maxAutoRetries;
+  final autoRetry = !inWatchTogetherSession && autoRetriesUsed < maxAutoRetries;
   return autoRetry ? PlayNextRetryPresentation.countdown : PlayNextRetryPresentation.manual;
 }
 

@@ -208,8 +208,8 @@ void main() {
       expect(resolve(autoRetriesUsed: maxPlayNextTransientRetries), PlayNextRetryPresentation.manual);
     });
 
-    test('auto-play off presents the prompt without a countdown', () {
-      expect(resolve(autoPlayEnabled: false), PlayNextRetryPresentation.manual);
+    test('auto-play off means nothing to re-present at completion', () {
+      expect(resolve(autoPlayEnabled: false), PlayNextRetryPresentation.none);
     });
 
     test('Watch Together sessions never auto-retry but keep the manual prompt', () {
