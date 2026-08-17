@@ -331,13 +331,20 @@ class PlayerNative extends PlayerBase {
     // header VALUES (`X-Plex-Device: Mac17,9` on Apple hardware), producing a
     // malformed request Plex rejects with 400. `append` takes each item
     // verbatim. Always clear first so a previous open's headers never leak
-    // into header-less media.
-    await command(['change-list', 'http-header-fields', 'clr', '']);
+    // into header-less media. The commands are pipelined — dispatched without
+    // awaiting between sends — because the method channel delivers messages in
+    // send order and the native side executes them in arrival order; awaiting
+    // each round trip serially cost ~12 round trips per open with Plex's
+    // identity headers.
+    final headerCommands = <Future<void>>[
+      command(['change-list', 'http-header-fields', 'clr', '']),
+    ];
     if (media.headers != null && media.headers!.isNotEmpty) {
       for (final entry in media.headers!.entries) {
-        await command(['change-list', 'http-header-fields', 'append', '${entry.key}: ${entry.value}']);
+        headerCommands.add(command(['change-list', 'http-header-fields', 'append', '${entry.key}: ${entry.value}']));
       }
     }
+    await Future.wait(headerCommands);
 
     // 'start' must be set before loadfile. These are playback defaults, not
     // user track selection, and mpv refuses a property write with
