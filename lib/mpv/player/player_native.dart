@@ -875,7 +875,22 @@ class PlayerNative extends PlayerBase {
   /// audio goes through the system renderer, which only handles Dolby
   /// Digital (Plus); Windows and Linux do real device passthrough for the
   /// full list. Never applied on macOS (PlatformDetector.supportsAudioPassthrough).
+  ///
+  /// Android does not use this list: mpv's audiotrack AO only opens stereo
+  /// IEC 61937 tracks at the 48kHz mixer rate, so naming a codec the route
+  /// cannot carry that way strands playback on a dead audio output (#1991).
+  /// The plugin derives the value from the current audio route instead.
   static final String _passthroughCodecs = Platform.isIOS ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
+
+  Future<String> _resolvePassthroughCodecs() async {
+    if (!Platform.isAndroid) return _passthroughCodecs;
+    try {
+      return await invoke<String>('getAudioSpdifCodecs') ?? '';
+    } catch (error, stackTrace) {
+      appLogger.w('MPV: audio route inspection failed; decoding instead', error: error, stackTrace: stackTrace);
+      return '';
+    }
+  }
 
   _AudioStateRequest get _requestedAudioState => (
     passthrough: _passthroughRequested,
@@ -1011,7 +1026,7 @@ class PlayerNative extends PlayerBase {
   }
 
   Future<void> _applyPassthrough(bool enabled) async {
-    await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
+    await setProperty('audio-spdif', enabled ? await _resolvePassthroughCodecs() : '');
     if (_nativeCoreUnavailable) return;
 
     // audio-spdif is the authoritative transition. Publish only after mpv

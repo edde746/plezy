@@ -5,6 +5,7 @@ import android.content.Context
 import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import com.edde746.plezy.exoplayer.supportedMpvSpdifCodecs
 import com.edde746.plezy.shared.PlayerChannelBinding
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -159,6 +160,7 @@ open class MpvPlayerPlugin(
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
+      "getAudioSpdifCodecs" -> handleGetAudioSpdifCodecs(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
       "openContentFd" -> handleOpenContentFd(call, result)
       "closeContentFd" -> handleCloseContentFd(call, result)
@@ -166,6 +168,16 @@ open class MpvPlayerPlugin(
       "setLogLevel" -> handleSetLogLevel(call, result)
       else -> result.notImplemented()
     }
+  }
+
+  /**
+   * Derives the `audio-spdif` value for the current audio route. mpv force-passthroughs
+   * every codec named there with no decode fallback, so with no context to inspect the
+   * route the conservative answer is the empty list — decode everything (#1703, #1991).
+   */
+  private fun handleGetAudioSpdifCodecs(result: MethodChannel.Result) {
+    val context: Context? = activity ?: applicationContext
+    result.success(context?.let(::supportedMpvSpdifCodecs) ?: "")
   }
 
   private fun handleInitialize(result: MethodChannel.Result) {

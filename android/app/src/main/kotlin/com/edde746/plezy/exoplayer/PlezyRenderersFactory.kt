@@ -207,7 +207,7 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     return IecCarrierSink(
       defaultSink = processedSink,
       carrierSink = buildCarrierSink(context, bufferSizeProvider),
-      carrierRouteAvailable = { supportsIecCarrier() },
+      carrierRouteAvailable = { supportsIecCarrier(context) },
       directOutputBlocked = { format -> shouldBlockDirectAudioOutput?.invoke(format) == true },
       log = audioDiagnosticsLogger
     ).also { iecCarrierSink = it }

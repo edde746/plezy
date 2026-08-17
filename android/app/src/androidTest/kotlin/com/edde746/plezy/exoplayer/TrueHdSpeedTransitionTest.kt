@@ -203,7 +203,7 @@ class TrueHdSpeedTransitionTest {
   @Test
   fun aRateFamilyMismatchFallsBackToTheDecoderInsteadOfGoingSilent() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
-    if (!supportsIecCarrier()) {
+    if (!supportsIecCarrier(context)) {
       Log.i(TAG, "==== MISMATCH SKIPPED: device has no carrier route ====")
       return
     }
