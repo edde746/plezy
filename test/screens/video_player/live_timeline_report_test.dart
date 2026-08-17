@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/live_tv_support.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/models/livetv_capture_buffer.dart';
 import 'package:plezy/screens/video_player/live_timeline_report.dart';
 
@@ -204,5 +205,9 @@ class _FakeSession implements LiveTvPlaybackSession {
   }
 
   @override
-  Future<String?> streamUrlAt({int? offsetSeconds}) async => 'https://example.invalid/live';
+  List<MediaSubtitleTrack> get subtitleTracks => const [];
+
+  @override
+  Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack}) async =>
+      'https://example.invalid/live';
 }

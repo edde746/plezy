@@ -117,9 +117,22 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     final dsa = _live.fallbackLevel < 2;
     appLogger.i('Retrying live stream: directStream=$ds directStreamAudio=$dsa');
 
+    // Carried across the re-tune: stream ids are tune-scoped, so the choice
+    // is re-mapped onto the recovered session's track list. Recovering the
+    // video outranks keeping subtitles — a failed burn re-apply drops them.
+    MediaSubtitleTrack? recoveredSubtitle;
     final result = await runLiveStreamRetry<LiveTvPlaybackSession>(
       recover: () => session.recover(directStream: ds, directStreamAudio: dsa),
-      lookupStreamUrl: (recovered) => recovered.streamUrlAt(),
+      lookupStreamUrl: (recovered) async {
+        recoveredSubtitle = LiveTvSessionState.remapSubtitleSelection(recovered.subtitleTracks, _live.selectedSubtitle);
+        if (recoveredSubtitle != null) {
+          final url = await recovered.streamUrlAt(subtitleTrack: recoveredSubtitle);
+          if (url != null) return url;
+          appLogger.w('Live recovery could not re-apply the subtitle burn; retrying without subtitles');
+          recoveredSubtitle = null;
+        }
+        return recovered.streamUrlAt();
+      },
       applyPlayerOptions: () => _setLiveStreamOptions(currentPlayer),
       open: (streamUrl) => currentPlayer.open(
         Media(streamUrl, headers: const {'Accept-Language': 'en'}),
@@ -129,6 +142,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       isCurrent: isCurrent,
       adoptSession: (recovered) {
         _live.adoptSession(recovered);
+        _live.selectedSubtitle = recoveredSubtitle;
         _live.markStreamRestartedAtLiveEdge();
       },
       discardSession: _abandonLiveSession,
@@ -182,19 +196,19 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   /// Seek the live TV stream to an absolute epoch second by rebuilding the
   /// stream at the target offset. The session returns null when the backend
   /// can't time-shift (Jellyfin), and its capture buffer is null there too,
-  /// so both guards cover it.
-  Future<void> _seekLivePosition(int targetEpochSeconds) async {
+  /// so both guards cover it. Returns whether the rebuilt stream was opened.
+  Future<bool> _seekLivePosition(int targetEpochSeconds) async {
     final currentPlayer = player;
-    if (currentPlayer == null) return;
+    if (currentPlayer == null) return false;
     final session = _live.session;
     final buffer = _live.captureBuffer;
-    if (session == null || buffer == null) return;
+    if (session == null || buffer == null) return false;
 
     final clamped = targetEpochSeconds.clamp(buffer.seekableStartEpoch, buffer.seekableEndEpoch);
     final offsetSeconds = clamped - buffer.startedAt.round();
 
-    final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
-    if (streamUrl == null || !mounted || player != currentPlayer) return;
+    final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds, subtitleTrack: _live.selectedSubtitle);
+    if (streamUrl == null || !mounted || player != currentPlayer) return false;
 
     _live.streamStartEpoch = buffer.startedAt + offsetSeconds;
     _live.atLiveEdge = (clamped >= buffer.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds);
@@ -207,6 +221,59 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       isLive: true,
     );
     if (mounted) _setPlayerState(() {});
+    return true;
+  }
+
+  /// Apply a source subtitle choice to the live stream by rebuilding it with
+  /// the backend's server-side delivery (Plex points the part's selection at
+  /// the stream and burns it). The live counterpart of the VOD source switch:
+  /// same [PlaybackSourceSubtitleChoice], but the restart is the raw
+  /// `streamUrlAt → open(isLive: true)` every live URL change uses.
+  Future<PlaybackSourceChangeOutcome> _switchLiveSubtitle(PlaybackSourceSubtitleChoice choice) async {
+    final currentPlayer = player;
+    final session = _live.session;
+    if (currentPlayer == null || session == null) return PlaybackSourceChangeOutcome.unavailable;
+
+    MediaSubtitleTrack? target;
+    if (!choice.isOff) {
+      for (final track in session.subtitleTracks) {
+        if (track.id == choice.sourceStreamId) {
+          target = track;
+          break;
+        }
+      }
+      if (target == null) return PlaybackSourceChangeOutcome.unavailable;
+    }
+    final previous = _live.selectedSubtitle;
+    if (target?.id == previous?.id) return PlaybackSourceChangeOutcome.unchanged;
+
+    _live.selectedSubtitle = target;
+
+    // Keep the viewer's position: rebuild at the time-shift offset when
+    // behind the live edge, otherwise re-open at the edge.
+    if (_live.captureBuffer != null && !_live.atLiveEdge) {
+      if (await _seekLivePosition(_currentPositionEpoch)) return PlaybackSourceChangeOutcome.applied;
+      _live.selectedSubtitle = previous;
+      return PlaybackSourceChangeOutcome.failed;
+    }
+
+    final streamUrl = await session.streamUrlAt(subtitleTrack: target);
+    if (!mounted || player != currentPlayer || _live.session != session) {
+      return PlaybackSourceChangeOutcome.superseded;
+    }
+    if (streamUrl == null) {
+      _live.selectedSubtitle = previous;
+      return PlaybackSourceChangeOutcome.failed;
+    }
+    await _setLiveStreamOptions(currentPlayer);
+    await currentPlayer.open(
+      Media(streamUrl, headers: const {'Accept-Language': 'en'}),
+      play: automotivePlaybackAllowedNow(),
+      isLive: true,
+    );
+    _live.markStreamRestartedAtLiveEdge();
+    if (mounted) _setPlayerState(() {});
+    return PlaybackSourceChangeOutcome.applied;
   }
 
   /// Current seekable epoch window for [_liveSeek], or null when there is no

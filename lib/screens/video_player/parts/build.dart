@@ -49,6 +49,15 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
 
   PlaybackSourceSubtitleChoice? _selectedSourceSubtitleChoiceForControls(List<MediaSubtitleTrack> tracks) {
     if (tracks.isEmpty) return null;
+    if (widget.isLive) {
+      // Live selection is owned by the session state, not a PlaybackSession;
+      // tune metadata may carry stale server-side `selected` flags, so the
+      // fallback loop below must not run for live.
+      final selected = _live.selectedSubtitle;
+      return selected == null
+          ? const PlaybackSourceSubtitleChoice.off()
+          : PlaybackSourceSubtitleChoice.source(selected.id);
+    }
     final selection = _playbackSession?.subtitleSelection;
     if (selection != null) {
       if (selection.isOff) return const PlaybackSourceSubtitleChoice.off();
@@ -67,6 +76,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       _playbackSession?.context.result.subtitleSidecars ?? const <PlaybackSubtitleSidecar>[];
 
   List<MediaSubtitleTrack> _sourceSubtitleTracksForControls() {
+    if (widget.isLive) {
+      // The live session lists only server-deliverable (burnable) streams;
+      // in-band captions stay in the native player track list.
+      return _live.session?.subtitleTracks ?? const <MediaSubtitleTrack>[];
+    }
     final sidecarSourceIds = {for (final sidecar in _sourceSubtitleSidecarsForControls()) ?sidecar.sourceStreamId};
     return selectableSourceSubtitleTracks(
       _currentMediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],

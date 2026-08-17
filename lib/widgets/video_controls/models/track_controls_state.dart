@@ -130,8 +130,13 @@ class TrackControlsState {
   });
 
   /// Transcoded subtitle choices must be negotiated with the server and
-  /// therefore replace the native rendition track list.
-  bool get canUseSourceSubtitles => isTranscoding && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitle != null;
+  /// therefore replace the native rendition track list. A live session's
+  /// server-side tracks work the same way — the stream is rebuilt with the
+  /// chosen track burned in (Plex live DVB subtitles, issue #1983) — while a
+  /// live stream that exposes none keeps the native list (in-band CEA
+  /// captions, issue #1590).
+  bool get canUseSourceSubtitles =>
+      (isTranscoding || isLive) && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitle != null;
 
   /// Direct play keeps embedded/native switching instant while still exposing
   /// unloaded server sidecars that require one source reopen when selected.

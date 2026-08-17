@@ -24,6 +24,7 @@ import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
+import 'file_info_parser.dart';
 import 'download_artwork_helpers.dart';
 import 'settings_service.dart';
 import 'library_query_translator.dart';

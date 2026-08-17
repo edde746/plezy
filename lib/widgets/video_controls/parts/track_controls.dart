@@ -39,7 +39,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
     final choice = widget.selectedSubtitleChoice;
     final sourceStreamId = choice != null && !choice.isOff ? choice.sourceStreamId : null;
     return PlaybackSubtitleResolver.burnRequiresRenegotiation(
-      isTranscoding: widget.isTranscoding,
+      // A live source selection is always delivered by burning into the
+      // rebuilt stream (`isLive` never has sidecars), so it counts as a
+      // transcode for this rule even though the player screen tracks no
+      // transcoding session for live playback.
+      isTranscoding: widget.isTranscoding || widget.isLive,
       currentSourceStreamId: sourceStreamId,
       currentSelectionHasSidecar:
           sourceStreamId != null &&

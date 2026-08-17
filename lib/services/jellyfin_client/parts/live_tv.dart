@@ -313,11 +313,19 @@ class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
   @override
   CaptureBuffer? get captureBuffer => null;
 
+  /// Intentionally unsupported: the session plays one URL negotiated at
+  /// start, so there is no rebuild through which a server-side subtitle
+  /// selection could be delivered. Jellyfin's live transcode profile decides
+  /// subtitle handling on its own.
+  @override
+  List<MediaSubtitleTrack> get subtitleTracks => const [];
+
   @override
   bool get canTimeShift => false;
 
   @override
-  Future<String?> streamUrlAt({int? offsetSeconds}) async => offsetSeconds == null ? _url : null;
+  Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack}) async =>
+      offsetSeconds == null && subtitleTrack == null ? _url : null;
 
   @override
   Future<CaptureBuffer?> reportTimeline({

@@ -9,6 +9,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/live_tv_support.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
@@ -49,7 +50,39 @@ void main() {
                   'type': 'clip',
                   'duration': 1800000,
                   'Media': [
-                    {'beginsAt': '1700000000'},
+                    {
+                      'beginsAt': '1700000000',
+                      'Part': [
+                        {
+                          'id': '42',
+                          'Stream': [
+                            {'id': '90', 'streamType': 1, 'codec': 'h264'},
+                            {'id': '91', 'streamType': 2, 'codec': 'ac3', 'languageCode': 'mul'},
+                            {
+                              'id': '92',
+                              'streamType': 3,
+                              'codec': 'dvb_subtitle',
+                              'language': 'Finnish',
+                              'languageCode': 'fin',
+                            },
+                            {
+                              'id': '93',
+                              'streamType': 3,
+                              'codec': 'eia_608',
+                              'language': 'English',
+                              'languageCode': 'eng',
+                            },
+                            {
+                              'id': '94',
+                              'streamType': 3,
+                              'codec': 'srt',
+                              'key': '/library/streams/94',
+                              'languageCode': 'eng',
+                            },
+                          ],
+                        },
+                      ],
+                    },
                   ],
                 },
               },
@@ -108,6 +141,103 @@ void main() {
       // Tune only — no transcode decision until the caller asks for a URL
       // (a watch-from-start dialog sits between the two).
       expect(requests, ['/livetv/dvrs/dvr-1/channels/ch-1/tune']);
+    });
+
+    test('tune exposes only embedded bitmap subtitle streams as burn targets', () async {
+      final client = makeClient((request) async {
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
+        return jsonResponse(const {});
+      });
+      addTearDown(client.close);
+
+      final session = (await client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1'))!;
+
+      // The DVB bitmap stream is listed (issue #1983); the in-band CEA
+      // caption and the external sidecar are deliberately not — captions ride
+      // the copied video bitstream (issue #1590) and a sidecar cannot be
+      // burned.
+      expect(session.subtitleTracks, hasLength(1));
+      final track = session.subtitleTracks.single;
+      expect(track.id, 92);
+      expect(track.codec, 'dvb_subtitle');
+      expect(track.languageCode, 'fin');
+    });
+
+    test('streamUrlAt with a subtitle track selects it on the tuned part and asks for a burn', () async {
+      final requests = <http.Request>[];
+      final client = makeClient((request) async {
+        requests.add(request);
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
+        if (request.method == 'PUT' && request.url.path == '/library/parts/42') {
+          return jsonResponse(const {});
+        }
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          return http.Response('ok', 200);
+        }
+        return jsonResponse(const {});
+      });
+      addTearDown(client.close);
+
+      final session = (await client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1'))!;
+      final track = session.subtitleTracks.single;
+
+      final burning = await session.streamUrlAt(subtitleTrack: track);
+      final burningUri = Uri.parse(burning!);
+      expect(burningUri.queryParameters['subtitles'], 'burn');
+      // The burned stream comes from the part's server-side selection, not a
+      // `subtitleStreamID` param the transcoder would ignore.
+      expect(burningUri.queryParameters.containsKey('subtitleStreamID'), isFalse);
+
+      Iterable<http.Request> selections() =>
+          requests.where((request) => request.method == 'PUT' && request.url.path == '/library/parts/42');
+      expect(selections(), hasLength(1));
+      expect(selections().single.url.queryParameters['subtitleStreamID'], '92');
+
+      final decision = requests.singleWhere((request) => request.url.path == '/video/:/transcode/universal/decision');
+      expect(decision.url.queryParameters['subtitles'], 'burn');
+
+      // A time-shift rebuild of the same track keeps the burn without a
+      // redundant selection round-trip.
+      final shifted = await session.streamUrlAt(offsetSeconds: 30, subtitleTrack: track);
+      expect(Uri.parse(shifted!).queryParameters['subtitles'], 'burn');
+      expect(selections(), hasLength(1));
+
+      // Dropping the track goes back to `none` (issue #1590's contract).
+      final off = await session.streamUrlAt();
+      expect(Uri.parse(off!).queryParameters['subtitles'], 'none');
+    });
+
+    test('streamUrlAt returns null when the server refuses the burn selection', () async {
+      final decisions = <http.Request>[];
+      final client = makeClient((request) async {
+        if (request.url.path.endsWith('/tune')) {
+          return jsonResponse(tuneResponse());
+        }
+        if (request.method == 'PUT' && request.url.path == '/library/parts/42') {
+          return http.Response('{}', 500, headers: {'content-type': 'application/json'});
+        }
+        if (request.url.path == '/video/:/transcode/universal/decision') {
+          decisions.add(request);
+          return http.Response('ok', 200);
+        }
+        return jsonResponse(const {});
+      });
+      addTearDown(client.close);
+
+      final session = (await client.liveTv.startPlayback('ch-1', dvrKey: 'dvr-1'))!;
+
+      // Burning against an unconfirmed selection would weld whatever the
+      // server had stored into the picture — no URL is the safe answer.
+      expect(await session.streamUrlAt(subtitleTrack: session.subtitleTracks.single), isNull);
+      expect(decisions, isEmpty);
+
+      // The session stays usable without subtitles.
+      final plain = await session.streamUrlAt();
+      expect(Uri.parse(plain!).queryParameters['subtitles'], 'none');
     });
 
     test('streamUrlAt builds live-edge and offset HLS URLs against one transcode session', () async {
@@ -288,6 +418,12 @@ void main() {
 
       // Time-shift unsupported — an offset request must not silently play live.
       expect(await session.streamUrlAt(offsetSeconds: 60), isNull);
+
+      // Server-side subtitle selection is intentionally unsupported: the one
+      // negotiated URL has no rebuild to deliver a selection through.
+      expect(session.subtitleTracks, isEmpty);
+      final foreignTrack = MediaSubtitleTrack(id: 1, selected: false, forced: false);
+      expect(await session.streamUrlAt(subtitleTrack: foreignTrack), isNull);
 
       // Recovery re-opens the negotiated HLS URL.
       expect(await session.recover(directStream: false, directStreamAudio: false), same(session));
