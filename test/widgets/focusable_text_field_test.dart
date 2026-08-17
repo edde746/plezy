@@ -489,7 +489,7 @@ void main() {
         home: Scaffold(
           body: Column(
             children: [
-              // Defaulted: exercises `automatic` resolving to onFirstFocus.
+              // Defaulted: exercises `automatic` opening only on first focus.
               FocusableTextField(controller: controller, focusNode: fieldFocusNode),
               Focus(focusNode: otherFocusNode, child: const SizedBox.shrink()),
             ],
@@ -753,7 +753,7 @@ void main() {
           body: Column(
             children: [
               // No tvTextInputAutoOpenBehavior: exercises the `automatic`
-              // default, which resolves to `onFirstFocus` on native tvOS.
+              // default, which opens only on first focus on native tvOS.
               FocusableTextField(controller: controller, focusNode: fieldFocusNode),
               Focus(focusNode: otherFocusNode, child: const SizedBox.shrink()),
             ],
@@ -768,9 +768,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(readOnly(), isFalse, reason: 'first focus should raise input');
 
-    // Every later entry stays closed. `onFocus` reopened on all of them, which
-    // is what made D-pad traversal of a form unusable; `afterFirstFocus` would
-    // also reopen from entry 2 onwards.
+    // Every later entry stays closed. Reopening on every focus entry is what
+    // made D-pad traversal of a form unusable; `afterFirstFocus` would also
+    // reopen from entry 2 onwards.
     for (var entry = 2; entry <= 4; entry++) {
       otherFocusNode.requestFocus();
       await tester.pumpAndSettle();

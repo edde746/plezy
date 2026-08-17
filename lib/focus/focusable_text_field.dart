@@ -38,24 +38,13 @@ bool _usesTvKeyboard({required TvTextInputPresentation presentation, TextInputTy
 String? _keyboardHint(InputDecoration? decoration) => decoration?.hintText ?? decoration?.labelText;
 
 enum TvTextInputAutoOpenBehavior {
-  /// Resolve per presentation: [onFirstFocus] for the native tvOS keyboard —
-  /// arriving at a field opens it once, but returning to it during D-pad
-  /// traversal does not, since it is a modal full-screen surface and
-  /// re-raising it on every pass makes a form untraversable. [onFocus] for the
-  /// in-app Flutter overlay, which is cheap, non-modal, and involves no UIKit
-  /// first responder.
+  /// Resolve per presentation: open-on-first-focus for the native tvOS
+  /// keyboard — arriving at a field opens it once, but returning to it during
+  /// D-pad traversal does not, since it is a modal full-screen surface and
+  /// re-raising it on every pass makes a form untraversable. Open-on-focus for
+  /// the in-app Flutter overlay, which is cheap, non-modal, and involves no
+  /// UIKit first responder.
   automatic,
-
-  /// Open the selected TV text input presentation whenever the field receives
-  /// focus. On Apple TV this raises the system keyboard on every focus entry,
-  /// including plain D-pad traversal — prefer [automatic] unless the field is
-  /// the sole purpose of its screen.
-  onFocus,
-
-  /// Open on the field's first focus, then stay closed on later focus entries.
-  /// Explicit tap/select still opens it, as does the first focus after a
-  /// focus-node or presentation change.
-  onFirstFocus,
 
   /// Keep initial focus on the field without opening text input, then open it
   /// automatically on later focus entries. Explicit tap/select still opens it.
@@ -906,19 +895,11 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       // field should still open it — otherwise typing always costs two
       // presses — but re-raising it every time D-pad traversal passes back
       // over the field makes a multi-field form unusable, so `automatic`
-      // resolves to `onFirstFocus` there. Android TV's native IME is a docked
+      // opens only on first focus there. Android TV's native IME is a docked
       // soft keyboard that does not take over the screen, so it keeps the
-      // historical auto-open. Explicit modes stay literal on both: a caller
-      // that asks for onFocus gets onFocus.
+      // historical auto-open.
       case TvTextInputAutoOpenBehavior.automatic:
         if (PlatformDetector.isAppleTV() && _hasSeenNativeTextInputFocus) return;
-        _hasSeenNativeTextInputFocus = true;
-        _setNativeTextInputActivated(true);
-      case TvTextInputAutoOpenBehavior.onFirstFocus:
-        if (_hasSeenNativeTextInputFocus) return;
-        _hasSeenNativeTextInputFocus = true;
-        _setNativeTextInputActivated(true);
-      case TvTextInputAutoOpenBehavior.onFocus:
         _hasSeenNativeTextInputFocus = true;
         _setNativeTextInputActivated(true);
       case TvTextInputAutoOpenBehavior.afterFirstFocus:
@@ -1052,11 +1033,6 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       // The Flutter overlay is an in-app, non-modal widget with no UIKit first
       // responder behind it, so opening it on focus costs nothing.
       case TvTextInputAutoOpenBehavior.automatic:
-      case TvTextInputAutoOpenBehavior.onFocus:
-        return true;
-      case TvTextInputAutoOpenBehavior.onFirstFocus:
-        if (_hasSeenTvKeyboardFocus) return false;
-        _hasSeenTvKeyboardFocus = true;
         return true;
       case TvTextInputAutoOpenBehavior.afterFirstFocus:
         if (!_hasSeenTvKeyboardFocus) {
