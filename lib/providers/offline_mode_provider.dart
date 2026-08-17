@@ -203,13 +203,6 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     safeNotifyListeners();
   }
 
-  /// Force a refresh of connectivity status
-  Future<void> refresh() async {
-    await _updateConnectionFlags();
-    _lastOfflineState = isOffline;
-    safeNotifyListeners();
-  }
-
   @override
   void dispose() {
     _multiServerProvider?.removeListener(_handleMultiServerProviderChanged);

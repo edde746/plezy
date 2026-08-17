@@ -18,12 +18,7 @@ enum LibrariesLoadState { initial, loading, loaded, error }
 class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   LibrariesProvider({this._storageService, this._multiServer, bool Function()? isProfileBinding})
     : _isProfileBinding = isProfileBinding ?? _neverBinding {
-    _loadCoordinator = CoalescedLoadCoordinator<String>(
-      onFull: () async {
-        await _loadLibrariesInternal();
-      },
-      onDelta: _loadDelta,
-    );
+    _loadCoordinator = CoalescedLoadCoordinator<String>(onFull: _loadLibrariesInternal, onDelta: _loadDelta);
     // Reload libraries when a new server comes online. Servers bind in waves
     // on sign-in / profile switch and slow ones reconnect after the initial
     // load; without this they stay missing from the sidebar until a re-switch
@@ -210,12 +205,11 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     }
   }
 
-  /// Returns `true` on a successful load, `false` on error.
-  Future<bool> _loadLibrariesInternal() async {
-    if (isDisposed) return false;
+  Future<void> _loadLibrariesInternal() async {
+    if (isDisposed) return;
     if (_aggregationService == null) {
       appLogger.w('LibrariesProvider: Cannot load libraries - not initialized');
-      return false;
+      return;
     }
 
     // Reloading over an already-loaded list (a reactive server-connect sync, an
@@ -236,7 +230,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       // The aggregation service converts Plex-typed responses to MediaLibrary
       // internally; Jellyfin clients return MediaLibrary natively.
       final result = await _aggregationService!.getMediaLibrariesFromAllServers();
-      if (isDisposed) return false;
+      if (isDisposed) return;
 
       // A pass in which zero servers succeeded is never authoritative — it
       // must not replace existing data, and it may only commit "loaded,
@@ -252,11 +246,11 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
           // covering those servers.
           appLogger.w('LibrariesProvider: refresh failed on all servers; keeping previous libraries');
           _loadedServerIds = result.succeededServerIds;
-          return false;
+          return;
         }
         if (result.cancelledServerIds.isNotEmpty || _isProfileBinding()) {
           appLogger.d('LibrariesProvider: first load disrupted (zero successful servers); staying in loading state');
-          return false;
+          return;
         }
       }
 
@@ -264,7 +258,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       var storage = _storageService;
       if (storage == null) {
         storage = await StorageService.getInstance();
-        if (isDisposed) return false;
+        if (isDisposed) return;
         _storageService = storage;
       }
       final savedOrder = storage.getLibraryOrder();
@@ -282,18 +276,16 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
       appLogger.i('LibrariesProvider: Loaded ${_libraries.length} libraries');
       safeNotifyListeners();
-      return true;
     } catch (e, stackTrace) {
-      if (isDisposed) return false;
+      if (isDisposed) return;
       appLogger.e('LibrariesProvider: Failed to load libraries', error: e, stackTrace: stackTrace);
       // A refresh that fails over an existing list keeps the last good data and
       // `loaded` state instead of blanking to an error screen; the next status
       // emission re-drives the sync.
-      if (reloadInPlace) return false;
+      if (reloadInPlace) return;
       _loadState = LibrariesLoadState.error;
       _errorMessage = e.toString();
       safeNotifyListeners();
-      return false;
     }
   }
 
