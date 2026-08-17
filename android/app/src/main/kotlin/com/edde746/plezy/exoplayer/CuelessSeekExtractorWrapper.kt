@@ -192,7 +192,7 @@ class CuelessSeekExtractorWrapper(
    * Routes seeks through [TrackAwareSeekMap]'s per-track cue lookups when the delegate reports
    * unseekable overall. The per-track queries read the live cue data (populated once the Cues
    * element parsed), so they resolve correctly even when the map was constructed before the
-   * Tracks element — the media3 1.11.0 tracks-after-clusters case.
+   * Tracks element — the media3 1.11.0 tracks-after-clusters case (androidx/media #3377).
    */
   private inner class TrackCueSeekMap(
     private val delegate: TrackAwareSeekMap

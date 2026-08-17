@@ -30,10 +30,11 @@ import org.junit.Test
  *
  * media3 1.11.0 builds the Matroska seek map at the end of the Cues element, which for these files
  * is before the Tracks element parsed, so the map permanently reports unseekable and ExoPlayer
- * coerces every seek to t=0 (ProgressiveMediaPeriod). The first test is a canary asserting the
- * upstream defect against a stock MatroskaExtractor — when it fails after a media3 upgrade, the
- * TrackAwareSeekMap repair in [CuelessSeekExtractorWrapper] can be retired. The second test drives
- * the production wrapper stack and requires the seek to actually land.
+ * coerces every seek to t=0 (ProgressiveMediaPeriod; tracking issue androidx/media #3377). The
+ * first test is a canary asserting the upstream defect against a stock MatroskaExtractor — when it
+ * fails after a media3 upgrade, the TrackAwareSeekMap repair in [CuelessSeekExtractorWrapper] can
+ * be retired. The second test drives the production wrapper stack and requires the seek to
+ * actually land.
  */
 class MatroskaLateTracksSeekDeviceTest {
   private companion object {

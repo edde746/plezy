@@ -111,7 +111,8 @@ class MatroskaLateTracksTest {
   /**
    * media3 1.11.0 builds the Matroska seek map at the end of the Cues element, which for
    * tracks-after-clusters files is before the Tracks element parsed — the map then permanently
-   * reports unseekable and resolves every seek to byte 0, snapping playback to the start (#1969).
+   * reports unseekable and resolves every seek to byte 0, snapping playback to the start
+   * (#1969; upstream androidx/media #3377).
    * The production stack must repair it through the per-track cue lookups.
    */
   @Test
