@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../../services/device_performance.dart';
@@ -471,15 +472,29 @@ class PlayerAndroid extends PlayerBase {
     }
   }
 
+  /// First successful (positive) [getHeapSize] result; the device heap is
+  /// immutable per process, so one channel round trip serves every caller.
+  static int? _cachedHeapSizeMB;
+
   /// Returns the device's large heap size in MB, or 0 if unavailable (Android only).
+  ///
+  /// Successful positive results are memoized — the playback-open hot path asks
+  /// again on every open. Failures keep returning 0 without being cached, so a
+  /// transient channel error can't pin the fallback for the process lifetime.
   static Future<int> getHeapSize() async {
+    final cached = _cachedHeapSizeMB;
+    if (cached != null) return cached;
     try {
       final result = await _methodChannel.invokeMethod<int>('getHeapSize');
+      if (result != null && result > 0) _cachedHeapSizeMB = result;
       return result ?? 0;
     } catch (e) {
       return 0;
     }
   }
+
+  @visibleForTesting
+  static void debugResetHeapSizeCache() => _cachedHeapSizeMB = null;
 
   @override
   Future<String> runtimePlayerType() async {

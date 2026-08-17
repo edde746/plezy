@@ -1261,7 +1261,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       initPhase = 'loading settings';
       final settingsService = await SettingsService.getInstance();
-      if (!_isPlayerInitializationCurrent(generation)) return;
+      // Literal `mounted` check: the kickoff block below reads `context`, and
+      // the lint cannot see the mounted check inside the helper.
+      if (!mounted || !_isPlayerInitializationCurrent(generation)) return;
       _autoPipEnabled = settingsService.read(SettingsService.autoPip);
       _exitFullscreenOnPlayerClose = settingsService.read(SettingsService.exitFullscreenOnPlayerClose);
       _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
@@ -1271,37 +1273,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final debugLoggingEnabled = settingsService.read(SettingsService.enableDebugLogging);
       final useExoPlayer = settingsService.read(SettingsService.useExoPlayer);
 
-      if (Platform.isWindows) {
-        initPhase = 'syncing display mode';
-        _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
-        await _displayModeService!.syncWithNative();
-        if (!_isPlayerInitializationCurrent(generation)) return;
-        if (!_fullscreenListenerAttached) {
-          FullscreenStateManager().addListener(_onFullscreenChanged);
-          _fullscreenListenerAttached = true;
-        }
-      }
-
-      // One-native-instance rule: a live music session owns the only audio
-      // core — stop it and wait for its dispose before constructing the
-      // video core (see PlaybackCoordinator).
-      initPhase = 'claiming playback session';
-      await PlaybackCoordinator.instance.claimVideo();
-      if (!mounted || generation != _playerInitializationGeneration) return;
-
-      initPhase = 'creating player';
-      final currentPlayer = Player(useExoPlayer: useExoPlayer);
-      attemptPlayer = currentPlayer;
-      if (!mounted || generation != _playerInitializationGeneration) return;
-      if (Platform.isAndroid && useExoPlayer) {
-        await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
-        if (!mounted || generation != _playerInitializationGeneration) return;
-      }
-
-      // Kick off getPlaybackData() in parallel with the rest of MPV setup.
+      // Kick off getPlaybackData() before the Windows display-mode sync, the
+      // music-session teardown in claimVideo(), player construction, and the
+      // whole mpv property chain below: the resolve depends only on settings +
+      // provider lookups, so starting it first hides all of that setup behind
+      // the network round trip(s).
       // The network/DB work has no dependency on the player — it just needs
-      // the context (providers), which is still safe to touch here because
-      // no async gaps invalidate it before the calls below read it.
+      // the context (providers), which is still safe to touch here because no
+      // async gaps invalidate it between the guard after the settings await
+      // and the reads below.
       // Skipped for live TV (has its own tune path) and offline (its own
       // branch in _startPlayback).
       if (!widget.isLive && !_offlineLibraryMode) {
@@ -1347,6 +1327,33 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // tell Dart we've "handled" the future so it's not reported as an
         // unhandled async error. The later `await` still receives the error.
         _playbackDataFuture!.ignore();
+      }
+
+      if (Platform.isWindows) {
+        initPhase = 'syncing display mode';
+        _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
+        await _displayModeService!.syncWithNative();
+        if (!_isPlayerInitializationCurrent(generation)) return;
+        if (!_fullscreenListenerAttached) {
+          FullscreenStateManager().addListener(_onFullscreenChanged);
+          _fullscreenListenerAttached = true;
+        }
+      }
+
+      // One-native-instance rule: a live music session owns the only audio
+      // core — stop it and wait for its dispose before constructing the
+      // video core (see PlaybackCoordinator).
+      initPhase = 'claiming playback session';
+      await PlaybackCoordinator.instance.claimVideo();
+      if (!mounted || generation != _playerInitializationGeneration) return;
+
+      initPhase = 'creating player';
+      final currentPlayer = Player(useExoPlayer: useExoPlayer);
+      attemptPlayer = currentPlayer;
+      if (!mounted || generation != _playerInitializationGeneration) return;
+      if (Platform.isAndroid && useExoPlayer) {
+        await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
+        if (!mounted || generation != _playerInitializationGeneration) return;
       }
 
       if (!_isPlayerInitializationCurrent(generation)) return;

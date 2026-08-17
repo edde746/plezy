@@ -306,24 +306,39 @@ Future<bool?> navigateToVideoPlayer(
   }
 
   try {
-    // Check if external player is enabled
+    // Check if external player is enabled. The platform guard comes first so
+    // platforms that can never launch an external player skip the settings
+    // lookup, and the singleton the saved-version resolve above already
+    // initialized is reused — getInstance() is awaited at most once per
+    // launch on this path.
     try {
-      final settingsService = await SettingsService.getInstance();
-      if (PlatformDetector.supportsExternalPlayers() && settingsService.read(SettingsService.useExternalPlayer)) {
-        bool launched = false;
+      if (PlatformDetector.supportsExternalPlayers()) {
+        final settingsService = SettingsService.instanceOrNull ?? await SettingsService.getInstance();
+        if (settingsService.read(SettingsService.useExternalPlayer)) {
+          bool launched = false;
 
-        if (isOffline) {
-          final globalKey = metadata.globalKey;
-          final videoPath = await downloadProvider.getVideoFilePath(
-            globalKey,
-            mediaIndex: mediaIndex,
-            mediaSourceId: mediaSourceId,
-          );
-          if (videoPath != null && context.mounted) {
-            final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+          if (isOffline) {
+            final globalKey = metadata.globalKey;
+            final videoPath = await downloadProvider.getVideoFilePath(
+              globalKey,
+              mediaIndex: mediaIndex,
+              mediaSourceId: mediaSourceId,
+            );
+            if (videoPath != null && context.mounted) {
+              final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+              launched = await ExternalPlayerService.launch(
+                context: context,
+                videoUrl: videoUrl,
+                metadata: metadata,
+                client: mediaClient,
+                offlineWatchService: offlineWatchService,
+                mediaIndex: mediaIndex,
+                mediaSourceId: mediaSourceId,
+              );
+            }
+          } else if (context.mounted) {
             launched = await ExternalPlayerService.launch(
               context: context,
-              videoUrl: videoUrl,
               metadata: metadata,
               client: mediaClient,
               offlineWatchService: offlineWatchService,
@@ -331,22 +346,13 @@ Future<bool?> navigateToVideoPlayer(
               mediaSourceId: mediaSourceId,
             );
           }
-        } else if (context.mounted) {
-          launched = await ExternalPlayerService.launch(
-            context: context,
-            metadata: metadata,
-            client: mediaClient,
-            offlineWatchService: offlineWatchService,
-            mediaIndex: mediaIndex,
-            mediaSourceId: mediaSourceId,
-          );
-        }
 
-        if (launched) {
-          // External playback never reaches the in-player session commit, so
-          // record the local last-played history here.
-          if (!isOffline) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
-          return null;
+          if (launched) {
+            // External playback never reaches the in-player session commit, so
+            // record the local last-played history here.
+            if (!isOffline) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
+            return null;
+          }
         }
       }
     } catch (e) {
