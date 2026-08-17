@@ -88,7 +88,7 @@ class AudioOutputPolicyTest {
     // No direct-playback oracle exists there, and getMinBufferSize alone is known to lie
     // (a Shield sizes the tuple, then the AudioTrack fails to initialise).
     assertFalse(
-      trueHdMatCarrierSupported(
+      iecCarrierSupported(
         sdkInt = 28,
         canSizeCarrierBuffer = { true },
         bitstreamSupported = { true },
@@ -102,7 +102,7 @@ class AudioOutputPolicyTest {
     for (sdkInt in intArrayOf(29, 30, 32, 33, 34)) {
       assertFalse(
         "api $sdkInt",
-        trueHdMatCarrierSupported(
+        iecCarrierSupported(
           sdkInt = sdkInt,
           canSizeCarrierBuffer = { false },
           bitstreamSupported = { true },
@@ -120,7 +120,7 @@ class AudioOutputPolicyTest {
         assertEquals(
           "api $sdkInt supported=$supported",
           supported,
-          trueHdMatCarrierSupported(
+          iecCarrierSupported(
             sdkInt = sdkInt,
             canSizeCarrierBuffer = { true },
             bitstreamSupported = { throw AssertionError("getDirectPlaybackSupport does not exist below API 33") },
@@ -139,7 +139,7 @@ class AudioOutputPolicyTest {
       assertEquals(
         "supported=$supported",
         supported,
-        trueHdMatCarrierSupported(
+        iecCarrierSupported(
           sdkInt = 33,
           canSizeCarrierBuffer = { true },
           bitstreamSupported = { supported },

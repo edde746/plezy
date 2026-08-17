@@ -107,7 +107,7 @@ class TrueHdSpeedTransitionTest {
     // AudioTrackConfig is built from OutputConfig, which stays PCM16 by design; the real
     // AudioTrack format is swapped in the builder modifier. The observable carrier signature is
     // therefore the 192kHz carrier rate with no decoder instantiated.
-    if (carrierEncoding != TrueHdMatPacker.CARRIER_SAMPLE_RATE || decoderBefore != null) {
+    if (carrierEncoding != IecCarrier.SAMPLE_RATE || decoderBefore != null) {
       Log.i(TAG, "==== SKIPPED: device does not take the carrier (rate=$carrierEncoding) ====")
       teardown(handler, player, thread, fixture)
       return
@@ -137,12 +137,12 @@ class TrueHdSpeedTransitionTest {
 
     assertEquals(
       "returning to 1x must put TrueHD back on the carrier",
-      TrueHdMatPacker.CARRIER_SAMPLE_RATE,
+      IecCarrier.SAMPLE_RATE,
       rateRestored
     )
     assertNotEquals(
       "TrueHD must leave the IEC 61937 carrier when speed leaves 1x",
-      TrueHdMatPacker.CARRIER_SAMPLE_RATE,
+      IecCarrier.SAMPLE_RATE,
       encodingAfter
     )
     assertTrue("a decoder must take over the TrueHD track", decoderAfter != null)
@@ -203,7 +203,7 @@ class TrueHdSpeedTransitionTest {
   @Test
   fun aRateFamilyMismatchFallsBackToTheDecoderInsteadOfGoingSilent() {
     val context = InstrumentationRegistry.getInstrumentation().targetContext
-    if (!supportsTrueHdMatCarrier()) {
+    if (!supportsIecCarrier()) {
       Log.i(TAG, "==== MISMATCH SKIPPED: device has no carrier route ====")
       return
     }
@@ -303,7 +303,7 @@ class TrueHdSpeedTransitionTest {
     assertTrue("a decoder must take the stream over instead of the carrier", decoder != null)
     assertNotEquals(
       "the stream must not still be riding the carrier",
-      TrueHdMatPacker.CARRIER_SAMPLE_RATE,
+      IecCarrier.SAMPLE_RATE,
       rate
     )
     assertTrue("playback must keep advancing after the fallback", positionSecond > positionFirst)

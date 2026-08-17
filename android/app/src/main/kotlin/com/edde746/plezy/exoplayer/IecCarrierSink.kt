@@ -16,13 +16,16 @@ import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Routes Dolby TrueHD through a MAT/IEC 61937 carrier, and everything else through the normal sink
- * (#1804).
+ * Routes Dolby TrueHD (#1804) and DTS-HD Master Audio (#1988) through an IEC 61937 carrier, and
+ * everything else through the normal sink.
  *
- * Android will not bitstream raw TrueHD on the TV routes measured for this issue: the platform
- * reports `ENCODING_DOLBY_TRUEHD` as offload-only while reporting `ENCODING_IEC61937` at 192kHz/7.1
- * as bitstream-capable. Kodi models the same split and packs the carrier itself; media3 only ever
- * hands Android raw TrueHD, at the stream rate. This sink adds the missing path.
+ * Android will not bitstream raw TrueHD on the TV routes measured for #1804: the platform reports
+ * `ENCODING_DOLBY_TRUEHD` as offload-only while reporting `ENCODING_IEC61937` at 192kHz/7.1 as
+ * bitstream-capable. Raw `ENCODING_DTS_HD` is worse on Fire OS: the route advertises it, the
+ * AudioTrack initialises and drains, and the receiver hears silence, because the encoding only
+ * means "basic profile" there (#1988). Kodi models the same split and packs the carrier itself;
+ * media3 only ever hands Android the raw encodings, at the stream rate. This sink adds the
+ * missing path, with one [IecCarrierPacker] per codec.
  *
  * **Why two delegates rather than one sink with the processors held inactive.** The carrier is a
  * bit-exact byte stream that happens to be shaped like PCM. Any sample mutation — downmix, Sonic,
@@ -39,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * delegates so either can be activated later; per-stream calls go to the active one alone.
  */
 @OptIn(UnstableApi::class)
-internal class TrueHdCarrierSink(
+internal class IecCarrierSink(
   private val defaultSink: AudioSink,
   private val carrierSink: AudioSink,
   /** Whether the current route can bitstream the carrier tuple. Evaluated per format. */
@@ -49,39 +52,39 @@ internal class TrueHdCarrierSink(
   private val log: ((String, String, String) -> Unit)? = null
 ) : AudioSink {
 
-  private companion object {
-    /** One MAT frame is exactly one carrier period: 3840 frames at 192kHz. */
-    const val CARRIER_BURST_DURATION_US =
-      TrueHdMatPacker.MAT_PKT_OFFSET.toLong() / TrueHdMatPacker.CARRIER_BYTES_PER_FRAME *
-        1_000_000L / TrueHdMatPacker.CARRIER_SAMPLE_RATE
-  }
+  private val matPacker = TrueHdMatPacker()
+  private val dtsHdPacker = DtsHdIecPacker()
 
-  private val packer = TrueHdMatPacker()
+  /** The packer for the configured stream; chosen by mime type in [configure]. */
+  private var activePacker: IecCarrierPacker = matPacker
 
   private var active: AudioSink = defaultSink
   private var carrierActive = false
+  private var loggedCoreStrip = false
 
   /** A burst the delegate refused; it must be placed before any further input is consumed. */
   private var pendingBurst: ByteBuffer? = null
   private var pendingBurstTimeUs: Long = 0
 
   /**
-   * Anchor for carrier timestamps, and how many bursts have been emitted since it.
+   * Anchor for carrier timestamps, and how many carrier frames have been emitted since it.
    *
-   * Each MAT frame is exactly one carrier period of audio, so timestamps are derived from the
-   * cadence rather than from whichever access unit happened to close the frame. Handing the sink
-   * the closing unit's own presentation time drifts against the time it derives from written
-   * frames, which it reports as a discontinuity on nearly every frame.
+   * Every burst is a whole number of carrier frames, so timestamps are derived from the cadence
+   * rather than from whichever access unit happened to close the burst. Handing the sink the
+   * closing unit's own presentation time drifts against the time it derives from written frames,
+   * which it reports as a discontinuity on nearly every burst. Counting frames rather than bursts
+   * keeps the arithmetic exact for burst durations that are not whole microseconds (a DTS-HD
+   * burst is 10666.67us).
    */
   private var carrierAnchorUs: Long = C.TIME_UNSET
-  private var burstsSinceAnchor: Long = 0
+  private var carrierFramesSinceAnchor: Long = 0
 
   private var playbackParameters: PlaybackParameters = PlaybackParameters.DEFAULT
   private var sinkListener: AudioSink.Listener? = null
 
   /**
-   * Latched when a stream's bitstream contradicts the rate its container announced, which selection
-   * was made from.
+   * Latched when a stream's bitstream contradicts the shape its container announced, which
+   * selection was made from.
    *
    * Deliberately outlives [flush] and [reset]: media3 resets every renderer disabled by a new
    * selection before enabling the replacement (ExoPlayerImplInternal.enableRenderers), and both
@@ -114,11 +117,11 @@ internal class TrueHdCarrierSink(
    * [directOutputBlocked] already reports.
    *
    * The rate family is decided from the format rather than from the packer, which only learns it
-   * from a major sync once buffers are already flowing — far too late for a selection that happens
-   * before configure.
+   * from the bitstream once buffers are already flowing — far too late for a selection that
+   * happens before configure.
    */
   private fun shouldUseCarrier(format: Format): Boolean {
-    if (format.sampleMimeType != MimeTypes.AUDIO_TRUEHD) return false
+    if (!isTrueHd(format) && !isDtsHd(format)) return false
     if (mismatchGeneration == mediaGeneration.get()) return false
     if (!isCarrierRateFamily(format.sampleRate)) return false
     if (playbackParameters.speed != 1f) return false
@@ -136,15 +139,15 @@ internal class TrueHdCarrierSink(
   private fun carrierFormat(): Format = Format.Builder()
     .setSampleMimeType(MimeTypes.AUDIO_RAW)
     .setPcmEncoding(C.ENCODING_PCM_16BIT)
-    .setChannelCount(TrueHdMatPacker.CARRIER_CHANNEL_COUNT)
-    .setSampleRate(TrueHdMatPacker.CARRIER_SAMPLE_RATE)
+    .setChannelCount(IecCarrier.CHANNEL_COUNT)
+    .setSampleRate(IecCarrier.SAMPLE_RATE)
     .build()
 
   /**
    * TrueHD is deliberately binary: the carrier, or decoded PCM. Never media3's own raw TrueHD path.
    *
    * That path builds an `ENCODING_DOLBY_TRUEHD` track at the *stream* rate, which is the
-   * configuration this issue is about — one box takes a single write and never advances its
+   * configuration #1804 is about — one box takes a single write and never advances its
    * playback head, another freezes for ten seconds, and the third declines it and decodes anyway.
    * Even Kodi's raw fallback is a different thing: it only offers raw TrueHD after verifying it at
    * 192kHz, which media3 never requests. So when the carrier is unavailable — no IEC route, a speed
@@ -153,15 +156,30 @@ internal class TrueHdCarrierSink(
    */
   private fun isTrueHd(format: Format): Boolean = format.sampleMimeType == MimeTypes.AUDIO_TRUEHD
 
+  /**
+   * DTS-HD is binary only while the carrier route exists: the carrier, or decoded PCM. Falling
+   * through to media3's raw `ENCODING_DTS_HD` path on such a route would land on exactly the
+   * silent configuration #1988 is about — the route that advertises the carrier and raw DTS-HD at
+   * once is the one whose raw path renders silence. Without a carrier route the raw path is the
+   * pre-carrier behavior and is left alone: those routes never had the carrier to lose, and some
+   * of them bitstream raw DTS-HD genuinely.
+   *
+   * DTS Express deliberately stays off the carrier: its mime carries a `;profile=lbr` suffix, so
+   * the equality below excludes it and it keeps decoding as before.
+   */
+  private fun isDtsHd(format: Format): Boolean = format.sampleMimeType == MimeTypes.AUDIO_DTS_HD
+
   override fun supportsFormat(format: Format): Boolean = when {
     shouldUseCarrier(format) -> true
     isTrueHd(format) -> false
+    isDtsHd(format) && carrierRouteAvailable() -> false
     else -> defaultSink.supportsFormat(format)
   }
 
   override fun getFormatSupport(format: Format): Int = when {
     shouldUseCarrier(format) -> AudioSink.SINK_FORMAT_SUPPORTED_DIRECTLY
     isTrueHd(format) -> AudioSink.SINK_FORMAT_UNSUPPORTED
+    isDtsHd(format) && carrierRouteAvailable() -> AudioSink.SINK_FORMAT_UNSUPPORTED
     else -> defaultSink.getFormatSupport(format)
   }
 
@@ -173,16 +191,18 @@ internal class TrueHdCarrierSink(
         "info",
         "audio",
         if (useCarrier) {
-          "TrueHD via MAT/IEC 61937 carrier at ${TrueHdMatPacker.CARRIER_SAMPLE_RATE}Hz/" +
-            "${TrueHdMatPacker.CARRIER_CHANNEL_COUNT}ch"
+          "${carrierCodecName(inputFormat)} via IEC 61937 carrier at ${IecCarrier.SAMPLE_RATE}Hz/" +
+            "${IecCarrier.CHANNEL_COUNT}ch"
         } else {
-          "Leaving the MAT carrier; audio returns to the normal sink"
+          "Leaving the IEC 61937 carrier; audio returns to the normal sink"
         }
       )
     }
     carrierActive = useCarrier
     configuredGeneration = mediaGeneration.get()
+    activePacker = if (isDtsHd(inputFormat)) dtsHdPacker else matPacker
     active = if (useCarrier) carrierSink else defaultSink
+    loggedCoreStrip = false
     discardCarrierState()
 
     if (useCarrier) {
@@ -196,6 +216,8 @@ internal class TrueHdCarrierSink(
       defaultSink.configure(audioSinkConfig)
     }
   }
+
+  private fun carrierCodecName(format: Format): String = if (isDtsHd(format)) "DTS-HD" else "TrueHD (MAT)"
 
   override fun handleBuffer(buffer: ByteBuffer, presentationTimeUs: Long, encodedAccessUnitCount: Int): Boolean {
     if (!carrierActive) return defaultSink.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
@@ -217,37 +239,30 @@ internal class TrueHdCarrierSink(
 
     var offset = 0
     while (offset < remaining.size) {
-      val length = TrueHdMatPacker.accessUnitLength(remaining, offset, remaining.size)
+      val length = activePacker.accessUnitLength(remaining, offset, remaining.size)
+      if (activePacker.unsupportedStream) return latchMismatch()
       if (length == 0) {
         // Not a unit boundary we recognise. Consuming the tail keeps the stream moving; trying to
         // resynchronise mid-carrier would splice a frame.
         buffer.position(buffer.limit())
         return true
       }
-      val burst = packer.packAccessUnit(remaining, offset, length)
-      if (packer.unsupportedRateFamily) {
-        // Selection is made from Format.sampleRate, so the bitstream disagrees with its container.
-        // The packer emits nothing in that state; consuming here would turn the stream into
-        // silence. Leave this unit in the buffer, latch the carrier off, and ask for reselection so
-        // the decoder takes over and receives it.
-        if (mismatchGeneration != configuredGeneration) {
-          mismatchGeneration = configuredGeneration
-          log?.invoke(
-            "warn",
-            "audio",
-            "TrueHD bitstream announced a 44.1kHz-family rate its container did not; " +
-              "leaving the carrier so it decodes"
-          )
-          sinkListener?.onAudioCapabilitiesChanged()
-        }
-        return false
-      }
+      val burst = activePacker.packAccessUnit(remaining, offset, length)
+      if (activePacker.unsupportedStream) return latchMismatch()
       offset += length
       buffer.position(buffer.position() + length)
       if (burst == null) continue
+      if (activePacker === dtsHdPacker && dtsHdPacker.strippedToCore && !loggedCoreStrip) {
+        loggedCoreStrip = true
+        log?.invoke(
+          "warn",
+          "audio",
+          "DTS-HD MA bitrate exceeds the IEC 61937 carrier; sending the DTS core substream for ~60s"
+        )
+      }
 
-      val burstTimeUs = carrierAnchorUs + burstsSinceAnchor * CARRIER_BURST_DURATION_US
-      burstsSinceAnchor++
+      val burstTimeUs = carrierAnchorUs + carrierFramesSinceAnchor * 1_000_000L / IecCarrier.SAMPLE_RATE
+      carrierFramesSinceAnchor += burst.remaining().toLong() / IecCarrier.BYTES_PER_FRAME
       if (!carrierSink.handleBuffer(burst, burstTimeUs, 1)) {
         pendingBurst = burst
         pendingBurstTimeUs = burstTimeUs
@@ -257,10 +272,35 @@ internal class TrueHdCarrierSink(
     return true
   }
 
+  /**
+   * The bitstream announced a shape the carrier cannot ride, which selection could not see in the
+   * container's Format. The packer emits nothing in that state; consuming here would turn the
+   * stream into silence. Leave the unit in the buffer, latch the carrier off, and ask for
+   * reselection so the decoder takes over and receives it.
+   */
+  private fun latchMismatch(): Boolean {
+    if (mismatchGeneration != configuredGeneration) {
+      mismatchGeneration = configuredGeneration
+      log?.invoke(
+        "warn",
+        "audio",
+        if (activePacker === dtsHdPacker) {
+          "DTS-HD bitstream cannot ride the 192kHz carrier (44.1kHz-family core or non-standard framing); " +
+            "leaving the carrier so it decodes"
+        } else {
+          "TrueHD bitstream announced a 44.1kHz-family rate its container did not; " +
+            "leaving the carrier so it decodes"
+        }
+      )
+      sinkListener?.onAudioCapabilitiesChanged()
+    }
+    return false
+  }
+
   override fun getCurrentPositionUs(sourceEnded: Boolean): Long = active.getCurrentPositionUs(sourceEnded)
 
   override fun playToEndOfStream() {
-    // A partially filled MAT frame cannot be emitted; up to 20ms is dropped at the end of a stream.
+    // A partially filled burst cannot be emitted; up to one burst is dropped at the end of a stream.
     active.playToEndOfStream()
   }
 
@@ -285,11 +325,12 @@ internal class TrueHdCarrierSink(
   override fun getAudioTrackBufferSizeUs(): Long = active.getAudioTrackBufferSizeUs()
 
   private fun discardCarrierState() {
-    packer.reset()
+    matPacker.reset()
+    dtsHdPacker.reset()
     pendingBurst = null
     // Re-anchor on the next burst: after a seek the carrier restarts from a new media time.
     carrierAnchorUs = C.TIME_UNSET
-    burstsSinceAnchor = 0
+    carrierFramesSinceAnchor = 0
   }
 
   // --- Persistent state: mirrored, so either delegate can be activated later ---
@@ -321,23 +362,23 @@ internal class TrueHdCarrierSink(
       if (isUnitSpeed) playbackParameters else PlaybackParameters.DEFAULT
     )
 
-    // Crossing 1x changes whether TrueHD may ride the carrier, but nothing re-asks on its own:
-    // the renderer only consults the sink when capabilities are invalidated. Rebuilding the track
-    // selector parameters is not enough either — DefaultTrackSelector skips invalidation when the
-    // rebuilt parameters compare equal. This is the path media3 itself uses for a route change,
-    // and it reaches onRendererCapabilitiesChanged, so the format is re-evaluated and TrueHD moves
-    // between the carrier and the decoder.
+    // Crossing 1x changes whether a bitstream may ride the carrier, but nothing re-asks on its
+    // own: the renderer only consults the sink when capabilities are invalidated. Rebuilding the
+    // track selector parameters is not enough either — DefaultTrackSelector skips invalidation
+    // when the rebuilt parameters compare equal. This is the path media3 itself uses for a route
+    // change, and it reaches onRendererCapabilitiesChanged, so the format is re-evaluated and the
+    // stream moves between the carrier and the decoder.
     if (wasUnitSpeed != isUnitSpeed && (carrierActive || isUnitSpeed)) {
       log?.invoke(
         "info",
         "audio",
-        "Playback speed ${if (isUnitSpeed) "returned to" else "left"} 1.0x; re-evaluating the TrueHD carrier"
+        "Playback speed ${if (isUnitSpeed) "returned to" else "left"} 1.0x; re-evaluating the bitstream carrier"
       )
       sinkListener?.onAudioCapabilitiesChanged()
     }
   }
 
-  /** Whether TrueHD is currently riding the carrier. Read by the core when speed changes. */
+  /** Whether the configured stream is currently riding the carrier. */
   val isCarrierActive: Boolean
     get() = carrierActive
 
@@ -345,7 +386,7 @@ internal class TrueHdCarrierSink(
    * While the carrier is live the delegate is deliberately pinned to 1x, but the player polls this
    * through the media clock and adopts whatever it reads. Reporting the delegate's value would push
    * the pinned 1x back and silently undo the user's speed change, so the requested parameters are
-   * reported instead; the reselection triggered above then moves TrueHD onto the decoder, which
+   * reported instead; the reselection triggered above then moves the stream onto the decoder, which
    * really can apply them.
    */
   override fun getPlaybackParameters(): PlaybackParameters = if (carrierActive) playbackParameters else active.getPlaybackParameters()
@@ -407,7 +448,7 @@ internal class TrueHdCarrierSink(
 
   /**
    * Called by the owner immediately before a new media item is set, which is the only point where
-   * "this stream lied about its rate" stops being true and the carrier can be offered again.
+   * "this stream lied about its shape" stops being true and the carrier can be offered again.
    */
   fun beginMediaItem() {
     mediaGeneration.incrementAndGet()

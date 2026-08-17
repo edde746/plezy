@@ -151,14 +151,14 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     )
   }
 
-  private var trueHdCarrierSink: TrueHdCarrierSink? = null
+  private var iecCarrierSink: IecCarrierSink? = null
 
   /**
    * Clears per-stream carrier state that must survive renderer resets but not a new media item.
-   * Call before setting a new source; see [TrueHdCarrierSink.beginMediaItem].
+   * Call before setting a new source; see [IecCarrierSink.beginMediaItem].
    */
   fun beginMediaItem() {
-    trueHdCarrierSink?.beginMediaItem()
+    iecCarrierSink?.beginMediaItem()
   }
 
   override fun buildAudioSink(
@@ -204,17 +204,17 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
       audioDiagnosticsLogger
     )
 
-    return TrueHdCarrierSink(
+    return IecCarrierSink(
       defaultSink = processedSink,
       carrierSink = buildCarrierSink(context, bufferSizeProvider),
-      carrierRouteAvailable = { supportsTrueHdMatCarrier() },
+      carrierRouteAvailable = { supportsIecCarrier() },
       directOutputBlocked = { format -> shouldBlockDirectAudioOutput?.invoke(format) == true },
       log = audioDiagnosticsLogger
-    ).also { trueHdCarrierSink = it }
+    ).also { iecCarrierSink = it }
   }
 
   /**
-   * The delegate that carries packed TrueHD (#1804).
+   * The delegate that carries packed TrueHD and DTS-HD (#1804, #1988).
    *
    * Deliberately separate from the processed sink, and deliberately barren: an empty
    * [DefaultAudioSink.AudioProcessorChain] means no downmix, no Sonic, no silence skipping and no

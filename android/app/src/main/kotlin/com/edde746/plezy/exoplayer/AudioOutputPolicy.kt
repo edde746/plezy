@@ -92,7 +92,8 @@ internal fun supportedMpvSpdifCodecs(context: Context): String {
 }
 
 /**
- * Whether this route can carry TrueHD as MAT inside IEC 61937 (#1804).
+ * Whether this route can carry a packed bitstream inside IEC 61937 at 192kHz/7.1 — TrueHD as MAT
+ * (#1804) and DTS-HD MA as DTS type IV (#1988) both ride this exact tuple.
  *
  * This is Kodi's test, and deliberately not media3's. Kodi asks the AudioTrack layer whether it can
  * size a buffer for one exact tuple — `getMinBufferSize(rate, mask, encoding) > 0` — and gates the
@@ -112,15 +113,15 @@ internal fun supportedMpvSpdifCodecs(context: Context): String {
  *   for it means the route carries the frames. Fire OS 8 (API 30) devices bitstream TrueHD this way
  *   and lost passthrough entirely under an API 33 gate (#1863). A route that still lies here fails
  *   AudioTrack initialisation, which the audio recovery path answers by force-decoding.
- * - Below API 29 there is no oracle at all, so the carrier is not offered and TrueHD decodes as
- *   before.
+ * - Below API 29 there is no oracle at all, so the carrier is not offered and the stream decodes
+ *   as before.
  */
-internal fun supportsTrueHdMatCarrier(): Boolean = trueHdMatCarrierSupported(
+internal fun supportsIecCarrier(): Boolean = iecCarrierSupported(
   sdkInt = Build.VERSION.SDK_INT,
   canSizeCarrierBuffer = {
     try {
       AudioTrack.getMinBufferSize(
-        TrueHdMatPacker.CARRIER_SAMPLE_RATE,
+        IecCarrier.SAMPLE_RATE,
         AudioFormat.CHANNEL_OUT_7POINT1_SURROUND,
         AudioFormat.ENCODING_IEC61937
       ) > 0
@@ -128,7 +129,7 @@ internal fun supportsTrueHdMatCarrier(): Boolean = trueHdMatCarrierSupported(
       false
     }
   },
-  // The SDK_INT guards repeat trueHdMatCarrierSupported's tiering only because lint's NewApi
+  // The SDK_INT guards repeat iecCarrierSupported's tiering only because lint's NewApi
   // check cannot see through the injected lambdas.
   bitstreamSupported = {
     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && iecCarrierBitstreamSupported()
@@ -139,11 +140,11 @@ internal fun supportsTrueHdMatCarrier(): Boolean = trueHdMatCarrierSupported(
 )
 
 /**
- * [supportsTrueHdMatCarrier] with the platform probes injected. Probes are only consulted on the
+ * [supportsIecCarrier] with the platform probes injected. Probes are only consulted on the
  * API tiers where they exist: [bitstreamSupported] (`getDirectPlaybackSupport`) on 33+ and
  * [directPlaybackSupported] (`AudioTrack.isDirectPlaybackSupported`) on 29–32.
  */
-internal fun trueHdMatCarrierSupported(
+internal fun iecCarrierSupported(
   sdkInt: Int,
   canSizeCarrierBuffer: () -> Boolean,
   bitstreamSupported: () -> Boolean,
@@ -160,7 +161,7 @@ private fun iecCarrierBitstreamSupported(): Boolean = try {
   val support = AudioManager.getDirectPlaybackSupport(iecCarrierProbeFormat(), movieAudioAttributes())
   (support and AudioManager.DIRECT_PLAYBACK_BITSTREAM_SUPPORTED) != 0
 } catch (error: Exception) {
-  Log.w(TAG, "IEC 61937 carrier probe failed; not offering the TrueHD carrier", error)
+  Log.w(TAG, "IEC 61937 carrier probe failed; not offering the bitstream carrier", error)
   false
 }
 
@@ -169,7 +170,7 @@ private fun iecCarrierBitstreamSupported(): Boolean = try {
 private fun iecCarrierDirectPlaybackSupported(): Boolean = try {
   AudioTrack.isDirectPlaybackSupported(iecCarrierProbeFormat(), movieAudioAttributes())
 } catch (error: Exception) {
-  Log.w(TAG, "IEC 61937 carrier probe failed; not offering the TrueHD carrier", error)
+  Log.w(TAG, "IEC 61937 carrier probe failed; not offering the bitstream carrier", error)
   false
 }
 
@@ -177,7 +178,7 @@ private fun iecCarrierDirectPlaybackSupported(): Boolean = try {
 private fun iecCarrierProbeFormat(): AudioFormat = AudioFormat.Builder()
   .setEncoding(AudioFormat.ENCODING_IEC61937)
   .setChannelMask(AudioFormat.CHANNEL_OUT_7POINT1_SURROUND)
-  .setSampleRate(TrueHdMatPacker.CARRIER_SAMPLE_RATE)
+  .setSampleRate(IecCarrier.SAMPLE_RATE)
   .build()
 
 private fun movieAudioAttributes(): android.media.AudioAttributes = AudioAttributes.Builder()
