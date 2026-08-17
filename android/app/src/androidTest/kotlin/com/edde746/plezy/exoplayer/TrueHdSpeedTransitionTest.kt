@@ -297,7 +297,7 @@ class TrueHdSpeedTransitionTest {
     // AudioTrack is ever opened and the rate sequence alone cannot tell the two apart.
     assertTrue(
       "the carrier must have been entered and then left at runtime, saw: $diagnostics",
-      diagnostics.any { it.contains("MAT/IEC 61937 carrier") } &&
+      diagnostics.any { it.contains("via IEC 61937 carrier") } &&
         diagnostics.any { it.contains("44.1kHz-family rate its container did not") }
     )
     assertTrue("a decoder must take the stream over instead of the carrier", decoder != null)
