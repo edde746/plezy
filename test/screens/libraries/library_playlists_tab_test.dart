@@ -85,17 +85,26 @@ void main() {
     expect(first.onNavigateUp, isNotNull);
     expect(first.onNavigateLeft, isNotNull);
     expect(first.onBack, isNotNull);
+    // Every card now carries explicit navigation; default directional
+    // traversal is bypassed (it resets the NestedScrollView on UP).
     expect(second.onNavigateUp, isNotNull);
-    expect(second.onNavigateLeft, isNull);
+    expect(second.onNavigateLeft, isNotNull);
 
-    final firstColumnBelowTop = cards.firstWhere((card) => card.onNavigateUp == null && card.onNavigateLeft != null);
-    expect((firstColumnBelowTop.item as MediaPlaylist).id, isNot('playlist-0'));
-
+    // First row: UP and BACK hand off to the tab bar, first-column LEFT to
+    // the sidebar. Second column's LEFT moves within the row instead.
     first.onNavigateUp!();
     first.onBack!();
     first.onNavigateLeft!();
+    second.onNavigateLeft!();
     expect(backCalls, 2);
     expect(sidebarCalls, 1);
+
+    // Below the top row, UP moves focus up a row rather than leaving the grid.
+    final columns = cards.where((card) => identical(card.onNavigateUp, first.onNavigateUp)).length;
+    final firstColumnBelowTop = _cardFor(cards, columns);
+    expect(firstColumnBelowTop.onNavigateUp, isNotNull);
+    firstColumnBelowTop.onNavigateUp!();
+    expect(backCalls, 2);
 
     final firstWidget = tester.widget<FocusableMediaCard>(find.byKey(const Key('playlist-0')));
     harness.rebuild.value++;
@@ -143,11 +152,14 @@ void main() {
     expect(first.disableScale, isTrue);
     expect(first.onNavigateUp, isNotNull);
     expect(first.onNavigateLeft, isNotNull);
-    expect(second.onNavigateUp, isNull);
+    // Rows below the first navigate up explicitly; LEFT always reaches the
+    // sidebar in the single-column list.
+    expect(second.onNavigateUp, isNotNull);
     expect(second.onNavigateLeft, isNotNull);
 
     first.onNavigateUp!();
     second.onNavigateLeft!();
+    second.onNavigateUp!();
     expect(backCalls, 1);
     expect(sidebarCalls, 1);
   });
