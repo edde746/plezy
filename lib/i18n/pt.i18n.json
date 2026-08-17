@@ -1416,7 +1416,12 @@
     "repeatAll": "Repetir tudo",
     "repeatOne": "Repetir uma faixa",
     "instantMixNoServer": "Nenhum servidor está disponível para uma mistura instantânea",
-    "noAudioUrl": "Nenhuma URL de áudio está disponível para ${track}"
+    "noAudioUrl": "Nenhuma URL de áudio está disponível para ${track}",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Assistir Juntos",

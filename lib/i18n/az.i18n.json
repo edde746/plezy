@@ -1416,7 +1416,12 @@
     "repeatAll": "Hamısını təkrarla",
     "repeatOne": "Birini təkrarla",
     "instantMixNoServer": "Ani miks üçün heç bir server mövcud deyil",
-    "noAudioUrl": "${track} üçün səs URL-i mövcud deyil"
+    "noAudioUrl": "${track} üçün səs URL-i mövcud deyil",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Birlikdə İzlə",

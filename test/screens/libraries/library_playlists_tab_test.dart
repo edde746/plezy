@@ -20,6 +20,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/card_inflation_budget.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
@@ -182,6 +183,13 @@ void main() {
           .every((card) => card.cardShapeOverride == CardShape.square),
       isTrue,
     );
+
+    // Square grids keep their square gutter spacing even on TV full-card
+    // layout (which is disabled for square shapes).
+    final gridDelegate =
+        tester.widget<SliverGrid>(find.byType(SliverGrid)).gridDelegate as SliverGridDelegateWithMaxCrossAxisExtent;
+    expect(gridDelegate.crossAxisSpacing, GridLayoutConstants.squareGridSpacing);
+    expect(gridDelegate.mainAxisSpacing, GridLayoutConstants.squareGridSpacing);
   });
 }
 

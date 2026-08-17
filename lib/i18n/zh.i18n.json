@@ -1406,7 +1406,12 @@
     "repeatAll": "列表循环",
     "repeatOne": "单曲循环",
     "instantMixNoServer": "没有可用于即时混合的服务器",
-    "noAudioUrl": "没有可供 ${track} 使用的音频 URL"
+    "noAudioUrl": "没有可供 ${track} 使用的音频 URL",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "一起看",

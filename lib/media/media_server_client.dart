@@ -7,6 +7,7 @@ import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse, throwIfHttpError;
 import '../utils/external_ids.dart';
 import '../utils/watch_state_notifier.dart';
+import 'artist_discography.dart';
 import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
@@ -288,6 +289,20 @@ abstract class MediaServerClient {
   /// to artists via tags and queries
   /// `/Items?AlbumArtistIds={id}&IncludeItemTypes=MusicAlbum`.
   Future<List<MediaItem>> fetchArtistAlbums(MediaItem artist);
+
+  /// The artist's discography split into release-format sections (albums,
+  /// singles & EPs, live, compilations), in display order. Plex follows the
+  /// album listing with one batched by-id metadata request for the
+  /// `Format`/`Subformat` tags (listing rows never carry them) and classifies
+  /// each album; if the tag fetch fails it degrades to a single flat
+  /// `albums` group.
+  ///
+  /// Jellyfin/Emby `BaseItemDto`s carry no single/EP/live/compilation
+  /// taxonomy, so the MediaBrowser family always returns exactly one
+  /// `albums` group. No [ServerCapabilities] flag gates this: support is
+  /// encoded in the result shape (one group = no wire taxonomy) and no UI
+  /// affordance would consult a flag, so a flag would be dead weight.
+  Future<List<ArtistDiscographyGroup>> fetchArtistDiscography(MediaItem artist);
 
   /// Tracks of album [albumId] in disc/track order. Plex:
   /// `/library/metadata/{id}/children`; Jellyfin:

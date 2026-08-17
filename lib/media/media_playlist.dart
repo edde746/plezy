@@ -55,8 +55,9 @@ class MediaPlaylist {
     this.serverName,
   });
 
-  /// Image used to represent the playlist in browse views.
-  String? get displayImagePath => compositeImagePath ?? thumbPath;
+  /// Image used to represent the playlist in browse views. A user-assigned
+  /// poster ([thumbPath]) wins over the Plex auto-generated composite.
+  String? get displayImagePath => thumbPath ?? compositeImagePath;
 
   /// Display-friendly title (alias of [title] for parity with [MediaItem]).
   String get displayTitle => title;

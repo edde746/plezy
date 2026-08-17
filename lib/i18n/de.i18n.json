@@ -1416,7 +1416,12 @@
     "repeatAll": "Alle wiederholen",
     "repeatOne": "Titel wiederholen",
     "instantMixNoServer": "Für einen Instant Mix ist kein Server verfügbar",
-    "noAudioUrl": "Für ${track} ist keine Audio-URL verfügbar"
+    "noAudioUrl": "Für ${track} ist keine Audio-URL verfügbar",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Gemeinsam Schauen",

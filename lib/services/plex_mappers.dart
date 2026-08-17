@@ -12,6 +12,7 @@
 // resolution and server-tagging.
 
 import 'package:json_annotation/json_annotation.dart';
+import '../media/artist_discography.dart';
 import '../media/ids.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../i18n/strings.g.dart';
@@ -637,6 +638,10 @@ class PlexMetadataDto {
   final List<String>? style;
   @JsonKey(name: 'Mood', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? mood;
+  @JsonKey(name: 'Format', fromJson: _tagListFromJson, includeToJson: false)
+  final List<String>? format;
+  @JsonKey(name: 'Subformat', fromJson: _tagListFromJson, includeToJson: false)
+  final List<String>? subformat;
   final String? audioLanguage;
   final String? subtitleLanguage;
   @JsonKey(fromJson: flexibleInt)
@@ -718,6 +723,8 @@ class PlexMetadataDto {
     this.label,
     this.style,
     this.mood,
+    this.format,
+    this.subformat,
     this.audioLanguage,
     this.subtitleLanguage,
     this.subtitleMode,
@@ -843,6 +850,8 @@ class PlexMetadataDto {
     List<String>? label,
     List<String>? style,
     List<String>? mood,
+    List<String>? format,
+    List<String>? subformat,
     String? audioLanguage,
     String? subtitleLanguage,
     int? subtitleMode,
@@ -915,6 +924,8 @@ class PlexMetadataDto {
       label: label ?? this.label,
       style: style ?? this.style,
       mood: mood ?? this.mood,
+      format: format ?? this.format,
+      subformat: subformat ?? this.subformat,
       audioLanguage: audioLanguage ?? this.audioLanguage,
       subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
       subtitleMode: subtitleMode ?? this.subtitleMode,
@@ -1039,6 +1050,19 @@ class PlexMappers {
   static MediaItem mediaItemFromCacheJson(Map<String, dynamic> json, {required ServerId serverId}) {
     final dto = PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId);
     return mediaItem(dto);
+  }
+
+  /// Plex's release-format taxonomy for an album row. `Format` tags EP/Single
+  /// mark Singles & EPs; otherwise `Subformat` live/compilation mark those
+  /// sections; everything else is a standard album. Matching is
+  /// case-insensitive, mirroring Plex's own filter semantics.
+  static DiscographyGroupKind discographyKind(PlexMetadataDto dto) {
+    bool hasTag(List<String>? tags, Set<String> wanted) =>
+        tags?.any((tag) => wanted.contains(tag.toLowerCase())) ?? false;
+    if (hasTag(dto.format, const {'ep', 'single'})) return DiscographyGroupKind.singlesAndEps;
+    if (hasTag(dto.subformat, const {'live'})) return DiscographyGroupKind.live;
+    if (hasTag(dto.subformat, const {'compilation'})) return DiscographyGroupKind.compilations;
+    return DiscographyGroupKind.albums;
   }
 
   /// Map a parsed [PlexMetadataDto] into a [PlexMediaItem].

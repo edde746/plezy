@@ -1416,7 +1416,12 @@
     "repeatAll": "Összes ismétlése",
     "repeatOne": "Egy szám ismétlése",
     "instantMixNoServer": "Nem érhető el szerver az azonnali mixhez",
-    "noAudioUrl": "Nem érhető el hang-URL ehhez: ${track}"
+    "noAudioUrl": "Nem érhető el hang-URL ehhez: ${track}",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Watch Together (Közös nézés)",

@@ -1416,7 +1416,12 @@
     "repeatAll": "Tout répéter",
     "repeatOne": "Répéter le titre",
     "instantMixNoServer": "Aucun serveur n’est disponible pour créer un mix instantané",
-    "noAudioUrl": "Aucune URL audio n’est disponible pour ${track}"
+    "noAudioUrl": "Aucune URL audio n’est disponible pour ${track}",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Regarder ensemble",

@@ -1416,7 +1416,12 @@
     "repeatAll": "Барлығын қайталау",
     "repeatOne": "Біреуін қайталау",
     "instantMixNoServer": "Жедел микс үшін қолжетімді сервер жоқ",
-    "noAudioUrl": "${track} үшін аудио URL-і қолжетімді емес"
+    "noAudioUrl": "${track} үшін аудио URL-і қолжетімді емес",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Бірге көру",

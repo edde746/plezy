@@ -1416,7 +1416,12 @@
     "repeatAll": "Alles herhalen",
     "repeatOne": "Eén herhalen",
     "instantMixNoServer": "Er is geen server beschikbaar voor een instantmix",
-    "noAudioUrl": "Er is geen audio-URL beschikbaar voor ${track}"
+    "noAudioUrl": "Er is geen audio-URL beschikbaar voor ${track}",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Samen kijken",

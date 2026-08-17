@@ -1416,7 +1416,12 @@
     "repeatAll": "Barchasini takrorlash",
     "repeatOne": "Birtasini takrorlash",
     "instantMixNoServer": "Tezkor miks uchun hech qanday server mavjud emas",
-    "noAudioUrl": "${track} uchun audio URL mavjud emas"
+    "noAudioUrl": "${track} uchun audio URL mavjud emas",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Birgalikda tomosha qilish",

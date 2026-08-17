@@ -1416,7 +1416,12 @@
     "repeatAll": "Repeat all",
     "repeatOne": "Repeat one",
     "instantMixNoServer": "No server is available for an instant mix",
-    "noAudioUrl": "No audio URL is available for ${track}"
+    "noAudioUrl": "No audio URL is available for ${track}",
+    "discography": {
+      "singlesAndEps": "Singles & EPs",
+      "live": "Live",
+      "compilations": "Compilations"
+    }
   },
   "watchTogether": {
     "title": "Watch Together",

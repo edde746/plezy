@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/connection/connection.dart';
+import 'package:plezy/media/artist_discography.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -3013,6 +3014,30 @@ void main() {
       expect(artistAlbums['Fields'], 'PremiereDate,OriginalTitle,SortName');
       expect(artistAlbums['EnableUserData'], 'false');
       expect(albumTracks['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
+    });
+
+    test('fetchArtistDiscography wraps the album listing in one albums group', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          return jsonResponse({
+            'Items': [
+              {'Id': 'album-1', 'Type': 'MusicAlbum', 'Name': 'Album 1'},
+              {'Id': 'album-2', 'Type': 'MusicAlbum', 'Name': 'Album 2'},
+            ],
+            'TotalRecordCount': 2,
+          });
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final groups = await scoped.fetchArtistDiscography(
+        testMediaItem(id: 'artist-1', backend: MediaBackend.jellyfin, kind: MediaKind.artist),
+      );
+
+      expect(groups, hasLength(1));
+      expect(groups.single.kind, DiscographyGroupKind.albums);
+      expect(groups.single.items.map((item) => item.id), ['album-1', 'album-2']);
     });
 
     test('fetchLibraryFiltersWithValues adds unwatched boolean filter', () async {
