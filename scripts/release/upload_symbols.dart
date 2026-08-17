@@ -13,7 +13,7 @@ const _defaultSentryUrl = 'https://bugs.plezy.app';
 
 Future<void> main(List<String> arguments) async {
   final scriptDirectory = File.fromUri(Platform.script).parent;
-  final result = await runUploadSymbols(arguments, repositoryRoot: scriptDirectory.parent);
+  final result = await runUploadSymbols(arguments, repositoryRoot: scriptDirectory.parent.parent);
   if (result != 0) {
     exitCode = result;
   }
