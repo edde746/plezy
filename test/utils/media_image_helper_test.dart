@@ -65,20 +65,6 @@ void main() {
 
       expect(url, original);
     });
-
-    test('leaves Jellyfin artwork unchanged when transcoding is disabled', () {
-      const original = 'https://jf.example/Items/item-1/Images/Primary?tag=abc&api_key=token';
-
-      final url = MediaImageHelper.getOptimizedImageUrl(
-        thumbPath: original,
-        maxWidth: 120,
-        maxHeight: 180,
-        devicePixelRatio: 2,
-        enableTranscoding: false,
-      );
-
-      expect(url, original);
-    });
   });
 
   group('MediaImageHelper.getOptimizedImageUrl sized transcodes', () {

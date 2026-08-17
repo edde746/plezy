@@ -62,10 +62,6 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
 
   DeletionNotifier._internal();
 
-  Stream<DeletionEvent> forServer(ServerId serverId) => stream.where((e) => e.serverId == serverId);
-
-  Stream<DeletionEvent> forItem(String itemId) => stream.where((e) => e.affectsItem(itemId));
-
   /// Emit a deletion event with logging
   @override
   void notify(DeletionEvent event) {

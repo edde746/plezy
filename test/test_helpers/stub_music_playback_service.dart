@@ -126,9 +126,6 @@ class StubMusicPlaybackService extends MusicPlaybackService {
   bool get sleepTimerActive => false;
 
   @override
-  DateTime? get sleepTimerEndsAt => null;
-
-  @override
   Duration? get sleepTimerDuration => null;
 
   @override

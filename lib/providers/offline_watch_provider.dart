@@ -103,7 +103,6 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
           cacheServerId: cacheServerId,
           changeType: changeType,
           parentChain: [],
-          mediaType: 'unknown',
           isNowWatched: isNowWatched,
           patchId: patchId,
         ),

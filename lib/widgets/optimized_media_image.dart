@@ -62,8 +62,6 @@ class OptimizedMediaImage extends StatelessWidget {
   final Widget Function(BuildContext, String)? placeholder;
   final Widget Function(BuildContext, String, dynamic)? errorWidget;
   final Duration fadeInDuration;
-  final bool enableTranscoding;
-  final String? cacheKey;
   final Alignment alignment;
   final IconData? fallbackIcon;
   final ImageType imageType;
@@ -84,8 +82,6 @@ class OptimizedMediaImage extends StatelessWidget {
     this.placeholder,
     this.errorWidget,
     this.fadeInDuration = const Duration(milliseconds: 300),
-    this.enableTranscoding = true,
-    this.cacheKey,
     this.alignment = Alignment.center,
     this.fallbackIcon,
     this.imageType = ImageType.poster,
@@ -106,8 +102,6 @@ class OptimizedMediaImage extends StatelessWidget {
     Widget Function(BuildContext, String)? placeholder,
     Widget Function(BuildContext, String, dynamic)? errorWidget,
     Duration fadeInDuration,
-    bool enableTranscoding,
-    String? cacheKey,
     Alignment alignment,
     IconData? fallbackIcon,
     ImageType imageType,
@@ -128,8 +122,6 @@ class OptimizedMediaImage extends StatelessWidget {
     Widget Function(BuildContext, String)? placeholder,
     Widget Function(BuildContext, String, dynamic)? errorWidget,
     Duration fadeInDuration = const Duration(milliseconds: 300),
-    bool enableTranscoding = true,
-    String? cacheKey,
     Alignment alignment = Alignment.center,
     IconData? fallbackIcon,
     String? localFilePath,
@@ -145,8 +137,6 @@ class OptimizedMediaImage extends StatelessWidget {
          placeholder: placeholder,
          errorWidget: errorWidget,
          fadeInDuration: fadeInDuration,
-         enableTranscoding: enableTranscoding,
-         cacheKey: cacheKey,
          alignment: alignment,
          fallbackIcon: fallbackIcon ?? Symbols.movie_rounded,
          imageType: ImageType.poster,
@@ -166,8 +156,6 @@ class OptimizedMediaImage extends StatelessWidget {
     Widget Function(BuildContext, String)? placeholder,
     Widget Function(BuildContext, String, dynamic)? errorWidget,
     Duration fadeInDuration = const Duration(milliseconds: 300),
-    bool enableTranscoding = true,
-    String? cacheKey,
     Alignment alignment = Alignment.center,
     IconData? fallbackIcon,
     String? localFilePath,
@@ -183,8 +171,6 @@ class OptimizedMediaImage extends StatelessWidget {
          placeholder: placeholder,
          errorWidget: errorWidget,
          fadeInDuration: fadeInDuration,
-         enableTranscoding: enableTranscoding,
-         cacheKey: cacheKey,
          alignment: alignment,
          fallbackIcon: fallbackIcon ?? Symbols.video_library_rounded,
          imageType: ImageType.thumb,
@@ -299,7 +285,6 @@ class OptimizedMediaImage extends StatelessWidget {
       maxWidth: effectiveWidth,
       maxHeight: effectiveHeight,
       devicePixelRatio: devicePixelRatio,
-      enableTranscoding: enableTranscoding,
       imageType: imageType,
     );
 
@@ -325,7 +310,6 @@ class OptimizedMediaImage extends StatelessWidget {
       imageUrl: imageUrl,
       memWidth: memWidth,
       memHeight: memHeight,
-      cacheKey: cacheKey,
     );
 
     // Reduced tier: swap in directly, no fade machinery at all.

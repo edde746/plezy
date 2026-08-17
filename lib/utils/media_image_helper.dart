@@ -162,7 +162,6 @@ class MediaImageHelper {
     required double maxWidth,
     required double maxHeight,
     required double devicePixelRatio,
-    bool enableTranscoding = true,
     ImageType imageType = ImageType.poster,
   }) {
     if (thumbPath == null || thumbPath.isEmpty) return '';
@@ -174,7 +173,6 @@ class MediaImageHelper {
       // scaling and cache-bucket rounding — Jellyfin's image endpoint
       // honours those query params.
       if (basePath.contains('api_key=')) {
-        if (!enableTranscoding) return basePath;
         final (width, height) = calculateOptimalDimensions(
           maxWidth: maxWidth,
           maxHeight: maxHeight,
@@ -196,7 +194,7 @@ class MediaImageHelper {
       // EPG / external URL — proxy through the server's transcoder. Plex
       // implements [externalImageUrl] via `/photo/:/transcode?url=...`;
       // backends without a comparable endpoint return the URL unchanged.
-      if (client == null || !enableTranscoding) return basePath;
+      if (client == null) return basePath;
       final (width, height) = calculateOptimalDimensions(
         maxWidth: maxWidth,
         maxHeight: maxHeight,
@@ -215,7 +213,7 @@ class MediaImageHelper {
       return '';
     }
 
-    if (!enableTranscoding || !shouldTranscode(basePath)) {
+    if (!shouldTranscode(basePath)) {
       return client.thumbnailUrl(basePath);
     }
 
@@ -241,15 +239,14 @@ class MediaImageHelper {
   static (int memWidth, int memHeight) getMemCacheDimensions({
     required int displayWidth,
     required int displayHeight,
-    double scaleFactor = 1.0,
     ImageType imageType = ImageType.poster,
   }) {
     // Bucket to match roundDimensions() so the mem-cache key and CNIP
     // maxHeight stay stable across sub-bucket resize deltas. Without this,
     // LayoutBuilder rebuilds during window resize churn the cache key on
     // every pixel and evict valid entries from Flutter's image cache.
-    final bucketedWidth = _bucketUp(displayWidth * scaleFactor, _widthRoundingFactor);
-    final bucketedHeight = _bucketUp(displayHeight * scaleFactor, _heightRoundingFactor);
+    final bucketedWidth = _bucketUp(displayWidth, _widthRoundingFactor);
+    final bucketedHeight = _bucketUp(displayHeight, _heightRoundingFactor);
 
     // Full-tier caps are a 1080p baseline scaled to the display, so slots on
     // a 4K surface decode at the resolution they render at instead of being
@@ -313,11 +310,10 @@ class MediaImageHelper {
     required String imageUrl,
     required int memWidth,
     required int memHeight,
-    String? cacheKey,
   }) {
     final provider = CachedNetworkImageProvider(
       imageUrl,
-      cacheKey: cacheKey ?? _serverArtworkCacheKey(imageUrl),
+      cacheKey: _serverArtworkCacheKey(imageUrl),
       cacheManager: PlexImageCacheManager.instance,
       headers: const {'User-Agent': 'Plezy'},
     );

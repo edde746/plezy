@@ -750,7 +750,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(music.playedTracks, tracks);
-      expect(music.playedContext?.id, playlist.id);
       expect(music.playedContext?.title, playlist.title);
       expect(music.playedContext?.kind, MusicPlayContextKind.playlist);
       expect(music.shuffle, isFalse);

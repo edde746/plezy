@@ -35,7 +35,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(harness.provider.leaveCalls, 1);
-      expect(harness.onLeaveSessionCalls, 1);
     });
 
     testWidgets('$role cancellation remains a no-op after the session sheet closes', (tester) async {
@@ -55,7 +54,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(harness.provider.leaveCalls, 0);
-      expect(harness.onLeaveSessionCalls, 0);
     });
   }
 
@@ -69,7 +67,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(harness.provider.leaveCalls, 1);
-    expect(harness.onLeaveSessionCalls, 1);
     expect(tester.takeException(), isNull);
   });
 
@@ -135,7 +132,6 @@ class _OverlayHarness {
 
   final _FakeWatchTogetherProvider provider;
   late OverlaySheetController sheetController;
-  int onLeaveSessionCalls = 0;
 
   Widget build() {
     return ChangeNotifierProvider<WatchTogetherProvider>.value(
@@ -146,9 +142,7 @@ class _OverlayHarness {
             builder: (context) {
               sheetController = OverlaySheetController.of(context);
               return Scaffold(
-                body: Center(
-                  child: WatchTogetherSessionIndicator(key: indicatorKey, onLeaveSession: () => onLeaveSessionCalls++),
-                ),
+                body: Center(child: WatchTogetherSessionIndicator(key: indicatorKey)),
               );
             },
           ),

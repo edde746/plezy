@@ -663,25 +663,12 @@ Profile _localProfile(String id) {
 }
 
 PlexHome _home(String adminUuid) {
-  return PlexHome(
-    id: 1,
-    name: 'Home',
-    guestUserID: null,
-    guestUserUUID: '',
-    guestEnabled: false,
-    subscription: false,
-    users: [_homeUser(adminUuid, admin: true)],
-  );
+  return PlexHome(id: 1, users: [_homeUser(adminUuid, admin: true)]);
 }
 
 PlexHome _homeWithUsers(String adminUuid, List<String> userUuids) {
   return PlexHome(
     id: 1,
-    name: 'Home',
-    guestUserID: null,
-    guestUserUUID: '',
-    guestEnabled: false,
-    subscription: false,
     users: [_homeUser(adminUuid, admin: true), for (final uuid in userUuids) _homeUser(uuid, admin: false)],
   );
 }

@@ -10,7 +10,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 void main() {
   setUpAll(() => LocaleSettings.setLocaleSync(AppLocale.en));
 
-  const start = OAuthProxyStart(session: 'session-token', url: 'https://example.com/oauth/start', expiresIn: 600);
+  const start = OAuthProxyStart(session: 'session-token', url: 'https://example.com/oauth/start');
 
   testWidgets('copy control exposes the OAuth URL as its value', (tester) async {
     final semantics = tester.ensureSemantics();

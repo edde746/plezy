@@ -98,7 +98,7 @@ class _AlbumDetailScreenState extends BaseMediaListDetailScreen<AlbumDetailScree
   }
 
   MusicPlayContext get _playContext =>
-      MusicPlayContext(id: widget.album.id, title: widget.album.displayTitle, kind: MusicPlayContextKind.album);
+      MusicPlayContext(title: widget.album.displayTitle, kind: MusicPlayContextKind.album);
 
   /// Plays the already-fetched track list — no extra server round-trip.
   Future<void> _playAll({bool shuffle = false}) async {

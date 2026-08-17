@@ -840,7 +840,6 @@ void main() {
           cacheServerId: 'jf-machine/user-a',
           changeType: WatchStateChangeType.watched,
           parentChain: const ['season-1', 'show-1'],
-          mediaType: 'episode',
           isNowWatched: true,
         ),
       );
@@ -1348,7 +1347,7 @@ void main() {
           expect(provider.downloads.keys, [globalKey]);
           expect(provider.getMetadata(globalKey)?.title, 'Profile B cache');
           expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, itemId))?.title, 'Profile B cache');
-          expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, itemId), isTrue);
+          expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/$itemId'), isTrue);
         },
       );
     }
@@ -2135,9 +2134,9 @@ void main() {
       await waitForProfileReload(provider, 'profile-a', () => provider.getMetadata(key)?.title == 'Profile A snapshot');
       expect(provider.getMetadata(key)?.isWatched, isFalse);
       expect(await db.getDownloadedMedia(key), isNotNull);
-      expect(await db.getDownloadOwnerCount(key), 2);
-      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeA.cacheServerId, '123'), isTrue);
-      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, '123'), isTrue);
+      expect(await db.getValidDownloadOwnersForKey(key), hasLength(2));
+      expect(await PlexApiCache.instance.isPinned(scopeA.cacheServerId, '/library/metadata/123'), isTrue);
+      expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/123'), isTrue);
       expect((await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'))?.title, 'Profile A snapshot');
       expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Profile B snapshot');
     });
@@ -2403,19 +2402,19 @@ void main() {
       );
 
       expect(await provider.queueDownload(profileBItem, clientB), 1);
-      expect(await db.getDownloadOwnerCount(key), 2);
+      expect(await db.getValidDownloadOwnersForKey(key), hasLength(2));
       expect(await db.getAllDownloadedMetadata(), hasLength(1));
-      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeA.cacheServerId, '123'), isTrue);
-      expect(await PlexApiCache.instance.isPinnedRatingKey(scopeB.cacheServerId, '123'), isTrue);
+      expect(await PlexApiCache.instance.isPinned(scopeA.cacheServerId, '/library/metadata/123'), isTrue);
+      expect(await PlexApiCache.instance.isPinned(scopeB.cacheServerId, '/library/metadata/123'), isTrue);
 
       await provider.deleteDownloadsForProfile('profile-a');
-      expect(await db.getDownloadOwnerCount(key), 1);
+      expect(await db.getValidDownloadOwnersForKey(key), hasLength(1));
       expect(await db.getDownloadedMedia(key), isNotNull);
       expect(await PlexApiCache.instance.getMetadata(scopeA.cacheServerId, '123'), isNull);
       expect((await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'))?.title, 'Profile B snapshot');
 
       await provider.deleteDownload(key);
-      expect(await db.getDownloadOwnerCount(key), 0);
+      expect(await db.getValidDownloadOwnersForKey(key), isEmpty);
       expect(await db.getDownloadedMedia(key), isNull);
       expect(await PlexApiCache.instance.getMetadata(scopeB.cacheServerId, '123'), isNull);
     });

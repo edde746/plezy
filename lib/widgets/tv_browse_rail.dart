@@ -80,8 +80,6 @@ class TvBrowseRailLayout {
 
   static double railInteractionExpansionForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
-  static double itemGapForScale(double _) => 0;
-
   static double fullCardItemGapForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
   static double viewAllItemWidthForScale(double scale) => (104 * scale).clamp(88, 132).toDouble();
@@ -90,12 +88,10 @@ class TvBrowseRailLayout {
 
   static double hubStripHeightForScale(double scale) => 36 * scale;
 
-  static double hubStripGapForScale(double _) => 0;
-
   static double nextHubPeekHeightForScale(double scale) => 30 * scale;
 
   static double hubSectionHeightFor({required double scale, required double activeRailHeight}) {
-    return hubStripHeightForScale(scale) + hubStripGapForScale(scale) + activeRailHeight;
+    return hubStripHeightForScale(scale) + activeRailHeight;
   }
 
   static double viewportHeightFor({required int hubCount, required double scale, required double sectionHeight}) {
@@ -135,7 +131,7 @@ class TvBrowseRailLayout {
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
-    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : itemGapForScale(scale);
+    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : 0.0;
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final emptyEpisodeThumbnailHub =
         hub.items.isEmpty && hub.type == 'episode' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
@@ -1200,7 +1196,6 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                   builder: (context, isActive, _) =>
                       _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
                 ),
-                SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
                 _buildHubRail(
                   hub: hub,
                   hubIndex: hubIndex,

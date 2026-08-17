@@ -180,7 +180,7 @@ Future<void> playAudioPlaylist(
   return playFetchedTracks(
     context,
     fetch: () async => preloadedItems ?? await fetchAllPlaylistItems(client, playlist.id),
-    playContext: MusicPlayContext(id: playlist.id, title: playlist.title, kind: MusicPlayContextKind.playlist),
+    playContext: MusicPlayContext(title: playlist.title, kind: MusicPlayContextKind.playlist),
     onError: onError,
     onEmpty: onEmpty,
     startTrack: startTrack,
@@ -211,7 +211,7 @@ Future<void> playTrackWithAlbumContext(BuildContext context, MediaItem track) as
           context,
           tracks: tracks,
           startTrack: tracks[startIndex],
-          playContext: MusicPlayContext(id: albumId, title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
+          playContext: MusicPlayContext(title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
         );
         return;
       }

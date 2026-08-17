@@ -19,12 +19,9 @@ class FocusableMediaCard extends StatefulWidget {
 
   /// Optional row/column position announced with this card.
   final String? semanticValue;
-  final double? width;
-  final double? height;
   final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh;
-  final bool forceGridMode;
   final bool forceListMode;
   final bool isInContinueWatching;
   final bool usesContinueWatchingAction;
@@ -86,12 +83,9 @@ class FocusableMediaCard extends StatefulWidget {
     super.key,
     required this.item,
     this.semanticValue,
-    this.width,
-    this.height,
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
-    this.forceGridMode = false,
     this.forceListMode = false,
     this.isInContinueWatching = false,
     bool? usesContinueWatchingAction,
@@ -148,12 +142,9 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
         key: _mediaCardKey,
         item: widget.item,
         semanticValue: widget.semanticValue,
-        width: widget.width,
-        height: widget.height,
         onRefresh: widget.onRefresh,
         onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
         onListRefresh: widget.onListRefresh,
-        forceGridMode: widget.forceGridMode,
         forceListMode: widget.forceListMode,
         isInContinueWatching: widget.isInContinueWatching,
         usesContinueWatchingAction: widget.usesContinueWatchingAction,

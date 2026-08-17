@@ -79,11 +79,7 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
     await playFetchedTracks(
       context,
       fetch: () => mediaClient.fetchPlayableDescendants(widget.artist.id),
-      playContext: MusicPlayContext(
-        id: widget.artist.id,
-        title: widget.artist.displayTitle,
-        kind: MusicPlayContextKind.artist,
-      ),
+      playContext: MusicPlayContext(title: widget.artist.displayTitle, kind: MusicPlayContextKind.artist),
       onError: (e, stackTrace) =>
           showErrorSnackBar(context, localizedLoadErrorMessage(e, stackTrace, context: widget.artist.displayTitle)),
       onEmpty: () => showAppSnackBar(context, emptyMessage),

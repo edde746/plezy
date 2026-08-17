@@ -790,9 +790,8 @@ void main() {
         provider.dispose();
       });
 
-      final becameHost = await provider.enterRoom('busy01', relayEndpoint: endpoint, displayName: 'Guest');
+      await provider.enterRoom('busy01', relayEndpoint: endpoint, displayName: 'Guest');
 
-      expect(becameHost, isFalse);
       expect(provider.isHost, isFalse);
       expect(provider.session?.hostPeerId, _providerHostId);
       final joins = relay.messages.where((message) => message['type'] == 'join').toList();
@@ -849,9 +848,8 @@ void main() {
         provider.dispose();
       });
 
-      final becameHost = await provider.enterRoom('empty1', relayEndpoint: endpoint, displayName: 'Host');
+      await provider.enterRoom('empty1', relayEndpoint: endpoint, displayName: 'Host');
 
-      expect(becameHost, isTrue);
       expect(provider.isHost, isTrue);
       // The probe identity is released before the code is taken over, so the
       // relay sees an empty room when the create lands.
@@ -889,9 +887,8 @@ void main() {
         provider.dispose();
       });
 
-      final becameHost = await provider.enterRoom('new01', relayEndpoint: endpoint, displayName: 'Host');
+      await provider.enterRoom('new01', relayEndpoint: endpoint, displayName: 'Host');
 
-      expect(becameHost, isTrue);
       expect(provider.isHost, isTrue);
       final create = relay.messages.singleWhere((message) => message['type'] == 'create');
       expect(provider.session?.hostPeerId, create['peerId']);

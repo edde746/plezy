@@ -175,7 +175,6 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
         outline: c.outline,
         text: c.text,
         textMuted: c.textMuted,
-        splashFactory: NoSplash.splashFactory,
       ),
     ],
   );

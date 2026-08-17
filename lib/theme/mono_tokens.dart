@@ -44,7 +44,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
   final Color outline;
   final Color text;
   final Color textMuted;
-  final InteractiveInkFeatureFactory? splashFactory;
 
   const MonoTokens({
     required this.radiusSm,
@@ -62,7 +61,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     required this.outline,
     required this.text,
     required this.textMuted,
-    required this.splashFactory,
   });
 
   @override
@@ -82,7 +80,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     Color? outline,
     Color? text,
     Color? textMuted,
-    InteractiveInkFeatureFactory? splashFactory,
   }) => MonoTokens(
     radiusSm: radiusSm ?? this.radiusSm,
     radiusMd: radiusMd ?? this.radiusMd,
@@ -99,7 +96,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
     outline: outline ?? this.outline,
     text: text ?? this.text,
     textMuted: textMuted ?? this.textMuted,
-    splashFactory: splashFactory ?? this.splashFactory,
   );
 
   @override
@@ -124,7 +120,6 @@ class MonoTokens extends ThemeExtension<MonoTokens> {
       outline: lerpC(outline, other.outline),
       text: lerpC(text, other.text),
       textMuted: lerpC(textMuted, other.textMuted),
-      splashFactory: other.splashFactory,
     );
   }
 }

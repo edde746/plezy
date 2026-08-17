@@ -72,9 +72,6 @@ class WatchStateEvent with HierarchicalEventMixin {
   @override
   final List<String> parentChain;
 
-  /// Media type that changed
-  final String mediaType;
-
   /// New progress value (for progressUpdate)
   final int? viewOffset;
 
@@ -105,7 +102,6 @@ class WatchStateEvent with HierarchicalEventMixin {
     required this.serverId,
     required this.changeType,
     required this.parentChain,
-    required this.mediaType,
     this.cacheServerId,
     this.viewOffset,
     this.isNowWatched,
@@ -134,10 +130,6 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
   factory WatchStateNotifier() => _instance;
 
   WatchStateNotifier._internal();
-
-  Stream<WatchStateEvent> forServer(ServerId serverId) => stream.where((e) => e.serverId == serverId);
-
-  Stream<WatchStateEvent> forItem(String itemId) => stream.where((e) => e.affectsItem(itemId));
 
   /// Emit a watch state event with logging
   @override
@@ -168,7 +160,6 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         cacheServerId: cacheServerId,
         changeType: isNowWatched ? WatchStateChangeType.watched : WatchStateChangeType.unwatched,
         parentChain: item.parentChain,
-        mediaType: item.kind.id,
         isNowWatched: isNowWatched,
         librarySectionID: item.libraryId,
         serverAcknowledged: serverAcknowledged,
@@ -207,7 +198,6 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         cacheServerId: cacheServerId,
         changeType: WatchStateChangeType.progressUpdate,
         parentChain: item.parentChain,
-        mediaType: item.kind.id,
         viewOffset: viewOffset,
         isNowWatched: isNowWatched,
         librarySectionID: item.libraryId,
@@ -228,7 +218,6 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         serverId: serverId,
         changeType: WatchStateChangeType.removedFromContinueWatching,
         parentChain: item.parentChain,
-        mediaType: item.kind.id,
         librarySectionID: item.libraryId,
       ),
     );

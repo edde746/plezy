@@ -4,20 +4,14 @@ import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
-import '../media/media_server_user_profile.dart';
 import '../services/plex_client.dart';
 import '../i18n/strings.g.dart';
-import '../providers/hidden_libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/user_profile_provider.dart';
 import 'app_logger.dart';
 
 extension ProviderExtensions on BuildContext {
   UserProfileProvider get userProfile => Provider.of<UserProfileProvider>(this, listen: false);
-
-  HiddenLibrariesProvider get hiddenLibraries => Provider.of<HiddenLibrariesProvider>(this, listen: false);
-
-  MediaServerUserProfile? get profileSettings => userProfile.profileSettings;
 
   /// Internal: resolve a [PlexClient] from a serverId or fall back to the
   /// first online server. Returns null if neither yields a Plex client.
