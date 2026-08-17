@@ -19,11 +19,10 @@ import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 
 class WatchTogetherSessionIndicator extends StatelessWidget {
-  final VoidCallback? onLeaveSession;
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
 
-  const WatchTogetherSessionIndicator({super.key, this.onLeaveSession, this.onCancelAutoHide, this.onStartAutoHide});
+  const WatchTogetherSessionIndicator({super.key, this.onCancelAutoHide, this.onStartAutoHide});
 
   @override
   Widget build(BuildContext context) {
@@ -45,10 +44,7 @@ class WatchTogetherSessionIndicator extends StatelessWidget {
     onCancelAutoHide?.call();
     unawaited(
       OverlaySheetController.of(context)
-          .show(
-            showDragHandle: true,
-            builder: (context) => _SessionMenuSheet(provider: provider, onLeaveSession: onLeaveSession),
-          )
+          .show(showDragHandle: true, builder: (context) => _SessionMenuSheet(provider: provider))
           .whenComplete(() => onStartAutoHide?.call()),
     );
   }
@@ -138,9 +134,8 @@ class _SessionIndicator extends StatelessWidget {
 
 class _SessionMenuSheet extends StatelessWidget {
   final WatchTogetherProvider provider;
-  final VoidCallback? onLeaveSession;
 
-  const _SessionMenuSheet({required this.provider, this.onLeaveSession});
+  const _SessionMenuSheet({required this.provider});
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +282,6 @@ class _SessionMenuSheet extends StatelessWidget {
         appLogger.e('WatchTogether: Overlay leave failed', error: error, stackTrace: stackTrace);
       }),
     );
-    onLeaveSession?.call();
   }
 }
 

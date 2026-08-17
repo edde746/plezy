@@ -102,7 +102,7 @@ class WatchTogetherProvider with ChangeNotifier {
   StreamSubscription<void>? _sessionEndedSubscription;
 
   // Getters
-  bool get isInSession => _session != null && _session!.state != SessionState.disconnected;
+  bool get isInSession => _session != null;
   bool get isHost => _session?.isHost ?? false;
   bool get isConnected => _session?.isConnected ?? false;
   bool get isSyncing => _isSyncing;
@@ -441,9 +441,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
   /// Enter a room by code — joins a room that still has someone in it and
   /// hosts the code otherwise.
-  ///
-  /// Returns `true` if the user became the host.
-  Future<bool> enterRoom(
+  Future<void> enterRoom(
     String sessionId, {
     required WatchTogetherRelayEndpoint relayEndpoint,
     ControlMode controlMode = ControlMode.anyone,
@@ -484,7 +482,6 @@ class WatchTogetherProvider with ChangeNotifier {
     } else {
       await joinSession(sessionId, relayEndpoint: relayEndpoint, displayName: displayName);
     }
-    return shouldBeHost;
   }
 
   /// Leave the current session. Local callbacks and player bindings are
