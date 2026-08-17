@@ -125,6 +125,14 @@ class GuideTabState extends State<GuideTab>
   Map<String, List<LiveTvProgram>> _programsByChannelScope = const {};
   Set<String> _scheduledRecordingKeys = const {};
   bool _isLoading = true;
+
+  /// Whether a load has completed at least once for this tab. Until the
+  /// first successful load the guide shows a full-screen spinner; in-session
+  /// window reloads keep the existing grid mounted and only overlay a
+  /// lightweight loading indicator. Never reset on channel-list changes:
+  /// `didUpdateWidget` re-indexes the loaded programs and fires no fetch, and
+  /// a reset would restore the unmount (and D-pad focus loss) this flag fixes.
+  bool _hasLoadedOnce = false;
   int _programLoadGeneration = 0;
 
   late DateTime _gridStart;
@@ -397,6 +405,7 @@ class GuideTabState extends State<GuideTab>
         _programsByChannelScope = programsByChannelScope;
         _scheduledRecordingKeys = scheduledRecordingKeys;
         _isLoading = false;
+        _hasLoadedOnce = true;
         // Focus tracking compares by identity, so a reload orphans the
         // focused program — re-resolve it against the fresh list.
         if (_focusZone == _GuideZone.grid && _gridColumn == 1 && _focusedProgram != null) {
@@ -758,6 +767,9 @@ class GuideTabState extends State<GuideTab>
         case 0:
           _shiftTimeRange(-2);
         case 1:
+          // The menu takes focus; suppress the in-flight SELECT key-up so the
+          // press that opened it cannot also activate the first menu item.
+          SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
           _showDayPicker();
         case 2:
           _shiftTimeRange(2);
@@ -925,15 +937,33 @@ class GuideTabState extends State<GuideTab>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    if (_isLoading) {
+    // Full-screen spinner only before the first window has loaded. In-session
+    // window reloads keep the grid mounted (so the day/time pickers and the
+    // guide Focus stay alive for D-pad navigation) and show a lightweight
+    // overlay instead — stale programs stay tappable while it settles.
+    if (_isLoading && !_hasLoadedOnce) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return Focus(
-      focusNode: _guideFocusNode,
-      onFocusChange: _handleGuideFocusChange,
-      onKeyEvent: _handleKeyEvent,
-      child: _buildGuideGrid(theme),
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        Focus(
+          focusNode: _guideFocusNode,
+          onFocusChange: _handleGuideFocusChange,
+          onKeyEvent: _handleKeyEvent,
+          child: _buildGuideGrid(theme),
+        ),
+        if (_isLoading)
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: ColoredBox(
+                color: Color(0x33000000),
+                child: Center(child: SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 3))),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -1076,6 +1106,7 @@ class GuideTabState extends State<GuideTab>
     final target = DateTime(day.year, day.month, day.day);
 
     if (target == today) return t.liveTv.today;
+    if (target == today.add(const Duration(days: 1))) return t.liveTv.tomorrow;
 
     return DateFormat('EEEE', LocaleSettings.currentLocale.intlLocaleName).format(target);
   }
@@ -1133,8 +1164,26 @@ class GuideTabState extends State<GuideTab>
       _jumpToNow();
       _guideFocusNode.requestFocus();
     } else if (value is DateTime) {
+      // Apply the picked day right away; the slot menu that follows only
+      // refines it (dismissing it keeps this window).
+      _applyDay(value);
       await _showTimeSlotPicker(value);
     }
+  }
+
+  /// Re-anchors the 6h window onto [day] keeping the current window's
+  /// time-of-day. Picking 'Now' instead re-anchors live via [_jumpToNow].
+  /// #1297: a deliberately picked day is never yanked back by the drift
+  /// checker — [_nowWasInWindow] stays false when now is outside it.
+  void _applyDay(DateTime day) {
+    final hour = _gridStart.hour;
+    final minute = _gridStart.minute;
+    setState(() {
+      _gridStart = DateTime(day.year, day.month, day.day, hour, minute);
+      _gridEnd = _gridStart.add(const Duration(hours: 6));
+      _nowWasInWindow = _nowInWindow(DateTime.now());
+    });
+    unawaited(_loadPrograms());
   }
 
   Future<void> _showTimeSlotPicker(DateTime day) async {
