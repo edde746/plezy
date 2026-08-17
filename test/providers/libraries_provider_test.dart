@@ -12,6 +12,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/storage_service.dart';
 
+import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/prefs.dart';
 
@@ -165,6 +166,115 @@ void main() {
       expect(p.libraries, isEmpty);
       final storage = await StorageService.getInstance();
       expect(storage.getLibraryOrder(), isNull);
+    });
+  });
+
+  group('LibrariesProvider library lookups (#1970)', () {
+    test('libraryByGlobalKey resolves loaded libraries; misses return null', () async {
+      final p = LibrariesProvider();
+      expect(p.libraryByGlobalKey('A:1'), isNull, reason: 'nothing resolves while unloaded');
+
+      await p.updateLibraryOrder([_serverLib(ServerId('A'), '1', 'Movies'), _serverLib(ServerId('A'), '2', 'Anime')]);
+
+      expect(p.libraryByGlobalKey('A:2')?.title, 'Anime');
+      expect(p.libraryByGlobalKey('A:999'), isNull);
+      expect(p.libraryByGlobalKey('2'), isNull, reason: 'bare library ids are not global keys');
+
+      p.dispose();
+    });
+
+    test('libraryCountForServer counts per server and is 0 while unloaded', () async {
+      final p = LibrariesProvider();
+      expect(p.libraryCountForServer('A'), 0);
+
+      await p.updateLibraryOrder([
+        _serverLib(ServerId('A'), '1', 'Movies'),
+        _serverLib(ServerId('A'), '2', 'Anime'),
+        _serverLib(ServerId('B'), '1', 'Shows'),
+      ]);
+
+      expect(p.libraryCountForServer('A'), 2);
+      expect(p.libraryCountForServer('B'), 1);
+      expect(p.libraryCountForServer('C'), 0);
+
+      p.dispose();
+    });
+
+    test('lookups stay current across a delta load and clear()', () async {
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(
+        serverId: ServerId('A'),
+        libraries: [_serverLib(ServerId('A'), '1', 'Movies A'), _serverLib(ServerId('A'), '2', 'Shows A')],
+      );
+      manager.debugRegisterClientForTesting(clientA);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.syncToOnlineServers({'A'});
+      expect(p.libraryCountForServer('A'), 2);
+      expect(p.libraryByGlobalKey('A:1')?.title, 'Movies A');
+
+      // A server connecting later merges through the delta path; the lookups
+      // must track the reassigned list, not the one they were built from.
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Movies B')]);
+      manager.debugRegisterClientForTesting(clientB);
+      await p.syncToOnlineServers({'A', 'B'});
+
+      expect(p.libraryCountForServer('B'), 1);
+      expect(p.libraryByGlobalKey('B:1')?.title, 'Movies B');
+      expect(p.libraryCountForServer('A'), 2);
+
+      p.clear();
+      expect(p.libraryCountForServer('A'), 0);
+      expect(p.libraryByGlobalKey('A:1'), isNull);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('libraryLabelFor labels only items on a multi-library server', () async {
+      final p = LibrariesProvider();
+      await p.updateLibraryOrder([
+        _serverLib(ServerId('A'), '1', 'Movies'),
+        _serverLib(ServerId('A'), '2', 'Anime'),
+        _serverLib(ServerId('B'), '1', 'Shows'),
+      ]);
+
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A', libraryId: '2', libraryTitle: 'Anime')), 'Anime');
+      expect(
+        p.libraryLabelFor(testMediaItem(serverId: 'B', libraryId: '1', libraryTitle: 'Shows')),
+        isNull,
+        reason: 'attribution on a single-library server is noise',
+      );
+
+      p.dispose();
+    });
+
+    test('libraryLabelFor is null for serverless items and while unloaded', () async {
+      final p = LibrariesProvider();
+      // While unloaded every server counts zero libraries, so nothing labels
+      // even when the item names its library.
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A', libraryId: '1', libraryTitle: 'Movies')), isNull);
+
+      await p.updateLibraryOrder([_serverLib(ServerId('A'), '1', 'Movies'), _serverLib(ServerId('A'), '2', 'Anime')]);
+
+      // A serverless item cannot be attributed even when it names a library.
+      expect(p.libraryLabelFor(testMediaItem(libraryId: '1', libraryTitle: 'Movies')), isNull);
+
+      p.dispose();
+    });
+
+    test('libraryLabelFor resolves a missing title through the loaded library', () async {
+      // Plex search rows carry only `librarySectionKey` — a library id without
+      // its title. The label falls back to the loaded library's title.
+      final p = LibrariesProvider();
+      await p.updateLibraryOrder([_serverLib(ServerId('A'), '1', 'Movies'), _serverLib(ServerId('A'), '2', 'Anime')]);
+
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A', libraryId: '2')), 'Anime');
+      // An unknown or absent library id has nothing to resolve against.
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A', libraryId: '9')), isNull);
+      expect(p.libraryLabelFor(testMediaItem(serverId: 'A')), isNull);
+
+      p.dispose();
     });
   });
 

@@ -224,6 +224,10 @@ class MediaCard extends StatefulWidget {
   final bool isOffline; // True for downloaded content without server access
   final bool mixedHubContext; // True when in a hub with mixed content (movies + episodes)
   final bool showServerName; // Show server name in list view (multi-server)
+
+  /// Library name to attribute the item with in list view, resolved by the
+  /// caller (see `LibrariesProvider.libraryLabelFor`). Null renders nothing.
+  final String? libraryName;
   final EpisodePosterMode? episodePosterModeOverride;
   final bool fullBleedImage;
 
@@ -254,6 +258,7 @@ class MediaCard extends StatefulWidget {
     this.isOffline = false,
     this.mixedHubContext = false,
     this.showServerName = false,
+    this.libraryName,
     this.episodePosterModeOverride,
     this.fullBleedImage = false,
     this.artworkDim,
@@ -426,6 +431,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
+            libraryName: widget.libraryName,
             episodePosterModeOverride: widget.episodePosterModeOverride,
             cardShapeOverride: widget.cardShapeOverride,
             catalogItem: _catalogItem,
@@ -665,6 +671,7 @@ class _MediaCardList extends StatelessWidget {
   final bool isOffline;
   final String? localPosterPath;
   final bool showServerName;
+  final String? libraryName;
   final EpisodePosterMode? episodePosterModeOverride;
   final CardShape? cardShapeOverride;
   final bool enableDetailLinks;
@@ -681,6 +688,7 @@ class _MediaCardList extends StatelessWidget {
     this.isOffline = false,
     this.localPosterPath,
     this.showServerName = false,
+    this.libraryName,
     this.episodePosterModeOverride,
     this.cardShapeOverride,
     this.catalogItem,
@@ -711,6 +719,16 @@ class _MediaCardList extends StatelessWidget {
   }
 
   int get _summaryMaxLines => density <= 2 ? 2 : density; // 2, 2, 3, 4, 5
+
+  /// Whether the row shows its source line. A requested server name (multi-
+  /// server surfaces) and a resolved library label both reveal the full
+  /// provenance — backend icon, server name, library name — so the reader
+  /// never has to guess which part is which (#1970).
+  bool get _showsSource {
+    final it = item;
+    if (it is! MediaItem) return false;
+    return (showServerName && it.serverName != null) || libraryName != null;
+  }
 
   String _buildMetadataLine() {
     final current = item;
@@ -883,7 +901,12 @@ class _MediaCardList extends StatelessWidget {
                       ExcludeSemantics(
                         child: Text(
                           _summary()!,
-                          maxLines: _summaryMaxLines,
+                          // The wide episode thumb makes the shortest list
+                          // row: the source line below must not grow it, so
+                          // it trades the summary's last line instead (#1970).
+                          maxLines: _showsSource && _cardShape() == CardShape.wide
+                              ? (_summaryMaxLines > 1 ? _summaryMaxLines - 1 : 1)
+                              : _summaryMaxLines,
                           overflow: .ellipsis,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: tokens(context).textMuted.withValues(alpha: 0.7),
@@ -893,25 +916,39 @@ class _MediaCardList extends StatelessWidget {
                         ),
                       ),
                     ],
-                    if (showServerName && item is MediaItem && (item as MediaItem).serverName != null) ...[
+                    if (_showsSource) ...[
                       const SizedBox(height: 4),
                       ExcludeSemantics(
                         child: Row(
                           children: [
-                            BackendBadge(
-                              backend: (item as MediaItem).backend,
-                              size: _metadataFontSize + 2,
-                              color: tokens(context).textMuted.withValues(alpha: 0.6),
+                            // The row centers the badge on the text's line
+                            // box (~0.38em above baseline), but server and
+                            // library names are lowercase-heavy, so their
+                            // optical mass is the x-height band centered
+                            // ~0.26em above baseline — the badge reads as
+                            // floating high. Paint it that ~0.11em lower;
+                            // Transform leaves layout (and the episode
+                            // summary-line trade) untouched.
+                            Transform.translate(
+                              offset: Offset(0, _metadataFontSize * 0.115),
+                              child: BackendBadge(
+                                backend: (item as MediaItem).backend,
+                                size: _metadataFontSize + 2,
+                                color: tokens(context).textMuted.withValues(alpha: 0.6),
+                              ),
                             ),
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                (item as MediaItem).serverName!,
+                                [?(item as MediaItem).serverName, ?libraryName].join(' • '),
                                 maxLines: 1,
                                 overflow: .ellipsis,
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: tokens(context).textMuted.withValues(alpha: 0.6),
                                   fontSize: _metadataFontSize,
+                                  // Matches the summary line it replaces on
+                                  // wide rows, keeping the trade height-neutral.
+                                  height: 1.3,
                                 ),
                               ),
                             ),

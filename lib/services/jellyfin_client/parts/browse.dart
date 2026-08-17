@@ -675,22 +675,25 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// OnDeck semantics: returns the resume episode when one exists, or S1E1
   /// when the user hasn't started. Movies and other kinds short-circuit.
   ///
-  /// The chain stays sequential — firing both together measured no better,
-  /// because the requests contend rather than overlap (`/Shows/NextUp` went
-  /// from 380ms alone to 1395ms beside the detail fetch) and a movie would pay
-  /// for a request it can never use. Instead the item is handed to
-  /// [onItemReady] the moment it lands, so the caller can paint without
-  /// waiting for the on-deck round trip (#1784).
+  /// The detail payload carries no library field of any kind, so the owning
+  /// CollectionFolder takes a `/Items/{id}/Ancestors` round trip of its own
+  /// (#1970) — best-effort, like the search stamp it mirrors.
+  ///
+  /// The chain stays sequential — firing requests together measured no
+  /// better, because they contend rather than overlap (`/Shows/NextUp` went
+  /// from 380ms alone to 1395ms beside the detail fetch). Instead the item is
+  /// handed to [onItemReady] the moment it lands, so the caller can paint
+  /// without waiting for the ancestors or on-deck round trips (#1784).
   @override
   Future<({MediaItem? item, MediaItem? onDeckEpisode})> fetchItemWithOnDeck(
     String id, {
     void Function(MediaItem item)? onItemReady,
   }) async {
     final item = await fetchItem(id);
-    if (item == null || item.kind != MediaKind.show) {
-      return (item: item, onDeckEpisode: null);
-    }
+    if (item == null) return (item: null, onDeckEpisode: null);
     onItemReady?.call(item);
+    final stamped = isOfflineMode ? item : await _withLibraryFromAncestors(item);
+    if (item.kind != MediaKind.show) return (item: stamped, onDeckEpisode: null);
     final nextUp = await _safeFetchItemsArray('/Shows/NextUp', {
       'seriesId': id,
       'userId': connection.userId,
@@ -699,7 +702,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       ...jellyfinImageQueryParameters,
     });
     final onDeckEpisode = nextUp.isEmpty ? null : _mapItem(nextUp.first);
-    return (item: item, onDeckEpisode: onDeckEpisode);
+    return (item: stamped, onDeckEpisode: onDeckEpisode);
   }
 
   /// In-flight `fetchItem` requests, keyed by item id.
@@ -1319,13 +1322,12 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     AbortController? abort,
     Set<String> excludedLibraryIds = const {},
   }) async {
-    if (excludedLibraryIds.isEmpty) return _searchEverywhere(query, limit: limit, abort: abort);
-
     // Jellyfin search rows cannot be attributed to a library after the fact:
     // there is no library field, and `ParentId` (which this request does not
     // even ask for) resolves to a season or physical folder, never the owning
-    // CollectionFolder. A hidden library can therefore only be excluded by
-    // scoping the request, one per visible library.
+    // CollectionFolder. Searching one scoped request per visible library is
+    // therefore the only way a hit ever learns which library it came from
+    // (#1970) — and the only way a hidden library can be excluded at all.
     var libraries = _loadedLibraryViews;
     if (libraries == null) {
       libraries = await _fetchLibraries(abort: abort);
@@ -1338,8 +1340,6 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       for (final library in libraries)
         if (!excludedLibraryIds.contains(library.id)) library,
     ];
-    // Nothing hidden actually belongs to this server — keep the single query.
-    if (visible.length == libraries.length) return _searchEverywhere(query, limit: limit, abort: abort);
     if (visible.isEmpty) return const [];
 
     // Each leg keeps the full candidate budget. Splitting it would cap a
@@ -1365,38 +1365,6 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       }
     }
     return deduplicated.values.toList();
-  }
-
-  /// Unscoped search: one request across every library the user can see.
-  ///
-  /// Artists come from the dedicated /Artists endpoint: `/Items?SearchTerm=`
-  /// only matches folder-derived MusicArtist rows (under folder names), so
-  /// tag-only artists would never appear in search. The artists leg is
-  /// best-effort — a music-endpoint hiccup shouldn't sink video search.
-  Future<List<MediaItem>> _searchEverywhere(String query, {required int limit, AbortController? abort}) async {
-    final results = await Future.wait([
-      _fetchItemsArray('/Items', {
-        'userId': connection.userId,
-        'SearchTerm': query,
-        'Recursive': 'true',
-        'Limit': limit.toString(),
-        'IncludeItemTypes': _searchItemTypes,
-        'Fields': _browseFields,
-        // Search ranks and trims client-side and never reads the total, which
-        // the server pays for separately on a broad term.
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, abort: abort),
-      _safeFetchItemsArray('/Artists', {
-        'userId': connection.userId,
-        'searchTerm': query,
-        'Limit': limit.toString(),
-        'EnableTotalRecordCount': 'false',
-        ...jellyfinImageQueryParameters,
-      }, abort: abort),
-    ]);
-    abort?.throwIfAborted();
-    return _mapItems([...results.first, ...results[1]]);
   }
 
   /// Search a single library. Results are stamped with it, which is the only
@@ -1450,9 +1418,12 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
               ...jellyfinImageQueryParameters,
             }, abort: abort),
           ];
-    // `/Artists` takes parentId and resolves it to an ancestor filter, but
-    // only a music library can contain any — asking elsewhere just buys an
-    // empty response.
+    // Artists come from the dedicated /Artists endpoint: `/Items?SearchTerm=`
+    // only matches folder-derived MusicArtist rows, so tag-only artists would
+    // never appear. It takes parentId and resolves it to an ancestor filter,
+    // but only a music library can contain any — asking elsewhere just buys
+    // an empty response. Best-effort: a music-endpoint hiccup shouldn't sink
+    // the leg's video siblings.
     final artistsFuture = library.kind == MediaKind.artist
         ? _safeFetchItemsArray('/Artists', {
             'userId': connection.userId,
@@ -1556,24 +1527,38 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// owning CollectionFolder. One extra request per match (memoized with the
   /// match by the session-level matcher cache); failures return the item
   /// unstamped.
-  Future<MediaItem> _withLibraryFromAncestors(MediaItem item) async {
+  Future<MediaItem> _withLibraryFromAncestors(MediaItem item) => _stampAncestorLibrary(item, _libraryAncestor(item.id));
+
+  /// Applies a settled [_libraryAncestor] lookup, or returns [item] unchanged
+  /// when the lookup found nothing.
+  Future<MediaItem> _stampAncestorLibrary(MediaItem item, Future<({String? id, String? title})?>? ancestor) async {
+    final library = await ancestor;
+    if (library == null) return item;
+    return item.copyWith(libraryId: library.id, libraryTitle: library.title);
+  }
+
+  /// The owning CollectionFolder of one item, from `/Items/{id}/Ancestors` —
+  /// the only place either dialect names an item's library. Best-effort:
+  /// failures and libraryless items (e.g. playlist-only rows) yield null.
+  Future<({String? id, String? title})?> _libraryAncestor(String itemId) async {
     try {
       final response = await _http.get(
-        '/Items/${_segment(item.id)}/Ancestors',
+        '/Items/${_segment(itemId)}/Ancestors',
         queryParameters: {'userId': connection.userId},
       );
       throwIfHttpError(response);
       final data = response.data;
-      if (data is! List) return item;
-      for (final ancestor in data.whereType<Map<String, dynamic>>()) {
-        if (ancestor['Type'] == 'CollectionFolder') {
-          return item.copyWith(libraryId: ancestor['Id'] as String?, libraryTitle: ancestor['Name'] as String?);
+      if (data is List) {
+        for (final ancestor in data.whereType<Map<String, dynamic>>()) {
+          if (ancestor['Type'] == 'CollectionFolder') {
+            return (id: ancestor['Id'] as String?, title: ancestor['Name'] as String?);
+          }
         }
       }
     } catch (e) {
-      appLogger.d('Jellyfin ancestors lookup failed for ${item.id}', error: e);
+      appLogger.d('Jellyfin ancestors lookup failed for $itemId', error: e);
     }
-    return item;
+    return null;
   }
 
   @override

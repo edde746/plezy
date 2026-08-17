@@ -554,6 +554,30 @@ void main() {
       expect(video.dolbyVision, isFalse);
       expect(video.dolbyVisionProfile, isNull);
     });
+
+    test('never derives library identity from ParentId, SeriesStudio, or ParentLibrary fields', () {
+      // None of these are a library: ParentId resolves to a season or physical
+      // folder, SeriesStudio is a studio, and ParentLibraryId/Name are not
+      // fields either dialect actually sends. Library identity comes only
+      // from explicit stamps (scoped search, the Ancestors lookup).
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'movie-1',
+          'Type': 'Movie',
+          'Name': 'Movie',
+          'ParentId': 'folder-1',
+          'SeriesStudio': 'Studio X',
+          'ParentLibraryId': 'lib-1',
+          'ParentLibraryName': 'Movies',
+        },
+        serverId: ServerId(_serverId),
+        serverName: 'Home',
+        absolutizer: null,
+      )!;
+
+      expect(item.libraryId, isNull);
+      expect(item.libraryTitle, isNull);
+    });
   });
 
   group('JellyfinMappers.library', () {

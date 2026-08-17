@@ -56,7 +56,10 @@ void main() {
         final path = request.url.path;
         if (path.endsWith('/Views')) return _json({'Items': views});
         if (path == '/Items') {
-          final parent = request.url.queryParameters['ParentId'] ?? '*';
+          final parent = request.url.queryParameters['ParentId'];
+          // Search is always library-scoped: an unscoped query can neither
+          // attribute its hits to a library nor honour a hidden one (#1970).
+          if (parent == null) fail('Unscoped /Items search: ${request.url}');
           final includedTypes = request.url.queryParameters['IncludeItemTypes']?.split(',').toSet();
           final items = itemsByParent[parent] ?? const <Map<String, dynamic>>[];
           return _json({
@@ -67,7 +70,8 @@ void main() {
           });
         }
         if (path == '/Artists') {
-          final parent = request.url.queryParameters['parentId'] ?? '*';
+          final parent = request.url.queryParameters['parentId'];
+          if (parent == null) fail('Unscoped /Artists search: ${request.url}');
           return _json({'Items': itemsByParent['artists:$parent'] ?? const <Map<String, dynamic>>[]});
         }
         fail('Unexpected request: ${request.url}');
@@ -75,23 +79,30 @@ void main() {
     );
   }
 
-  test('with nothing hidden, search stays a single unscoped query', () async {
+  test('every search fans out one scoped query per visible library', () async {
     final captured = <Uri>[];
     final client = makeClient(
       captured,
       itemsByParent: {
-        '*': [_hit('movie-1', 'Movie', 'The Movie')],
+        'lib-movies': [_hit('movie-1', 'Movie', 'The Movie')],
+        'lib-shows': [_hit('show-1', 'Series', 'The Show')],
+        'lib-music': [_hit('album-1', 'MusicAlbum', 'The Album')],
       },
     );
     addTearDown(client.close);
 
     final results = await client.searchItems('the');
 
-    expect(results.map((item) => item.id), ['movie-1']);
-    expect(captured.map((uri) => uri.path), ['/Items', '/Artists']);
-    expect(captured.first.queryParameters.containsKey('ParentId'), isFalse);
-    // No library listing is fetched when there is nothing to exclude.
-    expect(captured.where((uri) => uri.path.endsWith('/Views')), isEmpty);
+    expect(results.map((item) => item.id), ['movie-1', 'show-1', 'album-1']);
+    // A cold search loads the library views itself, exactly once.
+    expect(captured.where((uri) => uri.path.endsWith('/Views')), hasLength(1));
+    // One /Items leg per video library, two (album + audio) for music.
+    expect(captured.where((uri) => uri.path == '/Items').map((uri) => uri.queryParameters['ParentId']), [
+      'lib-movies',
+      'lib-shows',
+      'lib-music',
+      'lib-music',
+    ]);
   });
 
   test('a hidden library is excluded by scoping one request per visible library', () async {
@@ -111,6 +122,13 @@ void main() {
     expect(results.map((item) => item.id), ['movie-1', 'album-1']);
     // The unscoped query must not run: it would reintroduce the hidden library.
     expect(captured.where((uri) => uri.path == '/Items' && !uri.queryParameters.containsKey('ParentId')), isEmpty);
+    // The hidden library gets no request at all, under either param spelling.
+    expect(
+      captured.where(
+        (uri) => uri.queryParameters['ParentId'] == 'lib-shows' || uri.queryParameters['parentId'] == 'lib-shows',
+      ),
+      isEmpty,
+    );
     expect(captured.where((uri) => uri.path == '/Items').map((uri) => uri.queryParameters['ParentId']), [
       'lib-movies',
       'lib-music',
@@ -118,7 +136,7 @@ void main() {
     ]);
   });
 
-  test('scoped results carry the library they came from', () async {
+  test('every hit carries the library it came from', () async {
     final captured = <Uri>[];
     final client = makeClient(
       captured,
@@ -129,10 +147,10 @@ void main() {
     );
     addTearDown(client.close);
 
-    final results = await client.searchItems('the', excludedLibraryIds: {'lib-shows'});
+    final results = await client.searchItems('the');
 
     // Jellyfin sends no library field, so this stamp is the only attribution
-    // these items will ever have — and what the caller filters on.
+    // these items will ever have — what the caller renders and filters on.
     expect(results.map((item) => item.libraryId), ['lib-movies', 'lib-music']);
     expect(results.map((item) => item.libraryTitle), ['Movies', 'Music']);
     expect(results.map((item) => item.libraryGlobalKey), ['srv-1:lib-movies', 'srv-1:lib-music']);
@@ -148,7 +166,7 @@ void main() {
     );
     addTearDown(client.close);
 
-    final results = await client.searchItems('the', excludedLibraryIds: {'lib-shows'});
+    final results = await client.searchItems('the');
 
     expect(results.map((item) => item.id), ['artist-1']);
     expect(captured.where((uri) => uri.path == '/Artists').map((uri) => uri.queryParameters['parentId']), [
@@ -187,7 +205,7 @@ void main() {
     ]);
   });
 
-  test('scoped search reuses the views the library load already fetched', () async {
+  test('a warm search reuses the views the library load already fetched', () async {
     final captured = <Uri>[];
     final client = makeClient(captured);
     addTearDown(client.close);
@@ -196,7 +214,7 @@ void main() {
     await client.fetchLibraries();
     final afterLoad = captured.length;
 
-    await client.searchItems('the', excludedLibraryIds: {'lib-shows'});
+    await client.searchItems('the');
     await client.searchItems('the movie', excludedLibraryIds: {'lib-shows'});
 
     // /Views sits serially in front of every leg, so re-fetching it per
@@ -354,12 +372,12 @@ void main() {
     expect(movies.queryParameters['Fields'], contains('ChildCount'));
   });
 
-  test('excluded ids owned by another server leave the single query in place', () async {
+  test('excluded ids owned by another server do not shrink the fan-out', () async {
     final captured = <Uri>[];
     final client = makeClient(
       captured,
       itemsByParent: {
-        '*': [_hit('movie-1', 'Movie', 'The Movie')],
+        'lib-movies': [_hit('movie-1', 'Movie', 'The Movie')],
       },
     );
     addTearDown(client.close);
@@ -367,7 +385,14 @@ void main() {
     final results = await client.searchItems('the', excludedLibraryIds: {'some-other-servers-library'});
 
     expect(results.map((item) => item.id), ['movie-1']);
-    expect(captured.where((uri) => uri.path == '/Items').single.queryParameters.containsKey('ParentId'), isFalse);
+    // The foreign key matches none of this server's views, so every library
+    // stays visible — and every query stays scoped.
+    expect(captured.where((uri) => uri.path == '/Items').map((uri) => uri.queryParameters['ParentId']), [
+      'lib-movies',
+      'lib-shows',
+      'lib-music',
+      'lib-music',
+    ]);
   });
 
   test('hiding every library returns nothing instead of everything', () async {

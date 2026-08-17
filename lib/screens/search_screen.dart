@@ -9,10 +9,12 @@ import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
+import '../media/media_item_merge.dart';
 import '../mixins/debounced_media_search.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../providers/hidden_libraries_provider.dart';
+import '../providers/libraries_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/data_aggregation_service.dart';
 import '../utils/app_logger.dart';
@@ -243,7 +245,14 @@ class _SearchScreenState extends State<SearchScreen>
       final index = searchResults.indexWhere((item) => item.globalKey == source.globalKey);
       if (index == -1) return;
       setState(() {
-        searchResults[index] = updated;
+        // A fresh Jellyfin `fetchItem` carries no library field, and a
+        // library-less row would lose its label (#1970); keep the identity
+        // and library context the search stamped on the original row.
+        searchResults[index] = mergeFetchedMediaItem(
+          fetched: updated,
+          fallbackServerId: ServerId(serverId),
+          existing: source,
+        );
       });
     } catch (e) {
       appLogger.d('Search item refresh skipped for ${source.globalKey}', error: e);
@@ -257,6 +266,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   Widget _buildResultsList(BuildContext context) {
     final multiServer = context.watch<MultiServerProvider>();
+    final libraries = context.watch<LibrariesProvider>();
     final showServerName = multiServer.totalServerCount > 1;
     return buildResultsSliver((context, index) {
       final item = searchResults[index];
@@ -271,6 +281,7 @@ class _SearchScreenState extends State<SearchScreen>
         onNavigateLeft: _navigateToSidebar,
         onNavigateUp: index == 0 ? focusSearchInput : null,
         showServerName: showServerName,
+        libraryName: libraries.libraryLabelFor(item),
       );
     });
   }

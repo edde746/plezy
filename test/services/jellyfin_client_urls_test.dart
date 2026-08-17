@@ -3376,6 +3376,171 @@ void main() {
       expect(capturedNextUp!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
 
+    test('fetchItemWithOnDeck stamps the library from the first CollectionFolder ancestor', () async {
+      Uri? capturedAncestors;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie 1'});
+          }
+          if (req.url.path == '/Items/movie-1/Ancestors') {
+            capturedAncestors = req.url;
+            // Ancestors run leaf-to-root: the physical folder precedes the
+            // owning CollectionFolder, which precedes the aggregate root.
+            return jsonResponse([
+              {'Id': 'folder-1', 'Type': 'Folder', 'Name': 'movies-disk-1'},
+              {'Id': 'lib-movies', 'Type': 'CollectionFolder', 'Name': 'Movies'},
+              {'Id': 'root-1', 'Type': 'AggregateFolder', 'Name': 'Media Folders'},
+            ]);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('movie-1');
+
+      expect(capturedAncestors, isNotNull);
+      expect(capturedAncestors!.queryParameters['userId'], 'user-1');
+      expect(result.item!.libraryId, 'lib-movies');
+      expect(result.item!.libraryTitle, 'Movies');
+      expect(result.onDeckEpisode, isNull);
+    });
+
+    test('a show detail lookup stamps the library and still chains Next Up', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/show-1') {
+            return jsonResponse({'Id': 'show-1', 'Type': 'Series', 'Name': 'Show 1'});
+          }
+          if (req.url.path == '/Items/show-1/Ancestors') {
+            return jsonResponse([
+              {'Id': 'lib-shows', 'Type': 'CollectionFolder', 'Name': 'Shows'},
+            ]);
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            return jsonResponse({
+              'Items': [
+                {'Id': 'ep-9', 'Type': 'Episode', 'Name': 'Next Episode'},
+              ],
+            });
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('show-1');
+
+      // The record carries the stamped item, not the raw fetch.
+      expect(result.item!.libraryId, 'lib-shows');
+      expect(result.item!.libraryTitle, 'Shows');
+      expect(result.onDeckEpisode!.id, 'ep-9');
+    });
+
+    test('an ancestors failure leaves the detail item unstamped instead of failing the lookup', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie 1'});
+          }
+          if (req.url.path == '/Items/movie-1/Ancestors') {
+            return http.Response('boom', 500);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('movie-1');
+
+      // Best-effort stamp: the library label is decorative, the detail page
+      // is not — a failed lookup must never sink it.
+      expect(result.item!.id, 'movie-1');
+      expect(result.item!.libraryId, isNull);
+      expect(result.item!.libraryTitle, isNull);
+    });
+
+    test('ancestors without a CollectionFolder leave the detail item unstamped', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie 1'});
+          }
+          if (req.url.path == '/Items/movie-1/Ancestors') {
+            // A playlist-only row: folders all the way up, no library.
+            return jsonResponse([
+              {'Id': 'playlist-root', 'Type': 'Folder', 'Name': 'Playlists'},
+            ]);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('movie-1');
+
+      expect(result.item!.libraryId, isNull);
+      expect(result.item!.libraryTitle, isNull);
+    });
+
+    test('onItemReady fires with the unstamped item before the ancestors round trip', () async {
+      var ancestorsRequested = false;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/movie-1') {
+            return jsonResponse({'Id': 'movie-1', 'Type': 'Movie', 'Name': 'Movie 1'});
+          }
+          if (req.url.path == '/Items/movie-1/Ancestors') {
+            ancestorsRequested = true;
+            return jsonResponse([
+              {'Id': 'lib-movies', 'Type': 'CollectionFolder', 'Name': 'Movies'},
+            ]);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      MediaItem? early;
+      var earlyBeforeAncestors = false;
+      final result = await scoped.fetchItemWithOnDeck(
+        'movie-1',
+        onItemReady: (item) {
+          early = item;
+          earlyBeforeAncestors = !ancestorsRequested;
+        },
+      );
+
+      // The early paint must neither wait on nor carry the library stamp.
+      expect(earlyBeforeAncestors, isTrue);
+      expect(early!.libraryId, isNull);
+      expect(result.item!.libraryId, 'lib-movies');
+    });
+
+    test('a missing item short-circuits without an ancestors or Next Up request', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchItemWithOnDeck('gone-1');
+
+      expect(result.item, isNull);
+      expect(result.onDeckEpisode, isNull);
+      expect(requests.map((uri) => uri.path), ['/Users/user-1/Items/gone-1']);
+    });
+
     test('fetchPlaybackExtras loads native Jellyfin media segments', () async {
       final requests = <Uri>[];
       final scoped = JellyfinClient.forTesting(

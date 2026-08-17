@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../media/media_item.dart';
 import '../media/media_library.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/data_aggregation_service.dart';
@@ -77,6 +78,55 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
 
   /// Whether libraries are available
   bool get hasLibraries => _libraries.isNotEmpty;
+
+  /// Derived lookups, keyed on the identity of [_libraries]: every mutation
+  /// reassigns the list, so an identical source means the maps are current.
+  List<MediaLibrary>? _lookupSource;
+  Map<String, MediaLibrary> _byGlobalKey = const {};
+  Map<String, int> _libraryCountByServer = const {};
+
+  void _ensureLookups() {
+    if (identical(_lookupSource, _libraries)) return;
+    _byGlobalKey = {for (final library in _libraries) library.globalKey: library};
+    final counts = <String, int>{};
+    for (final library in _libraries) {
+      final serverId = library.serverId;
+      if (serverId != null) counts[serverId] = (counts[serverId] ?? 0) + 1;
+    }
+    _libraryCountByServer = counts;
+    _lookupSource = _libraries;
+  }
+
+  /// The loaded library with [globalKey] (see [MediaLibrary.globalKey]), or
+  /// null while unloaded or for an unknown key. The zero-request resolver for
+  /// items that carry a library id without its title — Plex search rows that
+  /// name their section only by `librarySectionKey` (#1970).
+  MediaLibrary? libraryByGlobalKey(String globalKey) {
+    _ensureLookups();
+    return _byGlobalKey[globalKey];
+  }
+
+  /// Number of loaded libraries on [serverId]; 0 while unloaded. The library
+  /// label on search rows renders only when this is > 1 — attribution on a
+  /// single-library server is noise (#1970).
+  int libraryCountForServer(String serverId) {
+    _ensureLookups();
+    return _libraryCountByServer[serverId] ?? 0;
+  }
+
+  /// The library name to attribute [item] with in search results (#1970), or
+  /// null when no label should render: the library is unknown, or the owning
+  /// server has only one. A missing title is resolved against the loaded
+  /// libraries, which covers Plex rows that carry a section id without its
+  /// title.
+  String? libraryLabelFor(MediaItem item) {
+    final serverId = item.serverId;
+    if (serverId == null || libraryCountForServer(serverId) < 2) return null;
+    final title = item.libraryTitle;
+    if (title != null) return title;
+    final globalKey = item.libraryGlobalKey;
+    return globalKey == null ? null : libraryByGlobalKey(globalKey)?.title;
+  }
 
   /// Initialize the provider with the aggregation service.
   /// This should be called after server connection is established.

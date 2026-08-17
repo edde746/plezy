@@ -46,6 +46,10 @@ class FocusableMediaCard extends StatefulWidget {
   /// Show server name in list view (multi-server)
   final bool showServerName;
 
+  /// Library name to attribute the item with in list view, resolved by the
+  /// caller (see `LibrariesProvider.libraryLabelFor`). Null renders nothing.
+  final String? libraryName;
+
   /// Whether to disable the scale animation on focus (e.g. in list view).
   final bool disableScale;
 
@@ -97,6 +101,7 @@ class FocusableMediaCard extends StatefulWidget {
     this.fullBleedImage = false,
     this.cardShapeOverride,
     this.showServerName = false,
+    this.libraryName,
     this.disableScale = false,
     this.focusNode,
     this.onNavigateUp,
@@ -158,6 +163,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
         fullBleedImage: widget.fullBleedImage,
         cardShapeOverride: widget.cardShapeOverride,
         showServerName: widget.showServerName,
+        libraryName: widget.libraryName,
       ),
     );
   }
