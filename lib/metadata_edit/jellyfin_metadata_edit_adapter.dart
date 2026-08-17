@@ -1,5 +1,4 @@
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
@@ -11,9 +10,6 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
   final JellyfinClient client;
 
   JellyfinMetadataEditAdapter(this.client);
-
-  @override
-  MediaBackend get backend => client.backend;
 
   @override
   MediaServerClient get mediaClient => client;

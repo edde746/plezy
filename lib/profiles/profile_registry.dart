@@ -36,11 +36,6 @@ class ProfileRegistry {
     return rows.map(_rowToProfile).whereType<Profile>().toList();
   }
 
-  Future<Profile?> get(String id) async {
-    final row = await (_db.select(_db.profiles)..where((t) => t.id.equals(id))).getSingleOrNull();
-    return row == null ? null : _rowToProfile(row);
-  }
-
   Future<void> upsert(Profile profile) async {
     await _db.runIdentityMutation(() async {
       final row = ProfilesCompanion(

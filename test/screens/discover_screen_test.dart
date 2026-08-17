@@ -153,8 +153,6 @@ void main() {
             theme: monoTheme(dark: true),
             home: MainScreenFocusScope(
               focusSidebar: () {},
-              focusContent: () {},
-              isSidebarFocused: false,
               sideNavigationWidth: targetSidebarOffset,
               reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
               foregroundLeft: currentForegroundLeft,
@@ -321,8 +319,6 @@ void main() {
             theme: monoTheme(dark: true),
             home: MainScreenFocusScope(
               focusSidebar: () {},
-              focusContent: () {},
-              isSidebarFocused: false,
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
               reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
               foregroundLeft: 0,
@@ -458,8 +454,6 @@ void main() {
             theme: monoTheme(dark: true),
             home: MainScreenFocusScope(
               focusSidebar: () {},
-              focusContent: () {},
-              isSidebarFocused: false,
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
               reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
               foregroundLeft: 0,
@@ -570,8 +564,6 @@ void main() {
               theme: monoTheme(dark: true),
               home: MainScreenFocusScope(
                 focusSidebar: () {},
-                focusContent: () {},
-                isSidebarFocused: false,
                 sideNavigationWidth: SideNavigationRailState.expandedWidth,
                 reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
                 foregroundLeft: 0,
@@ -722,8 +714,6 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
             theme: monoTheme(dark: true),
             home: MainScreenFocusScope(
               focusSidebar: () {},
-              focusContent: () {},
-              isSidebarFocused: false,
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
               reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
               foregroundLeft: 0,

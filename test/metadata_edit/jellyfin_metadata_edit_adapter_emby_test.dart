@@ -84,20 +84,6 @@ void main() {
       {'Name': 'archive'},
     ]);
   });
-
-  test("the adapter reports the dialect's backend", () {
-    final embyClient = _clientForDto(connection: testEmbyConnection(), dto: _embyItem(), postedBodies: <String>[]);
-    final jellyfinClient = _clientForDto(
-      connection: _jellyfinConnection(),
-      dto: _jellyfinItem(),
-      postedBodies: <String>[],
-    );
-    addTearDown(embyClient.close);
-    addTearDown(jellyfinClient.close);
-
-    expect(JellyfinMetadataEditAdapter(embyClient).backend, MediaBackend.emby);
-    expect(JellyfinMetadataEditAdapter(jellyfinClient).backend, MediaBackend.jellyfin);
-  });
 }
 
 JellyfinClient _clientForDto({

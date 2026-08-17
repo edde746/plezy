@@ -57,8 +57,7 @@ WatchStateEvent _ev({
   required String itemId,
   List<String> parentChain = const [],
   WatchStateChangeType type = WatchStateChangeType.watched,
-}) =>
-    WatchStateEvent(itemId: itemId, serverId: serverId, changeType: type, parentChain: parentChain, mediaType: 'movie');
+}) => WatchStateEvent(itemId: itemId, serverId: serverId, changeType: type, parentChain: parentChain);
 
 /// Drain microtasks the broadcast stream uses to deliver events.
 Future<void> _settle(WidgetTester tester) async {

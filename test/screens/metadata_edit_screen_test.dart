@@ -556,9 +556,6 @@ class _ArtworkAdapter extends MetadataEditAdapter {
   int uploadCalls = 0;
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
-
-  @override
   MediaServerClient get mediaClient => _client;
 
   @override

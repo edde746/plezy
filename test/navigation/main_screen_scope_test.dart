@@ -11,8 +11,6 @@ void main() {
       MaterialApp(
         home: MainScreenFocusScope(
           focusSidebar: () => focusCalls++,
-          focusContent: () {},
-          isSidebarFocused: false,
           sideNavigationWidth: 0,
           child: Builder(
             builder: (context) {
@@ -47,7 +45,7 @@ void main() {
   });
 
   testWidgets('focusSidebarOf does not register an inherited dependency', (tester) async {
-    var isSidebarFocused = false;
+    var sideNavigationWidth = 0.0;
     var childBuilds = 0;
     var focusCalls = 0;
     late StateSetter rebuildScope;
@@ -66,9 +64,7 @@ void main() {
             rebuildScope = setState;
             return MainScreenFocusScope(
               focusSidebar: () => focusCalls++,
-              focusContent: () {},
-              isSidebarFocused: isSidebarFocused,
-              sideNavigationWidth: 0,
+              sideNavigationWidth: sideNavigationWidth,
               child: child,
             );
           },
@@ -79,7 +75,7 @@ void main() {
     expect(childBuilds, 1);
     expect(focusCalls, 1);
 
-    rebuildScope(() => isSidebarFocused = true);
+    rebuildScope(() => sideNavigationWidth = 100);
     await tester.pump();
 
     expect(childBuilds, 1);

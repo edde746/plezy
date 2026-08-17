@@ -32,8 +32,6 @@ Future<void> pumpLibraryTab(
           theme: monoTheme(dark: true),
           home: MainScreenFocusScope(
             focusSidebar: focusSidebar ?? () {},
-            focusContent: () {},
-            isSidebarFocused: false,
             sideNavigationWidth: 0,
             child: Scaffold(
               body: NestedScrollView(

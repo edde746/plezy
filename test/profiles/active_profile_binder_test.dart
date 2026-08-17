@@ -1121,7 +1121,6 @@ PlexServer _server({
       ),
     ],
     owned: owned,
-    presence: true,
   );
 }
 

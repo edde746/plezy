@@ -1073,7 +1073,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Backend-neutral counterpart of [getServerBoundPlexClient]. Returns a
+  /// Returns a
   /// [MediaServerClient] for Jellyfin items too, so image URLs use the
   /// right server's transcoder.
   MediaServerClient? _getMediaClientForMetadata(BuildContext context) {

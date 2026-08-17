@@ -12,9 +12,6 @@ enum MainScreenScopeAspect {
   /// widgets (e.g. [SideNavigationBleedBuilder] call sites).
   offset,
 
-  /// `isSidebarFocused`.
-  focus,
-
   /// `foregroundWidth` / `viewportWidth` / `reservedSideNavigationWidth` —
   /// stable across sidebar flips (only change with window geometry).
   layout,
@@ -22,8 +19,6 @@ enum MainScreenScopeAspect {
 
 class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
   final VoidCallback focusSidebar;
-  final VoidCallback focusContent;
-  final bool isSidebarFocused;
   final double sideNavigationWidth;
   final double? reservedSideNavigationWidth;
   final double? foregroundLeft;
@@ -35,8 +30,6 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
   const MainScreenFocusScope({
     super.key,
     required this.focusSidebar,
-    required this.focusContent,
-    required this.isSidebarFocused,
     required this.sideNavigationWidth,
     this.reservedSideNavigationWidth,
     this.foregroundLeft,
@@ -98,8 +91,7 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
 
   @override
   bool updateShouldNotify(MainScreenFocusScope oldWidget) {
-    return isSidebarFocused != oldWidget.isSidebarFocused ||
-        sideNavigationWidth != oldWidget.sideNavigationWidth ||
+    return sideNavigationWidth != oldWidget.sideNavigationWidth ||
         reservedSideNavigationWidth != oldWidget.reservedSideNavigationWidth ||
         foregroundLeft != oldWidget.foregroundLeft ||
         foregroundWidth != oldWidget.foregroundWidth ||
@@ -110,9 +102,6 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
   bool updateShouldNotifyDependent(MainScreenFocusScope oldWidget, Set<MainScreenScopeAspect> dependencies) {
     if (dependencies.contains(MainScreenScopeAspect.offset) &&
         (foregroundLeft != oldWidget.foregroundLeft || sideNavigationWidth != oldWidget.sideNavigationWidth)) {
-      return true;
-    }
-    if (dependencies.contains(MainScreenScopeAspect.focus) && isSidebarFocused != oldWidget.isSidebarFocused) {
       return true;
     }
     if (dependencies.contains(MainScreenScopeAspect.layout) &&
