@@ -179,12 +179,13 @@ sealed class MediaItem with _$MediaItem {
     String? libraryTitle,
     String? audioLanguage,
     String? subtitleLanguage,
-    @JsonKey(fromJson: flexibleInt) int? subtitleMode,
     String? trailerKey,
     @JsonKey(fromJson: flexibleInt) int? playlistItemId,
     @JsonKey(fromJson: flexibleInt) int? playQueueItemId,
+
+    /// Plex extra classification (`subtype="trailer"` etc.) — read by the
+    /// detail screen's trailer picker via pattern destructuring.
     String? subtype,
-    @JsonKey(fromJson: flexibleInt) int? extraType,
     String? serverId,
     String? serverName,
 

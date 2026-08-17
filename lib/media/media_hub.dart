@@ -59,29 +59,18 @@ class MediaHub {
     return hubIdentifier != null && matches(hubIdentifier);
   }
 
-  MediaHub copyWith({
-    String? id,
-    String? identifier,
-    String? title,
-    String? type,
-    List<MediaItem>? items,
-    int? size,
-    bool? more,
-    String? libraryId,
-    String? serverId,
-    String? serverName,
-  }) {
+  MediaHub copyWith({List<MediaItem>? items, int? size}) {
     return MediaHub(
-      id: id ?? this.id,
-      identifier: identifier ?? this.identifier,
-      title: title ?? this.title,
-      type: type ?? this.type,
+      id: id,
+      identifier: identifier,
+      title: title,
+      type: type,
       items: items ?? this.items,
       size: size ?? this.size,
-      more: more ?? this.more,
-      libraryId: libraryId ?? this.libraryId,
-      serverId: serverId ?? this.serverId,
-      serverName: serverName ?? this.serverName,
+      more: more,
+      libraryId: libraryId,
+      serverId: serverId,
+      serverName: serverName,
     );
   }
 }

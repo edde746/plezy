@@ -57,7 +57,7 @@ sealed class PlayerError with _$PlayerError {
   String toString() => message;
 }
 
-enum PlayerLogLevel { none, fatal, error, warn, info, verbose, debug, trace }
+enum PlayerLogLevel { fatal, error, warn, info, verbose, debug, trace }
 
 @freezed
 sealed class AudioTrack with _$AudioTrack {

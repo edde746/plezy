@@ -5,13 +5,6 @@ import '../models/livetv_program.dart';
 import '../models/media_grab_operation.dart';
 import '../models/media_subscription.dart';
 
-class LiveTvActivityResult<T> {
-  final T value;
-  final String? activityUuid;
-
-  const LiveTvActivityResult({required this.value, this.activityUuid});
-}
-
 /// Program info captured when a live session starts. Plex's tune response
 /// carries the airing program; Jellyfin streams the channel without a
 /// program-scoped session, so its sessions report [none].
@@ -190,7 +183,7 @@ abstract class LiveTvSupport {
 /// recording APIs.
 abstract class LiveTvDvrSupport {
   Future<List<LiveTvDvr>> fetchDvrs();
-  Future<LiveTvActivityResult<void>> reloadGuide(String dvrId);
+  Future<void> reloadGuide(String dvrId);
 
   Future<List<SubscriptionTemplate>> getSubscriptionTemplate(String guid);
   Future<List<MediaSubscription>> fetchRecordingRules({bool includeGrabs = true, bool includeStorage = true});

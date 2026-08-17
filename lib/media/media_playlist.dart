@@ -62,44 +62,4 @@ class MediaPlaylist {
   String get displayTitle => title;
 
   String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
-
-  MediaPlaylist copyWith({
-    String? id,
-    MediaBackend? backend,
-    String? title,
-    String? summary,
-    String? guid,
-    bool? smart,
-    String? playlistType,
-    int? durationMs,
-    int? leafCount,
-    int? viewCount,
-    int? addedAt,
-    int? updatedAt,
-    int? lastViewedAt,
-    String? compositeImagePath,
-    String? thumbPath,
-    String? serverId,
-    String? serverName,
-  }) {
-    return MediaPlaylist(
-      id: id ?? this.id,
-      backend: backend ?? this.backend,
-      title: title ?? this.title,
-      summary: summary ?? this.summary,
-      guid: guid ?? this.guid,
-      smart: smart ?? this.smart,
-      playlistType: playlistType ?? this.playlistType,
-      durationMs: durationMs ?? this.durationMs,
-      leafCount: leafCount ?? this.leafCount,
-      viewCount: viewCount ?? this.viewCount,
-      addedAt: addedAt ?? this.addedAt,
-      updatedAt: updatedAt ?? this.updatedAt,
-      lastViewedAt: lastViewedAt ?? this.lastViewedAt,
-      compositeImagePath: compositeImagePath ?? this.compositeImagePath,
-      thumbPath: thumbPath ?? this.thumbPath,
-      serverId: serverId ?? this.serverId,
-      serverName: serverName ?? this.serverName,
-    );
-  }
 }

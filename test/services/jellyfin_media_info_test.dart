@@ -55,7 +55,7 @@ void main() {
       expect(info.displayCriteria?.fps, closeTo(23.976, 0.001));
       // Plex partId is null on Jellyfin because Jellyfin persists selected
       // stream indexes through playback progress reports instead.
-      expect(info.getPartId(), isNull);
+      expect(info.partId, isNull);
 
       // Jellyfin exposes the default server choice through IsDefault.
       final eng = info.audioTracks[0];

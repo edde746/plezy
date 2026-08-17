@@ -225,8 +225,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case PlayerLogLevel.debug:
       case PlayerLogLevel.trace:
         appLogger.d(message);
-      case PlayerLogLevel.none:
-        break;
     }
   }
 

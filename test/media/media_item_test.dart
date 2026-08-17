@@ -483,12 +483,9 @@ void main() {
           MediaRatingSource(source: 'imdb', value: 8.9, votes: 1200),
         ],
         subtitleLanguage: 'eng',
-        subtitleMode: 1,
         trailerKey: '/library/metadata/1',
         playlistItemId: 42,
         playQueueItemId: 7,
-        subtype: 'trailer',
-        extraType: 1,
       );
 
       final copy = original.copyWith(title: 'New');
@@ -498,12 +495,9 @@ void main() {
       expect(copy.ratings?.map((rating) => rating.source), ['rottenTomatoesCritic', 'imdb']);
       expect(copy.ratings?.last.votes, 1200);
       expect(copy.subtitleLanguage, 'eng');
-      expect(copy.subtitleMode, 1);
       expect(copy.trailerKey, '/library/metadata/1');
       expect(copy.playlistItemId, 42);
       expect(copy.playQueueItemId, 7);
-      expect(copy.subtype, 'trailer');
-      expect(copy.extraType, 1);
     });
 
     test('preserves Jellyfin playlist item id when omitted', () {
@@ -553,12 +547,9 @@ void main() {
           ),
         ],
         subtitleLanguage: 'eng',
-        subtitleMode: 2,
         trailerKey: '/trailer',
         playlistItemId: 4,
         playQueueItemId: 5,
-        subtype: 'trailer',
-        extraType: 9,
       );
 
       final json = original.toJson();
@@ -576,12 +567,9 @@ void main() {
       expect(plex.roles?.single.tag, 'Actor');
       expect(plex.mediaVersions?.single.parts.single.streamPath, '/stream');
       expect(plex.subtitleLanguage, 'eng');
-      expect(plex.subtitleMode, 2);
       expect(plex.trailerKey, '/trailer');
       expect(plex.playlistItemId, 4);
       expect(plex.playQueueItemId, 5);
-      expect(plex.subtype, 'trailer');
-      expect(plex.extraType, 9);
     });
 
     test('round-trips Jellyfin playlist item id', () {

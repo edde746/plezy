@@ -60,8 +60,6 @@ class MediaSourceInfo {
       videoAspectRatio: videoAspectRatio,
     );
   }
-
-  int? getPartId() => partId;
 }
 
 /// Per-resolution Jellyfin trickplay manifest. Mirrors `TrickplayInfoDto`

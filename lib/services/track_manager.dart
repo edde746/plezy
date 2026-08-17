@@ -592,7 +592,7 @@ class TrackManager {
       return null;
     }
 
-    final partId = info.getPartId();
+    final partId = info.partId;
     if (partId == null) {
       appLogger.w('No part ID available, cannot save stream selection');
     }

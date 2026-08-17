@@ -166,9 +166,9 @@ class JellyfinApiCache extends ApiCache {
         }
         data['UserData'] = userData;
         final encoded = jsonEncode(data);
-        await (database.update(database.apiCache)..where((t) => t.cacheKey.equals(row.cacheKey))).write(
-          ApiCacheCompanion(data: Value(encoded), cachedAt: Value(DateTime.now())),
-        );
+        await (database.update(
+          database.apiCache,
+        )..where((t) => t.cacheKey.equals(row.cacheKey))).write(ApiCacheCompanion(data: Value(encoded)));
       } catch (_) {
         // Skip malformed entries.
       }
