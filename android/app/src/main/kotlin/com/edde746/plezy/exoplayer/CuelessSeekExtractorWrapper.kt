@@ -8,14 +8,21 @@ import androidx.media3.extractor.ExtractorOutput
 import androidx.media3.extractor.PositionHolder
 import androidx.media3.extractor.SeekMap
 import androidx.media3.extractor.SeekPoint
+import androidx.media3.extractor.TrackAwareSeekMap
 import androidx.media3.extractor.TrackOutput
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
- * Extractor wrapper that enables approximate seeking for MKV files without Cues.
+ * Extractor wrapper that repairs seeking for MKV files media3 reports as unseekable.
  *
- * When the underlying extractor reports an [SeekMap.Unseekable] seek map (i.e. the MKV
- * has no Cues element), this wrapper replaces it with a proportional byte-position
- * estimate and scans for the nearest Cluster boundary after seeking.
+ * Two repairs, in priority order:
+ * - [SeekMap.Unseekable] with a known duration (no Cues element at all): replaced with a
+ *   proportional byte-position estimate, resynced to the nearest Cluster boundary after seeking.
+ * - A [TrackAwareSeekMap] whose [SeekMap.isSeekable] is false (media3 1.11.0 builds the Matroska
+ *   seek map while parsing Cues, which for files whose Tracks element follows the Clusters is
+ *   before any track is known — the primary seek track stays unset even though the Cues parsed):
+ *   wrapped so seeks resolve through the per-track cue lookups using the track IDs observed on
+ *   this output.
  */
 @androidx.media3.common.util.UnstableApi
 class CuelessSeekExtractorWrapper(
@@ -37,6 +44,9 @@ class CuelessSeekExtractorWrapper(
   private var needsClusterResync = false
   private var isApproximateSeeking = false
   private var pendingSeekTimeUs: Long = C.TIME_UNSET
+
+  /** Track IDs and types observed on the output, consulted by [TrackCueSeekMap]. */
+  private val registeredTracks = CopyOnWriteArrayList<Pair<Int, Int>>()
 
   override fun sniff(input: ExtractorInput): Boolean = delegate.sniff(input)
 
@@ -125,7 +135,13 @@ class CuelessSeekExtractorWrapper(
     private val delegate: ExtractorOutput
   ) : ExtractorOutput {
 
-    override fun track(id: Int, type: Int): TrackOutput = delegate.track(id, type)
+    override fun track(id: Int, type: Int): TrackOutput {
+      if (registeredTracks.none { it.first == id }) {
+        registeredTracks.add(id to type)
+      }
+      return delegate.track(id, type)
+    }
+
     override fun endTracks() = delegate.endTracks()
 
     override fun seekMap(seekMap: SeekMap) {
@@ -137,6 +153,11 @@ class CuelessSeekExtractorWrapper(
           delegate.seekMap(ApproximateSeekMap(durationUs))
           return
         }
+      } else if (!seekMap.isSeekable && seekMap is TrackAwareSeekMap) {
+        Log.i(TAG, "Wrapping unseekable TrackAwareSeekMap with per-track cue seeking")
+        isApproximateSeeking = false
+        delegate.seekMap(TrackCueSeekMap(seekMap))
+        return
       }
       // File has real Cues or unknown duration — pass through
       isApproximateSeeking = false
@@ -164,6 +185,42 @@ class CuelessSeekExtractorWrapper(
       val clampedTimeUs = timeUs.coerceIn(0, durationUs)
       val position = (clampedTimeUs.toDouble() / durationUs * length).toLong().coerceIn(0, length)
       return SeekMap.SeekPoints(SeekPoint(clampedTimeUs, position))
+    }
+  }
+
+  /**
+   * Routes seeks through [TrackAwareSeekMap]'s per-track cue lookups when the delegate reports
+   * unseekable overall. The per-track queries read the live cue data (populated once the Cues
+   * element parsed), so they resolve correctly even when the map was constructed before the
+   * Tracks element — the media3 1.11.0 tracks-after-clusters case.
+   */
+  private inner class TrackCueSeekMap(
+    private val delegate: TrackAwareSeekMap
+  ) : SeekMap {
+
+    override fun isSeekable(): Boolean = delegate.isSeekable || seekableTrackId() != null
+
+    override fun getDurationUs(): Long = delegate.durationUs
+
+    override fun getSeekPoints(timeUs: Long): SeekMap.SeekPoints {
+      if (delegate.isSeekable) return delegate.getSeekPoints(timeUs)
+      val trackId = seekableTrackId() ?: return delegate.getSeekPoints(timeUs)
+      return delegate.getSeekPoints(timeUs, trackId)
+    }
+
+    /** Mirrors media3's primary-track priority: video first, then audio, then anything with cues. */
+    private fun seekableTrackId(): Int? {
+      var audio: Int? = null
+      var fallback: Int? = null
+      for ((id, type) in registeredTracks) {
+        if (!delegate.isSeekable(id)) continue
+        when (type) {
+          C.TRACK_TYPE_VIDEO -> return id
+          C.TRACK_TYPE_AUDIO -> if (audio == null) audio = id
+          else -> if (fallback == null) fallback = id
+        }
+      }
+      return audio ?: fallback
     }
   }
 }
