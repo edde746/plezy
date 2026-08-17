@@ -171,6 +171,17 @@ class NativeRenderTeardownQueue {
   std::thread worker_;
 };
 
+// Mesa's software rasterizers, as named in GL_RENDERER. The video plane lands
+// on one when the compositor hands clients no GPU device (Muffin 6.6.3 does
+// exactly that), and that session is the one where handing mpv the Wayland
+// display is not merely futile but fatal — see the MPV_RENDER_PARAM_WL_DISPLAY
+// comment in InitRenderContextForSurface.
+bool IsSoftwareGlRenderer(const char* renderer) {
+  if (renderer == nullptr) return false;
+  return strstr(renderer, "llvmpipe") != nullptr || strstr(renderer, "softpipe") != nullptr ||
+         strstr(renderer, "swrast") != nullptr || strstr(renderer, "Software Rasterizer") != nullptr;
+}
+
 }  // namespace
 
 #ifdef PLEZY_MPV_PLAYER_LIFECYCLE_TEST
@@ -513,21 +524,28 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   // What the driver actually gave, and whether mpv will find the entry points
   // its compute path needs. Asking for a version is not the same as getting
   // it, and mpv's own report of "compute shaders=0" says nothing about which
-  // half is missing. Both are cheap and both were needed to diagnose this.
+  // half is missing. All of these are cheap and all were needed to diagnose
+  // this. The renderer name additionally decides the hwdec display handoff
+  // below.
   const GLubyte* gl_version = glGetString(GL_VERSION);
+  const GLubyte* gl_renderer = glGetString(GL_RENDERER);
+  const bool software_renderer = IsSoftwareGlRenderer(reinterpret_cast<const char*>(gl_renderer));
   g_message(
-      "MPV video plane: GL_VERSION='%s' dispatch_compute=%s image_load_store=%s",
+      "MPV video plane: GL_VERSION='%s' GL_RENDERER='%s' dispatch_compute=%s image_load_store=%s",
       gl_version ? reinterpret_cast<const char*>(gl_version) : "(null)",
+      gl_renderer ? reinterpret_cast<const char*>(gl_renderer) : "(null)",
       eglGetProcAddress("glDispatchCompute") ? "yes" : "no", eglGetProcAddress("glBindImageTexture") ? "yes" : "no");
 
-  // Pre-flight the VAAPI dmabuf interop prerequisites. mpv's probe
-  // (dmabuf_interop_gl_init) does not run here - it is lazy, on the first
-  // hardware decode attempt - and its failure never fails
-  // mpv_render_context_create, so a driver that lacks the pieces quietly
-  // decodes everything in software. Naming which prerequisite is missing on
-  // this display/context turns that into a diagnosable one-liner. The three
-  // extensions are the ones the probe requires; EGL_EXT_image_dma_buf_import
-  // is the display-level one, GL_OES_EGL_image is context-level.
+  // Pre-flight the VAAPI dmabuf interop prerequisites. mpv's GL-side probe
+  // (dmabuf_interop_gl_init) is lazy — first hardware decode attempt — and its
+  // failure never fails mpv_render_context_create, so a driver that lacks the
+  // pieces quietly decodes everything in software. Naming which prerequisite
+  // is missing on this display/context turns that into a diagnosable
+  // one-liner. The three extensions are the ones the probe requires;
+  // EGL_EXT_image_dma_buf_import is the display-level one, GL_OES_EGL_image is
+  // context-level. (The VAAPI *device* init is a different story: given a
+  // Wayland display below, mpv opens it eagerly inside
+  // mpv_render_context_create.)
   const char* egl_exts = eglQueryString(display, EGL_EXTENSIONS);
   const GLubyte* gl_exts = glGetString(GL_EXTENSIONS);
   const bool has_dma_buf = egl_exts != nullptr && strstr(egl_exts, "EGL_EXT_image_dma_buf_import") != nullptr;
@@ -561,14 +579,27 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
       {MPV_RENDER_PARAM_INVALID, nullptr},
   };
 
-  // The plane only exists on Wayland, and hwdec interop wants the display handle:
-  // without it VAAPI has to find a device by other means and can quietly end up
-  // on software decoding, on the path that exists for performance.
+  // The plane only exists on Wayland, and hwdec interop wants the display
+  // handle: without it VAAPI has to find a device by other means and can
+  // quietly end up on software decoding, on the path that exists for
+  // performance.
+  //
+  // Never on a software renderer, though. Zero-copy interop into llvmpipe does
+  // not exist, so the handle buys nothing — and the one session that produces
+  // a software renderer on the plane (a compositor that hands clients no GPU
+  // device; Muffin 6.6.3, issue #1963) is also the one where libva-wayland's
+  // vaInitialize segfaults on that handle, inside mpv_render_context_create,
+  // taking the app down before playback starts. Left without a display handle,
+  // mpv's hwdec=auto probes the DRM render nodes instead, which still works on
+  // such a session (the kernel driver is fine; only the compositor's device
+  // handoff is broken).
 #ifdef GDK_WINDOWING_WAYLAND
   GdkDisplay* gdk_display = gdk_display_get_default();
-  if (GDK_IS_WAYLAND_DISPLAY(gdk_display)) {
+  if (GDK_IS_WAYLAND_DISPLAY(gdk_display) && !software_renderer) {
     params[2].type = MPV_RENDER_PARAM_WL_DISPLAY;
     params[2].data = gdk_wayland_display_get_wl_display(gdk_display);
+  } else if (software_renderer) {
+    g_message("MPV video plane: software GL renderer; not handing mpv the Wayland display for VAAPI interop");
   }
 #endif
 
