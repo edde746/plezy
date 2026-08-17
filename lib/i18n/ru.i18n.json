@@ -1436,7 +1436,12 @@
     "repeatAll": "Повторять все",
     "repeatOne": "Повторять один",
     "instantMixNoServer": "Нет доступного сервера для мгновенного микса",
-    "noAudioUrl": "Для трека ${track} нет доступного URL аудио"
+    "noAudioUrl": "Для трека ${track} нет доступного URL аудио",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Смотреть вместе",

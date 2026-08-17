@@ -1416,7 +1416,12 @@
     "repeatAll": "Gjenta alle",
     "repeatOne": "Gjenta ett spor",
     "instantMixNoServer": "Ingen server er tilgjengelig for en hurtigmiks",
-    "noAudioUrl": "Ingen lyd-URL er tilgjengelig for ${track}"
+    "noAudioUrl": "Ingen lyd-URL er tilgjengelig for ${track}",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Se sammen",

@@ -1406,7 +1406,12 @@
     "repeatAll": "全曲リピート",
     "repeatOne": "1曲リピート",
     "instantMixNoServer": "インスタントミックスに利用できるサーバーがありません",
-    "noAudioUrl": "${track}で利用可能な音声URLがありません"
+    "noAudioUrl": "${track}で利用可能な音声URLがありません",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "一緒に見る",

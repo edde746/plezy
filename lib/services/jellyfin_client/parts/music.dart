@@ -28,6 +28,16 @@ mixin _JellyfinMusicMethods on _JellyfinClientInternals {
     return _mapItems(_itemsArray(response.data));
   }
 
+  /// MediaBrowser `BaseItemDto`s carry no single/EP/live/compilation
+  /// taxonomy, so the discography is a single albums group — the neutral
+  /// contract's MediaBrowser-family shape.
+  @override
+  Future<List<ArtistDiscographyGroup>> fetchArtistDiscography(MediaItem artist) async {
+    final albums = await fetchArtistAlbums(artist);
+    if (albums.isEmpty) return const <ArtistDiscographyGroup>[];
+    return [ArtistDiscographyGroup(kind: DiscographyGroupKind.albums, items: albums)];
+  }
+
   /// Tracks of [albumId] in disc/track order. `AlbumIds` (not `ParentId`) so
   /// tag-based albums whose files share one physical folder still resolve;
   /// `ParentIndexNumber,IndexNumber` yields correct multi-disc ordering.

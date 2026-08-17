@@ -1406,7 +1406,12 @@
     "repeatAll": "全部重複播放",
     "repeatOne": "單曲重複播放",
     "instantMixNoServer": "沒有可用於即時混音的伺服器",
-    "noAudioUrl": "${track} 沒有可用的音訊 URL"
+    "noAudioUrl": "${track} 沒有可用的音訊 URL",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "一起看",

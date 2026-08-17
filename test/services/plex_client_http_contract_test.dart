@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/artist_discography.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -1064,6 +1065,191 @@ void main() {
 
     expect(requestedPaths, ['/library/metadata/artist-1', '/library/sections/7/all']);
     expect(albums.map((album) => album.id), ['album-1']);
+  });
+
+  test('fetchArtistDiscography fetches tags in one batch and classifies per album', () async {
+    const baseKey = '/library/metadata/artist-1/children';
+    final requests = <Uri>[];
+    final client = makeClient((request) async {
+      requests.add(request.url);
+      if (request.url.path == '/library/sections/7/all') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'librarySectionID': 7,
+              'size': 5,
+              'totalSize': 5,
+              'Metadata': [
+                for (final id in ['album-1', 'album-2', 'album-ep', 'album-live', 'album-comp'])
+                  {'ratingKey': id, 'type': 'album', 'title': id},
+              ],
+            },
+          }),
+          200,
+          headers: const {'content-type': 'application/json'},
+        );
+      }
+      // Batched by-id metadata request: the only response shape that carries
+      // Format/Subformat. `album-ep` is deliberately dual-tagged to pin the
+      // singles-over-live precedence, and tag casing is mixed to pin
+      // case-insensitive matching.
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'size': 5,
+            'Metadata': [
+              {'ratingKey': 'album-1', 'type': 'album', 'title': 'album-1'},
+              {'ratingKey': 'album-2', 'type': 'album', 'title': 'album-2'},
+              {
+                'ratingKey': 'album-ep',
+                'type': 'album',
+                'title': 'album-ep',
+                'Format': [
+                  {'tag': 'EP'},
+                ],
+                'Subformat': [
+                  {'tag': 'Live'},
+                ],
+              },
+              {
+                'ratingKey': 'album-live',
+                'type': 'album',
+                'title': 'album-live',
+                'Subformat': [
+                  {'tag': 'Live'},
+                ],
+              },
+              {
+                'ratingKey': 'album-comp',
+                'type': 'album',
+                'title': 'album-comp',
+                'Subformat': [
+                  {'tag': 'compilation'},
+                ],
+              },
+            ],
+          },
+        }),
+        200,
+        headers: const {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final groups = await client.fetchArtistDiscography(
+      testMediaItem(id: 'artist-1', kind: MediaKind.artist, libraryId: '7'),
+    );
+
+    // Exactly two requests: the unchanged album listing plus one batched
+    // by-id tag lookup with explicit container bounds.
+    expect(requests, hasLength(2));
+    expect(requests[0].path, '/library/sections/7/all');
+    expect(requests[0].queryParameters['type'], '9');
+    expect(requests[0].queryParameters['artist.id'], 'artist-1');
+    expect(requests[0].queryParameters['sort'], 'album.year:desc');
+    expect(Uri.decodeComponent(requests[1].path), '/library/metadata/album-1,album-2,album-ep,album-live,album-comp');
+    expect(requests[1].queryParameters['X-Plex-Container-Start'], '0');
+    expect(requests[1].queryParameters['X-Plex-Container-Size'], '5');
+
+    expect(groups.map((group) => group.kind), [
+      DiscographyGroupKind.albums,
+      DiscographyGroupKind.singlesAndEps,
+      DiscographyGroupKind.live,
+      DiscographyGroupKind.compilations,
+    ]);
+    expect(groups.map((group) => group.items.map((item) => item.id).toList()), [
+      ['album-1', 'album-2'],
+      ['album-ep'],
+      ['album-live'],
+      ['album-comp'],
+    ]);
+
+    // The listing keeps the fetchArtistAlbums cache identity; the tag batch
+    // gets its own row.
+    final cache = PlexApiCache.instance;
+    Future<List<String>> cachedRatingKeys(String key) async {
+      final cached = await cache.get(defaultProfileScopeId.cacheServerId, key);
+      final container = cached!['MediaContainer'] as Map<String, dynamic>;
+      return [
+        for (final item in container['Metadata'] as List<dynamic>)
+          (item as Map<String, dynamic>)['ratingKey'] as String,
+      ];
+    }
+
+    expect(await cachedRatingKeys(baseKey), ['album-1', 'album-2', 'album-ep', 'album-live', 'album-comp']);
+    expect(await cachedRatingKeys('/library/metadata/artist-1/discography-tags/0'), [
+      'album-1',
+      'album-2',
+      'album-ep',
+      'album-live',
+      'album-comp',
+    ]);
+  });
+
+  test('fetchArtistDiscography degrades to a flat albums group when the tag batch fails', () async {
+    final requests = <Uri>[];
+    final client = makeClient((request) async {
+      requests.add(request.url);
+      if (request.url.path != '/library/sections/7/all') {
+        return http.Response('boom', 500, headers: const {'content-type': 'application/json'});
+      }
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'librarySectionID': 7,
+            'size': 2,
+            'totalSize': 2,
+            'Metadata': [
+              {'ratingKey': 'album-1', 'type': 'album', 'title': 'Album 1'},
+              {'ratingKey': 'album-2', 'type': 'album', 'title': 'Album 2'},
+            ],
+          },
+        }),
+        200,
+        headers: const {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final groups = await client.fetchArtistDiscography(
+      testMediaItem(id: 'artist-1', kind: MediaKind.artist, libraryId: '7'),
+    );
+
+    expect(groups, hasLength(1));
+    expect(groups.single.kind, DiscographyGroupKind.albums);
+    expect(groups.single.items.map((item) => item.id), ['album-1', 'album-2']);
+  });
+
+  test('fetchArtistDiscography skips the tag batch for a single-album artist', () async {
+    final requests = <Uri>[];
+    final client = makeClient((request) async {
+      requests.add(request.url);
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'librarySectionID': 7,
+            'size': 1,
+            'totalSize': 1,
+            'Metadata': [
+              {'ratingKey': 'album-1', 'type': 'album', 'title': 'Album 1'},
+            ],
+          },
+        }),
+        200,
+        headers: const {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final groups = await client.fetchArtistDiscography(
+      testMediaItem(id: 'artist-1', kind: MediaKind.artist, libraryId: '7'),
+    );
+
+    // Grouping is invisible with one album, so no tag lookup is issued.
+    expect(requests, hasLength(1));
+    expect(requests.single.path, '/library/sections/7/all');
+    expect(groups.single.kind, DiscographyGroupKind.albums);
+    expect(groups.single.items.map((item) => item.id), ['album-1']);
   });
 
   test('profile transition isolates metadata and every direct cache-only bypass', () async {

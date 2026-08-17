@@ -1416,7 +1416,12 @@
     "repeatAll": "Повтаряне на всички",
     "repeatOne": "Повтаряне на една",
     "instantMixNoServer": "Няма наличен сървър за незабавен микс",
-    "noAudioUrl": "Няма наличен URL за аудиото на ${track}"
+    "noAudioUrl": "Няма наличен URL за аудиото на ${track}",
+    "discography": {
+      "singlesAndEps": "",
+      "live": "",
+      "compilations": ""
+    }
   },
   "watchTogether": {
     "title": "Гледане заедно",

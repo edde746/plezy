@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
+import '../media/artist_discography.dart';
 import '../media/download_resolution.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
@@ -3387,6 +3388,65 @@ class PlexClient
       parseResponse: (response) => _extractMetadataList(response),
     );
     return (metadata ?? const <PlexMetadataDto>[]).map((item) => PlexMappers.mediaItem(item)).toList();
+  }
+
+  /// Grouped discography for [artist]: albums, singles & EPs, live, and
+  /// compilations. Plex listing rows never carry `Format`/`Subformat` tags
+  /// (even with `resolveTags=1`), so the album list is followed by one
+  /// batched `/library/metadata/{ids}` detail request, whose rows do include
+  /// them; each album is then classified individually. A failed tag fetch
+  /// degrades to the flat albums list rather than sinking the screen.
+  @override
+  Future<List<ArtistDiscographyGroup>> fetchArtistDiscography(MediaItem artist) async {
+    final albums = await fetchArtistAlbums(artist);
+    // With one album at most, grouping is invisible (a single section renders
+    // as the flat grid), so the tag lookup is pure overhead.
+    if (albums.length <= 1) {
+      return [if (albums.isNotEmpty) ArtistDiscographyGroup(kind: DiscographyGroupKind.albums, items: albums)];
+    }
+
+    final Map<String, DiscographyGroupKind> kinds;
+    try {
+      kinds = await _fetchDiscographyKinds(artist.id, [for (final album in albums) album.id]);
+    } catch (e) {
+      appLogger.w('Discography tag fetch failed for artist ${artist.id}, degrading to a flat albums list', error: e);
+      return [ArtistDiscographyGroup(kind: DiscographyGroupKind.albums, items: albums)];
+    }
+    return buildArtistDiscographyGroups(albums, (album) => kinds[album.id] ?? DiscographyGroupKind.albums);
+  }
+
+  /// Ids per batched `/library/metadata/{ids}` request. Plex ids are short,
+  /// so 100 keeps the URL well under proxy limits.
+  static const _discographyTagChunkSize = 100;
+
+  /// Fetches `Format`/`Subformat` tags for [albumIds] via batched by-id
+  /// metadata requests and classifies each album. Explicit container bounds
+  /// defeat any server-side default page cap; a missing row simply leaves
+  /// that album in the default section.
+  Future<Map<String, DiscographyGroupKind>> _fetchDiscographyKinds(String artistId, List<String> albumIds) async {
+    final chunks = [
+      for (var i = 0; i < albumIds.length; i += _discographyTagChunkSize)
+        albumIds.sublist(
+          i,
+          i + _discographyTagChunkSize > albumIds.length ? albumIds.length : i + _discographyTagChunkSize,
+        ),
+    ];
+    final results = await Future.wait([
+      for (final (index, chunk) in chunks.indexed)
+        fetchWithCacheFallback<List<PlexMetadataDto>>(
+          cacheKey: '/library/metadata/$artistId/discography-tags/$index',
+          networkCall: () => _http.get(
+            '/library/metadata/${chunk.join(',')}',
+            queryParameters: {'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': chunk.length},
+          ),
+          parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
+          parseResponse: (response) => _extractMetadataList(response),
+        ),
+    ]);
+    return {
+      for (final metadata in results)
+        for (final dto in metadata ?? const <PlexMetadataDto>[]) dto.ratingKey: PlexMappers.discographyKind(dto),
+    };
   }
 
   @override

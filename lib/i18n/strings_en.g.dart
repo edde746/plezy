@@ -3696,6 +3696,8 @@ class Translations$music$en {
 
 	/// en: 'No audio URL is available for ${track}'
 	String noAudioUrl({required Object track}) => 'No audio URL is available for ${track}';
+
+	late final Translations$music$discography$en discography = Translations$music$discography$en.internal(_root);
 }
 
 // Path: watchTogether
@@ -5955,6 +5957,24 @@ class Translations$explore$detail$en {
 	String get background => 'Background';
 }
 
+// Path: music.discography
+class Translations$music$discography$en {
+	Translations$music$discography$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Singles & EPs'
+	String get singlesAndEps => 'Singles & EPs';
+
+	/// en: 'Live'
+	String get live => 'Live';
+
+	/// en: 'Compilations'
+	String get compilations => 'Compilations';
+}
+
 // Path: downloads.backgroundWarning
 class Translations$downloads$backgroundWarning$en {
 	Translations$downloads$backgroundWarning$en.internal(this._root);
@@ -7684,6 +7704,9 @@ extension on Translations {
 			'music.repeatOne' => 'Repeat one',
 			'music.instantMixNoServer' => 'No server is available for an instant mix',
 			'music.noAudioUrl' => ({required Object track}) => 'No audio URL is available for ${track}',
+			'music.discography.singlesAndEps' => 'Singles & EPs',
+			'music.discography.live' => 'Live',
+			'music.discography.compilations' => 'Compilations',
 			'watchTogether.title' => 'Watch Together',
 			'watchTogether.description' => 'Watch content in sync with friends and family',
 			'watchTogether.createSession' => 'Create Session',
@@ -7935,11 +7958,11 @@ extension on Translations {
 			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Failed to start remote server: ${error}',
 			'companionRemote.errors.commandFailed' => ({required Object error}) => 'Failed to send remote command: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.joinTimedOut' => 'Timed out joining session',
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Failed to connect to any address',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.connectionLost' => 'Connection lost',
 			'companionRemote.closedBeforeAuth' => 'The connection closed before authentication',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
