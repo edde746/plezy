@@ -291,7 +291,6 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                               child: ContentStrip(
                                 player: widget.player,
                                 chapters: widget.chapters,
-                                chaptersLoaded: widget.chaptersLoaded,
                                 canControl: widget.canControl,
                                 serverId: widget.serverId,
                                 showQueueTab: widget.showQueueTab,

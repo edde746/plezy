@@ -78,8 +78,8 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<AdjacentEpisodes> _loadAdjacentEpisodes({MediaItem? metadata, _PlaybackAttempt? attempt}) async {
-    if (!mounted || widget.isLive) return const AdjacentEpisodes.unavailable();
+  Future<void> _loadAdjacentEpisodes({MediaItem? metadata, _PlaybackAttempt? attempt}) async {
+    if (!mounted || widget.isLive) return;
 
     final targetMetadata = metadata ?? _currentMetadata;
     try {
@@ -94,12 +94,9 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
               playedPartId: _currentMediaInfo?.partId?.toString(),
             );
       _commitAdjacentEpisodes(targetMetadata, adjacentEpisodes, attempt);
-      return adjacentEpisodes;
     } catch (e, st) {
       appLogger.w('Could not load adjacent episodes', error: e, stackTrace: st);
-      const failed = AdjacentEpisodes.failed();
-      _commitAdjacentEpisodes(targetMetadata, failed, attempt);
-      return failed;
+      _commitAdjacentEpisodes(targetMetadata, const AdjacentEpisodes.failed(), attempt);
     }
   }
 

@@ -37,8 +37,6 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
     final canControlPlayback = _canControlPlayback();
     final canNavigateMediaItems = _canNavigateMediaItems();
 
-    if (!mounted || currentPlayer != player || manager != _mediaControlsManager) return;
-
     await manager.setControlsEnabled(
       canPlayPause: canControlPlayback,
       canGoNext: hasNavigableItems && canNavigateMediaItems,

@@ -67,13 +67,12 @@ PlayNextRetryPresentation playNextRetryPresentation({
   required bool autoPlayEnabled,
   required bool inWatchTogetherSession,
   required int autoRetriesUsed,
-  int maxAutoRetries = maxPlayNextTransientRetries,
 }) {
   if (!wasAtCompletion || !hasNext) return PlayNextRetryPresentation.none;
   if (failureReason != PlaybackFailureReason.serverUnavailable) {
     return PlayNextRetryPresentation.none;
   }
-  final autoRetry = autoPlayEnabled && !inWatchTogetherSession && autoRetriesUsed < maxAutoRetries;
+  final autoRetry = autoPlayEnabled && !inWatchTogetherSession && autoRetriesUsed < maxPlayNextTransientRetries;
   return autoRetry ? PlayNextRetryPresentation.countdown : PlayNextRetryPresentation.manual;
 }
 
@@ -93,20 +92,10 @@ EofSignalClass classifyEofSignal({
   required int positionMs,
   required int playerDurationMs,
   required int? metadataDurationMs,
-  int toleranceMs = spuriousEofToleranceMs,
 }) {
   final effectiveDurationMs = math.max(playerDurationMs, metadataDurationMs ?? 0);
   if (effectiveDurationMs <= 0) return EofSignalClass.unknown;
-  return positionMs >= effectiveDurationMs - toleranceMs ? EofSignalClass.genuine : EofSignalClass.spurious;
-}
-
-/// What a position tick means for the end-of-video prompt flow.
-enum CompletionLatchSignal {
-  /// Nothing to do.
-  none,
-
-  /// Playback moved back out of the end region and the latch re-armed.
-  rearmed,
+  return positionMs >= effectiveDurationMs - spuriousEofToleranceMs ? EofSignalClass.genuine : EofSignalClass.spurious;
 }
 
 /// End-of-video latch with rearm hysteresis for the Play Next / completion
@@ -147,19 +136,18 @@ class CompletionLatch {
     if (_triggered && !promptVisible && !countdownActive) _triggered = false;
   }
 
-  /// Classify a position tick against the trigger/rearm windows.
-  CompletionLatchSignal classifyPosition({
+  /// Classify a position tick against the trigger/rearm windows, re-arming
+  /// the latch once playback moves back out past [rearmWindowMs] from the
+  /// end (and no prompt or countdown owns the screen).
+  void classifyPosition({
     required int positionMs,
     required int durationMs,
     required bool promptVisible,
     required bool countdownActive,
   }) {
-    if (durationMs <= 0) return CompletionLatchSignal.none;
+    if (durationMs <= 0) return;
     if (positionMs < durationMs - rearmWindowMs) {
-      final wasLatched = _triggered;
       rearmIfClear(promptVisible: promptVisible, countdownActive: countdownActive);
-      if (wasLatched && !_triggered) return CompletionLatchSignal.rearmed;
     }
-    return CompletionLatchSignal.none;
   }
 }

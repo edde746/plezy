@@ -38,19 +38,7 @@ import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 import 'version_quality_sheet.dart';
 
-enum _SettingsView {
-  menu,
-  speed,
-  zoom,
-  versionQuality,
-  sleep,
-  audioSync,
-  subtitleSync,
-  audioDevice,
-  shader,
-  dvConversion,
-  hdrToneMapping,
-}
+enum _SettingsView { menu, speed, zoom, versionQuality, sleep, audioDevice, shader, dvConversion, hdrToneMapping }
 
 class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
@@ -509,22 +497,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   void _navigateTo(_SettingsView view) {
-    // Sync views open as a compact top bar instead of a sub-view
-    if (view == _SettingsView.audioSync || view == _SettingsView.subtitleSync) {
-      _openSyncBar(view);
-      return;
-    }
     setState(() {
       _currentView = view;
     });
     OverlaySheetController.maybeOf(context)?.refocus();
   }
 
-  void _openSyncBar(_SettingsView view) {
+  // Sync adjustments open as a compact top bar instead of a sub-view.
+  void _openSyncBar({required bool isSubtitle}) {
     final controller = OverlaySheetController.maybeOf(context);
     if (controller == null) return;
 
-    final isSubtitle = view == _SettingsView.subtitleSync;
     final title = isSubtitle ? t.videoSettings.subtitleSync : t.videoSettings.audioSync;
     final icon = isSubtitle ? Symbols.subtitles_rounded : Symbols.sync_rounded;
     final propertyName = isSubtitle ? 'sub-delay' : 'audio-delay';
@@ -592,10 +575,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return _versionQualityTitle();
       case _SettingsView.sleep:
         return t.videoSettings.sleepTimer;
-      case _SettingsView.audioSync:
-        return t.videoSettings.audioSync;
-      case _SettingsView.subtitleSync:
-        return t.videoSettings.subtitleSync;
       case _SettingsView.audioDevice:
         return t.videoSettings.audioOutput;
       case _SettingsView.shader:
@@ -619,10 +598,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.art_track_rounded;
       case _SettingsView.sleep:
         return Symbols.bedtime_rounded;
-      case _SettingsView.audioSync:
-        return Symbols.sync_rounded;
-      case _SettingsView.subtitleSync:
-        return Symbols.subtitles_rounded;
       case _SettingsView.audioDevice:
         return Symbols.speaker_rounded;
       case _SettingsView.shader:
@@ -774,7 +749,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           title: t.videoSettings.audioSync,
           valueText: formatSyncOffset(_audioSyncOffset.toDouble()),
           isHighlighted: _audioSyncOffset != 0,
-          onTap: () => _navigateTo(_SettingsView.audioSync),
+          onTap: () => _openSyncBar(isSubtitle: false),
         ),
 
         _SettingsMenuItem(
@@ -782,7 +757,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           title: t.videoSettings.subtitleSync,
           valueText: formatSyncOffset(_subtitleSyncOffset.toDouble()),
           isHighlighted: _subtitleSyncOffset != 0,
-          onTap: () => _navigateTo(_SettingsView.subtitleSync),
+          onTap: () => _openSyncBar(isSubtitle: true),
         ),
 
         if (_supportsHdrControl)
@@ -1375,9 +1350,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildVersionQualityView();
           case _SettingsView.sleep:
             return _buildSleepView();
-          case _SettingsView.audioSync:
-          case _SettingsView.subtitleSync:
-            return _buildMenuView(); // Sync views open as top bars, fallback to menu
           case _SettingsView.audioDevice:
             return _buildAudioDeviceView();
           case _SettingsView.shader:

@@ -26,8 +26,9 @@ class _FrameRateStartupPlan {
 
   /// Whether the pre-open negotiation already counts as the per-item
   /// switch — keeps the post-first-frame fallback from double-switching
-  /// while a planned follow-up is still pending.
-  bool get countsAsApplied => didPreLoadSwitch || attemptedMpvPreLoad || preOpenExoHandled;
+  /// while a planned follow-up is still pending. A successful mpv pre-load
+  /// switch always implies [attemptedMpvPreLoad].
+  bool get countsAsApplied => attemptedMpvPreLoad || preOpenExoHandled;
 
   /// Subscribe to the first rendered frame *before* open() so the startup
   /// decoder refresh can't miss a synchronously-fast restart event.

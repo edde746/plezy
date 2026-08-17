@@ -628,7 +628,6 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       key: _contentStripKey,
                       player: widget.player,
                       chapters: widget.chapters,
-                      chaptersLoaded: widget.chaptersLoaded,
                       serverId: widget.serverId,
                       canControl: _canControl,
                       showQueueTab: widget.showQueueTab,

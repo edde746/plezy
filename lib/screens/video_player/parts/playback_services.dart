@@ -180,8 +180,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         promptVisible: _showPlayNextDialog,
         countdownActive: _autoPlayTimer?.isActive == true,
       );
-      // CompletionLatchSignal.rearmed needs no action here: the latch
-      // re-armed itself once playback seeked back out of the end region.
     });
   }
 

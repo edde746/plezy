@@ -54,12 +54,10 @@ class PerformanceStats {
   final String dvConversionMode;
   final int? dvConvertedRpus;
   final int? dvRpuConversionFailures;
-  final int? dvRpuOutputTooSmall;
   final int? dvAvgRpuConversionUs;
   final int? dvAvgSampleProcessingUs;
   final int? dvSourceProfile;
   final String? dvPlaybackPath;
-  final String? dvPlaybackReason;
 
   final int? appMemoryBytes;
   final double? uiFps;
@@ -106,12 +104,10 @@ class PerformanceStats {
     this.dvConversionMode = '',
     this.dvConvertedRpus,
     this.dvRpuConversionFailures,
-    this.dvRpuOutputTooSmall,
     this.dvAvgRpuConversionUs,
     this.dvAvgSampleProcessingUs,
     this.dvSourceProfile,
     this.dvPlaybackPath,
-    this.dvPlaybackReason,
     this.appMemoryBytes,
     this.uiFps,
   });
@@ -159,12 +155,10 @@ class PerformanceStats {
       dvConversionMode = '',
       dvConvertedRpus = null,
       dvRpuConversionFailures = null,
-      dvRpuOutputTooSmall = null,
       dvAvgRpuConversionUs = null,
       dvAvgSampleProcessingUs = null,
       dvSourceProfile = null,
       dvPlaybackPath = null,
-      dvPlaybackReason = null,
       appMemoryBytes = null,
       uiFps = null;
 

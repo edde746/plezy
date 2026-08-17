@@ -356,7 +356,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
                     ? 0
                     : newSubtitleChoice.sourceStreamId
               : null,
-          allParts: true,
         );
         if (!saved) {
           throw PlaybackException(t.messages.streamSelectionFailed);

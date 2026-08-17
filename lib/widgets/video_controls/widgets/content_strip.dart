@@ -32,7 +32,6 @@ import 'media_selector_thumbnail.dart';
 class ContentStrip extends StatefulWidget {
   final Player player;
   final List<MediaChapter> chapters;
-  final bool chaptersLoaded;
   final bool canControl;
   final String? serverId;
   final bool showQueueTab;
@@ -54,7 +53,6 @@ class ContentStrip extends StatefulWidget {
     super.key,
     required this.player,
     required this.chapters,
-    required this.chaptersLoaded,
     required this.canControl,
     this.serverId,
     this.showQueueTab = false,
