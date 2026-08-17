@@ -2858,6 +2858,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Future<void> _playFirstEpisode() async {
+    // Loading seasons and resolving the first episode cost network round
+    // trips; show the shared scoped loading dialog so Play gives immediate
+    // feedback. The offline branch reads local state only and needs none.
+    final loadingDialog = ScopedLoadingDialogController();
+    if (!widget.isOffline && mounted) {
+      loadingDialog.show(context, builder: (_) => const Center(child: CircularProgressIndicator()));
+    }
     try {
       // If seasons aren't loaded yet, wait for them or load them
       if (_seasons.isEmpty && !_isLoadingSeasons) {
@@ -2912,6 +2919,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return;
       }
 
+      // Hide the spinner before pushing the player so the pop cannot land on
+      // the player route.
+      await loadingDialog.dismiss();
+
       // Play the first episode
       // Preserve serverId for the episode
       final episodeWithServerId = firstEpisode.copyWith(
@@ -2933,6 +2944,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (mounted) {
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
+    } finally {
+      await loadingDialog.dismiss();
     }
   }
 

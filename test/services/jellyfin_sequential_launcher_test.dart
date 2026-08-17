@@ -112,6 +112,16 @@ class _RecordingJellyfinClient implements JellyfinClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// Playlist fetch that fails before the loading dialog's first frame,
+/// exercising `executeWithLoading`'s early-failure path.
+class _ThrowingJellyfinClient extends _RecordingJellyfinClient {
+  @override
+  Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
+    fetchPlaylistItemsCalls.add((id: id, offset: start ?? 0, limit: size ?? fakeMediaPageSize));
+    throw Exception('connection refused');
+  }
+}
+
 MediaItem _ep(String id, {ServerId? serverId}) => testMediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
@@ -724,6 +734,78 @@ void main() {
       expect(result, isA<PlayQueueEmpty>());
       expect(playback.isQueueActive, isFalse);
       expect(didNavigate, isFalse);
+    });
+
+    testWidgets('fetch starts before the loading dialog first frame renders', (tester) async {
+      final ctx = await pumpContext(tester);
+      final gate = Completer<void>();
+      final fakeClient = _RecordingJellyfinClient(playlistItemsResponse: [_ep('a'), _ep('b')], playlistPageGate: gate);
+      final playback = PlaybackStateProvider();
+      var didNavigate = false;
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {
+          didNavigate = true;
+        },
+      );
+      const playlist = MediaPlaylist(
+        id: 'pl-early-fetch',
+        backend: MediaBackend.jellyfin,
+        title: 'Early fetch',
+        playlistType: 'video',
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchFromCollectionOrPlaylist(item: playlist, shuffle: false);
+
+      // No frame has been pumped, so the dialog has not built yet — but the
+      // network operation must already be in flight.
+      expect(fakeClient.fetchPlaylistItemsCalls, hasLength(1));
+      expect(find.byType(DialogActionButton), findsNothing);
+
+      gate.complete();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(await resultFuture, isA<PlayQueueSuccess>());
+      expect(didNavigate, isTrue);
+      expect(find.byType(DialogActionButton), findsNothing);
+    });
+
+    testWidgets('operation failure before the dialog first frame still dismisses the dialog', (tester) async {
+      final ctx = await pumpContext(tester);
+      final fakeClient = _ThrowingJellyfinClient();
+      final playback = PlaybackStateProvider();
+      var didNavigate = false;
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {
+          didNavigate = true;
+        },
+      );
+      const playlist = MediaPlaylist(
+        id: 'pl-early-error',
+        backend: MediaBackend.jellyfin,
+        title: 'Early error',
+        playlistType: 'video',
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchFromCollectionOrPlaylist(item: playlist, shuffle: false);
+      // The failure lands before the dialog's first frame; it must not
+      // surface as an unhandled error, and the dialog must still come down.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(await resultFuture, isA<PlayQueueError>());
+      expect(didNavigate, isFalse);
+      expect(playback.isQueueActive, isFalse);
+      expect(find.byType(DialogActionButton), findsNothing);
+      expect(find.byType(SnackBar), findsOneWidget);
     });
 
     testWidgets('dialog Cancel aborts playlist launch idempotently without queue or snackbar', (tester) async {
