@@ -141,7 +141,15 @@ abstract class ApiCache {
   Future<void> put(ServerId serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
     final encoded = await tryIsolateRun(() => jsonEncode(data));
-    await _db.into(_db.apiCache).insertOnConflictUpdate(ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded)));
+    // The explicit stamp matters: on conflict the upsert only updates the
+    // companion's columns, so relying on the column default would leave a
+    // refreshed row carrying its original write time and [getIfFresh] would
+    // treat just-refetched data as stale.
+    await _db
+        .into(_db.apiCache)
+        .insertOnConflictUpdate(
+          ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())),
+        );
   }
 
   Future<void> deleteForServer(ServerId serverId) async {

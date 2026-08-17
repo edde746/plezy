@@ -926,7 +926,7 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
-      test('v21 migration drops connections.is_default and api_cache.cached_at without losing rows', () async {
+      test('v21 migration drops connections.is_default without touching api_cache.cached_at', () async {
         await db.close();
         final tempDir = await Directory.systemTemp.createTemp('plezy_db_v21_migration_test_');
         final file = File('${tempDir.path}/plezy_downloads.db');
@@ -947,12 +947,11 @@ class _AppDatabaseTestSuite {
                   createdAt: 1000,
                 ),
               );
-          await seeded.customStatement('INSERT INTO api_cache (cache_key, data, pinned) VALUES (?, ?, 1)', [
-            'srv:/library/metadata/1',
-            '{}',
-          ]);
+          await seeded.customStatement(
+            'INSERT INTO api_cache (cache_key, data, pinned, cached_at) VALUES (?, ?, 1, 12345)',
+            ['srv:/library/metadata/1', '{}'],
+          );
           await seeded.customStatement('ALTER TABLE connections ADD COLUMN is_default INTEGER NOT NULL DEFAULT 1');
-          await seeded.customStatement('ALTER TABLE api_cache ADD COLUMN cached_at INTEGER NOT NULL DEFAULT 0');
           await seeded.customStatement('PRAGMA user_version = 20');
           await seeded.close();
           seeded = null;
@@ -965,7 +964,9 @@ class _AppDatabaseTestSuite {
               .map((row) => row.read<String>('name'))
               .toSet();
           expect(connectionColumns, isNot(contains('is_default')));
-          expect(cacheColumns, isNot(contains('cached_at')));
+          // cached_at is load-bearing (ApiCacheSingleton.getIfFresh); the
+          // migration must leave it, and its values, alone.
+          expect(cacheColumns, contains('cached_at'));
 
           final connection = await reopened.select(reopened.connections).getSingle();
           expect(connection.id, 'c1');
@@ -973,6 +974,7 @@ class _AppDatabaseTestSuite {
           final cacheRow = await reopened.select(reopened.apiCache).getSingle();
           expect(cacheRow.cacheKey, 'srv:/library/metadata/1');
           expect(cacheRow.pinned, isTrue);
+          expect(cacheRow.cachedAt.millisecondsSinceEpoch ~/ 1000, 12345);
 
           // The drift table recreation must restore the kind index.
           final indexRows = await reopened

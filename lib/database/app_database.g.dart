@@ -2023,6 +2023,18 @@ class $ApiCacheTable extends ApiCache
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta(
+    'cachedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+    'cached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
   static const VerificationMeta _pinnedMeta = const VerificationMeta('pinned');
   @override
   late final GeneratedColumn<bool> pinned = GeneratedColumn<bool>(
@@ -2037,7 +2049,7 @@ class $ApiCacheTable extends ApiCache
     defaultValue: const Constant(false),
   );
   @override
-  List<GeneratedColumn> get $columns => [cacheKey, data, pinned];
+  List<GeneratedColumn> get $columns => [cacheKey, data, cachedAt, pinned];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2066,6 +2078,12 @@ class $ApiCacheTable extends ApiCache
     } else if (isInserting) {
       context.missing(_dataMeta);
     }
+    if (data.containsKey('cached_at')) {
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
+      );
+    }
     if (data.containsKey('pinned')) {
       context.handle(
         _pinnedMeta,
@@ -2089,6 +2107,10 @@ class $ApiCacheTable extends ApiCache
         DriftSqlType.string,
         data['${effectivePrefix}data'],
       )!,
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      )!,
       pinned: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}pinned'],
@@ -2108,11 +2130,17 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
   final String cacheKey;
   final String data;
 
+  /// When the row was last written ([ApiCacheSingleton.put] stamps it on
+  /// every store). Read by the fresh-cache-first playback metadata gate,
+  /// [ApiCacheSingleton.getIfFresh].
+  final DateTime cachedAt;
+
   /// Whether this item is pinned for offline access
   final bool pinned;
   const ApiCacheData({
     required this.cacheKey,
     required this.data,
+    required this.cachedAt,
     required this.pinned,
   });
   @override
@@ -2120,6 +2148,7 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
     final map = <String, Expression>{};
     map['cache_key'] = Variable<String>(cacheKey);
     map['data'] = Variable<String>(data);
+    map['cached_at'] = Variable<DateTime>(cachedAt);
     map['pinned'] = Variable<bool>(pinned);
     return map;
   }
@@ -2128,6 +2157,7 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
     return ApiCacheCompanion(
       cacheKey: Value(cacheKey),
       data: Value(data),
+      cachedAt: Value(cachedAt),
       pinned: Value(pinned),
     );
   }
@@ -2140,6 +2170,7 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
     return ApiCacheData(
       cacheKey: serializer.fromJson<String>(json['cacheKey']),
       data: serializer.fromJson<String>(json['data']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
       pinned: serializer.fromJson<bool>(json['pinned']),
     );
   }
@@ -2149,20 +2180,27 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
     return <String, dynamic>{
       'cacheKey': serializer.toJson<String>(cacheKey),
       'data': serializer.toJson<String>(data),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
       'pinned': serializer.toJson<bool>(pinned),
     };
   }
 
-  ApiCacheData copyWith({String? cacheKey, String? data, bool? pinned}) =>
-      ApiCacheData(
-        cacheKey: cacheKey ?? this.cacheKey,
-        data: data ?? this.data,
-        pinned: pinned ?? this.pinned,
-      );
+  ApiCacheData copyWith({
+    String? cacheKey,
+    String? data,
+    DateTime? cachedAt,
+    bool? pinned,
+  }) => ApiCacheData(
+    cacheKey: cacheKey ?? this.cacheKey,
+    data: data ?? this.data,
+    cachedAt: cachedAt ?? this.cachedAt,
+    pinned: pinned ?? this.pinned,
+  );
   ApiCacheData copyWithCompanion(ApiCacheCompanion data) {
     return ApiCacheData(
       cacheKey: data.cacheKey.present ? data.cacheKey.value : this.cacheKey,
       data: data.data.present ? data.data.value : this.data,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
       pinned: data.pinned.present ? data.pinned.value : this.pinned,
     );
   }
@@ -2172,36 +2210,41 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
     return (StringBuffer('ApiCacheData(')
           ..write('cacheKey: $cacheKey, ')
           ..write('data: $data, ')
+          ..write('cachedAt: $cachedAt, ')
           ..write('pinned: $pinned')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(cacheKey, data, pinned);
+  int get hashCode => Object.hash(cacheKey, data, cachedAt, pinned);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is ApiCacheData &&
           other.cacheKey == this.cacheKey &&
           other.data == this.data &&
+          other.cachedAt == this.cachedAt &&
           other.pinned == this.pinned);
 }
 
 class ApiCacheCompanion extends UpdateCompanion<ApiCacheData> {
   final Value<String> cacheKey;
   final Value<String> data;
+  final Value<DateTime> cachedAt;
   final Value<bool> pinned;
   final Value<int> rowid;
   const ApiCacheCompanion({
     this.cacheKey = const Value.absent(),
     this.data = const Value.absent(),
+    this.cachedAt = const Value.absent(),
     this.pinned = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   ApiCacheCompanion.insert({
     required String cacheKey,
     required String data,
+    this.cachedAt = const Value.absent(),
     this.pinned = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : cacheKey = Value(cacheKey),
@@ -2209,12 +2252,14 @@ class ApiCacheCompanion extends UpdateCompanion<ApiCacheData> {
   static Insertable<ApiCacheData> custom({
     Expression<String>? cacheKey,
     Expression<String>? data,
+    Expression<DateTime>? cachedAt,
     Expression<bool>? pinned,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (cacheKey != null) 'cache_key': cacheKey,
       if (data != null) 'data': data,
+      if (cachedAt != null) 'cached_at': cachedAt,
       if (pinned != null) 'pinned': pinned,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2223,12 +2268,14 @@ class ApiCacheCompanion extends UpdateCompanion<ApiCacheData> {
   ApiCacheCompanion copyWith({
     Value<String>? cacheKey,
     Value<String>? data,
+    Value<DateTime>? cachedAt,
     Value<bool>? pinned,
     Value<int>? rowid,
   }) {
     return ApiCacheCompanion(
       cacheKey: cacheKey ?? this.cacheKey,
       data: data ?? this.data,
+      cachedAt: cachedAt ?? this.cachedAt,
       pinned: pinned ?? this.pinned,
       rowid: rowid ?? this.rowid,
     );
@@ -2242,6 +2289,9 @@ class ApiCacheCompanion extends UpdateCompanion<ApiCacheData> {
     }
     if (data.present) {
       map['data'] = Variable<String>(data.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
     }
     if (pinned.present) {
       map['pinned'] = Variable<bool>(pinned.value);
@@ -2257,6 +2307,7 @@ class ApiCacheCompanion extends UpdateCompanion<ApiCacheData> {
     return (StringBuffer('ApiCacheCompanion(')
           ..write('cacheKey: $cacheKey, ')
           ..write('data: $data, ')
+          ..write('cachedAt: $cachedAt, ')
           ..write('pinned: $pinned, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -6808,6 +6859,7 @@ typedef $$ApiCacheTableCreateCompanionBuilder =
     ApiCacheCompanion Function({
       required String cacheKey,
       required String data,
+      Value<DateTime> cachedAt,
       Value<bool> pinned,
       Value<int> rowid,
     });
@@ -6815,6 +6867,7 @@ typedef $$ApiCacheTableUpdateCompanionBuilder =
     ApiCacheCompanion Function({
       Value<String> cacheKey,
       Value<String> data,
+      Value<DateTime> cachedAt,
       Value<bool> pinned,
       Value<int> rowid,
     });
@@ -6835,6 +6888,11 @@ class $$ApiCacheTableFilterComposer
 
   ColumnFilters<String> get data => $composableBuilder(
     column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6863,6 +6921,11 @@ class $$ApiCacheTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get pinned => $composableBuilder(
     column: $table.pinned,
     builder: (column) => ColumnOrderings(column),
@@ -6883,6 +6946,9 @@ class $$ApiCacheTableAnnotationComposer
 
   GeneratedColumn<String> get data =>
       $composableBuilder(column: $table.data, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
 
   GeneratedColumn<bool> get pinned =>
       $composableBuilder(column: $table.pinned, builder: (column) => column);
@@ -6921,11 +6987,13 @@ class $$ApiCacheTableTableManager
               ({
                 Value<String> cacheKey = const Value.absent(),
                 Value<String> data = const Value.absent(),
+                Value<DateTime> cachedAt = const Value.absent(),
                 Value<bool> pinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ApiCacheCompanion(
                 cacheKey: cacheKey,
                 data: data,
+                cachedAt: cachedAt,
                 pinned: pinned,
                 rowid: rowid,
               ),
@@ -6933,11 +7001,13 @@ class $$ApiCacheTableTableManager
               ({
                 required String cacheKey,
                 required String data,
+                Value<DateTime> cachedAt = const Value.absent(),
                 Value<bool> pinned = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ApiCacheCompanion.insert(
                 cacheKey: cacheKey,
                 data: data,
+                cachedAt: cachedAt,
                 pinned: pinned,
                 rowid: rowid,
               ),

@@ -9,6 +9,11 @@ class ApiCache extends Table {
 
   TextColumn get data => text()();
 
+  /// When the row was last written ([ApiCacheSingleton.put] stamps it on
+  /// every store). Read by the fresh-cache-first playback metadata gate,
+  /// [ApiCacheSingleton.getIfFresh].
+  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
+
   /// Whether this item is pinned for offline access
   BoolColumn get pinned => boolean().withDefault(const Constant(false))();
 

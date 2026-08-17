@@ -732,9 +732,8 @@ class AppDatabase extends _$AppDatabase {
           );
         }
         if (from < 21) {
-          appLogger.i('Dropping unused Connections.isDefault and ApiCache.cachedAt columns (v21 migration)');
+          appLogger.i('Dropping unused Connections.isDefault column (v21 migration)');
           await m.alterTable(TableMigration(connections));
-          await m.alterTable(TableMigration(apiCache));
         }
       },
     );
@@ -1324,13 +1323,14 @@ String _rescopePinnedPlexMetadataStatement({
     WHERE grandparent_rating_key IS NOT NULL
       AND grandparent_rating_key != ''
   )
-  INSERT INTO api_cache (cache_key, data, pinned)
+  INSERT INTO api_cache (cache_key, data, pinned, cached_at)
   SELECT DISTINCT
     metadata.server_id
       || $namespaceExpression
       || substr(source.cache_key, length(metadata.server_id) + 2),
     source.data,
-    source.pinned
+    source.pinned,
+    source.cached_at
   FROM download_metadata_ids AS metadata
   $ownerJoin
   JOIN api_cache AS source
@@ -1342,7 +1342,8 @@ String _rescopePinnedPlexMetadataStatement({
     $ownerFilter
   ON CONFLICT(cache_key) DO UPDATE SET
     data = excluded.data,
-    pinned = excluded.pinned
+    pinned = excluded.pinned,
+    cached_at = excluded.cached_at
 ''';
 
 Future<File> _resolveProductionDatabaseFile() async {
