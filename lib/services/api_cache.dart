@@ -127,6 +127,17 @@ abstract class ApiCache {
     return null;
   }
 
+  /// Like [get], but serves the row only when it was written within [maxAge]
+  /// of now; missing or older rows return null. Freshness gate for callers
+  /// that use the cache as a latency optimization (skip a redundant network
+  /// round trip) rather than as an offline fallback.
+  Future<Map<String, dynamic>?> getIfFresh(ServerId serverId, String endpoint, {required Duration maxAge}) async {
+    final key = _buildKey(serverId, endpoint);
+    final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
+    if (result == null || DateTime.now().difference(result.cachedAt) > maxAge) return null;
+    return await tryIsolateRun(() => jsonDecode(result.data) as Map<String, dynamic>);
+  }
+
   Future<void> put(ServerId serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
     final encoded = await tryIsolateRun(() => jsonEncode(data));

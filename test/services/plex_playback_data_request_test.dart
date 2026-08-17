@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:plezy/media/ids.dart';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -9,6 +10,7 @@ import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
@@ -253,6 +255,130 @@ void main() {
     expect(data.mediaInfo?.subtitleTracks, hasLength(1));
     expect(data.mediaInfo?.subtitleTracks.single.id, 401);
     expect(data.mediaInfo?.subtitleTracks.single.selected, isTrue);
+  });
+
+  group('fresh-cache-first playback metadata', () {
+    // Same scope [PlexClient.getVideoPlaybackData] resolves via
+    // `ServerId(cacheServerId)` — the fixture's default profile scope.
+    final cacheScope = buildPlexProfileScopeId(
+      serverId: ServerId('server-id'),
+      profileId: 'test-profile',
+    ).cacheServerId;
+    const endpoint = '/library/metadata/42';
+
+    // The shape the detail screen caches: includeStreams + checkFiles keys
+    // (`Stream`/`exists`/`accessible`) present on the part.
+    Map<String, dynamic> richPlaybackPayload() => {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'title': 'Movie',
+            'Media': [
+              {
+                'id': 7,
+                'container': 'mkv',
+                'Part': [
+                  {
+                    'id': 99,
+                    'key': '/library/parts/99/file.mkv',
+                    'exists': true,
+                    'accessible': true,
+                    'Stream': [
+                      {'streamType': 1, 'id': 300, 'codec': 'h264'},
+                      {'streamType': 3, 'id': 401, 'index': 1, 'codec': 'ass', 'languageCode': 'eng', 'selected': true},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    };
+
+    PlexClient makeCountingClient(List<Uri> requests) => makeClient((request) async {
+      requests.add(request.url);
+      if (request.url.path != endpoint) return http.Response('not found', 404);
+      return http.Response(jsonEncode(richPlaybackPayload()), 200, headers: {'content-type': 'application/json'});
+    });
+
+    test('fresh stream-rich cached row is served with zero network requests', () async {
+      await PlexApiCache.instance.put(cacheScope, endpoint, richPlaybackPayload());
+      final requests = <Uri>[];
+      final client = makeCountingClient(requests);
+      addTearDown(client.close);
+
+      final data = await client.getVideoPlaybackData('42');
+
+      expect(requests, isEmpty);
+      expect(data.hasValidVideoUrl, isTrue);
+      expect(data.videoUrl, contains('/library/parts/99/file.mkv'));
+      expect(data.mediaInfo?.subtitleTracks.single.id, 401);
+    });
+
+    test('fresh but stream-less cached row still fetches from the network', () async {
+      // getPlaybackExtras' lean fetch overwrites the shared row without
+      // includeStreams/checkFiles; that shape must never satisfy playback.
+      await PlexApiCache.instance.put(cacheScope, endpoint, {
+        'MediaContainer': {
+          'Metadata': [
+            {
+              'ratingKey': '42',
+              'type': 'movie',
+              'title': 'Movie',
+              'Media': [
+                {
+                  'id': 7,
+                  'container': 'mkv',
+                  'Part': [
+                    {'id': 99, 'key': '/library/parts/99/file.mkv'},
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      });
+      final requests = <Uri>[];
+      final client = makeCountingClient(requests);
+      addTearDown(client.close);
+
+      final data = await client.getVideoPlaybackData('42');
+
+      expect(requests, hasLength(1));
+      expect(requests.single.queryParameters['includeStreams'], '1');
+      expect(data.mediaInfo?.subtitleTracks.single.id, 401);
+    });
+
+    test('cached row older than the freshness window fetches from the network', () async {
+      await PlexApiCache.instance.put(cacheScope, endpoint, richPlaybackPayload());
+      await (db.update(db.apiCache)..where((t) => t.cacheKey.equals('$cacheScope:$endpoint'))).write(
+        ApiCacheCompanion(
+          cachedAt: Value(DateTime.now().subtract(playbackMetadataCacheFreshness + const Duration(seconds: 1))),
+        ),
+      );
+      final requests = <Uri>[];
+      final client = makeCountingClient(requests);
+      addTearDown(client.close);
+
+      final data = await client.getVideoPlaybackData('42');
+
+      expect(requests, hasLength(1));
+      expect(data.hasValidVideoUrl, isTrue);
+    });
+
+    test('cache miss fetches from the network', () async {
+      final requests = <Uri>[];
+      final client = makeCountingClient(requests);
+      addTearDown(client.close);
+
+      final data = await client.getVideoPlaybackData('42');
+
+      expect(requests, hasLength(1));
+      expect(data.hasValidVideoUrl, isTrue);
+    });
   });
 
   test('transcode initialization burns the selected embedded stream and sidecars only the external file', () async {

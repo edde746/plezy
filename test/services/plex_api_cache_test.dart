@@ -188,6 +188,42 @@ void main() {
     });
   });
 
+  group('getIfFresh', () {
+    Future<void> backdate(String cacheKey, Duration age) async {
+      await (db.update(db.apiCache)..where((t) => t.cacheKey.equals(cacheKey))).write(
+        ApiCacheCompanion(cachedAt: Value(DateTime.now().subtract(age))),
+      );
+    }
+
+    test('returns null for an unknown key', () async {
+      expect(
+        await cache.getIfFresh(ServerId('srv'), '/library/metadata/1', maxAge: const Duration(minutes: 5)),
+        isNull,
+      );
+    });
+
+    test('decodes a row written within maxAge', () async {
+      final payload = mediaContainer(ratingKey: '1', title: 'Fresh');
+      await cache.put(ServerId('srv'), '/library/metadata/1', payload);
+
+      final hit = await cache.getIfFresh(ServerId('srv'), '/library/metadata/1', maxAge: const Duration(minutes: 5));
+      expect(hit, equals(payload));
+    });
+
+    test('returns null for a row older than maxAge while get still serves it', () async {
+      await cache.put(ServerId('srv'), '/library/metadata/1', mediaContainer(ratingKey: '1', title: 'Old'));
+      await backdate('srv:/library/metadata/1', const Duration(minutes: 10));
+
+      expect(
+        await cache.getIfFresh(ServerId('srv'), '/library/metadata/1', maxAge: const Duration(minutes: 5)),
+        isNull,
+      );
+      // Staleness only gates the freshness-checked read; the offline-fallback
+      // read must keep serving the row.
+      expect(await cache.get(ServerId('srv'), '/library/metadata/1'), isNotNull);
+    });
+  });
+
   group('deletion', () {
     test('deleteForServer wipes only the targeted serverId', () async {
       await cache.put(ServerId('srv-a'), '/library/metadata/1', mediaContainer(ratingKey: '1'));

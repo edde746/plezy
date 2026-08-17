@@ -1864,6 +1864,34 @@ class PlexClient
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
   }) async {
+    // Fresh-cache-first: the detail screen writes a strict superset of this
+    // query shape (includeChapters+includeMarkers+includeOnDeck+checkFiles+
+    // includeStreams, [getMetadataWithImagesAndOnDeck]) under the same key
+    // seconds before a typical play tap, so a fresh stream-rich row makes the
+    // network round trip redundant on the tap-to-first-frame path. Any miss,
+    // staleness, thin row (getPlaybackExtras' lean fetch overwrites the shared
+    // row without includeStreams/checkFiles), or shape failure falls through
+    // to the network-first fetch below unchanged.
+    final freshRow = await cache.getIfFresh(
+      ServerId(cacheServerId),
+      '/library/metadata/$ratingKey',
+      maxAge: playbackMetadataCacheFreshness,
+    );
+    if (freshRow != null) {
+      try {
+        final cachedMetadataJson = _validatedPlaybackMetadataJson(freshRow);
+        if (cachedMetadataJson != null && _plexMetadataHasStreamDetail(cachedMetadataJson)) {
+          return parseVideoPlaybackDataFromJson(
+            cachedMetadataJson,
+            mediaIndex: mediaIndex,
+            selectedMediaSourceId: selectedMediaSourceId,
+            preferredVersionSignature: preferredVersionSignature,
+          );
+        }
+      } on FormatException {
+        // Malformed cached row: the network fetch below overwrites it.
+      }
+    }
     final data = await fetchWithCacheFallback<Map<String, dynamic>>(
       cacheKey: '/library/metadata/$ratingKey',
       // checkFiles=1 populates Part.accessible/exists so we can skip

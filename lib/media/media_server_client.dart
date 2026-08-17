@@ -894,6 +894,12 @@ abstract interface class MediaDeletionPermissionClient {
   Future<bool?> fetchDeletePermission(MediaItem item);
 }
 
+/// Bounds how old a cached metadata row may be to be served without a network
+/// round trip on playback start. Sized to cover the detail-screen-visit →
+/// play-tap gap while keeping stale-file risk (replaced/deleted media parts)
+/// negligible.
+const Duration playbackMetadataCacheFreshness = Duration(minutes: 5);
+
 /// Cache-aware fetch helpers shared by both backends so the offline-first /
 /// network-then-cache pattern lives in one place.
 ///

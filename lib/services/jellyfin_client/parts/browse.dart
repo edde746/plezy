@@ -728,6 +728,33 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     return request;
   }
 
+  /// [fetchItem], but a fresh cached row (≤ [playbackMetadataCacheFreshness]
+  /// old) short-circuits the network round trip.
+  ///
+  /// The single writer for this endpoint's row is [_fetchItemOnce] with the
+  /// full [_detailFields] shape, so a fresh row always carries `MediaSources`,
+  /// `Chapters` and `Trickplay`, and the raw DTO survives [_mapItem] — the
+  /// offline path below already relies on that. Playback start and the
+  /// controls' extras loader both re-request this exact payload seconds after
+  /// the detail screen fetched it (#1784 documents the duplicate-fetch cost),
+  /// which is what serving the fresh row removes. Purely an optimization
+  /// layer: any miss, staleness, cache error or mapping failure falls through
+  /// to [fetchItem] unchanged — including offline mode, where [fetchItem]
+  /// reads the cache without a freshness bound.
+  Future<MediaItem?> fetchItemFreshCacheFirst(String id) async {
+    final endpoint = '/Users/${_segment(connection.userId)}/Items/${_segment(id)}';
+    try {
+      final cached = await cache.getIfFresh(ServerId(cacheServerId), endpoint, maxAge: playbackMetadataCacheFreshness);
+      if (cached != null) {
+        final item = _mapItem(cached);
+        if (item != null) return item;
+      }
+    } catch (e, st) {
+      appLogger.w('JellyfinClient.fetchItemFreshCacheFirst cache read failed', error: e, stackTrace: st);
+    }
+    return fetchItem(id);
+  }
+
   Future<MediaItem?> _fetchItemOnce(String id) async {
     final endpoint = '/Users/${_segment(connection.userId)}/Items/${_segment(id)}';
     // Contract:

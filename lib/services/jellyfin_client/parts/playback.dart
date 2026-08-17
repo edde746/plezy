@@ -10,6 +10,10 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
 }
 
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
+  // Implemented by _JellyfinBrowseMethods (cross-part call, same pattern as
+  // _JellyfinImageDownloadMethods' redeclarations).
+  Future<MediaItem?> fetchItemFreshCacheFirst(String id);
+
   /// Backend-neutral [PlaybackExtras] for [itemId]. Both dialects expose
   /// chapters at the item level (`raw['Chapters']`), while only Jellyfin exposes
   /// native skip segments through `/MediaSegments/{itemId}`. Segment loading is
@@ -22,7 +26,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool forceChapterFallback = false,
     bool forceRefresh = false,
   }) async {
-    final item = await fetchItem(itemId);
+    final item = await fetchItemFreshCacheFirst(itemId);
     final markers = item == null ? const <MediaMarker>[] : await _fetchMediaSegmentMarkers(itemId);
     return jellyfinPlaybackExtrasFromRaw(
       item?.raw,
@@ -567,7 +571,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     String? sourceId,
     String? preferredSignature,
   }) async {
-    final item = await fetchItem(itemId);
+    final item = await fetchItemFreshCacheFirst(itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
     final sources = raw['MediaSources'];
