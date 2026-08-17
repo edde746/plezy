@@ -64,6 +64,28 @@ void main() {
       expect(inner.closeCount, 1);
     });
 
+    test('force-closes inner client when opted in and the drain times out', () async {
+      final inner = _DeferredSendClient();
+      final client = ManagedHttpClient(inner, debugLabel: 'test', forceCloseOnDrainTimeout: true);
+
+      final responseFuture = client.send(http.Request('GET', Uri.parse('https://example.test/stuck')));
+      await Future<void>.delayed(Duration.zero);
+
+      await client.closeGracefully(drainTimeout: const Duration(milliseconds: 1));
+      expect(inner.closeCount, 1);
+      await expectLater(inner.abortTrigger, completes);
+
+      // Idempotent: the inner client is closed exactly once.
+      await client.closeGracefully(drainTimeout: const Duration(milliseconds: 1));
+      expect(inner.closeCount, 1);
+
+      // A transport that completes late (a real dart:io client fails the
+      // request when force-closed) still settles cleanly.
+      inner.completeWithEmptyResponse();
+      final response = await responseFuture;
+      await response.stream.drain<void>();
+    });
+
     test('preserves final response URL metadata', () async {
       final finalUrl = Uri.parse('https://example.test/final');
       final inner = _UrlResponseClient(finalUrl);
