@@ -51,6 +51,11 @@ class GridLayoutConstants {
   /// reserves ([posterAspectRatio] adds 0.3 to the 2:3 image's denominator).
   static const double squareGridCellAspectRatio = 2 / 2.3;
 
+  /// Inter-card gutter for square (music) grids on touch platforms. Cards
+  /// already carry their own 3px internal padding, so the net visual gutter
+  /// is ~14px horizontal. Automotive keeps its larger [crossAxisSpacing].
+  static const double squareGridSpacing = 8.0;
+
   static double get crossAxisSpacing => PlatformDetector.isAutomotive() ? 24 : 0;
   static double get mainAxisSpacing => PlatformDetector.isAutomotive() ? 24 : 0;
 

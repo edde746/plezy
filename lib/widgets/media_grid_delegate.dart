@@ -36,9 +36,22 @@ class MediaGridDelegate {
     return maxCrossAxisExtent;
   }
 
-  static double spacingFor({required BuildContext context, bool fullBleedImage = false}) {
+  /// Inter-cell gutter for the resolved shape. Square (music) grids get
+  /// [GridLayoutConstants.squareGridSpacing] so cards have breathing room;
+  /// every other shape keeps the platform default (0, or 24 on automotive).
+  /// Full-bleed TV grids use the scaled full-card gutter.
+  static double spacingFor({
+    required BuildContext context,
+    bool useWideAspectRatio = false,
+    bool fullBleedImage = false,
+    CardShape? shape,
+  }) {
     if (PlatformDetector.isAutomotive()) return GridLayoutConstants.crossAxisSpacing;
-    if (!fullBleedImage) return GridLayoutConstants.crossAxisSpacing;
+    if (!fullBleedImage) {
+      return _resolveShape(shape, useWideAspectRatio) == CardShape.square
+          ? GridLayoutConstants.squareGridSpacing
+          : GridLayoutConstants.crossAxisSpacing;
+    }
     return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
   }
 
@@ -101,7 +114,12 @@ class MediaGridGeometry {
     bool fullBleedImage = false,
     CardShape? shape,
   }) {
-    final spacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullBleedImage);
+    final spacing = MediaGridDelegate.spacingFor(
+      context: context,
+      useWideAspectRatio: useWideAspectRatio,
+      fullBleedImage: fullBleedImage,
+      shape: shape,
+    );
     final aspectRatio = MediaGridDelegate.aspectRatioFor(
       useWideAspectRatio: useWideAspectRatio,
       fullBleedImage: fullBleedImage,
