@@ -465,7 +465,6 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       onRefresh: widget.onRefresh,
       onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
       onListRefresh: widget.onListRefresh,
-      onTap: () => _handleTap(context, item),
       isInContinueWatching: widget.isInContinueWatching,
       collectionId: widget.collectionId,
       child: cardWidget,
@@ -1249,7 +1248,7 @@ Color? _parseCatalogAccent(String? value) {
 String? _catalogRankBadge(CatalogItem item) {
   String? allTimeLabel;
   for (final rank in item.ranks ?? const <CatalogRank>[]) {
-    final contextual = !rank.allTime || rank.scope == CatalogRankScope.seasonal;
+    final contextual = !rank.allTime;
     if (contextual) {
       final season = rank.season;
       final year = rank.year;
@@ -1262,8 +1261,8 @@ String? _catalogRankBadge(CatalogItem item) {
       return t.explore.badge.rankSeasonal(n: rank.rank, season: window);
     }
 
-    // Not contextual means an all-time rank with a non-seasonal scope, so
-    // rankLabel takes its all-time scope-switch path.
+    // Not contextual means an all-time rank, so rankLabel takes its
+    // scope-switch path.
     allTimeLabel ??= rankLabel(rank);
   }
   return allTimeLabel;

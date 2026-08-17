@@ -693,7 +693,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
             buildFocusableGrid(items: items, onRefresh: updateItem, shape: _isAudioPlaylist ? CardShape.square : null)
           else
             // Plex regular playlists: sliver reorderable list
-            _buildReorderableList(isKeyboardMode),
+            _buildReorderableList(),
           if (_continuation.isLoading || _continuation.error != null)
             ContinuationStatusSliver(
               error: _continuation.error,
@@ -743,7 +743,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   /// Build a reorderable list for regular playlists with focus support
-  Widget _buildReorderableList(bool _) {
+  Widget _buildReorderableList() {
     return SliverReorderableList(
       onReorderItem: _onReorder,
       itemCount: items.length,

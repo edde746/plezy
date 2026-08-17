@@ -291,13 +291,7 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
     );
 
     if (!withContextMenu) return row;
-    return MediaContextMenu(
-      key: contextMenuKey,
-      item: widget.item,
-      onRefresh: widget.onRefresh,
-      onTap: widget.onTap,
-      child: row,
-    );
+    return MediaContextMenu(key: contextMenuKey, item: widget.item, onRefresh: widget.onRefresh, child: row);
   }
 }
 

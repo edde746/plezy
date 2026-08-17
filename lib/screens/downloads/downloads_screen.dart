@@ -255,7 +255,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
   }
 }
 
-enum DownloadType { manage, tvShows, movies }
+enum DownloadType { tvShows, movies }
 
 /// Grid content for TV Shows and Movies tabs
 class _DownloadsGridContent extends StatefulWidget {
@@ -388,12 +388,11 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
   bool suppressAutoFocusOf(_DownloadedMusicContent widget) => widget.suppressAutoFocus;
 
   Future<void> _playAlbumFrom(List<MediaItem> albumTracks, MediaItem track) async {
-    final album = track.parentId;
     await playTracks(
       context,
       tracks: albumTracks,
       startTrack: track,
-      playContext: MusicPlayContext(id: album, title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
+      playContext: MusicPlayContext(title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
     );
   }
 

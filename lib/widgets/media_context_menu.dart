@@ -154,7 +154,6 @@ class MediaContextMenu extends StatefulWidget {
   final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh;
-  final VoidCallback? onTap;
 
   /// Plays the item's trailer. When non-null a "Play trailer" item is added to
   /// the menu. Only the detail screen passes this (it resolves the trailer from
@@ -175,7 +174,6 @@ class MediaContextMenu extends StatefulWidget {
     this.onRefresh,
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
-    this.onTap,
     this.onPlayTrailer,
     required this.child,
     this.isInContinueWatching = false,
@@ -1254,7 +1252,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       context,
       fetch: () => _musicTracksForItem(item),
       playContext: MusicPlayContext(
-        id: item.id,
         title: item.displayTitle,
         kind: item.kind == MediaKind.artist ? MusicPlayContextKind.artist : MusicPlayContextKind.album,
       ),

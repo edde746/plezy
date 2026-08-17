@@ -59,7 +59,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   String? _errorMessage;
   String? _selectedLibraryGlobalKey;
-  bool _isInitialLoad = true;
 
   /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
   bool _isRestoringTab = false;
@@ -439,11 +438,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         if (!mounted) return;
         _resetOuterScroll();
       });
-    }
-
-    // Mark that initial load is complete
-    if (_isInitialLoad) {
-      _isInitialLoad = false;
     }
 
     // Save selected library key and restore saved tab (async — safe after state is consistent)

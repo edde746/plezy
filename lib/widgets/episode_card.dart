@@ -146,7 +146,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
             item: episode,
             onRefresh: widget.onRefresh,
             onListRefresh: widget.onListRefresh,
-            onTap: widget.onTap,
             child: InkWell(
               key: Key(episode.id),
               mouseCursor: SystemMouseCursors.click,

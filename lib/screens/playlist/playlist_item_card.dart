@@ -76,7 +76,6 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
       key: contextMenuKey,
       item: item,
       onRefresh: widget.onRefresh,
-      onTap: widget.onTap,
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         color: cardColor,

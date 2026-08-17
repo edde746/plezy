@@ -178,11 +178,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   }
 
   void _syncDiscoveredServerFocusNodes(List<DiscoveredJellyfinServer> servers) {
-    final ids = servers.map((server) => server.id).toSet();
-    final removed = _discoveredServerFocusNodes.keys.where((id) => !ids.contains(id)).toList(growable: false);
-    for (final id in removed) {
-      _discoveredServerFocusNodes.remove(id)?.dispose();
-    }
     for (final server in servers) {
       _discoveredServerFocusNodes.putIfAbsent(
         server.id,

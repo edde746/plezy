@@ -289,7 +289,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               final usesContinueWatchingAction = _usesContinueWatchingAction(hub);
 
               return HubSection(
-                key: index < _hubKeys.length ? _hubKeys[index] : null,
+                key: _hubKeys[index],
                 hub: hub,
                 focusMemory: _hubFocusMemory,
                 icon: hubIconFor(hub),
