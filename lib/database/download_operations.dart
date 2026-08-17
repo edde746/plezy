@@ -145,10 +145,6 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  Future<int> getDownloadOwnerCount(String globalKey) async {
-    return (await _validDownloadOwnerRows(globalKey)).length;
-  }
-
   @visibleForTesting
   Future<bool> hasDownloadOwner(String globalKey, {String? excludingProfileId}) async {
     final rows = await _validDownloadOwnerRows(globalKey, excludingProfileId: excludingProfileId);
@@ -190,8 +186,8 @@ extension DownloadDatabaseOperations on AppDatabase {
   /// inherit them.
   ///
   /// Runs on every profile switch — validity context is computed once and
-  /// applied in memory instead of the per-download full-table rescan
-  /// `getDownloadOwnerCount` would do.
+  /// applied in memory instead of a per-download full-table rescan through
+  /// `_validDownloadOwnerRows`.
   Future<void> adoptLegacyDownloadsForProfile(String profileId, {bool Function()? isStillActive}) async {
     if (profileId.isEmpty) return;
     if (isStillActive != null && !isStillActive()) return;

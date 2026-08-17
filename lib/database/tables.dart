@@ -12,9 +12,6 @@ class ApiCache extends Table {
   /// Whether this item is pinned for offline access
   BoolColumn get pinned => boolean().withDefault(const Constant(false))();
 
-  /// Timestamp for cache invalidation (optional future use)
-  DateTimeColumn get cachedAt => dateTime().withDefault(currentDateAndTime)();
-
   @override
   Set<Column> get primaryKey => {cacheKey};
 }
@@ -149,10 +146,6 @@ class Connections extends Table {
 
   /// Backend-specific config payload (token, baseUrl, profile id, …).
   TextColumn get configJson => text()();
-
-  /// Whether this is the default connection used at app launch when only
-  /// one connection is present.
-  BoolColumn get isDefault => boolean().withDefault(const Constant(false))();
 
   /// Timestamp this connection was added (milliseconds since epoch).
   IntColumn get createdAt => integer()();

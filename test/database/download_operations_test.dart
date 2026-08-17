@@ -922,7 +922,7 @@ void main() {
       await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'srv:100');
       await db.addDownloadOwner(profileId: 'profile-deleted', globalKey: 'srv:100');
 
-      expect(await db.getDownloadOwnerCount('srv:100'), 1);
+      expect(await db.getValidDownloadOwnersForKey('srv:100'), hasLength(1));
       expect(await db.hasDownloadOwner('srv:100', excludingProfileId: 'profile-a'), isFalse);
     });
 
@@ -931,7 +931,7 @@ void main() {
       await insertPlexConnection('account-1');
       await db.addDownloadOwner(profileId: plexHomeProfileId, globalKey: 'srv:100');
 
-      expect(await db.getDownloadOwnerCount('srv:100'), 1);
+      expect(await db.getValidDownloadOwnersForKey('srv:100'), hasLength(1));
       expect(await db.hasDownloadOwner('srv:100'), isTrue);
     });
 
@@ -939,7 +939,7 @@ void main() {
       const plexHomeProfileId = 'plex-home-missing-account-00000000-0000-0000-0000-000000000001';
       await db.addDownloadOwner(profileId: plexHomeProfileId, globalKey: 'srv:100');
 
-      expect(await db.getDownloadOwnerCount('srv:100'), 0);
+      expect(await db.getValidDownloadOwnersForKey('srv:100'), isEmpty);
       expect(await db.hasDownloadOwner('srv:100'), isFalse);
     });
   });

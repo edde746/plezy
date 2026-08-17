@@ -2077,7 +2077,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
     // Wire the per-server status listener before either branch so the splash
     // checkmarks fill in even while the user is choosing a profile.
-    _bindServerStatusListener(activeProfile, _serverManagerFromContext);
+    _bindServerStatusListener();
 
     // Start only after network/offline startup has been decided and the
     // active profile snapshot is hydrated. This prevents an eager binder
@@ -2144,10 +2144,10 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   StreamSubscription<Map<String, bool>>? _statusSub;
   StreamSubscription<({String serverId, bool online})>? _connectProgressSub;
 
-  void _bindServerStatusListener(ActiveProfileProvider _, MultiServerManager Function() resolveManager) {
+  void _bindServerStatusListener() {
     _statusSub?.cancel();
     _connectProgressSub?.cancel();
-    final manager = resolveManager();
+    final manager = _serverManagerFromContext();
     _connectProgressSub = manager.connectProgressStream.listen((progress) {
       if (!mounted) return;
       final existing = _serverStatus[progress.serverId];

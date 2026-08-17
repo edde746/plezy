@@ -278,7 +278,7 @@ class _AppDatabaseTestSuite {
           expect(downloads.map((row) => row.globalKey), ['plex-server:item']);
           expect(await database.getDownloadOwnerKeysForProfile('profile-a'), {'plex-server:item'});
           expect(await database.getDownloadOwnerKeysForProfile('profile-b'), {'plex-server:item'});
-          expect(await database.getDownloadOwnerCount('plex-server:item'), 2);
+          expect(await database.getValidDownloadOwnersForKey('plex-server:item'), hasLength(2));
         }
 
         try {
@@ -926,6 +926,66 @@ class _AppDatabaseTestSuite {
           db = AppDatabase.forTesting(NativeDatabase.memory());
         }
       });
+      test('v21 migration drops connections.is_default and api_cache.cached_at without losing rows', () async {
+        await db.close();
+        final tempDir = await Directory.systemTemp.createTemp('plezy_db_v21_migration_test_');
+        final file = File('${tempDir.path}/plezy_downloads.db');
+        AppDatabase? seeded;
+        AppDatabase? reopened;
+
+        try {
+          seeded = AppDatabase.forTesting(NativeDatabase(file));
+          await seeded.select(seeded.connections).get();
+          await seeded
+              .into(seeded.connections)
+              .insert(
+                ConnectionsCompanion.insert(
+                  id: 'c1',
+                  kind: 'plex',
+                  displayName: 'C1',
+                  configJson: '{}',
+                  createdAt: 1000,
+                ),
+              );
+          await seeded.customStatement('INSERT INTO api_cache (cache_key, data, pinned) VALUES (?, ?, 1)', [
+            'srv:/library/metadata/1',
+            '{}',
+          ]);
+          await seeded.customStatement('ALTER TABLE connections ADD COLUMN is_default INTEGER NOT NULL DEFAULT 1');
+          await seeded.customStatement('ALTER TABLE api_cache ADD COLUMN cached_at INTEGER NOT NULL DEFAULT 0');
+          await seeded.customStatement('PRAGMA user_version = 20');
+          await seeded.close();
+          seeded = null;
+
+          reopened = AppDatabase.forTesting(NativeDatabase(file));
+          final connectionColumns = (await reopened.customSelect("PRAGMA table_info('connections')").get())
+              .map((row) => row.read<String>('name'))
+              .toSet();
+          final cacheColumns = (await reopened.customSelect("PRAGMA table_info('api_cache')").get())
+              .map((row) => row.read<String>('name'))
+              .toSet();
+          expect(connectionColumns, isNot(contains('is_default')));
+          expect(cacheColumns, isNot(contains('cached_at')));
+
+          final connection = await reopened.select(reopened.connections).getSingle();
+          expect(connection.id, 'c1');
+          expect(connection.createdAt, 1000);
+          final cacheRow = await reopened.select(reopened.apiCache).getSingle();
+          expect(cacheRow.cacheKey, 'srv:/library/metadata/1');
+          expect(cacheRow.pinned, isTrue);
+
+          // The drift table recreation must restore the kind index.
+          final indexRows = await reopened
+              .customSelect("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_connections_kind'")
+              .get();
+          expect(indexRows, hasLength(1));
+        } finally {
+          await reopened?.close();
+          await seeded?.close();
+          await tempDir.delete(recursive: true);
+          db = AppDatabase.forTesting(NativeDatabase.memory());
+        }
+      });
     });
 
     _registerLegacyDesktopMigrationTests();
@@ -1254,7 +1314,7 @@ class _AppDatabaseTestSuite {
 
         expect(await db.getDownloadOwnerKeysForProfile('profile-a'), {'srv1:1'});
         expect(await db.getDownloadOwnerKeysForProfile('profile-b'), {'srv1:1'});
-        expect(await db.getDownloadOwnerCount('srv1:1'), 2);
+        expect(await db.getValidDownloadOwnersForKey('srv1:1'), hasLength(2));
 
         await db.removeDownloadOwner(profileId: 'profile-a', globalKey: 'srv1:1');
         expect(await db.getDownloadOwnerKeysForProfile('profile-a'), isEmpty);
@@ -2143,7 +2203,7 @@ class _AppDatabaseTestSuite {
           episodeCount: 5,
         );
         await db.updateSyncRuleEnabled('srv:10', false);
-        await db.updateSyncRuleLastExecuted('srv:10');
+        await db.completeSyncRuleExecution('srv:10');
         final firstRun = (await db.getSyncRule('srv:10'))!;
 
         await db.insertSyncRule(
@@ -2215,7 +2275,7 @@ class _AppDatabaseTestSuite {
         expect((await db.getSyncRule('srv:10'))!.enabled, isTrue);
       });
 
-      test('updateSyncRuleLastExecuted writes a timestamp', () async {
+      test('completeSyncRuleExecution writes a timestamp and marks links initialized', () async {
         await db.insertSyncRule(
           serverId: ServerId('srv'),
           ratingKey: '10',
@@ -2224,13 +2284,14 @@ class _AppDatabaseTestSuite {
           episodeCount: 5,
         );
         final before = DateTime.now().millisecondsSinceEpoch;
-        await db.updateSyncRuleLastExecuted('srv:10');
+        await db.completeSyncRuleExecution('srv:10');
         final after = DateTime.now().millisecondsSinceEpoch;
 
         final rule = await db.getSyncRule('srv:10');
         expect(rule!.lastExecutedAt, isNotNull);
         expect(rule.lastExecutedAt! >= before, isTrue);
         expect(rule.lastExecutedAt! <= after, isTrue);
+        expect(rule.downloadLinksInitialized, isTrue);
       });
 
       test('deleteSyncRule removes the matching row', () async {

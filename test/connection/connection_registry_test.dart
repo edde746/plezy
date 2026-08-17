@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
@@ -13,23 +12,14 @@ import 'package:plezy/services/plex_auth_service.dart';
 
 import '../test_helpers/prefs.dart';
 
-/// The id of the connection currently flagged default, read straight from the
-/// row (the registry maintains the flag; there is no public reader).
-Future<String?> _defaultConnectionId(AppDatabase db) async {
-  for (final row in await db.select(db.connections).get()) {
-    if (row.isDefault) return row.id;
-  }
-  return null;
-}
-
-JellyfinConnection _jellyfin({String id = 'srv-1', String userName = 'edde', int createdAtMs = 1_000_000}) {
+JellyfinConnection _jellyfin({String id = 'srv-1', int createdAtMs = 1_000_000}) {
   return JellyfinConnection(
     id: id,
     baseUrl: 'https://jellyfin.local',
     serverName: 'Home',
     serverMachineId: 'jf-machine-$id',
     userId: 'user-$id',
-    userName: userName,
+    userName: 'edde',
     accessToken: 'tok-$id',
     deviceId: 'dev-1',
     createdAt: DateTime.fromMillisecondsSinceEpoch(createdAtMs),
@@ -97,16 +87,13 @@ void main() {
   group('ConnectionRegistry', () {
     test('list() returns empty when no connections stored', () async {
       expect(await registry.list(), isEmpty);
-      expect(await _defaultConnectionId(db), isNull);
     });
 
-    test('first upserted connection becomes the default', () async {
+    test('upserted connection round-trips through list()', () async {
       await registry.upsert(_jellyfin(id: 'a'));
       final list = await registry.list();
       expect(list.length, 1);
       expect(list.first.id, 'a');
-
-      expect(await _defaultConnectionId(db), 'a');
     });
 
     test('upsert preserves type discriminator (Plex vs Jellyfin)', () async {
@@ -180,7 +167,6 @@ void main() {
               displayName: plex.displayName,
               configJson: jsonEncode(config),
               createdAt: plex.createdAt.millisecondsSinceEpoch,
-              isDefault: const Value(true),
             ),
           );
 
@@ -192,37 +178,13 @@ void main() {
       expect(row.configJson, isNot(contains('server-token-legacy')));
     });
 
-    test('setDefault flips the flag and clears it on others', () async {
-      await registry.upsert(_jellyfin(id: 'a'));
-      await registry.upsert(_jellyfin(id: 'b'));
-      await registry.setDefault('b');
-      expect(await _defaultConnectionId(db), 'b');
-      await registry.setDefault('a');
-      expect(await _defaultConnectionId(db), 'a');
-    });
-
-    test('remove deletes a row and re-elects a default when needed', () async {
+    test('remove deletes a row', () async {
       await registry.upsert(_jellyfin(id: 'a'));
       await registry.upsert(_jellyfin(id: 'b'));
       await registry.remove('a');
-      expect(await _defaultConnectionId(db), 'b');
+      expect((await registry.list()).map((c) => c.id).toList(), ['b']);
       await registry.remove('b');
-      expect(await _defaultConnectionId(db), isNull);
-    });
-
-    test('re-upsert preserves the existing default flag', () async {
-      // Regression: a token/metadata refresh that re-upserts an existing
-      // default row used to clear `isDefault` because the writer always
-      // wrote `isFirst` (false on update).
-      await registry.upsert(_jellyfin(id: 'a'));
-      await registry.upsert(_jellyfin(id: 'b'));
-      expect(await _defaultConnectionId(db), 'a');
-
-      await registry.upsert(_jellyfin(id: 'a', userName: 'refreshed'));
-      expect(await _defaultConnectionId(db), 'a');
-
-      await registry.upsert(_jellyfin(id: 'b', userName: 'refreshed'));
-      expect(await _defaultConnectionId(db), 'a');
+      expect(await registry.list(), isEmpty);
     });
 
     test('re-upsert preserves the original creation order', () async {
@@ -245,17 +207,6 @@ void main() {
       await registry.upsert(_jellyfin(id: 'a', createdAtMs: 5_000_000));
 
       expect((await registry.list()).single.createdAt, DateTime.fromMillisecondsSinceEpoch(5_000_000));
-    });
-
-    test('recordAuthSuccess updates lastAuthenticatedAt without losing config', () async {
-      await registry.upsert(_jellyfin(id: 'a'));
-      final at = DateTime.fromMillisecondsSinceEpoch(2_000_000);
-      await registry.recordAuthSuccess('a', at);
-
-      final c = await registry.get('a') as JellyfinConnection;
-      expect(c.lastAuthenticatedAt, at);
-      expect(c.baseUrl, 'https://jellyfin.local');
-      expect(c.accessToken, 'tok-a');
     });
   });
 }

@@ -37,15 +37,6 @@ enum OfflineActionType {
     OfflineActionType.watched => 'watched',
     OfflineActionType.unwatched => 'unwatched',
   };
-
-  /// Inverse of [id]. Throws on unknown so a typo in production doesn't
-  /// silently fall back to the wrong action.
-  static OfflineActionType fromId(String id) => switch (id) {
-    'progress' => OfflineActionType.progress,
-    'watched' => OfflineActionType.watched,
-    'unwatched' => OfflineActionType.unwatched,
-    _ => throw ArgumentError('Unknown OfflineActionType id: $id'),
-  };
 }
 
 final class AppDatabaseBootstrap {
@@ -319,6 +310,14 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Columns that once existed in a snapshotted table and may still appear in
+  /// committed recovery images written by older builds. They are stripped
+  /// before the strict round-trip check in [_decodeRecoveryRow] so retiring a
+  /// column does not brick restore on devices holding a pre-retirement image.
+  static const Map<String, Set<String>> _retiredRecoveryColumns = {
+    'connections': {'isDefault'},
+  };
+
   static List<T> _decodeRecoveryRows<T extends DataClass>(
     Map<String, Object?> group,
     String key,
@@ -326,9 +325,21 @@ class AppDatabase extends _$AppDatabase {
   ) {
     final value = group[key];
     if (value is! List) throw _invalidRecoveryImage;
+    final retired = _retiredRecoveryColumns[key];
     return [
       for (final row in value)
-        if (row is Map<String, dynamic>) _decodeRecoveryRow(row, fromJson) else throw _invalidRecoveryImage,
+        if (row is Map<String, dynamic>)
+          _decodeRecoveryRow(
+            retired == null
+                ? row
+                : {
+                    for (final entry in row.entries)
+                      if (!retired.contains(entry.key)) entry.key: entry.value,
+                  },
+            fromJson,
+          )
+        else
+          throw _invalidRecoveryImage,
     ];
   }
 
@@ -354,7 +365,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration {
@@ -719,6 +730,11 @@ class AppDatabase extends _$AppDatabase {
             'Index idx_sync_rule_downloads_profile_key',
             () => m.create(idxSyncRuleDownloadsProfileKey),
           );
+        }
+        if (from < 21) {
+          appLogger.i('Dropping unused Connections.isDefault and ApiCache.cachedAt columns (v21 migration)');
+          await m.alterTable(TableMigration(connections));
+          await m.alterTable(TableMigration(apiCache));
         }
       },
     );
@@ -1251,9 +1267,6 @@ class AppDatabase extends _$AppDatabase {
   Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) =>
       _writeSyncRule(globalKey, SyncRulesCompanion(enabled: Value(enabled)));
 
-  Future<void> updateSyncRuleLastExecuted(String globalKey) =>
-      _writeSyncRule(globalKey, SyncRulesCompanion(lastExecutedAt: Value(DateTime.now().millisecondsSinceEpoch)));
-
   Future<void> completeSyncRuleExecution(String globalKey) {
     return (update(syncRules)..where((t) => t.globalKey.equals(globalKey))).write(
       SyncRulesCompanion(
@@ -1311,14 +1324,13 @@ String _rescopePinnedPlexMetadataStatement({
     WHERE grandparent_rating_key IS NOT NULL
       AND grandparent_rating_key != ''
   )
-  INSERT INTO api_cache (cache_key, data, pinned, cached_at)
+  INSERT INTO api_cache (cache_key, data, pinned)
   SELECT DISTINCT
     metadata.server_id
       || $namespaceExpression
       || substr(source.cache_key, length(metadata.server_id) + 2),
     source.data,
-    source.pinned,
-    source.cached_at
+    source.pinned
   FROM download_metadata_ids AS metadata
   $ownerJoin
   JOIN api_cache AS source
@@ -1330,8 +1342,7 @@ String _rescopePinnedPlexMetadataStatement({
     $ownerFilter
   ON CONFLICT(cache_key) DO UPDATE SET
     data = excluded.data,
-    pinned = excluded.pinned,
-    cached_at = excluded.cached_at
+    pinned = excluded.pinned
 ''';
 
 Future<File> _resolveProductionDatabaseFile() async {
