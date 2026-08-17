@@ -27,6 +27,7 @@ void main() {
     Future<_Result> Function(String url)? measure,
     String? Function(Map<String, _Result> results)? selectBest,
     Map<String, Object?> Function(String candidate, _Result result)? failureLogFields,
+    Duration Function(String url)? probeDelayOf,
   }) {
     return raceEndpointCandidates<String, _Result>(
       label: 'test',
@@ -34,6 +35,7 @@ void main() {
       urlOf: (c) => c,
       preferredUrl: preferred,
       failureLogFields: failureLogFields,
+      probeDelayOf: probeDelayOf,
       probe: (c, _) => probe(c),
       measure: measure ?? (c) async => (url: c, ok: false),
       isSuccess: (r) => r.ok,
@@ -274,6 +276,61 @@ void main() {
     ).toList();
 
     expect(selections, isEmpty);
+  });
+
+  test('handicapped candidate loses to a slower direct candidate inside the window', () {
+    fakeAsync((async) {
+      const handicap = Duration(milliseconds: 100);
+      final probeCounts = <String, int>{};
+      final selections = <EndpointRaceSelection<String, _Result>>[];
+
+      race(
+        candidates: ['direct', 'relay'],
+        probeDelayOf: (url) => url == 'relay' ? handicap : Duration.zero,
+        probe: (url) {
+          probeCounts[url] = (probeCounts[url] ?? 0) + 1;
+          // Relay would answer instantly; direct takes 50ms — still inside
+          // the handicap window, so direct must win phase 1.
+          final delay = url == 'direct' ? const Duration(milliseconds: 50) : Duration.zero;
+          return Future<_Result>.delayed(delay, () => (url: url, ok: true));
+        },
+      ).listen(selections.add);
+      async.flushMicrotasks();
+
+      // Relay's probe has not started yet.
+      expect(probeCounts, {'direct': 1});
+
+      async.elapse(const Duration(milliseconds: 50));
+      expect(selections.first.phase, EndpointRacePhase.first);
+      expect(selections.first.candidate, 'direct');
+
+      // Once the race is decided, the handicapped probe is skipped entirely.
+      async.elapse(handicap);
+      expect(probeCounts.containsKey('relay'), isFalse);
+    });
+  });
+
+  test('handicapped candidate still wins when nothing else responds', () {
+    fakeAsync((async) {
+      const handicap = Duration(milliseconds: 100);
+      final selections = <EndpointRaceSelection<String, _Result>>[];
+
+      race(
+        candidates: ['direct', 'relay'],
+        probeDelayOf: (url) => url == 'relay' ? handicap : Duration.zero,
+        probe: (url) async => (url: url, ok: url == 'relay'),
+      ).listen(selections.add);
+      async.flushMicrotasks();
+
+      // Direct failed immediately; relay has not been probed yet, so the race
+      // must still be undecided rather than completed empty.
+      expect(selections, isEmpty);
+
+      async.elapse(handicap);
+      async.flushMicrotasks();
+      expect(selections.first.phase, EndpointRacePhase.first);
+      expect(selections.first.candidate, 'relay');
+    });
   });
 
   test('phase 2 still promotes the selector-best endpoint', () {

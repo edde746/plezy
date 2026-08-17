@@ -48,6 +48,7 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
   required bool Function(R result) isSuccess,
   required C? Function(Map<C, R> successfulResults) selectBestCandidate,
   void Function(C candidate, R result)? onFirstSuccess,
+  Duration Function(C candidate)? probeDelayOf,
   Duration preferredTimeout = MediaServerTimeouts.preferredEndpointProbe,
   Duration preferredHeadStart = MediaServerTimeouts.preferredEndpointHeadStart,
   Duration raceTimeout = MediaServerTimeouts.connectionRace,
@@ -113,6 +114,7 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
           mergedCached != null && identical(candidate, mergedCached) ? pendingCachedProbe! : probe(candidate, timeout),
       isSuccess: isSuccess,
       onFirstSuccess: onFirstSuccess,
+      probeDelayOf: probeDelayOf,
       timeout: raceTimeout,
     );
     if (first == null) {
@@ -197,6 +199,7 @@ Future<({C candidate, R result})?> _raceFirstSuccess<C, R>({
   String Function(C candidate)? displayTypeOf,
   Map<String, Object?> Function(C candidate, R result)? failureLogFields,
   void Function(C candidate, R result)? onFirstSuccess,
+  Duration Function(C candidate)? probeDelayOf,
 }) async {
   final completer = Completer<({C candidate, R result})?>();
   var completedTests = 0;
@@ -206,10 +209,33 @@ Future<({C candidate, R result})?> _raceFirstSuccess<C, R>({
     error: {'candidateCount': candidates.length},
   );
 
+  // Handicapped candidates (e.g. relay endpoints) start their probe late so
+  // preferred endpoint families get first claim on the race. If the race is
+  // already decided when the handicap elapses, the probe is skipped entirely.
+  // The probe result is wrapped in a record so a skip (null) stays
+  // distinguishable from a probe legitimately resolving to null should R ever
+  // be instantiated as a nullable type.
+  Future<({R result})?> delayedProbe(C candidate) async {
+    final delay = probeDelayOf?.call(candidate) ?? Duration.zero;
+    if (delay > Duration.zero) {
+      await Future<void>.delayed(delay);
+      if (completer.isCompleted) return null;
+    }
+    return (result: await probe(candidate, timeout));
+  }
+
   for (final candidate in candidates) {
     unawaited(
-      probe(candidate, timeout)
-          .then((result) {
+      delayedProbe(candidate)
+          .then((wrapped) {
+            if (wrapped == null) {
+              // Skipped probe: the race was already decided during the
+              // handicap, so this test can never be the one that completes
+              // the race — only the counter needs updating.
+              completedTests++;
+              return;
+            }
+            final result = wrapped.result;
             completedTests++;
 
             if (!isSuccess(result)) {

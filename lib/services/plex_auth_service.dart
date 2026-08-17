@@ -504,6 +504,12 @@ class PlexServer {
       onFirstSuccess: (_, result) {
         if (result.transcoderVideo != null) onTranscoderCapability?.call(result.transcoderVideo!);
       },
+      // Relay endpoints answer fast (plex.tv edge) but cap the session at
+      // 2 Mbps, and a bare file request over relay is rejected server-side
+      // with an opaque HTTP 500 (#1343/#665). Let direct endpoints claim the
+      // race first; relay only wins when nothing else responds in time.
+      probeDelayOf: (candidate) =>
+          candidate.connection.relay ? MediaServerTimeouts.relayProbeHandicap : Duration.zero,
     )) {
       if (selection.phase == EndpointRacePhase.first) {
         final firstCandidate = selection.candidate;

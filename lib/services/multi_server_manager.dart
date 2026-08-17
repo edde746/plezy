@@ -335,7 +335,7 @@ class MultiServerManager {
 
     // Get storage and load cached endpoint for this server
     final storage = await StorageService.getInstance();
-    final cachedEndpoint = storage.getServerEndpoint(ServerId(serverId));
+    final cachedEndpoint = _nonRelayCachedEndpoint(server, storage.getServerEndpoint(ServerId(serverId)));
 
     // The connection race already hits `/` on the winning endpoint — capture
     // `transcoderVideo` from that response so PlexClient.create can skip the
@@ -375,6 +375,13 @@ class MultiServerManager {
       serverName: server.name,
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: (newUrl) async {
+        // Classify against the live server object, not the connect-time
+        // capture: a profile refresh replaces _plexServers[serverId] with a
+        // refetched server (fresh, rotated relay URIs) while this client and
+        // closure live on, and a rotated relay URL would misclassify as
+        // remote against the stale connection list.
+        final liveServer = _plexServers[ServerId(serverId)] ?? server;
+        if (!_shouldPersistEndpoint(liveServer, newUrl)) return;
         await storage.saveServerEndpoint(ServerId(serverId), newUrl);
         appLogger.i('Updated endpoint for ${server.name} after failover: $newUrl');
       },
@@ -382,8 +389,13 @@ class MultiServerManager {
       seedTranscoderVideoSupport: observedTranscoderVideo,
     );
 
-    // Save the initial endpoint
-    await storage.saveServerEndpoint(ServerId(serverId), baseUrl);
+    // Save the initial endpoint. Relay endpoints are deliberately never
+    // persisted: a cached relay URL would win the next launch's head-start
+    // probe and pin every session to the relay's 2 Mbps cap even when a
+    // direct endpoint is reachable again.
+    if (_shouldPersistEndpoint(server, baseUrl)) {
+      await storage.saveServerEndpoint(ServerId(serverId), baseUrl);
+    }
 
     appLogger.i(
       'Connected ${server.name}',
@@ -401,6 +413,23 @@ class MultiServerManager {
     return client;
   }
 
+  /// Whether [url] may be persisted as the server's preferred endpoint.
+  /// Relay URLs are excluded — see the comment at the initial-save site.
+  bool _shouldPersistEndpoint(PlexServer server, String url) {
+    if (server.networkClassForUrl(url) != PlexNetworkClass.relay) return true;
+    appLogger.d('Not persisting relay endpoint as preferred for ${server.name}');
+    return false;
+  }
+
+  /// Drops a cached preferred endpoint that classifies as relay so it never
+  /// gets the head-start probe. Also migrates caches written before relay
+  /// endpoints were excluded from persistence.
+  String? _nonRelayCachedEndpoint(PlexServer server, String? cached) {
+    if (cached == null || server.networkClassForUrl(cached) != PlexNetworkClass.relay) return cached;
+    appLogger.i('Ignoring cached relay endpoint for ${server.name}, rediscovering connections');
+    return null;
+  }
+
   /// Persists a new endpoint, rebuilds the failover list, and switches the
   /// client only while it is still the registered client for this server.
   Future<bool> _promoteEndpoint({
@@ -416,8 +445,12 @@ class MultiServerManager {
     }
 
     if (!isCurrent()) return false;
-    await storage.saveServerEndpoint(serverId, newUrl);
-    if (!isCurrent()) return false;
+    // Still switch the live client to a relay endpoint when it is the only
+    // working one, but never persist it as the preferred endpoint.
+    if (_shouldPersistEndpoint(server, newUrl)) {
+      await storage.saveServerEndpoint(serverId, newUrl);
+      if (!isCurrent()) return false;
+    }
     final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
     await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
     return isCurrent();
@@ -1042,7 +1075,7 @@ class MultiServerManager {
       // Non-Plex client registered for this serverId — no Plex-style optimizer to run.
       return;
     }
-    final cachedEndpoint = storage.getServerEndpoint(serverId);
+    final cachedEndpoint = _nonRelayCachedEndpoint(server, storage.getServerEndpoint(serverId));
 
     try {
       appLogger.d('Starting connection optimization for ${server.name}', error: {'reason': reason});
@@ -1065,6 +1098,7 @@ class MultiServerManager {
           appLogger.i('Switched ${server.name} to better endpoint: $newUrl', error: {'type': connection.displayType});
         } else {
           if (_plexServers[serverId] != server) return;
+          if (!_shouldPersistEndpoint(server, newUrl)) continue;
           await storage.saveServerEndpoint(serverId, newUrl);
           if (_plexServers[serverId] != server) return;
           appLogger.i('Updated optimal endpoint for ${server.name}: $newUrl', error: {'type': connection.displayType});

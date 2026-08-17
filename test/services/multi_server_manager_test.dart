@@ -769,6 +769,94 @@ void main() {
       expect(storage.getServerEndpoint(ServerId('fresh-server')), promoted.uri);
     });
 
+    test('relay discovery winner connects but is never persisted as preferred', () async {
+      final storage = await _prepareFreshPlexManagerTest();
+      final relayEndpoint = _plexEndpoint('relay-winner', relay: true);
+      final server = _ControlledPlexServer(
+        serverId: 'relay-server',
+        endpoints: [relayEndpoint],
+        discoveryStreams: [() => Stream.value(relayEndpoint)],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+
+      final bound = await manager.refreshTokensForProfile(
+        _plexAccount('relay-account', [server]),
+        profileId: 'profile-a',
+      );
+      await pumpEventQueue();
+
+      expect(bound, {'relay-server'});
+      expect(factory.clients['relay-server']!.config.baseUrl, relayEndpoint.uri);
+      expect(storage.getServerEndpoint(ServerId('relay-server')), isNull);
+    });
+
+    test('promotion to a relay endpoint switches the client but leaves storage unchanged', () async {
+      final storage = await _prepareFreshPlexManagerTest();
+      final direct = _plexEndpoint('direct-first');
+      final relayEndpoint = _plexEndpoint('relay-late', relay: true);
+      final discoveries = StreamController<PlexConnection>(sync: true);
+      final server = _ControlledPlexServer(
+        serverId: 'mixed-server',
+        endpoints: [direct, relayEndpoint],
+        discoveryStreams: [() => discoveries.stream],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+      addTearDown(discoveries.close);
+
+      final refresh = manager.refreshTokensForProfile(_plexAccount('mixed-account', [server]), profileId: 'profile-a');
+      await pumpEventQueue();
+      discoveries.add(direct);
+      expect(await refresh, {'mixed-server'});
+      expect(storage.getServerEndpoint(ServerId('mixed-server')), direct.uri);
+
+      discoveries.add(relayEndpoint);
+      await discoveries.close();
+      await pumpEventQueue(times: 20);
+
+      final client = factory.clients['mixed-server']!;
+      expect(client.config.baseUrl, relayEndpoint.uri);
+      expect(storage.getServerEndpoint(ServerId('mixed-server')), direct.uri);
+    });
+
+    test('a cached relay endpoint is ignored at bind and replaced by the direct winner', () async {
+      final storage = await _prepareFreshPlexManagerTest();
+      final direct = _plexEndpoint('direct-home');
+      final relayEndpoint = _plexEndpoint('relay-cached', relay: true);
+      await storage.saveServerEndpoint(ServerId('cached-server'), relayEndpoint.uri);
+      final server = _ControlledPlexServer(
+        serverId: 'cached-server',
+        endpoints: [direct, relayEndpoint],
+        discoveryStreams: [() => Stream.value(direct)],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+
+      final bound = await manager.refreshTokensForProfile(
+        _plexAccount('cached-account', [server]),
+        profileId: 'profile-a',
+      );
+      await pumpEventQueue();
+
+      expect(bound, {'cached-server'});
+      // The relay URL must never reach discovery as the preferred endpoint.
+      expect(server.capturedPreferredUris, [null]);
+      expect(storage.getServerEndpoint(ServerId('cached-server')), direct.uri);
+    });
+
     test('fresh bind isolates a sibling factory failure and publishes both outcomes', () async {
       await _prepareFreshPlexManagerTest();
       final goodEndpoint = _plexEndpoint('good');
@@ -1638,13 +1726,13 @@ void main() {
   });
 }
 
-PlexConnection _plexEndpoint(String label) => PlexConnection(
+PlexConnection _plexEndpoint(String label, {bool relay = false}) => PlexConnection(
   protocol: 'https',
   address: '$label.invalid',
   port: 32400,
   uri: 'https://$label.invalid:32400',
-  local: true,
-  relay: false,
+  local: !relay,
+  relay: relay,
   ipv6: false,
 );
 
@@ -1657,6 +1745,7 @@ class _ControlledPlexServer extends PlexServer {
 
   final List<Stream<PlexConnection> Function()> discoveryStreams;
   int discoveryCalls = 0;
+  final List<String?> capturedPreferredUris = [];
 
   @override
   Stream<PlexConnection> findBestWorkingConnection({
@@ -1664,6 +1753,7 @@ class _ControlledPlexServer extends PlexServer {
     String? clientIdentifier,
     void Function(bool)? onTranscoderCapability,
   }) {
+    capturedPreferredUris.add(preferredUri);
     onTranscoderCapability?.call(true);
     final index = discoveryCalls++;
     if (discoveryStreams.isEmpty) return const Stream.empty();

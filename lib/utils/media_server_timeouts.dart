@@ -41,6 +41,14 @@ class MediaServerTimeouts {
   /// parallel (used in [PlexServer.findBestWorkingConnection]).
   static const connectionRace = Duration(seconds: 2);
 
+  /// Head start granted to non-relay candidates before relay endpoints are
+  /// probed in the phase-1 race. Plex's relay edge often answers faster than a
+  /// direct/reverse-proxied endpoint's TLS handshake, but winning the race puts
+  /// the whole session behind the relay's 2 Mbps cap — any direct endpoint that
+  /// answers inside this window should beat it. Relay remains a full fallback:
+  /// if nothing else responds, its (delayed) probe still wins the race.
+  static const relayProbeHandicap = Duration(milliseconds: 800);
+
   /// Per-server connection watchdog ceiling. The discovery path is no longer
   /// strictly serial (cached probe overlaps the race; the HTTPS upgrade runs
   /// off the critical path), so this is a generous upper bound rather than a
