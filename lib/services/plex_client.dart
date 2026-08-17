@@ -1643,7 +1643,58 @@ class PlexClient
       }
       result.add(item);
     }
-    return result;
+    return _backfillMissingLogos(result);
+  }
+
+  /// Some PMS versions (before the ~1.43 hub refresh) omit the show's
+  /// inherited `clearLogo` image from episode/season hub rows while the
+  /// show's own metadata still carries it, so the hero and other logo
+  /// surfaces fall back to the title even though the detail page works.
+  /// Resolve every missing owner's logo in one bulk metadata request
+  /// (`/library/metadata` accepts comma-joined rating keys) and stamp it on
+  /// the rows — the same grandparent lookup Plex Web performs. Best-effort:
+  /// a failed lookup never fails the shelf (it is retried on the next
+  /// refresh).
+  Future<List<PlexMetadataDto>> _backfillMissingLogos(List<PlexMetadataDto> items) async {
+    final missingByOwner = <String, List<int>>{};
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (item.clearLogo != null && item.clearLogo!.isNotEmpty) continue;
+      final ownerKey = switch (item.type?.toLowerCase()) {
+        'episode' => item.grandparentRatingKey,
+        'season' => item.parentRatingKey,
+        _ => null,
+      };
+      if (ownerKey == null || ownerKey.isEmpty) continue;
+      missingByOwner.putIfAbsent(ownerKey, () => []).add(i);
+    }
+    if (missingByOwner.isEmpty) return items;
+
+    try {
+      final response = await _getWithFailover(
+        '/library/metadata/${missingByOwner.keys.join(',')}',
+        allowEndpointFailover: false,
+      );
+      final metadata = _getMediaContainer(response)?['Metadata'] as List? ?? const [];
+      final logosByKey = <String, String>{};
+      for (final entry in metadata) {
+        final json = entry as Map<String, dynamic>;
+        final ratingKey = json['ratingKey']?.toString();
+        final logo = PlexMetadataDto.fromJsonWithImages(json).clearLogo;
+        if (ratingKey == null || ratingKey.isEmpty || logo == null || logo.isEmpty) continue;
+        logosByKey[ratingKey] = logo;
+      }
+      for (final entry in missingByOwner.entries) {
+        final logo = logosByKey[entry.key];
+        if (logo == null) continue;
+        for (final index in entry.value) {
+          items[index] = items[index].copyWith(clearLogo: logo);
+        }
+      }
+    } catch (e, st) {
+      appLogger.d('Failed to backfill continue-watching logos', error: e, stackTrace: st);
+    }
+    return items;
   }
 
   /// Get children of a metadata item (e.g., seasons for a show, episodes for a season).
