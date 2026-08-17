@@ -414,6 +414,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   int? selectedMediaIndex,
   String? selectedMediaSourceId,
   bool usePushReplacement = false,
+  bool resolveWatchState = true,
 }) async {
   final result = await navigateToVideoPlayer(
     context,
@@ -425,6 +426,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     selectedMediaIndex: selectedMediaIndex,
     selectedMediaSourceId: selectedMediaSourceId,
     usePushReplacement: usePushReplacement,
+    resolveWatchState: resolveWatchState,
   );
 
   appLogger.d('Returned from playback, refreshing metadata');

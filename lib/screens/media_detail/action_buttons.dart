@@ -53,6 +53,32 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       }
     }
 
+    // Restart target: the item whose in-progress playback a "play from
+    // beginning" would discard. For shows that is the on-deck episode (the
+    // show itself never carries a view offset), otherwise the item itself.
+    MediaItem? restartTarget;
+    if (metadata.isShow) {
+      final episode = _onDeckEpisode == null ? null : _fresh(_onDeckEpisode!);
+      if (episode != null && (episode.viewOffsetMs ?? 0) > 0) {
+        restartTarget = episode;
+      }
+    } else if (!metadata.isSeason && (_fresh(metadata).viewOffsetMs ?? 0) > 0) {
+      restartTarget = _fresh(metadata);
+    }
+
+    Future<void> onRestartPressed() async {
+      final target = restartTarget;
+      if (target == null) return;
+      appLogger.d('Playing from beginning: ${target.title}');
+      await navigateToVideoPlayerWithRefresh(
+        context,
+        metadata: target.copyWith(viewOffsetMs: 0),
+        isOffline: widget.isOffline,
+        onRefresh: _loadFullMetadata,
+        resolveWatchState: false,
+      );
+    }
+
     final primaryTrailer = _getPrimaryTrailer();
 
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
@@ -157,6 +183,19 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       builder: (context, state) => playButton(state),
     );
 
+    final restartAction = restartTarget == null
+        ? null
+        : FocusableAction(
+            debugLabel: 'detail_restart',
+            onPressed: () => unawaited(onRestartPressed()),
+            builder: (context, state) => iconActionButton(
+              state,
+              onPressed: () => unawaited(onRestartPressed()),
+              icon: const AppIcon(Symbols.replay_rounded, fill: 1),
+              tooltip: t.mediaMenu.playFromBeginning,
+            ),
+          );
+
     final trailerAction = primaryTrailer == null
         ? null
         : FocusableAction(
@@ -254,6 +293,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     final allActions = <FocusableAction>[
       playAction,
+      ?restartAction,
       ?trailerAction,
       ?shuffleAction,
       ?downloadAction,
