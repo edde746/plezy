@@ -401,10 +401,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
       // Bulk-load all pinned metadata across every backend in a single pass
       // instead of per-item DB calls.
-      final allMetadata = await _downloadManager.getAllPinnedMetadata(
-        preferActiveScope: true,
-        activeProfileId: _activeProfileId,
-      );
+      final allMetadata = await _downloadManager.getAllPinnedMetadata(activeProfileId: _activeProfileId);
 
       for (final item in downloads) {
         _downloads[item.globalKey] = DownloadProgress(
@@ -1656,10 +1653,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return;
     }
 
-    final allMetadata = await _downloadManager.getAllPinnedMetadata(
-      preferActiveScope: true,
-      activeProfileId: _activeProfileId,
-    );
+    final allMetadata = await _downloadManager.getAllPinnedMetadata(activeProfileId: _activeProfileId);
     if (isStale()) return;
     int cacheHits = 0;
     int networkFills = 0;

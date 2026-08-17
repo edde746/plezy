@@ -218,7 +218,7 @@ void main() {
   }
 
   Future<void> expectEmptyAttempt(Profile profile, JellyfinConnection connection) async {
-    expect(await ProfileRegistry(db).get(profile.id), isNull);
+    expect(await _hasProfile(db, profile.id), isFalse);
     expect(await ConnectionRegistry(db).get(connection.id), isNull);
     expect(await ProfileConnectionRegistry(db).get(profile.id, connection.id), isNull);
     expect(storage.getActiveProfileId(), isNull);
@@ -327,7 +327,7 @@ void main() {
     final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as JellyfinConnection;
     expect(restored.accessToken, priorConnection.accessToken);
     expect(restored.userName, priorConnection.userName);
-    expect(await ProfileRegistry(db).get(target.id), isNotNull);
+    expect(await _hasProfile(db, target.id), isTrue);
     expect(await ProfileConnectionRegistry(db).get(target.id, priorConnection.id), isNull);
     expect(storage.getActiveProfileId(), target.id);
     await tester.pumpWidget(const SizedBox.shrink());
@@ -363,7 +363,7 @@ void main() {
     );
     expect(error, isA<StateError>());
 
-    expect(await ProfileRegistry(db).get(newProfile.id), isNull);
+    expect(await _hasProfile(db, newProfile.id), isFalse);
     expect(await ConnectionRegistry(db).get(connection.id), isNull);
     expect(await ProfileConnectionRegistry(db).get(newProfile.id, connection.id), isNull);
     expect(storage.getProfileLastUsed(newProfile.id), isNull);
@@ -407,7 +407,7 @@ void main() {
     final restored = await tester.runAsync(() => ConnectionRegistry(db).get(priorConnection.id)) as JellyfinConnection;
     expect(restored.accessToken, priorConnection.accessToken);
     expect(restored.userName, priorConnection.userName);
-    expect(await ProfileRegistry(db).get(newProfile.id), isNull);
+    expect(await _hasProfile(db, newProfile.id), isFalse);
     expect(await ProfileConnectionRegistry(db).get(newProfile.id, priorConnection.id), isNull);
     expect(storage.getProfileLastUsed(newProfile.id), isNull);
     expect(storage.getActiveProfileId(), priorProfile.id);
@@ -433,7 +433,7 @@ void main() {
     gated.release.complete();
 
     await pending;
-    expect(await ProfileRegistry(db).get(profile.id), isNotNull);
+    expect(await _hasProfile(db, profile.id), isTrue);
     expect(await ConnectionRegistry(db).get(connection.id), isNotNull);
     expect(await ProfileConnectionRegistry(db).get(profile.id, connection.id), isNotNull);
     expect(storage.getActiveProfileId(), profile.id);
@@ -463,3 +463,6 @@ void main() {
     await tester.pump();
   });
 }
+
+Future<bool> _hasProfile(AppDatabase db, String id) async =>
+    (await ProfileRegistry(db).list()).any((profile) => profile.id == id);

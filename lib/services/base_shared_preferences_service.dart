@@ -165,7 +165,6 @@ abstract class BaseSharedPreferencesService {
         backupPath: backupPath,
         backupHoldsCredentials: backupHoldsCredentials,
         vaultKeySalvaged: seeded && salvaged.vaultKey != null,
-        sessionsSalvaged: seeded ? salvaged.sessions.length : 0,
         sessionsLost: seeded ? salvaged.losses : salvaged.losses + salvaged.sessions.length,
         requiresRestart: true,
       );
@@ -198,7 +197,6 @@ abstract class BaseSharedPreferencesService {
       backupPath: backupPath,
       backupHoldsCredentials: backupHoldsCredentials,
       vaultKeySalvaged: salvaged.vaultKey != null,
-      sessionsSalvaged: salvaged.sessions.length,
       sessionsLost: salvaged.losses,
     );
   }
@@ -230,9 +228,7 @@ abstract class BaseSharedPreferencesService {
       backupPath: backupPath,
       // The vault key survives unless it was the unreadable value itself.
       vaultKeySalvaged: key != credentialVaultKeyPref,
-      sessionsSalvaged: 0,
       sessionsLost: key == credentialVaultKeyPref ? 0 : 1,
-      settingsReset: false,
     );
   }
 

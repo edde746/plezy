@@ -72,13 +72,12 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     this._audioPlayerFactory = Player.audio,
     this._mediaControlsFactory = MediaControlsManager.new,
     this._completedConfirmDelay = const Duration(milliseconds: 400),
-    PlaybackCoordinator? coordinator,
     @visibleForTesting Future<void> Function(double)? volumePersistenceWriter,
     @visibleForTesting Random? queueRandom,
   }) : assert(resolver != null || database != null, 'database is required to build the default resolver'),
        _serverManager = serverManager,
        _resolver = resolver ?? ServerMusicSourceResolver(serverManager: serverManager, database: database!),
-       _coordinator = coordinator ?? PlaybackCoordinator.instance,
+       _coordinator = PlaybackCoordinator.instance,
        _queue = MusicQueueController(random: queueRandom),
        _volumePersistenceWriter = volumePersistenceWriter ?? _writePersistedVolume {
     _coordinator.registerMusicSession(stopAndDispose: _stopForVideoClaim);
@@ -205,7 +204,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   bool get _carBackgroundAudioAvailable => CarUxRestrictionsService.instance.state != CarUxRestrictionState.unknown;
 
   Timer? _sleepTimer;
-  DateTime? _sleepTimerEndsAt;
   Duration? _sleepTimerDuration;
   bool _sleepTimerEndOfTrack = false;
 
@@ -261,9 +259,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   @override
   bool get sleepTimerActive => _sleepTimer != null || _sleepTimerEndOfTrack;
-
-  @override
-  DateTime? get sleepTimerEndsAt => _sleepTimerEndsAt;
 
   @override
   Duration? get sleepTimerDuration => _sleepTimerDuration;
@@ -1442,12 +1437,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   void setSleepTimer(Duration? duration, {bool endOfTrack = false}) {
     _sleepTimer?.cancel();
     _sleepTimer = null;
-    _sleepTimerEndsAt = null;
     _sleepTimerDuration = null;
     final hadEndOfTrack = _sleepTimerEndOfTrack;
     _sleepTimerEndOfTrack = endOfTrack;
     if (!endOfTrack && duration != null) {
-      _sleepTimerEndsAt = DateTime.now().add(duration);
       _sleepTimerDuration = duration;
       _sleepTimer = Timer(duration, _onSleepTimerFired);
     }
@@ -1461,7 +1454,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   void _onSleepTimerFired() {
     _sleepTimer = null;
-    _sleepTimerEndsAt = null;
     _sleepTimerDuration = null;
     unawaited(pause());
     notifyListeners();
@@ -1470,7 +1462,6 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   void _cancelSleepTimer() {
     _sleepTimer?.cancel();
     _sleepTimer = null;
-    _sleepTimerEndsAt = null;
     _sleepTimerDuration = null;
     _sleepTimerEndOfTrack = false;
   }

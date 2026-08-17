@@ -16,17 +16,13 @@ enum MusicPlayContextKind { album, artist, playlist, mix, tracks }
 
 /// Provenance of the current queue (album/artist/playlist/instant mix).
 class MusicPlayContext {
-  /// Backend id of the source container, when it has one (instant mixes
-  /// don't).
-  final String? id;
-
   /// Display title of the session source. Used directly for stable
   /// artist/playlist/mix provenance labels.
   final String title;
 
   final MusicPlayContextKind kind;
 
-  const MusicPlayContext({this.id, required this.title, required this.kind});
+  const MusicPlayContext({required this.title, required this.kind});
 }
 
 /// Backend-neutral music playback session: owns the audio `Player`, the
@@ -133,10 +129,6 @@ abstract class MusicPlaybackService extends ChangeNotifier {
 
   /// Whether a sleep timer (timed or end-of-track) is armed.
   bool get sleepTimerActive;
-
-  /// When the timed sleep timer fires; null in end-of-track mode or when
-  /// inactive.
-  DateTime? get sleepTimerEndsAt;
 
   /// The duration the timed sleep timer was armed with (for marking the
   /// chosen preset); null in end-of-track mode or when inactive.

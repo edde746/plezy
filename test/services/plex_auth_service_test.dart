@@ -110,7 +110,6 @@ void main() {
     test('fetchServers tolerates scalar drift in server and connection fields', () async {
       final server = _serverJson()
         ..['owned'] = '1'
-        ..['presence'] = 1
         ..['product'] = 42
         ..['lastSeenAt'] = 123;
       final connection = (server['connections'] as List).single as Map<String, dynamic>
@@ -128,7 +127,6 @@ void main() {
       final servers = await PlexAuthService.forTesting(http: client).fetchServers('token');
 
       expect(servers.single.owned, isTrue);
-      expect(servers.single.presence, isTrue);
       expect(servers.single.product, '42');
       expect(servers.single.lastSeenAt, isNull);
       expect(connection['port'], '32400');

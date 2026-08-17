@@ -19,10 +19,6 @@ class JellyfinLiveSessionTracker {
   final String? playMethod;
   PlaybackReportSession? _session;
 
-  /// Session id reused across all heartbeats for this playback. Exposed
-  /// for callers that need to thread it elsewhere (e.g. analytics logs).
-  String get playSessionId => _playSessionId;
-
   /// Send the appropriate heartbeat for [state] (`'playing'`, `'paused'`,
   /// or `'stopped'`). Errors are swallowed — heartbeats are best-effort.
   Future<void> report({

@@ -156,7 +156,7 @@ void main() {
     });
     addTearDown(client.close);
 
-    final saved = await client.selectStreams(99, audioStreamID: 301, allParts: true);
+    final saved = await client.selectStreams(99, audioStreamID: 301);
 
     expect(saved, isTrue);
     expect(requests, hasLength(1));

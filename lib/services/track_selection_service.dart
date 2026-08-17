@@ -704,23 +704,10 @@ class TrackSelectionService {
     return result;
   }
 
-  /// Find a track by preferred language with variation lookup and logging
-  T? _findTrackByPreferredLanguage<T>(
-    List<T> tracks,
-    String preferredLanguage,
-    String? Function(T) getLanguage,
-    String Function(T) getDescription,
-    String trackType,
-  ) {
+  /// Find a track by preferred language with variation lookup
+  T? _findTrackByPreferredLanguage<T>(List<T> tracks, String preferredLanguage, String? Function(T) getLanguage) {
     final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-    return _findTrackByLanguageVariations<T>(
-      tracks,
-      preferredLanguage,
-      languageVariations,
-      getLanguage,
-      getDescription,
-      trackType,
-    );
+    return _findTrackByLanguageVariations<T>(tracks, languageVariations, getLanguage);
   }
 
   /// Apply a filter to tracks, falling back to original if filter produces empty result
@@ -777,13 +764,7 @@ class TrackSelectionService {
     if (preferredLanguages.isEmpty) return null;
 
     for (final preferredLanguage in preferredLanguages) {
-      final match = _findTrackByPreferredLanguage<AudioTrack>(
-        availableTracks,
-        preferredLanguage,
-        (t) => t.language,
-        (t) => t.title ?? 'Track ${t.id}',
-        'audio track',
-      );
+      final match = _findTrackByPreferredLanguage<AudioTrack>(availableTracks, preferredLanguage, (t) => t.language);
       if (match != null) return match;
     }
 
@@ -806,8 +787,6 @@ class TrackSelectionService {
         candidates,
         preferredLanguage,
         (track) => track.language,
-        (track) => track.title ?? 'Track ${track.id}',
-        'subtitle track',
       );
       if (match != null) return match;
     }
@@ -957,11 +936,8 @@ class TrackSelectionService {
   /// Returns the first track whose language matches any variation of the preferred language
   T? _findTrackByLanguageVariations<T>(
     List<T> tracks,
-    String _,
     List<String> languageVariations,
     String? Function(T) getLanguage,
-    String Function(T) _,
-    String _,
   ) {
     for (final track in tracks) {
       final trackLang = getLanguage(track)?.toLowerCase();

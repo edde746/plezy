@@ -59,18 +59,6 @@ class PlexApiCache extends ApiCache {
     return pin(serverId, '/library/metadata/$ratingKey');
   }
 
-  Future<void> unpinForOffline(ServerId serverId, String ratingKey) async {
-    return unpin(serverId, '/library/metadata/$ratingKey');
-  }
-
-  /// Whether the metadata for [ratingKey] is pinned for offline.
-  ///
-  /// Named `isPinnedRatingKey` to avoid colliding with the inherited
-  /// [ApiCache.isPinned]'s identical Dart signature.
-  Future<bool> isPinnedRatingKey(ServerId serverId, String ratingKey) {
-    return isPinned(serverId, '/library/metadata/$ratingKey');
-  }
-
   // Rating keys can be alphanumeric, not just numeric.
   static final RegExp _metadataKeyPattern = RegExp(r'/library/metadata/([^/]+)$');
 

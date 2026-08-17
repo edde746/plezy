@@ -12,21 +12,15 @@ class PlaybackSourceResolver {
 
   const PlaybackSourceResolver({required this.serverManager, required this.database});
 
-  /// [preferOffline] overrides the default downloaded-copy preference
-  /// (`offlineLibraryMode || options.qualityPreset.isOriginal`, so an omitted
-  /// preset keeps it on). Pass false for flows that must stay on the server
-  /// stream, e.g. a transcode restart.
-  Future<PlaybackContext> resolve(
-    PlaybackInitializationOptions options, {
-    required bool offlineLibraryMode,
-    bool? preferOffline,
-  }) async {
+  /// Prefers a downloaded copy when in offline library mode or when the
+  /// requested quality preset is original (an omitted preset keeps it on).
+  Future<PlaybackContext> resolve(PlaybackInitializationOptions options, {required bool offlineLibraryMode}) async {
     final metadata = options.metadata;
     final reportingClient = _playbackClient(serverIdOrNull(metadata.serverId), offlineLibraryMode: offlineLibraryMode);
     final service = PlaybackInitializationService(client: reportingClient, database: database);
     final result = await service.getPlaybackData(
       options,
-      preferOffline: preferOffline ?? (offlineLibraryMode || options.qualityPreset.isOriginal),
+      preferOffline: offlineLibraryMode || options.qualityPreset.isOriginal,
     );
 
     final sourceKind = result.usesLocalMedia
@@ -39,15 +33,12 @@ class PlaybackSourceResolver {
       client: reportingClient,
       offlineLibraryMode: offlineLibraryMode,
     );
-    final scopeId = reportingClient?.cacheServerId;
-
     return PlaybackContext(
       metadata: metadata,
       result: result,
       sourceKind: sourceKind,
       reportingMode: reportingMode,
       reportingClient: reportingClient,
-      clientScopeId: scopeId == metadata.serverId ? null : scopeId,
       streamHeaders: _streamHeaders(
         client: reportingClient,
         sourceKind: sourceKind,

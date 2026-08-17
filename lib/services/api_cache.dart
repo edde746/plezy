@@ -141,11 +141,7 @@ abstract class ApiCache {
   Future<void> put(ServerId serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
     final encoded = await tryIsolateRun(() => jsonEncode(data));
-    await _db
-        .into(_db.apiCache)
-        .insertOnConflictUpdate(
-          ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())),
-        );
+    await _db.into(_db.apiCache).insertOnConflictUpdate(ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded)));
   }
 
   Future<void> deleteForServer(ServerId serverId) async {
@@ -158,13 +154,6 @@ abstract class ApiCache {
     await (_db.update(
       _db.apiCache,
     )..where((t) => t.cacheKey.equals(key))).write(const ApiCacheCompanion(pinned: Value(true)));
-  }
-
-  Future<void> unpin(ServerId serverId, String endpoint) async {
-    final key = _buildKey(serverId, endpoint);
-    await (_db.update(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.equals(key))).write(const ApiCacheCompanion(pinned: Value(false)));
   }
 
   Future<bool> isPinned(ServerId serverId, String endpoint) async {

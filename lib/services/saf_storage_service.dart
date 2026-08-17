@@ -101,19 +101,6 @@ class SafStorageService implements SafStorageOperations {
     }
   }
 
-  /// Create a subdirectory in a SAF directory
-  /// Returns the URI of the created directory
-  Future<String?> createDirectory(String parentUri, String name) async {
-    if (!isAvailable) return null;
-    try {
-      final result = await _safUtil.mkdirp(parentUri, [name]);
-      return result.uri;
-    } catch (e) {
-      appLogger.w('SAF createDirectory error', error: e);
-      return null;
-    }
-  }
-
   /// Traverse to a child file/directory under a SAF directory.
   /// [names] is the path-component list from [parentUri] to the target;
   /// pass a single element for an immediate child.

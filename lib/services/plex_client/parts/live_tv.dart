@@ -22,8 +22,6 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     }
   }
 
-  String? _activityUuid(MediaServerResponse response) => response.headers['x-plex-activity'];
-
   List<T> _extractContainerList<T>(
     MediaServerResponse response,
     Iterable<String> keys,
@@ -170,10 +168,9 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   }
 
   @override
-  Future<LiveTvActivityResult<void>> reloadGuide(String dvrId) async {
+  Future<void> reloadGuide(String dvrId) async {
     final response = await _http.post('/livetv/dvrs/$dvrId/reloadGuide', timeout: MediaServerTimeouts.receive);
     _throwIfFailed(response);
-    return LiveTvActivityResult(value: null, activityUuid: _activityUuid(response));
   }
 
   /// Get EPG channels using provider lineup endpoints (matches official Plex web client)

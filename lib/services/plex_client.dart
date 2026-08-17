@@ -1418,7 +1418,7 @@ class PlexClient
   /// Select specific audio and subtitle streams for playback
   /// This updates which streams are "selected" in the media metadata
   /// Uses the part ID from media info for accurate stream selection
-  Future<bool> selectStreams(int partId, {int? audioStreamID, int? subtitleStreamID, bool allParts = true}) async {
+  Future<bool> selectStreams(int partId, {int? audioStreamID, int? subtitleStreamID}) async {
     final queryParams = <String, dynamic>{};
     if (audioStreamID != null) {
       queryParams['audioStreamID'] = audioStreamID;
@@ -1426,20 +1426,16 @@ class PlexClient
     if (subtitleStreamID != null) {
       queryParams['subtitleStreamID'] = subtitleStreamID;
     }
-    if (allParts) {
-      // If no streams to select, return early
-      if (queryParams.isEmpty) {
-        return true;
-      }
-      queryParams['allParts'] = 1;
-
-      // Use PUT request on /library/parts/{partId}
-      return _wrapBoolApiCall(
-        () => _http.put('/library/parts/$partId', queryParameters: queryParams),
-        'Failed to select streams',
-      );
+    // If no streams to select, return early
+    if (queryParams.isEmpty) {
+      return true;
     }
-    return true;
+    queryParams['allParts'] = 1;
+    // Use PUT request on /library/parts/{partId}
+    return _wrapBoolApiCall(
+      () => _http.put('/library/parts/$partId', queryParameters: queryParams),
+      'Failed to select streams',
+    );
   }
 
   /// Search for subtitles from external providers (e.g. OpenSubtitles) via the Plex server.
@@ -3542,7 +3538,7 @@ class PlexClient
           transcodeSessionId: options.transcodeSessionId!,
           audioStreamId: resolvedAudioId,
           selectedSubtitleTrack: requestedSubtitleTrack,
-          partId: data.mediaInfo?.getPartId(),
+          partId: data.mediaInfo?.partId,
         );
 
         // A transcode that cannot carry the requested caption is not the outcome we asked for. The

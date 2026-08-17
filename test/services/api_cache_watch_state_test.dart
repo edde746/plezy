@@ -185,7 +185,6 @@ void main() {
             ApiCacheCompanion(
               cacheKey: const Value('jf-srv:/Users/user-a/Items/item-1'),
               data: const Value('not json'),
-              cachedAt: Value(DateTime.now()),
             ),
           );
 

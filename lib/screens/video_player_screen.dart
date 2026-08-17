@@ -396,8 +396,8 @@ TrackPreferencePersister _plexTrackPersister(PlexClient? Function() resolve) {
     final client = resolve();
     if (client == null) return;
     await (trackType == 'audio'
-        ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
-        : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true));
+        ? client.selectStreams(partId, audioStreamID: streamID)
+        : client.selectStreams(partId, subtitleStreamID: streamID));
   };
 }
 

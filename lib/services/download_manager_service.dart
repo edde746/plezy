@@ -535,31 +535,24 @@ class DownloadManagerService {
 
   /// Bulk-load pinned metadata. Profile-visible hydration reads only exact
   /// owner namespaces; it never pre-merges another user's rows.
-  Future<Map<String, MediaItem>> getAllPinnedMetadata({bool preferActiveScope = false, String? activeProfileId}) async {
-    if (preferActiveScope) {
-      if (activeProfileId == null || activeProfileId.isEmpty) return {};
-      final ownerKeys = await _database.getDownloadOwnerKeysForProfile(activeProfileId);
-      final allowedByBackend = <MediaBackend, Set<ServerId>>{
-        for (final backend in MediaBackend.values) backend: <ServerId>{},
-      };
-      for (final item in await _database.getAllDownloadedMetadata()) {
-        if (!ownerKeys.contains(item.globalKey)) continue;
-        final serverId = ServerId(item.serverId);
-        final backend = await _backendForServer(serverId);
-        if (backend == null) continue;
-        final scopeId = await profileClientScopeIdForServer(serverId, activeProfileId);
-        if (scopeId != null) allowedByBackend[backend]!.add(ServerId(scopeId));
-      }
-      final results = await Future.wait(
-        MediaBackend.values.map(
-          (backend) => ApiCache.forBackend(backend).getAllPinnedMetadata(cacheServerIds: allowedByBackend[backend]),
-        ),
-      );
-      return {for (final result in results) ...result};
+  Future<Map<String, MediaItem>> getAllPinnedMetadata({String? activeProfileId}) async {
+    if (activeProfileId == null || activeProfileId.isEmpty) return {};
+    final ownerKeys = await _database.getDownloadOwnerKeysForProfile(activeProfileId);
+    final allowedByBackend = <MediaBackend, Set<ServerId>>{
+      for (final backend in MediaBackend.values) backend: <ServerId>{},
+    };
+    for (final item in await _database.getAllDownloadedMetadata()) {
+      if (!ownerKeys.contains(item.globalKey)) continue;
+      final serverId = ServerId(item.serverId);
+      final backend = await _backendForServer(serverId);
+      if (backend == null) continue;
+      final scopeId = await profileClientScopeIdForServer(serverId, activeProfileId);
+      if (scopeId != null) allowedByBackend[backend]!.add(ServerId(scopeId));
     }
-
     final results = await Future.wait(
-      MediaBackend.values.map((backend) => ApiCache.forBackend(backend).getAllPinnedMetadata()),
+      MediaBackend.values.map(
+        (backend) => ApiCache.forBackend(backend).getAllPinnedMetadata(cacheServerIds: allowedByBackend[backend]),
+      ),
     );
     return {for (final result in results) ...result};
   }
@@ -1964,7 +1957,7 @@ class DownloadManagerService {
       final requiresWiFi = settings.read(SettingsService.downloadOnWifiOnly);
       final MediaItem resolvedMetadata = metadata;
 
-      final becameInactive = await _serializeSafOwnership(() async {
+      await _serializeSafOwnership(() async {
         if (_queueBlockedByStorageFailure) return true;
         final metadata = resolvedMetadata;
         final safBaseUri = _storageService.safBaseUri;
@@ -2058,7 +2051,6 @@ class DownloadManagerService {
 
         return _enqueuePreparedTask(globalKey, task, safRootUri != null ? 'SAF download' : 'download');
       });
-      if (becameInactive) return true;
       return true;
     } catch (e, st) {
       if (await _isCancelledOrDeleted(globalKey)) {

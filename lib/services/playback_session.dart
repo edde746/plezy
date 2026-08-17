@@ -4,7 +4,6 @@ import '../media/media_source_info.dart';
 import '../media/media_version.dart';
 import '../models/transcode_quality_preset.dart';
 import 'playback_context.dart';
-import 'playback_initialization_types.dart';
 import 'playback_subtitle_resolver.dart';
 
 /// Immutable snapshot of everything that describes the item currently loaded
@@ -70,27 +69,23 @@ class PlaybackSession {
     return versions[index].id;
   }
 
-  PlaybackInitializationResult get result => context.result;
-
   MediaItem get metadata => context.metadata;
 
   MediaServerClient? get reportingClient => context.reportingClient;
 
-  bool get isTranscoding => result.isTranscoding;
+  bool get isTranscoding => context.result.isTranscoding;
 
-  bool get isOffline => result.isOffline;
+  bool get isOffline => context.result.isOffline;
 
-  String? get playSessionId => result.playSessionId;
+  String? get playSessionId => context.result.playSessionId;
 
-  String? get playMethod => result.playMethod;
+  String? get playMethod => context.result.playMethod;
 
-  int? get audioStreamId => result.activeAudioStreamId;
+  int? get audioStreamId => context.result.activeAudioStreamId;
 
-  int get mediaIndex => result.selectedMediaIndex;
+  int get mediaIndex => context.result.selectedMediaIndex;
 
-  List<MediaVersion> get availableVersions => result.availableVersions;
+  List<MediaVersion> get availableVersions => context.result.availableVersions;
 
-  MediaSourceInfo? get mediaInfo => result.mediaInfo;
-
-  Map<String, String>? get streamHeaders => context.streamHeaders;
+  MediaSourceInfo? get mediaInfo => context.result.mediaInfo;
 }

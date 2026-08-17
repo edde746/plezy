@@ -592,7 +592,7 @@ void main() {
       addTearDown(tracker.dispose);
 
       final events = <WatchStateEvent>[];
-      final sub = WatchStateNotifier().forItem('42').listen(events.add);
+      final sub = WatchStateNotifier().stream.where((e) => e.affectsItem('42')).listen(events.add);
       addTearDown(sub.cancel);
 
       await Future.wait([tracker.sendProgress('stopped'), tracker.sendProgress('stopped')]);
@@ -869,9 +869,8 @@ void main() {
       addTearDown(tracker.dispose);
 
       final watched = <WatchStateEvent>[];
-      final sub = WatchStateNotifier()
-          .forItem('42')
-          .where((e) => e.changeType == WatchStateChangeType.watched)
+      final sub = WatchStateNotifier().stream
+          .where((e) => e.affectsItem('42') && e.changeType == WatchStateChangeType.watched)
           .listen(watched.add);
       addTearDown(sub.cancel);
 
@@ -1081,9 +1080,8 @@ void main() {
       addTearDown(tracker.dispose);
 
       final watched = <WatchStateEvent>[];
-      final sub = WatchStateNotifier()
-          .forItem('42')
-          .where((e) => e.changeType == WatchStateChangeType.watched)
+      final sub = WatchStateNotifier().stream
+          .where((e) => e.affectsItem('42') && e.changeType == WatchStateChangeType.watched)
           .listen(watched.add);
       addTearDown(sub.cancel);
 
@@ -1553,7 +1551,7 @@ void main() {
 
       // Subscribe before triggering the event.
       final events = <WatchStateEvent>[];
-      final sub = WatchStateNotifier().forItem('42').listen(events.add);
+      final sub = WatchStateNotifier().stream.where((e) => e.affectsItem('42')).listen(events.add);
       addTearDown(sub.cancel);
 
       await tracker.sendProgress('stopped');
@@ -1579,7 +1577,7 @@ void main() {
       addTearDown(tracker.dispose);
 
       final events = <WatchStateEvent>[];
-      final sub = WatchStateNotifier().forItem('no-watch').listen(events.add);
+      final sub = WatchStateNotifier().stream.where((e) => e.affectsItem('no-watch')).listen(events.add);
       addTearDown(sub.cancel);
 
       await tracker.sendProgress('stopped');
@@ -1603,7 +1601,7 @@ void main() {
       addTearDown(tracker.dispose);
 
       final events = <WatchStateEvent>[];
-      final sub = WatchStateNotifier().forItem('scrobbler').listen(events.add);
+      final sub = WatchStateNotifier().stream.where((e) => e.affectsItem('scrobbler')).listen(events.add);
       addTearDown(sub.cancel);
 
       await tracker.sendProgress('stopped');
