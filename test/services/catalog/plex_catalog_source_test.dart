@@ -441,7 +441,6 @@ void main() {
       expect(captured.url.queryParameters, containsPair('searchProviders', 'discover'));
       expect(results, hasLength(1));
       expect(results.single.ids.plex, 'plex-movie-1');
-      expect(results.single.relevance, 0.91);
     });
 
     test('watchlist snapshot and mutation use the advertised action endpoint', () async {
@@ -626,7 +625,6 @@ void main() {
         title: 'Inception',
         overview: 'Row overview.',
         ids: CatalogItemIds(plex: 'plex-movie-1'),
-        relevance: 0.73,
       );
       final detailFuture = source.fetchDetail(item);
       await Future<void>.delayed(Duration.zero);
@@ -711,7 +709,6 @@ void main() {
       final detail = await detailFuture;
 
       expect(detail.item.overview, 'A complete and much longer summary from detail metadata.');
-      expect(detail.item.relevance, 0.73);
       expect(detail.item.genres, ['Science Fiction', 'Thriller']);
       expect(detail.item.studios, ['Warner Bros.']);
       expect(detail.item.countries, ['GB', 'US']);

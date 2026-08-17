@@ -158,7 +158,6 @@ class SeerrCatalogSource implements CatalogSource {
     languages: _languageList(m.originalLanguage),
     countries: _countryCodes(m.originCountry),
     isAdult: m.isMovie ? m.adult : null,
-    relevance: m.popularity,
   );
 
   Future<SeerrDetails?> _fetchDetails(MediaKind kind, int tmdbId) async {
@@ -219,7 +218,6 @@ class SeerrCatalogSource implements CatalogSource {
     budget: _positive(details.budget),
     revenue: _positive(details.revenue),
     isAdult: kind == MediaKind.movie ? details.adult : null,
-    relevance: details.popularity,
   );
 
   List<CatalogCastMember> _toCast(SeerrDetails details, int limit) => [

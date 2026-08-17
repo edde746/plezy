@@ -221,7 +221,7 @@ class AnilistClient implements DisposableTrackerClient {
 
   AnilistClient(TrackerSession session, {required this.onSessionInvalidated, http.Client? httpClient})
     : _session = session,
-      _http = TrackerHttpClient(service: TrackerService.anilist, logLabel: 'AniList', httpClient: httpClient);
+      _http = TrackerHttpClient(logLabel: 'AniList', httpClient: httpClient);
 
   TrackerSession get session => _session;
 

@@ -27,7 +27,7 @@ class SimklClient implements DisposableTrackerClient {
   final void Function() onSessionInvalidated;
 
   SimklClient(this.session, {required this.onSessionInvalidated, http.Client? httpClient})
-    : _http = TrackerHttpClient(service: TrackerService.simkl, logLabel: 'Simkl', httpClient: httpClient);
+    : _http = TrackerHttpClient(logLabel: 'Simkl', httpClient: httpClient);
 
   @override
   void dispose() => _http.dispose();

@@ -43,7 +43,7 @@ class TraktClient implements DisposableTrackerClient {
     this.onSessionUpdated,
     http.Client? httpClient,
   }) : _session = session,
-       _http = TrackerHttpClient(service: TrackerService.trakt, logLabel: 'Trakt', httpClient: httpClient);
+       _http = TrackerHttpClient(logLabel: 'Trakt', httpClient: httpClient);
 
   TrackerSession get session => _session;
 

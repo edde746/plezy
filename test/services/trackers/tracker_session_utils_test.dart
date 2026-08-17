@@ -19,12 +19,11 @@ void main() {
   });
 
   group('tracker session json codec', () {
-    test('round-trips Trakt sessions with snake-case keys and default scope', () {
+    test('round-trips Trakt sessions with snake-case keys', () {
       const session = TrackerSession(
         accessToken: 'trakt-at',
         refreshToken: 'trakt-rt',
         expiresAt: 2000,
-        scope: 'public',
         createdAt: 1000,
       );
 
@@ -33,7 +32,6 @@ void main() {
         'refresh_token': 'trakt-rt',
         'expires_at': 2000,
         'username': null,
-        'scope': 'public',
         'created_at': 1000,
       });
 
@@ -48,7 +46,6 @@ void main() {
       expect(decoded.refreshToken, 'trakt-rt');
       expect(decoded.expiresAt, 2000);
       expect(decoded.username, isNull);
-      expect(decoded.scope, isNull);
       expect(decoded.createdAt, 1000);
     });
 
@@ -70,7 +67,7 @@ void main() {
       expect(decoded.createdAt, 1000);
     });
 
-    test('builds Trakt token sessions with default scope', () {
+    test('builds Trakt token sessions', () {
       final session = TrackerSession.fromTokenResponse(TrackerService.trakt, {
         'access_token': 'trakt-at',
         'refresh_token': 'trakt-rt',
@@ -78,20 +75,8 @@ void main() {
         'created_at': 1000,
       });
 
-      expect(session.scope, 'public');
+      expect(session.accessToken, 'trakt-at');
       expect(session.expiresAt, 2000);
-    });
-
-    test('defaults missing scope only when decoding stored Trakt sessions', () {
-      final encoded = encodeTrackerSessionJson({
-        'access_token': 'trakt-at',
-        'refresh_token': 'trakt-rt',
-        'expires_at': 2000,
-        'created_at': 1000,
-      });
-
-      expect(TrackerSession.decode(encoded).scope, isNull);
-      expect(TrackerSession.decode(encoded, service: TrackerService.trakt).scope, 'public');
     });
   });
 
@@ -141,7 +126,7 @@ void main() {
       expect(session.expiresAt, 2000);
     });
 
-    test('decodes a legacy Trakt blob and defaults the scope', () {
+    test('decodes a legacy Trakt blob', () {
       final raw = encodeTrackerSessionJson({
         'access_token': 'trakt-at',
         'refresh_token': 'trakt-rt',
@@ -152,7 +137,7 @@ void main() {
       final session = TrackerSession.decode(raw, service: TrackerService.trakt);
 
       expect(session.refreshToken, 'trakt-rt');
-      expect(session.scope, 'public');
+      expect(session.expiresAt, 2000);
     });
 
     test('rejects a MAL/Trakt blob missing the refresh token', () {

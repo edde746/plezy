@@ -13,7 +13,7 @@ library;
 /// MAL returns one rank per ranking endpoint, AniList returns a `rankings`
 /// array tagged by type, Simkl returns a trending rank. Normalizing the scope
 /// lets one badge render `#3 airing` or `#12 most popular` from any of them.
-enum CatalogRankScope { popular, airing, rated, favorited, trending, seasonal }
+enum CatalogRankScope { popular, airing, rated, trending }
 
 /// A leaderboard position within [scope], over either all time or one
 /// season/year window.

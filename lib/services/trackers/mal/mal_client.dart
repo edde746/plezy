@@ -36,7 +36,7 @@ class MalClient implements DisposableTrackerClient {
     http.Client? httpClient,
     MalAuthService? authService,
   }) : _session = session,
-       _http = TrackerHttpClient(service: TrackerService.mal, logLabel: 'MAL', httpClient: httpClient),
+       _http = TrackerHttpClient(logLabel: 'MAL', httpClient: httpClient),
        _auth = authService ?? MalAuthService();
 
   TrackerSession get session => _session;

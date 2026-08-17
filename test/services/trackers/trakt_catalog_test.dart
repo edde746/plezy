@@ -18,7 +18,6 @@ TrackerSession _session() {
     accessToken: 'access',
     refreshToken: 'refresh',
     expiresAt: now + 86400,
-    scope: 'public',
     createdAt: now - 3600,
     username: 'alice',
   );

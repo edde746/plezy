@@ -92,9 +92,7 @@ String? rankLabel(CatalogRank rank) {
     CatalogRankScope.popular => t.explore.badge.rankPopular(n: rank.rank),
     CatalogRankScope.airing => t.explore.badge.rankAiring(n: rank.rank),
     CatalogRankScope.rated => t.explore.badge.rankRated(n: rank.rank),
-    CatalogRankScope.favorited => t.explore.badge.rankFavorited(n: rank.rank),
     CatalogRankScope.trending => t.explore.badge.rankTrending(n: rank.rank),
-    CatalogRankScope.seasonal => null,
   };
 }
 

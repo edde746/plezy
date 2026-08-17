@@ -43,11 +43,7 @@ class OAuthProxyClient {
       throw OAuthProxyException('OAuth proxy start failed: HTTP ${res.statusCode}');
     }
     final body = json.decode(res.body) as Map<String, dynamic>;
-    return OAuthProxyStart(
-      session: body['session'] as String,
-      url: body['url'] as String,
-      expiresIn: (body['expiresIn'] as num).toInt(),
-    );
+    return OAuthProxyStart(session: body['session'] as String, url: body['url'] as String);
   }
 
   /// Long-poll /auth/result?session=X until a completion event arrives.
@@ -124,11 +120,7 @@ class OAuthProxyStart {
   /// triggering the upstream OAuth flow.
   final String url;
 
-  /// Session TTL in seconds. After this, polls will 410 and the user must
-  /// restart.
-  final int expiresIn;
-
-  const OAuthProxyStart({required this.session, required this.url, required this.expiresIn});
+  const OAuthProxyStart({required this.session, required this.url});
 }
 
 class OAuthProxyResult {

@@ -21,7 +21,6 @@ TrackerSession _session({
     accessToken: accessToken,
     refreshToken: refreshToken,
     expiresAt: expiresAt ?? now - 60,
-    scope: 'public',
     createdAt: now - 3600,
     username: username,
   );

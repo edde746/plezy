@@ -164,7 +164,6 @@ void main() {
       });
       expect(fresh.accessToken, 'new-at');
       expect(fresh.refreshToken, 'new-rt');
-      expect(fresh.scope, 'write');
       // The token endpoint never echoes the account name, so it must survive
       // the rotation rather than blanking the settings row.
       expect(fresh.username, 'edde');

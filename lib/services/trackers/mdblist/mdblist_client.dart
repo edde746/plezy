@@ -36,7 +36,7 @@ class MdblistClient implements DisposableTrackerClient {
     http.Client? httpClient,
     MdblistAuthService? authService,
   }) : _session = session,
-       _http = TrackerHttpClient(service: TrackerService.mdblist, logLabel: 'MDBList', httpClient: httpClient),
+       _http = TrackerHttpClient(logLabel: 'MDBList', httpClient: httpClient),
        _auth = authService ?? MdblistAuthService();
 
   TrackerSession get session => _session;
