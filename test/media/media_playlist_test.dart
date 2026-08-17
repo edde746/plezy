@@ -27,14 +27,14 @@ MediaPlaylist _playlist({
 
 void main() {
   group('MediaPlaylist.displayImagePath', () {
-    test('prefers compositeImagePath over thumbPath', () {
+    test('prefers the user-assigned thumbPath over compositeImagePath', () {
       final pl = _playlist(compositeImagePath: '/composite/grid', thumbPath: '/thumb/single');
-      expect(pl.displayImagePath, '/composite/grid');
+      expect(pl.displayImagePath, '/thumb/single');
     });
 
-    test('falls back to thumbPath when composite is null', () {
-      final pl = _playlist(compositeImagePath: null, thumbPath: '/thumb/single');
-      expect(pl.displayImagePath, '/thumb/single');
+    test('falls back to compositeImagePath when thumb is null', () {
+      final pl = _playlist(compositeImagePath: '/composite/grid', thumbPath: null);
+      expect(pl.displayImagePath, '/composite/grid');
     });
 
     test('is null when both are null', () {
