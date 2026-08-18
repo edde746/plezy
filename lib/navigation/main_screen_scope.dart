@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/side_navigation_rail.dart';
+
 /// Dependency aspects for [MainScreenFocusScope].
 ///
 /// The scope is an [InheritedModel] so the per-sidebar-flip values (`offset`)
@@ -119,9 +121,9 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
 /// content box slides during sidebar expansion.
 ///
 /// The duration/curve MUST mirror the content-slide tween in MainScreen's
-/// `_buildContent`: pinning works because the two tweens retarget on the same
-/// frame and track each other exactly, so the animated `-bleed` cancels the
-/// content translate tick for tick.
+/// `_buildContent` and the rail's own width animation: pinning works because
+/// the tweens retarget on the same frame and track each other exactly, so the
+/// animated `-bleed` cancels the content translate tick for tick.
 class SideNavigationBleedBuilder extends StatelessWidget {
   final double targetBleed;
   final Widget? child;
@@ -133,8 +135,8 @@ class SideNavigationBleedBuilder extends StatelessWidget {
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween(end: targetBleed),
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutCubic,
+      duration: SideNavigationRailState.expandDuration,
+      curve: SideNavigationRailState.expandCurve,
       builder: builder,
       child: child,
     );

@@ -17,6 +17,7 @@ import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
@@ -63,7 +64,7 @@ AnimatedOpacity _railSurfaceOpacity(WidgetTester tester) {
       .widgetList<AnimatedOpacity>(
         find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedOpacity)),
       )
-      .singleWhere((widget) => widget.child is ColoredBox);
+      .singleWhere((widget) => widget.child is AnimatedContainer);
 }
 
 /// The Libraries header's expand/collapse chevron, matched by the symbol that
@@ -203,6 +204,38 @@ void main() {
     final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
     expect(tester.getSize(rail).width, SideNavigationRailState.collapsedWidth);
     expect(_railSurfaceOpacity(tester).opacity, 1.0);
+  });
+
+  testWidgets('closed desktop rail shows icon-only pill destinations', (tester) async {
+    await _pumpBasicRail(tester);
+
+    // Collapsed destinations are icon-only; labels appear only expanded.
+    expect(find.text('Home'), findsNothing);
+
+    final homeItem = find.byType(NavigationRailItem).first;
+    final pillFinder = find.descendant(of: homeItem, matching: find.byType(Container)).first;
+    expect(
+      tester.getSize(pillFinder),
+      const Size(NavigationRailItem.collapsedIndicatorWidth, NavigationRailItem.collapsedIndicatorHeight),
+    );
+    // Home is the selected tab: the pill carries the active indicator tint.
+    expect(_railItemDecoration(tester, homeItem)?.color, testMonoTokens.text.withValues(alpha: 0.1));
+
+    // Pill (and its icon) are centered in the rail.
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(
+      tester.getCenter(pillFinder).dx - tester.getTopLeft(rail).dx,
+      closeTo(SideNavigationRailState.collapsedWidth / 2, 0.1),
+    );
+  });
+
+  testWidgets('expanded rail destination uses a full-width stadium indicator', (tester) async {
+    await _pumpBasicRail(tester, alwaysExpanded: true);
+
+    final homeItem = find.byType(NavigationRailItem).first;
+    final indicator = find.descendant(of: homeItem, matching: find.byType(Container)).first;
+    expect(tester.getSize(indicator), const Size(SideNavigationRailState.expandedWidth - 24, 48));
+    expect(_railItemDecoration(tester, homeItem)?.borderRadius, BorderRadius.circular(MonoTokens.radiusFull));
   });
 
   testWidgets('expanded TV rail keeps a transparent surface', (tester) async {
@@ -404,7 +437,7 @@ void main() {
     expect(selectedTab, NavigationTabId.search);
   });
 
-  testWidgets('reports interaction expansion for shell content push', (tester) async {
+  testWidgets('hover expands the rail as an overlay and collapses on exit', (tester) async {
     await SettingsService.getInstance();
 
     final librariesProvider = LibrariesProvider();
@@ -418,7 +451,7 @@ void main() {
     final multiServerProvider = testMultiServerProvider(manager);
     addTearDown(multiServerProvider.dispose);
 
-    final reports = <bool>[];
+    final scrimReports = <bool>[];
 
     await tester.pumpWidget(
       TranslationProvider(
@@ -435,8 +468,8 @@ void main() {
                 selectedTab: NavigationTabId.discover,
                 isSidebarFocused: false,
                 alwaysExpanded: false,
-                onInteractionExpandedChanged: reports.add,
                 onDestinationSelected: (_) {},
+                onInteractionExpandedChanged: scrimReports.add,
                 onLibrarySelected: (_) {},
               ),
             ),
@@ -456,13 +489,24 @@ void main() {
     await gesture.moveTo(tester.getCenter(rail));
     await tester.pumpAndSettle();
 
-    expect(reports.last, isTrue);
+    // Floating overlays read as an M3E modal panel: extra-rounded trailing
+    // corners and an edge shadow, and the shell is told to scrim content.
+    final surface = _railSurfaceOpacity(tester).child! as AnimatedContainer;
+    final surfaceDecoration = surface.decoration! as BoxDecoration;
+    expect(
+      surfaceDecoration.borderRadius,
+      const BorderRadius.horizontal(right: Radius.circular(SideNavigationRailState.overlayCornerRadius)),
+    );
+    expect(surfaceDecoration.boxShadow, isNotEmpty);
+    expect(scrimReports.last, isTrue);
+
     expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
 
     await gesture.moveTo(tester.getBottomRight(rail) + const Offset(100, -10));
-    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
 
-    expect(reports.last, isFalse);
+    expect(tester.getSize(rail).width, SideNavigationRailState.collapsedWidth);
+    expect(scrimReports.last, isFalse);
   });
 
   testWidgets('Apple TV D-pad focus skips hidden downloads item', (tester) async {
