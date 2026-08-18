@@ -49,8 +49,14 @@ typedef LibraryAggregationResult = ({
   Set<String> cancelledServerIds,
   Set<String> failedServerIds,
 });
+
+/// `items` is the ranked list trimmed to the caller's limit; `candidates` is
+/// the full post-hidden-filter, pre-rank pool behind it, so a caller can
+/// re-rank a subset (e.g. one media kind) without a kind ranked out of
+/// `items` disappearing from its own filter.
 typedef SearchAggregationResult = ({
   List<MediaItem> items,
+  List<MediaItem> candidates,
   Set<String> succeededServerIds,
   Set<String> cancelledServerIds,
   Set<String> failedServerIds,
@@ -712,6 +718,7 @@ class DataAggregationService {
     if (query.trim().isEmpty) {
       return (
         items: const <MediaItem>[],
+        candidates: const <MediaItem>[],
         succeededServerIds: const <String>{},
         cancelledServerIds: const <String>{},
         failedServerIds: const <String>{},
@@ -723,6 +730,7 @@ class DataAggregationService {
     if (clients.isEmpty) {
       return (
         items: const <MediaItem>[],
+        candidates: const <MediaItem>[],
         succeededServerIds: const <String>{},
         cancelledServerIds: const <String>{},
         failedServerIds: const <String>{},
@@ -764,6 +772,7 @@ class DataAggregationService {
 
     return (
       items: items,
+      candidates: visible,
       succeededServerIds: fetched.succeededServerIds,
       cancelledServerIds: fetched.cancelledServerIds,
       failedServerIds: fetched.failedServerIds,

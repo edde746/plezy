@@ -29,6 +29,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/widgets/backend_badge.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
+import 'package:plezy/widgets/focusable_tab_chip.dart';
 import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:provider/provider.dart';
 
@@ -557,6 +558,139 @@ void main() {
     expect(refreshed.libraryId, '1');
     expect(refreshed.libraryTitle, 'Movies');
   });
+
+  testWidgets('kind chips appear only when results span multiple kinds', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    // Single-kind results have nothing to filter.
+    expect(find.byType(FocusableTabChip), findsNothing);
+
+    client.items
+      ..clear()
+      ..addAll(_mixedKindItems());
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks), findsOneWidget);
+  });
+
+  testWidgets('selecting a kind chip filters the list and All restores it', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies));
+    await tester.pumpAndSettle();
+    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsNothing);
+    expect(find.text('Paw Patrol Theme'), findsNothing);
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all));
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsNWidgets(3));
+  });
+
+  testWidgets('a kind ranked out of the trimmed All view keeps its chip and full results', (tester) async {
+    // 100 exact-title episodes fill the ranked display budget; the weakly
+    // titled track only survives in the candidate pool behind it.
+    final items = [
+      for (var i = 0; i < 100; i++)
+        testMediaItem(
+          id: 'episode_$i',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Paw Patrol',
+          serverId: 'server_1',
+          serverName: 'Server',
+        ),
+      testMediaItem(
+        id: 'track_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Underwater Instrumental Extended Version (paw remix)',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+    ];
+    final (_, key) = await _pumpTvSearchScreen(tester, items: items);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('Paw Patrol');
+    await tester.pumpAndSettle();
+
+    // The track lost the ranked top-100, but its chip derives from the
+    // pre-rank pool, so it must still be offered and show its rows.
+    final tracksChip = find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks);
+    expect(tracksChip, findsOneWidget);
+
+    await tester.tap(tracksChip);
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+    expect(find.text('Underwater Instrumental Extended Version (paw remix)'), findsOneWidget);
+  });
+
+  testWidgets('the filter falls back to All when its kind vanishes from a refined query', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes));
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+
+    client.items.removeWhere((item) => item.kind == MediaKind.episode);
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw patrol');
+    await tester.pumpAndSettle();
+
+    // Episodes are gone: the chip disappears and every remaining row shows.
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsNothing);
+    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
+  });
+
+  testWidgets('D-pad walks first result to chips and back, and Select applies the filter', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Up from the first result lands on the active (All) chip.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChipAll');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Up returns to the selected chip, not All.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
+  });
 }
 
 Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(
@@ -653,6 +787,35 @@ List<MediaItem> _twoLibraryMovies() => [
     serverId: 'server_1',
     serverName: 'Server',
     libraryId: '2',
+  ),
+];
+
+/// One result per kind on the same single-library server, so kind chips have
+/// something to filter.
+List<MediaItem> _mixedKindItems() => [
+  testMediaItem(
+    id: 'movie_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: 'Paw Patrol: The Movie',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+  testMediaItem(
+    id: 'episode_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.episode,
+    title: 'Paw Patrol Rescue',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+  testMediaItem(
+    id: 'track_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.track,
+    title: 'Paw Patrol Theme',
+    serverId: 'server_1',
+    serverName: 'Server',
   ),
 ];
 

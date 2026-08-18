@@ -207,6 +207,7 @@ void main() {
     test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {
       final search = await service.searchAcrossServers('hello');
       expect(search.items, isEmpty);
+      expect(search.candidates, isEmpty);
       expect(search.succeededServerIds, isEmpty);
       expect(search.cancelledServerIds, isEmpty);
       expect(search.failedServerIds, isEmpty);
@@ -338,6 +339,44 @@ void main() {
       final result = await service.searchAcrossServers('Target', limit: 1, hiddenLibraryKeys: {'plex:2'});
 
       expect(result.items.map((item) => item.id), ['visible-1']);
+    });
+
+    test('candidates keeps rows the ranked limit dropped, minus hidden ones', () async {
+      // The search screen's kind filter re-ranks `candidates`, so a kind
+      // crowded out of the trimmed `items` must still be present there — but
+      // a hidden library's rows must not be.
+      final movie = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Target',
+        serverId: 'plex',
+        libraryId: '1',
+      );
+      final episode = testMediaItem(
+        id: 'episode-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Target Sequel',
+        serverId: 'plex',
+        libraryId: '1',
+      );
+      final hidden = testMediaItem(
+        id: 'hidden-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Target',
+        serverId: 'plex',
+        libraryId: '2',
+      );
+      manager.debugRegisterClientForTesting(
+        _LibrariesClient(ServerId('plex'), searchResults: [movie, episode, hidden]),
+      );
+
+      final result = await service.searchAcrossServers('Target', limit: 1, hiddenLibraryKeys: {'plex:2'});
+
+      expect(result.items.map((item) => item.id), ['movie-1']);
+      expect(result.candidates.map((item) => item.id), unorderedEquals(['movie-1', 'episode-1']));
     });
 
     test('each server is told only about its own hidden libraries', () async {

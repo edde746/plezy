@@ -172,14 +172,15 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
   }
 
   /// The results list both screens render: padded, without keep-alives or
-  /// semantic indexes, one child per entry of [searchResults].
-  Widget buildResultsSliver(NullableIndexedWidgetBuilder itemBuilder) {
+  /// semantic indexes. One child per entry of [searchResults] unless the
+  /// caller renders a filtered view and passes its own [childCount].
+  Widget buildResultsSliver(NullableIndexedWidgetBuilder itemBuilder, {int? childCount}) {
     return SliverPadding(
       padding: const EdgeInsets.all(16),
       sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
           itemBuilder,
-          childCount: searchResults.length,
+          childCount: childCount ?? searchResults.length,
           addAutomaticKeepAlives: false,
           addSemanticIndexes: false,
         ),
