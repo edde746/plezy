@@ -1268,6 +1268,20 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     if (_shutdownStarted) return;
     _shutdownStarted = true;
 
+    // Hide the window before anything else so the exit reads as an instant
+    // close: the teardown below runs against a still-mounted tree and its
+    // state churn must never be user-visible. Cmd+Q and OS-initiated exits
+    // arrive here directly, so the close-button path is not the only entry.
+    // Bounded — hide() is a platform-channel round trip and a stalled
+    // platform thread must not hold the already-accepted exit open.
+    if (PlatformDetector.isDesktopOS()) {
+      try {
+        await windowManager.hide().timeout(const Duration(seconds: 1));
+      } catch (e, st) {
+        appLogger.w('Failed to hide window before exit teardown', error: e, stackTrace: st);
+      }
+    }
+
     _syncDebounce?.cancel();
     await _watchStateSubscription?.cancel();
     _removeConnectivitySyncListener();
@@ -1280,7 +1294,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     await TrackerCoordinator.instance.stopPlayback().timeout(const Duration(seconds: 3), onTimeout: () {});
     TrackerCoordinator.instance.cancelInFlight();
 
-    await _serverManager.disconnectAllGracefully();
+    await _serverManager.shutdown();
     await Future.wait([
       httpClient.closeGracefully(drainTimeout: const Duration(seconds: 5)),
       closeArtworkHttpClientGracefully(),

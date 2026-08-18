@@ -78,8 +78,13 @@ class MultiServerManager {
   Stream<Map<String, bool>> get statusStream => _statusController.stream;
 
   /// Publish a snapshot of the per-server online map — subscribers must never
-  /// receive the live [_serverStatus] instance.
-  void _emitStatus() => _statusController.add(Map.from(_serverStatus));
+  /// receive the live [_serverStatus] instance. A no-op once [shutdown] or
+  /// [dispose] closed the controller, so a health probe or reconnect landing
+  /// mid-exit cannot throw into a closed stream.
+  void _emitStatus() {
+    if (_statusController.isClosed) return;
+    _statusController.add(Map.from(_serverStatus));
+  }
 
   /// Per-server connect progress during a bind. Unlike [statusStream] — whose
   /// first emission means "the binder's first connect pass finished" and which
@@ -1445,6 +1450,20 @@ class MultiServerManager {
       _statusController.add({});
     }
     return clients;
+  }
+
+  /// Terminal app-exit teardown: closes the status streams first, then drains
+  /// every client connection.
+  ///
+  /// Unlike [disconnectAllGracefully] — whose empty snapshot profile-switch
+  /// and disconnect flows must observe — exit teardown must stay invisible:
+  /// the widget tree is still mounted while the exit request is serviced, and
+  /// an empty snapshot reads as "all servers gone", flipping the app into
+  /// offline UI and dismantling screens mid-shutdown.
+  Future<void> shutdown({Duration drainTimeout = const Duration(seconds: 5)}) async {
+    if (!_statusController.isClosed) unawaited(_statusController.close());
+    if (!_connectProgressController.isClosed) unawaited(_connectProgressController.close());
+    await disconnectAllGracefully(drainTimeout: drainTimeout);
   }
 
   /// Dispose resources

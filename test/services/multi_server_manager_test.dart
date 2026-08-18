@@ -1785,6 +1785,44 @@ void main() {
     });
   });
 
+  group('shutdown', () {
+    test('clears all state without emitting a snapshot and closes the stream', () async {
+      final m = MultiServerManager();
+      addTearDown(m.dispose);
+
+      m.updateServerStatus(ServerId('a'), true);
+      m.updateServerStatus(ServerId('b'), false);
+
+      final emitted = <Map<String, bool>>[];
+      var done = false;
+      final sub = m.statusStream.listen(emitted.add, onDone: () => done = true);
+      addTearDown(sub.cancel);
+
+      await m.shutdown();
+      await Future<void>.delayed(Duration.zero);
+
+      // Exit teardown must stay invisible: an empty snapshot would flip the
+      // still-mounted UI into offline mode while the app shuts down.
+      expect(m.serverIds, isEmpty);
+      expect(m.onlineServerIds, isEmpty);
+      expect(m.offlineServerIds, isEmpty);
+      expect(emitted, isEmpty);
+      expect(done, isTrue);
+    });
+
+    test('a health result landing after shutdown is a silent no-op', () async {
+      final m = MultiServerManager();
+      addTearDown(m.dispose);
+
+      m.updateServerStatus(ServerId('a'), true);
+      await m.shutdown();
+
+      // A probe that was in flight when the exit began must not throw into
+      // the closed status controller.
+      expect(() => m.updateServerStatus(ServerId('a'), false), returnsNormally);
+    });
+  });
+
   group('dispose', () {
     test('disposing without connectivity monitoring does not throw', () {
       final m = MultiServerManager();
