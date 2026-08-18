@@ -943,6 +943,7 @@ class _MainScreenState extends State<MainScreen>
   /// trackers owning their own watched semantics depend on.
   Future<void> _exitOnWindowClose() async {
     try {
+      await windowManager.hide();
       await AppExitService.requestGracefulExit().timeout(const Duration(seconds: 5));
     } catch (e, st) {
       appLogger.w('Graceful window close failed; exiting immediately', error: e, stackTrace: st);
