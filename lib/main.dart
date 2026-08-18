@@ -1280,7 +1280,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     await TrackerCoordinator.instance.stopPlayback().timeout(const Duration(seconds: 3), onTimeout: () {});
     TrackerCoordinator.instance.cancelInFlight();
 
-    await _serverManager.disconnectAllGracefully();
+    await _serverManager.disconnectAllGracefully(emitStatus: false);
     await Future.wait([
       httpClient.closeGracefully(drainTimeout: const Duration(seconds: 5)),
       closeArtworkHttpClientGracefully(),

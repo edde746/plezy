@@ -1602,6 +1602,26 @@ void main() {
       expect(emitted.last, isEmpty);
     });
 
+    test('terminal shutdown clears all status without emitting a snapshot', () async {
+      final m = MultiServerManager();
+      addTearDown(m.dispose);
+
+      m.updateServerStatus(ServerId('a'), true);
+      m.updateServerStatus(ServerId('b'), false);
+
+      final emitted = <Map<String, bool>>[];
+      final sub = m.statusStream.listen(emitted.add);
+      addTearDown(sub.cancel);
+
+      await m.disconnectAllGracefully(emitStatus: false);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(m.serverIds, isEmpty);
+      expect(m.onlineServerIds, isEmpty);
+      expect(m.offlineServerIds, isEmpty);
+      expect(emitted, isEmpty);
+    });
+
     test('clears inactive Jellyfin scoped clients', () {
       final m = MultiServerManager();
       addTearDown(m.dispose);

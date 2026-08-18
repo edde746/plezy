@@ -1294,16 +1294,23 @@ class MultiServerManager {
     unawaited(disconnectAllGracefully(drainTimeout: const Duration(seconds: 2)));
   }
 
-  Future<void> disconnectAllGracefully({Duration drainTimeout = const Duration(seconds: 5)}) async {
+  /// Disconnects every server and waits for their connections to drain.
+  ///
+  /// Terminal app shutdown can set [emitStatus] to false because no UI needs
+  /// the final disconnected snapshot.
+  Future<void> disconnectAllGracefully({
+    Duration drainTimeout = const Duration(seconds: 5),
+    bool emitStatus = true,
+  }) async {
     appLogger.i('Gracefully disconnecting all servers');
-    final clients = _detachAllClients();
+    final clients = _detachAllClients(emitStatus: emitStatus);
     await Future.wait(
       clients.map((client) => _closeClientGracefully(client, drainTimeout: drainTimeout)),
       eagerError: false,
     );
   }
 
-  Set<MediaServerClient> _detachAllClients() {
+  Set<MediaServerClient> _detachAllClients({bool emitStatus = true}) {
     ++_profileRefreshEpoch;
     _profileRefreshGenerations.clear();
     _stopNetworkMonitoring();
@@ -1324,7 +1331,7 @@ class MultiServerManager {
     _clientIdByServer.clear();
     _plexScopeByServer.clear();
     _activeOptimizations.clear();
-    if (!_statusController.isClosed) {
+    if (emitStatus && !_statusController.isClosed) {
       _statusController.add({});
     }
     return clients;
