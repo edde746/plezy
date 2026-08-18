@@ -4220,15 +4220,23 @@ class PlexClient
 
   /// `minSize`/`upscale` are how Plex's photo transcoder picks the scale
   /// factor. `minSize=1` scales until the *smaller* axis reaches the request
-  /// (cover) and `upscale=1` lets it enlarge past the original; both return
-  /// the whole image — Plex never crops or distorts. `minSize=0&upscale=0`
-  /// scales the *larger* axis to fit inside the box instead, which is what
-  /// `BoxFit.contain` artwork wants: the covering overshoot is decoded and
-  /// then thrown away by the fit-policy decode bounds.
+  /// (cover) and `minSize=0` fits the *larger* axis inside the box instead,
+  /// which is what `BoxFit.contain` artwork wants. Neither crops or distorts.
+  ///
+  /// `upscale=0` caps the scale factor at 1.0: a request larger than the
+  /// source returns the native image instead of a server-side enlargement.
+  /// Covers deliberately never upscale — the client renders `BoxFit.cover`
+  /// and the fit-policy decode bounds never enlarge either, so a server
+  /// upscale is pure transcoder CPU and transfer bytes for zero rendered
+  /// detail (verified against PMS 1.43: 1920×1080 art requested at 3840×2160
+  /// upscaled costs ~2.5× the transcode time and bytes; downscale results are
+  /// byte-identical either way). It also stops PMS flagging every request
+  /// `upscaled: 1` in its logs, which reads as constant re-transcoding (#1975).
   List<String> _transcodeSizeParams({int? width, int? height, required bool cover}) => [
     if (width != null) 'width=$width',
     if (height != null) 'height=$height',
-    if (cover) ...['minSize=1', 'upscale=1'] else ...['minSize=0', 'upscale=0'],
+    'minSize=${cover ? 1 : 0}',
+    'upscale=0',
   ];
 
   @override

@@ -430,13 +430,13 @@ class OptimizedMediaImage extends StatelessWidget {
 /// `CachedNetworkImage` instead decodes under `ResizeImagePolicy.exact`, which
 /// pins the logo to whatever ratio those two bounds happen to have.
 ///
-/// Plex serves logos with `minSize=1&upscale=1`, so the transcode covers the
-/// requested box on both axes (a 4313×1035 logo asked for at 1200×360 comes
-/// back 1500×360, aspect intact). `exact` then clamps neither axis down to the
-/// source and squashes the logo to the bound ratio: on a phone at DPR 3 the
-/// 400×120 hero slot decodes to exactly 1000×360 — the width capped by
-/// [MediaImageHelper.getMemCacheDimensions] — turning a 4.17∶1 logo into
-/// 2.78∶1.
+/// Plex serves logos as fitting transcodes (`minSize=0&upscale=0`), so the
+/// image comes back inside the requested box with aspect intact (a 4313×1035
+/// logo asked for at 1200×360 comes back 1200×288). `exact` ignores the
+/// source ratio and decodes to whatever ratio the two bounds happen to have:
+/// on a phone at DPR 3 the 400×120 hero slot decodes to exactly 1000×360 —
+/// the width capped by [MediaImageHelper.getMemCacheDimensions] — turning a
+/// 4.17∶1 logo into 2.78∶1.
 ///
 /// [fallbackBuilder] renders the title in place of the logo when the path is
 /// missing, the URL can't be built, or the image fails to load.

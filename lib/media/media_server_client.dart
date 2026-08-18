@@ -566,7 +566,10 @@ abstract class MediaServerClient {
   /// artwork drawn with [BoxFit.contain] (clear logos), where the overshoot is
   /// decoded and thrown away: a 4313×1035 logo asked for at 1200×360 comes back
   /// 1500×360 covering versus 1200×288 fitting, for ~20-30% more bytes and no
-  /// extra rendered detail. Neither mode crops or changes the aspect ratio.
+  /// extra rendered detail. Neither mode crops, distorts, or upscales past the
+  /// source: Plex requests are built with `upscale=0` so oversized requests
+  /// return native resolution, and Jellyfin's `MaxWidth`/`MaxHeight` never
+  /// enlarge.
   String thumbnailUrl(String? path, {int? width, int? height, bool cover = true});
 
   /// Proxy an absolute external image URL through the server's transcoder
