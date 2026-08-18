@@ -170,11 +170,38 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       _mediaCardKeys.removeWhere((index, _) => index >= widget.hub.items.length);
     }
 
+    if (widget.hub.id == oldWidget.hub.id) {
+      _followFocusedItem(oldWidget.hub.items);
+    }
+
     if (widget.hub.items.length != oldWidget.hub.items.length || widget.hub.more != oldWidget.hub.more) {
       final maxIndex = _totalItemCount == 0 ? 0 : _totalItemCount - 1;
       if (_focusedIndex > maxIndex) {
         _focusedIndex = maxIndex;
       }
+    }
+  }
+
+  /// Keep visual focus on the media it was on when the hub's items reorder
+  /// underneath it — a Continue Watching refresh after playback moves the
+  /// just-played item to the front (#1987). The exact item wins; an episode
+  /// that left the row follows its series' replacement entry (next episode).
+  /// When neither is present the positional clamp above applies unchanged.
+  void _followFocusedItem(List<MediaItem> oldItems) {
+    if (identical(oldItems, widget.hub.items)) return;
+    if (_focusedIndex < 0 || _focusedIndex >= oldItems.length) return;
+    final followedIndex = followItemIndex(widget.hub.items, oldItems[_focusedIndex]);
+    if (followedIndex == -1 || followedIndex == _focusedIndex) return;
+    _focusedIndex = followedIndex;
+    widget.focusMemory.remapForHub(_focusMemoryKey, followedIndex);
+    if (_hubFocusNode.hasFocus) {
+      // didUpdateWidget runs during the build phase; notifying listeners or
+      // jumping scroll positions here could setState mid-build upstream.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _focusedIndex != followedIndex || !_hubFocusNode.hasFocus) return;
+        _notifyFocusedItemChanged();
+        _scrollToIndex(followedIndex, animate: false);
+      });
     }
   }
 

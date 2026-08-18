@@ -221,6 +221,65 @@ void main() {
     await tester.pumpAndSettle();
     expect(focusedItemId, 'item_0');
   });
+
+  testWidgets('visual focus follows the played item when the hub reorders', (tester) async {
+    final items = [
+      for (var index = 0; index < 3; index++)
+        testMediaItem(id: 'item_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Item $index'),
+    ];
+    MediaHub hub(List<MediaItem> hubItems) => MediaHub(
+      id: 'continue_watching',
+      title: 'Continue Watching',
+      type: 'mixed',
+      items: hubItems,
+      size: hubItems.length,
+    );
+
+    final memory = HubFocusMemory();
+    final hubKey = GlobalKey<HubSectionState>();
+    String? focusedItemId;
+
+    Future<void> mount(List<MediaItem> hubItems) async {
+      await tester.pumpWidget(
+        InputModeTracker(
+          child: _TestApp(
+            child: HubSection(
+              key: hubKey,
+              hub: hub(hubItems),
+              focusMemory: memory,
+              icon: Symbols.play_circle_rounded,
+              isInContinueWatching: true,
+              onFocusedItemChanged: (item) => focusedItemId = item.id,
+            ),
+          ),
+        ),
+      );
+    }
+
+    await mount(items);
+    hubKey.currentState!.requestFocusAt(1);
+    await tester.pumpAndSettle();
+    expect(focusedItemId, 'item_1');
+
+    // Playback progress moved the played item to the front (#1987).
+    await mount([items[1], items[0], items[2]]);
+    await tester.pumpAndSettle();
+
+    // Live focus followed to index 0: moving right lands on the neighbor in
+    // the new order, not two past the stale position.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(focusedItemId, 'item_0');
+
+    // The remembered position follows a reorder too: memory now points at
+    // item_0 (index 1), which the next reorder moves back to index 0.
+    await mount([items[0], items[1], items[2]]);
+    await tester.pumpAndSettle();
+    hubKey.currentState!.requestFocusFromMemory();
+    await tester.pumpAndSettle();
+    expect(focusedItemId, 'item_0');
+  });
 }
 
 MediaHub _hubWith(MediaItem item) {

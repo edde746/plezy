@@ -2217,6 +2217,150 @@ void main() {
     expect(focusedItemIds, isEmpty);
     expect(activeHubIds, isEmpty);
   });
+
+  testWidgets('selection follows the played item when continue watching reorders', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final movieA = testMediaItem(id: 'movie_a', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie A');
+    final movieB = testMediaItem(id: 'movie_b', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie B');
+    final movieC = testMediaItem(id: 'movie_c', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie C');
+    MediaHub continueHub(List<MediaItem> items) =>
+        MediaHub(id: 'continue_watching', title: 'Continue Watching', type: 'mixed', items: items, size: items.length);
+    final focusedItemIds = <String>[];
+
+    Widget buildRail(List<MediaHub> hubs) {
+      return ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  key: const ValueKey('rail'),
+                  hubs: hubs,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(
+      buildRail([
+        continueHub([movieA, movieB, movieC]),
+      ]),
+    );
+    await tester.pump();
+
+    // Focus the second item, mirroring the user picking it before playback.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(focusedItemIds.last, movieB.id);
+
+    // Playback progress moved the played item to the front (#1987).
+    await tester.pumpWidget(
+      buildRail([
+        continueHub([movieB, movieA, movieC]),
+      ]),
+    );
+    await tester.pumpAndSettle();
+
+    expect(focusedItemIds.last, movieB.id);
+  });
+
+  testWidgets('selection follows the series when a finished episode is replaced by the next one', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(multiServerProvider.dispose);
+
+    final movie = testMediaItem(id: 'movie_a', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie A');
+    final episode1 = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      grandparentId: 'show_1',
+      title: 'S01E01',
+    );
+    final episode2 = testMediaItem(
+      id: 'episode_2',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      grandparentId: 'show_1',
+      title: 'S01E02',
+    );
+    MediaHub continueHub(List<MediaItem> items) =>
+        MediaHub(id: 'continue_watching', title: 'Continue Watching', type: 'mixed', items: items, size: items.length);
+    final focusedItemIds = <String>[];
+
+    Widget buildRail(List<MediaHub> hubs) {
+      return ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: InputModeTracker(
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  key: const ValueKey('rail'),
+                  hubs: hubs,
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.tv_rounded,
+                  onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(
+      buildRail([
+        continueHub([movie, episode1]),
+      ]),
+    );
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(focusedItemIds.last, episode1.id);
+
+    // Finishing the episode replaced it with the show's next episode at the
+    // front of the row.
+    await tester.pumpWidget(
+      buildRail([
+        continueHub([episode2, movie]),
+      ]),
+    );
+    await tester.pumpAndSettle();
+
+    expect(focusedItemIds.last, episode2.id);
+  });
 }
 
 ScrollPosition _activeRailPosition(WidgetTester tester) {

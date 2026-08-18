@@ -95,3 +95,17 @@ List<String> _hubKeyTokens(String rawKey) {
 String _compactHubKey(String rawKey) => rawKey.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '');
 
 bool _hasTailToken(List<String> tokens, String token) => tokens.isNotEmpty && tokens.last == token;
+
+/// Index of [previous] within [items] after a content refresh, so visual
+/// focus can follow the item it was on instead of staying at a stale
+/// position (a Continue Watching refresh moves the just-played entry to the
+/// front). The exact item wins; an episode that left the list falls back to
+/// its series' replacement entry (a finished episode becomes the next
+/// episode). Returns -1 when neither is present.
+int followItemIndex(List<MediaItem> items, MediaItem previous) {
+  final exactIndex = items.indexWhere((item) => item.globalKey == previous.globalKey);
+  if (exactIndex != -1) return exactIndex;
+  final seriesKey = previous.seriesGlobalKey;
+  if (seriesKey == null) return -1;
+  return items.indexWhere((item) => item.seriesGlobalKey == seriesKey);
+}

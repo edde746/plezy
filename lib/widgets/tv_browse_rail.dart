@@ -462,9 +462,11 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       return;
     }
 
-    final oldActiveHubKey = oldWidget.hubs.isEmpty
-        ? null
-        : _hubKey(oldWidget.hubs[_hubIndex.clamp(0, oldWidget.hubs.length - 1)]);
+    final oldActiveHub = oldWidget.hubs.isEmpty ? null : oldWidget.hubs[_hubIndex.clamp(0, oldWidget.hubs.length - 1)];
+    final oldActiveHubKey = oldActiveHub == null ? null : _hubKey(oldActiveHub);
+    final oldFocusedItem = oldActiveHub != null && _itemIndex < oldActiveHub.items.length
+        ? oldActiveHub.items[_itemIndex]
+        : null;
 
     if (widget.hubs.isEmpty) {
       _hubIndex = 0;
@@ -488,6 +490,19 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
     final hub = _activeHub;
     if (hub == null) return;
+    var followedFocusedItem = false;
+    if (_hasUserInteracted && oldFocusedItem != null && _hubKey(hub) == oldActiveHubKey) {
+      // Keep the selection on the media it was on when the active hub's items
+      // reorder underneath it — a Continue Watching refresh after playback
+      // moves the just-played item to the front (#1987). When the exact item
+      // left the list, follow its series' replacement entry (finished episode
+      // → next episode); otherwise fall through to the positional clamp.
+      final followedIndex = followItemIndex(hub.items, oldFocusedItem);
+      if (followedIndex != -1 && followedIndex != _itemIndex) {
+        _itemIndex = followedIndex;
+        followedFocusedItem = true;
+      }
+    }
     _itemIndex = _itemIndex.clamp(0, _totalItemCount(hub) == 0 ? 0 : _totalItemCount(hub) - 1);
     final selectedInitialItem = _selectInitialItemIfPossible();
     // notify:false — this runs during the build phase and the enclosing
@@ -503,7 +518,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _rememberTrailingStates();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (selectedInitialItem) _scrollToItem(animate: false);
+      if (selectedInitialItem || followedFocusedItem) _scrollToItem(animate: false);
       if (shouldJumpAlignActiveHub) {
         _scrollActiveHubToTop(animate: false);
       } else if (shouldAnimateAlignActiveHub) {
