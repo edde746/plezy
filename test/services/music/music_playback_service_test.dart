@@ -520,7 +520,10 @@ class FakeMediaControlsManager extends MediaControlsManager {
     bool force = false,
   }) async {}
 
-  final List<({bool canPlayPause, bool canGoNext, bool canStop, bool canSkip, bool canSetSpeed})> controlSyncs = [];
+  final List<
+    ({bool canPlayPause, bool canGoNext, bool canStop, bool canSkip, bool preferSkipOverTrackButtons, bool canSetSpeed})
+  >
+  controlSyncs = [];
 
   @override
   Future<void> setControlsEnabled({
@@ -531,12 +534,15 @@ class FakeMediaControlsManager extends MediaControlsManager {
     bool canStop = false,
     bool canSkip = false,
     bool canSetSpeed = false,
+    bool preferSkipOverTrackButtons = false,
+    Duration? skipInterval,
   }) async {
     controlSyncs.add((
       canPlayPause: canPlayPause,
       canGoNext: canGoNext,
       canStop: canStop,
       canSkip: canSkip,
+      preferSkipOverTrackButtons: preferSkipOverTrackButtons,
       canSetSpeed: canSetSpeed,
     ));
   }
@@ -1321,6 +1327,9 @@ void main() {
     expect(last.canPlayPause, isTrue);
     expect(last.canStop, isTrue);
     expect(last.canSkip, isTrue);
+    // Music never claims the Darwin lock-screen side slots for skip —
+    // next/previous stay the primary transport there.
+    expect(last.preferSkipOverTrackButtons, isFalse);
     expect(last.canSetSpeed, isFalse);
   });
 

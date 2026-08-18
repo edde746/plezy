@@ -926,8 +926,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
         canSeek: true,
         canStop: true,
         // In-track skips: Bluetooth/steering-wheel fast-forward and rewind
-        // buttons map here on Android. (Never surfaced on iOS/macOS — see
-        // MediaControlsManager.setControlsEnabled.)
+        // buttons map here on Android. (Not surfaced on iOS/macOS — music
+        // keeps next/previous as its lock-screen transport; see
+        // MediaControlsManager.setControlsEnabled's preferSkipOverTrackButtons,
+        // which music deliberately leaves unset.)
         canSkip: true,
         // Music always plays at 1.0 — never advertise a speed control.
       ),

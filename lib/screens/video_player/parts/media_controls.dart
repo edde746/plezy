@@ -45,6 +45,11 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
       canStop: true,
       // In-track skips work on live TV too through the capture buffer.
       canSkip: canControlPlayback,
+      // Video claims the lock-screen / remote-card side slots for ±skip
+      // (#1994); the step mirrors the in-player small skip. A mid-playback
+      // seekTimeSmall change applies on the next availability sync.
+      preferSkipOverTrackButtons: true,
+      skipInterval: Duration(seconds: SettingsService.instance.read(SettingsService.seekTimeSmall)),
       // Rate changes don't apply to a live stream.
       canSetSpeed: !widget.isLive && canControlPlayback,
     );
