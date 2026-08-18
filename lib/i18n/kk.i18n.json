@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Субтитрлер мен конфигурация",
     "seekAndTiming": "Айналдыру және уақытты реттеу",
     "behavior": "Мінез-құлық",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Plezy параметрлерін экспорттау"
   },
   "search": {

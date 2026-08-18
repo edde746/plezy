@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "자막 및 구성",
     "seekAndTiming": "탐색 및 타이밍",
     "behavior": "동작",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Plezy 설정 내보내기"
   },
   "search": {

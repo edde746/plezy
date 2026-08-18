@@ -102,9 +102,13 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
     if (shaderService == null || !shaderService.isSupported) return;
 
     final shaderProvider = context.read<ShaderProvider>();
+    // The restore target honors the configured persistence scope, so toggling
+    // back on inside an Anime4K library restores that library's preset rather
+    // than the global one.
+    final savedPresetId = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.shaderPreset, widget.metadata);
     final targetPreset = resolveShaderTogglePreset(
       currentPreset: shaderService.currentPreset,
-      savedPreset: shaderProvider.savedPreset,
+      savedPreset: shaderProvider.findPresetById(savedPresetId) ?? ShaderPreset.none,
       allPresets: shaderProvider.allPresets,
     );
 
@@ -118,10 +122,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
           .then((_) async {
             if (!mounted) return;
             if (targetPreset.isEnabled) {
-              await shaderProvider.setPreset(targetPreset);
-            } else {
-              shaderProvider.setCurrentPreset(targetPreset);
+              await ScopedPlayerPrefs.write(ScopedPlayerPrefs.shaderPreset, widget.metadata, targetPreset.id);
             }
+            // Toggling off stays session-only; the write above already synced
+            // the provider when the configured scope is global.
+            shaderProvider.setCurrentPreset(targetPreset);
             if (!mounted) return;
             // ignore: no-empty-block - setState triggers rebuild to reflect shader changes
             _setControlsState(() {});
@@ -207,6 +212,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onCancelAutoHide: widget.chromeController.cancelAutoHide,
       onStartAutoHide: _startHideTimer,
       serverId: widget.metadata.serverId,
+      metadata: widget.metadata,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,

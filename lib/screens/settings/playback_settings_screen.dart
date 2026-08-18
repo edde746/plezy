@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
+import '../../models/player_setting_scope.dart';
 import '../../mpv/player/platform/player_android.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/companion_remote/companion_remote_host_controller.dart';
@@ -110,6 +111,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
 
             _seekAndTimingGroup(),
             _behaviorGroup(context, isMobile),
+            _rememberPlayerChangesGroup(),
             _autoSkipGroup(),
             const SizedBox(height: 24),
           ],
@@ -175,6 +177,51 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       ),
     ],
   );
+
+  Widget _rememberPlayerChangesGroup() => SettingsGroup(
+    title: t.settings.rememberPlayerChanges,
+    children: [
+      _playerScopeTile(
+        pref: SettingsService.playbackSpeedScope,
+        icon: Symbols.speed_rounded,
+        title: t.settings.scopePlaybackSpeed,
+      ),
+      _playerScopeTile(
+        pref: SettingsService.shaderPresetScope,
+        icon: Symbols.auto_fix_high_rounded,
+        title: t.settings.scopeShaderPreset,
+      ),
+      _playerScopeTile(
+        pref: SettingsService.boxFitScope,
+        icon: Symbols.aspect_ratio_rounded,
+        title: t.settings.scopeAspectRatio,
+      ),
+      _playerScopeTile(
+        pref: SettingsService.syncOffsetScope,
+        icon: Symbols.sync_rounded,
+        title: t.settings.scopeSyncOffsets,
+      ),
+    ],
+  );
+
+  Widget _playerScopeTile({
+    required EnumPref<PlayerSettingScope> pref,
+    required IconData icon,
+    required String title,
+  }) => SettingSelectionTile<PlayerSettingScope>(
+    pref: pref,
+    icon: icon,
+    title: title,
+    subtitleBuilder: (scope) => '${_playerScopeLabel(scope)} · ${t.settings.rememberPlayerChangesDescription}',
+    options: PlayerSettingScope.values.map((s) => DialogOption(value: s, title: _playerScopeLabel(s))).toList(),
+  );
+
+  String _playerScopeLabel(PlayerSettingScope scope) => switch (scope) {
+    PlayerSettingScope.off => t.settings.playerScopeOff,
+    PlayerSettingScope.global => t.settings.playerScopeGlobal,
+    PlayerSettingScope.library => t.settings.playerScopeLibrary,
+    PlayerSettingScope.title => t.settings.playerScopeTitle,
+  };
 
   Widget _behaviorGroup(BuildContext context, bool isMobile) => SettingsGroup(
     title: t.settings.behavior,

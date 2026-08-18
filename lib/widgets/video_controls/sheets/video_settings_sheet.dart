@@ -17,6 +17,7 @@ import '../../../mpv/mpv.dart';
 import '../../../mpv/player/player_native.dart';
 import '../../../providers/shader_provider.dart';
 import '../../../services/file_picker_service.dart';
+import '../../../services/scoped_player_prefs.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../services/video_filter_manager.dart';
@@ -533,12 +534,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
             onOffsetChanged: (offset) async {
-              final settings = SettingsService.instance;
-              if (isSubtitle) {
-                await settings.write(SettingsService.subtitleSyncOffset, offset);
-              } else {
-                await settings.write(SettingsService.audioSyncOffset, offset);
-              }
+              final pref = isSubtitle ? ScopedPlayerPrefs.subtitleSyncOffset : ScopedPlayerPrefs.audioSyncOffset;
+              await ScopedPlayerPrefs.write(pref, _state.metadata, offset);
             },
           ),
         )
@@ -1002,8 +999,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
               onTap: () async {
                 await widget.player.setRate(speed);
-                // Save as default playback speed
-                await SettingsService.instance.write(SettingsService.defaultPlaybackSpeed, speed);
+                // Save at the configured persistence scope (global by default).
+                await ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, _state.metadata, speed);
                 if (context.mounted) {
                   OverlaySheetController.of(context).close(); // Close sheet after selection
                 }
@@ -1233,7 +1230,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   _state.onToggleAmbientLighting?.call();
                 }
                 await _state.shaderService!.applyPreset(preset);
-                await shaderProvider.setPreset(preset);
+                await ScopedPlayerPrefs.write(ScopedPlayerPrefs.shaderPreset, _state.metadata, preset.id);
+                shaderProvider.setCurrentPreset(preset);
                 if (!context.mounted) return;
                 _state.onShaderChanged?.call();
                 OverlaySheetController.of(context).close();
@@ -1262,7 +1260,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _state.onToggleAmbientLighting?.call();
         }
         await _state.shaderService!.applyPreset(preset);
-        await shaderProvider.setPreset(preset);
+        await ScopedPlayerPrefs.write(ScopedPlayerPrefs.shaderPreset, _state.metadata, preset.id);
+        shaderProvider.setCurrentPreset(preset);
         if (!mounted) return;
         _state.onShaderChanged?.call();
       }

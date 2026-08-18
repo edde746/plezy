@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Субтитры и конфигурация",
     "seekAndTiming": "Перемотка и время",
     "behavior": "Поведение",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Экспорт настроек Plezy"
   },
   "search": {

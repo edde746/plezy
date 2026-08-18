@@ -66,6 +66,10 @@ class TrackControlsState {
   final Function(MediaItem)? onQueueItemSelected;
   final String ratingKey;
   final String? mediaTitle;
+
+  /// Item currently playing, used to key scope-persisted player settings
+  /// ([ScopedPlayerPrefs]). Null only for embedders without item identity.
+  final MediaItem? metadata;
   final Future<SubtitleDownloadApplyOutcome> Function({required String serverId, required String ratingKey})?
   onSubtitleDownloaded;
 
@@ -114,6 +118,7 @@ class TrackControlsState {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.serverId,
+    this.metadata,
     this.shaderService,
     this.onShaderChanged,
     this.isAmbientLightingEnabled = false,

@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Legendas e configuração",
     "seekAndTiming": "Busca e tempo",
     "behavior": "Comportamento",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Exportar configurações do Plezy"
   },
   "search": {

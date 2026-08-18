@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Undertexter och konfiguration",
     "seekAndTiming": "Spolning och tidsinställningar",
     "behavior": "Beteende",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Exportera Plezy-inställningar"
   },
   "search": {

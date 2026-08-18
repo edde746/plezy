@@ -5,6 +5,7 @@ import 'package:plezy/models/audio_quality_preset.dart';
 import 'package:plezy/screens/settings/playback_settings_screen.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/models/player_setting_scope.dart';
 
 import '../../test_helpers/prefs.dart';
 
@@ -40,5 +41,31 @@ void main() {
     expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.low);
     expect(settings.prefs.getString(SettingsService.musicQualityPreset.key), 'low');
     expect(find.descendant(of: tile, matching: find.text('128 kbps')), findsOneWidget);
+  });
+
+  testWidgets('changes a player-change persistence scope', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final title = find.text('Shader Preset');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+
+    final tile = find.widgetWithText(ListTile, 'Shader Preset');
+    expect(find.descendant(of: tile, matching: find.textContaining('Everywhere')), findsOneWidget);
+
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Per library'));
+    await tester.pumpAndSettle();
+
+    final settings = SettingsService.instance;
+    expect(settings.read(SettingsService.shaderPresetScope), PlayerSettingScope.library);
+    expect(settings.prefs.getString(SettingsService.shaderPresetScope.key), 'library');
+    expect(find.descendant(of: tile, matching: find.textContaining('Per library')), findsOneWidget);
   });
 }

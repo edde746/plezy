@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "字幕と設定",
     "seekAndTiming": "シークとタイミング",
     "behavior": "動作",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Plezyの設定をエクスポート"
   },
   "search": {

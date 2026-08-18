@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Subtitrlar va konfiguratsiya",
     "seekAndTiming": "Oʻtkazish va vaqt sozlamalari",
     "behavior": "Xatti-harakat",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Plezy sozlamalarini eksport qilish"
   },
   "search": {

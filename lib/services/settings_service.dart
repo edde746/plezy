@@ -12,6 +12,7 @@ import 'package:plezy/utils/app_logger.dart';
 import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
+import '../models/player_setting_scope.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
 import 'sensitive_prefs.dart';
@@ -552,6 +553,33 @@ class SettingsService extends BaseSharedPreferencesService {
     transform: (v) => v.clamp(minimumPlaybackRate, maximumPlaybackRate),
   );
   static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
+
+  // Where a change made in the player's settings sheet persists (see
+  // [PlayerSettingScope]). Defaults preserve the pre-existing behavior:
+  // every change updates the global default.
+  static const playbackSpeedScope = EnumPref<PlayerSettingScope>(
+    'playback_speed_scope',
+    values: PlayerSettingScope.values,
+    defaultValue: PlayerSettingScope.global,
+  );
+  static const shaderPresetScope = EnumPref<PlayerSettingScope>(
+    'shader_preset_scope',
+    values: PlayerSettingScope.values,
+    defaultValue: PlayerSettingScope.global,
+  );
+  static const boxFitScope = EnumPref<PlayerSettingScope>(
+    'box_fit_scope',
+    values: PlayerSettingScope.values,
+    defaultValue: PlayerSettingScope.global,
+  );
+
+  /// One scope for both sync offsets: they are tuned together and a user who
+  /// wants per-title subtitle offsets wants per-title audio offsets too.
+  static const syncOffsetScope = EnumPref<PlayerSettingScope>(
+    'sync_offset_scope',
+    values: PlayerSettingScope.values,
+    defaultValue: PlayerSettingScope.global,
+  );
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
   static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
@@ -607,6 +635,15 @@ class SettingsService extends BaseSharedPreferencesService {
     encode: (v) => json.encode(v.map((k, pref) => MapEntry(k, pref.toJson()))),
     // Legacy values were bare ints; MediaVersionPreference.fromJson accepts both.
     decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, MediaVersionPreference.fromJson(v))),
+  );
+
+  /// Library-/title-scoped values for the player-sheet settings, managed by
+  /// [ScopedPlayerPrefs]: property id → scope key → `{'v': value, 't': ms}`.
+  static final scopedPlayerPrefValues = JsonPref<Map<String, dynamic>>(
+    'scoped_player_pref_values',
+    defaultValue: const {},
+    encode: json.encode,
+    decode: (raw) => Map<String, dynamic>.from(raw as Map),
   );
 
   /// Local record of when items were last played on this device
@@ -992,6 +1029,11 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleAnchorToScreen,
     defaultPlaybackSpeed,
     defaultBoxFitMode,
+    playbackSpeedScope,
+    shaderPresetScope,
+    boxFitScope,
+    syncOffsetScope,
+    scopedPlayerPrefValues,
     themeMode,
     videoPlayerNavigationEnabled,
     bufferSize,

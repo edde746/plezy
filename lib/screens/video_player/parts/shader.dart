@@ -1,7 +1,7 @@
 part of '../../video_player_screen.dart';
 
 extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
-  /// Apply the saved shader preset on playback start.
+  /// Apply the scope-resolved shader preset on playback start.
   /// Reads directly from SettingsService (synchronous SharedPreferences) to
   /// avoid a race with ShaderProvider's async initialization.
   Future<void> _applySavedShaderPreset() async {
@@ -9,8 +9,8 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
 
     try {
       final shaderProvider = context.read<ShaderProvider>();
-      final settings = await SettingsService.getInstance();
-      final presetId = settings.read(SettingsService.globalShaderPreset);
+      await SettingsService.getInstance();
+      final presetId = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.shaderPreset, _currentMetadata);
       final preset =
           (shaderProvider.initialized ? shaderProvider.findPresetById(presetId) : ShaderPreset.fromId(presetId)) ??
           ShaderPreset.none;

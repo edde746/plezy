@@ -205,6 +205,11 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onVolumeDown,
     VoidCallback? onToggleMute,
     ValueChanged<int>? onLiveSeekBy,
+
+    /// Persists a speed changed by the speed shortcuts. Supplied by the
+    /// player surface so the write can honor the configured persistence
+    /// scope ([ScopedPlayerPrefs]), which needs the current item's identity.
+    ValueChanged<double>? onSpeedPersist,
     Future<void> Function(Duration position)? onSeekRequested,
 
     /// Takes over relative seeking entirely when supplied, so the caller can
@@ -331,14 +336,14 @@ class KeyboardShortcutsService extends ChangeNotifier {
           case ShortcutAction.speedIncrease:
             final newRateUp = (player.state.rate + 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
             player.setRate(newRateUp);
-            _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateUp);
+            onSpeedPersist?.call(newRateUp);
           case ShortcutAction.speedDecrease:
             final newRateDown = (player.state.rate - 0.25).clamp(minimumPlaybackRate, maximumPlaybackRate);
             player.setRate(newRateDown);
-            _settingsService.write(SettingsService.defaultPlaybackSpeed, newRateDown);
+            onSpeedPersist?.call(newRateDown);
           case ShortcutAction.speedReset:
             player.setRate(1.0);
-            _settingsService.write(SettingsService.defaultPlaybackSpeed, 1.0);
+            onSpeedPersist?.call(1.0);
           case ShortcutAction.subSeekNext:
             player.command(['sub-seek', '1']);
           case ShortcutAction.subSeekPrev:

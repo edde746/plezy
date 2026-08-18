@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "字幕与配置",
     "seekAndTiming": "跳转与计时",
     "behavior": "行为",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "导出 Plezy 设置"
   },
   "search": {

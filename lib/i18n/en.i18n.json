@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Subtitles & Configuration",
     "seekAndTiming": "Seek & Timing",
     "behavior": "Behavior",
+    "rememberPlayerChanges": "Remember Player Changes",
+    "rememberPlayerChangesDescription": "Where a change made during playback is saved and reapplied from",
+    "scopePlaybackSpeed": "Playback Speed",
+    "scopeShaderPreset": "Shader Preset",
+    "scopeAspectRatio": "Aspect Ratio",
+    "scopeSyncOffsets": "Audio & Subtitle Sync",
+    "playerScopeOff": "Don't save",
+    "playerScopeGlobal": "Everywhere",
+    "playerScopeLibrary": "Per library",
+    "playerScopeTitle": "Per show or movie",
     "exportDialogTitle": "Export Plezy settings"
   },
   "search": {

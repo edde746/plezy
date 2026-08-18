@@ -1113,6 +1113,36 @@ class Translations$settings$en {
 	/// en: 'Behavior'
 	String get behavior => 'Behavior';
 
+	/// en: 'Remember Player Changes'
+	String get rememberPlayerChanges => 'Remember Player Changes';
+
+	/// en: 'Where a change made during playback is saved and reapplied from'
+	String get rememberPlayerChangesDescription => 'Where a change made during playback is saved and reapplied from';
+
+	/// en: 'Playback Speed'
+	String get scopePlaybackSpeed => 'Playback Speed';
+
+	/// en: 'Shader Preset'
+	String get scopeShaderPreset => 'Shader Preset';
+
+	/// en: 'Aspect Ratio'
+	String get scopeAspectRatio => 'Aspect Ratio';
+
+	/// en: 'Audio & Subtitle Sync'
+	String get scopeSyncOffsets => 'Audio & Subtitle Sync';
+
+	/// en: 'Don't save'
+	String get playerScopeOff => 'Don\'t save';
+
+	/// en: 'Everywhere'
+	String get playerScopeGlobal => 'Everywhere';
+
+	/// en: 'Per library'
+	String get playerScopeLibrary => 'Per library';
+
+	/// en: 'Per show or movie'
+	String get playerScopeTitle => 'Per show or movie';
+
 	/// en: 'Export Plezy settings'
 	String get exportDialogTitle => 'Export Plezy settings';
 }
@@ -6751,6 +6781,16 @@ extension on Translations {
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
+			'settings.rememberPlayerChanges' => 'Remember Player Changes',
+			'settings.rememberPlayerChangesDescription' => 'Where a change made during playback is saved and reapplied from',
+			'settings.scopePlaybackSpeed' => 'Playback Speed',
+			'settings.scopeShaderPreset' => 'Shader Preset',
+			'settings.scopeAspectRatio' => 'Aspect Ratio',
+			'settings.scopeSyncOffsets' => 'Audio & Subtitle Sync',
+			'settings.playerScopeOff' => 'Don\'t save',
+			'settings.playerScopeGlobal' => 'Everywhere',
+			'settings.playerScopeLibrary' => 'Per library',
+			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
@@ -6920,6 +6960,8 @@ extension on Translations {
 			'mediaMenu.deleteMovieTitle' => 'Delete this movie?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Delete episode',
 			'mediaMenu.deleteSeasonConfirm' => 'Delete season',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Delete show',
 			'mediaMenu.deleteMovieConfirm' => 'Delete movie',
 			'mediaMenu.deleteAnyway' => 'Delete anyway',
@@ -6930,8 +6972,6 @@ extension on Translations {
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} other episode is stored in the same file and will be deleted too:', other: '${n} other episodes are stored in the same file and will be deleted too:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.',
-			_ => null,
-		} ?? switch (path) {
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
 			'mediaMenu.mediaFailedToDelete' => 'Failed to delete media item',
 			'mediaMenu.rate' => 'Rate',
@@ -7434,6 +7474,8 @@ extension on Translations {
 			'explore.status.ended' => 'Ended',
 			'explore.status.canceled' => 'Canceled',
 			'explore.status.upcoming' => 'Upcoming',
+			_ => null,
+		} ?? switch (path) {
 			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
 			'explore.cast' => 'Cast',
 			'explore.characters' => 'Characters',
@@ -7444,8 +7486,6 @@ extension on Translations {
 			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
 			'explore.watchlistNoMatch' => 'Couldn\'t match this item to a watchlist',
 			'explore.notInLibrary' => 'Not in your library',
-			_ => null,
-		} ?? switch (path) {
 			'explore.inTheseLibraries' => 'In these libraries',
 			'explore.checkingLibrary' => 'Checking your library...',
 			'explore.emptyTitle' => 'Nothing here yet',
@@ -7948,6 +7988,8 @@ extension on Translations {
 			'companionRemote.remote.stop' => 'Stop',
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
@@ -7958,8 +8000,6 @@ extension on Translations {
 			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Failed to start remote server: ${error}',
 			'companionRemote.errors.commandFailed' => ({required Object error}) => 'Failed to send remote command: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.joinTimedOut' => 'Timed out joining session',
 			'companionRemote.errors.failedToConnectAnyAddress' => 'Failed to connect to any address',
 			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',

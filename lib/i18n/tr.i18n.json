@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Altyazılar ve Yapılandırma",
     "seekAndTiming": "Sarılma ve Zamanlama",
     "behavior": "Davranış",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Plezy ayarlarını dışa aktar"
   },
   "search": {

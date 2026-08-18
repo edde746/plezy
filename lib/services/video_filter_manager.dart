@@ -140,6 +140,16 @@ class VideoFilterManager {
     updateVideoFilter();
   }
 
+  /// Apply an externally resolved BoxFit mode (scoped-preference re-resolution
+  /// on an in-place item change). Does not fire [onBoxFitModeChanged]: the
+  /// value came from the store, so echoing it back would be redundant.
+  void setBoxFitMode(int mode) {
+    final next = mode.clamp(0, 2);
+    if (_boxFitMode == next) return;
+    _boxFitMode = next;
+    updateVideoFilter();
+  }
+
   /// Reset to contain mode (mode 0). Used when enabling ambient lighting.
   void resetToContain() {
     if (_boxFitMode != 0 || (_zoomScale - 1.0).abs() > 0.0001) {

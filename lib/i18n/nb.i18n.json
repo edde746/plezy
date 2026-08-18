@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Undertekster og konfigurasjon",
     "seekAndTiming": "Spoling og tidsinnstillinger",
     "behavior": "Oppførsel",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Eksporter Plezy-innstillinger"
   },
   "search": {

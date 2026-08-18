@@ -875,6 +875,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           mediaInfo: _currentMediaInfo,
         );
 
+        if (isItemChange) {
+          unawaited(_reapplyScopedPlayerPrefsForItemChange(previousMetadata: previousMetadata, metadata: metadata));
+        }
+
         _setPlayerState(() {
           _nextEpisode = null;
           _previousEpisode = null;
@@ -991,6 +995,53 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // rollback paths above have already cleared them, and this skips the rebuild when
       // neither flag is set.
       _clearEpisodeLoadingFlags();
+    }
+  }
+
+  /// Re-push scope-persisted player values whose resolution changed with the
+  /// item swapped in by [_reloadMediaInPlace].
+  ///
+  /// Shader, box-fit, and sync offsets are applied once per screen/player and
+  /// otherwise survive an in-place reload as latent native state — correct as
+  /// long as both items resolve to the same value, wrong the moment a Watch
+  /// Together swap or a next-episode hop crosses a library/title boundary.
+  /// Only changed resolutions are pushed so a session-local tweak keeps
+  /// carrying over exactly as it does today. Playback speed needs no handling
+  /// here: TrackManager re-resolves it on every open.
+  Future<void> _reapplyScopedPlayerPrefsForItemChange({
+    required MediaItem previousMetadata,
+    required MediaItem metadata,
+  }) async {
+    final currentPlayer = player;
+    if (currentPlayer == null) return;
+    try {
+      final previousAudioOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, previousMetadata);
+      final audioOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, metadata);
+      if (audioOffset != previousAudioOffset) {
+        await currentPlayer.setProperty('audio-delay', (audioOffset / 1000.0).toString());
+      }
+
+      final previousSubtitleOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, previousMetadata);
+      final subtitleOffset = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, metadata);
+      if (subtitleOffset != previousSubtitleOffset) {
+        await currentPlayer.setProperty('sub-delay', (subtitleOffset / 1000.0).toString());
+      }
+
+      final previousBoxFit = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, previousMetadata);
+      final boxFit = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, metadata);
+      if (boxFit != previousBoxFit) {
+        _videoFilterManager?.setBoxFitMode(boxFit);
+      }
+
+      final previousShaderId = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.shaderPreset, previousMetadata);
+      final shaderId = ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.shaderPreset, metadata);
+      if (shaderId != previousShaderId && mounted) {
+        // _currentMetadata is already the new item; the helper resolves
+        // against it and swaps the mpv shader chain.
+        await _applySavedShaderPreset();
+      }
+    } catch (e, stackTrace) {
+      appLogger.w('Failed to re-apply scoped player settings after item change', error: e, stackTrace: stackTrace);
     }
   }
 }

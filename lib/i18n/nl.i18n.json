@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Ondertitels en instellingen",
     "seekAndTiming": "Spoelen en timing",
     "behavior": "Gedrag",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Plezy-instellingen exporteren"
   },
   "search": {

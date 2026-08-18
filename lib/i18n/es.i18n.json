@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Subtítulos y configuración",
     "seekAndTiming": "Desplazamiento y tiempos",
     "behavior": "Comportamiento",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Exportar ajustes de Plezy"
   },
   "search": {

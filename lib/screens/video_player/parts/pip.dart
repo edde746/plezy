@@ -40,9 +40,12 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
         // iOS and tvOS zoom the native video layer; mpv's video-zoom would
         // force vo_avfoundation's Core Image path and kill HDR/DV passthrough.
         nativeVideoZoom: Platform.isIOS,
-        initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
+        initialBoxFitMode: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, _currentMetadata),
         initialPlayerSize: initialPlayerSize,
-        onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
+        // Reads _currentMetadata at invocation time so a cycle after an
+        // in-place episode swap keys against the item actually on screen.
+        onBoxFitModeChanged: (mode) =>
+            unawaited(ScopedPlayerPrefs.write(ScopedPlayerPrefs.boxFitMode, _currentMetadata, mode)),
       );
       unawaited(_videoFilterManager!.updateVideoFilter());
     }

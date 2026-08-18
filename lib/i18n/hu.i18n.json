@@ -345,6 +345,16 @@
     "subtitlesAndConfig": "Feliratok és konfiguráció",
     "seekAndTiming": "Tekerés és időzítés",
     "behavior": "Viselkedés",
+    "rememberPlayerChanges": "",
+    "rememberPlayerChangesDescription": "",
+    "scopePlaybackSpeed": "",
+    "scopeShaderPreset": "",
+    "scopeAspectRatio": "",
+    "scopeSyncOffsets": "",
+    "playerScopeOff": "",
+    "playerScopeGlobal": "",
+    "playerScopeLibrary": "",
+    "playerScopeTitle": "",
     "exportDialogTitle": "Plezy-beállítások exportálása"
   },
   "search": {
