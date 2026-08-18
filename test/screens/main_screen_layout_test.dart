@@ -134,6 +134,44 @@ void main() {
     );
   });
 
+  group('ProfileSelectionResumeGate', () {
+    test('does not prompt for overlay-style focus loss and regain (#1990)', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.inactive), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('prompts exactly once after a genuine backgrounding', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.inactive), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.paused), isFalse);
+      expect(gate.wasBackgrounded, isTrue);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isTrue);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isFalse);
+      expect(gate.wasBackgrounded, isFalse);
+    });
+
+    test('prompts after an iOS-style hidden -> inactive -> resumed return', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.hidden), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.inactive), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isTrue);
+    });
+
+    test('latches every backgrounding state', () {
+      for (final state in [AppLifecycleState.hidden, AppLifecycleState.paused, AppLifecycleState.detached]) {
+        final gate = ProfileSelectionResumeGate();
+        expect(gate.consumePromptOn(state), isFalse);
+        expect(gate.consumePromptOn(AppLifecycleState.resumed), isTrue, reason: '$state');
+      }
+    });
+
+    test('does not prompt without a prior backgrounding (cold open)', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isFalse);
+    });
+  });
+
   testWidgets('side navigation bleed animates from the previous value', (tester) async {
     Widget build(double targetBleed) {
       return Directionality(
