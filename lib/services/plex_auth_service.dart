@@ -426,7 +426,10 @@ class PlexServer {
 
   /// Find the best working connection by testing them
   /// Returns a Stream that emits connections progressively:
-  /// 1. First emission: The first connection that responds successfully
+  /// 1. First emission: The first connection that responds successfully.
+  ///    Relay is a fallback tier: a relay success is held until every direct
+  ///    candidate has failed, and a cached relay URL gets no head start, so
+  ///    a fast plex.tv relay edge can never beat a working direct endpoint.
   /// 2. Second emission (optional): The best connection after latency testing
   /// Priority: local > remote > relay, then HTTPS > HTTP, then lowest latency
   /// Tests both plex.direct URI and direct IP for each connection
@@ -473,6 +476,7 @@ class PlexServer {
       candidates: candidates,
       preferredUrl: preferredUri,
       candidateForUrl: _candidateForUrl,
+      tierOf: (candidate) => candidate.connection.relay ? 1 : 0,
       urlOf: (candidate) => candidate.url,
       displayTypeOf: (candidate) => candidate.connection.displayType,
       failureLogFields: (candidate, result) => {

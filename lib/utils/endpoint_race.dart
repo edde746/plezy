@@ -33,6 +33,16 @@ class EndpointRaceSelection<C, R> {
 /// a lower-latency URL in the background without blocking initial connection
 /// setup.
 ///
+/// [tierOf] makes phase 1 class-aware without delaying any probe: candidates
+/// map to an integer tier (0 = preferred). Every probe still starts
+/// immediately, but a success from a higher (fallback) tier — e.g. a Plex
+/// relay — is held and only accepted once every lower-tier candidate has
+/// failed, so a marginally slower direct endpoint always beats a fast relay
+/// edge. The hold is bounded by [raceTimeout] because that already bounds
+/// each probe. A cached/preferred URL resolving to a fallback-tier candidate
+/// also gets no head start; it competes as an ordinary participant. Omitting
+/// [tierOf] keeps the plain first-success race.
+///
 /// Diagnostic events intentionally omit candidate URLs. Backends register
 /// endpoints separately for unavoidable network-layer diagnostics.
 Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
@@ -43,6 +53,7 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
   Map<String, Object?> Function(C candidate, R result)? failureLogFields,
   String? preferredUrl,
   C? Function(String url)? candidateForUrl,
+  int Function(C candidate)? tierOf,
   required Future<R> Function(C candidate, Duration timeout) probe,
   required Future<R> Function(C candidate) measure,
   required bool Function(R result) isSuccess,
@@ -66,6 +77,14 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
   Future<R>? pendingCachedProbe;
   if (preferredUrl != null && preferredUrl.isNotEmpty) {
     cachedCandidate = candidateForUrl?.call(preferredUrl) ?? _candidateForUrl(candidates, urlOf, preferredUrl);
+  }
+  if (cachedCandidate != null && tierOf != null && tierOf(cachedCandidate) > 0) {
+    // A fallback-tier endpoint must never win the deterministic head start:
+    // it stays an ordinary race participant so preferred-tier candidates can
+    // beat it. Guarded here rather than at bind sites so every binder
+    // self-heals a fallback URL persisted by older builds.
+    appLogger.d('Cached $label endpoint is fallback-tier, racing without a head start');
+    cachedCandidate = null;
   }
   if (cachedCandidate != null) {
     final cached = cachedCandidate;
@@ -109,6 +128,7 @@ Stream<EndpointRaceSelection<C, R>> raceEndpointCandidates<C, R>({
       urlOf: urlOf,
       displayTypeOf: displayTypeOf,
       failureLogFields: failureLogFields,
+      tierOf: tierOf,
       probe: (candidate, timeout) =>
           mergedCached != null && identical(candidate, mergedCached) ? pendingCachedProbe! : probe(candidate, timeout),
       isSuccess: isSuccess,
@@ -194,12 +214,54 @@ Future<({C candidate, R result})?> _raceFirstSuccess<C, R>({
   required Future<R> Function(C candidate, Duration timeout) probe,
   required bool Function(R result) isSuccess,
   required Duration timeout,
+  int Function(C candidate)? tierOf,
   String Function(C candidate)? displayTypeOf,
   Map<String, Object?> Function(C candidate, R result)? failureLogFields,
   void Function(C candidate, R result)? onFirstSuccess,
 }) async {
   final completer = Completer<({C candidate, R result})?>();
-  var completedTests = 0;
+
+  int tierFor(C candidate) => tierOf?.call(candidate) ?? 0;
+  final pendingByTier = <int, int>{};
+  for (final candidate in candidates) {
+    pendingByTier.update(tierFor(candidate), (count) => count + 1, ifAbsent: () => 1);
+  }
+
+  // Best fallback-tier success so far: only accepted once no lower-tier
+  // probe is still pending, so a preferred-tier endpoint that answers later
+  // (but within its probe timeout) still wins.
+  ({C candidate, R result, int tier})? held;
+
+  bool lowerTierPending(int tier) {
+    for (final entry in pendingByTier.entries) {
+      if (entry.key < tier && entry.value > 0) return true;
+    }
+    return false;
+  }
+
+  void win(C candidate, R result) {
+    onFirstSuccess?.call(candidate, result);
+    completer.complete((candidate: candidate, result: result));
+  }
+
+  // Runs after a probe resolves without an immediate win: releases the held
+  // fallback success once every lower tier has drained, and completes with
+  // null when all candidates resolved without any success.
+  void settle() {
+    if (completer.isCompleted) return;
+    final fallback = held;
+    if (fallback != null && !lowerTierPending(fallback.tier)) {
+      appLogger.i(
+        '$label fallback-tier endpoint accepted after preferred tiers failed',
+        error: {'type': displayTypeOf?.call(fallback.candidate)},
+      );
+      win(fallback.candidate, fallback.result);
+      return;
+    }
+    if (pendingByTier.values.every((count) => count == 0)) {
+      completer.complete(null);
+    }
+  }
 
   appLogger.d(
     'Running $label endpoint race to find first working endpoint',
@@ -207,10 +269,11 @@ Future<({C candidate, R result})?> _raceFirstSuccess<C, R>({
   );
 
   for (final candidate in candidates) {
+    final tier = tierFor(candidate);
     unawaited(
       probe(candidate, timeout)
           .then((result) {
-            completedTests++;
+            pendingByTier[tier] = pendingByTier[tier]! - 1;
 
             if (!isSuccess(result)) {
               final failureFields = failureLogFields?.call(candidate, result);
@@ -221,27 +284,38 @@ Future<({C candidate, R result})?> _raceFirstSuccess<C, R>({
                   if (failureFields != null) ..._sanitizeEndpointFields(failureFields, urlOf(candidate)),
                 },
               );
+              settle();
+              return;
             }
 
-            if (isSuccess(result) && !completer.isCompleted) {
-              onFirstSuccess?.call(candidate, result);
-              completer.complete((candidate: candidate, result: result));
+            if (completer.isCompleted) return;
+
+            if (!lowerTierPending(tier)) {
+              win(candidate, result);
+              return;
             }
 
-            if (completedTests == candidates.length && !completer.isCompleted) {
-              completer.complete(null);
+            // A fallback-tier endpoint answered while a preferred tier is
+            // still probing (e.g. Plex relay vs direct). Hold it: it wins
+            // only if every preferred-tier candidate fails, so a slower
+            // direct endpoint always beats a fast relay edge (#1974).
+            final current = held;
+            if (current == null || tier < current.tier) {
+              appLogger.d(
+                '$label fallback-tier endpoint succeeded, holding while preferred tiers race',
+                error: {'type': displayTypeOf?.call(candidate)},
+              );
+              held = (candidate: candidate, result: result, tier: tier);
             }
           })
           .catchError((Object error, StackTrace stackTrace) {
-            completedTests++;
+            pendingByTier[tier] = pendingByTier[tier]! - 1;
             appLogger.w(
               '$label endpoint candidate threw during race',
               error: {'errorType': error.runtimeType.toString()},
               stackTrace: stackTrace,
             );
-            if (completedTests == candidates.length && !completer.isCompleted) {
-              completer.complete(null);
-            }
+            settle();
           }),
     );
   }

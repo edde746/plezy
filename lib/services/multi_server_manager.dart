@@ -161,6 +161,12 @@ class MultiServerManager {
   /// Debounce timer for connectivity events — collapses rapid network flapping
   Timer? _connectivityDebounce;
 
+  /// Per-server relay-escape probe timers and attempt counts
+  /// (see [_syncRelayEscape]).
+  final Map<String, Timer> _relayEscapeTimers = {};
+  final Map<String, int> _relayEscapeAttempts = {};
+  static const _relayEscapeBaseDelay = Duration(seconds: 30);
+
   /// Get all registered server IDs (Plex + MediaBrowser).
   ///
   /// Sourced from [_clients] rather than [_plexServers] because
@@ -375,15 +381,16 @@ class MultiServerManager {
       serverName: server.name,
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: (newUrl) async {
-        await storage.saveServerEndpoint(ServerId(serverId), newUrl);
-        appLogger.i('Updated endpoint for ${server.name} after failover: $newUrl');
+        appLogger.i('Endpoint changed for ${server.name} after failover: $newUrl');
+        await _savePreferredEndpoint(ServerId(serverId), storage, newUrl, capturedServer: server);
+        _syncRelayEscape(ServerId(serverId));
       },
       onAllEndpointsExhausted: () => _onServerEndpointsExhausted(ServerId(serverId)),
       seedTranscoderVideoSupport: observedTranscoderVideo,
     );
 
-    // Save the initial endpoint
-    await storage.saveServerEndpoint(ServerId(serverId), baseUrl);
+    // Save the initial endpoint (relay is refused — see _savePreferredEndpoint)
+    await _savePreferredEndpoint(ServerId(serverId), storage, baseUrl, capturedServer: server);
 
     appLogger.i(
       'Connected ${server.name}',
@@ -401,6 +408,31 @@ class MultiServerManager {
     return client;
   }
 
+  /// Persist [url] as [serverId]'s preferred endpoint unless it is a relay.
+  ///
+  /// The preferred endpoint gets a deterministic head start at the next bind,
+  /// so persisting a relay URL would pin future sessions to plex.tv's
+  /// bandwidth-capped relay even after direct connectivity returns (#1974).
+  /// The client may still *use* a relay endpoint — only persistence is
+  /// refused; [_syncRelayEscape] owns getting off it. Classified against both
+  /// the live registered server and the connect-time [capturedServer]: after
+  /// a profile refresh rotates relay URIs only one of the two may still list
+  /// the URL, and a URL absent from a server's connection list falls through
+  /// to the custom-hostname classifier, which cannot recognize relays.
+  Future<void> _savePreferredEndpoint(
+    ServerId serverId,
+    StorageService storage,
+    String url, {
+    PlexServer? capturedServer,
+  }) async {
+    bool isRelay(PlexServer? server) => server?.networkClassForUrl(url) == PlexNetworkClass.relay;
+    if (isRelay(_plexServers[serverId]) || isRelay(capturedServer)) {
+      appLogger.d('Refusing to persist relay endpoint as preferred for $serverId');
+      return;
+    }
+    await storage.saveServerEndpoint(serverId, url);
+  }
+
   /// Persists a new endpoint, rebuilds the failover list, and switches the
   /// client only while it is still the registered client for this server.
   Future<bool> _promoteEndpoint({
@@ -416,11 +448,13 @@ class MultiServerManager {
     }
 
     if (!isCurrent()) return false;
-    await storage.saveServerEndpoint(serverId, newUrl);
+    await _savePreferredEndpoint(serverId, storage, newUrl, capturedServer: server);
     if (!isCurrent()) return false;
     final newEndpoints = server.prioritizedEndpointUrls(preferredFirst: newUrl);
     await client.updateEndpointPreferences(newEndpoints, switchToFirst: true);
-    return isCurrent();
+    final current = isCurrent();
+    if (current) _syncRelayEscape(serverId);
+    return current;
   }
 
   /// Continues draining the connection optimization stream in the background,
@@ -494,6 +528,7 @@ class MultiServerManager {
   /// deliberately left alone — they are owned by the futures that set them.
   MediaServerClient? _forgetServer(String serverId) {
     _reconnectDebounce.remove(serverId)?.cancel();
+    _stopRelayEscape(serverId);
     final client = _clients.remove(serverId);
     _activeJellyfinMachine.remove(serverId);
     _plexServers.remove(serverId);
@@ -589,6 +624,7 @@ class MultiServerManager {
         _serverStatus[serverId] = true;
         _authErrorServers.remove(serverId);
         bound.add(serverId);
+        _syncRelayEscape(ServerId(serverId));
         _connectProgressController.add((serverId: serverId, online: true));
       } catch (e, stackTrace) {
         if (isStale() || !identical(_plexServers[serverId], server)) return;
@@ -1065,7 +1101,7 @@ class MultiServerManager {
           appLogger.i('Switched ${server.name} to better endpoint: $newUrl', error: {'type': connection.displayType});
         } else {
           if (_plexServers[serverId] != server) return;
-          await storage.saveServerEndpoint(serverId, newUrl);
+          await _savePreferredEndpoint(serverId, storage, newUrl, capturedServer: server);
           if (_plexServers[serverId] != server) return;
           appLogger.i('Updated optimal endpoint for ${server.name}: $newUrl', error: {'type': connection.displayType});
         }
@@ -1073,6 +1109,81 @@ class MultiServerManager {
     } catch (e, stackTrace) {
       appLogger.w('Connection optimization failed for ${server.name}', error: e, stackTrace: stackTrace);
     }
+  }
+
+  /// Whether [serverId]'s registered client is currently talking to a Plex
+  /// relay endpoint.
+  bool _isOnRelay(ServerId serverId) {
+    final client = _clients[serverId];
+    final server = _plexServers[serverId];
+    return client is PlexClient &&
+        server != null &&
+        server.networkClassForUrl(client.config.baseUrl) == PlexNetworkClass.relay;
+  }
+
+  /// Reconcile the relay-escape prober with [serverId]'s current endpoint.
+  ///
+  /// A session can land on relay legitimately (direct connectivity was down
+  /// at connect time) or transiently (a failover walked onto it). plex.tv
+  /// caps relay bandwidth, and the only other re-optimization trigger is a
+  /// connectivity event — which never fires on a stable network — so a relay
+  /// session would otherwise stay capped until restart. While the active
+  /// endpoint classifies as relay, re-race the candidates on a bounded
+  /// backoff; the phase-2 selector prefers any working direct endpoint, so
+  /// the first successful direct probe promotes away and stops the prober.
+  void _syncRelayEscape(ServerId serverId) {
+    if (!_isOnRelay(serverId)) {
+      _stopRelayEscape(serverId);
+      return;
+    }
+    if (_relayEscapeTimers.containsKey(serverId)) return;
+    final attempt = _relayEscapeAttempts[serverId] ?? 0;
+    final delay = _relayEscapeDelay(attempt);
+    appLogger.i(
+      'Connected via relay, scheduling direct-endpoint re-probe',
+      error: {'serverId': serverId, 'attempt': attempt, 'delaySeconds': delay.inSeconds},
+    );
+    _relayEscapeTimers[serverId] = Timer(delay, () {
+      _relayEscapeTimers.remove(serverId);
+      unawaited(_runRelayEscape(serverId));
+    });
+  }
+
+  void _stopRelayEscape(String serverId) {
+    _relayEscapeTimers.remove(serverId)?.cancel();
+    _relayEscapeAttempts.remove(serverId);
+  }
+
+  /// 30s, 60s, then every 120s — a returning direct endpoint is picked up
+  /// quickly without re-racing a genuinely relay-only server forever at a
+  /// tight cadence.
+  Duration _relayEscapeDelay(int attempt) => _relayEscapeBaseDelay * (1 << attempt.clamp(0, 2));
+
+  /// Whether a relay-escape re-probe is scheduled for [serverId].
+  @visibleForTesting
+  bool debugHasPendingRelayEscapeForTesting(ServerId serverId) => _relayEscapeTimers.containsKey(serverId);
+
+  /// Fire [serverId]'s pending relay-escape probe immediately instead of
+  /// waiting out its backoff — timers armed during a real-async bind are
+  /// unreachable from a test's fakeAsync zone.
+  @visibleForTesting
+  Future<void> debugFireRelayEscapeForTesting(ServerId serverId) {
+    _relayEscapeTimers.remove(serverId)?.cancel();
+    return _runRelayEscape(serverId);
+  }
+
+  Future<void> _runRelayEscape(ServerId serverId) async {
+    final server = _plexServers[serverId];
+    if (server == null || !_isOnRelay(serverId) || !isServerOnline(serverId)) {
+      // Gone, promoted away, or offline (the reconnect path owns offline
+      // servers and re-syncs on success).
+      _stopRelayEscape(serverId);
+      return;
+    }
+    _relayEscapeAttempts[serverId] = (_relayEscapeAttempts[serverId] ?? 0) + 1;
+    await _runServerTask(serverId, () => _reoptimizeServer(serverId: serverId, server: server, reason: 'relay-escape'));
+    // Still on relay (or the optimize slot was busy): keep probing.
+    _syncRelayEscape(serverId);
   }
 
   /// Attempt full reconnection for a single offline server
@@ -1106,6 +1217,7 @@ class MultiServerManager {
       final oldClient = _clients[serverId];
       if (oldClient != null) unawaited(_closeClientGracefully(oldClient));
       _clients[serverId] = client;
+      _syncRelayEscape(serverId);
       updateServerStatus(serverId, true);
       appLogger.i('Successfully reconnected to ${server.name}');
     } catch (e) {
@@ -1311,6 +1423,11 @@ class MultiServerManager {
       timer.cancel();
     }
     _reconnectDebounce.clear();
+    for (final timer in _relayEscapeTimers.values) {
+      timer.cancel();
+    }
+    _relayEscapeTimers.clear();
+    _relayEscapeAttempts.clear();
     _activeHealthCheck = null;
     _activeReconnect = null;
     final clients = <MediaServerClient>{..._clients.values, ..._jellyfinByCompoundId.values};

@@ -968,6 +968,174 @@ void main() {
     });
   });
 
+  group('relay endpoint handling', () {
+    test('a relay phase-1 winner is never persisted; a later direct promotion is', () async {
+      final storage = await _prepareFreshPlexManagerTest();
+      final direct = _plexEndpoint('direct');
+      final relay = _plexRelayEndpoint('relay');
+      final discoveries = StreamController<PlexConnection>(sync: true);
+      final server = _ControlledPlexServer(
+        serverId: 'relay-server',
+        endpoints: [direct, relay],
+        discoveryStreams: [() => discoveries.stream],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+      addTearDown(discoveries.close);
+
+      final refresh = manager.refreshTokensForProfile(_plexAccount('relay-account', [server]), profileId: 'profile-a');
+      await pumpEventQueue();
+      discoveries.add(relay);
+      expect(await refresh, {'relay-server'});
+      await pumpEventQueue();
+
+      final client = factory.clients['relay-server']!;
+      expect(client.config.baseUrl, relay.uri);
+      expect(storage.getServerEndpoint(ServerId('relay-server')), isNull);
+      expect(manager.debugHasPendingRelayEscapeForTesting(ServerId('relay-server')), isTrue);
+
+      discoveries.add(direct);
+      await discoveries.close();
+      await pumpEventQueue(times: 20);
+
+      expect(client.config.baseUrl, direct.uri);
+      expect(storage.getServerEndpoint(ServerId('relay-server')), direct.uri);
+      expect(manager.debugHasPendingRelayEscapeForTesting(ServerId('relay-server')), isFalse);
+    });
+
+    test('failover onto a relay endpoint never overwrites the preferred endpoint', () async {
+      final storage = await _prepareFreshPlexManagerTest();
+      final direct = _plexEndpoint('failover-direct');
+      final relay = _plexRelayEndpoint('failover-relay');
+      final server = _ControlledPlexServer(
+        serverId: 'failover-server',
+        endpoints: [direct, relay],
+        discoveryStreams: [() => Stream.value(direct)],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+
+      expect(
+        await manager.refreshTokensForProfile(_plexAccount('failover-account', [server]), profileId: 'profile-a'),
+        {'failover-server'},
+      );
+      await pumpEventQueue(times: 20);
+      expect(storage.getServerEndpoint(ServerId('failover-server')), direct.uri);
+
+      // Mid-session failover walks onto the relay candidate: the client may
+      // use it, but it must not become the next bind's head-start endpoint.
+      final onEndpointChanged = factory.calls.single.endpointChanged!;
+      await onEndpointChanged(relay.uri);
+      expect(storage.getServerEndpoint(ServerId('failover-server')), direct.uri);
+
+      // Reverse rotation (PR #1974 review): a profile refresh rotates the
+      // relay URI away, then the old relay URL reports a late failover
+      // switch. The live server no longer lists it — the custom-hostname
+      // fallback alone would classify it as remote — but the connect-time
+      // capture still recognizes it as relay.
+      final rotated = _ControlledPlexServer(
+        serverId: 'failover-server',
+        endpoints: [direct, _plexRelayEndpoint('rotated-relay')],
+        discoveryStreams: [() => Stream.value(direct)],
+      );
+      expect(
+        await manager.refreshTokensForProfile(_plexAccount('failover-account', [rotated]), profileId: 'profile-a'),
+        {'failover-server'},
+      );
+      await onEndpointChanged(relay.uri);
+      expect(storage.getServerEndpoint(ServerId('failover-server')), direct.uri);
+    });
+
+    test('a relay session re-probes on backoff and promotes a returning direct endpoint', () async {
+      final storage = await _prepareFreshPlexManagerTest();
+      final direct = _plexEndpoint('escape-direct');
+      final relay = _plexRelayEndpoint('escape-relay');
+      final server = _ControlledPlexServer(
+        serverId: 'escape-server',
+        endpoints: [direct, relay],
+        discoveryStreams: [
+          () => Stream.value(relay), // bind: only relay answers
+          () => Stream.value(relay), // first escape probe: still relay-only
+          () => Stream.value(direct), // second escape probe: direct is back
+        ],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+
+      expect(await manager.refreshTokensForProfile(_plexAccount('escape-account', [server]), profileId: 'profile-a'), {
+        'escape-server',
+      });
+      await pumpEventQueue(times: 20);
+      final client = factory.clients['escape-server']!;
+      expect(client.config.baseUrl, relay.uri);
+      expect(server.discoveryCalls, 1);
+      expect(manager.debugHasPendingRelayEscapeForTesting(ServerId('escape-server')), isTrue);
+
+      fakeAsync((async) {
+        // Fire the bind-scheduled probe (its real timer lives outside this zone).
+        unawaited(manager.debugFireRelayEscapeForTesting(ServerId('escape-server')));
+        async.flushMicrotasks();
+        expect(server.discoveryCalls, 2);
+        expect(client.config.baseUrl, relay.uri);
+
+        // Still relay-only: rescheduled with a doubled backoff (30s -> 60s).
+        async.elapse(const Duration(seconds: 60) - const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+        expect(server.discoveryCalls, 2);
+        async.elapse(const Duration(milliseconds: 1));
+        async.flushMicrotasks();
+
+        expect(server.discoveryCalls, 3);
+        expect(client.config.baseUrl, direct.uri);
+        expect(storage.getServerEndpoint(ServerId('escape-server')), direct.uri);
+        expect(manager.debugHasPendingRelayEscapeForTesting(ServerId('escape-server')), isFalse);
+
+        // Off relay: the prober stays stopped.
+        async.elapse(const Duration(minutes: 10));
+        async.flushMicrotasks();
+        expect(server.discoveryCalls, 3);
+      });
+    });
+
+    test('removing a relay-connected server cancels its escape prober', () async {
+      await _prepareFreshPlexManagerTest();
+      final relay = _plexRelayEndpoint('removed-relay');
+      final server = _ControlledPlexServer(
+        serverId: 'removed-server',
+        endpoints: [_plexEndpoint('removed-direct'), relay],
+        discoveryStreams: [() => Stream.value(relay)],
+      );
+      final factory = _RecordingPlexFactory();
+      final manager = MultiServerManager(
+        plexClientFactory: factory.create,
+        connectivityChanges: () => const Stream.empty(),
+      );
+      addTearDown(manager.dispose);
+
+      expect(await manager.refreshTokensForProfile(_plexAccount('removed-account', [server]), profileId: 'profile-a'), {
+        'removed-server',
+      });
+      await pumpEventQueue(times: 20);
+      expect(manager.debugHasPendingRelayEscapeForTesting(ServerId('removed-server')), isTrue);
+
+      manager.removeServer(ServerId('removed-server'));
+      expect(manager.debugHasPendingRelayEscapeForTesting(ServerId('removed-server')), isFalse);
+      expect(server.discoveryCalls, 1);
+    });
+  });
+
   group('Jellyfin connection updates', () {
     test('persists refreshed admin status discovered during health checks', () async {
       final persisted = <JellyfinConnection>[];
@@ -1648,6 +1816,17 @@ PlexConnection _plexEndpoint(String label) => PlexConnection(
   ipv6: false,
 );
 
+/// Mirrors a plex.tv relay connection: remote, `relay: true`.
+PlexConnection _plexRelayEndpoint(String label) => PlexConnection(
+  protocol: 'https',
+  address: '$label.invalid',
+  port: 8443,
+  uri: 'https://$label.invalid:8443',
+  local: false,
+  relay: true,
+  ipv6: false,
+);
+
 class _ControlledPlexServer extends PlexServer {
   _ControlledPlexServer({
     required String serverId,
@@ -1677,7 +1856,7 @@ class _PlexFactoryCall {
     required this.serverId,
     required this.profileScopeId,
     required this.prioritizedEndpoints,
-    required this.hasEndpointCallback,
+    required this.endpointChanged,
     required this.hasExhaustionCallback,
     required this.seedTranscoderVideoSupport,
   });
@@ -1686,9 +1865,11 @@ class _PlexFactoryCall {
   final ServerId serverId;
   final PlexProfileScopeId profileScopeId;
   final List<String>? prioritizedEndpoints;
-  final bool hasEndpointCallback;
+  final Future<void> Function(String newBaseUrl)? endpointChanged;
   final bool hasExhaustionCallback;
   final bool? seedTranscoderVideoSupport;
+
+  bool get hasEndpointCallback => endpointChanged != null;
 }
 
 class _RecordingPlexFactory {
@@ -1715,7 +1896,7 @@ class _RecordingPlexFactory {
         serverId: serverId,
         profileScopeId: profileScopeId,
         prioritizedEndpoints: prioritizedEndpoints,
-        hasEndpointCallback: onEndpointChanged != null,
+        endpointChanged: onEndpointChanged,
         hasExhaustionCallback: onAllEndpointsExhausted != null,
         seedTranscoderVideoSupport: seedTranscoderVideoSupport,
       ),
