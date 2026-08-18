@@ -314,6 +314,7 @@ class ExoPlayerCore(private val activity: Activity) :
   private var lastAudioRecoveryReason: String? = null
   private var lastAudioSinkError: String? = null
   private var loggedEwasteEac3Workaround: Boolean = false
+  private val loggedDtsAppDecoderMimes = mutableSetOf<String>()
   private var lastTrueHdDirectOutputLogKey: String? = null
   private var loggedDecodedPcmTunnelingGuard: Boolean = false
   private var hasRenderedVideoFrameForMedia: Boolean = false
@@ -2318,7 +2319,20 @@ class ExoPlayerCore(private val activity: Activity) :
       }
       return true
     }
-    return false
+    // DTS that is going to decode must not decode in a platform codec: on license-gated
+    // Amlogic boxes (the Onn family) the platform decoder drains normally while rendering
+    // silence (#1995). Bitstream-capable routes are untouched — media3 selects direct output
+    // before consulting the decoder list, and the visible platform decoder keeps the
+    // tunneling gate as it was.
+    val forceDts = shouldForceFfmpegDtsDecode(
+      mimeType,
+      directOutputBlocked = { shouldBlockDirectAudioOutput(dtsProbeFormat(mimeType), "decoder selection") },
+      routeCanBitstreamDts = { routeCanBitstreamDts(mimeType) }
+    )
+    if (forceDts && loggedDtsAppDecoderMimes.add(mimeType)) {
+      emitLog("info", "decoder", "Using app decoder for $mimeType; the stream will decode and platform DTS decoders render silence on license-gated devices")
+    }
+    return forceDts
   }
 
   private fun evaluateTrueHdDirectOutput(format: Format?): TrueHdDirectOutputDecision {
@@ -2426,6 +2440,33 @@ class ExoPlayerCore(private val activity: Activity) :
       .setSampleRate(sampleRate)
       .build()
   }
+
+  /**
+   * Whether the current route can bitstream [mimeType] at all: media3's raw direct path
+   * ([AudioCapabilities]) or, for DTS-HD, the IEC 61937 carrier ([IecCarrierSink]). When this
+   * is false the stream decodes regardless of the passthrough setting.
+   */
+  private fun routeCanBitstreamDts(mimeType: String): Boolean {
+    if (mimeType == MimeTypes.AUDIO_DTS_HD && supportsIecCarrier(activity)) return true
+    val audioAttributes = buildMovieAudioAttributes()
+    return try {
+      AudioCapabilities
+        .getCapabilities(activity, audioAttributes, null)
+        .isPassthroughPlaybackSupported(dtsProbeFormat(mimeType), audioAttributes)
+    } catch (e: Exception) {
+      // An unanswerable probe biases toward FFmpeg decode. A wrong "can't bitstream" is benign
+      // (bypass still wins before decoder selection); a wrong "can" leaves the silent platform
+      // decode path reachable.
+      false
+    }
+  }
+
+  /** DTS selection probe at the family's common shape; decoder selection only knows the mime. */
+  private fun dtsProbeFormat(mimeType: String): Format = Format.Builder()
+    .setSampleMimeType(mimeType)
+    .setChannelCount(6)
+    .setSampleRate(48_000)
+    .build()
 
   @RequiresApi(Build.VERSION_CODES.Q)
   @Suppress("DEPRECATION")

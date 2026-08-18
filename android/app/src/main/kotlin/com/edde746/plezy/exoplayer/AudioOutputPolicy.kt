@@ -32,6 +32,38 @@ internal fun isPassthroughAudioMimeType(mimeType: String): Boolean = when (mimeT
 internal fun shouldBlockDirectOutputForPassthrough(mimeType: String, audioPassthroughEnabled: Boolean): Boolean = !audioPassthroughEnabled && isPassthroughAudioMimeType(mimeType)
 
 /**
+ * The DTS-family mimes the bundled FFmpeg decoder claims (`FfmpegLibrary` maps both to `dca`).
+ *
+ * DTS Express (`audio/vnd.dts.hd;profile=lbr`) and DTS:X (`audio/vnd.dts.uhd`) are deliberately
+ * excluded: FFmpeg does not claim them, so hiding their platform decoders would leave those
+ * streams with no decoder at all.
+ */
+internal fun isFfmpegDtsMimeType(mimeType: String): Boolean = mimeType == MimeTypes.AUDIO_DTS || mimeType == MimeTypes.AUDIO_DTS_HD
+
+/**
+ * Whether a DTS stream should decode in the app's FFmpeg decoder instead of a platform
+ * MediaCodec decoder.
+ *
+ * Platform DTS decoders cannot be trusted with decode. On Amlogic-based Google TV boxes (the
+ * Onn family) DTS decode is license-gated in firmware, so `c2.amlogic.audio.decoder.dtshd`
+ * initialises, drains and advances the playback position while rendering silence — and collapses
+ * 5.1 to stereo where it does produce sound (#1995). FFmpeg decodes the whole `dca` family to
+ * full multichannel PCM everywhere, which is what mpv and Kodi ship on the same hardware.
+ *
+ * Scoped to streams that are actually going to decode: [directOutputBlocked] (passthrough off,
+ * downmix, normalization, the AudioTrack-failure blocklist) or a route that cannot bitstream DTS
+ * in any shape ([routeCanBitstreamDts] false — the Android TV default leaves passthrough on, so
+ * the setting alone cannot identify the decode path). Bitstream-capable routes are left exactly
+ * alone: media3 selects direct output before it ever consults the decoder list, and leaving the
+ * platform decoder visible there keeps the hardware-decoder tunneling gate unchanged.
+ */
+internal fun shouldForceFfmpegDtsDecode(
+  mimeType: String,
+  directOutputBlocked: () -> Boolean,
+  routeCanBitstreamDts: () -> Boolean
+): Boolean = isFfmpegDtsMimeType(mimeType) && (directOutputBlocked() || !routeCanBitstreamDts())
+
+/**
  * Linear PCM output encodings, i.e. the sink decoded the bitstream instead of
  * passing it through. Mirrors the platform's `AudioFormat.ENCODING_PCM_*` set.
  */

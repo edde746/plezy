@@ -48,6 +48,52 @@ class AudioOutputPolicyTest {
   }
 
   @Test
+  fun dtsDecodeIsForcedToFfmpegWhenDirectOutputIsBlocked() {
+    // Passthrough disabled (the #1995 report), downmix, normalization, or a failure block:
+    // the stream decodes, and platform DTS decoders render silence on license-gated devices.
+    assertTrue(shouldForceFfmpegDtsDecode("audio/vnd.dts", { true }, { true }))
+    assertTrue(shouldForceFfmpegDtsDecode("audio/vnd.dts.hd", { true }, { true }))
+  }
+
+  @Test
+  fun dtsDecodeIsForcedToFfmpegWhenTheRouteCannotBitstream() {
+    // Onn 4K Plus over HDMI to a Dolby-only TV: passthrough enabled (the Android TV default)
+    // still decodes because the route carries no DTS shape (#1995).
+    assertTrue(shouldForceFfmpegDtsDecode("audio/vnd.dts", { false }, { false }))
+    assertTrue(shouldForceFfmpegDtsDecode("audio/vnd.dts.hd", { false }, { false }))
+  }
+
+  @Test
+  fun bitstreamCapableDtsRoutesKeepThePlatformDecoderVisible() {
+    // A bitstreaming session never engages a decoder; leaving the platform decoder visible
+    // keeps the hardware-decoder tunneling gate exactly as it was.
+    assertFalse(shouldForceFfmpegDtsDecode("audio/vnd.dts", { false }, { true }))
+    assertFalse(shouldForceFfmpegDtsDecode("audio/vnd.dts.hd", { false }, { true }))
+  }
+
+  @Test
+  fun dtsVariantsFfmpegCannotClaimAreLeftAlone() {
+    // DTS Express and DTS:X are not in FfmpegLibrary's mime map; hiding their platform
+    // decoders would leave those streams with no decoder at all.
+    assertFalse(shouldForceFfmpegDtsDecode("audio/vnd.dts.hd;profile=lbr", { true }, { false }))
+    assertFalse(shouldForceFfmpegDtsDecode("audio/vnd.dts.uhd", { true }, { false }))
+    assertFalse(shouldForceFfmpegDtsDecode(MimeTypes.AUDIO_TRUEHD, { true }, { false }))
+  }
+
+  @Test
+  fun nonDtsMimesNeverConsultTheDtsProbes() {
+    // Decoder selection runs this predicate for every mime, video included; the probes make
+    // binder calls and must stay behind the mime gate.
+    assertFalse(
+      shouldForceFfmpegDtsDecode(
+        MimeTypes.VIDEO_H265,
+        { throw AssertionError("directOutputBlocked consulted for a non-DTS mime") },
+        { throw AssertionError("routeCanBitstreamDts consulted for a non-DTS mime") }
+      )
+    )
+  }
+
+  @Test
   fun spdifListNamesOnlyCodecsMpvsStereoIecTrackCanCarry() {
     // eac3 (a 192kHz burst), truehd and dts-hd (192kHz/8ch) never survive mpv's audiotrack
     // AO, which opens every spdif format as a stereo IEC 61937 track at the mixer rate;
