@@ -124,6 +124,10 @@ class DeployError(Exception):
     """Fatal, user-actionable pipeline failure."""
 
 
+class PhaseDeferred(Exception):
+    """A phase intentionally left pending for a later resume."""
+
+
 # ---------------------------------------------------------------------------
 # Pure helpers (unit-tested in test_deploy.py)
 # ---------------------------------------------------------------------------
@@ -886,11 +890,36 @@ class AmazonClient:
         return etag
 
 
+def _commit_amazon_edit(ctx: Context, client: AmazonClient, edit_id: str) -> None:
+    print(
+        "\n  Amazon requires two console-only answers that reset on every binary\n"
+        "  upload (not exposed by the App Submission API):\n"
+        "    1. open https://developer.amazon.com/apps-and-games/console\n"
+        f"    2. open the pending edit for {ctx.env['AMAZON_APPSTORE_PACKAGE_NAME']}\n"
+        '    3. re-check "touch capabilities" and "offline capabilities"\n'
+    )
+    if not ctx.confirm("Toggles checked? Commit (submit) the Amazon edit now?"):
+        log("amazon: edit left open; rerun with --only amazon later or submit manually")
+        raise PhaseDeferred
+    etag = client.etag(f"/edits/{edit_id}")
+    client.request("POST", f"/edits/{edit_id}/commit", headers={"If-Match": etag})
+    ctx.state.data.pop("amazon_pending_edit_id", None)
+    ctx.state.save()
+    log(f"amazon: edit {edit_id} committed (submitted)")
+
+
 def phase_amazon(ctx: Context) -> None:
     package = ctx.env["AMAZON_APPSTORE_PACKAGE_NAME"]
     apk = ROOT / "build/app/outputs/flutter-apk/app-release.apk"
     if dry_guard(ctx, f"build Amazon APK, replace binary in an edit for {package}, commit"):
         return
+    pending_edit_id = ctx.state.data.get("amazon_pending_edit_id")
+    if pending_edit_id:
+        log(f"amazon: resuming pending edit {pending_edit_id} without replacing its APK")
+        client = AmazonClient(package, _amazon_token(ctx.env))
+        _commit_amazon_edit(ctx, client, str(pending_edit_id))
+        return
+
 
     commit = short_sha()
     run(
@@ -959,19 +988,9 @@ def phase_amazon(ctx: Context) -> None:
         log("amazon: --amazon-skip-commit set; edit left open for manual submission")
         return
 
-    print(
-        "\n  Amazon requires two console-only answers that reset on every binary\n"
-        "  upload (not exposed by the App Submission API):\n"
-        "    1. open https://developer.amazon.com/apps-and-games/console\n"
-        f"    2. open the pending edit for {package}\n"
-        '    3. re-check "touch capabilities" and "offline capabilities"\n'
-    )
-    if not ctx.confirm("Toggles checked? Commit (submit) the Amazon edit now?"):
-        log("amazon: edit left open; rerun with --only amazon later or submit manually")
-        return
-    etag = client.etag(f"/edits/{edit_id}")
-    client.request("POST", f"/edits/{edit_id}/commit", headers={"If-Match": etag})
-    log(f"amazon: edit {edit_id} committed (submitted)")
+    ctx.state.data["amazon_pending_edit_id"] = edit_id
+    ctx.state.save()
+    _commit_amazon_edit(ctx, client, edit_id)
 
 
 # ---------------------------------------------------------------------------
@@ -1411,7 +1430,7 @@ def phase_publish(ctx: Context) -> None:
         return
     if not ctx.confirm(f"Publish GitHub release {ctx.tag} (removes draft) and update the cask?"):
         log("publish: skipped; rerun with --only publish when ready")
-        return
+        raise PhaseDeferred
 
     run(["gh", "release", "edit", ctx.tag, "--draft=false"])
     log(f"publish: release {ctx.tag} is live")
@@ -1488,10 +1507,12 @@ PHASE_FUNCTIONS = {
 
 
 def initialize_state(args: argparse.Namespace) -> State:
-    state = State.load()
-    if state and args.fresh:
-        STATE_PATH.unlink()
+    if args.fresh:
         state = None
+        if DEPLOY_DIR.exists() and not getattr(args, "dry_run", False):
+            shutil.rmtree(DEPLOY_DIR)
+    else:
+        state = State.load()
     if state:
         if args.version and args.version != state.version:
             raise DeployError(
@@ -1542,6 +1563,8 @@ def cmd_release(args: argparse.Namespace) -> int:
         log(f"phase: {phase}")
         try:
             PHASE_FUNCTIONS[phase](ctx)
+        except PhaseDeferred:
+            continue
         except KeyboardInterrupt:
             print()
             log(f"interrupted during {phase!r}; state saved, rerun `release` to resume")

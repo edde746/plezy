@@ -3,6 +3,8 @@ import tempfile
 import unittest
 import xml.dom.minidom
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SCRIPT_DIR))
@@ -242,6 +244,156 @@ class StateTest(unittest.TestCase):
 
     def test_load_returns_none_without_file(self) -> None:
         self.assertIsNone(State.load())
+
+
+class InitializeStateTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self._original_root = deploy.ROOT
+        self._original_deploy_dir = deploy.DEPLOY_DIR
+        self._original_state_path = deploy.STATE_PATH
+        deploy.ROOT = Path(self._tmp.name)
+        deploy.DEPLOY_DIR = deploy.ROOT / "build" / "deploy"
+        deploy.STATE_PATH = deploy.DEPLOY_DIR / "state.json"
+        (deploy.ROOT / "pubspec.yaml").write_text("version: 2.14.0+130\n", encoding="utf-8")
+
+    def tearDown(self) -> None:
+        deploy.ROOT = self._original_root
+        deploy.DEPLOY_DIR = self._original_deploy_dir
+        deploy.STATE_PATH = self._original_state_path
+        self._tmp.cleanup()
+
+    @staticmethod
+    def _args(*, dry_run: bool) -> SimpleNamespace:
+        return SimpleNamespace(
+            version="2.15.0",
+            build_number=None,
+            fresh=True,
+            dry_run=dry_run,
+        )
+
+    def _write_previous_release(self) -> Path:
+        State(version="2.14.0", build_number=130, done=["publish"]).save()
+        note = deploy.DEPLOY_DIR / "notes" / "play.txt"
+        note.parent.mkdir(parents=True)
+        note.write_text("old store notes\n", encoding="utf-8")
+        return note
+
+    def test_fresh_release_removes_state_and_generated_outputs(self) -> None:
+        old_note = self._write_previous_release()
+
+        state = deploy.initialize_state(self._args(dry_run=False))
+
+        self.assertEqual((state.version, state.build_number), ("2.15.0", 131))
+        self.assertFalse(old_note.exists())
+        self.assertEqual(State.load(), state)
+
+    def test_dry_run_fresh_release_preserves_existing_outputs(self) -> None:
+        old_note = self._write_previous_release()
+
+        state = deploy.initialize_state(self._args(dry_run=True))
+
+        self.assertEqual((state.version, state.build_number), ("2.15.0", 131))
+        self.assertEqual(old_note.read_text(encoding="utf-8"), "old store notes\n")
+        self.assertEqual(State.load().version, "2.14.0")
+
+
+class DeferredPhaseTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self._original_state_path = deploy.STATE_PATH
+        deploy.STATE_PATH = Path(self._tmp.name) / "state.json"
+
+    def tearDown(self) -> None:
+        deploy.STATE_PATH = self._original_state_path
+        self._tmp.cleanup()
+
+    @staticmethod
+    def _context(state: State, **args) -> deploy.Context:
+        defaults = {
+            "dry_run": False,
+            "yes": False,
+            "amazon_skip_commit": False,
+        }
+        defaults.update(args)
+        return deploy.Context(
+            args=SimpleNamespace(**defaults),
+            env={"AMAZON_APPSTORE_PACKAGE_NAME": "com.example.app"},
+            state=state,
+            phases=["amazon", "publish"],
+        )
+
+    def test_deferred_phase_remains_pending_in_release_state(self) -> None:
+        state = State(version="2.15.0", build_number=131)
+        args = SimpleNamespace(
+            only=["publish"],
+            skip=None,
+            notes="cl.txt",
+            dry_run=False,
+        )
+
+        def defer(_ctx) -> None:
+            raise deploy.PhaseDeferred
+
+        with (
+            mock.patch.object(deploy, "load_env_file", return_value={}),
+            mock.patch.object(deploy, "initialize_state", return_value=state),
+            mock.patch.object(deploy, "resolve_phases", return_value=["publish"]),
+            mock.patch.dict(deploy.PHASE_FUNCTIONS, {"publish": defer}, clear=True),
+            mock.patch.object(deploy, "print_summary"),
+        ):
+            self.assertEqual(deploy.cmd_release(args), 0)
+
+        self.assertNotIn("publish", State.load().done)
+
+    def test_publish_decline_defers_phase(self) -> None:
+        ctx = self._context(State(version="2.15.0", build_number=131))
+
+        with mock.patch.object(deploy.Context, "confirm", return_value=False):
+            with self.assertRaises(deploy.PhaseDeferred):
+                deploy.phase_publish(ctx)
+
+    def test_amazon_resume_commits_existing_edit_without_replacing_apk(self) -> None:
+        state = State(version="2.15.0", build_number=131)
+        state.data["amazon_pending_edit_id"] = "edit-42"
+        ctx = self._context(state)
+        client = mock.Mock()
+        client.etag.return_value = "etag-42"
+
+        with (
+            mock.patch.object(deploy, "_amazon_token", return_value="token"),
+            mock.patch.object(deploy, "AmazonClient", return_value=client),
+            mock.patch.object(deploy.Context, "confirm", return_value=True),
+            mock.patch.object(deploy, "run") as run_command,
+        ):
+            deploy.phase_amazon(ctx)
+
+        run_command.assert_not_called()
+        client.request.assert_called_once_with(
+            "POST",
+            "/edits/edit-42/commit",
+            headers={"If-Match": "etag-42"},
+        )
+        self.assertNotIn("amazon_pending_edit_id", state.data)
+
+    def test_amazon_resume_decline_keeps_edit_pending(self) -> None:
+        state = State(version="2.15.0", build_number=131)
+        state.data["amazon_pending_edit_id"] = "edit-42"
+        ctx = self._context(state)
+        client = mock.Mock()
+
+        with (
+            mock.patch.object(deploy, "_amazon_token", return_value="token"),
+            mock.patch.object(deploy, "AmazonClient", return_value=client),
+            mock.patch.object(deploy.Context, "confirm", return_value=False),
+            mock.patch.object(deploy, "run") as run_command,
+        ):
+            with self.assertRaises(deploy.PhaseDeferred):
+                deploy.phase_amazon(ctx)
+
+        run_command.assert_not_called()
+        client.request.assert_not_called()
+        self.assertEqual(state.data["amazon_pending_edit_id"], "edit-42")
 
 
 class SplitPhaseListsTest(unittest.TestCase):
