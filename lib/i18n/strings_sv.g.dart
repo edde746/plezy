@@ -316,6 +316,11 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet';
 	@override String get showChapterMarkersOnTimeline => 'Visa kapitelmarkörer på tidslinjen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Dela upp tidslinjen vid kapitelgränser';
+	@override String get specialsOrdering => 'Specialavsnitt i episodordning';
+	@override String get specialsOrderingDescription => 'Var specialavsnitt spelas upp i seriens visningsordning';
+	@override String get specialsOrderingServer => 'Följ serverordningen';
+	@override String get specialsOrderingAirDate => 'Infoga efter sändningsdatum';
+	@override String get specialsOrderingLast => 'Efter vanliga säsonger';
 	@override String get clickVideoTogglesPlayback => 'Klicka på videon för att spela upp eller pausa';
 	@override String get clickVideoTogglesPlaybackDescription => 'Klicka på videon för att spela upp eller pausa i stället för att visa kontrollerna.';
 	@override String get videoPlayerControls => 'Videospelarens kontroller';
@@ -461,6 +466,16 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Undertexter och konfiguration';
 	@override String get seekAndTiming => 'Spolning och tidsinställningar';
 	@override String get behavior => 'Beteende';
+	@override String get rememberPlayerChanges => 'Kom ihåg spelarändringar';
+	@override String get rememberPlayerChangesDescription => 'Var en ändring under uppspelning sparas och tillämpas igen';
+	@override String get scopePlaybackSpeed => 'Uppspelningshastighet';
+	@override String get scopeShaderPreset => 'Förinställning för shader';
+	@override String get scopeAspectRatio => 'Bildförhållande';
+	@override String get scopeSyncOffsets => 'Synkronisering av ljud och undertexter';
+	@override String get playerScopeOff => 'Spara inte';
+	@override String get playerScopeGlobal => 'Överallt';
+	@override String get playerScopeLibrary => 'Per bibliotek';
+	@override String get playerScopeTitle => 'Per serie eller film';
 	@override String get exportDialogTitle => 'Exportera Plezy-inställningar';
 }
 
@@ -752,12 +767,7 @@ class _Translations$videoControls$sv extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Ljud';
 	@override String get subtitlesLabel => 'Undertexter';
-	@override String get resetToZero => 'Återställ till 0 ms';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label} spelas senare';
-	@override String playsEarlier({required Object label}) => '${label} spelas tidigare';
-	@override String get noOffset => 'Ingen förskjutning';
 	@override String get letterbox => 'Brevlådeformat';
 	@override String get fillScreen => 'Fyll skärmen';
 	@override String get stretch => 'Sträck ut';
@@ -1527,6 +1537,7 @@ class _Translations$music$sv extends Translations$music$en {
 	@override String get repeatOne => 'Upprepa en låt';
 	@override String get instantMixNoServer => 'Ingen server är tillgänglig för en snabbmix';
 	@override String noAudioUrl({required Object track}) => 'Ingen ljud-URL är tillgänglig för ${track}';
+	@override late final _Translations$music$discography$sv discography = _Translations$music$discography$sv._(_root);
 }
 
 // Path: watchTogether
@@ -1932,8 +1943,6 @@ class _Translations$metadataEdit$sv extends Translations$metadataEdit$en {
 	@override String get country => 'Land';
 	@override String get collection => 'Samling';
 	@override String get label => 'Etikett';
-	@override String get style => 'Stil';
-	@override String get mood => 'Stämning';
 }
 
 // Path: matchScreen
@@ -2307,7 +2316,6 @@ class _Translations$explore$badge$sv extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '#${n} populär';
 	@override String rankAiring({required Object n}) => '#${n} sänds nu';
 	@override String rankRated({required Object n}) => '#${n} bäst betygsatta';
-	@override String rankFavorited({required Object n}) => '#${n} mest favoritmarkerade';
 	@override String rankTrending({required Object n}) => '#${n} trendar';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n} i ${season}';
 	@override String watchingNow({required Object n}) => '${n} tittar nu';
@@ -2475,6 +2483,18 @@ class _Translations$explore$detail$sv extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => 'Rekommenderad av ${percent} av tittarna';
 	@override String get relatedTitles => 'Relaterade titlar';
 	@override String get background => 'Bakgrund';
+}
+
+// Path: music.discography
+class _Translations$music$discography$sv extends Translations$music$discography$en {
+	_Translations$music$discography$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Singlar och EP';
+	@override String get live => 'Live';
+	@override String get compilations => 'Samlingar';
 }
 
 // Path: downloads.backgroundWarning
@@ -2873,6 +2893,11 @@ extension on TranslationsSv {
 			'settings.followServerTrackSelectionsDescription' => 'Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet',
 			'settings.showChapterMarkersOnTimeline' => 'Visa kapitelmarkörer på tidslinjen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Dela upp tidslinjen vid kapitelgränser',
+			'settings.specialsOrdering' => 'Specialavsnitt i episodordning',
+			'settings.specialsOrderingDescription' => 'Var specialavsnitt spelas upp i seriens visningsordning',
+			'settings.specialsOrderingServer' => 'Följ serverordningen',
+			'settings.specialsOrderingAirDate' => 'Infoga efter sändningsdatum',
+			'settings.specialsOrderingLast' => 'Efter vanliga säsonger',
 			'settings.clickVideoTogglesPlayback' => 'Klicka på videon för att spela upp eller pausa',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Klicka på videon för att spela upp eller pausa i stället för att visa kontrollerna.',
 			'settings.videoPlayerControls' => 'Videospelarens kontroller',
@@ -3018,6 +3043,16 @@ extension on TranslationsSv {
 			'settings.subtitlesAndConfig' => 'Undertexter och konfiguration',
 			'settings.seekAndTiming' => 'Spolning och tidsinställningar',
 			'settings.behavior' => 'Beteende',
+			'settings.rememberPlayerChanges' => 'Kom ihåg spelarändringar',
+			'settings.rememberPlayerChangesDescription' => 'Var en ändring under uppspelning sparas och tillämpas igen',
+			'settings.scopePlaybackSpeed' => 'Uppspelningshastighet',
+			'settings.scopeShaderPreset' => 'Förinställning för shader',
+			'settings.scopeAspectRatio' => 'Bildförhållande',
+			'settings.scopeSyncOffsets' => 'Synkronisering av ljud och undertexter',
+			'settings.playerScopeOff' => 'Spara inte',
+			'settings.playerScopeGlobal' => 'Överallt',
+			'settings.playerScopeLibrary' => 'Per bibliotek',
+			'settings.playerScopeTitle' => 'Per serie eller film',
 			'settings.exportDialogTitle' => 'Exportera Plezy-inställningar',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
@@ -3187,6 +3222,8 @@ extension on TranslationsSv {
 			'mediaMenu.deleteMovieTitle' => 'Ta bort den här filmen?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Ta bort avsnitt',
 			'mediaMenu.deleteSeasonConfirm' => 'Ta bort säsong',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Ta bort serie',
 			'mediaMenu.deleteMovieConfirm' => 'Ta bort film',
 			'mediaMenu.deleteAnyway' => 'Ta bort ändå',
@@ -3202,8 +3239,6 @@ extension on TranslationsSv {
 			'mediaMenu.rate' => 'Betygsätt',
 			'mediaMenu.playFromBeginning' => 'Spela från början',
 			'mediaMenu.playVersion' => 'Spela version...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Betygsätt',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Favorit',
@@ -3245,12 +3280,7 @@ extension on TranslationsSv {
 			'audioTracks.track' => ({required Object n}) => 'Ljudspår ${n}',
 			'videoControls.audioLabel' => 'Ljud',
 			'videoControls.subtitlesLabel' => 'Undertexter',
-			'videoControls.resetToZero' => 'Återställ till 0 ms',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label} spelas senare',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label} spelas tidigare',
-			'videoControls.noOffset' => 'Ingen förskjutning',
 			'videoControls.letterbox' => 'Brevlådeformat',
 			'videoControls.fillScreen' => 'Fyll skärmen',
 			'videoControls.stretch' => 'Sträck ut',
@@ -3706,6 +3736,8 @@ extension on TranslationsSv {
 			'explore.characters' => 'Karaktärer',
 			'explore.addToWatchlist' => 'Lägg till i bevakningslista',
 			'explore.removeFromWatchlist' => 'Ta bort från bevakningslista',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Tillagd i bevakningslistan',
 			'explore.removedFromWatchlist' => 'Borttagen från bevakningslistan',
 			'explore.watchlistUpdateFailed' => 'Det gick inte att uppdatera bevakningslistan',
@@ -3716,15 +3748,12 @@ extension on TranslationsSv {
 			'explore.emptyTitle' => 'Inget här ännu',
 			'explore.emptyMessage' => ({required Object source}) => 'Rader från ${source} visas här när de har innehåll.',
 			'explore.searchHint' => ({required Object source}) => 'Sök i ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'Inga resultat för "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Sök efter filmer och serier på ${source}.',
 			'explore.searchFailed' => 'Sökningen misslyckades. Kontrollera din anslutning och försök igen.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populär',
 			'explore.badge.rankAiring' => ({required Object n}) => '#${n} sänds nu',
 			'explore.badge.rankRated' => ({required Object n}) => '#${n} bäst betygsatta',
-			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} mest favoritmarkerade',
 			'explore.badge.rankTrending' => ({required Object n}) => '#${n} trendar',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} i ${season}',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} tittar nu',
@@ -3971,6 +4000,9 @@ extension on TranslationsSv {
 			'music.repeatOne' => 'Upprepa en låt',
 			'music.instantMixNoServer' => 'Ingen server är tillgänglig för en snabbmix',
 			'music.noAudioUrl' => ({required Object track}) => 'Ingen ljud-URL är tillgänglig för ${track}',
+			'music.discography.singlesAndEps' => 'Singlar och EP',
+			'music.discography.live' => 'Live',
+			'music.discography.compilations' => 'Samlingar',
 			'watchTogether.title' => 'Titta tillsammans',
 			'watchTogether.description' => 'Titta på innehåll synkroniserat med vänner och familj',
 			'watchTogether.createSession' => 'Skapa session',
@@ -4218,6 +4250,8 @@ extension on TranslationsSv {
 			'companionRemote.remote.subtitles' => 'Undertexter',
 			'companionRemote.remote.audio' => 'Ljud',
 			'companionRemote.remote.searchHint' => 'Sök på datorn...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Inget nätverksgränssnitt hittades',
 			'companionRemote.errors.authenticationFailed' => 'Autentiseringen misslyckades',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Det gick inte att starta fjärrservern: ${error}',
@@ -4230,8 +4264,6 @@ extension on TranslationsSv {
 			'videoSettings.playbackSpeed' => 'Uppspelningshastighet',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktiv (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sovtimer',
 			'videoSettings.audioSync' => 'Ljudsynkronisering',
@@ -4388,8 +4420,6 @@ extension on TranslationsSv {
 			'metadataEdit.country' => 'Land',
 			'metadataEdit.collection' => 'Samling',
 			'metadataEdit.label' => 'Etikett',
-			'metadataEdit.style' => 'Stil',
-			'metadataEdit.mood' => 'Stämning',
 			'matchScreen.match' => 'Matcha...',
 			'matchScreen.fixMatch' => 'Rätta matchning...',
 			'matchScreen.unmatch' => 'Ta bort matchning',

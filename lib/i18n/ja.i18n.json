@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します",
     "showChapterMarkersOnTimeline": "シークバーにチャプターマーカーを表示",
     "showChapterMarkersOnTimelineDescription": "チャプターの境界でシークバーを区切る",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "エピソード順にスペシャルを表示",
+    "specialsOrderingDescription": "シリーズの視聴順でスペシャルを再生する位置",
+    "specialsOrderingServer": "サーバーの順序に従う",
+    "specialsOrderingAirDate": "放送日順に挿入",
+    "specialsOrderingLast": "通常シーズンの後",
     "clickVideoTogglesPlayback": "動画クリックで再生/一時停止を切替",
     "clickVideoTogglesPlaybackDescription": "コントロール表示ではなく、動画クリックで再生/一時停止します。",
     "videoPlayerControls": "動画プレーヤーコントロール",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "字幕と設定",
     "seekAndTiming": "シークとタイミング",
     "behavior": "動作",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "プレーヤーの変更を記憶",
+    "rememberPlayerChangesDescription": "再生中に行った変更を保存し、再適用する場所",
+    "scopePlaybackSpeed": "再生速度",
+    "scopeShaderPreset": "シェーダープリセット",
+    "scopeAspectRatio": "アスペクト比",
+    "scopeSyncOffsets": "音声と字幕の同期",
+    "playerScopeOff": "保存しない",
+    "playerScopeGlobal": "すべて",
+    "playerScopeLibrary": "ライブラリごと",
+    "playerScopeTitle": "作品ごと",
     "exportDialogTitle": "Plezyの設定をエクスポート"
   },
   "search": {
@@ -606,12 +606,7 @@
   "videoControls": {
     "audioLabel": "音声",
     "subtitlesLabel": "字幕",
-    "resetToZero": "0msにリセット",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label}を遅らせる",
-    "playsEarlier": "${label}を早める",
-    "noOffset": "オフセットなし",
     "letterbox": "レターボックス",
     "fillScreen": "画面を埋める",
     "stretch": "引き延ばす",
@@ -1139,7 +1134,6 @@
       "rankPopular": "人気 #${n}",
       "rankAiring": "放送中 #${n}",
       "rankRated": "評価 #${n}",
-      "rankFavorited": "お気に入り #${n}",
       "rankTrending": "急上昇 #${n}",
       "rankSeasonal": "#${n}（${season}）",
       "watchingNow": "${n}人視聴中",
@@ -1418,9 +1412,9 @@
     "instantMixNoServer": "インスタントミックスに利用できるサーバーがありません",
     "noAudioUrl": "${track}で利用可能な音声URLがありません",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "シングル・EP",
+      "live": "ライブ",
+      "compilations": "コンピレーション"
     }
   },
   "watchTogether": {
@@ -1862,9 +1856,7 @@
     "producer": "プロデューサー",
     "country": "国",
     "collection": "コレクション",
-    "label": "ラベル",
-    "style": "スタイル",
-    "mood": "ムード"
+    "label": "ラベル"
   },
   "matchScreen": {
     "match": "照合…",

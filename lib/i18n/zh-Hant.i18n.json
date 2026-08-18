@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "切換劇集時，套用伺服器上為該集選擇的音訊與字幕，而不是沿用目前選擇",
     "showChapterMarkersOnTimeline": "在進度條上顯示章節標記",
     "showChapterMarkersOnTimelineDescription": "依章節分段顯示進度條",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "特別篇依集數排序",
+    "specialsOrderingDescription": "特別篇在影集觀看順序中的播放位置",
+    "specialsOrderingServer": "依伺服器順序",
+    "specialsOrderingAirDate": "依播出日期交錯",
+    "specialsOrderingLast": "一般季數之後",
     "clickVideoTogglesPlayback": "點選影片可切換播放或暫停",
     "clickVideoTogglesPlaybackDescription": "點選影片即可播放或暫停，而不顯示控制面板。",
     "videoPlayerControls": "影片播放器控制",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "字幕與設定",
     "seekAndTiming": "跳轉與計時",
     "behavior": "行為",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "記住播放器變更",
+    "rememberPlayerChangesDescription": "播放期間所做的變更要儲存並從何處重新套用",
+    "scopePlaybackSpeed": "播放速度",
+    "scopeShaderPreset": "著色器預設",
+    "scopeAspectRatio": "顯示比例",
+    "scopeSyncOffsets": "音訊與字幕同步",
+    "playerScopeOff": "不要儲存",
+    "playerScopeGlobal": "全部",
+    "playerScopeLibrary": "依媒體庫",
+    "playerScopeTitle": "依影集或電影",
     "exportDialogTitle": "匯出 Plezy 設定"
   },
   "search": {
@@ -606,12 +606,7 @@
   "videoControls": {
     "audioLabel": "音訊",
     "subtitlesLabel": "字幕",
-    "resetToZero": "重設為 0 ms",
     "addTime": "+${amount} ${unit}",
-    "minusTime": "-${amount} ${unit}",
-    "playsLater": "${label} 延後播放",
-    "playsEarlier": "${label} 提前播放",
-    "noOffset": "無偏移",
     "letterbox": "信箱模式（Letterbox）",
     "fillScreen": "填滿螢幕",
     "stretch": "拉伸",
@@ -1139,7 +1134,6 @@
       "rankPopular": "#${n} 熱門",
       "rankAiring": "#${n} 播出中",
       "rankRated": "#${n} 高分",
-      "rankFavorited": "#${n} 最多收藏",
       "rankTrending": "#${n} 趨勢",
       "rankSeasonal": "#${n} · ${season}",
       "watchingNow": "${n} 觀看中",
@@ -1418,9 +1412,9 @@
     "instantMixNoServer": "沒有可用於即時混音的伺服器",
     "noAudioUrl": "${track} 沒有可用的音訊 URL",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "單曲與 EP",
+      "live": "現場",
+      "compilations": "合輯"
     }
   },
   "watchTogether": {
@@ -1862,9 +1856,7 @@
     "producer": "製片",
     "country": "國家/地區",
     "collection": "收藏集",
-    "label": "標記",
-    "style": "風格",
-    "mood": "氛圍"
+    "label": "標記"
   },
   "matchScreen": {
     "match": "配對…",

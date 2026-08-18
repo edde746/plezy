@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Audio",
     "subtitlesLabel": "Subtitles",
-    "resetToZero": "Reset to 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} plays later",
-    "playsEarlier": "${label} plays earlier",
-    "noOffset": "No offset",
     "letterbox": "Letterbox",
     "fillScreen": "Fill screen",
     "stretch": "Stretch",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} popular",
       "rankAiring": "#${n} airing",
       "rankRated": "#${n} rated",
-      "rankFavorited": "#${n} favorited",
       "rankTrending": "#${n} trending",
       "rankSeasonal": "#${n} in ${season}",
       "watchingNow": "${n} watching",
@@ -1872,9 +1866,7 @@
     "producer": "Producer",
     "country": "Country",
     "collection": "Collection",
-    "label": "Label",
-    "style": "Style",
-    "mood": "Mood"
+    "label": "Label"
   },
   "matchScreen": {
     "match": "Match...",

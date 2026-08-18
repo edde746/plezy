@@ -316,6 +316,11 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett';
 	@override String get showChapterMarkersOnTimeline => 'Fejezetjelölők megjelenítése az idősávon';
 	@override String get showChapterMarkersOnTimelineDescription => 'Az idősáv felosztása a fejezetek határainál';
+	@override String get specialsOrdering => 'Különkiadások epizódsorrendben';
+	@override String get specialsOrderingDescription => 'A különkiadások helye a sorozat lejátszási sorrendjében';
+	@override String get specialsOrderingServer => 'Szerver szerinti sorrend';
+	@override String get specialsOrderingAirDate => 'Adás dátuma szerint közbeszúrva';
+	@override String get specialsOrderingLast => 'A normál évadok után';
 	@override String get clickVideoTogglesPlayback => 'Kattintás a videóra a lejátszás/szünet váltásához';
 	@override String get clickVideoTogglesPlaybackDescription => 'A videóra kattintva vált a lejátszás/szünet, a vezérlők megjelenítése helyett.';
 	@override String get videoPlayerControls => 'Videólejátszó vezérlői';
@@ -461,6 +466,16 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Feliratok és konfiguráció';
 	@override String get seekAndTiming => 'Tekerés és időzítés';
 	@override String get behavior => 'Viselkedés';
+	@override String get rememberPlayerChanges => 'Lejátszó módosításainak megjegyzése';
+	@override String get rememberPlayerChangesDescription => 'A lejátszás közben végzett módosítások mentési és újbóli alkalmazási helye';
+	@override String get scopePlaybackSpeed => 'Lejátszási sebesség';
+	@override String get scopeShaderPreset => 'Shader-előbeállítás';
+	@override String get scopeAspectRatio => 'Képarány';
+	@override String get scopeSyncOffsets => 'Hang- és feliratszinkronizálás';
+	@override String get playerScopeOff => 'Ne mentse';
+	@override String get playerScopeGlobal => 'Mindenhol';
+	@override String get playerScopeLibrary => 'Könyvtáronként';
+	@override String get playerScopeTitle => 'Sorozatonként vagy filmenként';
 	@override String get exportDialogTitle => 'Plezy-beállítások exportálása';
 }
 
@@ -752,12 +767,7 @@ class _Translations$videoControls$hu extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Hang';
 	@override String get subtitlesLabel => 'Feliratok';
-	@override String get resetToZero => 'Visszaállítás 0 ms-ra';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label}: későbbre állítva';
-	@override String playsEarlier({required Object label}) => '${label}: korábbra állítva';
-	@override String get noOffset => 'Nincs eltolás';
 	@override String get letterbox => 'Fekete sávok';
 	@override String get fillScreen => 'Képernyő kitöltése';
 	@override String get stretch => 'Nyújtás';
@@ -1527,6 +1537,7 @@ class _Translations$music$hu extends Translations$music$en {
 	@override String get repeatOne => 'Egy szám ismétlése';
 	@override String get instantMixNoServer => 'Nem érhető el szerver az azonnali mixhez';
 	@override String noAudioUrl({required Object track}) => 'Nem érhető el hang-URL ehhez: ${track}';
+	@override late final _Translations$music$discography$hu discography = _Translations$music$discography$hu._(_root);
 }
 
 // Path: watchTogether
@@ -1932,8 +1943,6 @@ class _Translations$metadataEdit$hu extends Translations$metadataEdit$en {
 	@override String get country => 'Ország';
 	@override String get collection => 'Gyűjtemény';
 	@override String get label => 'Kiadó';
-	@override String get style => 'Stílus';
-	@override String get mood => 'Hangulat';
 }
 
 // Path: matchScreen
@@ -2307,7 +2316,6 @@ class _Translations$explore$badge$hu extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '#${n} népszerű';
 	@override String rankAiring({required Object n}) => '#${n} adásban';
 	@override String rankRated({required Object n}) => '#${n} értékelt';
-	@override String rankFavorited({required Object n}) => '#${n} kedvenc';
 	@override String rankTrending({required Object n}) => '#${n} felkapott';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n} a(z) ${season} évadban';
 	@override String watchingNow({required Object n}) => '${n} nézi';
@@ -2475,6 +2483,18 @@ class _Translations$explore$detail$hu extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => 'A nézők ${percent}-a ajánlja';
 	@override String get relatedTitles => 'Kapcsolódó címek';
 	@override String get background => 'Háttér';
+}
+
+// Path: music.discography
+class _Translations$music$discography$hu extends Translations$music$discography$en {
+	_Translations$music$discography$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Kislemezek és EP-k';
+	@override String get live => 'Élő';
+	@override String get compilations => 'Válogatások';
 }
 
 // Path: downloads.backgroundWarning
@@ -2873,6 +2893,11 @@ extension on TranslationsHu {
 			'settings.followServerTrackSelectionsDescription' => 'Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett',
 			'settings.showChapterMarkersOnTimeline' => 'Fejezetjelölők megjelenítése az idősávon',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Az idősáv felosztása a fejezetek határainál',
+			'settings.specialsOrdering' => 'Különkiadások epizódsorrendben',
+			'settings.specialsOrderingDescription' => 'A különkiadások helye a sorozat lejátszási sorrendjében',
+			'settings.specialsOrderingServer' => 'Szerver szerinti sorrend',
+			'settings.specialsOrderingAirDate' => 'Adás dátuma szerint közbeszúrva',
+			'settings.specialsOrderingLast' => 'A normál évadok után',
 			'settings.clickVideoTogglesPlayback' => 'Kattintás a videóra a lejátszás/szünet váltásához',
 			'settings.clickVideoTogglesPlaybackDescription' => 'A videóra kattintva vált a lejátszás/szünet, a vezérlők megjelenítése helyett.',
 			'settings.videoPlayerControls' => 'Videólejátszó vezérlői',
@@ -3018,6 +3043,16 @@ extension on TranslationsHu {
 			'settings.subtitlesAndConfig' => 'Feliratok és konfiguráció',
 			'settings.seekAndTiming' => 'Tekerés és időzítés',
 			'settings.behavior' => 'Viselkedés',
+			'settings.rememberPlayerChanges' => 'Lejátszó módosításainak megjegyzése',
+			'settings.rememberPlayerChangesDescription' => 'A lejátszás közben végzett módosítások mentési és újbóli alkalmazási helye',
+			'settings.scopePlaybackSpeed' => 'Lejátszási sebesség',
+			'settings.scopeShaderPreset' => 'Shader-előbeállítás',
+			'settings.scopeAspectRatio' => 'Képarány',
+			'settings.scopeSyncOffsets' => 'Hang- és feliratszinkronizálás',
+			'settings.playerScopeOff' => 'Ne mentse',
+			'settings.playerScopeGlobal' => 'Mindenhol',
+			'settings.playerScopeLibrary' => 'Könyvtáronként',
+			'settings.playerScopeTitle' => 'Sorozatonként vagy filmenként',
 			'settings.exportDialogTitle' => 'Plezy-beállítások exportálása',
 			'search.hint' => 'Keresés filmek, sorozatok és zenék között...',
 			'search.tryDifferentTerm' => 'Próbálj másik keresési kifejezést',
@@ -3187,6 +3222,8 @@ extension on TranslationsHu {
 			'mediaMenu.deleteMovieTitle' => 'Töröljük ezt a filmet?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Epizód törlése',
 			'mediaMenu.deleteSeasonConfirm' => 'Évad törlése',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Sorozat törlése',
 			'mediaMenu.deleteMovieConfirm' => 'Film törlése',
 			'mediaMenu.deleteAnyway' => 'Törlés mindenképp',
@@ -3202,8 +3239,6 @@ extension on TranslationsHu {
 			'mediaMenu.rate' => 'Értékelés',
 			'mediaMenu.playFromBeginning' => 'Lejátszás az elejétől',
 			'mediaMenu.playVersion' => 'Verzió lejátszása...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Értékelés',
 			'rateSheet.server' => 'Szerver',
 			'rateSheet.favorite' => 'Kedvenc',
@@ -3245,12 +3280,7 @@ extension on TranslationsHu {
 			'audioTracks.track' => ({required Object n}) => '${n}. hangsáv',
 			'videoControls.audioLabel' => 'Hang',
 			'videoControls.subtitlesLabel' => 'Feliratok',
-			'videoControls.resetToZero' => 'Visszaállítás 0 ms-ra',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label}: későbbre állítva',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label}: korábbra állítva',
-			'videoControls.noOffset' => 'Nincs eltolás',
 			'videoControls.letterbox' => 'Fekete sávok',
 			'videoControls.fillScreen' => 'Képernyő kitöltése',
 			'videoControls.stretch' => 'Nyújtás',
@@ -3706,6 +3736,8 @@ extension on TranslationsHu {
 			'explore.characters' => 'Karakterek',
 			'explore.addToWatchlist' => 'Hozzáadás a Néznivalókhoz',
 			'explore.removeFromWatchlist' => 'Eltávolítás a Néznivalókból',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Hozzáadva a figyelőlistához',
 			'explore.removedFromWatchlist' => 'Eltávolítva a figyelőlistáról',
 			'explore.watchlistUpdateFailed' => 'Nem sikerült a Néznivalók frissítése',
@@ -3716,15 +3748,12 @@ extension on TranslationsHu {
 			'explore.emptyTitle' => 'Még nincs itt semmi',
 			'explore.emptyMessage' => ({required Object source}) => 'A(z) ${source} forrásból származó sorok itt fognak megjelenni, amint van tartalmuk.',
 			'explore.searchHint' => ({required Object source}) => 'Keresés itt: ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'Nincs találat a következőre: "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Filmek és sorozatok keresése a következőn: ${source}.',
 			'explore.searchFailed' => 'A keresés nem sikerült. Ellenőrizd a kapcsolatot és próbáld újra.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} népszerű',
 			'explore.badge.rankAiring' => ({required Object n}) => '#${n} adásban',
 			'explore.badge.rankRated' => ({required Object n}) => '#${n} értékelt',
-			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} kedvenc',
 			'explore.badge.rankTrending' => ({required Object n}) => '#${n} felkapott',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} a(z) ${season} évadban',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} nézi',
@@ -3971,6 +4000,9 @@ extension on TranslationsHu {
 			'music.repeatOne' => 'Egy szám ismétlése',
 			'music.instantMixNoServer' => 'Nem érhető el szerver az azonnali mixhez',
 			'music.noAudioUrl' => ({required Object track}) => 'Nem érhető el hang-URL ehhez: ${track}',
+			'music.discography.singlesAndEps' => 'Kislemezek és EP-k',
+			'music.discography.live' => 'Élő',
+			'music.discography.compilations' => 'Válogatások',
 			'watchTogether.title' => 'Watch Together (Közös nézés)',
 			'watchTogether.description' => 'Nézz tartalmat szinkronban barátaiddal és családoddal',
 			'watchTogether.createSession' => 'Munkamenet létrehozása',
@@ -4218,6 +4250,8 @@ extension on TranslationsHu {
 			'companionRemote.remote.subtitles' => 'Feliratok',
 			'companionRemote.remote.audio' => 'Hang',
 			'companionRemote.remote.searchHint' => 'Keresés az asztali gépen...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Nem található hálózati csatoló',
 			'companionRemote.errors.authenticationFailed' => 'A hitelesítés nem sikerült',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Nem sikerült elindítani a távirányító-szervert: ${error}',
@@ -4230,8 +4264,6 @@ extension on TranslationsHu {
 			'videoSettings.playbackSpeed' => 'Lejátszási sebesség',
 			'videoSettings.normalSpeed' => 'Normál',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktív (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Nagyítás',
 			'videoSettings.sleepTimer' => 'Elalvási időzítő',
 			'videoSettings.audioSync' => 'Hang szinkronizálása',
@@ -4388,8 +4420,6 @@ extension on TranslationsHu {
 			'metadataEdit.country' => 'Ország',
 			'metadataEdit.collection' => 'Gyűjtemény',
 			'metadataEdit.label' => 'Kiadó',
-			'metadataEdit.style' => 'Stílus',
-			'metadataEdit.mood' => 'Hangulat',
 			'matchScreen.match' => 'Párosítás...',
 			'matchScreen.fixMatch' => 'Párosítás javítása...',
 			'matchScreen.unmatch' => 'Párosítás megszüntetése',

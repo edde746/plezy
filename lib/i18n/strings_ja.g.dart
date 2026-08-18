@@ -316,6 +316,11 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します';
 	@override String get showChapterMarkersOnTimeline => 'シークバーにチャプターマーカーを表示';
 	@override String get showChapterMarkersOnTimelineDescription => 'チャプターの境界でシークバーを区切る';
+	@override String get specialsOrdering => 'エピソード順にスペシャルを表示';
+	@override String get specialsOrderingDescription => 'シリーズの視聴順でスペシャルを再生する位置';
+	@override String get specialsOrderingServer => 'サーバーの順序に従う';
+	@override String get specialsOrderingAirDate => '放送日順に挿入';
+	@override String get specialsOrderingLast => '通常シーズンの後';
 	@override String get clickVideoTogglesPlayback => '動画クリックで再生/一時停止を切替';
 	@override String get clickVideoTogglesPlaybackDescription => 'コントロール表示ではなく、動画クリックで再生/一時停止します。';
 	@override String get videoPlayerControls => '動画プレーヤーコントロール';
@@ -461,6 +466,16 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get subtitlesAndConfig => '字幕と設定';
 	@override String get seekAndTiming => 'シークとタイミング';
 	@override String get behavior => '動作';
+	@override String get rememberPlayerChanges => 'プレーヤーの変更を記憶';
+	@override String get rememberPlayerChangesDescription => '再生中に行った変更を保存し、再適用する場所';
+	@override String get scopePlaybackSpeed => '再生速度';
+	@override String get scopeShaderPreset => 'シェーダープリセット';
+	@override String get scopeAspectRatio => 'アスペクト比';
+	@override String get scopeSyncOffsets => '音声と字幕の同期';
+	@override String get playerScopeOff => '保存しない';
+	@override String get playerScopeGlobal => 'すべて';
+	@override String get playerScopeLibrary => 'ライブラリごと';
+	@override String get playerScopeTitle => '作品ごと';
 	@override String get exportDialogTitle => 'Plezyの設定をエクスポート';
 }
 
@@ -749,12 +764,7 @@ class _Translations$videoControls$ja extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => '音声';
 	@override String get subtitlesLabel => '字幕';
-	@override String get resetToZero => '0msにリセット';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label}を遅らせる';
-	@override String playsEarlier({required Object label}) => '${label}を早める';
-	@override String get noOffset => 'オフセットなし';
 	@override String get letterbox => 'レターボックス';
 	@override String get fillScreen => '画面を埋める';
 	@override String get stretch => '引き延ばす';
@@ -1519,6 +1529,7 @@ class _Translations$music$ja extends Translations$music$en {
 	@override String get repeatOne => '1曲リピート';
 	@override String get instantMixNoServer => 'インスタントミックスに利用できるサーバーがありません';
 	@override String noAudioUrl({required Object track}) => '${track}で利用可能な音声URLがありません';
+	@override late final _Translations$music$discography$ja discography = _Translations$music$discography$ja._(_root);
 }
 
 // Path: watchTogether
@@ -1924,8 +1935,6 @@ class _Translations$metadataEdit$ja extends Translations$metadataEdit$en {
 	@override String get country => '国';
 	@override String get collection => 'コレクション';
 	@override String get label => 'ラベル';
-	@override String get style => 'スタイル';
-	@override String get mood => 'ムード';
 }
 
 // Path: matchScreen
@@ -2299,7 +2308,6 @@ class _Translations$explore$badge$ja extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '人気 #${n}';
 	@override String rankAiring({required Object n}) => '放送中 #${n}';
 	@override String rankRated({required Object n}) => '評価 #${n}';
-	@override String rankFavorited({required Object n}) => 'お気に入り #${n}';
 	@override String rankTrending({required Object n}) => '急上昇 #${n}';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n}（${season}）';
 	@override String watchingNow({required Object n}) => '${n}人視聴中';
@@ -2465,6 +2473,18 @@ class _Translations$explore$detail$ja extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => '視聴者の${percent}がおすすめ';
 	@override String get relatedTitles => '関連作品';
 	@override String get background => '背景';
+}
+
+// Path: music.discography
+class _Translations$music$discography$ja extends Translations$music$discography$en {
+	_Translations$music$discography$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'シングル・EP';
+	@override String get live => 'ライブ';
+	@override String get compilations => 'コンピレーション';
 }
 
 // Path: downloads.backgroundWarning
@@ -2863,6 +2883,11 @@ extension on TranslationsJa {
 			'settings.followServerTrackSelectionsDescription' => 'エピソード切り替え時に、現在の選択を引き継ぐ代わりにサーバーで選択された音声と字幕を適用します',
 			'settings.showChapterMarkersOnTimeline' => 'シークバーにチャプターマーカーを表示',
 			'settings.showChapterMarkersOnTimelineDescription' => 'チャプターの境界でシークバーを区切る',
+			'settings.specialsOrdering' => 'エピソード順にスペシャルを表示',
+			'settings.specialsOrderingDescription' => 'シリーズの視聴順でスペシャルを再生する位置',
+			'settings.specialsOrderingServer' => 'サーバーの順序に従う',
+			'settings.specialsOrderingAirDate' => '放送日順に挿入',
+			'settings.specialsOrderingLast' => '通常シーズンの後',
 			'settings.clickVideoTogglesPlayback' => '動画クリックで再生/一時停止を切替',
 			'settings.clickVideoTogglesPlaybackDescription' => 'コントロール表示ではなく、動画クリックで再生/一時停止します。',
 			'settings.videoPlayerControls' => '動画プレーヤーコントロール',
@@ -3008,6 +3033,16 @@ extension on TranslationsJa {
 			'settings.subtitlesAndConfig' => '字幕と設定',
 			'settings.seekAndTiming' => 'シークとタイミング',
 			'settings.behavior' => '動作',
+			'settings.rememberPlayerChanges' => 'プレーヤーの変更を記憶',
+			'settings.rememberPlayerChangesDescription' => '再生中に行った変更を保存し、再適用する場所',
+			'settings.scopePlaybackSpeed' => '再生速度',
+			'settings.scopeShaderPreset' => 'シェーダープリセット',
+			'settings.scopeAspectRatio' => 'アスペクト比',
+			'settings.scopeSyncOffsets' => '音声と字幕の同期',
+			'settings.playerScopeOff' => '保存しない',
+			'settings.playerScopeGlobal' => 'すべて',
+			'settings.playerScopeLibrary' => 'ライブラリごと',
+			'settings.playerScopeTitle' => '作品ごと',
 			'settings.exportDialogTitle' => 'Plezyの設定をエクスポート',
 			'search.hint' => '映画、番組、音楽を検索…',
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
@@ -3177,6 +3212,8 @@ extension on TranslationsJa {
 			'mediaMenu.deleteMovieTitle' => 'この映画を削除しますか？',
 			'mediaMenu.deleteEpisodeConfirm' => 'エピソードを削除',
 			'mediaMenu.deleteSeasonConfirm' => 'シーズンを削除',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => '番組を削除',
 			'mediaMenu.deleteMovieConfirm' => '映画を削除',
 			'mediaMenu.deleteAnyway' => 'それでも削除',
@@ -3192,8 +3229,6 @@ extension on TranslationsJa {
 			'mediaMenu.rate' => '評価',
 			'mediaMenu.playFromBeginning' => '最初から再生',
 			'mediaMenu.playVersion' => 'バージョンを選んで再生…',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => '評価',
 			'rateSheet.server' => 'サーバー',
 			'rateSheet.favorite' => 'お気に入り',
@@ -3235,12 +3270,7 @@ extension on TranslationsJa {
 			'audioTracks.track' => ({required Object n}) => '音声トラック${n}',
 			'videoControls.audioLabel' => '音声',
 			'videoControls.subtitlesLabel' => '字幕',
-			'videoControls.resetToZero' => '0msにリセット',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label}を遅らせる',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label}を早める',
-			'videoControls.noOffset' => 'オフセットなし',
 			'videoControls.letterbox' => 'レターボックス',
 			'videoControls.fillScreen' => '画面を埋める',
 			'videoControls.stretch' => '引き延ばす',
@@ -3696,6 +3726,8 @@ extension on TranslationsJa {
 			'explore.characters' => 'キャラクター',
 			'explore.addToWatchlist' => 'ウォッチリストに追加',
 			'explore.removeFromWatchlist' => 'ウォッチリストから削除',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'ウォッチリストに追加しました',
 			'explore.removedFromWatchlist' => 'ウォッチリストから削除しました',
 			'explore.watchlistUpdateFailed' => 'ウォッチリストを更新できませんでした',
@@ -3706,15 +3738,12 @@ extension on TranslationsJa {
 			'explore.emptyTitle' => 'まだ何もありません',
 			'explore.emptyMessage' => ({required Object source}) => '${source}にコンテンツが追加されると、ここに表示されます。',
 			'explore.searchHint' => ({required Object source}) => '${source}を検索',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '「${query}」の結果が見つかりません',
 			'explore.searchPrompt' => ({required Object source}) => '${source}で映画やテレビ番組を検索します。',
 			'explore.searchFailed' => '検索に失敗しました。接続を確認してもう一度お試しください。',
 			'explore.badge.rankPopular' => ({required Object n}) => '人気 #${n}',
 			'explore.badge.rankAiring' => ({required Object n}) => '放送中 #${n}',
 			'explore.badge.rankRated' => ({required Object n}) => '評価 #${n}',
-			'explore.badge.rankFavorited' => ({required Object n}) => 'お気に入り #${n}',
 			'explore.badge.rankTrending' => ({required Object n}) => '急上昇 #${n}',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n}（${season}）',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n}人視聴中',
@@ -3961,6 +3990,9 @@ extension on TranslationsJa {
 			'music.repeatOne' => '1曲リピート',
 			'music.instantMixNoServer' => 'インスタントミックスに利用できるサーバーがありません',
 			'music.noAudioUrl' => ({required Object track}) => '${track}で利用可能な音声URLがありません',
+			'music.discography.singlesAndEps' => 'シングル・EP',
+			'music.discography.live' => 'ライブ',
+			'music.discography.compilations' => 'コンピレーション',
 			'watchTogether.title' => '一緒に見る',
 			'watchTogether.description' => '友達や家族と同期してコンテンツを視聴',
 			'watchTogether.createSession' => 'セッションを作成',
@@ -4208,6 +4240,8 @@ extension on TranslationsJa {
 			'companionRemote.remote.subtitles' => '字幕',
 			'companionRemote.remote.audio' => '音声',
 			'companionRemote.remote.searchHint' => 'デスクトップで検索…',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'ネットワークインターフェースが見つかりません',
 			'companionRemote.errors.authenticationFailed' => '認証に失敗しました',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'リモートサーバーを起動できませんでした: ${error}',
@@ -4220,8 +4254,6 @@ extension on TranslationsJa {
 			'videoSettings.playbackSpeed' => '再生速度',
 			'videoSettings.normalSpeed' => '標準',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '作動中（${duration}）',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'ズーム',
 			'videoSettings.sleepTimer' => 'スリープタイマー',
 			'videoSettings.audioSync' => '音声同期',
@@ -4378,8 +4410,6 @@ extension on TranslationsJa {
 			'metadataEdit.country' => '国',
 			'metadataEdit.collection' => 'コレクション',
 			'metadataEdit.label' => 'ラベル',
-			'metadataEdit.style' => 'スタイル',
-			'metadataEdit.mood' => 'ムード',
 			'matchScreen.match' => '照合…',
 			'matchScreen.fixMatch' => '照合を修正…',
 			'matchScreen.unmatch' => '照合を解除',

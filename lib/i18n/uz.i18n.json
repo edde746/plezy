@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Epizod almashganda joriy tanlovni ko'chirish o'rniga serverda tanlangan ovoz va subtitrni qo'llash",
     "showChapterMarkersOnTimeline": "Vaqt shkalasida boʻlim belgilarini koʻrsatish",
     "showChapterMarkersOnTimelineDescription": "Vaqt shkalasini boʻlimlarga boʻlish",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Maxsus qismlar epizodlar tartibida",
+    "specialsOrderingDescription": "Maxsus qismlar serialning tomosha qilish tartibida qayerda ijro etiladi",
+    "specialsOrderingServer": "Server tartibiga amal qilish",
+    "specialsOrderingAirDate": "Efirdagi sana boʻyicha aralashtirish",
+    "specialsOrderingLast": "Oddiy fasllardan keyin",
     "clickVideoTogglesPlayback": "Ijro/pauza uchun videoga bosing",
     "clickVideoTogglesPlaybackDescription": "Boshqaruv tugmalarini koʻrsatish oʻrniga videoni ijro etish yoki pauza qilish",
     "videoPlayerControls": "Video pleyer boshqaruv elementlari",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Subtitrlar va konfiguratsiya",
     "seekAndTiming": "Oʻtkazish va vaqt sozlamalari",
     "behavior": "Xatti-harakat",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Pleyer oʻzgarishlarini eslab qolish",
+    "rememberPlayerChangesDescription": "Ijro vaqtida qilingan oʻzgarish qayerda saqlanishi va qayta qoʻllanishi",
+    "scopePlaybackSpeed": "Ijro tezligi",
+    "scopeShaderPreset": "Sheyder oldindan sozlamasi",
+    "scopeAspectRatio": "Tomonlar nisbati",
+    "scopeSyncOffsets": "Audio va subtitr sinxronizatsiyasi",
+    "playerScopeOff": "Saqlamaslik",
+    "playerScopeGlobal": "Hamma joyda",
+    "playerScopeLibrary": "Kutubxona boʻyicha",
+    "playerScopeTitle": "Serial yoki film boʻyicha",
     "exportDialogTitle": "Plezy sozlamalarini eksport qilish"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Ovoz",
     "subtitlesLabel": "Subtitr",
-    "resetToZero": "0ms-ga qaytarish",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} keyinroq ijro etiladi",
-    "playsEarlier": "${label} ilgariroq ijro etiladi",
-    "noOffset": "Siljishsiz",
     "letterbox": "Keng ekran (Letterbox)",
     "fillScreen": "Ekranni toʻldirish",
     "stretch": "Choʻzish",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} mashhur",
       "rankAiring": "#${n} efirda",
       "rankRated": "#${n} baholangan",
-      "rankFavorited": "#${n} tanlanganlarga qoʻshilgan",
       "rankTrending": "#${n} ommabop",
       "rankSeasonal": "#${n} ${season} mavsumida",
       "watchingNow": "${n} kishi tomosha qilmoqda",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Tezkor miks uchun hech qanday server mavjud emas",
     "noAudioUrl": "${track} uchun audio URL mavjud emas",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Singllar va EP",
+      "live": "Jonli",
+      "compilations": "Toʻplamlar"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Prodyuser",
     "country": "Mamlakat",
     "collection": "Toʻplam",
-    "label": "Yorliq",
-    "style": "Stil",
-    "mood": "Kayfiyat"
+    "label": "Yorliq"
   },
   "matchScreen": {
     "match": "Moslashtirish...",

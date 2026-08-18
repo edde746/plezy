@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Przy zmianie odcinka stosuj ścieżkę dźwiękową i napisy wybrane na serwerze zamiast przenosić bieżący wybór",
     "showChapterMarkersOnTimeline": "Pokaż znaczniki rozdziałów na pasku przewijania",
     "showChapterMarkersOnTimelineDescription": "Podziel pasek przewijania na granicach rozdziałów",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Specjale w kolejności odcinków",
+    "specialsOrderingDescription": "Miejsce odcinków specjalnych w kolejności oglądania serialu",
+    "specialsOrderingServer": "Zgodnie z kolejnością serwera",
+    "specialsOrderingAirDate": "Przeplataj według daty emisji",
+    "specialsOrderingLast": "Po regularnych sezonach",
     "clickVideoTogglesPlayback": "Kliknięcie wideo przełącza odtwarzanie/pauzę",
     "clickVideoTogglesPlaybackDescription": "Kliknięcie wideo odtwarza/wstrzymuje zamiast pokazywać sterowanie.",
     "videoPlayerControls": "Kontrolki odtwarzacza wideo",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Napisy i konfiguracja",
     "seekAndTiming": "Przewijanie i czas",
     "behavior": "Zachowanie",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Zapamiętuj zmiany odtwarzacza",
+    "rememberPlayerChangesDescription": "Miejsce zapisywania i ponownego stosowania zmian dokonanych podczas odtwarzania",
+    "scopePlaybackSpeed": "Prędkość odtwarzania",
+    "scopeShaderPreset": "Ustawienie shadera",
+    "scopeAspectRatio": "Proporcje obrazu",
+    "scopeSyncOffsets": "Synchronizacja dźwięku i napisów",
+    "playerScopeOff": "Nie zapisuj",
+    "playerScopeGlobal": "Wszędzie",
+    "playerScopeLibrary": "Na bibliotekę",
+    "playerScopeTitle": "Na serial lub film",
     "exportDialogTitle": "Eksport ustawień Plezy"
   },
   "search": {
@@ -615,12 +615,7 @@
   "videoControls": {
     "audioLabel": "Audio",
     "subtitlesLabel": "Napisy",
-    "resetToZero": "Zresetuj do 0 ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label}: później",
-    "playsEarlier": "${label}: wcześniej",
-    "noOffset": "Bez przesunięcia",
     "letterbox": "Pasy wokół obrazu",
     "fillScreen": "Wypełnij ekran",
     "stretch": "Rozciągnij",
@@ -1157,7 +1152,6 @@
       "rankPopular": "#${n} popularne",
       "rankAiring": "#${n} emitowane",
       "rankRated": "#${n} najwyżej oceniane",
-      "rankFavorited": "#${n} w ulubionych",
       "rankTrending": "#${n} na czasie",
       "rankSeasonal": "#${n} w sezonie ${season}",
       "watchingNow": "${n} ogląda teraz",
@@ -1448,9 +1442,9 @@
     "instantMixNoServer": "Brak dostępnego serwera dla szybkiego miksu",
     "noAudioUrl": "Brak dostępnego adresu URL audio dla utworu ${track}",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Single i EP",
+      "live": "Na żywo",
+      "compilations": "Kompilacje"
     }
   },
   "watchTogether": {
@@ -1892,9 +1886,7 @@
     "producer": "Producent",
     "country": "Kraj",
     "collection": "Kolekcja",
-    "label": "Etykieta",
-    "style": "Styl",
-    "mood": "Nastrój"
+    "label": "Etykieta"
   },
   "matchScreen": {
     "match": "Dopasuj...",

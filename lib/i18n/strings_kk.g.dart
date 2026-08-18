@@ -316,6 +316,11 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану';
 	@override String get showChapterMarkersOnTimeline => 'Уақыт шкаласында бөлім белгілерін көрсету';
 	@override String get showChapterMarkersOnTimelineDescription => 'Уақыт шкаласын бөлімдерге бөлу';
+	@override String get specialsOrdering => 'Арнайы бөлімдер эпизодтар ретімен';
+	@override String get specialsOrderingDescription => 'Арнайы бөлімдер сериалдың көру ретінің қай жерінде ойнатылады';
+	@override String get specialsOrderingServer => 'Сервер ретін сақтау';
+	@override String get specialsOrderingAirDate => 'Эфир күні бойынша араластыру';
+	@override String get specialsOrderingLast => 'Қалыпты маусымдардан кейін';
 	@override String get clickVideoTogglesPlayback => 'Ойнату/кідірту үшін видеоны басу';
 	@override String get clickVideoTogglesPlaybackDescription => 'Басқару элементтерін көрсету орнына ойнату немесе кідірту';
 	@override String get videoPlayerControls => 'Видео ойнатқыш басқару элементтері';
@@ -461,6 +466,16 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Субтитрлер мен конфигурация';
 	@override String get seekAndTiming => 'Айналдыру және уақытты реттеу';
 	@override String get behavior => 'Мінез-құлық';
+	@override String get rememberPlayerChanges => 'Ойнатқыш өзгерістерін есте сақтау';
+	@override String get rememberPlayerChangesDescription => 'Ойнату кезінде жасалған өзгеріс сақталатын және қайта қолданылатын орын';
+	@override String get scopePlaybackSpeed => 'Ойнату жылдамдығы';
+	@override String get scopeShaderPreset => 'Шейдер алдын ала орнатымы';
+	@override String get scopeAspectRatio => 'Кадр пішімі';
+	@override String get scopeSyncOffsets => 'Аудио және субтитр синхрондауы';
+	@override String get playerScopeOff => 'Сақтамау';
+	@override String get playerScopeGlobal => 'Барлық жерде';
+	@override String get playerScopeLibrary => 'Кітапхана бойынша';
+	@override String get playerScopeTitle => 'Сериал немесе фильм бойынша';
 	@override String get exportDialogTitle => 'Plezy параметрлерін экспорттау';
 }
 
@@ -752,12 +767,7 @@ class _Translations$videoControls$kk extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Дыбыс';
 	@override String get subtitlesLabel => 'Субтитр';
-	@override String get resetToZero => '0мс-қа қалпына келтіру';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label} кейін ойнатылады';
-	@override String playsEarlier({required Object label}) => '${label} бұрын ойнатылады';
-	@override String get noOffset => 'Ығысусыз';
 	@override String get letterbox => 'Кең экран (Letterbox)';
 	@override String get fillScreen => 'Экранды толтыру';
 	@override String get stretch => 'Созу';
@@ -1527,6 +1537,7 @@ class _Translations$music$kk extends Translations$music$en {
 	@override String get repeatOne => 'Біреуін қайталау';
 	@override String get instantMixNoServer => 'Жедел микс үшін қолжетімді сервер жоқ';
 	@override String noAudioUrl({required Object track}) => '${track} үшін аудио URL-і қолжетімді емес';
+	@override late final _Translations$music$discography$kk discography = _Translations$music$discography$kk._(_root);
 }
 
 // Path: watchTogether
@@ -1932,8 +1943,6 @@ class _Translations$metadataEdit$kk extends Translations$metadataEdit$en {
 	@override String get country => 'Ел';
 	@override String get collection => 'Топтама';
 	@override String get label => 'Белгі';
-	@override String get style => 'Стиль';
-	@override String get mood => 'Көңіл-күй';
 }
 
 // Path: matchScreen
@@ -2307,7 +2316,6 @@ class _Translations$explore$badge$kk extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '#${n} танымал';
 	@override String rankAiring({required Object n}) => '#${n} эфирде';
 	@override String rankRated({required Object n}) => '#${n} бағаланған';
-	@override String rankFavorited({required Object n}) => '#${n} таңдаулы';
 	@override String rankTrending({required Object n}) => '#${n} трендте';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n} — ${season}';
 	@override String watchingNow({required Object n}) => '${n} қарауда';
@@ -2475,6 +2483,18 @@ class _Translations$explore$detail$kk extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => 'Көрермендердің ${percent} ұсынады';
 	@override String get relatedTitles => 'Қатысты атаулар';
 	@override String get background => 'Фон';
+}
+
+// Path: music.discography
+class _Translations$music$discography$kk extends Translations$music$discography$en {
+	_Translations$music$discography$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Синглдер және EP';
+	@override String get live => 'Жанды';
+	@override String get compilations => 'Жинақтар';
 }
 
 // Path: downloads.backgroundWarning
@@ -2873,6 +2893,11 @@ extension on TranslationsKk {
 			'settings.followServerTrackSelectionsDescription' => 'Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану',
 			'settings.showChapterMarkersOnTimeline' => 'Уақыт шкаласында бөлім белгілерін көрсету',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Уақыт шкаласын бөлімдерге бөлу',
+			'settings.specialsOrdering' => 'Арнайы бөлімдер эпизодтар ретімен',
+			'settings.specialsOrderingDescription' => 'Арнайы бөлімдер сериалдың көру ретінің қай жерінде ойнатылады',
+			'settings.specialsOrderingServer' => 'Сервер ретін сақтау',
+			'settings.specialsOrderingAirDate' => 'Эфир күні бойынша араластыру',
+			'settings.specialsOrderingLast' => 'Қалыпты маусымдардан кейін',
 			'settings.clickVideoTogglesPlayback' => 'Ойнату/кідірту үшін видеоны басу',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Басқару элементтерін көрсету орнына ойнату немесе кідірту',
 			'settings.videoPlayerControls' => 'Видео ойнатқыш басқару элементтері',
@@ -3018,6 +3043,16 @@ extension on TranslationsKk {
 			'settings.subtitlesAndConfig' => 'Субтитрлер мен конфигурация',
 			'settings.seekAndTiming' => 'Айналдыру және уақытты реттеу',
 			'settings.behavior' => 'Мінез-құлық',
+			'settings.rememberPlayerChanges' => 'Ойнатқыш өзгерістерін есте сақтау',
+			'settings.rememberPlayerChangesDescription' => 'Ойнату кезінде жасалған өзгеріс сақталатын және қайта қолданылатын орын',
+			'settings.scopePlaybackSpeed' => 'Ойнату жылдамдығы',
+			'settings.scopeShaderPreset' => 'Шейдер алдын ала орнатымы',
+			'settings.scopeAspectRatio' => 'Кадр пішімі',
+			'settings.scopeSyncOffsets' => 'Аудио және субтитр синхрондауы',
+			'settings.playerScopeOff' => 'Сақтамау',
+			'settings.playerScopeGlobal' => 'Барлық жерде',
+			'settings.playerScopeLibrary' => 'Кітапхана бойынша',
+			'settings.playerScopeTitle' => 'Сериал немесе фильм бойынша',
 			'settings.exportDialogTitle' => 'Plezy параметрлерін экспорттау',
 			'search.hint' => 'Фильмдер, сериалдар, музыка іздеу...',
 			'search.tryDifferentTerm' => 'Басқа іздеу сөзін байқап көріңіз',
@@ -3187,6 +3222,8 @@ extension on TranslationsKk {
 			'mediaMenu.deleteMovieTitle' => 'Осы фильм өшірілсін бе?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Бөлімді өшіру',
 			'mediaMenu.deleteSeasonConfirm' => 'Маусымды өшіру',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Сериалды өшіру',
 			'mediaMenu.deleteMovieConfirm' => 'Фильмді өшіру',
 			'mediaMenu.deleteAnyway' => 'Бәрібір өшіру',
@@ -3202,8 +3239,6 @@ extension on TranslationsKk {
 			'mediaMenu.rate' => 'Бағалау',
 			'mediaMenu.playFromBeginning' => 'Басынан бастап ойнату',
 			'mediaMenu.playVersion' => 'Нұсқаны ойнату...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Бағалау',
 			'rateSheet.server' => 'Сервер',
 			'rateSheet.favorite' => 'Таңдаулы',
@@ -3245,12 +3280,7 @@ extension on TranslationsKk {
 			'audioTracks.track' => ({required Object n}) => 'Аудиожол ${n}',
 			'videoControls.audioLabel' => 'Дыбыс',
 			'videoControls.subtitlesLabel' => 'Субтитр',
-			'videoControls.resetToZero' => '0мс-қа қалпына келтіру',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label} кейін ойнатылады',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label} бұрын ойнатылады',
-			'videoControls.noOffset' => 'Ығысусыз',
 			'videoControls.letterbox' => 'Кең экран (Letterbox)',
 			'videoControls.fillScreen' => 'Экранды толтыру',
 			'videoControls.stretch' => 'Созу',
@@ -3706,6 +3736,8 @@ extension on TranslationsKk {
 			'explore.characters' => 'Кейіпкерлер',
 			'explore.addToWatchlist' => 'Көру тізіміне қосу',
 			'explore.removeFromWatchlist' => 'Көру тізімінен өшіру',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Көру тізіміне қосылды',
 			'explore.removedFromWatchlist' => 'Көру тізімінен алынды',
 			'explore.watchlistUpdateFailed' => 'Көру тізімін жаңарту мүмкін болмады',
@@ -3716,15 +3748,12 @@ extension on TranslationsKk {
 			'explore.emptyTitle' => 'Әлі де мұнда ештеңе жоқ',
 			'explore.emptyMessage' => ({required Object source}) => '${source} дереккөзінен алынған қатарлар мұнда көрінеді.',
 			'explore.searchHint' => ({required Object source}) => '${source} ішінен іздеу',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '"${query}" бойынша нәтиже табылмады',
 			'explore.searchPrompt' => ({required Object source}) => '${source} арқылы фильмдер мен сериалдарды іздеңіз.',
 			'explore.searchFailed' => 'Іздеу қатесі. Қосылымды тексеріңіз.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} танымал',
 			'explore.badge.rankAiring' => ({required Object n}) => '#${n} эфирде',
 			'explore.badge.rankRated' => ({required Object n}) => '#${n} бағаланған',
-			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} таңдаулы',
 			'explore.badge.rankTrending' => ({required Object n}) => '#${n} трендте',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} — ${season}',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} қарауда',
@@ -3971,6 +4000,9 @@ extension on TranslationsKk {
 			'music.repeatOne' => 'Біреуін қайталау',
 			'music.instantMixNoServer' => 'Жедел микс үшін қолжетімді сервер жоқ',
 			'music.noAudioUrl' => ({required Object track}) => '${track} үшін аудио URL-і қолжетімді емес',
+			'music.discography.singlesAndEps' => 'Синглдер және EP',
+			'music.discography.live' => 'Жанды',
+			'music.discography.compilations' => 'Жинақтар',
 			'watchTogether.title' => 'Бірге көру',
 			'watchTogether.description' => 'Достарыңызбен бірге көріңіз',
 			'watchTogether.createSession' => 'Сеанс жасау',
@@ -4218,6 +4250,8 @@ extension on TranslationsKk {
 			'companionRemote.remote.subtitles' => 'Субтитрлер',
 			'companionRemote.remote.audio' => 'Дыбыс',
 			'companionRemote.remote.searchHint' => 'ПК-де іздеу...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Желілік интерфейс табылмады',
 			'companionRemote.errors.authenticationFailed' => 'Аутентификация қатесі',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Серверді іске қосу қатесі: ${error}',
@@ -4230,8 +4264,6 @@ extension on TranslationsKk {
 			'videoSettings.playbackSpeed' => 'Ойнату жылдамдығы',
 			'videoSettings.normalSpeed' => 'Қалыпты',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Белсенді (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Масштаб',
 			'videoSettings.sleepTimer' => 'Ұйқы таймері',
 			'videoSettings.audioSync' => 'Аудио синхрондау',
@@ -4388,8 +4420,6 @@ extension on TranslationsKk {
 			'metadataEdit.country' => 'Ел',
 			'metadataEdit.collection' => 'Топтама',
 			'metadataEdit.label' => 'Белгі',
-			'metadataEdit.style' => 'Стиль',
-			'metadataEdit.mood' => 'Көңіл-күй',
 			'matchScreen.match' => 'Сәйкестендіру...',
 			'matchScreen.fixMatch' => 'Сәйкестікті түзету...',
 			'matchScreen.unmatch' => 'Сәйкестікті жою',

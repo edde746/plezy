@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "При смене серии применять аудио и субтитры, выбранные на сервере, вместо переноса текущего выбора",
     "showChapterMarkersOnTimeline": "Показывать маркеры глав на шкале перемотки",
     "showChapterMarkersOnTimelineDescription": "Разделять шкалу перемотки по границам глав",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Спецвыпуски в порядке эпизодов",
+    "specialsOrderingDescription": "Место спецвыпусков в порядке просмотра сериала",
+    "specialsOrderingServer": "Следовать порядку сервера",
+    "specialsOrderingAirDate": "Чередовать по дате выхода",
+    "specialsOrderingLast": "После обычных сезонов",
     "clickVideoTogglesPlayback": "Нажатие на видео запускает или приостанавливает воспроизведение",
     "clickVideoTogglesPlaybackDescription": "Нажатие на видео запускает или приостанавливает воспроизведение вместо показа элементов управления.",
     "videoPlayerControls": "Элементы управления плеером",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Субтитры и конфигурация",
     "seekAndTiming": "Перемотка и время",
     "behavior": "Поведение",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Запоминать изменения плеера",
+    "rememberPlayerChangesDescription": "Где сохраняется и откуда повторно применяется изменение, сделанное во время воспроизведения",
+    "scopePlaybackSpeed": "Скорость воспроизведения",
+    "scopeShaderPreset": "Предустановка шейдера",
+    "scopeAspectRatio": "Соотношение сторон",
+    "scopeSyncOffsets": "Синхронизация аудио и субтитров",
+    "playerScopeOff": "Не сохранять",
+    "playerScopeGlobal": "Везде",
+    "playerScopeLibrary": "Для библиотеки",
+    "playerScopeTitle": "Для сериала или фильма",
     "exportDialogTitle": "Экспорт настроек Plezy"
   },
   "search": {
@@ -615,12 +615,7 @@
   "videoControls": {
     "audioLabel": "Аудио",
     "subtitlesLabel": "Субтитры",
-    "resetToZero": "Сбросить до 0мс",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} воспроизводится позже",
-    "playsEarlier": "${label} воспроизводится раньше",
-    "noOffset": "Без смещения",
     "letterbox": "Вписать в экран",
     "fillScreen": "Заполнить экран",
     "stretch": "Растянуть",
@@ -1157,7 +1152,6 @@
       "rankPopular": "#${n} по популярности",
       "rankAiring": "#${n} в эфире",
       "rankRated": "#${n} по оценкам",
-      "rankFavorited": "#${n} по избранному",
       "rankTrending": "#${n} в тренде",
       "rankSeasonal": "#${n} в сезоне ${season}",
       "watchingNow": "${n} смотрят",
@@ -1448,9 +1442,9 @@
     "instantMixNoServer": "Нет доступного сервера для мгновенного микса",
     "noAudioUrl": "Для трека ${track} нет доступного URL аудио",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Синглы и EP",
+      "live": "Концертные",
+      "compilations": "Сборники"
     }
   },
   "watchTogether": {
@@ -1892,9 +1886,7 @@
     "producer": "Продюсер",
     "country": "Страна",
     "collection": "Коллекция",
-    "label": "Метка",
-    "style": "Стиль",
-    "mood": "Настроение"
+    "label": "Метка"
   },
   "matchScreen": {
     "match": "Сопоставить...",

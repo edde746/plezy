@@ -316,6 +316,11 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'Al cambio di episodio applica l\'audio e i sottotitoli selezionati sul server invece di mantenere la scelta corrente';
 	@override String get showChapterMarkersOnTimeline => 'Mostra i marcatori dei capitoli sulla barra di avanzamento';
 	@override String get showChapterMarkersOnTimelineDescription => 'Segmenta la barra di avanzamento ai confini dei capitoli';
+	@override String get specialsOrdering => 'Speciali nell\'ordine degli episodi';
+	@override String get specialsOrderingDescription => 'Dove vengono riprodotti gli speciali nell\'ordine di visione di una serie';
+	@override String get specialsOrderingServer => 'Segui l\'ordine del server';
+	@override String get specialsOrderingAirDate => 'Intercalati per data di trasmissione';
+	@override String get specialsOrderingLast => 'Dopo le stagioni normali';
 	@override String get clickVideoTogglesPlayback => 'Fai clic sul video per alternare riproduzione e pausa';
 	@override String get clickVideoTogglesPlaybackDescription => 'Fai clic sul video per riprodurre o mettere in pausa anziché mostrare i controlli.';
 	@override String get videoPlayerControls => 'Controlli del lettore video';
@@ -461,6 +466,16 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Sottotitoli e impostazioni';
 	@override String get seekAndTiming => 'Avanzamento e tempi';
 	@override String get behavior => 'Comportamento';
+	@override String get rememberPlayerChanges => 'Ricorda le modifiche del lettore';
+	@override String get rememberPlayerChangesDescription => 'Dove viene salvata e riapplicata una modifica effettuata durante la riproduzione';
+	@override String get scopePlaybackSpeed => 'Velocità di riproduzione';
+	@override String get scopeShaderPreset => 'Preimpostazione shader';
+	@override String get scopeAspectRatio => 'Proporzioni';
+	@override String get scopeSyncOffsets => 'Sincronizzazione audio e sottotitoli';
+	@override String get playerScopeOff => 'Non salvare';
+	@override String get playerScopeGlobal => 'Ovunque';
+	@override String get playerScopeLibrary => 'Per libreria';
+	@override String get playerScopeTitle => 'Per serie o film';
 	@override String get exportDialogTitle => 'Esporta le impostazioni di Plezy';
 }
 
@@ -752,12 +767,7 @@ class _Translations$videoControls$it extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Audio';
 	@override String get subtitlesLabel => 'Sottotitoli';
-	@override String get resetToZero => 'Ripristina a 0 ms';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label}: riproduzione ritardata';
-	@override String playsEarlier({required Object label}) => '${label}: riproduzione anticipata';
-	@override String get noOffset => 'Nessun ritardo';
 	@override String get letterbox => 'Letterbox';
 	@override String get fillScreen => 'Riempi lo schermo';
 	@override String get stretch => 'Allunga';
@@ -1527,6 +1537,7 @@ class _Translations$music$it extends Translations$music$en {
 	@override String get repeatOne => 'Ripeti il brano';
 	@override String get instantMixNoServer => 'Nessun server disponibile per un mix istantaneo';
 	@override String noAudioUrl({required Object track}) => 'Nessun URL audio disponibile per ${track}';
+	@override late final _Translations$music$discography$it discography = _Translations$music$discography$it._(_root);
 }
 
 // Path: watchTogether
@@ -1932,8 +1943,6 @@ class _Translations$metadataEdit$it extends Translations$metadataEdit$en {
 	@override String get country => 'Paese';
 	@override String get collection => 'Raccolta';
 	@override String get label => 'Etichetta';
-	@override String get style => 'Stile';
-	@override String get mood => 'Atmosfera';
 }
 
 // Path: matchScreen
@@ -2307,7 +2316,6 @@ class _Translations$explore$badge$it extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '#${n} popolari';
 	@override String rankAiring({required Object n}) => '#${n} in onda';
 	@override String rankRated({required Object n}) => '#${n} valutati';
-	@override String rankFavorited({required Object n}) => '#${n} preferiti';
 	@override String rankTrending({required Object n}) => '#${n} di tendenza';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n} in ${season}';
 	@override String watchingNow({required Object n}) => '${n} in visione';
@@ -2475,6 +2483,18 @@ class _Translations$explore$detail$it extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => 'Consigliato dal ${percent} degli spettatori';
 	@override String get relatedTitles => 'Titoli correlati';
 	@override String get background => 'Contesto';
+}
+
+// Path: music.discography
+class _Translations$music$discography$it extends Translations$music$discography$en {
+	_Translations$music$discography$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Singoli ed EP';
+	@override String get live => 'Dal vivo';
+	@override String get compilations => 'Compilation';
 }
 
 // Path: downloads.backgroundWarning
@@ -2873,6 +2893,11 @@ extension on TranslationsIt {
 			'settings.followServerTrackSelectionsDescription' => 'Al cambio di episodio applica l\'audio e i sottotitoli selezionati sul server invece di mantenere la scelta corrente',
 			'settings.showChapterMarkersOnTimeline' => 'Mostra i marcatori dei capitoli sulla barra di avanzamento',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Segmenta la barra di avanzamento ai confini dei capitoli',
+			'settings.specialsOrdering' => 'Speciali nell\'ordine degli episodi',
+			'settings.specialsOrderingDescription' => 'Dove vengono riprodotti gli speciali nell\'ordine di visione di una serie',
+			'settings.specialsOrderingServer' => 'Segui l\'ordine del server',
+			'settings.specialsOrderingAirDate' => 'Intercalati per data di trasmissione',
+			'settings.specialsOrderingLast' => 'Dopo le stagioni normali',
 			'settings.clickVideoTogglesPlayback' => 'Fai clic sul video per alternare riproduzione e pausa',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Fai clic sul video per riprodurre o mettere in pausa anziché mostrare i controlli.',
 			'settings.videoPlayerControls' => 'Controlli del lettore video',
@@ -3018,6 +3043,16 @@ extension on TranslationsIt {
 			'settings.subtitlesAndConfig' => 'Sottotitoli e impostazioni',
 			'settings.seekAndTiming' => 'Avanzamento e tempi',
 			'settings.behavior' => 'Comportamento',
+			'settings.rememberPlayerChanges' => 'Ricorda le modifiche del lettore',
+			'settings.rememberPlayerChangesDescription' => 'Dove viene salvata e riapplicata una modifica effettuata durante la riproduzione',
+			'settings.scopePlaybackSpeed' => 'Velocità di riproduzione',
+			'settings.scopeShaderPreset' => 'Preimpostazione shader',
+			'settings.scopeAspectRatio' => 'Proporzioni',
+			'settings.scopeSyncOffsets' => 'Sincronizzazione audio e sottotitoli',
+			'settings.playerScopeOff' => 'Non salvare',
+			'settings.playerScopeGlobal' => 'Ovunque',
+			'settings.playerScopeLibrary' => 'Per libreria',
+			'settings.playerScopeTitle' => 'Per serie o film',
 			'settings.exportDialogTitle' => 'Esporta le impostazioni di Plezy',
 			'search.hint' => 'Cerca film, serie TV e musica...',
 			'search.tryDifferentTerm' => 'Prova altri termini di ricerca',
@@ -3187,6 +3222,8 @@ extension on TranslationsIt {
 			'mediaMenu.deleteMovieTitle' => 'Eliminare questo film?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Elimina episodio',
 			'mediaMenu.deleteSeasonConfirm' => 'Elimina stagione',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Elimina serie',
 			'mediaMenu.deleteMovieConfirm' => 'Elimina film',
 			'mediaMenu.deleteAnyway' => 'Elimina comunque',
@@ -3202,8 +3239,6 @@ extension on TranslationsIt {
 			'mediaMenu.rate' => 'Valuta',
 			'mediaMenu.playFromBeginning' => 'Riproduci dall\'inizio',
 			'mediaMenu.playVersion' => 'Riproduci versione...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Valuta',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Preferito',
@@ -3245,12 +3280,7 @@ extension on TranslationsIt {
 			'audioTracks.track' => ({required Object n}) => 'Traccia audio ${n}',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Sottotitoli',
-			'videoControls.resetToZero' => 'Ripristina a 0 ms',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label}: riproduzione ritardata',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label}: riproduzione anticipata',
-			'videoControls.noOffset' => 'Nessun ritardo',
 			'videoControls.letterbox' => 'Letterbox',
 			'videoControls.fillScreen' => 'Riempi lo schermo',
 			'videoControls.stretch' => 'Allunga',
@@ -3706,6 +3736,8 @@ extension on TranslationsIt {
 			'explore.characters' => 'Personaggi',
 			'explore.addToWatchlist' => 'Aggiungi alla lista da guardare',
 			'explore.removeFromWatchlist' => 'Rimuovi dalla lista da guardare',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Aggiunto alla lista titoli',
 			'explore.removedFromWatchlist' => 'Rimosso dalla lista titoli',
 			'explore.watchlistUpdateFailed' => 'Impossibile aggiornare la lista da guardare',
@@ -3716,15 +3748,12 @@ extension on TranslationsIt {
 			'explore.emptyTitle' => 'Ancora niente qui',
 			'explore.emptyMessage' => ({required Object source}) => 'Le sezioni di ${source} appariranno qui quando saranno disponibili dei contenuti.',
 			'explore.searchHint' => ({required Object source}) => 'Cerca su ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'Nessun risultato per "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Cerca film e serie TV su ${source}.',
 			'explore.searchFailed' => 'Ricerca fallita. Controlla la connessione e riprova.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} popolari',
 			'explore.badge.rankAiring' => ({required Object n}) => '#${n} in onda',
 			'explore.badge.rankRated' => ({required Object n}) => '#${n} valutati',
-			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} preferiti',
 			'explore.badge.rankTrending' => ({required Object n}) => '#${n} di tendenza',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} in ${season}',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} in visione',
@@ -3971,6 +4000,9 @@ extension on TranslationsIt {
 			'music.repeatOne' => 'Ripeti il brano',
 			'music.instantMixNoServer' => 'Nessun server disponibile per un mix istantaneo',
 			'music.noAudioUrl' => ({required Object track}) => 'Nessun URL audio disponibile per ${track}',
+			'music.discography.singlesAndEps' => 'Singoli ed EP',
+			'music.discography.live' => 'Dal vivo',
+			'music.discography.compilations' => 'Compilation',
 			'watchTogether.title' => 'Guarda insieme',
 			'watchTogether.description' => 'Guarda contenuti in sincronia con amici e familiari',
 			'watchTogether.createSession' => 'Crea sessione',
@@ -4218,6 +4250,8 @@ extension on TranslationsIt {
 			'companionRemote.remote.subtitles' => 'Sottotitoli',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Cerca sul computer...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Nessuna interfaccia di rete trovata',
 			'companionRemote.errors.authenticationFailed' => 'Autenticazione non riuscita',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Impossibile avviare il server remoto: ${error}',
@@ -4230,8 +4264,6 @@ extension on TranslationsIt {
 			'videoSettings.playbackSpeed' => 'Velocità di riproduzione',
 			'videoSettings.normalSpeed' => 'Normale',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Attivo (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Timer di spegnimento',
 			'videoSettings.audioSync' => 'Sincronizzazione audio',
@@ -4388,8 +4420,6 @@ extension on TranslationsIt {
 			'metadataEdit.country' => 'Paese',
 			'metadataEdit.collection' => 'Raccolta',
 			'metadataEdit.label' => 'Etichetta',
-			'metadataEdit.style' => 'Stile',
-			'metadataEdit.mood' => 'Atmosfera',
 			'matchScreen.match' => 'Abbina...',
 			'matchScreen.fixMatch' => 'Correggi abbinamento...',
 			'matchScreen.unmatch' => 'Rimuovi abbinamento',

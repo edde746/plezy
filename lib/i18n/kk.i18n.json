@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Бөлім ауысқанда ағымдағы таңдауды көшірудің орнына серверде таңдалған дыбыс пен субтитрлерді қолдану",
     "showChapterMarkersOnTimeline": "Уақыт шкаласында бөлім белгілерін көрсету",
     "showChapterMarkersOnTimelineDescription": "Уақыт шкаласын бөлімдерге бөлу",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Арнайы бөлімдер эпизодтар ретімен",
+    "specialsOrderingDescription": "Арнайы бөлімдер сериалдың көру ретінің қай жерінде ойнатылады",
+    "specialsOrderingServer": "Сервер ретін сақтау",
+    "specialsOrderingAirDate": "Эфир күні бойынша араластыру",
+    "specialsOrderingLast": "Қалыпты маусымдардан кейін",
     "clickVideoTogglesPlayback": "Ойнату/кідірту үшін видеоны басу",
     "clickVideoTogglesPlaybackDescription": "Басқару элементтерін көрсету орнына ойнату немесе кідірту",
     "videoPlayerControls": "Видео ойнатқыш басқару элементтері",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Субтитрлер мен конфигурация",
     "seekAndTiming": "Айналдыру және уақытты реттеу",
     "behavior": "Мінез-құлық",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Ойнатқыш өзгерістерін есте сақтау",
+    "rememberPlayerChangesDescription": "Ойнату кезінде жасалған өзгеріс сақталатын және қайта қолданылатын орын",
+    "scopePlaybackSpeed": "Ойнату жылдамдығы",
+    "scopeShaderPreset": "Шейдер алдын ала орнатымы",
+    "scopeAspectRatio": "Кадр пішімі",
+    "scopeSyncOffsets": "Аудио және субтитр синхрондауы",
+    "playerScopeOff": "Сақтамау",
+    "playerScopeGlobal": "Барлық жерде",
+    "playerScopeLibrary": "Кітапхана бойынша",
+    "playerScopeTitle": "Сериал немесе фильм бойынша",
     "exportDialogTitle": "Plezy параметрлерін экспорттау"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Дыбыс",
     "subtitlesLabel": "Субтитр",
-    "resetToZero": "0мс-қа қалпына келтіру",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} кейін ойнатылады",
-    "playsEarlier": "${label} бұрын ойнатылады",
-    "noOffset": "Ығысусыз",
     "letterbox": "Кең экран (Letterbox)",
     "fillScreen": "Экранды толтыру",
     "stretch": "Созу",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} танымал",
       "rankAiring": "#${n} эфирде",
       "rankRated": "#${n} бағаланған",
-      "rankFavorited": "#${n} таңдаулы",
       "rankTrending": "#${n} трендте",
       "rankSeasonal": "#${n} — ${season}",
       "watchingNow": "${n} қарауда",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Жедел микс үшін қолжетімді сервер жоқ",
     "noAudioUrl": "${track} үшін аудио URL-і қолжетімді емес",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Синглдер және EP",
+      "live": "Жанды",
+      "compilations": "Жинақтар"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Продюсер",
     "country": "Ел",
     "collection": "Топтама",
-    "label": "Белгі",
-    "style": "Стиль",
-    "mood": "Көңіл-күй"
+    "label": "Белгі"
   },
   "matchScreen": {
     "match": "Сәйкестендіру...",

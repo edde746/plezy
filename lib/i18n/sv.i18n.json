@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Vid avsnittsbyte används ljudet och undertexterna som valts på servern i stället för att föra över det aktuella valet",
     "showChapterMarkersOnTimeline": "Visa kapitelmarkörer på tidslinjen",
     "showChapterMarkersOnTimelineDescription": "Dela upp tidslinjen vid kapitelgränser",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Specialavsnitt i episodordning",
+    "specialsOrderingDescription": "Var specialavsnitt spelas upp i seriens visningsordning",
+    "specialsOrderingServer": "Följ serverordningen",
+    "specialsOrderingAirDate": "Infoga efter sändningsdatum",
+    "specialsOrderingLast": "Efter vanliga säsonger",
     "clickVideoTogglesPlayback": "Klicka på videon för att spela upp eller pausa",
     "clickVideoTogglesPlaybackDescription": "Klicka på videon för att spela upp eller pausa i stället för att visa kontrollerna.",
     "videoPlayerControls": "Videospelarens kontroller",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Undertexter och konfiguration",
     "seekAndTiming": "Spolning och tidsinställningar",
     "behavior": "Beteende",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Kom ihåg spelarändringar",
+    "rememberPlayerChangesDescription": "Var en ändring under uppspelning sparas och tillämpas igen",
+    "scopePlaybackSpeed": "Uppspelningshastighet",
+    "scopeShaderPreset": "Förinställning för shader",
+    "scopeAspectRatio": "Bildförhållande",
+    "scopeSyncOffsets": "Synkronisering av ljud och undertexter",
+    "playerScopeOff": "Spara inte",
+    "playerScopeGlobal": "Överallt",
+    "playerScopeLibrary": "Per bibliotek",
+    "playerScopeTitle": "Per serie eller film",
     "exportDialogTitle": "Exportera Plezy-inställningar"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Ljud",
     "subtitlesLabel": "Undertexter",
-    "resetToZero": "Återställ till 0 ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} spelas senare",
-    "playsEarlier": "${label} spelas tidigare",
-    "noOffset": "Ingen förskjutning",
     "letterbox": "Brevlådeformat",
     "fillScreen": "Fyll skärmen",
     "stretch": "Sträck ut",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} populär",
       "rankAiring": "#${n} sänds nu",
       "rankRated": "#${n} bäst betygsatta",
-      "rankFavorited": "#${n} mest favoritmarkerade",
       "rankTrending": "#${n} trendar",
       "rankSeasonal": "#${n} i ${season}",
       "watchingNow": "${n} tittar nu",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Ingen server är tillgänglig för en snabbmix",
     "noAudioUrl": "Ingen ljud-URL är tillgänglig för ${track}",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Singlar och EP",
+      "live": "Live",
+      "compilations": "Samlingar"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Producent",
     "country": "Land",
     "collection": "Samling",
-    "label": "Etikett",
-    "style": "Stil",
-    "mood": "Stämning"
+    "label": "Etikett"
   },
   "matchScreen": {
     "match": "Matcha...",

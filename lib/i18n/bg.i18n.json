@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор",
     "showChapterMarkersOnTimeline": "Показвай маркери на глави върху времевата линия",
     "showChapterMarkersOnTimelineDescription": "Разделяй времевата линия на сегменти по границите на главите",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Специални епизоди в реда на епизодите",
+    "specialsOrderingDescription": "Къде се възпроизвеждат специалните епизоди в реда за гледане на сериала",
+    "specialsOrderingServer": "Следвай реда на сървъра",
+    "specialsOrderingAirDate": "Подреждай по дата на излъчване",
+    "specialsOrderingLast": "След редовните сезони",
     "clickVideoTogglesPlayback": "Клик върху видеото превключва възпроизвеждане/пауза",
     "clickVideoTogglesPlaybackDescription": "Клик върху видеото пуска/паузира вместо да показва контролите.",
     "videoPlayerControls": "Контроли на видео плейъра",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Субтитри и конфигурация",
     "seekAndTiming": "Търсене и време",
     "behavior": "Поведение",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Запомняне на промените в плейъра",
+    "rememberPlayerChangesDescription": "Къде се записва и откъде се прилага отново промяна, направена по време на възпроизвеждане",
+    "scopePlaybackSpeed": "Скорост на възпроизвеждане",
+    "scopeShaderPreset": "Предварителна настройка на шейдъра",
+    "scopeAspectRatio": "Съотношение на страните",
+    "scopeSyncOffsets": "Синхронизация на аудио и субтитри",
+    "playerScopeOff": "Не запазвай",
+    "playerScopeGlobal": "Навсякъде",
+    "playerScopeLibrary": "По библиотека",
+    "playerScopeTitle": "По сериал или филм",
     "exportDialogTitle": "Експортиране на настройките на Plezy"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Аудио",
     "subtitlesLabel": "Субтитри",
-    "resetToZero": "Нулирай до 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} се възпроизвежда по-късно",
-    "playsEarlier": "${label} се възпроизвежда по-рано",
-    "noOffset": "Без отместване",
     "letterbox": "Черни ленти",
     "fillScreen": "Запълни екрана",
     "stretch": "Разтегни",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} популярен",
       "rankAiring": "#${n} в ефир",
       "rankRated": "#${n} оценен",
-      "rankFavorited": "#${n} най-харесван",
       "rankTrending": "#${n} в тенденция",
       "rankSeasonal": "#${n} през ${season}",
       "watchingNow": "${n} гледат",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Няма наличен сървър за незабавен микс",
     "noAudioUrl": "Няма наличен URL за аудиото на ${track}",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Сингли и EP",
+      "live": "Концертни",
+      "compilations": "Компилации"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Продуцент",
     "country": "Държава",
     "collection": "Колекция",
-    "label": "Етикет",
-    "style": "Стил",
-    "mood": "Настроение"
+    "label": "Етикет"
   },
   "matchScreen": {
     "match": "Съпостави...",

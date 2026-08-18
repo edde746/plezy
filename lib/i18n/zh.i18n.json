@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择",
     "showChapterMarkersOnTimeline": "在进度条上显示章节标记",
     "showChapterMarkersOnTimelineDescription": "按章节边界分段显示进度条",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "特别篇按剧集顺序",
+    "specialsOrderingDescription": "特别篇在剧集观看顺序中的播放位置",
+    "specialsOrderingServer": "遵循服务器顺序",
+    "specialsOrderingAirDate": "按播出日期穿插",
+    "specialsOrderingLast": "常规季之后",
     "clickVideoTogglesPlayback": "点击视频可切换播放/暂停",
     "clickVideoTogglesPlaybackDescription": "点击视频即可播放或暂停，而不是显示控制项。",
     "videoPlayerControls": "视频播放器控制",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "字幕与配置",
     "seekAndTiming": "跳转与计时",
     "behavior": "行为",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "记住播放器更改",
+    "rememberPlayerChangesDescription": "播放期间所做的更改保存并重新应用的位置",
+    "scopePlaybackSpeed": "播放速度",
+    "scopeShaderPreset": "着色器预设",
+    "scopeAspectRatio": "宽高比",
+    "scopeSyncOffsets": "音频和字幕同步",
+    "playerScopeOff": "不保存",
+    "playerScopeGlobal": "所有位置",
+    "playerScopeLibrary": "按媒体库",
+    "playerScopeTitle": "按剧集或电影",
     "exportDialogTitle": "导出 Plezy 设置"
   },
   "search": {
@@ -606,12 +606,7 @@
   "videoControls": {
     "audioLabel": "音频",
     "subtitlesLabel": "字幕",
-    "resetToZero": "重置为 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label}延后播放",
-    "playsEarlier": "${label}提前播放",
-    "noOffset": "无偏移",
     "letterbox": "黑边模式",
     "fillScreen": "填充屏幕",
     "stretch": "拉伸",
@@ -1139,7 +1134,6 @@
       "rankPopular": "热门榜第 #${n} 名",
       "rankAiring": "在播榜第 #${n} 名",
       "rankRated": "评分榜第 #${n} 名",
-      "rankFavorited": "收藏榜第 #${n} 名",
       "rankTrending": "趋势榜第 #${n} 名",
       "rankSeasonal": "${season}榜第 #${n} 名",
       "watchingNow": "${n} 人正在观看",
@@ -1418,9 +1412,9 @@
     "instantMixNoServer": "没有可用于即时混合的服务器",
     "noAudioUrl": "没有可供 ${track} 使用的音频 URL",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "单曲和 EP",
+      "live": "现场",
+      "compilations": "合集"
     }
   },
   "watchTogether": {
@@ -1862,9 +1856,7 @@
     "producer": "制片人",
     "country": "国家",
     "collection": "合集",
-    "label": "标记",
-    "style": "风格",
-    "mood": "氛围"
+    "label": "标记"
   },
   "matchScreen": {
     "match": "匹配…",

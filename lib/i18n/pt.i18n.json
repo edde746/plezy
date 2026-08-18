@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Ao mudar de episódio, aplicar o áudio e as legendas selecionados no servidor em vez de manter a escolha atual",
     "showChapterMarkersOnTimeline": "Mostrar marcadores de capítulos na barra de reprodução",
     "showChapterMarkersOnTimelineDescription": "Segmentar a barra de reprodução nos limites dos capítulos",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Especiais na ordem dos episódios",
+    "specialsOrderingDescription": "Onde os especiais são reproduzidos na ordem de exibição de uma série",
+    "specialsOrderingServer": "Seguir a ordem do servidor",
+    "specialsOrderingAirDate": "Intercalar pela data de exibição",
+    "specialsOrderingLast": "Após as temporadas regulares",
     "clickVideoTogglesPlayback": "Clicar no vídeo para alternar reprodução/pausa",
     "clickVideoTogglesPlaybackDescription": "Clicar no vídeo para reproduzir ou pausar em vez de mostrar os controles.",
     "videoPlayerControls": "Controles do reprodutor de vídeo",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Legendas e configuração",
     "seekAndTiming": "Busca e tempo",
     "behavior": "Comportamento",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Lembrar alterações do reprodutor",
+    "rememberPlayerChangesDescription": "Onde uma alteração feita durante a reprodução é salva e reaplicada",
+    "scopePlaybackSpeed": "Velocidade de reprodução",
+    "scopeShaderPreset": "Predefinição de shader",
+    "scopeAspectRatio": "Proporção da tela",
+    "scopeSyncOffsets": "Sincronização de áudio e legendas",
+    "playerScopeOff": "Não salvar",
+    "playerScopeGlobal": "Em todos os lugares",
+    "playerScopeLibrary": "Por biblioteca",
+    "playerScopeTitle": "Por série ou filme",
     "exportDialogTitle": "Exportar configurações do Plezy"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Áudio",
     "subtitlesLabel": "Legendas",
-    "resetToZero": "Redefinir para 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} reproduz depois",
-    "playsEarlier": "${label} reproduz antes",
-    "noOffset": "Sem deslocamento",
     "letterbox": "Letterbox",
     "fillScreen": "Preencher tela",
     "stretch": "Esticar",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} popular",
       "rankAiring": "#${n} no ar",
       "rankRated": "#${n} avaliado",
-      "rankFavorited": "#${n} favoritado",
       "rankTrending": "#${n} em alta",
       "rankSeasonal": "#${n} em ${season}",
       "watchingNow": "${n} assistindo",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Nenhum servidor está disponível para uma mistura instantânea",
     "noAudioUrl": "Nenhuma URL de áudio está disponível para ${track}",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Singles e EPs",
+      "live": "Ao vivo",
+      "compilations": "Compilações"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Produtor",
     "country": "País",
     "collection": "Coleção",
-    "label": "Rótulo",
-    "style": "Estilo",
-    "mood": "Humor"
+    "label": "Rótulo"
   },
   "matchScreen": {
     "match": "Associar...",

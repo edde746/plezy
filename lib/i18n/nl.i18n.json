@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen",
     "showChapterMarkersOnTimeline": "Hoofdstukmarkeringen op tijdlijn tonen",
     "showChapterMarkersOnTimelineDescription": "Verdeel de tijdlijn bij hoofdstukgrenzen",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Specials in afleveringsvolgorde",
+    "specialsOrderingDescription": "Waar specials worden afgespeeld in de kijkvolgorde van een serie",
+    "specialsOrderingServer": "Servervolgorde volgen",
+    "specialsOrderingAirDate": "Op uitzenddatum invoegen",
+    "specialsOrderingLast": "Na reguliere seizoenen",
     "clickVideoTogglesPlayback": "Klik op de video om afspelen of pauzeren te wisselen",
     "clickVideoTogglesPlaybackDescription": "Klik op de video om af te spelen of te pauzeren in plaats van de bediening te tonen.",
     "videoPlayerControls": "Videospelerbediening",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Ondertitels en instellingen",
     "seekAndTiming": "Spoelen en timing",
     "behavior": "Gedrag",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Spelerwijzigingen onthouden",
+    "rememberPlayerChangesDescription": "Waar een wijziging tijdens het afspelen wordt opgeslagen en opnieuw toegepast",
+    "scopePlaybackSpeed": "Afspeelsnelheid",
+    "scopeShaderPreset": "Shadervoorinstelling",
+    "scopeAspectRatio": "Beeldverhouding",
+    "scopeSyncOffsets": "Audio- en ondertitelsynchronisatie",
+    "playerScopeOff": "Niet opslaan",
+    "playerScopeGlobal": "Overal",
+    "playerScopeLibrary": "Per bibliotheek",
+    "playerScopeTitle": "Per serie of film",
     "exportDialogTitle": "Plezy-instellingen exporteren"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Audio",
     "subtitlesLabel": "Ondertitels",
-    "resetToZero": "Terugzetten naar 0 ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} speelt later af",
-    "playsEarlier": "${label} speelt eerder af",
-    "noOffset": "Geen offset",
     "letterbox": "Letterbox",
     "fillScreen": "Scherm vullen",
     "stretch": "Uitrekken",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} populair",
       "rankAiring": "#${n} nu op tv",
       "rankRated": "#${n} beoordeeld",
-      "rankFavorited": "#${n} favoriet",
       "rankTrending": "#${n} trending",
       "rankSeasonal": "#${n} in ${season}",
       "watchingNow": "${n} kijken",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Er is geen server beschikbaar voor een instantmix",
     "noAudioUrl": "Er is geen audio-URL beschikbaar voor ${track}",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Singles en EP's",
+      "live": "Live",
+      "compilations": "Compilaties"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Producent",
     "country": "Land",
     "collection": "Collectie",
-    "label": "Label",
-    "style": "Stijl",
-    "mood": "Stemming"
+    "label": "Label"
   },
   "matchScreen": {
     "match": "Koppelen...",

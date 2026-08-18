@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Ved afsnitsskift anvendes lyden og underteksterne valgt på serveren i stedet for at videreføre det aktuelle valg",
     "showChapterMarkersOnTimeline": "Vis kapitelmarkører på tidslinjen",
     "showChapterMarkersOnTimelineDescription": "Opdel tidslinjen ved kapitelgrænser",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Specialafsnit i episoderekkefølge",
+    "specialsOrderingDescription": "Hvor specialafsnit afspilles i seriens visningsrækkefølge",
+    "specialsOrderingServer": "Følg serverrækkefølgen",
+    "specialsOrderingAirDate": "Indflet efter udsendelsesdato",
+    "specialsOrderingLast": "Efter almindelige sæsoner",
     "clickVideoTogglesPlayback": "Klik på videoen for at skifte mellem afspilning og pause",
     "clickVideoTogglesPlaybackDescription": "Klik på videoen for at afspille eller sætte på pause i stedet for at vise betjeningsknapperne.",
     "videoPlayerControls": "Videoafspillerkontroller",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Undertekster og konfiguration",
     "seekAndTiming": "Søgning og timing",
     "behavior": "Adfærd",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Husk afspillerændringer",
+    "rememberPlayerChangesDescription": "Hvor en ændring under afspilning gemmes og anvendes igen",
+    "scopePlaybackSpeed": "Afspilningshastighed",
+    "scopeShaderPreset": "Shader-forudindstilling",
+    "scopeAspectRatio": "Billedformat",
+    "scopeSyncOffsets": "Synkronisering af lyd og undertekster",
+    "playerScopeOff": "Gem ikke",
+    "playerScopeGlobal": "Overalt",
+    "playerScopeLibrary": "Pr. bibliotek",
+    "playerScopeTitle": "Pr. serie eller film",
     "exportDialogTitle": "Eksportér Plezy-indstillinger"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Lyd",
     "subtitlesLabel": "Undertekster",
-    "resetToZero": "Nulstil til 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} afspilles senere",
-    "playsEarlier": "${label} afspilles tidligere",
-    "noOffset": "Ingen forskydning",
     "letterbox": "Letterbox",
     "fillScreen": "Fyld skærm",
     "stretch": "Stræk",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} populær",
       "rankAiring": "#${n} på luften",
       "rankRated": "#${n} bedømt",
-      "rankFavorited": "#${n} favorit",
       "rankTrending": "#${n} populær lige nu",
       "rankSeasonal": "#${n} i ${season}",
       "watchingNow": "${n} ser med",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Ingen server er tilgængelig til et øjeblikkeligt mix",
     "noAudioUrl": "Ingen lyd-URL er tilgængelig for ${track}",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Singler og EP'er",
+      "live": "Live",
+      "compilations": "Opsamlinger"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Producer",
     "country": "Land",
     "collection": "Samling",
-    "label": "Etiket",
-    "style": "Stil",
-    "mood": "Stemning"
+    "label": "Etiket"
   },
   "matchScreen": {
     "match": "Match...",

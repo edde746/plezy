@@ -1835,23 +1835,8 @@ class Translations$videoControls$en {
 	/// en: 'Subtitles'
 	String get subtitlesLabel => 'Subtitles';
 
-	/// en: 'Reset to 0ms'
-	String get resetToZero => 'Reset to 0ms';
-
 	/// en: '+${amount}${unit}'
 	String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-
-	/// en: '-${amount}${unit}'
-	String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-
-	/// en: '${label} plays later'
-	String playsLater({required Object label}) => '${label} plays later';
-
-	/// en: '${label} plays earlier'
-	String playsEarlier({required Object label}) => '${label} plays earlier';
-
-	/// en: 'No offset'
-	String get noOffset => 'No offset';
 
 	/// en: 'Letterbox'
 	String get letterbox => 'Letterbox';
@@ -4791,12 +4776,6 @@ class Translations$metadataEdit$en {
 
 	/// en: 'Label'
 	String get label => 'Label';
-
-	/// en: 'Style'
-	String get style => 'Style';
-
-	/// en: 'Mood'
-	String get mood => 'Mood';
 }
 
 // Path: matchScreen
@@ -5619,9 +5598,6 @@ class Translations$explore$badge$en {
 
 	/// en: '#${n} rated'
 	String rankRated({required Object n}) => '#${n} rated';
-
-	/// en: '#${n} favorited'
-	String rankFavorited({required Object n}) => '#${n} favorited';
 
 	/// en: '#${n} trending'
 	String rankTrending({required Object n}) => '#${n} trending';
@@ -7018,12 +6994,7 @@ extension on Translations {
 			'audioTracks.track' => ({required Object n}) => 'Audio Track ${n}',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Subtitles',
-			'videoControls.resetToZero' => 'Reset to 0ms',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label} plays later',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label} plays earlier',
-			'videoControls.noOffset' => 'No offset',
 			'videoControls.letterbox' => 'Letterbox',
 			'videoControls.fillScreen' => 'Fill screen',
 			'videoControls.stretch' => 'Stretch',
@@ -7474,13 +7445,13 @@ extension on Translations {
 			'explore.status.ended' => 'Ended',
 			'explore.status.canceled' => 'Canceled',
 			'explore.status.upcoming' => 'Upcoming',
-			_ => null,
-		} ?? switch (path) {
 			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
 			'explore.cast' => 'Cast',
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
 			'explore.removeFromWatchlist' => 'Remove from Watchlist',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Added to watchlist',
 			'explore.removedFromWatchlist' => 'Removed from watchlist',
 			'explore.watchlistUpdateFailed' => 'Couldn\'t update watchlist',
@@ -7497,7 +7468,6 @@ extension on Translations {
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} popular',
 			'explore.badge.rankAiring' => ({required Object n}) => '#${n} airing',
 			'explore.badge.rankRated' => ({required Object n}) => '#${n} rated',
-			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} favorited',
 			'explore.badge.rankTrending' => ({required Object n}) => '#${n} trending',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} in ${season}',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} watching',
@@ -7988,14 +7958,14 @@ extension on Translations {
 			'companionRemote.remote.stop' => 'Stop',
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'No network interface found',
 			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Failed to start remote server: ${error}',
@@ -8164,8 +8134,6 @@ extension on Translations {
 			'metadataEdit.country' => 'Country',
 			'metadataEdit.collection' => 'Collection',
 			'metadataEdit.label' => 'Label',
-			'metadataEdit.style' => 'Style',
-			'metadataEdit.mood' => 'Mood',
 			'matchScreen.match' => 'Match...',
 			'matchScreen.fixMatch' => 'Fix Match...',
 			'matchScreen.unmatch' => 'Unmatch',

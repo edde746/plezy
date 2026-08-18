@@ -316,6 +316,11 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => '切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择';
 	@override String get showChapterMarkersOnTimeline => '在进度条上显示章节标记';
 	@override String get showChapterMarkersOnTimelineDescription => '按章节边界分段显示进度条';
+	@override String get specialsOrdering => '特别篇按剧集顺序';
+	@override String get specialsOrderingDescription => '特别篇在剧集观看顺序中的播放位置';
+	@override String get specialsOrderingServer => '遵循服务器顺序';
+	@override String get specialsOrderingAirDate => '按播出日期穿插';
+	@override String get specialsOrderingLast => '常规季之后';
 	@override String get clickVideoTogglesPlayback => '点击视频可切换播放/暂停';
 	@override String get clickVideoTogglesPlaybackDescription => '点击视频即可播放或暂停，而不是显示控制项。';
 	@override String get videoPlayerControls => '视频播放器控制';
@@ -461,6 +466,16 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get subtitlesAndConfig => '字幕与配置';
 	@override String get seekAndTiming => '跳转与计时';
 	@override String get behavior => '行为';
+	@override String get rememberPlayerChanges => '记住播放器更改';
+	@override String get rememberPlayerChangesDescription => '播放期间所做的更改保存并重新应用的位置';
+	@override String get scopePlaybackSpeed => '播放速度';
+	@override String get scopeShaderPreset => '着色器预设';
+	@override String get scopeAspectRatio => '宽高比';
+	@override String get scopeSyncOffsets => '音频和字幕同步';
+	@override String get playerScopeOff => '不保存';
+	@override String get playerScopeGlobal => '所有位置';
+	@override String get playerScopeLibrary => '按媒体库';
+	@override String get playerScopeTitle => '按剧集或电影';
 	@override String get exportDialogTitle => '导出 Plezy 设置';
 }
 
@@ -749,12 +764,7 @@ class Translations$videoControls$zh extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => '音频';
 	@override String get subtitlesLabel => '字幕';
-	@override String get resetToZero => '重置为 0ms';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label}延后播放';
-	@override String playsEarlier({required Object label}) => '${label}提前播放';
-	@override String get noOffset => '无偏移';
 	@override String get letterbox => '黑边模式';
 	@override String get fillScreen => '填充屏幕';
 	@override String get stretch => '拉伸';
@@ -1519,6 +1529,7 @@ class Translations$music$zh extends Translations$music$en {
 	@override String get repeatOne => '单曲循环';
 	@override String get instantMixNoServer => '没有可用于即时混合的服务器';
 	@override String noAudioUrl({required Object track}) => '没有可供 ${track} 使用的音频 URL';
+	@override late final Translations$music$discography$zh discography = Translations$music$discography$zh.internal(_root);
 }
 
 // Path: watchTogether
@@ -1924,8 +1935,6 @@ class Translations$metadataEdit$zh extends Translations$metadataEdit$en {
 	@override String get country => '国家';
 	@override String get collection => '合集';
 	@override String get label => '标记';
-	@override String get style => '风格';
-	@override String get mood => '氛围';
 }
 
 // Path: matchScreen
@@ -2299,7 +2308,6 @@ class Translations$explore$badge$zh extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '热门榜第 #${n} 名';
 	@override String rankAiring({required Object n}) => '在播榜第 #${n} 名';
 	@override String rankRated({required Object n}) => '评分榜第 #${n} 名';
-	@override String rankFavorited({required Object n}) => '收藏榜第 #${n} 名';
 	@override String rankTrending({required Object n}) => '趋势榜第 #${n} 名';
 	@override String rankSeasonal({required Object season, required Object n}) => '${season}榜第 #${n} 名';
 	@override String watchingNow({required Object n}) => '${n} 人正在观看';
@@ -2465,6 +2473,18 @@ class Translations$explore$detail$zh extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => '${percent} 的观众推荐';
 	@override String get relatedTitles => '相关作品';
 	@override String get background => '背景';
+}
+
+// Path: music.discography
+class Translations$music$discography$zh extends Translations$music$discography$en {
+	Translations$music$discography$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => '单曲和 EP';
+	@override String get live => '现场';
+	@override String get compilations => '合集';
 }
 
 // Path: downloads.backgroundWarning
@@ -2863,6 +2883,11 @@ extension on TranslationsZh {
 			'settings.followServerTrackSelectionsDescription' => '切换剧集时，应用服务器上为该集选择的音频和字幕，而不是沿用当前选择',
 			'settings.showChapterMarkersOnTimeline' => '在进度条上显示章节标记',
 			'settings.showChapterMarkersOnTimelineDescription' => '按章节边界分段显示进度条',
+			'settings.specialsOrdering' => '特别篇按剧集顺序',
+			'settings.specialsOrderingDescription' => '特别篇在剧集观看顺序中的播放位置',
+			'settings.specialsOrderingServer' => '遵循服务器顺序',
+			'settings.specialsOrderingAirDate' => '按播出日期穿插',
+			'settings.specialsOrderingLast' => '常规季之后',
 			'settings.clickVideoTogglesPlayback' => '点击视频可切换播放/暂停',
 			'settings.clickVideoTogglesPlaybackDescription' => '点击视频即可播放或暂停，而不是显示控制项。',
 			'settings.videoPlayerControls' => '视频播放器控制',
@@ -3008,6 +3033,16 @@ extension on TranslationsZh {
 			'settings.subtitlesAndConfig' => '字幕与配置',
 			'settings.seekAndTiming' => '跳转与计时',
 			'settings.behavior' => '行为',
+			'settings.rememberPlayerChanges' => '记住播放器更改',
+			'settings.rememberPlayerChangesDescription' => '播放期间所做的更改保存并重新应用的位置',
+			'settings.scopePlaybackSpeed' => '播放速度',
+			'settings.scopeShaderPreset' => '着色器预设',
+			'settings.scopeAspectRatio' => '宽高比',
+			'settings.scopeSyncOffsets' => '音频和字幕同步',
+			'settings.playerScopeOff' => '不保存',
+			'settings.playerScopeGlobal' => '所有位置',
+			'settings.playerScopeLibrary' => '按媒体库',
+			'settings.playerScopeTitle' => '按剧集或电影',
 			'settings.exportDialogTitle' => '导出 Plezy 设置',
 			'search.hint' => '搜索电影、剧集、音乐…',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
@@ -3177,6 +3212,8 @@ extension on TranslationsZh {
 			'mediaMenu.deleteMovieTitle' => '删除这部电影？',
 			'mediaMenu.deleteEpisodeConfirm' => '删除单集',
 			'mediaMenu.deleteSeasonConfirm' => '删除季度',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => '删除剧集',
 			'mediaMenu.deleteMovieConfirm' => '删除电影',
 			'mediaMenu.deleteAnyway' => '仍然删除',
@@ -3192,8 +3229,6 @@ extension on TranslationsZh {
 			'mediaMenu.rate' => '评分',
 			'mediaMenu.playFromBeginning' => '从头播放',
 			'mediaMenu.playVersion' => '播放版本…',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => '评分',
 			'rateSheet.server' => '服务器',
 			'rateSheet.favorite' => '收藏',
@@ -3235,12 +3270,7 @@ extension on TranslationsZh {
 			'audioTracks.track' => ({required Object n}) => '音轨 ${n}',
 			'videoControls.audioLabel' => '音频',
 			'videoControls.subtitlesLabel' => '字幕',
-			'videoControls.resetToZero' => '重置为 0ms',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label}延后播放',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label}提前播放',
-			'videoControls.noOffset' => '无偏移',
 			'videoControls.letterbox' => '黑边模式',
 			'videoControls.fillScreen' => '填充屏幕',
 			'videoControls.stretch' => '拉伸',
@@ -3696,6 +3726,8 @@ extension on TranslationsZh {
 			'explore.characters' => '角色',
 			'explore.addToWatchlist' => '添加到想看列表',
 			'explore.removeFromWatchlist' => '从想看列表移除',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => '已加入待看列表',
 			'explore.removedFromWatchlist' => '已从待看列表中移除',
 			'explore.watchlistUpdateFailed' => '无法更新想看列表',
@@ -3706,15 +3738,12 @@ extension on TranslationsZh {
 			'explore.emptyTitle' => '这里还什么都没有',
 			'explore.emptyMessage' => ({required Object source}) => '当 ${source} 有内容时，相关内容将显示在这里。',
 			'explore.searchHint' => ({required Object source}) => '搜索 ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '没有“${query}”的结果',
 			'explore.searchPrompt' => ({required Object source}) => '在 ${source} 上搜索电影和剧集。',
 			'explore.searchFailed' => '搜索失败。请检查网络连接后重试。',
 			'explore.badge.rankPopular' => ({required Object n}) => '热门榜第 #${n} 名',
 			'explore.badge.rankAiring' => ({required Object n}) => '在播榜第 #${n} 名',
 			'explore.badge.rankRated' => ({required Object n}) => '评分榜第 #${n} 名',
-			'explore.badge.rankFavorited' => ({required Object n}) => '收藏榜第 #${n} 名',
 			'explore.badge.rankTrending' => ({required Object n}) => '趋势榜第 #${n} 名',
 			'explore.badge.rankSeasonal' => ({required Object season, required Object n}) => '${season}榜第 #${n} 名',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} 人正在观看',
@@ -3961,6 +3990,9 @@ extension on TranslationsZh {
 			'music.repeatOne' => '单曲循环',
 			'music.instantMixNoServer' => '没有可用于即时混合的服务器',
 			'music.noAudioUrl' => ({required Object track}) => '没有可供 ${track} 使用的音频 URL',
+			'music.discography.singlesAndEps' => '单曲和 EP',
+			'music.discography.live' => '现场',
+			'music.discography.compilations' => '合集',
 			'watchTogether.title' => '一起看',
 			'watchTogether.description' => '与朋友和家人同步观看内容',
 			'watchTogether.createSession' => '创建会话',
@@ -4208,6 +4240,8 @@ extension on TranslationsZh {
 			'companionRemote.remote.subtitles' => '字幕',
 			'companionRemote.remote.audio' => '音频',
 			'companionRemote.remote.searchHint' => '在桌面端搜索…',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => '未找到网络接口',
 			'companionRemote.errors.authenticationFailed' => '身份验证失败',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => '无法启动远程服务器：${error}',
@@ -4220,8 +4254,6 @@ extension on TranslationsZh {
 			'videoSettings.playbackSpeed' => '播放速度',
 			'videoSettings.normalSpeed' => '正常',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => '运行中（${duration}）',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => '缩放',
 			'videoSettings.sleepTimer' => '睡眠定时器',
 			'videoSettings.audioSync' => '音频同步',
@@ -4378,8 +4410,6 @@ extension on TranslationsZh {
 			'metadataEdit.country' => '国家',
 			'metadataEdit.collection' => '合集',
 			'metadataEdit.label' => '标记',
-			'metadataEdit.style' => '风格',
-			'metadataEdit.mood' => '氛围',
 			'matchScreen.match' => '匹配…',
 			'matchScreen.fixMatch' => '修正匹配…',
 			'matchScreen.unmatch' => '取消匹配',

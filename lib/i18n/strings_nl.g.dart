@@ -316,6 +316,11 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen';
 	@override String get showChapterMarkersOnTimeline => 'Hoofdstukmarkeringen op tijdlijn tonen';
 	@override String get showChapterMarkersOnTimelineDescription => 'Verdeel de tijdlijn bij hoofdstukgrenzen';
+	@override String get specialsOrdering => 'Specials in afleveringsvolgorde';
+	@override String get specialsOrderingDescription => 'Waar specials worden afgespeeld in de kijkvolgorde van een serie';
+	@override String get specialsOrderingServer => 'Servervolgorde volgen';
+	@override String get specialsOrderingAirDate => 'Op uitzenddatum invoegen';
+	@override String get specialsOrderingLast => 'Na reguliere seizoenen';
 	@override String get clickVideoTogglesPlayback => 'Klik op de video om afspelen of pauzeren te wisselen';
 	@override String get clickVideoTogglesPlaybackDescription => 'Klik op de video om af te spelen of te pauzeren in plaats van de bediening te tonen.';
 	@override String get videoPlayerControls => 'Videospelerbediening';
@@ -461,6 +466,16 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Ondertitels en instellingen';
 	@override String get seekAndTiming => 'Spoelen en timing';
 	@override String get behavior => 'Gedrag';
+	@override String get rememberPlayerChanges => 'Spelerwijzigingen onthouden';
+	@override String get rememberPlayerChangesDescription => 'Waar een wijziging tijdens het afspelen wordt opgeslagen en opnieuw toegepast';
+	@override String get scopePlaybackSpeed => 'Afspeelsnelheid';
+	@override String get scopeShaderPreset => 'Shadervoorinstelling';
+	@override String get scopeAspectRatio => 'Beeldverhouding';
+	@override String get scopeSyncOffsets => 'Audio- en ondertitelsynchronisatie';
+	@override String get playerScopeOff => 'Niet opslaan';
+	@override String get playerScopeGlobal => 'Overal';
+	@override String get playerScopeLibrary => 'Per bibliotheek';
+	@override String get playerScopeTitle => 'Per serie of film';
 	@override String get exportDialogTitle => 'Plezy-instellingen exporteren';
 }
 
@@ -752,12 +767,7 @@ class _Translations$videoControls$nl extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Audio';
 	@override String get subtitlesLabel => 'Ondertitels';
-	@override String get resetToZero => 'Terugzetten naar 0 ms';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label} speelt later af';
-	@override String playsEarlier({required Object label}) => '${label} speelt eerder af';
-	@override String get noOffset => 'Geen offset';
 	@override String get letterbox => 'Letterbox';
 	@override String get fillScreen => 'Scherm vullen';
 	@override String get stretch => 'Uitrekken';
@@ -1527,6 +1537,7 @@ class _Translations$music$nl extends Translations$music$en {
 	@override String get repeatOne => 'Eén herhalen';
 	@override String get instantMixNoServer => 'Er is geen server beschikbaar voor een instantmix';
 	@override String noAudioUrl({required Object track}) => 'Er is geen audio-URL beschikbaar voor ${track}';
+	@override late final _Translations$music$discography$nl discography = _Translations$music$discography$nl._(_root);
 }
 
 // Path: watchTogether
@@ -1932,8 +1943,6 @@ class _Translations$metadataEdit$nl extends Translations$metadataEdit$en {
 	@override String get country => 'Land';
 	@override String get collection => 'Collectie';
 	@override String get label => 'Label';
-	@override String get style => 'Stijl';
-	@override String get mood => 'Stemming';
 }
 
 // Path: matchScreen
@@ -2307,7 +2316,6 @@ class _Translations$explore$badge$nl extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '#${n} populair';
 	@override String rankAiring({required Object n}) => '#${n} nu op tv';
 	@override String rankRated({required Object n}) => '#${n} beoordeeld';
-	@override String rankFavorited({required Object n}) => '#${n} favoriet';
 	@override String rankTrending({required Object n}) => '#${n} trending';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n} in ${season}';
 	@override String watchingNow({required Object n}) => '${n} kijken';
@@ -2475,6 +2483,18 @@ class _Translations$explore$detail$nl extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => 'Aanbevolen door ${percent} van de kijkers';
 	@override String get relatedTitles => 'Gerelateerde titels';
 	@override String get background => 'Achtergrond';
+}
+
+// Path: music.discography
+class _Translations$music$discography$nl extends Translations$music$discography$en {
+	_Translations$music$discography$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Singles en EP\'s';
+	@override String get live => 'Live';
+	@override String get compilations => 'Compilaties';
 }
 
 // Path: downloads.backgroundWarning
@@ -2873,6 +2893,11 @@ extension on TranslationsNl {
 			'settings.followServerTrackSelectionsDescription' => 'Pas bij het wisselen van aflevering de op de server geselecteerde audio en ondertitels toe in plaats van de huidige keuze over te nemen',
 			'settings.showChapterMarkersOnTimeline' => 'Hoofdstukmarkeringen op tijdlijn tonen',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Verdeel de tijdlijn bij hoofdstukgrenzen',
+			'settings.specialsOrdering' => 'Specials in afleveringsvolgorde',
+			'settings.specialsOrderingDescription' => 'Waar specials worden afgespeeld in de kijkvolgorde van een serie',
+			'settings.specialsOrderingServer' => 'Servervolgorde volgen',
+			'settings.specialsOrderingAirDate' => 'Op uitzenddatum invoegen',
+			'settings.specialsOrderingLast' => 'Na reguliere seizoenen',
 			'settings.clickVideoTogglesPlayback' => 'Klik op de video om afspelen of pauzeren te wisselen',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Klik op de video om af te spelen of te pauzeren in plaats van de bediening te tonen.',
 			'settings.videoPlayerControls' => 'Videospelerbediening',
@@ -3018,6 +3043,16 @@ extension on TranslationsNl {
 			'settings.subtitlesAndConfig' => 'Ondertitels en instellingen',
 			'settings.seekAndTiming' => 'Spoelen en timing',
 			'settings.behavior' => 'Gedrag',
+			'settings.rememberPlayerChanges' => 'Spelerwijzigingen onthouden',
+			'settings.rememberPlayerChangesDescription' => 'Waar een wijziging tijdens het afspelen wordt opgeslagen en opnieuw toegepast',
+			'settings.scopePlaybackSpeed' => 'Afspeelsnelheid',
+			'settings.scopeShaderPreset' => 'Shadervoorinstelling',
+			'settings.scopeAspectRatio' => 'Beeldverhouding',
+			'settings.scopeSyncOffsets' => 'Audio- en ondertitelsynchronisatie',
+			'settings.playerScopeOff' => 'Niet opslaan',
+			'settings.playerScopeGlobal' => 'Overal',
+			'settings.playerScopeLibrary' => 'Per bibliotheek',
+			'settings.playerScopeTitle' => 'Per serie of film',
 			'settings.exportDialogTitle' => 'Plezy-instellingen exporteren',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
@@ -3187,6 +3222,8 @@ extension on TranslationsNl {
 			'mediaMenu.deleteMovieTitle' => 'Deze film verwijderen?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Aflevering verwijderen',
 			'mediaMenu.deleteSeasonConfirm' => 'Seizoen verwijderen',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Serie verwijderen',
 			'mediaMenu.deleteMovieConfirm' => 'Film verwijderen',
 			'mediaMenu.deleteAnyway' => 'Toch verwijderen',
@@ -3202,8 +3239,6 @@ extension on TranslationsNl {
 			'mediaMenu.rate' => 'Beoordelen',
 			'mediaMenu.playFromBeginning' => 'Afspelen vanaf het begin',
 			'mediaMenu.playVersion' => 'Versie afspelen...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Beoordelen',
 			'rateSheet.server' => 'Server',
 			'rateSheet.favorite' => 'Favoriet',
@@ -3245,12 +3280,7 @@ extension on TranslationsNl {
 			'audioTracks.track' => ({required Object n}) => 'Audiospoor ${n}',
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Ondertitels',
-			'videoControls.resetToZero' => 'Terugzetten naar 0 ms',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label} speelt later af',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label} speelt eerder af',
-			'videoControls.noOffset' => 'Geen offset',
 			'videoControls.letterbox' => 'Letterbox',
 			'videoControls.fillScreen' => 'Scherm vullen',
 			'videoControls.stretch' => 'Uitrekken',
@@ -3706,6 +3736,8 @@ extension on TranslationsNl {
 			'explore.characters' => 'Personages',
 			'explore.addToWatchlist' => 'Toevoegen aan kijklijst',
 			'explore.removeFromWatchlist' => 'Verwijderen uit kijklijst',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Aan kijklijst toegevoegd',
 			'explore.removedFromWatchlist' => 'Uit kijklijst verwijderd',
 			'explore.watchlistUpdateFailed' => 'Kon kijklijst niet bijwerken',
@@ -3716,15 +3748,12 @@ extension on TranslationsNl {
 			'explore.emptyTitle' => 'Hier is nog niets',
 			'explore.emptyMessage' => ({required Object source}) => 'Rijen van ${source} verschijnen hier zodra ze inhoud hebben.',
 			'explore.searchHint' => ({required Object source}) => 'Zoeken in ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'Geen resultaten voor "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Zoek naar films en series op ${source}.',
 			'explore.searchFailed' => 'Zoeken mislukt. Controleer je verbinding en probeer opnieuw.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} populair',
 			'explore.badge.rankAiring' => ({required Object n}) => '#${n} nu op tv',
 			'explore.badge.rankRated' => ({required Object n}) => '#${n} beoordeeld',
-			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} favoriet',
 			'explore.badge.rankTrending' => ({required Object n}) => '#${n} trending',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} in ${season}',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} kijken',
@@ -3971,6 +4000,9 @@ extension on TranslationsNl {
 			'music.repeatOne' => 'Eén herhalen',
 			'music.instantMixNoServer' => 'Er is geen server beschikbaar voor een instantmix',
 			'music.noAudioUrl' => ({required Object track}) => 'Er is geen audio-URL beschikbaar voor ${track}',
+			'music.discography.singlesAndEps' => 'Singles en EP\'s',
+			'music.discography.live' => 'Live',
+			'music.discography.compilations' => 'Compilaties',
 			'watchTogether.title' => 'Samen kijken',
 			'watchTogether.description' => 'Kijk synchroon met vrienden en familie',
 			'watchTogether.createSession' => 'Sessie maken',
@@ -4218,6 +4250,8 @@ extension on TranslationsNl {
 			'companionRemote.remote.subtitles' => 'Ondertitels',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Zoeken op desktop...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Geen netwerkinterface gevonden',
 			'companionRemote.errors.authenticationFailed' => 'Authenticatie mislukt',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Externe server starten mislukt: ${error}',
@@ -4230,8 +4264,6 @@ extension on TranslationsNl {
 			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
 			'videoSettings.normalSpeed' => 'Normaal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Actief (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Slaaptimer',
 			'videoSettings.audioSync' => 'Audiosynchronisatie',
@@ -4388,8 +4420,6 @@ extension on TranslationsNl {
 			'metadataEdit.country' => 'Land',
 			'metadataEdit.collection' => 'Collectie',
 			'metadataEdit.label' => 'Label',
-			'metadataEdit.style' => 'Stijl',
-			'metadataEdit.mood' => 'Stemming',
 			'matchScreen.match' => 'Koppelen...',
 			'matchScreen.fixMatch' => 'Koppeling herstellen...',
 			'matchScreen.unmatch' => 'Ontkoppelen',

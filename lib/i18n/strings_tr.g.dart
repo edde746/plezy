@@ -316,6 +316,11 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'Bölüm değiştiğinde geçerli seçimi taşımak yerine sunucuda seçilen ses ve altyazıyı uygula';
 	@override String get showChapterMarkersOnTimeline => 'Zaman çubuğunda kısım işaretçilerini göster';
 	@override String get showChapterMarkersOnTimelineDescription => 'Zaman çubuğunu kısım sınırlarına göre böl';
+	@override String get specialsOrdering => 'Özel bölümler bölüm sırasına göre';
+	@override String get specialsOrderingDescription => 'Özel bölümlerin dizinin izleme sırasındaki yeri';
+	@override String get specialsOrderingServer => 'Sunucu sırasını izle';
+	@override String get specialsOrderingAirDate => 'Yayın tarihine göre araya ekle';
+	@override String get specialsOrderingLast => 'Normal sezonlardan sonra';
 	@override String get clickVideoTogglesPlayback => 'Oynat/duraklat için videoya tıkla';
 	@override String get clickVideoTogglesPlaybackDescription => 'Kontrolleri göstermek yerine oynatmak/duraklatmak için videoya tıkla.';
 	@override String get videoPlayerControls => 'Video Oynatıcı Kontrolleri';
@@ -461,6 +466,16 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Altyazılar ve Yapılandırma';
 	@override String get seekAndTiming => 'Sarılma ve Zamanlama';
 	@override String get behavior => 'Davranış';
+	@override String get rememberPlayerChanges => 'Oynatıcı değişikliklerini hatırla';
+	@override String get rememberPlayerChangesDescription => 'Oynatma sırasında yapılan değişikliklerin kaydedilip yeniden uygulanacağı yer';
+	@override String get scopePlaybackSpeed => 'Oynatma hızı';
+	@override String get scopeShaderPreset => 'Gölgelendirici ön ayarı';
+	@override String get scopeAspectRatio => 'En-boy oranı';
+	@override String get scopeSyncOffsets => 'Ses ve altyazı senkronizasyonu';
+	@override String get playerScopeOff => 'Kaydetme';
+	@override String get playerScopeGlobal => 'Her yerde';
+	@override String get playerScopeLibrary => 'Kitaplık başına';
+	@override String get playerScopeTitle => 'Dizi veya film başına';
 	@override String get exportDialogTitle => 'Plezy ayarlarını dışa aktar';
 }
 
@@ -752,12 +767,7 @@ class _Translations$videoControls$tr extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Ses';
 	@override String get subtitlesLabel => 'Altyazı';
-	@override String get resetToZero => '0ms\'ye Sıfırla';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label} daha sonra oynatılır';
-	@override String playsEarlier({required Object label}) => '${label} daha önce oynatılır';
-	@override String get noOffset => 'Ofset yok';
 	@override String get letterbox => 'Geniş Ekran (Letterbox)';
 	@override String get fillScreen => 'Ekrana Doldur';
 	@override String get stretch => 'Uzat';
@@ -1527,6 +1537,7 @@ class _Translations$music$tr extends Translations$music$en {
 	@override String get repeatOne => 'Tekini tekrarla';
 	@override String get instantMixNoServer => 'Anında miks için kullanılabilir sunucu yok';
 	@override String noAudioUrl({required Object track}) => '${track} için kullanılabilir ses URL\'si yok';
+	@override late final _Translations$music$discography$tr discography = _Translations$music$discography$tr._(_root);
 }
 
 // Path: watchTogether
@@ -1932,8 +1943,6 @@ class _Translations$metadataEdit$tr extends Translations$metadataEdit$en {
 	@override String get country => 'Ülke';
 	@override String get collection => 'Koleksiyon';
 	@override String get label => 'Etiket';
-	@override String get style => 'Tarz';
-	@override String get mood => 'Ruh Hali';
 }
 
 // Path: matchScreen
@@ -2307,7 +2316,6 @@ class _Translations$explore$badge$tr extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => 'Popülerde #${n}';
 	@override String rankAiring({required Object n}) => 'Yayında #${n}';
 	@override String rankRated({required Object n}) => 'Puanlarda #${n}';
-	@override String rankFavorited({required Object n}) => 'Favorilerde #${n}';
 	@override String rankTrending({required Object n}) => 'Trendde #${n}';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n} ${season} sezonunda';
 	@override String watchingNow({required Object n}) => '${n} izliyor';
@@ -2475,6 +2483,18 @@ class _Translations$explore$detail$tr extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => 'İzleyicilerin ${percent} tarafından önerildi';
 	@override String get relatedTitles => 'İlgili yapımlar';
 	@override String get background => 'Arka plan';
+}
+
+// Path: music.discography
+class _Translations$music$discography$tr extends Translations$music$discography$en {
+	_Translations$music$discography$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Single ve EP\'ler';
+	@override String get live => 'Canlı';
+	@override String get compilations => 'Derlemeler';
 }
 
 // Path: downloads.backgroundWarning
@@ -2873,6 +2893,11 @@ extension on TranslationsTr {
 			'settings.followServerTrackSelectionsDescription' => 'Bölüm değiştiğinde geçerli seçimi taşımak yerine sunucuda seçilen ses ve altyazıyı uygula',
 			'settings.showChapterMarkersOnTimeline' => 'Zaman çubuğunda kısım işaretçilerini göster',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Zaman çubuğunu kısım sınırlarına göre böl',
+			'settings.specialsOrdering' => 'Özel bölümler bölüm sırasına göre',
+			'settings.specialsOrderingDescription' => 'Özel bölümlerin dizinin izleme sırasındaki yeri',
+			'settings.specialsOrderingServer' => 'Sunucu sırasını izle',
+			'settings.specialsOrderingAirDate' => 'Yayın tarihine göre araya ekle',
+			'settings.specialsOrderingLast' => 'Normal sezonlardan sonra',
 			'settings.clickVideoTogglesPlayback' => 'Oynat/duraklat için videoya tıkla',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Kontrolleri göstermek yerine oynatmak/duraklatmak için videoya tıkla.',
 			'settings.videoPlayerControls' => 'Video Oynatıcı Kontrolleri',
@@ -3018,6 +3043,16 @@ extension on TranslationsTr {
 			'settings.subtitlesAndConfig' => 'Altyazılar ve Yapılandırma',
 			'settings.seekAndTiming' => 'Sarılma ve Zamanlama',
 			'settings.behavior' => 'Davranış',
+			'settings.rememberPlayerChanges' => 'Oynatıcı değişikliklerini hatırla',
+			'settings.rememberPlayerChangesDescription' => 'Oynatma sırasında yapılan değişikliklerin kaydedilip yeniden uygulanacağı yer',
+			'settings.scopePlaybackSpeed' => 'Oynatma hızı',
+			'settings.scopeShaderPreset' => 'Gölgelendirici ön ayarı',
+			'settings.scopeAspectRatio' => 'En-boy oranı',
+			'settings.scopeSyncOffsets' => 'Ses ve altyazı senkronizasyonu',
+			'settings.playerScopeOff' => 'Kaydetme',
+			'settings.playerScopeGlobal' => 'Her yerde',
+			'settings.playerScopeLibrary' => 'Kitaplık başına',
+			'settings.playerScopeTitle' => 'Dizi veya film başına',
 			'settings.exportDialogTitle' => 'Plezy ayarlarını dışa aktar',
 			'search.hint' => 'Film, dizi, müzik ara...',
 			'search.tryDifferentTerm' => 'Farklı bir arama terimi deneyin',
@@ -3187,6 +3222,8 @@ extension on TranslationsTr {
 			'mediaMenu.deleteMovieTitle' => 'Bu film silinsin mi?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Bölümü Sil',
 			'mediaMenu.deleteSeasonConfirm' => 'Sezonu Sil',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Diziyi Sil',
 			'mediaMenu.deleteMovieConfirm' => 'Filmi Sil',
 			'mediaMenu.deleteAnyway' => 'Yine de Sil',
@@ -3202,8 +3239,6 @@ extension on TranslationsTr {
 			'mediaMenu.rate' => 'Oyla',
 			'mediaMenu.playFromBeginning' => 'Baştan Oynat',
 			'mediaMenu.playVersion' => 'Sürümü Oynat...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Oyla',
 			'rateSheet.server' => 'Sunucu',
 			'rateSheet.favorite' => 'Favori',
@@ -3245,12 +3280,7 @@ extension on TranslationsTr {
 			'audioTracks.track' => ({required Object n}) => 'Ses Parçası ${n}',
 			'videoControls.audioLabel' => 'Ses',
 			'videoControls.subtitlesLabel' => 'Altyazı',
-			'videoControls.resetToZero' => '0ms\'ye Sıfırla',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label} daha sonra oynatılır',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label} daha önce oynatılır',
-			'videoControls.noOffset' => 'Ofset yok',
 			'videoControls.letterbox' => 'Geniş Ekran (Letterbox)',
 			'videoControls.fillScreen' => 'Ekrana Doldur',
 			'videoControls.stretch' => 'Uzat',
@@ -3706,6 +3736,8 @@ extension on TranslationsTr {
 			'explore.characters' => 'Karakterler',
 			'explore.addToWatchlist' => 'İzleme Listesine Ekle',
 			'explore.removeFromWatchlist' => 'İzleme Listesinden Kaldır',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'İzleme listesine eklendi',
 			'explore.removedFromWatchlist' => 'İzleme listesinden kaldırıldı',
 			'explore.watchlistUpdateFailed' => 'İzleme listesi güncellenemedi',
@@ -3716,15 +3748,12 @@ extension on TranslationsTr {
 			'explore.emptyTitle' => 'Henüz burada bir şey yok',
 			'explore.emptyMessage' => ({required Object source}) => '${source} kaynağındaki satırlar içerik bulunduğunda burada görünecektir.',
 			'explore.searchHint' => ({required Object source}) => '${source} üzerinde ara',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => '"${query}" için sonuç bulunamadı',
 			'explore.searchPrompt' => ({required Object source}) => '${source} üzerinde film ve dizileri arayın.',
 			'explore.searchFailed' => 'Arama başarısız. Bağlantınızı kontrol edip tekrar deneyin.',
 			'explore.badge.rankPopular' => ({required Object n}) => 'Popülerde #${n}',
 			'explore.badge.rankAiring' => ({required Object n}) => 'Yayında #${n}',
 			'explore.badge.rankRated' => ({required Object n}) => 'Puanlarda #${n}',
-			'explore.badge.rankFavorited' => ({required Object n}) => 'Favorilerde #${n}',
 			'explore.badge.rankTrending' => ({required Object n}) => 'Trendde #${n}',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} ${season} sezonunda',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} izliyor',
@@ -3971,6 +4000,9 @@ extension on TranslationsTr {
 			'music.repeatOne' => 'Tekini tekrarla',
 			'music.instantMixNoServer' => 'Anında miks için kullanılabilir sunucu yok',
 			'music.noAudioUrl' => ({required Object track}) => '${track} için kullanılabilir ses URL\'si yok',
+			'music.discography.singlesAndEps' => 'Single ve EP\'ler',
+			'music.discography.live' => 'Canlı',
+			'music.discography.compilations' => 'Derlemeler',
 			'watchTogether.title' => 'Birlikte İzle',
 			'watchTogether.description' => 'Arkadaşlarınızla ve ailenizle eş zamanlı içerik izleyin',
 			'watchTogether.createSession' => 'Oturum Oluştur',
@@ -4218,6 +4250,8 @@ extension on TranslationsTr {
 			'companionRemote.remote.subtitles' => 'Altyazılar',
 			'companionRemote.remote.audio' => 'Ses',
 			'companionRemote.remote.searchHint' => 'Masaüstünde ara...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Ağ arabirimi bulunamadı',
 			'companionRemote.errors.authenticationFailed' => 'Kimlik doğrulama başarısız oldu',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Uzaktan kumanda sunucusu başlatılamadı: ${error}',
@@ -4230,8 +4264,6 @@ extension on TranslationsTr {
 			'videoSettings.playbackSpeed' => 'Oynatma Hızı',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Aktif (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Yakınlaştırma',
 			'videoSettings.sleepTimer' => 'Uyku Zamanlayıcısı',
 			'videoSettings.audioSync' => 'Ses Senkronizasyonu',
@@ -4388,8 +4420,6 @@ extension on TranslationsTr {
 			'metadataEdit.country' => 'Ülke',
 			'metadataEdit.collection' => 'Koleksiyon',
 			'metadataEdit.label' => 'Etiket',
-			'metadataEdit.style' => 'Tarz',
-			'metadataEdit.mood' => 'Ruh Hali',
 			'matchScreen.match' => 'Eşleştir...',
 			'matchScreen.fixMatch' => 'Eşleşmeyi Düzelt...',
 			'matchScreen.unmatch' => 'Eşleşmeyi Kaldır',

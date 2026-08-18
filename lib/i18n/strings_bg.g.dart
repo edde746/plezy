@@ -316,6 +316,11 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get followServerTrackSelectionsDescription => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор';
 	@override String get showChapterMarkersOnTimeline => 'Показвай маркери на глави върху времевата линия';
 	@override String get showChapterMarkersOnTimelineDescription => 'Разделяй времевата линия на сегменти по границите на главите';
+	@override String get specialsOrdering => 'Специални епизоди в реда на епизодите';
+	@override String get specialsOrderingDescription => 'Къде се възпроизвеждат специалните епизоди в реда за гледане на сериала';
+	@override String get specialsOrderingServer => 'Следвай реда на сървъра';
+	@override String get specialsOrderingAirDate => 'Подреждай по дата на излъчване';
+	@override String get specialsOrderingLast => 'След редовните сезони';
 	@override String get clickVideoTogglesPlayback => 'Клик върху видеото превключва възпроизвеждане/пауза';
 	@override String get clickVideoTogglesPlaybackDescription => 'Клик върху видеото пуска/паузира вместо да показва контролите.';
 	@override String get videoPlayerControls => 'Контроли на видео плейъра';
@@ -461,6 +466,16 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get subtitlesAndConfig => 'Субтитри и конфигурация';
 	@override String get seekAndTiming => 'Търсене и време';
 	@override String get behavior => 'Поведение';
+	@override String get rememberPlayerChanges => 'Запомняне на промените в плейъра';
+	@override String get rememberPlayerChangesDescription => 'Къде се записва и откъде се прилага отново промяна, направена по време на възпроизвеждане';
+	@override String get scopePlaybackSpeed => 'Скорост на възпроизвеждане';
+	@override String get scopeShaderPreset => 'Предварителна настройка на шейдъра';
+	@override String get scopeAspectRatio => 'Съотношение на страните';
+	@override String get scopeSyncOffsets => 'Синхронизация на аудио и субтитри';
+	@override String get playerScopeOff => 'Не запазвай';
+	@override String get playerScopeGlobal => 'Навсякъде';
+	@override String get playerScopeLibrary => 'По библиотека';
+	@override String get playerScopeTitle => 'По сериал или филм';
 	@override String get exportDialogTitle => 'Експортиране на настройките на Plezy';
 }
 
@@ -752,12 +767,7 @@ class _Translations$videoControls$bg extends Translations$videoControls$en {
 	// Translations
 	@override String get audioLabel => 'Аудио';
 	@override String get subtitlesLabel => 'Субтитри';
-	@override String get resetToZero => 'Нулирай до 0ms';
 	@override String addTime({required Object amount, required Object unit}) => '+${amount}${unit}';
-	@override String minusTime({required Object amount, required Object unit}) => '-${amount}${unit}';
-	@override String playsLater({required Object label}) => '${label} се възпроизвежда по-късно';
-	@override String playsEarlier({required Object label}) => '${label} се възпроизвежда по-рано';
-	@override String get noOffset => 'Без отместване';
 	@override String get letterbox => 'Черни ленти';
 	@override String get fillScreen => 'Запълни екрана';
 	@override String get stretch => 'Разтегни';
@@ -1527,6 +1537,7 @@ class _Translations$music$bg extends Translations$music$en {
 	@override String get repeatOne => 'Повтаряне на една';
 	@override String get instantMixNoServer => 'Няма наличен сървър за незабавен микс';
 	@override String noAudioUrl({required Object track}) => 'Няма наличен URL за аудиото на ${track}';
+	@override late final _Translations$music$discography$bg discography = _Translations$music$discography$bg._(_root);
 }
 
 // Path: watchTogether
@@ -1932,8 +1943,6 @@ class _Translations$metadataEdit$bg extends Translations$metadataEdit$en {
 	@override String get country => 'Държава';
 	@override String get collection => 'Колекция';
 	@override String get label => 'Етикет';
-	@override String get style => 'Стил';
-	@override String get mood => 'Настроение';
 }
 
 // Path: matchScreen
@@ -2307,7 +2316,6 @@ class _Translations$explore$badge$bg extends Translations$explore$badge$en {
 	@override String rankPopular({required Object n}) => '#${n} популярен';
 	@override String rankAiring({required Object n}) => '#${n} в ефир';
 	@override String rankRated({required Object n}) => '#${n} оценен';
-	@override String rankFavorited({required Object n}) => '#${n} най-харесван';
 	@override String rankTrending({required Object n}) => '#${n} в тенденция';
 	@override String rankSeasonal({required Object n, required Object season}) => '#${n} през ${season}';
 	@override String watchingNow({required Object n}) => '${n} гледат';
@@ -2475,6 +2483,18 @@ class _Translations$explore$detail$bg extends Translations$explore$detail$en {
 	@override String recommendedByPercent({required Object percent}) => 'Препоръчан от ${percent} от зрителите';
 	@override String get relatedTitles => 'Свързани заглавия';
 	@override String get background => 'Фон';
+}
+
+// Path: music.discography
+class _Translations$music$discography$bg extends Translations$music$discography$en {
+	_Translations$music$discography$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get singlesAndEps => 'Сингли и EP';
+	@override String get live => 'Концертни';
+	@override String get compilations => 'Компилации';
 }
 
 // Path: downloads.backgroundWarning
@@ -2873,6 +2893,11 @@ extension on TranslationsBg {
 			'settings.followServerTrackSelectionsDescription' => 'При смяна на епизода прилагай избраните на сървъра аудио и субтитри, вместо да се пренася текущият избор',
 			'settings.showChapterMarkersOnTimeline' => 'Показвай маркери на глави върху времевата линия',
 			'settings.showChapterMarkersOnTimelineDescription' => 'Разделяй времевата линия на сегменти по границите на главите',
+			'settings.specialsOrdering' => 'Специални епизоди в реда на епизодите',
+			'settings.specialsOrderingDescription' => 'Къде се възпроизвеждат специалните епизоди в реда за гледане на сериала',
+			'settings.specialsOrderingServer' => 'Следвай реда на сървъра',
+			'settings.specialsOrderingAirDate' => 'Подреждай по дата на излъчване',
+			'settings.specialsOrderingLast' => 'След редовните сезони',
 			'settings.clickVideoTogglesPlayback' => 'Клик върху видеото превключва възпроизвеждане/пауза',
 			'settings.clickVideoTogglesPlaybackDescription' => 'Клик върху видеото пуска/паузира вместо да показва контролите.',
 			'settings.videoPlayerControls' => 'Контроли на видео плейъра',
@@ -3018,6 +3043,16 @@ extension on TranslationsBg {
 			'settings.subtitlesAndConfig' => 'Субтитри и конфигурация',
 			'settings.seekAndTiming' => 'Търсене и време',
 			'settings.behavior' => 'Поведение',
+			'settings.rememberPlayerChanges' => 'Запомняне на промените в плейъра',
+			'settings.rememberPlayerChangesDescription' => 'Къде се записва и откъде се прилага отново промяна, направена по време на възпроизвеждане',
+			'settings.scopePlaybackSpeed' => 'Скорост на възпроизвеждане',
+			'settings.scopeShaderPreset' => 'Предварителна настройка на шейдъра',
+			'settings.scopeAspectRatio' => 'Съотношение на страните',
+			'settings.scopeSyncOffsets' => 'Синхронизация на аудио и субтитри',
+			'settings.playerScopeOff' => 'Не запазвай',
+			'settings.playerScopeGlobal' => 'Навсякъде',
+			'settings.playerScopeLibrary' => 'По библиотека',
+			'settings.playerScopeTitle' => 'По сериал или филм',
 			'settings.exportDialogTitle' => 'Експортиране на настройките на Plezy',
 			'search.hint' => 'Търсене на филми, сериали, музика...',
 			'search.tryDifferentTerm' => 'Опитайте с различна дума за търсене',
@@ -3187,6 +3222,8 @@ extension on TranslationsBg {
 			'mediaMenu.deleteMovieTitle' => 'Да изтрия ли този филм?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Изтрий епизода',
 			'mediaMenu.deleteSeasonConfirm' => 'Изтрий сезона',
+			_ => null,
+		} ?? switch (path) {
 			'mediaMenu.deleteShowConfirm' => 'Изтрий сериала',
 			'mediaMenu.deleteMovieConfirm' => 'Изтрий филма',
 			'mediaMenu.deleteAnyway' => 'Изтрий въпреки това',
@@ -3202,8 +3239,6 @@ extension on TranslationsBg {
 			'mediaMenu.rate' => 'Оцени',
 			'mediaMenu.playFromBeginning' => 'Пусни от началото',
 			'mediaMenu.playVersion' => 'Пусни версия...',
-			_ => null,
-		} ?? switch (path) {
 			'rateSheet.title' => 'Оцени',
 			'rateSheet.server' => 'Сървър',
 			'rateSheet.favorite' => 'Добави в любими',
@@ -3245,12 +3280,7 @@ extension on TranslationsBg {
 			'audioTracks.track' => ({required Object n}) => 'Аудиопътечка ${n}',
 			'videoControls.audioLabel' => 'Аудио',
 			'videoControls.subtitlesLabel' => 'Субтитри',
-			'videoControls.resetToZero' => 'Нулирай до 0ms',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
-			'videoControls.minusTime' => ({required Object amount, required Object unit}) => '-${amount}${unit}',
-			'videoControls.playsLater' => ({required Object label}) => '${label} се възпроизвежда по-късно',
-			'videoControls.playsEarlier' => ({required Object label}) => '${label} се възпроизвежда по-рано',
-			'videoControls.noOffset' => 'Без отместване',
 			'videoControls.letterbox' => 'Черни ленти',
 			'videoControls.fillScreen' => 'Запълни екрана',
 			'videoControls.stretch' => 'Разтегни',
@@ -3706,6 +3736,8 @@ extension on TranslationsBg {
 			'explore.characters' => 'Герои',
 			'explore.addToWatchlist' => 'Добави в списъка за гледане',
 			'explore.removeFromWatchlist' => 'Премахни от списъка за гледане',
+			_ => null,
+		} ?? switch (path) {
 			'explore.addedToWatchlist' => 'Добавено към списъка за гледане',
 			'explore.removedFromWatchlist' => 'Премахнато от списъка за гледане',
 			'explore.watchlistUpdateFailed' => 'Неуспешно обновяване на списъка за гледане',
@@ -3716,15 +3748,12 @@ extension on TranslationsBg {
 			'explore.emptyTitle' => 'Тук все още няма нищо',
 			'explore.emptyMessage' => ({required Object source}) => 'Редовете от ${source} ще се появят тук, когато има съдържание.',
 			'explore.searchHint' => ({required Object source}) => 'Търсене в ${source}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.searchEmpty' => ({required Object query}) => 'Няма резултати за "${query}"',
 			'explore.searchPrompt' => ({required Object source}) => 'Търси филми и сериали в ${source}.',
 			'explore.searchFailed' => 'Търсенето се провали. Провери връзката си и опитай отново.',
 			'explore.badge.rankPopular' => ({required Object n}) => '#${n} популярен',
 			'explore.badge.rankAiring' => ({required Object n}) => '#${n} в ефир',
 			'explore.badge.rankRated' => ({required Object n}) => '#${n} оценен',
-			'explore.badge.rankFavorited' => ({required Object n}) => '#${n} най-харесван',
 			'explore.badge.rankTrending' => ({required Object n}) => '#${n} в тенденция',
 			'explore.badge.rankSeasonal' => ({required Object n, required Object season}) => '#${n} през ${season}',
 			'explore.badge.watchingNow' => ({required Object n}) => '${n} гледат',
@@ -3971,6 +4000,9 @@ extension on TranslationsBg {
 			'music.repeatOne' => 'Повтаряне на една',
 			'music.instantMixNoServer' => 'Няма наличен сървър за незабавен микс',
 			'music.noAudioUrl' => ({required Object track}) => 'Няма наличен URL за аудиото на ${track}',
+			'music.discography.singlesAndEps' => 'Сингли и EP',
+			'music.discography.live' => 'Концертни',
+			'music.discography.compilations' => 'Компилации',
 			'watchTogether.title' => 'Гледане заедно',
 			'watchTogether.description' => 'Гледайте съдържание синхронизирано с приятели и семейство',
 			'watchTogether.createSession' => 'Създай сесия',
@@ -4218,6 +4250,8 @@ extension on TranslationsBg {
 			'companionRemote.remote.subtitles' => 'Субтитри',
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Търсене на настолен компютър...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'Не е намерен мрежов интерфейс',
 			'companionRemote.errors.authenticationFailed' => 'Неуспешно удостоверяване',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Неуспешно стартиране на сървъра за дистанционно управление: ${error}',
@@ -4230,8 +4264,6 @@ extension on TranslationsBg {
 			'videoSettings.playbackSpeed' => 'Скорост на възпроизвеждане',
 			'videoSettings.normalSpeed' => 'Нормална',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Активен (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Мащаб',
 			'videoSettings.sleepTimer' => 'Таймер за заспиване',
 			'videoSettings.audioSync' => 'Синхронизация на аудио',
@@ -4388,8 +4420,6 @@ extension on TranslationsBg {
 			'metadataEdit.country' => 'Държава',
 			'metadataEdit.collection' => 'Колекция',
 			'metadataEdit.label' => 'Етикет',
-			'metadataEdit.style' => 'Стил',
-			'metadataEdit.mood' => 'Настроение',
 			'matchScreen.match' => 'Съпостави...',
 			'matchScreen.fixMatch' => 'Поправи съвпадение...',
 			'matchScreen.unmatch' => 'Премахни съвпадение',

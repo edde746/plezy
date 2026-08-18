@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Epizódváltáskor a szerveren kiválasztott hang és felirat lép életbe az aktuális választás átvitele helyett",
     "showChapterMarkersOnTimeline": "Fejezetjelölők megjelenítése az idősávon",
     "showChapterMarkersOnTimelineDescription": "Az idősáv felosztása a fejezetek határainál",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Különkiadások epizódsorrendben",
+    "specialsOrderingDescription": "A különkiadások helye a sorozat lejátszási sorrendjében",
+    "specialsOrderingServer": "Szerver szerinti sorrend",
+    "specialsOrderingAirDate": "Adás dátuma szerint közbeszúrva",
+    "specialsOrderingLast": "A normál évadok után",
     "clickVideoTogglesPlayback": "Kattintás a videóra a lejátszás/szünet váltásához",
     "clickVideoTogglesPlaybackDescription": "A videóra kattintva vált a lejátszás/szünet, a vezérlők megjelenítése helyett.",
     "videoPlayerControls": "Videólejátszó vezérlői",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Feliratok és konfiguráció",
     "seekAndTiming": "Tekerés és időzítés",
     "behavior": "Viselkedés",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Lejátszó módosításainak megjegyzése",
+    "rememberPlayerChangesDescription": "A lejátszás közben végzett módosítások mentési és újbóli alkalmazási helye",
+    "scopePlaybackSpeed": "Lejátszási sebesség",
+    "scopeShaderPreset": "Shader-előbeállítás",
+    "scopeAspectRatio": "Képarány",
+    "scopeSyncOffsets": "Hang- és feliratszinkronizálás",
+    "playerScopeOff": "Ne mentse",
+    "playerScopeGlobal": "Mindenhol",
+    "playerScopeLibrary": "Könyvtáronként",
+    "playerScopeTitle": "Sorozatonként vagy filmenként",
     "exportDialogTitle": "Plezy-beállítások exportálása"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Hang",
     "subtitlesLabel": "Feliratok",
-    "resetToZero": "Visszaállítás 0 ms-ra",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label}: későbbre állítva",
-    "playsEarlier": "${label}: korábbra állítva",
-    "noOffset": "Nincs eltolás",
     "letterbox": "Fekete sávok",
     "fillScreen": "Képernyő kitöltése",
     "stretch": "Nyújtás",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} népszerű",
       "rankAiring": "#${n} adásban",
       "rankRated": "#${n} értékelt",
-      "rankFavorited": "#${n} kedvenc",
       "rankTrending": "#${n} felkapott",
       "rankSeasonal": "#${n} a(z) ${season} évadban",
       "watchingNow": "${n} nézi",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Nem érhető el szerver az azonnali mixhez",
     "noAudioUrl": "Nem érhető el hang-URL ehhez: ${track}",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Kislemezek és EP-k",
+      "live": "Élő",
+      "compilations": "Válogatások"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Producer",
     "country": "Ország",
     "collection": "Gyűjtemény",
-    "label": "Kiadó",
-    "style": "Stílus",
-    "mood": "Hangulat"
+    "label": "Kiadó"
   },
   "matchScreen": {
     "match": "Párosítás...",

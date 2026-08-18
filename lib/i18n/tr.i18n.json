@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Bölüm değiştiğinde geçerli seçimi taşımak yerine sunucuda seçilen ses ve altyazıyı uygula",
     "showChapterMarkersOnTimeline": "Zaman çubuğunda kısım işaretçilerini göster",
     "showChapterMarkersOnTimelineDescription": "Zaman çubuğunu kısım sınırlarına göre böl",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Özel bölümler bölüm sırasına göre",
+    "specialsOrderingDescription": "Özel bölümlerin dizinin izleme sırasındaki yeri",
+    "specialsOrderingServer": "Sunucu sırasını izle",
+    "specialsOrderingAirDate": "Yayın tarihine göre araya ekle",
+    "specialsOrderingLast": "Normal sezonlardan sonra",
     "clickVideoTogglesPlayback": "Oynat/duraklat için videoya tıkla",
     "clickVideoTogglesPlaybackDescription": "Kontrolleri göstermek yerine oynatmak/duraklatmak için videoya tıkla.",
     "videoPlayerControls": "Video Oynatıcı Kontrolleri",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Altyazılar ve Yapılandırma",
     "seekAndTiming": "Sarılma ve Zamanlama",
     "behavior": "Davranış",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Oynatıcı değişikliklerini hatırla",
+    "rememberPlayerChangesDescription": "Oynatma sırasında yapılan değişikliklerin kaydedilip yeniden uygulanacağı yer",
+    "scopePlaybackSpeed": "Oynatma hızı",
+    "scopeShaderPreset": "Gölgelendirici ön ayarı",
+    "scopeAspectRatio": "En-boy oranı",
+    "scopeSyncOffsets": "Ses ve altyazı senkronizasyonu",
+    "playerScopeOff": "Kaydetme",
+    "playerScopeGlobal": "Her yerde",
+    "playerScopeLibrary": "Kitaplık başına",
+    "playerScopeTitle": "Dizi veya film başına",
     "exportDialogTitle": "Plezy ayarlarını dışa aktar"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Ses",
     "subtitlesLabel": "Altyazı",
-    "resetToZero": "0ms'ye Sıfırla",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} daha sonra oynatılır",
-    "playsEarlier": "${label} daha önce oynatılır",
-    "noOffset": "Ofset yok",
     "letterbox": "Geniş Ekran (Letterbox)",
     "fillScreen": "Ekrana Doldur",
     "stretch": "Uzat",
@@ -1145,7 +1140,6 @@
       "rankPopular": "Popülerde #${n}",
       "rankAiring": "Yayında #${n}",
       "rankRated": "Puanlarda #${n}",
-      "rankFavorited": "Favorilerde #${n}",
       "rankTrending": "Trendde #${n}",
       "rankSeasonal": "#${n} ${season} sezonunda",
       "watchingNow": "${n} izliyor",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Anında miks için kullanılabilir sunucu yok",
     "noAudioUrl": "${track} için kullanılabilir ses URL'si yok",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Single ve EP'ler",
+      "live": "Canlı",
+      "compilations": "Derlemeler"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Yapımcı",
     "country": "Ülke",
     "collection": "Koleksiyon",
-    "label": "Etiket",
-    "style": "Tarz",
-    "mood": "Ruh Hali"
+    "label": "Etiket"
   },
   "matchScreen": {
     "match": "Eşleştir...",

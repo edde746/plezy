@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "에피소드 전환 시 현재 선택을 유지하는 대신 서버에서 선택된 오디오와 자막을 적용합니다",
     "showChapterMarkersOnTimeline": "탐색 막대에 챕터 마커 표시",
     "showChapterMarkersOnTimelineDescription": "챕터 경계에서 탐색 막대 구분",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "에피소드 순서로 스페셜 표시",
+    "specialsOrderingDescription": "시리즈 시청 순서에서 스페셜이 재생되는 위치",
+    "specialsOrderingServer": "서버 순서 따르기",
+    "specialsOrderingAirDate": "방영일 순서로 삽입",
+    "specialsOrderingLast": "일반 시즌 뒤",
     "clickVideoTogglesPlayback": "동영상 클릭으로 재생/일시정지 전환",
     "clickVideoTogglesPlaybackDescription": "컨트롤을 표시하는 대신 동영상을 클릭하여 재생하거나 일시정지합니다.",
     "videoPlayerControls": "비디오 플레이어 컨트롤",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "자막 및 구성",
     "seekAndTiming": "탐색 및 타이밍",
     "behavior": "동작",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "플레이어 변경 사항 기억",
+    "rememberPlayerChangesDescription": "재생 중 변경한 사항을 저장하고 다시 적용할 위치",
+    "scopePlaybackSpeed": "재생 속도",
+    "scopeShaderPreset": "셰이더 프리셋",
+    "scopeAspectRatio": "화면 비율",
+    "scopeSyncOffsets": "오디오 및 자막 동기화",
+    "playerScopeOff": "저장하지 않음",
+    "playerScopeGlobal": "모든 곳",
+    "playerScopeLibrary": "라이브러리별",
+    "playerScopeTitle": "시리즈 또는 영화별",
     "exportDialogTitle": "Plezy 설정 내보내기"
   },
   "search": {
@@ -606,12 +606,7 @@
   "videoControls": {
     "audioLabel": "오디오",
     "subtitlesLabel": "자막",
-    "resetToZero": "0ms로 재설정",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} 나중에 재생됨",
-    "playsEarlier": "${label} 더 먼저 재생됨",
-    "noOffset": "오프셋 없음",
     "letterbox": "레터박스 모드",
     "fillScreen": "화면 채우기",
     "stretch": "확장",
@@ -1139,7 +1134,6 @@
       "rankPopular": "#${n} 인기",
       "rankAiring": "#${n} 방영 중",
       "rankRated": "#${n} 평가",
-      "rankFavorited": "#${n} 즐겨찾기",
       "rankTrending": "#${n} 트렌드",
       "rankSeasonal": "#${n} ${season}",
       "watchingNow": "${n}명 시청 중",
@@ -1418,9 +1412,9 @@
     "instantMixNoServer": "즉석 믹스에 사용할 수 있는 서버가 없습니다",
     "noAudioUrl": "${track}에 사용할 수 있는 오디오 URL이 없습니다",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "싱글 및 EP",
+      "live": "라이브",
+      "compilations": "컴필레이션"
     }
   },
   "watchTogether": {
@@ -1862,9 +1856,7 @@
     "producer": "프로듀서",
     "country": "국가",
     "collection": "컬렉션",
-    "label": "라벨",
-    "style": "스타일",
-    "mood": "분위기"
+    "label": "라벨"
   },
   "matchScreen": {
     "match": "일치...",

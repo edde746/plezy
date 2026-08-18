@@ -195,11 +195,11 @@
     "followServerTrackSelectionsDescription": "Epizod dəyişəndə cari seçimi köçürmək əvəzinə serverdə seçilmiş səs və altyazını tətbiq et",
     "showChapterMarkersOnTimeline": "Zaman çubuğunda hissə işarələrini göstər",
     "showChapterMarkersOnTimelineDescription": "Zaman çubuğunu hissə sərhədlərinə böl",
-    "specialsOrdering": "",
-    "specialsOrderingDescription": "",
-    "specialsOrderingServer": "",
-    "specialsOrderingAirDate": "",
-    "specialsOrderingLast": "",
+    "specialsOrdering": "Xüsusi bölmələr epizod sırasına görə",
+    "specialsOrderingDescription": "Xüsusi bölmələrin serialın izləmə sırasındakı yeri",
+    "specialsOrderingServer": "Server sırasını izlə",
+    "specialsOrderingAirDate": "Yayım tarixinə görə qarışdır",
+    "specialsOrderingLast": "Adi mövsümlərdən sonra",
     "clickVideoTogglesPlayback": "Oynat/fasilə üçün videoya toxun",
     "clickVideoTogglesPlaybackDescription": "İdarəetməni göstərmək əvəzinə oynatmaq/fasilə etmək üçün videoya toxun.",
     "videoPlayerControls": "Video oynadıcı idarəetmələri",
@@ -345,16 +345,16 @@
     "subtitlesAndConfig": "Altyazılar və konfiqurasiya",
     "seekAndTiming": "Sarğı və vaxt tənzimləməsi",
     "behavior": "Davranış",
-    "rememberPlayerChanges": "",
-    "rememberPlayerChangesDescription": "",
-    "scopePlaybackSpeed": "",
-    "scopeShaderPreset": "",
-    "scopeAspectRatio": "",
-    "scopeSyncOffsets": "",
-    "playerScopeOff": "",
-    "playerScopeGlobal": "",
-    "playerScopeLibrary": "",
-    "playerScopeTitle": "",
+    "rememberPlayerChanges": "Pleyer dəyişikliklərini yadda saxla",
+    "rememberPlayerChangesDescription": "Oxutma zamanı edilən dəyişikliklərin harada saxlanacağı və yenidən tətbiq ediləcəyi",
+    "scopePlaybackSpeed": "Oxutma sürəti",
+    "scopeShaderPreset": "Şader ön ayarı",
+    "scopeAspectRatio": "Tərəf nisbəti",
+    "scopeSyncOffsets": "Audio və subtitr sinxronizasiyası",
+    "playerScopeOff": "Saxlama",
+    "playerScopeGlobal": "Hər yerdə",
+    "playerScopeLibrary": "Kitabxana üzrə",
+    "playerScopeTitle": "Serial və ya film üzrə",
     "exportDialogTitle": "Plezy tənzimləmələrini ixrac et"
   },
   "search": {
@@ -609,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Səs",
     "subtitlesLabel": "Altyazı",
-    "resetToZero": "0ms-yə sıfırla",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} sonra oynadılır",
-    "playsEarlier": "${label} əvvəl oynadılır",
-    "noOffset": "Ofset yoxdur",
     "letterbox": "Geniş ekran (Letterbox)",
     "fillScreen": "Ekrana doldur",
     "stretch": "Gərmək",
@@ -1145,7 +1140,6 @@
       "rankPopular": "#${n} populyar",
       "rankAiring": "#${n} yayımlanır",
       "rankRated": "#${n} qiymətləndirilib",
-      "rankFavorited": "#${n} favorit",
       "rankTrending": "#${n} trenddə",
       "rankSeasonal": "${season} üçün #${n}",
       "watchingNow": "${n} izləyir",
@@ -1428,9 +1422,9 @@
     "instantMixNoServer": "Ani miks üçün heç bir server mövcud deyil",
     "noAudioUrl": "${track} üçün səs URL-i mövcud deyil",
     "discography": {
-      "singlesAndEps": "",
-      "live": "",
-      "compilations": ""
+      "singlesAndEps": "Single-lar və EP-lər",
+      "live": "Canlı",
+      "compilations": "Kompilyasiyalar"
     }
   },
   "watchTogether": {
@@ -1872,9 +1866,7 @@
     "producer": "Prodüser",
     "country": "Ölkə",
     "collection": "Kolleksiya",
-    "label": "Etiket",
-    "style": "Stil",
-    "mood": "Əhval-ruhiyyə"
+    "label": "Etiket"
   },
   "matchScreen": {
     "match": "Uyğunlaşdır...",
