@@ -13,6 +13,34 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final playTextStyle = TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: .w700);
     final playButtonIcon = AppIcon(playIcon, fill: 1, size: playIconSize);
 
+    // Split "Play Version" segment (#1881): a visible second Play segment
+    // that surfaces multiple versions without opening the ⋮ menu. Only when
+    // the item itself carries a real choice — a movie/episode with more than
+    // one inline version — and its server is reachable (offline playback and
+    // unreachable servers have at most one playable version, so the picker
+    // would offer versions that can't play; see #1440). Transcode-only
+    // quality picking deliberately stays in the ⋮ menu: a chevron on every
+    // item would stop signaling "multiple versions exist".
+    final itemServerId = serverIdOrNull(metadata.serverId);
+    final showVersionSplit =
+        !widget.isOffline &&
+        (metadata.isMovie || metadata.isEpisode) &&
+        (metadata.mediaVersions?.length ?? 0) > 1 &&
+        itemServerId != null &&
+        context.read<MultiServerProvider>().serverManager.isClientOnline(itemServerId);
+    // M3E split-button geometry: stadium outer corners, small joined inner
+    // corners, a hairline gap between the two segments, and a trailing
+    // segment narrower than a full action so it reads as Play's appendix.
+    final splitGap = isTv ? 2.0 * tvScale : 2.0;
+    final versionSegmentWidth = actionSize * 0.75;
+    final splitInnerRadius = Radius.circular(isTv ? 8.0 * tvScale : 8.0);
+    final splitOuterRadius = Radius.circular(actionSize / 2);
+    final playShape = showVersionSplit
+        ? RoundedRectangleBorder(
+            borderRadius: BorderRadiusDirectional.horizontal(start: splitOuterRadius, end: splitInnerRadius),
+          )
+        : null;
+
     Future<void> onPlayPressed() async {
       // For TV shows, play the OnDeck episode if available
       // Otherwise, play the first episode of the first season
@@ -53,6 +81,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       }
     }
 
+    Future<void> onPlayVersionPressed() async {
+      final didNavigate = await promptAndPlayVersion(context, metadata);
+      // Same post-playback refresh plain Play gets from
+      // navigateToVideoPlayerWithRefresh; the split segment is online-only.
+      if (didNavigate && mounted) unawaited(_loadFullMetadata());
+    }
+
     final primaryTrailer = _getPrimaryTrailer();
 
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
@@ -71,10 +106,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       return null; // default for other states
     });
 
-    ButtonStyle actionButtonStyle({Color? foregroundColor, EdgeInsetsGeometry? padding, bool showFocus = false}) {
+    ButtonStyle actionButtonStyle({
+      Color? foregroundColor,
+      EdgeInsetsGeometry? padding,
+      bool showFocus = false,
+      OutlinedBorder? shape,
+    }) {
       if (!isKeyboardMode && !isTv) {
         if (padding != null) {
-          return FilledButton.styleFrom(padding: padding);
+          return FilledButton.styleFrom(padding: padding, shape: shape);
         }
         return IconButton.styleFrom(
           minimumSize: const Size(48, 48),
@@ -93,6 +133,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         overlayColor: noOverlay,
         backgroundColor: WidgetStatePropertyAll(showFocus ? focusBg : idleBg),
         foregroundColor: WidgetStatePropertyAll(showFocus ? focusFg : foregroundColor ?? tonalFg),
+        shape: shape != null ? WidgetStatePropertyAll(shape) : null,
       );
     }
 
@@ -117,6 +158,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             style: actionButtonStyle(
               showFocus: state.showFocus,
               padding: .symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+              shape: playShape,
             ),
             child: playButtonLabel.isNotEmpty
                 ? Row(
@@ -128,6 +170,35 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                     ],
                   )
                 : playButtonIcon,
+          ),
+        ),
+      );
+    }
+
+    // The trailing segment of the split Play button. A plain FilledButton
+    // (not IconButton) so both segments share color roles and focus styling.
+    Widget versionButton(FocusableActionBuildState state) {
+      return Semantics(
+        label: t.mediaMenu.playVersion,
+        button: true,
+        onTap: onPlayVersionPressed,
+        excludeSemantics: true,
+        child: Tooltip(
+          message: t.mediaMenu.playVersion,
+          child: SizedBox(
+            width: versionSegmentWidth,
+            height: actionSize,
+            child: FilledButton(
+              onPressed: onPlayVersionPressed,
+              style: actionButtonStyle(
+                showFocus: state.showFocus,
+                padding: .zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadiusDirectional.horizontal(start: splitInnerRadius, end: splitOuterRadius),
+                ),
+              ),
+              child: AppIcon(Symbols.keyboard_arrow_down_rounded, fill: 1, size: playIconSize),
+            ),
           ),
         ),
       );
@@ -156,6 +227,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       onPressed: onPlayPressed,
       builder: (context, state) => playButton(state),
     );
+
+    final versionAction = showVersionSplit
+        ? FocusableAction(
+            debugLabel: 'detail_play_version',
+            spacingBefore: splitGap,
+            onPressed: onPlayVersionPressed,
+            builder: (context, state) => versionButton(state),
+          )
+        : null;
 
     final trailerAction = primaryTrailer == null
         ? null
@@ -254,6 +334,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     final allActions = <FocusableAction>[
       playAction,
+      ?versionAction,
       ?trailerAction,
       ?shuffleAction,
       ?downloadAction,
@@ -279,7 +360,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final estimatedPlayWidth = playButtonWidthEstimate();
     double estimatedRowWidth(List<FocusableAction> actions) {
       if (actions.isEmpty) return 0;
-      return estimatedPlayWidth + (actions.length - 1) * actionSize + (actions.length - 1) * gap;
+      var width = estimatedPlayWidth;
+      for (var i = 1; i < actions.length; i++) {
+        final actionWidth = identical(actions[i], versionAction) ? versionSegmentWidth : actionSize;
+        width += (actions[i].spacingBefore ?? gap) + actionWidth;
+      }
+      return width;
     }
 
     List<FocusableAction> compactActionsFor(double maxWidth) {
@@ -289,13 +375,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         return compact;
       }
 
-      final medium = <FocusableAction>[playAction, ?downloadAction, watchedAction, ?moreActionsAction];
+      final medium = <FocusableAction>[playAction, ?versionAction, ?downloadAction, watchedAction, ?moreActionsAction];
       if (!maxWidth.isFinite || estimatedRowWidth(medium) <= maxWidth) return medium;
 
-      final compact = <FocusableAction>[playAction, watchedAction, ?moreActionsAction];
+      final compact = <FocusableAction>[playAction, ?versionAction, watchedAction, ?moreActionsAction];
       if (estimatedRowWidth(compact) <= maxWidth) return compact;
 
-      return [playAction, ?moreActionsAction];
+      return [playAction, ?versionAction, ?moreActionsAction];
     }
 
     Widget actionBar(List<FocusableAction> actions) {

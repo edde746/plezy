@@ -966,6 +966,7 @@ void main() {
       String? initialSeasonId,
       int? initialSeasonIndex,
       String? initialEpisodeId,
+      NavigatorObserver? observer,
     }) async {
       TvDetectionService.debugSetAppleTVOverride(false);
       await SettingsService.getInstance();
@@ -989,11 +990,14 @@ void main() {
       // testMultiServer disposes the manager as well as its provider;
       // MultiServerProvider does not own the manager, and manager.dispose() is
       // what closes its status/progress controllers and the registered client.
-      final multiServerProvider = testMultiServer(clients: [client]).provider;
+      final multi = testMultiServer(clients: [client]);
+      final multiServerProvider = multi.provider;
       final watchStateOverlay = WatchStateStore();
+      final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
 
       addTearDown(() async {
         watchStateOverlay.dispose();
+        offlineWatch.dispose();
         downloadProvider.dispose();
         downloadManager.dispose();
         await db.close();
@@ -1006,8 +1010,10 @@ void main() {
               ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
               ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
               ChangeNotifierProvider<WatchStateStore>.value(value: watchStateOverlay),
+              ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
             ],
             child: MaterialApp(
+              navigatorObservers: [?observer],
               theme: monoTheme(dark: true),
               home: withProfileNavigationScope(
                 child: MediaDetailScreen(
@@ -1142,6 +1148,79 @@ void main() {
 
       expect(find.text('Example Studio'), findsOneWidget);
       expect(find.text('Director'), findsNothing);
+    });
+
+    testWidgets('movie with multiple versions gets a split segment that plays the picked version', (tester) async {
+      // Issue #1881: the split Play chevron makes multiple versions visible
+      // on the detail screen and runs the existing Play Version flow.
+      final versions = [MediaVersion(id: 'v1', videoResolution: '1080'), MediaVersion(id: 'v2', videoResolution: '4k')];
+      final movie = testMediaItem(
+        id: 'multi_version',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Multi Version',
+        serverId: 'server_1',
+        serverName: 'Server',
+        mediaVersions: versions,
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+      final observer = _RecordingNavigatorObserver(popVideoPlayerImmediately: true);
+
+      await pumpPhoneDetail(tester, client, movie, observer: observer);
+
+      final chevron = find.descendant(
+        of: find.byType(FocusableActionBar),
+        matching: find.byIcon(Symbols.keyboard_arrow_down_rounded),
+      );
+      expect(chevron, findsOneWidget);
+
+      await tester.tap(chevron);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // The existing version picker, listing every version. Scoped to the
+      // dialog: the hero's quality chip also renders the resolution label.
+      Finder inDialog(String text) => find.descendant(of: find.byType(Dialog), matching: find.text(text));
+      expect(inDialog(t.mediaMenu.playVersion), findsOneWidget);
+      expect(inDialog(versions[0].displayLabel), findsOneWidget);
+      expect(inDialog(versions[1].displayLabel), findsOneWidget);
+
+      await tester.tap(inDialog(versions[1].displayLabel));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Jellyfin can transcode, so the quality picker follows; keep Original.
+      await tester.tap(inDialog(t.videoControls.qualityOriginal));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(observer.pushedRouteNames, contains(kVideoPlayerRouteName));
+      // The pick is remembered so Continue Watching / plain Play resume it.
+      final saved = await savedMediaVersionPreferenceFor(movie);
+      expect(saved?.index, 1);
+    });
+
+    testWidgets('single-version movie keeps the plain play button', (tester) async {
+      final movie = testMediaItem(
+        id: 'single_version',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        title: 'Single Version',
+        serverId: 'server_1',
+        serverName: 'Server',
+        mediaVersions: [MediaVersion(id: 'v1', videoResolution: '1080')],
+      );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      expect(
+        find.descendant(
+          of: find.byType(FocusableActionBar),
+          matching: find.byIcon(Symbols.keyboard_arrow_down_rounded),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('portrait phone hero shows square art instead of the cropped backdrop', (tester) async {

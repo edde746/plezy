@@ -13,7 +13,6 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../metadata_edit/metadata_edit_adapters.dart';
-import '../media/media_version.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/music/music_playback_service.dart';
@@ -21,13 +20,9 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/watch_actions.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
-import '../models/transcode_quality_preset.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
-import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
-import '../utils/quality_preset_labels.dart';
-import '../utils/media_version_resolver.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -852,7 +847,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'play_version':
-          didNavigate = await _handlePlayVersion(context);
+          didNavigate = await promptAndPlayVersion(context, _mediaItem!);
           break;
 
         case 'fileinfo':
@@ -1161,71 +1156,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: e.toString()));
       }
     }
-  }
-
-  Future<bool> _handlePlayVersion(BuildContext context) async {
-    final item = _mediaItem!;
-    final itemServerId = serverIdOrNull(_itemServerId);
-    final client = context.tryGetMediaClientForServer(itemServerId);
-    final itemServerOnline =
-        itemServerId != null && context.read<MultiServerProvider>().serverManager.isClientOnline(itemServerId);
-    // Same flag the in-player Version & Quality sheet reads — keeps both
-    // surfaces honest about what the active backend can actually do. Also
-    // requires a reachable server: capabilities are static, and a server
-    // dropping between menu open and tap must not offer transcodes.
-    final canTranscode = itemServerOnline && (client?.capabilities.videoTranscoding ?? false);
-    final versions = client == null ? item.mediaVersions ?? const [] : await resolveMediaVersions(item, client);
-    if (!context.mounted) return false;
-
-    int selectedVersionIndex = 0;
-    if (versions.length > 1) {
-      final picked = await showVersionPickerDialog(context, versions, t.mediaMenu.playVersion);
-      if (picked == null || !context.mounted) return false;
-      selectedVersionIndex = picked;
-    }
-
-    final selectedVersion = selectedVersionIndex < versions.length ? versions[selectedVersionIndex] : null;
-    TranscodeQualityPreset selectedQuality = TranscodeQualityPreset.original;
-    if (canTranscode) {
-      final picked = await showQualityPickerDialog(
-        context,
-        sourceBitrateKbps: selectedVersion?.bitrate,
-        sourceDurationMs: item.durationMs,
-        sourceSizeBytes: _versionSizeBytes(selectedVersion),
-      );
-      if (picked == null || !context.mounted) return false;
-      selectedQuality = picked;
-    }
-
-    // Remember the pick so Continue Watching / plain Play resume this version
-    // (#1492) — same store the in-player version switch writes.
-    if (versions.length > 1) {
-      await saveMediaVersionPreferenceFor(item, index: selectedVersionIndex, versions: versions);
-      if (!context.mounted) return false;
-    }
-
-    await navigateToVideoPlayer(
-      context,
-      metadata: item,
-      selectedMediaIndex: selectedVersionIndex,
-      selectedMediaSourceId: selectedVersion?.id,
-      selectedQualityPreset: selectedQuality,
-    );
-    return true;
-  }
-
-  /// Sum of [MediaPart.sizeBytes] across all parts of [version]. Returns
-  /// null when any part is missing a size (a partial sum would be misleading
-  /// for the "Original" row in the quality picker).
-  int? _versionSizeBytes(MediaVersion? version) {
-    if (version == null || version.parts.isEmpty) return null;
-    var total = 0;
-    for (final p in version.parts) {
-      final s = p.sizeBytes;
-      if (s == null || s <= 0) return null;
-      total += s;
-    }
-    return total > 0 ? total : null;
   }
 
   /// The track list music playback should operate on for [item]: the item

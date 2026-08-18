@@ -32,6 +32,12 @@ class FocusableAction {
   final Widget? child;
   final FocusableActionBuilder? builder;
 
+  /// Row gap between this action and the one before it, overriding the bar's
+  /// uniform [FocusableActionBar.spacing]. Lets visually joined pairs (the
+  /// detail screen's split Play button) sit tighter than the rest of the row.
+  /// Ignored on the first action.
+  final double? spacingBefore;
+
   const FocusableAction({
     this.icon = Symbols.circle_rounded,
     this.iconColor,
@@ -44,6 +50,7 @@ class FocusableAction {
     this.onPressed,
     this.child,
     this.builder,
+    this.spacingBefore,
   });
 }
 
@@ -190,7 +197,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
       mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < widget.actions.length; i++) ...[
-          if (i > 0 && widget.spacing > 0) SizedBox(width: widget.spacing),
+          if (i > 0 && _gapBefore(i) > 0) SizedBox(width: _gapBefore(i)),
           _buildButton(i, isKeyboard, duration),
         ],
       ],
@@ -203,6 +210,8 @@ class FocusableActionBarState extends State<FocusableActionBar> {
     // focus; mid-transition the two multiply, which stays visually seamless.
     return AnimatedOpacity(opacity: isKeyboard && !_hasAnyFocus ? 0.6 : 1.0, duration: duration, child: row);
   }
+
+  double _gapBefore(int index) => widget.actions[index].spacingBefore ?? widget.spacing;
 
   Widget _buildButton(int index, bool isKeyboard, Duration duration) {
     final action = widget.actions[index];
