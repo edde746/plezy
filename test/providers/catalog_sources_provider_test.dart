@@ -5,8 +5,16 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
+import 'package:plezy/providers/seerr_account_provider.dart';
+import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/plex_discover_client.dart';
+import 'package:plezy/services/trackers/mdblist/mdblist_tracker.dart';
+import 'package:plezy/services/trackers/tracker_account_store.dart';
+import 'package:plezy/services/trackers/tracker_constants.dart';
+import 'package:plezy/services/trackers/tracker_coordinator.dart';
+import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 import '../test_helpers/media_items.dart';
@@ -84,6 +92,46 @@ void main() {
     await provider.onProfileBindingStateChanged(false);
     expect(calls, 3);
     expect(provider.connectedSources, isEmpty);
+  });
+  test('tracker rebind exposes and removes the MDBList catalog source', () async {
+    const userUuid = 'profile-mdblist';
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await trackerAccountStore(TrackerService.mdblist).save(
+      userUuid,
+      TrackerSession(
+        accessToken: 'access',
+        refreshToken: 'refresh',
+        expiresAt: now + 3600,
+        createdAt: now,
+        username: 'alice',
+      ),
+    );
+    BaseSharedPreferencesService.resetForTesting();
+
+    final trackers = TrackersProvider();
+    final seerr = SeerrAccountProvider();
+    final sources = CatalogSourcesProvider(plexSessionSupplier: () async => null);
+    addTearDown(() {
+      sources.dispose();
+      trackers.dispose();
+      seerr.dispose();
+      MdblistTracker.instance.rebindSession(null, onSessionInvalidated: () {});
+    });
+
+    await trackers.onActiveProfileChanged(userUuid);
+    await TrackerCoordinator.instance.flushWriteQueue();
+    sources.update(trackers, seerr);
+
+    expect(sources.connectedSources.map((source) => source.id), [CatalogSourceId.mdblist]);
+    expect(sources.activeSource?.displayName, 'MDBList');
+    expect(sources.watchlistCapableSource?.id, CatalogSourceId.mdblist);
+
+    await trackers.onActiveProfileChanged('empty-profile');
+    await TrackerCoordinator.instance.flushWriteQueue();
+    sources.update(trackers, seerr);
+
+    expect(sources.connectedSources, isEmpty);
+    expect(sources.hasAnySource, isFalse);
   });
 
   group('watchlist candidate cache', () {

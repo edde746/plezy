@@ -76,6 +76,7 @@ void main() {
       expect(p.isSimklConnected, isFalse);
       expect(p.isTraktConnected, isFalse);
       expect(p.isMdblistConnected, isFalse);
+      expect(p.mdblistCatalogClient, isNull);
       expect(p.malUsername, isNull);
       expect(p.anilistUsername, isNull);
       expect(p.simklUsername, isNull);
@@ -121,6 +122,7 @@ void main() {
       await _simklStore.save(uuid, _simkl(username: 'carol'));
       await _traktStore.save(uuid, _trakt(username: 'dave'));
 
+      await _mdblistStore.save(uuid, _session(TrackerService.mdblist, 'eve'));
       // Reset cached singletons so the provider reads fresh prefs state.
       BaseSharedPreferencesService.resetForTesting();
 
@@ -133,10 +135,13 @@ void main() {
       expect(p.isAnilistConnected, isTrue);
       expect(p.isSimklConnected, isTrue);
       expect(p.isTraktConnected, isTrue);
+      expect(p.isMdblistConnected, isTrue);
       expect(p.malUsername, 'alice');
       expect(p.anilistUsername, 'bob');
       expect(p.simklUsername, 'carol');
       expect(p.traktUsername, 'dave');
+      expect(p.mdblistUsername, 'eve');
+      expect(p.mdblistCatalogClient, same(MdblistTracker.instance.client));
       expect(notified, greaterThanOrEqualTo(1));
 
       p.dispose();
@@ -148,6 +153,7 @@ void main() {
       await _anilistStore.save(uuid, _anilist(username: 'bob'));
       await _simklStore.save(uuid, _simkl(username: 'carol'));
       await _traktStore.save(uuid, _trakt(username: 'dave'));
+      await _mdblistStore.save(uuid, _session(TrackerService.mdblist, 'eve'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
@@ -159,6 +165,8 @@ void main() {
       expect(p.isAnilistConnected, isFalse);
       expect(p.isSimklConnected, isFalse);
       expect(p.isTraktConnected, isFalse);
+      expect(p.isMdblistConnected, isFalse);
+      expect(p.mdblistCatalogClient, isNull);
 
       p.dispose();
     });

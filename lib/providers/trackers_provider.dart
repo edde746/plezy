@@ -139,11 +139,13 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// is gated on the provider's profile-bound session.
   TraktClient? get traktCatalogClient => _trakt.session == null ? null : TraktTracker.instance.client;
 
-  /// Live AniList and Simkl clients for Explore. Like [malCatalogClient],
-  /// these are gated on this provider's profile-bound sessions so a fresh
-  /// profile subtree cannot observe clients still bound to the prior profile.
+  /// Live AniList, Simkl, and MDBList clients for Explore. Like
+  /// [malCatalogClient], these are gated on this provider's profile-bound
+  /// sessions so a fresh profile subtree cannot observe clients still bound
+  /// to the prior profile.
   AnilistClient? get anilistCatalogClient => _anilist.session == null ? null : AnilistTracker.instance.client;
   SimklClient? get simklCatalogClient => _simkl.session == null ? null : SimklTracker.instance.client;
+  MdblistClient? get mdblistCatalogClient => _mdblist.session == null ? null : MdblistTracker.instance.client;
 
   String? get malUsername => _mal.session?.username;
   String? get anilistUsername => _anilist.session?.username;
