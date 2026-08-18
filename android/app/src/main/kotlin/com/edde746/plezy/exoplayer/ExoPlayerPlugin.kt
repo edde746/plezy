@@ -1312,8 +1312,10 @@ class ExoPlayerPlugin :
     val observedProps = observedProperties.toList()
     val bufferSize = configuredBufferSizeBytes
 
+    // vo is owned by MpvPlayerCore's init: the fallback core hardware-decodes
+    // (hwdec below), so it gets the legacy gpu VO — gpu-next under mediacodec
+    // fails every frame on Tegra (#2010) and reshapes no DV anyway.
     core.setProperty("hwdec", "mediacodec,mediacodec-copy")
-    core.setProperty("vo", "gpu-next,gpu")
     core.setProperty("ao", "audiotrack")
 
     if (bufferSize != null && bufferSize > 0) {

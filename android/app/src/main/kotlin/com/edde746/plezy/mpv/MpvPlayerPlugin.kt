@@ -148,7 +148,7 @@ open class MpvPlayerPlugin(
 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
-      "initialize" -> handleInitialize(result)
+      "initialize" -> handleInitialize(call, result)
       "dispose" -> handleDispose(result)
       "setProperty" -> handleSetProperty(call, result)
       "getProperty" -> handleGetProperty(call, result)
@@ -180,7 +180,11 @@ open class MpvPlayerPlugin(
     result.success(context?.let(::supportedMpvSpdifCodecs) ?: "")
   }
 
-  private fun handleInitialize(result: MethodChannel.Result) {
+  private fun handleInitialize(call: MethodCall, result: MethodChannel.Result) {
+    // Whether the session will hardware-decode; decides the initial vo chain
+    // (MpvPlayerCore.initialVideoOutput). Absent on the audio-only core and
+    // from older callers; hardware decode is the setting's default.
+    val hardwareDecoding = call.argument<Boolean>("hardwareDecoding") ?: true
     // Video cores need the Activity (surface/view hierarchy); the audio-only
     // core is built on the application context so it can outlive it.
     val coreContext: Context? = if (audioOnly) applicationContext else activity
@@ -239,7 +243,7 @@ open class MpvPlayerPlugin(
         }
 
         gen = ++sessionGeneration
-        core = MpvPlayerCore(coreContext, audioOnly).apply {
+        core = MpvPlayerCore(coreContext, audioOnly, hardwareDecoding).apply {
           delegate = this@MpvPlayerPlugin
         }
         playerCore = core

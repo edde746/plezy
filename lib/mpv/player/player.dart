@@ -385,7 +385,12 @@ abstract class Player {
   /// On Android, pass [useExoPlayer] to override the default:
   /// - true: Use ExoPlayer (default, better hardware support)
   /// - false: Use MPV (more features, ASS subtitle rendering)
-  factory Player({bool? useExoPlayer}) {
+  ///
+  /// [hardwareDecoding] is the session's hardware-decoding setting. The
+  /// Android mpv backend uses it to pick its initial video output — gpu for
+  /// hardware sessions, gpu-next for software ones, where DV reshaping can
+  /// actually happen (see MpvPlayerCore.initialVideoOutput; #2010).
+  factory Player({bool? useExoPlayer, bool hardwareDecoding = true}) {
     if (Platform.isAndroid) {
       // Default to ExoPlayer on Android, with MPV as fallback
       // The caller should pass useExoPlayer based on SettingsService.getUseExoPlayer()
@@ -393,7 +398,7 @@ abstract class Player {
       if (useExo) {
         return PlayerAndroid(); // ExoPlayer (default)
       }
-      return PlayerNative(); // MPV fallback
+      return PlayerNative(hardwareDecoding: hardwareDecoding); // MPV fallback
     }
     if (Platform.isMacOS || Platform.isIOS) {
       return PlayerNative();

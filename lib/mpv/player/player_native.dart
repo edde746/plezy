@@ -25,7 +25,12 @@ typedef _AudioStateGenerations = ({int passthrough, int normalization, int downm
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
   /// Video player on the default mpv channels/core.
-  PlayerNative()
+  ///
+  /// [hardwareDecoding] mirrors the session's hardware-decoding setting so
+  /// the Android core can pick its initial video output before mpv
+  /// initializes: gpu for hardware sessions, gpu-next for software ones (see
+  /// MpvPlayerCore.initialVideoOutput; #2010). Other platforms ignore it.
+  PlayerNative({this._hardwareDecoding = true})
     : methodChannel = const MethodChannel('com.plezy/mpv_player'),
       eventChannel = const EventChannel('com.plezy/mpv_player/events'),
       audioOnly = false;
@@ -37,7 +42,12 @@ class PlayerNative extends PlayerBase {
   PlayerNative.audio()
     : methodChannel = const MethodChannel('com.plezy/mpv_audio_player'),
       eventChannel = const EventChannel('com.plezy/mpv_audio_player/events'),
-      audioOnly = true;
+      audioOnly = true,
+      _hardwareDecoding = true;
+
+  /// Whether this session intends to hardware-decode; carried on
+  /// `initialize` for the Android core's vo decision.
+  final bool _hardwareDecoding;
 
   String _dvConversionMode = 'auto';
   String _dvConversionLog = 'no';
@@ -215,7 +225,10 @@ class PlayerNative extends PlayerBase {
 
   Future<void> _doInitialize() async {
     try {
-      final result = await invoke<Object>('initialize');
+      // The video core carries the session's decode intent so Android can
+      // choose its vo before mpv_initialize; every other platform's handler
+      // ignores initialize arguments.
+      final result = await invoke<Object>('initialize', audioOnly ? null : {'hardwareDecoding': _hardwareDecoding});
       if (result != true) {
         throw Exception('Failed to initialize player');
       }

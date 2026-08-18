@@ -62,6 +62,17 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun hardwareDecodeSessionsKeepTheLegacyGpuVo() {
+    // gpu-next under hwdec=mediacodec fails every frame on Tegra (the
+    // cross-stage samplerExternalOES linker bug): solid blue screen with
+    // audio on the Shield (#2010). DV reshaping — the reason gpu-next exists
+    // on Android (#1902) — only happens under software decode anyway, so
+    // gpu-next is offered exactly there and nowhere else.
+    assertEquals("gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = true))
+    assertEquals("gpu-next,gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = false))
+  }
+
+  @Test
   fun setPropertyWithoutCoreReportsNotInitializedForVideoAndAudio() {
     for (plugin in listOf(MpvPlayerPlugin(), MpvAudioPlayerPlugin())) {
       val result = RecordingResult()
