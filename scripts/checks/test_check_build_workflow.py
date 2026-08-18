@@ -133,6 +133,47 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("native input manifest", result.stderr)
 
+    def test_draft_release_without_explicit_tag_is_rejected(self) -> None:
+        workflow = self._workflow().replace(
+            " && inputs.release_tag != '' }}",
+            " }}",
+            1,
+        )
+        self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches workflow")
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must require an explicit release tag", result.stderr)
+
+    def test_release_run_without_tagged_name_is_rejected(self) -> None:
+        workflow = self._workflow().replace(
+            "run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag) "
+            "|| format('Build {0}', github.sha) }}\n",
+            "",
+            1,
+        )
+        self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches workflow")
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must expose their tag in the run name", result.stderr)
+
+    def test_release_tag_without_exact_target_is_rejected(self) -> None:
+        workflow = self._workflow().replace(
+            "          target_commitish: ${{ github.sha }}\n",
+            "",
+            1,
+        )
+        self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches workflow")
+
+        result = self._run(workflow)
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("must target the exact build commit", result.stderr)
+
+
 
 if __name__ == "__main__":
     unittest.main()

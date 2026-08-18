@@ -1,7 +1,9 @@
+import json
+import os
+import plistlib
 import sys
 import tempfile
 import unittest
-import xml.dom.minidom
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -13,13 +15,10 @@ import deploy
 from deploy import (
     DeployError,
     State,
-    build_appcast,
     bump_pubspec_text,
-    collect_release_files,
     parse_env_text,
     resolve_phases,
     sanitize_msstore_pricing,
-    update_cask_text,
 )
 
 
@@ -62,6 +61,137 @@ NOT A VALID LINE
         self.assertEqual(values["A"], "${NOPE}")
 
 
+
+class LoadEnvFileTest(unittest.TestCase):
+    def test_file_values_override_stale_ambient_release_configuration(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".env").write_text(
+                "DELIVER_APP_IDENTIFIER=com.edde746.plezy\n"
+                "SUPPLY_PACKAGE_NAME=${DELIVER_APP_IDENTIFIER}\n"
+                "APPLE_TEAM_ID=G88U5B5783\n",
+                encoding="utf-8",
+            )
+            ambient = {
+                "DELIVER_APP_IDENTIFIER": "com.example.stale",
+                "SUPPLY_PACKAGE_NAME": "com.example.stale",
+                "APPLE_TEAM_ID": "STALETEAM1",
+            }
+            with (
+                mock.patch.object(deploy, "ROOT", root),
+                mock.patch.dict(os.environ, ambient, clear=True),
+            ):
+                loaded = deploy.load_env_file()
+
+        self.assertEqual(loaded["DELIVER_APP_IDENTIFIER"], "com.edde746.plezy")
+        self.assertEqual(loaded["SUPPLY_PACKAGE_NAME"], "com.edde746.plezy")
+        self.assertEqual(loaded["APPLE_TEAM_ID"], "G88U5B5783")
+
+
+class GoogleRequestTest(unittest.TestCase):
+    def test_requests_use_client_retry_policy(self) -> None:
+        request = mock.Mock()
+        request.execute.return_value = {"ok": True}
+
+        self.assertEqual(deploy._execute_google_request(request), {"ok": True})
+
+        request.execute.assert_called_once_with(num_retries=5)
+
+    def test_resumable_upload_retries_every_chunk(self) -> None:
+        status = mock.Mock()
+        status.progress.return_value = 0.5
+        request = mock.Mock()
+        request.next_chunk.side_effect = [(status, None), (None, {"versionCode": 131})]
+
+        response = deploy._execute_resumable_google_upload(request, "play")
+
+        self.assertEqual(response, {"versionCode": 131})
+        self.assertEqual(request.next_chunk.call_count, 2)
+        request.next_chunk.assert_called_with(num_retries=5)
+
+
+class AppleUploadTest(unittest.TestCase):
+    @staticmethod
+    def _context() -> deploy.Context:
+        return deploy.Context(
+            args=SimpleNamespace(dry_run=False, yes=True),
+            env={
+                "APPLE_TEAM_ID": "G88U5B5783",
+                "ASC_KEY_ID": "KEY1234567",
+                "ASC_ISSUER_ID": "issuer",
+            },
+            state=State(version="2.15.0", build_number=131),
+            phases=["ios", "tvos"],
+        )
+
+    def test_export_uses_local_xcode_account_and_returns_ipa(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            deploy_dir = Path(tmp) / "deploy"
+            archive = Path(tmp) / "Runner.xcarchive"
+            archive.mkdir()
+            ipa = deploy_dir / "export-tvos/Plezy.ipa"
+            with (
+                mock.patch.object(deploy, "DEPLOY_DIR", deploy_dir),
+                mock.patch.object(deploy, "run") as run_command,
+                mock.patch.object(deploy, "_find_single_ipa", return_value=ipa),
+            ):
+                result = deploy._export_archive(self._context(), archive, "tvos")
+
+            options = plistlib.loads((deploy_dir / "export-options-tvos.plist").read_bytes())
+
+        self.assertEqual(result, ipa)
+        self.assertEqual(options["destination"], "export")
+        self.assertEqual(options["teamID"], "G88U5B5783")
+        command = run_command.call_args.args[0]
+        self.assertIn("-allowProvisioningUpdates", command)
+        self.assertNotIn("-authenticationKeyPath", command)
+
+    def test_upload_uses_altool_with_api_key(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ipa = Path(tmp) / "Plezy.ipa"
+            ipa.write_bytes(b"ipa")
+            with mock.patch.object(deploy, "run") as run_command:
+                deploy._upload_ipa(self._context(), ipa, "tvos")
+
+        run_command.assert_called_once_with(
+            [
+                "xcrun",
+                "altool",
+                "--upload-app",
+                "--type",
+                "tvos",
+                "-f",
+                str(ipa),
+                "--apiKey",
+                "KEY1234567",
+                "--apiIssuer",
+                "issuer",
+            ]
+        )
+
+    def test_ios_resume_skips_an_already_uploaded_build(self) -> None:
+        ctx = self._context()
+        with (
+            mock.patch.object(deploy, "_asc_has_uploaded_build", return_value=True) as has_build,
+            mock.patch.object(deploy, "run") as run_command,
+        ):
+            deploy.phase_ios(ctx)
+
+        has_build.assert_called_once_with(ctx, "IOS")
+        run_command.assert_not_called()
+
+    def test_tvos_resume_skips_an_already_uploaded_build(self) -> None:
+        ctx = self._context()
+        with (
+            mock.patch.object(deploy, "_asc_has_uploaded_build", return_value=True) as has_build,
+            mock.patch.object(deploy, "run") as run_command,
+        ):
+            deploy.phase_tvos(ctx)
+
+        has_build.assert_called_once_with(ctx, "TV_OS")
+        run_command.assert_not_called()
+
+
 class BumpPubspecTextTest(unittest.TestCase):
     PUBSPEC = """\
 name: plezy
@@ -85,58 +215,6 @@ dependencies:
         with self.assertRaises(ValueError):
             bump_pubspec_text("name: plezy\n", "2.13.0", 231)
 
-
-class BuildAppcastTest(unittest.TestCase):
-    def test_full_appcast_has_both_enclosures(self) -> None:
-        xml_text = build_appcast("2.13.0", "231", "macsig", "1000", "winsig", "2000")
-        doc = xml.dom.minidom.parseString(xml_text)
-        enclosures = doc.getElementsByTagName("enclosure")
-        self.assertEqual(len(enclosures), 2)
-        macos, windows = enclosures
-        self.assertEqual(
-            macos.getAttribute("url"),
-            "https://github.com/edde746/plezy/releases/download/2.13.0/plezy-macos.dmg",
-        )
-        self.assertEqual(macos.getAttribute("sparkle:edSignature"), "macsig")
-        self.assertEqual(macos.getAttribute("length"), "1000")
-        self.assertEqual(
-            windows.getAttribute("url"),
-            "https://github.com/edde746/plezy/releases/download/2.13.0/plezy-windows-installer.exe",
-        )
-        self.assertEqual(windows.getAttribute("sparkle:installerArguments"), "/SILENT /SP-")
-        version_nodes = doc.getElementsByTagName("sparkle:version")
-        self.assertEqual(version_nodes[0].firstChild.nodeValue, "231")
-
-    def test_unsigned_appcast_has_no_enclosures(self) -> None:
-        xml_text = build_appcast("2.13.0", "231")
-        doc = xml.dom.minidom.parseString(xml_text)
-        self.assertEqual(len(doc.getElementsByTagName("enclosure")), 0)
-        notes = doc.getElementsByTagName("sparkle:releaseNotesLink")
-        self.assertIn("2.13.0", notes[0].firstChild.nodeValue)
-
-
-class UpdateCaskTextTest(unittest.TestCase):
-    CASK = """\
-cask "plezy" do
-  version "2.12.1"
-  sha256 "7a5e30d125d5a379108bf691ae8ce5e2af0a1acf98ee40897909a9576ebe3ef9"
-
-  url "https://github.com/edde746/plezy/releases/download/#{version}/plezy-macos.dmg"
-  name "Plezy"
-end
-"""
-
-    def test_updates_version_and_sha(self) -> None:
-        result = update_cask_text(self.CASK, "2.13.0", "f" * 64)
-        self.assertIn('version "2.13.0"', result)
-        self.assertIn(f'sha256 "{"f" * 64}"', result)
-        self.assertNotIn("2.12.1", result)
-        # Interpolated URL and other stanzas are untouched.
-        self.assertIn('#{version}/plezy-macos.dmg', result)
-
-    def test_missing_stanza_raises(self) -> None:
-        with self.assertRaises(DeployError):
-            update_cask_text('cask "plezy" do\nend\n', "2.13.0", "f" * 64)
 
 
 class ResolvePhasesTest(unittest.TestCase):
@@ -166,53 +244,185 @@ class ResolvePhasesTest(unittest.TestCase):
             resolve_phases(None, ["nope"])
 
 
-class CollectReleaseFilesTest(unittest.TestCase):
-    EXPECTED = [
-        "android-apk/plezy-android-arm64-v8a.tar.gz",
-        "android-apk/plezy-android-armeabi-v7a.tar.gz",
-        "android-apk/plezy-android-x86_64.tar.gz",
-        "ios-ipa/plezy-ios.ipa",
-        "macos-dmg/plezy-macos.dmg",
-        "windows-x64-portable/plezy-windows-x64-portable.7z",
-        "windows-arm64-portable/plezy-windows-arm64-portable.7z",
-        "windows-installer/plezy-windows-installer.exe",
-        "linux-x64/plezy-linux-x64.deb",
-        "linux-x64/plezy-linux-x64.tar.gz",
-        "linux-arm64/plezy-linux-arm64.deb",
-        "linux-arm64/plezy-linux-arm64.tar.gz",
-    ]
 
-    def make_tree(self, root: Path, skip: str = "") -> None:
-        for rel in self.EXPECTED:
-            if rel == skip:
-                continue
-            path = root / rel
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_bytes(b"artifact")
 
-    def test_collects_all_artifacts(self) -> None:
+class BuildFarmTest(unittest.TestCase):
+    @staticmethod
+    def _context(state: State) -> deploy.Context:
+        return deploy.Context(
+            args=SimpleNamespace(dry_run=False, yes=True),
+            env={},
+            state=state,
+            phases=["farm_start", "farm_wait"],
+        )
+
+    def test_start_passes_release_tag_and_records_only_the_new_run(self) -> None:
+        state = State(version="2.15.0", build_number=131)
+        state.data["release_sha"] = "abc123"
+        responses = [
+            SimpleNamespace(returncode=0, stdout=json.dumps([{"databaseId": 10}])),
+            SimpleNamespace(returncode=0, stdout=""),
+            SimpleNamespace(
+                returncode=0,
+                stdout=json.dumps(
+                    [
+                        {
+                            "databaseId": 12,
+                            "displayTitle": "Build abc123",
+                            "headSha": "abc123",
+                            "status": "completed",
+                            "createdAt": "2026-08-18T00:00:01Z",
+                        },
+                        {
+                            "databaseId": 11,
+                            "displayTitle": "Release 2.15.0",
+                            "headSha": "abc123",
+                            "status": "completed",
+                            "createdAt": "2026-08-18T00:00:00Z",
+                        },
+                        {
+                            "databaseId": 10,
+                            "headSha": "abc123",
+                            "status": "completed",
+                            "createdAt": "2026-08-17T00:00:00Z",
+                        },
+                    ]
+                ),
+            ),
+        ]
+        with (
+            mock.patch.object(deploy, "run", side_effect=responses) as run_command,
+            mock.patch.object(deploy.time, "sleep"),
+            mock.patch.object(state, "save"),
+        ):
+            deploy.phase_farm_start(self._context(state))
+
+        dispatch = run_command.call_args_list[1].args[0]
+        self.assertIn("release_tag=2.15.0", dispatch)
+        self.assertEqual(state.data["farm_run_id"], 11)
+
+    def test_start_resumes_discovery_without_dispatching_twice(self) -> None:
+        state = State(version="2.15.0", build_number=131)
+        state.data.update(
+            {
+                "release_sha": "abc123",
+                "farm_dispatch": {
+                    "headSha": "abc123",
+                    "previousRunIds": [10],
+                },
+            }
+        )
+        response = SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                [
+                    {
+                        "databaseId": 11,
+                        "displayTitle": "Release 2.15.0",
+                        "headSha": "abc123",
+                        "status": "queued",
+                        "createdAt": "2026-08-18T00:00:00Z",
+                    }
+                ]
+            ),
+        )
+        with (
+            mock.patch.object(deploy, "run", return_value=response) as run_command,
+            mock.patch.object(deploy.time, "sleep"),
+            mock.patch.object(state, "save"),
+        ):
+            deploy.phase_farm_start(self._context(state))
+
+        run_command.assert_called_once()
+        self.assertEqual(run_command.call_args.args[0][:4], ["gh", "run", "list", "--workflow"])
+        self.assertEqual(state.data["farm_run_id"], 11)
+        self.assertNotIn("farm_dispatch", state.data)
+
+    def test_wait_downloads_only_the_store_artifact(self) -> None:
+        state = State(version="2.15.0", build_number=131)
+        state.data["farm_run_id"] = 11
         with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.make_tree(root)
-            files = collect_release_files(root)
-            relative = {str(p.relative_to(root)) for p in files}
-            self.assertEqual(relative, set(self.EXPECTED))
+            artifacts = Path(tmp) / "artifacts"
+            responses = [
+                SimpleNamespace(
+                    returncode=0,
+                    stdout=json.dumps({"status": "completed", "conclusion": "success"}),
+                ),
+                SimpleNamespace(returncode=0, stdout=""),
+            ]
+            with (
+                mock.patch.object(deploy, "ARTIFACTS_DIR", artifacts),
+                mock.patch.object(deploy, "run", side_effect=responses) as run_command,
+            ):
+                deploy.phase_farm_wait(self._context(state))
 
-    def test_missing_explicit_artifact_is_reported(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.make_tree(root, skip="macos-dmg/plezy-macos.dmg")
+        download = run_command.call_args_list[1].args[0]
+        self.assertEqual(download[:4], ["gh", "run", "download", "11"])
+        self.assertIn("windows-msix", download)
+        self.assertNotIn("--pattern", download)
+
+
+class GitHubReleaseTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self._notes_dir = Path(self._tmp.name) / "notes"
+        self._notes_dir.mkdir()
+        (self._notes_dir / "github.md").write_text("Release notes\n", encoding="utf-8")
+        self._notes_patch = mock.patch.object(deploy, "NOTES_DIR", self._notes_dir)
+        self._notes_patch.start()
+
+    def tearDown(self) -> None:
+        self._notes_patch.stop()
+        self._tmp.cleanup()
+
+    @staticmethod
+    def _context() -> deploy.Context:
+        state = State(version="2.15.0", build_number=131)
+        state.data["release_sha"] = "abc123"
+        return deploy.Context(
+            args=SimpleNamespace(dry_run=False, yes=True),
+            env={},
+            state=state,
+            phases=["release"],
+        )
+
+    @staticmethod
+    def _release_info(assets: set[str]) -> SimpleNamespace:
+        return SimpleNamespace(
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "isDraft": True,
+                    "targetCommitish": "abc123",
+                    "assets": [{"name": name} for name in sorted(assets)],
+                }
+            ),
+        )
+
+    def test_verifies_workflow_assets_then_attaches_notes(self) -> None:
+        responses = [
+            self._release_info(set(deploy.RELEASE_ASSET_NAMES)),
+            SimpleNamespace(returncode=0, stdout=""),
+        ]
+        with mock.patch.object(deploy, "run", side_effect=responses) as run_command:
+            deploy.phase_release(self._context())
+
+        edit = run_command.call_args_list[1].args[0]
+        self.assertEqual(edit[:4], ["gh", "release", "edit", "2.15.0"])
+        self.assertIn(str(self._notes_dir / "github.md"), edit)
+
+    def test_rejects_incomplete_draft_before_editing(self) -> None:
+        assets = set(deploy.RELEASE_ASSET_NAMES)
+        assets.remove("plezy-macos.dmg")
+        with mock.patch.object(
+            deploy,
+            "run",
+            return_value=self._release_info(assets),
+        ) as run_command:
             with self.assertRaisesRegex(DeployError, "plezy-macos.dmg"):
-                collect_release_files(root)
+                deploy.phase_release(self._context())
 
-    def test_empty_linux_directory_is_reported(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            self.make_tree(root)
-            for entry in (root / "linux-arm64").iterdir():
-                entry.unlink()
-            with self.assertRaisesRegex(DeployError, "linux-arm64"):
-                collect_release_files(root)
+        run_command.assert_called_once()
 
 
 class StateTest(unittest.TestCase):
@@ -352,6 +562,19 @@ class DeferredPhaseTest(unittest.TestCase):
         with mock.patch.object(deploy.Context, "confirm", return_value=False):
             with self.assertRaises(deploy.PhaseDeferred):
                 deploy.phase_publish(ctx)
+
+    def test_publish_does_not_commit_or_push_package_metadata(self) -> None:
+        ctx = self._context(State(version="2.15.0", build_number=131))
+
+        with (
+            mock.patch.object(deploy.Context, "confirm", return_value=True),
+            mock.patch.object(deploy, "run") as run_command,
+        ):
+            deploy.phase_publish(ctx)
+
+        run_command.assert_called_once_with(
+            ["gh", "release", "edit", "2.15.0", "--draft=false"]
+        )
 
     def test_amazon_resume_commits_existing_edit_without_replacing_apk(self) -> None:
         state = State(version="2.15.0", build_number=131)

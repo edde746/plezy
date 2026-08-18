@@ -250,6 +250,23 @@ for artifact in (
 ):
     require(f"name: {artifact}" in package_windows, f"Windows packaging lost {artifact}")
 
+require(
+    re.search(
+        r"(?ms)^  workflow_dispatch:\n    inputs:\n      release_tag:\n"
+        r".*?        default: ''\n        type: string\n",
+        text,
+    )
+    is not None,
+    "build workflow must expose an optional release_tag input",
+)
+
+
+require(
+    "run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag)"
+    in text,
+    "release workflow runs must expose their tag in the run name",
+)
+
 release = job("create-release")
 require(
     "needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]"
@@ -282,16 +299,29 @@ for build_input in (
         f"&& inputs.{build_input}" in release_condition,
         f"release publication must require {build_input}",
     )
+require(
+    "&& inputs.release_tag != ''" in release_condition,
+    "draft release creation must require an explicit release tag",
+)
+
 
 require("draft: true" in release, "build output must remain a draft release")
-require("tag_name:" not in release, "build output must not bind a release tag")
 require(
-    "generate_release_notes:" not in release,
-    "untagged draft releases must not request generated release notes",
+    "tag_name: ${{ inputs.release_tag }}" in release,
+    "release builds must bind the requested tag",
 )
 require(
-    "Refuse to overwrite a published release" not in release,
-    "untagged draft creation must not inspect or block on published releases",
+    "target_commitish: ${{ github.sha }}" in release,
+    "release tags must target the exact build commit",
+)
+require(
+    "if: ${{ inputs.release_tag != '' }}" in release
+    and '"$RELEASE_TAG" != "$VERSION"' in release,
+    "release tags must be validated against the pubspec version",
+)
+require(
+    "generate_release_notes:" not in release,
+    "draft releases must not generate notes before deploy.py attaches channel notes",
 )
 
 trusted_ref = job("validate-trusted-ref")

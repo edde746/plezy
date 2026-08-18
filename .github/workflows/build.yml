@@ -1,8 +1,13 @@
 name: Build
+run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag) || format('Build {0}', github.sha) }}
 
 on:
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: Tag for a draft release; omit to build Actions artifacts only
+        default: ''
+        type: string
       build_android:
         description: Build Android
         default: true
@@ -860,7 +865,7 @@ jobs:
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux }}
+    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux && inputs.release_tag != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -878,6 +883,21 @@ jobs:
           BUILD_NUMBER=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Validate release tag
+        if: ${{ inputs.release_tag != '' }}
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use semantic versioning: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_TAG" != "$VERSION" ]]; then
+            echo "Release tag $RELEASE_TAG does not match pubspec version $VERSION." >&2
+            exit 1
+          fi
 
       - name: Download Android artifacts
         if: ${{ inputs.build_android }}
@@ -1043,5 +1063,8 @@ jobs:
           files: ${{ steps.release-files.outputs.files }}
           draft: true
           prerelease: false
+          name: ${{ inputs.release_tag }}
+          tag_name: ${{ inputs.release_tag }}
+          target_commitish: ${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
