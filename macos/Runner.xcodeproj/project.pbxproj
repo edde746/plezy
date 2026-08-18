@@ -895,7 +895,7 @@
 			repositoryURL = "https://github.com/edde746/MPVKit";
 			requirement = {
 				kind = exactVersion;
-				version = 1.0.21;
+				version = 1.0.22;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

@@ -878,7 +878,11 @@ class MpvPlayerCoreBase: NSObject {
         // doesn't dim the video, so skip the per-frame CI composite that
         // round-trips BT.2020/PQ through linear P3.
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
-        checkError(mpv_set_option_string(mpv, "avfoundation-queue-lead-ms", "500"))
+        // Host-clock presentation: samples carry mpv's scheduled display
+        // time against a free-running timebase, so audio-clock drift never
+        // accumulates in the VO (#1776). Media-time presentation is only
+        // needed for PiP, which tvOS does not have.
+        checkError(mpv_set_option_string(mpv, "avfoundation-presentation", "host"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
       #else
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
