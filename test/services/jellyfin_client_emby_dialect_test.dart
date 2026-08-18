@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/testing.dart';
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -137,7 +136,7 @@ void main() {
       expect(jellyfinRequests.requests.every((request) => request.body.isEmpty), isTrue);
     });
 
-    test('Emby reads Continue Watching from /Items while Jellyfin keeps /UserItems/Resume', () async {
+    test('both dialects read Continue Watching from the dedicated resume route', () async {
       http.Response respond(http.Request request) => jsonResponse({'Items': <Object?>[], 'TotalRecordCount': 0});
 
       final embyRequests = _RequestCapture(respond);
@@ -152,17 +151,12 @@ void main() {
 
       expect(
         embyRequests.requests.map((request) => '${request.method} ${request.url.path}').toList(),
-        // Both Emby legs go to /Items: the resume leg because its dedicated route
-        // cannot be filtered or paged there, and the Next Up leg because it is a
-        // recency query over played episodes (which returns none here, so no
-        // per-series query follows). See the resume-semantics and Next Up groups.
-        ['GET /Items', 'GET /Items'],
+        // One window request: the dedicated route is the only listing that
+        // honours HideFromResume (#2003), and its zero-position rows already are
+        // the Next Up half, so no second leg is issued. An empty window also
+        // means no recency scan. See the resume-semantics and Next Up groups.
+        ['GET /Users/user-1/Items/Resume'],
         reason: embyRequests.log.join('\n'),
-      );
-      expect(
-        embyRequests.requests.first.url.queryParameters['Filters'],
-        'IsResumable',
-        reason: 'the Emby resume leg lost its server-side filter',
       );
       expect(
         jellyfinRequests.requests.map((request) => '${request.method} ${request.url.path}').toList(),
@@ -173,11 +167,9 @@ void main() {
       final jellyfinResume = jellyfinRequests.requests.first;
       expect(embyResume.url.queryParameters, {
         'userId': 'user-1',
-        // The server-side progress filter Emby's dedicated resume route lacks.
-        'Filters': 'IsResumable',
-        'SortBy': 'DatePlayed',
-        'SortOrder': 'Descending',
-        'Limit': '1',
+        // The whole window, not the caller's count: both shelf halves are carved
+        // out of this one response.
+        'Limit': '300',
         // Emby withholds these from list rows unless asked, so the hub field set
         // is widened for it and only for it.
         'Fields': 'Overview,ProductionYear,OfficialRating,PremiereDate,DateCreated,UserDataLastPlayedDate',
@@ -205,7 +197,7 @@ void main() {
 
     test('an Emby resume row carries the played date it asked for', () async {
       final requests = _RequestCapture((request) {
-        if (request.url.queryParameters['Filters'] == 'IsResumable') {
+        if (request.url.path.endsWith('/Items/Resume')) {
           return jsonResponse({
             'Items': [
               {
@@ -231,7 +223,7 @@ void main() {
         greaterThan(DateTime.utc(2020, 1, 2).millisecondsSinceEpoch ~/ 1000),
         reason: 'the resume row degraded to its addedAt',
       );
-      final resume = requests.requests.firstWhere((request) => request.url.queryParameters.containsKey('Filters'));
+      final resume = requests.requests.firstWhere((request) => request.url.path.endsWith('/Items/Resume'));
       expect(resume.url.queryParameters['Fields'], contains('UserDataLastPlayedDate'));
     });
 
@@ -346,25 +338,38 @@ void main() {
   });
 
   group('MediaBrowser Next Up shelf', () {
-    test('Emby rebuilds the shelf per series in last-played order', () async {
-      // Emby only computes Next Up per series: unscoped /Shows/NextUp returns
-      // nothing there under any parameter combination. The client therefore asks
-      // /Items for recently played episodes and then queries each series.
+    test('Emby carves the shelf from the resume window in server order', () async {
+      // Emby has no library-wide /Shows/NextUp, and only the dedicated resume
+      // route honours HideFromResume (#2003). Its zero-position rows already are
+      // each started series' next episode; one recency scan supplies the play
+      // dates and the cutoff, so nothing per-series is issued.
       final requests = _RequestCapture((request) {
-        if (request.url.path == '/Items') {
+        if (request.url.path.endsWith('/Items/Resume')) {
           return jsonResponse({
             'Items': [
-              // Deliberately repeats series-b so the dedupe and ordering show.
-              {'Id': 'ep-b1', 'SeriesId': 'series-b', 'Type': 'Episode'},
-              {'Id': 'ep-a1', 'SeriesId': 'series-a', 'Type': 'Episode'},
-              {'Id': 'ep-b0', 'SeriesId': 'series-b', 'Type': 'Episode'},
+              {
+                'Id': 'next-series-b',
+                'Name': 'Next of series-b',
+                'Type': 'Episode',
+                'SeriesId': 'series-b',
+                'UserData': {'PlaybackPositionTicks': 0},
+              },
+              {
+                'Id': 'next-series-a',
+                'Name': 'Next of series-a',
+                'Type': 'Episode',
+                'SeriesId': 'series-a',
+                'UserData': {'PlaybackPositionTicks': 0},
+              },
             ],
           });
         }
-        final seriesId = request.url.queryParameters['SeriesId'];
         return jsonResponse({
           'Items': [
-            {'Id': 'next-$seriesId', 'Name': 'Next of $seriesId', 'Type': 'Episode', 'SeriesId': seriesId},
+            // Deliberately repeats series-b so the scan's dedupe shows.
+            {'Id': 'ep-b1', 'SeriesId': 'series-b', 'Type': 'Episode'},
+            {'Id': 'ep-a1', 'SeriesId': 'series-a', 'Type': 'Episode'},
+            {'Id': 'ep-b0', 'SeriesId': 'series-b', 'Type': 'Episode'},
           ],
         });
       });
@@ -373,53 +378,48 @@ void main() {
 
       final rows = await client.fetchMoreHubItemsPage('home.nextup', start: 0, size: 10);
 
-      // Phase 1 asks for played episodes newest-first; phase 2 scopes per series.
+      // The scan asks for played episodes newest-first; nothing scopes a series.
       final recency = requests.requests.firstWhere((request) => request.url.path == '/Items');
       expect(recency.url.queryParameters['Filters'], 'IsPlayed');
       expect(recency.url.queryParameters['SortBy'], 'DatePlayed');
       expect(recency.url.queryParameters['SortOrder'], 'Descending');
       expect(recency.url.queryParameters['IncludeItemTypes'], 'Episode');
+      expect(requests.requests.where((request) => request.url.path == '/Shows/NextUp'), isEmpty);
 
-      final scoped = requests.requests
-          .where((request) => request.url.path == '/Shows/NextUp')
-          .map((request) => request.url.queryParameters['SeriesId'])
-          .toList();
-      expect(scoped, ['series-b', 'series-a'], reason: 'one scoped query per distinct series, in recency order');
-      expect(scoped.every((id) => id != null), isTrue);
-
-      // Rows keep the series recency order, not completion order.
+      // Rows keep the window's order — the server's own recency order.
       expect(rows.items.map((item) => item.id), ['next-series-b', 'next-series-a']);
       expect(rows.totalCount, 2);
     });
 
-    test('a failed series lookup drops only that series', () async {
+    test('a failed recency scan empties the shelf instead of sinking the fetch', () async {
+      // The scan is what vouches that a series is recent enough for the cutoff;
+      // without it an abandoned series could resurface, so unvouched rows are
+      // dropped rather than published undated.
       final requests = _RequestCapture((request) {
-        if (request.url.path == '/Items') {
+        if (request.url.path.endsWith('/Items/Resume')) {
           return jsonResponse({
             'Items': [
-              {'Id': 'ep-a', 'SeriesId': 'series-a', 'Type': 'Episode'},
-              {'Id': 'ep-b', 'SeriesId': 'series-b', 'Type': 'Episode'},
+              {
+                'Id': 'next-series-a',
+                'Name': 'Next',
+                'Type': 'Episode',
+                'SeriesId': 'series-a',
+                'UserData': {'PlaybackPositionTicks': 0},
+              },
             ],
           });
         }
-        if (request.url.queryParameters['SeriesId'] == 'series-a') {
-          return jsonResponse({'Error': 'boom'}, status: 500);
-        }
-        return jsonResponse({
-          'Items': [
-            {'Id': 'next-series-b', 'Name': 'Survivor', 'Type': 'Episode', 'SeriesId': 'series-b'},
-          ],
-        });
+        return jsonResponse({'Error': 'boom'}, status: 500);
       });
       final client = testEmbyClient(handler: requests.handle);
       addTearDown(client.close);
 
       final rows = await client.fetchMoreHubItemsPage('home.nextup', start: 0, size: 10);
 
-      expect(rows.items.map((item) => item.id), ['next-series-b']);
+      expect(rows.items, isEmpty);
     });
 
-    test('Emby with no played episodes issues no per-series query', () async {
+    test('an Emby window with no zero-position rows issues no recency scan', () async {
       final requests = _RequestCapture((_) => jsonResponse({'Items': <Object?>[]}));
       final client = testEmbyClient(handler: requests.handle);
       addTearDown(client.close);
@@ -427,22 +427,28 @@ void main() {
       final rows = await client.fetchMoreHubItemsPage('home.nextup', start: 0, size: 10);
 
       expect(rows.items, isEmpty);
-      expect(requests.requests.where((request) => request.url.path == '/Shows/NextUp'), isEmpty);
+      expect(requests.requests.map((request) => request.url.path).toList(), ['/Users/user-1/Items/Resume']);
     });
 
-    test('paging the reconstructed shelf past its end keeps the total and adds no requests', () async {
+    test('paging the Emby shelf past its end keeps the total and adds no requests', () async {
       final requests = _RequestCapture((request) {
-        if (request.url.path == '/Items' && request.url.queryParameters['Filters'] == 'IsPlayed') {
+        if (request.url.path.endsWith('/Items/Resume')) {
           return jsonResponse({
             'Items': [
-              for (var i = 0; i < 3; i++) {'Id': 'ep-$i', 'SeriesId': 'series-$i', 'Type': 'Episode'},
+              for (var i = 0; i < 3; i++)
+                {
+                  'Id': 'next-series-$i',
+                  'Name': 'Next',
+                  'Type': 'Episode',
+                  'SeriesId': 'series-$i',
+                  'UserData': {'PlaybackPositionTicks': 0},
+                },
             ],
           });
         }
-        final seriesId = request.url.queryParameters['SeriesId'];
         return jsonResponse({
           'Items': [
-            {'Id': 'next-$seriesId', 'Name': 'Next', 'Type': 'Episode', 'SeriesId': seriesId},
+            for (var i = 0; i < 3; i++) {'Id': 'ep-$i', 'SeriesId': 'series-$i', 'Type': 'Episode'},
           ],
         });
       });
@@ -458,10 +464,9 @@ void main() {
       expect(beyond.totalCount, 3, reason: 'total changed past the end of the shelf');
       expect(beyond.offset, 99);
 
-      // Each page costs one recency query plus one query per distinct series —
-      // never more, however far past the end the caller asks.
-      final perPage = 1 + 3;
-      expect(requests.requests, hasLength(perPage * 2), reason: requests.log.join('\n'));
+      // Each page costs the window plus one recency scan — never more, however
+      // far past the end the caller asks.
+      expect(requests.requests, hasLength(2 * 2), reason: requests.log.join('\n'));
     });
 
     test('Jellyfin keeps the single unscoped Next Up request', () async {
@@ -507,17 +512,14 @@ void main() {
       'TotalRecordCount': 2,
     };
 
-    test('Emby reads resume from /Items with a server-side IsResumable filter', () async {
-      // Emby's dedicated resume route returns every started series' next episode
-      // alongside the genuinely in-progress items and sorts the latter LAST, so
-      // it cannot be paged. /Items?Filters=IsResumable returns only real progress.
+    test('Emby keeps zero-position rows out of Continue Watching', () async {
+      // The dedicated route conflates the two shelves; the split must send the
+      // started series' next episode to Next Up, never to Continue Watching. The
+      // route has to be read despite that because it is the only listing that
+      // honours HideFromResume: /Items?Filters=IsResumable ignores the flag,
+      // which is how removed rows kept coming back (#2003).
       final requests = _RequestCapture((request) {
-        if (request.url.path == '/Items' && request.url.queryParameters['Filters'] == 'IsResumable') {
-          return jsonResponse({
-            'Items': [(resumePayload()['Items'] as List).first],
-            'TotalRecordCount': 1,
-          });
-        }
+        if (request.url.path.endsWith('/Items/Resume')) return jsonResponse(resumePayload());
         return jsonResponse({'Items': <Object?>[], 'TotalRecordCount': 0});
       });
       final client = testEmbyClient(handler: requests.handle);
@@ -527,13 +529,11 @@ void main() {
       final continueHub = hubs.firstWhere((hub) => hub.id.endsWith('continue'));
 
       expect(continueHub.items.map((item) => item.id), ['movie-1']);
-      // Never the resume route, which cannot be filtered or paged on Emby.
-      expect(requests.requests.where((request) => request.url.path.endsWith('/Items/Resume')), isEmpty);
-      final resumeRequest = requests.requests.firstWhere(
-        (request) => request.url.queryParameters['Filters'] == 'IsResumable',
+      expect(
+        requests.requests.where((request) => request.url.queryParameters['Filters'] == 'IsResumable'),
+        isEmpty,
+        reason: 'the hide-blind IsResumable query came back',
       );
-      expect(resumeRequest.url.queryParameters['SortBy'], 'DatePlayed');
-      expect(resumeRequest.url.queryParameters['SortOrder'], 'Descending');
     });
 
     test('Jellyfin keeps its dedicated resume route unfiltered', () async {
@@ -555,14 +555,9 @@ void main() {
       expect(resumeRequest.url.queryParameters.containsKey('SortBy'), isFalse);
     });
 
-    test('the paged Emby continue hub uses the same filtered route', () async {
+    test('the paged Emby continue hub pages the window in memory', () async {
       final requests = _RequestCapture((request) {
-        if (request.url.path == '/Items' && request.url.queryParameters['Filters'] == 'IsResumable') {
-          return jsonResponse({
-            'Items': [(resumePayload()['Items'] as List).first],
-            'TotalRecordCount': 1,
-          });
-        }
+        if (request.url.path.endsWith('/Items/Resume')) return jsonResponse(resumePayload());
         return jsonResponse({'Items': <Object?>[], 'TotalRecordCount': 0});
       });
       final client = testEmbyClient(handler: requests.handle);
@@ -570,27 +565,37 @@ void main() {
 
       final page = await client.fetchMoreHubItemsPage('home.continue', start: 0, size: 10);
 
-      expect(page.items.map((item) => item.id), ['movie-1']);
-      expect(page.totalCount, 1, reason: 'server-side total lost');
-      expect(requests.requests.single.url.queryParameters['StartIndex'], '0');
+      expect(page.items.map((item) => item.id), ['movie-1'], reason: 'a zero-position row leaked into the page');
+      expect(page.totalCount, 1, reason: 'the total must count the split half, not the raw window');
+      final window = requests.requests.single;
+      expect(window.url.path, '/Users/user-1/Items/Resume');
+      // In-memory paging: the request carries the window cap, never the page.
+      expect(window.url.queryParameters['Limit'], '300');
+      expect(window.url.queryParameters.containsKey('StartIndex'), isFalse);
     });
 
-    test('a reconstructed Emby Next Up preview honours the requested limit', () async {
-      // 10 started series, preview asks for 3: the shelf must be sliced, not
-      // returned at the series-lookup cap.
+    test('an Emby Next Up preview honours the requested limit', () async {
+      // 10 started series in the window, preview asks for 3: the shelf must be
+      // sliced, not returned at the window size.
       final requests = _RequestCapture((request) {
-        if (request.url.path == '/Items' && request.url.queryParameters['Filters'] == 'IsPlayed') {
+        if (request.url.path.endsWith('/Items/Resume')) {
           return jsonResponse({
             'Items': [
-              for (var i = 0; i < 10; i++) {'Id': 'ep-$i', 'SeriesId': 'series-$i', 'Type': 'Episode'},
+              for (var i = 0; i < 10; i++)
+                {
+                  'Id': 'next-series-$i',
+                  'Name': 'Next',
+                  'Type': 'Episode',
+                  'SeriesId': 'series-$i',
+                  'UserData': {'PlaybackPositionTicks': 0},
+                },
             ],
           });
         }
-        final seriesId = request.url.queryParameters['SeriesId'];
-        if (seriesId != null) {
+        if (request.url.queryParameters['Filters'] == 'IsPlayed') {
           return jsonResponse({
             'Items': [
-              {'Id': 'next-$seriesId', 'Name': 'Next', 'Type': 'Episode', 'SeriesId': seriesId},
+              for (var i = 0; i < 10; i++) {'Id': 'ep-$i', 'SeriesId': 'series-$i', 'Type': 'Episode'},
             ],
           });
         }
@@ -606,9 +611,22 @@ void main() {
       expect(nextUp.items.map((item) => item.id), ['next-series-0', 'next-series-1', 'next-series-2']);
     });
 
-    test('the Emby recency probe never moves the active endpoint', () async {
+    test('the Emby recency scan never moves the active endpoint', () async {
       var exhausted = 0;
       final requests = _RequestCapture((request) {
+        if (request.url.path.endsWith('/Items/Resume')) {
+          return jsonResponse({
+            'Items': [
+              {
+                'Id': 'next-series-a',
+                'Name': 'Next',
+                'Type': 'Episode',
+                'SeriesId': 'series-a',
+                'UserData': {'PlaybackPositionTicks': 0},
+              },
+            ],
+          });
+        }
         if (request.url.path == '/Items' && request.url.queryParameters['Filters'] == 'IsPlayed') {
           return jsonResponse({'Error': 'boom'}, status: 500);
         }
@@ -623,13 +641,13 @@ void main() {
 
       final hubs = await client.fetchGlobalHubs(limit: 5);
 
-      // A failing best-effort shelf must degrade, not trigger failover.
+      // A failing best-effort scan must degrade, not trigger failover.
       expect(hubs.where((hub) => hub.id.endsWith('nextup')), isEmpty);
-      expect(exhausted, 0, reason: 'the recency probe escalated to endpoint exhaustion');
+      expect(exhausted, 0, reason: 'the recency scan escalated to endpoint exhaustion');
       expect(
         requests.requests.every((request) => request.url.host == 'emby.example.com'),
         isTrue,
-        reason: 'the recency probe switched endpoints',
+        reason: 'the recency scan switched endpoints',
       );
     });
   });
@@ -644,15 +662,36 @@ void main() {
       'DateCreated': created,
     };
 
-    test('Emby stamps each reconstructed row with its series play date', () async {
+    test('Emby stamps each Next Up row with its series play date', () async {
       // A Next Up episode has never been played, so its own UserData carries no
       // date. Without the stamp the shelf's sort key falls back to when the
       // episode was added to the library — which is what `DateCreated` is here,
-      // deliberately inverted against the recency order.
+      // deliberately inverted against the recency order, as is the window's own
+      // row order: the stamp alone must decide the merged order.
       final requests = _RequestCapture((request) {
-        final query = request.url.queryParameters;
-        if (query['Filters'] == 'IsResumable') return jsonResponse({'Items': <Object?>[]});
-        if (query['Filters'] == 'IsPlayed') {
+        if (request.url.path.endsWith('/Items/Resume')) {
+          return jsonResponse({
+            'Items': [
+              {
+                'Id': 'next-series-older',
+                'Name': 'next-series-older',
+                'Type': 'Episode',
+                'SeriesId': 'series-older',
+                'DateCreated': '2030-01-01T00:00:00.0000000Z',
+                'UserData': {'PlaybackPositionTicks': 0},
+              },
+              {
+                'Id': 'next-series-recent',
+                'Name': 'next-series-recent',
+                'Type': 'Episode',
+                'SeriesId': 'series-recent',
+                'DateCreated': '2020-01-01T00:00:00.0000000Z',
+                'UserData': {'PlaybackPositionTicks': 0},
+              },
+            ],
+          });
+        }
+        if (request.url.queryParameters['Filters'] == 'IsPlayed') {
           return jsonResponse({
             'Items': [
               {
@@ -670,21 +709,7 @@ void main() {
             ],
           });
         }
-        final seriesId = query['SeriesId']!;
-        return jsonResponse({
-          'Items': [
-            {
-              'Id': 'next-$seriesId',
-              'Name': 'next-$seriesId',
-              'Type': 'Episode',
-              'SeriesId': seriesId,
-              // Inverted against the play order.
-              'DateCreated': seriesId == 'series-older'
-                  ? '2030-01-01T00:00:00.0000000Z'
-                  : '2020-01-01T00:00:00.0000000Z',
-            },
-          ],
-        });
+        return jsonResponse({'Items': <Object?>[]});
       });
       final client = testEmbyClient(handler: requests.handle);
       addTearDown(client.close);
@@ -696,7 +721,7 @@ void main() {
         DateTime.utc(2026, 8, 4, 21).millisecondsSinceEpoch ~/ 1000,
         DateTime.utc(2026, 8, 1, 21).millisecondsSinceEpoch ~/ 1000,
       ], reason: 'rows were not stamped with their series play date');
-      // The recency query must ask for the date, and the per-series enrichment
+      // The recency scan must ask for the date, and the per-series enrichment
       // (ParentId + Fields=UserData) must never run: the stamp makes it redundant.
       final probe = requests.requests.firstWhere((request) => request.url.queryParameters['Filters'] == 'IsPlayed');
       expect(probe.url.queryParameters['Fields'], contains('UserDataLastPlayedDate'));
@@ -752,30 +777,41 @@ void main() {
     });
   });
 
-  group('MediaBrowser Next Up budget', () {
-    test('a stalled pass is bounded by one whole-pass wall clock', () async {
-      // Per-request timeouts cannot bound this: MediaServerHttpClient applies
-      // each to the connect and receive phases independently, and the probe and
-      // the per-series lookups would otherwise bound separately and add up. One
-      // timer covers the whole pass, probe included.
+  group('MediaBrowser Next Up stall degradation', () {
+    test('a stalled recency scan cannot sink the resume half', () async {
+      // The scan is best-effort and runs under its own short per-phase timeout:
+      // when it stalls, the Next Up half degrades to empty while the resume half
+      // still lands.
       final stalled = Completer<void>();
       addTearDown(() {
         if (!stalled.isCompleted) stalled.complete();
       });
       final client = testEmbyClient(
         handler: (request) async {
-          if (request.url.queryParameters['Filters'] == 'IsResumable') {
+          if (request.url.path.endsWith('/Items/Resume')) {
             return http.Response(
               jsonEncode({
                 'Items': [
-                  {'Id': 'movie-1', 'Name': 'In Progress', 'Type': 'Movie'},
+                  {
+                    'Id': 'movie-1',
+                    'Name': 'In Progress',
+                    'Type': 'Movie',
+                    'UserData': {'PlaybackPositionTicks': 2400000000},
+                  },
+                  {
+                    'Id': 'next-series-a',
+                    'Name': 'Next',
+                    'Type': 'Episode',
+                    'SeriesId': 'series-a',
+                    'UserData': {'PlaybackPositionTicks': 0},
+                  },
                 ],
               }),
               200,
               headers: {'content-type': 'application/json'},
             );
           }
-          // Both the recency probe and every per-series lookup hang.
+          // The recency scan hangs.
           await stalled.future;
           return http.Response('{"Items":[]}', 200, headers: {'content-type': 'application/json'});
         },
@@ -786,11 +822,11 @@ void main() {
       final shelf = await client.fetchContinueWatching(count: 10);
       sw.stop();
 
-      expect(shelf.map((item) => item.id), ['movie-1'], reason: 'the resume leg was sunk by the stalled pass');
+      expect(shelf.map((item) => item.id), ['movie-1'], reason: 'the resume half was sunk by the stalled scan');
       expect(
         sw.elapsed,
-        lessThan(const Duration(seconds: 6)),
-        reason: 'the pass ran past its whole-pass budget (${sw.elapsed})',
+        lessThan(const Duration(seconds: 8)),
+        reason: 'the scan ran past its per-phase timeouts (${sw.elapsed})',
       );
     });
   });
@@ -798,8 +834,21 @@ void main() {
   group('MediaBrowser Next Up stamping', () {
     test('a repeated series keeps its newest play and odd dtos still map', () async {
       final requests = _RequestCapture((request) {
-        if (request.url.queryParameters['Filters'] == 'IsResumable') {
-          return jsonResponse({'Items': <Object?>[]});
+        if (request.url.path.endsWith('/Items/Resume')) {
+          return jsonResponse({
+            'Items': [
+              for (final series in ['series-a', 'series-b'])
+                {
+                  'Id': 'next-$series',
+                  'Name': 'next-$series',
+                  'Type': 'Episode',
+                  'SeriesId': series,
+                  'DateCreated': '2021-05-06T00:00:00.0000000Z',
+                  // Carries its own UserData, which the stamp must preserve.
+                  'UserData': {'PlaybackPositionTicks': 0, 'Played': false},
+                },
+            ],
+          });
         }
         if (request.url.queryParameters['Filters'] == 'IsPlayed') {
           return jsonResponse({
@@ -823,20 +872,7 @@ void main() {
             ],
           });
         }
-        final seriesId = request.url.queryParameters['SeriesId'];
-        return jsonResponse({
-          'Items': [
-            {
-              'Id': 'next-$seriesId',
-              'Name': 'next-$seriesId',
-              'Type': 'Episode',
-              'SeriesId': seriesId,
-              'DateCreated': '2021-05-06T00:00:00.0000000Z',
-              // Carries its own UserData, which the stamp must preserve.
-              'UserData': {'PlaybackPositionTicks': 30000000, 'Played': false},
-            },
-          ],
-        });
+        return jsonResponse({'Items': <Object?>[]});
       });
       final client = testEmbyClient(handler: requests.handle);
       addTearDown(client.close);
@@ -846,72 +882,35 @@ void main() {
       expect(shelf.map((item) => item.id), ['next-series-a', 'next-series-b']);
       // series-a takes the newer of its two plays, not the last one seen.
       expect(shelf.first.lastViewedAt, DateTime.utc(2026, 8, 4, 21).millisecondsSinceEpoch ~/ 1000);
-      // The row's own UserData survived the stamp.
-      expect(shelf.first.viewOffsetMs, 3000);
+      // The row's own UserData survived the stamp: a replaced map would lose the
+      // position and surface null here rather than 0.
+      expect(shelf.first.viewOffsetMs, 0);
       // An undated series degrades to its addedAt rather than being dropped.
       expect(shelf.last.lastViewedAt, isNull);
       expect(shelf.last.addedAt, isNotNull);
-      // One request per distinct series, not per played episode.
-      expect(requests.requests.where((request) => request.url.path == '/Shows/NextUp'), hasLength(2));
-    });
-  });
-
-  group('MediaBrowser Next Up wall clock', () {
-    test('a response that stalls between phases still lands inside the budget', () async {
-      // MediaServerHttpClient times the connect and receive phases
-      // independently, so headers just under the per-request timeout followed by
-      // a stalled body outlive it. Only racing the probe against the pass
-      // deadline bounds this.
-      final stalledBody = StreamController<List<int>>();
-      addTearDown(stalledBody.close);
-      final client = testEmbyClient(
-        httpClient: MockClient.streaming((request, _) async {
-          Map<String, String> query() => request.url.queryParameters;
-          if (query()['Filters'] == 'IsResumable') {
-            final body = utf8.encode(
-              jsonEncode({
-                'Items': [
-                  {'Id': 'movie-1', 'Name': 'In Progress', 'Type': 'Movie'},
-                ],
-              }),
-            );
-            return http.StreamedResponse(Stream.value(body), 200, headers: {'content-type': 'application/json'});
-          }
-          if (query()['Filters'] == 'IsPlayed') {
-            // Headers under the 3s per-request timeout, then a body that never
-            // arrives: 2.5s + 3s receive would be 5.5s unraced.
-            await Future<void>.delayed(const Duration(milliseconds: 2500));
-            return http.StreamedResponse(stalledBody.stream, 200, headers: {'content-type': 'application/json'});
-          }
-          return http.StreamedResponse(
-            Stream.value(utf8.encode('{"Items":[]}')),
-            200,
-            headers: {'content-type': 'application/json'},
-          );
-        }),
-      );
-      addTearDown(client.close);
-
-      final sw = Stopwatch()..start();
-      final shelf = await client.fetchContinueWatching(count: 10);
-      sw.stop();
-
-      expect(shelf.map((item) => item.id), ['movie-1']);
-      expect(
-        sw.elapsed,
-        lessThan(const Duration(milliseconds: 4800)),
-        reason: 'the stalled probe outlived the pass deadline (${sw.elapsed})',
-      );
+      // The window already carries the rows; nothing per-series runs.
+      expect(requests.requests.where((request) => request.url.path == '/Shows/NextUp'), isEmpty);
     });
   });
 
   group('MediaBrowser Next Up cutoff', () {
     test('Emby drops series last played before the cutoff Jellyfin enforces', () async {
-      // Emby's /Shows/NextUp ignores NextUpDateCutoff, so the window has to be
-      // applied to the recency scan instead.
+      // Nothing on the Emby server applies NextUpDateCutoff, so the window has
+      // to be applied to the recency scan instead.
       final requests = _RequestCapture((request) {
-        if (request.url.queryParameters['Filters'] == 'IsResumable') {
-          return jsonResponse({'Items': <Object?>[]});
+        if (request.url.path.endsWith('/Items/Resume')) {
+          return jsonResponse({
+            'Items': [
+              for (final series in ['series-recent', 'series-abandoned', 'series-undated'])
+                {
+                  'Id': 'next-$series',
+                  'Name': 'next-$series',
+                  'Type': 'Episode',
+                  'SeriesId': series,
+                  'UserData': {'PlaybackPositionTicks': 0},
+                },
+            ],
+          });
         }
         if (request.url.queryParameters['Filters'] == 'IsPlayed') {
           return jsonResponse({
@@ -933,12 +932,7 @@ void main() {
             ],
           });
         }
-        final seriesId = request.url.queryParameters['SeriesId'];
-        return jsonResponse({
-          'Items': [
-            {'Id': 'next-$seriesId', 'Type': 'Episode', 'SeriesId': seriesId},
-          ],
-        });
+        return jsonResponse({'Items': <Object?>[]});
       });
       final client = testEmbyClient(handler: requests.handle);
       addTearDown(client.close);
@@ -946,27 +940,36 @@ void main() {
       final shelf = await client.fetchContinueWatching(count: 10);
 
       expect(shelf.map((item) => item.id), ['next-series-recent', 'next-series-undated']);
-      // The abandoned series must not even cost a per-series request.
-      expect(
-        requests.requests.where((request) => request.url.queryParameters['SeriesId'] == 'series-abandoned'),
-        isEmpty,
-        reason: 'queried a series outside the cutoff',
-      );
     });
   });
 
-  group('MediaBrowser Next Up cancellation', () {
-    test('a caller cancellation is disruption, not an empty shelf', () async {
-      // The pass swallows its *own* deadline so the shelf degrades gracefully.
+  group('MediaBrowser playback shelf cancellation', () {
+    test('a caller cancellation during the recency scan is disruption, not an empty shelf', () async {
+      // The scan swallows its *own* failures so the shelf degrades gracefully.
       // A cancellation the caller asked for must still propagate, so a paged
       // caller can tell "disrupted" from "the user has nothing to watch next".
       final abort = AbortController();
       final client = testEmbyClient(
         handler: (request) async {
-          if (request.url.queryParameters['Filters'] == 'IsPlayed') {
-            abort.abort();
-            await Future<void>.delayed(const Duration(milliseconds: 20));
+          if (request.url.path.endsWith('/Items/Resume')) {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {
+                    'Id': 'next-series-a',
+                    'Name': 'Next',
+                    'Type': 'Episode',
+                    'SeriesId': 'series-a',
+                    'UserData': {'PlaybackPositionTicks': 0},
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
           }
+          abort.abort();
+          await Future<void>.delayed(const Duration(milliseconds: 20));
           return http.Response('{"Items":[]}', 200, headers: {'content-type': 'application/json'});
         },
       );
@@ -985,11 +988,25 @@ void main() {
       final abort = AbortController();
       final client = testEmbyClient(
         handler: (request) async {
-          if (request.url.queryParameters['Filters'] == 'IsPlayed') {
-            abort.abort();
-            // Resolve as an ordinary empty response, never as a cancellation.
-            return http.Response('{"Items":[]}', 200, headers: {'content-type': 'application/json'});
+          if (request.url.path.endsWith('/Items/Resume')) {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {
+                    'Id': 'next-series-a',
+                    'Name': 'Next',
+                    'Type': 'Episode',
+                    'SeriesId': 'series-a',
+                    'UserData': {'PlaybackPositionTicks': 0},
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
           }
+          abort.abort();
+          // Resolve as an ordinary empty response, never as a cancellation.
           return http.Response('{"Items":[]}', 200, headers: {'content-type': 'application/json'});
         },
       );
@@ -1001,45 +1018,18 @@ void main() {
       );
     });
 
-    test('a cancellation during the per-series phase is not a partial page', () async {
-      // The per-series loop breaks on either abort. A partial shelf must not be
-      // published as though those series had no next episode.
+    test('a cancellation during the window fetch propagates from the paged continue hub', () async {
       final abort = AbortController();
       final client = testEmbyClient(
         handler: (request) async {
-          if (request.url.queryParameters['Filters'] == 'IsPlayed') {
-            return http.Response(
-              jsonEncode({
-                'Items': [
-                  for (var i = 0; i < 12; i++) {'Id': 'ep-$i', 'SeriesId': 'series-$i', 'Type': 'Episode'},
-                ],
-              }),
-              200,
-              headers: {'content-type': 'application/json'},
-            );
-          }
-          if (request.url.path == '/Shows/NextUp') {
-            // Cancel once the first batch has produced rows, so the loop breaks
-            // with a non-empty partial result.
-            abort.abort();
-            final seriesId = request.url.queryParameters['SeriesId'];
-            return http.Response(
-              jsonEncode({
-                'Items': [
-                  {'Id': 'next-$seriesId', 'Type': 'Episode', 'SeriesId': seriesId},
-                ],
-              }),
-              200,
-              headers: {'content-type': 'application/json'},
-            );
-          }
+          abort.abort();
           return http.Response('{"Items":[]}', 200, headers: {'content-type': 'application/json'});
         },
       );
       addTearDown(client.close);
 
       await expectLater(
-        client.fetchMoreHubItemsPage('home.nextup', start: 0, size: 5, abort: abort),
+        client.fetchMoreHubItemsPage('home.continue', start: 0, size: 5, abort: abort),
         throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
       );
     });

@@ -162,10 +162,13 @@ const _episodeQueuePageSize = 200;
 /// improving (0.65s at 3, 0.56s at both 4 and 6).
 const _seriesLastPlayedConcurrency = 4;
 
-/// Ceiling on how many series [_attachSeriesLastPlayed] dates in one call. Sits
-/// just above `DiscoverProvider`'s 21-row continue-watching probe so the home
-/// shelf is always fully dated, and caps the uncapped `count: null` shelf, whose
-/// Next Up half is limited only by how many series the user has started.
+/// Ceiling on how many series [_attachSeriesLastPlayed] dates in one call and
+/// on how many series [_fetchRecentlyPlayedSeriesIds] returns — which also
+/// bounds the Emby Next Up shelf, since [_stampEmbyNextUpRows] drops rows the
+/// scan cannot vouch for. Sits just above `DiscoverProvider`'s 21-row
+/// continue-watching probe so the home shelf is always fully dated, and caps
+/// the uncapped `count: null` shelf, whose Next Up half is limited only by how
+/// many series the user has started.
 const _seriesLastPlayedLookupLimit = 24;
 
 /// Per-phase budget for one [_fetchSeriesLastPlayed] lookup.
@@ -177,18 +180,28 @@ const _seriesLastPlayedLookupLimit = 24;
 /// shelf is better off unstamped than waiting on the 10s/120s shared defaults.
 const _seriesLastPlayedRequestTimeout = Duration(seconds: 3);
 
-/// Hard ceiling on [_attachSeriesLastPlayed] and on the reconstructed Next Up
-/// pass, recency probe included. On expiry it aborts whatever is in flight, so it
-/// bounds the whole pass regardless of how many batches remain or which request
-/// phase a lookup is stuck in — the per-request timeouts alone cannot, because
-/// each applies to the connect and receive phases independently. Two orders of
-/// magnitude under the 10s-connect/120s-receive defaults the single unscoped scan
-/// ran with, so a stalled endpoint cannot make the scoped form slower than the
-/// query it fixes.
+/// Hard ceiling on one [_attachSeriesLastPlayed] pass. On expiry it aborts
+/// whatever is in flight, so it bounds the whole pass regardless of how many
+/// batches remain or which request phase a lookup is stuck in — the
+/// per-request timeouts alone cannot, because each applies to the connect and
+/// receive phases independently. Two orders of magnitude under the
+/// 10s-connect/120s-receive defaults the single unscoped scan ran with, so a
+/// stalled endpoint cannot make the scoped form slower than the query it
+/// fixes.
 const _seriesLastPlayedBudget = Duration(seconds: 4);
 
 const _childrenPageSize = 500;
 const _pagedListPageSize = 200;
+
+/// Ceiling on the one dedicated-resume-route window that feeds every Emby
+/// playback shelf (see [_embyResumeWindowQuery]). The route cannot be
+/// server-filtered to either shelf half, so previews slice the split halves
+/// and the see-all surfaces page them in memory; this bounds that response.
+/// The rows arrive recency-ordered — the genuinely in-progress items plus one
+/// row per started series — so anything past a few hundred rows is old enough
+/// that the Next Up cutoff would drop it anyway.
+const _embyResumeWindowLimit = 300;
+
 const _playableDescendantTypes = 'Movie,Episode,Audio';
 const _playableFolderDescendantTypes = 'Movie,Episode,Video,MusicVideo';
 const _episodeOrderQueryParameters = {
@@ -1601,10 +1614,22 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
 
   @override
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async {
+    if (!dialect.resumeReturnsOnlyStartedItems) {
+      // Emby: both shelf halves ride the one hide-aware window request — see
+      // [_embyResumeWindowQuery].
+      final split = _splitEmbyResumeRows(
+        await _fetchItemsArray(paths.resumeItems, _embyResumeWindowQuery(), retry: _continueWatchingRetry),
+      );
+      return _mergeContinueWatchingAndNextUp(
+        resume: _mapItems(split.resume),
+        nextUp: _mapItems(await _stampEmbyNextUpRows(split.nextUp)),
+        limit: count,
+      );
+    }
+
     final results = await Future.wait([
-      _fetchItemsArray(_resumePath, {
+      _fetchItemsArray(paths.resumeItems, {
         'userId': connection.userId,
-        ..._resumeFilterQuery,
         'Limit': ?count?.toString(),
         'Fields': _hubRowFields,
         'MediaTypes': 'Video',
@@ -1612,7 +1637,7 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         'EnableTotalRecordCount': 'false',
         ...jellyfinImageQueryParameters,
       }, retry: _continueWatchingRetry),
-      _fetchNextUpRows({
+      _safeFetchItemsArray('/Shows/NextUp', {
         'userId': connection.userId,
         'Limit': ?count?.toString(),
         'Fields': _hubRowFields,
@@ -1623,13 +1648,11 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       }, retry: _continueWatchingRetry),
     ]);
 
-    final nextUp = _mapItems(results[1]);
     return _mergeContinueWatchingAndNextUp(
       resume: _mapItems(results.first),
-      // Only the server-side shelf needs enriching: `/Shows/NextUp` rows carry no
-      // series play date, while the reconstructed rows were already stamped from
-      // the recency query that ordered them.
-      nextUp: dialect.supportsGlobalNextUp ? await _attachSeriesLastPlayed(nextUp) : nextUp,
+      // `/Shows/NextUp` rows carry no series play date, so stamp them with one
+      // before the recency merge.
+      nextUp: await _attachSeriesLastPlayed(_mapItems(results[1])),
       limit: count,
     );
   }
@@ -1752,13 +1775,13 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       return [hub('recent', recentTitle, 'mixed', latest)].where((h) => h.items.isNotEmpty).toList();
     }
 
-    final results = await Future.wait([
-      latestFuture,
-      _safeFetchItemsArray(
-        _resumePath,
+    final Future<List<Map<String, dynamic>>> resumeRowsFuture;
+    final Future<List<Map<String, dynamic>>> nextUpRowsFuture;
+    if (dialect.resumeReturnsOnlyStartedItems) {
+      resumeRowsFuture = _safeFetchItemsArray(
+        paths.resumeItems,
         {
           'userId': connection.userId,
-          ..._resumeFilterQuery,
           'ParentId': ?parentId,
           'Limit': limit.toString(),
           'Fields': _hubRowFields,
@@ -1769,9 +1792,10 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
         },
         retry: retry,
         diagnostics: diagnostics,
-      ),
-      includeNextUp
-          ? _fetchNextUpRows(
+      );
+      nextUpRowsFuture = includeNextUp
+          ? _safeFetchItemsArray(
+              '/Shows/NextUp',
               {
                 'userId': connection.userId,
                 'ParentId': ?parentId,
@@ -1785,14 +1809,29 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
               retry: retry,
               diagnostics: diagnostics,
             )
-          : Future.value(const <Map<String, dynamic>>[]),
-    ]);
+          : Future.value(const <Map<String, dynamic>>[]);
+    } else {
+      // Emby: one hide-aware window request feeds both playback shelves — see
+      // [_embyResumeWindowQuery].
+      final splitFuture = _safeFetchItemsArray(
+        paths.resumeItems,
+        _embyResumeWindowQuery(parentId: parentId),
+        retry: retry,
+        diagnostics: diagnostics,
+      ).then(_splitEmbyResumeRows);
+      resumeRowsFuture = splitFuture.then((split) => split.resume);
+      nextUpRowsFuture = includeNextUp
+          ? splitFuture.then((split) => _stampEmbyNextUpRows(split.nextUp, parentId: parentId))
+          : Future.value(const <Map<String, dynamic>>[]);
+    }
+
+    final results = await Future.wait([latestFuture, resumeRowsFuture, nextUpRowsFuture]);
 
     return [
-      hub('continue', continueTitle, 'mixed', results[1]),
-      // The reconstructed Emby shelf is capped by the series lookup limit rather
-      // than the caller's, so slice it to the requested preview size the way the
-      // server-side query already does for Jellyfin.
+      // The Emby halves are carved out of the shared window rather than capped by
+      // the request, so slice both to the requested preview size the way the
+      // server-side queries already do for Jellyfin.
+      hub('continue', continueTitle, 'mixed', results[1].take(limit).toList(growable: false)),
       hub('nextup', nextUpTitle, 'episode', results[2].take(limit).toList(growable: false)),
       hub('recent', recentTitle, 'mixed', results.first),
     ].where((h) => h.items.isNotEmpty).toList();
@@ -1967,11 +2006,18 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
           abort: abort,
         );
       case 'continue':
+        if (!dialect.resumeReturnsOnlyStartedItems) {
+          // Emby: page the hide-aware window in memory — see [_embyResumeWindowQuery].
+          final resume = _splitEmbyResumeRows(
+            await _fetchItemsArray(paths.resumeItems, _embyResumeWindowQuery(parentId: parentId), abort: abort),
+          ).resume;
+          final window = resume.skip(offset).take(pageSize).toList(growable: false);
+          return LibraryPage<MediaItem>(items: _mapItems(window), totalCount: resume.length, offset: offset);
+        }
         return _safeFetchMediaPage(
-          _resumePath,
+          paths.resumeItems,
           {
             'userId': connection.userId,
-            ..._resumeFilterQuery,
             'StartIndex': offset.toString(),
             'Limit': effectiveLimit,
             'Fields': _hubRowFields,
@@ -1985,29 +2031,31 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
           abort: abort,
         );
       case 'nextup':
-        final nextUpQuery = <String, dynamic>{
-          'userId': connection.userId,
-          'StartIndex': offset.toString(),
-          'Limit': effectiveLimit,
-          'Fields': _hubRowFields,
-          'ParentId': ?parentId,
-          'EnableResumable': 'false',
-          'NextUpDateCutoff': _nextUpDateCutoff(),
-          'EnableTotalRecordCount': 'true',
-          ...jellyfinImageQueryParameters,
-        };
         if (dialect.supportsGlobalNextUp) {
           return _safeFetchMediaPage(
             '/Shows/NextUp',
-            nextUpQuery,
+            {
+              'userId': connection.userId,
+              'StartIndex': offset.toString(),
+              'Limit': effectiveLimit,
+              'Fields': _hubRowFields,
+              'ParentId': ?parentId,
+              'EnableResumable': 'false',
+              'NextUpDateCutoff': _nextUpDateCutoff(),
+              'EnableTotalRecordCount': 'true',
+              ...jellyfinImageQueryParameters,
+            },
             offset: offset,
             requestedSize: pageSize,
             abort: abort,
           );
         }
-        // Emby's shelf is assembled client-side and is capped by
-        // [_seriesLastPlayedLookupLimit], so it is paged in memory.
-        final rows = await _fetchNextUpRows(nextUpQuery, abort: abort);
+        // Emby: the shelf is carved from the hide-aware window and paged in
+        // memory — see [_embyResumeWindowQuery].
+        final split = _splitEmbyResumeRows(
+          await _fetchItemsArray(paths.resumeItems, _embyResumeWindowQuery(parentId: parentId), abort: abort),
+        );
+        final rows = await _stampEmbyNextUpRows(split.nextUp, parentId: parentId, abort: abort);
         final window = rows.skip(offset).take(pageSize).toList(growable: false);
         return LibraryPage<MediaItem>(items: _mapItems(window), totalCount: rows.length, offset: offset);
       case 'recentlyplayed':
@@ -2198,148 +2246,78 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     ];
   }
 
-  /// Route and extra query that list genuinely in-progress items.
+  /// Query for the one dedicated-resume-route window that feeds every Emby
+  /// playback shelf.
   ///
-  /// Jellyfin's dedicated resume route already returns only started items. Emby's
-  /// does not: measured against one in-progress movie and 30 started series it
-  /// returned 30 rows — the movie plus every started series' next episode — with
-  /// the movie sorted *last*, and no `Filters` value removed them. Paging that is
-  /// unusable, so Emby reads the ordinary `/Items` route with
-  /// `Filters=IsResumable`, which returned exactly the movie
-  /// (`TotalRecordCount: 1`) and supports the same sort, paging and `ParentId`
-  /// scoping. Those next episodes reach the UI through the Next Up shelf, which
-  /// is where Plezy models them.
-  Map<String, dynamic> get _resumeFilterQuery => dialect.resumeReturnsOnlyStartedItems
-      ? const {}
-      : const {'Filters': 'IsResumable', 'SortBy': 'DatePlayed', 'SortOrder': 'Descending'};
+  /// Emby's route conflates the two shelves Plezy models separately: it returns
+  /// the genuinely in-progress items *and* one zero-position next episode per
+  /// started series, and no server-side filter separates them (measured on
+  /// 4.9.5: `Filters=IsResumable` changes nothing). It is nevertheless the only
+  /// listing that honours `HideFromResume` — `/Items?Filters=IsResumable` and
+  /// `/Shows/NextUp?SeriesId=` keep returning hidden rows, and no public filter
+  /// or `UserData` field exposes the flag — so reading anything else pins a
+  /// removed row to the shelf forever (#2003). The response is split by
+  /// [_splitEmbyResumeRows] instead: previews slice the halves and the see-all
+  /// surfaces page them in memory.
+  Map<String, dynamic> _embyResumeWindowQuery({String? parentId}) => {
+    'userId': connection.userId,
+    'ParentId': ?parentId,
+    'Limit': _embyResumeWindowLimit.toString(),
+    'Fields': _hubRowFields,
+    'MediaTypes': 'Video',
+    'Recursive': 'true',
+    'EnableTotalRecordCount': 'false',
+    ...jellyfinImageQueryParameters,
+  };
 
-  /// `/Items` on Emby (see [_resumeFilterQuery]); the dedicated route otherwise.
-  String get _resumePath => dialect.resumeReturnsOnlyStartedItems ? paths.resumeItems : '/Items';
-
-  /// Library-wide Next Up rows.
-  ///
-  /// Jellyfin computes this server-side. Emby only computes Next Up per series
-  /// — an unscoped `/Shows/NextUp` returns nothing there under any parameter
-  /// combination (see [MediaBrowserDialect.supportsGlobalNextUp]) — so this
-  /// reconstructs the shelf in two phases:
-  ///
-  /// 1. one `/Items` query for the most recently played episodes, newest first,
-  ///    which yields the started series in exactly the order the shelf wants;
-  /// 2. one `/Shows/NextUp?SeriesId=` per distinct series, bounded by the same
-  ///    concurrency and lookup cap [_attachSeriesLastPlayed] uses, and by one
-  ///    [_seriesLastPlayedBudget] wall clock that covers phase 1 as well, so a
-  ///    slow server cannot hold the home screen.
-  ///
-  /// Rows come back series-recency-ordered, which is what the caller's merge
-  /// expects, and a failed per-series lookup drops only that series.
-  Future<List<Map<String, dynamic>>> _fetchNextUpRows(
-    Map<String, dynamic> queryParameters, {
-    _HubRetryPolicy? retry,
-    AbortController? abort,
-    HubFetchDiagnostics? diagnostics,
-  }) async {
-    if (dialect.supportsGlobalNextUp) {
-      return _safeFetchItemsArray(
-        '/Shows/NextUp',
-        queryParameters,
-        retry: retry,
-        abort: abort,
-        diagnostics: diagnostics,
-      );
+  /// Split one Emby resume-route window into the two shelves it conflates:
+  /// rows with progress are Continue Watching, zero-position episode rows are
+  /// each started series' Next Up entry. Both halves keep the server's
+  /// recency order.
+  ({List<Map<String, dynamic>> resume, List<Map<String, dynamic>> nextUp}) _splitEmbyResumeRows(
+    List<Map<String, dynamic>> rows,
+  ) {
+    final resume = <Map<String, dynamic>>[];
+    final nextUp = <Map<String, dynamic>>[];
+    for (final row in rows) {
+      final userData = row['UserData'];
+      final positionMs = jellyfinTicksToMs(userData is Map<String, dynamic> ? userData['PlaybackPositionTicks'] : null);
+      if (positionMs != null && positionMs > 0) {
+        resume.add(row);
+      } else if (row['Type'] == 'Episode') {
+        nextUp.add(row);
+      }
     }
-
-    final budgetAbort = AbortController();
-    final deadline = Timer(_seriesLastPlayedBudget, budgetAbort.abort);
-    // The caller's cancellation has to reach the requests this pass owns, which
-    // all run under [budgetAbort].
-    if (abort != null) unawaited(abort.trigger.then((_) => budgetAbort.abort()));
-    try {
-      return await _reconstructNextUpRows(queryParameters, abort: abort, budgetAbort: budgetAbort);
-    } finally {
-      deadline.cancel();
-      budgetAbort.abort();
-    }
+    return (resume: resume, nextUp: nextUp);
   }
 
-  /// The reconstruction itself, under a caller-supplied wall-clock budget.
-  Future<List<Map<String, dynamic>>> _reconstructNextUpRows(
-    Map<String, dynamic> queryParameters, {
-    required AbortController? abort,
-    required AbortController budgetAbort,
+  /// Stamp Emby's zero-position Next Up rows with their series' newest play
+  /// date and apply the [_nextUpDateCutoff] window Jellyfin enforces
+  /// server-side.
+  ///
+  /// A Next Up episode has never been played, so its own `UserData` carries no
+  /// date and the shelf's recency sort would degrade to when the episode was
+  /// added to the library. The dates come from one recently-played-episodes
+  /// scan ([_fetchRecentlyPlayedSeriesIds]); a series the scan did not reach is
+  /// dropped, which keeps the shelf bounded to the series the scan can vouch
+  /// for — the same [_seriesLastPlayedLookupLimit] bound the shelf had when it
+  /// was reconstructed from per-series `/Shows/NextUp` lookups. A failed scan
+  /// therefore costs the Next Up half, never the resume half.
+  Future<List<Map<String, dynamic>>> _stampEmbyNextUpRows(
+    List<Map<String, dynamic>> rows, {
+    String? parentId,
+    AbortController? abort,
   }) async {
-    final probe = _fetchRecentlyPlayedSeriesIds(parentId: queryParameters['ParentId'] as String?, abort: budgetAbort);
-    final List<(String, String?)> probed;
-    try {
-      // Raced, not just awaited: aborting is advisory at the transport, and the
-      // probe's own timeout applies to the connect and receive phases
-      // independently, so a delayed header plus a stalled body could outlive the
-      // deadline. Same policy as the per-series batches below.
-      probed = await Future.any([probe, budgetAbort.trigger.then((_) => const <(String, String?)>[])]);
-    } on MediaServerHttpException catch (e) {
-      // Our own deadline expiring is not a disrupted fetch: this shelf is
-      // best-effort, so an over-budget probe costs the Next Up half rather than
-      // the caller's whole request. A cancellation the *caller* asked for still
-      // propagates.
-      if (e.isCancellation && abort?.isAborted != true) return const [];
-      rethrow;
-    } finally {
-      // The loser may still fail later; its outcome is no longer anyone's.
-      probe.ignore();
-    }
-    // Before the early return below: an empty probe can also mean the caller
-    // cancelled mid-request and the transport reported an ordinary timeout, which
-    // must not be published as "nothing to watch next".
-    abort?.throwIfAborted();
-
-    final recentSeries = _withinNextUpCutoff(probed, queryParameters['NextUpDateCutoff'] as String?);
-    if (recentSeries.isEmpty) return const [];
-    final seriesIds = [for (final (seriesId, _) in recentSeries) seriesId];
-
-    // Per-series queries carry the caller's field/image selection but never its
-    // paging: the shelf is assembled here and sliced by the caller.
-    final perSeriesQuery = <String, dynamic>{
-      for (final entry in queryParameters.entries)
-        if (entry.key != 'StartIndex' && entry.key != 'Limit' && entry.key != 'ParentId') entry.key: entry.value,
-      'Limit': '1',
-    };
-
-    final rowsBySeries = <String, Map<String, dynamic>>{};
-    for (var start = 0; start < seriesIds.length; start += _seriesLastPlayedConcurrency) {
-      if (budgetAbort.isAborted || abort?.isAborted == true) break;
-      final batch = seriesIds.skip(start).take(_seriesLastPlayedConcurrency);
-      // Each lookup records itself as it completes, so a sibling that is still
-      // slow when the deadline fires costs only its own row. Awaiting the batch
-      // as one future would discard every result it had already collected.
-      final lookups = [
-        for (final seriesId in batch)
-          _fetchSeriesNextUp(seriesId, perSeriesQuery, budgetAbort).then((result) {
-            final (id, row) = result;
-            if (row != null) rowsBySeries[id] = row;
-          }),
-      ];
-      final batchDone = Future.wait(lookups);
-      await Future.any([batchDone, budgetAbort.trigger]);
-      // No-op once the batch has won; suppresses the loser's late completion.
-      batchDone.ignore();
-    }
-
-    // The loop breaks on either abort, and the caller's means disruption: a
-    // partial shelf must not be published as though the series had no next
-    // episode. Our own budget expiring keeps degrading to whatever was collected.
-    abort?.throwIfAborted();
-
-    // Reassemble in series-recency order rather than completion order, stamping
-    // each row with its series' newest play date. A Next Up episode has never
-    // been played, so its own `UserData` carries no date, and the shelf's sort
-    // key would otherwise fall back to when the episode was added to the
-    // library. The date comes from the same response that established this
-    // order, so no extra request is needed.
+    if (rows.isEmpty) return rows;
+    final recentSeries = _withinNextUpCutoff(
+      await _fetchRecentlyPlayedSeriesIds(parentId: parentId, abort: abort),
+      _nextUpDateCutoff(),
+    );
+    final lastPlayedBySeries = {for (final (seriesId, lastPlayed) in recentSeries) seriesId: lastPlayed};
     return [
-      for (final (seriesId, lastPlayed) in recentSeries)
-        if (rowsBySeries[seriesId] case final row?)
-          if (lastPlayed == null)
-            row
-          else
+      for (final row in rows)
+        if (lastPlayedBySeries.containsKey(row['SeriesId']))
+          if (lastPlayedBySeries[row['SeriesId']] case final lastPlayed?)
             {
               ...row,
               // Tolerant read: a dto whose `UserData` is absent or not an object
@@ -2348,17 +2326,19 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
                 ...?(row['UserData'] is Map<String, dynamic> ? row['UserData'] as Map<String, dynamic> : null),
                 'LastPlayedDate': lastPlayed,
               },
-            },
+            }
+          else
+            row,
     ];
   }
 
   /// Drop series whose newest play predates [cutoff], the window Jellyfin's own
   /// `/Shows/NextUp` applies through `NextUpDateCutoff`.
   ///
-  /// Measured on Emby 4.9.5: `/Shows/NextUp` ignores `NextUpDateCutoff` entirely
-  /// — a cutoff of 2030 still returned the row that a 2019 cutoff did, while
-  /// Jellyfin 10.11 returned nothing for a future cutoff. Without this the
-  /// reconstructed shelf would resurrect series the user abandoned years ago that
+  /// Measured on Emby 4.9.5: nothing on the server applies the window — a
+  /// `NextUpDateCutoff` of 2030 still returned the row that a 2019 cutoff did,
+  /// while Jellyfin 10.11 returned nothing for a future cutoff. Without this the
+  /// Next Up shelf would resurrect series the user abandoned years ago that
   /// Jellyfin hides.
   ///
   /// Filtered here rather than on the server because Emby has no played-date
@@ -2388,9 +2368,9 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   /// signal Emby exposes for series: a series dto carries neither a usable
   /// `PlayCount` nor a `DatePlayed` sort key, so the episodes have to supply the
   /// order. Because the rows arrive newest-first, the first row naming a series
-  /// *is* that series' newest play, so this one request yields both the shelf
-  /// order and the timestamp each reconstructed row needs — no per-series
-  /// enrichment round trip.
+  /// *is* that series' newest play, so this one request yields both the cutoff
+  /// input and the timestamp each of [_stampEmbyNextUpRows]'s rows needs — no
+  /// per-series enrichment round trip.
   Future<List<(String, String?)>> _fetchRecentlyPlayedSeriesIds({String? parentId, AbortController? abort}) async {
     final rows = await _safeFetchItemsArray(
       '/Items',
@@ -2417,10 +2397,10 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       // Best-effort shelf: a timeout or 5xx here must not move the client's
       // active endpoint, which is what every other hub leg also avoids.
       //
-      // This [timeout] bounds a single request phase, not the probe: like every
-      // per-call timeout it applies to connect and receive independently. The
-      // wall clock comes from the caller's shared [_seriesLastPlayedBudget],
-      // which covers this probe and the per-series lookups together.
+      // This [timeout] bounds a single request phase, not the scan: like every
+      // per-call timeout it applies to connect and receive independently, so a
+      // stalled endpoint costs at most two phases before the Next Up half
+      // degrades to empty.
       //
       // Deliberately *not* the hub retry policy: `_getItemsResponse` ignores
       // `timeout` on the retried path, which would leave this request bounded
@@ -2439,23 +2419,6 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       if (lastPlayedBySeries.length >= _seriesLastPlayedLookupLimit) break;
     }
     return [for (final entry in lastPlayedBySeries.entries) (entry.key, entry.value)];
-  }
-
-  /// The single Next Up episode for [seriesId], or null when the series has none
-  /// left — or when the lookup failed, which drops only this series.
-  Future<(String, Map<String, dynamic>?)> _fetchSeriesNextUp(
-    String seriesId,
-    Map<String, dynamic> queryParameters,
-    AbortController abort,
-  ) async {
-    final rows = await _safeFetchItemsArray(
-      '/Shows/NextUp',
-      {...queryParameters, 'SeriesId': seriesId},
-      abort: abort,
-      timeout: _seriesLastPlayedRequestTimeout,
-      allowEndpointFailover: false,
-    );
-    return (seriesId, rows.isEmpty ? null : rows.first);
   }
 
   /// Newest `LastPlayedDate` across [seriesId]'s episodes, or null when the

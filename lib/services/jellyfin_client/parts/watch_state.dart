@@ -47,10 +47,15 @@ mixin _JellyfinWatchStateMethods on _JellyfinClientInternals {
   /// Hide [item] from Continue Watching while keeping its resume position.
   ///
   /// Emby-only. `POST /Users/{uid}/Items/{id}/HideFromResume?Hide=true` drops
-  /// the row from `/Users/{uid}/Items/Resume` and leaves
-  /// `UserData.PlaybackPositionTicks` untouched (verified on Emby 4.9.5).
-  /// Jellyfin 10.11 has no equivalent route, so it keeps throwing and
-  /// [ServerCapabilities.continueWatchingRemoval] keeps the affordance hidden.
+  /// the row from `/Users/{uid}/Items/Resume` — the one listing that honours
+  /// the flag, and therefore the route every Emby playback shelf reads (see
+  /// [MediaBrowserDialect.resumeReturnsOnlyStartedItems]) — while leaving
+  /// `UserData.PlaybackPositionTicks` untouched. Hiding a zero-position Next Up
+  /// row also removes its series' entry, and reporting new playback clears the
+  /// flag, so a removed item returns once the user actually resumes it (all
+  /// verified on Emby 4.9.5). Jellyfin 10.11 has no equivalent route, so it
+  /// keeps throwing and [ServerCapabilities.continueWatchingRemoval] keeps the
+  /// affordance hidden.
   @override
   Future<void> removeFromContinueWatching(MediaItem item) async {
     if (!dialect.supportsContinueWatchingRemoval) {
