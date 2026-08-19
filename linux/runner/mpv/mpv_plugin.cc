@@ -622,9 +622,16 @@ static void apply_hdr_state(MpvPlugin* self, bool allow, mpv::HdrToneMapping mod
         // The surface's own watchdog bounds this leg too, but it only unstages
         // the plane - the plugin's transaction state and the queued HDR
         // method calls stay stuck behind the unanswered reply. This timeout
-        // answers them. Armed after SetHdrOutput so a synchronous reply (the
-        // no-op short-circuit) cannot race it, and removed by the reply
-        // callback above.
+        // answers them, and is armed only while the reply is genuinely
+        // outstanding. A synchronous reply - the no-op short-circuit, or a
+        // player that cannot command output properties - has already finished
+        // the leg by this line, and a timer armed for it would be an orphan
+        // nothing removes: the reply callback above ran before the source id
+        // existed. That orphan fired five seconds after every no-op re-apply
+        // (one per playback restart) and withdrew the plane's live HDR
+        // description each time - the HDR/SDR flicker of issue #2016. An
+        // asynchronous reply removes the timer in the reply callback.
+        if (*leg_finished) return;
         struct MpvLegTimeout {
           MpvPlugin* self;
           guint64 generation;
