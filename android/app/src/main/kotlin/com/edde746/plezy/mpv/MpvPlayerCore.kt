@@ -80,8 +80,7 @@ class MpvPlayerCore private constructor(
      * mid-session hwdec fallback to software stays on vo=gpu, which renders
      * software frames correctly (the pre-2.15.0 behavior for every session).
      */
-    internal fun initialVideoOutput(hardwareDecoding: Boolean): String =
-      if (hardwareDecoding) "gpu" else "gpu-next,gpu"
+    internal fun initialVideoOutput(hardwareDecoding: Boolean): String = if (hardwareDecoding) "gpu" else "gpu-next,gpu"
   }
 
   /** Video-only paths. The plugin always constructs video cores with the
