@@ -1735,6 +1735,7 @@
     "decoder": "Декодер",
     "rawDecoder": "Өңделмеген декодер",
     "tunneling": "Туннельдеу",
+    "passthrough": "Тікелей өткізу",
     "aspect": "Қатынас",
     "rotation": "Бұрылыс",
     "dvSource": "DV дереккөзі",

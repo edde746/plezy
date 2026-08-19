@@ -1735,6 +1735,7 @@
     "decoder": "Çözücü",
     "rawDecoder": "Ham Çözücü",
     "tunneling": "Tünelleme",
+    "passthrough": "Doğrudan geçiş",
     "aspect": "Oran",
     "rotation": "Döndürme",
     "dvSource": "DV Kaynağı",

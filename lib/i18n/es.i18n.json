@@ -1735,6 +1735,7 @@
     "decoder": "Decodificador",
     "rawDecoder": "Decodificador sin procesar",
     "tunneling": "Túnel",
+    "passthrough": "Transferencia directa",
     "aspect": "Aspecto",
     "rotation": "Rotación",
     "dvSource": "Origen DV",

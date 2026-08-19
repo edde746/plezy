@@ -148,6 +148,13 @@ class PerformanceStatsService {
 
     if (playerType == 'mpv') {
       // Parse MPV stats format (returned when in fallback mode)
+      final audio = _resolveAudioDisplay(
+        format: statsMap['audio-params/format'] as String?,
+        samplerate: statsMap['audio-params/samplerate'] as String?,
+        hrChannels: statsMap['audio-params/hr-channels'] as String?,
+        demuxSamplerate: statsMap['current-tracks/audio/demux-samplerate'] as String?,
+        demuxChannelCount: statsMap['current-tracks/audio/demux-channel-count'] as String?,
+      );
       final stats = PerformanceStats(
         playerType: 'mpv',
         videoCodec: _formatVideoCodecName(statsMap['video-codec'] as String?),
@@ -158,8 +165,9 @@ class PerformanceStatsService {
         videoBitrate: _parseInt(statsMap['video-bitrate'] as String?),
         hwdecCurrent: statsMap['hwdec-current'] as String?,
         audioCodec: _formatAudioCodecName(statsMap['audio-codec-name'] as String?),
-        audioSamplerate: _parseInt(statsMap['audio-params/samplerate'] as String?),
-        audioChannels: statsMap['audio-params/hr-channels'] as String?,
+        audioSamplerate: audio.samplerate,
+        audioChannels: audio.channels,
+        audioPassthroughFormat: audio.passthroughFormat,
         audioBitrate: _parseInt(statsMap['audio-bitrate'] as String?),
         avsyncChange: _parseDouble(statsMap['total-avsync-change'] as String?),
         cacheUsed: _parseInt(statsMap['cache-used'] as String?),
@@ -252,6 +260,9 @@ class PerformanceStatsService {
       player.getProperty('frame-drop-count'), // 15
       player.getProperty('decoder-frame-drop-count'), // 16
       player.getProperty('demuxer-cache-duration'), // 17
+      player.getProperty('audio-params/format'), // 18
+      player.getProperty('current-tracks/audio/demux-samplerate'), // 19
+      player.getProperty('current-tracks/audio/demux-channel-count'), // 20
     ]);
 
     final hasVideo = results[1] != null;
@@ -287,6 +298,14 @@ class PerformanceStatsService {
       // ProcessInfo not available on all platforms
     }
 
+    final audio = _resolveAudioDisplay(
+      format: results[18],
+      samplerate: results[8],
+      hrChannels: results[9],
+      demuxSamplerate: results[19],
+      demuxChannelCount: results[20],
+    );
+
     final stats = PerformanceStats(
       playerType: 'mpv',
       videoCodec: _formatVideoCodecName(results.first),
@@ -297,8 +316,9 @@ class PerformanceStatsService {
       videoBitrate: _parseInt(results[5]),
       hwdecCurrent: results[6],
       audioCodec: _formatAudioCodecName(results[7]),
-      audioSamplerate: _parseInt(results[8]),
-      audioChannels: results[9],
+      audioSamplerate: audio.samplerate,
+      audioChannels: audio.channels,
+      audioPassthroughFormat: audio.passthroughFormat,
       audioBitrate: _parseInt(results[10]),
       avsyncChange: _parseDouble(results[11]),
       cacheUsed: _parseInt(results[12]),
@@ -335,6 +355,29 @@ class PerformanceStatsService {
   int? _parseInt(String? value) {
     if (value == null || value.isEmpty) return null;
     return int.tryParse(value);
+  }
+
+  /// Resolves the displayed audio sample rate and channel layout.
+  ///
+  /// When mpv bitstreams (`audio-params/format` is 'spdif-*'), audio-params
+  /// describe the IEC 61937 carrier — 192 kHz "stereo" for E-AC-3 — which is
+  /// transport framing, not audio. Reporters read that as "downgraded to
+  /// 2ch PCM" (#1300), so show the source track's values instead.
+  ({int? samplerate, String? channels, String? passthroughFormat}) _resolveAudioDisplay({
+    required String? format,
+    required String? samplerate,
+    required String? hrChannels,
+    required String? demuxSamplerate,
+    required String? demuxChannelCount,
+  }) {
+    if (format == null || !format.startsWith('spdif-')) {
+      return (samplerate: _parseInt(samplerate), channels: hrChannels, passthroughFormat: null);
+    }
+    return (
+      samplerate: _parseInt(demuxSamplerate),
+      channels: CodecUtils.formatAudioChannels(_parseInt(demuxChannelCount)),
+      passthroughFormat: format,
+    );
   }
 
   /// Parse a string to double, returning null if parsing fails.

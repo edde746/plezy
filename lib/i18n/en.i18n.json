@@ -1735,6 +1735,7 @@
     "decoder": "Decoder",
     "rawDecoder": "Raw Decoder",
     "tunneling": "Tunneling",
+    "passthrough": "Passthrough",
     "aspect": "Aspect",
     "rotation": "Rotation",
     "dvSource": "DV Source",

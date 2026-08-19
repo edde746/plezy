@@ -1725,6 +1725,7 @@
     "decoder": "デコーダー",
     "rawDecoder": "Raw デコーダー",
     "tunneling": "トンネリング",
+    "passthrough": "パススルー",
     "aspect": "アスペクト",
     "rotation": "回転",
     "dvSource": "DV ソース",

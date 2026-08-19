@@ -1797,6 +1797,7 @@ class _Translations$performanceOverlay$uz extends Translations$performanceOverla
 	@override String get decoder => 'Dekoder';
 	@override String get rawDecoder => 'Ishlov berilmagan dekoder';
 	@override String get tunneling => 'Tunnellash';
+	@override String get passthrough => 'Toʻgʻridan-toʻgʻri oʻtkazish';
 	@override String get aspect => 'Nisbat';
 	@override String get rotation => 'Aylanish';
 	@override String get dvSource => 'DV manbasi';
@@ -4292,6 +4293,7 @@ extension on TranslationsUz {
 			'performanceOverlay.decoder' => 'Dekoder',
 			'performanceOverlay.rawDecoder' => 'Ishlov berilmagan dekoder',
 			'performanceOverlay.tunneling' => 'Tunnellash',
+			'performanceOverlay.passthrough' => 'Toʻgʻridan-toʻgʻri oʻtkazish',
 			'performanceOverlay.aspect' => 'Nisbat',
 			'performanceOverlay.rotation' => 'Aylanish',
 			'performanceOverlay.dvSource' => 'DV manbasi',

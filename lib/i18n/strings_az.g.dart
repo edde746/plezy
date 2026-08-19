@@ -1797,6 +1797,7 @@ class _Translations$performanceOverlay$az extends Translations$performanceOverla
 	@override String get decoder => 'Çözücü';
 	@override String get rawDecoder => 'Xam çözücü';
 	@override String get tunneling => 'Tünelləmə';
+	@override String get passthrough => 'Birbaşa ötürmə';
 	@override String get aspect => 'Nisbət';
 	@override String get rotation => 'Dönmə';
 	@override String get dvSource => 'DV mənbəyi';
@@ -4292,6 +4293,7 @@ extension on TranslationsAz {
 			'performanceOverlay.decoder' => 'Çözücü',
 			'performanceOverlay.rawDecoder' => 'Xam çözücü',
 			'performanceOverlay.tunneling' => 'Tünelləmə',
+			'performanceOverlay.passthrough' => 'Birbaşa ötürmə',
 			'performanceOverlay.aspect' => 'Nisbət',
 			'performanceOverlay.rotation' => 'Dönmə',
 			'performanceOverlay.dvSource' => 'DV mənbəyi',

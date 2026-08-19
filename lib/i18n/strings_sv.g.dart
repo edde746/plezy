@@ -1797,6 +1797,7 @@ class _Translations$performanceOverlay$sv extends Translations$performanceOverla
 	@override String get decoder => 'Dekoder';
 	@override String get rawDecoder => 'Rå dekoder';
 	@override String get tunneling => 'Tunnling';
+	@override String get passthrough => 'Genomströmning';
 	@override String get aspect => 'Bildformat';
 	@override String get rotation => 'Rotation';
 	@override String get dvSource => 'DV-källa';
@@ -4292,6 +4293,7 @@ extension on TranslationsSv {
 			'performanceOverlay.decoder' => 'Dekoder',
 			'performanceOverlay.rawDecoder' => 'Rå dekoder',
 			'performanceOverlay.tunneling' => 'Tunnling',
+			'performanceOverlay.passthrough' => 'Genomströmning',
 			'performanceOverlay.aspect' => 'Bildformat',
 			'performanceOverlay.rotation' => 'Rotation',
 			'performanceOverlay.dvSource' => 'DV-källa',

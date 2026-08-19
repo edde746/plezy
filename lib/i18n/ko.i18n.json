@@ -1725,6 +1725,7 @@
     "decoder": "디코더",
     "rawDecoder": "원본 디코더",
     "tunneling": "터널링",
+    "passthrough": "패스스루",
     "aspect": "화면비",
     "rotation": "회전",
     "dvSource": "DV 소스",

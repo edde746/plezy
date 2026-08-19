@@ -1735,6 +1735,7 @@
     "decoder": "Dekoder",
     "rawDecoder": "Rå dekoder",
     "tunneling": "Tunneling",
+    "passthrough": "Passthrough",
     "aspect": "Billedformat",
     "rotation": "Rotation",
     "dvSource": "DV-kilde",

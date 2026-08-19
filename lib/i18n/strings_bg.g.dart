@@ -1797,6 +1797,7 @@ class _Translations$performanceOverlay$bg extends Translations$performanceOverla
 	@override String get decoder => 'Декодер';
 	@override String get rawDecoder => 'Суров декодер';
 	@override String get tunneling => 'Тунелиране';
+	@override String get passthrough => 'Директно предаване';
 	@override String get aspect => 'Съотношение';
 	@override String get rotation => 'Завъртане';
 	@override String get dvSource => 'DV източник';
@@ -4292,6 +4293,7 @@ extension on TranslationsBg {
 			'performanceOverlay.decoder' => 'Декодер',
 			'performanceOverlay.rawDecoder' => 'Суров декодер',
 			'performanceOverlay.tunneling' => 'Тунелиране',
+			'performanceOverlay.passthrough' => 'Директно предаване',
 			'performanceOverlay.aspect' => 'Съотношение',
 			'performanceOverlay.rotation' => 'Завъртане',
 			'performanceOverlay.dvSource' => 'DV източник',

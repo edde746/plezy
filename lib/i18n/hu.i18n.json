@@ -1735,6 +1735,7 @@
     "decoder": "Dekóder",
     "rawDecoder": "Nyers dekóder",
     "tunneling": "Alagutazás",
+    "passthrough": "Passthrough",
     "aspect": "Méretarány",
     "rotation": "Forgatás",
     "dvSource": "DV-forrás",

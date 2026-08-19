@@ -1755,6 +1755,7 @@
     "decoder": "Декодер",
     "rawDecoder": "Raw-декодер",
     "tunneling": "Туннелирование",
+    "passthrough": "Сквозной вывод",
     "aspect": "Соотношение",
     "rotation": "Поворот",
     "dvSource": "Источник DV",

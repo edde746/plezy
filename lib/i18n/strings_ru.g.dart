@@ -1813,6 +1813,7 @@ class _Translations$performanceOverlay$ru extends Translations$performanceOverla
 	@override String get decoder => 'Декодер';
 	@override String get rawDecoder => 'Raw-декодер';
 	@override String get tunneling => 'Туннелирование';
+	@override String get passthrough => 'Сквозной вывод';
 	@override String get aspect => 'Соотношение';
 	@override String get rotation => 'Поворот';
 	@override String get dvSource => 'Источник DV';
@@ -4312,6 +4313,7 @@ extension on TranslationsRu {
 			'performanceOverlay.decoder' => 'Декодер',
 			'performanceOverlay.rawDecoder' => 'Raw-декодер',
 			'performanceOverlay.tunneling' => 'Туннелирование',
+			'performanceOverlay.passthrough' => 'Сквозной вывод',
 			'performanceOverlay.aspect' => 'Соотношение',
 			'performanceOverlay.rotation' => 'Поворот',
 			'performanceOverlay.dvSource' => 'Источник DV',

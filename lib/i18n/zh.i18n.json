@@ -1725,6 +1725,7 @@
     "decoder": "解码器",
     "rawDecoder": "原始解码器",
     "tunneling": "隧道",
+    "passthrough": "直通",
     "aspect": "宽高比",
     "rotation": "旋转",
     "dvSource": "DV 来源",

@@ -1797,6 +1797,7 @@ class _Translations$performanceOverlay$kk extends Translations$performanceOverla
 	@override String get decoder => 'Декодер';
 	@override String get rawDecoder => 'Өңделмеген декодер';
 	@override String get tunneling => 'Туннельдеу';
+	@override String get passthrough => 'Тікелей өткізу';
 	@override String get aspect => 'Қатынас';
 	@override String get rotation => 'Бұрылыс';
 	@override String get dvSource => 'DV дереккөзі';
@@ -4292,6 +4293,7 @@ extension on TranslationsKk {
 			'performanceOverlay.decoder' => 'Декодер',
 			'performanceOverlay.rawDecoder' => 'Өңделмеген декодер',
 			'performanceOverlay.tunneling' => 'Туннельдеу',
+			'performanceOverlay.passthrough' => 'Тікелей өткізу',
 			'performanceOverlay.aspect' => 'Қатынас',
 			'performanceOverlay.rotation' => 'Бұрылыс',
 			'performanceOverlay.dvSource' => 'DV дереккөзі',

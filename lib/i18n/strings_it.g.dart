@@ -1797,6 +1797,7 @@ class _Translations$performanceOverlay$it extends Translations$performanceOverla
 	@override String get decoder => 'Decoder';
 	@override String get rawDecoder => 'Decoder raw';
 	@override String get tunneling => 'Tunneling';
+	@override String get passthrough => 'Passthrough';
 	@override String get aspect => 'Proporzioni';
 	@override String get rotation => 'Rotazione';
 	@override String get dvSource => 'Sorgente DV';
@@ -4292,6 +4293,7 @@ extension on TranslationsIt {
 			'performanceOverlay.decoder' => 'Decoder',
 			'performanceOverlay.rawDecoder' => 'Decoder raw',
 			'performanceOverlay.tunneling' => 'Tunneling',
+			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Proporzioni',
 			'performanceOverlay.rotation' => 'Rotazione',
 			'performanceOverlay.dvSource' => 'Sorgente DV',

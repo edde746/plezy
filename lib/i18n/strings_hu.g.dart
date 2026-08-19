@@ -1797,6 +1797,7 @@ class _Translations$performanceOverlay$hu extends Translations$performanceOverla
 	@override String get decoder => 'Dekóder';
 	@override String get rawDecoder => 'Nyers dekóder';
 	@override String get tunneling => 'Alagutazás';
+	@override String get passthrough => 'Passthrough';
 	@override String get aspect => 'Méretarány';
 	@override String get rotation => 'Forgatás';
 	@override String get dvSource => 'DV-forrás';
@@ -4292,6 +4293,7 @@ extension on TranslationsHu {
 			'performanceOverlay.decoder' => 'Dekóder',
 			'performanceOverlay.rawDecoder' => 'Nyers dekóder',
 			'performanceOverlay.tunneling' => 'Alagutazás',
+			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Méretarány',
 			'performanceOverlay.rotation' => 'Forgatás',
 			'performanceOverlay.dvSource' => 'DV-forrás',

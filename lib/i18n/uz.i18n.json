@@ -1735,6 +1735,7 @@
     "decoder": "Dekoder",
     "rawDecoder": "Ishlov berilmagan dekoder",
     "tunneling": "Tunnellash",
+    "passthrough": "Toʻgʻridan-toʻgʻri oʻtkazish",
     "aspect": "Nisbat",
     "rotation": "Aylanish",
     "dvSource": "DV manbasi",

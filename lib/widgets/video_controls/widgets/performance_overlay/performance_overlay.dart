@@ -68,6 +68,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       ]),
       _buildSection(Symbols.volume_up_rounded, t.fileInfo.audio, [
         if (_stats.audioCodec != null) _metric(t.fileInfo.codec, _stats.audioCodec!),
+        if (_stats.audioPassthrough) _metric(t.performanceOverlay.passthrough, _stats.audioPassthroughFormatted),
         _metric(t.performanceOverlay.sampleRate, _stats.sampleRateFormatted),
         _metric(t.fileInfo.channels, _stats.audioChannels ?? t.common.notAvailable),
         if (_stats.hasValidAudioBitrate) _metric(t.fileInfo.bitrate, _stats.audioBitrateFormatted),

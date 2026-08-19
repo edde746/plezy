@@ -4375,6 +4375,9 @@ class Translations$performanceOverlay$en {
 	/// en: 'Tunneling'
 	String get tunneling => 'Tunneling';
 
+	/// en: 'Passthrough'
+	String get passthrough => 'Passthrough';
+
 	/// en: 'Aspect'
 	String get aspect => 'Aspect';
 
@@ -8006,6 +8009,7 @@ extension on Translations {
 			'performanceOverlay.decoder' => 'Decoder',
 			'performanceOverlay.rawDecoder' => 'Raw Decoder',
 			'performanceOverlay.tunneling' => 'Tunneling',
+			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Aspect',
 			'performanceOverlay.rotation' => 'Rotation',
 			'performanceOverlay.dvSource' => 'DV Source',

@@ -1790,6 +1790,7 @@ class _Translations$performanceOverlay$zh_Hant extends Translations$performanceO
 	@override String get decoder => '解碼器';
 	@override String get rawDecoder => '原始解碼器';
 	@override String get tunneling => '通道模式';
+	@override String get passthrough => '直通';
 	@override String get aspect => '寬高比';
 	@override String get rotation => '旋轉角度';
 	@override String get dvSource => 'DV 來源';
@@ -4283,6 +4284,7 @@ extension on TranslationsZhHant {
 			'performanceOverlay.decoder' => '解碼器',
 			'performanceOverlay.rawDecoder' => '原始解碼器',
 			'performanceOverlay.tunneling' => '通道模式',
+			'performanceOverlay.passthrough' => '直通',
 			'performanceOverlay.aspect' => '寬高比',
 			'performanceOverlay.rotation' => '旋轉角度',
 			'performanceOverlay.dvSource' => 'DV 來源',

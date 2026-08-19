@@ -1789,6 +1789,7 @@ class _Translations$performanceOverlay$ko extends Translations$performanceOverla
 	@override String get decoder => '디코더';
 	@override String get rawDecoder => '원본 디코더';
 	@override String get tunneling => '터널링';
+	@override String get passthrough => '패스스루';
 	@override String get aspect => '화면비';
 	@override String get rotation => '회전';
 	@override String get dvSource => 'DV 소스';
@@ -4282,6 +4283,7 @@ extension on TranslationsKo {
 			'performanceOverlay.decoder' => '디코더',
 			'performanceOverlay.rawDecoder' => '원본 디코더',
 			'performanceOverlay.tunneling' => '터널링',
+			'performanceOverlay.passthrough' => '패스스루',
 			'performanceOverlay.aspect' => '화면비',
 			'performanceOverlay.rotation' => '회전',
 			'performanceOverlay.dvSource' => 'DV 소스',

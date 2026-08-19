@@ -1797,6 +1797,7 @@ class _Translations$performanceOverlay$es extends Translations$performanceOverla
 	@override String get decoder => 'Decodificador';
 	@override String get rawDecoder => 'Decodificador sin procesar';
 	@override String get tunneling => 'Túnel';
+	@override String get passthrough => 'Transferencia directa';
 	@override String get aspect => 'Aspecto';
 	@override String get rotation => 'Rotación';
 	@override String get dvSource => 'Origen DV';
@@ -4292,6 +4293,7 @@ extension on TranslationsEs {
 			'performanceOverlay.decoder' => 'Decodificador',
 			'performanceOverlay.rawDecoder' => 'Decodificador sin procesar',
 			'performanceOverlay.tunneling' => 'Túnel',
+			'performanceOverlay.passthrough' => 'Transferencia directa',
 			'performanceOverlay.aspect' => 'Aspecto',
 			'performanceOverlay.rotation' => 'Rotación',
 			'performanceOverlay.dvSource' => 'Origen DV',

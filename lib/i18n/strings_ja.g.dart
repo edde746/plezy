@@ -1789,6 +1789,7 @@ class _Translations$performanceOverlay$ja extends Translations$performanceOverla
 	@override String get decoder => 'デコーダー';
 	@override String get rawDecoder => 'Raw デコーダー';
 	@override String get tunneling => 'トンネリング';
+	@override String get passthrough => 'パススルー';
 	@override String get aspect => 'アスペクト';
 	@override String get rotation => '回転';
 	@override String get dvSource => 'DV ソース';
@@ -4282,6 +4283,7 @@ extension on TranslationsJa {
 			'performanceOverlay.decoder' => 'デコーダー',
 			'performanceOverlay.rawDecoder' => 'Raw デコーダー',
 			'performanceOverlay.tunneling' => 'トンネリング',
+			'performanceOverlay.passthrough' => 'パススルー',
 			'performanceOverlay.aspect' => 'アスペクト',
 			'performanceOverlay.rotation' => '回転',
 			'performanceOverlay.dvSource' => 'DV ソース',

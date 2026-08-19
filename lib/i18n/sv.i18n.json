@@ -1735,6 +1735,7 @@
     "decoder": "Dekoder",
     "rawDecoder": "Rå dekoder",
     "tunneling": "Tunnling",
+    "passthrough": "Genomströmning",
     "aspect": "Bildformat",
     "rotation": "Rotation",
     "dvSource": "DV-källa",
