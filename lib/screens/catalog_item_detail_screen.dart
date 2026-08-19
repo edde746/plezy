@@ -118,10 +118,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final sources = context.read<CatalogSourcesProvider>();
     _watchlistSource = sources.watchlistSourceFor(widget.item);
     // Request needs a connected Seerr, the permission for this kind, and a
-    // tmdb id (Trakt items carry one natively; MAL items get theirs from the
-    // Fribb mapping at row time).
+    // tmdb id. The id is checked at build time from the detail-enriched item,
+    // not here: Trakt items carry one natively and MAL items get theirs from
+    // the Fribb mapping at row time, but Plex Discover's hub/search/related
+    // endpoints ignore includeGuids, so a Plex item's tmdb id only arrives
+    // with the detail fetch (issue #1959).
     final seerr = sources.seerrSource;
-    if (seerr != null && widget.item.ids.tmdb != null && seerr.canRequest(widget.item.kind)) {
+    if (seerr != null && seerr.canRequest(widget.item.kind)) {
       _requestSource = seerr;
     }
     final source = _watchlistSource;
@@ -290,7 +293,11 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   bool get _hasTrailer => _item.trailerUrl?.trim().isNotEmpty ?? false;
 
-  bool get _hasActions => _watchlistSource != null || _requestSource != null || _hasTrailer;
+  /// Whether the Request action can actually render: the tmdb id may only
+  /// arrive with the detail fetch (see initState), so read the enriched item.
+  bool get _canRequest => _requestSource != null && _item.ids.tmdb != null;
+
+  bool get _hasActions => _watchlistSource != null || _canRequest || _hasTrailer;
 
   bool get _hasLibraryMatches => _libraryMatchFocusNodes.isNotEmpty;
 

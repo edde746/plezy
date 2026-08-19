@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -14,12 +16,16 @@ import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
+import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
+import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -116,11 +122,43 @@ class _FakeCatalogSource implements CatalogSource {
 
 class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
   final CatalogSource source;
+  final SeerrCatalogSource? seerr;
 
-  _FakeCatalogSourcesProvider(this.source);
+  _FakeCatalogSourcesProvider(this.source, {this.seerr});
 
   @override
-  List<CatalogSource> get connectedSources => [source];
+  List<CatalogSource> get connectedSources => [source, ?seerr];
+
+  @override
+  SeerrCatalogSource? get seerrSource => seerr;
+}
+
+/// A real [SeerrCatalogSource]: the Request gate reads the session's
+/// permission bitmask through [SeerrCatalogSource.canRequest]. None of these
+/// tests open the request sheet, so no Seerr HTTP is expected.
+SeerrCatalogSource _seerrSource({int permissions = SeerrPermission.request}) {
+  final client = SeerrClient(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.local,
+      identifier: 'a@b.c',
+      secret: 'pw',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions,
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      createdAt: 0,
+    ),
+    onSessionInvalidated: () {},
+    httpClient: MockClient((request) async => http.Response('unexpected Seerr request', 500)),
+  );
+  final source = SeerrCatalogSource(client);
+  addTearDown(() {
+    source.dispose();
+    client.dispose();
+  });
+  return source;
 }
 
 class _FakeCatalogLibraryMatcher extends CatalogLibraryMatcher {
@@ -210,8 +248,9 @@ Future<void> _pumpDetail(
   bool pushedRoute = false,
   CatalogItem item = _item,
   CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
+  SeerrCatalogSource? seerr,
 }) async {
-  final sources = _FakeCatalogSourcesProvider(source);
+  final sources = _FakeCatalogSourcesProvider(source, seerr: seerr);
   final serverManager = MultiServerManager();
   final multiServer = testMultiServerProvider(serverManager);
   final matcher = matcherBuilder?.call(multiServer) ?? _FakeCatalogLibraryMatcher(multiServer, matches);
@@ -331,6 +370,41 @@ void main() {
     expect(find.text(t.explore.notInLibrary), findsNothing);
     expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
     expect(find.text('Movies'), findsOneWidget);
+  });
+
+  group('Seerr request action', () {
+    testWidgets('appears once the detail load supplies the tmdb id', (tester) async {
+      // #1959: Plex Discover's hub/search/related endpoints ignore
+      // includeGuids, so a row item carries no tmdb id until fetchDetail
+      // brings one. The Request gate must read the enriched item, not the
+      // row form the screen opened with.
+      final detailCompleter = Completer<CatalogDetail>();
+      final source = _FakeCatalogSource(detailCompleter: detailCompleter);
+
+      await _pumpDetail(tester, source, item: _bareRow, seerr: _seerrSource());
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+
+      detailCompleter.complete(const CatalogDetail(item: _enrichedRow));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+    });
+
+    testWidgets('appears immediately when the row item already carries a tmdb id', (tester) async {
+      final source = _FakeCatalogSource();
+
+      await _pumpDetail(tester, source, seerr: _seerrSource());
+
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+    });
+
+    testWidgets('stays hidden without the request permission', (tester) async {
+      final source = _FakeCatalogSource();
+
+      await _pumpDetail(tester, source, seerr: _seerrSource(permissions: 0));
+
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
   });
 
   testWidgets('lists every library copy of one title, best quality first', (tester) async {
