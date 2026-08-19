@@ -528,7 +528,10 @@ class DeferredPhaseTest(unittest.TestCase):
         defaults.update(args)
         return deploy.Context(
             args=SimpleNamespace(**defaults),
-            env={"AMAZON_APPSTORE_PACKAGE_NAME": "com.example.app"},
+            env={
+                "AMAZON_APPSTORE_PACKAGE_NAME": "com.example.app",
+                "AMAZON_APPSTORE_APP_ID": "amzn1.devportal.mobileapp.fixture",
+            },
             state=state,
             phases=["amazon", "publish"],
         )

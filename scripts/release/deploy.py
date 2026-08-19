@@ -41,6 +41,8 @@ Credentials come from .env at the repository root (same file fastlane used):
     SUPPLY_JSON_KEY_DATA / SUPPLY_JSON_KEY   Play service-account JSON (data or path)
     SUPPLY_PACKAGE_NAME                      Android package name
     AMAZON_APPSTORE_CLIENT_ID / _CLIENT_SECRET / _PACKAGE_NAME
+    AMAZON_APPSTORE_APP_ID                   Amazon App ID (amzn1.devportal.
+                                             mobileapp...., from the console URL)
     DELIVER_APP_IDENTIFIER                   Apple bundle id
     ASC_KEY_ID / ASC_ISSUER_ID / ASC_KEY_PATH
                                              App Store Connect team API key
@@ -480,6 +482,7 @@ def phase_preflight(ctx: Context) -> None:
                 "AMAZON_APPSTORE_CLIENT_ID",
                 "AMAZON_APPSTORE_CLIENT_SECRET",
                 "AMAZON_APPSTORE_PACKAGE_NAME",
+                "AMAZON_APPSTORE_APP_ID",
             ],
             "amazon",
         )
@@ -487,6 +490,12 @@ def phase_preflight(ctx: Context) -> None:
             raise DeployError(
                 "amazon: AMAZON_APPSTORE_PACKAGE_NAME must be com.edde746.plezy3; "
                 f"got {env['AMAZON_APPSTORE_PACKAGE_NAME']!r}"
+            )
+        if not env["AMAZON_APPSTORE_APP_ID"].startswith("amzn1.devportal.mobileapp."):
+            raise DeployError(
+                "amazon: AMAZON_APPSTORE_APP_ID must be the amzn1.devportal.mobileapp. "
+                "app id from the developer-console URL; the API no longer accepts "
+                f"package names; got {env['AMAZON_APPSTORE_APP_ID']!r}"
             )
     if pending & {"ios", "tvos", "asc"}:
         require_env(
@@ -957,13 +966,15 @@ def _commit_amazon_edit(ctx: Context, client: AmazonClient, edit_id: str) -> Non
 
 def phase_amazon(ctx: Context) -> None:
     package = ctx.env["AMAZON_APPSTORE_PACKAGE_NAME"]
+    # The submission API addresses apps by Amazon app id; package names 400.
+    app_id = ctx.env["AMAZON_APPSTORE_APP_ID"]
     apk = ROOT / "build/app/outputs/flutter-apk/app-release.apk"
     if dry_guard(ctx, f"build Amazon APK, replace binary in an edit for {package}, commit"):
         return
     pending_edit_id = ctx.state.data.get("amazon_pending_edit_id")
     if pending_edit_id:
         log(f"amazon: resuming pending edit {pending_edit_id} without replacing its APK")
-        client = AmazonClient(package, _amazon_token(ctx.env))
+        client = AmazonClient(app_id, _amazon_token(ctx.env))
         _commit_amazon_edit(ctx, client, str(pending_edit_id))
         return
 
@@ -989,7 +1000,7 @@ def phase_amazon(ctx: Context) -> None:
     if not apk.is_file():
         raise DeployError(f"amazon: APK not found at {apk}")
 
-    client = AmazonClient(package, _amazon_token(ctx.env))
+    client = AmazonClient(app_id, _amazon_token(ctx.env))
 
     edits_response = client.request("GET", "/edits")
     edits = edits_response.json() if edits_response.text.strip() else {}
