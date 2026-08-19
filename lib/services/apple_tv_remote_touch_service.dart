@@ -1,9 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 
-import '../focus/focus_navigation_intent.dart';
 import '../focus/input_mode_tracker.dart';
 import '../utils/app_logger.dart';
 import '../utils/key_event_simulator.dart' as key_sim;
@@ -19,25 +17,33 @@ class AppleTvRemotePlayPauseAction {
 }
 
 const double _axisSwitchDominanceRatio = 1.5;
-const Duration _swipeRepeatInterval = Duration(milliseconds: 140);
-// Device-tuned on an Apple TV 4K against native focus feel: UIKit's
-// indirect-touch acceleration means roughly half an item's extent of
-// reported travel already reads as "one deliberate swipe".
-const double _swipeExtentGain = 0.55;
-const double _maxSwipeThreshold = 180;
+// Retuned against the native tvOS focus engine, measured on-device on an
+// Apple TV 4K (issue #2006), poster grid 230x345:
+// - one focus step per ~400pt of indirect-touch travel (UITouch points — the
+//   same accelerated space the engine reports on this channel), measured
+//   identical for the 230pt and 345pt axes: the step distance does NOT
+//   follow the focused item's extent;
+// - steps repeat every ~60ms (native median) during a committed drag;
+// - a fast lift glides on: one extra step past ~2000pt/s, two past ~8000pt/s,
+//   landing within ~130ms of the lift.
+// Small extents (chips, list rows) are unmeasured; the fixed step distance
+// extrapolates the measured axis-independence to them.
+const Duration _swipeRepeatInterval = Duration(milliseconds: 60);
+const double _swipeStepDistance = 400;
+const Duration _glideStepInterval = Duration(milliseconds: 70);
+const double _glideVelocity = 2000;
+const double _glideDoubleStepVelocity = 8000;
+const Duration _liftVelocityWindow = Duration(milliseconds: 100);
 
-/// Bridges tvOS touch-surface events from Apple's iOS Remote app into the
-/// focus-tree key events Plezy already handles for D-pad navigation.
+/// Bridges tvOS touch-surface events (Siri Remote and Apple's iOS Remote app)
+/// into the focus-tree key events Plezy already handles for D-pad navigation.
 ///
-/// Like the native focus engine, the pan distance for one focus step follows
-/// the focused control's on-screen size: small chips traverse quickly, large
-/// cards demand a longer swipe. When no usable geometry exists (a bare focus
-/// scope, the video player's screen-sized catch-all surfaces) the step falls
-/// back to a fixed threshold.
+/// One focus step costs a fixed [swipeThreshold] of touch travel regardless
+/// of the focused control's size, steps repeat on a short cadence during a
+/// sustained drag, and a fast lift "glides" one or two further steps — all
+/// three tuned to on-device measurements of the native focus engine.
 class AppleTvRemoteTouchService {
   static const String _channelName = 'flutter/gamepadtouchevent';
-  static const double defaultSwipeThreshold = 180;
-  static const double defaultMinSwipeThreshold = 50;
 
   static final AppleTvRemoteTouchService instance = AppleTvRemoteTouchService();
 
@@ -50,13 +56,8 @@ class AppleTvRemoteTouchService {
   final StreamController<AppleTvRemotePlayPauseAction> _playPauseController =
       StreamController<AppleTvRemotePlayPauseAction>.broadcast();
 
-  /// Fallback step distance when no usable focus geometry exists.
+  /// Touch travel that prices one focus step.
   final double swipeThreshold;
-  final double minSwipeThreshold;
-
-  /// Global rect of the control that prices a focus step, or null when no
-  /// usable geometry exists. Injected so tests can supply fake geometry.
-  final Rect? Function() _focusedItemRect;
 
   bool _listening = false;
   bool _nativeKeyHandlerRegistered = false;
@@ -67,19 +68,18 @@ class AppleTvRemoteTouchService {
   double _anchorY = 0;
   _SwipeAxis? _lastSwipeAxis;
   DateTime? _lastSwipeAt;
+  LogicalKeyboardKey? _lastSwipeKey;
+  final List<({DateTime t, double x, double y})> _moveSamples = [];
+  Timer? _glideTimer;
 
   AppleTvRemoteTouchService({
     void Function(LogicalKeyboardKey logicalKey)? simulateKeyPress,
     VoidCallback? scheduleFrame,
     DateTime Function()? now,
-    this.swipeThreshold = defaultSwipeThreshold,
-    this.minSwipeThreshold = defaultMinSwipeThreshold,
-    Rect? Function()? focusedItemRect,
-  }) : assert(minSwipeThreshold > 0 && minSwipeThreshold <= _maxSwipeThreshold),
-       _simulateKeyPress = simulateKeyPress ?? key_sim.simulateKeyPress,
+    this.swipeThreshold = _swipeStepDistance,
+  }) : _simulateKeyPress = simulateKeyPress ?? key_sim.simulateKeyPress,
        _scheduleFrame = scheduleFrame ?? key_sim.scheduleFrameIfIdle,
        _now = now ?? DateTime.now,
-       _focusedItemRect = focusedItemRect ?? _defaultFocusedItemRect,
        _duplicateInputGuard = GamepadDuplicateInputGuard(now: now);
 
   Stream<AppleTvRemotePlayPauseAction> get playPauseActions => _playPauseController.stream;
@@ -95,6 +95,7 @@ class AppleTvRemoteTouchService {
   void stop() {
     if (!_listening) return;
     _channel.setMessageHandler(null);
+    _cancelGlide();
     _unregisterNativeKeyHandler();
     _duplicateInputGuard.clear();
     _resetTouch();
@@ -134,12 +135,12 @@ class AppleTvRemoteTouchService {
         if (position == null) return;
         _moveTouch(position.$1, position.$2);
       case 'ended':
-        // Drop the lift frame: the final position on touchesEnded is
-        // unreliable on the Siri Remote — a natural finger pivot during
-        // lift can register enough delta from the post-last-swipe anchor
-        // to fire a stray opposite-direction swipe. In-gesture 'move'
-        // events have already covered any legitimate swipe motion.
-        _resetTouch();
+        // Drop the lift frame position: it is unreliable on the Siri Remote —
+        // a natural finger pivot during lift can register enough delta from
+        // the post-last-swipe anchor to fire a stray opposite-direction
+        // swipe. The gesture's recorded move samples still price a post-lift
+        // glide.
+        _endTouch();
       case 'cancelled':
         _resetTouch();
       case 'play_pause':
@@ -167,6 +168,7 @@ class AppleTvRemoteTouchService {
   }
 
   void _startTouch(double x, double y) {
+    _cancelGlide();
     _touchActive = true;
     _startX = x;
     _startY = y;
@@ -174,6 +176,10 @@ class AppleTvRemoteTouchService {
     _anchorY = y;
     _lastSwipeAxis = null;
     _lastSwipeAt = null;
+    _lastSwipeKey = null;
+    _moveSamples
+      ..clear()
+      ..add((t: _now(), x: x, y: y));
   }
 
   void _moveTouch(double x, double y) {
@@ -186,6 +192,7 @@ class AppleTvRemoteTouchService {
     final deltaY = _anchorY - y;
 
     final now = _now();
+    _recordMoveSample(now, x, y);
     final lastSwipeAt = _lastSwipeAt;
     if (lastSwipeAt != null && now.difference(lastSwipeAt) < _swipeRepeatInterval) {
       // Travel during the repeat cooldown never counts toward the next step:
@@ -204,8 +211,7 @@ class AppleTvRemoteTouchService {
       return;
     }
 
-    final thresholds = _stepThresholds();
-    final axis = _resolveSwipeAxis(x: x, y: y, deltaX: deltaX, deltaY: deltaY, thresholds: thresholds);
+    final axis = _resolveSwipeAxis(x: x, y: y, deltaX: deltaX, deltaY: deltaY);
     if (axis == null) return;
 
     final logicalKey = axis == _SwipeAxis.horizontal
@@ -217,36 +223,33 @@ class AppleTvRemoteTouchService {
       source: 'swipe',
       detail:
           'dx=${_formatDouble(deltaX)} dy=${_formatDouble(deltaY)} '
-          'thX=${_formatDouble(thresholds.horizontal)} thY=${_formatDouble(thresholds.vertical)}',
+          'th=${_formatDouble(swipeThreshold)}',
     );
     _anchorX = x;
     _anchorY = y;
     _lastSwipeAxis = axis;
     _lastSwipeAt = now;
+    _lastSwipeKey = logicalKey;
   }
 
-  /// Resolves which axis, if any, crossed its step threshold.
-  ///
-  /// Distances are normalized by the per-axis thresholds so that, like the
-  /// native focus engine, a wide-flat control steps vertically once the finger
-  /// covers the item's height even while the raw horizontal delta is larger.
+  /// Resolves which axis, if any, covered a full step distance, with
+  /// hysteresis so incidental drift does not zig-zag an established swipe.
   _SwipeAxis? _resolveSwipeAxis({
     required double x,
     required double y,
     required double deltaX,
     required double deltaY,
-    required ({double horizontal, double vertical}) thresholds,
   }) {
-    final progressX = deltaX.abs() / thresholds.horizontal;
-    final progressY = deltaY.abs() / thresholds.vertical;
+    final progressX = deltaX.abs() / swipeThreshold;
+    final progressY = deltaY.abs() / swipeThreshold;
     if (progressX < 1 && progressY < 1) return null;
 
     final candidate = progressX >= progressY ? _SwipeAxis.horizontal : _SwipeAxis.vertical;
     final lastAxis = _lastSwipeAxis;
     if (lastAxis == null || candidate == lastAxis) return candidate;
 
-    final totalProgressX = (_startX - x).abs() / thresholds.horizontal;
-    final totalProgressY = (_startY - y).abs() / thresholds.vertical;
+    final totalProgressX = (_startX - x).abs() / swipeThreshold;
+    final totalProgressY = (_startY - y).abs() / swipeThreshold;
     final candidateTotal = _axisValue(candidate, totalProgressX, totalProgressY);
     final lastAxisTotal = _axisValue(lastAxis, totalProgressX, totalProgressY);
     final candidateSegment = _axisValue(candidate, progressX, progressY);
@@ -263,31 +266,61 @@ class AppleTvRemoteTouchService {
     return axis == _SwipeAxis.horizontal ? horizontal : vertical;
   }
 
-  ({double horizontal, double vertical}) _stepThresholds() {
-    final rect = _focusedItemRect();
-    if (rect == null) return (horizontal: swipeThreshold, vertical: swipeThreshold);
-    return (horizontal: _thresholdForExtent(rect.width), vertical: _thresholdForExtent(rect.height));
+  void _recordMoveSample(DateTime now, double x, double y) {
+    _moveSamples.add((t: now, x: x, y: y));
+    final cutoff = now.subtract(_liftVelocityWindow);
+    while (_moveSamples.isNotEmpty && _moveSamples.first.t.isBefore(cutoff)) {
+      _moveSamples.removeAt(0);
+    }
   }
 
-  double _thresholdForExtent(double extent) {
-    if (!extent.isFinite || extent <= 0) return swipeThreshold;
-    return (extent * _swipeExtentGain).clamp(minSwipeThreshold, _maxSwipeThreshold).toDouble();
+  void _endTouch() {
+    final glideKey = _lastSwipeKey;
+    final glideSteps = _liftGlideSteps();
+    _resetTouch();
+    if (glideKey != null && glideSteps > 0) _startGlide(glideKey, glideSteps);
   }
 
-  /// Reads the primary focus geometry, rejecting nodes whose rect cannot
-  /// meaningfully price a step: bare scopes (nothing real is focused yet) and
-  /// the player's catch-all [DirectionalShortcutFocusNode] surfaces are
-  /// screen-sized, and a detached or unlaid-out node has no rect at all.
-  static Rect? _defaultFocusedItemRect() {
-    final node = FocusManager.instance.primaryFocus;
-    if (node == null || node is FocusScopeNode || node is DirectionalShortcutFocusNode) return null;
-    final context = node.context;
-    if (context == null) return null;
-    final renderObject = context.findRenderObject();
-    if (renderObject is! RenderBox || !renderObject.attached || !renderObject.hasSize) return null;
-    final rect = node.rect;
-    if (!rect.isFinite || rect.isEmpty) return null;
-    return rect;
+  /// Prices the post-lift glide from the finger's velocity over the last
+  /// [_liftVelocityWindow] of the gesture, measured along the established
+  /// swipe axis. A gesture that never produced a step has no established
+  /// direction and never glides; neither does a lift moving against the last
+  /// step (a reversal pivot).
+  int _liftGlideSteps() {
+    final key = _lastSwipeKey;
+    final axis = _lastSwipeAxis;
+    if (key == null || axis == null || _moveSamples.length < 2) return 0;
+    final first = _moveSamples.first;
+    final last = _moveSamples.last;
+    final dt = last.t.difference(first.t).inMicroseconds / Duration.microsecondsPerSecond;
+    if (dt <= 0) return 0;
+    final velocity = axis == _SwipeAxis.horizontal ? (last.x - first.x) / dt : (last.y - first.y) / dt;
+    final towardKey = axis == _SwipeAxis.horizontal
+        ? (velocity < 0 ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight)
+        : (velocity < 0 ? LogicalKeyboardKey.arrowUp : LogicalKeyboardKey.arrowDown);
+    if (towardKey != key) return 0;
+    final speed = velocity.abs();
+    if (speed < _glideVelocity) return 0;
+    return speed >= _glideDoubleStepVelocity ? 2 : 1;
+  }
+
+  void _startGlide(LogicalKeyboardKey key, int steps) {
+    _cancelGlide();
+    var remaining = steps;
+    _log('start glide key=${_keyName(key)} steps=$steps');
+    _glideTimer = Timer.periodic(_glideStepInterval, (timer) {
+      _emitKey(key, source: 'glide');
+      remaining -= 1;
+      if (remaining <= 0) {
+        timer.cancel();
+        if (identical(_glideTimer, timer)) _glideTimer = null;
+      }
+    });
+  }
+
+  void _cancelGlide() {
+    _glideTimer?.cancel();
+    _glideTimer = null;
   }
 
   bool _emitKey(LogicalKeyboardKey logicalKey, {required String source, String? detail}) {
@@ -307,6 +340,8 @@ class AppleTvRemoteTouchService {
     _touchActive = false;
     _lastSwipeAxis = null;
     _lastSwipeAt = null;
+    _lastSwipeKey = null;
+    _moveSamples.clear();
   }
 
   void _registerNativeKeyHandler() {
