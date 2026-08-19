@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../models/mal/mal_anime.dart';
 import '../../../models/mal/mal_character.dart';
+import '../../../models/trackers/anime_list_snapshot.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/json_utils.dart';
 import '../future_coalescer.dart';
@@ -152,11 +153,19 @@ class MalClient implements DisposableTrackerClient {
     return MalPage.fromJson(res, MalAnime.fromJson);
   }
 
-  Future<int?> getAnimeEpisodeCount(int animeId) async {
-    final res = await _request('GET', '/anime/$animeId?fields=num_episodes');
+  /// Episode count plus the viewer's list status in one request, so the
+  /// rewatch-preserving scrobble path costs no extra call.
+  Future<AnimeListSnapshot?> getAnimeListSnapshot(int animeId) async {
+    final res = await _request('GET', '/anime/$animeId?fields=num_episodes,my_list_status');
     if (res is! Map) return null;
     final count = flexibleInt(res['num_episodes']);
-    return count != null && count > 0 ? count : null;
+    final list = res['my_list_status'];
+    return AnimeListSnapshot(
+      episodeCount: count != null && count > 0 ? count : null,
+      rewatching: list is Map && flexibleBool(list['is_rewatching']),
+      completed: list is Map && list['status'] == 'completed',
+      rewatchCount: list is Map ? (flexibleInt(list['num_times_rewatched']) ?? 0) : 0,
+    );
   }
 
   Future<TrackerSession> _refresh() => _refreshCoalescer.run(_doRefresh);

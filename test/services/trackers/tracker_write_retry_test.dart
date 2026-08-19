@@ -116,8 +116,10 @@ Map<String, dynamic> _decodeBody(String body) {
   return Uri.splitQueryString(body);
 }
 
-/// Records every write and can hold one in flight, which is how request ordering
-/// is driven without leaning on wall-clock timing.
+/// Records every request and can hold one write in flight, which is how
+/// request ordering is driven without leaning on wall-clock timing. Reads
+/// (the MAL list-snapshot GET) pass through ungated so the gate always lands
+/// on the write whose ordering the test drives.
 class _Recorder {
   final List<String> paths = [];
   final List<Map<String, dynamic>> bodies = [];
@@ -127,8 +129,10 @@ class _Recorder {
   http.Client get client => MockClient((request) async {
     paths.add(request.url.path);
     bodies.add(_decodeBody(request.body));
-    final pending = gate;
-    if (pending != null) await pending.future;
+    if (request.method != 'GET') {
+      final pending = gate;
+      if (pending != null) await pending.future;
+    }
     return http.Response('{}', status);
   });
 }

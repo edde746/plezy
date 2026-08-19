@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 
 import '../../../models/trackers/anime_ids.dart';
+import '../../../models/trackers/anime_list_snapshot.dart';
 import '../../../utils/app_logger.dart';
 import '../anime_list_tracker_base.dart';
 import '../tracker.dart';
@@ -52,7 +53,7 @@ class MalTracker extends TrackerBase with ClientBackedTracker<MalClient>, AnimeL
   int? animeId(AnimeIds? anime) => anime?.mal;
 
   @override
-  Future<int?> loadAnimeEpisodeCount(MalClient client, int malId) => client.getAnimeEpisodeCount(malId);
+  Future<AnimeListSnapshot?> loadAnimeListSnapshot(MalClient client, int malId) => client.getAnimeListSnapshot(malId);
 
   @override
   Future<void> saveAnimeProgress(
@@ -60,8 +61,23 @@ class MalTracker extends TrackerBase with ClientBackedTracker<MalClient>, AnimeL
     required int animeId,
     required int progress,
     required bool completed,
+    required bool rewatching,
+    int? rewatchCount,
   }) async {
-    final fields = {'status': completed ? 'completed' : 'watching', 'num_watched_episodes': '$progress'};
+    final fields = {'num_watched_episodes': '$progress'};
+    if (rewatching) {
+      // MAL models a rewatch as the existing status (normally completed) plus
+      // is_rewatching, so writing status=watching here would yank the show out
+      // of the completed list (issue #2026). Omitted form fields are untouched.
+      fields['is_rewatching'] = 'true';
+    } else {
+      fields['status'] = completed ? 'completed' : 'watching';
+      if (rewatchCount != null) {
+        // Finishing a rewatch: land back on completed with the counter bumped.
+        fields['is_rewatching'] = 'false';
+        fields['num_times_rewatched'] = '$rewatchCount';
+      }
+    }
     await client.updateMyListStatus(animeId, fields);
     appLogger.d('MAL: updated list status (mal=$animeId, fields=$fields)');
   }
