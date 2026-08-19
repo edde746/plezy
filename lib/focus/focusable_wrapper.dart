@@ -319,8 +319,12 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         _animationController?.reverse();
       }
 
-      // Auto-scroll into view
-      if (hasFocus && widget.autoScroll) {
+      // Auto-scroll into view. Keyboard/D-pad sessions only: pointer-mode
+      // focus is invisible and only ever parked or restored programmatically
+      // (entry focus targets, a context menu re-focusing its trigger on
+      // close), so revealing it would yank the viewport away from wherever
+      // the user scrolled (issue #2031).
+      if (hasFocus && widget.autoScroll && InputModeTracker.currentMode == InputMode.keyboard) {
         _scrollIntoView();
       }
 

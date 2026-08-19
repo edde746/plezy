@@ -5,6 +5,7 @@ import '../exceptions/media_server_exceptions.dart';
 
 import '../media/media_item.dart';
 import '../utils/app_logger.dart';
+import '../utils/scroll_utils.dart';
 
 /// Debounced free-text media search shared by the main search screen and the
 /// catalog (Explore) search screen: text controller + focus nodes, a 500ms
@@ -195,6 +196,9 @@ mixin DebouncedMediaSearch<T extends StatefulWidget> on State<T> {
     if (query.isEmpty) return;
     if (searchResults.isNotEmpty && !isSearching && query == lastSearchedQuery) {
       firstResultFocusNode.requestFocus();
+      // Focus-gain auto-scroll is keyboard/D-pad-only, so reveal explicitly:
+      // a touch OSK submit must still jump to the results.
+      scrollContextToCenter(firstResultFocusNode.context);
       return;
     }
     if ((_debounceTimer?.isActive ?? false) || !isSearching) {
