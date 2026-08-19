@@ -7,6 +7,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_image_helper.dart';
+import 'package:plezy/utils/platform_detector.dart';
 
 import '../test_helpers/media_items.dart';
 
@@ -147,16 +148,59 @@ void main() {
       );
     });
 
-    test('reduced tier tightens thumb and poster caps', () {
+    test('reduced tier keeps full tile decode caps but bounds art (#2020)', () {
       DevicePerformance.debugReset(autoReduced: true, override: VisualEffectsSetting.auto);
       expect(
         MediaImageHelper.getMemCacheDimensions(displayWidth: 4000, displayHeight: 4000, imageType: ImageType.thumb),
-        (640, 360),
+        (960, 540),
       );
       expect(
         MediaImageHelper.getMemCacheDimensions(displayWidth: 4000, displayHeight: 4000, imageType: ImageType.poster),
-        (480, 720),
+        (720, 1080),
       );
+      expect(
+        MediaImageHelper.getMemCacheDimensions(displayWidth: 4000, displayHeight: 4000, imageType: ImageType.square),
+        (720, 720),
+      );
+      // Backdrops stay at the ~720p low-RAM art budget; scrims mask the cap.
+      expect(
+        MediaImageHelper.getMemCacheDimensions(displayWidth: 4000, displayHeight: 4000, imageType: ImageType.art),
+        (1280, 720),
+      );
+    });
+  });
+
+  group('MediaImageHelper.effectiveDevicePixelRatio', () {
+    tearDown(() {
+      DevicePerformance.debugReset();
+      TvDetectionService.debugSetAppleTVOverride(null);
+    });
+
+    Future<double> dprFor(WidgetTester tester, {required double mediaQueryDpr}) async {
+      late double result;
+      await tester.pumpWidget(
+        MediaQuery(
+          data: MediaQueryData(devicePixelRatio: mediaQueryDpr),
+          child: Builder(
+            builder: (context) {
+              result = MediaImageHelper.effectiveDevicePixelRatio(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+      return result;
+    }
+
+    testWidgets('reduced tier no longer caps artwork density (#2020)', (tester) async {
+      DevicePerformance.debugReset(autoReduced: true, override: VisualEffectsSetting.auto);
+      expect(await dprFor(tester, mediaQueryDpr: 2.0), 2.0);
+    });
+
+    testWidgets('reduced-tier TV keeps the sharp-artwork DPR floor (#2020)', (tester) async {
+      DevicePerformance.debugReset(autoReduced: true, override: VisualEffectsSetting.auto);
+      TvDetectionService.debugSetAppleTVOverride(true);
+      expect(await dprFor(tester, mediaQueryDpr: 1.0), 2.0);
     });
   });
 
@@ -197,14 +241,16 @@ void main() {
       expect(MediaImageHelper.roundDimensions(400, 600), (400, 600));
     });
 
-    test('a 4K display leaves the reduced tier untouched', () {
+    test('a 4K display leaves the reduced tier at the 1080p baseline', () {
       DevicePerformance.debugReset(autoReduced: true, override: VisualEffectsSetting.auto);
       DevicePerformance.debugDisplayShortestSideOverride = 2160;
       DevicePerformance.debugDetectDisplayBudget();
 
+      // The budget factor stays pinned to 1.0: tiles keep the full-tier
+      // 1080p baseline caps but never scale up with the display.
       expect(
         MediaImageHelper.getMemCacheDimensions(displayWidth: 4000, displayHeight: 4000, imageType: ImageType.poster),
-        (480, 720),
+        (720, 1080),
       );
       expect(MediaImageHelper.roundDimensions(3840, 2160), (1920, 1080));
     });
