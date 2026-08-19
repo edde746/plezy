@@ -68,6 +68,7 @@ import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
+import 'video_player_screen.dart';
 import 'profile/profile_teardown.dart';
 import '../services/system_shelf_service.dart';
 import '../watch_together/watch_together.dart';
@@ -86,6 +87,31 @@ bool shouldHandleDesktopRootEscape({
   required bool isHomeTab,
 }) {
   return isDesktop && isPhysicalKeyboardEvent && logicalKey == LogicalKeyboardKey.escape && isCurrentRoute && isHomeTab;
+}
+
+/// Whether a lifecycle resume should raise the "ask for a profile on open"
+/// picker.
+///
+/// Mobile-only: on desktop `resumed` fires on every window focus gain
+/// (alt-tab, click), which is far too frequent — the startup prompt is
+/// sufficient there. Never during active video playback: waking the device
+/// mid-stream must resume the stream, not stack the root-navigator picker
+/// over the live player route, whose focus self-heal fights the picker for
+/// the remote (#2034) — the playback session already belongs to the profile
+/// that started it.
+@visibleForTesting
+bool shouldShowProfileSelectionOnResume({
+  required bool resumedFromBackground,
+  required bool isOffline,
+  required bool alreadyShowingProfileSelection,
+  required bool isMobilePlatform,
+  required bool hasActiveVideoPlayback,
+}) {
+  return resumedFromBackground &&
+      !isOffline &&
+      !alreadyShowingProfileSelection &&
+      isMobilePlatform &&
+      !hasActiveVideoPlayback;
 }
 
 /// Latches whether the app has genuinely left the foreground since the last
@@ -969,14 +995,16 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final shouldPrompt = _profileSelectionResumeGate.consumePromptOn(state);
-    if (shouldPrompt && !_isOffline && !_isShowingProfileSelection) {
-      // Only show profile selection on resume for mobile platforms.
-      // On desktop, "resumed" fires on every window focus gain (alt-tab, click),
-      // which is too frequent — the initial prompt on startup is sufficient.
-      if (Platform.isAndroid || Platform.isIOS) {
-        _showProfileSelectionOnResume();
-      }
+    // Always consume: the gate latches backgrounding on every lifecycle event.
+    final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(state);
+    if (shouldShowProfileSelectionOnResume(
+      resumedFromBackground: resumedFromBackground,
+      isOffline: _isOffline,
+      alreadyShowingProfileSelection: _isShowingProfileSelection,
+      isMobilePlatform: Platform.isAndroid || Platform.isIOS,
+      hasActiveVideoPlayback: VideoPlayerScreenState.activeGlobalKey != null,
+    )) {
+      _showProfileSelectionOnResume();
     }
   }
 

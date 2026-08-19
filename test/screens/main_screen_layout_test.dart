@@ -134,6 +134,34 @@ void main() {
     );
   });
 
+  test('resume prompt is suppressed during active video playback (#2034)', () {
+    bool should({
+      bool resumedFromBackground = true,
+      bool isOffline = false,
+      bool alreadyShowingProfileSelection = false,
+      bool isMobilePlatform = true,
+      bool hasActiveVideoPlayback = false,
+    }) {
+      return shouldShowProfileSelectionOnResume(
+        resumedFromBackground: resumedFromBackground,
+        isOffline: isOffline,
+        alreadyShowingProfileSelection: alreadyShowingProfileSelection,
+        isMobilePlatform: isMobilePlatform,
+        hasActiveVideoPlayback: hasActiveVideoPlayback,
+      );
+    }
+
+    expect(should(), isTrue);
+    // Waking the device mid-stream resumes the stream; the picker would
+    // fight the player's focus self-heal for the remote.
+    expect(should(hasActiveVideoPlayback: true), isFalse);
+    expect(should(resumedFromBackground: false), isFalse);
+    expect(should(isOffline: true), isFalse);
+    expect(should(alreadyShowingProfileSelection: true), isFalse);
+    // Desktop "resumed" fires on every window focus gain; startup prompt only.
+    expect(should(isMobilePlatform: false), isFalse);
+  });
+
   group('ProfileSelectionResumeGate', () {
     test('does not prompt for overlay-style focus loss and regain (#1990)', () {
       final gate = ProfileSelectionResumeGate();
