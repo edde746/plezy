@@ -1003,9 +1003,9 @@ void main() {
           await expectLater(player.setAudioPassthrough(true), throwsA(isA<PlatformException>()));
 
           expect(propertyWrites.where((write) => write.$1 == 'af').map((write) => write.$2), [
-            'loudnorm=I=-14:TP=-3:LRA=4',
+            'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp',
             '',
-            'loudnorm=I=-14:TP=-3:LRA=4',
+            'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp',
           ]);
           expect(player.audioPassthroughActive, isFalse);
         } finally {

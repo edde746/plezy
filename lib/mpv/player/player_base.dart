@@ -1149,7 +1149,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
   /// mpv loudnorm targeting streaming-style loudness; mirrored by the
   /// Android ExoPlayer effect parameters in AudioNormalizationEffect.kt.
-  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4';
+  ///
+  /// Dynamic-mode loudnorm always outputs float64 at 192 kHz, which made the
+  /// AO open at f64/192k and forced the OS mixer to convert/resample on the
+  /// deadline-critical path (~4x the per-cycle DSP work), underrunning during
+  /// playback startup (#1720). The trailing mpv-native format filter pins the
+  /// chain back to 48 kHz float, so the conversion runs once on the buffered
+  /// decode side. mpv's own `format` filter is used instead of lavfi
+  /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
+  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
   @override
   Future<void> setAudioNormalization(bool enabled) async {
