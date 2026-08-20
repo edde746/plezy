@@ -147,7 +147,10 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen> with AsyncFormS
   }
 
   Future<void> _finish(SeerrAccountProvider account, SeerrSession session) async {
-    await account.adoptSession(session.copyWith(instanceLabel: _instance?.instanceLabel));
+    // The probe already answered /settings/public; carry its label and the
+    // product discriminator (MediaStatus 6/7 decode per product) into the
+    // persisted session.
+    await account.adoptSession(session.copyWith(instanceLabel: _instance?.instanceLabel, product: _instance?.product));
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }

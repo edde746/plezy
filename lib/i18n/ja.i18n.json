@@ -1920,6 +1920,7 @@
     "statusPartiallyAvailable": "一部利用可能",
     "statusRequested": "リクエスト済み",
     "statusProcessing": "処理中",
+    "statusBlocklisted": "",
     "couldNotReach": "${url}に接続できませんでした: ${error}",
     "noInstanceAtUrl": "${url}にSeerrインスタンスがありません（HTTP ${status}）",
     "notInitialized": "このSeerrインスタンスでは初回セットアップが完了していません",

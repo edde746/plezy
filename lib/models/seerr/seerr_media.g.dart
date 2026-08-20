@@ -36,12 +36,8 @@ SeerrMediaInfo _$SeerrMediaInfoFromJson(Map<String, dynamic> json) =>
       id: (json['id'] as num?)?.toInt(),
       tmdbId: (json['tmdbId'] as num?)?.toInt(),
       tvdbId: (json['tvdbId'] as num?)?.toInt(),
-      status: json['status'] == null
-          ? SeerrMediaStatus.unknown
-          : SeerrMediaStatus.fromCode((json['status'] as num?)?.toInt()),
-      status4k: json['status4k'] == null
-          ? SeerrMediaStatus.unknown
-          : SeerrMediaStatus.fromCode((json['status4k'] as num?)?.toInt()),
+      statusCode: (json['status'] as num?)?.toInt(),
+      status4kCode: (json['status4k'] as num?)?.toInt(),
       seasons: (json['seasons'] as List<dynamic>?)
           ?.map((e) => SeerrSeasonInfo.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -53,10 +49,6 @@ SeerrMediaInfo _$SeerrMediaInfoFromJson(Map<String, dynamic> json) =>
 SeerrSeasonInfo _$SeerrSeasonInfoFromJson(Map<String, dynamic> json) =>
     SeerrSeasonInfo(
       seasonNumber: (json['seasonNumber'] as num).toInt(),
-      status: json['status'] == null
-          ? SeerrMediaStatus.unknown
-          : SeerrMediaStatus.fromCode((json['status'] as num?)?.toInt()),
-      status4k: json['status4k'] == null
-          ? SeerrMediaStatus.unknown
-          : SeerrMediaStatus.fromCode((json['status4k'] as num?)?.toInt()),
+      statusCode: (json['status'] as num?)?.toInt(),
+      status4kCode: (json['status4k'] as num?)?.toInt(),
     );

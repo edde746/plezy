@@ -1920,6 +1920,7 @@
     "statusPartiallyAvailable": "일부 사용 가능",
     "statusRequested": "요청됨",
     "statusProcessing": "처리 중",
+    "statusBlocklisted": "",
     "couldNotReach": "${url}에 연결할 수 없습니다: ${error}",
     "noInstanceAtUrl": "${url}에 Seerr 인스턴스가 없습니다(HTTP ${status})",
     "notInitialized": "이 Seerr 인스턴스는 최초 실행 설정을 완료하지 않았습니다",

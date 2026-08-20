@@ -1920,6 +1920,7 @@
     "statusPartiallyAvailable": "部分可用",
     "statusRequested": "已請求",
     "statusProcessing": "處理中",
+    "statusBlocklisted": "",
     "couldNotReach": "無法連線至 ${url}：${error}",
     "noInstanceAtUrl": "在 ${url} 找不到 Seerr 執行個體（HTTP ${status}）",
     "notInitialized": "此 Seerr 執行個體尚未完成首次執行設定",

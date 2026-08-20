@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Delvis tillgänglig",
     "statusRequested": "Begärd",
     "statusProcessing": "Bearbetas",
+    "statusBlocklisted": "",
     "couldNotReach": "Kunde inte nå ${url}: ${error}",
     "noInstanceAtUrl": "Det finns ingen Seerr-instans på ${url} (HTTP ${status})",
     "notInitialized": "Den här Seerr-instansen har inte slutfört den inledande konfigurationen",

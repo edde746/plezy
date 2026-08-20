@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Partially available",
     "statusRequested": "Requested",
     "statusProcessing": "Processing",
+    "statusBlocklisted": "Blocklisted",
     "couldNotReach": "Could not reach ${url}: ${error}",
     "noInstanceAtUrl": "No Seerr instance at ${url} (HTTP ${status})",
     "notInitialized": "This Seerr instance has not completed first-run setup",

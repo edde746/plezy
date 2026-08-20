@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Részben elérhető",
     "statusRequested": "Igényelve",
     "statusProcessing": "Feldolgozás alatt",
+    "statusBlocklisted": "",
     "couldNotReach": "Nem sikerült elérni ezt: ${url}: ${error}",
     "noInstanceAtUrl": "Nem található Seerr-példány ezen a címen: ${url} (HTTP ${status})",
     "notInitialized": "Ennek a Seerr-példánynak a kezdeti beállítása még nem fejeződött be",

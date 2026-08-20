@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Qisman mavjud",
     "statusRequested": "Soʻraldi",
     "statusProcessing": "Ishlanmoqda",
+    "statusBlocklisted": "",
     "couldNotReach": "${url} manziliga ulanib boʻlmadi: ${error}",
     "noInstanceAtUrl": "${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})",
     "notInitialized": "Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan",

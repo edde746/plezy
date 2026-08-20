@@ -1950,6 +1950,7 @@
     "statusPartiallyAvailable": "Częściowo dostępne",
     "statusRequested": "Zamówione",
     "statusProcessing": "Przetwarzanie",
+    "statusBlocklisted": "",
     "couldNotReach": "Nie udało się połączyć z ${url}: ${error}",
     "noInstanceAtUrl": "Pod adresem ${url} nie ma instancji Seerr (HTTP ${status})",
     "notInitialized": "Ta instancja Seerr nie ukończyła konfiguracji początkowej",

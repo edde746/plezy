@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Teilweise verfügbar",
     "statusRequested": "Angefragt",
     "statusProcessing": "Wird verarbeitet",
+    "statusBlocklisted": "",
     "couldNotReach": "${url} nicht erreichbar: ${error}",
     "noInstanceAtUrl": "Keine Seerr-Instanz unter ${url} (HTTP ${status})",
     "notInitialized": "Die Ersteinrichtung dieser Seerr-Instanz wurde noch nicht abgeschlossen",

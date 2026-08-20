@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Parcialmente disponible",
     "statusRequested": "Solicitado",
     "statusProcessing": "Procesando",
+    "statusBlocklisted": "",
     "couldNotReach": "No se pudo conectar con ${url}: ${error}",
     "noInstanceAtUrl": "No hay ninguna instancia de Seerr en ${url} (HTTP ${status})",
     "notInitialized": "Esta instancia de Seerr no ha completado la configuración inicial",

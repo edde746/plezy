@@ -13,9 +13,9 @@ import 'package:plezy/utils/external_ids.dart';
 
 import '../../test_helpers/http_fixtures.dart';
 
-SeerrCatalogSource _source(MockClient mock) {
+SeerrCatalogSource _source(MockClient mock, {SeerrProduct product = SeerrProduct.unknown}) {
   final client = SeerrClient(
-    const SeerrSession(
+    SeerrSession(
       baseUrl: 'https://seerr.example.com',
       method: SeerrAuthMethod.local,
       identifier: 'a@b.c',
@@ -25,6 +25,7 @@ SeerrCatalogSource _source(MockClient mock) {
       permissions: 2,
       displayName: 'Alice',
       instanceLabel: 'Seerr',
+      product: product,
       createdAt: 0,
     ),
     onSessionInvalidated: () {},
@@ -186,6 +187,28 @@ void main() {
                   ],
                 },
               },
+              {
+                'id': 8,
+                'mediaType': 'movie',
+                'title': 'Failed',
+                'mediaInfo': {
+                  'status': 1,
+                  'requests': [
+                    {'id': 81, 'status': 4, 'is4k': false},
+                  ],
+                },
+              },
+              {
+                'id': 9,
+                'mediaType': 'movie',
+                'title': 'Completed',
+                'mediaInfo': {
+                  'status': 5,
+                  'requests': [
+                    {'id': 91, 'status': 5, 'is4k': false},
+                  ],
+                },
+              },
             ],
           }),
         ),
@@ -216,6 +239,130 @@ void main() {
       expect(byTitle['Declined']?.request, CatalogRequestState.declined);
       expect(byTitle['Processing']?.availability, CatalogAvailability.unavailable);
       expect(byTitle['Processing']?.request, CatalogRequestState.processing);
+      // A failed arr push surfaces as failed so the user can re-request.
+      expect(byTitle['Failed']?.request, CatalogRequestState.failed);
+      // A completed request adds no active state; availability tells the story.
+      expect(byTitle['Completed']?.availability, CatalogAvailability.available);
+      expect(byTitle['Completed']?.request, isNull);
+    });
+
+    test('a failed request overrides stale pipeline media status only when nothing live backs it', () async {
+      final source = _source(
+        MockClient(
+          (request) async => jsonResponse({
+            'page': 1,
+            'totalPages': 1,
+            'results': [
+              // Seerr marks the request Failed on arr-push failure but can
+              // leave the media status Processing; with no live request the
+              // stale status must not hide the failure.
+              {
+                'id': 1,
+                'mediaType': 'movie',
+                'title': 'Failed, stale processing',
+                'mediaInfo': {
+                  'status': 3,
+                  'requests': [
+                    {'id': 11, 'status': 4, 'is4k': false},
+                  ],
+                },
+              },
+              {
+                'id': 2,
+                'mediaType': 'movie',
+                'title': 'Failed, stale queue',
+                'mediaInfo': {
+                  'status': 2,
+                  'requests': [
+                    {'id': 21, 'status': 4, 'is4k': false},
+                  ],
+                },
+              },
+              // A live approved re-request backs the Processing status, so
+              // the old failure stays hidden behind the active pipeline.
+              {
+                'id': 3,
+                'mediaType': 'movie',
+                'title': 'Failed, live retry',
+                'mediaInfo': {
+                  'status': 3,
+                  'requests': [
+                    {'id': 31, 'status': 4, 'is4k': false},
+                    {'id': 32, 'status': 2, 'is4k': false},
+                  ],
+                },
+              },
+              // Waiting-for-approval still outranks everything, failed included.
+              {
+                'id': 4,
+                'mediaType': 'movie',
+                'title': 'Failed, pending approval',
+                'mediaInfo': {
+                  'status': 3,
+                  'requests': [
+                    {'id': 41, 'status': 4, 'is4k': false},
+                    {'id': 42, 'status': 1, 'is4k': false},
+                  ],
+                },
+              },
+            ],
+          }),
+        ),
+      );
+
+      final page = await source.fetchRow(CatalogRowId.trending);
+      final byTitle = {for (final item in page.items) item.title: item.serverState};
+
+      expect(byTitle['Failed, stale processing']?.request, CatalogRequestState.failed);
+      // Availability still reflects the wire status; only the request state
+      // re-opens the request flow.
+      expect(byTitle['Failed, stale processing']?.availability, CatalogAvailability.unavailable);
+      expect(byTitle['Failed, stale queue']?.request, CatalogRequestState.failed);
+      expect(byTitle['Failed, live retry']?.request, CatalogRequestState.processing);
+      expect(byTitle['Failed, pending approval']?.request, CatalogRequestState.pending);
+    });
+
+    test('decodes MediaStatus codes 6/7 per product; unknown products stay non-available', () async {
+      MockClient mock() => MockClient(
+        (request) async => jsonResponse({
+          'page': 1,
+          'totalPages': 1,
+          'results': [
+            {
+              'id': 1,
+              'mediaType': 'movie',
+              'title': 'Six',
+              'mediaInfo': {'status': 6},
+            },
+            {
+              'id': 2,
+              'mediaType': 'movie',
+              'title': 'Seven',
+              'mediaInfo': {'status': 7},
+            },
+          ],
+        }),
+      );
+
+      Future<Map<String, CatalogServerState?>> fetch(SeerrProduct product) async {
+        final page = await _source(mock(), product: product).fetchRow(CatalogRowId.trending);
+        return {for (final item in page.items) item.title: item.serverState};
+      }
+
+      // Overseerr: 6=DELETED; 7 has no meaning, so no server state at all.
+      final overseerr = await fetch(SeerrProduct.overseerr);
+      expect(overseerr['Six']?.availability, CatalogAvailability.unavailable);
+      expect(overseerr['Seven'], isNull);
+
+      // Jellyseerr: 6=BLOCKLISTED, 7=DELETED — neither is available.
+      final jellyseerr = await fetch(SeerrProduct.jellyseerr);
+      expect(jellyseerr['Six']?.availability, CatalogAvailability.unavailable);
+      expect(jellyseerr['Seven']?.availability, CatalogAvailability.unavailable);
+
+      // Legacy sessions without the discriminator treat both conservatively.
+      final unknown = await fetch(SeerrProduct.unknown);
+      expect(unknown['Six']?.availability, CatalogAvailability.unavailable);
+      expect(unknown['Seven']?.availability, CatalogAvailability.unavailable);
     });
 
     test('preserves full dates and retains the coarse year fallback for malformed input', () async {

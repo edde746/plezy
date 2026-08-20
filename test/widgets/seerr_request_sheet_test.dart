@@ -43,10 +43,11 @@ SeerrCatalogSource _source(MockClient mock, {int permissions = SeerrPermission.r
   return source;
 }
 
-Map<String, dynamic> _publicSettings() => {
+Map<String, dynamic> _publicSettings({int? mediaServerType}) => {
   'initialized': true,
   'localLogin': true,
   'mediaServerLogin': true,
+  'mediaServerType': ?mediaServerType,
   'movie4kEnabled': false,
   'series4kEnabled': false,
   'partialRequestsEnabled': true,
@@ -214,6 +215,145 @@ void main() {
 
     expect(find.text('Available'), findsOneWidget);
     expect(find.byType(FilledButton), findsNothing);
+  });
+
+  testWidgets('failed and completed requests do not block re-requesting a movie', (tester) async {
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/603':
+          return _json({
+            'id': 603,
+            'title': 'The Matrix',
+            'mediaInfo': {
+              'status': 1,
+              'requests': [
+                {'id': 1, 'status': 4, 'is4k': false},
+                {'id': 2, 'status': 5, 'is4k': false},
+              ],
+            },
+          });
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock);
+
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 603, title: 'The Matrix');
+
+    // Only pending/approved requests hold a claim; a failed arr push or a
+    // settled request must leave the title re-requestable.
+    final submit = find.widgetWithText(FilledButton, 'Request');
+    expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
+    expect(find.text('Requested'), findsNothing);
+  });
+
+  testWidgets('a failed request unblocks a stale Processing status when nothing live backs it', (tester) async {
+    // Seerr marks the request Failed on arr-push failure but can leave the
+    // media status Processing; that stale status must not keep blocking.
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/603':
+          return _json({
+            'id': 603,
+            'title': 'The Matrix',
+            'mediaInfo': {
+              'status': 3,
+              'requests': [
+                {'id': 1, 'status': 4, 'is4k': false},
+              ],
+            },
+          });
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock);
+
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 603, title: 'The Matrix');
+
+    expect(find.text('Processing'), findsNothing);
+    final submit = find.widgetWithText(FilledButton, 'Request');
+    expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
+  });
+
+  testWidgets('a live approved retry keeps a failed title blocked as Processing', (tester) async {
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/603':
+          return _json({
+            'id': 603,
+            'title': 'The Matrix',
+            'mediaInfo': {
+              'status': 3,
+              'requests': [
+                {'id': 1, 'status': 4, 'is4k': false},
+                {'id': 2, 'status': 2, 'is4k': false},
+              ],
+            },
+          });
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock);
+
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 603, title: 'The Matrix');
+
+    expect(find.text('Processing'), findsOneWidget);
+    expect(find.byType(FilledButton), findsNothing);
+  });
+
+  testWidgets('a Jellyseerr blocklisted movie offers nothing to request', (tester) async {
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          // mediaServerType present -> Jellyseerr -> status 6 = BLOCKLISTED.
+          return _json(_publicSettings(mediaServerType: SeerrMediaServerType.jellyfin));
+        case '/api/v1/movie/603':
+          return _json({
+            'id': 603,
+            'title': 'The Matrix',
+            'mediaInfo': {'status': 6},
+          });
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock);
+
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 603, title: 'The Matrix');
+
+    expect(find.text('Blocklisted'), findsOneWidget);
+    expect(find.byType(FilledButton), findsNothing);
+  });
+
+  testWidgets('the settings fetch upgrades a legacy session so Overseerr code 7 stays requestable', (tester) async {
+    // The session starts without a product (legacy persist); code 7 would be
+    // conservatively blocked. The sheet's settings fetch resolves the
+    // instance as Overseerr (no mediaServerType), where 7 is meaningless,
+    // so the title must offer a request.
+    final mock = MockClient((request) async {
+      switch (request.url.path) {
+        case '/api/v1/settings/public':
+          return _json(_publicSettings());
+        case '/api/v1/movie/603':
+          return _json({
+            'id': 603,
+            'title': 'The Matrix',
+            'mediaInfo': {'status': 7},
+          });
+      }
+      fail('unexpected request ${request.url.path}');
+    });
+    final source = _source(mock);
+
+    await _pumpSheet(tester, source: source, kind: MediaKind.movie, tmdbId: 603, title: 'The Matrix');
+
+    expect(find.text('Blocklisted'), findsNothing);
+    final submit = find.widgetWithText(FilledButton, 'Request');
+    expect(tester.widget<FilledButton>(submit).onPressed, isNotNull);
   });
 
   testWidgets('advanced permission loads servers and sends destination overrides', (tester) async {

@@ -17,6 +17,24 @@ enum SeerrAuthMethod {
   local,
 }
 
+/// Which Seerr product the instance runs. The two products disagree on
+/// `MediaStatus` wire codes 6/7 (see `SeerrMediaStatus.resolve`), so decoding
+/// needs this context.
+///
+/// Derived from the *presence* of `mediaServerType` in `/settings/public`:
+/// Jellyseerr/Seerr always send a numeric value (4 = NOT_CONFIGURED even
+/// before setup), while Overseerr's `FullPublicSettings` has no such key.
+/// Titles, URLs, and version strings are user-editable and untrustworthy.
+enum SeerrProduct {
+  overseerr,
+  jellyseerr,
+
+  /// Sessions persisted before the discriminator existed. Codes 6/7 decode
+  /// to `blocklisted` (not available, not requestable — safe under either
+  /// product) until the next `/settings/public` fetch refreshes the flag.
+  unknown,
+}
+
 /// An authenticated Seerr session for one profile: instance URL, the Express
 /// session cookie, the credentials needed to re-login silently, and the
 /// Seerr-side user it maps to.
@@ -43,6 +61,11 @@ class SeerrSession {
 
   /// Instance `applicationTitle` from `/settings/public`.
   final String instanceLabel;
+
+  /// Product discriminator captured from `/settings/public`; [SeerrProduct.unknown]
+  /// for sessions persisted before it existed, until a settings fetch
+  /// refreshes it.
+  final SeerrProduct product;
   final int createdAt;
 
   const SeerrSession({
@@ -55,6 +78,7 @@ class SeerrSession {
     required this.permissions,
     required this.displayName,
     required this.instanceLabel,
+    this.product = SeerrProduct.unknown,
     required this.createdAt,
   });
 
@@ -64,6 +88,7 @@ class SeerrSession {
     int? permissions,
     String? displayName,
     String? instanceLabel,
+    SeerrProduct? product,
   }) => SeerrSession(
     baseUrl: baseUrl,
     method: method,
@@ -74,6 +99,7 @@ class SeerrSession {
     permissions: permissions ?? this.permissions,
     displayName: displayName ?? this.displayName,
     instanceLabel: instanceLabel ?? this.instanceLabel,
+    product: product ?? this.product,
     createdAt: createdAt,
   );
 
@@ -87,6 +113,7 @@ class SeerrSession {
     'permissions': permissions,
     'display_name': displayName,
     'instance_label': instanceLabel,
+    'product': product.name,
     'created_at': createdAt,
   };
 
@@ -104,6 +131,9 @@ class SeerrSession {
     permissions: (json['permissions'] as num?)?.toInt() ?? 0,
     displayName: json['display_name'] as String? ?? '',
     instanceLabel: json['instance_label'] as String? ?? '',
+    // Legacy sessions predate the discriminator: decode conservatively as
+    // unknown; the next /settings/public fetch refreshes and persists it.
+    product: SeerrProduct.values.asNameMap()[json['product']] ?? SeerrProduct.unknown,
     createdAt: (json['created_at'] as num?)?.toInt() ?? 0,
   );
 

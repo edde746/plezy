@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Жартылай қолжетімді",
     "statusRequested": "Сұралды",
     "statusProcessing": "Өңделуде",
+    "statusBlocklisted": "",
     "couldNotReach": "${url} мекенжайына қосылу мүмкін болмады: ${error}",
     "noInstanceAtUrl": "${url} мекенжайында Seerr данасы жоқ (HTTP ${status})",
     "notInitialized": "Бұл Seerr данасының бастапқы баптауы аяқталмаған",

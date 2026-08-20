@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Hissəvi əlçatandır",
     "statusRequested": "Sorğu göndərildi",
     "statusProcessing": "Emal edilir",
+    "statusBlocklisted": "",
     "couldNotReach": "${url} ünvanına çatmaq olmadı: ${error}",
     "noInstanceAtUrl": "${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})",
     "notInitialized": "Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb",

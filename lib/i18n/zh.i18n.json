@@ -1920,6 +1920,7 @@
     "statusPartiallyAvailable": "部分可用",
     "statusRequested": "已请求",
     "statusProcessing": "处理中",
+    "statusBlocklisted": "",
     "couldNotReach": "无法连接到 ${url}：${error}",
     "noInstanceAtUrl": "${url} 上没有 Seerr 实例（HTTP ${status}）",
     "notInitialized": "此 Seerr 实例尚未完成首次运行设置",

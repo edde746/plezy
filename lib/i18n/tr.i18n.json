@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Kısmen mevcut",
     "statusRequested": "İstendi",
     "statusProcessing": "İşleniyor",
+    "statusBlocklisted": "",
     "couldNotReach": "${url} adresine ulaşılamadı: ${error}",
     "noInstanceAtUrl": "${url} adresinde Seerr örneği bulunamadı (HTTP ${status})",
     "notInitialized": "Bu Seerr örneği ilk çalıştırma kurulumunu tamamlamadı",

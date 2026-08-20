@@ -230,8 +230,11 @@ class SeerrCatalogSource implements CatalogSource {
         ),
   ];
 
-  static CatalogServerState? _serverState(SeerrMediaInfo? info) {
+  CatalogServerState? _serverState(SeerrMediaInfo? info) {
     if (info == null) return null;
+    // Read the product at call time: getPublicSettings refreshes it on the
+    // live session, upgrading legacy sessions mid-lifetime.
+    final product = client.session.product;
 
     int? availableSeasons;
     int? totalSeasons;
@@ -242,7 +245,7 @@ class SeerrCatalogSource implements CatalogSource {
       for (final season in seasons) {
         if (season.seasonNumber <= 0) continue;
         total++;
-        if (season.status == SeerrMediaStatus.available) available++;
+        if (season.status(product) == SeerrMediaStatus.available) available++;
       }
       if (total > 0) {
         availableSeasons = available;
@@ -250,11 +253,13 @@ class SeerrCatalogSource implements CatalogSource {
       }
     }
 
+    final status = info.status(product);
+    final status4k = info.status4k(product);
     final state = CatalogServerState(
-      availability: _availability(info.status),
-      availability4k: _availability(info.status4k),
-      request: _requestState(info, is4k: false, mediaStatus: info.status),
-      request4k: _requestState(info, is4k: true, mediaStatus: info.status4k),
+      availability: _availability(status),
+      availability4k: _availability(status4k),
+      request: _requestState(info, is4k: false, mediaStatus: status),
+      request4k: _requestState(info, is4k: true, mediaStatus: status4k),
       availableSeasons: availableSeasons,
       totalSeasons: totalSeasons,
     );
@@ -266,6 +271,7 @@ class SeerrCatalogSource implements CatalogSource {
     SeerrMediaStatus.partiallyAvailable => CatalogAvailability.partiallyAvailable,
     SeerrMediaStatus.pending ||
     SeerrMediaStatus.processing ||
+    SeerrMediaStatus.blocklisted ||
     SeerrMediaStatus.deleted => CatalogAvailability.unavailable,
     SeerrMediaStatus.unknown => null,
   };
@@ -278,6 +284,7 @@ class SeerrCatalogSource implements CatalogSource {
     var pendingApproval = false;
     var approved = false;
     var declined = false;
+    var failed = false;
     for (final request in info.requests ?? const <SeerrRequest>[]) {
       if ((request.is4k ?? false) != is4k) continue;
       switch (request.status) {
@@ -287,6 +294,12 @@ class SeerrCatalogSource implements CatalogSource {
           approved = true;
         case SeerrRequestStatus.declined:
           declined = true;
+        case SeerrRequestStatus.failed:
+          failed = true;
+        case SeerrRequestStatus.completed:
+          // Settled: the media status already reflects availability, so a
+          // completed request contributes no active request state.
+          break;
       }
     }
 
@@ -294,6 +307,11 @@ class SeerrCatalogSource implements CatalogSource {
     // for approval; MediaInfo.pending means an approved request is queued in
     // the acquisition pipeline. Keep that distinction and precedence explicit.
     if (pendingApproval) return CatalogRequestState.pending;
+    // Seerr marks a request Failed on arr-push failure but can leave the
+    // media status Processing/Pending behind. With no live pending/approved
+    // request backing that status it is stale, so the failed request wins and
+    // re-requesting stays open; any live request keeps the pipeline outcome.
+    if (failed && !approved) return CatalogRequestState.failed;
     if (mediaStatus == SeerrMediaStatus.processing) return CatalogRequestState.processing;
     if (approved || mediaStatus == SeerrMediaStatus.pending) return CatalogRequestState.approved;
     if (declined) return CatalogRequestState.declined;

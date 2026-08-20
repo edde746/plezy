@@ -1950,6 +1950,7 @@
     "statusPartiallyAvailable": "Частично доступно",
     "statusRequested": "Запрошено",
     "statusProcessing": "Обработка",
+    "statusBlocklisted": "",
     "couldNotReach": "Не удалось связаться с ${url}: ${error}",
     "noInstanceAtUrl": "По адресу ${url} нет экземпляра Seerr (HTTP ${status})",
     "notInitialized": "Первоначальная настройка этого экземпляра Seerr не завершена",

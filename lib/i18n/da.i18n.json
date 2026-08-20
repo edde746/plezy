@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Delvist tilgængelig",
     "statusRequested": "Anmodet",
     "statusProcessing": "Behandler",
+    "statusBlocklisted": "",
     "couldNotReach": "Kunne ikke nå ${url}: ${error}",
     "noInstanceAtUrl": "Ingen Seerr-instans på ${url} (HTTP ${status})",
     "notInitialized": "Denne Seerr-instans har ikke fuldført førstegangsopsætningen",

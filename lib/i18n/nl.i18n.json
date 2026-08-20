@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Gedeeltelijk beschikbaar",
     "statusRequested": "Aangevraagd",
     "statusProcessing": "Verwerken",
+    "statusBlocklisted": "",
     "couldNotReach": "Kon ${url} niet bereiken: ${error}",
     "noInstanceAtUrl": "Geen Seerr-instantie op ${url} (HTTP ${status})",
     "notInitialized": "De eerste configuratie van deze Seerr-instantie is niet voltooid",

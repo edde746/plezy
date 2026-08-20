@@ -4978,6 +4978,9 @@ class Translations$seerr$en {
 	/// en: 'Processing'
 	String get statusProcessing => 'Processing';
 
+	/// en: 'Blocklisted'
+	String get statusBlocklisted => 'Blocklisted';
+
 	/// en: 'Could not reach ${url}: ${error}'
 	String couldNotReach({required Object url, required Object error}) => 'Could not reach ${url}: ${error}';
 
@@ -8192,6 +8195,7 @@ extension on Translations {
 			'seerr.statusPartiallyAvailable' => 'Partially available',
 			'seerr.statusRequested' => 'Requested',
 			'seerr.statusProcessing' => 'Processing',
+			'seerr.statusBlocklisted' => 'Blocklisted',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Could not reach ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'No Seerr instance at ${url} (HTTP ${status})',
 			'seerr.notInitialized' => 'This Seerr instance has not completed first-run setup',

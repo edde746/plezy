@@ -1930,6 +1930,7 @@
     "statusPartiallyAvailable": "Delvis tilgjengelig",
     "statusRequested": "Forespurt",
     "statusProcessing": "Behandler",
+    "statusBlocklisted": "",
     "couldNotReach": "Kunne ikke nå ${url}: ${error}",
     "noInstanceAtUrl": "Ingen Seerr-instans på ${url} (HTTP ${status})",
     "notInitialized": "Denne Seerr-instansen har ikke fullført førstegangsoppsettet",
