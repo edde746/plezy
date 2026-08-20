@@ -69,7 +69,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     // A sidecar subtitle fetch shares this log stream and could arm the
     // watchdog too, but a first frame disarms it, so that only matters when
     // the primary media is itself stuck.
-    if (status == 503 && !widget.isLive && !_hasRenderedFirstFrame && !_hasFatalPlaybackError) {
+    if (status == 503 && !widget.isLive && !_firstFrame.rendered && !_hasFatalPlaybackError) {
       _http503Watchdog.onOpenPhase503();
     }
     if (log.level == PlayerLogLevel.error || log.level == PlayerLogLevel.fatal) {
@@ -82,7 +82,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
   /// server is still refusing the stream. Synthesize the error the reconnect
   /// loop will never raise on its own so the normal failure policy runs.
   void _onOpenHttp503Persistent() {
-    if (!mounted || _isExiting.value || _hasRenderedFirstFrame || _hasFatalPlaybackError) return;
+    if (!mounted || _isExiting.value || _firstFrame.rendered || _hasFatalPlaybackError) return;
     appLogger.w(
       'Server kept answering the stream with HTTP 503 for '
       '${openHttp503Patience.inSeconds}s without a first frame — giving up on this open',

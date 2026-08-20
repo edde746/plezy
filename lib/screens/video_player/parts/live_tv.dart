@@ -343,8 +343,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _liveSeek.cancel();
 
     final previousSession = _live.session;
-    final previousHasFirstFrame = _hasFirstFrame.value;
-    final previousHasRenderedFirstFrame = _hasRenderedFirstFrame;
+    final previousFirstFrame = _firstFrame.snapshot();
     final channel = channels[newIndex];
     appLogger.d('Switching to channel: ${channel.displayName} (${channel.key})');
 
@@ -375,8 +374,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       }
 
       _setPlayerState(() {
-        _hasFirstFrame.value = false;
-        _hasRenderedFirstFrame = false;
+        _firstFrame.reset();
       });
       replacementOpenStarted = true;
       await currentPlayer.open(
@@ -420,8 +418,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       if (!isCurrentChannelSwitch()) return;
       if (replacementOpenStarted && mounted && _live.session == previousSession) {
         _setPlayerState(() {
-          _hasFirstFrame.value = previousHasFirstFrame;
-          _hasRenderedFirstFrame = previousHasRenderedFirstFrame;
+          _firstFrame.restore(previousFirstFrame);
         });
       }
       appLogger.e('Failed to switch channel', error: e);

@@ -277,7 +277,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
 
                     return Video(
                       player: player!,
-                      hasFirstFrame: _hasFirstFrame,
+                      hasFirstFrame: _firstFrame.uiReady,
                       controls: (context) => PlexVideoControls(
                         player: player!,
                         volumeController: _volumeController!,
@@ -319,7 +319,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                             _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
                         canControl: authority.canControlPlayback,
                         canNavigateMediaItems: authority.canNavigateMediaItems,
-                        hasFirstFrame: _hasFirstFrame,
+                        hasFirstFrame: _firstFrame.uiReady,
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
                         chromeController: _chromeController,
                         shaderService: _shaderService,
@@ -370,7 +370,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
               // Hidden in PiP mode
               VideoPlayerBufferingOverlay(
                 isBuffering: _isBuffering,
-                hasFirstFrame: _hasFirstFrame,
+                hasFirstFrame: _firstFrame.uiReady,
                 isExiting: _isExiting,
               ),
               // Watch Together overlays (isolated from video surface repaints)

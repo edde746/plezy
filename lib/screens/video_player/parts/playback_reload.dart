@@ -395,8 +395,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       final previousLaunchIdentity = VideoPlayerScreenState._activeRouteGuard.identityFor(this);
       final previousPartId = _currentMediaInfo?.partId;
       final previousMediaSourceId = _currentMediaInfo?.mediaSourceId;
-      final previousHasFirstFrame = _hasFirstFrame.value;
-      final previousHasRenderedFirstFrame = _hasRenderedFirstFrame;
+      final previousFirstFrame = _firstFrame.snapshot();
       final previousHasFatalPlaybackError = _hasFatalPlaybackError;
       _hasFatalPlaybackError = false;
       final isItemChange = previousMetadata.globalKey != metadata.globalKey;
@@ -498,7 +497,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         _unfocusPlayNextPrompt();
         _showPlayNextDialog = false;
         _autoPlayTimer?.cancel();
-        _hasFirstFrame.value = false;
+        _firstFrame.resetUiForOpen();
 
         // Detach before pausing so the reload's internal pause can't broadcast
         // a party-wide pause; the finally below restores the attachment.
@@ -669,7 +668,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             return true;
           },
           onOpening: () {
-            _hasRenderedFirstFrame = false;
+            _firstFrame.resetRenderedForAttempt();
             // 503s observed from here on belong to the replacement open.
             _http503Watchdog.disarm();
           },
@@ -735,8 +734,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           if (previousLaunchIdentity != null) {
             VideoPlayerScreenState._activeRouteGuard.update(this, previousLaunchIdentity);
           }
-          _hasFirstFrame.value = previousHasFirstFrame;
-          _hasRenderedFirstFrame = previousHasRenderedFirstFrame;
+          _firstFrame.restore(previousFirstFrame);
           _hasFatalPlaybackError = previousHasFatalPlaybackError;
           // If the stop report already went out, un-latch the tracker so the
           // resumed session keeps reporting (and its eventual real stop sends).
@@ -792,7 +790,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
               ratingKey: _currentMetadata.id,
               serverId: reattachServerId,
               mediaTitle: _currentMetadata.displayTitle,
-              hasFirstFrame: _hasFirstFrame.value,
+              hasFirstFrame: _firstFrame.uiReady.value,
               remoteSeek: _seekPlayback,
             );
           }

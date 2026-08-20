@@ -871,7 +871,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     // Open video through Player
     if (result.videoUrl != null) {
       // Reset first frame flag and frame rate retry counter for new video
-      if (clearFirstFrameForOpen) _hasFirstFrame.value = false;
+      if (clearFirstFrameForOpen) _firstFrame.resetUiForOpen();
       _frameRate.resetForNewItem();
       if (frameRatePlan.countsAsApplied) {
         _frameRate.applied = true;

@@ -23,7 +23,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
           ratingKey: _currentMetadata.id,
           serverId: serverId,
           mediaTitle: _currentMetadata.displayTitle,
-          hasFirstFrame: _hasFirstFrame.value,
+          hasFirstFrame: _firstFrame.uiReady.value,
           startupHold: startupHold,
           // Sync-issued seeks ride the screen's seek path so Plex transcode
           // restarts keep working for out-of-buffer targets.

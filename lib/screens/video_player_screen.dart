@@ -85,6 +85,7 @@ import '../utils/route_visibility.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/android_exit_diagnostics.dart';
 import 'video_player/completion_latch.dart';
+import 'video_player/first_frame_gate.dart';
 import 'video_player/frame_rate_matcher.dart';
 import 'video_player/companion_remote_binding.dart';
 import 'video_player/media_controls_screen_controller.dart';
@@ -986,11 +987,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
-  final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false);
-  // UI readiness may be forced true to hide the loading spinner after a
-  // startup failure. Reporting readiness is stricter: only a renderer event
-  // (or the established non-ExoPlayer position fallback) sets this latch.
-  bool _hasRenderedFirstFrame = false;
+  final FirstFrameGate _firstFrame = FirstFrameGate();
   bool _hasFatalPlaybackError = false;
 
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
@@ -1019,7 +1016,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       isPromptOpen: () => _showPlayNextDialog || _showStillWatchingPrompt,
       dismissPrompt: _dismissPlaybackPromptForBack,
       isChromePresented: () =>
-          _isPlayerInitialized && player != null && _hasFirstFrame.value && _chromeController.controlsPresented,
+          _isPlayerInitialized && player != null && _firstFrame.uiReady.value && _chromeController.controlsPresented,
       // On phones a Back must exit the player even with the controls up
       // (#1938); the staged chrome handling is TV/desktop behavior (#4443b761
       // applied it to the phone system-back path too, so back stopped
@@ -2017,7 +2014,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _detachFromWatchTogetherSession();
 
     _isBuffering.dispose();
-    _hasFirstFrame.dispose();
+    _firstFrame.dispose();
     _isExiting.dispose();
     _chromeController.dispose();
     _toastController.dispose();
@@ -2174,7 +2171,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     primePlayerNavigationFocusForEvent(
       event,
       focusNode: _screenFocusNode,
-      playerReady: _isPlayerInitialized && player != null && _hasFirstFrame.value,
+      playerReady: _isPlayerInitialized && player != null && _firstFrame.uiReady.value,
       isCurrentRoute: isRouteChainCurrent(context),
       isAppleTV: PlatformDetector.isAppleTV(),
     );

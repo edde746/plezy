@@ -5,7 +5,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
-    _hasRenderedFirstFrame = false;
+    _firstFrame.resetRenderedForAttempt();
     _hasFatalPlaybackError = false;
     // 503s observed from here on belong to this attempt's open.
     _http503Watchdog.disarm();
@@ -13,7 +13,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {
       try {
-        _hasFirstFrame.value = false;
+        _firstFrame.resetUiForOpen();
         await currentPlayer.requestAudioFocus();
         await _setLiveStreamOptions(currentPlayer);
         if (!attempt.isCurrent) return;
@@ -314,7 +314,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (!primaryMediaOpened) {
           _hasFatalPlaybackError = true;
         }
-        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
+        _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
         showErrorSnackBar(context, e.message);
       }
     } catch (e, st) {
@@ -323,7 +323,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (!primaryMediaOpened) {
           _hasFatalPlaybackError = true;
         }
-        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
+        _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }

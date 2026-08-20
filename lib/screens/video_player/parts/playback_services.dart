@@ -37,10 +37,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   Future<void> _markFirstFrameReady(Player currentPlayer, SettingsService settingsService) async {
-    if (!mounted || player != currentPlayer || _hasRenderedFirstFrame || _hasFatalPlaybackError) return;
+    if (!mounted || player != currentPlayer || _firstFrame.rendered || _hasFatalPlaybackError) return;
 
-    _hasRenderedFirstFrame = true;
-    _hasFirstFrame.value = true;
+    _firstFrame.markReady();
     _http503Watchdog.disarm();
     unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
     final progressTracker = _progressTracker;
@@ -156,7 +155,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       // a renderer, so it may infer readiness only after switching to MPV.
       final canInferRenderedFrameFromPosition =
           !(Platform.isAndroid && useExoPlayer) || (currentPlayer is PlayerAndroid && currentPlayer.usingMpvFallback);
-      if (canInferRenderedFrameFromPosition && !_hasRenderedFirstFrame) {
+      if (canInferRenderedFrameFromPosition && !_firstFrame.rendered) {
         if (lastObservedPositionMs != null && position.inMilliseconds != lastObservedPositionMs) {
           unawaited(_markFirstFrameReady(currentPlayer, settingsService));
         }
@@ -280,8 +279,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     if (mounted) {
       _isBuffering.value = false;
-      _hasFirstFrame.value = false;
-      _hasRenderedFirstFrame = false;
+      _firstFrame.reset();
       _http503Watchdog.disarm();
     }
   }
@@ -372,8 +370,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         playMethod: effectivePlayMethod,
         playSessionId: playSessionId,
         mediaInfo: mediaInfo,
-        canReportPlayback: () => _hasRenderedFirstFrame && !_hasFatalPlaybackError,
-        hasRenderedPlayback: () => _hasRenderedFirstFrame,
+        canReportPlayback: () => _firstFrame.rendered && !_hasFatalPlaybackError,
+        hasRenderedPlayback: () => _firstFrame.rendered,
         subtitleOffIsDeliberate: () => _playbackSession?.subtitleSelection.declinedPreference == null,
         onPausedKeepalive: mediaClient is PlexClient && effectivePlayMethod == 'Transcode'
             ? () => mediaClient.pingTranscodeSession(_playbackTranscodeSessionId)
@@ -402,8 +400,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         player: currentPlayer,
         isOffline: true,
         offlineWatchService: offlineWatchService,
-        canReportPlayback: () => _hasRenderedFirstFrame && !_hasFatalPlaybackError,
-        hasRenderedPlayback: () => _hasRenderedFirstFrame,
+        canReportPlayback: () => _firstFrame.rendered && !_hasFatalPlaybackError,
+        hasRenderedPlayback: () => _firstFrame.rendered,
       );
       _progressTracker!.startTracking();
     }
