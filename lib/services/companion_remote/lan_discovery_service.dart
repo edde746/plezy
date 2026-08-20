@@ -286,6 +286,12 @@ class LanDiscoveryService {
   }
 
   void _emitHosts() {
+    // stopListening() can arrive after dispose(): CompanionRemoteProvider's
+    // async crypto-rebuild path tears down the host server on whichever
+    // service instance it captured earlier. Emitting into the closed
+    // controller threw "Bad state: Cannot add new events after calling
+    // close" — the top Dart crash in production.
+    if (_hostsController.isClosed) return;
     _hostsController.add(_discoveredHosts.values.toList());
   }
 
