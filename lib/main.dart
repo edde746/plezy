@@ -615,6 +615,11 @@ class StartupBootstrap<T> extends StatefulWidget {
   /// what the gate may do next. [StartupRepairResult.retry] re-runs
   /// [initialize]; [StartupRepairResult.restart] parks the app on the failure
   /// screen, because nothing may touch preferences until the process restarts.
+  ///
+  /// The context is a descendant of the gate's own bootstrap [MaterialApp]
+  /// (never the gate `State`'s context, which sits above it), so dialogs and
+  /// snackbars can resolve a `Navigator`, `MaterialLocalizations` and
+  /// `ScaffoldMessenger` from it.
   final Future<StartupRepairResult> Function(BuildContext context, StartupFailureRecord record, Object error)? repair;
 
   final ThemeData? lightTheme;
@@ -737,7 +742,12 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
     }
   }
 
-  Future<void> _repair(StartupFailureRecord failure) async {
+  /// [context] must sit below the bootstrap `MaterialApp` — it comes from the
+  /// `home` builder in [_buildBootstrapHome]. The gate `State`'s own context
+  /// is above that `MaterialApp` and has no `Navigator`,
+  /// `MaterialLocalizations` or `ScaffoldMessenger`, so the repair dialogs and
+  /// the failure snackbar would all throw when built from it.
+  Future<void> _repair(BuildContext context, StartupFailureRecord failure) async {
     final repair = widget.repair;
     final error = _failureError;
     if (repair == null || error == null || _repairing || _restartRequired) return;
@@ -747,7 +757,7 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
       result = await repair(context, failure, error);
     } catch (error, stackTrace) {
       appLogger.e('Startup storage repair failed', error: error, stackTrace: stackTrace);
-      if (mounted) showErrorSnackBar(context, t.startup.repairFailed);
+      if (context.mounted) showErrorSnackBar(context, t.startup.repairFailed);
     }
     if (!mounted) return;
     setState(() {
@@ -800,7 +810,7 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
           busy: _initializing || _repairing,
           restartRequired: _restartRequired,
           onRetry: () => unawaited(_initialize()),
-          onRepair: failure.repairable && widget.repair != null ? () => _repair(failure) : null,
+          onRepair: failure.repairable && widget.repair != null ? () => _repair(context, failure) : null,
         ),
       );
     }
