@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
+import 'package:plezy/models/companion_remote/remote_session.dart';
 import 'package:plezy/services/companion_remote/companion_remote_peer_service.dart';
 import 'package:plezy/services/companion_remote/remote_auth_context.dart';
 import 'package:plezy/services/companion_remote/remote_auth_service.dart';
@@ -478,6 +479,52 @@ void main() {
       const RemoteCommand(type: RemoteCommandType.pause, data: {'source': 'host'}),
     );
   });
+
+  test('abrupt connection loss surfaces as a disconnect, not a terminal error', () async {
+    final host = CompanionRemotePeerService();
+    final remote = CompanionRemotePeerService();
+    _TcpProxy? proxy;
+    addTearDown(() async {
+      await remote.dispose();
+      await host.dispose();
+      await proxy?.dispose();
+    });
+
+    final session = await host.createSessionForContexts('Test Host', 'macos', [_authContext]);
+    final activeProxy = proxy = await _TcpProxy.start(session.port);
+
+    await remote.joinSessionWithContexts(
+      'Test Remote',
+      'ios',
+      '127.0.0.1:${activeProxy.port}',
+      [_authContext],
+      authContextId: _authContext.id,
+      expectedHostClientId: _authContext.clientIdentifier,
+    );
+
+    final errors = <RemotePeerError>[];
+    final statuses = <RemoteSessionStatus>[];
+    final errorSubscription = remote.onError.listen(errors.add);
+    final statusSubscription = remote.onConnectionStateChanged.listen(statuses.add);
+    addTearDown(() async {
+      await errorSubscription.cancel();
+      await statusSubscription.cancel();
+    });
+    final disconnected = remote.onDeviceDisconnected.first;
+
+    // Kill the TCP connection without a WebSocket close handshake — the
+    // signal a resumed Android app sees after backgrounding killed the
+    // socket. It must feed the disconnect/reconnect path, never a terminal
+    // error (dart:io normalizes even read-side socket errors to onDone, and
+    // the peer's onError branch mirrors this contract for transports that do
+    // surface errors).
+    activeProxy.abortSockets();
+
+    await disconnected.timeout(_ioTimeout);
+    await _flushEventQueue();
+    expect(errors, isEmpty);
+    expect(statuses, [RemoteSessionStatus.disconnected]);
+  });
 }
 
 typedef _TestRaceProbeConnection = ({Future<void> Function() close, Future<void> ready, Stream<dynamic> stream});
@@ -555,6 +602,51 @@ class _CancelTrackingSubscription<T> implements StreamSubscription<T> {
 
   @override
   Future<E> asFuture<E>([E? futureValue]) => _delegate.asFuture(futureValue);
+}
+
+/// Byte-level TCP relay between the remote client and a real host, so a test
+/// can destroy the transport under the client without the WebSocket close
+/// handshake a clean [CompanionRemotePeerService.disconnect] would perform.
+class _TcpProxy {
+  _TcpProxy._(this._server, this._targetPort);
+
+  final ServerSocket _server;
+  final int _targetPort;
+  final List<Socket> _sockets = [];
+  bool _serverClosed = false;
+
+  int get port => _server.port;
+
+  static Future<_TcpProxy> start(int targetPort) async {
+    final server = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final proxy = _TcpProxy._(server, targetPort);
+    server.listen((socket) => unawaited(proxy._pipe(socket)));
+    return proxy;
+  }
+
+  Future<void> _pipe(Socket remoteSide) async {
+    final hostSide = await Socket.connect(InternetAddress.loopbackIPv4, _targetPort);
+    _sockets
+      ..add(remoteSide)
+      ..add(hostSide);
+    remoteSide.listen(hostSide.add, onDone: hostSide.destroy, onError: (Object _) => hostSide.destroy());
+    hostSide.listen(remoteSide.add, onDone: remoteSide.destroy, onError: (Object _) => remoteSide.destroy());
+  }
+
+  /// Destroy both pipe ends immediately, with no WebSocket close frame.
+  void abortSockets() {
+    for (final socket in _sockets) {
+      socket.destroy();
+    }
+  }
+
+  Future<void> dispose() async {
+    if (!_serverClosed) {
+      _serverClosed = true;
+      await _server.close();
+    }
+    abortSockets();
+  }
 }
 
 final _authContext = RemoteAuthContext(
