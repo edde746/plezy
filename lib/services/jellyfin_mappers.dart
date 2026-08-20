@@ -16,10 +16,6 @@ import '../utils/resolution_label.dart';
 import 'file_info_parser.dart';
 import 'jellyfin_display_metadata.dart';
 
-// Re-export so existing callers that pulled `resolutionLabelFromHeight`
-// from this file keep compiling without a bulk import rewrite.
-export '../utils/resolution_label.dart' show resolutionLabelFromHeight;
-
 Map<String, dynamic>? jellyfinFirstVideoStream(Object? streams) {
   if (streams is! List) return null;
   for (final stream in streams) {

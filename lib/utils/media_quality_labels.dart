@@ -56,25 +56,10 @@ MediaVersion? _selectedVersion(List<MediaVersion>? versions, int versionIndex) {
 
 String? _formatResolution(MediaVersion version) {
   final raw = version.videoResolution?.trim();
-  if (raw != null && raw.isNotEmpty) return _formatResolutionValue(raw);
+  if (raw != null && raw.isNotEmpty) return resolutionDisplayLabel(raw);
 
   final fallback = resolutionLabelFromDimensions(version.width, version.height);
-  return fallback == null ? null : _formatResolutionValue(fallback);
-}
-
-String _formatResolutionValue(String value) {
-  final normalized = value.trim().toLowerCase();
-  if (normalized == '4k' || normalized == 'uhd') return '4K';
-  if (normalized == 'sd') return 'SD';
-
-  final numeric = RegExp(r'^(\d+)(?:p)?$').firstMatch(normalized);
-  if (numeric != null) {
-    final height = int.tryParse(numeric.group(1)!);
-    if (height != null && height >= 2160) return '4K';
-    return '${numeric.group(1)}p';
-  }
-
-  return value.toUpperCase();
+  return fallback == null ? null : resolutionDisplayLabel(fallback);
 }
 
 MediaStream? _firstStreamOfKind(MediaVersion version, MediaStreamKind kind) {

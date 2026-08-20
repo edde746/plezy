@@ -542,11 +542,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     return () => nodes[index].requestFocus();
   }
 
-  String _backendLabel(MediaBackend backend) => switch (backend) {
-    MediaBackend.plex => 'Plex',
-    MediaBackend.jellyfin => 'Jellyfin',
-    MediaBackend.emby => 'Emby',
-  };
+  String _backendLabel(MediaBackend backend) => backend.dialect?.productName ?? 'Plex';
 }
 
 const _serverKey = 'server';
