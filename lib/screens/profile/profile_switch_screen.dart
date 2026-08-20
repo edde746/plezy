@@ -25,6 +25,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/profile_switching_overlay.dart';
 import '../libraries/state_messages.dart';
 import 'add_local_profile_screen.dart';
+import 'pin_entry_dialog.dart';
 import 'profile_teardown.dart';
 import 'profile_detail_screen.dart';
 
@@ -261,7 +262,29 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     );
   }
 
+  /// Gate Manage/Delete on a non-active, PIN-protected local profile behind
+  /// its PIN: without this the picker menu bypasses the lock entirely
+  /// ([ProfileDetailScreen] exposes rename, PIN removal, and connection
+  /// edits). The active profile already proved its PIN at switch time, and
+  /// Plex Home profiles keep their server-side PIN flow. Loops on wrong
+  /// entries with the same shake-on-error pattern as activation — see
+  /// [showPinEntryDialog].
+  Future<bool> _verifyPinForProfileAction(Profile profile) async {
+    if (!profile.isLocal || !profile.isPinProtected) return true;
+    if (profile.id == context.read<ActiveProfileProvider>().activeId) return true;
+    String? errorMessage;
+    while (true) {
+      if (!mounted) return false;
+      final pin = await showPinEntryDialog(context, profile.displayName, errorMessage: errorMessage);
+      if (!mounted || pin == null) return false;
+      if (verifyProfilePin(profile, pin)) return true;
+      errorMessage = t.profiles.incorrectPinTryAgain;
+    }
+  }
+
   Future<void> _manageProfile(Profile profile) async {
+    if (!await _verifyPinForProfileAction(profile)) return;
+    if (!mounted) return;
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileDetailScreen(profile: profile)));
   }
 
@@ -277,6 +300,8 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   }
 
   Future<void> _deleteProfile(Profile profile) async {
+    if (!await _verifyPinForProfileAction(profile)) return;
+    if (!mounted) return;
     await confirmAndDeleteProfile(
       context,
       profile: profile,
