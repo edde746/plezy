@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
+import '../utils/app_logger.dart';
 
 typedef JellyfinItemCacheKey = ({String scopeId, String machineId, String userId, String itemId});
 typedef JellyfinCacheItem = ({ApiCacheData cacheRow, JellyfinItemCacheKey key});
@@ -69,6 +70,19 @@ class JellyfinCacheResolver {
     }
     if (requested.userId != null) {
       matches.sort((a, b) => a.key.scopeId == serverOrScopeId ? -1 : (b.key.scopeId == serverOrScopeId ? 1 : 0));
+    } else {
+      // Mirror the write-path guard in JellyfinApiCache.applyWatchState: a bare
+      // machine id may only resolve when every surviving row belongs to one
+      // user. Picking any ordering would serve another user's cached state and
+      // token-stamped URLs.
+      final userIds = {for (final match in matches) match.key.userId};
+      if (userIds.length > 1) {
+        appLogger.w(
+          'Refusing ambiguous bare-scope MediaBrowser cache resolution',
+          error: {'serverOrScopeId': serverOrScopeId, 'itemId': itemId, 'userCount': userIds.length},
+        );
+        return const [];
+      }
     }
     return matches;
   }
