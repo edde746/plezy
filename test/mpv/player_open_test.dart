@@ -621,6 +621,63 @@ void main() {
       );
     });
 
+    test('MPV defers macOS output volume until the audio output is active', () async {
+      PlayerNative.debugMacOSOutputVolumeOverride = true;
+      final calls = <MethodCall>[];
+      var rejectNextOutputVolume = true;
+      try {
+        await withMockPlayerChannels(
+          methodChannelName: 'com.plezy/mpv_player',
+          eventChannelName: 'com.plezy/mpv_player/events',
+          methodHandler: (call) async {
+            calls.add(call);
+            if (call.method == 'setProperty' && _setPropertyName(call) == 'ao-volume' && rejectNextOutputVolume) {
+              rejectNextOutputVolume = false;
+              throw PlatformException(code: 'SET_PROPERTY_FAILED');
+            }
+            return call.method == 'initialize' ? true : null;
+          },
+          testBody: () async {
+            final player = PlayerNative();
+            try {
+              await player.setVolume(50);
+              expect(_setPropertyValueIndex(calls, 'volume', '50.0'), greaterThanOrEqualTo(0));
+              expect(_setPropertyCallIndex(calls, 'ao-volume'), -1);
+
+              calls.clear();
+              await player.open(Media('https://example.test/movie.mkv'));
+              final loadIndex = _loadfileCallIndex(calls);
+              expect(_setPropertyValueIndex(calls, 'pause', 'yes'), lessThan(loadIndex));
+              expect(_setPropertyValueIndex(calls, 'pause', 'no'), -1);
+
+              player.handlePlayerEvent('file-loaded', null);
+              await pumpEventQueue();
+              expect(_setPropertyCallIndex(calls, 'ao-volume'), -1);
+              expect(_setPropertyValueIndex(calls, 'pause', 'no'), greaterThan(loadIndex));
+
+              calls.clear();
+              player.handlePropertyChange('audio-out-params', const {'channels': 'stereo'});
+              await pumpEventQueue();
+              expect(_setPropertyValueIndex(calls, 'ao-volume', '12.5'), greaterThanOrEqualTo(0));
+              expect(_setPropertyValueIndex(calls, 'volume', '50.0'), greaterThanOrEqualTo(0));
+
+              calls.clear();
+              player.handlePropertyChange('audio-out-params', const {'channels': 'stereo'});
+              await pumpEventQueue();
+              expect(
+                _setPropertyValueIndex(calls, 'ao-volume', '12.5'),
+                lessThan(_setPropertyValueIndex(calls, 'volume', '100.0')),
+              );
+            } finally {
+              await player.dispose();
+            }
+          },
+        );
+      } finally {
+        PlayerNative.debugMacOSOutputVolumeOverride = null;
+      }
+    });
+
     test('MPV passes external subtitles through loadfile options', () async {
       final calls = <MethodCall>[];
 
