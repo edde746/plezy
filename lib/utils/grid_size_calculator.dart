@@ -18,33 +18,6 @@ class GridSizeCalculator {
     return _lerp(100, 200, f);
   }
 
-  /// Calculates the max cross-axis extent accounting for outer padding.
-  /// [density] is an int 1–5.
-  static double getMaxCrossAxisExtentWithPadding(BuildContext context, int density, double horizontalPadding) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final availableWidth = screenWidth - horizontalPadding;
-    final f = LibraryDensity.factor(density);
-
-    // TV-specific sizing for 10ft viewing distance
-    if (PlatformDetector.isTV()) {
-      final divisor = _lerp(12, 6, f);
-      final maxItemWidth = _lerp(140, 240, f);
-      return (availableWidth / divisor).clamp(0, maxItemWidth);
-    }
-
-    if (ScreenBreakpoints.isWideTabletOrLarger(screenWidth)) {
-      final divisor = _lerp(10, 5, f);
-      final maxItemWidth = _lerp(140, 280, f);
-      return (availableWidth / divisor).clamp(0, maxItemWidth);
-    } else if (ScreenBreakpoints.isTablet(screenWidth)) {
-      final targetItemCount = _lerp(6, 3, f);
-      return availableWidth / targetItemCount;
-    } else {
-      final targetItemCount = _lerp(5, 2, f);
-      return availableWidth / targetItemCount;
-    }
-  }
-
   /// Calculates the number of columns for a given available width.
   ///
   /// Matches Flutter's SliverGridDelegateWithMaxCrossAxisExtent exactly (see

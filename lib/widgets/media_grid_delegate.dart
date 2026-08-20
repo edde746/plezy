@@ -19,14 +19,10 @@ class MediaGridDelegate {
   static double _maxCrossAxisExtentFor({
     required BuildContext context,
     required int density,
-    required bool usePaddingAware,
-    required double horizontalPadding,
     required bool useWideAspectRatio,
     CardShape? shape,
   }) {
-    var maxCrossAxisExtent = usePaddingAware
-        ? GridSizeCalculator.getMaxCrossAxisExtentWithPadding(context, density, horizontalPadding)
-        : GridSizeCalculator.getMaxCrossAxisExtent(context, density);
+    var maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
 
     // For wide aspect ratio (16:9), increase max extent so items are larger
     // and there are fewer per row (roughly 1.8x wider to maintain similar visual area)
@@ -108,8 +104,6 @@ class MediaGridGeometry {
     required double crossAxisExtent,
     required int density,
     double? crossAxisExtentForColumnCount,
-    bool usePaddingAware = false,
-    double horizontalPadding = 16,
     bool useWideAspectRatio = false,
     bool fullBleedImage = false,
     CardShape? shape,
@@ -128,8 +122,6 @@ class MediaGridGeometry {
     final maxCrossAxisExtent = MediaGridDelegate._maxCrossAxisExtentFor(
       context: context,
       density: density,
-      usePaddingAware: usePaddingAware,
-      horizontalPadding: horizontalPadding,
       useWideAspectRatio: useWideAspectRatio,
       shape: shape,
     );

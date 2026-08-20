@@ -558,8 +558,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                         itemCount: _filteredItems.length,
                         density: libraryDensity,
                         padding: const EdgeInsets.all(8),
-                        usePaddingAware: true,
-                        horizontalPadding: 16,
                         useWideAspectRatio: useWideLayout,
                         fullBleedImage: fullCardLayout,
                         shape: isSquareHub ? CardShape.square : null,
