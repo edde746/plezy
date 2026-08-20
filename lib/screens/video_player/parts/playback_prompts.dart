@@ -20,7 +20,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
           ? _sendStoppedProgressOnce(positionOverride: duration)
           : _sendStoppedProgressOnce(),
     );
-    _updateMediaControlsPlaybackState();
+    _mediaControls.pushPlaybackState();
     unawaited(DiscordRPCService.instance.pausePlayback());
     // The item finished, so real-time trackers get a terminal report now rather
     // than whenever the screen happens to tear down: a completion prompt or

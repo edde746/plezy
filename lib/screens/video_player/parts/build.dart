@@ -246,7 +246,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     if (_lastMediaControlAuthority != authority) {
                       _lastMediaControlAuthority = authority;
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) unawaited(_syncMediaControlsAvailability());
+                        if (mounted) unawaited(_mediaControls.syncAvailability());
                       });
                     }
 

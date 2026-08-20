@@ -264,7 +264,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _audioFocusFuture = null;
     _playbackDataFuture = null;
     _playbackSession = null;
-    _mediaControlsSuspendedForTvBackground = false;
+    _mediaControls.resetSuspension();
 
     if (progressTracker != null) {
       try {
@@ -439,11 +439,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       onPlay: () {
         final currentPlayer = player;
         if (currentPlayer == null) return;
-        unawaited(_seekBackForRewind(currentPlayer));
+        unawaited(_mediaControls.seekBackForRewind(currentPlayer));
         unawaited(_playWithPlaybackIntent(currentPlayer));
         _wasPlayingBeforeInactive = false;
         _announceTransportCommand(willPlay: true);
-        _updateMediaControlsPlaybackState();
+        _mediaControls.pushPlaybackState();
       },
       onPause: () {
         final currentPlayer = player;
@@ -454,7 +454,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         }
         unawaited(_pauseWithPlaybackIntent(currentPlayer));
         _announceTransportCommand(willPlay: false);
-        _updateMediaControlsPlaybackState();
+        _mediaControls.pushPlaybackState();
       },
       onTogglePlayPause: () {
         final currentPlayer = player;
@@ -463,12 +463,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           unawaited(_pauseWithPlaybackIntent(currentPlayer));
           _announceTransportCommand(willPlay: false);
         } else {
-          unawaited(_seekBackForRewind(currentPlayer));
+          unawaited(_mediaControls.seekBackForRewind(currentPlayer));
           unawaited(_playWithPlaybackIntent(currentPlayer));
           _wasPlayingBeforeInactive = false;
           _announceTransportCommand(willPlay: true);
         }
-        _updateMediaControlsPlaybackState();
+        _mediaControls.pushPlaybackState();
       },
       onSeek: (position) {
         final currentPlayer = player;
@@ -491,7 +491,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Set up media control event handling
     _mediaControlSubscription = mediaControlsManager.controlEvents.listen((event) {
-      if (_mediaControlsSuspendedForTvBackground) {
+      if (_mediaControls.suspendedForTvBackground) {
         appLogger.d('Media control: ${event.runtimeType} ignored while Android TV background-suspended');
         return;
       }
@@ -523,12 +523,12 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     if (!mounted) return;
 
-    await _syncMediaControlsAvailability();
+    await _mediaControls.syncAvailability();
     if (!mounted || player != currentPlayer || _mediaControlsManager != mediaControlsManager) return;
 
     // Listen to playing state and update media controls
     _mediaControlsPlayingSubscription = currentPlayer.streams.playing.listen((isPlaying) {
-      _updateMediaControlsPlaybackState();
+      _mediaControls.pushPlaybackState();
     });
 
     // Listen to position updates for media controls and Discord
@@ -552,7 +552,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     });
 
     _mediaControlsSeekableSubscription = currentPlayer.streams.seekable.listen((_) {
-      unawaited(_syncMediaControlsAvailability());
+      unawaited(_mediaControls.syncAvailability());
     });
   }
 
@@ -579,7 +579,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       return;
     }
 
-    if (isPlaying && _mediaControlsSuspendedForTvBackground) {
+    if (isPlaying && _mediaControls.suspendedForTvBackground) {
       appLogger.w('Playback started while Android TV background media controls are suspended; pausing');
       Sentry.addBreadcrumb(
         Breadcrumb(message: 'Blocked TV background playback start', category: 'player.media_controls'),
@@ -605,7 +605,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     _progressTracker?.sendProgress(isPlaying ? 'playing' : 'paused');
 
     // Update OS media controls playback state
-    _updateMediaControlsPlaybackState();
+    _mediaControls.pushPlaybackState();
 
     // Update Discord Rich Presence + real-time trackers
     if (isPlaying) {
@@ -664,7 +664,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     } catch (e) {
       appLogger.w('Failed to pause after Apple audio session $reason', error: e);
     } finally {
-      _updateMediaControlsPlaybackState();
+      _mediaControls.pushPlaybackState();
     }
   }
 
@@ -692,7 +692,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     } catch (e) {
       appLogger.w('Failed to resume after Apple audio session $reason', error: e);
     } finally {
-      _updateMediaControlsPlaybackState();
+      _mediaControls.pushPlaybackState();
     }
   }
 

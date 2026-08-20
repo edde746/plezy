@@ -30,7 +30,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       'pipTransitionInFlight': _androidAutoPipTransitionInFlight,
       'hiddenForBackground': _hiddenForBackground,
       'playerSuspendedForTvBackground': _playerSuspendedForTvBackground,
-      'mediaControlsSuspendedForTvBackground': _mediaControlsSuspendedForTvBackground,
+      'mediaControlsSuspendedForTvBackground': _mediaControls.suspendedForTvBackground,
       'backend': _playerBackendLabel,
     };
     if (action != null) {
@@ -50,7 +50,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       ' pipTransitionInFlight=$_androidAutoPipTransitionInFlight'
       ' hiddenForBackground=$_hiddenForBackground'
       ' playerSuspendedForTvBackground=$_playerSuspendedForTvBackground'
-      ' mediaControlsSuspendedForTvBackground=$_mediaControlsSuspendedForTvBackground'
+      ' mediaControlsSuspendedForTvBackground=$_mediaControls.suspendedForTvBackground'
       ' backend=$_playerBackendLabel',
     );
   }
@@ -106,7 +106,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       }
       await stoppedReport;
       if (!mounted || currentPlayer != player) return;
-      await _suspendMediaControlsForTvBackground('hidden_live_stopped');
+      await _mediaControls.suspendForTvBackground('hidden_live_stopped');
       _recordLifecycleState('hidden', action: 'live_stopped_exit_on_resume');
       return;
     }
@@ -159,7 +159,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     _suspendLiveTimelineForBackground();
 
     if (isTv) {
-      await _suspendMediaControlsForTvBackground('hidden');
+      await _mediaControls.suspendForTvBackground('hidden');
       if (_armTvBackgroundPlayerSuspendTimer()) {
         _recordLifecycleState('hidden', action: 'tv_background_pause_suspend_armed');
       } else {
@@ -228,8 +228,8 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
     // Restore media controls and wakelock when app is resumed.
     if (_isPlayerInitialized && mounted) {
-      _resumeMediaControlsAfterTvBackground('app_resumed');
-      await _restoreMediaControlsAfterResume();
+      _mediaControls.resumeAfterTvBackground('app_resumed');
+      await _mediaControls.restoreAfterResume();
     }
 
     _resumeLiveTimelineAfterBackgroundIfNeeded();
@@ -350,7 +350,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   /// place through the regular reload flow — a fresh playback decision, since
   /// the old session is closed and its stream URL may have expired
   /// server-side — and comes back paused; the caller's
-  /// [_restoreMediaControlsAfterResume] then resumes it (with
+  /// [MediaControlsScreenController.restoreAfterResume] then resumes it (with
   /// rewind-on-resume) exactly like a plain background pause. Live sessions
   /// never enter this flow because their tuned session and capture-buffer
   /// position must remain intact across backgrounding.

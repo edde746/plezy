@@ -87,7 +87,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     if (!mounted || currentPlayer != player) return;
 
     _notifyWatchTogetherSeek(target);
-    _updateMediaControlsPlaybackState();
+    _mediaControls.pushPlaybackState();
   }
 
   /// Replace this screen with a fresh player route — the fallback for flows

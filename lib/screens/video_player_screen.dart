@@ -89,6 +89,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/android_exit_diagnostics.dart';
 import 'video_player/completion_latch.dart';
 import 'video_player/frame_rate_matcher.dart';
+import 'video_player/media_controls_screen_controller.dart';
 import 'video_player/live_stream_retry.dart';
 import 'video_player/live_timeline_report.dart';
 import 'video_player/wakelock_controller.dart';
@@ -118,7 +119,6 @@ part 'video_player/parts/episode_queue.dart';
 part 'video_player/parts/errors.dart';
 part 'video_player/parts/lifecycle.dart';
 part 'video_player/parts/live_tv.dart';
-part 'video_player/parts/media_controls.dart';
 part 'video_player/parts/pip.dart';
 part 'video_player/parts/shader.dart';
 part 'video_player/parts/playback_open.dart';
@@ -691,7 +691,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // App lifecycle state tracking
   bool _wasPlayingBeforeInactive = false;
   bool _hiddenForBackground = false;
-  bool _mediaControlsSuspendedForTvBackground = false;
   bool _resumeAfterAppleAudioSessionPause = false;
   DateTime? _lastPlaybackPauseAt;
   bool _autoPipEnabled = false;
@@ -736,6 +735,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
   MediaControlsManager? _mediaControlsManager;
+  late final MediaControlsScreenController _mediaControls = MediaControlsScreenController(
+    manager: () => _mediaControlsManager,
+    player: () => player,
+    isMounted: () => mounted,
+    isLive: widget.isLive,
+    shouldSkipForPip: () => _shouldSkipForPip,
+    isPlayerInitialized: () => _isPlayerInitialized,
+    metadata: () => _currentMetadata,
+    client: () => _isOfflinePlayback ? null : _getMediaServerClient(context),
+    isPlaylistActive: () => context.read<PlaybackStateProvider>().isPlaylistActive,
+    canControlPlayback: () => _canControlPlayback(),
+    canNavigateMediaItems: () => _canNavigateMediaItems(),
+    rewindOnResumeSeconds: () => _rewindOnResume,
+    seek: (position) => _seekPlayback(position),
+    play: _playWithPlaybackIntent,
+    wasPlayingBeforeInactive: () => _wasPlayingBeforeInactive,
+    clearWasPlayingBeforeInactive: () => _wasPlayingBeforeInactive = false,
+    wakelock: _wakelockController,
+    recordLifecycle: (state, {action}) => _recordLifecycleState(state, action: action),
+  );
   ({bool canControlPlayback, bool canNavigateMediaItems})? _lastMediaControlAuthority;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
@@ -1194,8 +1213,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           break;
         }
         // We don't support background playback
-        if (_shouldSuspendMediaControlsForTvBackground) {
-          unawaited(_suspendMediaControlsForTvBackground('paused'));
+        if (_mediaControls.shouldSuspendForTvBackground) {
+          unawaited(_mediaControls.suspendForTvBackground('paused'));
         } else {
           unawaited(_mediaControlsManager?.clear());
         }
@@ -2199,7 +2218,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     try {
       if (resumes) {
-        await _seekBackForRewind(currentPlayer);
+        await _mediaControls.seekBackForRewind(currentPlayer);
         if (!mounted || player != currentPlayer) return;
       }
       await switch (command) {
