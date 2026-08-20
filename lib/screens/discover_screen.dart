@@ -63,7 +63,13 @@ import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
+import '../widgets/app_refresh_indicator.dart';
 import 'companion_remote/mobile_remote_screen.dart';
+
+extension on CustomScrollView {
+  Widget _withRefreshIndicator(Future<void> Function() onRefresh) =>
+      AppRefreshIndicator(onRefresh: onRefresh, child: this);
+}
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
@@ -916,6 +922,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         children: [
           CustomScrollView(
             controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
               // Hero Section (Continue Watching) - at top of screen
               Builder(
@@ -1016,7 +1023,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 SliverToBoxAdapter(child: SizedBox(height: 24 + bottomPadding)),
               ],
             ],
-          ),
+          )._withRefreshIndicator(_discover.load),
           // Overlaid app bar — excluded from default focus traversal so that
           // initial/tab-switch focus lands on content (hero/hubs), not the toolbar.
           // Toolbar buttons are still reachable via explicit UP from hero section.
