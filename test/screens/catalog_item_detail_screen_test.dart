@@ -1056,7 +1056,7 @@ void main() {
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
 
     await _pumpDetail(tester, source, item: item);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
@@ -1078,7 +1078,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await _pumpDetail(tester, _FakeCatalogSource());
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
@@ -1098,7 +1098,7 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
     expect(tester.widget<SingleChildScrollView>(find.byKey(const Key('catalog_detail_scroll'))).controller!.offset, 0);
   });
 
@@ -1147,12 +1147,12 @@ void main() {
     final source = _FakeCatalogSource(watchlistLoading: true);
     await _pumpDetail(tester, source);
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_watchlist');
     final actionNode = tester
         .widgetList<Focus>(find.descendant(of: find.byType(FocusableActionBar), matching: find.byType(Focus)))
         .map((widget) => widget.focusNode)
         .whereType<FocusNode>()
-        .singleWhere((node) => node.debugLabel == 'ActionBar[0]');
+        .singleWhere((node) => node.debugLabel == 'catalog_watchlist');
     expect(actionNode.canRequestFocus, isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.select);

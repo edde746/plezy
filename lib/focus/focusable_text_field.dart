@@ -227,9 +227,30 @@ KeyEventResult _handleInputKey({
     if (result != KeyEventResult.ignored) return finish(result, 'custom-tv-hardware-keyboard');
   }
 
-  if (onBack != null && key.isBackKey) {
-    if (event is KeyDownEvent) onBack();
-    return finish(KeyEventResult.handled, 'onBack');
+  if (onBack != null && event.logicalKey.isBackKey) {
+    // On TV the native text-input path can swallow the matching KeyUp (the
+    // closing IME session eats it), so back fires on KeyDown — the same
+    // down-only shape as [handleBackKeyAction]'s Apple TV branch, coordinator
+    // mark included so a parallel back dispatch still dedupes. Elsewhere the
+    // shared handler's KeyUp semantics apply.
+    if (PlatformDetector.isTV()) {
+      if (BackKeyUpSuppressor.consumeIfSuppressed(event)) return finish(KeyEventResult.handled, 'onBack');
+      if (event is KeyDownEvent) {
+        BackKeyCoordinator.markHandled();
+        onBack();
+        // onBack may move focus (empty search field -> sidebar); the matching
+        // KeyUp is then delivered to the NEW focus chain, whose shared
+        // handlers act on KeyUp — a second back action. Arm the suppressor
+        // (after onBack, so a modal opened by it cannot clear the arming) so
+        // whichever chain receives the KeyUp swallows it. This cannot pin: the
+        // suppressor's hardware observer clears the armed state once the
+        // physical press ends — see _KeyUpSuppressor.
+        BackKeyUpSuppressor.suppressBackUntilKeyUp();
+      }
+      return finish(KeyEventResult.handled, 'onBack');
+    }
+    final backResult = handleBackKeyAction(event, onBack);
+    if (backResult != KeyEventResult.ignored) return finish(backResult, 'onBack');
   }
 
   // Enter/numpad enter are left to TextField.onSubmitted. Handle only

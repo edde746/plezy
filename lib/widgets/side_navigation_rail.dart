@@ -658,6 +658,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasLiveTv,
     required bool hasNowPlaying,
     required bool hasExplore,
+    required bool isCollapsed,
   }) {
     return [
       if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
@@ -665,7 +666,10 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         _kHome,
         if (hasNowPlaying) _kNowPlaying,
         _kLibraries,
-        if (_librariesExpanded) ...[
+        // Library rows render inside ExcludeFocus(excluding: !_librariesExpanded
+        // || isCollapsed); keep the D-pad order in lockstep with that render
+        // condition so a collapsed rail never targets a focus-excluded row.
+        if (_librariesExpanded && !isCollapsed) ...[
           ..._focusKeysForLibraryRows(visibleRows),
           if (hasHiddenLibraries) ...[
             _kHiddenLibraries,
@@ -708,14 +712,19 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final currentIndex = focusOrder.indexOf(currentKey);
     if (currentIndex == -1) return KeyEventResult.ignored;
 
-    final nextIndex = isDown ? currentIndex + 1 : currentIndex - 1;
-    if (nextIndex < 0 || nextIndex >= focusOrder.length) return KeyEventResult.handled;
-
-    final nextNode = _focusTracker.nodeFor(focusOrder[nextIndex]);
-    if (nextNode == null) return KeyEventResult.ignored;
-
-    _requestFocusAndReveal(nextNode);
-    return KeyEventResult.handled;
+    // Scan onward past keys whose node is unmounted or focus-excluded (a row
+    // can outlive its focusability, e.g. under an ExcludeFocus ancestor).
+    // Returning handled without moving focus would swallow the key and also
+    // suppress the framework's own directional traversal, so yield ignored
+    // when no viable candidate remains in the requested direction.
+    final step = isDown ? 1 : -1;
+    for (var index = currentIndex + step; index >= 0 && index < focusOrder.length; index += step) {
+      final node = _focusTracker.nodeFor(focusOrder[index]);
+      if (node == null || node.context == null || !node.canRequestFocus) continue;
+      _requestFocusAndReveal(node);
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
   }
 
   /// Collapse the sidebar (resets touch-expand state).
@@ -827,6 +836,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           hasLiveTv: hasLiveTv,
           hasNowPlaying: nowPlayingTrack != null,
           hasExplore: hasExplore,
+          isCollapsed: isCollapsed,
         );
         _debugAssertUniqueFocusOrder(focusOrder);
         return TapRegion(

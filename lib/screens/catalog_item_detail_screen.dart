@@ -1282,6 +1282,10 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                           actions: [
                                             if (_watchlistSource != null)
                                               FocusableAction(
+                                                // Stable identities so the focused binding survives the
+                                                // list-shape changes of async enrichment (watchlist/request
+                                                // sources and trailer URL arrive at different times).
+                                                debugLabel: 'catalog_watchlist',
                                                 icon: onWatchlist ?? false
                                                     ? Symbols.bookmark_added_rounded
                                                     : Symbols.bookmark_add_rounded,
@@ -1292,6 +1296,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                               ),
                                             if (_requestSource case final SeerrCatalogSource seerr when tmdbId != null)
                                               FocusableAction(
+                                                debugLabel: 'catalog_request',
                                                 icon: Symbols.download_rounded,
                                                 tooltip: t.seerr.request,
                                                 onPressed: () => unawaited(
@@ -1306,6 +1311,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                                               ),
                                             if (item.trailerUrl?.trim() case final trailer? when trailer.isNotEmpty)
                                               FocusableAction(
+                                                debugLabel: 'catalog_trailer',
                                                 icon: Symbols.play_circle_rounded,
                                                 tooltip: t.explore.detail.watchTrailer,
                                                 onPressed: () => unawaited(_openExternalUrl(trailer)),

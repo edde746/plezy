@@ -130,8 +130,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
   void didUpdateWidget(FocusableActionBar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_shouldRebuildFocusNodes(oldWidget)) {
-      _disposeNodes();
-      _initNodes();
+      _rebindNodes(oldWidget.actions);
     }
   }
 
@@ -144,29 +143,118 @@ class FocusableActionBarState extends State<FocusableActionBar> {
     return false;
   }
 
-  void _initNodes() {
-    _focusBindings = [];
-    _focusNodes = [];
-    _focusStates = List<bool>.filled(widget.actions.length, false);
-    for (var i = 0; i < widget.actions.length; i++) {
-      final index = i;
-      final binding = OwnedFocusNodeBinding();
-      binding.bind(
-        externalNode: widget.actions[i].focusNode,
-        debugLabel: widget.actions[i].debugLabel ?? 'ActionBar[$i]',
-        listener: () {
-          final hasFocus = _focusNodes[index].hasFocus;
-          if (_focusStates[index] != hasFocus) {
-            setState(() => _focusStates[index] = hasFocus);
-          }
-          _notifyRowFocusIfChanged();
-        },
-      );
-      _focusBindings.add(binding);
-      _focusNodes.add(binding.node);
-      _focusStates[i] = binding.node.hasFocus;
+  /// Stable identity for matching an action across list changes: the supplied
+  /// [FocusableAction.focusNode] first, else [FocusableAction.debugLabel].
+  /// Unlabeled actions have no identity and only ever match positionally.
+  static Object? _actionIdentity(FocusableAction action) => action.focusNode ?? action.debugLabel;
+
+  /// Whether the action-list shape is unchanged: same length and every
+  /// labeled identity present in both lists sits at the index it had. Only
+  /// then does an unlabeled action's position provably still refer to the
+  /// same conceptual action.
+  bool _unlabeledPositionsStable(List<FocusableAction> oldActions) {
+    if (oldActions.length != widget.actions.length) return false;
+    for (var i = 0; i < oldActions.length; i++) {
+      final identity = _actionIdentity(oldActions[i]);
+      if (identity == null) continue;
+      for (var j = 0; j < widget.actions.length; j++) {
+        if (j != i && _actionIdentity(widget.actions[j]) == identity) return false;
+      }
     }
+    return true;
+  }
+
+  OwnedFocusNodeBinding _createBinding(FocusableAction action, int index) {
+    final binding = OwnedFocusNodeBinding();
+    binding.bind(
+      externalNode: action.focusNode,
+      debugLabel: action.debugLabel ?? 'ActionBar[$index]',
+      listener: () => _handleBindingFocusChange(binding),
+    );
+    return binding;
+  }
+
+  /// Index resolved at call time: a binding survives action-list changes, so
+  /// a listener must not capture the slot it was created for.
+  void _handleBindingFocusChange(OwnedFocusNodeBinding binding) {
+    final index = _focusBindings.indexOf(binding);
+    if (index != -1) {
+      final hasFocus = binding.node.hasFocus;
+      if (_focusStates[index] != hasFocus) {
+        setState(() => _focusStates[index] = hasFocus);
+      }
+    }
+    _notifyRowFocusIfChanged();
+  }
+
+  void _initNodes() {
+    _focusBindings = [for (var i = 0; i < widget.actions.length; i++) _createBinding(widget.actions[i], i)];
+    _focusNodes = [for (final binding in _focusBindings) binding.node];
+    _focusStates = [for (final node in _focusNodes) node.hasFocus];
     _hasAnyFocus = _focusNodes.any((node) => node.hasFocus);
+  }
+
+  /// Rebind on an action-list change, reusing the binding of every action
+  /// whose identity survives so its focus node is not disposed out from under
+  /// the user (media detail's watchlist action arrives asynchronously and
+  /// used to drop D-pad focus with the wholesale rebuild). A removed focused
+  /// action is disposed with its listener already detached, so the genuine
+  /// row-focus loss is reported through [_notifyRowFocusIfChanged] here.
+  void _rebindNodes(List<FocusableAction> oldActions) {
+    final oldBindings = _focusBindings;
+    final focusedOldIndex = _focusNodes.indexWhere((node) => node.hasFocus);
+
+    final claimed = List<bool>.filled(oldBindings.length, false);
+    final unlabeledPositionsStable = _unlabeledPositionsStable(oldActions);
+    int? matchOldIndex(int newIndex) {
+      final identity = _actionIdentity(widget.actions[newIndex]);
+      if (identity != null) {
+        for (var i = 0; i < oldActions.length; i++) {
+          if (!claimed[i] && _actionIdentity(oldActions[i]) == identity) return i;
+        }
+        return null;
+      }
+      // Positional reuse is the only option for an unlabeled action, but it
+      // is only provably correct while the list shape is unchanged; across an
+      // insertion/removal its successor is unknowable, so fall through to a
+      // fresh binding — genuinely dropping focus beats silently retargeting
+      // the focused binding (and its next Select) onto a different action.
+      if (unlabeledPositionsStable && !claimed[newIndex] && _actionIdentity(oldActions[newIndex]) == null) {
+        return newIndex;
+      }
+      return null;
+    }
+
+    var focusedNewIndex = -1;
+    final newBindings = <OwnedFocusNodeBinding>[];
+    for (var i = 0; i < widget.actions.length; i++) {
+      final oldIndex = matchOldIndex(i);
+      if (oldIndex == null) {
+        newBindings.add(_createBinding(widget.actions[i], i));
+        continue;
+      }
+      claimed[oldIndex] = true;
+      if (oldIndex == focusedOldIndex) focusedNewIndex = i;
+      newBindings.add(oldBindings[oldIndex]);
+    }
+
+    _focusBindings = newBindings;
+    _focusNodes = [for (final binding in newBindings) binding.node];
+    _focusStates = [for (final node in _focusNodes) node.hasFocus];
+
+    for (var i = 0; i < oldBindings.length; i++) {
+      if (!claimed[i]) oldBindings[i].dispose();
+    }
+
+    // The focused action survived: keep focus on it. The keyed row keeps its
+    // Focus element attached across reorders, so this only re-requests focus
+    // if the framework unfocused the node during widget churn.
+    if (focusedNewIndex != -1 &&
+        widget.actions[focusedNewIndex].onPressed != null &&
+        !_focusNodes[focusedNewIndex].hasFocus) {
+      _focusNodes[focusedNewIndex].requestFocus();
+    }
+    _notifyRowFocusIfChanged();
   }
 
   void _notifyRowFocusIfChanged() {
@@ -223,6 +311,9 @@ class FocusableActionBarState extends State<FocusableActionBar> {
     final customChild = action.builder?.call(context, buildState);
 
     return Focus(
+      // Keyed on the binding so an insertion moves the element with its node
+      // instead of detaching (and thereby unfocusing) it slot by slot.
+      key: ObjectKey(_focusBindings[index]),
       focusNode: _focusNodes[index],
       canRequestFocus: enabled,
       autofocus: action.autofocus && enabled,
