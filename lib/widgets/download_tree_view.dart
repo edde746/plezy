@@ -213,7 +213,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocu
         final seasonProgress = episodeNodes.isEmpty
             ? 0.0
             : episodeNodes.map((e) => e.progress).reduce((a, b) => a + b) / episodeNodes.length;
-        final seasonStatus = _determineAggregateStatus(episodeNodes.map((e) => e.status).toList());
+        final seasonStatus = determineDownloadAggregateStatus(episodeNodes.map((e) => e.status).toList());
 
         seasons.add(
           DownloadTreeNode(
@@ -238,7 +238,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocu
       final showProgress = seasons.isEmpty
           ? 0.0
           : seasons.map((s) => s.progress).reduce((a, b) => a + b) / seasons.length;
-      final showStatus = _determineAggregateStatus(seasons.map((s) => s.status).toList());
+      final showStatus = determineDownloadAggregateStatus(seasons.map((s) => s.status).toList());
 
       shows.add(
         DownloadTreeNode(
@@ -291,7 +291,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocu
       });
 
       final albumProgress = trackNodes.map((e) => e.progress).reduce((a, b) => a + b) / trackNodes.length;
-      final albumStatus = _determineAggregateStatus(trackNodes.map((e) => e.status).toList());
+      final albumStatus = determineDownloadAggregateStatus(trackNodes.map((e) => e.status).toList());
 
       albums.add(
         DownloadTreeNode(
@@ -312,32 +312,15 @@ class _DownloadTreeViewState extends State<DownloadTreeView> with UnsuppressFocu
     return [...movies, ...shows, ...albums];
   }
 
-  DownloadStatus _determineAggregateStatus(List<DownloadStatus> statuses) {
-    if (statuses.isEmpty) return DownloadStatus.queued;
-
-    if (statuses.any((s) => s == DownloadStatus.downloading)) {
-      return DownloadStatus.downloading;
-    }
-    if (statuses.any((s) => s == DownloadStatus.queued)) {
-      return DownloadStatus.queued;
-    }
-    if (statuses.any((s) => s == DownloadStatus.paused)) {
-      return DownloadStatus.paused;
-    }
-    if (statuses.any((s) => s == DownloadStatus.failed)) {
-      return DownloadStatus.failed;
-    }
-    return DownloadStatus.completed;
-  }
-
   int _compareByStatus(DownloadStatus a, DownloadStatus b) {
     const statusOrder = {
       DownloadStatus.downloading: 0,
       DownloadStatus.queued: 1,
       DownloadStatus.paused: 2,
-      DownloadStatus.completed: 3,
-      DownloadStatus.failed: 4,
-      DownloadStatus.cancelled: 5,
+      DownloadStatus.partial: 3,
+      DownloadStatus.completed: 4,
+      DownloadStatus.failed: 5,
+      DownloadStatus.cancelled: 6,
     };
     return (statusOrder[a] ?? 99).compareTo(statusOrder[b] ?? 99);
   }
@@ -471,6 +454,40 @@ String? resolveDownloadContainerGlobalKey(DownloadTreeNode node, Map<String, Med
     case DownloadNodeType.track:
       return null;
   }
+}
+
+/// Reduce child statuses to a container status, covering every
+/// [DownloadStatus] value explicitly.
+///
+/// Active states take precedence (downloading > queued > paused > failed);
+/// among purely terminal children, all-cancelled stays cancelled, all-completed
+/// stays completed, and any other mix — completed next to cancelled, or a
+/// child that is itself partial — is partial.
+@visibleForTesting
+DownloadStatus determineDownloadAggregateStatus(List<DownloadStatus> statuses) {
+  if (statuses.isEmpty) return DownloadStatus.queued;
+
+  if (statuses.any((s) => s == DownloadStatus.downloading)) {
+    return DownloadStatus.downloading;
+  }
+  if (statuses.any((s) => s == DownloadStatus.queued)) {
+    return DownloadStatus.queued;
+  }
+  if (statuses.any((s) => s == DownloadStatus.paused)) {
+    return DownloadStatus.paused;
+  }
+  if (statuses.any((s) => s == DownloadStatus.failed)) {
+    return DownloadStatus.failed;
+  }
+
+  // Only terminal outcomes remain: completed, cancelled, partial.
+  if (statuses.every((s) => s == DownloadStatus.cancelled)) {
+    return DownloadStatus.cancelled;
+  }
+  if (statuses.every((s) => s == DownloadStatus.completed)) {
+    return DownloadStatus.completed;
+  }
+  return DownloadStatus.partial;
 }
 
 String? _firstLeafKey(DownloadTreeNode node) {

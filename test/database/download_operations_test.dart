@@ -527,6 +527,29 @@ void main() {
         isEmpty,
       );
     });
+
+    test('getNextQueueItem skips excluded keys and returns null when all are excluded', () async {
+      for (final ratingKey in ['1', '2']) {
+        await db.insertDownload(
+          serverId: ServerId('srv'),
+          ratingKey: ratingKey,
+          globalKey: 'srv:$ratingKey',
+          type: 'movie',
+          status: DownloadStatus.queued.index,
+        );
+      }
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await db
+          .into(db.downloadQueue)
+          .insert(DownloadQueueCompanion.insert(mediaGlobalKey: 'srv:1', priority: const Value(5), addedAt: now));
+      await db
+          .into(db.downloadQueue)
+          .insert(DownloadQueueCompanion.insert(mediaGlobalKey: 'srv:2', priority: const Value(1), addedAt: now));
+
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:1');
+      expect((await db.getNextQueueItem(excludedGlobalKeys: {'srv:1'}))?.mediaGlobalKey, 'srv:2');
+      expect(await db.getNextQueueItem(excludedGlobalKeys: {'srv:1', 'srv:2'}), isNull);
+    });
   });
 
   group('update helpers', () {

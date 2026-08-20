@@ -192,6 +192,9 @@ class DownloadManagerService {
 
   // Prevents concurrent _processQueue calls
   bool _isProcessingQueue = false;
+  // A _processQueue call landed while a drain was already running; the
+  // running drain replays one more full pass before releasing the guard.
+  bool _queueRerunRequested = false;
   bool _isRepairingArtwork = false;
   bool _disposed = false;
   bool _queueBlockedByStorageFailure = false;
@@ -1708,37 +1711,55 @@ class DownloadManagerService {
       await queueProcessorOverride(client);
       return;
     }
-    if (_isProcessingQueue) return;
+    if (_isProcessingQueue) {
+      // A server that connected mid-drain must re-drive the pass: rows its
+      // offline server forced the running drain to skip would otherwise wait
+      // for an unrelated trigger (next enqueue, retry timer) to be picked up.
+      _queueRerunRequested = true;
+      return;
+    }
     _isProcessingQueue = true;
     _fallbackClient = client;
 
     try {
       await (_fileDownloaderInitializerOverride?.call() ?? _initializeFileDownloader());
 
-      while (!_queueBlockedByStorageFailure) {
-        if (_consecutiveQueueFailures >= _maxConsecutiveFailures) {
-          appLogger.w('Circuit breaker: $_consecutiveQueueFailures consecutive failures, pausing queue');
-          break;
-        }
+      do {
+        _queueRerunRequested = false;
+        // Heads whose client could not be resolved this cycle: excluded from the
+        // next lookup so the drain advances instead of re-reading the same row.
+        final skippedGlobalKeys = <String>{};
+        while (!_queueBlockedByStorageFailure) {
+          if (_consecutiveQueueFailures >= _maxConsecutiveFailures) {
+            appLogger.w('Circuit breaker: $_consecutiveQueueFailures consecutive failures, pausing queue');
+            break;
+          }
 
-        final nextItem = await _database.getNextQueueItem();
-        if (nextItem == null) break;
+          final nextItem = await _database.getNextQueueItem(excludedGlobalKeys: skippedGlobalKeys);
+          if (nextItem == null) break;
 
-        // Resolve the correct client for the item's server/scope — skip if unavailable.
-        final itemClient = await _getClientForDownloadKey(nextItem.mediaGlobalKey);
-        if (itemClient == null) {
-          appLogger.d('Skipping queued download ${nextItem.mediaGlobalKey}: server offline');
-          break;
+          // Resolve the correct client for the item's server/scope — skip if unavailable.
+          final itemClient = await _getClientForDownloadKey(nextItem.mediaGlobalKey);
+          if (itemClient == null) {
+            appLogger.d('Skipping queued download ${nextItem.mediaGlobalKey}: server offline');
+            skippedGlobalKeys.add(nextItem.mediaGlobalKey);
+            continue;
+          }
+          final enqueued = await _prepareAndEnqueueDownload(nextItem.mediaGlobalKey, itemClient, nextItem);
+          if (enqueued) {
+            _consecutiveQueueFailures = 0;
+          } else {
+            _consecutiveQueueFailures++;
+          }
         }
-        final enqueued = await _prepareAndEnqueueDownload(nextItem.mediaGlobalKey, itemClient, nextItem);
-        if (enqueued) {
-          _consecutiveQueueFailures = 0;
-        } else {
-          _consecutiveQueueFailures++;
-        }
-      }
+        // A fresh pass gets a fresh skip set: a rerun request means server
+        // availability may have changed under the pass that just finished.
+      } while (_queueRerunRequested &&
+          !_queueBlockedByStorageFailure &&
+          _consecutiveQueueFailures < _maxConsecutiveFailures);
     } finally {
       _isProcessingQueue = false;
+      _queueRerunRequested = false;
     }
   }
 
@@ -2511,8 +2532,11 @@ class DownloadManagerService {
             }
           }
         } else {
-          // Normal mode recovery: reconstruct from task
-          storedPath = await _storageService.toRelativePath('${task.directory}/${task.filename}');
+          // Normal mode recovery: reconstruct via Task.filePath(), which rejoins
+          // the base-directory component the Task constructor stripped from
+          // `directory` — a plain directory/filename join drops the root of a
+          // BaseDirectory.root (custom download path) task.
+          storedPath = await _storageService.toRelativePath(await task.filePath());
         }
       }
 
@@ -3151,20 +3175,24 @@ class DownloadManagerService {
     }
   }
 
-  /// Get chapter thumb paths from cached metadata. Backend-aware: routes
-  /// through the resolved [MediaServerClient] so Jellyfin items return
-  /// their `/Items/.../Images/Chapter/...?tag=...` paths and Plex items
-  /// return their `/library/parts/.../indexes/sd/...` paths. Both shapes
-  /// hash through [DownloadStorageService] the same way.
+  /// Get chapter thumb paths from cached metadata, or null when the cache
+  /// cannot answer. Backend-aware: routes through the resolved
+  /// [MediaServerClient] so Jellyfin items return their
+  /// `/Items/.../Images/Chapter/...?tag=...` paths and Plex items return
+  /// their `/library/parts/.../indexes/sd/...` paths. Both shapes hash
+  /// through [DownloadStorageService] the same way.
   ///
-  /// `fetchPlaybackExtras` consults each backend's cache first, so this
-  /// stays cheap during deletion (no network round-trip when the metadata
-  /// is already cached, which it always is for downloaded items).
-  Future<List<String>> _getChapterThumbPaths(ServerId serverId, String ratingKey, {String? clientScopeId}) async {
+  /// Deliberately cache-only ([MediaServerClient.fetchPlaybackExtrasFromCacheOnly]):
+  /// the deletion path calls this once per downloaded row and must not fan out
+  /// network requests. A row whose metadata is missing from the cache (queue
+  /// admission tolerates failed metadata pinning) reports `null` — unknown
+  /// references — rather than "no references".
+  Future<List<String>?> _getChapterThumbPaths(ServerId serverId, String ratingKey, {String? clientScopeId}) async {
     try {
       final client = _getClient(serverId, clientScopeId: clientScopeId);
-      if (client == null) return [];
-      final extras = await client.fetchPlaybackExtras(ratingKey);
+      if (client == null) return null;
+      final extras = await client.fetchPlaybackExtrasFromCacheOnly(ratingKey);
+      if (extras == null) return null;
       return extras.chapters
           .map((ch) => ch.thumb)
           .where((thumb) => thumb != null && thumb.isNotEmpty)
@@ -3172,7 +3200,7 @@ class DownloadManagerService {
           .toList();
     } catch (e) {
       appLogger.w('Error getting chapter thumb paths for $ratingKey', error: e);
-      return [];
+      return null;
     }
   }
 
@@ -3181,13 +3209,25 @@ class DownloadManagerService {
   /// Pre-loads all chapter paths for other items on the same server in one pass,
   /// then checks membership in a Set — O(items * chapters) instead of
   /// O(thumbs * items * chapters) with repeated DB queries.
-  Future<void> _deleteChapterThumbnails(ServerId serverId, String ratingKey, {String? clientScopeId}) async {
+  ///
+  /// [batchRatingKeys] names sibling rows being deleted in the same container
+  /// operation (season/show fan-out plus the container row itself). They are
+  /// skipped like the item's own row: they are scheduled to disappear, so they
+  /// must neither retain thumbnails via the cache-miss early return nor
+  /// contribute in-use paths — either would orphan files once their rows are
+  /// gone.
+  Future<void> _deleteChapterThumbnails(
+    ServerId serverId,
+    String ratingKey, {
+    String? clientScopeId,
+    Set<String> batchRatingKeys = const {},
+  }) async {
     try {
       final record = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), ratingKey));
       final scopeId = clientScopeId ?? record?.clientScopeId;
       final thumbPaths = await _getChapterThumbPaths(serverId, ratingKey, clientScopeId: scopeId);
 
-      if (thumbPaths.isEmpty) {
+      if (thumbPaths == null || thumbPaths.isEmpty) {
         appLogger.d('No chapter thumbnails to delete for $ratingKey');
         return;
       }
@@ -3195,12 +3235,20 @@ class DownloadManagerService {
       final otherItems = await _database.getDownloadsByServerId(serverId);
       final inUseThumbPaths = <String>{};
       for (final item in otherItems) {
-        if (item.ratingKey == ratingKey) continue;
+        if (item.ratingKey == ratingKey || batchRatingKeys.contains(item.ratingKey)) continue;
         final itemChapterPaths = await _getChapterThumbPaths(
           serverId,
           item.ratingKey,
           clientScopeId: item.clientScopeId,
         );
+        if (itemChapterPaths == null) {
+          // Conservative retention: this row's references are unknown, so any
+          // of the candidate thumbnails may be shared with it. Keep them all.
+          appLogger.d(
+            'Retaining chapter thumbnails for $ratingKey: references of ${item.ratingKey} unknown (not cached)',
+          );
+          return;
+        }
         inUseThumbPaths.addAll(itemChapterPaths);
       }
 
@@ -3237,6 +3285,7 @@ class DownloadManagerService {
     ServerId serverId, {
     String? clientScopeId,
     bool skipStorageVideoAndParents = false,
+    Set<String> batchRatingKeys = const {},
   }) async {
     try {
       final parentMetadata = episode.grandparentId != null
@@ -3259,7 +3308,12 @@ class DownloadManagerService {
         appLogger.i('Deleted episode subtitles: ${subsDir.path}');
       }
 
-      await _deleteChapterThumbnails(serverId, episode.id, clientScopeId: clientScopeId);
+      await _deleteChapterThumbnails(
+        serverId,
+        episode.id,
+        clientScopeId: clientScopeId,
+        batchRatingKeys: batchRatingKeys,
+      );
 
       if (!skipStorageVideoAndParents) {
         await _cleanupEpisodeStorageParents(episode, showYear, storageDeletion);
@@ -3309,6 +3363,11 @@ class DownloadManagerService {
     required String parentTitle,
   }) async {
     final isSaf = _storageService.isUsingSaf;
+    // Every row in this batch — the episodes plus the container row the caller
+    // deletes afterwards — is scheduled to disappear, so the chapter-thumbnail
+    // reference scan must ignore them: a batch sibling's cache miss would
+    // otherwise retain thumbnails that get orphaned once its row is gone.
+    final batchRatingKeys = <String>{parentKey, for (final e in episodes) e.ratingKey};
     for (int i = 0; i < episodes.length; i++) {
       final episode = episodes[i];
       final episodeGlobalKey = buildGlobalKey(ServerId(serverId), episode.ratingKey);
@@ -3336,9 +3395,15 @@ class DownloadManagerService {
             serverId,
             clientScopeId: episodeScopeId,
             skipStorageVideoAndParents: true,
+            batchRatingKeys: batchRatingKeys,
           );
         } else {
-          await _deleteChapterThumbnails(ServerId(serverId), episode.ratingKey, clientScopeId: episodeScopeId);
+          await _deleteChapterThumbnails(
+            ServerId(serverId),
+            episode.ratingKey,
+            clientScopeId: episodeScopeId,
+            batchRatingKeys: batchRatingKeys,
+          );
           await _deleteByFilePath(episode);
         }
       } else {
@@ -3346,6 +3411,7 @@ class DownloadManagerService {
           ServerId(serverId),
           episode.ratingKey,
           clientScopeId: episode.clientScopeId ?? clientScopeId,
+          batchRatingKeys: batchRatingKeys,
         );
         await _deleteByFilePath(episode);
       }

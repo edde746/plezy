@@ -453,12 +453,18 @@ class _MainScreenState extends State<MainScreen>
   bool _wasBindingPrev = false;
   bool _hadProfiles = false;
 
-  /// Subscription to MultiServerManager status changes. Used to resume any
-  /// queued downloads as soon as a Plex client comes online for the first
-  /// time after launch (legacy main.dart used to do this from SetupScreen
+  /// Subscription to MultiServerManager status changes. Held for the
+  /// MainScreen lifetime (cancelled in dispose) so queued downloads resume
+  /// whenever a server comes online — first connect after launch or a later
+  /// reconnect (legacy main.dart used to do the launch half from SetupScreen
   /// before navigating).
   StreamSubscription<Map<String, bool>>? _serverStatusSub;
-  bool _downloadResumeFired = false;
+
+  /// Online-server snapshot covered by the last queued-download resume. A
+  /// server missing from the latest snapshot drops out of the set, so a
+  /// disconnect/reconnect surfaces it as newly online again and triggers a
+  /// fresh resume for rows the queue drain skipped while it was away.
+  final Set<String> _resumeCoveredServerIds = {};
 
   /// Listener that fires when [ActiveProfileBinder] settles (Plex *and*
   /// Jellyfin both bound). Drives the once-per-launch priming of
@@ -593,17 +599,18 @@ class _MainScreenState extends State<MainScreen>
 
   /// Run startup tasks that depend on having at least one online server:
   /// initialize and load the libraries provider, kick off the initial
-  /// watch-state sync, and (for Plex) resume any queued downloads. The
-  /// legacy [SetupScreen] path used to do all this before navigating to
+  /// watch-state sync, and resume any queued downloads. The legacy
+  /// [SetupScreen] path used to do all this before navigating to
   /// MainScreen; with the binder taking over for the connect, we hook
   /// into [ActiveProfileProvider.isBinding] (for the once-only priming,
   /// which must wait for *all* connections — Plex *and* Jellyfin — to
   /// land so the navbar shows libraries from both backends) and
-  /// [MultiServerManager.statusStream] (for download resume, which only
-  /// cares about the first online Plex client). Fires at most once per
-  /// MainScreen lifetime.
+  /// [MultiServerManager.statusStream] (for download resume, which
+  /// re-fires whenever a server comes online that the last resume didn't
+  /// cover, so rows skipped while their server was offline get drained).
+  /// The priming fires at most once per MainScreen lifetime.
   void _runStartupOnFirstOnlineServer(MultiServerManager manager) {
-    if (_isOffline || _downloadResumeFired) return;
+    if (_isOffline) return;
 
     final activeProfile = context.read<ActiveProfileProvider>();
 
@@ -639,7 +646,8 @@ class _MainScreenState extends State<MainScreen>
       // pipeline is backend-neutral (resumeQueuedDownloads accepts a
       // MediaServerClient and per-item resolution picks up the right
       // backend), so a Jellyfin-only setup can resume too.
-      _resumeQueuedDownloadsOnce(manager.onlineClients.values.firstOrNull);
+      final onlineClients = manager.onlineClients;
+      _resumeQueuedDownloadsForServers(onlineClients.keys.toSet(), onlineClients.values.firstOrNull);
     }
 
     // Listen for binding-settle so the once-only priming runs after both
@@ -654,12 +662,14 @@ class _MainScreenState extends State<MainScreen>
       primeServicesOnBindingSettle(fromTimeout: true);
     });
 
-    // Fast paths: binder may have already settled / first Plex server may
+    // Fast paths: binder may have already settled / first server may
     // already be online (binder finished before this microtask).
     primeServicesOnBindingSettle();
     tryDownloadResume();
-    if (_downloadResumeFired) return;
 
+    // Held for the MainScreen lifetime (cancelled in dispose): every status
+    // change re-checks the resume so a server that connects late — or drops
+    // and reconnects — re-drives the queue for rows skipped while offline.
     _serverStatusSub = manager.statusStream.listen((_) => tryDownloadResume());
   }
 
@@ -677,7 +687,8 @@ class _MainScreenState extends State<MainScreen>
         if (!mounted) return;
         context.read<OfflineWatchSyncService>().onServersConnected();
         unawaited(context.read<DownloadProvider>().refreshMetadataFromCache());
-        _resumeQueuedDownloadsOnce(
+        _resumeQueuedDownloadsForServers(
+          mp.onlineServerIds.toSet(),
           mp.onlineServerIds.map((id) => mp.getClientForServer(ServerId(id))).nonNulls.firstOrNull,
         );
       }
@@ -687,18 +698,26 @@ class _MainScreenState extends State<MainScreen>
     _primeContentTabs();
   }
 
-  /// Single-shot "resume queued downloads once any client is online" rule,
+  /// Resume queued downloads for servers the last resume didn't cover,
   /// shared by the startup status-stream path and [_primeOnlineServices] —
-  /// each caller resolves its own candidate client (unfiltered manager view
-  /// vs the visibility-filtered provider) and hands it here. No-op once the
-  /// resume has fired, or while no client is online yet.
-  void _resumeQueuedDownloadsOnce(MediaServerClient? onlineClient) {
-    if (_downloadResumeFired || !mounted) return;
-    if (onlineClient == null) return;
-    _downloadResumeFired = true;
-    // The status subscription exists only to drive this one-shot.
-    _serverStatusSub?.cancel();
-    _serverStatusSub = null;
+  /// each caller resolves its own view of online server ids plus a candidate
+  /// client (unfiltered manager view vs the visibility-filtered provider)
+  /// and hands them here. Replacing (not accumulating) the covered snapshot
+  /// means a disconnected server drops out and its reconnect counts as newly
+  /// online again. No-op while nothing new is online or no client resolves;
+  /// per-item client resolution inside the drain picks the right server.
+  void _resumeQueuedDownloadsForServers(Set<String> onlineServerIds, MediaServerClient? onlineClient) {
+    final newlyOnline = onlineServerIds.difference(_resumeCoveredServerIds);
+    if (!mounted || newlyOnline.isEmpty || onlineClient == null) {
+      // Drop servers that went offline so their reconnect counts as newly
+      // online, but never mark servers covered that no resume actually saw —
+      // a null client here would otherwise swallow their trigger for good.
+      _resumeCoveredServerIds.retainAll(onlineServerIds);
+      return;
+    }
+    _resumeCoveredServerIds
+      ..clear()
+      ..addAll(onlineServerIds);
     final downloadProvider = context.read<DownloadProvider>();
     unawaited(
       downloadProvider.ensureInitialized().then((_) {
