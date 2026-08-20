@@ -444,10 +444,26 @@ void showRegexInputDialog({
   final controller = TextEditingController(text: currentValue);
   String? errorText;
 
+  // A blank pattern compiles but matches every chapter title, so it is
+  // rejected like uncompilable input; "Reset to default" is the intentional
+  // way to clear the setting.
+  String? validationError(String value) {
+    if (value.trim().isEmpty) return t.settings.invalidRegex;
+    try {
+      RegExp(value, caseSensitive: false);
+      return null;
+    } catch (_) {
+      return t.settings.invalidRegex;
+    }
+  }
+
+  StateSetter? dialogState;
+
   _showSettingsInputDialog(
     context: context,
     title: title,
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
+      dialogState = setDialogState;
       return FocusableTextField(
         controller: controller,
         decoration: InputDecoration(labelText: t.settings.regex, errorText: errorText),
@@ -455,14 +471,7 @@ void showRegexInputDialog({
         textInputAction: TextInputAction.done,
         onEditingComplete: () => saveFocusNode.requestFocus(),
         onChanged: (value) {
-          setDialogState(() {
-            try {
-              RegExp(value, caseSensitive: false);
-              errorText = null;
-            } catch (_) {
-              errorText = t.settings.invalidRegex;
-            }
-          });
+          setDialogState(() => errorText = validationError(value));
         },
       );
     },
@@ -476,7 +485,13 @@ void showRegexInputDialog({
       ),
     ],
     onSave: (_) async {
-      if (errorText != null) return false;
+      // Save is the persistence boundary: re-validate here so an
+      // already-persisted blank value cannot be saved back untouched.
+      final error = validationError(controller.text);
+      if (error != null) {
+        dialogState?.call(() => errorText = error);
+        return false;
+      }
       await onSave(controller.text);
       return true;
     },
