@@ -124,6 +124,13 @@ class GuideTabState extends State<GuideTab>
   List<LiveTvProgram> _programs = [];
   Map<String, List<LiveTvProgram>> _programsByChannelScope = const {};
   Set<String> _scheduledRecordingKeys = const {};
+
+  /// Recording keys the user just scheduled/unscheduled from this guide.
+  /// Local actions stay authoritative until the next full grid load returns
+  /// fresh subscription attributes: the grab refresh below races the server
+  /// materializing (or tearing down) grab operations, and the rendered
+  /// programs keep their stale `subscriptionID` attributes until refetched.
+  Map<String, bool> _recordingOverrides = const {};
   bool _isLoading = true;
 
   /// Whether a load has completed at least once for this tab. Until the
@@ -404,6 +411,7 @@ class GuideTabState extends State<GuideTab>
         _programs = allPrograms;
         _programsByChannelScope = programsByChannelScope;
         _scheduledRecordingKeys = scheduledRecordingKeys;
+        _recordingOverrides = const {};
         _isLoading = false;
         _hasLoadedOnce = true;
         // Focus tracking compares by identity, so a reload orphans the
@@ -497,6 +505,15 @@ class GuideTabState extends State<GuideTab>
 
   bool _isRecordingScheduled(LiveTvProgram program) {
     final keys = _recordingKeysForProgram(program);
+    for (final key in keys) {
+      final override = _recordingOverrides[key];
+      if (override != null) return override;
+    }
+    // The grid response tags subscribed airings itself (subscriptionID /
+    // grandparentSubscriptionID) — the signal the official client renders
+    // its record badges from. Grab matching below stays as the secondary
+    // signal for airings the server did not tag.
+    if (program.recordingRuleKey != null) return true;
     return keys.any(_scheduledRecordingKeys.contains);
   }
 
@@ -504,13 +521,7 @@ class GuideTabState extends State<GuideTab>
     final keys = _recordingKeysForProgram(program);
     if (keys.isNotEmpty) {
       setState(() {
-        final next = {..._scheduledRecordingKeys};
-        if (isScheduled) {
-          next.addAll(keys);
-        } else {
-          next.removeAll(keys);
-        }
-        _scheduledRecordingKeys = next;
+        _recordingOverrides = {..._recordingOverrides, for (final key in keys) key: isScheduled};
       });
     }
     unawaited(_refreshScheduledRecordingKeys());

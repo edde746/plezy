@@ -6,7 +6,7 @@ const _providerVersionHeader = {'X-Plex-Provider-Version': '5.1'};
 mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport, LiveTvDvrSupport {
   PlexConfig get config;
 
-  List<({String identifier, String gridEndpoint})> get _providerEpg;
+  List<PlexEpgProvider> get _providerEpg;
 
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json);
 
@@ -224,11 +224,11 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
   }
 
   /// Return EPG providers (already parsed from /media/providers during initialization)
-  Future<List<({String identifier, String gridEndpoint})>> _discoverEpgProviders() async {
+  Future<List<PlexEpgProvider>> _discoverEpgProviders() async {
     return _providerEpg;
   }
 
-  List<({String identifier, String gridEndpoint})> _epgProvidersForLineup(String? lineup) {
+  List<PlexEpgProvider> _epgProvidersForLineup(String? lineup) {
     if (lineup == null || lineup.isEmpty) return _providerEpg;
     final matching = _providerEpg.where((p) => p.identifier == lineup || p.gridEndpoint.contains(lineup)).toList();
     return matching.isNotEmpty ? matching : _providerEpg;
@@ -488,8 +488,17 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
     bool includeStorage = true,
   }) async {
     if (ratingKeys.isEmpty) return const [];
+    // Provider-scoped DVR routes are mounted under the *numeric* provider id
+    // from /media/providers, not the provider identifier — the identifier
+    // form 404s (issue #2009). Resolve it from the discovered provider state;
+    // an unknown provider falls back to the identifier rather than inventing
+    // a new failure mode.
+    final numericId = _providerEpg.where((p) => p.identifier == providerId).firstOrNull?.id;
+    if (numericId == null) {
+      appLogger.d('No numeric provider id known for $providerId; using identifier in mapping path');
+    }
     final response = await _getWithFailover(
-      '/media/providers/$providerId/media/subscriptions/mapping/${ratingKeys.join(',')}',
+      '/media/providers/${numericId ?? providerId}/media/subscriptions/mapping/${ratingKeys.join(',')}',
       queryParameters: {'includeStorage': includeStorage ? 1 : 0},
     );
     return _extractContainerList(response, const ['MediaSubscription'], MediaSubscription.fromJson);

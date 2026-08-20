@@ -147,7 +147,7 @@ PlexClient testPlexClient({
   List<String>? prioritizedEndpoints,
   http.Client Function()? endpointProbeHttpClientFactory,
   void Function()? onAllEndpointsExhausted,
-  List<({String identifier, String gridEndpoint})> epgProviders = const [],
+  List<PlexEpgProvider> epgProviders = const [],
   String? homeHubKey,
   String? promotedHubKey,
   String? continueWatchingHubKey,

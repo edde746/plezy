@@ -291,6 +291,12 @@ bool? _parsePlexTranscoderVideoCapability(Object? value) {
 
 bool _shouldFallbackPlexItemLookup(Object error) => error is MediaServerHttpException && error.isTransient;
 
+/// One live-TV EPG provider advertised by `/media/providers`: the string
+/// identifier (e.g. `tv.plex.providers.epg.cloud:2`), its grid endpoint, and
+/// the numeric provider id that provider-scoped DVR routes (such as the
+/// subscription mapping endpoint) are mounted under.
+typedef PlexEpgProvider = ({String identifier, String gridEndpoint, String? id});
+
 class _PlexMediaProviderState {
   const _PlexMediaProviderState({
     required this.libraries,
@@ -303,7 +309,7 @@ class _PlexMediaProviderState {
   static const empty = _PlexMediaProviderState(libraries: [], epg: []);
 
   final List<PlexLibraryDto> libraries;
-  final List<({String identifier, String gridEndpoint})> epg;
+  final List<PlexEpgProvider> epg;
   final String? homeHubKey;
   final String? promotedHubKey;
   final String? continueWatchingHubKey;
@@ -433,7 +439,7 @@ class PlexClient
 
   /// EPG providers parsed from /media/providers
   @override
-  List<({String identifier, String gridEndpoint})> _providerEpg = const [];
+  List<PlexEpgProvider> _providerEpg = const [];
   int _profileUpdateGeneration = 0;
 
   /// Server-level preferences fetched from /:/prefs
@@ -539,7 +545,7 @@ class PlexClient
     List<String>? prioritizedEndpoints,
     http.Client Function()? endpointProbeHttpClientFactory,
     VoidCallback? onAllEndpointsExhausted,
-    List<({String identifier, String gridEndpoint})> epgProviders = const [],
+    List<PlexEpgProvider> epgProviders = const [],
     String? homeHubKey,
     String? promotedHubKey,
     String? continueWatchingHubKey,
@@ -609,7 +615,7 @@ class PlexClient
     if (providers == null) return _PlexMediaProviderState.empty;
 
     final libraries = <PlexLibraryDto>[];
-    final epg = <({String identifier, String gridEndpoint})>[];
+    final epg = <PlexEpgProvider>[];
     String? homeHubKey;
     String? promotedHubKey;
     String? continueWatchingHubKey;
@@ -682,8 +688,9 @@ class PlexClient
           if (feature['type'] == 'grid') {
             final gridEndpoint = feature['key'] as String?;
             if (gridEndpoint != null) {
-              epg.add((identifier: identifier, gridEndpoint: gridEndpoint));
-              appLogger.d('Discovered EPG provider: $identifier (grid: $gridEndpoint)');
+              final providerId = provider['id']?.toString();
+              epg.add((identifier: identifier, gridEndpoint: gridEndpoint, id: providerId));
+              appLogger.d('Discovered EPG provider: $identifier (id: $providerId, grid: $gridEndpoint)');
             }
           }
         }

@@ -124,8 +124,26 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
 
   Future<void> _loadMapping() async {
     final client = widget.client;
-    final providerId = widget.program.providerIdentifier;
-    final ratingKey = widget.program.ratingKey;
+    final program = widget.program;
+
+    // The grid/metadata responses tag subscribed airings with the owning
+    // rule key (subscriptionID / grandparentSubscriptionID) — the official
+    // client's source of truth for the Record vs Manage state. When present
+    // there is nothing to fetch: the rule key is all Manage (delete) needs.
+    final taggedRuleKey = program.recordingRuleKey;
+    if (taggedRuleKey != null) {
+      setStateIfMounted(() {
+        _existingSubscription = MediaSubscription(key: taggedRuleKey, title: program.grandparentTitle ?? program.title);
+        _checkedMapping = true;
+      });
+      return;
+    }
+
+    // Untagged airing: fall back to the provider-scoped mapping endpoint for
+    // programs whose source response omits the attributes (hub entries, grid
+    // data that predates a schedule made elsewhere).
+    final providerId = program.providerIdentifier;
+    final ratingKey = program.ratingKey;
     if (client == null || providerId == null || providerId.isEmpty || ratingKey == null || ratingKey.isEmpty) {
       setStateIfMounted(() => _checkedMapping = true);
       return;
