@@ -10,6 +10,7 @@ import '../../services/plex_auth_service.dart';
 import '../../focus/focusable_button.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/external_url_launcher.dart';
 import '../../utils/platform_detector.dart';
 
 /// Whether the Plex PIN hand-off must stay in-app as a QR code instead of
@@ -140,9 +141,11 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
           final mode = PlatformDetector.isTV() ? LaunchMode.inAppWebView : LaunchMode.inAppBrowserView;
           await launchUrl(uri, mode: mode);
         } catch (_) {
-          // Chrome Custom Tabs may not be available — fall back to default
-          // external browser.
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          // Chrome Custom Tabs / the in-app browser may be unavailable — fall
+          // back to the system browser. launchExternalUrl adds a Linux
+          // xdg-open fallback for desktops where url_launcher's gio path is
+          // missing (#1477).
+          await launchExternalUrl(uri);
         }
       }
 
