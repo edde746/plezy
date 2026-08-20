@@ -510,7 +510,7 @@ void MpvPlayer::DetachMpvInnerSubclass() {
   inner_subclass_.reset();
 }
 
-bool MpvPlayer::Initialize(HWND view) {
+bool MpvPlayer::Initialize(HWND view, const std::map<std::string, std::string>& initial_options) {
   if (mpv_) {
     return true;  // Already initialized.
   }
@@ -530,7 +530,7 @@ bool MpvPlayer::Initialize(HWND view) {
     mpv_set_option_string(mpv_, "force-window", "no");
     mpv_set_option_string(mpv_, "audio-display", "no");
     mpv_set_option_string(mpv_, "gapless-audio", "weak");
-  } else {
+  } else if (view) {
     // Create a child window for mpv to render into, parented to the Flutter
     // |view|. The video child then sits in the view's own per-window layer
     // stack, above the view's (never-painted) layer-1 content and below the
@@ -593,6 +593,10 @@ bool MpvPlayer::Initialize(HWND view) {
 
   // Default to warn-level logging; Dart side can raise to "v" if debug logging is enabled.
   mpv_request_log_messages(mpv_, "warn");
+
+  for (const auto& [name, value] : initial_options) {
+    mpv_set_option_string(mpv_, name.c_str(), value.c_str());
+  }
 
   // Initialize mpv.
   int err = mpv_initialize(mpv_);

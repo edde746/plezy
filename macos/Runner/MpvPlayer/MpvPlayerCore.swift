@@ -1,4 +1,5 @@
 import Cocoa
+import Darwin
 import Libmpv
 import QuartzCore
 
@@ -9,13 +10,19 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private var playbackActivity: NSObjectProtocol?
   private var layerHiddenForOcclusion = false
   private var layerHiddenForScreenSleep = false
+  private var overlayMode = false
+  private var initialOptions: [String: String] = [:]
 
   /// True while any reason (occlusion, screen sleep) requires the layer hidden.
   private var hasLayerHideReason: Bool {
     layerHiddenForOcclusion || layerHiddenForScreenSleep
   }
 
-  func initialize(in window: NSWindow) -> Bool {
+  func initialize(
+    in window: NSWindow,
+    overlay: Bool = false,
+    initialOptions: [String: String] = [:]
+  ) -> Bool {
     guard !isInitialized else {
       print("[MpvPlayerCore] Already initialized")
       return true
@@ -27,6 +34,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     self.window = window
+    overlayMode = overlay
+    self.initialOptions = initialOptions
 
     let layer = MpvMetalLayer()
     layer.frame = contentView.bounds
@@ -51,6 +60,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
     print("[MpvPlayerCore] Metal layer added, frame: \(layer.frame)")
 
+    // libmpv requires C numeric formatting each time a context is created.
+    setlocale(LC_NUMERIC, "C")
     guard setupMpv() else {
       print("[MpvPlayerCore] Failed to setup MPV")
       layer.removeFromSuperlayer()
@@ -110,6 +121,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     // single-entry ao list would turn that into playback with no audio at
     // all (#1964).
     checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))
+    for (name, value) in initialOptions {
+      checkError(mpv_set_option_string(mpv, name, value))
+    }
   }
 
   func reattachMetalLayer() {
@@ -221,7 +235,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     endPlaybackActivity()
     NotificationCenter.default.removeObserver(self)
     NSWorkspace.shared.notificationCenter.removeObserver(self)
-    disposeSharedState(destroySynchronously: false)
+    // Encoder output must be finalized before Dart post-processes the MP4.
+    // Playback cores retain asynchronous teardown to keep sheet closure fast.
+    disposeSharedState(destroySynchronously: initialOptions["o"] != nil)
 
     metalLayer?.removeFromSuperlayer()
     metalLayer = nil
@@ -357,18 +373,37 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     guard let metalLayer else { return }
 
     withoutLayerAnimations {
-      superlayer.backgroundColor = NSColor.black.cgColor
-      superlayer.isOpaque = true
+      if overlayMode {
+        let targetIndex = overlayInsertionIndex(in: superlayer, excluding: metalLayer)
+        let currentIndex = superlayer.sublayers?.firstIndex { $0 === metalLayer }
+        let needsReorder = currentIndex != Int(targetIndex)
+        if metalLayer.superlayer !== superlayer || needsReorder {
+          metalLayer.removeFromSuperlayer()
+          superlayer.insertSublayer(metalLayer, at: targetIndex)
+        }
+      } else {
+        superlayer.backgroundColor = NSColor.black.cgColor
+        superlayer.isOpaque = true
 
-      let needsReorder = superlayer.sublayers?.first !== metalLayer
-      if metalLayer.superlayer !== superlayer || needsReorder {
-        metalLayer.removeFromSuperlayer()
-        superlayer.insertSublayer(metalLayer, at: 0)
+        let needsReorder = superlayer.sublayers?.first !== metalLayer
+        if metalLayer.superlayer !== superlayer || needsReorder {
+          metalLayer.removeFromSuperlayer()
+          superlayer.insertSublayer(metalLayer, at: 0)
+        }
       }
+      metalLayer.zPosition = 0
 
       metalLayer.frame = frame
       updateDrawableSize(for: metalLayer)
     }
+  }
+
+  private func overlayInsertionIndex(in superlayer: CALayer, excluding layer: CALayer) -> UInt32 {
+    let mpvLayerCount =
+      superlayer.sublayers?.filter { candidate in
+        candidate !== layer && candidate is MpvMetalLayer
+      }.count ?? 0
+    return UInt32(mpvLayerCount)
   }
 
   private func updateDrawableSize(for metalLayer: CAMetalLayer) {

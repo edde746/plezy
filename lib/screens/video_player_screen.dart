@@ -48,6 +48,8 @@ import '../services/media_controls_manager.dart';
 import '../services/playback_coordinator.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_context.dart';
+import '../services/clip_export_service.dart';
+import '../services/clip_preview_player_controller.dart';
 import '../services/local_playback_history.dart';
 import '../services/playback_session.dart';
 import '../services/playback_subtitle_resolver.dart';
@@ -106,6 +108,7 @@ import 'video_player/visual_effects_controller.dart';
 import 'video_player/widgets/player_prompt_overlays.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/video_controls/player_chrome_controller.dart';
+import '../widgets/video_controls/sheets/clip_editor_sheet.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../widgets/video_controls/widgets/player_toast_indicator.dart';
 import '../focus/focusable_button.dart';
@@ -118,6 +121,7 @@ import '../i18n/strings.g.dart';
 import '../watch_together/providers/watch_together_provider.dart';
 
 part 'video_player/parts/companion_remote.dart';
+part 'video_player/parts/clips.dart';
 part 'video_player/parts/display_matching.dart';
 part 'video_player/parts/episode_navigation.dart';
 part 'video_player/parts/episode_queue.dart';
@@ -869,6 +873,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   PlaybackProgressTracker? get debugProgressTrackerForTesting => _progressTracker;
 
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;
+  late final ClipExportService _clipExportService = ClipExportService();
 
   @override
   void initState() {
@@ -1574,7 +1579,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       if (PlatformDetector.isDesktopOS()) {
-        await currentPlayer.setProperty('screenshot-directory', '~/Pictures');
+        final screenshotDirectory = await ClipExportService.screenshotDirectory();
+        await currentPlayer.setProperty('screenshot-directory', screenshotDirectory.path);
       }
 
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));
@@ -1885,6 +1891,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _isExiting.dispose();
     _chromeController.dispose();
     _toastController.dispose();
+    _clipExportService.dispose();
 
     // The release sequence below mirrors _tearDownFailedPlayerAttempt but is
     // deliberately separate: dispose() cannot await, and it destroys the
