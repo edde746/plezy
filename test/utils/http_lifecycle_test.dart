@@ -36,7 +36,14 @@ void main() {
       expect(inner.closeCount, 1);
       expect(inner.responseCancelled, isTrue);
       await expectLater(inner.abortTrigger, completes);
-      await expectLater(response.stream.toList(), completion(isEmpty));
+      // Cancellation is not an empty successful response: a body cancelled
+      // before anyone listened must surface the abort, not a clean [] close.
+      await expectLater(
+        response.stream.toList(),
+        throwsA(
+          isA<http.RequestAbortedException>().having((e) => e.uri, 'uri', Uri.parse('https://example.test/slow')),
+        ),
+      );
     });
 
     test('closeGracefully can retry after a drain timeout', () async {

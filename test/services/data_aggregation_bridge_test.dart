@@ -1100,7 +1100,7 @@ void main() {
       final movieLatest = captured.singleWhere(
         (uri) => uri.path == '/Users/user-1/Items/Latest' && uri.queryParameters['ParentId'] == 'movies',
       );
-      expect(movieLatest.queryParameters['Fields'], 'Overview');
+      expect(movieLatest.queryParameters['Fields'], 'Overview,DateCreated');
       expect(movieLatest.queryParameters.containsKey('EnableUserData'), isFalse);
     });
 
@@ -1309,6 +1309,69 @@ void main() {
       expect(captured.where((uri) => uri.path.startsWith('/hubs/sections/')).map((uri) => uri.path), [
         '/hubs/sections/9',
       ]);
+    });
+
+    test('Plex server with a failed global leg is not marked succeeded by the optional music append', () async {
+      // /hubs/promoted failures are recorded in diagnostics and returned as []
+      // (never thrown), so only the success accounting separates "promoted
+      // hubs are gone" from "promoted hubs are empty". Counting the optional
+      // music leg as server success let DiscoverProvider replace every cached
+      // movie/TV home row with the lone music row.
+      final client = testPlexClient(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('plex-1'),
+        serverName: 'Plex',
+        promotedHubKey: '/hubs/promoted',
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/library/sections') {
+            return _json({
+              'MediaContainer': {
+                'Directory': [
+                  {'key': '1', 'type': 'movie', 'title': 'Movies'},
+                  {'key': '9', 'type': 'artist', 'title': 'Music'},
+                ],
+              },
+            });
+          }
+          if (req.url.path == '/hubs/promoted') {
+            return http.Response('server error', 500);
+          }
+          if (req.url.path == '/hubs/sections/9') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/library/sections/9/recentlyAdded',
+                    'title': 'Recently Added Music',
+                    'type': 'album',
+                    'hubIdentifier': 'music.recent',
+                    'size': 1,
+                    'Metadata': [
+                      {'ratingKey': 'album-1', 'type': 'album', 'title': 'Album', 'librarySectionID': 9},
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      final result = await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false);
+
+      expect(result.succeededServerIds, isEmpty, reason: 'the optional music leg must not vouch for the server');
+      expect(result.failedServerIds, {'plex-1'});
+      // The music rows that did arrive are still delivered.
+      expect(result.hubs.map((h) => h.identifier), ['music.recent']);
     });
   });
 }

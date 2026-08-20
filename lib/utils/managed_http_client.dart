@@ -156,6 +156,16 @@ class ManagedHttpClient extends http.BaseClient {
     var subscribed = false;
     var cancelledBeforeListen = false;
 
+    // Cancellation is not an empty successful response: deliver the abort as
+    // an error so downstream mapping (MediaServerHttpException.from) reports
+    // `cancelled` instead of handing consumers a clean empty body. Runs at
+    // most once — whichever of cancelResponse/onListen gets there first.
+    void abortOutput() {
+      if (controller.isClosed) return;
+      controller.addError(http.RequestAbortedException(tracked.url));
+      unawaited(controller.close());
+    }
+
     Future<void> cancelResponse() async {
       if (tracked.isDone) return;
       tracked.abort();
@@ -163,10 +173,18 @@ class ManagedHttpClient extends http.BaseClient {
       if (subscribed) {
         await subscription?.cancel();
       } else {
-        final cancelSubscription = response.stream.listen(null, onError: (_) {});
+        // Subscribe-and-cancel releases the inner transport stream nobody is
+        // reading. Post-abort transport errors are expected here, but not
+        // silently: the outer consumer gets the abort from abortOutput.
+        final cancelSubscription = response.stream.listen(
+          null,
+          onError: (Object e, StackTrace st) {
+            appLogger.d('HTTP response release stream error during cancellation', error: e, stackTrace: st);
+          },
+        );
         await cancelSubscription.cancel();
       }
-      unawaited(controller.close());
+      abortOutput();
       _complete(tracked);
     }
 
@@ -174,7 +192,7 @@ class ManagedHttpClient extends http.BaseClient {
       sync: true,
       onListen: () {
         if (cancelledBeforeListen) {
-          unawaited(controller.close());
+          abortOutput();
           return;
         }
         subscribed = true;

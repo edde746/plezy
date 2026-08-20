@@ -555,7 +555,13 @@ class DataAggregationService {
             legSucceededServerIds.add(serverId);
           }
           if (music != null) {
-            if (music.succeeded) legSucceededServerIds.add(serverId);
+            // The music append is optional: it must not vouch for the server
+            // when the global leg failed or was cancelled (Plex records that
+            // in diagnostics and returns [] instead of throwing), or a lone
+            // music row would replace every cached movie/TV home row.
+            if (music.succeeded && !globalDiagnostics.failed && !globalDiagnostics.cancelled) {
+              legSucceededServerIds.add(serverId);
+            }
             if (music.failed) legFailedServerIds.add(serverId);
             if (music.cancelled) legCancelledServerIds.add(serverId);
           }
