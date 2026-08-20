@@ -172,7 +172,7 @@ void main() {
         'Limit': '300',
         // Emby withholds these from list rows unless asked, so the hub field set
         // is widened for it and only for it.
-        'Fields': 'Overview,ProductionYear,OfficialRating,PremiereDate,DateCreated,UserDataLastPlayedDate',
+        'Fields': 'Overview,DateCreated,ProductionYear,OfficialRating,PremiereDate,UserDataLastPlayedDate',
         'MediaTypes': 'Video',
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
@@ -182,9 +182,9 @@ void main() {
       expect(jellyfinResume.url.queryParameters, {
         'userId': 'user-1',
         'Limit': '1',
-        // Jellyfin volunteers the row metadata and filters its own resume route,
-        // so its request string is unchanged from before Emby existed.
-        'Fields': 'Overview',
+        // Jellyfin volunteers year/rating and filters its own resume route,
+        // but withholds DateCreated (addedAt) unless Fields names it.
+        'Fields': 'Overview,DateCreated',
         'MediaTypes': 'Video',
         'Recursive': 'true',
         'EnableTotalRecordCount': 'false',
@@ -246,6 +246,9 @@ void main() {
       final jellyfinFields = jellyfinRequests.requests.last.url.queryParameters['Fields']!.split(',');
 
       expect(embyFields, containsAll(<String>['ProductionYear', 'OfficialRating', 'PremiereDate', 'DateCreated']));
+      // Jellyfin gates DateCreated behind ItemFields too, so the base set —
+      // not the Emby widening — must carry it or addedAt is null on every row.
+      expect(jellyfinFields, contains('DateCreated'));
       // Jellyfin's request string must not gain them.
       expect(jellyfinFields, isNot(contains('ProductionYear')));
       expect(jellyfinFields, isNot(contains('OfficialRating')));

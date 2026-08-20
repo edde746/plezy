@@ -69,6 +69,9 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
     if (draft.fieldChanged('originallyAvailableAt')) {
       final value = draft.value<String>('originallyAvailableAt') ?? '';
       dto['PremiereDate'] = _jellyfinDate(value, raw['PremiereDate']);
+      // The app renders MediaItem.year from ProductionYear, not PremiereDate,
+      // and the full-DTO re-post would otherwise re-send the stale year.
+      dto['ProductionYear'] = DateTime.tryParse(value.trim())?.year;
     }
     if (_listFieldChanged(draft, 'studio')) {
       dto['Studios'] = _replaceNamePairs(_mapList(dto['Studios']), metadataStringList(draft.values['studio']));

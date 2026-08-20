@@ -4284,6 +4284,17 @@ void main() {
       client.close();
     });
 
+    test('hub see-all rows request DateCreated so the "Date Added" sort has addedAt', () async {
+      // hub_detail_screen sorts see-all rows by MediaItem.addedAt, which is
+      // mapped from DateCreated — a field Jellyfin withholds unless named in
+      // Fields. Without it the sort silently compares nulls.
+      final client = buildClient();
+      await client.fetchMoreHubItems('home.recent', limit: 10);
+
+      expect(captured!.queryParameters['Fields'], 'Overview,DateCreated');
+      client.close();
+    });
+
     test('global "home.continue" hits /UserItems/Resume with userId', () async {
       final client = buildClient();
       await client.fetchMoreHubItems('home.continue');
@@ -4543,7 +4554,10 @@ void main() {
       expect(itemsRequest.queryParameters['Limit'], '36');
       expect(itemsRequest.queryParameters['SortBy'], 'SortName');
       expect(itemsRequest.queryParameters['SortOrder'], 'Ascending');
-      expect(itemsRequest.queryParameters['Fields'], 'RecursiveItemCount,ChildCount,OriginalTitle,SortName,Overview');
+      expect(
+        itemsRequest.queryParameters['Fields'],
+        'RecursiveItemCount,ChildCount,OriginalTitle,SortName,Overview,DateCreated',
+      );
       expect(itemsRequest.queryParameters.containsKey('EnableTotalRecordCount'), isFalse);
       expect(itemsRequest.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(itemsRequest.queryParameters['ImageTypeLimit'], '3');

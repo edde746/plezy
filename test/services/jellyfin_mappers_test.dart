@@ -62,6 +62,8 @@ void main() {
       expect(item.tagline, 'Your mind is the scene of the crime.');
       expect(item.year, 2010);
       expect(item.originallyAvailableAt, '2010-07-16');
+      // DateCreated is what list/hub rows request so recency sorts have a key.
+      expect(item.addedAt, DateTime.utc(2025, 1, 15, 10).millisecondsSinceEpoch ~/ 1000);
       expect(item.contentRating, 'PG-13');
       expect(item.studio, 'Warner Bros');
       expect(item.rating, 8.8);
