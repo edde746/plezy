@@ -216,6 +216,14 @@ class GamepadService with WindowListener {
   GamepadService._({GamepadDuplicateInputGuard? duplicateInputGuard})
     : _duplicateInputGuard = duplicateInputGuard ?? GamepadDuplicateInputGuard(enabled: () => Platform.isWindows);
 
+  /// Standalone instance for tests; never wired to the platform stream.
+  @visibleForTesting
+  factory GamepadService.forTesting({GamepadDuplicateInputGuard? duplicateInputGuard}) = GamepadService._;
+
+  /// Feeds [event] through the production event handler.
+  @visibleForTesting
+  void debugHandleGamepadEvent(GamepadEvent event) => _handleGamepadEvent(event);
+
   key_sim.KeyEventSimulatorController get _simulator {
     return _keyEventSimulator ??= key_sim.KeyEventSimulatorController(
       deviceType: ui.KeyEventDeviceType.gamepad,
@@ -291,6 +299,18 @@ class GamepadService with WindowListener {
   @override
   void onWindowBlur() {
     _windowFocused = false;
+    _releaseHeldInputState();
+
+    // Release native device handles so other apps can use the gamepad.
+    Gamepad.instance.pause();
+  }
+
+  /// Stops direction repeat and clears every held button and stick latch.
+  ///
+  /// Held-input state is global, not per-controller: any single gamepad
+  /// disconnecting (or the window blurring) clears held state for all
+  /// controllers.
+  void _releaseHeldInputState() {
     _stopDirectionRepeat();
 
     // Release all face buttons in one frame so held widget state cannot stick.
@@ -307,9 +327,6 @@ class GamepadService with WindowListener {
     _leftStickDown = false;
     _leftStickLeft = false;
     _leftStickRight = false;
-
-    // Release native device handles so other apps can use the gamepad.
-    Gamepad.instance.pause();
   }
 
   void _registerNativeKeyHandler() {
@@ -383,6 +400,10 @@ class GamepadService with WindowListener {
         if (TextInputDiagnostics.enabled) {
           _logGamepadDiag('connection connected=${e.connected} info=${e.info.name}/${e.info.id}');
         }
+        // A controller that vanishes mid-hold never sends its releases: drop
+        // the repeat timer and held keys so navigation cannot run away. The
+        // plugin stays live for any remaining controllers.
+        if (!e.connected) _releaseHeldInputState();
       case final GamepadButtonEvent e:
         _handleButton(e);
       case final GamepadAxisEvent e:
