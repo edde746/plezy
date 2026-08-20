@@ -196,6 +196,10 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         _live.selectedSubtitle = recoveredSubtitle;
         _live.markStreamRestartedAtLiveEdge();
       },
+      // Jellyfin's recover() returns the receiver, so the recovered object can
+      // be the still-current session; the retry helper skips the discard by
+      // identity so a failed retry cannot terminally stop-report it.
+      currentSession: () => _live.session,
       discardSession: _abandonLiveSession,
       reportFailure: (error, stackTrace) {
         appLogger.e('Failed to recover live stream', error: error, stackTrace: stackTrace);

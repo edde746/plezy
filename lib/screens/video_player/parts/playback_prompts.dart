@@ -287,6 +287,11 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     _stillWatchingTimer?.cancel();
     if (_showStillWatchingPrompt) {
       _unfocusStillWatchingPrompt();
+      // Back or a next-episode action on the visible prompt is the same
+      // "still watching" acknowledgement as Continue: re-arm the sleep timer.
+      // Guarded on prompt visibility — ordinary navigation also dismisses
+      // here and must leave an armed timer untouched.
+      SleepTimerService().restartTimer();
       _setPlayerState(() {
         _showStillWatchingPrompt = false;
       });

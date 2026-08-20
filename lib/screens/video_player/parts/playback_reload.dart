@@ -741,13 +741,18 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           if (wasPlayingBeforeReload && mounted && player == currentPlayer) {
             unawaited(_playWithPlaybackIntent(currentPlayer));
           }
-        } else if (_progressTracker == null && player == currentPlayer) {
-          // The new file is playing and its session is committed — keep the
-          // new identity and make sure progress reporting is wired to the
-          // item actually on screen (the failure may have hit before
-          // _wirePerItemPlaybackServices ran).
+        }
+        if (_progressTracker == null && player == currentPlayer) {
+          // Progress reporting must survive both exits: beforeArm disposed the
+          // tracker before the open boundary, so rebuild it for the item
+          // actually on screen (the failure may have hit before
+          // _wirePerItemPlaybackServices ran). On the rollback path
+          // _currentMetadata was just restored to the previous item; after a
+          // committed open it is the replacement. _playbackSession describes
+          // that same item on both paths, so its client and session fields are
+          // the right wiring either way.
           _wirePerItemPlaybackServices(
-            metadata: metadata,
+            metadata: _currentMetadata,
             mediaClient: _playbackSession?.reportingClient,
             offlineWatchService: offlineWatchService,
             playSessionId: _playbackPlaySessionId,

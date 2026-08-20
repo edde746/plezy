@@ -863,6 +863,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   @visibleForTesting
   PlayerChromeController get chromeController => _chromeController;
 
+  /// Lets reload-failure coverage assert the progress tracker was rebuilt and
+  /// which item it is bound to; the tracker itself is private screen state.
+  @visibleForTesting
+  PlaybackProgressTracker? get debugProgressTrackerForTesting => _progressTracker;
+
   late final PlayerNavigationCoordinator _playerNavigationCoordinator;
 
   @override
