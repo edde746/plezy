@@ -830,9 +830,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
     _playbackIntentShouldPlay = true;
     if (widget.isLive && _live.retryFailed) {
-      if (_live.retrying) return Future.value();
-      _live.retrying = true;
-      return _retryLiveStream();
+      return _retryLiveStreamForPlayIntent();
     }
     if (_eofRecovery.parked && _transitionGate.transition == PlaybackTransition.idle) {
       // Parked on a dead stream: play/pause on a drained cache is a no-op

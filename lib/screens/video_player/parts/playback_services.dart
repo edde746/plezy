@@ -139,8 +139,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       if (!mounted || player != currentPlayer) return;
       _lastLogError = null;
       _fatalHttpStatuses.clear();
-      _live.fallbackLevel = 0;
-      _live.retryFailed = false;
+      _resetLiveLadderOnPlaybackRestart();
       final markFirstFrameReady = _markFirstFrameReady(currentPlayer, settingsService);
       _trackManager?.onPlaybackRestart();
       await markFirstFrameReady;

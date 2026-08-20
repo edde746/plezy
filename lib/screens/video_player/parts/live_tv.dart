@@ -21,6 +21,57 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     });
   }
 
+  /// Advance the fallback ladder and retry — the error path's entry point.
+  void _beginLiveLadderRetry() {
+    _live.fallbackLevel++;
+    _live.retrying = true;
+    appLogger.w('Live stream failed, retrying with fallback level ${_live.fallbackLevel}');
+    unawaited(_retryLiveStream());
+  }
+
+  /// Play pressed while the live stream is dead: reuse the ladder retry
+  /// unless one is already in flight.
+  Future<void> _retryLiveStreamForPlayIntent() {
+    if (_live.retrying) return Future.value();
+    _live.retrying = true;
+    return _retryLiveStream();
+  }
+
+  /// A playback restart proves the current ladder level works; refill it.
+  void _resetLiveLadderOnPlaybackRestart() {
+    _live.fallbackLevel = 0;
+    _live.retryFailed = false;
+  }
+
+  void _suspendLiveTimelineForBackground() {
+    _live.resumeTimelineOnResume = _live.timelineTimer != null;
+    _stopLiveTimelineUpdates();
+  }
+
+  void _resumeLiveTimelineAfterBackgroundIfNeeded() {
+    final shouldResume = _live.resumeTimelineOnResume;
+    _live.resumeTimelineOnResume = false;
+    if (shouldResume && _live.session != null) {
+      _startLiveTimelineUpdates();
+    }
+  }
+
+  /// The TV background policy stopped the tuned session: exit the screen on
+  /// the next resume instead of showing a dead stream.
+  void _stopLiveSessionForTvBackground() {
+    _live.exitOnResume = true;
+    _live.resumeTimelineOnResume = false;
+    _stopLiveTimelineUpdates();
+  }
+
+  /// Whether the background stop asked for an exit-on-resume; consuming the
+  /// flag so the exit runs once.
+  bool _consumeLiveExitOnResume() {
+    if (!_live.exitOnResume) return false;
+    _live.exitOnResume = false;
+    return true;
+  }
+
   void _stopLiveTimelineUpdates() {
     _live.timelineGeneration++;
     _live.timelineTimer?.cancel();

@@ -61,19 +61,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     _recordLifecycleState('pip_transition', action: '${value ? 'started' : 'cleared'}:$reason');
   }
 
-  void _suspendLiveTimelineForBackground() {
-    _live.resumeTimelineOnResume = _live.timelineTimer != null;
-    _stopLiveTimelineUpdates();
-  }
-
-  void _resumeLiveTimelineAfterBackgroundIfNeeded() {
-    final shouldResume = _live.resumeTimelineOnResume;
-    _live.resumeTimelineOnResume = false;
-    if (shouldResume && _live.session != null) {
-      _startLiveTimelineUpdates();
-    }
-  }
-
   Future<void> _handleAppHidden() async {
     if (_shouldSkipForPip) {
       _recordLifecycleState('hidden', action: 'skipped_for_pip');
@@ -92,9 +79,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
     final isTv = PlatformDetector.isTV();
     if (widget.isLive && shouldStopLiveSessionForTvBackground(isTv: isTv, policy: _live.session?.backgroundPolicy)) {
-      _live.exitOnResume = true;
-      _live.resumeTimelineOnResume = false;
-      _stopLiveTimelineUpdates();
+      _stopLiveSessionForTvBackground();
 
       // Start the server cleanup before releasing the native stream. tvOS may
       // suspend the process shortly after this lifecycle callback returns.
@@ -177,8 +162,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     _recordLifecycleState('resumed', action: 'begin');
     _watchTogetherProvider?.setBackgrounded(false);
 
-    if (_live.exitOnResume) {
-      _live.exitOnResume = false;
+    if (_consumeLiveExitOnResume()) {
       _recordLifecycleState('resumed', action: 'exit_stopped_live_session');
       await _handleBackButton();
       return;

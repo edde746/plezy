@@ -46,10 +46,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
       case PlaybackFailureAction.ignore:
         return;
       case PlaybackFailureAction.liveRetry:
-        _live.fallbackLevel++;
-        _live.retrying = true;
-        appLogger.w('Live stream failed, retrying with fallback level ${_live.fallbackLevel}');
-        unawaited(_retryLiveStream());
+        _beginLiveLadderRetry();
       case PlaybackFailureAction.liveInterrupted:
         showGlobalErrorSnackBar(t.messages.liveStreamInterrupted);
       case PlaybackFailureAction.fatal:
