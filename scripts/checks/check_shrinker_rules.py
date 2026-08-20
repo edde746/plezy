@@ -2,28 +2,35 @@
 """Validate that name-reached Android classes and members survive R8.
 
 Flutter minifies every release build, so anything the app reaches only by name is
-invisible to R8 and gets shrunk or renamed away. Three such surfaces exist:
+invisible to R8 and gets shrunk or renamed away. Four such surfaces exist:
 
 * app-module classes placed in a library namespace so that library discovers them with
   ``Class.forName`` (the bundled ``androidx.media3.decoder.ffmpeg`` audio decoder);
 * classes resolved from native code with ``FindClass``;
 * members resolved from native code with ``Get*MethodID``/``Get*FieldID``, including
-  every type named in the descriptor those lookups pass.
+  every type named in the descriptor those lookups pass;
+* classes and members resolved by name from Kotlin/Java itself with ``Class.forName``
+  and ``getDeclaredField``/``getDeclaredMethod`` (the Matroska extractor wrappers reach
+  private ``MatroskaExtractor`` fields this way), in every ``android/**/src/main``
+  source root including the ``libass`` module.
 
-None of them has a compile-time reference, so only ``android/app/proguard-rules.pro``
-keeps them, and losing a keep surfaces solely as broken behaviour in a release build.
+None of these lookups leaves a reference R8 can see, so only
+``android/app/proguard-rules.pro`` keeps their targets, and losing a keep surfaces
+solely as broken behaviour in a release build.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import re
 from pathlib import Path
 
 PROGUARD_RULES = Path("android/app/proguard-rules.pro")
-APP_JAVA_ROOT = Path("android/app/src/main/java")
+ANDROID_ROOT = Path("android")
 CPP_ROOT = Path("android/app/src/main/cpp")
 NATIVE_SUFFIXES = {".c", ".cc", ".cpp", ".h", ".hpp"}
+JVM_SUFFIXES = {".kt", ".java"}
 # Dependency namespaces reached only through reflection have no direct callers.
 REFLECTED_NAMESPACES = ("androidx/media3/",)
 # Bootclasspath framework types are not in the app dex and need no keep rule.
@@ -40,19 +47,37 @@ _MEMBER_LOOKUP = re.compile(
     + r"\s*\)"
 )
 _DESCRIPTOR_CLASS = re.compile(r"L([\w/$]+);")
-# Only -keep variants without allowshrinking/allowobfuscation keep classes and names.
+_JVM_PACKAGE = re.compile(r"^\s*package\s+([\w.]+)", re.MULTILINE)
+_JVM_IMPORT = re.compile(r"^\s*import\s+(?:static\s+)?([\w.]+)(?:\s+as\s+(\w+))?\s*;?\s*$", re.MULTILINE)
+_JVM_CLASS_FOR_NAME = re.compile(r"\bClass\s*\.\s*forName\s*\(\s*" + _STRING_LITERAL.pattern)
+# Receiver forms this check can resolve statically: Type::class.java (Kotlin) and
+# Type.class (Java). Anything else (javaClass, a variable) leaves group 1 empty.
+_JVM_MEMBER_LOOKUP = re.compile(
+    r"(?:\b([\w.]+)(?:::class(?:\s*\.\s*java)?|\.class)\s*)?"
+    r"\.\s*getDeclared(?:Field|Method)\s*\(\s*" + _STRING_LITERAL.pattern
+)
+# Only -keep variants without allowshrinking/allowobfuscation keep names.
 _KEEP = re.compile(
-    r"^-(?:keep|keepclasseswithmembers)((?:\s*,\s*\w+)*)\s+(?:class|interface|enum)\s+(\S+)"
+    r"^-(keepclasseswithmembernames|keepclasseswithmembers|keepclassmembernames|keepclassmembers|keepnames|keep)"
+    r"((?:\s*,\s*\w+)*)\s+(?:class|interface|enum)\s+(\S+)"
     r"(?:\s*\{(.*?)\})?",
     re.MULTILINE | re.DOTALL,
 )
 _UNSAFE_MODIFIERS = ("allowshrinking", "allowobfuscation")
+# Directives that keep the class itself alive and un-renamed — what a name-only class
+# lookup (Class.forName / FindClass) needs.
+_CLASS_KEEP_DIRECTIVES = frozenset({"keep", "keepclasseswithmembers"})
+# Directives that keep matched members alive and un-renamed — what a member with no
+# compile-time reference at all (JNI Get*MethodID/Get*FieldID) needs. The ...names
+# variants allow shrinking, which would delete a natively-reached member outright.
+_MEMBER_KEEP_DIRECTIVES = frozenset({"keep", "keepclassmembers", "keepclasseswithmembers"})
 
 
 class Keep:
-    """One parsed ``-keep`` rule: a class-name pattern plus its member block."""
+    """One parsed ``-keep`` rule: directive, class-name pattern, and member block."""
 
-    def __init__(self, pattern: str, modifiers: str, members: str) -> None:
+    def __init__(self, directive: str, pattern: str, modifiers: str, members: str) -> None:
+        self.directive = directive
         self.pattern = pattern
         self.modifiers = modifiers
         self.members = members
@@ -71,6 +96,14 @@ class Keep:
         return "*" in self.members or member in self.members
 
     @property
+    def keeps_class_name(self) -> bool:
+        return self.directive in _CLASS_KEEP_DIRECTIVES
+
+    @property
+    def keeps_member_alive(self) -> bool:
+        return self.directive in _MEMBER_KEEP_DIRECTIVES
+
+    @property
     def includes_descriptor_classes(self) -> bool:
         return "includedescriptorclasses" in self.modifiers
 
@@ -78,10 +111,10 @@ class Keep:
 def _parse_keeps(rules: str) -> list[Keep]:
     keeps = []
     for match in _KEEP.finditer(rules):
-        modifiers = match.group(1) or ""
+        modifiers = match.group(2) or ""
         if any(modifier in modifiers for modifier in _UNSAFE_MODIFIERS):
             continue
-        keeps.append(Keep(match.group(2).replace("$", "."), modifiers, match.group(3) or ""))
+        keeps.append(Keep(match.group(1), match.group(3).replace("$", "."), modifiers, match.group(4) or ""))
     return keeps
 
 
@@ -105,16 +138,51 @@ def _native_sources(root: Path) -> list[Path]:
     return sorted(path for path in cpp_root.rglob("*") if path.suffix in NATIVE_SUFFIXES)
 
 
-def _reflected_classes(root: Path) -> list[str]:
-    java_root = root / APP_JAVA_ROOT
-    if not java_root.is_dir():
+def _main_source_dirs(root: Path) -> list[Path]:
+    """Every ``src/main`` directory in every module under ``android/``."""
+    android = root / ANDROID_ROOT
+    if not android.is_dir():
         return []
-    classes = []
-    for source in sorted(java_root.rglob("*.java")):
-        relative = source.relative_to(java_root).as_posix()
-        if relative.startswith(REFLECTED_NAMESPACES):
-            classes.append(_binary_name(relative[: -len(".java")]))
-    return classes
+    mains = []
+    for current, dirnames, _ in os.walk(android):
+        dirnames[:] = [name for name in dirnames if name not in ("build", ".gradle", ".cxx")]
+        path = Path(current)
+        if path.name == "main" and path.parent.name == "src":
+            mains.append(path)
+            dirnames[:] = []
+    return sorted(mains)
+
+
+def _jvm_language_roots(root: Path) -> list[Path]:
+    return sorted(
+        language_root
+        for main in _main_source_dirs(root)
+        for language_root in (main / "java", main / "kotlin")
+        if language_root.is_dir()
+    )
+
+
+def _jvm_sources(root: Path) -> list[Path]:
+    return sorted(
+        {
+            path
+            for language_root in _jvm_language_roots(root)
+            for path in language_root.rglob("*")
+            if path.suffix in JVM_SUFFIXES
+        }
+    )
+
+
+def _reflected_classes(root: Path) -> list[str]:
+    classes = set()
+    for language_root in _jvm_language_roots(root):
+        for source in language_root.rglob("*"):
+            if source.suffix not in JVM_SUFFIXES:
+                continue
+            relative = source.relative_to(language_root).as_posix()
+            if relative.startswith(REFLECTED_NAMESPACES):
+                classes.add(_binary_name(relative[: -len(source.suffix)]))
+    return sorted(classes)
 
 
 def _check_native_lookups(root: Path, keeps: list[Keep], errors: list[str]) -> None:
@@ -124,7 +192,7 @@ def _check_native_lookups(root: Path, keeps: list[Keep], errors: list[str]) -> N
         label = source.relative_to(root).as_posix()
 
         for owner in sorted(set(owners.values())):
-            if not any(keep.matches_class(owner) for keep in keeps):
+            if not any(keep.keeps_class_name and keep.matches_class(owner) for keep in keeps):
                 errors.append(f"{label} resolves {owner} with FindClass but no -keep covers it")
 
         for match in _MEMBER_LOOKUP.finditer(text):
@@ -137,7 +205,7 @@ def _check_native_lookups(root: Path, keeps: list[Keep], errors: list[str]) -> N
                 )
                 continue
             matching = [keep for keep in keeps if keep.matches_class(owner)]
-            if not any(keep.keeps_member(member) for keep in matching):
+            if not any(keep.keeps_member_alive and keep.keeps_member(member) for keep in matching):
                 errors.append(f"{label} resolves {owner}.{member} from native code but no -keep retains that member")
             for referenced in _DESCRIPTOR_CLASS.findall(descriptor):
                 name = _binary_name(referenced)
@@ -145,35 +213,94 @@ def _check_native_lookups(root: Path, keeps: list[Keep], errors: list[str]) -> N
                     continue
                 if any(keep.includes_descriptor_classes for keep in matching):
                     continue
-                if not any(keep.matches_class(name) for keep in keeps):
+                if not any(keep.keeps_class_name and keep.matches_class(name) for keep in keeps):
                     errors.append(
                         f"{label} names {name} in the descriptor of {owner}.{member}, so renaming it breaks the "
                         f"lookup, but no -keep covers it (or mark the owner -keep,includedescriptorclasses)"
                     )
 
 
+def _jvm_imports(text: str) -> dict[str, str]:
+    imports = {}
+    for match in _JVM_IMPORT.finditer(text):
+        qualified, alias = match.group(1), match.group(2)
+        imports[alias or qualified.rpartition(".")[2]] = qualified
+    return imports
+
+
+def _resolve_receiver(receiver: str, package: str, imports: dict[str, str]) -> str:
+    head, _, rest = receiver.partition(".")
+    qualified = imports.get(head)
+    if qualified is not None:
+        return f"{qualified}.{rest}" if rest else qualified
+    if rest:
+        # No matching import and already dotted: written package-qualified inline.
+        return receiver
+    return f"{package}.{receiver}" if package else receiver
+
+
+def _check_jvm_reflection(root: Path, keeps: list[Keep], errors: list[str]) -> None:
+    for source in _jvm_sources(root):
+        text = source.read_text(encoding="utf-8")
+        label = source.relative_to(root).as_posix()
+        package_match = _JVM_PACKAGE.search(text)
+        package = package_match.group(1) if package_match else ""
+        imports = _jvm_imports(text)
+
+        for match in _JVM_CLASS_FOR_NAME.finditer(text):
+            name = _binary_name(match.group(1))
+            if name.startswith(PLATFORM_PREFIXES):
+                continue
+            if not any(keep.keeps_class_name and keep.matches_class(name) for keep in keeps):
+                errors.append(f"{label} resolves {name} with Class.forName but no -keep covers it")
+
+        for match in _JVM_MEMBER_LOOKUP.finditer(text):
+            receiver, member = match.group(1), match.group(2)
+            if receiver is None:
+                errors.append(
+                    f"{label} looks up member '{member}' reflectively on a receiver this check cannot "
+                    f"resolve to a class; name the type (Type::class.java / Type.class) or extend "
+                    f"{Path(__file__).name}"
+                )
+                continue
+            owner = _resolve_receiver(receiver, package, imports)
+            if owner.startswith(PLATFORM_PREFIXES):
+                continue
+            # The receiver names the owner in code, so the class survives on its own;
+            # only the member *name* is invisible to R8. Any keep flavour that pins the
+            # name — including -keepclassmembernames, which deliberately lets genuinely
+            # unused members shrink — satisfies the lookup.
+            if not any(keep.matches_class(owner) and keep.keeps_member(member) for keep in keeps):
+                errors.append(
+                    f"{label} resolves {owner}.{member} with getDeclaredField/getDeclaredMethod "
+                    f"but no -keep rule pins that member name"
+                )
+
+
 def validate(root: Path) -> list[str]:
     root = root.resolve()
     reflected = _reflected_classes(root)
     has_native = bool(_native_sources(root))
-    if not reflected and not has_native:
+    has_jvm = bool(_jvm_sources(root))
+    if not reflected and not has_native and not has_jvm:
         return []
 
     rules_path = root / PROGUARD_RULES
     if not rules_path.is_file():
         return [
-            f"{PROGUARD_RULES} is missing, so R8 will shrink name-reached classes out of release "
+            f"{PROGUARD_RULES.as_posix()} is missing, so R8 will shrink name-reached classes out of release "
             f"builds{': ' + ', '.join(reflected) if reflected else ''}"
         ]
 
     keeps = _parse_keeps(rules_path.read_text(encoding="utf-8"))
     errors = []
     for binary_name in reflected:
-        if not any(keep.matches_class(binary_name) for keep in keeps):
+        if not any(keep.keeps_class_name and keep.matches_class(binary_name) for keep in keeps):
             errors.append(
-                f"{binary_name} lives in a reflected namespace but no -keep in {PROGUARD_RULES} covers it"
+                f"{binary_name} lives in a reflected namespace but no -keep in {PROGUARD_RULES.as_posix()} covers it"
             )
     _check_native_lookups(root, keeps, errors)
+    _check_jvm_reflection(root, keeps, errors)
     return errors
 
 

@@ -29,6 +29,47 @@ FULL_RULES = (
     "-keep class androidx.media3.decoder.SimpleDecoderOutputBuffer { *; }\n"
 )
 
+# Mirrors the production rule: MatroskaExtractor is referenced at compile time, so only
+# the member names need pinning for the getDeclaredField lookups.
+MATROSKA_KEEP = (
+    "-keepclassmembernames class androidx.media3.extractor.mkv.MatroskaExtractor {\n"
+    "  private androidx.media3.extractor.ExtractorOutput extractorOutput;\n"
+    "  private androidx.media3.common.util.ParsableByteArray subtitleSample;\n"
+    "}\n"
+)
+
+# The shape AssMatroskaExtractor.kt uses: import + Type::class.java receivers.
+KOTLIN_REFLECTION_SOURCE = """
+package com.edde746.plezy.libass
+
+import androidx.media3.extractor.mkv.MatroskaExtractor
+
+internal val extractorOutputField = MatroskaExtractor::class.java.getDeclaredField("extractorOutput").apply {
+  isAccessible = true
+}
+internal val subtitleSampleField = MatroskaExtractor::class.java.getDeclaredField("subtitleSample").apply {
+  isAccessible = true
+}
+"""
+
+# The Java receiver spelling of the same lookup.
+JAVA_REFLECTION_SOURCE = """
+package com.edde746.plezy.exoplayer;
+
+import androidx.media3.extractor.mkv.MatroskaExtractor;
+
+class MatroskaFields {
+  static final java.lang.reflect.Field OUTPUT;
+  static {
+    try {
+      OUTPUT = MatroskaExtractor.class.getDeclaredField("extractorOutput");
+    } catch (NoSuchFieldException error) {
+      throw new ExceptionInInitializerError(error);
+    }
+  }
+}
+"""
+
 
 class ShrinkerRulesCheckerTest(unittest.TestCase):
     def setUp(self) -> None:
@@ -50,6 +91,11 @@ class ShrinkerRulesCheckerTest(unittest.TestCase):
 
     def _write_rules(self, rules: str) -> None:
         self.rules_path.write_text(rules, encoding="utf-8")
+
+    def _write_source(self, relative: str, text: str) -> None:
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(text, encoding="utf-8")
 
     @staticmethod
     def _failure_kinds(errors: list[str]) -> set[str]:
@@ -151,6 +197,106 @@ class ShrinkerRulesCheckerTest(unittest.TestCase):
 
         self.assertEqual(1, len(errors))
         self.assertIn("cannot trace", errors[0])
+
+    def test_kotlin_field_reflection_without_a_member_name_pin_is_reported(self) -> None:
+        self._write_source("android/libass/src/main/java/com/edde746/plezy/libass/AssProbe.kt", KOTLIN_REFLECTION_SOURCE)
+        self._write_rules(FULL_RULES)
+
+        self.assertEqual(
+            ["android/libass/src/main/java/com/edde746/plezy/libass/AssProbe.kt resolves "
+             "androidx.media3.extractor.mkv.MatroskaExtractor.extractorOutput with "
+             "getDeclaredField/getDeclaredMethod but no -keep rule pins that member name",
+             "android/libass/src/main/java/com/edde746/plezy/libass/AssProbe.kt resolves "
+             "androidx.media3.extractor.mkv.MatroskaExtractor.subtitleSample with "
+             "getDeclaredField/getDeclaredMethod but no -keep rule pins that member name"],
+            CHECKER.validate(self.root),
+        )
+
+    def test_keepclassmembernames_satisfies_reflective_field_lookups(self) -> None:
+        self._write_source("android/libass/src/main/java/com/edde746/plezy/libass/AssProbe.kt", KOTLIN_REFLECTION_SOURCE)
+        self._write_source(
+            "android/app/src/main/java/com/edde746/plezy/exoplayer/MatroskaFields.java", JAVA_REFLECTION_SOURCE
+        )
+        self._write_rules(FULL_RULES + MATROSKA_KEEP)
+
+        self.assertEqual([], CHECKER.validate(self.root))
+
+    def test_class_forname_is_not_satisfied_by_a_member_name_pin(self) -> None:
+        self._write_source(
+            "android/app/src/main/kotlin/com/edde746/plezy/boot/PluginLoader.kt",
+            'package com.edde746.plezy.boot\n\n'
+            'internal fun loadPlugin(): Class<*> = Class.forName("com.example.ReflectedPlugin")\n',
+        )
+        self._write_rules(FULL_RULES + "-keepclassmembernames class com.example.ReflectedPlugin { *; }\n")
+
+        self.assertEqual(
+            ["android/app/src/main/kotlin/com/edde746/plezy/boot/PluginLoader.kt resolves "
+             "com.example.ReflectedPlugin with Class.forName but no -keep covers it"],
+            CHECKER.validate(self.root),
+        )
+
+    def test_class_keep_satisfies_class_forname(self) -> None:
+        self._write_source(
+            "android/app/src/main/kotlin/com/edde746/plezy/boot/PluginLoader.kt",
+            'package com.edde746.plezy.boot\n\n'
+            'internal fun loadPlugin(): Class<*> = Class.forName("com.example.ReflectedPlugin")\n',
+        )
+        self._write_rules(FULL_RULES + "-keep class com.example.ReflectedPlugin { *; }\n")
+
+        self.assertEqual([], CHECKER.validate(self.root))
+
+    def test_reflection_in_test_sources_needs_no_keep(self) -> None:
+        # Unit and instrumentation sources never run under R8, so their reflection
+        # helpers must not demand keep rules.
+        self._write_source("android/app/src/test/kotlin/com/edde746/plezy/Probe.kt", KOTLIN_REFLECTION_SOURCE)
+        self._write_source("android/app/src/androidTest/kotlin/com/edde746/plezy/Probe.kt", KOTLIN_REFLECTION_SOURCE)
+        self._write_rules(FULL_RULES)
+
+        self.assertEqual([], CHECKER.validate(self.root))
+
+    def test_unresolvable_reflective_receiver_fails_loudly(self) -> None:
+        self._write_source(
+            "android/app/src/main/kotlin/com/edde746/plezy/Probe.kt",
+            'package com.edde746.plezy\n\n'
+            'internal fun grab(target: Any) = target.javaClass.getDeclaredField("pendingResult")\n',
+        )
+        self._write_rules(FULL_RULES)
+
+        errors = CHECKER.validate(self.root)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn("cannot resolve", errors[0])
+
+    def test_same_package_receiver_resolves_against_the_file_package(self) -> None:
+        self._write_source(
+            "android/app/src/main/kotlin/com/example/app/Host.kt",
+            'package com.example.app\n\n'
+            'internal fun poke() = Helper::class.java.getDeclaredMethod("secret")\n',
+        )
+        self._write_rules(FULL_RULES)
+
+        errors = CHECKER.validate(self.root)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn("com.example.app.Helper.secret", errors[0])
+
+    def test_keepclassmembernames_does_not_satisfy_a_native_member_lookup(self) -> None:
+        # A natively-reached member has no compile-time reference at all, so a rule that
+        # allows shrinking (-keepclassmembernames) must not count as covering it.
+        self._write_rules(
+            "-keep class androidx.media3.decoder.ffmpeg.** {\n"
+            "  <init>(android.os.Handler);\n"
+            "}\n"
+            "-keep class androidx.media3.decoder.SimpleDecoderOutputBuffer { *; }\n"
+            "-keepclassmembernames class androidx.media3.decoder.ffmpeg.FfmpegAudioDecoder { growOutputBuffer; }\n"
+        )
+
+        self.assertEqual(
+            ["android/app/src/main/cpp/media3_ffmpeg_decoder/ffmpeg_jni.cc resolves "
+             "androidx.media3.decoder.ffmpeg.FfmpegAudioDecoder.growOutputBuffer from native code "
+             "but no -keep retains that member"],
+            CHECKER.validate(self.root),
+        )
 
 
 if __name__ == "__main__":
