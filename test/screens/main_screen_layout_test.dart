@@ -200,6 +200,66 @@ void main() {
     });
   });
 
+  group('ContentRefreshResumeGate', () {
+    // Injectable clock: tests advance `now` instead of sleeping.
+    ContentRefreshResumeGate gateAt(DateTime Function() now) =>
+        ContentRefreshResumeGate(staleAfter: const Duration(minutes: 5), now: now);
+
+    test('refreshes once after a backgrounding longer than the threshold (#2043)', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.paused), isFalse);
+      now = now.add(const Duration(hours: 18));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isTrue);
+      // Consumed: an immediate second resume must not refresh again.
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('does not refresh after a short backgrounding', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.hidden), isFalse);
+      now = now.add(const Duration(minutes: 4, seconds: 59));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('does not refresh for overlay-style inactive -> resumed', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.inactive), isFalse);
+      now = now.add(const Duration(hours: 1));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('does not refresh on a cold-open resume with no prior backgrounding', () {
+      final gate = gateAt(DateTime.now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('keeps the earliest backgrounded time across hidden -> paused churn', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.hidden), isFalse);
+      now = now.add(const Duration(minutes: 4));
+      // A later deeper state must not restart the clock.
+      expect(gate.consumeRefreshOn(AppLifecycleState.paused), isFalse);
+      now = now.add(const Duration(minutes: 2));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isTrue);
+    });
+
+    test('resume resets the latch for the next backgrounding', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.paused), isFalse);
+      now = now.add(const Duration(minutes: 1));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+      // The stale clock must start from the *new* backgrounding, not the old one.
+      expect(gate.consumeRefreshOn(AppLifecycleState.paused), isFalse);
+      now = now.add(const Duration(minutes: 5));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isTrue);
+    });
+  });
+
   testWidgets('side navigation bleed animates from the previous value', (tester) async {
     Widget build(double targetBleed) {
       return Directionality(

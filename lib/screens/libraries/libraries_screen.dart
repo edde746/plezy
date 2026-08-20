@@ -469,11 +469,20 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
   }
 
-  // Public method to refresh content (for normal navigation)
+  /// Refetch content in place (stale-resume sweep from MainScreen, #2043).
+  ///
+  /// With a library on screen this refetches its instantiated tabs — the same
+  /// action as the toolbar refresh button. Selecting the saved library again
+  /// would not: the tab widgets are keyed on stable GlobalKeys and only reload
+  /// when the library's globalKey changes. Without a selection yet (provider
+  /// was empty at startup) it re-runs initialization instead.
   @override
   void refresh() {
-    // Reinitialize with current libraries
-    _initializeWithLibraries();
+    if (_selectedLibraryGlobalKey == null) {
+      _initializeWithLibraries();
+      return;
+    }
+    _refreshSelectedLibraryTabs();
   }
 
   // Refresh every loaded tab for the selected library.

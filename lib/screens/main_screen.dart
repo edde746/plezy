@@ -153,6 +153,49 @@ class ProfileSelectionResumeGate {
   }
 }
 
+/// Latches when the app leaves the foreground and, on the next `resumed`,
+/// reports whether it stayed backgrounded long enough that on-screen content
+/// should be refetched (#2043).
+///
+/// TV launchers resume the resident process rather than cold-starting it, so
+/// "opening the app" hours later otherwise shows the in-memory grids from the
+/// previous session. The [staleAfter] threshold keeps short interruptions
+/// (app switch, notification shade, desktop alt-tab reaching `hidden`) from
+/// refetching and resetting scroll/focus state, and `inactive`-only overlays
+/// never latch at all — same shape as [ProfileSelectionResumeGate].
+@visibleForTesting
+class ContentRefreshResumeGate {
+  ContentRefreshResumeGate({this.staleAfter = const Duration(minutes: 5), DateTime Function()? now})
+    : _now = now ?? DateTime.now;
+
+  /// Minimum time spent backgrounded before a resume triggers a refresh.
+  final Duration staleAfter;
+  final DateTime Function() _now;
+
+  DateTime? _backgroundedAt;
+
+  /// Feeds one lifecycle transition through the gate. Returns true exactly
+  /// once per backgrounding: on the first `resumed` after the sequence
+  /// reached `hidden`/`paused`/`detached` at least [staleAfter] ago. Keeps
+  /// the *earliest* backgrounded timestamp, so `hidden -> paused` churn while
+  /// backgrounded doesn't restart the clock.
+  bool consumeRefreshOn(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        final backgroundedAt = _backgroundedAt;
+        _backgroundedAt = null;
+        return backgroundedAt != null && _now().difference(backgroundedAt) >= staleAfter;
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _backgroundedAt ??= _now();
+        return false;
+      case AppLifecycleState.inactive:
+        return false;
+    }
+  }
+}
+
 @visibleForTesting
 ({double left, double width}) mainScreenSideNavigationContentLayout({
   required double viewportWidth,
@@ -305,6 +348,10 @@ class _MainScreenState extends State<MainScreen>
   /// exactly once on the next resume, while transient focus losses
   /// (`inactive`, e.g. the Fire TV Alexa overlay) never prompt.
   final _profileSelectionResumeGate = ProfileSelectionResumeGate();
+
+  /// Latches a genuine backgrounding and, on resume, reports whether the app
+  /// was gone long enough that the content tabs should refetch (#2043).
+  final _contentRefreshResumeGate = ContentRefreshResumeGate();
 
   late List<Widget> _screens;
 
@@ -996,8 +1043,9 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Always consume: the gate latches backgrounding on every lifecycle event.
+    // Always consume: the gates latch backgrounding on every lifecycle event.
     final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(state);
+    final refreshStaleContent = _contentRefreshResumeGate.consumeRefreshOn(state);
     if (shouldShowProfileSelectionOnResume(
       resumedFromBackground: resumedFromBackground,
       isOffline: _isOffline,
@@ -1006,6 +1054,28 @@ class _MainScreenState extends State<MainScreen>
       hasActiveVideoPlayback: VideoPlayerScreenState.activeGlobalKey != null,
     )) {
       _showProfileSelectionOnResume();
+    }
+    if (refreshStaleContent) _refreshContentAfterStaleResume();
+  }
+
+  /// Refetch the content tabs after the app resumes from a long backgrounding.
+  ///
+  /// TV launchers resume the resident process rather than cold-starting it, so
+  /// without this the tabs keep showing the in-memory content from the previous
+  /// session — the Libraries grid could sit hours stale until the user switched
+  /// libraries (#2043). Goes through [Refreshable.refresh], each screen's
+  /// non-destructive refetch: Discover refreshes Continue Watching in place,
+  /// Libraries refetches the selected library's loaded tabs, Search re-runs a
+  /// non-empty query. Skipped while playback is up — nothing content-stale is
+  /// on screen and the playback path must stay quiet.
+  void _refreshContentAfterStaleResume() {
+    if (_isOffline || !_startupServicesPrimed || !mounted) return;
+    if (VideoPlayerScreenState.activeGlobalKey != null) return;
+    if (!context.read<MultiServerProvider>().hasConnectedServers) return;
+    appLogger.d('Refreshing content tabs after stale resume');
+    unawaited(context.read<LibrariesProvider>().refresh());
+    for (final tab in _contentTabs) {
+      _onScreen<Refreshable>(tab, (screen) => screen.refresh());
     }
   }
 
