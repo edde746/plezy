@@ -237,6 +237,24 @@ void main() {
       expect(svc.findAudioTrackByProfile(tracks, profile), isNull);
     });
 
+    test('est track preceding spa does not prefix-match preference es', () {
+      // Regression: the profile matcher used startsWith, so an `est`
+      // (Estonian) track ahead of `spa` won a Spanish (`es`) preference.
+      final tracks = [_audio('1', lang: 'est'), _audio('2', lang: 'spa')];
+      final profile = _profile(defaultAudioLanguage: 'es');
+      expect(svc.findAudioTrackByProfile(tracks, profile), tracks[1]);
+    });
+
+    test('hyphenated region variants still match the base language', () {
+      final tracks = [_audio('1', lang: 'est'), _audio('2', lang: 'es-419')];
+      final profile = _profile(defaultAudioLanguage: 'es');
+      expect(svc.findAudioTrackByProfile(tracks, profile), tracks[1]);
+
+      // And a hyphenated preference still finds a plain ISO 639-2 track.
+      final spaOnly = [_audio('1', lang: 'spa')];
+      expect(svc.findAudioTrackByProfile(spaOnly, _profile(defaultAudioLanguage: 'es-419')), spaOnly[0]);
+    });
+
     test('returns null on empty available tracks', () {
       final profile = _profile(defaultAudioLanguage: 'eng');
       expect(svc.findAudioTrackByProfile(const [], profile), isNull);
@@ -881,6 +899,18 @@ void main() {
       final result = _svc(
         metadata: _meta(backend: MediaBackend.jellyfin),
         profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.always),
+      ).selectSubtitleTrack(tracks, null, null)!;
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('Jellyfin SubtitleMode.Always: est subtitle does not prefix-match preference es', () {
+      // Regression: same startsWith matcher served subtitles, so an `est`
+      // row ahead of `spa` hijacked a Spanish (`es`) subtitle preference.
+      final tracks = [_sub('1', lang: 'est'), _sub('2', lang: 'spa')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'es', subtitleMode: SubtitlePlaybackMode.always),
       ).selectSubtitleTrack(tracks, null, null)!;
       expect(result.priority, TrackSelectionPriority.profile);
       expect(result.track.id, '2');

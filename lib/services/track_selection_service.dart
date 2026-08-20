@@ -704,10 +704,18 @@ class TrackSelectionService {
     return result;
   }
 
-  /// Find a track by preferred language with variation lookup
+  /// Find the first track whose language matches the preferred language.
+  ///
+  /// Matching goes through [languageMatches] (exact, region-code, and
+  /// ISO 639 variation parity) - never prefix comparison, which would let
+  /// e.g. an `est` (Estonian) track satisfy an `es` (Spanish) preference.
   T? _findTrackByPreferredLanguage<T>(List<T> tracks, String preferredLanguage, String? Function(T) getLanguage) {
-    final languageVariations = LanguageCodes.getVariations(preferredLanguage);
-    return _findTrackByLanguageVariations<T>(tracks, languageVariations, getLanguage);
+    for (final track in tracks) {
+      if (languageMatches(getLanguage(track), preferredLanguage)) {
+        return track;
+      }
+    }
+    return null;
   }
 
   /// Apply a filter to tracks, falling back to original if filter produces empty result
@@ -930,22 +938,6 @@ class TrackSelectionService {
       (t) => t.title,
       (t) => t.language,
     );
-  }
-
-  /// Find a track matching a preferred language from a list of tracks
-  /// Returns the first track whose language matches any variation of the preferred language
-  T? _findTrackByLanguageVariations<T>(
-    List<T> tracks,
-    List<String> languageVariations,
-    String? Function(T) getLanguage,
-  ) {
-    for (final track in tracks) {
-      final trackLang = getLanguage(track)?.toLowerCase();
-      if (trackLang != null && languageVariations.any((lang) => trackLang.startsWith(lang))) {
-        return track;
-      }
-    }
-    return null;
   }
 
   /// Checks if a track language matches a preferred language
