@@ -36,9 +36,7 @@ import '../mixins/mounted_set_state_mixin.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../models/companion_remote/remote_command.dart';
 import '../providers/companion_remote_provider.dart';
-import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/car_ux_restrictions_service.dart';
 import '../services/driver_distraction.dart';
@@ -89,6 +87,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/android_exit_diagnostics.dart';
 import 'video_player/completion_latch.dart';
 import 'video_player/frame_rate_matcher.dart';
+import 'video_player/companion_remote_binding.dart';
 import 'video_player/media_controls_screen_controller.dart';
 import 'video_player/live_stream_retry.dart';
 import 'video_player/live_timeline_report.dart';
@@ -774,8 +773,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   WatchTogetherProvider? _watchTogetherProvider;
 
-  CompanionRemoteProvider? _companionRemoteProvider;
-  VoidCallback? _savedOnHome;
+  late final CompanionRemoteBinding _companionRemote = CompanionRemoteBinding(
+    player: () => player,
+    isMounted: () => mounted,
+    canControlPlayback: () => _canControlPlayback(),
+    volumeController: () => _volumeController,
+    hasNextEpisode: () => _nextEpisode != null,
+    onStop: () => _handleBackButton(),
+    onPlayNext: () => _playNext(),
+    onPlayPrevious: () => _restartOrPlayPrevious(),
+    seekRelative: (offset) => _seekRelative(offset),
+    onCycleSubtitles: () => _cycleSubtitleTrack(),
+    onCycleAudio: () => _cycleAudioTrack(),
+    onHome: () => _handleHomeButton(),
+    readProvider: () => context.read<CompanionRemoteProvider>(),
+  );
 
   /// Backend-neutral lookup. Returns whichever client (Plex or Jellyfin)
   /// owns this item. Used by the player initialization path.
@@ -1100,7 +1112,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       CarUxRestrictionsService.instance.listenable.addListener(_handleCarRestrictionsChanged);
     }
 
-    _setupCompanionRemoteCallbacks();
+    _companionRemote.bind();
     _setupAppleTvRemotePlaybackActions();
 
     _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
@@ -1920,7 +1932,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       return;
     }
 
-    final onHome = _savedOnHome;
+    final onHome = _companionRemote.savedOnHome;
     navigator.popUntil((route) => route.isFirst);
     onHome?.call();
   }
@@ -1979,7 +1991,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playbackTransitionIdleCompleter = null;
     if (transitionCompleter != null && !transitionCompleter.isCompleted) transitionCompleter.complete();
 
-    _cleanupCompanionRemoteCallbacks();
+    _companionRemote.unbind();
 
     // Notify Watch Together guests that host is exiting the player.
     // Use stored reference since context.read() may fail in dispose.
