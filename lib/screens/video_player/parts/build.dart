@@ -42,7 +42,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
       _lastVideoLayoutSize = pendingSize;
       _lastVideoLayoutPlayer = currentPlayer;
       _videoFilterManager?.updatePlayerSize(pendingSize);
-      _updateAmbientLightingOnResize(pendingSize);
+      _visualEffects.onResize(pendingSize);
       unawaited(currentPlayer.updateFrame());
     });
   }
@@ -213,7 +213,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
           }
 
           final zoomScale = _videoFilterManager?.zoomScale ?? 1.0;
-          _showZoomToast(zoomScale);
+          _visualEffects.showZoomToast(zoomScale);
           _clearMobileZoomGesture();
           _setPlayerState(() {});
         },
@@ -301,11 +301,11 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         videoZoomScale: _videoFilterManager?.zoomScale ?? 1.0,
-                        onCycleBoxFitMode: _cycleBoxFitMode,
-                        onVideoZoomChanged: _setVideoZoom,
-                        onZoomIn: _zoomVideoIn,
-                        onZoomOut: _zoomVideoOut,
-                        onResetVideoZoom: _resetVideoZoom,
+                        onCycleBoxFitMode: _visualEffects.cycleBoxFitMode,
+                        onVideoZoomChanged: _visualEffects.setZoom,
+                        onZoomIn: _visualEffects.zoomIn,
+                        onZoomOut: _visualEffects.zoomOut,
+                        onResetVideoZoom: _visualEffects.resetZoom,
                         onCycleAudioTrack: _cycleAudioTrack,
                         onCycleSubtitleTrack: _cycleSubtitleTrack,
                         onAudioTrackChanged: _onAudioTrackChanged,
@@ -337,7 +337,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onJumpToLive: _live.captureBuffer != null && !_live.atLiveEdge ? _jumpToLiveEdge : null,
                         isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
                         onToggleAmbientLighting: _ambientLightingService?.isSupported == true
-                            ? _toggleAmbientLighting
+                            ? _visualEffects.toggleAmbientLighting
                             : null,
                         toastController: _toastController,
                       ),

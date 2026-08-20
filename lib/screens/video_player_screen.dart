@@ -68,7 +68,6 @@ import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_volume_controller.dart';
 import '../services/pip_service.dart';
-import '../models/shader_preset.dart';
 import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
@@ -97,6 +96,7 @@ import 'video_player/open_http_503_watchdog.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
 import 'video_player/tv_background_suspend_policy.dart';
+import 'video_player/visual_effects_controller.dart';
 import 'video_player/widgets/player_prompt_overlays.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/video_controls/player_chrome_controller.dart';
@@ -119,7 +119,6 @@ part 'video_player/parts/errors.dart';
 part 'video_player/parts/lifecycle.dart';
 part 'video_player/parts/live_tv.dart';
 part 'video_player/parts/pip.dart';
-part 'video_player/parts/shader.dart';
 part 'video_player/parts/playback_open.dart';
 part 'video_player/parts/playback_prompts.dart';
 part 'video_player/parts/playback_reload.dart';
@@ -685,6 +684,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   // VLC-style in-player toast controller (rate changes, backend switch, etc.).
   final PlayerToastController _toastController = PlayerToastController();
+
+  late final VisualEffectsController _visualEffects = VisualEffectsController(
+    player: () => player,
+    shaderService: () => _shaderService,
+    ambientLighting: () => _ambientLightingService,
+    filterManager: () => _videoFilterManager,
+    metadata: () => _currentMetadata,
+    shaderProvider: () => context.read<ShaderProvider>(),
+    isMounted: () => mounted,
+    requestRebuild: () => _setPlayerState(() {}),
+    toast: _toastController,
+  );
   bool _reclaimingFocus = false;
 
   // App lifecycle state tracking

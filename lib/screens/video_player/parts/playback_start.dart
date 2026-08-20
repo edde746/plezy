@@ -292,8 +292,8 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
               _shaderService!.ambientLightingService = _ambientLightingService;
               _videoFilterManager?.ambientLightingService = _ambientLightingService;
 
-              await _applySavedShaderPreset();
-              await _restoreAmbientLighting();
+              await _visualEffects.applySavedPreset();
+              await _visualEffects.restoreAmbientLighting();
             }
           }
           return attempt.isCurrent;

@@ -857,7 +857,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       if (shaderId != previousShaderId && mounted) {
         // _currentMetadata is already the new item; the helper resolves
         // against it and swaps the mpv shader chain.
-        await _applySavedShaderPreset();
+        await _visualEffects.applySavedPreset();
       }
     } catch (e, stackTrace) {
       appLogger.w('Failed to re-apply scoped player settings after item change', error: e, stackTrace: stackTrace);

@@ -160,7 +160,7 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
     filterManager.exitPipMode();
     if (restoreAmbient) {
       filterManager.clearPipAmbientLightingFlag();
-      unawaited(_restoreAmbientLighting());
+      unawaited(_visualEffects.restoreAmbientLighting());
     }
     _pipFiltersPrepared = false;
   }
