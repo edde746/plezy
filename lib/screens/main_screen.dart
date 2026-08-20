@@ -284,6 +284,68 @@ ProfileInvalidationAction profileInvalidationAction({
   return ProfileInvalidationAction.none;
 }
 
+/// The initial-profile prompt flow behind [_MainScreenState]'s post-frame
+/// prompt and its late-profiles re-arm, extracted so the mid-await re-entry
+/// race is testable without the full MainScreen tree.
+///
+/// [claimPrompt] must synchronously claim the "picker is up" guard and return
+/// false when it is already claimed. The claim is taken before the first
+/// await: the provider notifies mid-initialize (e.g. a fresh sign-in's slow
+/// home-user fetch), and the listener's re-entrant call would otherwise stack
+/// a second requireSelection picker on the root navigator. [releasePrompt]
+/// clears the claim on every exit; on the push path that re-clear is
+/// idempotent with [pushProfileSelection]'s own post-pop clear.
+@visibleForTesting
+Future<void> runInitialProfilePrompt({
+  required ActiveProfileProvider activeProfile,
+  required bool Function() claimPrompt,
+  required void Function() releasePrompt,
+  required bool Function() isMounted,
+  required bool isOfflineMode,
+  required Future<bool> Function() hasConnections,
+  required Future<void> Function() settleSession,
+  required Future<void> Function() pushProfileSelection,
+  Future<SettingsService> Function() settings = SettingsService.getInstance,
+}) async {
+  if (!claimPrompt()) return;
+  try {
+    // The provider's initialize() is fire-and-forget from MultiProvider —
+    // wait for it to settle so `active` and `profiles` reflect storage
+    // before we decide whether to prompt.
+    await activeProfile.initialize();
+    if (!isMounted()) return;
+
+    final settingsService = await settings();
+    if (!isMounted()) return;
+
+    // Connections but ZERO resolvable profiles (e.g. the home-user fetch
+    // failed at sign-in): a session with nothing to select and no picker is
+    // a dead end. Mirror the boot guard — prune orphans and route to auth
+    // when nothing selectable remains.
+    if (activeProfile.active == null && activeProfile.profiles.isEmpty) {
+      // Offline, "unresolvable" may just be an unreachable plex.tv — don't
+      // kick the user to auth over it.
+      if (!isOfflineMode && await hasConnections() && isMounted()) {
+        appLogger.w('MainScreen: connections exist but no profiles resolved — settling session');
+        await settleSession();
+      }
+      return;
+    }
+
+    // Always prompt when there's no active profile but profiles exist
+    // (fresh sign-in with multiple Plex Home users): otherwise the binder
+    // has no profile to bind, and the user lands on an empty screen with
+    // no way back to the picker.
+    final hasNoActive = activeProfile.active == null && activeProfile.profiles.isNotEmpty;
+
+    if (!hasNoActive && !activeProfile.requiresSelectionOnOpen(settingsService)) return;
+
+    await pushProfileSelection();
+  } finally {
+    releasePrompt();
+  }
+}
+
 class MainScreen extends StatefulWidget {
   final bool isOfflineMode;
 
@@ -483,6 +545,11 @@ class _MainScreenState extends State<MainScreen>
       final activeProfile = context.read<ActiveProfileProvider>();
       _activeProfileForListener = activeProfile;
       _lastSeenProfileId = activeProfile.activeId;
+      // Prime the late-profiles edge alongside _lastSeenProfileId so the
+      // "!_hadProfiles && hasProfilesNow" check in _onActiveProfileChanged
+      // fires only on a genuine empty -> non-empty transition, not on the
+      // first notification of a session that started with profiles.
+      _hadProfiles = activeProfile.profiles.isNotEmpty;
       activeProfile.addListener(_onActiveProfileChanged);
       _plexHomeService = context.read<PlexHomeService>();
       unawaited(_plexHomeService!.start());
@@ -680,38 +747,20 @@ class _MainScreenState extends State<MainScreen>
 
     final activeProfile = context.read<ActiveProfileProvider>();
     final connections = context.read<ConnectionRegistry>();
-    // The provider's initialize() is fire-and-forget from MultiProvider —
-    // wait for it to settle so `active` and `profiles` reflect storage
-    // before we decide whether to prompt.
-    await activeProfile.initialize();
-    if (!mounted) return;
-
-    final settingsService = await SettingsService.getInstance();
-    if (!mounted) return;
-
-    // Connections but ZERO resolvable profiles (e.g. the home-user fetch
-    // failed at sign-in): a session with nothing to select and no picker is
-    // a dead end. Mirror the boot guard — prune orphans and route to auth
-    // when nothing selectable remains.
-    if (activeProfile.active == null && activeProfile.profiles.isEmpty) {
-      // Offline, "unresolvable" may just be an unreachable plex.tv — don't
-      // kick the user to auth over it.
-      if (!widget.isOfflineMode && (await connections.list()).isNotEmpty && mounted) {
-        appLogger.w('MainScreen: connections exist but no profiles resolved — settling session');
-        await settleSessionAfterRemoval(SessionTeardownScope.of(context));
-      }
-      return;
-    }
-
-    // Always prompt when there's no active profile but profiles exist
-    // (fresh sign-in with multiple Plex Home users): otherwise the binder
-    // has no profile to bind, and the user lands on an empty screen with
-    // no way back to the picker.
-    final hasNoActive = activeProfile.active == null && activeProfile.profiles.isNotEmpty;
-
-    if (!hasNoActive && !activeProfile.requiresSelectionOnOpen(settingsService)) return;
-
-    await _pushProfileSelection();
+    await runInitialProfilePrompt(
+      activeProfile: activeProfile,
+      claimPrompt: () {
+        if (_isShowingProfileSelection) return false;
+        _isShowingProfileSelection = true;
+        return true;
+      },
+      releasePrompt: () => _isShowingProfileSelection = false,
+      isMounted: () => mounted,
+      isOfflineMode: widget.isOfflineMode,
+      hasConnections: () async => (await connections.list()).isNotEmpty,
+      settleSession: () => settleSessionAfterRemoval(SessionTeardownScope.of(context)),
+      pushProfileSelection: _pushProfileSelection,
+    );
   }
 
   /// Push the picker in "must choose" mode, suppressing the tvOS menu-button

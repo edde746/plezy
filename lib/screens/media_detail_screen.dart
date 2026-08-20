@@ -2937,7 +2937,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           context,
           metadata: episodeWithServerId,
           isOffline: widget.isOffline,
-          onRefresh: _loadFullMetadata,
+          onRefresh: _refreshWatchState,
         );
       }
     } catch (e) {
@@ -2963,7 +2963,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final launcher = MediaListPlaybackLauncher.forItem(context, metadata);
     final result = await launcher.launchShuffledShow(metadata: metadata);
     if (result is PlayQueueSuccess && mounted) {
-      unawaited(_loadFullMetadata());
+      unawaited(_refreshWatchState());
     }
   }
 

@@ -1,8 +1,21 @@
+import 'dart:async';
+
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/connection/connection_registry.dart';
+import 'package:plezy/database/app_database.dart';
+import 'package:plezy/profiles/active_profile_provider.dart';
+import 'package:plezy/profiles/plex_home_service.dart';
+import 'package:plezy/profiles/profile.dart';
+import 'package:plezy/profiles/profile_connection_registry.dart';
+import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/screens/main_screen.dart';
+import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
+
+import '../test_helpers/prefs.dart';
 
 void main() {
   test('side navigation pushes stable foreground off-screen while temporarily expanded', () {
@@ -297,4 +310,160 @@ void main() {
     await tester.pumpAndSettle();
     expect(left(), closeTo(-SideNavigationRailState.expandedWidth, 0.001));
   });
+
+  group('runInitialProfilePrompt', () {
+    Future<_PromptFixture> makeFixture() async {
+      resetSharedPreferencesForTest();
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final profiles = ProfileRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final active = _GatedInitializeActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+      );
+      addTearDown(() async {
+        await active.resetForTesting();
+        active.dispose();
+        await plexHome.dispose();
+        await db.close();
+      });
+      return _PromptFixture(profiles: profiles, storage: storage, active: active);
+    }
+
+    test('mid-initialize synchronous notify pushes exactly one requireSelection picker', () async {
+      final fixture = await makeFixture();
+      // Two selectable profiles, none active: the prompt must push the picker.
+      await fixture.profiles.upsert(Profile.local(id: 'p1', displayName: 'One', createdAt: DateTime(2026, 1, 1)));
+      await fixture.profiles.upsert(Profile.local(id: 'p2', displayName: 'Two', createdAt: DateTime(2026, 1, 2)));
+
+      var claimed = false;
+      var pushes = 0;
+      final pickerPopped = Completer<void>();
+      final runs = <Future<void>>[];
+
+      Future<void> run() => runInitialProfilePrompt(
+        activeProfile: fixture.active,
+        claimPrompt: () {
+          if (claimed) return false;
+          claimed = true;
+          return true;
+        },
+        releasePrompt: () => claimed = false,
+        isMounted: () => true,
+        isOfflineMode: false,
+        hasConnections: () async => fail('zero-profiles settle branch must not run'),
+        settleSession: () async => fail('zero-profiles settle branch must not run'),
+        pushProfileSelection: () async {
+          pushes++;
+          // The real picker route stays up until the user selects a profile.
+          await pickerPopped.future;
+        },
+      );
+
+      // The late-profiles re-arm: any provider notification landing while the
+      // first prompt is parked on initialize() re-enters the prompt, exactly
+      // like _onActiveProfileChanged does.
+      fixture.active.addListener(() => runs.add(run()));
+
+      // Parks on the gated initialize after its synchronous notify re-entered.
+      runs.add(run());
+      expect(runs, hasLength(2), reason: 'the gated initialize notified synchronously');
+
+      fixture.active.initializeGate.complete();
+      await pumpEventQueue();
+      expect(pushes, 1);
+
+      // A notification landing while the picker route is up (e.g. the
+      // connection watcher) must not stack a second requireSelection picker.
+      fixture.active.emitExternalNotify();
+      await pumpEventQueue();
+      expect(pushes, 1);
+
+      pickerPopped.complete();
+      await Future.wait(runs);
+      expect(pushes, 1);
+      expect(claimed, isFalse, reason: 'claim released after the picker resolves');
+    });
+
+    test('non-push exit releases the double-push claim', () async {
+      final fixture = await makeFixture();
+      // One profile, already active, "require selection on open" off: the
+      // prompt must decline to push and release its claim so a later genuine
+      // prompt is still possible.
+      await fixture.profiles.upsert(Profile.local(id: 'p1', displayName: 'One', createdAt: DateTime(2026, 1, 1)));
+      await fixture.storage.setActiveProfileId('p1');
+      fixture.active.initializeGate.complete();
+
+      var claimed = false;
+      var pushes = 0;
+
+      Future<void> run() => runInitialProfilePrompt(
+        activeProfile: fixture.active,
+        claimPrompt: () {
+          if (claimed) return false;
+          claimed = true;
+          return true;
+        },
+        releasePrompt: () => claimed = false,
+        isMounted: () => true,
+        isOfflineMode: false,
+        hasConnections: () async => fail('zero-profiles settle branch must not run'),
+        settleSession: () async => fail('zero-profiles settle branch must not run'),
+        pushProfileSelection: () async => pushes++,
+      );
+
+      await run();
+      expect(pushes, 0);
+      expect(claimed, isFalse, reason: 'a non-push exit must release the claim');
+
+      // The released claim keeps future prompts reachable.
+      await run();
+      expect(pushes, 0);
+      expect(claimed, isFalse);
+    });
+  });
+}
+
+class _PromptFixture {
+  _PromptFixture({required this.profiles, required this.storage, required this.active});
+
+  final ProfileRegistry profiles;
+  final StorageService storage;
+  final _GatedInitializeActiveProfileProvider active;
+}
+
+/// [ActiveProfileProvider] whose [initialize] parks on [initializeGate] after
+/// notifying — the fresh sign-in shape where the provider's connection watcher
+/// notifies while MainScreen's prompt is still awaiting initialize().
+class _GatedInitializeActiveProfileProvider extends ActiveProfileProvider {
+  _GatedInitializeActiveProfileProvider({
+    required super.registry,
+    required super.plexHome,
+    required super.connections,
+    required super.profileConnections,
+    required super.storage,
+  });
+
+  final Completer<void> initializeGate = Completer<void>();
+
+  @override
+  Future<void> initialize() async {
+    notifyListeners();
+    await initializeGate.future;
+    await super.initialize();
+  }
+
+  /// A notification from outside the prompt (e.g. a connection table write).
+  void emitExternalNotify() => notifyListeners();
 }

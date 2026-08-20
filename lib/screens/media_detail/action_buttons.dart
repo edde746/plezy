@@ -51,7 +51,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             context,
             metadata: _onDeckEpisode!,
             isOffline: widget.isOffline,
-            onRefresh: _loadFullMetadata,
+            onRefresh: _refreshWatchState,
           );
         } else {
           // No on deck episode, fetch first episode of first season
@@ -64,7 +64,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             context,
             metadata: _episodes.first,
             isOffline: widget.isOffline,
-            onRefresh: _loadFullMetadata,
+            onRefresh: _refreshWatchState,
           );
         } else {
           await _playFirstEpisode();
@@ -76,7 +76,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           context,
           metadata: metadata,
           isOffline: widget.isOffline,
-          onRefresh: _loadFullMetadata,
+          onRefresh: _refreshWatchState,
         );
       }
     }
@@ -85,7 +85,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       final didNavigate = await promptAndPlayVersion(context, metadata);
       // Same post-playback refresh plain Play gets from
       // navigateToVideoPlayerWithRefresh; the split segment is online-only.
-      if (didNavigate && mounted) unawaited(_loadFullMetadata());
+      if (didNavigate && mounted) unawaited(_refreshWatchState());
     }
 
     final primaryTrailer = _getPrimaryTrailer();

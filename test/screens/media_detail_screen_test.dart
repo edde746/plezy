@@ -1113,6 +1113,65 @@ void main() {
       expect(find.text('S1E1'), findsNothing);
     });
 
+    testWidgets('returning from playback refreshes watch state without the full-screen loader', (tester) async {
+      // The post-playback refresh used to re-run _loadFullMetadata, which
+      // raises _isLoadingMetadata — build then swaps the whole detail subtree
+      // for a spinner — and refetches seasons, episodes and extras.
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final episode1 = buildEpisode(show, season1, 1);
+      final episode2 = buildEpisode(show, season1, 2);
+
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1],
+          season1.id: [episode1, episode2],
+        },
+      )..onDeckEpisode = episode1;
+      final observer = _RecordingNavigatorObserver(popVideoPlayerImmediately: true);
+
+      await pumpPhoneDetail(tester, client, show, observer: observer);
+
+      expect(find.text('S1E1'), findsOneWidget, reason: 'play button targets the on-deck episode');
+      expect(find.text('Episode S1E1'), findsOneWidget);
+      final childrenCallsBeforePlayback = client.childrenPageCalls.length;
+      observer.pushedRouteNames.clear();
+
+      // The next fetchItemWithOnDeck — the post-playback refresh — reports
+      // the following episode as on deck.
+      client.onDeckEpisode = episode2;
+
+      await tester.tap(
+        find.descendant(of: find.byType(FocusableActionBar), matching: find.byIcon(Symbols.play_arrow_rounded)),
+      );
+      // Pump the push, the immediate pop, and the refresh round-trip one
+      // frame at a time: the old full-reload path swapped in a loading
+      // scaffold here and unmounted the episode list.
+      for (var i = 0; i < 8; i++) {
+        await tester.pump();
+        expect(
+          find.byType(CircularProgressIndicator),
+          findsNothing,
+          reason: 'playback return must not raise the full-screen loader',
+        );
+        expect(
+          find.text('Episode S1E1'),
+          findsOneWidget,
+          reason: 'loaded episode rows must survive the playback return',
+        );
+      }
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(observer.pushedRouteNames, contains(kVideoPlayerRouteName));
+      // Watch state did refresh: the play button now targets the next episode.
+      expect(find.text('S1E2'), findsOneWidget);
+      // The lightweight refresh fetches the item + on-deck only — no season
+      // or episode page refetch, no early-paint (both are full-loader work).
+      expect(client.childrenPageCalls.length, childrenCallsBeforePlayback);
+      expect(client.earlyPaints, hasLength(1));
+    });
+
     testWidgets('shows directors when they are the only additional info', (tester) async {
       final movie = testMediaItem(
         id: 'director_only',
