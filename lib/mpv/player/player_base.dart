@@ -390,8 +390,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       case 'speed':
         final rate = _finiteDouble(value);
         if (rate != null) {
-          _state = _state.copyWith(rate: rate);
-          rateController.add(rate);
+          setRateState(rate);
         }
         break;
 
@@ -413,6 +412,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           }
           if (result.selectedSubtitleId != null) {
             updateSelectedSubtitleTrack(result.selectedSubtitleId);
+          }
+          // Deselection still arrives through the secondary-sid observation
+          // ('no'), which stays the clearing path; track-list only ever
+          // asserts a selection it can attribute via main-selection.
+          if (result.selectedSecondarySubtitleId != null) {
+            updateSelectedSecondarySubtitleTrack(result.selectedSecondarySubtitleId);
           }
         }
         break;
@@ -586,11 +591,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     };
   }
 
-  ({Tracks tracks, String? selectedAudioId, String? selectedSubtitleId}) parseTrackList(List trackList) {
+  ({Tracks tracks, String? selectedAudioId, String? selectedSubtitleId, String? selectedSecondarySubtitleId})
+  parseTrackList(List trackList) {
     final audioTracks = <AudioTrack>[];
     final subtitleTracks = <SubtitleTrack>[];
     String? selectedAudioId;
     String? selectedSubtitleId;
+    String? selectedSecondarySubtitleId;
     final containerMetadataIndexes = <String, int>{};
 
     for (final track in trackList) {
@@ -624,7 +631,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           ),
         );
       } else if (type == 'sub') {
-        if (selected) selectedSubtitleId = id;
+        if (selected) {
+          // mpv marks both the `sid` and the `--secondary-sid` track as
+          // selected; `main-selection` (0 = primary, 1 = secondary) tells them
+          // apart. Backends that never report it (ExoPlayer) keep the plain
+          // selected-means-primary reading.
+          final mainSelection = _finiteInt(track['main-selection']);
+          if (mainSelection == null || mainSelection == 0) {
+            selectedSubtitleId = id;
+          } else if (mainSelection == 1) {
+            selectedSecondarySubtitleId = id;
+          }
+        }
         final rawCodec = track['codec'];
         final codec = rawCodec is String ? rawCodec : null;
         final rawTitle = track['title'];
@@ -674,6 +692,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       tracks: Tracks(audio: audioTracks, subtitle: subtitleTracks),
       selectedAudioId: selectedAudioId,
       selectedSubtitleId: selectedSubtitleId,
+      selectedSecondarySubtitleId: selectedSecondarySubtitleId,
     );
   }
 
@@ -746,6 +765,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     if (_state.volume == volume) return;
     _state = _state.copyWith(volume: volume);
     volumeController.add(volume);
+  }
+
+  @protected
+  void setRateState(double rate) {
+    if (_state.rate == rate) return;
+    _state = _state.copyWith(rate: rate);
+    rateController.add(rate);
   }
 
   @protected

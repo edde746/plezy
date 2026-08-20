@@ -306,6 +306,9 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<void> setRate(double rate) async {
     await invoke('setRate', {'rate': rate});
+    // The ExoPlayer core emits no `speed` property, so the mirror below is the
+    // only thing that lands the rate in PlayerState — same shape as setVolume.
+    if (!disposed) setRateState(rate);
   }
 
   @override
