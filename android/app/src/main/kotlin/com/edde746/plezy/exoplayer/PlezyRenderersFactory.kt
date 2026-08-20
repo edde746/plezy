@@ -8,6 +8,9 @@ import androidx.annotation.OptIn
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.audio.AudioProcessor
+import androidx.media3.common.audio.ChannelMixingAudioProcessor
+import androidx.media3.common.audio.ChannelMixingMatrix
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.decoder.DecoderInputBuffer
@@ -16,6 +19,7 @@ import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.analytics.PlayerId
 import androidx.media3.exoplayer.audio.AudioOutput
 import androidx.media3.exoplayer.audio.AudioOutputProvider
+import androidx.media3.exoplayer.audio.AudioRendererEventListener
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.AudioTrackAudioOutputProvider
 import androidx.media3.exoplayer.audio.DefaultAudioSink
@@ -25,6 +29,7 @@ import androidx.media3.exoplayer.mediacodec.MediaCodecAdapter
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
+import com.edde746.plezy.TvDetection
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
@@ -32,8 +37,36 @@ import kotlin.math.abs
 @OptIn(UnstableApi::class)
 class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context) {
 
+  /**
+   * Android TV: MediaCodec.setOutputSurface is broken on many TV SoCs (Sony Bravia
+   * MediaTek etc., ExoPlayer #5119/#8329) — force full codec re-init on surface
+   * changes instead (#1481). TV-only: phones keep the fast path for PiP churn.
+   */
+  private val forceSetOutputSurfaceWorkaround: Boolean = TvDetection.isTv(context)
+
   /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
   val audioDelayUs = AtomicLong(0L)
+
+  /**
+   * Stereo-downmix processor; inactive while every registered matrix is identity.
+   * Pre-populated for counts 1..12 so sink configure can never hit
+   * "No mixing matrix for input channel count". ExoPlayerCore swaps in
+   * downmix matrices via [DownmixMatrices] when the setting is enabled.
+   */
+  private val identityChannelMixingMatrices = Array(DownmixMatrices.MAX_MIXING_CHANNELS) { index ->
+    val channelCount = index + 1
+    ChannelMixingMatrix(
+      channelCount,
+      channelCount,
+      DownmixMatrices.identityCoefficients(channelCount)
+    )
+  }
+
+  val channelMixProcessor = ChannelMixingAudioProcessor().apply {
+    for (matrix in identityChannelMixingMatrices) putChannelMixingMatrix(matrix)
+  }
+
+  fun identityChannelMixingMatrix(channelCount: Int): ChannelMixingMatrix = identityChannelMixingMatrices[channelCount - 1]
 
   /** Returns whether direct encoded output should be hidden so decoded PCM output can be selected. */
   var shouldBlockDirectAudioOutput: ((Format) -> Boolean)? = null
@@ -55,9 +88,9 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     allowedVideoJoiningTimeMs: Long,
     out: ArrayList<Renderer>
   ) {
-    // Let super build the full list (it also appends extension renderers reflectively,
-    // e.g. the jellyfin ffmpeg artifact's video renderer), then swap the stock
-    // MediaCodecVideoRenderer for the DV-sanitizing variant at the same index.
+    // Let super build the full list (including optional extension renderers),
+    // then swap the stock MediaCodecVideoRenderer for the DV-sanitizing variant
+    // at the same index.
     super.buildVideoRenderers(
       context,
       extensionRendererMode,
@@ -79,8 +112,53 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
         .setEventHandler(eventHandler)
         .setEventListener(eventListener)
         .setMaxDroppedFramesToNotify(MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY),
+      forceSetOutputSurfaceWorkaround,
       videoDiagnosticsLogger
     )
+  }
+
+  /**
+   * Records which audio renderers the session actually got. Whether the bundled
+   * FFmpeg renderer loaded decides between decoding TrueHD/DTS-HD in ExoPlayer and
+   * bailing to the mpv fallback, and nothing else in an uploaded log distinguishes
+   * the two (#1703).
+   */
+  override fun buildAudioRenderers(
+    context: Context,
+    extensionRendererMode: Int,
+    mediaCodecSelector: MediaCodecSelector,
+    enableDecoderFallback: Boolean,
+    audioSink: AudioSink,
+    eventHandler: Handler,
+    eventListener: AudioRendererEventListener,
+    out: ArrayList<Renderer>
+  ) {
+    val firstAudioIndex = out.size
+    super.buildAudioRenderers(
+      context,
+      extensionRendererMode,
+      mediaCodecSelector,
+      enableDecoderFallback,
+      audioSink,
+      eventHandler,
+      eventListener,
+      out
+    )
+    audioDiagnosticsLogger?.invoke(
+      "info",
+      "audio",
+      "Audio renderers: " + out.subList(firstAudioIndex, out.size).joinToString { it.name }
+    )
+  }
+
+  private var iecCarrierSink: IecCarrierSink? = null
+
+  /**
+   * Clears per-stream carrier state that must survive renderer resets but not a new media item.
+   * Call before setting a new source; see [IecCarrierSink.beginMediaItem].
+   */
+  fun beginMediaItem() {
+    iecCarrierSink?.beginMediaItem()
   }
 
   override fun buildAudioSink(
@@ -88,12 +166,16 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     enableFloatOutput: Boolean,
     enableAudioOutputPlaybackParams: Boolean
   ): AudioSink {
-    AudioTrackAudioOutputProvider.failOnSpuriousAudioTimestamp = false
-
+    // Media3 1.11's replacement is fixed at 500ms; preserve the dynamic 500–1000ms PCM policy.
+    @Suppress("DEPRECATION")
     val bufferSizeProvider = DefaultAudioTrackBufferSizeProvider.Builder()
       .setMinPcmBufferDurationUs(500_000)
       .setMaxPcmBufferDurationUs(1_000_000)
       .setPcmBufferMultiplicationFactor(4)
+      // Media3 defaults passthrough to 250ms, which the AC3 factor doubles to 500ms. Some
+      // HDMI routes reject a buffer that short (#1790). Ask for a second up front; Media3 1.11
+      // now uses the same one-second floor for its last-resort retry (#3207).
+      .setPassthroughBufferDurationUs(500_000)
       .build()
 
     val realProvider = AudioTrackAudioOutputProvider.Builder(context)
@@ -107,10 +189,13 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     val defaultSink = DefaultAudioSink.Builder(context)
       .setEnableFloatOutput(enableFloatOutput)
       .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
+      // Wraps in DefaultAudioProcessorChain, keeping stock silence-skip +
+      // Sonic; the downmix runs first and only in the decoded-PCM path.
+      .setAudioProcessors(arrayOf(channelMixProcessor))
       .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs, audioDiagnosticsLogger))
       .build()
 
-    return PositionFixAudioSink(
+    val processedSink = PositionFixAudioSink(
       defaultSink,
       rawPositionUs,
       audioDelayUs,
@@ -118,7 +203,89 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
       onAudioCapabilitiesChanged,
       audioDiagnosticsLogger
     )
+
+    return IecCarrierSink(
+      defaultSink = processedSink,
+      carrierSink = buildCarrierSink(context, bufferSizeProvider),
+      carrierRouteAvailable = { supportsIecCarrier(context) },
+      directOutputBlocked = { format -> shouldBlockDirectAudioOutput?.invoke(format) == true },
+      log = audioDiagnosticsLogger
+    ).also { iecCarrierSink = it }
   }
+
+  /**
+   * The delegate that carries packed TrueHD and DTS-HD (#1804, #1988).
+   *
+   * Deliberately separate from the processed sink, and deliberately barren: an empty
+   * [DefaultAudioSink.AudioProcessorChain] means no downmix, no Sonic, no silence skipping and no
+   * float conversion can ever touch the bytes. The carrier only looks like PCM; a single mutated
+   * sample reaches the receiver as full-scale noise rather than as a glitch.
+   *
+   * The output provider keeps `OutputConfig.encoding` at PCM 16-bit so every position, pending-data
+   * and release accounting in media3 stays in its mature PCM path — which is correct here, because
+   * after packing the stream genuinely is a fixed-rate 192kHz 8-channel carrier. Only the
+   * `AudioTrack` itself is switched to `ENCODING_IEC61937`, via the builder modifier that upstream
+   * applies immediately before `AudioTrack.Builder.build()`.
+   */
+  private fun buildCarrierSink(
+    context: Context,
+    bufferSizeProvider: DefaultAudioTrackBufferSizeProvider
+  ): AudioSink {
+    val provider = AudioTrackAudioOutputProvider.Builder(context)
+      .setAudioTrackBufferSizeProvider(bufferSizeProvider)
+      .apply {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+          setAudioTrackBuilderModifier { builder, config ->
+            builder.setAudioFormat(
+              android.media.AudioFormat.Builder()
+                .setEncoding(android.media.AudioFormat.ENCODING_IEC61937)
+                .setChannelMask(android.media.AudioFormat.CHANNEL_OUT_7POINT1_SURROUND)
+                .setSampleRate(config.sampleRate)
+                .build()
+            )
+            // The AudioTrackConfig media3 reports upstream is built from OutputConfig, which stays
+            // PCM so the accounting stays in the PCM domain — so it cannot show the real encoding.
+            // This is the only place that can confirm what the AudioTrack was actually built as.
+            audioDiagnosticsLogger?.invoke(
+              "info",
+              "audio",
+              "Carrier AudioTrack: encoding=IEC61937 rate=${config.sampleRate} " +
+                "mask=0x${android.media.AudioFormat.CHANNEL_OUT_7POINT1_SURROUND.toString(16)} " +
+                "buffer=${config.bufferSize}"
+            )
+          }
+        }
+      }
+      .build()
+
+    return DefaultAudioSink.Builder(context)
+      .setEnableFloatOutput(false)
+      // Not DefaultAudioProcessorChain: that one appends silence-skipping and Sonic whatever it is
+      // constructed with, and either would rewrite carrier bytes. This chain has nothing in it, so
+      // AudioProcessingPipeline is a straight passthrough. Speed is reported as applied without
+      // resampling because the carrier delegate routes playback parameters to the AudioTrack, and
+      // the sink refuses the carrier outright at any speed other than 1.0x.
+      .setAudioProcessorChain(EmptyAudioProcessorChain())
+      .setAudioOutputProvider(provider)
+      .build()
+  }
+}
+
+/**
+ * An [AudioProcessorChain] that owns no processors, for the MAT carrier delegate (#1804).
+ *
+ * `DefaultAudioProcessorChain` always contributes silence-skipping and Sonic; both rewrite samples,
+ * which is fatal to a bit-exact IEC 61937 carrier. Speed is reported back unchanged because the
+ * carrier delegate applies playback parameters at the AudioTrack, and the routing sink declines the
+ * carrier entirely at any speed other than 1.0x.
+ */
+@OptIn(UnstableApi::class)
+private class EmptyAudioProcessorChain : DefaultAudioSink.AudioProcessorChain {
+  override fun getAudioProcessors(): Array<AudioProcessor> = emptyArray()
+  override fun applyPlaybackParameters(playbackParameters: PlaybackParameters): PlaybackParameters = playbackParameters
+  override fun applySkipSilenceEnabled(skipSilenceEnabled: Boolean): Boolean = false
+  override fun getMediaDuration(playoutDuration: Long): Long = playoutDuration
+  override fun getSkippedOutputFrameCount(): Long = 0L
 }
 
 /**
@@ -341,6 +508,7 @@ internal class SubtitleDelayRenderer(
 @OptIn(UnstableApi::class)
 internal class DvSanitizingVideoRenderer(
   builder: Builder,
+  private val forceSetOutputSurfaceWorkaround: Boolean,
   private val log: ((String, String, String) -> Unit)?
 ) : MediaCodecVideoRenderer(builder) {
 
@@ -348,6 +516,26 @@ internal class DvSanitizingVideoRenderer(
 
   private var stripHdr10PlusSei = false
   private var stripDvRpu = false
+  private var loggedSurfaceWorkaround = false
+
+  // On TV SoCs MediaCodec.setOutputSurface() silently yields a black picture after
+  // the screensaver/background destroys and recreates the surface (#1481). Returning
+  // true makes media3 release + re-init the codec instead. media3's built-in device
+  // list doesn't cover 2019+ Bravias; consulted once per codec init.
+  override fun codecNeedsSetOutputSurfaceWorkaround(name: String): Boolean {
+    if (forceSetOutputSurfaceWorkaround) {
+      if (!loggedSurfaceWorkaround) {
+        loggedSurfaceWorkaround = true
+        log?.invoke(
+          "info",
+          "video",
+          "TV setOutputSurface workaround active: codec will fully re-init on surface changes (codec=$name)"
+        )
+      }
+      return true
+    }
+    return super.codecNeedsSetOutputSurfaceWorkaround(name)
+  }
 
   // Sanitize diagnostics — playback-thread only, cumulative for the renderer's lifetime.
   private var sanitizedSampleCount = 0L
@@ -423,16 +611,45 @@ internal class DvSanitizingVideoRenderer(
 // AudioTrack and creates a new one. On Android TV with tunneled playback, this causes
 // 7-10s audio dropout while the hardware pipeline reinitializes (Sony Bravia, etc).
 // By flushing instead of releasing and caching the output, we skip the teardown cycle.
+//
+// Two invariants keep that safe (#1790):
+//
+//  1. Only outputs [AudioOutputCachePolicy] admits are parked, so the cache never holds a
+//     scarce direct/passthrough route hostage while the next one is being created.
+//  2. Every flush is answered by exactly one onReleased, promptly.
+//
+// DefaultAudioSink increments a *static, process-wide* counter on every flush and decrements it
+// only from `Listener::onReleased`, which media3 delivers by posting to the playback looper — a
+// looper that is already dead by the time a player-release actually completes. A dropped callback
+// pins the counter above zero, and any nonzero value disables media3's escalation of *both* init
+// and write failures: `PendingExceptionHolder` refuses to arm its throw deadline and every retry
+// short-circuits, so a sink error never becomes a PlaybackException and playback hangs in
+// STATE_BUFFERING with no recovery. The wrapper therefore owns the listener set and answers the
+// flush itself when it parks the track, because a parked track is never going to release.
+//
+// Deferring that answer until the parked track is really evicted is tempting — it would let
+// media3 stay patient through the eviction, whose replacement is built while the old AudioTrack
+// is still going away — but it holds the counter above zero for the whole live track after the
+// first seek, which is the very hang above. So the eviction overlap is tolerated instead, as
+// upstream tolerates it: if the replacement does fail to allocate, media3 escalates on its own
+// 200ms deadline into the audio recovery ladder, and the buffering stall watchdog backs that up.
+//
+// Everything below is confined to the ExoPlayer playback thread: sink flush/release, provider
+// lookups, and media3's own onReleased delivery all run there.
 
 @OptIn(UnstableApi::class)
-private class RawPositionOutputProvider(
+internal class RawPositionOutputProvider(
   private val delegate: AudioOutputProvider,
   private val rawPositionUs: AtomicLong,
-  private val log: ((String, String, String) -> Unit)?
+  private val log: ((String, String, String) -> Unit)?,
+  private val sdkInt: Int = Build.VERSION.SDK_INT
 ) : AudioOutputProvider {
 
   private var cachedOutput: RawPositionAudioOutput? = null
   private var cachedConfig: AudioOutputProvider.OutputConfig? = null
+
+  /** Outputs whose real release was started but whose completion has not been observed yet. */
+  private val unsettledReleases = LinkedHashSet<RawPositionAudioOutput>()
 
   override fun getFormatSupport(config: AudioOutputProvider.FormatConfig) = delegate.getFormatSupport(config)
 
@@ -442,14 +659,24 @@ private class RawPositionOutputProvider(
     val cached = cachedOutput
     if (cached != null && cachedConfig == config) {
       cachedOutput = null
+      cached.markReacquired()
       return cached
     }
     cached?.forceRelease()
     cachedOutput = null
+    cachedConfig = null
 
+    // The replacement is built while the evicted track is still going away. Upstream does the
+    // same; the alternatives are worse (see the note above this class).
     val realOutput = delegate.getAudioOutput(config)
     cachedConfig = config
-    return RawPositionAudioOutput(realOutput, rawPositionUs, this, log)
+    return RawPositionAudioOutput(
+      delegate = realOutput,
+      rawPositionUs = rawPositionUs,
+      provider = this,
+      mayCache = AudioOutputCachePolicy.mayCache(config.encoding, config.isOffload, sdkInt),
+      log = log
+    )
   }
 
   fun returnToCache(output: RawPositionAudioOutput) {
@@ -458,6 +685,14 @@ private class RawPositionOutputProvider(
       existing.forceRelease()
     }
     cachedOutput = output
+  }
+
+  fun onRealReleaseStarted(output: RawPositionAudioOutput) {
+    unsettledReleases.add(output)
+  }
+
+  fun onReleaseSettled(output: RawPositionAudioOutput) {
+    unsettledReleases.remove(output)
   }
 
   override fun addListener(listener: AudioOutputProvider.Listener) = delegate.addListener(listener)
@@ -470,15 +705,21 @@ private class RawPositionOutputProvider(
     cachedOutput?.forceRelease()
     cachedOutput = null
     cachedConfig = null
+    // Player teardown: media3 schedules the real AudioTrack release with a delay and posts the
+    // completion back to the playback looper this call is in the middle of quitting, so nothing
+    // will ever deliver it. Settle here rather than leak the accounting for the whole process.
+    for (output in unsettledReleases.toList()) output.settleReleaseNow()
+    unsettledReleases.clear()
     delegate.release()
   }
 }
 
 @OptIn(UnstableApi::class)
-private class RawPositionAudioOutput(
+internal class RawPositionAudioOutput(
   private val delegate: AudioOutput,
   private val rawPositionUs: AtomicLong,
   private val provider: RawPositionOutputProvider,
+  private val mayCache: Boolean,
   private val log: ((String, String, String) -> Unit)?
 ) : AudioOutput {
 
@@ -486,6 +727,46 @@ private class RawPositionAudioOutput(
   private var writeCount = 0L
   private var writtenBytes = 0L
   private var failed = false
+
+  /**
+   * DefaultAudioSink registers here instead of on the real output, so the wrapper can report the
+   * releases media3 will not: a parked output never really releases, and a released output's
+   * completion callback is posted to a playback looper that may already be gone. The set is
+   * cleared on every release report and repopulated by the sink on the next acquisition, which
+   * also stops one stale listener per reuse from piling up on the real output.
+   */
+  private val listeners = mutableListOf<AudioOutput.Listener>()
+  private var releaseSignalled = false
+
+  private val currentListener: AudioOutput.Listener?
+    get() = listeners.lastOrNull()
+
+  private val forwarder = object : AudioOutput.Listener {
+    override fun onPositionAdvancing(playoutStartSystemTimeMs: Long) {
+      currentListener?.onPositionAdvancing(playoutStartSystemTimeMs)
+    }
+
+    override fun onOffloadDataRequest() {
+      currentListener?.onOffloadDataRequest()
+    }
+
+    override fun onOffloadPresentationEnded() {
+      currentListener?.onOffloadPresentationEnded()
+    }
+
+    override fun onUnderrun() {
+      currentListener?.onUnderrun()
+    }
+
+    override fun onReleased() {
+      provider.onReleaseSettled(this@RawPositionAudioOutput)
+      signalReleased()
+    }
+  }
+
+  init {
+    delegate.addListener(forwarder)
+  }
 
   override fun getPositionUs(): Long {
     val pos = delegate.getPositionUs()
@@ -535,22 +816,48 @@ private class RawPositionAudioOutput(
 
   override fun release() {
     rawPositionUs.set(Long.MIN_VALUE)
-    if (failed) {
-      delegate.release()
-      return
-    }
-    if (Build.VERSION.SDK_INT >= 25) {
+    if (!failed && mayCache) {
       delegate.stop()
       delegate.flush()
       provider.returnToCache(this)
-    } else {
-      delegate.release()
+      // A parked track is never going to release, so answer the flush now. Holding the sink's
+      // pending-release count open for it would disable media3's escalation of every later sink
+      // error, for as long as the track stays parked or live — the #1790 hang, re-armed by an
+      // ordinary seek.
+      signalReleased()
+      return
     }
+    startRealRelease()
   }
 
+  /** Releases for real even when the output would otherwise be cacheable. */
   fun forceRelease() {
     rawPositionUs.set(Long.MIN_VALUE)
+    startRealRelease()
+  }
+
+  /** Reports a release whose completion callback can no longer be delivered. */
+  fun settleReleaseNow() {
+    provider.onReleaseSettled(this)
+    signalReleased()
+  }
+
+  /** Re-arms the wrapper for a fresh acquisition out of the provider's cache. */
+  fun markReacquired() {
+    releaseSignalled = false
+  }
+
+  private fun startRealRelease() {
+    provider.onRealReleaseStarted(this)
     delegate.release()
+  }
+
+  private fun signalReleased() {
+    if (releaseSignalled) return
+    releaseSignalled = true
+    val notified = listeners.toList()
+    listeners.clear()
+    for (listener in notified) listener.onReleased()
   }
 
   override fun setVolume(volume: Float) = delegate.setVolume(volume)
@@ -560,8 +867,12 @@ private class RawPositionAudioOutput(
   override fun getBufferSizeInFrames() = delegate.getBufferSizeInFrames()
   override fun getPlaybackParameters() = delegate.getPlaybackParameters()
   override fun isStalled() = delegate.isStalled()
-  override fun addListener(listener: AudioOutput.Listener) = delegate.addListener(listener)
-  override fun removeListener(listener: AudioOutput.Listener) = delegate.removeListener(listener)
+  override fun addListener(listener: AudioOutput.Listener) {
+    listeners.add(listener)
+  }
+  override fun removeListener(listener: AudioOutput.Listener) {
+    listeners.remove(listener)
+  }
   override fun setPlaybackParameters(playbackParameters: PlaybackParameters) = delegate.setPlaybackParameters(playbackParameters)
   override fun setOffloadDelayPadding(delayInFrames: Int, paddingInFrames: Int) = delegate.setOffloadDelayPadding(delayInFrames, paddingInFrames)
   override fun setOffloadEndOfStream() = delegate.setOffloadEndOfStream()

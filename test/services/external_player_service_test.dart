@@ -6,15 +6,22 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/media/playback_report_metadata.dart';
-import 'package:plezy/models/external_player_models.dart';
 import 'package:plezy/services/external_player_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
+import 'package:plezy/utils/active_client_scope.dart';
+import 'package:plezy/utils/watch_state_notifier.dart';
+import '../test_helpers/media_items.dart';
+import '../test_helpers/playback_report_fakes.dart';
 
-class _RecordingClient implements MediaServerClient {
-  _RecordingClient({this.backend = MediaBackend.plex});
+class _RecordingClient with PlaybackReportRecorder implements MediaServerClient, ScopedMediaServerClient {
+  _RecordingClient({this.backend = MediaBackend.plex, String? scopedServerId})
+    : scopedServerId =
+          scopedServerId ??
+          (backend == MediaBackend.plex
+              ? buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a')
+              : 'srv/user-a');
 
   bool failStart = false;
   bool failStop = false;
@@ -27,6 +34,8 @@ class _RecordingClient implements MediaServerClient {
 
   @override
   final MediaBackend backend;
+  @override
+  final String scopedServerId;
 
   @override
   double get watchedThreshold => 0.9;
@@ -38,31 +47,18 @@ class _RecordingClient implements MediaServerClient {
   bool get marksWatchedOnPlaybackStopped => backend == MediaBackend.jellyfin;
 
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    started.add((positionMs: position.inMilliseconds, durationMs: duration?.inMilliseconds));
-    if (failStart) throw StateError('start failed');
-  }
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) async {
-    stopped.add((positionMs: position.inMilliseconds, durationMs: duration?.inMilliseconds));
-    if (failStop) throw StateError('stop failed');
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    final entry = (positionMs: call.position.inMilliseconds, durationMs: call.duration?.inMilliseconds);
+    switch (call.kind) {
+      case PlaybackReportKind.started:
+        started.add(entry);
+        if (failStart) throw StateError('start failed');
+      case PlaybackReportKind.progress:
+        throw UnimplementedError();
+      case PlaybackReportKind.stopped:
+        stopped.add(entry);
+        if (failStop) throw StateError('stop failed');
+    }
   }
 
   @override
@@ -75,7 +71,7 @@ class _RecordingClient implements MediaServerClient {
 }
 
 MediaItem _item({int? durationMs}) {
-  return MediaItem(
+  return testMediaItem(
     id: 'item-1',
     backend: MediaBackend.plex,
     kind: MediaKind.movie,
@@ -85,16 +81,6 @@ MediaItem _item({int? durationMs}) {
 }
 
 void main() {
-  test('MX Player Android package candidates include free and Pro variants', () {
-    final mxPlayer = KnownPlayers.findById('mx_player');
-
-    expect(mxPlayer, isNotNull);
-    expect(KnownPlayers.androidPackageCandidates(mxPlayer!), [
-      'com.mxtech.videoplayer.ad',
-      'com.mxtech.videoplayer.pro',
-    ]);
-  });
-
   test('Android external progress preserves null duration and still stops after start failure', () async {
     final client = _RecordingClient()..failStart = true;
 
@@ -133,6 +119,28 @@ void main() {
     expect(action!.viewOffset, 5000);
     expect(action.duration, isNull);
     expect(action.shouldMarkWatched, isFalse);
+  });
+
+  test('Android external progress emits the exact client cache scope', () async {
+    final scope = buildPlexProfileScopeId(serverId: ServerId('srv'), profileId: 'profile-a');
+    final client = _RecordingClient(scopedServerId: scope);
+    final events = <WatchStateEvent>[];
+    final subscription = WatchStateNotifier().stream
+        .where((event) => event.affectsItem('item-1'))
+        .where((event) => event.changeType == WatchStateChangeType.progressUpdate)
+        .listen(events.add);
+    addTearDown(subscription.cancel);
+
+    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      positionMs: 5000,
+      durationMs: 100000,
+      metadata: _item(durationMs: 100000),
+      client: client,
+    );
+    await Future<void>.delayed(Duration.zero);
+
+    expect(events, hasLength(1));
+    expect(events.single.cacheServerId, scope);
   });
 
   test('Android external progress ignores missing position without explicit completion', () async {

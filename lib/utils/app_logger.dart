@@ -4,23 +4,8 @@ import 'package:logger/logger.dart';
 
 import 'log_redaction_manager.dart';
 
-/// Redacts sensitive information from log messages based on known values.
-String _redactSensitiveData(String message) {
-  var redacted = LogRedactionManager.redact(message);
-
-  // Fallbacks for sensitive fields we cannot track ahead of time.
-  redacted = redacted.replaceAllMapped(
-    RegExp(r'([Aa]uthorization[=:]\s*)([^\s,]+)'),
-    (match) => '${match.group(1)}[REDACTED]',
-  );
-
-  redacted = redacted.replaceAllMapped(
-    RegExp(r'([Pp]assword[=:]\s*)([^\s&,;]+)'),
-    (match) => '${match.group(1)}[REDACTED]',
-  );
-
-  return redacted;
-}
+/// Redacts sensitive information from a log field.
+String _redactSensitiveData(String value) => LogRedactionManager.redact(value);
 
 /// Represents a single log entry stored in memory
 class LogEntry {
@@ -48,32 +33,20 @@ class LogEntry {
   }
 }
 
-/// Custom log output that stores logs in memory with a circular buffer
+/// In-memory log store with a circular buffer.
 ///
-/// Storage is handled by [MemoryAwareLogPrinter.log()] — this class only
-/// forwards formatted lines to the console via the default [ConsoleOutput].
-class MemoryLogOutput extends LogOutput {
+/// Storage is handled by [MemoryAwareLogPrinter.log()]; console output goes
+/// through the logger's default [ConsoleOutput].
+class MemoryLogOutput {
   static const int maxLogSizeBytes = 5 * 1024 * 1024;
   static final ListQueue<LogEntry> _logs = ListQueue<LogEntry>();
   static int _currentSize = 0;
-
-  static final _consoleOutput = ConsoleOutput();
 
   static List<LogEntry> getLogs() => _logs.toList().reversed.toList();
 
   static void clearLogs() {
     _logs.clear();
     _currentSize = 0;
-  }
-
-  static int getCurrentSize() => _currentSize;
-
-  static double getCurrentSizeMB() => _currentSize / (1024 * 1024);
-
-  @override
-  void output(OutputEvent event) {
-    // Only print to console — storage is done in MemoryAwareLogPrinter.log()
-    _consoleOutput.output(event);
   }
 }
 
@@ -88,13 +61,16 @@ class MemoryAwareLogPrinter extends LogPrinter {
     // Store the log with error and stack trace if available
     final message = _redactSensitiveData(event.message.toString());
     final error = event.error != null ? _redactSensitiveData(event.error.toString()) : null;
+    final stackTrace = event.stackTrace != null
+        ? StackTrace.fromString(_redactSensitiveData(event.stackTrace.toString()))
+        : null;
 
     final logEntry = LogEntry(
       timestamp: DateTime.now(),
       level: event.level,
       message: message,
       error: error,
-      stackTrace: event.stackTrace,
+      stackTrace: stackTrace,
     );
 
     MemoryLogOutput._logs.add(logEntry);
@@ -106,9 +82,7 @@ class MemoryAwareLogPrinter extends LogPrinter {
       MemoryLogOutput._currentSize -= removed.estimatedSize;
     }
 
-    return _wrappedPrinter.log(
-      LogEvent(event.level, message, time: event.time, error: error, stackTrace: event.stackTrace),
-    );
+    return _wrappedPrinter.log(LogEvent(event.level, message, time: event.time, error: error, stackTrace: stackTrace));
   }
 }
 

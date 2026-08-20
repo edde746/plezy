@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../media/ids.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../focus/dpad_navigator.dart';
+import '../../focus/dpad_reorder_mixin.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
-import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
 import '../../providers/multi_server_provider.dart';
@@ -34,18 +32,33 @@ class ReorderFavoritesSheet extends StatefulWidget {
   State<ReorderFavoritesSheet> createState() => _ReorderFavoritesSheetState();
 }
 
-class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
+class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet>
+    with DpadReorderListMixin<FavoriteChannel, ReorderFavoritesSheet> {
   late List<FavoriteChannel> _tempFavorites;
 
-  // Keyboard navigation state
-  int _focusedIndex = 0;
-  int _focusedColumn = 0; // 0 = row, 1 = remove button
-  int? _movingIndex;
-  int? _originalIndex;
-  List<FavoriteChannel>? _originalOrder;
   final FocusNode _listFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
-  bool _backKeyDownSeen = false;
+
+  // Keyboard navigation: column 0 = row, column 1 = remove button.
+  @override
+  List<FavoriteChannel> get reorderItems => _tempFavorites;
+
+  @override
+  set reorderItems(List<FavoriteChannel> value) => _tempFavorites = value;
+
+  @override
+  int get lastReorderColumn => 1;
+
+  @override
+  ScrollController? get reorderScrollController => _scrollController;
+
+  @override
+  void onReorderMoveConfirmed() => widget.onReorder(_tempFavorites);
+
+  @override
+  void onReorderColumnActivated(int column, int index) {
+    if (column == 1) _removeItem(index);
+  }
 
   @override
   void initState() {
@@ -60,139 +73,6 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
     super.dispose();
   }
 
-  void _ensureFocusedVisible() {
-    if (!_scrollController.hasClients) return;
-
-    const double itemHeight = 72.0;
-    const double listTopPadding = 8.0;
-    final double targetTop = listTopPadding + (_focusedIndex * itemHeight);
-    final double targetBottom = targetTop + itemHeight;
-
-    final double viewportTop = _scrollController.offset;
-    final double viewportHeight = _scrollController.position.viewportDimension;
-    final double viewportBottom = viewportTop + viewportHeight;
-
-    if (targetTop >= viewportTop && targetBottom <= viewportBottom) return;
-
-    final double destination = (targetTop - viewportHeight * 0.25).clamp(
-      0.0,
-      _scrollController.position.maxScrollExtent,
-    );
-
-    _scrollController.animateTo(destination, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
-  }
-
-  KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
-    final key = event.logicalKey;
-
-    if (key.isBackKey) {
-      if (event is KeyDownEvent) {
-        _backKeyDownSeen = true;
-      } else if (event is KeyUpEvent && !_backKeyDownSeen) {
-        return KeyEventResult.handled;
-      }
-      if (event is KeyUpEvent) {
-        _backKeyDownSeen = false;
-      }
-    }
-
-    final backResult = handleBackKeyAction(event, () {
-      if (_movingIndex != null) {
-        setState(() {
-          if (_originalOrder != null) {
-            _tempFavorites = List.from(_originalOrder!);
-          }
-          _focusedIndex = _originalIndex ?? 0;
-          _movingIndex = null;
-          _originalIndex = null;
-          _originalOrder = null;
-        });
-      } else {
-        OverlaySheetController.popAdaptive(context);
-      }
-    });
-    if (backResult != KeyEventResult.ignored) {
-      return backResult;
-    }
-
-    if (!event.isActionable) return KeyEventResult.ignored;
-
-    if (_movingIndex != null) {
-      if (key.isUpKey && _movingIndex! > 0) {
-        setState(() {
-          final item = _tempFavorites.removeAt(_movingIndex!);
-          _tempFavorites.insert(_movingIndex! - 1, item);
-          _movingIndex = _movingIndex! - 1;
-          _focusedIndex = _movingIndex!;
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
-      }
-      if (key.isDownKey && _movingIndex! < _tempFavorites.length - 1) {
-        setState(() {
-          final item = _tempFavorites.removeAt(_movingIndex!);
-          _tempFavorites.insert(_movingIndex! + 1, item);
-          _movingIndex = _movingIndex! + 1;
-          _focusedIndex = _movingIndex!;
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
-      }
-      if (key.isSelectKey) {
-        widget.onReorder(_tempFavorites);
-        setState(() {
-          _movingIndex = null;
-          _originalIndex = null;
-          _originalOrder = null;
-        });
-        return KeyEventResult.handled;
-      }
-    } else {
-      if (key.isUpKey && _focusedIndex > 0) {
-        setState(() {
-          _focusedIndex--;
-          _focusedColumn = 0;
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
-      }
-      if (key.isDownKey && _focusedIndex < _tempFavorites.length - 1) {
-        setState(() {
-          _focusedIndex++;
-          _focusedColumn = 0;
-        });
-        _ensureFocusedVisible();
-        return KeyEventResult.handled;
-      }
-      if (key.isLeftKey && _focusedColumn > 0) {
-        setState(() => _focusedColumn--);
-        return KeyEventResult.handled;
-      }
-      if (key.isRightKey && _focusedColumn < 1) {
-        setState(() => _focusedColumn++);
-        return KeyEventResult.handled;
-      }
-      if (key.isSelectKey) {
-        if (_focusedColumn == 0) {
-          setState(() {
-            _movingIndex = _focusedIndex;
-            _originalIndex = _focusedIndex;
-            _originalOrder = List.from(_tempFavorites);
-          });
-        } else if (_focusedColumn == 1) {
-          _removeItem(_focusedIndex);
-        }
-        return KeyEventResult.handled;
-      }
-    }
-
-    if (key.isDpadDirection) {
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
-
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
       final item = _tempFavorites.removeAt(oldIndex);
@@ -205,8 +85,8 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
     final removed = _tempFavorites[index];
     setState(() {
       _tempFavorites.removeAt(index);
-      if (_focusedIndex >= _tempFavorites.length) {
-        _focusedIndex = (_tempFavorites.length - 1).clamp(0, _tempFavorites.length);
+      if (focusedIndex >= _tempFavorites.length) {
+        focusedIndex = (_tempFavorites.length - 1).clamp(0, _tempFavorites.length);
       }
     });
     widget.onRemove(removed);
@@ -224,12 +104,14 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
       mainAxisSize: .min,
       children: [
         BottomSheetHeader(title: t.liveTv.reorderFavorites, icon: Symbols.swap_vert_rounded),
-        Expanded(
+        Flexible(
           child: Focus(
             focusNode: _listFocusNode,
+            descendantsAreFocusable: false,
             autofocus: isKeyboardMode,
-            onKeyEvent: _handleKeyEvent,
+            onKeyEvent: handleReorderKeyEvent,
             child: ReorderableListView.builder(
+              shrinkWrap: true,
               scrollController: _scrollController,
               onReorderItem: _onReorder,
               itemCount: _tempFavorites.length,
@@ -238,8 +120,8 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
               itemBuilder: (context, index) {
                 final fav = _tempFavorites[index];
                 final channel = widget.channelMap[fav.stableKey];
-                final isFocused = isKeyboardMode && index == _focusedIndex;
-                final isMoving = index == _movingIndex;
+                final isFocused = isKeyboardMode && index == focusedIndex;
+                final isMoving = index == movingIndex;
 
                 return _buildFavoriteTile(
                   key: ValueKey(fav.stableKey),
@@ -248,7 +130,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
                   index: index,
                   isFocused: isFocused,
                   isMoving: isMoving,
-                  focusedColumn: isFocused ? _focusedColumn : null,
+                  focusedColumn: isFocused ? focusedColumn : null,
                 );
               },
             ),

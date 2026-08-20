@@ -5,6 +5,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/trackers/anime_lists_mapping.dart';
 import 'package:plezy/services/trackers/anime_episode_progress_resolver.dart';
+import '../../test_helpers/media_items.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, List<MediaItem>> childrenByParent;
@@ -33,7 +34,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-MediaItem _season(int number, {int? watched, int? total}) => MediaItem(
+MediaItem _season(int number, {int? watched, int? total, int? childCount}) => testMediaItem(
   id: 'season-$number',
   backend: MediaBackend.plex,
   kind: MediaKind.season,
@@ -41,9 +42,10 @@ MediaItem _season(int number, {int? watched, int? total}) => MediaItem(
   index: number,
   leafCount: total,
   viewedLeafCount: watched,
+  childCount: childCount,
 );
 
-MediaItem _episode({int season = 2, int number = 6, String showId = 'show-1', int? viewCount}) => MediaItem(
+MediaItem _episode({int season = 2, int number = 6, String showId = 'show-1', int? viewCount}) => testMediaItem(
   id: 'episode-$season-$number',
   backend: MediaBackend.plex,
   kind: MediaKind.episode,
@@ -104,6 +106,18 @@ void main() {
       final resolver = AnimeEpisodeProgressResolver(
         _FakeMediaServerClient({
           'show-1': [_season(2, watched: 12, total: 12)],
+        }),
+      );
+
+      final result = await resolver.resolve(_episode(season: 2, number: 12), scope: AnimeProgressScope.season);
+
+      expect(result?.progress, 12);
+    });
+
+    test('season scope uses direct episode count when the leaf total is missing', () async {
+      final resolver = AnimeEpisodeProgressResolver(
+        _FakeMediaServerClient({
+          'show-1': [_season(2, watched: 12, childCount: 12)],
         }),
       );
 

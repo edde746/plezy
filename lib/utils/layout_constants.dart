@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'platform_detector.dart';
 
 /// Layout and sizing constants used throughout the application
 /// Screen width breakpoints for responsive design
@@ -18,11 +19,7 @@ class ScreenBreakpoints {
 
   static bool isTablet(double width) => width >= mobile && width < desktop;
 
-  static bool isWideTablet(double width) => width >= wideTablet && width < desktop;
-
   static bool isDesktop(double width) => width >= desktop && width < largeDesktop;
-
-  static bool isLargeDesktop(double width) => width >= largeDesktop;
 
   static bool isDesktopOrLarger(double width) => width >= desktop;
 
@@ -31,7 +28,6 @@ class ScreenBreakpoints {
 
 /// Animation and notification durations.
 class AppDurations {
-  static const Duration animFast = Duration(milliseconds: 200);
   static const Duration animMedium = Duration(milliseconds: 300);
   static const Duration animSlow = Duration(milliseconds: 500);
   static const Duration snackBarDefault = Duration(seconds: 3);
@@ -47,13 +43,27 @@ class GridLayoutConstants {
 
   static const double episodeGridCellAspectRatio = 1.4;
 
-  static const double crossAxisSpacing = 0;
-  static const double mainAxisSpacing = 0;
+  /// 1:1 music artwork (albums/artists/tracks). Also the full-card image
+  /// ratio for square items, mirroring [fullCardPosterAspectRatio].
+  static const double squareAspectRatio = 1 / 1;
+
+  /// Square grid cell: 1:1 image plus the same text band the poster cell
+  /// reserves ([posterAspectRatio] adds 0.3 to the 2:3 image's denominator).
+  static const double squareGridCellAspectRatio = 2 / 2.3;
+
+  /// Inter-card gutter for square (music) grids on touch platforms. Cards
+  /// already carry their own 3px internal padding, so the net visual gutter
+  /// is ~14px horizontal. Automotive keeps its larger [crossAxisSpacing].
+  static const double squareGridSpacing = 8.0;
+
+  static double get crossAxisSpacing => PlatformDetector.isAutomotive() ? 24 : 0;
+  static double get mainAxisSpacing => PlatformDetector.isAutomotive() ? 24 : 0;
 
   static double fullCardGridSpacingForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
   /// Standard grid padding
-  static EdgeInsets get gridPadding => const EdgeInsets.only(left: 2, right: 2, bottom: 2);
+  static EdgeInsets get gridPadding =>
+      PlatformDetector.isAutomotive() ? const EdgeInsets.all(24) : const EdgeInsets.only(left: 2, right: 2, bottom: 2);
 }
 
 class TvLayoutConstants {

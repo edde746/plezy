@@ -2,24 +2,17 @@ PODS:
   - auto_updater_macos (0.0.1):
     - FlutterMacOS
     - Sparkle
-  - cupertino_http (0.0.1):
-    - Flutter
-    - FlutterMacOS
   - FlutterMacOS (1.0.0)
   - os_media_controls (0.2.4):
     - FlutterMacOS
-  - screen_retriever_macos (0.0.1):
-    - FlutterMacOS
   - Sparkle (2.9.0)
-  - universal_gamepad (0.1.0):
+  - universal_gamepad (1.5.8):
     - FlutterMacOS
 
 DEPENDENCIES:
   - auto_updater_macos (from `Flutter/ephemeral/.symlinks/plugins/auto_updater_macos/macos`)
-  - cupertino_http (from `Flutter/ephemeral/.symlinks/plugins/cupertino_http/darwin`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - os_media_controls (from `Flutter/ephemeral/.symlinks/plugins/os_media_controls/macos`)
-  - screen_retriever_macos (from `Flutter/ephemeral/.symlinks/plugins/screen_retriever_macos/macos`)
   - universal_gamepad (from `Flutter/ephemeral/.symlinks/plugins/universal_gamepad/macos`)
 
 SPEC REPOS:
@@ -29,26 +22,20 @@ SPEC REPOS:
 EXTERNAL SOURCES:
   auto_updater_macos:
     :path: Flutter/ephemeral/.symlinks/plugins/auto_updater_macos/macos
-  cupertino_http:
-    :path: Flutter/ephemeral/.symlinks/plugins/cupertino_http/darwin
   FlutterMacOS:
     :path: Flutter/ephemeral
   os_media_controls:
     :path: Flutter/ephemeral/.symlinks/plugins/os_media_controls/macos
-  screen_retriever_macos:
-    :path: Flutter/ephemeral/.symlinks/plugins/screen_retriever_macos/macos
   universal_gamepad:
     :path: Flutter/ephemeral/.symlinks/plugins/universal_gamepad/macos
 
 SPEC CHECKSUMS:
   auto_updater_macos: 3a42f1a06be6981f1a18be37e6e7bf86aa732118
-  cupertino_http: 94ac07f5ff090b8effa6c5e2c47871d48ab7c86c
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   os_media_controls: 20a765c7ebaae4fb3133cc47782eb99d7b50d851
-  screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
   Sparkle: f4355f9ebbe9b7d932df4980d70f13922ac97b2a
-  universal_gamepad: 8922f1f238f62d6847de887228976d5b572b57da
+  universal_gamepad: 5d5c2ad9be4eaafcdc0bdc536b51725fe058667f
 
 PODFILE CHECKSUM: d16f5e5d196d1ca9863d7a71d5885cad7ffa7d2d
 
-COCOAPODS: 1.16.2
+COCOAPODS: 1.17.0

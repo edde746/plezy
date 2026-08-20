@@ -7,7 +7,7 @@ part of 'media_version.dart';
 // **************************************************************************
 
 MediaVersion _$MediaVersionFromJson(Map<String, dynamic> json) => MediaVersion(
-  id: _stringFromJson(json['id']),
+  id: stringOrEmpty(json['id']),
   width: flexibleInt(json['width']),
   height: flexibleInt(json['height']),
   videoResolution: json['videoResolution'] as String?,

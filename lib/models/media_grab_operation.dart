@@ -5,23 +5,9 @@ import 'livetv_program.dart';
 
 part 'media_grab_operation.g.dart';
 
-Map<String, dynamic>? _metadataFromJson(Object? raw) {
-  if (raw is Map<String, dynamic>) return raw;
-  if (raw is List && raw.isNotEmpty && raw.first is Map<String, dynamic>) {
-    return raw.first as Map<String, dynamic>;
-  }
-  return null;
-}
+Map<String, dynamic>? _metadataFromJson(Object? raw) => firstFlexibleMap(raw);
 
-LiveTvProgram? _programFromMetadata(Object? raw) {
-  final metadata = _metadataFromJson(raw);
-  if (metadata == null) return null;
-  try {
-    return LiveTvProgram.fromJson(metadata);
-  } catch (_) {
-    return null;
-  }
-}
+LiveTvProgram? _programFromMetadata(Object? raw) => parseFlexibleJsonObject(raw, LiveTvProgram.fromJson);
 
 /// A scheduled or active Plex DVR grab operation.
 @JsonSerializable(createToJson: false)

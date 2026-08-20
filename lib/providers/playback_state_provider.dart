@@ -11,6 +11,37 @@ import '../mixins/disposable_change_notifier_mixin.dart';
 /// [LocalPlayQueue]) where the full list is already resident.
 typedef PlayQueueWindowFetcher = Future<PlayQueueResponse?> Function(int playQueueId, {String? center, int window});
 
+/// Outcome of resolving one direction in the active playback queue.
+enum QueueNavigationStatus {
+  /// The adjacent queue item was found.
+  found,
+
+  /// The active queue was loaded successfully and has no item in this direction.
+  boundary,
+
+  /// No active queue or matching current item was available.
+  unavailable,
+
+  /// A server-backed queue window could not be loaded or validated.
+  failed,
+}
+
+@immutable
+class QueueNavigationResult {
+  const QueueNavigationResult._(this.status, this.item);
+
+  const QueueNavigationResult.found(MediaItem item) : this._(QueueNavigationStatus.found, item);
+
+  const QueueNavigationResult.boundary() : this._(QueueNavigationStatus.boundary, null);
+
+  const QueueNavigationResult.unavailable() : this._(QueueNavigationStatus.unavailable, null);
+
+  const QueueNavigationResult.failed() : this._(QueueNavigationStatus.failed, null);
+
+  final QueueNavigationStatus status;
+  final MediaItem? item;
+}
+
 /// Result of trying to locate the current queue index.
 class _IndexLookupResult {
   final int? index;
@@ -50,8 +81,14 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// (Jellyfin) it's a synthetic index assigned in [setPlaybackFromLocalQueue].
   /// Returns null when [item] isn't in the current loaded window.
   int? playQueueItemIdFor(MediaItem item) {
+    if (!_isQueueMode) return null;
     if (item is PlexMediaItem && item.playQueueItemId != null) {
-      return item.playQueueItemId;
+      final id = item.playQueueItemId!;
+      final loadedIndex = _findLoadedIndex(id);
+      if (loadedIndex == -1 || _loadedItems[loadedIndex].globalKey != item.globalKey) {
+        return null;
+      }
+      return id;
     }
     final idx = _loadedItems.indexOf(item);
     if (idx < 0 || idx >= _syntheticIds.length) return null;
@@ -67,13 +104,15 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// Whether any queue-based playback is active
   bool get isQueueActive => _playQueueId != null && _isQueueMode;
 
-  /// Whether [item] belongs to the currently active queue. True for Plex
-  /// items the server-side queue stamped with a `playQueueItemId`, and for
-  /// items present in a Jellyfin local queue (synthetic id). Gates the
-  /// player's "preserve vs. wipe launcher-set queue" decision in both
-  /// [VideoPlayerScreen.initState] and `_ensurePlayQueue`, so a playlist
-  /// or collection queue survives entry into the player instead of being
-  /// replaced with a show queue.
+  /// Whether [item] belongs to the currently active queue. Plex membership
+  /// requires both the server queue id and media identity to match a loaded
+  /// entry. Client-side membership uses the exact stored object because
+  /// duplicate media entries in playlists must remain distinguishable.
+  /// Gates the player's "preserve vs. wipe launcher-set queue" decision in
+  /// [VideoPlayerScreen.initState], `_ensurePlayQueue`, and
+  /// [EpisodeNavigationService]'s `_ensureLocalEpisodeQueue`, so a
+  /// playlist, collection, or shuffled show queue survives entry into the
+  /// player instead of being replaced with a sequential show queue.
   bool isItemInActiveQueue(MediaItem item) => isQueueActive && playQueueItemIdFor(item) != null;
 
   /// The context key (show/season/playlist ratingKey) for the current session
@@ -88,19 +127,25 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// The current play queue item ID
   int? get currentPlayQueueItemID => _currentPlayQueueItemID;
 
+  /// The queue item the cursor currently points at, or null when no queue
+  /// is active or the cursor is outside the loaded window.
+  MediaItem? get currentQueueItem => _currentPlayQueueItemID == null ? null : _findLoadedItem(_currentPlayQueueItemID!);
+
   /// Set the client reference for loading more items
   void setPlayQueueWindowFetcher(PlayQueueWindowFetcher? fetcher) {
     _windowFetcher = fetcher;
   }
 
-  /// Update the current play queue item when playing a new item
+  /// Update the queue cursor after playback of [metadata] starts.
+  ///
+  /// Items outside the active loaded window are rejected. A server-stamped
+  /// queue id alone is not proof that an item belongs to this queue.
   void setCurrentItem(MediaItem metadata) {
     if (!_isQueueMode) return;
     final id = playQueueItemIdFor(metadata);
-    if (id != null) {
-      _currentPlayQueueItemID = id;
-      safeNotifyListeners();
-    }
+    if (id == null || id == _currentPlayQueueItemID) return;
+    _currentPlayQueueItemID = id;
+    safeNotifyListeners();
   }
 
   /// Initialize playback from a play queue
@@ -146,53 +191,59 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     safeNotifyListeners();
   }
 
-  /// Load more items from the play queue if needed
-  /// Returns true if more items were loaded
-  Future<bool> _ensureItemsLoaded(int targetPlayQueueItemID) async {
+  /// Load a server queue window centered on [centerPlayQueueItemID].
+  ///
+  /// Returns false for transport errors, malformed/empty responses, or when
+  /// the requested center is absent from the returned window.
+  Future<bool> _loadServerWindow(int centerPlayQueueItemID) async {
     if (_windowFetcher == null || _playQueueId == null) return false;
-
-    // Plex queues only — items are PlexMediaItem with a real playQueueItemId.
-    final hasItem = _loadedItems.whereType<PlexMediaItem>().any(
-      (item) => item.playQueueItemId == targetPlayQueueItemID,
-    );
-
-    if (hasItem) return true;
-
-    // Load a window around the target item
     try {
       final response = await _windowFetcher!(
         _playQueueId!,
-        center: targetPlayQueueItemID.toString(),
+        center: centerPlayQueueItemID.toString(),
         window: _windowSize,
       );
+      final items = response?.items;
+      if (response == null || items == null || items.isEmpty) return false;
 
-      if (response != null && response.items != null) {
-        // Items arrive pre-tagged with server info by the producing mapper.
-        _loadedItems = response.items!;
-        // Use size or items length as fallback if totalCount is null
-        _playQueueTotalCount = response.playQueueTotalCount ?? response.size ?? response.items!.length;
-        _playQueueShuffled = response.playQueueShuffled;
-        safeNotifyListeners();
-        return _findLoadedIndex(targetPlayQueueItemID) != -1;
-      }
-    } catch (e) {
-      // Failed to load items
+      _loadedItems = items;
+      _playQueueTotalCount = response.playQueueTotalCount ?? response.size ?? items.length;
+      _playQueueShuffled = response.playQueueShuffled;
+      safeNotifyListeners();
+      return _findLoadedIndex(centerPlayQueueItemID) != -1;
+    } catch (_) {
       return false;
     }
-
-    return false;
   }
 
-  Future<_IndexLookupResult> _getCurrentIndex({bool loadIfMissing = false}) async {
+  /// Load a missing queue item without refetching an item already resident.
+  Future<bool> _ensureItemsLoaded(int targetPlayQueueItemID) async {
+    if (_findLoadedIndex(targetPlayQueueItemID) != -1) return true;
+    return _loadServerWindow(targetPlayQueueItemID);
+  }
+
+  Future<_IndexLookupResult> _getCurrentIndex(String currentItemKey, {bool loadIfMissing = false}) async {
     if (!_isQueueMode || _loadedItems.isEmpty || _currentPlayQueueItemID == null) {
       return const _IndexLookupResult();
     }
 
-    var currentIndex = _findLoadedIndex(_currentPlayQueueItemID!);
+    int findCurrent() {
+      final cursorIndex = _findLoadedIndex(_currentPlayQueueItemID!);
+      if (cursorIndex != -1 && _matchesItemKey(_loadedItems[cursorIndex], currentItemKey)) {
+        return cursorIndex;
+      }
 
-    if (currentIndex != -1) {
-      return _IndexLookupResult(index: currentIndex);
+      var matchedIndex = -1;
+      for (var i = 0; i < _loadedItems.length; i++) {
+        if (!_matchesItemKey(_loadedItems[i], currentItemKey)) continue;
+        if (matchedIndex != -1) return -1;
+        matchedIndex = i;
+      }
+      return matchedIndex;
     }
+
+    var currentIndex = findCurrent();
+    if (currentIndex != -1) return _IndexLookupResult(index: currentIndex);
 
     if (!loadIfMissing || _windowFetcher == null || _playQueueId == null) {
       return const _IndexLookupResult();
@@ -203,14 +254,15 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
       return const _IndexLookupResult(attemptedLoad: true, loadFailed: true);
     }
 
-    currentIndex = _findLoadedIndex(_currentPlayQueueItemID!);
-
+    currentIndex = findCurrent();
     if (currentIndex == -1) {
       return const _IndexLookupResult(attemptedLoad: true, loadFailed: true);
     }
-
     return _IndexLookupResult(index: currentIndex, attemptedLoad: true);
   }
+
+  bool _matchesItemKey(MediaItem item, String currentItemKey) =>
+      item.id == currentItemKey || item.globalKey == currentItemKey;
 
   /// Returns the index of the item with [playQueueItemId] in [_loadedItems],
   /// or -1 if absent. Bridges Plex (real id on [PlexMediaItem]) and
@@ -234,98 +286,128 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   }
 
   /// Gets the next item in the playback queue.
-  /// Returns null if queue is exhausted or current item is not in queue.
-  /// [loopQueue] - If true, restart from beginning when queue is exhausted
-  Future<MediaItem?> getNextEpisode(String currentItemKey, {bool loopQueue = false}) async {
-    if (!_isQueueMode) {
-      // For sequential mode, let the video player handle next episode
-      return null;
-    }
+  ///
+  /// Returns a typed result so a queue-window failure cannot be mistaken for
+  /// the confirmed end of the queue. Entries backed by the same file as the
+  /// one playing are skipped: Plex lists each episode of a multi-episode file
+  /// (`S02E24-E25.mkv`) as its own queue item, and advancing to the sibling
+  /// would replay the file from the start (#1500). [playedPartId] pins the
+  /// comparison to the file of the part actually playing when known;
+  /// otherwise any file overlap with the current item counts.
+  Future<QueueNavigationResult> getNextEpisode(String currentItemKey, {String? playedPartId}) async {
+    if (!_isQueueMode) return const QueueNavigationResult.unavailable();
 
-    final indexResult = await _getCurrentIndex(loadIfMissing: true);
+    final indexResult = await _getCurrentIndex(currentItemKey, loadIfMissing: true);
     if (indexResult.index == null) {
-      if (indexResult.loadFailed) {
-        clearShuffle();
+      return indexResult.loadFailed ? const QueueNavigationResult.failed() : const QueueNavigationResult.unavailable();
+    }
+
+    final current = _loadedItems[indexResult.index!];
+    var anchor = current;
+    // Bounded so a pathological all-same-file queue cannot spin.
+    for (var steps = 0; steps <= _playQueueTotalCount; steps++) {
+      final result = await _itemAtOffset(anchor, 1);
+      final candidate = result.item;
+      if (result.status != QueueNavigationStatus.found || candidate == null) {
+        return result;
       }
-      return null;
-    }
-    final currentIndex = indexResult.index!;
-
-    // Check if there's a next item in the loaded window
-    if (currentIndex + 1 < _loadedItems.length) {
-      // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
-      return _loadedItems[currentIndex + 1];
-    }
-
-    // Check if we're at the end of the entire queue
-    if (currentIndex + 1 >= _playQueueTotalCount) {
-      if (loopQueue && _playQueueTotalCount > 0) {
-        // Loop back to beginning - load first item
-        if (_windowFetcher != null && _playQueueId != null) {
-          final response = await _windowFetcher!(_playQueueId!);
-          if (response != null && response.items != null && response.items!.isNotEmpty) {
-            // Items arrive pre-tagged with server info by the producing mapper.
-            _loadedItems = response.items!;
-            // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
-            return _loadedItems.first;
-          }
-        }
+      if (!current.sharesFileWith(candidate, playedPartId: playedPartId)) {
+        return result;
       }
-      // At end of queue - return null but keep queue active so user can still go back
-      return null;
+      anchor = candidate;
     }
-
-    // Need to load next window
-    if (_windowFetcher != null && _playQueueId != null && _loadedItems.isNotEmpty) {
-      // Load next window centered on the item after current. Plex-only path
-      // — _windowFetcher != null implies queue items are PlexMediaItem.
-      final last = _loadedItems.last;
-      final nextItemID = last is PlexMediaItem ? last.playQueueItemId : null;
-      if (nextItemID != null) {
-        final targetPlayQueueItemID = nextItemID + 1;
-        final loaded = await _ensureItemsLoaded(targetPlayQueueItemID);
-        if (loaded) return _findLoadedItem(targetPlayQueueItemID);
-      }
-    }
-
-    return null;
+    return const QueueNavigationResult.failed();
   }
 
   /// Gets the previous item in the playback queue.
   /// Returns null if at the beginning of the queue or current item is not in queue.
-  Future<MediaItem?> getPreviousEpisode(String currentItemKey) async {
-    if (!_isQueueMode) {
-      // For sequential mode, let the video player handle previous episode
-      return null;
+  ///
+  /// Mirrors [getNextEpisode]'s multi-episode-file handling (#1500): entries
+  /// backed by the file that's playing are skipped, and the result is
+  /// collapsed to the first episode of its same-file group so a
+  /// multi-episode file is entered at the episode that fronts it.
+  Future<QueueNavigationResult> getPreviousEpisode(String currentItemKey, {String? playedPartId}) async {
+    if (!_isQueueMode) return const QueueNavigationResult.unavailable();
+
+    final indexResult = await _getCurrentIndex(currentItemKey, loadIfMissing: true);
+    if (indexResult.index == null) {
+      return indexResult.loadFailed ? const QueueNavigationResult.failed() : const QueueNavigationResult.unavailable();
     }
 
-    final currentIndex = (await _getCurrentIndex()).index;
-    if (currentIndex == null) return null;
-
-    // Check if there's a previous item in the loaded window
-    if (currentIndex > 0) {
-      // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
-      return _loadedItems[currentIndex - 1];
-    }
-
-    // Check if we're at the beginning of the entire queue
-    if (currentIndex == 0) {
-      return null;
-    }
-
-    // Need to load previous window
-    if (_windowFetcher != null && _playQueueId != null && _loadedItems.isNotEmpty) {
-      // Plex-only path — _windowFetcher != null implies items are PlexMediaItem.
-      final first = _loadedItems.first;
-      final prevItemID = first is PlexMediaItem ? first.playQueueItemId : null;
-      if (prevItemID != null && prevItemID > 0) {
-        final targetPlayQueueItemID = prevItemID - 1;
-        final loaded = await _ensureItemsLoaded(targetPlayQueueItemID);
-        if (loaded) return _findLoadedItem(targetPlayQueueItemID);
+    final current = _loadedItems[indexResult.index!];
+    MediaItem candidate = current;
+    for (var steps = 0; steps <= _playQueueTotalCount; steps++) {
+      final result = await _itemAtOffset(candidate, -1);
+      final before = result.item;
+      if (result.status != QueueNavigationStatus.found || before == null) {
+        return result;
       }
+      candidate = before;
+      if (!current.sharesFileWith(candidate, playedPartId: playedPartId)) break;
     }
 
-    return null;
+    // Collapse to the first episode of the candidate's same-file group.
+    for (var steps = 0; steps <= _playQueueTotalCount; steps++) {
+      final result = await _itemAtOffset(candidate, -1);
+      final before = result.item;
+      if (result.status == QueueNavigationStatus.failed) return result;
+      if (result.status != QueueNavigationStatus.found || before == null || !candidate.sharesFileWith(before)) {
+        return QueueNavigationResult.found(candidate);
+      }
+      candidate = before;
+    }
+    return QueueNavigationResult.found(candidate);
+  }
+
+  /// The queue item [delta] steps from [anchor], extending a server-backed
+  /// window when needed. The centered response proves whether [anchor] is at
+  /// the global boundary; a window-local index is never compared with the
+  /// queue's global item count.
+  Future<QueueNavigationResult> _itemAtOffset(MediaItem anchor, int delta) async {
+    final anchorId = playQueueItemIdFor(anchor);
+    if (anchorId == null) return const QueueNavigationResult.unavailable();
+    var anchorIndex = _findLoadedIndex(anchorId);
+    if (anchorIndex == -1) return const QueueNavigationResult.unavailable();
+
+    var target = anchorIndex + delta;
+    if (target >= 0 && target < _loadedItems.length) {
+      return QueueNavigationResult.found(_loadedItems[target]);
+    }
+
+    // Local queues are fully resident, so their window edge is the queue edge.
+    if (_windowFetcher == null || _playQueueId == null) {
+      return const QueueNavigationResult.boundary();
+    }
+    if (_playQueueTotalCount > 0 && _loadedItems.length >= _playQueueTotalCount) {
+      return const QueueNavigationResult.boundary();
+    }
+
+    // Refresh around the actual anchor. Queue ids are opaque and need not be
+    // consecutive, so never guess the neighbour's id.
+    if (!await _loadServerWindow(anchorId)) {
+      return const QueueNavigationResult.failed();
+    }
+    anchorIndex = _findLoadedIndex(anchorId);
+    if (anchorIndex == -1) return const QueueNavigationResult.failed();
+    target = anchorIndex + delta;
+    return target >= 0 && target < _loadedItems.length
+        ? QueueNavigationResult.found(_loadedItems[target])
+        : const QueueNavigationResult.boundary();
+  }
+
+  /// Queue items backed by the same physical file as [current] — the other
+  /// episodes of a Plex multi-episode file (#1500), which should share its
+  /// watched state. Scans the loaded window only: in sequential order
+  /// same-file episodes are adjacent, so they are always co-resident.
+  /// [current] may be a different object instance than the queue's copy;
+  /// exclusion is by item id.
+  List<MediaItem> sameFileSiblings(MediaItem current, {String? playedPartId}) {
+    if (!_isQueueMode) return const [];
+    final seenIds = <String>{current.id};
+    return [
+      for (final item in _loadedItems)
+        if (seenIds.add(item.id) && current.sharesFileWith(item, playedPartId: playedPartId)) item,
+    ];
   }
 
   /// Clears the playback queue and exits queue mode

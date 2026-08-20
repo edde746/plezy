@@ -1,12 +1,14 @@
 import 'package:json_annotation/json_annotation.dart';
 
+import '../utils/json_utils.dart';
+
 part 'media_role.g.dart';
 
 /// A cast or crew member attached to a media item.
 @JsonSerializable(includeIfNull: false)
 class MediaRole {
   final String? id;
-  @JsonKey(fromJson: _stringFromJson)
+  @JsonKey(fromJson: stringOrEmpty)
   final String tag;
   final String? role;
   final String? thumbPath;
@@ -17,5 +19,3 @@ class MediaRole {
 
   Map<String, dynamic> toJson() => _$MediaRoleToJson(this);
 }
-
-String _stringFromJson(Object? raw) => (raw ?? '').toString();

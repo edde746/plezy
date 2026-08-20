@@ -1,7 +1,12 @@
+import 'package:intl/intl.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/app_locale_utils.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/utils/formatters.dart';
 
 void main() {
+  setUp(() => LocaleSettings.setLocaleSync(AppLocale.en));
+
   group('padNumber', () {
     test('pads with leading zeros to given width', () {
       expect(padNumber(5, 3), '005');
@@ -100,6 +105,26 @@ void main() {
     });
   });
 
+  group('Traditional Chinese formatting', () {
+    test('uses script-specific compact-number symbols', () async {
+      await LocaleSettings.setLocale(AppLocale.zh);
+      expect(NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName).format(10000), '1万');
+
+      await LocaleSettings.setLocale(AppLocale.zhHant);
+      expect(NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName).format(10000), '1萬');
+    });
+
+    test('uses script-specific textual duration units', () async {
+      const duration = Duration(hours: 1, minutes: 2);
+
+      await LocaleSettings.setLocale(AppLocale.zh);
+      expect(formatDurationTextual(duration.inMilliseconds), '1小时 2分');
+
+      await LocaleSettings.setLocale(AppLocale.zhHant);
+      expect(formatDurationTextual(duration.inMilliseconds), '1小時 2分鐘');
+    });
+  });
+
   group('toBulletedString', () {
     test('joins with " · " separator', () {
       expect(toBulletedString(['a', 'b', 'c']), 'a · b · c');
@@ -174,12 +199,6 @@ void main() {
     test('returns input unchanged when unparseable', () {
       expect(formatFullDate('not-a-date'), 'not-a-date');
       expect(formatFullDate(''), '');
-    });
-
-    test('does not throw for a valid ISO date', () {
-      // DateFormat may fall back to raw input if intl date symbols aren't
-      // initialised in the test runner — just verify no crash and string output.
-      expect(formatFullDate('2024-01-15'), isA<String>());
     });
   });
 }

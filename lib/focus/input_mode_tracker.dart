@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/platform_detector.dart';
-import '../services/gamepad_service.dart';
 import 'dpad_navigator.dart';
-import '../services/companion_remote/companion_remote_receiver.dart';
+import 'focus_navigation_intent.dart';
 
 /// Tracks whether the user is navigating via keyboard/d-pad or pointer (mouse/touch).
 ///
@@ -32,15 +31,34 @@ class InputModeTracker extends StatefulWidget {
   const InputModeTracker({super.key, required this.child});
 
   /// Get the current input mode.
-  static InputMode of(BuildContext context) {
-    final provider = context.dependOnInheritedWidgetOfExactType<_InputModeProvider>();
+  ///
+  /// Set [listen] to false for event handlers and post-frame callbacks that
+  /// only need a one-shot value. Those reads must not subscribe their owning
+  /// screen to future input-mode changes.
+  static InputMode of(BuildContext context, {bool listen = true}) {
+    final provider = listen
+        ? context.dependOnInheritedWidgetOfExactType<_InputModeProvider>()
+        : context.getInheritedWidgetOfExactType<_InputModeProvider>();
     return provider?.mode ?? InputMode.pointer;
   }
 
   /// Convenience method to check if we're in keyboard mode.
-  static bool isKeyboardMode(BuildContext context) {
-    return of(context) == InputMode.keyboard;
+  static bool isKeyboardMode(BuildContext context, {bool listen = true}) {
+    return of(context, listen: listen) == InputMode.keyboard;
   }
+
+  /// Live input mode, readable without a [BuildContext].
+  ///
+  /// Focus-change listeners fire during key dispatch, before the inherited
+  /// provider has rebuilt for a mode flip, so a context read through [of]
+  /// is one frame stale on the first navigation key of a keyboard session.
+  /// The tracker's own state is updated synchronously by its
+  /// [HardwareKeyboard] handler, which runs before focus traversal moves
+  /// focus. Falls back to the platform default when no tracker is mounted.
+  static InputMode get currentMode => _instance?._mode ?? _defaultMode;
+
+  /// Keyboard/D-pad on TV, pointer everywhere else.
+  static InputMode get _defaultMode => PlatformDetector.isTV() ? InputMode.keyboard : InputMode.pointer;
 
   /// Whether system back must be blocked because the dpad key handler owns
   /// back navigation: on Android in keyboard mode (TV/gamepad), letting the
@@ -49,34 +67,44 @@ class InputModeTracker extends StatefulWidget {
     return Platform.isAndroid && isKeyboardMode(context);
   }
 
+  /// Report input from a device that cannot point — gamepad, companion remote,
+  /// Siri Remote touch. Those services synthesize their key events through
+  /// [KeyEventSimulatorController], which dispatches straight down the focus
+  /// chain and never reaches [HardwareKeyboard], so they cannot be observed by
+  /// [eventRequestsFocusNavigation] and must announce themselves here.
+  ///
+  /// Calls `setState`, so never call this during build. A no-op when no tracker
+  /// is mounted.
+  static void reportNonPointerInput() {
+    final state = _instance;
+    if (state != null && state.mounted) state._setMode(InputMode.keyboard);
+  }
+
+  static _InputModeTrackerState? _instance;
+
   @override
   State<InputModeTracker> createState() => _InputModeTrackerState();
 }
 
 class _InputModeTrackerState extends State<InputModeTracker> {
-  // Default to keyboard mode on Android TV, pointer mode elsewhere
-  InputMode _mode = TvDetectionService.isTVSync() ? InputMode.keyboard : InputMode.pointer;
+  InputMode _mode = InputModeTracker._defaultMode;
 
   @override
   void initState() {
     super.initState();
-    // Initialize focus highlight strategy based on starting mode
+    // Published before anything can report input. The outgoing tracker of a
+    // subtree swap disposes *after* the incoming one initialises, so teardown
+    // is identity-guarded — otherwise startup's bootstrap→app swap would leave
+    // the live registration cleared.
+    InputModeTracker._instance = this;
     _updateFocusHighlightStrategy(_mode);
-    // Listen to hardware keyboard events globally
     HardwareKeyboard.instance.addHandler(_handleKeyEvent);
-
-    // Register callback for gamepad input to switch to keyboard mode
-    GamepadService.onGamepadInput = () => _setMode(InputMode.keyboard);
-
-    // Register callback for companion remote input to switch to keyboard mode
-    CompanionRemoteReceiver.onRemoteInput = () => _setMode(InputMode.keyboard);
   }
 
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleKeyEvent);
-    GamepadService.onGamepadInput = null;
-    CompanionRemoteReceiver.onRemoteInput = null;
+    if (identical(InputModeTracker._instance, this)) InputModeTracker._instance = null;
     super.dispose();
   }
 
@@ -85,9 +113,10 @@ class _InputModeTrackerState extends State<InputModeTracker> {
     // events after route pops (see BackKeySuppressorObserver).
     BackKeyPressTracker.handleKeyEvent(event);
 
-    // Only switch to keyboard mode on navigation key down (not repeats, releases,
-    // or non-navigation keys like volume buttons or letter keys while typing)
-    if (event is KeyDownEvent && event.logicalKey.isNavigationKey) {
+    // Only a key that asks to navigate by focus starts a keyboard session.
+    // Activation and dismissal act on what is already focused, so promoting on
+    // them would arm focus chrome for a viewer who never asked to navigate.
+    if (eventRequestsFocusNavigation(event)) {
       _setMode(InputMode.keyboard);
     }
     // Return false to let the event continue propagating
@@ -115,24 +144,32 @@ class _InputModeTrackerState extends State<InputModeTracker> {
 
   @override
   Widget build(BuildContext context) {
-    // On Android TV, don't switch to pointer mode from pointer events
-    // as D-pad can generate synthetic pointer events that would incorrectly
-    // trigger pointer mode and show a cursor instead of D-pad focus navigation
-    if (TvDetectionService.isTVSync()) {
+    // Non-desktop TVs keep keyboard mode across synthetic pointer events, but
+    // their controls remain pointer-reachable for engine-generated taps.
+    if (PlatformDetector.isTV() && !PlatformDetector.isDesktopOS()) {
       return _InputModeProvider(mode: _mode, child: widget.child);
     }
 
     return Listener(
-      // Switch to pointer mode on mouse activity
       onPointerDown: (_) => _setMode(InputMode.pointer),
       onPointerHover: (_) => _setMode(InputMode.pointer),
       behavior: HitTestBehavior.translucent,
-      child: MouseRegion(
-        cursor: _mode == InputMode.keyboard ? SystemMouseCursors.none : MouseCursor.defer,
-        child: IgnorePointer(
-          ignoring: _mode == InputMode.keyboard,
-          child: _InputModeProvider(mode: _mode, child: widget.child),
-        ),
+      child: Stack(
+        alignment: Alignment.topLeft,
+        fit: StackFit.passthrough,
+        children: [
+          _InputModeProvider(mode: _mode, child: widget.child),
+          // Hide the desktop cursor in keyboard mode without excluding the
+          // application subtree from the current pointer hit test.
+          if (_mode == InputMode.keyboard)
+            const Positioned.fill(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.none,
+                opaque: false,
+                hitTestBehavior: HitTestBehavior.translucent,
+              ),
+            ),
+        ],
       ),
     );
   }

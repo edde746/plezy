@@ -1,31 +1,13 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  String? _absolutizeImagePath(String? path);
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
+mixin _JellyfinPlaylistMethods on _JellyfinClientInternals {
   static const int _playlistsPageSize = 200;
 
   @override
-  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) async {
-    final all = <MediaPlaylist>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchPlaylistsPage(
-        playlistType: playlistType,
-        smart: smart,
-        start: start,
-        size: _playlistsPageSize,
-      );
-      if (page.items.isEmpty) break;
-      all.addAll(page.items);
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
-  }
+  Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) => drainPages<MediaPlaylist>(
+    (start, size) => fetchPlaylistsPage(playlistType: playlistType, smart: smart, start: start, size: size),
+    pageSize: _playlistsPageSize,
+  );
 
   @override
   Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
@@ -42,49 +24,52 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     final offset = start ?? 0;
     final pageSize = size ?? _playlistsPageSize;
     final requestedType = playlistType.toLowerCase();
-    final items = <MediaPlaylist>[];
-    var rawOffset = 0;
-    var filteredSeen = 0;
-    int? rawTotal;
-    var rawFinished = false;
-
-    while (items.length < pageSize && !rawFinished) {
-      final response = await _http.get(
-        '/Items',
-        queryParameters: {
-          'userId': connection.userId,
-          'IncludeItemTypes': 'Playlist',
-          'Recursive': 'true',
-          'StartIndex': rawOffset.toString(),
-          'Limit': pageSize.toString(),
-          'Fields': 'Overview,DateCreated,DateLastSaved,ChildCount,Tags',
-          ...jellyfinImageQueryParameters,
-        },
-        abort: abort,
-      );
-      throwIfHttpError(response);
-      final rawItems = _itemsArray(response.data);
-      final rawTotalValue = response.data is Map<String, dynamic>
-          ? (response.data as Map<String, dynamic>)['TotalRecordCount']
-          : null;
-      if (rawTotalValue is int) rawTotal = rawTotalValue;
-
-      for (final item in rawItems.map(_playlistFromJson)) {
-        if (!_matchesPlaylistFilters(item, requestedType: requestedType, smart: smart)) continue;
-        if (filteredSeen >= offset && items.length < pageSize) {
-          items.add(item);
-        }
-        filteredSeen++;
-      }
-
-      rawOffset += rawItems.length;
-      rawFinished = rawItems.isEmpty || rawItems.length < pageSize || (rawTotal != null && rawOffset >= rawTotal);
+    final mediaType = switch (requestedType) {
+      '' => null,
+      'video' => 'Video',
+      'audio' => 'Audio',
+      'photo' => 'Photo',
+      'book' => 'Book',
+      'unknown' => 'Unknown',
+      _ => '',
+    };
+    if (mediaType == '') {
+      return LibraryPage<MediaPlaylist>(items: const [], totalCount: 0, offset: offset);
     }
 
-    final fallbackTotal = rawFinished
-        ? filteredSeen
-        : _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
-    return LibraryPage<MediaPlaylist>(items: items, totalCount: fallbackTotal, offset: offset);
+    // Emby returns the entire item index when `/Items` carries a `MediaTypes`
+    // filter alongside `IncludeItemTypes=Playlist`, and never types a playlist
+    // DTO, so it lists every playlist and the requested type only decides how
+    // the results are labelled. See
+    // [MediaBrowserDialect.playlistsFilterByMediaType].
+    final filterByMediaType = dialect.playlistsFilterByMediaType;
+    final labelType = requestedType.isEmpty ? 'video' : requestedType;
+
+    final response = await _http.get(
+      '/Items',
+      queryParameters: {
+        'userId': connection.userId,
+        'IncludeItemTypes': 'Playlist',
+        'Recursive': 'true',
+        'MediaTypes': ?(filterByMediaType ? mediaType : null),
+        'StartIndex': offset.toString(),
+        'Limit': pageSize.toString(),
+        // `DateModified` carries the modification time on Emby, which leaves
+        // `DateLastSaved` null for playlists. Unlike the detail route, the list
+        // route honours `Fields` strictly, so the mapper's fallback is dead
+        // unless the field is requested here.
+        'Fields': 'Overview,DateCreated,DateLastSaved,DateModified,ChildCount,Tags',
+        ...jellyfinImageQueryParameters,
+      },
+      abort: abort,
+    );
+    throwIfHttpError(response);
+    return _pagedItems(
+      response.data,
+      offset: offset,
+      requestedSize: pageSize,
+      map: (raw) => raw.map((json) => _playlistFromJson(json, labelType: labelType)).toList(),
+    );
   }
 
   @override
@@ -93,7 +78,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     if (item == null) return null;
     return MediaPlaylist(
       id: item.id,
-      backend: MediaBackend.jellyfin,
+      backend: dialect.backend,
       title: item.title ?? t.playlists.playlist,
       summary: item.summary,
       smart: false,
@@ -130,27 +115,22 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    final items = _itemsArray(response.data);
-    final rawTotal = response.data is Map<String, dynamic>
-        ? (response.data as Map<String, dynamic>)['TotalRecordCount']
-        : null;
-    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
-    return LibraryPage<MediaItem>(
-      items: _mapItems(items),
-      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
-      offset: offset,
-    );
+    return _pagedItems(response.data, offset: offset, requestedSize: pageSize, map: _mapItems);
   }
 
   @override
   Future<MediaPlaylist?> createPlaylist({required String title, required List<MediaItem> items}) async {
+    // MediaType stamps the playlist's kind server-side; derive it from the
+    // seed items so music selections create Audio playlists (which is what
+    // fetchPlaylistsPage filters on). Empty seeds keep the Video default.
+    final isMusic = items.isNotEmpty && items.first.kind.isMusic;
     final response = await _http.post(
       '/Playlists',
       queryParameters: {
         'Name': title,
         'Ids': items.map((i) => i.id).join(','),
         'UserId': connection.userId,
-        'MediaType': 'Video',
+        'MediaType': isMusic ? 'Audio' : 'Video',
       },
     );
     throwIfHttpError(response);
@@ -173,13 +153,13 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
 
   @override
   Future<bool> deletePlaylist(MediaPlaylist playlist) async {
-    // Jellyfin treats playlists as items — same delete endpoint.
+    // Both MediaBrowser dialects treat playlists as items — same delete endpoint.
     final response = await _http.delete('/Items/${_segment(playlist.id)}');
     throwIfHttpError(response);
     return true;
   }
 
-  /// Jellyfin's move endpoint takes an absolute index, so [afterItem] is
+  /// The MediaBrowser move endpoint takes an absolute index, so [afterItem] is
   /// ignored — its sibling Plex impl needs it for `?after=`. The "wrong
   /// backend" / "missing playlistItemId" branches still return `false`
   /// (business not-applicable, not a network error) so callers can revert
@@ -197,7 +177,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       return false;
     }
     if (item.playlistItemId == null) {
-      appLogger.e('movePlaylistItem: item ${item.id} ("${item.title}") has no playlistItemId');
+      appLogger.e('Jellyfin movePlaylistItem failed: missing playlist entry ID');
       return false;
     }
     final response = await _http.post(
@@ -214,7 +194,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
       return false;
     }
     if (item.playlistItemId == null) {
-      appLogger.e('removeFromPlaylist: item ${item.id} ("${item.title}") has no playlistItemId');
+      appLogger.e('Jellyfin removeFromPlaylist failed: missing playlist entry ID');
       return false;
     }
     final response = await _http.delete(
@@ -225,18 +205,23 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     return true;
   }
 
-  MediaPlaylist _playlistFromJson(Map<String, dynamic> json) {
+  /// [labelType] backs `MediaType` when the server omits it — always the case
+  /// on Emby, which leaves playlists untyped.
+  MediaPlaylist _playlistFromJson(Map<String, dynamic> json, {String labelType = 'video'}) {
     final id = json['Id'] as String? ?? '';
     return MediaPlaylist(
       id: id,
-      backend: MediaBackend.jellyfin,
+      backend: dialect.backend,
       title: json['Name'] as String? ?? t.playlists.playlist,
       summary: json['Overview'] as String?,
       smart: false,
-      playlistType: (json['MediaType'] as String?)?.toLowerCase() ?? 'video',
+      playlistType: (json['MediaType'] as String?)?.toLowerCase() ?? labelType,
       leafCount: json['ChildCount'] as int?,
-      addedAt: _epochSecondsFromJson(json['DateCreated'] as String?),
-      updatedAt: _epochSecondsFromJson(json['DateLastSaved'] as String?),
+      addedAt: jellyfinIsoToEpochSeconds(json['DateCreated'] as String?),
+      // Emby leaves `DateLastSaved` null on a playlist and carries the
+      // timestamp in `DateModified`; the item and library mappers already use
+      // this same fallback.
+      updatedAt: jellyfinIsoToEpochSeconds(json['DateLastSaved'] as String? ?? json['DateModified'] as String?),
       thumbPath: _absolutizeImagePath(_imageTagPath(id, json['ImageTags'])),
       serverId: serverId,
       serverName: serverName,
@@ -247,18 +232,6 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     if (item.kind == MediaKind.track || item.kind == MediaKind.album) return 'audio';
     if (item.kind == MediaKind.photo) return 'photo';
     return 'video';
-  }
-
-  bool _matchesPlaylistFilters(MediaPlaylist playlist, {required String requestedType, required bool? smart}) {
-    if (requestedType.isNotEmpty && playlist.playlistType.toLowerCase() != requestedType) return false;
-    if (smart != null && playlist.smart != smart) return false;
-    return true;
-  }
-
-  int? _epochSecondsFromJson(String? iso) {
-    if (iso == null || iso.isEmpty) return null;
-    final dt = DateTime.tryParse(iso);
-    return dt == null ? null : dt.millisecondsSinceEpoch ~/ 1000;
   }
 
   String? _imageTagPath(String id, Object? tags) {

@@ -1,5 +1,3 @@
-import 'package:collection/collection.dart';
-
 import '../media/media_version.dart';
 import '../media/media_source_info.dart';
 import '../utils/jellyfin_time.dart';
@@ -52,6 +50,15 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
 
   final mediaSourceId = source['Id'] as String?;
   final trickplayByWidth = _parseTrickplayManifest(trickplay, mediaSourceId);
+  // BIF tooltip aspect from the video stream's dimensions — the same source
+  // `jellyfinDisplayCriteriaFromStream` reads. Only the Emby BIF path consumes
+  // this today; Jellyfin derives aspect from its tile manifest.
+  final videoStream = parsedStreams.videoStream;
+  final videoWidth = flexibleInt(videoStream?['Width']);
+  final videoHeight = flexibleInt(videoStream?['Height']);
+  final videoAspectRatio = videoWidth != null && videoHeight != null && videoHeight > 0
+      ? videoWidth / videoHeight
+      : null;
 
   return MediaSourceInfo(
     videoUrl: '',
@@ -64,45 +71,28 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
     defaultAudioStreamIndex: defaultAudioStreamIndex,
     defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
     trickplayByWidth: trickplayByWidth,
+    videoAspectRatio: videoAspectRatio,
   );
 }
 
 List<MediaAudioTrack> _withDefaultAudioSelection(List<MediaAudioTrack> tracks, int? defaultStreamIndex) {
   if (defaultStreamIndex == null) return tracks;
-  return [
-    for (final track in tracks)
-      MediaAudioTrack(
-        id: track.id,
-        index: track.index,
-        codec: track.codec,
-        language: track.language,
-        languageCode: track.languageCode,
-        title: track.title,
-        displayTitle: track.displayTitle,
-        channels: track.channels,
-        selected: track.index == defaultStreamIndex,
-        external: track.external,
-      ),
-  ];
+  return [for (final track in tracks) track.withSelected(track.index == defaultStreamIndex)];
 }
 
+/// Marks the row Jellyfin selected for this user, and only that row.
+///
+/// `DefaultSubtitleStreamIndex` is the server's whole answer: it folds in the
+/// user's `SubtitleMode`, their language preference, and any per-item choice
+/// Plezy persisted through playback progress reports (including `-1` for a
+/// deliberate off). A null index is part of that answer — "play no subtitle" —
+/// not a missing field. Synthesising a selection from the container's
+/// default/forced flags overrode `SubtitleMode: None` at the server-selected
+/// priority, so a user who turned subtitles off on the server had them
+/// switched back on by every fresh item (#1779).
 List<MediaSubtitleTrack> _withDefaultSubtitleSelection(List<MediaSubtitleTrack> tracks, int? defaultStreamIndex) {
   return [
-    for (final track in tracks)
-      MediaSubtitleTrack(
-        id: track.id,
-        index: track.index,
-        codec: track.codec,
-        language: track.language,
-        languageCode: track.languageCode,
-        title: track.title,
-        displayTitle: track.displayTitle,
-        selected: defaultStreamIndex != null ? track.index == defaultStreamIndex : track.selected || track.forced,
-        forced: track.forced,
-        key: track.key,
-        external: track.external,
-        usesExternalDelivery: track.usesExternalDelivery,
-      ),
+    for (final track in tracks) track.withSelected(defaultStreamIndex != null && track.index == defaultStreamIndex),
   ];
 }
 
@@ -178,10 +168,12 @@ String? _jellyfinSegmentMarkerType(String? value) {
 
 /// Coerce a Jellyfin trickplay manifest to `Map<int width, TrickplayInfo>`,
 /// tolerating both the flat OpenAPI shape (`{ "320": {...} }`) and the nested
-/// Streamyfin shape (`{ "<sourceId>": { "320": {...} } }`).
+/// Streamyfin shape (`{ "<sourceId>": { "320": {...} } }`). Nested manifests
+/// require an exact selected-source match. A source-less caller may use a
+/// nested manifest only when it contains exactly one map-valued candidate.
 ///
-/// Returns `null` when [raw] is missing, malformed, or contains no usable
-/// entries — callers treat that as "no scrub thumbnails".
+/// Returns `null` when [raw] is missing, malformed, ambiguous, or contains no
+/// usable entries — callers treat that as "no scrub thumbnails".
 Map<int, TrickplayInfo>? _parseTrickplayManifest(Object? raw, String? sourceId) {
   if (raw is! Map) return null;
   if (raw.isEmpty) return null;
@@ -195,16 +187,19 @@ Map<int, TrickplayInfo>? _parseTrickplayManifest(Object? raw, String? sourceId) 
   if (raw.values.any(_looksLikeTrickplayInfo)) {
     resolutionMap = raw;
   } else {
-    final byId = sourceId != null ? raw[sourceId] : null;
-    if (byId is Map) {
+    if (sourceId != null) {
+      final byId = raw[sourceId];
+      if (byId is! Map) return null;
       resolutionMap = byId;
     } else {
-      // Source id not in the manifest — fall back to the first nested
-      // entry so the user still gets *something*. The caller already
-      // chose the right source; this is best-effort recovery.
-      final first = raw.values.firstWhereOrNull((v) => v is Map);
-      if (first is! Map) return null;
-      resolutionMap = first;
+      Map? soleCandidate;
+      for (final candidate in raw.values) {
+        if (candidate is! Map) continue;
+        if (soleCandidate != null) return null;
+        soleCandidate = candidate;
+      }
+      if (soleCandidate == null) return null;
+      resolutionMap = soleCandidate;
     }
   }
 

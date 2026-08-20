@@ -17,6 +17,40 @@ import com.edde746.plezy.libass.Ass
 import com.edde746.plezy.libass.AssRender
 import com.edde746.plezy.libass.AssTrack
 import com.edde746.plezy.libass.media.parser.AssHeaderParser
+import com.edde746.plezy.libass.media.widget.AssAtlasPipelineConfig
+
+internal class AssFontStore {
+  private val pendingFonts = mutableListOf<Pair<String, ByteArray>>()
+
+  @Synchronized
+  fun add(
+    name: String,
+    data: ByteArray,
+    nativeReady: Boolean,
+    addToNative: (String, ByteArray) -> Unit
+  ) {
+    if (nativeReady) {
+      addToNative(name, data)
+    } else {
+      pendingFonts.add(name to data)
+    }
+  }
+
+  @Synchronized
+  fun flush(addToNative: (String, ByteArray) -> Unit) {
+    pendingFonts.forEach { (name, data) -> addToNative(name, data) }
+    pendingFonts.clear()
+  }
+
+  @Synchronized
+  fun reset(nativeInitialized: Boolean, clearNative: () -> Unit) {
+    pendingFonts.clear()
+    if (nativeInitialized) clearNative()
+  }
+
+  @Synchronized
+  internal fun pendingSnapshot(): List<Pair<String, ByteArray>> = pendingFonts.toList()
+}
 
 /**
  * Handles ASS subtitle rendering and integration with ExoPlayer.
@@ -51,8 +85,8 @@ class AssHandler(
   /** The available ASS tracks in the current media. */
   private val availableTracks = mutableMapOf<String, AssTrack>()
 
-  /** Fonts encountered before any ASS track was created. Flushed in [createTrack]. */
-  private val pendingFonts = mutableListOf<Pair<String, ByteArray>>()
+  /** Owns pre-track Java font buffers and the per-media native clear boundary. */
+  internal val fontStore = AssFontStore()
 
   /** The size of the video track. */
   var videoSize = Size.ZERO
@@ -118,6 +152,7 @@ class AssHandler(
     resetMediaState(releaseNative = true)
   }
 
+  @Synchronized
   private fun resetMediaState(releaseNative: Boolean) {
     val oldRender = render
     val oldTracks = availableTracks.values.toList()
@@ -126,7 +161,6 @@ class AssHandler(
     track = null
     format = null
     availableTracks.clear()
-    pendingFonts.clear()
     videoSize = Size.ZERO
     renderCallback?.invoke(null)
 
@@ -134,6 +168,7 @@ class AssHandler(
       oldRender?.release()
       oldTracks.forEach { it.release() }
     }
+    fontStore.reset(assDelegate.isInitialized()) { ass.clearFonts() }
   }
 
   /**
@@ -185,13 +220,15 @@ class AssHandler(
    * (re)created or the selected track changes, so renderer state survives both.
    */
   private fun applyRenderState(render: AssRender) {
+    // Storage (script/video authoring size) stays full-res; only the frame and
+    // margins follow RENDER_SCALE so the raster shrinks while layout is unchanged.
     if (videoSize.isValid) render.setStorageSize(videoSize.width, videoSize.height)
     when {
-      surfaceSize.isValid -> render.setFrameSize(surfaceSize.width, surfaceSize.height)
+      surfaceSize.isValid -> render.setFrameSize(scaledForRender(surfaceSize.width), scaledForRender(surfaceSize.height))
       // Fallback frame until the overlay surface reports its size.
-      videoSize.isValid -> render.setFrameSize(videoSize.width, videoSize.height)
+      videoSize.isValid -> render.setFrameSize(scaledForRender(videoSize.width), scaledForRender(videoSize.height))
     }
-    margins?.let { m -> render.setMargins(m[0], m[1], m[2], m[3]) }
+    margins?.let { m -> render.setMargins(scaledForRender(m[0]), scaledForRender(m[1]), scaledForRender(m[2]), scaledForRender(m[3])) }
     render.setUseMargins(useMargins)
   }
 
@@ -220,7 +257,7 @@ class AssHandler(
     if (surfaceSize.width == width && surfaceSize.height == height) return
     Log.i("AssHandler", "setOverlaySurfaceSize: width = $width, height = $height")
     surfaceSize = Size(width, height)
-    render?.setFrameSize(width, height)
+    render?.setFrameSize(scaledForRender(width), scaledForRender(height))
   }
 
   /**
@@ -230,8 +267,12 @@ class AssHandler(
    */
   fun setMargins(top: Int, bottom: Int, left: Int, right: Int) {
     margins = intArrayOf(top, bottom, left, right)
-    render?.setMargins(top, bottom, left, right)
+    render?.setMargins(scaledForRender(top), scaledForRender(bottom), scaledForRender(left), scaledForRender(right))
   }
+
+  /** Frame/margin extents go to libass at the overlay's render resolution; the GL
+   *  side scales the result back up. Identity unless RENDER_SCALE < 1. */
+  private fun scaledForRender(px: Int): Int = AssAtlasPipelineConfig.scaledForRender(px)
 
   /** mpv's sub-ass-force-margins: anchor non-positioned events to the visible frame. */
   fun setUseMargins(use: Boolean) {
@@ -267,10 +308,8 @@ class AssHandler(
    */
   @Synchronized
   fun addFont(name: String, data: ByteArray) {
-    if (hasTracks()) {
-      ass.addFont(name, data)
-    } else {
-      pendingFonts.add(name to data)
+    fontStore.add(name, data, hasTracks()) { fontName, fontData ->
+      ass.addFont(fontName, fontData)
     }
   }
 
@@ -287,12 +326,7 @@ class AssHandler(
     createRenderIfNeeded()
 
     // Flush any fonts that were buffered before the first track was created.
-    if (pendingFonts.isNotEmpty()) {
-      for ((name, data) in pendingFonts) {
-        ass.addFont(name, data)
-      }
-      pendingFonts.clear()
-    }
+    fontStore.flush { name, data -> ass.addFont(name, data) }
 
     val track = ass.createTrack()
     if (format.initializationData.size > 0) {
@@ -368,6 +402,7 @@ class AssHandler(
   /**
    * Releases all native resources held by this handler.
    */
+  @Synchronized
   fun release() {
     videoFrameCallback = null
     player?.clearVideoFrameMetadataListener(videoFrameMetadataListener)
@@ -383,4 +418,16 @@ class AssHandler(
    */
   private val Size.isValid
     get() = width > 0 && height > 0
+
+  companion object {
+    /**
+     * Sets the global libass overlay render scale (fraction of the surface resolution; 1.0 = no
+     * downscale). Cheaper raster for the render-bound tail on weak GPUs, at some sharpness. Set
+     * before/at playback init — [AssAtlasPipelineConfig.scaledForRender] reads it on the next
+     * frame-size apply (overlay surface create / size change), so it takes effect from playback.
+     */
+    fun setRenderScale(scale: Float) {
+      AssAtlasPipelineConfig.renderScale = scale.coerceIn(0.2f, 1.0f)
+    }
+  }
 }

@@ -8,6 +8,7 @@ import 'package:win_http/win_http.dart';
 
 import 'app_logger.dart';
 import 'managed_http_client.dart';
+import 'media_server_timeouts.dart';
 
 /// Shared Cronet engine so all clients reuse the same connection pool.
 CronetEngine? _sharedEngine;
@@ -23,15 +24,19 @@ void _logPlatformClient(String platform, String client) {
   appLogger.i('Platform HTTP client', error: {'platform': platform, 'client': client});
 }
 
-http.Client _createTunedIoClient(String debugLabel) {
-  return ManagedHttpClient(
-    IOClient(
-      HttpClient()
-        ..maxConnectionsPerHost = 12
-        ..idleTimeout = const Duration(seconds: 90),
-    ),
-    debugLabel: debugLabel,
-  );
+/// dart:io leaves TCP connects unbounded (Darwin retries SYNs for ~75 s) and
+/// `package:http` cannot abort a request whose connection is still being
+/// established, so every IOClient gets an explicit connect bound and
+/// permission to force-close after a failed drain (#1972).
+http.Client _createIoClient(String debugLabel, {bool tuned = false}) {
+  final httpClient = HttpClient()..connectionTimeout = MediaServerTimeouts.connect;
+  if (tuned) {
+    // Plex home loads fan out many HTTP/1.1 calls; keep connections warm.
+    httpClient
+      ..maxConnectionsPerHost = 12
+      ..idleTimeout = const Duration(seconds: 90);
+  }
+  return ManagedHttpClient(IOClient(httpClient), debugLabel: debugLabel, forceCloseOnDrainTimeout: true);
 }
 
 http.Client createPlatformClient() {
@@ -53,11 +58,11 @@ http.Client createPlatformClient() {
       }
     }
     _logPlatformClient('android', 'IOClient (Android fallback)');
-    return _createTunedIoClient('IOClient (Android fallback)');
+    return _createIoClient('IOClient (Android fallback)', tuned: true);
   }
   if (Platform.isIOS && _tvosBuild) {
     _logPlatformClient('tvos', 'IOClient (tvOS tuned)');
-    return _createTunedIoClient('IOClient (tvOS tuned)');
+    return _createIoClient('IOClient (tvOS tuned)', tuned: true);
   }
   if (Platform.isIOS || Platform.isMacOS) {
     try {
@@ -67,7 +72,7 @@ http.Client createPlatformClient() {
     } catch (e, st) {
       appLogger.w('CupertinoClient init failed, falling back to IOClient', error: e, stackTrace: st);
       _logPlatformClient(Platform.isIOS ? 'ios' : 'macos', 'IOClient (fallback)');
-      return ManagedHttpClient(IOClient(), debugLabel: 'IOClient (fallback)');
+      return _createIoClient('IOClient (fallback)');
     }
   }
   if (Platform.isWindows) {
@@ -78,17 +83,17 @@ http.Client createPlatformClient() {
     } catch (e, st) {
       appLogger.w('WinHttpClient init failed, falling back to IOClient', error: e, stackTrace: st);
       _logPlatformClient('windows', 'IOClient (fallback)');
-      return ManagedHttpClient(IOClient(), debugLabel: 'IOClient (fallback)');
+      return _createIoClient('IOClient (fallback)');
     }
   }
   _logPlatformClient(Platform.operatingSystem, 'IOClient');
-  return ManagedHttpClient(IOClient(), debugLabel: 'IOClient');
+  return _createIoClient('IOClient');
 }
 
 http.Client createPlexApiClient() {
   if (Platform.isLinux) {
     _logPlatformClient('linux', 'IOClient (Plex API tuned)');
-    return _createTunedIoClient('IOClient (Plex API tuned)');
+    return _createIoClient('IOClient (Plex API tuned)', tuned: true);
   }
   return createPlatformClient();
 }

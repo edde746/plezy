@@ -8,6 +8,7 @@ import '../../focus/key_event_utils.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
+import '../../profiles/plex_home_switch.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/clickable_cursor.dart';
@@ -380,15 +381,13 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
     final backResult = handleBackKeyAction(event, widget.onCancel);
     if (backResult != KeyEventResult.ignored) return backResult;
+    if (event.isTvSelectEvent || (PlatformDetector.isTV() && event.isPhysicalKeyboardEnter)) {
+      return handleOneShotSelect(event, () => _activate(_rows[_row][_column]));
+    }
 
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
       if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
         _deleteLastDigit();
-        return KeyEventResult.handled;
-      }
-
-      if (event.isTvSelectEvent || (PlatformDetector.isTV() && event.isPhysicalKeyboardEnter)) {
-        _activate(_rows[_row][_column]);
         return KeyEventResult.handled;
       }
 
@@ -423,12 +422,15 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
       }
     }
 
-    return KeyEventResult.handled;
+    return KeyEventResult.ignored;
   }
 
   void _onMobilePinChanged(String value) {
     final digitsOnly = value.replaceAll(RegExp(r'\D'), '');
-    final pin = digitsOnly.length > 4 ? digitsOnly.substring(0, 4) : digitsOnly;
+    final pin = switch (digitsOnly.length) {
+      <= 4 => digitsOnly,
+      _ => digitsOnly.substring(0, expandToGraphemeRange(digitsOnly, const TextRange(start: 0, end: 4)).end),
+    };
     if (pin != value) {
       _mobileController.value = TextEditingValue(
         text: pin,
@@ -482,7 +484,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
   Widget _buildKeypadLayout(BuildContext context) {
     return Column(
       mainAxisSize: .min,
-      children: [_buildDigitRow(context, obscureDigits: true), const SizedBox(height: 18), _buildKeypad(context)],
+      children: [_buildDigitRow(context), const SizedBox(height: 18), _buildKeypad(context)],
     );
   }
 
@@ -539,7 +541,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
   Widget _buildKeyContent(BuildContext context, _PinKey key, Color foreground) {
     final icon = key.icon;
-    if (icon != null) return Icon(icon, color: foreground, size: 30);
+    if (icon != null) return AppIcon(icon, color: foreground, size: 30);
 
     return FittedBox(
       fit: BoxFit.scaleDown,
@@ -551,7 +553,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
     );
   }
 
-  Widget _buildDigitRow(BuildContext _, {bool obscureDigits = false}) {
+  Widget _buildDigitRow(BuildContext _) {
     return Row(
       mainAxisSize: .min,
       mainAxisAlignment: .center,
@@ -561,7 +563,6 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
           _DigitBox(
             digit: _digits[i],
             isActive: (widget.isMobile ? _mobileFocusNode.hasFocus : true) && _activeIndex == i,
-            obscureDigit: obscureDigits,
           ),
         ],
       ],
@@ -600,7 +601,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
               ),
             ),
           ),
-          _buildDigitRow(context, obscureDigits: true),
+          _buildDigitRow(context),
         ],
       ),
     );
@@ -610,9 +611,8 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 class _DigitBox extends StatelessWidget {
   final int? digit;
   final bool isActive;
-  final bool obscureDigit;
 
-  const _DigitBox({required this.digit, required this.isActive, this.obscureDigit = false});
+  const _DigitBox({required this.digit, required this.isActive});
 
   @override
   Widget build(BuildContext context) {
@@ -638,7 +638,7 @@ class _DigitBox extends StatelessWidget {
             color: isActive ? focusColor.withValues(alpha: 0.08) : Colors.transparent,
           ),
           child: Text(
-            digit != null ? (obscureDigit || !isActive ? '•' : digit.toString()) : '–',
+            digit != null ? '•' : '–',
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: .bold,
               color: digit != null
@@ -662,37 +662,41 @@ class _PinKey {
   const _PinKey.backspace() : type = _PinKeyType.backspace, digit = null;
   const _PinKey.close() : type = _PinKeyType.close, digit = null;
 
-  String get label {
-    switch (type) {
-      case _PinKeyType.digit:
-        return digit.toString();
-      case _PinKeyType.backspace:
-        return t.common.delete;
-      case _PinKeyType.close:
-        return t.common.cancel;
-    }
-  }
+  /// Only evaluated for digit keys — icon keys short-circuit on [icon] in
+  /// [_TvPinInputState._buildKeyContent].
+  String get label => digit.toString();
 
   IconData? get icon {
     switch (type) {
       case _PinKeyType.digit:
         return null;
       case _PinKeyType.backspace:
-        return Icons.backspace_outlined;
+        return Symbols.backspace_rounded;
       case _PinKeyType.close:
-        return Icons.close_rounded;
+        return Symbols.close_rounded;
     }
   }
 }
 
 /// Shows the PIN entry dialog and returns the entered PIN, or null if cancelled
 Future<String?> showPinEntryDialog(BuildContext context, String userName, {String? errorMessage}) {
+  // PIN entry guards root-owned profile activation and must survive disposal of
+  // the active profile session while the binder switches users.
   return showDialog<String>(
     context: context,
+    useRootNavigator: true,
     barrierDismissible: false,
     builder: (context) => PinEntryDialog(userName: userName, errorMessage: errorMessage),
   );
 }
+
+/// The [PlexHomeSwitchPinPrompt] every UI-side `mintPlexHomeUserToken` caller
+/// needs: show [showPinEntryDialog] for [displayName], or cancel the switch
+/// once [context] is gone. Only the *use* is guarded — build it before the
+/// caller's first await, while [context] is still live.
+PlexHomeSwitchPinPrompt dialogPinPrompt(BuildContext context, String displayName) =>
+    ({String? errorMessage}) async =>
+        context.mounted ? showPinEntryDialog(context, displayName, errorMessage: errorMessage) : null;
 
 /// Two-step "set + confirm" PIN entry. Returns the matching PIN, or null
 /// when the user cancels. On mismatch, surfaces a snackbar via [onMismatch]

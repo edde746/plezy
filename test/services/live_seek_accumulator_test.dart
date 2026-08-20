@@ -98,6 +98,41 @@ void main() {
       });
     });
 
+    test('does not reopen when a skip is clamped to the current boundary', () {
+      fakeAsync((async) {
+        window = (start: 950, end: 1050);
+        final acc = build();
+
+        currentEpoch = 1050;
+        acc.seekBy(15);
+        expect(acc.pendingEpoch, isNull);
+
+        currentEpoch = 950;
+        acc.seekBy(-15);
+        expect(acc.pendingEpoch, isNull);
+
+        async.elapse(const Duration(milliseconds: 300));
+        expect(seeks, isEmpty);
+        expect(changes, 0);
+        acc.dispose();
+      });
+    });
+
+    test('still seeks away from a capture-buffer boundary', () {
+      fakeAsync((async) {
+        window = (start: 950, end: 1050);
+        currentEpoch = 1050;
+        final acc = build();
+
+        acc.seekBy(-15);
+        expect(acc.pendingEpoch, 1035);
+
+        async.elapse(const Duration(milliseconds: 300));
+        expect(seeks, [1035]);
+        acc.dispose();
+      });
+    });
+
     test('flushes the newer target when a press lands during the seek', () {
       fakeAsync((async) {
         gate = Completer<void>();

@@ -24,17 +24,20 @@ class FocusTheme {
     return Theme.of(context).extension<MonoTokens>()?.fast ?? const Duration(milliseconds: 150);
   }
 
+  /// [radii] overrides [borderRadius] when per-corner radii are needed
+  /// (M3E grouped cards: large outer / small inner corners).
   static BoxDecoration focusDecoration(
     BuildContext context, {
     required bool isFocused,
     double borderRadius = defaultBorderRadius,
+    BorderRadius? radii,
     double borderStrokeAlign = BorderSide.strokeAlignInside,
     Color? color,
   }) {
     final focusColor = color ?? getFocusBorderColor(context);
 
     return BoxDecoration(
-      borderRadius: BorderRadius.circular(borderRadius),
+      borderRadius: radii ?? BorderRadius.circular(borderRadius),
       border: Border.all(
         color: isFocused ? focusColor : Colors.transparent,
         width: focusBorderWidth,
@@ -65,10 +68,32 @@ class FocusTheme {
 
   /// Build focus decoration with background color instead of border.
   /// Useful for video controls where it should match the native hover style.
-  static BoxDecoration focusBackgroundDecoration({required bool isFocused, double borderRadius = defaultBorderRadius}) {
+  /// [radii] overrides [borderRadius] when per-corner radii are needed.
+  static BoxDecoration focusBackgroundDecoration({
+    required bool isFocused,
+    double borderRadius = defaultBorderRadius,
+    BorderRadius? radii,
+  }) {
     return BoxDecoration(
-      borderRadius: BorderRadius.circular(borderRadius),
+      borderRadius: radii ?? BorderRadius.circular(borderRadius),
       color: isFocused ? Colors.white.withValues(alpha: 0.2) : Colors.transparent,
+    );
+  }
+
+  /// Focus background fill derived from the theme's text color, so it stays
+  /// visible on BOTH light and dark surfaces — the white-based
+  /// [focusBackgroundDecoration] disappears on light ones. This is the mono
+  /// convention used by [TrackRow], the navigation rail, and the music player
+  /// surfaces. Prefer this for any new mono-themed surface.
+  static BoxDecoration textFillFocusDecoration(
+    BuildContext context, {
+    required bool isFocused,
+    double borderRadius = defaultBorderRadius,
+    BorderRadius? radii,
+  }) {
+    return BoxDecoration(
+      borderRadius: radii ?? BorderRadius.circular(borderRadius),
+      color: isFocused ? tokens(context).text.withValues(alpha: 0.12) : Colors.transparent,
     );
   }
 }

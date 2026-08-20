@@ -1,23 +1,41 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:plezy/focus/dpad_navigator.dart';
+import 'package:plezy/focus/focusable_text_field.dart';
+import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
+import 'package:plezy/providers/hidden_libraries_provider.dart';
+import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/search_screen.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/widgets/backend_badge.dart';
+import 'package:plezy/widgets/focusable_media_card.dart';
+import 'package:plezy/widgets/focusable_tab_chip.dart';
+import 'package:plezy/widgets/loading_indicator_box.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
+import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -27,28 +45,42 @@ void main() {
   });
 
   setUp(() async {
+    _resetGlobalTestState();
     resetSharedPreferencesForTest();
-    SettingsService.resetForTesting();
     await SettingsService.getInstance();
+    // HiddenLibrariesProvider resolves this lazily; the real SharedPreferences
+    // round trip never completes inside a testWidgets fake-async zone, so warm
+    // the singleton here.
+    await StorageService.getInstance();
   });
 
-  tearDown(() {
-    TvDetectionService.debugSetAppleTVOverride(null);
-    TvDetectionService.setForceTVSync(false);
-  });
+  tearDown(_resetGlobalTestState);
 
   testWidgets('stale callbacks are no-ops after SearchScreen is disposed', (tester) async {
     final key = GlobalKey<State<SearchScreen>>();
+    final item = testMediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Movie 1',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
 
+    final hiddenLibraries = HiddenLibrariesProvider();
+    addTearDown(hiddenLibraries.dispose);
     await tester.pumpWidget(
       TranslationProvider(
-        child: MaterialApp(home: SearchScreen(key: key)),
+        child: ChangeNotifierProvider<HiddenLibrariesProvider>.value(
+          value: hiddenLibraries,
+          child: MaterialApp(home: SearchScreen(key: key)),
+        ),
       ),
     );
 
     final state = key.currentState!;
     final searchInput = state as SearchInputFocusable;
-    searchInput.setSearchQuery('movie');
+    _searchController(tester).text = 'movie';
     await tester.pump();
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -56,61 +88,623 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(() => (state as Refreshable).refresh(), returnsNormally);
-    expect(() => (state as dynamic).updateItem('movie_1'), returnsNormally);
+    expect(() => (state as dynamic).updateItem(item), returnsNormally);
     expect(() => (state as FullRefreshable).fullRefresh(), returnsNormally);
-    expect(() => searchInput.setSearchQuery('new movie'), returnsNormally);
+    expect(() => searchInput.submitSearchQuery('new movie'), returnsNormally);
     expect(() => (state as FocusableTab).focusActiveTabIfReady(), returnsNormally);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('TV OSK search key moves focus to the first result', (tester) async {
-    final (client, key) = await _pumpTvSearchScreen(tester);
+  testWidgets('TV native Search action moves focus to the first result', (tester) async {
+    final (client, _) = await _pumpTvSearchScreen(tester);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
 
-    final state = key.currentState!;
-    (state as SearchInputFocusable).setSearchQuery('movie');
-    // rate_limiter's Debounce compares DateTime.now() against the fake-clock
-    // timer, so it never invokes under FakeAsync — run the search via
-    // refresh() (same _performSearch path) to get results behind the dialog.
-    (state as Refreshable).refresh();
-    await tester.pumpAndSettle();
+    _searchController(tester).text = 'movie';
+    // Let the normal debounce populate results while native input remains active.
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
     expect(client.queries, ['movie']);
     expect(find.text('Movie 1'), findsOneWidget);
 
-    await tester.tap(_keyboardDoneKey());
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
     expect(find.text('Movie 1'), findsOneWidget);
-
-    // Dispose the screen so its still-armed debounce timer is cancelled.
-    await tester.pumpWidget(const SizedBox.shrink());
+    expect(client.queries, ['movie']);
   });
 
-  testWidgets('TV OSK search key before the debounce fires searches immediately', (tester) async {
-    final (client, key) = await _pumpTvSearchScreen(tester);
+  testWidgets('TV native Search action before debounce searches immediately', (tester) async {
+    final (client, _) = await _pumpTvSearchScreen(tester);
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
 
-    (key.currentState! as SearchInputFocusable).setSearchQuery('movie');
+    _searchController(tester).text = 'movie';
     await tester.pump(const Duration(milliseconds: 100));
     expect(client.queries, isEmpty);
 
-    await tester.tap(_keyboardDoneKey());
+    await tester.showKeyboard(find.byType(TextField));
+    await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie']);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
   });
+
+  testWidgets('companion-remote submitSearchQuery closes native input and focuses results', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Selection updates must not re-arm the debounce into a second fetch.
+    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pumpAndSettle();
+    expect(client.queries, ['movie']);
+
+    // Re-submitting already-displayed results leaves result focus stable.
+    final searchInput = key.currentState! as SearchInputFocusable;
+    searchInput.submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+    expect(client.queries, ['movie']);
+
+    // Returning to the input is the D-pad-up path from the first result
+    // (search_screen.dart onNavigateUp), so it must not re-raise the system
+    // keyboard; Select does. The field's first focus already opened it once.
+    searchInput.focusSearchInput();
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('companion-remote query with no results keeps native input closed', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, items: []);
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('zzz');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['zzz']);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('failed companion-remote query keeps native input closed', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, registerClient: false);
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isFalse);
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, isEmpty);
+    expect(find.byIcon(Symbols.error_rounded), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchInput');
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byType(TextField)).readOnly, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('partial server failure shows available results and a warning', (tester) async {
+    final failedClient = _FakeMediaServerClient(
+      serverIdValue: 'server_2',
+      serverNameValue: 'Offline Server',
+      items: const [],
+      searchError: MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'refused'),
+    );
+    final (client, key) = await _pumpTvSearchScreen(tester, additionalClients: [failedClient]);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    expect(failedClient.queries, ['movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text(t.messages.searchPartialResults), findsOneWidget);
+  });
+
+  testWidgets('results from a hidden library never reach the list', (tester) async {
+    final hiddenLibraries = HiddenLibrariesProvider();
+    addTearDown(hiddenLibraries.dispose);
+    await hiddenLibraries.ensureInitialized();
+    await hiddenLibraries.hideLibrary('server_1:2');
+
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      hiddenLibraries: hiddenLibraries,
+      items: _twoLibraryMovies(),
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    // One request per user action: hydrating the hidden keys must not race the
+    // first query into running twice.
+    expect(client.queries, ['movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text('Movie 2'), findsNothing);
+  });
+
+  testWidgets('hiding a library while results are shown re-runs the query', (tester) async {
+    final hiddenLibraries = HiddenLibrariesProvider();
+    addTearDown(hiddenLibraries.dispose);
+
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      hiddenLibraries: hiddenLibraries,
+      items: _twoLibraryMovies(),
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+    expect(client.queries, ['movie']);
+    expect(find.text('Movie 2'), findsOneWidget);
+
+    await hiddenLibraries.hideLibrary('server_1:2');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie', 'movie']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text('Movie 2'), findsNothing);
+  });
+
+  testWidgets('all server failures render the failed state instead of empty results', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      searchError: MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'refused'),
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    expect(find.text(t.explore.searchFailed), findsOneWidget);
+    expect(find.text(t.errors.searchUnavailable), findsOneWidget);
+    expect(find.text(t.messages.noResultsFound), findsNothing);
+  });
+
+  testWidgets('editing cancels the stale server request before the next debounce', (tester) async {
+    final (client, _) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+    final gate = Completer<void>();
+    client.searchGate = gate;
+
+    _searchController(tester).text = 'first';
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump();
+    expect(client.queries, ['first']);
+    final staleAbort = client.lastSearchAbort;
+    expect(staleAbort, isNotNull);
+    expect(staleAbort!.isAborted, isFalse);
+
+    _searchController(tester).text = 'second';
+    await tester.pump();
+
+    expect(staleAbort.isAborted, isTrue);
+    expect(client.queries, ['first']);
+
+    gate.complete();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pumpAndSettle();
+    expect(client.queries, ['first', 'second']);
+    expect(find.text(t.explore.searchFailed), findsNothing);
+  });
+
+  testWidgets('all-server cancellation preserves prior results without an error', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    client.searchError = MediaServerHttpException(
+      type: MediaServerHttpErrorType.cancelled,
+      message: 'connection replaced',
+    );
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('second');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie', 'second']);
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text(t.explore.searchFailed), findsNothing);
+    expect(find.text(t.errors.searchUnavailable), findsNothing);
+  });
+
+  testWidgets('card refresh stays server-qualified without restarting search', (tester) async {
+    final serverOneItem = testMediaItem(
+      id: 'shared-id',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Shared',
+      serverId: 'server_1',
+      serverName: 'Server One',
+    );
+    final serverTwoItem = testMediaItem(
+      id: 'shared-id',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Shared Alternate',
+      serverId: 'server_2',
+      serverName: 'Server Two',
+    );
+    final serverTwoClient = _FakeMediaServerClient(
+      serverIdValue: 'server_2',
+      serverNameValue: 'Server Two',
+      items: [serverTwoItem],
+    );
+    final (serverOneClient, key) = await _pumpTvSearchScreen(
+      tester,
+      items: [serverOneItem],
+      additionalClients: [serverTwoClient],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('shared');
+    await tester.pumpAndSettle();
+
+    expect(serverOneClient.queries, ['shared']);
+    expect(serverTwoClient.queries, ['shared']);
+    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
+
+    // The exact-title match is the first, focused card. Keep the fetch open
+    // to observe the screen while the item-only refresh is in flight.
+    final sourceFinder = find.byKey(Key(serverOneItem.globalKey));
+    final untouchedFinder = find.byKey(Key(serverTwoItem.globalKey));
+    final sourceCardState = tester.state(sourceFinder);
+    final untouchedCardState = tester.state(untouchedFinder);
+    final focusedNode = FocusManager.instance.primaryFocus;
+    expect(focusedNode?.debugLabel, 'SearchFirstResult');
+
+    final fetchGate = Completer<void>();
+    final updated = serverOneItem.copyWith(title: 'Refreshed on Server One');
+    serverOneClient
+      ..itemResult = updated
+      ..fetchGate = fetchGate;
+
+    tester.widget<FocusableMediaCard>(sourceFinder).onRefresh!(serverOneItem);
+    await tester.pump();
+
+    // This used to fan the bare id out to every server and drive the whole
+    // screen through another search/loading pass.
+    expect(serverOneClient.fetchedItemIds, ['shared-id']);
+    expect(serverTwoClient.fetchedItemIds, isEmpty);
+    expect(serverOneClient.queries, ['shared']);
+    expect(serverTwoClient.queries, ['shared']);
+    expect(find.byWidget(LoadingIndicatorBox.sliver), findsNothing);
+    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
+    expect(tester.state(sourceFinder), same(sourceCardState));
+    expect(tester.state(untouchedFinder), same(untouchedCardState));
+    expect(FocusManager.instance.primaryFocus, same(focusedNode));
+
+    fetchGate.complete();
+    await tester.pumpAndSettle();
+
+    // The refresh lands as a merged copy (mergeFetchedMediaItem keeps the
+    // search row's library/server context, #1970), not the fetched instance.
+    final refreshedItem = tester.widget<FocusableMediaCard>(sourceFinder).item as MediaItem;
+    expect(refreshedItem.title, 'Refreshed on Server One');
+    expect(refreshedItem.serverId, 'server_1');
+    expect(refreshedItem.serverName, 'Server One');
+    expect(tester.widget<FocusableMediaCard>(untouchedFinder).item, same(serverTwoItem));
+    expect(tester.state(sourceFinder), same(sourceCardState));
+    expect(tester.state(untouchedFinder), same(untouchedCardState));
+    expect(FocusManager.instance.primaryFocus, same(focusedNode));
+    expect(serverOneClient.queries, ['shared']);
+    expect(serverTwoClient.queries, ['shared']);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('search rows show the library name when the server has several libraries', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      items: [
+        testMediaItem(
+          id: 'movie_1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Movie 1',
+          serverId: 'server_1',
+          serverName: 'Server',
+          libraryId: '1',
+          libraryTitle: 'Movies',
+        ),
+        testMediaItem(
+          id: 'movie_2',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Movie 2',
+          serverId: 'server_1',
+          serverName: 'Server',
+          libraryId: '2',
+          libraryTitle: 'Anime',
+        ),
+      ],
+      libraries: [_library('1', 'Movies'), _library('2', 'Anime')],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(client.queries, ['movie']);
+    // The source line always carries the full provenance: backend icon,
+    // server name, then library name.
+    expect(find.text('Server • Movies'), findsOneWidget);
+    expect(find.text('Server • Anime'), findsOneWidget);
+    expect(find.byType(BackendBadge), findsNWidgets(2));
+  });
+
+  testWidgets('library name back-fills from loaded libraries when the row only carries an id', (tester) async {
+    // Plex search rows name their section only by librarySectionKey; the
+    // title must resolve against the loaded libraries without a request.
+    final (_, key) = await _pumpTvSearchScreen(
+      tester,
+      items: _twoLibraryMovies(),
+      libraries: [_library('1', 'Movies'), _library('2', 'Anime')],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Server • Movies'), findsOneWidget);
+    expect(find.text('Server • Anime'), findsOneWidget);
+  });
+
+  testWidgets('no library label on a single-library server', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(
+      tester,
+      items: [
+        testMediaItem(
+          id: 'movie_1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Movie 1',
+          serverId: 'server_1',
+          serverName: 'Server',
+          libraryId: '1',
+          libraryTitle: 'Movies',
+        ),
+      ],
+      libraries: [_library('1', 'Movies')],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Movie 1'), findsOneWidget);
+    expect(find.text('Server • Movies'), findsNothing);
+    expect(find.byType(BackendBadge), findsNothing);
+  });
+
+  testWidgets('card refresh keeps the library stamp', (tester) async {
+    final stamped = testMediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Movie 1',
+      serverId: 'server_1',
+      serverName: 'Server',
+      libraryId: '1',
+      libraryTitle: 'Movies',
+    );
+    final (client, key) = await _pumpTvSearchScreen(
+      tester,
+      items: [stamped],
+      libraries: [_library('1', 'Movies'), _library('2', 'Anime')],
+    );
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+    expect(find.text('Server • Movies'), findsOneWidget);
+
+    // A fresh fetchItem carries no library context (a Jellyfin /Items/{id}
+    // response has none); the merge must keep the stamp search applied.
+    client.itemResult = testMediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Movie 1 (Refreshed)',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final cardFinder = find.byKey(Key(stamped.globalKey));
+    tester.widget<FocusableMediaCard>(cardFinder).onRefresh!(stamped);
+    await tester.pumpAndSettle();
+
+    expect(client.fetchedItemIds, ['movie_1']);
+    expect(find.text('Movie 1 (Refreshed)'), findsOneWidget);
+    expect(find.text('Server • Movies'), findsOneWidget);
+    final refreshed = tester.widget<FocusableMediaCard>(cardFinder).item as MediaItem;
+    expect(refreshed.libraryId, '1');
+    expect(refreshed.libraryTitle, 'Movies');
+  });
+
+  testWidgets('kind chips appear only when results span multiple kinds', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
+    await tester.pumpAndSettle();
+
+    // Single-kind results have nothing to filter.
+    expect(find.byType(FocusableTabChip), findsNothing);
+
+    client.items
+      ..clear()
+      ..addAll(_mixedKindItems());
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsOneWidget);
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks), findsOneWidget);
+  });
+
+  testWidgets('selecting a kind chip filters the list and All restores it', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies));
+    await tester.pumpAndSettle();
+    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsNothing);
+    expect(find.text('Paw Patrol Theme'), findsNothing);
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all));
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsNWidgets(3));
+  });
+
+  testWidgets('a kind ranked out of the trimmed All view keeps its chip and full results', (tester) async {
+    // 100 exact-title episodes fill the ranked display budget; the weakly
+    // titled track only survives in the candidate pool behind it.
+    final items = [
+      for (var i = 0; i < 100; i++)
+        testMediaItem(
+          id: 'episode_$i',
+          backend: MediaBackend.plex,
+          kind: MediaKind.episode,
+          title: 'Paw Patrol',
+          serverId: 'server_1',
+          serverName: 'Server',
+        ),
+      testMediaItem(
+        id: 'track_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.track,
+        title: 'Underwater Instrumental Extended Version (paw remix)',
+        serverId: 'server_1',
+        serverName: 'Server',
+      ),
+    ];
+    final (_, key) = await _pumpTvSearchScreen(tester, items: items);
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('Paw Patrol');
+    await tester.pumpAndSettle();
+
+    // The track lost the ranked top-100, but its chip derives from the
+    // pre-rank pool, so it must still be offered and show its rows.
+    final tracksChip = find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks);
+    expect(tracksChip, findsOneWidget);
+
+    await tester.tap(tracksChip);
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+    expect(find.text('Underwater Instrumental Extended Version (paw remix)'), findsOneWidget);
+  });
+
+  testWidgets('the filter falls back to All when its kind vanishes from a refined query', (tester) async {
+    final (client, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes));
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+
+    client.items.removeWhere((item) => item.kind == MediaKind.episode);
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw patrol');
+    await tester.pumpAndSettle();
+
+    // Episodes are gone: the chip disappears and every remaining row shows.
+    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsNothing);
+    expect(find.byType(FocusableMediaCard), findsNWidgets(2));
+  });
+
+  testWidgets('D-pad walks first result to chips and back, and Select applies the filter', (tester) async {
+    final (_, key) = await _pumpTvSearchScreen(tester, items: _mixedKindItems());
+    await tester.pumpAndSettle();
+
+    (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Up from the first result lands on the active (All) chip.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChipAll');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+    expect(find.byType(FocusableMediaCard), findsOneWidget);
+    expect(find.text('Paw Patrol Rescue'), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
+
+    // Up returns to the selected chip, not All.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchKindChip_movie');
+  });
 }
 
-Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(WidgetTester tester) async {
-  TvDetectionService.debugSetAppleTVOverride(null);
-  await TvDetectionService.getInstance(forceTv: true);
-  TvDetectionService.setForceTVSync(true);
+Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchScreen(
+  WidgetTester tester, {
+  List<MediaItem>? items,
+  // When false, no server is registered, so performSearchQuery throws — the
+  // path a companion-remote submit hits when the search fails outright.
+  bool registerClient = true,
+  Object? searchError,
+  List<_FakeMediaServerClient> additionalClients = const [],
+  HiddenLibrariesProvider? hiddenLibraries,
+  List<MediaLibrary> libraries = const [],
+}) async {
+  TvDetectionService.debugSetAppleTVOverride(true);
   tester.view.devicePixelRatio = 1.0;
   tester.view.physicalSize = const Size(1280, 720);
   addTearDown(() {
@@ -119,26 +713,44 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
   });
 
   final client = _FakeMediaServerClient(
-    items: [
-      MediaItem(
-        id: 'movie_1',
-        backend: MediaBackend.plex,
-        kind: MediaKind.movie,
-        title: 'Movie 1',
-        serverId: 'server_1',
-        serverName: 'Server',
-      ),
-    ],
+    items:
+        items ??
+        [
+          testMediaItem(
+            id: 'movie_1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.movie,
+            title: 'Movie 1',
+            serverId: 'server_1',
+            serverName: 'Server',
+          ),
+        ],
+    searchError: searchError,
   );
-  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-  final provider = MultiServerProvider(manager, DataAggregationService(manager));
+  final manager = MultiServerManager();
+  if (registerClient) manager.debugRegisterClientForTesting(client);
+  for (final additionalClient in additionalClients) {
+    manager.debugRegisterClientForTesting(additionalClient);
+  }
+  final provider = testMultiServerProvider(manager);
   addTearDown(provider.dispose);
+
+  final hidden = hiddenLibraries ?? HiddenLibrariesProvider();
+  if (hiddenLibraries == null) addTearDown(hidden.dispose);
+
+  final librariesProvider = LibrariesProvider();
+  addTearDown(librariesProvider.dispose);
+  if (libraries.isNotEmpty) await librariesProvider.updateLibraryOrder(libraries);
 
   final key = GlobalKey<State<SearchScreen>>();
   await tester.pumpWidget(
     TranslationProvider(
-      child: ChangeNotifierProvider<MultiServerProvider>.value(
-        value: provider,
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: provider),
+          ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hidden),
+          ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+        ],
         child: MaterialApp(
           theme: monoTheme(dark: true),
           home: SearchScreen(key: key),
@@ -146,27 +758,111 @@ Future<(_FakeMediaServerClient, GlobalKey<State<SearchScreen>>)> _pumpTvSearchSc
       ),
     ),
   );
+  addTearDown(() async {
+    // Dispose the search state (including its debounce, focus nodes, and any
+    // hosted OSK route) before resetting process-wide focus/keyboard state.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+  });
   return (client, key);
 }
 
-Finder _keyboardDoneKey() {
-  return find.descendant(
-    of: find.byKey(const Key('tv_virtual_keyboard_panel')),
-    matching: find.byIcon(Icons.search_rounded),
-  );
+/// Two movies on the same server in different libraries, so a test can hide
+/// one library and assert only the other survives.
+List<MediaItem> _twoLibraryMovies() => [
+  testMediaItem(
+    id: 'movie_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: 'Movie 1',
+    serverId: 'server_1',
+    serverName: 'Server',
+    libraryId: '1',
+  ),
+  testMediaItem(
+    id: 'movie_2',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: 'Movie 2',
+    serverId: 'server_1',
+    serverName: 'Server',
+    libraryId: '2',
+  ),
+];
+
+/// One result per kind on the same single-library server, so kind chips have
+/// something to filter.
+List<MediaItem> _mixedKindItems() => [
+  testMediaItem(
+    id: 'movie_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: 'Paw Patrol: The Movie',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+  testMediaItem(
+    id: 'episode_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.episode,
+    title: 'Paw Patrol Rescue',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+  testMediaItem(
+    id: 'track_1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.track,
+    title: 'Paw Patrol Theme',
+    serverId: 'server_1',
+    serverName: 'Server',
+  ),
+];
+
+/// A library on `server_1`, keyed so `MediaItem.libraryGlobalKey` for items
+/// with the same `libraryId` resolves to it.
+MediaLibrary _library(String id, String title) =>
+    MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: 'server_1');
+
+TextEditingController _searchController(WidgetTester tester) {
+  return tester.widget<FocusableTextField>(find.byType(FocusableTextField)).controller;
+}
+
+void _resetGlobalTestState() {
+  FocusManager.instance.primaryFocus?.unfocus();
+  HardwareKeyboard.instance.clearState();
+  SelectKeyUpSuppressor.clearSuppression();
+  BackKeyUpSuppressor.clearSuppression();
+  BackKeyCoordinator.clear();
+  TvDetectionService.debugSetAppleTVOverride(null);
+  TvDetectionService.setForceTVSync(false);
+  SettingsService.resetForTesting();
 }
 
 class _FakeMediaServerClient implements MediaServerClient {
+  final String serverIdValue;
+  final String serverNameValue;
   final List<MediaItem> items;
+  Object? searchError;
   final List<String> queries = [];
+  final List<String> fetchedItemIds = [];
+  MediaItem? itemResult;
+  Completer<void>? fetchGate;
+  Completer<void>? searchGate;
+  AbortController? lastSearchAbort;
 
-  _FakeMediaServerClient({required this.items});
+  _FakeMediaServerClient({
+    required this.items,
+    this.serverIdValue = 'server_1',
+    this.serverNameValue = 'Server',
+    this.searchError,
+  });
 
   @override
-  ServerId get serverId => ServerId('server_1');
+  ServerId get serverId => ServerId(serverIdValue);
 
   @override
-  String? get serverName => 'Server';
+  String? get serverName => serverNameValue;
 
   @override
   MediaBackend get backend => MediaBackend.plex;
@@ -175,9 +871,28 @@ class _FakeMediaServerClient implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.plex;
 
   @override
-  Future<List<MediaItem>> searchItems(String query, {int limit = 100}) async {
+  Future<List<MediaItem>> searchItems(
+    String query, {
+    int limit = 100,
+    AbortController? abort,
+    Set<String> excludedLibraryIds = const {},
+  }) async {
     queries.add(query);
+    lastSearchAbort = abort;
+    abort?.throwIfAborted();
+    if (searchError != null) throw searchError!;
+    final gate = searchGate;
+    if (gate != null) await gate.future;
+    abort?.throwIfAborted();
     return items;
+  }
+
+  @override
+  Future<MediaItem?> fetchItem(String id, {bool useCache = true}) async {
+    fetchedItemIds.add(id);
+    final gate = fetchGate;
+    if (gate != null) await gate.future;
+    return itemResult;
   }
 
   @override

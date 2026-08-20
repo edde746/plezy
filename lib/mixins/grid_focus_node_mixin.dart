@@ -59,10 +59,12 @@ mixin GridFocusNodeMixin<T extends StatefulWidget> on State<T> {
       }
     }
     for (final key in keysToRemove) {
-      final node = gridItemFocusNodes.remove(key);
-      if (node != null && !node.hasFocus) {
-        node.dispose();
-      }
+      final node = gridItemFocusNodes[key];
+      // A focused node is still borrowed by its mounted card. Keep ownership
+      // and indexed identity until a later eviction or final teardown.
+      if (node == null || node.hasFocus) continue;
+      gridItemFocusNodes.remove(key);
+      node.dispose();
     }
   }
 

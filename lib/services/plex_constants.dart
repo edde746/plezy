@@ -8,6 +8,7 @@ class PlexStreamType {
   static const int video = 1;
   static const int audio = 2;
   static const int subtitle = 3;
+  static const int lyrics = 4;
 }
 
 /// Plex metadata `type` integer codes — the value that goes in the

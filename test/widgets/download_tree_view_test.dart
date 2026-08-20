@@ -5,6 +5,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/widgets/download_tree_view.dart';
+import '../test_helpers/media_items.dart';
 
 DownloadTreeNode _episodeNode(String globalKey) => DownloadTreeNode(
   key: globalKey,
@@ -34,7 +35,7 @@ MediaItem _episodeMeta({
   required ServerId? serverId,
   required String? grandparentId,
   required String? parentId,
-}) => MediaItem(
+}) => testMediaItem(
   id: id,
   backend: MediaBackend.plex,
   kind: MediaKind.episode,

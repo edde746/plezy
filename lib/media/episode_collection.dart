@@ -1,40 +1,73 @@
 import 'library_query.dart';
+import '../services/settings_service.dart' show SettingsService, SpecialsOrdering;
 import 'media_item.dart';
 import 'media_kind.dart';
 import 'media_server_client.dart';
 
-/// Collect every episode of a show into [out] using the backend's one-shot
-/// recursive-leaves call ([MediaServerClient.fetchPlayableDescendants] —
-/// Plex's `/library/metadata/{id}/allLeaves`, Jellyfin's
-/// `/Items?Recursive=true&IncludeItemTypes=Movie,Episode`). Avoids walking
-/// show → seasons → episodes client-side, so large series come back in one
-/// trip and aren't capped by any per-page Limit.
+/// Collect every episode below a show or season into [out] using the backend's
+/// one-shot recursive-leaves call ([MediaServerClient.fetchPlayableDescendants]
+/// — Plex's `/library/metadata/{id}/allLeaves`, Jellyfin's
+/// `/Items?Recursive=true&IncludeItemTypes=Movie,Episode`). This avoids walking
+/// show → seasons → episodes client-side and is not capped by a page size.
 ///
-/// A failure of the underlying call propagates to the caller — both
-/// `DownloadProvider.queueDownload` and the sync rule executor wrap their
-/// invocations so the user-facing error surfaces / the rule run is rolled
-/// back.
-Future<void> collectEpisodesForShow(
+/// A failure propagates to the caller so download and sync transactions can
+/// surface or roll back the operation.
+Future<void> collectEpisodes(
   MediaServerClient client,
-  String showRatingKey, {
+  String parentId, {
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
+  bool includeSpecials = true,
 }) {
-  return _collectPlayable(client, showRatingKey, unwatchedOnly: unwatchedOnly, out: out, fallback: fallback);
+  return _collectPlayable(
+    client,
+    parentId,
+    unwatchedOnly: unwatchedOnly,
+    out: out,
+    fallback: fallback,
+    includeSpecials: includeSpecials,
+  );
 }
 
-/// Collect every episode of a single season into [out] via the same
-/// one-shot endpoint. On a season the leaves *are* the episodes, so the
-/// shape matches the show case.
-Future<void> collectEpisodesForSeason(
+/// Walks [items] and collects playable movie/episode/track entries into [out].
+/// Shows and seasons are expanded into their episodes; albums and artists are
+/// expanded into their tracks (audio playlists/collections). Clips, nested
+/// collections/playlists, and unknown types are skipped. [unwatchedOnly] applies
+/// the same played-state filter to every kind — for tracks that means
+/// Plex/Jellyfin play counts.
+///
+/// Shared by the one-shot "download this list" queue and the sync rule that
+/// keeps the same list downloaded, so both expand a list to the same items.
+Future<void> collectListLeaves(
   MediaServerClient client,
-  String seasonRatingKey, {
+  List<MediaItem> items, {
   required bool unwatchedOnly,
   required List<MediaItem> out,
-  MediaItem? fallback,
-}) {
-  return _collectPlayable(client, seasonRatingKey, unwatchedOnly: unwatchedOnly, out: out, fallback: fallback);
+}) async {
+  for (final item in items) {
+    switch (item.kind) {
+      case MediaKind.movie:
+      case MediaKind.episode:
+      case MediaKind.track:
+        if (unwatchedOnly && !item.isUnwatchedOrInProgress) break;
+        out.add(item);
+      case MediaKind.show:
+      case MediaKind.season:
+        await collectEpisodes(client, item.id, unwatchedOnly: unwatchedOnly, out: out, fallback: item);
+      case MediaKind.album:
+      case MediaKind.artist:
+        // One recursive-leaves call per container on both backends
+        // (Jellyfin retries tag-only artists by album-artist credit).
+        for (final track in await client.fetchPlayableDescendants(item.id)) {
+          if (unwatchedOnly && !track.isUnwatchedOrInProgress) continue;
+          out.add(track);
+        }
+      default:
+        // Skip clips, nested collections/playlists, unknown types.
+        break;
+    }
+  }
 }
 
 /// Fetch just the first episode of a season without walking the entire season.
@@ -44,21 +77,27 @@ Future<MediaItem?> fetchFirstEpisodeForSeason(
   String seasonRatingKey, {
   String? seriesId,
 }) async {
-  final seasonPagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
-  final page = seriesId != null && seasonPagingClient != null
-      ? await seasonPagingClient.fetchSeasonEpisodesPage(seriesId, seasonRatingKey, start: 0, size: 1)
-      : await client.fetchChildrenPage(seasonRatingKey, start: 0, size: 1);
+  final page = await _fetchSeasonPage(client, seasonId: seasonRatingKey, seriesId: seriesId, start: 0, size: 1);
   for (final item in page.items) {
     if (item.kind == MediaKind.episode) return item;
   }
   return null;
 }
 
+/// A season number of 0 (or missing) denotes the Specials folder. Season
+/// selection treats it as a last resort for "what to watch next" — see
+/// [defaultPlaybackSeasonIndex] and [firstUnwatchedSeasonIndex], which open on
+/// the first regular season. Episode ordering ([sortEpisodesByWatchOrder])
+/// places Specials per the [SettingsService.specialsOrdering] preference.
+bool isSpecialSeasonNumber(int? seasonNumber) => (seasonNumber ?? 0) == 0;
+
 /// Prefer the first regular season over specials, falling back to the first
 /// season row when a show only has specials or lacks season indexes.
 int defaultPlaybackSeasonIndex(List<MediaItem> seasons) {
   if (seasons.isEmpty) return 0;
-  final regularSeasonIndex = seasons.indexWhere((season) => season.kind == MediaKind.season && (season.index ?? 0) > 0);
+  final regularSeasonIndex = seasons.indexWhere(
+    (season) => season.kind == MediaKind.season && !isSpecialSeasonNumber(season.index),
+  );
   if (regularSeasonIndex != -1) return regularSeasonIndex;
   final firstSeasonIndex = seasons.indexWhere((season) => season.kind == MediaKind.season);
   return firstSeasonIndex == -1 ? 0 : firstSeasonIndex;
@@ -73,18 +112,17 @@ MediaItem? defaultPlaybackSeason(List<MediaItem> seasons) {
 }
 
 /// Index of the first season that still has unwatched episodes, preferring
-/// regular seasons over specials (mirrors [defaultPlaybackSeasonIndex]). Uses
-/// leafCount/viewedLeafCount, so no episodes need to be fetched. Returns null
-/// when every season is fully watched (or counts are unavailable).
+/// regular seasons over specials (mirrors [defaultPlaybackSeasonIndex]).
+/// Uses normalized aggregate state, so no episodes need to be fetched.
+/// Returns null when every season is fully watched or counts are unavailable.
 int? firstUnwatchedSeasonIndex(List<MediaItem> seasons) {
   int? firstSpecial;
   for (var i = 0; i < seasons.length; i++) {
     final season = seasons[i];
     if (season.kind != MediaKind.season) continue;
-    final leaf = season.leafCount;
-    if (leaf == null || leaf <= 0) continue;
-    if ((season.viewedLeafCount ?? 0) >= leaf) continue; // fully watched
-    if ((season.index ?? 0) > 0) return i; // first regular season with unwatched
+    if (season.leafWatchTotal == null) continue;
+    if (season.isWatched) continue;
+    if (!isSpecialSeasonNumber(season.index)) return i; // first regular season with unwatched
     firstSpecial ??= i; // specials only count as a last resort
   }
   return firstSpecial;
@@ -96,8 +134,119 @@ int? firstUnwatchedSeasonIndex(List<MediaItem> seasons) {
 MediaItem? firstUnwatchedEpisode(List<MediaItem> episodes) {
   for (final episode in episodes) {
     if (episode.kind != MediaKind.episode) continue;
-    if (episode.isWatched && !episode.hasActiveProgress) continue;
+    if (!episode.isUnwatchedOrInProgress) continue;
     return episode;
+  }
+  return null;
+}
+
+/// Orders episodes into the **aired watch order** — the sequence they're meant
+/// to be played in: primarily by air date ([MediaItem.originallyAvailableAt]),
+/// so a Special that aired between two regular episodes is played between them,
+/// the way Plex's own play queue and clients do (#1416).
+///
+/// Episodes without a usable air date sort *after* dated ones, falling back to
+/// [compareEpisodesSpecialsLast]. So undated Specials never wedge into the
+/// middle of the aired run, and a "next N" cut still leads with regular
+/// episodes — preserving the #1414 guarantee that the whole Specials folder is
+/// never front-loaded.
+///
+/// Prefer [sortEpisodesByWatchOrder], which honors the user's
+/// [SettingsService.specialsOrdering] preference — many shows fill season 0
+/// with same-day featurettes that would hijack auto-advance (#1952).
+int compareEpisodesByWatchOrder(MediaItem a, MediaItem b) {
+  final aDate = _airDateKey(a);
+  final bDate = _airDateKey(b);
+  if (aDate != null && bDate != null) {
+    final byDate = aDate.compareTo(bDate);
+    if (byDate != 0) return byDate;
+  } else if (aDate == null && bDate != null) {
+    return 1; // undated episodes sort after dated ones
+  } else if (aDate != null && bDate == null) {
+    return -1;
+  }
+  // Same air date, or both undated.
+  return compareEpisodesSpecialsLast(a, b);
+}
+
+/// Orders episodes with Specials strictly after the regular seasons, then by
+/// season number and episode number (#1414). The watch order for
+/// [SpecialsOrdering.specialsLast], the client-side fallback for
+/// [SpecialsOrdering.respectServer], and the tie/undated fallback inside
+/// [compareEpisodesByWatchOrder]. The trailing id comparison keeps ties
+/// deterministic (Dart's [List.sort] is not stable) so a "next N" cut is
+/// stable across runs.
+int compareEpisodesSpecialsLast(MediaItem a, MediaItem b) {
+  final aSpecial = isSpecialSeasonNumber(a.parentIndex);
+  final bSpecial = isSpecialSeasonNumber(b.parentIndex);
+  if (aSpecial != bSpecial) return aSpecial ? 1 : -1;
+  final season = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+  if (season != 0) return season;
+  final episode = (a.index ?? 0).compareTo(b.index ?? 0);
+  if (episode != 0) return episode;
+  return a.id.compareTo(b.id);
+}
+
+/// Air date used to order episodes in [compareEpisodesByWatchOrder], or null
+/// when absent. Both backends normalize [MediaItem.originallyAvailableAt] to
+/// `YYYY-MM-DD` (Plex natively, Jellyfin from `PremiereDate`), so a plain
+/// lexicographic comparison is chronological.
+String? _airDateKey(MediaItem episode) {
+  final date = episode.originallyAvailableAt;
+  return (date == null || date.isEmpty) ? null : date;
+}
+
+/// The user's [SettingsService.specialsOrdering] preference, defaulting to
+/// [SpecialsOrdering.respectServer] when settings are unavailable.
+SpecialsOrdering effectiveSpecialsOrdering() =>
+    SettingsService.instanceOrNull?.read(SettingsService.specialsOrdering) ?? SpecialsOrdering.respectServer;
+
+/// In-place sort into the shared episode watch order used by the offline
+/// next/prev queue, the offline OnDeck list, the count-capped "download /
+/// sync next N" selection, and (mode-adjusted) the online queue builders.
+///
+/// [ordering] defaults to [effectiveSpecialsOrdering]:
+/// - [SpecialsOrdering.airDate] — aired interleave
+///   ([compareEpisodesByWatchOrder], #1416);
+/// - [SpecialsOrdering.specialsLast] — Specials after the regular seasons
+///   ([compareEpisodesSpecialsLast], #1952);
+/// - [SpecialsOrdering.respectServer] — this function has no server order to
+///   respect, so it falls back to Specials-last: the safe order for "next N"
+///   cuts (#1414) and offline auto-advance. Online queue builders implement
+///   the mode themselves: `createShowPlayQueue` picks the Plex source URI and
+///   the Jellyfin/Plex `fetchClientSideEpisodeQueue` overrides decide between
+///   preserving the response order and calling back into this sort.
+void sortEpisodesByWatchOrder(List<MediaItem> episodes, {SpecialsOrdering? ordering}) {
+  final mode = ordering ?? effectiveSpecialsOrdering();
+  episodes.sort(mode == SpecialsOrdering.airDate ? compareEpisodesByWatchOrder : compareEpisodesSpecialsLast);
+}
+
+/// The episode after [currentIdx] in [ordered] that is backed by a different
+/// file than the current one. Plex lists each episode of a multi-episode file
+/// (`S02E24-E25.mkv`) as its own item, and advancing to a same-file sibling
+/// would replay the file from the start (#1500). Items without part metadata
+/// never match, so this degrades to plain adjacency.
+MediaItem? nextEpisodeSkippingSameFile(List<MediaItem> ordered, int currentIdx) {
+  final current = ordered[currentIdx];
+  for (var i = currentIdx + 1; i < ordered.length; i++) {
+    if (!current.sharesFileWith(ordered[i])) return ordered[i];
+  }
+  return null;
+}
+
+/// The episode before [currentIdx] in [ordered] backed by a different file,
+/// collapsed to the first episode of its same-file group so a multi-episode
+/// file is entered at the episode that fronts it (#1500).
+MediaItem? previousEpisodeSkippingSameFile(List<MediaItem> ordered, int currentIdx) {
+  final current = ordered[currentIdx];
+  for (var i = currentIdx - 1; i >= 0; i--) {
+    final candidate = ordered[i];
+    if (current.sharesFileWith(candidate)) continue;
+    var head = i;
+    while (head > 0 && candidate.sharesFileWith(ordered[head - 1])) {
+      head--;
+    }
+    return ordered[head];
   }
   return null;
 }
@@ -152,15 +301,26 @@ Future<LibraryPage<MediaItem>> fetchSeasonEpisodePage(
   required int start,
   required int size,
 }) async {
-  final seasonPagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
-  final page = seasonPagingClient != null
-      ? await seasonPagingClient.fetchSeasonEpisodesPage(show.id, season.id, start: start, size: size)
-      : await client.fetchChildrenPage(season.id, start: start, size: size);
+  final page = await _fetchSeasonPage(client, seriesId: show.id, seasonId: season.id, start: start, size: size);
   return LibraryPage<MediaItem>(
     items: normalizeSeasonEpisodes(page.items, show: show, season: season),
     totalCount: page.totalCount,
     offset: page.offset,
   );
+}
+
+Future<LibraryPage<MediaItem>> _fetchSeasonPage(
+  MediaServerClient client, {
+  required String seasonId,
+  required int start,
+  required int size,
+  String? seriesId,
+}) {
+  final pagingClient = client is SeasonEpisodePagingClient ? client as SeasonEpisodePagingClient : null;
+  if (seriesId != null && pagingClient != null) {
+    return pagingClient.fetchSeasonEpisodesPage(seriesId, seasonId, start: start, size: size);
+  }
+  return client.fetchChildrenPage(seasonId, start: start, size: size);
 }
 
 List<MediaItem> normalizeSeasonEpisodes(
@@ -192,13 +352,26 @@ Future<void> _collectPlayable(
   required bool unwatchedOnly,
   required List<MediaItem> out,
   MediaItem? fallback,
+  bool includeSpecials = true,
 }) async {
   final leaves = await client.fetchPlayableDescendants(parentId);
+  // Collect into a local list and order it before handing back: the backend
+  // returns episodes in raw container order (Plex /grandchildren puts S00
+  // first). Sorting into aired watch order means order-capped callers ("next N
+  // unwatched" download, sync-rule deficit) slice the next episodes in the order
+  // they're meant to be watched — Specials interleaved by air date, never the
+  // whole Specials folder front-loaded (#1414). Sort the per-call slice, not the
+  // shared `out` accumulator, so multi-container callers don't interleave across
+  // shows.
+  final collected = <MediaItem>[];
   for (final ep in leaves) {
     if (ep.kind != MediaKind.episode) continue;
-    if (unwatchedOnly && ep.isWatched && !ep.hasActiveProgress) continue;
-    out.add(_withFallbackLibrary(ep, fallback));
+    if (!includeSpecials && isSpecialSeasonNumber(ep.parentIndex)) continue;
+    if (unwatchedOnly && !ep.isUnwatchedOrInProgress) continue;
+    collected.add(_withFallbackLibrary(ep, fallback));
   }
+  sortEpisodesByWatchOrder(collected);
+  out.addAll(collected);
 }
 
 MediaItem _withFallbackLibrary(MediaItem item, MediaItem? fallback) {

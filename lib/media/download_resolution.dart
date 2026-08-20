@@ -50,5 +50,14 @@ class DownloadResolution {
   final String? mediaSourceId;
   final List<DownloadSubtitleSpec> externalSubtitles;
 
-  const DownloadResolution({required this.videoUrl, this.mediaSourceId, this.externalSubtitles = const []});
+  /// Whether [externalSubtitles] is authoritative. A false value keeps the
+  /// supplementary-download queue pending so it can retry enrichment later.
+  final bool externalSubtitlesResolved;
+
+  const DownloadResolution({
+    required this.videoUrl,
+    this.mediaSourceId,
+    this.externalSubtitles = const [],
+    this.externalSubtitlesResolved = true,
+  });
 }

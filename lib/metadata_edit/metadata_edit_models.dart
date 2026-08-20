@@ -1,7 +1,8 @@
-import '../media/media_backend.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+import '../utils/media_image_helper.dart';
 
 enum MetadataEditFieldType { text, multilineText, date, stringList, choice, artwork }
 
@@ -24,6 +25,7 @@ class MetadataArtworkConfig {
   final int gridColumns;
   final double gridAspectRatio;
   final MetadataArtworkFit fit;
+  final ImageType imageType;
 
   const MetadataArtworkConfig({
     required this.key,
@@ -33,6 +35,7 @@ class MetadataArtworkConfig {
     required this.gridColumns,
     required this.gridAspectRatio,
     this.fit = MetadataArtworkFit.cover,
+    this.imageType = ImageType.poster,
   });
 }
 
@@ -115,7 +118,6 @@ class MetadataEditDraft {
 }
 
 abstract class MetadataEditAdapter {
-  MediaBackend get backend;
   MediaServerClient get mediaClient;
 
   bool supportsKind(MediaKind kind);
@@ -144,7 +146,9 @@ abstract class MetadataEditAdapter {
 
   Future<List<MetadataArtworkOption>> fetchArtwork(MetadataEditDraft draft, MetadataEditField field);
 
-  Future<bool> applyArtworkOption(MetadataEditDraft draft, MetadataEditField field, MetadataArtworkOption option);
+  Future<bool> applyArtworkOption(MetadataEditDraft draft, MetadataEditField field, MetadataArtworkOption option) {
+    return applyArtworkFromUrl(draft, field, option.sourceUrl);
+  }
 
   Future<bool> applyArtworkFromUrl(MetadataEditDraft draft, MetadataEditField field, String url);
 
@@ -155,6 +159,133 @@ abstract class MetadataEditAdapter {
   void syncReloadedItem(MetadataEditDraft draft, MediaItem item) {
     draft.currentItem = item;
   }
+}
+
+/// Basic-info fields shared by every backend; only the studio field type differs.
+List<MetadataEditField> metadataBasicFields(
+  MediaKind kind, {
+  MetadataEditFieldType studioType = MetadataEditFieldType.text,
+}) {
+  return [
+    MetadataEditField(id: 'title', label: t.metadataEdit.title, type: MetadataEditFieldType.text),
+    if (kind != MediaKind.season)
+      MetadataEditField(id: 'titleSort', label: t.metadataEdit.sortTitle, type: MetadataEditFieldType.text),
+    if (kind == MediaKind.movie || kind == MediaKind.show)
+      MetadataEditField(id: 'originalTitle', label: t.metadataEdit.originalTitle, type: MetadataEditFieldType.text),
+    if (kind != MediaKind.season)
+      MetadataEditField(
+        id: 'originallyAvailableAt',
+        label: t.metadataEdit.releaseDate,
+        type: MetadataEditFieldType.date,
+      ),
+    if (kind != MediaKind.season)
+      MetadataEditField(id: 'contentRating', label: t.metadataEdit.contentRating, type: MetadataEditFieldType.text),
+    if (kind == MediaKind.movie || kind == MediaKind.show)
+      MetadataEditField(id: 'studio', label: t.metadataEdit.studio, type: studioType),
+    if (kind == MediaKind.movie || kind == MediaKind.show)
+      MetadataEditField(id: 'tagline', label: t.metadataEdit.tagline, type: MetadataEditFieldType.text),
+    MetadataEditField(id: 'summary', label: t.metadataEdit.summary, type: MetadataEditFieldType.multilineText),
+  ];
+}
+
+/// Artwork fields shared by every backend; each backend supplies its own artwork
+/// key names, which kinds carry a logo, and whether square art exists.
+List<MetadataEditField> metadataArtworkFields(
+  MediaKind kind, {
+  required String posterKey,
+  required String backdropKey,
+  required String logoKey,
+  String? squareKey,
+  Set<MediaKind> logoKinds = const {MediaKind.movie, MediaKind.show},
+}) {
+  final fields = <MetadataEditField>[
+    // Episode "posters" are 16:9 thumbnails, not 2:3 poster art.
+    kind == MediaKind.episode
+        ? metadataArtworkField(
+            posterKey,
+            t.metadataEdit.poster,
+            t.metadataEdit.selectPoster,
+            80,
+            45,
+            2,
+            16 / 9,
+            imageType: ImageType.thumb,
+          )
+        : metadataArtworkField(posterKey, t.metadataEdit.poster, t.metadataEdit.selectPoster, 40, 60, 3, 2 / 3),
+  ];
+  if (kind == MediaKind.movie || kind == MediaKind.show || kind == MediaKind.episode) {
+    fields.add(
+      metadataArtworkField(
+        backdropKey,
+        t.metadataEdit.background,
+        t.metadataEdit.selectBackground,
+        80,
+        45,
+        2,
+        16 / 9,
+        imageType: ImageType.art,
+      ),
+    );
+  }
+  if (logoKinds.contains(kind)) {
+    fields.add(
+      metadataArtworkField(
+        logoKey,
+        t.metadataEdit.logo,
+        t.metadataEdit.selectLogo,
+        80,
+        32,
+        2,
+        2.5,
+        fit: MetadataArtworkFit.contain,
+        imageType: ImageType.logo,
+      ),
+    );
+    if (squareKey != null) {
+      fields.add(
+        metadataArtworkField(
+          squareKey,
+          t.metadataEdit.squareArt,
+          t.metadataEdit.selectSquareArt,
+          50,
+          50,
+          3,
+          1,
+          imageType: ImageType.avatar,
+        ),
+      );
+    }
+  }
+  return fields;
+}
+
+MetadataEditField metadataArtworkField(
+  String key,
+  String label,
+  String title,
+  double width,
+  double height,
+  int columns,
+  double aspectRatio, {
+  MetadataArtworkFit fit = MetadataArtworkFit.cover,
+  ImageType imageType = ImageType.poster,
+}) {
+  return MetadataEditField(
+    id: 'artwork:$key',
+    label: label,
+    type: MetadataEditFieldType.artwork,
+    saveMode: MetadataEditSaveMode.immediate,
+    artwork: MetadataArtworkConfig(
+      key: key,
+      selectTitle: title,
+      previewWidth: width,
+      previewHeight: height,
+      gridColumns: columns,
+      gridAspectRatio: aspectRatio,
+      fit: fit,
+      imageType: imageType,
+    ),
+  );
 }
 
 bool metadataEditValueEquals(Object? a, Object? b) {

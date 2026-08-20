@@ -1,8 +1,12 @@
+/// [mediaSegment] selects the endpoint family: Jellyfin serves the identical
+/// static-stream contract under `/Videos/{id}/stream` and `/Audio/{id}/stream`
+/// — music track playback passes `'Audio'`.
 String buildJellyfinDirectStreamUrl({
   required String baseUrl,
   required String accessToken,
   required String deviceId,
   required String itemId,
+  String mediaSegment = 'Videos',
   String? container,
   String? mediaSourceId,
   String? playSessionId,
@@ -20,7 +24,7 @@ String buildJellyfinDirectStreamUrl({
     'AudioStreamIndex': ?audioStreamIndex?.toString(),
   };
   final encodedItem = Uri.encodeComponent(itemId);
-  return '$baseUrl/Videos/$encodedItem/stream?${_encodeQuery(params)}';
+  return '$baseUrl/$mediaSegment/$encodedItem/stream?${_encodeQuery(params)}';
 }
 
 String buildJellyfinTrickplayTileUrl({

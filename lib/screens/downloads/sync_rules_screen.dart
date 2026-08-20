@@ -14,11 +14,25 @@ import '../../services/sync_rule_executor.dart';
 import '../../utils/content_utils.dart';
 import '../../utils/download_utils.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/app_icon.dart';
 import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
 
-class SyncRulesScreen extends StatelessWidget {
+class SyncRulesScreen extends StatefulWidget {
   const SyncRulesScreen({super.key});
+
+  @override
+  State<SyncRulesScreen> createState() => _SyncRulesScreenState();
+}
+
+class _SyncRulesScreenState extends State<SyncRulesScreen> {
+  late final Stream<List<Connection>> _connections;
+
+  @override
+  void initState() {
+    super.initState();
+    _connections = context.read<ConnectionRegistry>().watchConnections();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +40,9 @@ class SyncRulesScreen extends StatelessWidget {
       builder: (context, downloadProvider, _) {
         final syncRules = downloadProvider.syncRules;
         final multiServerProvider = context.watch<MultiServerProvider>();
-        final connectionRegistry = context.read<ConnectionRegistry>();
 
         return StreamBuilder<List<Connection>>(
-          stream: connectionRegistry.watchConnections(),
+          stream: _connections,
           initialData: const [],
           builder: (context, snapshot) {
             final connections = snapshot.data ?? const <Connection>[];
@@ -235,7 +248,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
               dense: true,
               visualDensity: const VisualDensity(vertical: -3),
               shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-              leading: Icon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
+              leading: AppIcon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
               title: Text(title, maxLines: 1, overflow: .ellipsis),
               subtitle: Column(
                 crossAxisAlignment: .start,
@@ -322,7 +335,7 @@ class _SwipeRevealDeleteActionState extends State<_SwipeRevealDeleteAction> {
                             child: Column(
                               mainAxisAlignment: .center,
                               children: [
-                                Icon(Symbols.delete_rounded, color: colorScheme.onError, size: 20),
+                                AppIcon(Symbols.delete_rounded, color: colorScheme.onError, size: 20),
                                 const SizedBox(height: 2),
                                 Text(
                                   t.common.delete,

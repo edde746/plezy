@@ -1,5 +1,4 @@
-import 'package:collection/collection.dart';
-
+import '../primitives.dart';
 import 'watch_session.dart';
 
 /// Playback lifecycle phase broadcast by the host.
@@ -146,7 +145,7 @@ class PlaybackState {
       other.anchorHostTimeMs == anchorHostTimeMs &&
       other.rate == rate &&
       other.controlMode == controlMode &&
-      const ListEquality<String>().equals(other.waitingOn, waitingOn) &&
+      orderedStringListsEqual(other.waitingOn, waitingOn) &&
       other.actorPeerId == actorPeerId &&
       other.actionHint == actionHint;
 

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:ui';
 import '../../media/ids.dart';
 
@@ -19,19 +18,20 @@ import '../../utils/provider_extensions.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/media_context_menu.dart';
 import '../../widgets/optimized_media_image.dart';
-import '../../widgets/overlay_sheet.dart';
 import '../../widgets/watched_indicator.dart';
 import '../../theme/mono_tokens.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/loading_indicator_box.dart';
 
-/// Individual item in the folder tree
-/// Can be either a folder (expandable) or a file (tappable)
+/// Individual item in the folder tree. [isExpandable] controls hierarchy
+/// behavior independently from [isFolder], which identifies plain directory
+/// rows and their folder-specific visuals/actions.
 class FolderTreeItem extends StatefulWidget {
   final MediaItem item;
   final int depth;
   final bool isExpanded;
   final bool isFolder;
+  final bool isExpandable;
   final VoidCallback? onTap;
   final VoidCallback? onExpand;
   final VoidCallback? onPlayAll;
@@ -40,7 +40,7 @@ class FolderTreeItem extends StatefulWidget {
   final FocusNode? focusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateLeft;
-  final void Function(String itemId)? onRefresh;
+  final void Function(MediaItem source)? onRefresh;
   final VoidCallback? onListRefresh;
   final String? serverId;
 
@@ -50,6 +50,7 @@ class FolderTreeItem extends StatefulWidget {
     required this.depth,
     this.isExpanded = false,
     this.isFolder = false,
+    this.isExpandable = false,
     this.onTap,
     this.onExpand,
     this.onPlayAll,
@@ -69,10 +70,8 @@ class FolderTreeItem extends StatefulWidget {
 
 class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixin {
   /// Whether the row is a real media item that gets the standard media
-  /// context menu. Jellyfin series/seasons act as expandable folders in the
-  /// tree but are still real media items.
-  bool get _isMediaRow =>
-      !widget.isFolder || widget.item.kind == MediaKind.show || widget.item.kind == MediaKind.season;
+  /// presentation and context menu, even when it is also expandable.
+  bool get _isMediaRow => !widget.isFolder;
 
   /// Plain folders only offer the Play/Shuffle actions of their trailing buttons.
   bool get _hasFolderMenu => !_isMediaRow && (widget.onPlayAll != null || widget.onShuffle != null);
@@ -109,7 +108,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
   }
 
   void _handleTap() {
-    if (widget.isFolder) {
+    if (widget.isExpandable) {
       widget.onExpand?.call();
     } else {
       widget.onTap?.call();
@@ -149,23 +148,13 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     final previousFocus = FocusManager.instance.primaryFocus;
     final position = lastTapPosition;
     final fromKeyboard = position == null;
-    final useBottomSheet = Platform.isIOS || Platform.isAndroid;
-
-    String? selected;
-    if (useBottomSheet) {
-      selected = await OverlaySheetController.showAdaptive<String>(
-        context,
-        showDragHandle: true,
-        builder: (context) => AppMenuSheet<String>(title: _rowTitle(), entries: entries, focusFirstItem: fromKeyboard),
-      );
-    } else {
-      selected = await showAppMenu<String>(
-        context,
-        entries: entries,
-        position: position ?? _rowCenter(),
-        focusFirstItem: fromKeyboard,
-      );
-    }
+    final selected = await showAdaptiveAppMenu<String>(
+      context,
+      title: _rowTitle(),
+      entries: entries,
+      position: position ?? _rowCenter(),
+      focusFirstItem: fromKeyboard,
+    );
 
     if (!mounted) return;
 
@@ -259,6 +248,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     final episodePosterMode = svc.read(SettingsService.episodePosterMode);
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final showUnwatchedCount = svc.read(SettingsService.showUnwatchedCount);
+    final expandIcon = widget.isExpanded ? Symbols.keyboard_arrow_down_rounded : Symbols.keyboard_arrow_right_rounded;
 
     final isWide = widget.item.usesWideAspectRatio(episodePosterMode);
     final thumbWidth = isWide ? 130.0 : 53.0;
@@ -272,6 +262,13 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
       child: Row(
         crossAxisAlignment: .center,
         children: [
+          if (widget.isExpandable) ...[
+            SizedBox(
+              width: 24,
+              child: widget.isLoading ? const LoadingIndicatorBox(size: 16) : AppIcon(expandIcon, fill: 1, size: 20),
+            ),
+            const SizedBox(width: 8),
+          ],
           // Thumbnail with progress overlay
           SizedBox(
             width: thumbWidth,

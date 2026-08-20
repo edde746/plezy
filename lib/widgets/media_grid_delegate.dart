@@ -1,82 +1,91 @@
 import 'package:flutter/material.dart';
+import '../media/media_item.dart' show CardShape;
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
+import '../utils/platform_detector.dart';
 
-/// Shared grid delegate configuration for media item grids
-/// Maintains consistent aspect ratio and spacing across all media grids.
+/// Shared grid metric helpers for media item grids — spacing, aspect ratio,
+/// and max cross-axis extent. [MediaGridGeometry.resolve] is the single place
+/// that composes them into a grid delegate.
 class MediaGridDelegate {
-  /// Creates a standard grid delegate for media items
+  /// Resolves the shape from the optional [shape] parameter, falling back to
+  /// the legacy wide-vs-poster bool so existing call sites are byte-identical.
+  static CardShape _resolveShape(CardShape? shape, bool useWideAspectRatio) =>
+      shape ?? (useWideAspectRatio ? CardShape.wide : CardShape.poster);
+
+  /// Resolves the max cross-axis extent for [MediaGridGeometry.resolve],
+  /// including the 1.8x widening for 16:9 episode thumbnails. Square cells
+  /// keep the poster extent so column counts match the poster grid.
   ///
-  /// Uses [GridSizeCalculator.getMaxCrossAxisExtent] by default.
-  /// Set [usePaddingAware] to true to use [GridSizeCalculator.getMaxCrossAxisExtentWithPadding] instead.
-  /// Set [useWideAspectRatio] to true to use 16:9 aspect ratio for episode thumbnails.
-  /// Set [fullBleedImage] to true when the card is image-only and should not reserve text height.
-  /// Pass [maxCrossAxisExtentOverride] to bypass the calculator and the wide-aspect multiplier —
-  /// the caller is then responsible for providing a fully-resolved per-cell width.
-  static SliverGridDelegateWithMaxCrossAxisExtent createDelegate({
-    required BuildContext context,
-    required int density,
-    bool usePaddingAware = false,
-    double horizontalPadding = 16,
-    bool useWideAspectRatio = false,
-    bool fullBleedImage = false,
-    double? maxCrossAxisExtentOverride,
-  }) {
-    final aspectRatio = aspectRatioFor(useWideAspectRatio: useWideAspectRatio, fullBleedImage: fullBleedImage);
-    final spacing = spacingFor(context: context, fullBleedImage: fullBleedImage);
-
-    final maxCrossAxisExtent =
-        maxCrossAxisExtentOverride ??
-        _maxCrossAxisExtentFor(
-          context: context,
-          density: density,
-          usePaddingAware: usePaddingAware,
-          horizontalPadding: horizontalPadding,
-          useWideAspectRatio: useWideAspectRatio,
-        );
-
-    return SliverGridDelegateWithMaxCrossAxisExtent(
-      maxCrossAxisExtent: maxCrossAxisExtent,
-      childAspectRatio: aspectRatio,
-      crossAxisSpacing: spacing,
-      mainAxisSpacing: spacing,
-    );
-  }
-
-  /// Resolves the max cross-axis extent the way [createDelegate] does,
-  /// including the 1.8x widening for 16:9 episode thumbnails.
+  /// This is the single widening scheme: wide cells widen the max extent
+  /// BEFORE the integral column packing. Nothing multiplies the resolved cell
+  /// afterwards — horizontal rows adopt the packed cell via [wideCellWidth]
+  /// so a hub row and a grid of the same items match at equal width.
   static double _maxCrossAxisExtentFor({
     required BuildContext context,
     required int density,
-    required bool usePaddingAware,
-    required double horizontalPadding,
     required bool useWideAspectRatio,
+    CardShape? shape,
   }) {
-    var maxCrossAxisExtent = usePaddingAware
-        ? GridSizeCalculator.getMaxCrossAxisExtentWithPadding(context, density, horizontalPadding)
-        : GridSizeCalculator.getMaxCrossAxisExtent(context, density);
+    var maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
 
     // For wide aspect ratio (16:9), increase max extent so items are larger
     // and there are fewer per row (roughly 1.8x wider to maintain similar visual area)
-    if (useWideAspectRatio) {
+    if (_resolveShape(shape, useWideAspectRatio) == CardShape.wide) {
       maxCrossAxisExtent *= 1.8;
     }
     return maxCrossAxisExtent;
   }
 
-  static double spacingFor({required BuildContext context, bool fullBleedImage = false}) {
-    if (!fullBleedImage) return GridLayoutConstants.crossAxisSpacing;
+  /// The cell width the grid formula resolves for a wide (16:9) surface —
+  /// the wide analogue of [GridSizeCalculator.getCellWidth]. Horizontal hub
+  /// rows use this instead of scaling the poster cell so episode rows match
+  /// the episode grid behind their "see all" page (#2039, plan item 3).
+  static double wideCellWidth(BuildContext context, double availableWidth, int density) {
+    final maxCrossAxisExtent = _maxCrossAxisExtentFor(context: context, density: density, useWideAspectRatio: true);
+    final spacing = spacingFor(context: context, useWideAspectRatio: true);
+    final columnCount = GridSizeCalculator.getColumnCount(
+      availableWidth,
+      maxCrossAxisExtent,
+      crossAxisSpacing: spacing,
+    );
+    return GridSizeCalculator.getCellWidthForColumnCount(availableWidth, columnCount, crossAxisSpacing: spacing);
+  }
+
+  /// Inter-cell gutter for the resolved shape. Square (music) grids get
+  /// [GridLayoutConstants.squareGridSpacing] so cards have breathing room;
+  /// every other shape keeps the platform default (0, or 24 on automotive).
+  /// Full-bleed TV grids use the scaled full-card gutter.
+  static double spacingFor({
+    required BuildContext context,
+    bool useWideAspectRatio = false,
+    bool fullBleedImage = false,
+    CardShape? shape,
+  }) {
+    if (PlatformDetector.isAutomotive()) return GridLayoutConstants.crossAxisSpacing;
+    if (!fullBleedImage) {
+      return _resolveShape(shape, useWideAspectRatio) == CardShape.square
+          ? GridLayoutConstants.squareGridSpacing
+          : GridLayoutConstants.crossAxisSpacing;
+    }
     return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
   }
 
-  static double aspectRatioFor({bool useWideAspectRatio = false, bool fullBleedImage = false}) {
+  static double aspectRatioFor({bool useWideAspectRatio = false, bool fullBleedImage = false, CardShape? shape}) {
+    final resolved = _resolveShape(shape, useWideAspectRatio);
     if (fullBleedImage) {
-      return useWideAspectRatio
-          ? GridLayoutConstants.episodeThumbnailAspectRatio
-          : GridLayoutConstants.fullCardPosterAspectRatio;
+      return switch (resolved) {
+        CardShape.wide => GridLayoutConstants.episodeThumbnailAspectRatio,
+        CardShape.square => GridLayoutConstants.squareAspectRatio,
+        CardShape.poster => GridLayoutConstants.fullCardPosterAspectRatio,
+      };
     }
 
-    return useWideAspectRatio ? GridLayoutConstants.episodeGridCellAspectRatio : GridLayoutConstants.posterAspectRatio;
+    return switch (resolved) {
+      CardShape.wide => GridLayoutConstants.episodeGridCellAspectRatio,
+      CardShape.square => GridLayoutConstants.squareGridCellAspectRatio,
+      CardShape.poster => GridLayoutConstants.posterAspectRatio,
+    };
   }
 }
 
@@ -115,22 +124,26 @@ class MediaGridGeometry {
     required double crossAxisExtent,
     required int density,
     double? crossAxisExtentForColumnCount,
-    bool usePaddingAware = false,
-    double horizontalPadding = 16,
     bool useWideAspectRatio = false,
     bool fullBleedImage = false,
+    CardShape? shape,
   }) {
-    final spacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullBleedImage);
+    final spacing = MediaGridDelegate.spacingFor(
+      context: context,
+      useWideAspectRatio: useWideAspectRatio,
+      fullBleedImage: fullBleedImage,
+      shape: shape,
+    );
     final aspectRatio = MediaGridDelegate.aspectRatioFor(
       useWideAspectRatio: useWideAspectRatio,
       fullBleedImage: fullBleedImage,
+      shape: shape,
     );
     final maxCrossAxisExtent = MediaGridDelegate._maxCrossAxisExtentFor(
       context: context,
       density: density,
-      usePaddingAware: usePaddingAware,
-      horizontalPadding: horizontalPadding,
       useWideAspectRatio: useWideAspectRatio,
+      shape: shape,
     );
 
     final columnCount = GridSizeCalculator.getColumnCount(

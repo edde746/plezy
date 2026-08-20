@@ -16,14 +16,29 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
   }
 
-  /// Focus play/pause button if we're in keyboard navigation mode (desktop/TV only)
-  void _focusPlayPauseIfKeyboardMode() {
-    if (!mounted) return;
-    if (!_videoPlayerNavigationEnabled) return;
+  /// Focus Play/Pause when the viewer is already driving with keyboard/D-pad
+  /// and opted into player navigation.
+  ///
+  /// This is an *automatic* grab — no key caused it — so it additionally
+  /// requires an active keyboard session; a key-driven grab only needs
+  /// [eventRequestsFocusNavigation].
+  ///
+  /// Returns whether it actually moved focus, because the caller uses that to
+  /// decide whether the player surface still needs to claim the remote. It must
+  /// therefore report `false` when the chrome is not mounted — a TV route opens
+  /// with the chrome down, and claiming that it focused something there would
+  /// leave the remote parked on the screen node (#1765).
+  bool _focusPlayPauseIfKeyboardMode() {
+    if (!mounted || !_showControls) return false;
+    // The raw preference, not the directional policy: a TV viewer who turned
+    // player navigation off must not get Play/Pause focused on open.
+    if (!videoPlayerNavigationPreference()) return false;
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
-    if (!isMobile && InputModeTracker.isKeyboardMode(context)) {
-      _desktopControlsKey.currentState?.requestPlayPauseFocus();
-    }
+    if (isMobile || !InputModeTracker.isKeyboardMode(context, listen: false)) return false;
+    final controls = _desktopControlsKey.currentState;
+    if (controls == null) return false;
+    controls.requestPlayPauseFocus();
+    return true;
   }
 
   /// Listen to playback state changes to manage auto-hide timer
@@ -47,9 +62,14 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   }
 
   /// Controls hide delay: 5s on mobile/TV/keyboard-nav, 3s on desktop with mouse.
+  /// Maestro builds extend the delay because accessibility-tree queries can take
+  /// longer than the production timeout on physical devices.
   Duration get _hideDelay {
+    if (const bool.fromEnvironment('PLEZY_MAESTRO_E2E')) {
+      return const Duration(seconds: 30);
+    }
     final isMobile = (Platform.isIOS || Platform.isAndroid) && !PlatformDetector.isTV();
-    if (isMobile || PlatformDetector.isTV() || _videoPlayerNavigationEnabled) {
+    if (isMobile || playerDirectionalNavigationEnabled()) {
       return const Duration(seconds: 5);
     }
     return const Duration(seconds: 3);
@@ -63,20 +83,14 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   void _startHideTimer() => widget.chromeController.startAutoHide();
 
-  /// Restart the hide timer on user interaction (if video is playing)
-  void _restartHideTimerIfPlaying() => widget.chromeController.restartAutoHideIfPlaying();
+  /// Restart the hide timer on user interaction for the current playback state.
+  void _restartHideTimerForCurrentPlaybackState() => widget.chromeController.restartAutoHideForCurrentPlaybackState();
 
   void _handlePointerSignal(PointerSignalEvent event) {
-    if (event is PointerScrollEvent && _keyboardService != null) {
-      _cancelAutoSkipFromUserInteraction();
-      final delta = event.scrollDelta.dy;
-      final volume = widget.player.state.volume;
-      final maxVol = _keyboardService!.maxVolume.toDouble();
-      final newVolume = (volume - delta / 20).clamp(0.0, maxVol);
-      widget.player.setVolume(newVolume);
-      unawaited(SettingsService.getInstance().then((s) => s.write(SettingsService.volume, newVolume)));
-      _showControlsFromPointerActivity();
-    }
+    if (event is! PointerScrollEvent) return;
+    _cancelAutoSkipFromUserInteraction();
+    widget.volumeController.adjust(-event.scrollDelta.dy / 20);
+    _showControlsFromPointerActivity();
   }
 
   /// Show controls in response to pointer activity (mouse/trackpad movement).
@@ -88,10 +102,20 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     widget.chromeController.toggle();
   }
 
+  void _toggleControlsFromSemantics() {
+    if (_showControls) {
+      widget.chromeController.hide();
+      return;
+    }
+    widget.chromeController.show(restartAutoHide: false);
+    widget.chromeController.cancelAutoHide();
+  }
+
   /// Apply preferred orientations for the given lock state. Wired to
   /// [SettingsService.rotationLocked] via [bindEffect] so any change — from
   /// this toggle or from the settings screen — fires the same SystemChrome call.
   void _applyRotationLock(bool locked) {
+    if (PlatformDetector.isAutomotive()) return;
     unawaited(
       SystemChrome.setPreferredOrientations(
         locked ? const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight] : DeviceOrientation.values,
@@ -162,29 +186,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
   }
 
-  /// macOS PiP changed — force controls visible while PiP is active
-  void _onMacPipChanged() {
-    if (!mounted) return;
-    final inPip = _pipService.isPipActive.value;
-    if (inPip) {
-      widget.chromeController.hold(PlayerChromeHold.pip);
-    } else {
-      widget.chromeController.release(PlayerChromeHold.pip);
-    }
-  }
-
   Future<void> _toggleFullscreen() async {
     if (!PlatformDetector.isDesktopOS()) return;
     await FullscreenStateManager().toggleFullscreen();
-  }
-
-  /// Exit fullscreen if the window is actually fullscreen (async check).
-  /// Used by ESC handler on Windows/Linux to avoid relying on _isFullscreen flag.
-  Future<void> _exitFullscreenIfNeeded() async {
-    if (!Platform.isWindows && !Platform.isLinux) return;
-    if (await windowManager.isFullScreen()) {
-      await FullscreenStateManager().exitFullscreen();
-    }
   }
 
   /// Initialize always-on-top state from window manager (desktop only)
@@ -229,16 +233,6 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
   }
 
-  /// Show controls and focus timeline on LEFT/RIGHT input (TV/desktop)
-  void _showControlsWithTimelineFocus() {
-    widget.chromeController.show();
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _desktopControlsKey.currentState?.requestTimelineFocus();
-    });
-  }
-
   /// Hide controls when navigating up from timeline (keyboard mode)
   /// If skip marker button or Play Next dialog is visible, focus it instead of hiding controls
   void _hideControlsFromKeyboard() {
@@ -261,52 +255,71 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     if (!mounted) return;
     final controlsVisible = widget.chromeController.controlsVisible;
     final visibilityChanged = controlsVisible != _lastControlsVisible;
-    final focusTarget = widget.chromeController.takeFocusTarget();
+    final focusPlayPause = widget.chromeController.takePlayPauseFocus();
     _lastControlsVisible = controlsVisible;
 
     if (visibilityChanged && !controlsVisible) {
       _desktopControlsKey.currentState?.hideContentStrip();
       _cancelSkipButtonDismissTimer();
       _setControlsState(() {
+        _controlsOpaque = false;
         if (_currentMarker != null) _skipButtonDismissed = true;
       });
-      _reclaimFocusAfterControlsHide();
-    } else {
-      _setControlsState(() {});
+      _claimPlayerSurfaceFocus();
+    } else if (visibilityChanged) {
+      // The timeline is about to take over held-key seeking; commit whatever
+      // the hidden-chrome burst accumulated so it can't rebase from a stale
+      // position once the timeline's own accumulator starts.
+      _flushHiddenDirectionalSeek();
+      _setControlsState(() {
+        _controlsMounted = true;
+        _controlsOpaque = false;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_showControls || !_controlsMounted) return;
+        _setControlsState(() => _controlsOpaque = true);
+      });
+    } else if (controlsVisible && !_controlsMounted) {
+      _setControlsState(() {
+        _controlsMounted = true;
+        _controlsOpaque = true;
+      });
     }
 
     if (visibilityChanged && Platform.isMacOS) {
       _updateTrafficLightVisibility();
     }
 
-    if (focusTarget != null) {
-      _requestFocusTarget(focusTarget);
+    if (focusPlayPause) {
+      _requestPlayPauseFocus();
     }
   }
 
-  void _reclaimFocusAfterControlsHide() {
-    final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
-    if (sheetOpen) return;
+  /// Park focus on the player surface so this widget's key layer owns the
+  /// remote. Without this the screen node keeps primary focus and its
+  /// self-heal raises the whole chrome on the first actionable key, which is
+  /// what the transient seek and transport indicators exist to avoid.
+  void _claimPlayerSurfaceFocus() {
+    if (_sheetIsOpen()) return;
     _focusNode.requestFocus();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_focusNode.hasPrimaryFocus) {
-        _focusNode.requestFocus();
-      }
+      // Re-check: a sheet or a route can open during the frame we deferred
+      // over, and the retry must not pull the remote back out of it.
+      if (!mounted || _focusNode.hasPrimaryFocus || _sheetIsOpen()) return;
+      if (ModalRoute.of(context)?.isCurrent != true) return;
+      _focusNode.requestFocus();
     });
   }
 
-  void _requestFocusTarget(PlayerChromeFocusTarget target) {
+  bool _sheetIsOpen() => OverlaySheetController.maybeOf(context)?.isOpen ?? false;
+
+  void _requestPlayPauseFocus() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !widget.chromeController.controlsVisible) return;
       // Never steal focus from an open sheet (same rule as
-      // _reclaimFocusAfterControlsHide).
+      // _claimPlayerSurfaceFocus).
       if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) return;
-      switch (target) {
-        case PlayerChromeFocusTarget.playPause:
-          _desktopControlsKey.currentState?.requestPlayPauseFocus();
-        case PlayerChromeFocusTarget.timeline:
-          _desktopControlsKey.currentState?.requestTimelineFocus();
-      }
+      _desktopControlsKey.currentState?.requestPlayPauseFocus();
     });
   }
 }

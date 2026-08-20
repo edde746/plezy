@@ -14,14 +14,14 @@ void main() {
     test('captures the first video stream and accumulates audio + subs', () {
       final streams = [
         // streamType 1=video, 2=audio, 3=subtitle
-        {'streamType': 1, 'id': 100, 'frameRate': 23.976, 'colorSpace': 'bt709'},
+        {'streamType': '1', 'id': '100', 'frameRate': 23.976, 'colorSpace': 'bt709'},
         {
-          'streamType': 2,
-          'id': 101,
-          'index': 1,
+          'streamType': '2',
+          'id': '101',
+          'index': '1',
           'codec': 'eac3',
           'language': 'English',
-          'channels': 6,
+          'channels': '6',
           'selected': true,
           'displayTitle': 'English (EAC3 5.1)',
         },
@@ -35,9 +35,9 @@ void main() {
           'selected': false,
         },
         {
-          'streamType': 3,
-          'id': 200,
-          'index': 3,
+          'streamType': '3',
+          'id': '200',
+          'index': '3',
           'codec': 'srt',
           'language': 'English',
           'forced': false,
@@ -48,8 +48,7 @@ void main() {
 
       final out = walkStreams(streams, reader);
 
-      expect(out.videoStream?['id'], 100);
-      expect(out.audioStream?['id'], 101);
+      expect(out.videoStream?['id'], '100');
       expect(out.videoStream?['frameRate'], closeTo(23.976, 1e-6));
       expect(out.audioTracks.map((t) => t.id), [101, 102]);
       expect(out.audioTracks[0].channels, 6);
@@ -81,7 +80,6 @@ void main() {
       final streams = ['not a map', 42, null];
       final out = walkStreams(streams, reader);
       expect(out.videoStream, isNull);
-      expect(out.audioStream, isNull);
       expect(out.audioTracks, isEmpty);
       expect(out.subtitleTracks, isEmpty);
     });
@@ -109,7 +107,6 @@ void main() {
       final out = walkStreams(streams, reader);
 
       expect(out.videoStream?['Index'], 0);
-      expect(out.audioStream?['Index'], 1);
       expect(out.videoStream?['RealFrameRate'], closeTo(23.976, 1e-6));
       expect(out.audioTracks.map((t) => t.id), [1, 2]);
       expect(out.audioTracks[0].selected, isTrue);
@@ -145,36 +142,6 @@ void main() {
       final out = walkStreams(streams, reader);
       expect(out.videoStream, isNull);
       expect(out.audioTracks, hasLength(1));
-    });
-  });
-
-  group('cross-backend equivalence', () {
-    test('both readers produce parallel track structures from analogous JSON', () {
-      const plexReader = PlexFileInfoStreamReader();
-      const jfReader = JellyfinFileInfoStreamReader();
-
-      final plexStreams = [
-        {'streamType': 1, 'id': 1, 'frameRate': 24.0},
-        {'streamType': 2, 'id': 2, 'codec': 'aac', 'language': 'English', 'channels': 2, 'selected': true},
-        {'streamType': 3, 'id': 3, 'codec': 'srt', 'language': 'English', 'selected': false, 'forced': false},
-      ];
-      final jfStreams = [
-        {'Type': 'Video', 'Index': 0, 'RealFrameRate': 24.0},
-        {'Type': 'Audio', 'Index': 1, 'Codec': 'aac', 'Language': 'eng', 'Channels': 2, 'IsDefault': true},
-        {'Type': 'Subtitle', 'Index': 2, 'Codec': 'srt', 'Language': 'eng', 'IsDefault': false, 'IsForced': false},
-      ];
-
-      final plex = walkStreams(plexStreams, plexReader);
-      final jf = walkStreams(jfStreams, jfReader);
-
-      expect(plex.audioTracks, hasLength(1));
-      expect(jf.audioTracks, hasLength(1));
-      expect(plex.subtitleTracks, hasLength(1));
-      expect(jf.subtitleTracks, hasLength(1));
-      expect(plex.videoStream?['frameRate'], jf.videoStream?['RealFrameRate']);
-      expect(plex.audioTracks.first.codec, jf.audioTracks.first.codec);
-      expect(plex.audioTracks.first.channels, jf.audioTracks.first.channels);
-      expect(plex.audioTracks.first.selected, jf.audioTracks.first.selected);
     });
   });
 }

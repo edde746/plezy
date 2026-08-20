@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/screens/profile/pin_entry_dialog.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
@@ -64,6 +65,34 @@ void main() {
     expect(find.byType(PinEntryDialog), findsNothing);
   });
 
+  testWidgets('mobile PIN normalizes oversized input before submitting', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(false);
+    String? result;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(platform: TargetPlatform.iOS),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                result = await showPinEntryDialog(context, 'Protected Profile');
+              },
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    tester.widget<TextField>(find.byType(TextField)).onChanged!('12345');
+    await tester.pumpAndSettle();
+
+    expect(result, '1234');
+    expect(find.byType(PinEntryDialog), findsNothing);
+  });
   testWidgets('mobile duplicate submit does not pop route below PIN dialog', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(false);
     String? pinResult;
@@ -197,13 +226,36 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('1'), findsOneWidget);
-    expect(find.byIcon(Icons.close_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.backspace_outlined), findsOneWidget);
+    expect(find.byIcon(Symbols.close_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.backspace_rounded), findsOneWidget);
     expect(find.byType(TextField), findsNothing);
     expect(find.widgetWithText(TextButton, 'Cancel'), findsNothing);
     expect(find.byType(FilledButton), findsNothing);
 
     await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 1
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 2
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 3
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowLeft, PhysicalKeyboardKey.arrowLeft);
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowLeft, PhysicalKeyboardKey.arrowLeft);
+    await _pressDpadKey(tester, LogicalKeyboardKey.arrowDown, PhysicalKeyboardKey.arrowDown);
+    await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 4
+    await tester.pumpAndSettle();
+
+    expect(result, '1234');
+    expect(find.byType(PinEntryDialog), findsNothing);
+  });
+
+  testWidgets('held D-pad select activates each PIN key once', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    String? result;
+
+    await _pumpPinDialogLauncher(tester, onResult: (pin) => result = pin);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    await _holdDpadSelect(tester); // 1
     await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
     await _pressDpadKey(tester, LogicalKeyboardKey.select, PhysicalKeyboardKey.select); // 2
     await _pressDpadKey(tester, LogicalKeyboardKey.arrowRight, PhysicalKeyboardKey.arrowRight);
@@ -280,6 +332,24 @@ void main() {
     expect(find.byType(PinEntryDialog), findsNothing);
   });
 
+  testWidgets('unowned keyboard keys remain available to ancestor handlers', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+
+    await _pumpPinDialogLauncher(tester, onResult: (_) {});
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    final result = _dispatchKey(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.f12,
+        logicalKey: LogicalKeyboardKey.f12,
+        timeStamp: Duration.zero,
+      ),
+    );
+
+    expect(result, KeyEventResult.ignored);
+    expect(find.byType(PinEntryDialog), findsOneWidget);
+  });
   testWidgets('non-mobile PIN entry accepts physical keyboard digits', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     String? result;
@@ -355,6 +425,34 @@ Future<void> _pumpPinDialogLauncher(
 
 Future<void> _pressKey(WidgetTester tester, LogicalKeyboardKey key) async {
   await tester.sendKeyEvent(key);
+  await tester.pump();
+}
+
+Future<void> _holdDpadSelect(WidgetTester tester) async {
+  _dispatchKey(
+    const KeyDownEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration.zero,
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
+  _dispatchKey(
+    const KeyRepeatEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 100),
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
+  _dispatchKey(
+    const KeyUpEvent(
+      physicalKey: PhysicalKeyboardKey.select,
+      logicalKey: LogicalKeyboardKey.select,
+      timeStamp: Duration(milliseconds: 200),
+      deviceType: ui.KeyEventDeviceType.directionalPad,
+    ),
+  );
   await tester.pump();
 }
 

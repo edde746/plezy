@@ -2,20 +2,10 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/bif_thumbnail_service.dart';
-import 'package:plezy/services/plex_client.dart';
 
-// BIF (Roku Base Index Format) is a binary container for video timeline
-// thumbnails. The service exposes [BifThumbnailService] which downloads + parses
-// a file (network-bound), but the parser itself is reachable through
-// [BifThumbnailService.load] when paired with a fake [PlexClient] that returns
-// hand-crafted bytes.
-//
-// What's NOT covered (by design):
-//   - The 50MiB size guard — verifying it would mean producing a 50MiB
-//     `Uint8List`, which is wasteful for unit tests.
-//   - The download-throws path — `BifThumbnailService.load` swallows errors
-//     into a "no thumbnails" state, and the only observable difference between
-//     "download failed" and "valid 0-image BIF" is `isAvailable=false`.
+// BIF parser coverage feeds hand-crafted bytes through the load callback.
+// Size-limit and download-failure behavior are intentionally left to
+// integration coverage.
 
 /// Build a minimal valid BIF byte buffer.
 ///
@@ -69,26 +59,7 @@ Uint8List _buildBif(List<({int timestamp, List<int> bytes})> entries, {int times
   return buf;
 }
 
-/// Fake [PlexClient] that satisfies the *only* method [BifThumbnailService.load]
-/// invokes — `downloadBifFile`. Every other PlexClient member is unreachable
-/// from this path, so [noSuchMethod] is forwarded to the default impl which
-/// throws — making any unintended call a loud failure.
-class _FakePlexClient implements PlexClient {
-  _FakePlexClient(this._bytes);
-  final Uint8List? _bytes;
-
-  @override
-  Future<Uint8List?> downloadBifFile(int partId) async => _bytes;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
 void main() {
-  // ============================================================
-  // Initial state
-  // ============================================================
-
   group('initial state', () {
     test('isAvailable is false before load()', () {
       final svc = BifThumbnailService();
@@ -104,10 +75,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Pure parser (via load + getThumbnail)
-  // ============================================================
-
   group('valid BIF parsing', () {
     test('parses a 3-entry BIF with default 1000ms multiplier', () async {
       final bytes = _buildBif([
@@ -118,7 +85,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(bytes), 1);
+      await svc.load(() async => bytes);
 
       expect(svc.isAvailable, isTrue);
 
@@ -145,7 +112,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(bytes), 1);
+      await svc.load(() async => bytes);
 
       expect(svc.getThumbnail(Duration.zero), Uint8List.fromList([0xAA]));
       // 1.999s — still first entry.
@@ -162,22 +129,18 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(bytes), 1);
+      await svc.load(() async => bytes);
 
       // 7s should hit the second entry (7 * 1000ms).
       expect(svc.getThumbnail(const Duration(seconds: 7)), Uint8List.fromList([0x02]));
     });
   });
 
-  // ============================================================
-  // Malformed input
-  // ============================================================
-
   group('malformed BIF input', () {
     test('rejects bytes shorter than the 64-byte header', () async {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(Uint8List(50)), 1);
+      await svc.load(() async => Uint8List(50));
       expect(svc.isAvailable, isFalse);
     });
 
@@ -185,7 +148,7 @@ void main() {
       // 128-byte buffer with all-zero bytes (no magic).
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(Uint8List(128)), 1);
+      await svc.load(() async => Uint8List(128));
       expect(svc.isAvailable, isFalse);
     });
 
@@ -201,7 +164,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(buf), 1);
+      await svc.load(() async => buf);
       expect(svc.isAvailable, isFalse);
     });
 
@@ -224,7 +187,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(bytes), 1);
+      await svc.load(() async => bytes);
 
       // Entry 0 is skipped (next offset == its offset). Entry 1's window is
       // (firstImgOffset .. sentinel.offset), which is still valid, so it
@@ -238,15 +201,11 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Empty / null input
-  // ============================================================
-
   group('empty input', () {
     test('null download keeps the service in unavailable state', () async {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(null), 1);
+      await svc.load(() async => null);
       expect(svc.isAvailable, isFalse);
       expect(svc.getThumbnail(Duration.zero), isNull);
     });
@@ -254,7 +213,7 @@ void main() {
     test('empty bytes keep the service in unavailable state', () async {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(Uint8List(0)), 1);
+      await svc.load(() async => Uint8List(0));
       expect(svc.isAvailable, isFalse);
     });
 
@@ -262,7 +221,7 @@ void main() {
       final bytes = _buildBif(const []); // no entries, only header + sentinel
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(_FakePlexClient(bytes), 1);
+      await svc.load(() async => bytes);
 
       // Loaded successfully but the entries list is empty — `isAvailable`
       // requires non-empty entries.
@@ -270,10 +229,6 @@ void main() {
       expect(svc.getThumbnail(Duration.zero), isNull);
     });
   });
-
-  // ============================================================
-  // Reload + dispose
-  // ============================================================
 
   group('reload + dispose', () {
     test('a second load() replaces prior entries', () async {
@@ -287,10 +242,10 @@ void main() {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
 
-      await svc.load(_FakePlexClient(first), 1);
+      await svc.load(() async => first);
       expect(svc.getThumbnail(Duration.zero), Uint8List.fromList([0xAA]));
 
-      await svc.load(_FakePlexClient(second), 2);
+      await svc.load(() async => second);
       expect(svc.getThumbnail(Duration.zero), Uint8List.fromList([0xBB, 0xCC]));
     });
 
@@ -301,12 +256,12 @@ void main() {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
 
-      await svc.load(_FakePlexClient(first), 1);
+      await svc.load(() async => first);
       expect(svc.isAvailable, isTrue);
 
       // The implementation sets `_entries = null` at the start of `load()`,
       // so a null download leaves the service unavailable.
-      await svc.load(_FakePlexClient(null), 2);
+      await svc.load(() async => null);
       expect(svc.isAvailable, isFalse);
       expect(svc.getThumbnail(Duration.zero), isNull);
     });
@@ -316,7 +271,7 @@ void main() {
         (timestamp: 0, bytes: [0xFF]),
       ]);
       final svc = BifThumbnailService();
-      await svc.load(_FakePlexClient(bytes), 1);
+      await svc.load(() async => bytes);
       expect(svc.isAvailable, isTrue);
 
       svc.dispose();

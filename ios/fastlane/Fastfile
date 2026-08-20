@@ -13,13 +13,10 @@ platform :ios do
   lane :deploy_appstore do
     git_commit = `git -C #{PROJECT_ROOT_ARG} rev-parse --short HEAD`.strip
 
-    # Build the Flutter app
     sh("cd #{PROJECT_ROOT_ARG} && flutter build ipa --dart-define=ENABLE_SENTRY=true --dart-define=GIT_COMMIT=#{git_commit} --dart-define=SENTRY_ENVIRONMENT=app-store --dart-define=SENTRY_DIST=app-store --split-debug-info=debug-info/ios")
 
-    # Upload debug symbols
     sh("cd #{PROJECT_ROOT_ARG} && SENTRY_DIST=app-store ./scripts/upload-symbols.sh ios")
 
-    # Upload to App Store
     upload_to_app_store(
       ipa: "../build/ios/ipa/Plezy.ipa",
       force: true,

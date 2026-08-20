@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
+import '../../models/player_setting_scope.dart';
 import '../../mpv/player/platform/player_android.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/companion_remote/companion_remote_host_controller.dart';
@@ -46,172 +48,290 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context);
 
-    return SettingsPage(
-      title: Text(t.settings.videoPlayback),
-      children: [
-        SettingsSectionHeader(t.settings.player),
-        if (Platform.isAndroid) _playerBackendSelector(),
-        if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
-        _hardwareDecodingTile(),
-        if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
-        if (Platform.isAndroid) _matchContentFrameRateTile(),
-        if (Platform.isWindows) _matchRefreshRateTile(),
-        if (Platform.isWindows) _matchDynamicRangeTile(),
-        _displaySwitchDelayTile(),
-        _tunneledPlaybackTile(),
-        _dvConversionModeTile(),
-        _bufferSizeTile(),
-        _defaultQualityTile(),
-
-        SettingsSectionHeader(t.settings.subtitlesAndConfig),
-        SettingNavigationTile(
-          icon: Symbols.subtitles_rounded,
-          title: t.settings.subtitleStyling,
-          subtitle: t.settings.subtitleStylingDescription,
-          destinationBuilder: (_) => const SubtitleStylingScreen(),
-        ),
-        _mpvConfigTile(),
-
-        SettingsSectionHeader(t.settings.seekAndTiming),
-        SettingNumberTile(
-          pref: SettingsService.seekTimeSmall,
-          icon: Symbols.replay_10_rounded,
-          title: t.settings.smallSkipDuration,
-          subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
-          labelText: t.settings.secondsLabel,
-          suffixText: t.settings.secondsShort,
-          min: 1,
-          max: 120,
-          onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
-        ),
-        SettingNumberTile(
-          pref: SettingsService.seekTimeLarge,
-          icon: Symbols.replay_30_rounded,
-          title: t.settings.largeSkipDuration,
-          subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
-          labelText: t.settings.secondsLabel,
-          suffixText: t.settings.secondsShort,
-          min: 1,
-          max: 120,
-          onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
-        ),
-        SettingNumberTile(
-          pref: SettingsService.rewindOnResume,
-          icon: Symbols.replay_rounded,
-          title: t.settings.rewindOnResume,
-          subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
-          labelText: t.settings.secondsLabel,
-          suffixText: t.settings.secondsShort,
-          min: 0,
-          max: 10,
-        ),
-        SettingNumberTile(
-          pref: SettingsService.sleepTimerDuration,
-          icon: Symbols.bedtime_rounded,
-          title: t.settings.defaultSleepTimer,
-          subtitleBuilder: (v) => t.settings.minutesUnit(minutes: v.toString()),
-          labelText: t.settings.minutesLabel,
-          suffixText: t.settings.minutesShort,
-          min: 5,
-          max: 240,
-        ),
-        SettingNumberTile(
-          pref: SettingsService.maxVolume,
-          icon: Symbols.volume_up_rounded,
-          title: t.settings.maxVolume,
-          subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: v.toString()),
-          labelText: t.settings.maxVolumeDescription,
-          suffixText: '%',
-          min: 100,
-          max: 300,
-        ),
-
-        SettingsSectionHeader(t.settings.behavior),
-        if (DiscordRPCService.isAvailable)
-          SettingSwitchTile(
-            pref: SettingsService.enableDiscordRPC,
-            icon: Symbols.chat_rounded,
-            title: t.settings.discordRichPresence,
-            subtitle: t.settings.discordRichPresenceDescription,
-            onAfterWrite: (v) => DiscordRPCService.instance.setEnabled(v),
-          ),
-        if (PlatformDetector.shouldActAsRemoteHost(context))
-          SettingSwitchTile(
-            pref: SettingsService.enableCompanionRemoteServer,
-            icon: Symbols.phone_android_rounded,
-            title: t.settings.companionRemoteServer,
-            subtitle: t.settings.companionRemoteServerDescription,
-            onAfterWrite: (v) => applyCompanionRemoteServerSetting(context, v),
-          ),
-        SettingSwitchTile(
-          pref: SettingsService.rememberTrackSelections,
-          icon: Symbols.bookmark_rounded,
-          title: t.settings.rememberTrackSelections,
-          subtitle: t.settings.rememberTrackSelectionsDescription,
-        ),
-        SettingSwitchTile(
-          pref: SettingsService.showChapterMarkersOnTimeline,
-          icon: Symbols.bookmarks_rounded,
-          title: t.settings.showChapterMarkersOnTimeline,
-          subtitle: t.settings.showChapterMarkersOnTimelineDescription,
-        ),
-        if (!isMobile)
-          SettingSwitchTile(
-            pref: SettingsService.clickVideoTogglesPlayback,
-            icon: Symbols.play_pause_rounded,
-            title: t.settings.clickVideoTogglesPlayback,
-            subtitle: t.settings.clickVideoTogglesPlaybackDescription,
-          ),
-
-        SettingsSectionHeader(t.settings.autoSkip),
-        SettingSwitchTile(
-          pref: SettingsService.autoSkipIntro,
-          icon: Symbols.fast_forward_rounded,
-          title: t.settings.autoSkipIntro,
-          subtitle: t.settings.autoSkipIntroDescription,
-        ),
-        SettingSwitchTile(
-          pref: SettingsService.autoSkipCredits,
-          icon: Symbols.skip_next_rounded,
-          title: t.settings.autoSkipCredits,
-          subtitle: t.settings.autoSkipCreditsDescription,
-        ),
-        SettingSwitchTile(
-          pref: SettingsService.forceSkipMarkerFallback,
-          icon: Symbols.tune_rounded,
-          title: t.settings.forceSkipMarkerFallback,
-          subtitle: t.settings.forceSkipMarkerFallbackDescription,
-        ),
-        SettingNumberTile(
-          pref: SettingsService.autoSkipDelay,
-          icon: Symbols.timer_rounded,
-          title: t.settings.autoSkipDelay,
-          subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v.toString()),
-          labelText: t.settings.secondsLabel,
-          suffixText: t.settings.secondsShort,
-          min: 1,
-          max: 30,
-        ),
-        SettingRegexTile(
-          pref: SettingsService.introPattern,
-          icon: Symbols.match_case_rounded,
-          title: t.settings.introPattern,
-          subtitle: t.settings.introPatternDescription,
-          defaultValue: SettingsService.defaultIntroPattern,
-        ),
-        SettingRegexTile(
-          pref: SettingsService.creditsPattern,
-          icon: Symbols.match_case_rounded,
-          title: t.settings.creditsPattern,
-          subtitle: t.settings.creditsPatternDescription,
-          defaultValue: SettingsService.defaultCreditsPattern,
-        ),
-        const SizedBox(height: 24),
+    // Visibility of several Player tiles is pref-reactive; hoisted here so
+    // group children can use plain `if`s (a SizedBox.shrink() child would
+    // corrupt the SettingsGroup corner shapes).
+    return SettingsBuilder(
+      prefs: const [
+        SettingsService.useExoPlayer,
+        SettingsService.matchRefreshRate,
+        SettingsService.matchDynamicRange,
+        SettingsService.matchContentFrameRate,
+        SettingsService.audioDownmix,
       ],
+      builder: (context) {
+        final svc = SettingsService.instance;
+        final exoActive = Platform.isAndroid && svc.read(SettingsService.useExoPlayer);
+        final downmixOn = svc.read(SettingsService.audioDownmix);
+        final showDisplaySwitchDelay =
+            PlatformDetector.isAppleTV() ||
+            (Platform.isWindows &&
+                (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
+            (Platform.isAndroid && svc.read(SettingsService.matchContentFrameRate));
+
+        return SettingsPage(
+          title: Text(t.settings.videoPlayback),
+          children: [
+            SettingsGroup(
+              title: t.settings.player,
+              children: [
+                if (Platform.isAndroid) _playerBackendSelector(),
+                if (PlatformDetector.supportsExternalPlayers()) _externalPlayerTile(),
+                _hardwareDecodingTile(),
+                if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
+                if (Platform.isAndroid) _matchContentFrameRateTile(),
+                if (Platform.isWindows) _matchRefreshRateTile(),
+                if (Platform.isWindows) _matchDynamicRangeTile(),
+                if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
+                if (exoActive) _tunneledPlaybackTile(),
+                if (PlatformDetector.supportsAudioPassthrough()) _audioPassthroughTile(),
+                _audioDownmixTile(),
+                if (downmixOn) _downmixCenterBoostTile(),
+                if (downmixOn) _downmixNormalizeTile(),
+                if (exoActive) _dvConversionModeTile(),
+                _bufferSizeTile(),
+                if (exoActive) _playbackBufferTile(),
+                _defaultQualityTile(),
+                _musicQualityTile(),
+              ],
+            ),
+
+            SettingsGroup(
+              title: t.settings.subtitlesAndConfig,
+              children: [
+                SettingNavigationTile(
+                  icon: Symbols.subtitles_rounded,
+                  title: t.settings.subtitleStyling,
+                  subtitle: t.settings.subtitleStylingDescription,
+                  destinationBuilder: (_) => const SubtitleStylingScreen(),
+                ),
+                if (!exoActive) _mpvConfigTile(),
+              ],
+            ),
+
+            _seekAndTimingGroup(),
+            _behaviorGroup(context, isMobile),
+            _rememberPlayerChangesGroup(),
+            _autoSkipGroup(),
+            const SizedBox(height: 24),
+          ],
+        );
+      },
     );
   }
 
-  Widget _playerBackendSelector() => SettingSegmentedTile<bool, bool>(
+  Widget _seekAndTimingGroup() => SettingsGroup(
+    title: t.settings.seekAndTiming,
+    children: [
+      SettingNumberTile(
+        pref: SettingsService.seekTimeSmall,
+        icon: Symbols.replay_10_rounded,
+        title: t.settings.smallSkipDuration,
+        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+        labelText: t.settings.secondsLabel,
+        suffixText: t.settings.secondsShort,
+        min: 1,
+        max: 120,
+        onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
+      ),
+      SettingNumberTile(
+        pref: SettingsService.seekTimeLarge,
+        icon: Symbols.replay_30_rounded,
+        title: t.settings.largeSkipDuration,
+        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+        labelText: t.settings.secondsLabel,
+        suffixText: t.settings.secondsShort,
+        min: 1,
+        max: 120,
+        onAfterWrite: (_) => _keyboardService?.refreshFromStorage(),
+      ),
+      SettingNumberTile(
+        pref: SettingsService.rewindOnResume,
+        icon: Symbols.replay_rounded,
+        title: t.settings.rewindOnResume,
+        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+        labelText: t.settings.secondsLabel,
+        suffixText: t.settings.secondsShort,
+        min: 0,
+        max: 10,
+      ),
+      SettingNumberTile(
+        pref: SettingsService.sleepTimerDuration,
+        icon: Symbols.bedtime_rounded,
+        title: t.settings.defaultSleepTimer,
+        subtitleBuilder: (v) => t.settings.minutesUnit(minutes: v.toString()),
+        labelText: t.settings.minutesLabel,
+        suffixText: t.settings.minutesShort,
+        min: 5,
+        max: 240,
+      ),
+      SettingNumberTile(
+        pref: SettingsService.maxVolume,
+        icon: Symbols.volume_up_rounded,
+        title: t.settings.maxVolume,
+        subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: v.toString()),
+        labelText: t.settings.maxVolumeDescription,
+        suffixText: '%',
+        min: 100,
+        max: 300,
+      ),
+    ],
+  );
+
+  Widget _rememberPlayerChangesGroup() => SettingsGroup(
+    title: t.settings.rememberPlayerChanges,
+    children: [
+      _playerScopeTile(
+        pref: SettingsService.playbackSpeedScope,
+        icon: Symbols.speed_rounded,
+        title: t.settings.scopePlaybackSpeed,
+      ),
+      _playerScopeTile(
+        pref: SettingsService.shaderPresetScope,
+        icon: Symbols.auto_fix_high_rounded,
+        title: t.settings.scopeShaderPreset,
+      ),
+      _playerScopeTile(
+        pref: SettingsService.boxFitScope,
+        icon: Symbols.aspect_ratio_rounded,
+        title: t.settings.scopeAspectRatio,
+      ),
+      _playerScopeTile(
+        pref: SettingsService.syncOffsetScope,
+        icon: Symbols.sync_rounded,
+        title: t.settings.scopeSyncOffsets,
+      ),
+    ],
+  );
+
+  Widget _playerScopeTile({
+    required EnumPref<PlayerSettingScope> pref,
+    required IconData icon,
+    required String title,
+  }) => SettingSelectionTile<PlayerSettingScope>(
+    pref: pref,
+    icon: icon,
+    title: title,
+    subtitleBuilder: (scope) => '${_playerScopeLabel(scope)} · ${t.settings.rememberPlayerChangesDescription}',
+    options: PlayerSettingScope.values.map((s) => DialogOption(value: s, title: _playerScopeLabel(s))).toList(),
+  );
+
+  String _playerScopeLabel(PlayerSettingScope scope) => switch (scope) {
+    PlayerSettingScope.off => t.settings.playerScopeOff,
+    PlayerSettingScope.global => t.settings.playerScopeGlobal,
+    PlayerSettingScope.library => t.settings.playerScopeLibrary,
+    PlayerSettingScope.title => t.settings.playerScopeTitle,
+  };
+
+  Widget _behaviorGroup(BuildContext context, bool isMobile) => SettingsGroup(
+    title: t.settings.behavior,
+    children: [
+      if (DiscordRPCService.isAvailable)
+        SettingSwitchTile(
+          pref: SettingsService.enableDiscordRPC,
+          icon: Symbols.chat_rounded,
+          title: t.settings.discordRichPresence,
+          subtitle: t.settings.discordRichPresenceDescription,
+          onAfterWrite: (v) => DiscordRPCService.instance.setEnabled(v),
+        ),
+      if (PlatformDetector.shouldActAsRemoteHost(context))
+        SettingSwitchTile(
+          pref: SettingsService.enableCompanionRemoteServer,
+          icon: Symbols.phone_android_rounded,
+          title: t.settings.companionRemoteServer,
+          subtitle: t.settings.companionRemoteServerDescription,
+          onAfterWrite: (v) => applyCompanionRemoteServerSetting(context, v),
+        ),
+      SettingSwitchTile(
+        pref: SettingsService.rememberTrackSelections,
+        icon: Symbols.bookmark_rounded,
+        title: t.settings.rememberTrackSelections,
+        subtitle: t.settings.rememberTrackSelectionsDescription,
+      ),
+      SettingSwitchTile(
+        pref: SettingsService.followServerTrackSelections,
+        icon: Symbols.dns_rounded,
+        title: t.settings.followServerTrackSelections,
+        subtitle: t.settings.followServerTrackSelectionsDescription,
+      ),
+      SettingSwitchTile(
+        pref: SettingsService.showChapterMarkersOnTimeline,
+        icon: Symbols.bookmarks_rounded,
+        title: t.settings.showChapterMarkersOnTimeline,
+        subtitle: t.settings.showChapterMarkersOnTimelineDescription,
+      ),
+      SettingSelectionTile<SpecialsOrdering>(
+        pref: SettingsService.specialsOrdering,
+        icon: Symbols.low_priority_rounded,
+        title: t.settings.specialsOrdering,
+        subtitleBuilder: (mode) => '${_specialsOrderingLabel(mode)} · ${t.settings.specialsOrderingDescription}',
+        options: SpecialsOrdering.values.map((m) => DialogOption(value: m, title: _specialsOrderingLabel(m))).toList(),
+      ),
+      if (!isMobile)
+        SettingSwitchTile(
+          pref: SettingsService.clickVideoTogglesPlayback,
+          icon: Symbols.play_pause_rounded,
+          title: t.settings.clickVideoTogglesPlayback,
+          subtitle: t.settings.clickVideoTogglesPlaybackDescription,
+        ),
+    ],
+  );
+
+  String _specialsOrderingLabel(SpecialsOrdering mode) => switch (mode) {
+    SpecialsOrdering.respectServer => t.settings.specialsOrderingServer,
+    SpecialsOrdering.airDate => t.settings.specialsOrderingAirDate,
+    SpecialsOrdering.specialsLast => t.settings.specialsOrderingLast,
+  };
+
+  Widget _autoSkipGroup() => SettingsGroup(
+    title: t.settings.autoSkip,
+    children: [
+      SettingSwitchTile(
+        pref: SettingsService.autoSkipIntro,
+        icon: Symbols.fast_forward_rounded,
+        title: t.settings.autoSkipIntro,
+        subtitle: t.settings.autoSkipIntroDescription,
+      ),
+      SettingSwitchTile(
+        pref: SettingsService.autoSkipCredits,
+        icon: Symbols.skip_next_rounded,
+        title: t.settings.autoSkipCredits,
+        subtitle: t.settings.autoSkipCreditsDescription,
+      ),
+      SettingSwitchTile(
+        pref: SettingsService.forceSkipMarkerFallback,
+        icon: Symbols.tune_rounded,
+        title: t.settings.forceSkipMarkerFallback,
+        subtitle: t.settings.forceSkipMarkerFallbackDescription,
+      ),
+      SettingNumberTile(
+        pref: SettingsService.autoSkipDelay,
+        icon: Symbols.timer_rounded,
+        title: t.settings.autoSkipDelay,
+        subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v.toString()),
+        labelText: t.settings.secondsLabel,
+        suffixText: t.settings.secondsShort,
+        min: 1,
+        max: 30,
+      ),
+      SettingRegexTile(
+        pref: SettingsService.introPattern,
+        icon: Symbols.match_case_rounded,
+        title: t.settings.introPattern,
+        subtitle: t.settings.introPatternDescription,
+        defaultValue: SettingsService.defaultIntroPattern,
+      ),
+      SettingRegexTile(
+        pref: SettingsService.creditsPattern,
+        icon: Symbols.match_case_rounded,
+        title: t.settings.creditsPattern,
+        subtitle: t.settings.creditsPatternDescription,
+        defaultValue: SettingsService.defaultCreditsPattern,
+      ),
+    ],
+  );
+
+  Widget _playerBackendSelector() => SettingSegmentedTile<bool>(
     pref: SettingsService.useExoPlayer,
     icon: Symbols.play_circle_rounded,
     title: t.settings.playerBackend,
@@ -219,8 +339,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       ButtonSegment(value: true, label: Text(t.settings.exoPlayer)),
       ButtonSegment(value: false, label: Text(t.settings.mpv)),
     ],
-    decode: (s) => s,
-    encode: (s) => s,
   );
 
   Widget _externalPlayerTile() => SettingsBuilder(
@@ -275,62 +393,68 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     subtitle: t.settings.matchDynamicRangeDescription,
   );
 
-  Widget _displaySwitchDelayTile() => SettingsBuilder(
-    prefs: const [
-      SettingsService.matchRefreshRate,
-      SettingsService.matchDynamicRange,
-      SettingsService.matchContentFrameRate,
-    ],
-    builder: (context) {
-      final svc = SettingsService.instance;
-      final shouldShow =
-          PlatformDetector.isAppleTV() ||
-          (Platform.isWindows &&
-              (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
-          (Platform.isAndroid && svc.read(SettingsService.matchContentFrameRate));
-      if (!shouldShow) return const SizedBox.shrink();
-      return SettingNumberTile(
-        pref: SettingsService.displaySwitchDelay,
-        icon: Symbols.timer_rounded,
-        title: t.settings.displaySwitchDelay,
-        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
-        labelText: t.settings.secondsLabel,
-        suffixText: t.settings.secondsShort,
-        min: 0,
-        max: 10,
-      );
-    },
+  Widget _audioPassthroughTile() => SettingSwitchTile(
+    pref: SettingsService.audioPassthrough,
+    icon: Symbols.surround_sound_rounded,
+    title: t.settings.audioPassthrough,
+    subtitle: PlatformDetector.isAppleTV()
+        ? t.settings.audioPassthroughDescriptionAppleTv
+        : t.settings.audioPassthroughDescription,
   );
 
-  Widget _tunneledPlaybackTile() => SettingValueBuilder<bool>(
-    pref: SettingsService.useExoPlayer,
-    builder: (_, useExo, _) {
-      if (!Platform.isAndroid || !useExo) return const SizedBox.shrink();
-      return SettingSwitchTile(
-        pref: SettingsService.tunneledPlayback,
-        icon: Symbols.tv_options_input_settings_rounded,
-        title: t.settings.tunneledPlayback,
-        subtitle: t.settings.tunneledPlaybackDescription,
-      );
-    },
+  Widget _audioDownmixTile() => SettingSwitchTile(
+    pref: SettingsService.audioDownmix,
+    icon: Symbols.headphones_rounded,
+    title: t.settings.audioDownmix,
+    subtitle: t.settings.audioDownmixDescription,
   );
 
-  Widget _dvConversionModeTile() => SettingValueBuilder<bool>(
-    pref: SettingsService.useExoPlayer,
-    builder: (_, useExo, _) {
-      if (!Platform.isAndroid || !useExo) return const SizedBox.shrink();
-      return SettingSelectionTile<DvConversionModePreference, DvConversionModePreference>(
-        pref: SettingsService.dvConversionMode,
-        icon: Symbols.hdr_strong_rounded,
-        title: t.settings.dvConversionMode,
-        subtitleBuilder: (mode) => '${_dvConversionModeLabel(mode)} · ${t.settings.dvConversionModeDescription}',
-        options: DvConversionModePreference.values
-            .map((m) => DialogOption(value: m, title: _dvConversionModeLabel(m)))
-            .toList(),
-        decode: (m) => m,
-        encode: (m) => m,
-      );
-    },
+  Widget _downmixCenterBoostTile() => SettingNumberTile(
+    pref: SettingsService.downmixCenterBoost,
+    icon: Symbols.record_voice_over_rounded,
+    title: t.settings.downmixCenterBoost,
+    subtitleBuilder: (v) => t.settings.downmixCenterBoostValue(db: v.toString()),
+    labelText: t.settings.downmixCenterBoostLabel,
+    suffixText: t.settings.downmixCenterBoostShort,
+    min: 0,
+    max: 12,
+  );
+
+  Widget _downmixNormalizeTile() => SettingSwitchTile(
+    pref: SettingsService.audioDownmixNormalize,
+    icon: Symbols.graphic_eq_rounded,
+    title: t.settings.audioDownmixNormalize,
+    subtitle: t.settings.audioDownmixNormalizeDescription,
+  );
+
+  // Visibility for this and the three tiles below is decided by the hoisted
+  // SettingsBuilder in build().
+  Widget _displaySwitchDelayTile() => SettingNumberTile(
+    pref: SettingsService.displaySwitchDelay,
+    icon: Symbols.timer_rounded,
+    title: t.settings.displaySwitchDelay,
+    subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v.toString()),
+    labelText: t.settings.secondsLabel,
+    suffixText: t.settings.secondsShort,
+    min: 0,
+    max: 10,
+  );
+
+  Widget _tunneledPlaybackTile() => SettingSwitchTile(
+    pref: SettingsService.tunneledPlayback,
+    icon: Symbols.tv_options_input_settings_rounded,
+    title: t.settings.tunneledPlayback,
+    subtitle: t.settings.tunneledPlaybackDescription,
+  );
+
+  Widget _dvConversionModeTile() => SettingSelectionTile<DvConversionModePreference>(
+    pref: SettingsService.dvConversionMode,
+    icon: Symbols.hdr_strong_rounded,
+    title: t.settings.dvConversionMode,
+    subtitleBuilder: (mode) => '${_dvConversionModeLabel(mode)} · ${t.settings.dvConversionModeDescription}',
+    options: DvConversionModePreference.values
+        .map((m) => DialogOption(value: m, title: _dvConversionModeLabel(m)))
+        .toList(),
   );
 
   String _dvConversionModeLabel(DvConversionModePreference mode) => switch (mode) {
@@ -342,7 +466,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
 
   Widget _bufferSizeTile() {
     final bufferOptions = const [0, 64, 128, 256, 512, 1024];
-    return SettingSelectionTile<int, int>(
+    return SettingSelectionTile<int>(
       pref: SettingsService.bufferSize,
       icon: Symbols.memory_rounded,
       title: t.settings.bufferSize,
@@ -350,8 +474,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       options: bufferOptions
           .map((s) => DialogOption(value: s, title: s == 0 ? t.settings.bufferSizeAuto : '${s}MB'))
           .toList(),
-      decode: (s) => s,
-      encode: (s) => s,
       onAfterWrite: (value) async {
         if (Platform.isAndroid && value > 0) {
           final heapMB = await PlayerAndroid.getHeapSize();
@@ -363,7 +485,23 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     );
   }
 
-  Widget _defaultQualityTile() => SettingSelectionTile<TranscodeQualityPreset, TranscodeQualityPreset>(
+  Widget _playbackBufferTile() => SettingSelectionTile<PlaybackBufferTier>(
+    pref: SettingsService.playbackBufferTier,
+    icon: Symbols.hourglass_top_rounded,
+    title: t.settings.playbackBuffer,
+    subtitleBuilder: (tier) => '${_playbackBufferLabel(tier)} · ${t.settings.playbackBufferDescription}',
+    options: PlaybackBufferTier.values
+        .map((tier) => DialogOption(value: tier, title: _playbackBufferLabel(tier)))
+        .toList(),
+  );
+
+  String _playbackBufferLabel(PlaybackBufferTier tier) => switch (tier) {
+    PlaybackBufferTier.auto => t.settings.playbackBufferAuto,
+    PlaybackBufferTier.large => t.settings.playbackBufferLarge,
+    PlaybackBufferTier.extraLarge => t.settings.playbackBufferExtraLarge,
+  };
+
+  Widget _defaultQualityTile() => SettingSelectionTile<TranscodeQualityPreset>(
     pref: SettingsService.defaultQualityPreset,
     icon: Symbols.high_quality_rounded,
     title: t.settings.defaultQualityTitle,
@@ -371,20 +509,23 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     options: TranscodeQualityPreset.displayOrder
         .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
         .toList(),
-    decode: (p) => p,
-    encode: (p) => p,
   );
 
-  Widget _mpvConfigTile() => SettingValueBuilder<bool>(
-    pref: SettingsService.useExoPlayer,
-    builder: (_, useExo, _) {
-      if (Platform.isAndroid && useExo) return const SizedBox.shrink();
-      return SettingNavigationTile(
-        icon: Symbols.tune_rounded,
-        title: t.mpvConfig.title,
-        subtitle: t.mpvConfig.description,
-        destinationBuilder: (_) => const MpvConfigScreen(),
-      );
-    },
+  Widget _musicQualityTile() => SettingSelectionTile<AudioQualityPreset>(
+    pref: SettingsService.musicQualityPreset,
+    icon: Symbols.music_note_rounded,
+    title: t.settings.musicQualityTitle,
+    subtitleBuilder: _musicQualityLabel,
+    options: AudioQualityPreset.values.map((p) => DialogOption(value: p, title: _musicQualityLabel(p))).toList(),
+  );
+
+  String _musicQualityLabel(AudioQualityPreset preset) =>
+      preset.isOriginal ? t.videoControls.qualityOriginal : '${preset.bitrateKbps} kbps';
+
+  Widget _mpvConfigTile() => SettingNavigationTile(
+    icon: Symbols.tune_rounded,
+    title: t.mpvConfig.title,
+    subtitle: t.mpvConfig.description,
+    destinationBuilder: (_) => const MpvConfigScreen(),
   );
 }

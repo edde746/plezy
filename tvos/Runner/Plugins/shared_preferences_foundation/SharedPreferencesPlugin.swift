@@ -1,6 +1,11 @@
 // Copyright 2013 The Flutter Authors
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+// Plezy tvOS copy: shared_preferences_foundation 2.5.6 from flutter/packages
+// commit 18b9cc5f2b0820cb6164f0150958ba76db75c61a. Local delta: add
+// `os(tvOS)` to the three iOS import/messenger guards. To update, copy this
+// file and messages.g.swift from the newly locked package version, reapply only
+// those guards, then build Runner for Apple TV simulator and device.
 
 import Foundation
 
@@ -111,8 +116,7 @@ public class SharedPreferencesPlugin: NSObject, FlutterPlugin, UserDefaultsApi {
     return Array(try getAll(allowList: allowList, options: options).keys)
   }
 
-  func getAll(allowList: [String]?, options: SharedPreferencesPigeonOptions) throws -> [String: Any]
-  {
+  func getAll(allowList: [String]?, options: SharedPreferencesPigeonOptions) throws -> [String: Any] {
     return try SharedPreferencesPlugin.getAllPrefs(allowList: allowList, options: options)
   }
 

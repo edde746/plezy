@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:collection/collection.dart';
 
 import '../../utils/app_logger.dart';
 import '../../utils/udp_broadcast_sockets.dart';
@@ -35,11 +36,15 @@ class DiscoveredHost {
 /// Hosts broadcast authenticated beacons; clients listen and filter
 /// by matching Plex home membership.
 class LanDiscoveryService {
-  static const int discoveryPort = 48633;
+  static const int defaultDiscoveryPort = 48633;
   static const int _broadcastIntervalSeconds = 3;
   static const int _staleTimeoutSeconds = 10;
   static const int _beaconVersion = 1;
 
+  /// UDP port used for both beacon targets and listener binding.
+  final int discoveryPort;
+
+  LanDiscoveryService({this.discoveryPort = defaultDiscoveryPort});
   // Broadcaster state (host)
   UdpBroadcastSocketSet? _broadcastSockets;
   Timer? _broadcastTimer;
@@ -48,6 +53,7 @@ class LanDiscoveryService {
   RawDatagramSocket? _listenSocket;
   StreamSubscription<RawSocketEvent>? _listenSubscription;
   Timer? _staleCleanupTimer;
+  int _listenGeneration = 0;
   final Map<String, DiscoveredHost> _discoveredHosts = {};
   final _hostsController = StreamController<List<DiscoveredHost>>.broadcast();
 
@@ -58,34 +64,6 @@ class LanDiscoveryService {
   bool get isListening => _listenSocket != null;
 
   // ── Host: Broadcasting ──
-
-  Future<void> startBroadcasting({
-    required List<int> discoveryKey,
-    required String deviceName,
-    required String platform,
-    required String clientId,
-    required int wsPort,
-    required List<String> ips,
-  }) async {
-    return startBroadcastingForContexts(
-      contexts: [
-        RemoteAuthContext(
-          id: clientId,
-          backend: 'legacy',
-          connectionId: clientId,
-          homeSecret: const [],
-          discoveryKey: discoveryKey,
-          clientIdentifier: clientId,
-          userUuid: '',
-          allowedUserUuids: const [],
-        ),
-      ],
-      deviceName: deviceName,
-      platform: platform,
-      wsPort: wsPort,
-      ips: ips,
-    );
-  }
 
   Future<void> startBroadcastingForContexts({
     required List<RemoteAuthContext> contexts,
@@ -168,29 +146,12 @@ class LanDiscoveryService {
 
   // ── Client: Listening ──
 
-  /// Start listening for host beacons.
-  /// Returns a stream of currently-visible hosts, updated on each beacon or stale cleanup.
-  Stream<List<DiscoveredHost>> startListening({required List<int> discoveryKey}) {
-    return startListeningForContexts([
-      RemoteAuthContext(
-        id: '',
-        backend: 'legacy',
-        connectionId: '',
-        homeSecret: const [],
-        discoveryKey: discoveryKey,
-        clientIdentifier: '',
-        userUuid: '',
-        allowedUserUuids: const [],
-      ),
-    ]);
-  }
-
   Stream<List<DiscoveredHost>> startListeningForContexts(List<RemoteAuthContext> contexts) {
     _stopListeningInternal();
     _discoveredHosts.clear();
+    final generation = _listenGeneration;
 
-    _bindListener(contexts);
-
+    unawaited(_bindListener(contexts, generation));
     // Periodically remove stale hosts
     _staleCleanupTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       final now = DateTime.now();
@@ -211,23 +172,29 @@ class LanDiscoveryService {
     return _hostsController.stream;
   }
 
-  Future<void> _bindListener(List<RemoteAuthContext> contexts) async {
+  Future<void> _bindListener(List<RemoteAuthContext> contexts, int generation) async {
     try {
-      _listenSocket = await RawDatagramSocket.bind(
+      final socket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4,
         discoveryPort,
         reuseAddress: true,
         reusePort: true,
       );
-
+      if (generation != _listenGeneration) {
+        socket.close();
+        return;
+      }
+      _listenSocket = socket;
       appLogger.d('LanDiscovery: Listening on port $discoveryPort');
 
-      _listenSubscription = _listenSocket!.listenDatagrams(
+      _listenSubscription = socket.listenDatagrams(
         (datagram) => _handleDatagram(datagram, contexts),
         debugLabel: 'LanDiscovery listener',
       );
     } catch (e) {
-      appLogger.e('LanDiscovery: Failed to bind listener', error: e);
+      if (generation == _listenGeneration) {
+        appLogger.e('LanDiscovery: Failed to bind listener', error: e);
+      }
     }
   }
 
@@ -274,22 +241,31 @@ class LanDiscoveryService {
         return; // Different home
       }
 
-      // Valid beacon from same home
+      // Valid beacon from same home. Normalize only after authentication so
+      // stored endpoint order matches the canonical HMAC representation.
+      final normalizedIps = List<String>.from(ips)..sort();
+      final lastSeen = DateTime.now();
       final hostKey = clientId;
-      if (_discoveredHosts.containsKey(hostKey)) {
-        final existing = _discoveredHosts[hostKey]!;
-        existing.lastSeen = DateTime.now();
-        // Only emit if fields actually changed
-        if (existing.name != name || existing.port != port) {
+      final existing = _discoveredHosts[hostKey];
+      if (existing != null) {
+        final hostChanged =
+            existing.name != name ||
+            existing.platform != platform ||
+            existing.port != port ||
+            !const ListEquality<String>().equals(existing.ips, normalizedIps);
+        if (hostChanged) {
           _discoveredHosts[hostKey] = DiscoveredHost(
             authContextId: existing.authContextId,
             clientId: clientId,
             name: name,
             platform: platform,
             port: port,
-            ips: ips,
+            ips: normalizedIps,
+            lastSeen: lastSeen,
           );
           _emitHosts();
+        } else {
+          existing.lastSeen = lastSeen;
         }
       } else {
         _discoveredHosts[hostKey] = DiscoveredHost(
@@ -298,9 +274,10 @@ class LanDiscoveryService {
           name: name,
           platform: platform,
           port: port,
-          ips: ips,
+          ips: normalizedIps,
+          lastSeen: lastSeen,
         );
-        appLogger.d('LanDiscovery: Discovered host: $name ($platform) at ${ips.join(", ")}:$port');
+        appLogger.d('LanDiscovery: Discovered host: $name ($platform) at ${normalizedIps.join(", ")}:$port');
         _emitHosts();
       }
     } catch (e) {
@@ -309,6 +286,12 @@ class LanDiscoveryService {
   }
 
   void _emitHosts() {
+    // stopListening() can arrive after dispose(): CompanionRemoteProvider's
+    // async crypto-rebuild path tears down the host server on whichever
+    // service instance it captured earlier. Emitting into the closed
+    // controller threw "Bad state: Cannot add new events after calling
+    // close" — the top Dart crash in production.
+    if (_hostsController.isClosed) return;
     _hostsController.add(_discoveredHosts.values.toList());
   }
 
@@ -319,6 +302,7 @@ class LanDiscoveryService {
   }
 
   void _stopListeningInternal() {
+    ++_listenGeneration;
     _staleCleanupTimer?.cancel();
     _staleCleanupTimer = null;
     _listenSubscription?.cancel();

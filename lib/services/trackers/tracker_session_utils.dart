@@ -3,17 +3,8 @@ import 'dart:convert' as convert;
 /// Current epoch time in seconds, matching tracker OAuth expiry fields.
 int trackerSessionNowEpochSeconds() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-bool isTrackerTokenExpired(int expiresAt, {int? nowSeconds}) =>
-    (nowSeconds ?? trackerSessionNowEpochSeconds()) >= expiresAt;
-
 bool trackerTokenNeedsRefresh(int expiresAt, {int refreshWindowSeconds = 300, int? nowSeconds}) =>
     (nowSeconds ?? trackerSessionNowEpochSeconds()) >= expiresAt - refreshWindowSeconds;
-
-mixin EncodedTrackerSession {
-  Map<String, dynamic> toJson();
-
-  String encode() => encodeTrackerSessionJson(toJson());
-}
 
 String encodeTrackerSessionJson(Map<String, dynamic> value) => convert.json.encode(value);
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../../utils/app_logger.dart';
+import '../primitives.dart';
 
 /// NTP-style clock-offset estimation against the session host (guest side).
 ///
@@ -12,9 +13,7 @@ import '../../utils/app_logger.dart';
 /// All time reads go through the injected [nowMs] so tests can virtualize
 /// time alongside `fakeAsync`.
 class ClockSync {
-  ClockSync({required this._sendPing, int Function()? nowMs}) : _nowMs = nowMs ?? _systemNowMs;
-
-  static int _systemNowMs() => DateTime.now().millisecondsSinceEpoch;
+  ClockSync({required this._sendPing, int Function()? nowMs}) : _nowMs = nowMs ?? watchTogetherSystemNowMs;
 
   static const int _windowSize = 8;
   static const int _maxAcceptedRttMs = 1000;

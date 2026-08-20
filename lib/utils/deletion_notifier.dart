@@ -4,6 +4,7 @@ import 'app_logger.dart';
 import 'base_notifier.dart';
 import 'global_key_utils.dart';
 import 'hierarchical_event_mixin.dart';
+import 'media_event_keys.dart';
 
 /// Event representing a media item deletion with parent chain for hierarchical invalidation
 class DeletionEvent with HierarchicalEventMixin {
@@ -61,10 +62,6 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
 
   DeletionNotifier._internal();
 
-  Stream<DeletionEvent> forServer(ServerId serverId) => stream.where((e) => e.serverId == serverId);
-
-  Stream<DeletionEvent> forItem(String itemId) => stream.where((e) => e.affectsItem(itemId));
-
   /// Emit a deletion event with logging
   @override
   void notify(DeletionEvent event) {
@@ -73,11 +70,8 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
   }
 
   void notifyDeletedItem({required MediaItem item, bool isDownloadOnly = false}) {
-    final serverId = serverIdOrNull(item.serverId);
-    if (serverId == null) {
-      appLogger.w('DeletionNotifier: missing serverId for ${item.id}, skipping deletion event');
-      return;
-    }
+    final serverId = serverIdForEvent(item, notifier: 'DeletionNotifier', event: 'deletion');
+    if (serverId == null) return;
     notify(
       DeletionEvent(
         itemId: item.id,

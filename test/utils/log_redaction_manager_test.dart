@@ -42,7 +42,7 @@ void main() {
     test('api_key redaction is case-insensitive', () {
       final result = LogRedactionManager.redact('API_KEY=topsecret&z=1');
       expect(result.contains('topsecret'), isFalse);
-      expect(result.contains('api_key=[REDACTED]'), isTrue);
+      expect(result.contains('[REDACTED]'), isTrue);
     });
 
     test('redacts Jellyfin Quick Connect secret query parameter without registration', () {
@@ -56,8 +56,23 @@ void main() {
     test('Quick Connect secret redaction is case-insensitive and preserves other params', () {
       final result = LogRedactionManager.redact('SECRET=a%2Fb%20c&Authenticated=false');
       expect(result.contains('a%2Fb%20c'), isFalse);
-      expect(result.contains('secret=[REDACTED]'), isTrue);
+      expect(result.contains('[REDACTED]'), isTrue);
       expect(result.contains('Authenticated=false'), isTrue);
+    });
+
+    test('redacts Plex Home pin query parameter without registration', () {
+      final input = 'POST https://clients.plex.tv/api/v2/home/users/uuid/switch?X-Plex-Token=tok&pin=1234 → 201';
+      final result = LogRedactionManager.redact(input);
+      expect(result.contains('pin=1234'), isFalse);
+      expect(result.contains('pin=[REDACTED]'), isTrue);
+    });
+
+    test('pin redaction is case-insensitive and leaves compound params intact', () {
+      final result = LogRedactionManager.redact('PIN=0000&checkPin=abc&next=1');
+      expect(result.contains('PIN=0000'), isFalse);
+      expect(result.contains('[REDACTED]'), isTrue);
+      expect(result.contains('checkPin=abc'), isTrue);
+      expect(result.contains('next=1'), isTrue);
     });
 
     test('redacts X-Emby-Token header form', () {
@@ -93,6 +108,170 @@ void main() {
       final result = LogRedactionManager.redact('version 1.2.3 was released');
       expect(result, 'version 1.2.3 was released');
     });
+
+    test('redacts generic Authorization schemes across serialized forms', () {
+      const cases = <({String input, String secret, String neighbor})>[
+        (
+          input: 'Authorization: Bearer bearer.value-_/+~==\nStatus: 401',
+          secret: 'bearer.value-_/+~==',
+          neighbor: 'Status: 401',
+        ),
+        (
+          input: 'aUtHoRiZaTiOn = Basic basic.value-_/+~==, status=denied',
+          secret: 'basic.value-_/+~==',
+          neighbor: 'status=denied',
+        ),
+        (
+          input: '{Authorization: Bearer map.value-_/+~==, operation: connect}',
+          secret: 'map.value-_/+~==',
+          neighbor: 'operation: connect',
+        ),
+        (
+          input: '{"authorization":"Basic json.value-_/+~==","status":"denied"}',
+          secret: 'json.value-_/+~==',
+          neighbor: '"status":"denied"',
+        ),
+        (
+          input: "{'Authorization' = 'Bearer quoted.value-_/+~=='; next=ok}",
+          secret: 'quoted.value-_/+~==',
+          neighbor: 'next=ok',
+        ),
+      ];
+
+      for (final testCase in cases) {
+        final result = LogRedactionManager.redact(testCase.input);
+        expect(result, isNot(contains(testCase.secret)), reason: testCase.input);
+        expect(result, contains('[REDACTED]'), reason: testCase.input);
+        expect(result, contains(testCase.neighbor), reason: testCase.input);
+      }
+    });
+
+    test('redacts opaque Authorization and multiple sensitive fields', () {
+      const input =
+          'Authorization: opaque-auth-value\n'
+          'Proxy-Authorization: Basic proxy.value+/==\n'
+          '{"password":"json-password","client_secret":"json-client-secret","status":"failed"}';
+
+      final result = LogRedactionManager.redact(input);
+
+      for (final secret in const ['opaque-auth-value', 'proxy.value+/==', 'json-password', 'json-client-secret']) {
+        expect(result, isNot(contains(secret)));
+      }
+      expect('[REDACTED]'.allMatches(result).length, greaterThanOrEqualTo(4));
+      expect(result, contains('"status":"failed"'));
+    });
+
+    test('redacts exact sensitive query and header keys but preserves neighbors', () {
+      const input =
+          'GET /items?api_key=query-secret&refresh_token=refresh-secret&token_count=42\n'
+          'Cookie: session=cookie-secret; refresh=second-cookie-secret\n'
+          'X-Api-Key: header-secret\n'
+          'Status: 403';
+
+      final result = LogRedactionManager.redact(input);
+
+      for (final secret in const [
+        'query-secret',
+        'refresh-secret',
+        'cookie-secret',
+        'second-cookie-secret',
+        'header-secret',
+      ]) {
+        expect(result, isNot(contains(secret)));
+      }
+      expect(result, contains('token_count=42'));
+      expect(result, contains('Status: 403'));
+    });
+
+    test('redacts complete unquoted structured values containing hashes', () {
+      const cases = <({String input, String output, String secret})>[
+        (input: '{password: left#right}', output: '{password: [REDACTED]}', secret: 'left#right'),
+        (
+          input: '{password: left"middle#right, status: denied}',
+          output: '{password: [REDACTED], status: denied}',
+          secret: 'left"middle#right',
+        ),
+        (
+          input: "{password: left'middle#right; status: denied}",
+          output: '{password: [REDACTED]; status: denied}',
+          secret: "left'middle#right",
+        ),
+        (
+          input: "request couldn't serialize {password: left{middle#right, status: denied}",
+          output: "request couldn't serialize {password: [REDACTED], status: denied}",
+          secret: 'left{middle#right',
+        ),
+        (
+          input: 'password: left#right # external comment',
+          output: 'password: [REDACTED] # external comment',
+          secret: 'left#right',
+        ),
+      ];
+
+      for (final testCase in cases) {
+        final result = LogRedactionManager.redact(testCase.input);
+        expect(result, testCase.output, reason: testCase.input);
+        expect(result, isNot(contains(testCase.secret)), reason: testCase.input);
+      }
+    });
+
+    test('redacts nested structured values without consuming safe neighbors', () {
+      const cases = <({String input, String output})>[
+        (
+          input: "{password: {primary: left#right, quoted: 'comma, hash# and } brace'}, status: denied}",
+          output: '{password: [REDACTED], status: denied}',
+        ),
+        (
+          input: '{secret: [left#right, {"nested": "quote\\", comma, # and ] bracket"}], status: denied}',
+          output: '{secret: [REDACTED], status: denied}',
+        ),
+        (
+          input: '{"password":"left,#right} still secret","status":"denied"}',
+          output: '{"password":"[REDACTED]","status":"denied"}',
+        ),
+      ];
+
+      for (final testCase in cases) {
+        expect(LogRedactionManager.redact(testCase.input), testCase.output, reason: testCase.input);
+      }
+    });
+
+    test('preserves URL fragments and external comments', () {
+      expect(
+        LogRedactionManager.redact('GET https://example.test/path?password=left#public-fragment'),
+        'GET https://example.test/path?password=[REDACTED]#public-fragment',
+      );
+      expect(
+        LogRedactionManager.redact(
+          '{"endpoint":"https://example.test/{item}?password=left#public-fragment","status":"denied"}',
+        ),
+        '{"endpoint":"https://example.test/{item}?password=[REDACTED]#public-fragment","status":"denied"}',
+      );
+      expect(
+        LogRedactionManager.redact('password=left # configuration comment'),
+        'password=[REDACTED] # configuration comment',
+      );
+    });
+
+    test('redacts URL userinfo while preserving the destination', () {
+      const input = 'connect https://synthetic-user:synthetic-password@example.test:8443/library?mode=fast';
+
+      final result = LogRedactionManager.redact(input);
+
+      expect(result, isNot(contains('synthetic-user')));
+      expect(result, isNot(contains('synthetic-password')));
+      expect(result, contains('https://[REDACTED]@example.test:8443/library?mode=fast'));
+    });
+
+    test('does not over-redact prose or token-count-style fields', () {
+      const input =
+          'authorization failed after token refresh; '
+          'token_count=42 token-count=43 tokenCount=44 max_tokens=45 '
+          'input_tokens=46 outputTokens=47 notsecret=visible '
+          'authorizationMode=interactive';
+
+      expect(LogRedactionManager.redact(input), input);
+    });
   });
 
   group('registerToken', () {
@@ -100,7 +279,7 @@ void main() {
       LogRedactionManager.registerToken('abc-secret-XYZ');
       final result = LogRedactionManager.redact('Authorization: Bearer abc-secret-XYZ');
       expect(result.contains('abc-secret-XYZ'), isFalse);
-      expect(result.contains('[REDACTED_TOKEN]'), isTrue);
+      expect(result.contains('[REDACTED]'), isTrue);
     });
 
     test('redacts URL-encoded form of a token', () {
@@ -161,6 +340,16 @@ void main() {
       final r2 = LogRedactionManager.redact('host https://server.example.com/');
       expect(r1.contains('server.example.com'), isFalse);
       expect(r2.contains('server.example.com'), isFalse);
+    });
+
+    test('redacts the mpv-escaped form used in option-value logs', () {
+      LogRedactionManager.registerServerUrl('https://server.example.com');
+      // mpv echoes list options like sub-files with ':' escaped as '\:'.
+      final result = LogRedactionManager.redact(
+        r"Setting option 'sub-files' = 'https\://server.example.com/Videos/1/Subtitles/0/0/Stream.srt' (flags = 16)",
+      );
+      expect(result.contains('server.example.com'), isFalse);
+      expect(result.contains('[REDACTED_URL]'), isTrue);
     });
   });
 

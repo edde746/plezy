@@ -5,6 +5,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
+import '../../media/media_browser_dialect.dart';
+import '../../theme/mono_tokens.dart';
 import '../../profiles/profile.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -17,8 +19,8 @@ import 'add_plex_account_screen.dart';
 /// When [targetProfile] is provided, also offers a "Borrow from another
 /// profile" option that opens [BorrowConnectionScreen] for the target. The
 /// global Connections screen invokes this without a target — Plex auto-
-/// surfaces its Home users as new profiles, Jellyfin binds to the active
-/// profile via [AddJellyfinScreen].
+/// surfaces its Home users as new profiles, while MediaBrowser servers bind
+/// to the active profile via [AddJellyfinScreen].
 ///
 /// Pops with `true` after the underlying flow succeeds so the parent list
 /// refreshes; pops with `null` (the default) when the user backs out.
@@ -30,6 +32,8 @@ class AddConnectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scoped = targetProfile != null;
+    const jellyfinDialect = MediaBrowserDialect.jellyfin;
+    const embyDialect = MediaBrowserDialect.emby;
     final options = <_BackendOption>[
       _BackendOption(
         backend: MediaBackend.plex,
@@ -39,13 +43,35 @@ class AddConnectionScreen extends StatelessWidget {
       ),
       _BackendOption(
         backend: MediaBackend.jellyfin,
-        title: t.addServer.connectToJellyfinCard,
+        title: t.addServer.connectToMediaBrowserCard(product: jellyfinDialect.productName),
         subtitle: scoped
-            ? t.addServer.connectToJellyfinCardSubtitleScoped(name: targetProfile!.displayName)
-            : t.addServer.connectToJellyfinCardSubtitle,
-        builder: (_) => AddJellyfinScreen(targetProfile: targetProfile),
+            ? t.addServer.connectToMediaBrowserCardSubtitleScoped(
+                product: jellyfinDialect.productName,
+                name: targetProfile!.displayName,
+              )
+            : t.addServer.connectToMediaBrowserCardSubtitle,
+        builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: jellyfinDialect),
       ),
+      _BackendOption(
+        backend: MediaBackend.emby,
+        title: t.addServer.connectToMediaBrowserCard(product: embyDialect.productName),
+        subtitle: scoped
+            ? t.addServer.connectToMediaBrowserCardSubtitleScoped(
+                product: embyDialect.productName,
+                name: targetProfile!.displayName,
+              )
+            : t.addServer.connectToMediaBrowserCardSubtitle,
+        builder: (_) => AddJellyfinScreen(targetProfile: targetProfile, dialect: embyDialect),
+      ),
+      if (scoped)
+        _BackendOption(
+          backend: null,
+          title: t.addServer.borrowFromAnotherProfile,
+          subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
+          builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!),
+        ),
     ];
+    final tokensRef = tokens(context);
     return FocusedScrollScaffold(
       title: Text(
         scoped
@@ -58,30 +84,16 @@ class AddConnectionScreen extends StatelessWidget {
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               for (var i = 0; i < options.length; i++) ...[
-                if (i > 0) const SizedBox(height: 12),
+                if (i > 0) SizedBox(height: tokensRef.groupGap),
                 _BackendCard(
-                  leading: BackendBadge(backend: options[i].backend, size: 28),
+                  borderRadius: groupItemRadii(context, i, options.length),
+                  leading: options[i].backend != null
+                      ? BackendBadge(backend: options[i].backend!, size: 28)
+                      : const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
                   title: options[i].title,
                   subtitle: options[i].subtitle,
                   onTap: () async {
                     final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: options[i].builder));
-                    if (added == true && context.mounted) {
-                      Navigator.of(context).pop(true);
-                    }
-                  },
-                ),
-              ],
-              if (scoped) ...[
-                const SizedBox(height: 12),
-                _BackendCard(
-                  leading: const AppIcon(Symbols.share_rounded, fill: 1, size: 28),
-                  title: t.addServer.borrowFromAnotherProfile,
-                  subtitle: t.addServer.borrowFromAnotherProfileSubtitle,
-                  onTap: () async {
-                    final added = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(builder: (_) => BorrowConnectionScreen(targetProfile: targetProfile!)),
-                    );
                     if (added == true && context.mounted) {
                       Navigator.of(context).pop(true);
                     }
@@ -97,7 +109,8 @@ class AddConnectionScreen extends StatelessWidget {
 }
 
 class _BackendOption {
-  final MediaBackend backend;
+  /// Null for the borrow option (renders a share icon instead of a badge).
+  final MediaBackend? backend;
   final String title;
   final String subtitle;
   final WidgetBuilder builder;
@@ -106,27 +119,34 @@ class _BackendOption {
 }
 
 class _BackendCard extends StatelessWidget {
+  final BorderRadius borderRadius;
   final Widget leading;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
-  const _BackendCard({required this.leading, required this.title, required this.subtitle, required this.onTap});
+  const _BackendCard({
+    required this.borderRadius,
+    required this.leading,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return FocusableWrapper(
       disableScale: true,
-      borderRadius: 12,
+      borderRadii: borderRadius,
       descendantsAreFocusable: false,
       onSelect: onTap,
       child: Material(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: borderRadius,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: borderRadius,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(

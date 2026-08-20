@@ -3,38 +3,6 @@ import '../utils/desktop_window_padding.dart';
 import '../services/fullscreen_state_manager.dart';
 import 'app_bar_back_button.dart';
 
-/// Configuration class for common app bar properties.
-/// Reduces duplication between different app bar implementations.
-class DesktopAppBarConfig {
-  final Widget? title;
-  final List<Widget>? actions;
-  final double? elevation;
-  final Color? backgroundColor;
-  final Color? surfaceTintColor;
-  final Color? shadowColor;
-  final double? scrolledUnderElevation;
-  final bool floating;
-  final bool pinned;
-  final double? expandedHeight;
-  final Widget? flexibleSpace;
-  final PreferredSizeWidget? bottom;
-
-  const DesktopAppBarConfig({
-    this.title,
-    this.actions,
-    this.elevation,
-    this.backgroundColor,
-    this.surfaceTintColor,
-    this.shadowColor,
-    this.scrolledUnderElevation,
-    this.floating = false,
-    this.pinned = false,
-    this.expandedHeight,
-    this.flexibleSpace,
-    this.bottom,
-  });
-}
-
 /// Helper class for building app bar sections with consistent desktop behavior.
 class DesktopAppBarSections {
   /// Builds the leading section with proper padding and back button handling.
@@ -52,11 +20,7 @@ class DesktopAppBarSections {
       final canPop = parentRoute?.canPop ?? false;
 
       if (canPop) {
-        effectiveLeading = AppBarBackButton(
-          style: BackButtonStyle.plain,
-          onPressed: () => Navigator.of(context).pop(),
-          semanticLabel: MaterialLocalizations.of(context).backButtonTooltip,
-        );
+        effectiveLeading = AppBarBackButton(style: BackButtonStyle.plain, onPressed: () => Navigator.of(context).pop());
       }
     }
 
@@ -153,21 +117,16 @@ class DesktopSliverAppBar extends StatelessWidget {
   }
 }
 
-/// Unified widget for desktop top bars that handles fullscreen state and back button logic.
-/// Reduces UI drift by centralizing the app bar implementation.
-class DesktopTopBar extends StatelessWidget {
-  final DesktopAppBarConfig config;
-  final Widget? leading;
-  final VoidCallback? onBackPressed;
+/// Convenience wrapper around [DesktopSliverAppBar] — the canonical desktop app bar —
+/// that rebuilds when fullscreen state changes so window-control spacing stays correct.
+/// For anything beyond title/actions/pinned, use [DesktopSliverAppBar] directly.
+class CustomAppBar extends StatelessWidget {
+  final Widget? title;
+  final List<Widget>? actions;
+  final bool pinned;
   final bool automaticallyImplyLeading;
 
-  const DesktopTopBar({
-    super.key,
-    required this.config,
-    this.leading,
-    this.onBackPressed,
-    this.automaticallyImplyLeading = true,
-  });
+  const CustomAppBar({super.key, this.title, this.actions, this.pinned = false, this.automaticallyImplyLeading = true});
 
   @override
   Widget build(BuildContext context) {
@@ -176,95 +135,14 @@ class DesktopTopBar extends StatelessWidget {
       builder: (context, _) {
         final isFullscreen = FullscreenStateManager().isFullscreen;
 
-        Widget? effectiveLeading = leading;
-        if (effectiveLeading == null && automaticallyImplyLeading) {
-          final parentRoute = ModalRoute.of(context);
-          final canPop = parentRoute?.canPop ?? false;
-
-          if (canPop) {
-            effectiveLeading = AppBarBackButton(style: BackButtonStyle.plain, onPressed: onBackPressed);
-          }
-        }
-
         return DesktopSliverAppBar(
           key: ValueKey('desktop_top_bar_$isFullscreen'),
-          title: config.title,
-          actions: config.actions,
-          leading: effectiveLeading,
-          automaticallyImplyLeading: false,
-          elevation: config.elevation,
-          backgroundColor: config.backgroundColor,
-          surfaceTintColor: config.surfaceTintColor,
-          shadowColor: config.shadowColor,
-          scrolledUnderElevation: config.scrolledUnderElevation,
-          floating: config.floating,
-          pinned: config.pinned,
-          expandedHeight: config.expandedHeight,
-          flexibleSpace: config.flexibleSpace,
-          bottom: config.bottom,
+          title: title,
+          actions: actions,
+          pinned: pinned,
+          automaticallyImplyLeading: automaticallyImplyLeading,
         );
       },
-    );
-  }
-}
-
-/// Convenient wrapper for DesktopSliverAppBar with built-in back button handling.
-///
-/// This widget is maintained for backward compatibility. For new code, consider
-/// using [DesktopTopBar] directly for a more unified approach.
-class CustomAppBar extends StatelessWidget {
-  final Widget? title;
-  final List<Widget>? actions;
-  final VoidCallback? onBackPressed;
-  final double? elevation;
-  final Color? backgroundColor;
-  final Color? surfaceTintColor;
-  final Color? shadowColor;
-  final double? scrolledUnderElevation;
-  final bool floating;
-  final bool pinned;
-  final double? expandedHeight;
-  final Widget? flexibleSpace;
-  final PreferredSizeWidget? bottom;
-  final bool automaticallyImplyLeading;
-
-  const CustomAppBar({
-    super.key,
-    this.title,
-    this.actions,
-    this.onBackPressed,
-    this.elevation,
-    this.backgroundColor,
-    this.surfaceTintColor,
-    this.shadowColor,
-    this.scrolledUnderElevation,
-    this.floating = false,
-    this.pinned = false,
-    this.expandedHeight,
-    this.flexibleSpace,
-    this.bottom,
-    this.automaticallyImplyLeading = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return DesktopTopBar(
-      config: DesktopAppBarConfig(
-        title: title,
-        actions: actions,
-        elevation: elevation,
-        backgroundColor: backgroundColor,
-        surfaceTintColor: surfaceTintColor,
-        shadowColor: shadowColor,
-        scrolledUnderElevation: scrolledUnderElevation,
-        floating: floating,
-        pinned: pinned,
-        expandedHeight: expandedHeight,
-        flexibleSpace: flexibleSpace,
-        bottom: bottom,
-      ),
-      onBackPressed: onBackPressed,
-      automaticallyImplyLeading: automaticallyImplyLeading,
     );
   }
 }

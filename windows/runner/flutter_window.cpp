@@ -3,13 +3,12 @@
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "mpv/display_mode_manager.h"
 #include "mpv/mpv_plugin.h"
 
-// Registry key for window placement persistence
 static constexpr wchar_t kWindowPlacementKey[] = L"Software\\Plezy";
 static constexpr wchar_t kWindowPlacementValue[] = L"WindowPlacement";
 
-// Debounce timer for saving window placement
 static UINT_PTR g_saveTimerId = 0;
 static HWND g_mainHwnd = nullptr;
 // When true, WM_WINDOWPOSCHANGED should not persist placement. Used while a
@@ -17,17 +16,14 @@ static HWND g_mainHwnd = nullptr;
 // as the user's last "normal" placement.
 static bool g_suppressPlacementSave = false;
 
-// Forward declaration
 static void SaveWindowPlacement(HWND hwnd);
 
-// Timer callback for debounced save
 static void CALLBACK SaveTimerProc(HWND, UINT, UINT_PTR, DWORD) {
   if (g_mainHwnd) SaveWindowPlacement(g_mainHwnd);
   KillTimer(nullptr, g_saveTimerId);
   g_saveTimerId = 0;
 }
 
-// Write a WINDOWPLACEMENT struct directly to the registry.
 static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   HKEY hKey;
   if (RegCreateKeyExW(
@@ -38,7 +34,6 @@ static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   }
 }
 
-// Save the window's current WINDOWPLACEMENT to registry.
 static void SaveWindowPlacement(HWND hwnd) {
   WINDOWPLACEMENT wp{};
   wp.length = sizeof(wp);
@@ -46,8 +41,6 @@ static void SaveWindowPlacement(HWND hwnd) {
   WriteWindowPlacement(wp);
 }
 
-// Load and apply WINDOWPLACEMENT from registry
-// Returns whether the window should be maximized
 static bool LoadWindowPlacement(HWND hwnd) {
   HKEY hKey;
   if (RegOpenKeyExW(HKEY_CURRENT_USER, kWindowPlacementKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) return false;
@@ -70,11 +63,10 @@ static bool LoadWindowPlacement(HWND hwnd) {
   return wasMaximized;
 }
 
-// Debounce save to avoid excessive registry writes during resize/move
 static void DebounceSaveWindowPlacement(HWND hwnd) {
   g_mainHwnd = hwnd;
   if (g_saveTimerId) KillTimer(nullptr, g_saveTimerId);
-  g_saveTimerId = SetTimer(nullptr, 0, 500, SaveTimerProc);  // 500ms debounce
+  g_saveTimerId = SetTimer(nullptr, 0, 500, SaveTimerProc);
 }
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project) : project_(project) {}
@@ -92,22 +84,21 @@ bool FlutterWindow::OnCreate() {
   // creation / destruction in the startup path.
   flutter_controller_ =
       std::make_unique<flutter::FlutterViewController>(frame.right - frame.left, frame.bottom - frame.top, project_);
-  // Ensure that basic setup of the controller was successful.
   if (!flutter_controller_->engine() || !flutter_controller_->view()) {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
 
-  // Register mpv player plugin.
   OutputDebugStringA("FlutterWindow: About to register MpvPlayerPlugin\n");
   MpvPlayerPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
+  MpvAudioPlayerPluginRegisterWithRegistrar(
+      flutter_controller_->engine()->GetRegistrarForPlugin("MpvAudioPlayerPlugin"));
   OutputDebugStringA("FlutterWindow: MpvPlayerPlugin registered\n");
 
   RegisterWindowChannel();
 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
-  // Load saved window placement before showing
   HWND hwnd = GetHandle();
   bool maximized = LoadWindowPlacement(hwnd);
 
@@ -156,6 +147,10 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam
   }
 
   switch (message) {
+    case WM_DISPLAYCHANGE:
+      // One bounded, serialized retry for a display that may have reconnected.
+      mpv::DisplayModeManager::RecoverIfNeeded();
+      break;
     case WM_FONTCHANGE:
       flutter_controller_->engine()->ReloadSystemFonts();
       break;

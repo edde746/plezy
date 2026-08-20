@@ -7,9 +7,13 @@ import 'package:http/http.dart';
 /// Jellyfin auth/HTTP layers throw subtypes from this hierarchy so consumers
 /// can catch with one filter and match exhaustively when they care which
 /// failure mode it is.
+///
+/// [message] is English for stable logs and Sentry grouping. [display] is the
+/// localized user-facing text when this failure is rendered in the UI.
 sealed class MediaServerException implements Exception {
   final String message;
-  const MediaServerException(this.message);
+  final String? display;
+  const MediaServerException(this.message, {this.display});
 
   @override
   String toString() => '$runtimeType: $message';
@@ -19,7 +23,7 @@ sealed class MediaServerException implements Exception {
 /// look like the expected backend at all. Surfaces in onboarding probes
 /// (Jellyfin `/System/Info/Public`, Plex resource discovery).
 class MediaServerUrlException extends MediaServerException {
-  const MediaServerUrlException(super.message);
+  const MediaServerUrlException(super.message, {super.display});
 }
 
 /// Authentication failed — bad password, expired token, disabled user,
@@ -28,13 +32,13 @@ class MediaServerUrlException extends MediaServerException {
 /// during refresh).
 class MediaServerAuthException extends MediaServerException {
   final int? statusCode;
-  const MediaServerAuthException(super.message, {this.statusCode});
+  const MediaServerAuthException(super.message, {this.statusCode, super.display});
 }
 
 /// Auth polling reached a terminal server-side expiry/rejection state before
 /// the user completed the external sign-in flow.
 class MediaServerPinExpiredException extends MediaServerAuthException {
-  const MediaServerPinExpiredException() : super('PIN expired before sign-in');
+  const MediaServerPinExpiredException({String? display}) : super('PIN expired before sign-in', display: display);
 }
 
 /// HTTP transport / non-2xx errors. Carries the status code (when known),
@@ -50,8 +54,14 @@ class MediaServerHttpException extends MediaServerException {
   final dynamic responseData;
   final Uri? requestUri;
 
-  MediaServerHttpException({required this.type, String? message, this.statusCode, this.responseData, this.requestUri})
-    : super(message ?? '');
+  MediaServerHttpException({
+    required this.type,
+    String? message,
+    String? display,
+    this.statusCode,
+    this.responseData,
+    this.requestUri,
+  }) : super(message ?? '', display: display);
 
   /// Map a caught exception to a [MediaServerHttpException].
   factory MediaServerHttpException.from(Object error, {Uri? uri}) {
@@ -92,6 +102,12 @@ class MediaServerHttpException extends MediaServerException {
       type == MediaServerHttpErrorType.connectionError ||
       type == MediaServerHttpErrorType.receiveTimeout;
 
+  /// Whether the request was aborted client-side (client teardown or an
+  /// explicit abort), as opposed to failing against the server. A cancelled
+  /// fetch says nothing about the server's actual content — callers must not
+  /// treat it as an empty result.
+  bool get isCancellation => type == MediaServerHttpErrorType.cancelled;
+
   @override
   String toString() {
     final parts = <String>[type.name];
@@ -101,4 +117,26 @@ class MediaServerHttpException extends MediaServerException {
     if (uri != null) parts.add('${uri.host}${uri.path}');
     return 'MediaServerHttpException(${parts.join(': ')})';
   }
+}
+
+/// The server explicitly terminated the client's playback session (admin
+/// "stop stream", paused-too-long auto-termination, concurrent-stream limit).
+///
+/// Plex signals this with `terminationCode`/`terminationText` on the
+/// MediaContainer of a timeline report response. The MediaBrowser backends
+/// deliver admin stops as a WebSocket remote-control command Plezy does not
+/// subscribe to, so they never throw this — intentionally unsupported there.
+///
+/// Progress reporting must stop when this is thrown: continuing the heartbeat
+/// loop re-registers the session server-side as a zombie row the admin can no
+/// longer clear (#1916).
+class PlaybackSessionTerminatedException extends MediaServerException {
+  /// Server-defined termination code (e.g. Plex 2006 for an admin stop).
+  final int code;
+
+  /// Human-readable server-supplied reason; may carry an admin message.
+  final String? reason;
+
+  PlaybackSessionTerminatedException({required this.code, this.reason})
+    : super('Server terminated playback session (code $code)${reason == null ? '' : ': $reason'}');
 }

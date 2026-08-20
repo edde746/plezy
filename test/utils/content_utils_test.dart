@@ -1,12 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_item_types.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/utils/content_utils.dart';
+import '../test_helpers/media_items.dart';
 
 MediaItem _episode({int? viewOffsetMs, int? durationMs, int? viewCount, int? leafCount, int? viewedLeafCount}) {
-  return MediaItem(
+  return testMediaItem(
     id: '1',
     backend: MediaBackend.plex,
     kind: MediaKind.episode,
@@ -19,7 +21,7 @@ MediaItem _episode({int? viewOffsetMs, int? durationMs, int? viewCount, int? lea
 }
 
 MediaItem _movie({int? viewCount}) {
-  return MediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie, viewCount: viewCount);
+  return testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie, viewCount: viewCount);
 }
 
 void main() {
@@ -57,7 +59,7 @@ void main() {
   group('MediaItemTypes.shouldHideSpoiler', () {
     test('false for non-episodes', () {
       expect(_movie().shouldHideSpoiler, isFalse);
-      final show = MediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.show);
+      final show = testMediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.show);
       expect(show.shouldHideSpoiler, isFalse);
     });
 
@@ -65,14 +67,11 @@ void main() {
       expect(_episode(viewCount: 1).shouldHideSpoiler, isFalse);
     });
 
-    test('false when >= 50% watched', () {
-      expect(_episode(viewOffsetMs: 5000, durationMs: 10000).shouldHideSpoiler, isFalse);
-      expect(_episode(viewOffsetMs: 8000, durationMs: 10000).shouldHideSpoiler, isFalse);
-    });
-
-    test('true when < 50% watched', () {
+    test('true while in progress until the episode is marked watched', () {
       expect(_episode(viewOffsetMs: 1000, durationMs: 10000).shouldHideSpoiler, isTrue);
       expect(_episode(viewOffsetMs: 4999, durationMs: 10000).shouldHideSpoiler, isTrue);
+      expect(_episode(viewOffsetMs: 5000, durationMs: 10000).shouldHideSpoiler, isTrue);
+      expect(_episode(viewOffsetMs: 8000, durationMs: 10000).shouldHideSpoiler, isTrue);
     });
 
     test('true when no progress at all (unwatched)', () {
@@ -96,8 +95,13 @@ void main() {
       expect(ContentTypeHelper.isVideoContent('artist'), isFalse);
     });
 
-    test('isMusicLibrary returns false for null and non-matching types', () {
-      expect(ContentTypeHelper.isMusicLibrary(null), isFalse);
+    test('getLibraryIcon normalizes type and falls back to folder', () {
+      expect(ContentTypeHelper.getLibraryIcon('MOVIE'), Symbols.movie_rounded);
+      expect(ContentTypeHelper.getLibraryIcon('show'), Symbols.tv_rounded);
+      expect(ContentTypeHelper.getLibraryIcon('artist'), Symbols.music_note_rounded);
+      expect(ContentTypeHelper.getLibraryIcon('photo'), Symbols.photo_rounded);
+      expect(ContentTypeHelper.getLibraryIcon('mixed'), Symbols.share_rounded);
+      expect(ContentTypeHelper.getLibraryIcon('unknown'), Symbols.folder_rounded);
     });
   });
 }

@@ -60,6 +60,9 @@ target 'Runner' do
       raise "tvos/Podfile: plugin '#{name}' not in .flutter-plugins-dependencies"
     pod name, :path => File.join(base, 'ios')
   end
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
 end
 
 post_install do |installer|

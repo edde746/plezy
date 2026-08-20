@@ -118,12 +118,20 @@ import wakelock_plus
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Set the long-form profile before activation so Dolby capabilities are
+    // available before playback.
     do {
       let session = AVAudioSession.sharedInstance()
-      try session.setCategory(.playback, mode: .default)
+      try session.setCategory(
+        .playback, mode: .default, policy: .longFormAudio, options: [])
       try session.setActive(true)
     } catch {
-      print("Failed to configure audio session: \(error)")
+      print("Failed to configure long-form audio session: \(error)")
+      do {
+        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+      } catch {
+        print("Failed to configure audio session: \(error)")
+      }
     }
 
     application.beginReceivingRemoteControlEvents()
@@ -137,6 +145,9 @@ import wakelock_plus
     }
     if let r = self.registrar(forPlugin: "MpvPlayerPlugin") {
       MpvPlayerPlugin.register(with: r)
+    }
+    if let r = self.registrar(forPlugin: "MpvAudioPlayerPlugin") {
+      MpvAudioPlayerPlugin.register(with: r)
     }
     if let r = self.registrar(forPlugin: "PackageInfoPlusPlugin") {
       PackageInfoPlusPlugin.register(with: r)

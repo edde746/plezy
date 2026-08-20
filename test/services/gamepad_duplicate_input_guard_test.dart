@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/gamepad_service.dart';
+import 'package:universal_gamepad/universal_gamepad.dart';
 
 void main() {
   group('GamepadDuplicateInputGuard', () {
@@ -57,8 +58,25 @@ void main() {
       guard.clear();
       guard.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.browserBack));
 
-      expect(guard.shouldSuppressSyntheticKey(LogicalKeyboardKey.escape), isTrue);
+      expect(guard.shouldSuppressSyntheticKey(LogicalKeyboardKey.gameButtonB), isTrue);
     });
+  });
+
+  test('tvOS engine exclusively owns standard navigation buttons', () {
+    for (final button in [
+      GamepadButton.dpadUp,
+      GamepadButton.dpadDown,
+      GamepadButton.dpadLeft,
+      GamepadButton.dpadRight,
+      GamepadButton.a,
+      GamepadButton.b,
+    ]) {
+      expect(isTvosEngineOwnedGamepadButton(isAppleTV: true, button: button), isTrue);
+    }
+
+    expect(isTvosEngineOwnedGamepadButton(isAppleTV: true, button: GamepadButton.x), isFalse);
+    expect(isTvosEngineOwnedGamepadButton(isAppleTV: true, button: GamepadButton.leftShoulder), isFalse);
+    expect(isTvosEngineOwnedGamepadButton(isAppleTV: false, button: GamepadButton.a), isFalse);
   });
 }
 

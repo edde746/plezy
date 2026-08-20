@@ -18,6 +18,9 @@ class Ass {
     external fun nativeAssAddFont(ptr: Long, name: String, buffer: ByteArray)
 
     @JvmStatic
+    external fun nativeAssClearFonts(ptr: Long)
+
+    @JvmStatic
     external fun nativeAssDeinit(ptr: Long)
   }
 
@@ -42,6 +45,12 @@ class Ass {
   fun addFont(name: String, buffer: ByteArray) {
     lock.withLock {
       if (!released && nativeAss != 0L) nativeAssAddFont(nativeAss, name, buffer)
+    }
+  }
+
+  internal fun clearFonts() {
+    lock.withLock {
+      if (!released && nativeAss != 0L) nativeAssClearFonts(nativeAss)
     }
   }
 

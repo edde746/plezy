@@ -58,12 +58,30 @@ class PlaybackReportSnapshot {
 /// fire reports concurrently, but state changes are recorded synchronously
 /// before any async work such as settings lookup, track mapping, or HTTP calls.
 class PlaybackReportSession {
-  PlaybackReportSession({required this.client, required this.itemId, this.playSessionId, this.playMethod});
+  PlaybackReportSession({
+    required this.client,
+    required this.itemId,
+    this.playSessionId,
+    this.playMethod,
+    this.liveStreamId,
+    this.onDelivered,
+  });
 
   final MediaServerClient client;
   final String itemId;
   final String? playSessionId;
   final String? playMethod;
+  final String? liveStreamId;
+
+  /// Invoked with each snapshot the backend actually received, right after its
+  /// report call returns.
+  ///
+  /// Coalesced and superseded snapshots never reach this: [report] resolving
+  /// `true` is not delivery. A same-state heartbeat arriving while the start
+  /// report is in flight is dropped by [_reportProgress] yet still completes
+  /// its future, so callers that need to know what the server saw — such as
+  /// watched-threshold crossing detection — must key on this instead.
+  final void Function(PlaybackReportSnapshot snapshot)? onDelivered;
 
   _PlaybackReportState _state = _PlaybackReportState.idle;
   PlaybackReportSnapshot? _startSnapshot;
@@ -244,10 +262,12 @@ class PlaybackReportSession {
       duration: snapshot.duration,
       playSessionId: playSessionId,
       playMethod: playMethod,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
       audioStreamIndex: selection.audioStreamIndex,
       subtitleStreamIndex: selection.subtitleStreamIndex,
     );
+    onDelivered?.call(snapshot);
   }
 
   Future<bool> _sendProgress(PlaybackReportSnapshot snapshot) async {
@@ -260,10 +280,12 @@ class PlaybackReportSession {
       isPaused: snapshot.state == 'paused',
       playSessionId: playSessionId,
       playMethod: playMethod,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
       audioStreamIndex: selection.audioStreamIndex,
       subtitleStreamIndex: selection.subtitleStreamIndex,
     );
+    onDelivered?.call(snapshot);
     return true;
   }
 
@@ -274,8 +296,10 @@ class PlaybackReportSession {
       position: snapshot.position,
       duration: snapshot.duration,
       playSessionId: playSessionId,
+      liveStreamId: liveStreamId,
       mediaSourceId: selection.mediaSourceId,
       report: snapshot.report,
     );
+    onDelivered?.call(snapshot);
   }
 }

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../media/media_server_client.dart';
 import '../../models/livetv_channel.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../models/livetv_program.dart';
@@ -16,8 +17,10 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
 import '../../widgets/overlay_sheet.dart';
+import '../../widgets/settings_section.dart';
 import 'live_tv_actions_mixin.dart';
 import 'livetv_recording_actions.dart';
+import 'livetv_styles.dart';
 
 /// Shows all upcoming airings of a show, matching the Plex "upcoming episodes" view.
 class LiveTvShowScheduleScreen extends StatefulWidget {
@@ -90,10 +93,10 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
   /// lookup is needed.
   bool get _canRecord {
     final client = context.read<MultiServerProvider>().getClientForServer(ServerId(widget.serverId));
-    return client != null && client.capabilities.liveTvDvr;
+    return client?.liveTvDvr != null;
   }
 
-  Future<void> _onRecordShow() async {
+  Future<void> _onRecordShow(BuildContext hostContext) async {
     final client = context.read<MultiServerProvider>().getClientForServer(ServerId(widget.serverId));
     if (client == null) return;
     // Use the first program with a guid as the seed for `getSubscriptionTemplate`.
@@ -107,7 +110,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
       }
     }
     if (seed == null) return;
-    await recordProgram(context, client, seed);
+    await recordProgram(hostContext, client, seed);
   }
 
   @override
@@ -116,58 +119,68 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
     return OverlaySheetHost(
       // Close an open sheet on system back instead of popping the screen.
       canPop: true,
-      child: FocusedScrollScaffold(
-        title: Text(widget.showTitle),
-        actions: showRecord
-            ? [
-                FocusableActionBar(
-                  actions: [
-                    FocusableAction(
-                      icon: Symbols.fiber_manual_record_rounded,
-                      tooltip: t.liveTv.recordShow,
-                      onPressed: _onRecordShow,
-                    ),
+      child: Builder(
+        builder: (hostContext) => FocusedScrollScaffold(
+          title: Text(widget.showTitle),
+          focusableAppBarActions: true,
+          actions: showRecord
+              ? [
+                  FocusableActionBar(
+                    actions: [
+                      FocusableAction(
+                        icon: Symbols.fiber_manual_record_rounded,
+                        tooltip: t.liveTv.recordShow,
+                        onPressed: () => _onRecordShow(hostContext),
+                      ),
+                    ],
+                  ),
+                ]
+              : null,
+          slivers: [
+            if (_isLoading)
+              LoadingIndicatorBox.sliver
+            else if (_programs.isEmpty)
+              SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
+            else
+              SliverToBoxAdapter(
+                child: SettingsGroup(
+                  children: [
+                    for (var index = 0; index < _programs.length; index++) _buildScheduleItem(index, hostContext),
                   ],
                 ),
-              ]
-            : null,
-        slivers: [
-          if (_isLoading)
-            LoadingIndicatorBox.sliver
-          else if (_programs.isEmpty)
-            SliverFillRemaining(child: Center(child: Text(t.liveTv.noPrograms)))
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate((context, index) {
-                final program = _programs[index];
-                final channel = findChannelForProgram(program);
-                void onTap() {
-                  if (program.isCurrentlyAiring && channel != null) {
-                    tuneChannel(channel);
-                  } else {
-                    showProgramDetails(
-                      program: program,
-                      channel: channel,
-                      posterThumb: program.thumb,
-                      posterServerId: widget.serverId,
-                    );
-                  }
-                }
-
-                return FocusableWrapper(
-                  autofocus: index == 0,
-                  autoScroll: true,
-                  useComfortableZone: true,
-                  useBackgroundFocus: true,
-                  disableScale: true,
-                  onSelect: onTap,
-                  onBack: () => Navigator.pop(context),
-                  child: _ScheduleListTile(program: program, channel: channel, onTap: onTap),
-                );
-              }, childCount: _programs.length),
-            ),
-        ],
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildScheduleItem(int index, BuildContext hostContext) {
+    final program = _programs[index];
+    final channel = findChannelForProgram(program);
+    void onTap() {
+      if (program.isCurrentlyAiring && channel != null) {
+        tuneChannel(channel);
+      } else {
+        showProgramDetails(
+          sheetContext: hostContext,
+          program: program,
+          channel: channel,
+          posterThumb: program.thumb,
+          posterServerId: widget.serverId,
+        );
+      }
+    }
+
+    return FocusableWrapper(
+      autofocus: index == 0,
+      autoScroll: true,
+      useComfortableZone: true,
+      useBackgroundFocus: true,
+      disableScale: true,
+      onSelect: onTap,
+      onBack: () => Navigator.pop(hostContext),
+      child: _ScheduleListTile(program: program, channel: channel, onTap: onTap),
     );
   }
 }
@@ -187,7 +200,7 @@ class _ScheduleListTile extends StatelessWidget {
 
     if (program.isCurrentlyAiring && end != null) {
       final minutesLeft = end.difference(now).inMinutes;
-      return '${minutesLeft}min left';
+      return t.discover.minutesLeft(minutes: minutesLeft);
     }
 
     final minutesUntil = start.difference(now).inMinutes;
@@ -195,7 +208,7 @@ class _ScheduleListTile extends StatelessWidget {
       // Just started
       return _formatAbsoluteTime(start, now, is24Hour: is24Hour);
     } else if (minutesUntil < 90) {
-      return 'Starting in ${minutesUntil}min';
+      return t.liveTv.startingInMinutes(minutes: minutesUntil);
     } else {
       return _formatAbsoluteTime(start, now, is24Hour: is24Hour);
     }
@@ -203,7 +216,10 @@ class _ScheduleListTile extends StatelessWidget {
 
   String _formatAbsoluteTime(DateTime start, DateTime now, {required bool is24Hour}) {
     final time = formatClockTime(start, is24Hour: is24Hour);
-    return '${formatRelativeDayLabel(start, now: now)} at $time';
+    return t.liveTv.dayAtTime(
+      day: formatRelativeDayLabel(start, now: now),
+      time: time,
+    );
   }
 
   @override
@@ -226,12 +242,7 @@ class _ScheduleListTile extends StatelessWidget {
       canRequestFocus: false,
       onTap: onTap,
       child: Container(
-        decoration: isLive
-            ? BoxDecoration(
-                color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                border: Border(left: BorderSide(color: theme.colorScheme.primary, width: 3)),
-              )
-            : null,
+        color: isLive ? airingFill(context) : null,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
           crossAxisAlignment: .start,

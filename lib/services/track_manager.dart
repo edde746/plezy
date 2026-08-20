@@ -1,35 +1,31 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
+import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 
 import '../media/media_item.dart';
-import '../media/media_item_types.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_source_info.dart';
+import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
+import '../services/subtitle_preference.dart';
 import '../services/track_selection_service.dart';
 import '../utils/app_logger.dart';
-import '../utils/language_codes.dart';
 import '../utils/track_label_builder.dart';
 
-/// Persists a track choice through Plex's immediate preference endpoints.
+/// Persists a track choice for the current part to the server.
 /// Backends that persist through another path (Jellyfin uses playback progress
-/// stream indexes) or lack server-side track preferences leave this null.
+/// stream indexes) or lack server-side stream selection leave this null.
 /// [trackType] is `'audio'` or `'subtitle'`.
 typedef TrackPreferencePersister =
-    Future<void> Function({
-      required String id,
-      required int partId,
-      required String trackType,
-      String? languageCode,
-      int? streamID,
-    });
+    Future<void> Function({required int partId, required String trackType, required int streamID});
 
 /// Manages track (audio + subtitle) lifecycle: external subtitle loading,
 /// automatic track selection, server preference sync, and cycling.
 ///
 /// Follows the same manager pattern as [VideoFilterManager]:
-/// constructed with a [Player] + callbacks, mutated via public setters,
 /// disposed when the player screen tears down.
 class TrackManager {
   final Player player;
@@ -56,20 +52,45 @@ class TrackManager {
   MediaItem metadata;
   MediaSourceInfo? mediaInfo;
   AudioTrack? preferredAudioTrack;
-  SubtitleTrack? preferredSubtitleTrack;
-  SubtitleTrack? preferredSecondarySubtitleTrack;
+  SubtitlePreference? preferredSubtitleTrack;
+  SubtitlePreference? preferredSecondarySubtitleTrack;
+
+  /// The primary subtitle is burned into the video by the server, so it needs no native track and
+  /// none is ever coming. Set on a transcode whose selected row has no sidecar.
+  bool primarySubtitleIsServerRendered = false;
 
   // ── Internal state ─────────────────────────────────────────────────
 
   bool waitingForExternalSubsTrackSelection = false;
   bool _externalSubtitleAddsInFlight = false;
   bool _isApplyingTrackSelection = false;
+  Completer<void>? _selectionIdleCompleter;
+  Future<void>? _activePlayerMutationDrain;
   List<SubtitleTrack> _lastExternalSubtitles = const [];
   StreamSubscription<Tracks>? _trackLoadingSubscription;
   Timer? _subtitleFallbackTimer;
   Timer? _trackSelectionFallbackTimer;
+  bool _disposed = false;
+  int _selectionGeneration = 0;
+
+  bool get _managerIsActive => !_disposed && isActive();
+
+  bool _isSelectionCurrent(int generation) => _managerIsActive && generation == _selectionGeneration;
+
+  void _trackDispatchedPlayerMutation(Future<void> mutation) {
+    final drain = mutation.then<void>((_) {}, onError: (Object _, StackTrace _) {});
+    _activePlayerMutationDrain = drain;
+    unawaited(
+      drain.then((_) {
+        if (identical(_activePlayerMutationDrain, drain)) {
+          _activePlayerMutationDrain = null;
+        }
+      }),
+    );
+  }
 
   /// Cached external subtitles for re-use after backend fallback.
+  @visibleForTesting
   List<SubtitleTrack> get lastExternalSubtitles => _lastExternalSubtitles;
 
   TrackManager({
@@ -83,6 +104,7 @@ class TrackManager {
     this.preferredAudioTrack,
     this.preferredSubtitleTrack,
     this.preferredSecondarySubtitleTrack,
+    this.primarySubtitleIsServerRendered = false,
     this.showMessage,
   });
 
@@ -163,63 +185,193 @@ class TrackManager {
     });
   }
 
+  /// Invalidates every pending automatic selection before the player is
+  /// reused for another media generation and returns a bounded drain for the
+  /// native player mutation already in flight at invalidation time.
+  ///
+  /// The returned future does not wait for profile/track readiness or include
+  /// mutations started by a later generation. Reload callers can await it
+  /// immediately before replacement media is opened, ensuring an
+  /// already-dispatched native audio, subtitle, or rate mutation cannot land
+  /// on that replacement. Disposal deliberately ignores the drain so teardown
+  /// is never held by a native command.
+  Future<void> invalidatePendingSelection() {
+    final activePlayerMutationDrain = _activePlayerMutationDrain;
+    _selectionGeneration++;
+    _trackLoadingSubscription?.cancel();
+    _trackLoadingSubscription = null;
+    _trackSelectionFallbackTimer?.cancel();
+    _trackSelectionFallbackTimer = null;
+    return activePlayerMutationDrain ?? Future<void>.value();
+  }
+
   // ── Track selection ────────────────────────────────────────────────
 
   /// Apply track selection once tracks are available.
-  /// If tracks are not yet loaded, subscribes to the stream.
+  ///
+  /// The five-second fallback applies any ready audio/rate settings, but a
+  /// source that advertises subtitles keeps listening for their late native
+  /// track-list update. The listener has a separate hard deadline and every
+  /// callback is scoped to the current media generation. The deadline pass
+  /// resolves the subtitle from whatever has arrived rather than deferring
+  /// again, so a source the native player never exposes ends as an explicit
+  /// decision instead of silently leaving subtitles untouched.
+  ///
+  /// Callers may arm this after an `await`, so a manager disposed or
+  /// deactivated in the meantime must not subscribe or start a timer: nothing
+  /// would ever cancel them. The generation checks inside each callback only
+  /// stop the work, not the allocation.
   void applyTrackSelectionWhenReady() {
+    if (!_managerIsActive) return;
+    final selectionGeneration = _selectionGeneration;
+    bool selectionIsCurrent() => _isSelectionCurrent(selectionGeneration);
     final currentTracks = player.state.tracks;
     if (_tracksReadyForSelection(currentTracks)) {
-      applyTrackSelection();
-    } else {
-      _trackLoadingSubscription?.cancel();
-      _trackLoadingSubscription = player.streams.tracks.listen((tracks) {
-        if (!_tracksReadyForSelection(tracks)) return;
-
-        _trackLoadingSubscription?.cancel();
-        _trackLoadingSubscription = null;
-        _trackSelectionFallbackTimer?.cancel();
-        _trackSelectionFallbackTimer = null;
-        applyTrackSelection();
-      });
-
-      _trackSelectionFallbackTimer?.cancel();
-      _trackSelectionFallbackTimer = Timer(const Duration(seconds: 5), () {
-        if (!isActive()) return;
-        _trackLoadingSubscription?.cancel();
-        _trackLoadingSubscription = null;
-        applyTrackSelection();
-      });
+      unawaited(applyTrackSelection());
+      return;
     }
+
+    _trackLoadingSubscription?.cancel();
+    _trackLoadingSubscription = player.streams.tracks.listen((tracks) {
+      if (!selectionIsCurrent() || !_tracksReadyForSelection(tracks)) return;
+
+      _trackLoadingSubscription?.cancel();
+      _trackLoadingSubscription = null;
+      _trackSelectionFallbackTimer?.cancel();
+      _trackSelectionFallbackTimer = null;
+      unawaited(applyTrackSelection());
+    });
+
+    _trackSelectionFallbackTimer?.cancel();
+    _trackSelectionFallbackTimer = Timer(const Duration(seconds: 5), () {
+      if (!selectionIsCurrent()) return;
+
+      final tracks = player.state.tracks;
+      final waitingForAdvertisedSubtitles =
+          mediaInfo?.subtitleTracks.isNotEmpty == true && !_tracksReadyForSelection(tracks);
+      if (!waitingForAdvertisedSubtitles) {
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
+        _trackSelectionFallbackTimer = null;
+        unawaited(applyTrackSelection());
+        return;
+      }
+
+      appLogger.w(
+        'Native subtitle tracks are still pending after 5 seconds; applying ready track settings and continuing to wait',
+      );
+      unawaited(applyTrackSelection());
+      _trackSelectionFallbackTimer = Timer(const Duration(seconds: 25), () {
+        if (!selectionIsCurrent()) return;
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
+        _trackSelectionFallbackTimer = null;
+        if (!_tracksReadyForSelection(player.state.tracks)) {
+          appLogger.w('Advertised native subtitle selection did not resolve before the 30-second deadline');
+        }
+        unawaited(applyTrackSelection(waitForPendingSource: false));
+      });
+    });
   }
 
   bool _tracksReadyForSelection(Tracks tracks) {
+    final realSubtitleTracks = tracks.subtitle
+        .where((track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id)
+        .toList(growable: false);
+    final service = TrackSelectionService(metadata: metadata, plexMediaInfo: mediaInfo);
+
+    // A burned-in primary is already in the picture, so no native track is ever coming for it.
+    // Waiting for one holds up audio and rate setup for the five-second fallback and then logs a
+    // missed deadline twenty-five seconds later, for a selection already on screen.
+    //
+    // Answered before the empty-list guard below: a silent video whose primary is burned and whose
+    // secondary is unset legitimately exposes no tracks at all, and treating that as "not ready"
+    // spent both waits plus selection's own ten seconds on a catalog that was already complete.
+    //
+    // A carried *secondary* is a real native track that may still be on its way, though, and only
+    // one selection pass ever runs - so retiring the wait here would drop it for good. Neither is
+    // audio: the source can advertise tracks the native catalog has not published yet, and answering
+    // "ready" on the subtitle question alone retired the listener before they arrived, leaving the
+    // preferred track unselected and playback on the engine's default.
+    if (primarySubtitleIsServerRendered) {
+      if (!_secondaryPreferenceResolves(service, realSubtitleTracks)) return false;
+      return !_awaitingAdvertisedAudio(tracks);
+    }
+
     final hasAnyTracks = tracks.audio.isNotEmpty || tracks.subtitle.isNotEmpty;
     if (!hasAnyTracks) return false;
 
-    final info = mediaInfo;
-    if (info == null || tracks.subtitle.isNotEmpty) return true;
+    final realAudioTracks = tracks.audio
+        .where((track) => track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id)
+        .toList(growable: false);
+    final selectedAudioTrack = service.selectAudioTrack(realAudioTracks, preferredAudioTrack)?.track;
 
-    // Plex can legitimately report subtitles without selecting one. During an
-    // in-place item reload Android clears the old track list before the new
-    // demuxed subtitles arrive; applying selection at the first audio-only
-    // update would treat that temporary empty subtitle list as an explicit
-    // server "off" decision and leave the next episode without selectable subs.
-    return info.subtitleTracks.isEmpty;
+    // Selection owns the catalog-completeness decision. A null subtitle result
+    // is the only state in which a requested source track can still arrive.
+    return service.selectSubtitleTrack(realSubtitleTracks, preferredSubtitleTrack, selectedAudioTrack) != null;
   }
 
-  /// Core track selection: delegates to [TrackSelectionService].
-  Future<void> applyTrackSelection() async {
-    if (!isActive() || _isApplyingTrackSelection) return;
+  /// Whether the carried secondary subtitle, if there is one, has a native track to land on.
+  /// Vacuously true when none is wanted, or when the backend has no secondary lane at all.
+  bool _secondaryPreferenceResolves(TrackSelectionService service, List<SubtitleTrack> realSubtitleTracks) {
+    final preference = preferredSecondarySubtitleTrack;
+    if (preference == null || preference is SubtitleOffPreference) return true;
+    if (!player.supportsSecondarySubtitles) return true;
+    final match = switch (preference) {
+      SubtitleOffPreference() => null,
+      SubtitleTrackPreference(:final track) =>
+        track.id == 'no' ? null : service.findBestSubtitleMatch(realSubtitleTracks, track),
+      SubtitleIntentPreference(:final intent) => findNativeTrackForIntent(intent, realSubtitleTracks),
+    };
+    return match != null && match.id != 'no';
+  }
+
+  /// Whether the source advertises audio the native catalog has not published yet.
+  ///
+  /// Only asked on the burned-subtitle shortcut, which otherwise answers the
+  /// subtitle question alone and would retire the track listener while audio was
+  /// still arriving - leaving the preferred track unselected. A source that
+  /// advertises none (a genuinely silent video) is never waited for.
+  bool _awaitingAdvertisedAudio(Tracks tracks) {
+    final sourceAdvertisesAudio = mediaInfo?.audioTracks.isNotEmpty ?? false;
+    if (!sourceAdvertisesAudio) return false;
+    return !tracks.audio.any((track) => track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id);
+  }
+
+  /// Core track selection: delegates to [TrackSelectionService]. Returns
+  /// whether every player mutation completed for this still-active owner.
+  ///
+  /// Pass `waitForPendingSource: false` from a deadline pass so an advertised
+  /// subtitle that never materialized resolves to the best available choice
+  /// instead of deferring forever.
+  Future<bool> applyTrackSelection({bool waitForPendingSource = true}) async {
+    final selectionGeneration = _selectionGeneration;
+    bool selectionIsActive() => _isSelectionCurrent(selectionGeneration);
+    if (!selectionIsActive()) return false;
+
+    if (_isApplyingTrackSelection) {
+      // A later track-list event can make a same-generation selection materially
+      // different (notably when subtitles arrive while the five-second audio/rate
+      // fallback is still applying). Queue one pass after the current mutation
+      // chain rather than dropping that event.
+      final activeSelectionDone = _selectionIdleCompleter?.future;
+      if (activeSelectionDone == null) return false;
+      await activeSelectionDone;
+      if (!selectionIsActive()) return false;
+      return applyTrackSelection(waitForPendingSource: waitForPendingSource);
+    }
 
     _isApplyingTrackSelection = true;
+    final idleCompleter = Completer<void>();
+    _selectionIdleCompleter = idleCompleter;
     try {
       await waitForProfileSettings();
-      if (!isActive()) return;
+      if (!selectionIsActive()) return false;
 
       final profileSettings = getProfileSettings();
-      final settingsService = await SettingsService.getInstance();
-      if (!isActive()) return;
+      // Keeps the settings singleton live before the synchronous scoped read.
+      await SettingsService.getInstance();
+      if (!selectionIsActive()) return false;
 
       final trackService = TrackSelectionService(
         player: player,
@@ -228,18 +380,27 @@ class TrackManager {
         plexMediaInfo: mediaInfo,
       );
 
-      await trackService.selectAndApplyTracks(
+      return await trackService.selectAndApplyTracks(
         preferredAudioTrack: preferredAudioTrack,
         preferredSubtitleTrack: preferredSubtitleTrack,
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
-        defaultPlaybackSpeed: settingsService.read(SettingsService.defaultPlaybackSpeed),
+        defaultPlaybackSpeed: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, metadata),
         onAudioTrackChanged: onAudioTrackChanged,
         onSubtitleTrackChanged: onSubtitleTrackChanged,
+        isActive: selectionIsActive,
+        onPlayerMutationDispatched: _trackDispatchedPlayerMutation,
+        waitForPendingSource: waitForPendingSource,
+        primarySubtitleIsServerRendered: primarySubtitleIsServerRendered,
       );
     } catch (e) {
       appLogger.w('Failed to apply track selection', error: e);
+      return false;
     } finally {
       _isApplyingTrackSelection = false;
+      if (identical(_selectionIdleCompleter, idleCompleter)) {
+        _selectionIdleCompleter = null;
+        idleCompleter.complete();
+      }
     }
   }
 
@@ -256,8 +417,13 @@ class TrackManager {
 
   /// Handle ExoPlayer → MPV backend switch: re-add external subs and reapply selection.
   Future<void> onBackendSwitched() async {
-    appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
+    final pendingSelection = _selectionIdleCompleter?.future;
+    final playerMutationDrain = invalidatePendingSelection();
+    if (pendingSelection != null) await pendingSelection;
+    await playerMutationDrain;
+    if (!_managerIsActive) return;
 
+    appLogger.i('Player backend switched from ExoPlayer to MPV (native fallback)');
     if (_lastExternalSubtitles.isNotEmpty && !player.attachesExternalSubtitlesAtOpen) {
       try {
         await addExternalSubtitles(_lastExternalSubtitles);
@@ -266,31 +432,42 @@ class TrackManager {
       }
     }
 
-    if (!isActive()) return;
+    if (!_managerIsActive) return;
 
     applyTrackSelectionWhenReady();
   }
 
   // ── Track cycling (remote/keyboard shortcuts) ──────────────────────
 
-  /// Cycle to the next subtitle track and save the preference.
-  void cycleSubtitleTrack() {
+  /// Cycle to the next subtitle track, save the preference, and return the
+  /// track now playing so the caller can record it as the committed choice.
+  /// Returns null when there was nothing to cycle.
+  SubtitleTrack? cycleSubtitleTrack() {
     final tracks = player.state.tracks.subtitle.where((t) => t.id != 'auto').toList();
-    if (tracks.isEmpty) return;
+    if (tracks.isEmpty) return null;
 
     final current = player.state.track.subtitle;
     final currentIndex = tracks.indexWhere((t) => t.id == current?.id);
     final nextIndex = (currentIndex + 1) % tracks.length;
     final next = tracks[nextIndex];
     player.selectSubtitleTrack(next);
-    onSubtitleTrackChanged(next);
+    unawaited(onSubtitleTrackSelectedByUser(next));
 
     if (isActive()) {
       final label = next.id == 'no'
-          ? 'Subtitles: Off'
-          : 'Subtitles: ${TrackLabelBuilder.subtitleLabel(title: next.title, language: next.language, codec: next.codec, forced: next.isForced, index: nextIndex).joined}';
+          ? t.videoControls.osdSubtitlesOff
+          : t.videoControls.osdSubtitles(
+              track: TrackLabelBuilder.subtitleLabel(
+                title: next.title,
+                language: next.language,
+                codec: next.codec,
+                forced: next.isForced,
+                index: nextIndex,
+              ).joined,
+            );
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
+    return next;
   }
 
   /// Cycle to the next audio track and save the preference.
@@ -303,13 +480,48 @@ class TrackManager {
     final nextIndex = (currentIndex + 1) % tracks.length;
     final next = tracks[nextIndex];
     player.selectAudioTrack(next);
-    onAudioTrackChanged(next);
+    unawaited(onAudioTrackSelectedByUser(next));
 
     if (isActive()) {
-      final label =
-          'Audio: ${TrackLabelBuilder.audioLabel(title: next.title, language: next.language, codec: next.codec, channels: next.channelsCount, index: nextIndex).joined}';
+      final label = t.videoControls.osdAudio(
+        track: TrackLabelBuilder.audioLabel(
+          title: next.title,
+          language: next.language,
+          codec: next.codec,
+          channels: next.channelsCount,
+          index: nextIndex,
+        ).joined,
+      );
       showMessage?.call(label, duration: const Duration(seconds: 1));
     }
+  }
+
+  // ── Explicit user selection ────────────────────────────────────────
+
+  /// Records an explicit user audio choice.
+  ///
+  /// A source that advertises subtitles keeps an automatic selection pending
+  /// for up to 30 seconds (see [applyTrackSelectionWhenReady]). That late pass
+  /// re-runs [TrackSelectionService] against the preferences, so it would
+  /// overwrite whatever the user picked in the meantime. Retiring the pending
+  /// selection first makes the explicit choice win.
+  ///
+  /// The caller has already told the player which track to use, and this does
+  /// not re-issue that command: the generation bump closes the whole window.
+  /// `TrackSelectionService` re-checks the generation in the statement right
+  /// before each `select*Track` call, so no later automatic mutation can be
+  /// dispatched, and one already in flight was dispatched earlier and so lands
+  /// before the user's.
+  Future<void> onAudioTrackSelectedByUser(AudioTrack track) async {
+    await invalidatePendingSelection();
+    await onAudioTrackChanged(track);
+  }
+
+  /// Records an explicit user subtitle choice, retiring any pending automatic
+  /// selection for the same reason as [onAudioTrackSelectedByUser].
+  Future<void> onSubtitleTrackSelectedByUser(SubtitleTrack track, {int? sourceStreamId}) async {
+    await invalidatePendingSelection();
+    await onSubtitleTrackChanged(track, sourceStreamId: sourceStreamId);
   }
 
   // ── Server preference sync ─────────────────────────────────────────
@@ -320,75 +532,46 @@ class TrackManager {
     final partId = await _guardTrackChange(info);
     if (partId == null || info == null) return;
 
-    int? streamID = _matchTrackByAttributes(
-      mpvLanguage: track.language,
-      mpvTitle: track.title,
-      plexTracks: info.audioTracks,
-      getLanguageCode: (t) => t.languageCode,
-      getDisplayTitle: (t) => t.displayTitle,
-      getTitle: (t) => t.title,
-      getId: (t) => t.id,
-    );
-
+    final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
+    final streamID = matchedPlex?.id;
     if (streamID != null) {
-      appLogger.d('Matched audio by lang/title: streamID $streamID');
+      appLogger.d('Matched audio to streamID $streamID');
     } else {
-      final matchedPlex = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
-      streamID = matchedPlex?.id;
-      if (streamID != null) {
-        appLogger.d('Matched audio by properties: streamID $streamID');
-      } else {
-        appLogger.e('Could not match audio track to any Plex track');
-      }
+      appLogger.e('Could not match audio track to any Plex track');
     }
 
-    await _saveTrackPreferences(partId: partId, trackType: 'audio', languageCode: track.language, streamID: streamID);
+    await _saveTrackPreferences(partId: partId, trackType: 'audio', streamID: streamID);
   }
 
   /// Handle subtitle track changes — save stream selection and language preference.
-  Future<void> onSubtitleTrackChanged(SubtitleTrack track) async {
+  Future<void> onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
     final info = mediaInfo;
     final partId = await _guardTrackChange(info);
     if (partId == null) return;
 
-    String? languageCode;
     int? streamID;
 
     if (track.id == 'no') {
-      languageCode = 'none';
       streamID = 0;
       appLogger.i('User turned subtitles off, saving preference');
+    } else if (sourceStreamId != null) {
+      streamID = sourceStreamId;
+      appLogger.d('Using authoritative subtitle streamID $streamID');
     } else if (info != null) {
-      languageCode = track.language;
-
-      streamID = _matchTrackByAttributes(
-        mpvLanguage: track.language,
-        mpvTitle: track.title,
-        plexTracks: info.subtitleTracks,
-        getLanguageCode: (t) => t.languageCode,
-        getDisplayTitle: (t) => t.displayTitle,
-        getTitle: (t) => t.title,
-        getId: (t) => t.id,
+      final matchedPlex = findPlexTrackForMpvSubtitle(
+        track,
+        info.subtitleTracks,
+        allMpvTracks: player.state.tracks.subtitle,
       );
-
+      streamID = matchedPlex?.id;
       if (streamID != null) {
-        appLogger.d('Matched subtitle by lang/title: streamID $streamID');
+        appLogger.d('Matched subtitle to streamID $streamID');
       } else {
-        final matchedPlex = findPlexTrackForMpvSubtitle(
-          track,
-          info.subtitleTracks,
-          allMpvTracks: player.state.tracks.subtitle,
-        );
-        streamID = matchedPlex?.id;
-        if (streamID != null) {
-          appLogger.d('Matched subtitle by properties: streamID $streamID');
-        } else {
-          appLogger.e('Could not match subtitle track to any Plex track');
-        }
+        appLogger.e('Could not match subtitle track to any Plex track');
       }
     }
 
-    await _saveTrackPreferences(partId: partId, trackType: 'subtitle', languageCode: languageCode, streamID: streamID);
+    await _saveTrackPreferences(partId: partId, trackType: 'subtitle', streamID: streamID);
   }
 
   /// Handle secondary subtitle track changes — no server save needed.
@@ -398,11 +581,6 @@ class TrackManager {
   }
 
   // ── Private helpers ────────────────────────────────────────────────
-
-  /// Series/movie-level identifier used for language preferences.
-  String get _preferenceId {
-    return metadata.isEpisode ? (metadata.grandparentId ?? metadata.id) : metadata.id;
-  }
 
   /// Common guard checks for track change handlers.
   Future<int?> _guardTrackChange(MediaSourceInfo? info) async {
@@ -416,91 +594,43 @@ class TrackManager {
       return null;
     }
 
-    final partId = info.getPartId();
+    final partId = info.partId;
     if (partId == null) {
       appLogger.w('No part ID available, cannot save stream selection');
     }
     return partId;
   }
 
-  /// Save language preference and stream selection to the server.
-  Future<void> _saveTrackPreferences({
-    required int partId,
-    required String trackType,
-    String? languageCode,
-    int? streamID,
-  }) async {
+  /// Save the stream selection for the current part to the server.
+  ///
+  /// A null [streamID] means no server stream could be identified for the
+  /// chosen track. There is no local fallback store, so the choice is simply
+  /// lost — say so instead of reporting a save that never happened.
+  Future<void> _saveTrackPreferences({required int partId, required String trackType, int? streamID}) async {
+    if (streamID == null) {
+      appLogger.w('Not saving $trackType stream selection: no server stream matched the selected track');
+      return;
+    }
     try {
       if (!isActive()) return;
       final persist = persistTrackPreference;
       if (persist == null) {
         return;
       }
-      await persist(
-        id: _preferenceId,
-        partId: partId,
-        trackType: trackType,
-        languageCode: languageCode,
-        streamID: streamID,
-      );
-      appLogger.d('Successfully saved $trackType preferences (language + stream)');
+      await persist(partId: partId, trackType: trackType, streamID: streamID);
+      appLogger.d('Successfully saved $trackType stream selection');
     } catch (e) {
-      appLogger.e('Failed to save $trackType preferences', error: e);
-    }
-  }
-
-  /// Match an mpv track against Plex tracks by language and title.
-  int? _matchTrackByAttributes<T>({
-    required String? mpvLanguage,
-    required String? mpvTitle,
-    required List<T> plexTracks,
-    required String? Function(T) getLanguageCode,
-    required String? Function(T) getDisplayTitle,
-    required String? Function(T) getTitle,
-    required int Function(T) getId,
-  }) {
-    final normalizedLang = _iso6391To6392(mpvLanguage);
-
-    for (final plexTrack in plexTracks) {
-      final matchLang = getLanguageCode(plexTrack) == normalizedLang;
-      final matchTitle = (mpvTitle == null || mpvTitle.isEmpty)
-          ? true
-          : (getDisplayTitle(plexTrack) == mpvTitle || getTitle(plexTrack) == mpvTitle);
-
-      if (matchLang && matchTitle) {
-        return getId(plexTrack);
-      }
-    }
-    return null;
-  }
-
-  /// Convert ISO 639-1 code (e.g. "fr") to ISO 639-2/B (e.g. "fre"). Plex
-  /// streams use the 3-letter form.
-  static String? _iso6391To6392(String? code) {
-    if (code == null || code.isEmpty) return null;
-    final lang = code.split('-').first.toLowerCase();
-
-    try {
-      final variations = LanguageCodes.getVariations(lang);
-      for (final variation in variations) {
-        if (variation.length == 3) {
-          return variation;
-        }
-      }
-      return null;
-    } catch (e) {
-      return null;
+      appLogger.e('Failed to save $trackType stream selection', error: e);
     }
   }
 
   /// Clean up subscriptions.
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
+    invalidatePendingSelection();
     _externalSubtitleAddsInFlight = false;
-    _trackLoadingSubscription?.cancel();
-    _trackLoadingSubscription = null;
     _subtitleFallbackTimer?.cancel();
     _subtitleFallbackTimer = null;
-    _trackSelectionFallbackTimer?.cancel();
-    _trackSelectionFallbackTimer = null;
   }
 }

@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/dpad_navigator.dart';
@@ -79,8 +78,6 @@ Future<T?> showAppMenu<T>(
   Rect? anchorRect,
   AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
   bool focusFirstItem = false,
-  double minWidth = 220,
-  double? maxWidth,
 }) {
   assert(position != null || anchorRect != null, 'showAppMenu requires a position or anchorRect');
 
@@ -96,8 +93,6 @@ Future<T?> showAppMenu<T>(
       anchorRect: anchorRect,
       anchorAlignment: anchorAlignment,
       focusFirstItem: focusFirstItem,
-      minWidth: minWidth,
-      maxWidth: maxWidth,
     ),
     transitionBuilder: (dialogContext, animation, _, child) {
       final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
@@ -120,6 +115,38 @@ Future<T?> showAppMenu<T>(
   );
 }
 
+Future<T?> showAdaptiveAppMenu<T>(
+  BuildContext context, {
+  required List<AppMenuEntry<T>> entries,
+  String? title,
+  Offset? position,
+  Rect? anchorRect,
+  AppMenuAnchorAlignment anchorAlignment = AppMenuAnchorAlignment.start,
+  bool focusFirstItem = false,
+  bool isScrollControlled = false,
+}) {
+  // ThemeData.platform follows the real target platform by default, including
+  // Android TV and tvOS, while remaining overrideable in widget tests.
+  final platform = Theme.of(context).platform;
+  if (platform == TargetPlatform.iOS || platform == TargetPlatform.android) {
+    return OverlaySheetController.showAdaptive<T>(
+      context,
+      showDragHandle: true,
+      isScrollControlled: isScrollControlled,
+      builder: (context) => AppMenuSheet<T>(title: title, entries: entries, focusFirstItem: focusFirstItem),
+    );
+  }
+
+  return showAppMenu<T>(
+    context,
+    entries: entries,
+    position: position,
+    anchorRect: anchorRect,
+    anchorAlignment: anchorAlignment,
+    focusFirstItem: focusFirstItem,
+  );
+}
+
 Alignment _transitionAlignment(BuildContext context, {Offset? position, Rect? anchorRect}) {
   final size = MediaQuery.sizeOf(context);
   final origin = position ?? anchorRect?.center ?? Offset(size.width / 2, size.height / 2);
@@ -137,10 +164,6 @@ class AppMenuButton<T> extends StatefulWidget {
   final AppMenuEntryBuilder<T> entriesBuilder;
   final ValueChanged<T>? onSelected;
   final AppMenuAnchorAlignment anchorAlignment;
-  final Offset alignmentOffset;
-  final double minWidth;
-  final double? maxWidth;
-  final EdgeInsetsGeometry? childPadding;
 
   const AppMenuButton({
     super.key,
@@ -151,10 +174,6 @@ class AppMenuButton<T> extends StatefulWidget {
     required this.entriesBuilder,
     this.onSelected,
     this.anchorAlignment = AppMenuAnchorAlignment.start,
-    this.alignmentOffset = Offset.zero,
-    this.minWidth = 220,
-    this.maxWidth,
-    this.childPadding,
   }) : assert(icon != null || child != null, 'AppMenuButton requires icon or child');
 
   @override
@@ -168,7 +187,7 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return null;
 
-    final topLeft = renderBox.localToGlobal(Offset.zero) + widget.alignmentOffset;
+    final topLeft = renderBox.localToGlobal(Offset.zero);
     final anchorRect = Rect.fromLTWH(topLeft.dx, topLeft.dy, renderBox.size.width, renderBox.size.height);
     final selected = await showAppMenu<T>(
       context,
@@ -176,8 +195,6 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
       anchorRect: anchorRect,
       anchorAlignment: widget.anchorAlignment,
       focusFirstItem: focusFirstItem,
-      minWidth: widget.minWidth,
-      maxWidth: widget.maxWidth,
     );
     if (!mounted || selected == null) return selected;
     widget.onSelected?.call(selected);
@@ -185,20 +202,19 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
   }
 
   Future<void> _handlePressed() async {
-    await showButtonMenu(focusFirstItem: InputModeTracker.isKeyboardMode(context));
+    await showButtonMenu(focusFirstItem: InputModeTracker.isKeyboardMode(context, listen: false));
   }
 
   @override
   Widget build(BuildContext context) {
     final child = widget.child;
     if (child != null) {
-      final content = Padding(padding: widget.childPadding ?? EdgeInsets.zero, child: child);
       final button = ClickableCursor(
         enabled: widget.enabled,
         child: InkWell(
           onTap: widget.enabled ? _handlePressed : null,
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: content,
+          child: child,
         ),
       );
       final tooltip = widget.tooltip;
@@ -355,16 +371,15 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
   @override
   void initState() {
     super.initState();
-    initFocusNode();
     effectiveFocusNode.addListener(_updateFocusedState);
   }
 
   @override
   void didUpdateWidget(AppMenuItemTile<T> oldWidget) {
+    final rebinds = oldWidget.focusNode != widget.focusNode;
+    if (rebinds) effectiveFocusNode.removeListener(_updateFocusedState);
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.focusNode != widget.focusNode) {
-      effectiveFocusNode.removeListener(_updateFocusedState);
-      updateFocusNode(oldWidget.focusNode);
+    if (rebinds) {
       effectiveFocusNode.addListener(_updateFocusedState);
       _isFocused = effectiveFocusNode.hasFocus;
     }
@@ -373,7 +388,6 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
   @override
   void dispose() {
     effectiveFocusNode.removeListener(_updateFocusedState);
-    disposeFocusNode();
     super.dispose();
   }
 
@@ -388,7 +402,7 @@ class _AppMenuItemTileState<T> extends State<AppMenuItemTile<T>> with FocusableT
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final enabled = item.enabled && widget.onPressed != null;
-    final active = enabled && (_isFocused || _isHovered);
+    final active = enabled && ((_isFocused && InputModeTracker.isKeyboardMode(context)) || _isHovered);
     final foreground = _foregroundColor(context, active: active);
     final subtitleColor = foreground.withValues(alpha: active && item.stateLayerColor != null ? 0.86 : 0.68);
     final background = _backgroundColor(context, active: active);
@@ -535,8 +549,6 @@ class _AppMenuPopup<T> extends StatefulWidget {
   final Rect? anchorRect;
   final AppMenuAnchorAlignment anchorAlignment;
   final bool focusFirstItem;
-  final double minWidth;
-  final double? maxWidth;
 
   const _AppMenuPopup({
     required this.entries,
@@ -544,8 +556,6 @@ class _AppMenuPopup<T> extends StatefulWidget {
     required this.anchorRect,
     required this.anchorAlignment,
     required this.focusFirstItem,
-    required this.minWidth,
-    required this.maxWidth,
   });
 
   @override
@@ -553,15 +563,14 @@ class _AppMenuPopup<T> extends StatefulWidget {
 }
 
 class _AppMenuPopupState<T> extends State<_AppMenuPopup<T>> {
+  static const double _minMenuWidth = 220;
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
     const edgePadding = 8.0;
-    final desiredWidth = widget.maxWidth ?? math.max(widget.minWidth, _estimateMenuWidth(context));
-    final menuWidth = desiredWidth.clamp(
-      widget.minWidth,
-      math.max(widget.minWidth, screenSize.width - edgePadding * 2),
-    );
+    final desiredWidth = math.max(_minMenuWidth, _estimateMenuWidth(context));
+    final menuWidth = desiredWidth.clamp(_minMenuWidth, math.max(_minMenuWidth, screenSize.width - edgePadding * 2));
     final estimatedHeight = _estimateMenuHeight(widget.entries);
     final availableHeight = math.max(0.0, screenSize.height - edgePadding * 2);
     final menuHeight = estimatedHeight.clamp(0.0, availableHeight).toDouble();
@@ -649,7 +658,7 @@ class _AppMenuPopupState<T> extends State<_AppMenuPopup<T>> {
         longest = math.max(longest, entry.label?.length ?? 0);
       }
     }
-    return math.min(360, math.max(widget.minWidth, 96 + longest * 7.5));
+    return math.min(360, math.max(_minMenuWidth, 96 + longest * 7.5));
   }
 }
 

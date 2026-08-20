@@ -8,7 +8,7 @@ part of 'media_role.dart';
 
 MediaRole _$MediaRoleFromJson(Map<String, dynamic> json) => MediaRole(
   id: json['id'] as String?,
-  tag: _stringFromJson(json['tag']),
+  tag: stringOrEmpty(json['tag']),
   role: json['role'] as String?,
   thumbPath: json['thumbPath'] as String?,
 );

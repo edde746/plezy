@@ -10,9 +10,9 @@ class MediaSourceInfo {
   final int? partId;
   final MediaDisplayCriteria? displayCriteria;
 
-  /// Jellyfin source id for the *selected* version (null on Plex). Lets the
-  /// trickplay loader request the right tile sheet when an item has multiple
-  /// `MediaSources`.
+  /// Backend-opaque source id for the selected version. Plex uses the
+  /// authoritative `MediaVersion.id`; Jellyfin uses the selected
+  /// `MediaSources` id.
   final String? mediaSourceId;
 
   /// Jellyfin default stream indexes for this source. A subtitle index of -1
@@ -41,7 +41,25 @@ class MediaSourceInfo {
     this.trickplayByWidth,
     this.videoAspectRatio,
   });
-  int? getPartId() => partId;
+
+  /// Field-preserving rebuild. Track lists are the only members that the
+  /// playback pipeline rewrites after construction; every other field must
+  /// survive those rewrites untouched.
+  MediaSourceInfo copyWith({List<MediaAudioTrack>? audioTracks, List<MediaSubtitleTrack>? subtitleTracks}) {
+    return MediaSourceInfo(
+      videoUrl: videoUrl,
+      audioTracks: audioTracks ?? this.audioTracks,
+      subtitleTracks: subtitleTracks ?? this.subtitleTracks,
+      chapters: chapters,
+      partId: partId,
+      displayCriteria: displayCriteria,
+      mediaSourceId: mediaSourceId,
+      defaultAudioStreamIndex: defaultAudioStreamIndex,
+      defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
+      trickplayByWidth: trickplayByWidth,
+      videoAspectRatio: videoAspectRatio,
+    );
+  }
 }
 
 /// Per-resolution Jellyfin trickplay manifest. Mirrors `TrickplayInfoDto`
@@ -106,6 +124,22 @@ class MediaAudioTrack with _TrackLabelMixin {
   });
 
   bool get isExternal => external;
+
+  /// Rebuild with a different server-selected flag.
+  MediaAudioTrack withSelected(bool selected) {
+    return MediaAudioTrack(
+      id: id,
+      index: index,
+      codec: codec,
+      language: language,
+      languageCode: languageCode,
+      title: title,
+      displayTitle: displayTitle,
+      channels: channels,
+      selected: selected,
+      external: external,
+    );
+  }
 
   TrackLabel get label {
     return TrackLabelBuilder.audioLabel(
@@ -173,6 +207,35 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   bool get isExternalFile => external;
 
   bool get isExternal => external || usesExternalDelivery || (key != null && key!.isNotEmpty);
+
+  /// Rebuild with a different server-selected flag.
+  MediaSubtitleTrack withSelected(bool selected) => _rebuild(selected: selected);
+
+  /// Rebuild without the sidecar identity fields ([key] and
+  /// [usesExternalDelivery]).
+  ///
+  /// Whether a row has sidecar identity is a per-playback fact that only the
+  /// backend service layer can establish; this just applies that decision.
+  /// [external] is left untouched for the caller to interpret.
+  MediaSubtitleTrack withoutSidecarIdentity() =>
+      key == null && !usesExternalDelivery ? this : _rebuild(dropSidecarIdentity: true);
+
+  MediaSubtitleTrack _rebuild({bool? selected, bool dropSidecarIdentity = false}) {
+    return MediaSubtitleTrack(
+      id: id,
+      index: index,
+      codec: codec,
+      language: language,
+      languageCode: languageCode,
+      title: title,
+      displayTitle: displayTitle,
+      selected: selected ?? this.selected,
+      forced: forced,
+      key: dropSidecarIdentity ? null : key,
+      external: external,
+      usesExternalDelivery: dropSidecarIdentity ? false : usesExternalDelivery,
+    );
+  }
 }
 
 class MediaChapter {
@@ -238,6 +301,30 @@ class MediaChapter {
     }
     return null;
   }
+
+  /// Find the chapter targeted by next/previous traversal. Previous traversal
+  /// restarts the current chapter only after [previousRestartThreshold]; before
+  /// that it selects an earlier chapter.
+  static int? seekTargetIndex(
+    Duration position,
+    List<MediaChapter> chapters, {
+    required bool forward,
+    Duration previousRestartThreshold = const Duration(seconds: 3),
+  }) {
+    final positionMs = position.inMilliseconds;
+    if (forward) {
+      for (int i = 0; i < chapters.length; i++) {
+        if ((chapters[i].startTimeOffset ?? 0) > positionMs) return i;
+      }
+      return null;
+    }
+
+    final thresholdMs = previousRestartThreshold.inMilliseconds;
+    for (int i = chapters.length - 1; i >= 0; i--) {
+      if (positionMs > (chapters[i].startTimeOffset ?? 0) + thresholdMs) return i;
+    }
+    return null;
+  }
 }
 
 class MediaMarker {
@@ -251,7 +338,6 @@ class MediaMarker {
   Duration get startTime => Duration(milliseconds: startTimeOffset);
   Duration get endTime => Duration(milliseconds: endTimeOffset);
 
-  bool get isIntro => type == 'intro';
   bool get isCredits => type == 'credits';
 
   bool containsPosition(Duration position) {

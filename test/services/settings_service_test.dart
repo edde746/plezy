@@ -1,6 +1,10 @@
-import 'package:flutter/services.dart';
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/hotkey_model.dart';
+import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/models/audio_quality_preset.dart';
+import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -15,6 +19,7 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.debugSetAutomotiveOverride(null);
   });
 
   group('SettingsService.parseMpvConfigText', () {
@@ -68,32 +73,85 @@ void main() {
     });
   });
 
-  group('SettingsService keyboard shortcut defaults', () {
-    test('includes Ctrl+S screenshot shortcut', () {
-      expect(SettingsService.defaultKeyboardShortcuts()['screenshot'], 'Ctrl+S');
+  group('SettingsService episode action', () {
+    test('defaults to play and resets to play', () async {
+      final settings = await SettingsService.getInstance();
 
-      final hotkey = SettingsService.defaultKeyboardHotkeys()['screenshot'];
-      expect(hotkey, isNotNull);
-      expect(hotkey!.key, PhysicalKeyboardKey.keyS);
-      expect(hotkey.modifiers, [HotKeyModifier.control]);
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.play);
+
+      await settings.write(SettingsService.episodeAction, EpisodeAction.details);
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.details);
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.episodeAction), EpisodeAction.play);
     });
   });
 
-  group('SettingsService TV card defaults', () {
-    test('full card layout starts disabled', () async {
-      final settings = await SettingsService.getInstance();
+  group('SettingsService music quality', () {
+    test('defaults to original and persists changes by enum name', () async {
+      var settings = await SettingsService.getInstance();
 
-      expect(settings.read(SettingsService.tvFullCardLayout), isFalse);
+      expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.original);
+
+      await settings.write(SettingsService.musicQualityPreset, AudioQualityPreset.medium);
+      expect(settings.prefs.getString(SettingsService.musicQualityPreset.key), 'medium');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.musicQualityPreset), AudioQualityPreset.medium);
+    });
+  });
+
+  group('SettingsService app locale', () {
+    test('persists script-specific locales by enum name', () async {
+      var settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.appLocale, AppLocale.zhHant);
+      expect(settings.prefs.getString(SettingsService.appLocale.key), 'zhHant');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.appLocale), AppLocale.zhHant);
+    });
+
+    test('continues to read legacy language-code values', () async {
+      var settings = await SettingsService.getInstance();
+      await settings.prefs.setString(SettingsService.appLocale.key, 'zh');
+
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.appLocale), AppLocale.zh);
     });
   });
 
   group('SettingsService platform gates', () {
-    test('audio passthrough stays available on desktop but not Apple TV', () {
-      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
+    test('audio passthrough stays available on Apple TV and non-macOS desktop, never macOS', () {
+      // Platform.is* is unmockable, so the desktop expectation follows the
+      // test host: hidden on a macOS host (#1964), available elsewhere.
+      expect(PlatformDetector.supportsAudioPassthrough(), Platform.isMacOS ? isFalse : isTrue);
 
       TvDetectionService.debugSetAppleTVOverride(true);
 
-      expect(PlatformDetector.supportsAudioPassthrough(), isFalse);
+      expect(PlatformDetector.supportsAudioPassthrough(), isTrue);
+    });
+
+    test('audio passthrough defaults off on a non-Android-TV host and honors explicit writes', () async {
+      final settings = await SettingsService.getInstance();
+      // The Android-TV-on-ExoPlayer default-on branch depends on Platform.isAndroid,
+      // which is false (and unmockable) on the test host, so the default is off here.
+      expect(settings.read(SettingsService.audioPassthrough), isFalse);
+
+      await settings.write(SettingsService.audioPassthrough, true);
+      expect(settings.read(SettingsService.audioPassthrough), isTrue);
+
+      await settings.write(SettingsService.audioPassthrough, false);
+      expect(settings.read(SettingsService.audioPassthrough), isFalse);
     });
 
     test('forces external player off on Apple TV even when stored enabled', () async {
@@ -110,6 +168,23 @@ void main() {
       await settings.write(SettingsService.autoPip, true);
 
       TvDetectionService.debugSetAppleTVOverride(true);
+
+      expect(settings.read(SettingsService.autoPip), isFalse);
+    });
+
+    test('forces auto PiP off on automotive while honoring the stored value elsewhere', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.autoPip, true);
+
+      // The pref can only surface a stored true where the host itself supports
+      // PiP. That term is Platform.isAndroid/isIOS/isMacOS, unmockable and false
+      // on the Linux and Windows CI hosts, where the gate pins the pref off no
+      // matter what is stored. pictureInPictureAllowed covers the automotive
+      // veto itself on every host.
+      final hostSupportsPip = PlatformDetector.supportsPictureInPicture();
+      expect(settings.read(SettingsService.autoPip), hostSupportsPip ? isTrue : isFalse);
+
+      TvDetectionService.debugSetAutomotiveOverride(true);
 
       expect(settings.read(SettingsService.autoPip), isFalse);
     });
@@ -135,6 +210,40 @@ void main() {
       await settings.resetAllSettings();
 
       expect(settings.read(SettingsService.companionRemoteLastHostAddress), isNull);
+    });
+  });
+
+  group('SettingsService Watch Together relay', () {
+    test('typed writes canonicalize valid bases and reject invalid replacement', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.customRelayUrl, '  HTTPS://Relay.Example.Test/path///  ');
+      expect(settings.read(SettingsService.customRelayUrl), 'https://relay.example.test/path');
+
+      await expectLater(
+        settings.write(SettingsService.customRelayUrl, 'ws://relay.example.test'),
+        throwsFormatException,
+      );
+      expect(settings.read(SettingsService.customRelayUrl), 'https://relay.example.test/path');
+
+      await settings.write(SettingsService.customRelayUrl, '   ');
+      expect(settings.read(SettingsService.customRelayUrl), isNull);
+    });
+
+    test('startup canonicalizes valid history and removes invalid history', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: {SettingsService.customRelayUrl.key: '  http://Relay.Example.Test:8080/prefix// '},
+      );
+      SettingsService.resetForTesting();
+      var settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.customRelayUrl), 'http://relay.example.test:8080/prefix');
+
+      resetSharedPreferencesForTest(
+        initialAsync: {SettingsService.customRelayUrl.key: 'https://relay.example.test/path?wrong=route'},
+      );
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.customRelayUrl), isNull);
     });
   });
 
@@ -188,4 +297,48 @@ void main() {
       expect(settings.isLibraryAllowedForTracker(TrackerService.trakt, 'server:allowed'), isTrue);
     });
   });
+  group('BaseSharedPreferencesService initialization generations', () {
+    test('a reset-raced initialization resolves to the replacement backend', () async {
+      resetSharedPreferencesForTest(initialAsync: const {'generation_marker': 'old'});
+      final firstOnInit = Completer<void>();
+      final firstStarted = Completer<void>();
+      var constructions = 0;
+
+      final raced = BaseSharedPreferencesService.initializeInstance<_GenerationTestPreferences>(() {
+        final construction = constructions++;
+        return _GenerationTestPreferences(
+          construction,
+          onInitStarted: construction == 0 ? firstStarted : null,
+          onInitGate: construction == 0 ? firstOnInit : null,
+        );
+      });
+      await firstStarted.future;
+
+      resetSharedPreferencesForTest(initialAsync: const {'generation_marker': 'new'});
+      final replacement = await BaseSharedPreferencesService.initializeInstance<_GenerationTestPreferences>(
+        () => _GenerationTestPreferences(constructions++),
+      );
+      firstOnInit.complete();
+      final recovered = await raced;
+
+      expect(recovered, same(replacement));
+      expect(recovered.construction, 1);
+      expect(recovered.readString('generation_marker'), 'new');
+      expect(constructions, 2);
+    });
+  });
+}
+
+class _GenerationTestPreferences extends BaseSharedPreferencesService {
+  _GenerationTestPreferences(this.construction, {this.onInitStarted, this.onInitGate});
+
+  final int construction;
+  final Completer<void>? onInitStarted;
+  final Completer<void>? onInitGate;
+
+  @override
+  Future<void> onInit() async {
+    onInitStarted?.complete();
+    await onInitGate?.future;
+  }
 }

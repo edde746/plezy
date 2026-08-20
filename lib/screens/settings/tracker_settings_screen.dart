@@ -7,6 +7,7 @@ import '../../models/trackers/device_code.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/anilist/anilist_tracker.dart';
 import '../../services/trackers/mal/mal_tracker.dart';
+import '../../services/trackers/mdblist/mdblist_tracker.dart';
 import '../../services/trackers/oauth_proxy_client.dart';
 import '../../services/trackers/simkl/simkl_tracker.dart';
 import '../../services/trackers/tracker_constants.dart';
@@ -20,7 +21,7 @@ import 'tracker_connect_launcher.dart';
 
 Future<void> startMalConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
-  final name = t.trackers.services.mal;
+  final name = t.services.names.mal;
   return launchTrackerConnect<OAuthProxyStart>(
     context,
     isBusyOrConnected: account.isConnecting(TrackerService.mal) || account.isMalConnected,
@@ -34,7 +35,7 @@ Future<void> startMalConnection(BuildContext context) {
 
 Future<void> startAnilistConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
-  final name = t.trackers.services.anilist;
+  final name = t.services.names.anilist;
   return launchTrackerConnect<OAuthProxyStart>(
     context,
     isBusyOrConnected: account.isConnecting(TrackerService.anilist) || account.isAnilistConnected,
@@ -48,12 +49,26 @@ Future<void> startAnilistConnection(BuildContext context) {
 
 Future<void> startSimklConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
-  final name = t.trackers.services.simkl;
+  final name = t.services.names.simkl;
   return launchTrackerConnect<DeviceCode>(
     context,
     isBusyOrConnected: account.isConnecting(TrackerService.simkl) || account.isSimklConnected,
     serviceName: name,
     connect: (cb) => account.connectSimkl(onCodeReady: cb),
+    onCancel: account.cancelConnect,
+    buildDialog: (p, cancel) => DeviceCodeDialog(code: p, serviceName: name, onCancel: cancel),
+    urlFor: (p) => p.verificationUrlComplete ?? p.verificationUrl,
+  );
+}
+
+Future<void> startMdblistConnection(BuildContext context) {
+  final account = context.read<TrackersProvider>();
+  final name = t.services.names.mdblist;
+  return launchTrackerConnect<DeviceCode>(
+    context,
+    isBusyOrConnected: account.isConnecting(TrackerService.mdblist) || account.isMdblistConnected,
+    serviceName: name,
+    connect: (cb) => account.connectMdblist(onCodeReady: cb),
     onCancel: account.cancelConnect,
     buildDialog: (p, cancel) => DeviceCodeDialog(code: p, serviceName: name, onCancel: cancel),
     urlFor: (p) => p.verificationUrlComplete ?? p.verificationUrl,
@@ -67,7 +82,6 @@ class TrackerConfig {
   final String displayName;
   final bool Function(TrackersProvider) isConnected;
   final String? Function(TrackersProvider) username;
-  final Pref<bool> scrobblePref;
   final Future<void> Function(bool) onScrobbleChanged;
   final Future<void> Function(TrackersProvider) disconnect;
 
@@ -76,45 +90,52 @@ class TrackerConfig {
     required this.displayName,
     required this.isConnected,
     required this.username,
-    required this.scrobblePref,
     required this.onScrobbleChanged,
     required this.disconnect,
   });
 
+  Pref<bool> get scrobblePref => SettingsService.scrobblePref(service);
+
   static TrackerConfig mal() => TrackerConfig(
     service: TrackerService.mal,
-    displayName: t.trackers.services.mal,
+    displayName: t.services.names.mal,
     isConnected: (a) => a.isMalConnected,
     username: (a) => a.malUsername,
-    scrobblePref: SettingsService.enableMalScrobble,
     onScrobbleChanged: MalTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectMal(),
   );
 
   static TrackerConfig anilist() => TrackerConfig(
     service: TrackerService.anilist,
-    displayName: t.trackers.services.anilist,
+    displayName: t.services.names.anilist,
     isConnected: (a) => a.isAnilistConnected,
     username: (a) => a.anilistUsername,
-    scrobblePref: SettingsService.enableAnilistScrobble,
     onScrobbleChanged: AnilistTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectAnilist(),
   );
 
   static TrackerConfig simkl() => TrackerConfig(
     service: TrackerService.simkl,
-    displayName: t.trackers.services.simkl,
+    displayName: t.services.names.simkl,
     isConnected: (a) => a.isSimklConnected,
     username: (a) => a.simklUsername,
-    scrobblePref: SettingsService.enableSimklScrobble,
     onScrobbleChanged: SimklTracker.instance.setEnabled,
     disconnect: (a) => a.disconnectSimkl(),
   );
+
+  static TrackerConfig mdblist() => TrackerConfig(
+    service: TrackerService.mdblist,
+    displayName: t.services.names.mdblist,
+    isConnected: (a) => a.isMdblistConnected,
+    username: (a) => a.mdblistUsername,
+    onScrobbleChanged: MdblistTracker.instance.setEnabled,
+    disconnect: (a) => a.disconnectMdblist(),
+  );
 }
 
-/// Shared settings screen for MAL, AniList, and Simkl. Only reachable while
-/// connected — if the session drops (refresh failure, back-nav race) we pop
-/// back to the hub.
+/// Shared settings screen for MAL, AniList, Simkl and MDBList. Only reachable
+/// while connected — if the session drops (refresh failure, back-nav race) we
+/// pop back to the hub.
 class TrackerSettingsScreen extends StatelessWidget {
   final TrackerConfig config;
   const TrackerSettingsScreen({super.key, required this.config});
@@ -122,8 +143,8 @@ class TrackerSettingsScreen extends StatelessWidget {
   Future<void> _disconnect(BuildContext context, TrackersProvider account) async {
     final confirmed = await showConfirmDialog(
       context,
-      title: t.trackers.disconnectConfirm(service: config.displayName),
-      message: t.trackers.disconnectConfirmBody(service: config.displayName),
+      title: t.services.disconnectConfirm(service: config.displayName),
+      message: t.services.disconnectConfirmBody(service: config.displayName),
       confirmText: t.common.disconnect,
       isDestructive: true,
     );
@@ -150,14 +171,14 @@ class TrackerSettingsScreen extends StatelessWidget {
         final username = config.username(account);
         return TrackerAccountSettingsBody(
           title: title,
-          accountTitle: username != null ? t.trackers.connectedAs(username: username) : config.displayName,
+          accountTitle: username != null ? t.services.connectedAs(username: username) : config.displayName,
           service: config.service,
           toggles: [
             TrackerSettingsToggle(
               pref: config.scrobblePref,
-              icon: Symbols.auto_timer,
-              title: t.trackers.scrobble,
-              subtitle: t.trackers.scrobbleDescription,
+              icon: Symbols.auto_timer_rounded,
+              title: t.services.scrobble,
+              subtitle: t.services.scrobbleDescription,
               onAfterWrite: config.onScrobbleChanged,
             ),
           ],

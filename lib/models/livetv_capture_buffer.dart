@@ -1,3 +1,5 @@
+import '../utils/json_utils.dart';
+
 /// Represents the seekable capture buffer for a live TV transcode session.
 ///
 /// Extracted from the `TranscodeSession` element in the tune response:
@@ -23,17 +25,11 @@ class CaptureBuffer {
   /// Parse from a TranscodeSession JSON map. Returns null if required fields are missing.
   /// Values may be num or String depending on whether the server returned JSON or XML.
   static CaptureBuffer? fromTranscodeSession(Map<String, dynamic> session) {
-    final timeStamp = _parseDouble(session['timeStamp']);
-    final minOffset = _parseDouble(session['minOffsetAvailable']);
-    final maxOffset = _parseDouble(session['maxOffsetAvailable']);
+    final timeStamp = flexibleDouble(session['timeStamp']);
+    final minOffset = flexibleDouble(session['minOffsetAvailable']);
+    final maxOffset = flexibleDouble(session['maxOffsetAvailable']);
     if (timeStamp == null || minOffset == null || maxOffset == null) return null;
     return CaptureBuffer(startedAt: timeStamp, seekStartSeconds: minOffset, seekEndSeconds: maxOffset);
-  }
-
-  static double? _parseDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    if (value is String) return double.tryParse(value);
-    return null;
   }
 
   @override

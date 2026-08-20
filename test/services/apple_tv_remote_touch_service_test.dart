@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/apple_tv_remote_touch_service.dart';
@@ -6,7 +9,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('AppleTvRemoteTouchService', () {
-    test('emits repeated horizontal swipes only after the repeat interval', () async {
+    test('a single fast flick emits exactly one swipe', () async {
       final harness = _Harness();
 
       await harness.send('started', x: 500, y: 500);
@@ -15,8 +18,44 @@ void main() {
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
 
-      harness.advance(const Duration(milliseconds: 141));
-      await harness.send('move', x: 260, y: 490);
+      // The flick's tail travel landed inside the repeat cooldown and must be
+      // discarded: a near-stationary frame after the cooldown expires must not
+      // release it as a second focus step.
+      harness.advance(const Duration(milliseconds: 61));
+      await harness.send('move', x: 259, y: 490);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('sub-threshold cooldown travel plus lift drift does not fire a second swipe', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      await harness.send('move', x: 390, y: 500);
+      // 80pt tail inside the cooldown: below threshold, but banked it would
+      // combine with the 70pt lift drift below to cross the 100pt threshold.
+      await harness.send('move', x: 310, y: 500);
+
+      harness.advance(const Duration(milliseconds: 61));
+      await harness.send('move', x: 240, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+    });
+
+    test('a sustained drag keeps repeating after each repeat interval', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 900, y: 500);
+      await harness.send('move', x: 780, y: 500);
+
+      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+
+      harness.advance(const Duration(milliseconds: 30));
+      await harness.send('move', x: 700, y: 500);
+
+      // A full fresh threshold is covered after the cooldown expires.
+      harness.advance(const Duration(milliseconds: 31));
+      await harness.send('move', x: 580, y: 500);
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
     });
@@ -36,7 +75,7 @@ void main() {
       await harness.send('started', x: 500, y: 500);
       await harness.send('move', x: 380, y: 500);
 
-      harness.advance(const Duration(milliseconds: 141));
+      harness.advance(const Duration(milliseconds: 61));
       await harness.send('move', x: 380, y: 370);
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
@@ -48,7 +87,7 @@ void main() {
       await harness.send('started', x: 500, y: 500);
       await harness.send('move', x: 380, y: 500);
 
-      harness.advance(const Duration(milliseconds: 141));
+      harness.advance(const Duration(milliseconds: 61));
       await harness.send('move', x: 260, y: 370);
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
@@ -60,7 +99,7 @@ void main() {
       await harness.send('started', x: 500, y: 500);
       await harness.send('move', x: 380, y: 500);
 
-      harness.advance(const Duration(milliseconds: 141));
+      harness.advance(const Duration(milliseconds: 61));
       await harness.send('move', x: 500, y: 370);
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowRight]);
@@ -72,7 +111,7 @@ void main() {
       await harness.send('started', x: 500, y: 500);
       await harness.send('move', x: 380, y: 500);
 
-      harness.advance(const Duration(milliseconds: 141));
+      harness.advance(const Duration(milliseconds: 61));
       await harness.send('move', x: 380, y: 300);
 
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowUp]);
@@ -134,119 +173,14 @@ void main() {
       expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
     });
 
-    test('click events emit held select key down and up', () async {
-      final harness = _Harness();
-
-      await harness.send('started', x: 500, y: 500);
-      await harness.send('ended', x: 500, y: 500);
-      await harness.send('click_s');
-      await harness.send('click_e');
-
-      expect(harness.keyDowns, [LogicalKeyboardKey.enter]);
-      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
-
-      harness.advance(const Duration(milliseconds: 121));
-      await harness.send('click_s');
-      await harness.send('click_e');
-
-      expect(harness.keyDowns, [LogicalKeyboardKey.enter, LogicalKeyboardKey.enter]);
-      expect(harness.keyUps, [LogicalKeyboardKey.enter, LogicalKeyboardKey.enter]);
-    });
-
-    test('native select suppresses click fallback from physical remote path', () async {
-      final harness = _Harness();
-
-      harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.select));
-      await harness.send('click_s');
-      await harness.send('click_e');
-
-      expect(harness.keyDowns, isEmpty);
-      expect(harness.keyUps, isEmpty);
-
-      harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.select));
-      harness.advance(const Duration(milliseconds: 121));
-      await harness.send('click_s');
-      await harness.send('click_e');
-
-      expect(harness.keyDowns, [LogicalKeyboardKey.enter]);
-      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
-    });
-
-    test('native select during click fallback is consumed and releases synthetic select', () async {
+    test('legacy click messages do not synthesize Select', () async {
       final harness = _Harness();
 
       await harness.send('click_s');
-
-      expect(harness.keyDowns, [LogicalKeyboardKey.enter]);
-      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.enter)), isTrue);
-      expect(harness.keyUps, isEmpty);
-
-      expect(harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.enter)), isTrue);
-
-      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
-
       await harness.send('click_e');
 
-      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
+      expect(harness.keys, isEmpty);
     });
-
-    test('native select burst consumes duplicate native pairs', () async {
-      final harness = _Harness();
-
-      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.select)), isFalse);
-      expect(harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.select)), isFalse);
-
-      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.select)), isTrue);
-      expect(harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.select)), isTrue);
-
-      harness.advance(const Duration(milliseconds: 121));
-
-      expect(harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.select)), isFalse);
-      expect(harness.service.handleNativeKeyEvent(_keyUp(LogicalKeyboardKey.select)), isFalse);
-    });
-
-    test('raw native enter suppresses click fallback from tvOS engine path', () async {
-      final harness = _Harness();
-
-      harness.service.handleNativeKeyEvent(_keyDown(_rawEnterKey));
-      await harness.send('click_s');
-      await harness.send('click_e');
-
-      expect(harness.keyDowns, isEmpty);
-      expect(harness.keyUps, isEmpty);
-    });
-
-    test('recent directional input suppresses click fallback', () async {
-      final harness = _Harness();
-
-      harness.service.handleNativeKeyEvent(_keyDown(LogicalKeyboardKey.arrowLeft));
-      await harness.send('click_s');
-      await harness.send('click_e');
-
-      expect(harness.keyDowns, isEmpty);
-      expect(harness.keyUps, isEmpty);
-
-      harness.advance(const Duration(milliseconds: 221));
-      await harness.send('click_s');
-      await harness.send('click_e');
-
-      expect(harness.keyDowns, [LogicalKeyboardKey.enter]);
-      expect(harness.keyUps, [LogicalKeyboardKey.enter]);
-    });
-
-    test('synthetic swipe suppresses click fallback', () async {
-      final harness = _Harness();
-
-      await harness.send('started', x: 500, y: 500);
-      await harness.send('move', x: 380, y: 500);
-      await harness.send('click_s');
-      await harness.send('click_e');
-
-      expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
-      expect(harness.keyDowns, isEmpty);
-      expect(harness.keyUps, isEmpty);
-    });
-
     test('cancelled touch does not emit select on a later ended message', () async {
       final harness = _Harness();
 
@@ -258,44 +192,123 @@ void main() {
       expect(harness.keys, isEmpty);
     });
 
-    test('isTouchActive and listenable track touch start and end', () async {
-      final harness = _Harness();
-      final seen = <bool>[];
-      harness.service.touchActiveListenable.addListener(() => seen.add(harness.service.isTouchActive));
+    test('a fast lift glides one extra step', () {
+      fakeAsync((async) {
+        final harness = _Harness();
 
-      expect(harness.service.isTouchActive, isFalse);
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 50));
+        // 120pt in 50ms = 2400pt/s at lift: past the glide velocity, below
+        // the double-step velocity.
+        harness.sendSync('move', x: 380, y: 500);
+        harness.sendSync('ended', x: 380, y: 500);
 
-      await harness.send('started', x: 500, y: 500);
-      expect(harness.service.isTouchActive, isTrue);
+        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
 
-      await harness.send('ended', x: 500, y: 500);
-      expect(harness.service.isTouchActive, isFalse);
+        async.elapse(const Duration(milliseconds: 70));
+        expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
 
-      expect(seen, [true, false]);
+        async.elapse(const Duration(milliseconds: 300));
+        expect(harness.keys, [LogicalKeyboardKey.arrowLeft, LogicalKeyboardKey.arrowLeft]);
+      });
     });
 
-    test('cancelled touch clears touch-active state', () async {
-      final harness = _Harness();
+    test('a violent flick glides two extra steps', () {
+      fakeAsync((async) {
+        final harness = _Harness();
 
-      await harness.send('started', x: 500, y: 500);
-      expect(harness.service.isTouchActive, isTrue);
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 8));
+        // 120pt in 8ms = 15000pt/s at lift: past the double-step velocity.
+        harness.sendSync('move', x: 380, y: 500);
+        harness.sendSync('ended', x: 380, y: 500);
 
-      await harness.send('cancelled');
-      expect(harness.service.isTouchActive, isFalse);
+        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+
+        async.elapse(const Duration(milliseconds: 140));
+        expect(harness.keys, List.filled(3, LogicalKeyboardKey.arrowLeft));
+
+        async.elapse(const Duration(milliseconds: 300));
+        expect(harness.keys, List.filled(3, LogicalKeyboardKey.arrowLeft));
+      });
+    });
+
+    test('a slow lift does not glide', () {
+      fakeAsync((async) {
+        final harness = _Harness();
+
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 60));
+        // 100pt in 60ms = 1667pt/s at lift: below the glide velocity.
+        harness.sendSync('move', x: 400, y: 500);
+        harness.sendSync('ended', x: 400, y: 500);
+
+        async.elapse(const Duration(milliseconds: 500));
+        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+      });
+    });
+
+    test('a new touch cancels a pending glide', () {
+      fakeAsync((async) {
+        final harness = _Harness();
+
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 8));
+        harness.sendSync('move', x: 380, y: 500);
+        harness.sendSync('ended', x: 380, y: 500);
+        harness.sendSync('started', x: 500, y: 500);
+
+        async.elapse(const Duration(milliseconds: 500));
+        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+      });
+    });
+
+    test('a gesture that never produced a step does not glide', () {
+      fakeAsync((async) {
+        final harness = _Harness();
+
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 8));
+        // Fast but sub-threshold: no step, so no established direction.
+        harness.sendSync('move', x: 420, y: 500);
+        harness.sendSync('ended', x: 420, y: 500);
+
+        async.elapse(const Duration(milliseconds: 500));
+        expect(harness.keys, isEmpty);
+      });
+    });
+
+    test('a lift moving against the last step does not glide', () {
+      fakeAsync((async) {
+        final harness = _Harness();
+
+        harness.sendSync('started', x: 500, y: 500);
+        harness.advance(const Duration(milliseconds: 50));
+        harness.sendSync('move', x: 380, y: 500);
+
+        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+
+        // Reversal pivot inside the cooldown: net window velocity points
+        // right, against the emitted arrowLeft.
+        harness.advance(const Duration(milliseconds: 8));
+        harness.sendSync('move', x: 620, y: 500);
+        harness.sendSync('ended', x: 620, y: 500);
+
+        async.elapse(const Duration(milliseconds: 500));
+        expect(harness.keys, [LogicalKeyboardKey.arrowLeft]);
+      });
     });
   });
 }
 
 class _Harness {
+  _Harness();
+
   DateTime now = DateTime(2026, 5, 5, 12);
   final List<LogicalKeyboardKey> keys = [];
-  final List<LogicalKeyboardKey> keyDowns = [];
-  final List<LogicalKeyboardKey> keyUps = [];
 
   late final AppleTvRemoteTouchService service = AppleTvRemoteTouchService(
     simulateKeyPress: keys.add,
-    simulateKeyDown: keyDowns.add,
-    simulateKeyUp: keyUps.add,
     scheduleFrame: () {},
     now: () => now,
     swipeThreshold: 100,
@@ -305,17 +318,17 @@ class _Harness {
     return service.handleMessage({'type': type, 'x': x, 'y': y});
   }
 
+  /// Fire-and-forget variant for [fakeAsync] bodies, where awaiting would
+  /// need manual microtask flushing; the handler body is synchronous.
+  void sendSync(String type, {double x = 0, double y = 0}) {
+    unawaited(service.handleMessage({'type': type, 'x': x, 'y': y}));
+  }
+
   void advance(Duration duration) {
     now = now.add(duration);
   }
 }
 
-const _rawEnterKey = LogicalKeyboardKey(0x0d);
-
 KeyDownEvent _keyDown(LogicalKeyboardKey logicalKey) {
   return KeyDownEvent(physicalKey: PhysicalKeyboardKey.enter, logicalKey: logicalKey, timeStamp: Duration.zero);
-}
-
-KeyUpEvent _keyUp(LogicalKeyboardKey logicalKey) {
-  return KeyUpEvent(physicalKey: PhysicalKeyboardKey.enter, logicalKey: logicalKey, timeStamp: Duration.zero);
 }

@@ -2,63 +2,36 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/services/playback_report_session.dart';
 
-class _RecordingClient implements MediaServerClient {
+import '../test_helpers/playback_report_fakes.dart';
+
+class _RecordingClient with PlaybackReportRecorder implements MediaServerClient {
   final calls = <String>[];
   Completer<void>? startGate;
   Completer<void>? stopGate;
   bool failNextStop = false;
 
   @override
-  Future<void> reportPlaybackStarted({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? playMethod,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    final gate = startGate;
-    if (gate != null) await gate.future;
-    calls.add('started:${position.inMilliseconds}:$mediaSourceId:$audioStreamIndex:$subtitleStreamIndex');
-  }
-
-  @override
-  Future<void> reportPlaybackProgress({
-    required String itemId,
-    required Duration position,
-    required Duration duration,
-    bool isPaused = false,
-    String? playSessionId,
-    String? playMethod,
-    String? mediaSourceId,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-  }) async {
-    calls.add('${isPaused ? 'paused' : 'playing'}:${position.inMilliseconds}');
-  }
-
-  @override
-  Future<void> reportPlaybackStopped({
-    required String itemId,
-    required Duration position,
-    Duration? duration,
-    String? playSessionId,
-    String? mediaSourceId,
-    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
-  }) async {
-    calls.add('stopped-attempt:${position.inMilliseconds}:$mediaSourceId');
-    final gate = stopGate;
-    if (gate != null) await gate.future;
-    if (failNextStop) {
-      failNextStop = false;
-      throw StateError('stop failed');
+  Future<void> onPlaybackReport(PlaybackReportCall call) async {
+    final positionMs = call.position.inMilliseconds;
+    switch (call.kind) {
+      case PlaybackReportKind.started:
+        final start = startGate;
+        if (start != null) await start.future;
+        calls.add('started:$positionMs:${call.mediaSourceId}:${call.audioStreamIndex}:${call.subtitleStreamIndex}');
+      case PlaybackReportKind.progress:
+        calls.add('${call.isPaused ? 'paused' : 'playing'}:$positionMs');
+      case PlaybackReportKind.stopped:
+        calls.add('stopped-attempt:$positionMs:${call.mediaSourceId}');
+        final stop = stopGate;
+        if (stop != null) await stop.future;
+        if (failNextStop) {
+          failNextStop = false;
+          throw StateError('stop failed');
+        }
+        calls.add('stopped:$positionMs:${call.mediaSourceId}');
     }
-    calls.add('stopped:${position.inMilliseconds}:$mediaSourceId');
   }
 
   @override
@@ -196,5 +169,45 @@ void main() {
     expect(session.isIdle, isTrue);
     expect(await session.report(_snapshot('playing', positionMs: 4000)), isTrue);
     expect(client.calls, ['stopped-attempt:3000:null', 'stopped:3000:null', 'started:4000:null:null:null']);
+  });
+
+  test('onDelivered fires only for snapshots the backend actually received', () async {
+    // Callers that must know what the server saw — watched-threshold crossing
+    // detection (#1740) — cannot use report()'s bool: a same-state heartbeat
+    // arriving while the start report is in flight resolves true but is
+    // coalesced away.
+    final client = _RecordingClient()..startGate = Completer<void>();
+    final delivered = <int>[];
+    final session = PlaybackReportSession(
+      client: client,
+      itemId: 'item-1',
+      onDelivered: (snapshot) => delivered.add(snapshot.position.inMilliseconds),
+    );
+
+    final first = session.report(_snapshot('playing', positionMs: 1000));
+    final second = session.report(_snapshot('playing', positionMs: 2000));
+    await Future<void>.delayed(Duration.zero);
+
+    client.startGate!.complete();
+    expect(await Future.wait([first, second]), [true, true]);
+
+    expect(client.calls, ['started:1000:null:null:null']);
+    expect(delivered, [1000], reason: 'the 2000ms snapshot was dropped, so it was never delivered');
+  });
+
+  test('onDelivered reports progress and stopped snapshots as they are sent', () async {
+    final client = _RecordingClient();
+    final delivered = <String>[];
+    final session = PlaybackReportSession(
+      client: client,
+      itemId: 'item-1',
+      onDelivered: (snapshot) => delivered.add('${snapshot.state}:${snapshot.position.inMilliseconds}'),
+    );
+
+    await session.report(_snapshot('playing', positionMs: 1000));
+    await session.report(_snapshot('paused', positionMs: 2000));
+    await session.report(_snapshot('stopped', positionMs: 3000));
+
+    expect(delivered, ['playing:1000', 'paused:2000', 'stopped:3000']);
   });
 }

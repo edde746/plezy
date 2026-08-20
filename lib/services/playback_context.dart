@@ -12,7 +12,6 @@ class PlaybackContext {
   final PlaybackSourceKind sourceKind;
   final PlaybackReportingMode reportingMode;
   final MediaServerClient? reportingClient;
-  final String? clientScopeId;
   final Map<String, String>? streamHeaders;
 
   const PlaybackContext({
@@ -21,11 +20,9 @@ class PlaybackContext {
     required this.sourceKind,
     required this.reportingMode,
     this.reportingClient,
-    this.clientScopeId,
     this.streamHeaders,
   });
 
   bool get usesLocalMedia => sourceKind == PlaybackSourceKind.localFile;
   bool get shouldQueueOnReportFailure => reportingMode == PlaybackReportingMode.onlineWithOfflineFallback;
-  bool get shouldQueueOnly => reportingMode == PlaybackReportingMode.offlineQueue;
 }

@@ -1,9 +1,17 @@
+import 'dart:io';
+
+import 'dart:convert';
+import 'package:path/path.dart' as path;
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/shader_preset.dart';
 import 'package:plezy/providers/shader_provider.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/settings_export_service.dart';
 
+import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 
 void main() {
@@ -25,25 +33,6 @@ void main() {
       p.dispose();
     });
 
-    test('allPresets exposes built-in presets and includes none + nvscaler', () async {
-      final p = ShaderProvider();
-      await Future.delayed(Duration.zero);
-
-      // Built-ins should always be present even with no custom presets stored.
-      final ids = p.allPresets.map((preset) => preset.id).toList();
-      expect(ids, contains(ShaderPreset.none.id));
-      expect(ids, contains(ShaderPreset.nvscalerDefault.id));
-      expect(ids, contains('artcnn_c4f16_neutral'));
-      expect(ids, contains('artcnn_c4f16_dn'));
-      expect(ids, contains('artcnn_c4f16_ds'));
-      expect(ids, contains('artcnn_c4f32_neutral'));
-      expect(ids, contains('artcnn_c4f32_dn'));
-      expect(ids, contains('artcnn_c4f32_ds'));
-      expect(p.allPresets.length, ShaderPreset.allPresets.length);
-
-      p.dispose();
-    });
-
     test('setPreset persists, updates current/saved, and notifies', () async {
       final p = ShaderProvider();
       await Future.delayed(Duration.zero);
@@ -57,7 +46,6 @@ void main() {
       expect(p.isShaderEnabled, isTrue);
       expect(notified, 1);
 
-      // Verify persisted via the SettingsService directly.
       final svc = await SettingsService.getInstance();
       expect(svc.read(SettingsService.globalShaderPreset), ShaderPreset.nvscalerDefault.id);
 
@@ -78,7 +66,6 @@ void main() {
       expect(p.savedPreset, ShaderPreset.nvscalerDefault);
       expect(notified, 1);
 
-      // Same id → no notify.
       p.setCurrentPreset(ShaderPreset.none);
       expect(notified, 1);
 
@@ -163,11 +150,121 @@ void main() {
       p.dispose();
     });
 
+    test('reuses the unmodifiable built-in catalog when no custom presets exist', () async {
+      final p = ShaderProvider();
+      await Future.delayed(Duration.zero);
+
+      expect(identical(p.allPresets, ShaderPreset.allPresets), isTrue);
+      expect(identical(p.allPresets, p.allPresets), isTrue);
+      expect(() => p.allPresets.add(ShaderPreset.none), throwsUnsupportedError);
+      p.dispose();
+    });
+
+    test('refreshes a stable merged catalog when custom presets change', () async {
+      final originalPathProvider = PathProviderPlatform.instance;
+      final root = await Directory.systemTemp.createTemp('plezy_shader_provider_test_');
+      PathProviderPlatform.instance = FakePathProvider(root);
+      addTearDown(() async {
+        PathProviderPlatform.instance = originalPathProvider;
+        if (await root.exists()) await root.delete(recursive: true);
+      });
+      final source = File(path.join(root.path, 'custom.glsl'))..writeAsStringSync('shader');
+      final p = ShaderProvider();
+      addTearDown(p.dispose);
+      await Future.delayed(Duration.zero);
+      final builtIns = p.allPresets;
+
+      final custom = await p.importCustomShader(source.path, 'Custom');
+      final merged = p.allPresets;
+      expect(identical(merged, builtIns), isFalse);
+      expect(identical(merged, p.allPresets), isTrue);
+      expect(merged.last, custom);
+      expect(() => merged.removeLast(), throwsUnsupportedError);
+
+      await p.deleteCustomShader(custom);
+      expect(p.findPresetById(custom.id), isNull);
+      expect(identical(p.allPresets, ShaderPreset.allPresets), isTrue);
+    });
+
+    test('filters unsafe persisted custom shader rows and invalid saved selection', () async {
+      const valid = ShaderPreset(
+        id: 'custom_ks9p7.glsl',
+        name: 'Legacy',
+        type: ShaderPresetType.custom,
+        fileName: 'ks9p7.glsl',
+      );
+      const unsafeRows = [
+        ShaderPreset(
+          id: 'custom_traversal',
+          name: 'Traversal',
+          type: ShaderPresetType.custom,
+          fileName: '../sentinel.glsl',
+        ),
+        ShaderPreset(
+          id: 'custom_nested',
+          name: 'Nested',
+          type: ShaderPresetType.custom,
+          fileName: 'nested/shader.glsl',
+        ),
+        ShaderPreset(
+          id: 'custom_wrong_type',
+          name: 'Wrong type',
+          type: ShaderPresetType.custom,
+          fileName: 'shader.txt',
+        ),
+      ];
+      final svc = await SettingsService.getInstance();
+      await svc.write(SettingsService.customShaderPresets, [valid.toJson(), ...unsafeRows.map((row) => row.toJson())]);
+      await svc.write(SettingsService.globalShaderPreset, unsafeRows.first.id);
+
+      final p = ShaderProvider();
+      await Future.delayed(Duration.zero);
+
+      expect(p.customPresets, [valid]);
+      expect(p.findPresetById(unsafeRows.first.id), isNull);
+      expect(p.savedPreset, ShaderPreset.none);
+      expect(p.currentPreset, ShaderPreset.none);
+      p.dispose();
+    });
+
+    test('portable settings import cannot expose an unsafe custom shader row', () async {
+      const unsafe = ShaderPreset(
+        id: 'custom_imported_traversal',
+        name: 'Imported traversal',
+        type: ShaderPresetType.custom,
+        fileName: '../sentinel.glsl',
+      );
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      final result = await SettingsExportService.applyImportMap(
+        {
+          'formatVersion': SettingsExportService.formatVersion,
+          'prefs': {
+            'custom_shader_presets': {
+              'type': 'string',
+              'value': jsonEncode([unsafe.toJson()]),
+            },
+          },
+        },
+        prefs,
+        currentUserUuid: 'profile',
+      );
+      expect(result.keysImported, 0);
+      final svc = await SettingsService.getInstance();
+      await svc.write(SettingsService.globalShaderPreset, unsafe.id);
+
+      final p = ShaderProvider();
+      await Future.delayed(Duration.zero);
+
+      expect(p.customPresets, isEmpty);
+      expect(p.findPresetById(unsafe.id), isNull);
+      expect(p.savedPreset, ShaderPreset.none);
+      p.dispose();
+    });
+
     test('safeNotifyListeners no-ops after dispose', () async {
       final p = ShaderProvider();
       await Future.delayed(Duration.zero);
       p.dispose();
-      // Should not throw — setPreset calls safeNotifyListeners under the hood.
       await p.setPreset(ShaderPreset.none);
     });
   });

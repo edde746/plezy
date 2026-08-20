@@ -1,4 +1,4 @@
-import 'dart:async' show unawaited;
+import 'dart:async' show Stream, unawaited;
 import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
@@ -26,6 +26,7 @@ class ChapterSheet extends StatefulWidget {
   final Player player;
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
+  final bool canControl;
   final String? serverId; // Server ID for the metadata these chapters belong to
   final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration position)? onSeekCompleted;
@@ -35,6 +36,7 @@ class ChapterSheet extends StatefulWidget {
     required this.player,
     required this.chapters,
     required this.chaptersLoaded,
+    required this.canControl,
     this.serverId,
     this.onSeekRequested,
     this.onSeekCompleted,
@@ -46,6 +48,27 @@ class ChapterSheet extends StatefulWidget {
 
 class _ChapterSheetState extends State<ChapterSheet> {
   final _initialScroll = InitialItemScrollController();
+  late Stream<int?> _chapterIndexStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _bindChapterIndexStream();
+  }
+
+  @override
+  void didUpdateWidget(ChapterSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.player, widget.player) || !identical(oldWidget.chapters, widget.chapters)) {
+      _bindChapterIndexStream();
+    }
+  }
+
+  void _bindChapterIndexStream() {
+    _chapterIndexStream = widget.player.streams.position
+        .map((position) => MediaChapter.indexAtPosition(position, widget.chapters))
+        .distinct();
+  }
 
   @override
   void dispose() {
@@ -54,6 +77,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
   }
 
   Future<void> _handleChapterTap(Duration position) async {
+    if (!widget.canControl) return;
     final clamped = clampSeekPosition(widget.player, position);
     await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     if (mounted) {
@@ -69,24 +93,30 @@ class _ChapterSheetState extends State<ChapterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Duration>(
-      stream: widget.player.streams.position,
-      initialData: widget.player.state.position,
-      builder: (context, positionSnapshot) {
-        final currentPosition = positionSnapshot.data ?? Duration.zero;
-        final currentChapterIndex = MediaChapter.indexAtPosition(currentPosition, widget.chapters);
-
+    return StreamBuilder<int?>(
+      stream: _chapterIndexStream,
+      initialData: MediaChapter.indexAtPosition(widget.player.state.position, widget.chapters),
+      builder: (context, chapterSnapshot) {
+        final currentChapterIndex = chapterSnapshot.data;
         Widget content;
         if (!widget.chaptersLoaded) {
-          content = const Center(child: CircularProgressIndicator());
+          content = const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(heightFactor: 1, child: CircularProgressIndicator()),
+          );
         } else if (widget.chapters.isEmpty) {
-          content = Center(
-            child: Text(t.videoControls.noChaptersAvailable, style: TextStyle(color: tokens(context).textMuted)),
+          content = Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              heightFactor: 1,
+              child: Text(t.videoControls.noChaptersAvailable, style: TextStyle(color: tokens(context).textMuted)),
+            ),
           );
         } else {
           _initialScroll.maybeScrollTo(currentChapterIndex);
 
           content = ListView.builder(
+            shrinkWrap: true,
             controller: _initialScroll.controller,
             itemCount: widget.chapters.length,
             itemBuilder: (context, index) {
@@ -136,9 +166,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                 trailing: isCurrentChapter
                     ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: Theme.of(context).colorScheme.primary)
                     : null,
-                onTap: () {
-                  unawaited(_handleChapterTap(chapter.startTime));
-                },
+                onTap: widget.canControl ? () => unawaited(_handleChapterTap(chapter.startTime)) : null,
               );
             },
           );

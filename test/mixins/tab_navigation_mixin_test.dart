@@ -8,7 +8,7 @@ import 'package:plezy/services/gamepad_service.dart';
 /// Tests stage [tabCount] focus nodes and read the resulting controller state
 /// after [initTabNavigation] runs.
 class _Probe extends StatefulWidget {
-  const _Probe({required this.tabCount, required this.onState, this.initialIndex = 0});
+  const _Probe({super.key, required this.tabCount, required this.onState, this.initialIndex = 0});
 
   final int tabCount;
   final int initialIndex;
@@ -52,24 +52,21 @@ class _ProbeState extends State<_Probe> with TickerProviderStateMixin<_Probe>, T
   }
 
   @override
-  Widget build(BuildContext context) =>
-      const Directionality(textDirection: TextDirection.ltr, child: SizedBox.shrink());
+  Widget build(BuildContext context) => Directionality(
+    textDirection: TextDirection.ltr,
+    child: Column(
+      children: [for (final node in _nodes) Focus(focusNode: node, child: const SizedBox.shrink())],
+    ),
+  );
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('TabNavigationMixin', () {
-    setUp(() {
-      // Static gamepad callbacks are global state; isolate each test.
-      GamepadService.onL1Pressed = null;
-      GamepadService.onR1Pressed = null;
-    });
+    setUp(GamepadService.debugClearTabNavigationHandlers);
 
-    tearDown(() {
-      GamepadService.onL1Pressed = null;
-      GamepadService.onR1Pressed = null;
-    });
+    tearDown(GamepadService.debugClearTabNavigationHandlers);
 
     testWidgets('initTabNavigation creates a TabController with the right length', (tester) async {
       late _ProbeState state;
@@ -77,36 +74,49 @@ void main() {
 
       expect(state.tabCount, 3);
       expect(state.tabController.length, 3);
-      // Initial tab is 0 by default.
       expect(state.tabController.index, 0);
-      // Auto-focus suppression flag starts false.
       expect(state.suppressAutoFocus, isFalse);
     });
 
-    testWidgets('initTabNavigation registers L1/R1 gamepad callbacks', (tester) async {
+    testWidgets('initTabNavigation registers owner-scoped bumper navigation', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(tabCount: 3, onState: (s) => state = s));
 
-      // Mixin wires its private goToPreviousTab/goToNextTab to the static
-      // callbacks; we can only assert non-null wiring (the closures are the
-      // mixin's bound methods, not directly comparable).
-      expect(GamepadService.onL1Pressed, isNotNull);
-      expect(GamepadService.onR1Pressed, isNotNull);
-      // Sanity: invoking R1 advances the tab via the mixin's goToNextTab.
-      GamepadService.onR1Pressed!.call();
+      GamepadService.debugDispatchTabNavigation(previous: false);
       await tester.pump();
       expect(state.tabController.index, 1);
     });
 
-    testWidgets('disposeTabNavigation clears the static gamepad callbacks', (tester) async {
-      await tester.pumpWidget(_Probe(tabCount: 2, onState: (_) {}));
-      expect(GamepadService.onL1Pressed, isNotNull);
-      expect(GamepadService.onR1Pressed, isNotNull);
+    testWidgets('disposing one tab screen preserves another owner registration', (tester) async {
+      late _ProbeState first;
+      late _ProbeState second;
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Column(
+            children: [
+              _Probe(key: const ValueKey('first'), tabCount: 2, onState: (s) => first = s),
+              _Probe(key: const ValueKey('second'), tabCount: 2, onState: (s) => second = s),
+            ],
+          ),
+        ),
+      );
 
-      // Replace the widget tree to fire dispose.
-      await tester.pumpWidget(const SizedBox.shrink());
-      expect(GamepadService.onL1Pressed, isNull);
-      expect(GamepadService.onR1Pressed, isNull);
+      GamepadService.debugDispatchTabNavigation(previous: false);
+      await tester.pump();
+      expect(first.tabController.index, 1);
+      expect(second.tabController.index, 0);
+
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: _Probe(key: const ValueKey('second'), tabCount: 2, onState: (s) => second = s),
+        ),
+      );
+      GamepadService.debugDispatchTabNavigation(previous: false);
+      await tester.pump();
+
+      expect(second.tabController.index, 1);
     });
 
     testWidgets('tabChipFocusNodes drives tabCount; getTabChipFocusNode returns the right node', (tester) async {
@@ -183,10 +193,11 @@ void main() {
       expect(state.tabController.length, 3);
       expect(state.tabController.index, 0);
 
-      // The original is disposed; touching it would throw — but the
-      // mixin's references all point at the new instance now.
-      expect(GamepadService.onL1Pressed, isNotNull);
-      expect(GamepadService.onR1Pressed, isNotNull);
+      // The original is disposed, while the owner-scoped registry points at
+      // the newly initialized controller.
+      GamepadService.debugDispatchTabNavigation(previous: false);
+      await tester.pump();
+      expect(state.tabController.index, 1);
     });
 
     testWidgets('onTabChanged fires when tabController.index changes', (tester) async {
@@ -201,22 +212,17 @@ void main() {
 
       expect(state.onTabChangedCalls, greaterThan(before));
     });
-
-    testWidgets('focusTabBar sets suppressAutoFocus and calls requestFocus on the active chip', (tester) async {
+    testWidgets('focusTabBar focuses the active chip and suppresses content auto-focus', (tester) async {
       late _ProbeState state;
-      await tester.pumpWidget(_Probe(tabCount: 3, onState: (s) => state = s));
+      await tester.pumpWidget(_Probe(tabCount: 3, initialIndex: 1, onState: (s) => state = s));
+      final activeNode = state.getTabChipFocusNode(1);
 
-      // Pre-condition: nothing is focused.
-      final activeNode = state.getTabChipFocusNode(state.tabController.index);
       expect(activeNode.hasFocus, isFalse);
-
       state.focusTabBar();
       await tester.pump();
 
-      // The flag flip is the deterministic, mountable side-effect of
-      // focusTabBar; actual focus delivery requires a real Focus widget tree
-      // (the production usage attaches each node to a FocusableTabChip).
       expect(state.suppressAutoFocus, isTrue);
+      expect(activeNode.hasFocus, isTrue);
     });
 
     testWidgets('onTabBarBack is null-safe outside MainScreenFocusScope (no throw)', (tester) async {

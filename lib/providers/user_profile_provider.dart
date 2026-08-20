@@ -5,9 +5,9 @@ import 'package:flutter/foundation.dart';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
-import '../i18n/strings.g.dart';
 import '../media/media_server_user_profile.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+import '../profiles/active_plex_token.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile.dart';
 import '../profiles/profile_connection.dart';
@@ -20,8 +20,8 @@ import '../utils/app_logger.dart';
 
 /// Holds the *current user's playback preferences* (audio/subtitle language
 /// defaults) for the active profile. Plex profiles fetch from
-/// `https://clients.plex.tv/api/v2/user`; Jellyfin profiles fetch from
-/// `/Users/Me` on the bound Jellyfin server.
+/// `https://clients.plex.tv/api/v2/user`; MediaBrowser profiles use their
+/// dialect's current-user route on the bound server.
 ///
 /// Profile *identity* and *switching* are owned by [ActiveProfileProvider]
 /// and [ActiveProfileBinder]. This provider is just the settings cache so
@@ -34,16 +34,12 @@ import '../utils/app_logger.dart';
 /// account-owner's token would silently return the *owner's* settings —
 /// wrong defaults for kid profiles, parental restrictions, etc.
 class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  UserProfileProvider({StorageService? storageService}) : _storageService = storageService;
+  UserProfileProvider({this._storageService, this._authService});
 
   MediaServerUserProfile? _profileSettings;
-  bool _isLoading = false;
-  String? _error;
   bool _isInitialized = false;
 
   MediaServerUserProfile? get profileSettings => _profileSettings;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
 
   PlexAuthService? _authService;
   StorageService? _storageService;
@@ -55,6 +51,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   StreamSubscription<List<ProfileConnection>>? _profileConnectionSubscription;
   String? _watchedProfileConnectionProfileId;
   ProfileConnectionRegistry? _watchedProfileConnectionRegistry;
+  String? _watchedProfileConnectionFingerprint;
 
   /// Wire the dependencies needed to resolve the active user's token / client.
   /// May be called multiple times (proxy provider re-builds) — only the
@@ -95,6 +92,11 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final id = ap.activeId;
     if (id == _lastSeenActiveId) return;
     _lastSeenActiveId = id;
+    // The previous profile's settings must not bleed into the new profile
+    // (playback defaults, parental restrictions) while the fetch runs — or
+    // permanently, when the fetch fails/is unavailable.
+    _profileSettings = null;
+    safeNotifyListeners();
     _watchActiveProfileConnections(ap.active);
     if (_isInitialized) unawaited(refreshProfileSettings());
   }
@@ -110,9 +112,23 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _profileConnectionSubscription = null;
     _watchedProfileConnectionRegistry = registry;
     _watchedProfileConnectionProfileId = profileId;
+    _watchedProfileConnectionFingerprint = null;
 
     if (registry == null || profileId == null) return;
-    _profileConnectionSubscription = registry.watchForProfile(profileId).listen((_) {
+    _profileConnectionSubscription = registry.watchForProfile(profileId).listen((rows) {
+      // Refresh only when something settings-relevant changed. The binder
+      // bumps lastUsedAt on every bind (markUsed), and drift re-emits on
+      // each of those writes — refetching plex.tv settings for them is
+      // wasted round-trips that also wake every awaitBindingSettle path.
+      final fingerprint = [
+        for (final row in rows) '${row.connectionId}|${row.userToken ?? ''}|${row.isDefault}',
+      ].join(';');
+      if (fingerprint == _watchedProfileConnectionFingerprint) return;
+      final first = _watchedProfileConnectionFingerprint == null;
+      _watchedProfileConnectionFingerprint = fingerprint;
+      // The initial emission mirrors the subscribe-time state; the profile
+      // change that created this subscription already refreshes.
+      if (first) return;
       if (_isInitialized) unawaited(refreshProfileSettings());
     });
   }
@@ -134,7 +150,6 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
       _isInitialized = true;
     } catch (e) {
       appLogger.e('UserProfileProvider: critical initialization failure', error: e);
-      _setError(t.profiles.initializeServicesFailed);
       _authService = null;
       _storageService = null;
       _isInitialized = false;
@@ -150,16 +165,21 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     // read the freshly-minted user-token rather than racing the cache.
     await _activeProfile?.awaitBindingSettle();
 
+    // A late-landing fetch must not clobber another profile's settings —
+    // discard the result when the active profile changed mid-flight.
+    final requestedId = _activeProfile?.activeId;
+    bool stale() => _activeProfile?.activeId != requestedId;
+
     final settingsConnection = await _resolveActiveSettingsConnection();
     final connection = settingsConnection?.connection;
     if (connection is JellyfinConnection) {
-      final jellyfinClient = _resolveJellyfinClient(connection);
-      if (jellyfinClient == null) {
-        appLogger.d('UserProfileProvider: default Jellyfin client unavailable, skipping settings refresh');
+      final mediaBrowserClient = _resolveMediaBrowserClient(connection);
+      if (mediaBrowserClient == null) {
+        appLogger.d('UserProfileProvider: default MediaBrowser client unavailable, skipping settings refresh');
         return;
       }
-      final profile = await jellyfinClient.fetchUserProfile();
-      if (profile != null) {
+      final profile = await mediaBrowserClient.fetchUserProfile();
+      if (profile != null && !stale()) {
         _profileSettings = profile;
         safeNotifyListeners();
       }
@@ -175,6 +195,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     try {
       _authService ??= await PlexAuthService.create();
       final profile = await _authService!.getUserProfile(userToken);
+      if (stale()) return;
       _profileSettings = profile;
       safeNotifyListeners();
     } catch (e) {
@@ -182,24 +203,23 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     }
   }
 
-  JellyfinClient? _resolveJellyfinClient(JellyfinConnection conn) {
+  JellyfinClient? _resolveMediaBrowserClient(JellyfinConnection conn) {
     final manager = _serverManager;
     if (manager == null) return null;
     final client = manager.getClient(ServerId(conn.serverMachineId));
     return client is JellyfinClient ? client : null;
   }
 
-  /// Resolve the *active Home user's* plex.tv token, in priority order:
-  ///   1. The [ProfileConnection]'s `userToken`. For Plex Home profiles
-  ///      this is the parent connection's row (written by
-  ///      `_bindPlexHome`); for local profiles bound to a Plex account
-  ///      it's the default join row (`listForProfile` orders default
-  ///      first).
-  ///   2. The parent / first plex account's token as a last resort —
-  ///      wrong user identity, but at least keeps the call from
-  ///      no-op'ing for fresh installs that haven't completed a bind yet.
-  /// Returns `null` only when the device has no Plex account at all
-  /// (Jellyfin-only setup) or no profile is active.
+  /// Resolve the Plex credential for the active profile without crossing
+  /// identity boundaries.
+  ///
+  /// A Plex Home profile may use only the switched token stored on its exact
+  /// parent [ProfileConnection] — [resolveActivePlexToken] with the
+  /// account-token fallback disabled. A missing or empty switched token
+  /// returns `null`; the parent account token represents a different user.
+  ///
+  /// Local Plezy profiles keep their explicitly selected Plex account fallback
+  /// because that account is the identity selected by the local profile.
   Future<String?> _resolveActivePlexUserToken({
     ({ProfileConnection profileConnection, Connection connection})? preferred,
   }) async {
@@ -210,28 +230,31 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final profile = activeProfile.active;
     if (profile == null) return null;
 
-    final plexAccounts = (await connections.list()).whereType<PlexAccountConnection>().toList();
-    if (plexAccounts.isEmpty) return null;
-
+    final connectionList = await connections.list();
     final pcRegistry = _profileConnectionRegistry;
 
     if (profile.kind == ProfileKind.plexHome) {
+      // Divergent preconditions layered over the shared resolver: require the
+      // switched-user uuid and the exact parent account — never resolve a
+      // Home profile through some other bound account.
       final parentId = profile.parentConnectionId;
       final uuid = profile.plexHomeUserUuid;
       if (parentId == null || uuid == null) return null;
-      if (pcRegistry != null) {
-        final pc = await pcRegistry.get(profile.id, parentId);
-        if (pc?.hasToken == true) return pc!.userToken;
+      if (!connectionList.whereType<PlexAccountConnection>().any((account) => account.id == parentId)) {
+        return null;
       }
-      // Pre-bind fallback: the binder hasn't run yet (or it failed), so
-      // there's no user-scoped token. Return the parent account token —
-      // it'll fetch the *owner's* settings, but that's still better than
-      // no settings at all on first launch.
-      for (final acc in plexAccounts) {
-        if (acc.id == parentId) return acc.accountToken;
-      }
-      return null;
+      if (pcRegistry == null) return null;
+      final resolved = await resolveActivePlexToken(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: pcRegistry,
+        allowAccountTokenForHomeUser: false,
+      );
+      return resolved?.token;
     }
+
+    final plexAccounts = connectionList.whereType<PlexAccountConnection>().toList();
+    if (plexAccounts.isEmpty) return null;
 
     // Local profile — read the user-token off the default ProfileConnection
     // (listForProfile orders default first). Each connection persists its
@@ -285,8 +308,6 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// screen "sign out" action; the rest of the teardown (clearing
   /// connections, profiles, etc.) happens in the screen's logout flow.
   Future<void> logout() async {
-    _isLoading = true;
-    safeNotifyListeners();
     try {
       _storageService ??= await StorageService.getInstance();
       await _storageService!.clearUserData();
@@ -294,23 +315,12 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
       _authService = null;
       _storageService = null;
       _isInitialized = false;
-      _clearError();
       appLogger.i('UserProfileProvider: logged out');
     } catch (e) {
       appLogger.e('UserProfileProvider: logout error', error: e);
     } finally {
-      _isLoading = false;
       safeNotifyListeners();
     }
-  }
-
-  void _setError(String error) {
-    _error = error;
-    safeNotifyListeners();
-  }
-
-  void _clearError() {
-    _error = null;
   }
 
   @override

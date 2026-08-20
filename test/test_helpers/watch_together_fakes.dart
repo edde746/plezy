@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/watch_together/models/sync_message.dart';
 import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
+import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 
 /// Rich fake [Player] for Watch Together sync tests.
 ///
@@ -32,6 +33,9 @@ class FakeSyncPlayer implements Player {
 
   /// When set, the next command throws this and clears the field.
   Object? nextCommandError;
+
+  /// When set, the next command waits for this future and clears the field.
+  Future<void>? nextCommandFuture;
 
   /// Simulates bitstream audio ignoring rate changes: setRate succeeds but
   /// neither state nor the rate stream reflect it.
@@ -91,6 +95,9 @@ class FakeSyncPlayer implements Player {
   Future<void> play() async {
     commandLog.add('play');
     _maybeThrow();
+    final pending = nextCommandFuture;
+    nextCommandFuture = null;
+    if (pending != null) await pending;
     if (_state.playing) return;
     _state = _state.copyWith(playing: true);
     _playingController.add(true);
@@ -100,6 +107,9 @@ class FakeSyncPlayer implements Player {
   Future<void> pause() async {
     commandLog.add('pause');
     _maybeThrow();
+    final pending = nextCommandFuture;
+    nextCommandFuture = null;
+    if (pending != null) await pending;
     if (!_state.playing) return;
     _state = _state.copyWith(playing: false);
     _playingController.add(false);
@@ -109,6 +119,9 @@ class FakeSyncPlayer implements Player {
   Future<void> seek(Duration position) async {
     commandLog.add('seek:${position.inMilliseconds}');
     _maybeThrow();
+    final pending = nextCommandFuture;
+    nextCommandFuture = null;
+    if (pending != null) await pending;
     _state = _state.copyWith(position: position);
     if (emitRestartOnSeek) _playbackRestartController.add(null);
   }
@@ -117,6 +130,9 @@ class FakeSyncPlayer implements Player {
   Future<void> setRate(double rate) async {
     commandLog.add('rate:$rate');
     _maybeThrow();
+    final pending = nextCommandFuture;
+    nextCommandFuture = null;
+    if (pending != null) await pending;
     if (ignoreRateChanges || _state.rate == rate) return;
     _state = _state.copyWith(rate: rate);
     _rateController.add(rate);
@@ -186,57 +202,6 @@ class FakeSyncPlayer implements Player {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// Standalone recording fake peer service (no relay behind it).
-class FakeWatchTogetherPeerService extends WatchTogetherPeerService {
-  FakeWatchTogetherPeerService({required this.peerId}) : super(customBaseUrl: 'http://localhost');
-
-  final String peerId;
-  final _messages = StreamController<SyncMessage>.broadcast();
-  final _peerConnected = StreamController<String>.broadcast();
-  final _peerDisconnected = StreamController<String>.broadcast();
-
-  final List<SyncMessage> broadcasts = [];
-  final Map<String, List<SyncMessage>> sent = {};
-
-  @override
-  String? get myPeerId => peerId;
-
-  @override
-  Stream<SyncMessage> get onMessageReceived => _messages.stream;
-
-  @override
-  Stream<String> get onPeerConnected => _peerConnected.stream;
-
-  @override
-  Stream<String> get onPeerDisconnected => _peerDisconnected.stream;
-
-  @override
-  void broadcast(SyncMessage message) {
-    broadcasts.add(message);
-  }
-
-  @override
-  void sendTo(String peerId, SyncMessage message) {
-    sent.putIfAbsent(peerId, () => []).add(message);
-  }
-
-  /// All recorded outgoing messages of [type], broadcast and targeted.
-  Iterable<SyncMessage> outgoing(SyncMessageType type) =>
-      [...broadcasts, ...sent.values.expand((m) => m)].where((m) => m.type == type);
-
-  void emit(SyncMessage message) => _messages.add(message);
-
-  void emitPeerConnected(String peerId) => _peerConnected.add(peerId);
-
-  void emitPeerDisconnected(String peerId) => _peerDisconnected.add(peerId);
-
-  Future<void> close() async {
-    await _messages.close();
-    await _peerConnected.close();
-    await _peerDisconnected.close();
-  }
-}
-
 /// In-memory relay linking [HubPeerService]s for duplex end-to-end tests.
 ///
 /// Mirrors the real relay's contract: broadcasts fan out to every other
@@ -247,6 +212,9 @@ class FakeRelayHub {
   final Map<String, HubPeerService> _peers = {};
 
   HubPeerService register(String peerId) {
+    if (_peers.containsKey(peerId)) {
+      throw StateError('Peer ID is already registered: $peerId');
+    }
     final service = HubPeerService._(peerId, this);
     for (final existing in _peers.values) {
       existing._peerConnected.add(peerId);
@@ -286,7 +254,7 @@ class FakeRelayHub {
 }
 
 class HubPeerService extends WatchTogetherPeerService {
-  HubPeerService._(this.peerId, this._hub) : super(customBaseUrl: 'http://localhost');
+  HubPeerService._(this.peerId, this._hub) : super(endpoint: WatchTogetherRelayEndpoint.resolve('http://localhost'));
 
   final String peerId;
   final FakeRelayHub _hub;

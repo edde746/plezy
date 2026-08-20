@@ -5,33 +5,25 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/trackers/anime_ids.dart';
-import 'package:plezy/services/trackers/anilist/anilist_session.dart';
 import 'package:plezy/services/trackers/anilist/anilist_tracker.dart';
-import 'package:plezy/services/trackers/mal/mal_session.dart';
 import 'package:plezy/services/trackers/mal/mal_tracker.dart';
-import 'package:plezy/services/trackers/simkl/simkl_session.dart';
 import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
 import 'package:plezy/services/trackers/tracker_id_resolver.dart';
-import 'package:plezy/services/trakt/trakt_scrobble_service.dart';
-import 'package:plezy/services/trakt/trakt_session.dart';
+import 'package:plezy/services/trackers/tracker_session.dart';
+import 'package:plezy/services/trackers/trakt/trakt_tracker.dart';
 import 'package:plezy/utils/external_ids.dart';
 
 int _now() => DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-TraktSession _traktSession() => TraktSession(
-  accessToken: 'token',
-  refreshToken: 'refresh',
-  expiresAt: _now() + 86400,
-  scope: 'public',
-  createdAt: _now(),
-);
+TrackerSession _traktSession() =>
+    TrackerSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: _now() + 86400, createdAt: _now());
 
-SimklSession _simklSession() => SimklSession(accessToken: 'token', createdAt: _now());
+TrackerSession _simklSession() => TrackerSession(accessToken: 'token', createdAt: _now());
 
-MalSession _malSession() =>
-    MalSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: _now() + 86400, createdAt: _now());
+TrackerSession _malSession() =>
+    TrackerSession(accessToken: 'token', refreshToken: 'refresh', expiresAt: _now() + 86400, createdAt: _now());
 
-AnilistSession _anilistSession() => AnilistSession(accessToken: 'token', expiresAt: _now() + 86400, createdAt: _now());
+TrackerSession _anilistSession() => TrackerSession(accessToken: 'token', expiresAt: _now() + 86400, createdAt: _now());
 
 TrackerRatingContext _ctx({
   required MediaKind kind,
@@ -50,7 +42,7 @@ TrackerRatingContext _ctx({
 
 void main() {
   tearDown(() {
-    TraktScrobbleService.instance.rebindToProfile(null, onSessionInvalidated: () {});
+    TraktTracker.instance.rebindSession(null, onSessionInvalidated: () {});
     SimklTracker.instance.rebindSession(null, onSessionInvalidated: () {});
     MalTracker.instance.rebindSession(null, onSessionInvalidated: () {});
     AnilistTracker.instance.rebindSession(null, onSessionInvalidated: () {});
@@ -73,11 +65,9 @@ void main() {
         200,
       );
     });
-    TraktScrobbleService.instance.rebindToProfile(_traktSession(), onSessionInvalidated: () {}, httpClient: client);
+    TraktTracker.instance.rebindSession(_traktSession(), onSessionInvalidated: () {}, httpClient: client);
 
-    final score = await TraktScrobbleService.instance.getRating(
-      _ctx(kind: MediaKind.episode, season: 1, episodeNumber: 2),
-    );
+    final score = await TraktTracker.instance.getRating(_ctx(kind: MediaKind.episode, season: 1, episodeNumber: 2));
 
     expect(score, 8);
   });

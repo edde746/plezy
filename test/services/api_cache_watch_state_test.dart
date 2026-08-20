@@ -1,4 +1,3 @@
-
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -115,16 +114,14 @@ void main() {
       return cached!['UserData'] as Map<String, dynamic>;
     }
 
-    test('mutates every per-user row for the same item', () async {
-      // Jellyfin caches one row per userId — both must flip, otherwise a
-      // profile switch surfaces the other user's stale row (audit D-cluster).
+    test('skips ambiguous bare scope when multiple users cache the same item', () async {
       await JellyfinApiCache.instance.put(serverId, '/Users/user-a/Items/item-1', dto());
       await JellyfinApiCache.instance.put(serverId, '/Users/user-b/Items/item-1', dto());
 
       await JellyfinApiCache.instance.applyWatchState(serverId: serverId, itemId: 'item-1', isWatched: true);
 
-      expect((await readBack('user-a'))['Played'], isTrue);
-      expect((await readBack('user-b'))['Played'], isTrue);
+      expect((await readBack('user-a'))['Played'], isFalse);
+      expect((await readBack('user-b'))['Played'], isFalse);
     });
 
     test('converts viewOffsetMs to 100-ns ticks', () async {
@@ -188,7 +185,6 @@ void main() {
             ApiCacheCompanion(
               cacheKey: const Value('jf-srv:/Users/user-a/Items/item-1'),
               data: const Value('not json'),
-              cachedAt: Value(DateTime.now()),
             ),
           );
 

@@ -34,4 +34,26 @@ void main() {
     expect(first, 1);
     expect(second, 2);
   });
+
+  test('KeyedFutureCache memoizes successes and evicts failures', () async {
+    final cache = KeyedFutureCache<String, int>();
+    final errors = <Object>[];
+    var calls = 0;
+
+    Future<int> create({required bool fail}) async {
+      calls++;
+      if (fail) throw StateError('boom');
+      return calls;
+    }
+
+    await expectLater(cache.run('a', () => create(fail: true), onError: errors.add), throwsStateError);
+    expect(errors, hasLength(1));
+
+    expect(await cache.run('a', () => create(fail: false)), 2);
+    expect(await cache.run('a', () => create(fail: false)), 2);
+    expect(calls, 2);
+
+    cache.clear();
+    expect(await cache.run('a', () => create(fail: false)), 3);
+  });
 }

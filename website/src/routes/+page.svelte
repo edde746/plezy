@@ -5,8 +5,8 @@
   import Reviews from '$lib/components/Reviews.svelte';
   import FAQ from '$lib/components/FAQ.svelte';
   import Footer from '$lib/components/Footer.svelte';
-  import NoiseOverlay from '$lib/components/NoiseOverlay.svelte';
   import { faqSchemaMainEntity } from '$lib/content/faqs';
+  import { buildSoftwareApplicationOffers } from '$lib/content/software_app_offers';
 
   const { data } = $props();
 
@@ -24,34 +24,10 @@
       "url": "https://plezy.app",
       "applicationCategory": "MultimediaApplication",
       "operatingSystem": "iOS, Android, Android TV, tvOS, Windows, macOS, Linux",
-      "offers": [
-        {
-          "@type": "Offer",
-          "url": "https://apps.apple.com/us/app/id6754315964",
-          "price": data.appStorePrice ?? "0",
-          "priceCurrency": "USD",
-          "category": "App Store"
-        },
-        {
-          "@type": "Offer",
-          "url": "https://play.google.com/store/apps/details?id=com.edde746.plezy",
-          "price": data.playStorePrice ?? "0",
-          "priceCurrency": "USD",
-          "category": "Google Play"
-        },
-        {
-          "@type": "Offer",
-          "url": "https://www.amazon.com/gp/product/B0GK65CVS1",
-          "category": "Amazon Appstore"
-        },
-        {
-          "@type": "Offer",
-          "url": "https://github.com/edde746/plezy",
-          "price": "0",
-          "priceCurrency": "USD",
-          "category": "GitHub"
-        }
-      ]
+      "offers": buildSoftwareApplicationOffers({
+        appStorePrice: data.appStorePrice,
+        playStorePrice: data.playStorePrice
+      })
     };
 
     if (data.aggregateRating) {
@@ -95,7 +71,6 @@
   {@html `<script type="application/ld+json">${JSON.stringify(faqSchema)}</script>`}
 </svelte:head>
 
-<NoiseOverlay />
 <Hero />
 <Features />
 <Screenshots />
