@@ -14,6 +14,9 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/hub_section.dart';
+import 'package:plezy/utils/layout_constants.dart';
+import 'package:plezy/widgets/media_grid_delegate.dart';
+import 'package:plezy/widgets/tv_browse_rail.dart';
 
 import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
@@ -160,6 +163,71 @@ void main() {
     final poster = find.descendant(of: find.byType(MediaCard), matching: find.byType(ClipRRect)).first;
     final posterSize = tester.getSize(poster);
     expect(posterSize.width / posterSize.height, closeTo(16 / 9, 0.001));
+  });
+
+  testWidgets('wide hub row cards match the episode grid cell at equal width', (tester) async {
+    // One widening scheme (#2039 plan item 3): the row adopts the grid's
+    // packed wide cell (1.8x extent before the ceil), never poster cell x 1.5.
+    // At 480dp / density 3 the schemes diverge: 240dp vs the old 180dp.
+    tester.view.physicalSize = const Size(1440, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    final item = testMediaItem(
+      id: 'clip_wide',
+      backend: MediaBackend.plex,
+      kind: MediaKind.clip,
+      title: 'Home Video',
+      thumbPath: '/video-frame.jpg',
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: HubSection(hub: _hubWith(item), focusMemory: HubFocusMemory(), icon: Symbols.movie_rounded),
+      ),
+    );
+
+    final geometry = MediaGridGeometry.resolve(
+      context: tester.element(find.byType(HubSection)),
+      crossAxisExtent: 480,
+      density: LibraryDensity.defaultValue,
+      useWideAspectRatio: true,
+    );
+    final mediaCard = tester.widget<MediaCard>(find.byType(MediaCard));
+    expect(mediaCard.width, geometry.itemWidth);
+    expect(mediaCard.width, 240);
+  });
+
+  testWidgets('TV shelf wide cards use the rail wide formula, not a tall-card multiplier', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 2.0;
+    addTearDown(tester.view.reset);
+
+    final item = testMediaItem(
+      id: 'clip_wide_tv',
+      backend: MediaBackend.plex,
+      kind: MediaKind.clip,
+      title: 'Home Video',
+      thumbPath: '/video-frame.jpg',
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: HubSection(hub: _hubWith(item), focusMemory: HubFocusMemory(), icon: Symbols.movie_rounded),
+      ),
+    );
+
+    final expected = TvBrowseRailLayout.cardWidthFor(
+      availableWidth: 960,
+      density: LibraryDensity.defaultValue,
+      useWideLayout: true,
+      scale: TvLayoutConstants.scaleForSize(const Size(960, 540)),
+      horizontalPadding: TvLayoutConstants.shelfHorizontalInset * 2,
+      itemGap: 0,
+    );
+    final mediaCard = tester.widget<MediaCard>(find.byType(MediaCard));
+    expect(mediaCard.width, expected);
   });
 
   testWidgets('shows a provider result count in the existing hub header only when supplied', (tester) async {
