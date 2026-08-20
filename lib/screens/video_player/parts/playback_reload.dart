@@ -50,7 +50,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         newPreset == null &&
         newAudioStreamId == null;
     if (widget.isLive && !isLiveSubtitleSwitch) return PlaybackSourceChangeOutcome.unavailable;
-    final transitionLease = _tryAcquirePlaybackTransition(_PlaybackTransition.switchingSource);
+    final transitionLease = _transitionGate.tryAcquire(PlaybackTransition.switchingSource);
     if (transitionLease == null) return PlaybackSourceChangeOutcome.busy;
     try {
       if (isLiveSubtitleSwitch) return await _switchLiveSubtitle(newSubtitleChoice);
@@ -63,13 +63,13 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         newSubtitleChoice: newSubtitleChoice,
       );
     } finally {
-      _releasePlaybackTransition(transitionLease);
+      _transitionGate.release(transitionLease);
     }
   }
 
   Future<PlaybackSourceChangeOutcome> _performPlaybackSourceSwitch({
     required Player currentPlayer,
-    required _PlaybackTransitionLease transitionLease,
+    required PlaybackTransitionLease transitionLease,
     int? newMediaIndex,
     TranscodeQualityPreset? newPreset,
     int? newAudioStreamId,
@@ -78,7 +78,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     bool isCurrentSourceSwitch() =>
         mounted &&
         player == currentPlayer &&
-        _ownsPlaybackTransition(transitionLease, expected: _PlaybackTransition.switchingSource);
+        _transitionGate.owns(transitionLease, expected: PlaybackTransition.switchingSource);
     bool sourceSwitchWasSuperseded() => !mounted || player != currentPlayer || transitionLease.wasSuperseded;
     void rememberSourceAudioPreference() {
       final streamId = newAudioStreamId;
@@ -356,7 +356,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     bool startPaused = false,
     bool useCurrentAudioStreamSelection = true,
     bool showErrorUi = true,
-    _PlaybackTransitionLease? transitionLease,
+    PlaybackTransitionLease? transitionLease,
     String reason = 'media reload',
   }) async {
     if (widget.isLive) {
@@ -370,11 +370,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     }
 
     final reloadLease = transitionLease == null
-        ? _tryAcquirePlaybackTransition(_PlaybackTransition.reloadingMedia)
-        : _advancePlaybackTransition(
+        ? _transitionGate.tryAcquire(PlaybackTransition.reloadingMedia)
+        : _transitionGate.advance(
             transitionLease,
-            _PlaybackTransition.reloadingMedia,
-            expected: _PlaybackTransition.switchingSource,
+            PlaybackTransition.reloadingMedia,
+            expected: PlaybackTransition.switchingSource,
           )
         ? transitionLease
         : null;
@@ -805,7 +805,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       // Cover setup as well as async playback work: context/provider reads can
       // throw before the operational try/catch is entered. Identity ownership
       // prevents this continuation from releasing a newer transition.
-      _releasePlaybackTransition(reloadLease);
+      _transitionGate.release(reloadLease);
       // Every superseded return leaves the episode loading flags set otherwise, and
       // _playNext/_playPrevious treat them as a re-entrancy guard — a stuck flag turns the
       // Next button into a no-op for the rest of the session. Idempotent: the success and

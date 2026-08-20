@@ -117,7 +117,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     // Idempotent retry: already on the target with a settled player. Don't
     // test identity mid-transition — _currentMetadata is set eagerly at
     // reload start and can roll back on failure.
-    if (_playbackTransition == _PlaybackTransition.idle &&
+    if (_transitionGate.transition == PlaybackTransition.idle &&
         player != null &&
         _currentMetadata.id == ratingKey &&
         _currentMetadata.serverId == serverId) {

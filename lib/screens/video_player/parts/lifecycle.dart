@@ -279,7 +279,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     if (_playerSuspendedForTvBackground || _shouldSkipForPip) return;
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
     if (lifecycleState == AppLifecycleState.resumed || lifecycleState == AppLifecycleState.inactive) return;
-    if (_playbackTransition != _PlaybackTransition.idle || !_firstFrame.uiReady.value) {
+    if (_transitionGate.transition != PlaybackTransition.idle || !_firstFrame.uiReady.value) {
       // A reload/zap/startup flow owns the player right now; stopping under
       // it would corrupt its open sequence. Retry after another grace.
       _armTvBackgroundPlayerSuspendTimer();

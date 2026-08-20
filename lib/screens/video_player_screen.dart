@@ -93,6 +93,7 @@ import 'video_player/live_stream_retry.dart';
 import 'video_player/live_timeline_report.dart';
 import 'video_player/wakelock_controller.dart';
 import 'video_player/playback_failure_action.dart';
+import 'video_player/playback_transition_gate.dart';
 import 'video_player/open_http_503_watchdog.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
@@ -308,27 +309,7 @@ SubtitlePreference? sessionPreferenceForSourceSubtitleChoice(
   return null;
 }
 
-/// The in-place media-source transitions a [VideoPlayerScreenState] can run.
-/// They are mutually exclusive by construction — entry points bail while a
-/// transition is in flight.
-enum _PlaybackTransition { idle, switchingSource, reloadingMedia, switchingChannel }
-
 enum _SubtitleSelectionSlot { primary, secondary }
-
-/// Identity token for one owner of the in-place playback transition lock.
-///
-/// The enum describes what the current owner is doing; it is not itself an
-/// ownership token because a superseded async flow can outlive a newer flow
-/// that has since acquired the same enum value.
-final class _PlaybackTransitionLease {
-  _PlaybackTransitionLease();
-
-  bool _wasSuperseded = false;
-
-  bool get wasSuperseded => _wasSuperseded;
-
-  void _markSuperseded() => _wasSuperseded = true;
-}
 
 /// Outcome of [VideoPlayerScreenState._reloadMediaInPlace].
 enum _MediaReloadOutcome {
@@ -484,9 +465,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   // In-flight media-source transition. At most one can run at a time: reloads
   // and channel switches are mutually exclusive.
-  _PlaybackTransition _playbackTransition = _PlaybackTransition.idle;
-  _PlaybackTransitionLease? _playbackTransitionLease;
-  Completer<void>? _playbackTransitionIdleCompleter;
+  final PlaybackTransitionGate _transitionGate = PlaybackTransitionGate();
   bool _playbackIntentShouldPlay = true;
 
   int _pendingSubtitleCycleCount = 0;
@@ -534,7 +513,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // through its own path). The getters below denormalize it for the many
   // existing read sites.
   PlaybackSession? _playbackSession;
-  int _playbackGeneration = 0;
   // Fired in parallel with MPV setup so the OS audio-focus negotiation
   // (~90ms on Android) doesn't sit on the critical path. Awaited before
   // `player.open()` so the semantics are unchanged — we just eat the cost
@@ -865,66 +843,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
 
-  int _beginPlaybackGeneration({bool isMediaReload = false}) {
-    if (!isMediaReload) _forcePlaybackTransitionIdle();
-    return ++_playbackGeneration;
-  }
-
-  _PlaybackTransitionLease? _tryAcquirePlaybackTransition(_PlaybackTransition transition) {
-    assert(transition != _PlaybackTransition.idle);
-    if (_playbackTransition != _PlaybackTransition.idle) return null;
-    final lease = _PlaybackTransitionLease();
-    _playbackTransitionLease = lease;
-    _changePlaybackTransition(transition);
-    return lease;
-  }
-
-  bool _ownsPlaybackTransition(_PlaybackTransitionLease lease, {_PlaybackTransition? expected}) {
-    return identical(_playbackTransitionLease, lease) && (expected == null || _playbackTransition == expected);
-  }
-
-  bool _advancePlaybackTransition(
-    _PlaybackTransitionLease lease,
-    _PlaybackTransition transition, {
-    _PlaybackTransition? expected,
-  }) {
-    assert(transition != _PlaybackTransition.idle);
-    if (!_ownsPlaybackTransition(lease, expected: expected)) return false;
-    _changePlaybackTransition(transition);
-    return true;
-  }
-
-  void _releasePlaybackTransition(_PlaybackTransitionLease lease) {
-    if (!identical(_playbackTransitionLease, lease)) return;
-    _playbackTransitionLease = null;
-    _changePlaybackTransition(_PlaybackTransition.idle);
-  }
-
-  void _forcePlaybackTransitionIdle() {
-    _playbackTransitionLease?._markSuperseded();
-    _playbackTransitionLease = null;
-    _changePlaybackTransition(_PlaybackTransition.idle);
-  }
-
-  void _changePlaybackTransition(_PlaybackTransition transition) {
-    if (_playbackTransition == transition) return;
-    _playbackTransition = transition;
-    if (transition == _PlaybackTransition.idle) {
-      final completer = _playbackTransitionIdleCompleter;
-      _playbackTransitionIdleCompleter = null;
-      if (completer != null && !completer.isCompleted) completer.complete();
-    } else {
-      _playbackTransitionIdleCompleter ??= Completer<void>();
-    }
-  }
-
-  Future<void> _waitForPlaybackTransitionIdle() async {
-    while (mounted && _playbackTransition != _PlaybackTransition.idle) {
-      _playbackTransitionIdleCompleter ??= Completer<void>();
-      await _playbackTransitionIdleCompleter!.future;
-    }
-  }
-
   /// Start a new playback attempt: invalidates automatic track selection,
   /// bumps the generation, and captures the owning player so async
   /// continuations can check [_PlaybackAttempt.isCurrent] uniformly instead of
@@ -934,14 +852,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final trackMutationDrain = _trackManager?.invalidatePendingSelection() ?? Future<void>.value();
     return _PlaybackAttempt._(
       this,
-      _beginPlaybackGeneration(isMediaReload: isMediaReload),
+      _transitionGate.beginGeneration(isMediaReload: isMediaReload),
       currentPlayer,
       trackMutationDrain,
     );
   }
 
   bool _isCurrentPlaybackGeneration(int generation, Player currentPlayer) {
-    return mounted && player == currentPlayer && _playbackGeneration == generation;
+    return mounted && player == currentPlayer && _transitionGate.generation == generation;
   }
 
   Future<void> _playWithPlaybackIntent(Player currentPlayer) {
@@ -956,7 +874,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _live.retrying = true;
       return _retryLiveStream();
     }
-    if (_spuriousEofRecoveryParked && _playbackTransition == _PlaybackTransition.idle) {
+    if (_spuriousEofRecoveryParked && _transitionGate.transition == PlaybackTransition.idle) {
       // Parked on a dead stream: play/pause on a drained cache is a no-op
       // (mpv doesn't even flip `pause` on EOF), so any press means "get my
       // video back" — rebuild the stream instead (#1520).
@@ -978,7 +896,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (widget.isLive && _live.retryFailed) {
       return _playWithPlaybackIntent(currentPlayer);
     }
-    if (_spuriousEofRecoveryParked && _playbackTransition == _PlaybackTransition.idle) {
+    if (_spuriousEofRecoveryParked && _transitionGate.transition == PlaybackTransition.idle) {
       _playbackIntentShouldPlay = true;
       return _retrySpuriousEofRecovery(reason: 'play/pause pressed');
     }
@@ -1306,7 +1224,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _disposePlayerInitializationAttempt(Player attemptPlayer) async {
-    _playbackGeneration++;
+    _transitionGate.bumpGeneration();
     _disposeVolumeControllerForPlayer(attemptPlayer);
     if (identical(player, attemptPlayer)) {
       player = null;
@@ -1995,9 +1913,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     WidgetsBinding.instance.removeObserver(this);
     CarUxRestrictionsService.instance.listenable.removeListener(_handleCarRestrictionsChanged);
 
-    final transitionCompleter = _playbackTransitionIdleCompleter;
-    _playbackTransitionIdleCompleter = null;
-    if (transitionCompleter != null && !transitionCompleter.isCompleted) transitionCompleter.complete();
+    _transitionGate.completeIdleWaiters();
 
     _companionRemote.unbind();
 

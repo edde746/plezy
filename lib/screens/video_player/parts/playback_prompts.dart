@@ -8,7 +8,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     if (!completed) return;
     // Ignore spurious EOF from the old file during an in-place media-source
     // transition (episode swap, transcode restart, channel switch).
-    if (_playbackTransition != _PlaybackTransition.idle) return;
+    if (_transitionGate.transition != PlaybackTransition.idle) return;
     if (_isResolvingCompletionAdjacency) return;
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged

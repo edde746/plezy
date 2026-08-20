@@ -721,7 +721,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // stream, and in-flight transitions already produce expected EOFs that
     // _onVideoCompleted ignores — all fall through untouched.
     if (widget.isLive || _isOfflinePlayback) return false;
-    if (_playbackTransition != _PlaybackTransition.idle) return false;
+    if (_transitionGate.transition != PlaybackTransition.idle) return false;
     // Already parked: swallow duplicate EOF signals without burning budget
     // or re-toasting.
     if (_spuriousEofRecoveryParked) return true;
@@ -788,7 +788,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   /// always allowed and never consume the automatic budget.
   Future<void> _retrySpuriousEofRecovery({required String reason, Duration? resumePosition}) async {
     final currentPlayer = player;
-    if (currentPlayer == null || _playbackTransition != _PlaybackTransition.idle) return;
+    if (currentPlayer == null || _transitionGate.transition != PlaybackTransition.idle) return;
     appLogger.i('Retrying dead-stream recovery ($reason)');
     _spuriousEofRecoveryParked = false;
     final outcome = await _reloadMediaInPlace(

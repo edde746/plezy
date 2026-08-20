@@ -102,7 +102,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     _liveSeek.cancel();
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
-    final generation = _playbackGeneration;
+    final generation = _transitionGate.generation;
     bool isCurrent() => _isCurrentPlaybackGeneration(generation, currentPlayer);
     final session = _live.session;
     if (session == null) {
@@ -334,12 +334,12 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (currentPlayer == null) return;
 
-    final transitionLease = _tryAcquirePlaybackTransition(_PlaybackTransition.switchingChannel);
+    final transitionLease = _transitionGate.tryAcquire(PlaybackTransition.switchingChannel);
     if (transitionLease == null) return; // debounce concurrent switches
     bool isCurrentChannelSwitch() =>
         mounted &&
         player == currentPlayer &&
-        _ownsPlaybackTransition(transitionLease, expected: _PlaybackTransition.switchingChannel);
+        _transitionGate.owns(transitionLease, expected: PlaybackTransition.switchingChannel);
     _liveSeek.cancel();
 
     final previousSession = _live.session;
@@ -424,7 +424,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       appLogger.e('Failed to switch channel', error: e);
       if (mounted) showErrorSnackBar(context, e.toString());
     } finally {
-      _releasePlaybackTransition(transitionLease);
+      _transitionGate.release(transitionLease);
     }
   }
 

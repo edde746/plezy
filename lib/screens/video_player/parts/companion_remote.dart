@@ -32,7 +32,7 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
     _subtitleCycleDrainActive = true;
     try {
       while (mounted && _pendingSubtitleCycleCount > 0) {
-        await _waitForPlaybackTransitionIdle();
+        await _transitionGate.waitForIdle(() => mounted);
         if (!mounted || _pendingSubtitleCycleCount == 0) break;
 
         // Collapse every press queued before this dispatch into one target.
@@ -51,7 +51,7 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
         final targetChoice = PlaybackSubtitleResolver.advanceSourceChoice(sourceTracks, currentChoice, advances);
         final outcome = await _switchPlaybackSource(newSubtitleChoice: targetChoice);
         if (outcome == PlaybackSourceChangeOutcome.busy) {
-          await _waitForPlaybackTransitionIdle();
+          await _transitionGate.waitForIdle(() => mounted);
           continue;
         }
         _pendingSubtitleCycleCount -= advances;
