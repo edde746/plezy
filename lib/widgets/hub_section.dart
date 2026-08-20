@@ -26,6 +26,7 @@ import 'skeleton_media_card.dart';
 import 'sliver_child_memo.dart';
 import '../utils/scroll_utils.dart';
 import 'horizontal_scroll_with_arrows.dart';
+import 'tv_browse_rail.dart';
 import '../i18n/strings.g.dart';
 
 enum HubCardSizing {
@@ -428,11 +429,18 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     );
   }
 
-  double _getTvCardWidth(double availableWidth, int density, double leadingPadding) {
-    final f = LibraryDensity.factor(density);
-    final targetCards = 7.0 - (f * 2.0);
-    final usableWidth = (availableWidth - (leadingPadding * 2)).clamp(1.0, double.infinity);
-    return (usableWidth / targetCards).clamp(210.0, 340.0);
+  /// TV shelf cards share [TvBrowseRailLayout.cardWidthFor] so the two
+  /// remaining HubSection-on-TV surfaces (live TV "What's On", catalog item
+  /// related rows) match the rails every neighboring TV screen renders.
+  double _getTvCardWidth(BuildContext context, double availableWidth, int density, double leadingPadding) {
+    return TvBrowseRailLayout.cardWidthFor(
+      availableWidth: availableWidth,
+      density: density,
+      useWideLayout: false,
+      scale: TvLayoutConstants.scaleOf(context),
+      horizontalPadding: leadingPadding * 2,
+      itemGap: 0,
+    );
   }
 
   @override
@@ -528,7 +536,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     if (svc == null) return const SizedBox.shrink();
                     final density = svc.read(SettingsService.libraryDensity);
                     final baseCardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
-                        ? _getTvCardWidth(constraints.maxWidth, density, leadingPadding)
+                        ? _getTvCardWidth(context, constraints.maxWidth, density, leadingPadding)
                         : GridSizeCalculator.getCellWidth(constraints.maxWidth, context, density);
 
                     final EpisodePosterMode episodePosterMode =
