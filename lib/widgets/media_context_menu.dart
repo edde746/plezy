@@ -1116,24 +1116,31 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<void> _showFileInfo(BuildContext context) async {
-    var loadingShown = false;
+    // The spinner is owned by a ScopedLoadingDialogController so the
+    // `finally` can dismiss it even after the launching card unmounts —
+    // the controller pops via the dialog's own context and only while the
+    // dialog route is still current. A bare captured navigator + `canPop`
+    // is insufficient: it can pop an intervening route instead.
+    final loadingDialog = ScopedLoadingDialogController();
 
     try {
       final client = _getMediaClientForItem();
       if (context.mounted) {
-        showLoadingDialog(context);
-        loadingShown = true;
+        loadingDialog.show(
+          context,
+          // Same back-trapping spinner as [showLoadingDialog]: nothing the
+          // user can do mid-fetch is better than backing into the screen
+          // underneath while the pop is pending.
+          builder: (_) => const PopScope(canPop: false, child: Center(child: CircularProgressIndicator())),
+        );
       }
 
       // Fetch file info
       final item = _mediaItem!;
       final fileInfo = await client.getFileInfo(item);
 
-      // Close loading indicator
-      if (loadingShown && context.mounted) {
-        Navigator.pop(context);
-        loadingShown = false;
-      }
+      // Close the loading indicator before presenting the sheet.
+      await loadingDialog.dismiss();
 
       if (fileInfo != null && context.mounted && mounted) {
         // Show file info bottom sheet, presented from the menu's own context
@@ -1147,14 +1154,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
       }
     } catch (e) {
-      // Close loading indicator if it's still open
-      if (loadingShown && context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
       if (context.mounted) {
         showErrorSnackBar(context, t.messages.errorLoadingFileInfo(error: e.toString()));
       }
+    } finally {
+      await loadingDialog.dismiss();
     }
   }
 
