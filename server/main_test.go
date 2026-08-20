@@ -56,7 +56,8 @@ func newTestServer(t *testing.T, stateFile string) *Server {
 		rooms:         make(map[string]*Room),
 		logs:          newLogStore(t.TempDir()),
 		posters:       newPosterStore(t.TempDir(), maxPosterStoreSize, posterMaxAge),
-		posterUploads: newPosterUploadLimiter(posterPerIPRateBurst, posterPerIPRateSustained, posterGlobalRateBurst, posterGlobalRateSustained, maxConcurrentPosterUploads, time.Now()),
+		posterUploads: newPosterUploadLimiter(posterPerIPRateBurst, posterPerIPRateSustained, posterGlobalRateBurst, posterGlobalRateSustained, maxConcurrentPosterUploads, maxConcurrentPosterUploadsPerIP, time.Now()),
+		posterFetches: newPosterUploadLimiter(posterFetchPerIPRateBurst, posterFetchPerIPRateSustained, posterFetchGlobalRateBurst, posterFetchGlobalRateSustained, maxConcurrentPosterFetches, maxConcurrentPosterFetchesPerIP, time.Now()),
 		conns:         newConnTracker(),
 		clientIPs:     newClientIPResolver(nil),
 	}
@@ -1129,7 +1130,6 @@ func TestSnapshotDirectorySyncWarningIsThrottled(t *testing.T) {
 	}
 }
 
-
 type relayHarness struct {
 	srv     *Server
 	httpSrv *httptest.Server
@@ -1185,7 +1185,8 @@ func newStorageHarness(t *testing.T, logs *logStore, posters *posterStore) *rela
 		rooms:         make(map[string]*Room),
 		logs:          logs,
 		posters:       posters,
-		posterUploads: newPosterUploadLimiter(posterPerIPRateBurst, posterPerIPRateSustained, posterGlobalRateBurst, posterGlobalRateSustained, maxConcurrentPosterUploads, time.Now()),
+		posterUploads: newPosterUploadLimiter(posterPerIPRateBurst, posterPerIPRateSustained, posterGlobalRateBurst, posterGlobalRateSustained, maxConcurrentPosterUploads, maxConcurrentPosterUploadsPerIP, time.Now()),
+		posterFetches: newPosterUploadLimiter(posterFetchPerIPRateBurst, posterFetchPerIPRateSustained, posterFetchGlobalRateBurst, posterFetchGlobalRateSustained, maxConcurrentPosterFetches, maxConcurrentPosterFetchesPerIP, time.Now()),
 		logLookups:    make(chan struct{}, maxConcurrentLogLookups),
 		conns:         newConnTracker(),
 		clientIPs:     mustClientIPResolver(t, "127.0.0.0/8"),
@@ -1670,7 +1671,6 @@ func TestClientWriteFailureClosesConnection(t *testing.T) {
 	client.close()
 }
 
-
 func TestRateLimiterBurstExhausts(t *testing.T) {
 	rl := newRateLimiter(5, 10)
 	for i := 0; i < 5; i++ {
@@ -1759,7 +1759,6 @@ func TestCleanupRateWindowsUsesWindowBoundary(t *testing.T) {
 		t.Fatal("expired fixed-window limiter was retained")
 	}
 }
-
 
 func TestConnTrackerPerIPLimit(t *testing.T) {
 	ct := newConnTracker()
@@ -1873,12 +1872,12 @@ func TestPosterUploadLimiterAdmissionPolicy(t *testing.T) {
 	now := time.Unix(1_700_000_000, 0)
 
 	t.Run("per IP burst and independent clients", func(t *testing.T) {
-		limiter := newPosterUploadLimiter(2, 1, 10, 1, 10, now)
+		limiter := newPosterUploadLimiter(2, 1, 10, 1, 10, 10, now)
 		for range 2 {
 			if !limiter.tryStart("203.0.113.1", now) {
 				t.Fatal("per-IP burst rejected early")
 			}
-			limiter.finish()
+			limiter.finish("203.0.113.1")
 		}
 		if limiter.tryStart("203.0.113.1", now) {
 			t.Fatal("request beyond per-IP burst succeeded")
@@ -1886,16 +1885,16 @@ func TestPosterUploadLimiterAdmissionPolicy(t *testing.T) {
 		if !limiter.tryStart("203.0.113.2", now) {
 			t.Fatal("independent IP was denied")
 		}
-		limiter.finish()
+		limiter.finish("203.0.113.2")
 	})
 
 	t.Run("global burst spans distinct clients", func(t *testing.T) {
-		limiter := newPosterUploadLimiter(10, 1, 2, 1, 10, now)
+		limiter := newPosterUploadLimiter(10, 1, 2, 1, 10, 10, now)
 		for _, ip := range []string{"203.0.113.1", "203.0.113.2"} {
 			if !limiter.tryStart(ip, now) {
 				t.Fatalf("%s rejected before global burst exhausted", ip)
 			}
-			limiter.finish()
+			limiter.finish(ip)
 		}
 		if limiter.tryStart("203.0.113.3", now) {
 			t.Fatal("request beyond global burst succeeded")
@@ -1906,41 +1905,79 @@ func TestPosterUploadLimiterAdmissionPolicy(t *testing.T) {
 	})
 
 	t.Run("concurrency denial consumes no tokens", func(t *testing.T) {
-		limiter := newPosterUploadLimiter(1, 0, 2, 0, 1, now)
+		limiter := newPosterUploadLimiter(1, 0, 2, 0, 1, 1, now)
 		if !limiter.tryStart("203.0.113.1", now) {
 			t.Fatal("first upload denied")
 		}
 		if limiter.tryStart("203.0.113.2", now) {
 			t.Fatal("upload above concurrency limit succeeded")
 		}
-		limiter.finish()
+		limiter.finish("203.0.113.1")
 		if !limiter.tryStart("203.0.113.2", now) {
 			t.Fatal("concurrency denial consumed admission tokens")
 		}
-		limiter.finish()
+		limiter.finish("203.0.113.2")
+	})
+
+	t.Run("per IP concurrency cap leaves slots for other clients", func(t *testing.T) {
+		limiter := newPosterUploadLimiter(3, 0, 10, 0, 8, 2, now)
+		for range 2 {
+			if !limiter.tryStart("203.0.113.1", now) {
+				t.Fatal("request within per-IP concurrency cap denied")
+			}
+		}
+		if limiter.tryStart("203.0.113.1", now) {
+			t.Fatal("request above per-IP concurrency cap succeeded")
+		}
+		if !limiter.tryStart("203.0.113.2", now) {
+			t.Fatal("saturated client starved an independent IP")
+		}
+		// The capped denial consumed no admission tokens: the IP's third and
+		// final burst token must still admit it once a slot frees up.
+		limiter.finish("203.0.113.1")
+		if !limiter.tryStart("203.0.113.1", now) {
+			t.Fatal("per-IP concurrency denial consumed admission tokens")
+		}
+	})
+
+	t.Run("finish releases the slot of the finishing IP only", func(t *testing.T) {
+		limiter := newPosterUploadLimiter(10, 0, 10, 0, 10, 1, now)
+		if !limiter.tryStart("203.0.113.1", now) {
+			t.Fatal("first client denied")
+		}
+		if !limiter.tryStart("203.0.113.2", now) {
+			t.Fatal("second client denied")
+		}
+		limiter.finish("203.0.113.1")
+		if !limiter.tryStart("203.0.113.1", now) {
+			t.Fatal("released client was still capped")
+		}
+		if limiter.tryStart("203.0.113.2", now) {
+			t.Fatal("finish released the wrong client's slot")
+		}
 	})
 
 	t.Run("per IP denial refunds global token", func(t *testing.T) {
-		limiter := newPosterUploadLimiter(1, 0, 2, 0, 2, now)
+		limiter := newPosterUploadLimiter(1, 0, 2, 0, 2, 2, now)
 		if !limiter.tryStart("203.0.113.1", now) {
 			t.Fatal("first upload denied")
 		}
-		limiter.finish()
+		limiter.finish("203.0.113.1")
 		if limiter.tryStart("203.0.113.1", now) {
 			t.Fatal("exhausted IP unexpectedly admitted")
 		}
 		if !limiter.tryStart("203.0.113.2", now) {
 			t.Fatal("refunded global token was unavailable to another IP")
 		}
-		limiter.finish()
+		limiter.finish("203.0.113.2")
 	})
 
 	t.Run("finish restores only concurrency and time restores rate", func(t *testing.T) {
-		limiter := newPosterUploadLimiter(1, 1, 1, 1, 1, now)
+		limiter := newPosterUploadLimiter(1, 1, 1, 1, 1, 1, now)
 		if !limiter.tryStart("203.0.113.1", now) {
 			t.Fatal("first upload denied")
 		}
-		limiter.finish()
+		limiter.finish("203.0.113.1")
 		if limiter.active != 0 {
 			t.Fatalf("active=%d, want 0", limiter.active)
 		}
@@ -1950,15 +1987,15 @@ func TestPosterUploadLimiterAdmissionPolicy(t *testing.T) {
 		if !limiter.tryStart("203.0.113.1", now.Add(time.Second)) {
 			t.Fatal("sustained refill did not restore capacity")
 		}
-		limiter.finish()
+		limiter.finish("203.0.113.1")
 	})
 
 	t.Run("cleanup retains effective buckets then reclaims full ones", func(t *testing.T) {
-		limiter := newPosterUploadLimiter(2, 1, 10, 1, 2, now)
+		limiter := newPosterUploadLimiter(2, 1, 10, 1, 2, 2, now)
 		if !limiter.tryStart("203.0.113.1", now) {
 			t.Fatal("first upload denied")
 		}
-		limiter.finish()
+		limiter.finish("203.0.113.1")
 		limiter.cleanup(now)
 		if _, ok := limiter.perIP["203.0.113.1"]; !ok {
 			t.Fatal("cleanup removed effective per-IP limiter")
@@ -1969,7 +2006,6 @@ func TestPosterUploadLimiterAdmissionPolicy(t *testing.T) {
 		}
 	})
 }
-
 
 func TestClientIPResolverTrustChains(t *testing.T) {
 	tests := []struct {
@@ -2065,7 +2101,6 @@ func TestParseTrustedProxyCIDRs(t *testing.T) {
 	}
 }
 
-
 // Random IDs may repeat; this test checks shape. Collision retry is covered by
 // TestLogStorePersistsAcrossRestartAndAvoidsIDCollisions.
 func TestGenerateLogIDShape(t *testing.T) {
@@ -2081,7 +2116,6 @@ func TestGenerateLogIDShape(t *testing.T) {
 		}
 	}
 }
-
 
 func TestCreateSucceeds(t *testing.T) {
 	h := newRelayHarness(t)
@@ -2748,7 +2782,6 @@ func TestConnectionCannotRetainMultipleRoomMemberships(t *testing.T) {
 	}
 }
 
-
 func TestJoinSucceedsAndBroadcastsPeerJoined(t *testing.T) {
 	h := newRelayHarness(t)
 	host := h.dial(t, "2.0.0.1")
@@ -3308,7 +3341,6 @@ func TestJoinAdmissionIsAtomicWithReservedRoomCreate(t *testing.T) {
 	}
 }
 
-
 func TestBroadcastDeliversToOthersNotSender(t *testing.T) {
 	h := newRelayHarness(t)
 	host := h.dial(t, "3.0.0.1")
@@ -3450,7 +3482,6 @@ func TestSendToNotInRoomRejected(t *testing.T) {
 	c.expectError("not_in_room")
 }
 
-
 func TestPingReturnsPong(t *testing.T) {
 	h := newRelayHarness(t)
 	c := h.dial(t, "5.0.0.1")
@@ -3494,7 +3525,6 @@ func TestPerConnectionMessageRateLimit(t *testing.T) {
 		t.Fatal("expected to hit rate_limited within burst+10 messages")
 	}
 }
-
 
 func TestDisconnectBroadcastsPeerLeft(t *testing.T) {
 	h := newRelayHarness(t)
@@ -5495,7 +5525,6 @@ func TestCleanupDisconnectsPeersBeforeRemovingExpiredOccupiedRoom(t *testing.T) 
 	}
 }
 
-
 func postLog(t *testing.T, baseURL, ip string, body []byte) *http.Response {
 	t.Helper()
 	req, err := http.NewRequest(http.MethodPost, baseURL+"/logs", bytes.NewReader(body))
@@ -6340,7 +6369,6 @@ func TestLogsMethodNotAllowed(t *testing.T) {
 	}
 }
 
-
 var minimalPNG = []byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a, 0x01, 0x02, 0x03}
 
 type countingReadCloser struct {
@@ -6441,7 +6469,7 @@ func snapshotPosterStore(t *testing.T, store *posterStore) (int, int64, []string
 func TestPosterHandlerRejectsRateLimitedRequestBeforeReadingOrStoring(t *testing.T) {
 	s := newTestServer(t, filepath.Join(t.TempDir(), "rooms.json"))
 	now := time.Now()
-	s.posterUploads = newPosterUploadLimiter(1, 0, 10, 0, 2, now)
+	s.posterUploads = newPosterUploadLimiter(1, 0, 10, 0, 2, 2, now)
 
 	first := servePosterUpload(s, io.NopCloser(bytes.NewReader(minimalPNG)), "203.0.113.1")
 	if first.Code != http.StatusOK {
@@ -6465,7 +6493,7 @@ func TestPosterHandlerRejectsRateLimitedRequestBeforeReadingOrStoring(t *testing
 
 func TestPosterHandlerConcurrencyRejectsBeforeReadAndRecovers(t *testing.T) {
 	s := newTestServer(t, filepath.Join(t.TempDir(), "rooms.json"))
-	s.posterUploads = newPosterUploadLimiter(20, 0, 20, 0, 2, time.Now())
+	s.posterUploads = newPosterUploadLimiter(20, 0, 20, 0, 2, 2, time.Now())
 	release := make(chan struct{})
 	recorders := make(chan *httptest.ResponseRecorder, 2)
 
@@ -6519,7 +6547,7 @@ func TestPosterHandlerConcurrencyRejectsBeforeReadAndRecovers(t *testing.T) {
 
 func TestPosterHandlerDeadlineReleasesStalledUploadSlot(t *testing.T) {
 	s := newTestServer(t, filepath.Join(t.TempDir(), "rooms.json"))
-	s.posterUploads = newPosterUploadLimiter(10, 0, 10, 0, 1, time.Now())
+	s.posterUploads = newPosterUploadLimiter(10, 0, 10, 0, 1, 1, time.Now())
 	s.posterBodyReadTimeout = 20 * time.Millisecond
 	stalled := newDeadlineBlockingReadCloser()
 	result := make(chan *httptest.ResponseRecorder, 1)
@@ -6557,7 +6585,7 @@ func TestPosterHandlerDeadlineReleasesStalledUploadSlot(t *testing.T) {
 
 func TestPosterHandlerSlowChunkedBodyDeadline(t *testing.T) {
 	s := newTestServer(t, filepath.Join(t.TempDir(), "rooms.json"))
-	s.posterUploads = newPosterUploadLimiter(10, 0, 10, 0, 1, time.Now())
+	s.posterUploads = newPosterUploadLimiter(10, 0, 10, 0, 1, 1, time.Now())
 	s.posterBodyReadTimeout = 30 * time.Millisecond
 	httpServer := httptest.NewServer(http.HandlerFunc(s.handlePostPosters))
 	t.Cleanup(httpServer.Close)
@@ -6623,7 +6651,7 @@ func TestPosterHandlerReleasesConcurrencyOnEveryExit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := newTestServer(t, filepath.Join(t.TempDir(), "rooms.json"))
-			s.posterUploads = newPosterUploadLimiter(10, 0, 10, 0, 1, time.Now())
+			s.posterUploads = newPosterUploadLimiter(10, 0, 10, 0, 1, 1, time.Now())
 			originalDir := s.posters.dir
 			if tt.storeFailure {
 				s.posters.dir = filepath.Join(t.TempDir(), "missing", "posters")
@@ -6650,7 +6678,7 @@ func TestPosterHandlerReleasesConcurrencyOnEveryExit(t *testing.T) {
 func TestPosterHandlerUsesTrustedCanonicalIdentityAndGlobalBudget(t *testing.T) {
 	t.Run("untrusted XFF rotation cannot bypass per-IP limit", func(t *testing.T) {
 		h := newRelayHarnessNoTrust(t)
-		h.srv.posterUploads = newPosterUploadLimiter(3, 0, 20, 0, 4, time.Now())
+		h.srv.posterUploads = newPosterUploadLimiter(3, 0, 20, 0, 4, 4, time.Now())
 		for i := range 3 {
 			resp := postPoster(t, h.baseURL, fmt.Sprintf("203.0.113.%d", i+1), minimalPNG)
 			resp.Body.Close()
@@ -6672,7 +6700,7 @@ func TestPosterHandlerUsesTrustedCanonicalIdentityAndGlobalBudget(t *testing.T) 
 
 	t.Run("trusted clients are independent but share global budget", func(t *testing.T) {
 		h := newRelayHarness(t)
-		h.srv.posterUploads = newPosterUploadLimiter(3, 0, 8, 0, 4, time.Now())
+		h.srv.posterUploads = newPosterUploadLimiter(3, 0, 8, 0, 4, 4, time.Now())
 		for range 3 {
 			resp := postPoster(t, h.baseURL, "203.0.113.1", minimalPNG)
 			resp.Body.Close()
@@ -6774,6 +6802,133 @@ func TestPostersRoundTrip(t *testing.T) {
 	}
 	if ct := getResp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "image/png") {
 		t.Errorf("Content-Type=%q", ct)
+	}
+}
+
+func servePosterGet(s *Server, path, remoteAddr string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(http.MethodGet, path, nil)
+	req.RemoteAddr = remoteAddr
+	recorder := httptest.NewRecorder()
+	s.handleGetPosters(recorder, req)
+	return recorder
+}
+
+func TestPosterGetRateLimitedPerIPWithBoundedConcurrency(t *testing.T) {
+	s := newTestServer(t, filepath.Join(t.TempDir(), "rooms.json"))
+	now := time.Now()
+	_, entry, err := s.posters.store(minimalPNG, "image/png", now)
+	if err != nil {
+		t.Fatalf("store poster: %v", err)
+	}
+	path := "/posters/" + entry.Filename
+
+	t.Run("per-IP budget", func(t *testing.T) {
+		s.posterFetches = newPosterUploadLimiter(2, 0, 100, 0, 8, 4, now)
+		for i := range 2 {
+			if got := servePosterGet(s, path, "203.0.113.7:1234"); got.Code != http.StatusOK {
+				t.Fatalf("fetch %d status=%d want 200", i, got.Code)
+			}
+		}
+		limited := servePosterGet(s, path, "203.0.113.7:1234")
+		if limited.Code != http.StatusTooManyRequests {
+			t.Fatalf("status=%d want 429 once per-IP burst is exhausted", limited.Code)
+		}
+		other := servePosterGet(s, path, "203.0.113.8:1234")
+		if other.Code != http.StatusOK {
+			t.Fatalf("status=%d want 200 for an independent client", other.Code)
+		}
+	})
+
+	t.Run("concurrency guard shared with handler", func(t *testing.T) {
+		s.posterFetches = newPosterUploadLimiter(100, 0, 100, 0, 1, 1, now)
+		if !s.posterFetches.tryStart("in-flight", now) {
+			t.Fatal("could not occupy the single fetch slot")
+		}
+		blocked := servePosterGet(s, path, "203.0.113.9:1234")
+		if blocked.Code != http.StatusTooManyRequests {
+			t.Fatalf("status=%d want 429 while the slot is held", blocked.Code)
+		}
+		s.posterFetches.finish("in-flight")
+		if got := servePosterGet(s, path, "203.0.113.9:1234"); got.Code != http.StatusOK {
+			t.Fatalf("status=%d want 200 after the slot is released", got.Code)
+		}
+	})
+
+	t.Run("slot released on every handler exit", func(t *testing.T) {
+		s.posterFetches = newPosterUploadLimiter(100, 0, 100, 0, 1, 1, now)
+		missing := "/posters/" + strings.Repeat("z", posterIDLength) + ".png"
+		if got := servePosterGet(s, missing, "203.0.113.10:1234"); got.Code != http.StatusNotFound {
+			t.Fatalf("missing poster status=%d want 404", got.Code)
+		}
+		if got := servePosterGet(s, path, "203.0.113.10:1234"); got.Code != http.StatusOK {
+			t.Fatalf("status=%d want 200 after a 404 exit released the slot", got.Code)
+		}
+		if got := servePosterGet(s, path, "203.0.113.10:1234"); got.Code != http.StatusOK {
+			t.Fatalf("status=%d want 200 after a 200 exit released the slot", got.Code)
+		}
+	})
+}
+
+// Concurrent lookups must serve non-expired hits from the read lock and
+// delete an expired entry exactly once under the write lock.
+func TestPosterLookupConcurrentHitsAndExpiryAreRaceClean(t *testing.T) {
+	ps := newPosterStore(t.TempDir(), 1024, time.Hour)
+	now := time.Now()
+	liveID, liveEntry, err := ps.store([]byte{1, 2, 3}, "image/png", now)
+	if err != nil {
+		t.Fatalf("store live poster: %v", err)
+	}
+	expiredID, expiredEntry, err := ps.store([]byte{4, 5, 6, 7}, "image/png", now.Add(-2*time.Hour))
+	if err != nil {
+		t.Fatalf("store expired poster: %v", err)
+	}
+
+	var liveMisses, expiredHits, lookupErrs atomic.Int64
+	var wg sync.WaitGroup
+	for range 8 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for range 200 {
+				entry, ok, err := ps.lookupEntry(liveID, now, nil)
+				if err != nil {
+					lookupErrs.Add(1)
+				} else if !ok || entry.Filename != liveEntry.Filename {
+					liveMisses.Add(1)
+				}
+				if _, ok, err := ps.lookupEntry(expiredID, now, nil); err != nil {
+					lookupErrs.Add(1)
+				} else if ok {
+					expiredHits.Add(1)
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	if n := lookupErrs.Load(); n != 0 {
+		t.Fatalf("%d lookups returned errors", n)
+	}
+	if n := liveMisses.Load(); n != 0 {
+		t.Fatalf("live entry missed %d times during concurrent lookups", n)
+	}
+	if n := expiredHits.Load(); n != 0 {
+		t.Fatalf("expired entry served %d times", n)
+	}
+
+	ps.mu.RLock()
+	used := ps.used
+	_, liveRetained := ps.entries[liveID]
+	_, expiredRetained := ps.entries[expiredID]
+	ps.mu.RUnlock()
+	if !liveRetained || expiredRetained {
+		t.Fatalf("entries after concurrent lookups: live=%v expired=%v", liveRetained, expiredRetained)
+	}
+	if used != int64(3) {
+		t.Fatalf("used=%d want 3: the expired entry must be deleted exactly once", used)
+	}
+	if _, err := os.Stat(ps.filePath(expiredEntry.Filename)); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("expired poster file not removed: %v", err)
 	}
 }
 
@@ -7548,7 +7703,8 @@ func TestCleanupStepContinuesAfterRemovalFailureAndThrottlesLogging(t *testing.T
 		rooms:         make(map[string]*Room),
 		logs:          logs,
 		posters:       posters,
-		posterUploads: newPosterUploadLimiter(posterPerIPRateBurst, posterPerIPRateSustained, posterGlobalRateBurst, posterGlobalRateSustained, maxConcurrentPosterUploads, now),
+		posterUploads: newPosterUploadLimiter(posterPerIPRateBurst, posterPerIPRateSustained, posterGlobalRateBurst, posterGlobalRateSustained, maxConcurrentPosterUploads, maxConcurrentPosterUploadsPerIP, now),
+		posterFetches: newPosterUploadLimiter(posterFetchPerIPRateBurst, posterFetchPerIPRateSustained, posterFetchGlobalRateBurst, posterFetchGlobalRateSustained, maxConcurrentPosterFetches, maxConcurrentPosterFetchesPerIP, now),
 		conns:         newConnTracker(),
 	}
 	srv.runCleanupStep(now)
@@ -7629,7 +7785,6 @@ func TestRemovalFailureLogDoesNotExposeCapabilityPath(t *testing.T) {
 		t.Fatalf("removal log=%q, want sanitized context %q", message, want)
 	}
 }
-
 
 func TestSnapshotSurvivesRestartWithHostAuthority(t *testing.T) {
 	stateFile := filepath.Join(t.TempDir(), "rooms.json")

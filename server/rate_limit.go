@@ -32,15 +32,26 @@ func (rl *rateLimiter) allow() bool {
 }
 
 func (rl *rateLimiter) allowAt(now time.Time) bool {
+	ok, _ := rl.allowOrWaitAt(now)
+	return ok
+}
+
+// allowOrWaitAt consumes a token when one is available; otherwise it reports
+// how long until a token refills (zero when the bucket never refills) so
+// callers can emit Retry-After.
+func (rl *rateLimiter) allowOrWaitAt(now time.Time) (bool, time.Duration) {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
 	rl.refillAtLocked(now)
-	if rl.tokens < 1 {
-		return false
+	if rl.tokens >= 1 {
+		rl.tokens--
+		return true, 0
 	}
-	rl.tokens--
-	return true
+	if rl.refillRate <= 0 {
+		return false, 0
+	}
+	return false, time.Duration((1 - rl.tokens) / rl.refillRate * float64(time.Second))
 }
 
 func (rl *rateLimiter) refund() {
@@ -94,19 +105,23 @@ type posterUploadLimiter struct {
 	global         *rateLimiter
 	perIP          map[string]*rateLimiter
 	active         int
+	activePerIP    map[string]int
 	maxConcurrent  int
+	maxPerIP       int
 	perIPBurst     int
 	perIPSustained int
 }
 
 func newPosterUploadLimiter(
-	perIPBurst, perIPSustained, globalBurst, globalSustained, maxConcurrent int,
+	perIPBurst, perIPSustained, globalBurst, globalSustained, maxConcurrent, maxPerIP int,
 	now time.Time,
 ) *posterUploadLimiter {
 	return &posterUploadLimiter{
 		global:         newRateLimiterAt(globalBurst, globalSustained, now),
 		perIP:          make(map[string]*rateLimiter),
+		activePerIP:    make(map[string]int),
 		maxConcurrent:  maxConcurrent,
+		maxPerIP:       maxPerIP,
 		perIPBurst:     perIPBurst,
 		perIPSustained: perIPSustained,
 	}
@@ -116,6 +131,12 @@ func (pl *posterUploadLimiter) tryStart(ip string, now time.Time) bool {
 	pl.mu.Lock()
 	defer pl.mu.Unlock()
 
+	// Concurrency checks precede bucket charges so a denied request consumes
+	// no admission tokens. The per-IP slot cap keeps one client's slow
+	// transfers from monopolizing the global slots.
+	if pl.activePerIP[ip] >= pl.maxPerIP {
+		return false
+	}
 	if pl.active >= pl.maxConcurrent {
 		return false
 	}
@@ -132,14 +153,21 @@ func (pl *posterUploadLimiter) tryStart(ip string, now time.Time) bool {
 		return false
 	}
 	pl.active++
+	pl.activePerIP[ip]++
 	return true
 }
 
-func (pl *posterUploadLimiter) finish() {
+func (pl *posterUploadLimiter) finish(ip string) {
 	pl.mu.Lock()
 	defer pl.mu.Unlock()
 	if pl.active > 0 {
 		pl.active--
+	}
+	switch n := pl.activePerIP[ip]; {
+	case n > 1:
+		pl.activePerIP[ip] = n - 1
+	case n == 1:
+		delete(pl.activePerIP, ip)
 	}
 }
 

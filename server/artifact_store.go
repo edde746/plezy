@@ -14,7 +14,6 @@ import (
 	"time"
 )
 
-
 type artifactRemovalError struct {
 	err error
 }
@@ -161,7 +160,6 @@ func (as *artifactStore) accountedLocked() int64 {
 	return as.used + as.pendingDebt
 }
 
-
 func (as *artifactStore) loadExisting(now time.Time) error {
 	as.mu.Lock()
 	defer as.mu.Unlock()
@@ -274,25 +272,34 @@ func (as *artifactStore) put(data []byte, ext, contentType string, now time.Time
 	return id, entry, nil
 }
 
-// lookupEntry returns a live matching entry, deleting it if expired.
+// lookupEntry returns a live matching entry, deleting it if expired. The
+// common non-expired hit takes only the read lock; expiry upgrades to the
+// write lock and re-checks, since the entry may change while unlocked.
 func (as *artifactStore) lookupEntry(
 	id string,
 	now time.Time,
 	match func(artifactEntry) bool,
 ) (artifactEntry, bool, error) {
-	as.mu.Lock()
-	defer as.mu.Unlock()
+	as.mu.RLock()
 	entry, ok := as.entries[id]
+	as.mu.RUnlock()
 	if !ok || (match != nil && !match(entry)) {
 		return artifactEntry{}, false, nil
 	}
-	if !now.Before(entry.ExpiresAt) {
+	if now.Before(entry.ExpiresAt) {
+		return entry, true, nil
+	}
+
+	as.mu.Lock()
+	defer as.mu.Unlock()
+	// Delete only the exact entry observed above: a concurrent delete may
+	// already have dropped it, and the id could since name a live artifact.
+	if current, live := as.entries[id]; live && current == entry {
 		if err := as.deleteEntryLocked(id); err != nil {
 			return artifactEntry{}, false, err
 		}
-		return artifactEntry{}, false, nil
 	}
-	return entry, true, nil
+	return artifactEntry{}, false, nil
 }
 
 func (as *artifactStore) cleanup(now time.Time) error {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:clock/clock.dart';
 import 'package:http/http.dart' as http;
 
 import '../../utils/abortable_http_request.dart';
@@ -51,9 +52,11 @@ class OAuthProxyClient {
   /// Returns null if [shouldCancel] flips true between iterations or [onCancel]
   /// completes mid-request. Throws [OAuthProxyException] on unrecoverable errors
   /// (session gone, upstream failure). The server holds each request for up to
-  /// 50 s; 204 responses are retried transparently.
+  /// 50 s; 204 responses are retried transparently, and 429 responses are
+  /// retried until the session's own lifetime expires.
   Future<OAuthProxyResult?> poll(String session, {bool Function()? shouldCancel, Future<void>? onCancel}) async {
     final uri = Uri.parse('$baseUrl/auth/result').replace(queryParameters: {'session': session});
+    final deadline = clock.now().add(TrackerConstants.oauthProxySessionTimeout);
     final cancelSentinel = Object();
     // Subscribe to onCancel once; reusing this derived future avoids
     // accumulating a fresh listener per loop iteration.
@@ -88,6 +91,17 @@ class OAuthProxyClient {
       if (res.statusCode == 204) continue; // server-side timeout, retry
       if (res.statusCode == 410) {
         throw const OAuthProxyException('Session expired or already used');
+      }
+      if (res.statusCode == 429 && clock.now().isBefore(deadline)) {
+        // Rate limiting is transient while the relay session is alive: honor
+        // the server's suggested pause when present, otherwise resume on the
+        // normal retry tick. Past the deadline the 429 falls through below.
+        final retryAfter = int.tryParse(res.headers['retry-after'] ?? '');
+        final delay = retryAfter != null && retryAfter > 0
+            ? Duration(seconds: retryAfter)
+            : TrackerConstants.oauthProxyRetryDelay;
+        await Future.any<Object?>([Future<void>.delayed(delay), ?cancelFuture]);
+        continue;
       }
       if (res.statusCode != 200) {
         throw OAuthProxyException('OAuth proxy poll failed: HTTP ${res.statusCode}');

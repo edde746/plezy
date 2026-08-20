@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -28,10 +29,16 @@ const (
 	oauthMaxSessions        = 5000
 	oauthStartBurst         = 3
 	oauthStartRateSustained = 1
-	oauthBrowserStateBytes  = 18 // 144 bits, 24 base64url characters
-	oauthPollSecretBytes    = 18 // independent device capability
-	oauthPKCEVerifierLen    = 64
-	oauthUpstreamTimeout    = 15 * time.Second
+	// /auth/result gets its own per-IP budget: an honest device polls about
+	// once per oauthResultWait hold (~12 requests over a session's TTL), so
+	// this burst absorbs several concurrent NAT'd flows and polling can never
+	// starve /auth/start's stricter session-creation budget above.
+	oauthResultBurst         = 10
+	oauthResultRateSustained = 1
+	oauthBrowserStateBytes   = 18 // 144 bits, 24 base64url characters
+	oauthPollSecretBytes     = 18 // independent device capability
+	oauthPKCEVerifierLen     = 64
+	oauthUpstreamTimeout     = 15 * time.Second
 )
 
 // oauthServiceConfig describes one configured upstream provider.
@@ -61,6 +68,10 @@ type oauthSession struct {
 	codeVerifier string // MAL PKCE; empty for AniList. Cleared after token exchange.
 	createdAt    time.Time
 	done         chan struct{}
+
+	// callbackClaimed makes the browser callback single-use before any
+	// upstream exchange. Guarded by oauthProxy.mu, not s.mu.
+	callbackClaimed bool
 
 	mu        sync.Mutex
 	completed bool
@@ -112,8 +123,9 @@ type oauthProxy struct {
 	browserStates map[string]*oauthSession
 	pollDigests   map[[sha256.Size]byte]*oauthSession
 
-	ipMu   sync.Mutex
-	ipRate map[string]*rateLimiter
+	ipMu     sync.Mutex
+	ipRate   map[string]*rateLimiter
+	pollRate map[string]*rateLimiter
 }
 
 func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig, clientIPs clientIPResolver) *oauthProxy {
@@ -125,6 +137,7 @@ func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig, clien
 		browserStates: make(map[string]*oauthSession),
 		pollDigests:   make(map[[sha256.Size]byte]*oauthSession),
 		ipRate:        make(map[string]*rateLimiter),
+		pollRate:      make(map[string]*rateLimiter),
 	}
 }
 
@@ -309,8 +322,15 @@ func (p *oauthProxy) handleCallback(w http.ResponseWriter, r *http.Request, serv
 	state := q.Get("state")
 	p.mu.Lock()
 	sess := p.browserStates[state]
+	// Claim the callback before the upstream exchange: a replayed or
+	// concurrent duplicate callback must never reach the provider again.
+	// The poll entry stays live so the device still receives the result.
+	valid := sess != nil && sess.service == service && !sess.callbackClaimed
+	if valid {
+		sess.callbackClaimed = true
+	}
 	p.mu.Unlock()
-	if sess == nil || sess.service != service {
+	if !valid {
 		renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from Plezy.")
 		return
 	}
@@ -363,12 +383,27 @@ func (p *oauthProxy) handleResult(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	ip, err := p.clientIPs.resolve(r)
+	if err != nil {
+		http.Error(w, "Invalid client address", http.StatusBadRequest)
+		return
+	}
 	pollDigest := digestPollSecret(r.URL.Query().Get("session"))
 	p.mu.Lock()
 	sess := p.pollDigests[pollDigest]
 	p.mu.Unlock()
 	if sess == nil {
+		// Unknown capabilities are rejected before any budget is charged so
+		// bogus requests cannot starve an honest poller; the generic 410 and
+		// the 144-bit poll secret keep enumeration infeasible.
 		http.Error(w, "Session not found", http.StatusGone)
+		return
+	}
+	if ok, retryAfter := p.pollAllow(ip); !ok {
+		if seconds := int((retryAfter + time.Second - 1) / time.Second); seconds > 0 {
+			w.Header().Set("Retry-After", strconv.Itoa(seconds))
+		}
+		http.Error(w, "Rate limited", http.StatusTooManyRequests)
 		return
 	}
 
@@ -509,18 +544,31 @@ func (p *oauthProxy) cleanup() {
 
 	p.ipMu.Lock()
 	cleanupRateLimiters(p.ipRate, now, nil)
+	cleanupRateLimiters(p.pollRate, now, nil)
 	p.ipMu.Unlock()
 }
 
+// ipAllow charges the strict per-IP session-creation budget for /auth/start.
 func (p *oauthProxy) ipAllow(ip string) bool {
+	ok, _ := p.chargeIP(p.ipRate, ip, oauthStartBurst, oauthStartRateSustained)
+	return ok
+}
+
+// pollAllow charges the per-IP /auth/result budget, reporting the refill wait
+// on denial so the handler can emit Retry-After.
+func (p *oauthProxy) pollAllow(ip string) (bool, time.Duration) {
+	return p.chargeIP(p.pollRate, ip, oauthResultBurst, oauthResultRateSustained)
+}
+
+func (p *oauthProxy) chargeIP(buckets map[string]*rateLimiter, ip string, burst, sustained int) (bool, time.Duration) {
 	p.ipMu.Lock()
 	defer p.ipMu.Unlock()
-	rl, ok := p.ipRate[ip]
+	rl, ok := buckets[ip]
 	if !ok {
-		rl = newRateLimiter(oauthStartBurst, oauthStartRateSustained)
-		p.ipRate[ip] = rl
+		rl = newRateLimiter(burst, sustained)
+		buckets[ip] = rl
 	}
-	return rl.allow()
+	return rl.allowOrWaitAt(time.Now())
 }
 
 const successPageHTML = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in</title><style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#1a1a1a;text-align:center;padding:1em;box-sizing:border-box}@media(prefers-color-scheme:dark){body{background:#0f0f0f;color:#f5f5f5}}.check{width:72px;height:72px;margin-bottom:20px}h2{margin:0 0 8px;font-weight:600;font-size:1.25rem}p{margin:0;opacity:.7;font-size:.95rem}</style><body><svg class="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><h2>Signed in to Plezy</h2><p>You can close this tab and return to the app.</p></body>`
