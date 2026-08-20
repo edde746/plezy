@@ -776,8 +776,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   SettingsService get _settings => SettingsService.instance;
   int get _seekTimeSmall => _settings.read(SettingsService.seekTimeSmall);
   int get _rewindOnResume => _settings.read(SettingsService.rewindOnResume);
-  int get _audioSyncOffset => _settings.read(SettingsService.audioSyncOffset);
-  int get _subtitleSyncOffset => _settings.read(SettingsService.subtitleSyncOffset);
+  // Resolved through the configured sync-offset scope so the sheet rows, the
+  // tune indicator, and the sync-slider seed agree with the value the player
+  // actually applies (video_player_screen resolves the same way).
+  int get _audioSyncOffset => ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.audioSyncOffset, widget.metadata);
+  int get _subtitleSyncOffset => ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.subtitleSyncOffset, widget.metadata);
   bool get _isRotationLocked => _settings.read(SettingsService.rotationLocked);
   bool _isScreenLocked = false; // Touch lock during playback
   bool _showLockIcon = false; // Whether to show the lock overlay icon
@@ -890,6 +893,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _lastControlsVisible = widget.chromeController.controlsVisible;
     _controlsMounted = _lastControlsVisible;
     _controlsOpaque = _lastControlsVisible;
+    if (_controlsOpaque) widget.chromeController.markControlsOpaque();
     // Horizontal arrows stay the player's even with navigation enabled: with
     // the chrome down they run a hidden seek (see parts/key_events.dart), so
     // they are not evidence of a focus session. Up/Down raises the chrome and
@@ -933,6 +937,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.rewindOnResume,
       SettingsService.audioSyncOffset,
       SettingsService.subtitleSyncOffset,
+      // The sync-offset getters resolve through ScopedPlayerPrefs, so scoped
+      // writes and scope changes must rebuild too.
+      SettingsService.scopedPlayerPrefValues,
+      SettingsService.syncOffsetScope,
       SettingsService.rotationLocked,
       SettingsService.autoSkipIntro,
       SettingsService.autoSkipCredits,
@@ -1017,6 +1025,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       _lastControlsVisible = widget.chromeController.controlsVisible;
       _controlsMounted = _lastControlsVisible;
       _controlsOpaque = _lastControlsVisible;
+      if (_controlsOpaque) widget.chromeController.markControlsOpaque();
       widget.chromeController.addListener(_onChromeChanged);
     }
     // The same controls instance survives in-place episode swaps — re-key

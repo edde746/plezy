@@ -133,6 +133,41 @@ void main() {
       expect(controller.controlsPresented, isFalse);
     });
 
+    test('hide before the chrome ever became opaque retires presentation immediately', () {
+      final controller = PlayerChromeController(initiallyVisible: false);
+      addTearDown(controller.dispose);
+
+      // Desktop pointer-exit race: show and hide land in the same frame gap,
+      // so the AnimatedOpacity mounts already at its hidden target, never
+      // animates, and never fires onEnd → markControlsHidden.
+      controller.show();
+      expect(controller.controlsPresented, isTrue);
+
+      expect(controller.hide(ignoreHolds: true), isTrue);
+
+      expect(controller.controlsVisible, isFalse);
+      expect(
+        controller.controlsPresented,
+        isFalse,
+        reason: 'no fade-out will run, so back must resolve to the route pop, not hide-the-chrome',
+      );
+    });
+
+    test('hide after the chrome became opaque still defers presentation to the fade-out', () {
+      final controller = PlayerChromeController(initiallyVisible: false);
+      addTearDown(controller.dispose);
+
+      controller.show();
+      controller.markControlsOpaque();
+      controller.hide();
+
+      expect(controller.controlsPresented, isTrue, reason: 'a real fade-out owns the presented flag until onEnd');
+
+      controller.markControlsHidden();
+
+      expect(controller.controlsPresented, isFalse);
+    });
+
     test('a hidden start is also unpresented, so back is not classified as hide-the-chrome', () {
       final controller = PlayerChromeController(initiallyVisible: false);
       addTearDown(controller.dispose);

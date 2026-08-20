@@ -11,10 +11,12 @@ enum PlayerChromeHold { pip, contentStrip, promptInteraction, scrub }
 class PlayerChromeController extends ChangeNotifier implements ValueListenable<bool> {
   PlayerChromeController({bool initiallyVisible = true})
     : _controlsVisible = initiallyVisible,
-      _controlsPresented = initiallyVisible;
+      _controlsPresented = initiallyVisible,
+      _controlsOpaque = initiallyVisible;
 
   bool _controlsVisible;
   bool _controlsPresented;
+  bool _controlsOpaque;
   bool _contentStripVisible = false;
   bool _playing = false;
   bool _hasFirstFrame = true;
@@ -107,12 +109,27 @@ class PlayerChromeController extends ChangeNotifier implements ValueListenable<b
     if (!ignoreHolds && _holds.isNotEmpty) return false;
     cancelAutoHide();
     _controlsVisible = false;
+    // A chrome that never reached full opacity has no fade-out to run — a
+    // freshly inserted AnimatedOpacity sits at its hidden target and never
+    // fires onEnd, so markControlsHidden would never arrive. Retire the
+    // presented flag now; the controls host drops its subtree in response.
+    // A chrome that did fade in keeps the flag until markControlsHidden.
+    if (!_controlsOpaque) _controlsPresented = false;
+    _controlsOpaque = false;
     if (_contentStripVisible) {
       _contentStripVisible = false;
       _holds.remove(PlayerChromeHold.contentStrip);
     }
     notifyListeners();
     return true;
+  }
+
+  /// Called when the controls subtree is actually rendered at full opacity,
+  /// so a later [hide] can rely on a real fade-out (and its
+  /// [markControlsHidden] completion) to retire [controlsPresented].
+  void markControlsOpaque() {
+    if (!_controlsVisible) return;
+    _controlsOpaque = true;
   }
 
   /// Called when the controls opacity animation reaches its hidden target.

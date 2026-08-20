@@ -261,8 +261,13 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     if (visibilityChanged && !controlsVisible) {
       _desktopControlsKey.currentState?.hideContentStrip();
       _cancelSkipButtonDismissTimer();
+      // When the chrome never reached full opacity, hide() already retired the
+      // presented flag — no fade-out will run, so AnimatedOpacity.onEnd never
+      // fires. Drop the subtree here instead of waiting for it.
+      final controlsDismissed = !widget.chromeController.controlsPresented;
       _setControlsState(() {
         _controlsOpaque = false;
+        if (controlsDismissed) _controlsMounted = false;
         if (_currentMarker != null) _skipButtonDismissed = true;
       });
       _claimPlayerSurfaceFocus();
@@ -277,9 +282,11 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_showControls || !_controlsMounted) return;
+        widget.chromeController.markControlsOpaque();
         _setControlsState(() => _controlsOpaque = true);
       });
     } else if (controlsVisible && !_controlsMounted) {
+      widget.chromeController.markControlsOpaque();
       _setControlsState(() {
         _controlsMounted = true;
         _controlsOpaque = true;
