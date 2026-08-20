@@ -95,9 +95,13 @@ class DisplayModeManager {
   // Enable or disable system HDR.
   // Saves/restores DEVMODEW around the toggle (Windows changes display mode on HDR state change).
   // Uses SET_HDR_STATE (type 16) on Win11 24H2+, SET_ADVANCED_COLOR_STATE (type 10) on older.
+  // A live change repeated from a different monitor hands off: the recorded
+  // display is restored first, then the current monitor becomes the recorded
+  // display. If that restore fails, the request is refused.
   bool SetHDREnabled(HWND window, bool enabled);
 
-  // Restore the previously saved HDR state.
+  // Restore the previously saved HDR state. Gated on and applied to the
+  // recorded original display, not the window's current monitor.
   bool RestoreOriginalHDRState(HWND window);
 
   // Returns true if an HDR state change has been applied (and not yet restored).
@@ -149,6 +153,11 @@ class DisplayModeManager {
 
   // Toggle HDR via DisplayConfig (version-dispatched).
   static LONG SetHDRStateForTarget(const DisplayConfigId& target, bool enabled);
+
+  // Query current HDR enablement for a resolved DisplayConfig target
+  // (version-dispatched). Keyed by target so save/restore paths can ask about
+  // the recorded display rather than the window's current monitor.
+  static bool IsHDREnabledForTarget(const DisplayConfigId& target);
 
   // Stored original mode for restoration.
   std::wstring original_device_name_;

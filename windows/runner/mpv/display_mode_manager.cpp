@@ -345,12 +345,16 @@ bool DisplayModeManager::IsHDREnabled(HWND window) {
   auto target_id = GetDisplayTargetId(device_name);
   if (!target_id) return false;
 
+  return IsHDREnabledForTarget(*target_id);
+}
+
+bool DisplayModeManager::IsHDREnabledForTarget(const DisplayConfigId& target) {
   if (IsWin11_24H2OrNewer()) {
     DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 info = {};
     info.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2);
     info.header.size = sizeof(info);
-    info.header.adapterId = target_id->adapter_id;
-    info.header.id = target_id->id;
+    info.header.adapterId = target.adapter_id;
+    info.header.id = target.id;
 
     if (DisplayConfigGetDeviceInfo(&info.header) == ERROR_SUCCESS) {
       return info.activeColorMode == DISPLAYCONFIG_ADVANCED_COLOR_MODE_HDR;
@@ -359,8 +363,8 @@ bool DisplayModeManager::IsHDREnabled(HWND window) {
     DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO info = {};
     info.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
     info.header.size = sizeof(info);
-    info.header.adapterId = target_id->adapter_id;
-    info.header.id = target_id->id;
+    info.header.adapterId = target.adapter_id;
+    info.header.id = target.id;
 
     if (DisplayConfigGetDeviceInfo(&info.header) == ERROR_SUCCESS) {
       bool hdr_supported = info.advancedColorSupported && !info.wideColorEnforced;
@@ -379,14 +383,29 @@ void DisplayModeManager::SaveOriginalHDRState(HWND window) {
 bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
   std::lock_guard<std::recursive_mutex> transaction_lock(g_display_override_mutex);
 
-  const std::wstring device_name = GetMonitorDeviceName(window);
+  // While an HDR change is live, a repeat toggle stays tied to the recorded
+  // display so the persisted record and the toggled target always name the
+  // same display. When the window has verifiably moved to another monitor,
+  // hand off: restore the recorded display through the normal restore path
+  // (which retires its recovery record), then run this request as a fresh
+  // change on the current monitor. If that restore fails, refuse the new
+  // operation so the retained record still names the only diverged display.
+  // If the current monitor cannot be determined, stay pinned to the recorded
+  // display rather than retarget.
+  const std::wstring current_device_name = GetMonitorDeviceName(window);
+  if (hdr_changed_ && !current_device_name.empty() && current_device_name != original_hdr_device_name_ &&
+      !RestoreOriginalHDRState(window)) {
+    return false;
+  }
+
+  const bool hdr_was_changed = hdr_changed_;
+  const std::wstring device_name = hdr_was_changed ? original_hdr_device_name_ : current_device_name;
   if (device_name.empty()) return false;
 
   const auto target_id = GetDisplayTargetId(device_name);
   if (!target_id) return false;
 
-  const bool hdr_was_changed = hdr_changed_;
-  if (!hdr_changed_) SaveOriginalHDRState(window);
+  if (!hdr_was_changed) SaveOriginalHDRState(window);
   if (original_hdr_device_name_.empty() ||
       !PrepareHDRRecoveryAtRegistry(original_hdr_device_name_, original_hdr_enabled_)) {
     return false;
@@ -424,7 +443,7 @@ bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
   return true;
 }
 
-bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
+bool DisplayModeManager::RestoreOriginalHDRState(HWND) {
   std::lock_guard<std::recursive_mutex> transaction_lock(g_display_override_mutex);
   if (!hdr_changed_) return false;
   if (original_hdr_device_name_.empty()) {
@@ -440,10 +459,12 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
     return false;
   }
 
-  if (IsHDREnabled(window) != original_hdr_enabled_) {
-    // The original target was resolved above even when the currently observed
-    // HDR state already matches, so a disconnected target cannot be mistaken
-    // for a successful restore.
+  if (IsHDREnabledForTarget(*target_id) != original_hdr_enabled_) {
+    // The gate queries the recorded target, not the window's current monitor,
+    // so moving the window to another display after the HDR change cannot
+    // skip the restore. The target was resolved above even when the observed
+    // state already matches, so a disconnected target cannot be mistaken for
+    // a successful restore.
 
     // Save DEVMODEW before restore toggle.
     DEVMODEW pre_toggle_dm = {};
