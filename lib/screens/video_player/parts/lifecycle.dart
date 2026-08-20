@@ -50,7 +50,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       ' pipTransitionInFlight=$_androidAutoPipTransitionInFlight'
       ' hiddenForBackground=$_hiddenForBackground'
       ' playerSuspendedForTvBackground=${_tvSuspend.suspended}'
-      ' mediaControlsSuspendedForTvBackground=$_mediaControls.suspendedForTvBackground'
+      ' mediaControlsSuspendedForTvBackground=${_mediaControls.suspendedForTvBackground}'
       ' backend=$_playerBackendLabel',
     );
   }
