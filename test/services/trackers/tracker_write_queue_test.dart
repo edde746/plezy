@@ -236,6 +236,43 @@ void main() {
     expect((await queue.load('user-b')).single.ctx.ratingKey, 'second');
   });
 
+  test('disconnect purge drops one service rows so nothing replays, leaving other services queued', () async {
+    final queue = TrackerWriteQueue();
+    final traktCtx = _episode(ratingKey: 'trakt-episode', external: const ExternalIds(tvdb: 100));
+    final traktKey = trackerItemCoalesceKey(
+      TrackerService.trakt,
+      traktCtx,
+      trackerExternalRowIdentity(traktCtx.external),
+    )!;
+    final malCtx = _episode(ratingKey: 'mal-episode', external: const ExternalIds(tvdb: 200));
+    await queue.enqueue('user-a', _item(ctx: traktCtx, coalesceKey: traktKey));
+    await queue.enqueue(
+      'user-a',
+      _item(
+        ctx: malCtx,
+        coalesceKey: trackerSeriesCoalesceKey(TrackerService.mal, 42),
+        service: TrackerService.mal,
+        progressClaim: 5,
+      ),
+    );
+
+    await queue.removeService('user-a', TrackerService.trakt);
+
+    final survivors = await queue.load('user-a');
+    expect(survivors.map((item) => item.service), [TrackerService.mal], reason: 'other services keep their rows');
+
+    final sent = <TrackerWriteQueueItem>[];
+    await queue.flush(
+      'user-a',
+      send: (item) async {
+        sent.add(item);
+        return TrackerWriteDisposition.done;
+      },
+    );
+
+    expect(sent.map((item) => item.service), [TrackerService.mal], reason: 'the purged service must not dispatch');
+  });
+
   test('legacy Trakt rows migrate once with their intent and episode metadata intact', () async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     const user = 'legacy-user';

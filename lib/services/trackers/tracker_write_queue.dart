@@ -264,6 +264,24 @@ class TrackerWriteQueue {
     });
   }
 
+  /// Drop every queued row for [service] under [userUuid] — persisted and
+  /// in-memory fallback alike.
+  ///
+  /// Called on explicit disconnect: items carry no tracker-account identity,
+  /// so a row queued under the departing account would otherwise replay
+  /// through whichever account connects to this service next.
+  Future<void> removeService(String userUuid, TrackerService service) async {
+    _inMemoryFallbackByUser[userUuid]?.removeWhere((item) => item.service == service);
+    await _locked(() async {
+      final items = await load(userUuid);
+      final before = items.length;
+      items.removeWhere((item) => item.service == service);
+      if (items.length == before) return;
+      appLogger.i('Tracker write queue: dropped ${before - items.length} ${service.name} rows on disconnect');
+      await _save(userUuid, items);
+    });
+  }
+
   /// Whether a completed write that applied [appliedProgress] covers [item].
   static bool covers({required int? appliedProgress, required TrackerWriteQueueItem item}) =>
       coversClaim(appliedProgress: appliedProgress, claim: item.progressClaim);

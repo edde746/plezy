@@ -23,7 +23,9 @@ import 'loading_indicator_box.dart';
 /// On wide viewports (TV, desktop, phone landscape) the QR pane sits beside
 /// the instructions so the dialog stays short enough for TV screens — tvOS
 /// renders at 540 logical pixels of height, where the stacked layout clips.
-/// Dismissing calls [onCancel] so the provider can abort the poll.
+/// Every dismissal — the Cancel button, a system back, or a programmatic pop —
+/// routes through one [PopScope], which calls [onCancel] exactly once per pop
+/// so the provider can abort the poll.
 class PendingAuthDialog extends StatelessWidget {
   final String title;
   final String body;
@@ -40,6 +42,10 @@ class PendingAuthDialog extends StatelessWidget {
   /// [url]; the scheme is stripped for display either way.
   final String? displayUrl;
   final String openLabel;
+
+  /// Invoked when the dialog's route pops, whatever popped it. Callers that
+  /// pop the dialog themselves after the flow resolves must make this a no-op
+  /// for that pop (see `launchTrackerConnect`).
   final VoidCallback onCancel;
 
   const PendingAuthDialog({
@@ -126,80 +132,86 @@ class PendingAuthDialog extends StatelessWidget {
       ],
     );
 
-    return AlertDialog(
-      scrollable: true,
-      title: Text(title),
-      // Wide: the QR fills the left pane and everything textual lives in the
-      // right column — body at the QR's top edge, button/spinner at its bottom
-      // edge, the URL above the button, and any service extras (activation
-      // code) centered in the remaining space. Both flows fill their column,
-      // so neither pane floats in empty space.
-      content: wide
-          ? IntrinsicHeight(
-              child: Row(
+    return PopScope(
+      // The route still pops normally; this only observes the pop, so the
+      // Cancel button below and a system back share one cancel invocation.
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) onCancel();
+      },
+      child: AlertDialog(
+        scrollable: true,
+        title: Text(title),
+        // Wide: the QR fills the left pane and everything textual lives in the
+        // right column — body at the QR's top edge, button/spinner at its bottom
+        // edge, the URL above the button, and any service extras (activation
+        // code) centered in the remaining space. Both flows fill their column,
+        // so neither pane floats in empty space.
+        content: wide
+            ? IntrinsicHeight(
+                child: Row(
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .stretch,
+                  children: [
+                    Column(mainAxisSize: .min, mainAxisAlignment: .center, children: [qr]),
+                    const SizedBox(width: 28),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 320),
+                      child: Column(
+                        crossAxisAlignment: .stretch,
+                        children: [
+                          bodyText,
+                          Expanded(
+                            child: children.isEmpty
+                                ? const SizedBox.shrink()
+                                : Column(mainAxisAlignment: .center, children: children),
+                          ),
+                          Align(
+                            alignment: .centerLeft,
+                            child: urlChip(textAlign: TextAlign.start),
+                          ),
+                          const SizedBox(height: 12),
+                          if (openButton != null) ...[openButton, const SizedBox(height: 16)],
+                          waitingRow,
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
                 mainAxisSize: .min,
                 crossAxisAlignment: .stretch,
                 children: [
-                  Column(mainAxisSize: .min, mainAxisAlignment: .center, children: [qr]),
-                  const SizedBox(width: 28),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 320),
+                  bodyText,
+                  const SizedBox(height: 16),
+                  ...children,
+                  Center(
                     child: Column(
-                      crossAxisAlignment: .stretch,
+                      mainAxisSize: .min,
                       children: [
-                        bodyText,
-                        Expanded(
-                          child: children.isEmpty
-                              ? const SizedBox.shrink()
-                              : Column(mainAxisAlignment: .center, children: children),
+                        qr,
+                        const SizedBox(height: 8),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: qrSize + 32),
+                          child: urlChip(textAlign: TextAlign.center),
                         ),
-                        Align(
-                          alignment: .centerLeft,
-                          child: urlChip(textAlign: TextAlign.start),
-                        ),
-                        const SizedBox(height: 12),
-                        if (openButton != null) ...[openButton, const SizedBox(height: 16)],
-                        waitingRow,
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  if (openButton != null) ...[openButton, const SizedBox(height: 16)],
+                  waitingRow,
                 ],
               ),
-            )
-          : Column(
-              mainAxisSize: .min,
-              crossAxisAlignment: .stretch,
-              children: [
-                bodyText,
-                const SizedBox(height: 16),
-                ...children,
-                Center(
-                  child: Column(
-                    mainAxisSize: .min,
-                    children: [
-                      qr,
-                      const SizedBox(height: 8),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: qrSize + 32),
-                        child: urlChip(textAlign: TextAlign.center),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (openButton != null) ...[openButton, const SizedBox(height: 16)],
-                waitingRow,
-              ],
-            ),
-      actions: [
-        DialogActionButton(
-          onPressed: () {
-            onCancel();
-            Navigator.of(context).pop();
-          },
-          label: t.common.cancel,
-        ),
-      ],
+        actions: [
+          DialogActionButton(
+            // The PopScope above invokes [onCancel]; calling it here too would
+            // cancel twice.
+            onPressed: () => Navigator.of(context).pop(),
+            label: t.common.cancel,
+          ),
+        ],
+      ),
     );
   }
 }

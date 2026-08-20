@@ -66,6 +66,13 @@ class KeyedFutureCache<K, T> {
     return future;
   }
 
+  /// Evict [key]'s memoized load so the next [run] fetches fresh. In-flight
+  /// callers keep their future; only the memo is dropped (the identical-guard
+  /// in [run] keeps a detached failure from evicting a newer entry).
+  void remove(K key) {
+    _entries.remove(key);
+  }
+
   void clear() {
     _entries.clear();
   }

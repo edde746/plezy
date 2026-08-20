@@ -45,11 +45,6 @@ class MdblistTracker extends TrackerBase
   /// MDBList counts a `/scrobble/stop` as a watch from this progress upwards.
   static const double _scrobbleWatchedPercent = 80.0;
 
-  /// The bound client is replaced on every session rebind, so its identity is
-  /// the account identity.
-  @override
-  Object? get scrobbleBinding => client;
-
   @override
   bool get canReportPlayback => isEnabledWithSession;
 

@@ -341,6 +341,11 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
+  /// Explicit-disconnect teardown. Every caller is one of the `disconnectX`
+  /// methods — profile rebinds go through [onActiveProfileChanged] instead —
+  /// so this is also where the service's queued writes are purged: they were
+  /// created under the account being dropped and must never replay through
+  /// whichever account connects to this service next.
   Future<void> _clearAndRebind(_TrackerSlot slot) async {
     _invalidateConnect(slot.service);
     final userUuid = _activeUserUuid;
@@ -351,6 +356,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     slot.session = null;
     _rebind(slot);
     safeNotifyListeners();
+    await TrackerCoordinator.instance.purgeWriteQueueForService(slot.service);
     await slot.store.clear(userUuid);
   }
 

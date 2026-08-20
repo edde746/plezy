@@ -29,6 +29,12 @@ abstract class Tracker {
   /// 5.6 MB mapping download entirely.
   bool get needsFribb;
 
+  /// Identity of the account binding this tracker currently writes through,
+  /// compared only by [identical]. Deferred work captures it and re-checks
+  /// before writing or queueing, so a rebind — profile switch, disconnect,
+  /// reconnect — cannot redirect a write to whichever account replaced it.
+  Object? get accountBinding;
+
   Future<void> initialize();
   Future<void> setEnabled(bool enabled);
 
@@ -120,12 +126,6 @@ class ScrobblePolicy {
 /// Manual, container, offline-replay and external-player marks still go
 /// through [Tracker.markWatched].
 abstract interface class RealtimeScrobbleTracker implements Tracker {
-  /// Identity of the account binding this tracker currently writes through,
-  /// compared only by [identical]. Deferred work captures it and re-checks
-  /// before writing, so a rebind — profile switch, disconnect, reconnect —
-  /// cannot redirect a write to whichever account replaced it.
-  Object? get scrobbleBinding;
-
   /// True when a playback lifecycle report may go out right now.
   bool get canReportPlayback;
 
@@ -198,6 +198,11 @@ mixin ClientBackedTracker<TClient extends DisposableTrackerClient> on TrackerBas
 
   @override
   bool get hasActiveClient => _client != null;
+
+  /// The bound client is replaced on every session rebind (including
+  /// disconnect, which binds null), so its identity is the account identity.
+  @override
+  Object? get accountBinding => client;
 
   void rebindTrackerClient(
     TrackerSession? session, {

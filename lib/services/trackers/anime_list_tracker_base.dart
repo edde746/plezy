@@ -84,6 +84,11 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
       rewatching: rewatching,
       rewatchCount: rewatchCount,
     );
+    // The write changed the very fields the snapshot feeds back into the next
+    // write (status, rewatching, rewatch count), so keeping it would replay
+    // this decision on stale state — e.g. bumping the rewatch count again. A
+    // failed write throws above this line and keeps the snapshot for a retry.
+    _listSnapshotLoads.remove(id);
   }
 
   @override
@@ -99,6 +104,11 @@ mixin AnimeListTrackerBase<TClient extends DisposableTrackerClient> on TrackerBa
     final id = animeId(ctx.anime);
     if (activeClient == null || id == null) return;
     await deleteAnimeEntry(activeClient, id);
+    // The entry is gone; the memoized snapshot still describes it. Same
+    // keep-on-failure contract as [markWatched]. Ratings skip this: the
+    // snapshot carries no rating field, so [setAnimeRating] changes nothing
+    // the cache mirrors.
+    _listSnapshotLoads.remove(id);
   }
 
   @override
