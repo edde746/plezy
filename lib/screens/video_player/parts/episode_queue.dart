@@ -85,7 +85,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     try {
       final adjacentEpisodes = _offlineLibraryMode
           ? _loadAdjacentEpisodesOffline(targetMetadata)
-          : await _episodeNavigation.loadAdjacentEpisodes(
+          : await _episode.navigation.loadAdjacentEpisodes(
               context: context,
               metadata: targetMetadata,
               // The part actually being played, so the queue can skip sibling
@@ -144,9 +144,9 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
       return;
     }
     _setPlayerState(() {
-      _nextEpisode = adjacentEpisodes.next;
-      _previousEpisode = adjacentEpisodes.previous;
-      _nextEpisodeStatus = adjacentEpisodes.nextStatus;
+      _episode.next = adjacentEpisodes.next;
+      _episode.previous = adjacentEpisodes.previous;
+      _episode.nextStatus = adjacentEpisodes.nextStatus;
     });
     _primeNextEpisodePlaybackMetadata(adjacentEpisodes.next);
   }
@@ -166,10 +166,10 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   /// error handling, so a failed prime costs nothing.
   void _primeNextEpisodePlaybackMetadata(MediaItem? next) {
     if (next == null || _offlineLibraryMode || !mounted) return;
-    if (_primedNextEpisodeGlobalKey == next.globalKey) return;
+    if (_episode.primedNextGlobalKey == next.globalKey) return;
     final client = context.tryGetMediaClientForServer(serverIdOrNull(next.serverId));
     if (client == null) return;
-    _primedNextEpisodeGlobalKey = next.globalKey;
+    _episode.primedNextGlobalKey = next.globalKey;
     unawaited(() async {
       try {
         await client.fetchItem(next.id);

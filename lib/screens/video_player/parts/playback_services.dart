@@ -81,7 +81,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         lastObservedPositionMs = null;
         final durMs = currentPlayer.state.duration.inMilliseconds;
         final posMs = currentPlayer.state.position.inMilliseconds;
-        if (durMs <= 0 || posMs < durMs - _completionLatch.rearmWindowMs) {
+        if (durMs <= 0 || posMs < durMs - _episode.completionLatch.rearmWindowMs) {
           _rearmCompletionLatch();
         }
       }
@@ -168,11 +168,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       _eofRecovery.onPositionAdvanced(position.inMilliseconds);
 
       final duration = activePlayer.state.duration;
-      _completionLatch.classifyPosition(
+      _episode.completionLatch.classifyPosition(
         positionMs: position.inMilliseconds,
         durationMs: duration.inMilliseconds,
-        promptVisible: _showPlayNextDialog,
-        countdownActive: _autoPlayTimer?.isActive == true,
+        promptVisible: _episode.showPlayNextDialog,
+        countdownActive: _episode.autoPlayTimer?.isActive == true,
       );
     });
   }
@@ -470,7 +470,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         }
       },
       onNext: () {
-        if (_nextEpisode != null) unawaited(_playNext());
+        if (_episode.next != null) unawaited(_playNext());
       },
       onPrevious: () => unawaited(_restartOrPlayPrevious()),
       onStop: () => unawaited(_handleBackButton()),

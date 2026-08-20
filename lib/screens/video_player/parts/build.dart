@@ -256,7 +256,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     } else {
                       // _playNext no-ops while a navigation is in flight; matching that here
                       // keeps the control from looking live while it does nothing.
-                      onNext = (_nextEpisode != null && !_isLoadingNext && authority.canNavigateMediaItems)
+                      onNext = (_episode.next != null && !_episode.isLoadingNext && authority.canNavigateMediaItems)
                           ? _playNext
                           : null;
                     }
@@ -265,7 +265,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     if (widget.isLive) {
                       onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
                     } else {
-                      final canRestartOrPrevious = _currentMetadata.isEpisode || _previousEpisode != null;
+                      final canRestartOrPrevious = _currentMetadata.isEpisode || _episode.previous != null;
                       onPrevious = (canRestartOrPrevious && authority.canNavigateMediaItems)
                           ? _restartOrPlayPrevious
                           : null;
@@ -320,7 +320,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         canControl: authority.canControlPlayback,
                         canNavigateMediaItems: authority.canNavigateMediaItems,
                         hasFirstFrame: _firstFrame.uiReady,
-                        playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
+                        playNextFocusNode: _episode.showPlayNextDialog ? _playNextConfirmFocusNode : null,
                         chromeController: _chromeController,
                         shaderService: _shaderService,
                         // ignore: no-empty-block - state update triggers rebuild to reflect shader change
@@ -347,9 +347,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
               ),
               // Netflix-style auto-play overlay (hidden in PiP mode)
               VideoPlayerPlayNextOverlay(
-                visible: _showPlayNextDialog,
-                nextEpisode: _nextEpisode,
-                autoPlayCountdown: _autoPlayCountdown,
+                visible: _episode.showPlayNextDialog,
+                nextEpisode: _episode.next,
+                autoPlayCountdown: _episode.autoPlayCountdown,
                 cancelFocusNode: _playNextCancelFocusNode,
                 confirmFocusNode: _playNextConfirmFocusNode,
                 chromeController: _chromeController,

@@ -495,8 +495,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         _currentMetadata = metadata;
         VideoPlayerScreenState._activeRouteGuard.update(this, targetLaunchIdentity);
         _unfocusPlayNextPrompt();
-        _showPlayNextDialog = false;
-        _autoPlayTimer?.cancel();
+        _episode.showPlayNextDialog = false;
+        _episode.autoPlayTimer?.cancel();
         _firstFrame.resetUiForOpen();
 
         // Detach before pausing so the reload's internal pause can't broadcast
@@ -638,7 +638,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             return isCurrentReload();
           },
           afterMediaOpened: (_, _, _) async {
-            _completionLatch.reset();
+            _episode.completionLatch.reset();
             if (isItemChange) {
               // Same-item reloads (including the spurious-EOF recovery itself
               // and quality switches) keep the spent budget — that is the
@@ -697,12 +697,12 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         }
 
         _setPlayerState(() {
-          _nextEpisode = null;
-          _previousEpisode = null;
-          _nextEpisodeStatus = QueueNavigationStatus.failed;
+          _episode.next = null;
+          _episode.previous = null;
+          _episode.nextStatus = QueueNavigationStatus.failed;
           // A successful swap restores the transient-retry budget for the
           // next transition (#1867).
-          _playNextTransientRetryCount = 0;
+          _episode.playNextTransientRetryCount = 0;
         });
 
         try {
@@ -724,8 +724,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         // Next prompt when an EOF-driven advance merely hit a transient
         // server blip (#1867). Non-PlaybackException throws stay null —
         // they never qualify for a retry prompt.
-        _lastMediaReloadFailureReason = e is PlaybackException ? e.reason : null;
-        _completionLatch.reset();
+        _episode.lastReloadFailureReason = e is PlaybackException ? e.reason : null;
+        _episode.completionLatch.reset();
         if (!didOpenReplacement) {
           // Nothing was opened: the previous session is still committed, so
           // only the eagerly-set identity needs restoring before resuming.
@@ -759,8 +759,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         // rolled-back identity (_clearEpisodeLoadingFlags skips the rebuild
         // when no loading flags are set).
         _setPlayerState(() {
-          _isLoadingNext = false;
-          _isLoadingPrevious = false;
+          _episode.isLoadingNext = false;
+          _episode.isLoadingPrevious = false;
         });
         if (isItemChange) _showChromeForSwappedItem();
         appLogger.e('Failed to reload media in-place during $reason', error: e);

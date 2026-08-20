@@ -85,6 +85,7 @@ import '../utils/route_visibility.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/android_exit_diagnostics.dart';
 import 'video_player/completion_latch.dart';
+import 'video_player/episode_session_state.dart';
 import 'video_player/first_frame_gate.dart';
 import 'video_player/frame_rate_matcher.dart';
 import 'video_player/companion_remote_binding.dart';
@@ -432,17 +433,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void>? _playerInitializationOperation;
   int _playerInitializationGeneration = 0;
   late MediaItem _currentMetadata;
-  MediaItem? _nextEpisode;
-  MediaItem? _previousEpisode;
-  // Retryable sentinel until the fire-and-forget initial adjacency load
-  // commits found, boundary, or unavailable.
-  QueueNavigationStatus _nextEpisodeStatus = QueueNavigationStatus.failed;
-  // globalKey of the adjacent episode whose playback metadata row was last
-  // prefetched into the API cache — see _primeNextEpisodePlaybackMetadata.
-  String? _primedNextEpisodeGlobalKey;
-  bool _isResolvingCompletionAdjacency = false;
-  bool _isLoadingNext = false;
-  bool _isLoadingPrevious = false;
+  final EpisodeSessionState _episode = EpisodeSessionState();
 
   // In-flight media-source transition. At most one can run at a time: reloads
   // and channel switches are mutually exclusive.
@@ -456,7 +447,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// toasted about — the heartbeat retry loop must not re-toast every 2s.
   String? _wtSwitchToastShownForKey;
 
-  bool _showPlayNextDialog = false;
   bool _isPhone = false;
   late int _effectiveSelectedMediaIndex;
 
@@ -587,22 +577,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     bounds: _liveSeekBounds,
     onChanged: _onLiveSeekTargetChanged,
   );
-
-  Timer? _autoPlayTimer;
-  int _autoPlayCountdown = 5;
-
-  // Transient episode-transition failure retry (#1867). A failed in-place
-  // reload records the classified reason here so _playNext can distinguish
-  // "server momentarily unreachable" (re-present the Play Next prompt,
-  // optionally with an auto-retry countdown) from terminal failures.
-  // _navigateToEpisode clears the field before each attempt; the counter
-  // resets when a reload succeeds.
-  PlaybackFailureReason? _lastMediaReloadFailureReason;
-  int _playNextTransientRetryCount = 0;
-
-  // End-of-video Play Next latch. Completion comes from the player EOF signal;
-  // position ticks only re-arm once playback is more than 2s from the end.
-  final CompletionLatch _completionLatch = CompletionLatch(rearmWindowMs: 2000);
 
   // Spurious-EOF recovery (#1520): a long pause can get the server-side
   // stream reaped or the idle socket killed; on resume the player drains its
@@ -747,8 +721,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int _pinchZoomActivationUpdateCount = 0;
   bool _isPinchZooming = false;
   bool _pinchZoomChanged = false;
-  final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
-
   WatchTogetherProvider? _watchTogetherProvider;
 
   late final CompanionRemoteBinding _companionRemote = CompanionRemoteBinding(
@@ -756,7 +728,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     isMounted: () => mounted,
     canControlPlayback: () => _canControlPlayback(),
     volumeController: () => _volumeController,
-    hasNextEpisode: () => _nextEpisode != null,
+    hasNextEpisode: () => _episode.next != null,
     onStop: () => _handleBackButton(),
     onPlayNext: () => _playNext(),
     onPlayPrevious: () => _restartOrPlayPrevious(),
@@ -919,7 +891,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     _playerNavigationCoordinator = PlayerNavigationCoordinator(
       chromeController: _chromeController,
-      isPromptOpen: () => _showPlayNextDialog || _showStillWatchingPrompt,
+      isPromptOpen: () => _episode.showPlayNextDialog || _showStillWatchingPrompt,
       dismissPrompt: _dismissPlaybackPromptForBack,
       isChromePresented: () =>
           _isPlayerInitialized && player != null && _firstFrame.uiReady.value && _chromeController.controlsPresented,
@@ -1800,7 +1772,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton({bool navigateHome = false}) async {
-    if (!navigateHome && (_showPlayNextDialog || _showStillWatchingPrompt)) {
+    if (!navigateHome && (_episode.showPlayNextDialog || _showStillWatchingPrompt)) {
       _dismissPlaybackPromptForBack();
       return;
     }
@@ -1957,7 +1929,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _sleepTimerSubscription?.cancel();
     _trackManager?.dispose();
 
-    _autoPlayTimer?.cancel();
+    _episode.dispose();
     _tvBackgroundPlayerSuspendTimer?.cancel();
     _http503Watchdog.disarm();
 

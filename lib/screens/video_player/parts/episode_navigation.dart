@@ -2,10 +2,10 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   void _clearEpisodeLoadingFlags() {
-    if (!_isLoadingNext && !_isLoadingPrevious) return;
+    if (!_episode.isLoadingNext && !_episode.isLoadingPrevious) return;
     _setPlayerState(() {
-      _isLoadingNext = false;
-      _isLoadingPrevious = false;
+      _episode.isLoadingNext = false;
+      _episode.isLoadingPrevious = false;
     });
   }
 
@@ -24,27 +24,27 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   Future<void> _playNext() async {
     if (!_canNavigateMediaItems()) return;
     if (!mounted) return;
-    if (_nextEpisode == null || _isLoadingNext) return;
+    if (_episode.next == null || _episode.isLoadingNext) return;
 
     // EOF-driven advances (prompt confirm, auto-play countdown, PiP) run with
     // the completion latch set; a mid-episode Next press does not. Captured
     // before the prompt state below is cleared — a transiently failed advance
     // from EOF re-presents the Play Next prompt instead of parking on the
     // finished episode's last frame (#1867).
-    final wasAtCompletion = _completionLatch.triggered;
+    final wasAtCompletion = _episode.completionLatch.triggered;
 
-    _autoPlayTimer?.cancel();
+    _episode.autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
     _dismissStillWatching();
 
-    _notifyWatchTogetherMediaChange(metadata: _nextEpisode);
+    _notifyWatchTogetherMediaChange(metadata: _episode.next);
 
     _setPlayerState(() {
-      _isLoadingNext = true;
-      _showPlayNextDialog = false;
+      _episode.isLoadingNext = true;
+      _episode.showPlayNextDialog = false;
     });
 
-    final outcome = await _navigateToEpisode(_nextEpisode!);
+    final outcome = await _navigateToEpisode(_episode.next!);
     if (outcome == MediaReloadOutcome.failed) {
       _presentPlayNextRetryPrompt(wasAtCompletion: wasAtCompletion);
     }
@@ -52,34 +52,34 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
   Future<void> _playPrevious() async {
     if (!_canNavigateMediaItems()) return;
-    if (_previousEpisode == null || _isLoadingPrevious) return;
+    if (_episode.previous == null || _episode.isLoadingPrevious) return;
 
-    _notifyWatchTogetherMediaChange(metadata: _previousEpisode);
+    _notifyWatchTogetherMediaChange(metadata: _episode.previous);
 
     _setPlayerState(() {
-      _isLoadingPrevious = true;
+      _episode.isLoadingPrevious = true;
     });
 
-    await _navigateToEpisode(_previousEpisode!);
+    await _navigateToEpisode(_episode.previous!);
   }
 
   Future<void> _restartOrPlayPrevious() async {
     if (!_canNavigateMediaItems()) return;
     final currentPlayer = player;
-    if (!mounted || currentPlayer == null || _isLoadingPrevious) return;
+    if (!mounted || currentPlayer == null || _episode.isLoadingPrevious) return;
 
-    if (!shouldRestartBeforePreviousItem(currentPlayer.state.position) && _previousEpisode != null) {
+    if (!shouldRestartBeforePreviousItem(currentPlayer.state.position) && _episode.previous != null) {
       await _playPrevious();
       return;
     }
 
-    _autoPlayTimer?.cancel();
+    _episode.autoPlayTimer?.cancel();
     _unfocusPlayNextPrompt();
     _dismissStillWatching();
 
     _setPlayerState(() {
-      _showPlayNextDialog = false;
-      _completionLatch.reset();
+      _episode.showPlayNextDialog = false;
+      _episode.completionLatch.reset();
     });
 
     final target = clampSeekPosition(currentPlayer, Duration.zero);
@@ -121,7 +121,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   /// superseded attempts. The screen-replacement fallback reports
   /// [MediaReloadOutcome.rejected]: no in-place reload ran.
   Future<MediaReloadOutcome> _navigateToEpisode(MediaItem episodeMetadata) async {
-    _lastMediaReloadFailureReason = null;
+    _episode.lastReloadFailureReason = null;
     final currentPlayer = player;
     if (currentPlayer == null) {
       if (mounted) unawaited(_replaceScreenWithPlayer(episodeMetadata));
