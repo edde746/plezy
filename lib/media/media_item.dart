@@ -504,6 +504,17 @@ sealed class MediaItem with _$MediaItem {
   /// Plex-only edition label. Jellyfin returns null.
   String? get editionTitle => null;
 
+  /// Plex marks unmatched home-video items ("Other Videos" libraries, agent
+  /// `tv.plex.agents.none`) as `type="movie"` with `subtype="clip"`. They keep
+  /// [MediaKind.movie] so movie-only actions (downloads, add-to, delete from
+  /// server, detail navigation) stay available, but they render like clips:
+  /// 16:9 cards showing the generated video-frame thumb instead of a cropped
+  /// 2:3 poster (#2036).
+  bool get _isPlexHomeVideo {
+    if (this case PlexMediaItem(subtype: 'clip', kind: MediaKind.movie)) return true;
+    return false;
+  }
+
   /// Returns the appropriate poster path based on episode poster mode.
   String? posterThumb({EpisodePosterMode mode = EpisodePosterMode.seriesPoster, bool mixedHubContext = false}) {
     if (kind == MediaKind.episode) {
@@ -524,13 +535,15 @@ sealed class MediaItem with _$MediaItem {
       }
     }
 
+    // Home videos and true clips identify by their generated 16:9 video-frame
+    // thumb; the movie branches below would prefer art that rarely exists.
+    if (kind == MediaKind.clip || _isPlexHomeVideo) return thumbPath ?? artPath;
+
     if (mixedHubContext &&
         mode == EpisodePosterMode.episodeThumbnail &&
         (kind == MediaKind.movie || kind == MediaKind.show)) {
       return artPath ?? thumbPath;
     }
-
-    if (kind == MediaKind.clip) return thumbPath ?? artPath;
 
     return thumbPath;
   }
@@ -551,7 +564,7 @@ sealed class MediaItem with _$MediaItem {
 
   /// True when the item should render in 16:9.
   bool usesWideAspectRatio(EpisodePosterMode mode, {bool mixedHubContext = false}) {
-    if (kind == MediaKind.clip) return true;
+    if (kind == MediaKind.clip || _isPlexHomeVideo) return true;
     if (kind == MediaKind.episode && mode == EpisodePosterMode.episodeThumbnail) {
       return true;
     }

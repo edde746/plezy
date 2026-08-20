@@ -1861,7 +1861,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         _selectedGrouping == browseGroupingArtists ||
         _selectedGrouping == browseGroupingAlbums ||
         _selectedGrouping == browseGroupingTracks;
-    final browseShape = isMusicGrouping ? CardShape.square : null;
+    // Clip libraries (MediaBrowser home videos, Plex "Other Videos") hold
+    // homogeneous 16:9 items, so the flat grid uses wide cells; poster cells
+    // would letterbox every card (#2036).
+    final isClipLibrary = widget.library.kind == MediaKind.clip;
+    final browseShape = isMusicGrouping
+        ? CardShape.square
+        : isClipLibrary
+        ? CardShape.wide
+        : null;
     // Full-bleed TV cards intentionally hide captions. Music artwork alone
     // is not a reliable identity, so artist/album/track grids always keep the
     // standard captioned card while preserving their circular/square artwork.

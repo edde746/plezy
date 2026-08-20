@@ -12,6 +12,7 @@ import 'package:plezy/media/media_library.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/plex_mappers.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 const _serverId = 'plex-machine-1';
@@ -389,6 +390,53 @@ void main() {
     });
   });
 
+  group('PlexMappers.mediaItem (Plex home video: type=movie subtype=clip)', () {
+    test('keeps the movie kind but renders wide with the video-frame thumb in every poster mode', () {
+      // Wire shape of an "Other Videos"/unmatched-agent library item (#2036).
+      final json = {
+        'ratingKey': '8964',
+        'type': 'movie',
+        'subtype': 'clip',
+        'guid': 'tv.plex.agents.none://8964',
+        'title': 'Holiday 2019',
+        'thumb': '/library/metadata/8964/thumb/1',
+      };
+
+      final item = _mediaItemFromJson(json, serverId: ServerId(_serverId));
+      // Movie kind is deliberate: downloads, add-to, delete-from-server, and
+      // detail navigation all gate on MediaKind.movie.
+      expect(item.kind, MediaKind.movie);
+      for (final mode in EpisodePosterMode.values) {
+        expect(item.usesWideAspectRatio(mode), isTrue, reason: mode.name);
+        expect(item.cardShape(mode), CardShape.wide, reason: mode.name);
+        expect(item.posterThumb(mode: mode), '/library/metadata/8964/thumb/1', reason: mode.name);
+      }
+    });
+
+    test('falls back to art when the generated thumb is missing', () {
+      final item = _mediaItemFromJson({
+        'ratingKey': '8506',
+        'type': 'movie',
+        'subtype': 'clip',
+        'art': '/library/metadata/8506/art/1',
+      }, serverId: ServerId(_serverId));
+
+      expect(item.posterThumb(), '/library/metadata/8506/art/1');
+    });
+
+    test('a movie without the clip subtype keeps the poster shape', () {
+      final item = _mediaItemFromJson({
+        'ratingKey': '1',
+        'type': 'movie',
+        'title': 'Matched',
+        'thumb': '/t',
+      }, serverId: ServerId(_serverId));
+
+      expect(item.usesWideAspectRatio(EpisodePosterMode.seriesPoster), isFalse);
+      expect(item.cardShape(EpisodePosterMode.seriesPoster), CardShape.poster);
+    });
+  });
+
   group('PlexMappers.mediaItem (show + season + episode)', () {
     test('show preserves leaf counts and child counts', () {
       final json = {
@@ -683,6 +731,21 @@ void main() {
       expect(lib.isShared, isFalse);
       expect(lib.serverId, _serverId);
       expect(lib.serverName, _serverName);
+    });
+
+    test('home-video section (type=movie subtype=clip) maps to the clip kind', () {
+      // `/media/providers` marks "Other Videos" sections this way; the clip
+      // kind gives them the same folder-first grouping and wide grid cells as
+      // MediaBrowser `homevideos` views (#2036).
+      final json = {
+        'key': '7',
+        'title': 'Home Videos',
+        'type': 'movie',
+        'subtype': 'clip',
+        'agent': 'tv.plex.agents.none',
+      };
+      final lib = _mediaLibraryFromJson(json, serverId: ServerId(_serverId));
+      expect(lib.kind, MediaKind.clip);
     });
 
     test('shared library is marked isShared', () {

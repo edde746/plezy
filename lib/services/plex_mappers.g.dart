@@ -45,6 +45,7 @@ PlexLibraryDto _$PlexLibraryDtoFromJson(Map<String, dynamic> json) =>
       key: readStringField(json, 'key') as String? ?? '',
       title: json['title'] as String? ?? '',
       type: json['type'] as String? ?? '',
+      subtype: json['subtype'] as String?,
       agent: json['agent'] as String?,
       scanner: json['scanner'] as String?,
       language: json['language'] as String?,

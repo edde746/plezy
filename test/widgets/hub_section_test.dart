@@ -135,6 +135,33 @@ void main() {
     expect(outerPadding.padding.resolve(TextDirection.ltr).bottom, 0);
   });
 
+  testWidgets('clip-only hub keeps 16:9 cards in a poster episode mode', (tester) async {
+    // Clips (home videos) are wide in every mode; only episode/mixed hubs
+    // should fold the poster preference back to 2:3 (#2036).
+    final item = testMediaItem(
+      id: 'home_video',
+      backend: MediaBackend.plex,
+      kind: MediaKind.clip,
+      title: 'Home Video',
+      thumbPath: '/video-frame.jpg',
+    );
+
+    await tester.pumpWidget(
+      _TestApp(
+        child: HubSection(
+          hub: _hubWith(item),
+          focusMemory: HubFocusMemory(),
+          icon: Symbols.movie_rounded,
+          episodePosterModeOverride: EpisodePosterMode.seriesPoster,
+        ),
+      ),
+    );
+
+    final poster = find.descendant(of: find.byType(MediaCard), matching: find.byType(ClipRRect)).first;
+    final posterSize = tester.getSize(poster);
+    expect(posterSize.width / posterSize.height, closeTo(16 / 9, 0.001));
+  });
+
   testWidgets('shows a provider result count in the existing hub header only when supplied', (tester) async {
     final item = testMediaItem(
       id: 'counted_item',

@@ -362,6 +362,11 @@ class PlexLibraryDto {
   final String title;
   @JsonKey(defaultValue: '')
   final String type;
+
+  /// `"clip"` on home-video ("Other Videos") sections. Only present in the
+  /// `/media/providers` listing; the legacy `/library/sections` fallback
+  /// omits it, degrading those sections to [MediaKind.movie].
+  final String? subtype;
   final String? agent;
   final String? scanner;
   final String? language;
@@ -383,6 +388,7 @@ class PlexLibraryDto {
     required this.key,
     required this.title,
     required this.type,
+    this.subtype,
     this.agent,
     this.scanner,
     this.language,
@@ -402,6 +408,7 @@ class PlexLibraryDto {
       key: key,
       title: title,
       type: type,
+      subtype: subtype,
       agent: agent,
       scanner: scanner,
       language: language,
@@ -1231,7 +1238,10 @@ class PlexMappers {
       id: dto.key,
       backend: MediaBackend.plex,
       title: dto.title,
-      kind: MediaKind.fromString(dto.type),
+      // Home-video sections come back as `type="movie" subtype="clip"`; map
+      // them to the clip kind MediaBrowser `homevideos` views already use so
+      // they share the folder-first grouping and wide grid cells (#2036).
+      kind: dto.type == 'movie' && dto.subtype == 'clip' ? MediaKind.clip : MediaKind.fromString(dto.type),
       language: dto.language,
       updatedAt: dto.updatedAt,
       createdAt: dto.createdAt,

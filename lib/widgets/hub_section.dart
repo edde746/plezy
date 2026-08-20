@@ -539,11 +539,13 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
                     final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-                    final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
-
-                    // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
+                    // 16:9 when every item is wide (episode thumbnails, clips,
+                    // home videos), or for mixed hubs in episode-thumbnail
+                    // mode. Clip-only hubs stay wide in the poster modes —
+                    // same gate as TvBrowseRail — since episodes already fold
+                    // the mode into usesWideAspectRatio (#2036).
                     final useWideLayout =
-                        episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+                        hasEpisodes && (!hasNonEpisodes || episodePosterMode == EpisodePosterMode.episodeThumbnail);
 
                     // Music hubs render square album/artist artwork
                     final isSquareHub =

@@ -7,6 +7,7 @@ import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_role.dart';
 import 'package:plezy/media/media_version.dart';
+import 'package:plezy/services/settings_service.dart';
 import '../test_helpers/media_items.dart';
 
 /// Backend-agnostic [MediaItem] tests. Existing coverage is split between
@@ -667,6 +668,34 @@ void main() {
       final emby = MediaItem(id: 'e1', backend: MediaBackend.emby, kind: MediaKind.movie) as JellyfinMediaItem;
 
       expect(emby.copyWith(title: 'renamed').backend, MediaBackend.emby);
+    });
+  });
+
+  group('MediaItem card shape for Plex home videos (#2036)', () {
+    const homeVideo = PlexMediaItem(
+      id: 'hv1',
+      kind: MediaKind.movie,
+      subtype: 'clip',
+      thumbPath: '/thumb',
+      artPath: '/art',
+    );
+
+    test('movie with subtype=clip renders wide in every episode poster mode', () {
+      for (final mode in EpisodePosterMode.values) {
+        expect(homeVideo.usesWideAspectRatio(mode), isTrue, reason: mode.name);
+        expect(homeVideo.cardShape(mode), CardShape.wide, reason: mode.name);
+      }
+    });
+
+    test('posterThumb prefers the generated video-frame thumb over art, even in mixed hubs', () {
+      expect(homeVideo.posterThumb(), '/thumb');
+      expect(homeVideo.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true), '/thumb');
+    });
+
+    test('other Plex subtypes do not widen a movie', () {
+      const trailer = PlexMediaItem(id: 't1', kind: MediaKind.movie, subtype: 'trailer', thumbPath: '/thumb');
+      expect(trailer.usesWideAspectRatio(EpisodePosterMode.seriesPoster), isFalse);
+      expect(trailer.cardShape(EpisodePosterMode.seriesPoster), CardShape.poster);
     });
   });
 
