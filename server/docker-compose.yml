@@ -23,7 +23,7 @@ services:
   bugs:
     # Update the source-revision tag, index digest, and platforms together using CONTRIBUTING.md.
     # Platforms: linux/amd64, linux/arm64
-    image: ghcr.io/edde746/bugs:sha-319e0eb@sha256:1e5a2d8ab80e703de4a8a8b15d858ce931609e2226bf1e6d04979c0ca52a3005
+    image: ghcr.io/edde746/bugs:sha-c996cf3@sha256:540d985c51f953704c8b97c6c568d0ffc107b91223dd5279136cce1c5522598b
     restart: unless-stopped
     mem_limit: 512m
     volumes:
