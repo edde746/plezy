@@ -59,7 +59,7 @@ import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
-import 'settings/settings_screen.dart';
+import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
@@ -643,7 +643,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+    Navigator.push(context, buildSettingsRoute());
   }
 
   /// Build the [FocusableAction] wrapping the user menu.

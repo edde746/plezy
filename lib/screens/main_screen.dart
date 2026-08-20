@@ -32,6 +32,7 @@ import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../navigation/profile_navigation_scope.dart';
+import '../navigation/settings_shortcut.dart';
 import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
@@ -1434,6 +1435,15 @@ class _MainScreenState extends State<MainScreen>
     return KeyEventResult.handled;
   }
 
+  /// Handle Cmd+, (macOS) / Ctrl+, (Windows/Linux) to open settings (#1909).
+  /// Only sees the chord while this route has focus; [SettingsShortcut] above
+  /// the profile navigator covers pushed content routes.
+  KeyEventResult _handleSettingsShortcut(KeyEvent event) {
+    if (!isSettingsShortcut(event)) return KeyEventResult.ignored;
+    _openSettings();
+    return KeyEventResult.handled;
+  }
+
   @override
   void didPush() {
     // Called when this route has been pushed (initial navigation)
@@ -1595,7 +1605,7 @@ class _MainScreenState extends State<MainScreen>
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+    Navigator.push(context, buildSettingsRoute());
   }
 
   void _handleLibrariesScreenSelected(String libraryGlobalKey) {
@@ -1794,6 +1804,8 @@ class _MainScreenState extends State<MainScreen>
                 if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
                 final searchResult = _handleSearchShortcut(event);
                 if (searchResult == KeyEventResult.handled) return searchResult;
+                final settingsResult = _handleSettingsShortcut(event);
+                if (settingsResult == KeyEventResult.handled) return settingsResult;
                 return _handleBackKey(event);
               },
               child: TweenAnimationBuilder<double>(
