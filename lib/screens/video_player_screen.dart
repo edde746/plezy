@@ -2119,12 +2119,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _handleControlsTransport(TransportCommand command) async {
     final currentPlayer = player;
     if (currentPlayer == null) return;
-    await switch (command) {
-      TransportCommand.play => _playWithPlaybackIntent(currentPlayer),
-      TransportCommand.pause => _pauseWithPlaybackIntent(currentPlayer),
-      TransportCommand.toggle => _playOrPauseWithPlaybackIntent(currentPlayer),
-    };
-    _announceTransportCommand(willPlay: _playbackIntentShouldPlay);
+    try {
+      await switch (command) {
+        TransportCommand.play => _playWithPlaybackIntent(currentPlayer),
+        TransportCommand.pause => _pauseWithPlaybackIntent(currentPlayer),
+        TransportCommand.toggle => _playOrPauseWithPlaybackIntent(currentPlayer),
+      };
+      _announceTransportCommand(willPlay: _playbackIntentShouldPlay);
+    } catch (e, st) {
+      // Same tolerance as _remoteTransport above: a transport tap races
+      // player teardown (NOT_INITIALIZED) and mpv's event queue
+      // (SET_PROPERTY_FAILED), and this path is invoked unawaited — an
+      // uncaught PlatformException here was a recurring production crash.
+      appLogger.w('controls play/pause failed', error: e, stackTrace: st);
+    }
   }
 
   String? _lastLogError;
