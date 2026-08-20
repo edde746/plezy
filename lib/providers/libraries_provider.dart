@@ -179,11 +179,22 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     try {
       final result = await _aggregationService!.getMediaLibrariesFromAllServers(serverIds: ids);
       if (isDisposed) return;
+      // A pass in which zero servers succeeded is never authoritative: keep
+      // the current list and leave every id un-loaded so the next status
+      // emission retries the whole delta.
+      final succeeded = result.succeededServerIds;
+      if (succeeded.isEmpty) {
+        appLogger.w('LibrariesProvider: delta load failed on all of $ids; keeping previous libraries');
+        return;
+      }
       final fresh = result.libraries;
 
+      // Replace only the entries of servers that actually succeeded. A failed
+      // server keeps its retained libraries and stays out of _loadedServerIds,
+      // so it is refetched instead of wiped.
       final merged = [
         for (final lib in _libraries)
-          if (!ids.contains(lib.serverId)) lib,
+          if (!succeeded.contains(lib.serverId)) lib,
         ...fresh,
       ];
       var storage = _storageService;
@@ -195,7 +206,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       _libraries = _applyLibraryOrder(merged, storage.getLibraryOrder());
       // Union *succeeded* ids only, so a server whose fetch failed is retried
       // on the next status emission instead of being cached as loaded.
-      _loadedServerIds = {..._loadedServerIds, ...result.succeededServerIds};
+      _loadedServerIds = {..._loadedServerIds, ...succeeded};
 
       appLogger.i('LibrariesProvider: merged ${fresh.length} libraries from $ids');
       safeNotifyListeners();
@@ -262,9 +273,29 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
         _storageService = storage;
       }
       final savedOrder = storage.getLibraryOrder();
-      final orderedLibraries = _applyLibraryOrder(result.libraries, savedOrder);
 
-      _libraries = orderedLibraries;
+      // Partial-failure rule: a pass is authoritative only for the servers
+      // that actually responded. On an in-place refresh where some servers
+      // failed or were aborted mid-request, mirror _loadDelta's merge — keep
+      // the prior entries of the unreachable servers and replace only the
+      // succeeded servers' entries (including an authoritative empty) —
+      // instead of replacing wholesale, which would blank a server that
+      // merely timed out. Servers absent from the pass entirely (removed
+      // servers) still drop, and _loadedServerIds below excludes the kept
+      // ones so they are refetched rather than cached as loaded.
+      var libraries = result.libraries;
+      if (reloadInPlace) {
+        final unreachable = {...result.failedServerIds, ...result.cancelledServerIds};
+        if (unreachable.isNotEmpty) {
+          libraries = [
+            for (final lib in _libraries)
+              if (unreachable.contains(lib.serverId)) lib,
+            ...result.libraries,
+          ];
+        }
+      }
+
+      _libraries = _applyLibraryOrder(libraries, savedOrder);
       // Track which servers actually responded so [syncToOnlineServers] can tell
       // a genuinely new server from one already covered. Keyed on fetch success
       // (not on which servers returned libraries) so a zero-library server still

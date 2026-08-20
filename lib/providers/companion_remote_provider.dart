@@ -766,14 +766,20 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   /// guards live here so a candidate that lost ownership while joining is
   /// disposed rather than promoted, in exactly one place. Returns true only
   /// when the candidate was promoted.
+  ///
+  /// [isReconnectAttempt] carries the attempt's own intent: a failed reconnect
+  /// reschedules from this captured flag (plus the generation guard) rather
+  /// than from `_session.status`, which the candidate's mirrored status/error
+  /// emissions can overwrite while the join is in flight.
   Future<bool> _runRemoteConnect({
     required int generation,
     required Future<void> Function(CompanionRemotePeerService peer) join,
     required void Function(CompanionRemotePeerService peer) onConnected,
     required String failureLog,
-    required void Function(Object error) onFailure,
+    void Function(Object error)? onFailure,
     bool seedConnectingSession = false,
     bool rethrowOnFailure = false,
+    bool isReconnectAttempt = false,
   }) async {
     final candidate = _peerServiceFactory();
     _pendingRemotePeer = candidate;
@@ -809,7 +815,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       _cleanupSubscriptions();
       await _disposePeer(candidate);
       appLogger.e(failureLog, error: error, stackTrace: stackTrace);
-      onFailure(error);
+      onFailure?.call(error);
+      if (isReconnectAttempt && generation == _remoteGeneration) {
+        _scheduleReconnect(generation);
+      }
       if (rethrowOnFailure) rethrow;
       return false;
     }
@@ -1085,11 +1094,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         _reconnectAttempts = 0;
       },
       failureLog: 'CompanionRemote: Reconnect failed',
-      onFailure: (_) {
-        if (generation == _remoteGeneration && _session?.status == RemoteSessionStatus.reconnecting) {
-          _scheduleReconnect(generation);
-        }
-      },
+      // Reschedule from the attempt's own intent, not from `_session.status`:
+      // the candidate's status/error emissions overwrite `reconnecting` while
+      // the join is in flight, which used to end the cycle after one failure.
+      isReconnectAttempt: true,
     );
     if (reconnected) {
       appLogger.d('CompanionRemote: Reconnected successfully');

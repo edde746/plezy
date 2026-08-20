@@ -671,6 +671,149 @@ void main() {
       manager.dispose();
     });
 
+    test('a partially failed silent refresh retains the failed servers previous libraries', () async {
+      // Regression: an in-place refresh where A succeeds but B fails used to
+      // replace the list wholesale with A's response, dropping B's last valid
+      // libraries from the sidebar — with no guaranteed follow-up emission
+      // after an HTTP timeout. Partial multi-server failure must not
+      // overwrite valid state.
+      final manager = MultiServerManager();
+      final aLibraries = [_serverLib(ServerId('A'), '1', 'Movies A')];
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: aLibraries);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
+      manager.debugRegisterClientForTesting(clientA);
+      manager.debugRegisterClientForTesting(clientB);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.loadLibraries();
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A', 'Shows B'});
+
+      // In-place refresh: A responds with updated content, B times out. The
+      // partial pass must replace only A's entries and retain B's.
+      aLibraries
+        ..clear()
+        ..add(_serverLib(ServerId('A'), '2', 'Movies A v2'));
+      clientB.error = Exception('timed out');
+      await p.loadLibraries();
+
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A v2', 'Shows B'});
+
+      // B's retained entries do not count as covering it: it stayed out of
+      // the loaded set, so the next sync refetches B (and only B).
+      clientB.error = null;
+      await p.syncToOnlineServers({'A', 'B'});
+      expect(clientA.fetchLibrariesCalls, 2, reason: 'A was committed as loaded by the partial refresh');
+      expect(clientB.fetchLibrariesCalls, 3);
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A v2', 'Shows B'});
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a refresh drops the entries of a server absent from the pass entirely', () async {
+      // Retention applies only to servers that were *in* the pass and failed;
+      // a removed server is in no result set, so its entries drop as before.
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
+      manager.debugRegisterClientForTesting(clientA);
+      manager.debugRegisterClientForTesting(clientB);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.loadLibraries();
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A', 'Shows B'});
+
+      manager.removeServer(ServerId('B'));
+      await p.loadLibraries();
+
+      expect(p.hasLoaded, isTrue);
+      expect(p.libraries.map((l) => l.title), ['Movies A']);
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a subsequent all-failed delta keeps the retained libraries', () async {
+      // Regression: after a totally failed refresh cleared _loadedServerIds
+      // (list retained), the next status emission routed both ids through the
+      // delta path; with both fetches failing again the delta committed an
+      // empty merge and wiped the sidebar although nothing changed server-side.
+      final manager = MultiServerManager();
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
+      manager.debugRegisterClientForTesting(clientA);
+      manager.debugRegisterClientForTesting(clientB);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.syncToOnlineServers({'A', 'B'});
+      expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
+
+      // Totally failed silent refresh: list kept, loaded set cleared.
+      clientA.error = Exception('offline');
+      clientB.error = Exception('offline');
+      await p.loadLibraries();
+      expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
+
+      var notified = 0;
+      p.addListener(() => notified++);
+
+      await p.syncToOnlineServers({'A', 'B'});
+
+      expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
+      expect(notified, 0, reason: 'a pass in which zero servers succeeded is never authoritative');
+
+      // Both ids stayed un-loaded, so the next sync retries them.
+      clientA.error = null;
+      clientB.error = null;
+      await p.syncToOnlineServers({'A', 'B'});
+      expect(clientA.fetchLibrariesCalls, 4);
+      expect(clientB.fetchLibrariesCalls, 4);
+      expect(p.libraries.map((l) => l.title), containsAll(<String>['Movies A', 'Shows B']));
+
+      p.dispose();
+      manager.dispose();
+    });
+
+    test('a partially failed delta replaces only the succeeded servers entries', () async {
+      final manager = MultiServerManager();
+      final aLibraries = [_serverLib(ServerId('A'), '1', 'Movies A')];
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: aLibraries);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
+      manager.debugRegisterClientForTesting(clientA);
+      manager.debugRegisterClientForTesting(clientB);
+      final p = LibrariesProvider()..initialize(DataAggregationService(manager));
+
+      await p.syncToOnlineServers({'A', 'B'});
+
+      // Totally failed silent refresh: list kept, loaded set cleared, so the
+      // next sync routes both ids through the delta path.
+      clientA.error = Exception('offline');
+      clientB.error = Exception('offline');
+      await p.loadLibraries();
+
+      // A recovers with changed content; B is still down. The delta must
+      // replace A's stale entry and retain B's instead of wiping it.
+      clientA.error = null;
+      aLibraries
+        ..clear()
+        ..add(_serverLib(ServerId('A'), '2', 'Movies A v2'));
+      await p.syncToOnlineServers({'A', 'B'});
+
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A v2', 'Shows B'});
+
+      // B stayed un-loaded and is refetched once it recovers; A was committed
+      // as loaded by the partial delta and is not.
+      clientB.error = null;
+      await p.syncToOnlineServers({'A', 'B'});
+      expect(clientA.fetchLibrariesCalls, 3, reason: 'A was loaded by the partial delta');
+      expect(clientB.fetchLibrariesCalls, 4);
+      expect(p.libraries.map((l) => l.title).toSet(), {'Movies A v2', 'Shows B'});
+
+      p.dispose();
+      manager.dispose();
+    });
+
     test('online-servers listener is removed on dispose', () {
       final manager = MultiServerManager();
       final multiServer = testMultiServerProvider(manager);
