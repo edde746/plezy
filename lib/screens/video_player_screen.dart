@@ -123,6 +123,7 @@ part 'video_player/parts/pip.dart';
 part 'video_player/parts/shader.dart';
 part 'video_player/parts/playback_open.dart';
 part 'video_player/parts/playback_prompts.dart';
+part 'video_player/parts/playback_reload.dart';
 part 'video_player/parts/playback_services.dart';
 part 'video_player/parts/playback_start.dart';
 part 'video_player/parts/seeking.dart';
