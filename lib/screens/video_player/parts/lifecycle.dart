@@ -379,9 +379,9 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       startPaused: true,
       reason: 'TV background suspend restore',
     );
-    if (outcome == _MediaReloadOutcome.rejected) {
+    if (outcome == MediaReloadOutcome.rejected) {
       appLogger.w('TV background suspend restore: in-place reload rejected');
-    } else if (outcome == _MediaReloadOutcome.failed) {
+    } else if (outcome == MediaReloadOutcome.failed) {
       appLogger.w('TV background suspend restore: in-place reload failed');
     }
   }

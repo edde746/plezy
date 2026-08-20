@@ -207,15 +207,15 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         transitionLease: transitionLease,
         reason: 'source switch',
       );
-      if (outcome == _MediaReloadOutcome.opened) {
+      if (outcome == MediaReloadOutcome.opened) {
         rememberSourceAudioPreference();
         rememberSourceSubtitlePreference();
       }
       return switch (outcome) {
-        _MediaReloadOutcome.opened => PlaybackSourceChangeOutcome.applied,
-        _MediaReloadOutcome.rejected => PlaybackSourceChangeOutcome.busy,
-        _MediaReloadOutcome.superseded => PlaybackSourceChangeOutcome.superseded,
-        _MediaReloadOutcome.failed => PlaybackSourceChangeOutcome.failed,
+        MediaReloadOutcome.opened => PlaybackSourceChangeOutcome.applied,
+        MediaReloadOutcome.rejected => PlaybackSourceChangeOutcome.busy,
+        MediaReloadOutcome.superseded => PlaybackSourceChangeOutcome.superseded,
+        MediaReloadOutcome.failed => PlaybackSourceChangeOutcome.failed,
       };
     } catch (e) {
       // A normal switchingSource -> reloadingMedia phase advance (and the
@@ -336,11 +336,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
   /// release) arms track selection without playing, the same way a Watch
   /// Together-owned start does. The caller owns starting playback.
   ///
-  /// The returned [_MediaReloadOutcome] tells the caller what actually
-  /// happened: only [_MediaReloadOutcome.failed] means the previous session
+  /// The returned [MediaReloadOutcome] tells the caller what actually
+  /// happened: only [MediaReloadOutcome.failed] means the previous session
   /// is still on screen with its (possibly dead) stream; user feedback for
   /// failures is shown here unless [showErrorUi] is false.
-  Future<_MediaReloadOutcome> _reloadMediaInPlace({
+  Future<MediaReloadOutcome> _reloadMediaInPlace({
     required MediaItem metadata,
     int? selectedMediaIndex,
     String? selectedMediaSourceId,
@@ -361,12 +361,12 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
   }) async {
     if (widget.isLive) {
       _clearEpisodeLoadingFlags();
-      return _MediaReloadOutcome.rejected;
+      return MediaReloadOutcome.rejected;
     }
     final existingPlayer = player;
     if (!mounted || existingPlayer == null) {
       if (mounted) _clearEpisodeLoadingFlags();
-      return _MediaReloadOutcome.rejected;
+      return MediaReloadOutcome.rejected;
     }
 
     final reloadLease = transitionLease == null
@@ -380,7 +380,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         : null;
     if (reloadLease == null) {
       _clearEpisodeLoadingFlags();
-      return _MediaReloadOutcome.rejected;
+      return MediaReloadOutcome.rejected;
     }
 
     try {
@@ -450,7 +450,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
         }
         _clearEpisodeLoadingFlags();
-        return _MediaReloadOutcome.failed;
+        return MediaReloadOutcome.failed;
       }
 
       final shouldAutoStart = shouldAutoStartReloadedMedia(
@@ -459,7 +459,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         startPaused: startPaused,
       );
 
-      if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+      if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
       final targetQualityPreset = qualityPreset ?? _selectedQualityPreset;
@@ -509,7 +509,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         } catch (e) {
           appLogger.w('Failed to pause before $reason', error: e);
         }
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Local resume lookup can overlap the old stop, but source resolution
         // below must not: Plex can use that stop to terminate any new
@@ -522,11 +522,11 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           offlineWatchService: offlineWatchService,
           requested: resumePosition,
         );
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
         await stoppedProgressFuture;
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         final playbackContext = await playbackResolver.resolve(
           PlaybackInitializationOptions(
             metadata: metadata,
@@ -542,7 +542,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           ),
           offlineLibraryMode: _offlineLibraryMode,
         );
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         final result = playbackContext.result;
         final mediaClient = playbackContext.reportingClient;
         final plexClient = mediaClient is PlexClient ? mediaClient : null;
@@ -560,7 +560,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             offlineWatchService: offlineWatchService,
             requested: resumePosition,
           );
-          if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+          if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         }
         final subtitleSelection = await _resolveSubtitleSelectionForOpen(
           metadata: metadata,
@@ -573,7 +573,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
               ((previousMediaSourceId != null && previousMediaSourceId == result.mediaInfo!.mediaSourceId) ||
                   (previousPartId != null && previousPartId == result.mediaInfo!.partId)),
         );
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Build the replacement session now, commit it only once open()
         // succeeds — until then every session-derived getter still describes
@@ -589,7 +589,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         }
 
         final settingsService = await SettingsService.getInstance();
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Shared open orchestration with the initial start flow
         // ([_openResolvedMedia]) — including the Android MPV startup decoder
@@ -643,8 +643,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
               // Same-item reloads (including the spurious-EOF recovery itself
               // and quality switches) keep the spent budget — that is the
               // loop guard.
-              _spuriousEofRecoveryAttempts = 0;
-              _spuriousEofRecoveryBaselineMs = null;
+              _eofRecovery.resetBudget();
             }
 
             // Versions/mediaInfo come from the committed session; rebuild so
@@ -679,8 +678,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             _commitPlaybackSession(session);
           },
         );
-        if (flow == null) return _MediaReloadOutcome.superseded;
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (flow == null) return MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         // Same helper as the initial start flow, so any future change lands in
         // both paths together.
@@ -713,14 +712,14 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         }
 
         unawaited(_loadAdjacentEpisodes(metadata: metadata, attempt: attempt));
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
 
         if (_autoPipEnabled) {
           unawaited(_updateAutoPipState(isPlaying: currentPlayer.state.playing));
         }
-        return _MediaReloadOutcome.opened;
+        return MediaReloadOutcome.opened;
       } catch (e) {
-        if (!isCurrentReload()) return _MediaReloadOutcome.superseded;
+        if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         // Record the classified reason so _playNext can re-present the Play
         // Next prompt when an EOF-driven advance merely hit a transient
         // server blip (#1867). Non-PlaybackException throws stay null —
@@ -768,7 +767,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         if (mounted && showErrorUi) {
           showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
         }
-        return didOpenReplacement ? _MediaReloadOutcome.opened : _MediaReloadOutcome.failed;
+        return didOpenReplacement ? MediaReloadOutcome.opened : MediaReloadOutcome.failed;
       } finally {
         // Restore Watch Together sync on every exit: after a successful item
         // change (readiness re-handshakes for the new item), after a failed

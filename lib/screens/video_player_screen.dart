@@ -89,6 +89,8 @@ import 'video_player/first_frame_gate.dart';
 import 'video_player/frame_rate_matcher.dart';
 import 'video_player/companion_remote_binding.dart';
 import 'video_player/media_controls_screen_controller.dart';
+import 'video_player/media_reload_outcome.dart';
+import 'video_player/spurious_eof_recovery.dart';
 import 'video_player/live_stream_retry.dart';
 import 'video_player/live_timeline_report.dart';
 import 'video_player/wakelock_controller.dart';
@@ -310,27 +312,6 @@ SubtitlePreference? sessionPreferenceForSourceSubtitleChoice(
 }
 
 enum _SubtitleSelectionSlot { primary, secondary }
-
-/// Outcome of [VideoPlayerScreenState._reloadMediaInPlace].
-enum _MediaReloadOutcome {
-  /// An entry guard refused the attempt (live screen, unmounted, another
-  /// transition in flight). Nothing was touched; safe to retry later.
-  rejected,
-
-  /// A newer playback attempt took ownership mid-reload; its outcome
-  /// governs what is on screen now.
-  superseded,
-
-  /// The replacement media opened and its session committed. A post-open
-  /// step may still have failed (tracks/services were rewired in the
-  /// catch), but the network stream is fresh.
-  opened,
-
-  /// The reload failed before the replacement opened: the previous session
-  /// is still committed, the eagerly-set identity was rolled back, and the
-  /// old (possibly dead — #1520) stream is still loaded.
-  failed,
-}
 
 /// Handle for one playback attempt (initial start or in-place reload).
 /// Async continuations check [isCurrent] after every await while the screen
@@ -630,15 +611,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // restores once playback progresses well past the last recovery point or
   // on an item change; user-initiated retries (play/seek) are always allowed
   // and never consume it.
-  static const int _maxSpuriousEofRecoveryAttempts = 2;
-  static const int _spuriousEofProgressResetMs = 30000;
-  int _spuriousEofRecoveryAttempts = 0;
-  int? _spuriousEofRecoveryBaselineMs;
-
-  /// Playback is parked mid-file on a dead stream: automatic recovery failed
-  /// or its budget is spent. Exits: user play/seek (always allowed) or the
-  /// server-status monitor seeing the server come back online.
-  bool _spuriousEofRecoveryParked = false;
+  late final SpuriousEofRecovery _eofRecovery = SpuriousEofRecovery(
+    isLive: widget.isLive,
+    isOffline: () => _isOfflinePlayback,
+    transitionGate: _transitionGate,
+    player: () => player,
+    metadata: () => _currentMetadata,
+    reload: ({required Duration resumePosition, required String reason}) => _reloadMediaInPlace(
+      metadata: _currentMetadata,
+      resumePosition: resumePosition,
+      preserveCurrentTrackSelection: true,
+      startPaused: !_playbackIntentShouldPlay,
+      showErrorUi: false,
+      reason: reason,
+    ),
+    wakelock: _wakelockController,
+  );
 
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
@@ -823,7 +811,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _selectedQualityPreset = session.qualityPreset;
     _selectedAudioStreamId = session.audioStreamId;
     // Any freshly opened stream ends a dead-stream park (#1520).
-    _spuriousEofRecoveryParked = false;
+    _eofRecovery.clearPark();
     // Every successful open passes through here (never live TV), making it
     // the chokepoint for the local last-played history. Offline plays are
     // excluded — like version prefs, the history describes online intent.
@@ -874,11 +862,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _live.retrying = true;
       return _retryLiveStream();
     }
-    if (_spuriousEofRecoveryParked && _transitionGate.transition == PlaybackTransition.idle) {
+    if (_eofRecovery.parked && _transitionGate.transition == PlaybackTransition.idle) {
       // Parked on a dead stream: play/pause on a drained cache is a no-op
       // (mpv doesn't even flip `pause` on EOF), so any press means "get my
       // video back" — rebuild the stream instead (#1520).
-      return _retrySpuriousEofRecovery(reason: 'play pressed');
+      return _eofRecovery.retry(reason: 'play pressed');
     }
     return currentPlayer.play();
   }
@@ -896,9 +884,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (widget.isLive && _live.retryFailed) {
       return _playWithPlaybackIntent(currentPlayer);
     }
-    if (_spuriousEofRecoveryParked && _transitionGate.transition == PlaybackTransition.idle) {
+    if (_eofRecovery.parked && _transitionGate.transition == PlaybackTransition.idle) {
       _playbackIntentShouldPlay = true;
-      return _retrySpuriousEofRecovery(reason: 'play/pause pressed');
+      return _eofRecovery.retry(reason: 'play/pause pressed');
     }
     _playbackIntentShouldPlay = !currentPlayer.state.playing;
     return currentPlayer.playOrPause();

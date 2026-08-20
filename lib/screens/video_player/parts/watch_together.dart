@@ -186,7 +186,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       reason: 'watch together media switch',
     );
     if (!mounted) return false;
-    if (outcome == _MediaReloadOutcome.rejected) {
+    if (outcome == MediaReloadOutcome.rejected) {
       if (player == null) {
         unawaited(_replaceScreenWithPlayer(metadata));
         return true;
