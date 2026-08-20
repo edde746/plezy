@@ -1340,7 +1340,14 @@ class PlexClient
     }
   }
 
-  /// Wraps an API call that returns a list, returning empty list on error
+  /// Wraps an API call that returns a list.
+  ///
+  /// Contract (matches [_wrapBoolApiCall]):
+  ///   - HTTP 2xx → returns the parsed list.
+  ///   - HTTP 4xx/5xx → throws [MediaServerHttpException] (via
+  ///     [throwIfHttpError]) so callers can show a real error rather than a
+  ///     silent empty list.
+  ///   - Network/IO/parse failure → exception bubbles unchanged.
   @override
   Future<List<T>> _wrapListApiCall<T>(
     Future<MediaServerResponse> Function() apiCall,
@@ -1349,10 +1356,11 @@ class PlexClient
   ) async {
     try {
       final response = await apiCall();
+      throwIfHttpError(response);
       return parseResponse(response);
-    } catch (e) {
-      appLogger.e(errorMessage, error: e);
-      return [];
+    } catch (e, st) {
+      appLogger.e(errorMessage, error: e, stackTrace: st);
+      rethrow;
     }
   }
 
@@ -2607,38 +2615,32 @@ class PlexClient
   }
 
   /// Get root folders for a library section
-  /// Returns the top-level folder structure for filesystem-based browsing
+  /// Returns the top-level folder structure for filesystem-based browsing.
+  /// Transport/HTTP failures propagate so the folder tree can show a real
+  /// error instead of an empty listing.
   Future<List<PlexMetadataDto>> _getLibraryFolders(String sectionId) async {
-    try {
-      final response = await _getWithFailover(
-        '/library/sections/$sectionId/folder',
-        queryParameters: {'includeCollections': 0},
-      );
-      return _extractMetadataAndDirectories(response, librarySectionID: _librarySectionIdFromString(sectionId));
-    } catch (e) {
-      appLogger.e('Failed to get library folders: $e');
-      return [];
-    }
+    final response = await _getWithFailover(
+      '/library/sections/$sectionId/folder',
+      queryParameters: {'includeCollections': 0},
+    );
+    return _extractMetadataAndDirectories(response, librarySectionID: _librarySectionIdFromString(sectionId));
   }
 
   /// Get children of a specific folder
-  /// Returns files and subfolders within the given folder
+  /// Returns files and subfolders within the given folder.
+  /// Transport/HTTP failures propagate so the folder tree can show a real
+  /// error instead of an empty listing.
   Future<List<PlexMetadataDto>> _getFolderChildren(
     String folderKey, {
     String? librarySectionID,
     String? librarySectionTitle,
   }) async {
-    try {
-      final response = await _getWithFailover(folderKey);
-      return _extractMetadataAndDirectories(
-        response,
-        librarySectionID: _librarySectionIdFromString(folderKey) ?? _librarySectionIdFromString(librarySectionID),
-        librarySectionTitle: librarySectionTitle,
-      );
-    } catch (e) {
-      appLogger.e('Failed to get folder children: $e');
-      return [];
-    }
+    final response = await _getWithFailover(folderKey);
+    return _extractMetadataAndDirectories(
+      response,
+      librarySectionID: _librarySectionIdFromString(folderKey) ?? _librarySectionIdFromString(librarySectionID),
+      librarySectionTitle: librarySectionTitle,
+    );
   }
 
   /// Get library-specific playlists

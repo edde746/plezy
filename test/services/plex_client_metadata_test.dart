@@ -90,6 +90,35 @@ void main() {
     expect(draft.value<String>('originalTitle'), 'Original show title');
     expect(draft.value<String>('pref:episodeSort'), isNull);
   });
+
+  test('removed tags are emitted single-encoded because the transport encodes exactly once', () async {
+    Uri? requestedUri;
+    final client = testPlexClient(
+      handler: (request) async {
+        requestedUri = request.url;
+        return http.Response('{}', 200, headers: const {'content-type': 'application/json'});
+      },
+    );
+    addTearDown(client.close);
+
+    final ok = await client.updateMetadata(
+      sectionId: 1,
+      ratingKey: 'show-1',
+      typeNumber: 2,
+      tagChanges: {
+        'genre': (current: ['Drama'], original: ['Drama', 'Science Fiction']),
+      },
+    );
+
+    expect(ok, isTrue);
+    expect(requestedUri, isNotNull);
+    // Decoding the emitted query once must yield the original tag. The old
+    // Uri.encodeComponent pre-pass double-encoded it ('Science%2520Fiction'
+    // on the wire), so the server deleted a tag that doesn't exist.
+    expect(requestedUri!.queryParameters['genre[].tag.tag-'], 'Science Fiction');
+    expect(requestedUri!.query, contains('Science%20Fiction'));
+    expect(requestedUri!.query, isNot(contains('%2520')));
+  });
 }
 
 http.Response _metadataResponse(List<Object?> settings) {

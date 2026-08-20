@@ -44,7 +44,9 @@ mixin _PlexMetadataEditMethods on _PlexClientInternals {
         }
         final removed = original.where((tag) => !current.contains(tag));
         if (removed.isNotEmpty) {
-          queryParameters['$field[].tag.tag-'] = removed.map(Uri.encodeComponent).join(',');
+          // No pre-encoding: the HTTP transport encodes query values exactly
+          // once, so encoding here would double-encode (e.g. spaces → %2520).
+          queryParameters['$field[].tag.tag-'] = removed.join(',');
         }
         queryParameters['$field.locked'] = '1';
       }

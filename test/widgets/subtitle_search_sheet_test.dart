@@ -1,10 +1,19 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/ids.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/video_controls/sheets/subtitle_search_sheet.dart';
+import 'package:provider/provider.dart';
 
+import '../test_helpers/backend_client_fixtures.dart';
+import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/theme.dart';
 
 void main() {
@@ -67,6 +76,31 @@ void main() {
       expect(tester.getTopLeft(find.byType(TextField)).dy, fieldTop);
     });
   });
+
+  group('search error contract', () {
+    late AppDatabase database;
+
+    setUp(() {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      database = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(database);
+    });
+
+    tearDown(() => database.close());
+
+    testWidgets('HTTP 500 from searchSubtitles shows the sheet error state, not "no subtitles found"', (tester) async {
+      final client = testPlexClient(serverId: ServerId('server'), handler: (_) async => http.Response('{}', 500));
+      final provider = testMultiServer(clients: [client]).provider;
+
+      await _pumpSearchSheet(tester, multiServer: provider);
+
+      // [PlexClient._wrapListApiCall] rethrows HTTP failures; the sheet's
+      // catch must render its error text instead of an empty-result state.
+      expect(find.textContaining('HTTP 500'), findsOneWidget);
+      expect(find.text(t.videoControls.noSubtitlesFound), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+  });
 }
 
 /// Height of the sheet box the host lays out, i.e. what the user sees.
@@ -74,23 +108,24 @@ double _sheetHeight(WidgetTester tester) {
   return tester.getSize(find.descendant(of: find.byType(OverlaySheetHost), matching: find.byType(AnimatedSize))).height;
 }
 
-Future<void> _pumpSearchSheet(WidgetTester tester) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      theme: ThemeData(extensions: const [testMonoTokens]),
-      home: OverlaySheetHost(
-        child: Builder(
-          builder: (context) => Scaffold(
-            body: ElevatedButton(
-              onPressed: () => OverlaySheetController.of(context).show<void>(
-                builder: (_) => const SubtitleSearchSheet(ratingKey: '1', serverId: 'server'),
-              ),
-              child: const Text('Open'),
+Future<void> _pumpSearchSheet(WidgetTester tester, {MultiServerProvider? multiServer}) async {
+  final app = MaterialApp(
+    theme: ThemeData(extensions: const [testMonoTokens]),
+    home: OverlaySheetHost(
+      child: Builder(
+        builder: (context) => Scaffold(
+          body: ElevatedButton(
+            onPressed: () => OverlaySheetController.of(context).show<void>(
+              builder: (_) => const SubtitleSearchSheet(ratingKey: '1', serverId: 'server'),
             ),
+            child: const Text('Open'),
           ),
         ),
       ),
     ),
+  );
+  await tester.pumpWidget(
+    multiServer == null ? app : ChangeNotifierProvider<MultiServerProvider>.value(value: multiServer, child: app),
   );
   await tester.tap(find.text('Open'));
   await tester.pumpAndSettle();

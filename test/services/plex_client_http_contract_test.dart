@@ -436,6 +436,68 @@ void main() {
     });
   });
 
+  group('Plex list endpoint error contract', () {
+    test('fetchLibraryFolders propagates HTTP 500 instead of a successful empty folder list', () async {
+      final failing = makeClient((_) async => http.Response('{}', 500));
+      addTearDown(failing.close);
+      await expectLater(
+        failing.fetchLibraryFolders('1'),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
+    });
+
+    test('fetchFolderChildren propagates HTTP 500 but keeps null folder key as the empty interface case', () async {
+      final folder = testMediaItem(
+        id: 'folder-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.folder,
+        serverId: 'server-id',
+        backendFolderKey: '/library/sections/1/folder?parent=2',
+      );
+      final failing = makeClient((_) async => http.Response('{}', 500));
+      addTearDown(failing.close);
+      await expectLater(
+        failing.fetchFolderChildren(folder),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
+
+      // A folder row without a backend key is a local interface case, not a
+      // transport result — it must resolve empty without any request.
+      var requests = 0;
+      final keyless = makeClient((_) async {
+        requests++;
+        return http.Response('{}', 500);
+      });
+      addTearDown(keyless.close);
+      final noKey = testMediaItem(
+        id: 'folder-2',
+        backend: MediaBackend.plex,
+        kind: MediaKind.folder,
+        serverId: 'server-id',
+      );
+      expect(await keyless.fetchFolderChildren(noKey), isEmpty);
+      expect(requests, 0);
+    });
+
+    test('searchSubtitles throws on HTTP 500 instead of reporting no results', () async {
+      final failing = makeClient((_) async => http.Response('{}', 500));
+      addTearDown(failing.close);
+      await expectLater(
+        failing.searchSubtitles('item-1', language: 'en'),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
+    });
+
+    test('findMatches throws on HTTP 500 instead of reporting no matches', () async {
+      final failing = makeClient((_) async => http.Response('{}', 500));
+      addTearDown(failing.close);
+      await expectLater(
+        failing.findMatches('item-1', title: 'Movie'),
+        throwsA(isA<MediaServerHttpException>().having((error) => error.statusCode, 'statusCode', 500)),
+      );
+    });
+  });
+
   test('play queue accepts numeric strings from Plex', () async {
     final client = makeClient(
       (_) async => http.Response(
@@ -704,7 +766,7 @@ void main() {
     expect(captured?.url.queryParameters, containsPair('title.value', 'Renamed'));
     expect(captured?.url.queryParameters, containsPair('title.locked', '1'));
     expect(captured?.url.queryParameters, containsPair('genre[0].tag.tag', 'Drama'));
-    expect(captured?.url.queryParameters, containsPair('genre[].tag.tag-', 'Science%20Fiction'));
+    expect(captured?.url.queryParameters, containsPair('genre[].tag.tag-', 'Science Fiction'));
     expect(captured?.url.queryParameters, containsPair('genre.locked', '1'));
   });
 
