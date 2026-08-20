@@ -101,6 +101,7 @@ import 'video_player/open_http_503_watchdog.dart';
 import 'video_player/live_tv_session_args.dart';
 import 'video_player/live_tv_session_state.dart';
 import 'video_player/tv_background_suspend_policy.dart';
+import 'video_player/tv_background_suspend_state.dart';
 import 'video_player/visual_effects_controller.dart';
 import 'video_player/widgets/player_prompt_overlays.dart';
 import '../widgets/overlay_sheet.dart';
@@ -654,27 +655,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   String _playerBackendLabel = 'unknown';
 
   /// Android TV: release the native AV pipeline once the app stays
-  /// backgrounded past this grace window. A merely paused player keeps its
+  /// backgrounded past the grace window. A merely paused player keeps its
   /// MediaCodec decoders and (tunneled passthrough) AudioTrack alive, which
   /// on shared-pipeline TV SoCs degrades every other app until Plezy is
   /// force-stopped. The grace absorbs transient hidden/paused blips
   /// (assistant overlay, HDMI-CEC events) so quick app switches don't churn
   /// codecs.
-  static const Duration _tvBackgroundPlayerSuspendGrace = Duration(seconds: 30);
-
-  /// Redelivery schedule for the suspend-time stopped report. Standby entry
-  /// can drop Wi-Fi into power-save and stall exactly that connect, and
-  /// mutations deliberately never fail over ([FailoverHttpClient]), so the
-  /// one report the suspend exists for gets a bounded retry window instead
-  /// of a single fail-fast attempt.
-  static const Duration _tvBackgroundStopReportRetryDelay = Duration(seconds: 10);
-  static const int _tvBackgroundStopReportMaxRetries = 5;
-  Timer? _tvBackgroundPlayerSuspendTimer;
-  bool _playerSuspendedForTvBackground = false;
-  Duration? _tvBackgroundSuspendPosition;
-  AudioTrack? _tvBackgroundSuspendAudioTrack;
-  SubtitleTrack? _tvBackgroundSuspendSubtitleTrack;
-  SubtitleTrack? _tvBackgroundSuspendSecondarySubtitleTrack;
+  final TvBackgroundSuspendState _tvSuspend = TvBackgroundSuspendState();
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// Apple auto-PiP is system-initiated during the background transition, and
@@ -1928,7 +1915,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _trackManager?.dispose();
 
     _episode.dispose();
-    _tvBackgroundPlayerSuspendTimer?.cancel();
+    _tvSuspend.dispose();
     _http503Watchdog.disarm();
 
     _stillWatchingTimer?.cancel();

@@ -29,7 +29,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       'pipActive': pipActive,
       'pipTransitionInFlight': _androidAutoPipTransitionInFlight,
       'hiddenForBackground': _hiddenForBackground,
-      'playerSuspendedForTvBackground': _playerSuspendedForTvBackground,
+      'playerSuspendedForTvBackground': _tvSuspend.suspended,
       'mediaControlsSuspendedForTvBackground': _mediaControls.suspendedForTvBackground,
       'backend': _playerBackendLabel,
     };
@@ -49,7 +49,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       ' pipActive=$pipActive'
       ' pipTransitionInFlight=$_androidAutoPipTransitionInFlight'
       ' hiddenForBackground=$_hiddenForBackground'
-      ' playerSuspendedForTvBackground=$_playerSuspendedForTvBackground'
+      ' playerSuspendedForTvBackground=${_tvSuspend.suspended}'
       ' mediaControlsSuspendedForTvBackground=$_mediaControls.suspendedForTvBackground'
       ' backend=$_playerBackendLabel',
     );
@@ -191,7 +191,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     // A TV background suspend released the native pipeline via stop();
     // rebuild the playback session in place before the media-control restore
     // below can act on the stopped player.
-    if (_playerSuspendedForTvBackground) {
+    if (_tvSuspend.suspended) {
       await _restorePlayerAfterTvBackgroundSuspend();
       if (!mounted || currentPlayer != player) return;
     }
@@ -227,21 +227,18 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       isAndroid: Platform.isAndroid,
       isTv: PlatformDetector.isTV(),
       isLive: widget.isLive,
-      alreadySuspended: _playerSuspendedForTvBackground,
+      alreadySuspended: _tvSuspend.suspended,
     )) {
       return false;
     }
-    _tvBackgroundPlayerSuspendTimer?.cancel();
-    _tvBackgroundPlayerSuspendTimer = Timer(VideoPlayerScreenState._tvBackgroundPlayerSuspendGrace, () {
-      _tvBackgroundPlayerSuspendTimer = null;
+    _tvSuspend.armGrace(() {
       _enqueueLifecycleTransition('tv_background_suspend', _suspendPlayerForTvBackground);
     });
     return true;
   }
 
   void _cancelTvBackgroundPlayerSuspendTimer() {
-    _tvBackgroundPlayerSuspendTimer?.cancel();
-    _tvBackgroundPlayerSuspendTimer = null;
+    _tvSuspend.cancelGrace();
   }
 
   /// Grace expired while still backgrounded: release the native AV pipeline
@@ -260,7 +257,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     // A live stream's tuned session is also its time-shift buffer. Stopping
     // it would force a re-tune at the live edge and discard pause state.
     if (widget.isLive) return;
-    if (_playerSuspendedForTvBackground || _shouldSkipForPip) return;
+    if (_tvSuspend.suspended || _shouldSkipForPip) return;
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
     if (lifecycleState == AppLifecycleState.resumed || lifecycleState == AppLifecycleState.inactive) return;
     if (_transitionGate.transition != PlaybackTransition.idle || !_firstFrame.uiReady.value) {
@@ -272,11 +269,12 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
 
     final suspendPosition = currentPlayer.state.position;
     final suspendDuration = currentPlayer.state.duration;
-    _tvBackgroundSuspendPosition = suspendPosition;
-    _tvBackgroundSuspendAudioTrack = currentPlayer.state.track.audio;
-    _tvBackgroundSuspendSubtitleTrack = currentPlayer.state.track.subtitle;
-    _tvBackgroundSuspendSecondarySubtitleTrack = currentPlayer.state.track.secondarySubtitle;
-    _playerSuspendedForTvBackground = true;
+    _tvSuspend.latch(
+      position: suspendPosition,
+      audioTrack: currentPlayer.state.track.audio,
+      subtitleTrack: currentPlayer.state.track.subtitle,
+      secondarySubtitleTrack: currentPlayer.state.track.secondarySubtitle,
+    );
     // Stop the heartbeat timer first: its paused tick also pings any Plex
     // transcode session, which would keep that alive past the stop report.
     // Start the stopped report before releasing the native stream — the same
@@ -290,11 +288,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       await currentPlayer.stop();
       _recordLifecycleState('hidden', action: 'tv_background_suspend');
     } catch (e) {
-      _playerSuspendedForTvBackground = false;
-      _tvBackgroundSuspendPosition = null;
-      _tvBackgroundSuspendAudioTrack = null;
-      _tvBackgroundSuspendSubtitleTrack = null;
-      _tvBackgroundSuspendSecondarySubtitleTrack = null;
+      _tvSuspend.clear();
       // The player still holds its native state, so re-arm reporting: the
       // next paused heartbeat re-opens a server session at the same position
       // and the pause stays resumable in place.
@@ -317,13 +311,13 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   /// exists to clear (#1911). Runs detached from the lifecycle transition
   /// queue so a wake-up is never blocked behind a backoff sleep; each attempt
   /// re-checks that the suspend is still standing, because the restore path
-  /// clears [_playerSuspendedForTvBackground] before it rebuilds a live
-  /// session that a late retry must not report stopped.
+  /// drops the suspended latch before it rebuilds a live session that a late
+  /// retry must not report stopped.
   Future<void> _redeliverTvBackgroundStopReport({required Duration position, required Duration duration}) async {
-    for (var attempt = 0; attempt < VideoPlayerScreenState._tvBackgroundStopReportMaxRetries; attempt++) {
-      await Future<void>.delayed(VideoPlayerScreenState._tvBackgroundStopReportRetryDelay);
+    for (var attempt = 0; attempt < TvBackgroundSuspendState.stopReportMaxRetries; attempt++) {
+      await Future<void>.delayed(TvBackgroundSuspendState.stopReportRetryDelay);
       final tracker = _progressTracker;
-      if (!mounted || tracker == null || !_playerSuspendedForTvBackground) return;
+      if (!mounted || tracker == null || !_tvSuspend.suspended) return;
       if (tracker.stoppedReportDelivered) return;
       await tracker.sendProgress('stopped', positionOverride: position, durationOverride: duration);
     }
@@ -339,15 +333,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   /// never enter this flow because their tuned session and capture-buffer
   /// position must remain intact across backgrounding.
   Future<void> _restorePlayerAfterTvBackgroundSuspend() async {
-    _playerSuspendedForTvBackground = false;
-    final resumePosition = _tvBackgroundSuspendPosition;
-    final audioTrack = _tvBackgroundSuspendAudioTrack;
-    final subtitleTrack = _tvBackgroundSuspendSubtitleTrack;
-    final secondarySubtitleTrack = _tvBackgroundSuspendSecondarySubtitleTrack;
-    _tvBackgroundSuspendPosition = null;
-    _tvBackgroundSuspendAudioTrack = null;
-    _tvBackgroundSuspendSubtitleTrack = null;
-    _tvBackgroundSuspendSecondarySubtitleTrack = null;
+    final restore = _tvSuspend.consumeForRestore();
 
     final currentPlayer = player;
     if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
@@ -355,11 +341,11 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
     _recordLifecycleState('resumed', action: 'tv_background_suspend_reload');
     final outcome = await _reloadMediaInPlace(
       metadata: _currentMetadata,
-      resumePosition: resumePosition,
+      resumePosition: restore.position,
       preserveCurrentTrackSelection: true,
-      preservedAudioTrack: audioTrack,
-      preservedSubtitleTrack: SubtitlePreference.trackOrNull(subtitleTrack),
-      preservedSecondarySubtitleTrack: SubtitlePreference.trackOrNull(secondarySubtitleTrack),
+      preservedAudioTrack: restore.audioTrack,
+      preservedSubtitleTrack: SubtitlePreference.trackOrNull(restore.subtitleTrack),
+      preservedSecondarySubtitleTrack: SubtitlePreference.trackOrNull(restore.secondarySubtitleTrack),
       startPaused: true,
       reason: 'TV background suspend restore',
     );
