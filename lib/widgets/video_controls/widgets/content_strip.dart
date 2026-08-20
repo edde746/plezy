@@ -1,6 +1,7 @@
 import 'dart:async' show Stream, unawaited;
 import '../../../media/ids.dart';
 
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -43,6 +44,9 @@ class ContentStrip extends StatefulWidget {
   /// When true, no tab bar is shown — pages are navigated via UP/DOWN.
   final bool useFocusNavigation;
 
+  /// Whether focus-navigation mode should show the current page label.
+  final bool showFocusNavigationLabel;
+
   /// Called when navigating UP from the top-most strip page (back to buttons).
   final VoidCallback? onNavigateUp;
 
@@ -60,6 +64,7 @@ class ContentStrip extends StatefulWidget {
     this.onSeekRequested,
     this.onSeekCompleted,
     this.useFocusNavigation = false,
+    this.showFocusNavigationLabel = true,
     this.onNavigateUp,
     this.onFocusActivity,
   });
@@ -203,6 +208,25 @@ class ContentStripState extends State<ContentStrip> {
     });
   }
 
+  bool handlePointerScroll(PointerScrollEvent event) {
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.paintBounds.contains(renderObject.globalToLocal(event.position))) {
+      return false;
+    }
+
+    final controller = _activeTab == _StripTab.chapters ? _chapterScrollController : _queueScrollController;
+    if (!controller.hasClients) return true;
+
+    final delta = event.scrollDelta;
+    final horizontalDelta = delta.dx.abs() > delta.dy.abs() ? delta.dx : delta.dy;
+    if (horizontalDelta == 0) return true;
+
+    final position = controller.position;
+    controller.jumpTo((position.pixels + horizontalDelta).clamp(0.0, position.maxScrollExtent));
+    widget.onFocusActivity?.call();
+    return true;
+  }
+
   KeyEventResult _handleFocusItemKeyEvent(KeyEvent event, int index, int totalItems, _StripTab page) {
     if (!event.isActionable) return KeyEventResult.ignored;
 
@@ -332,8 +356,8 @@ class ContentStripState extends State<ContentStrip> {
           children: [
             // Tab bar only shown in touch mode when both tabs exist
             if (_hasBothTabs && !widget.useFocusNavigation) _buildTabBar(),
-            // In focus mode, show a small label for the current page
-            if (widget.useFocusNavigation)
+            // In focus mode, show a small label for the current page when requested.
+            if (widget.useFocusNavigation && widget.showFocusNavigationLabel)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(

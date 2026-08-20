@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -333,6 +334,10 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
     _onContentStripNavigateUp();
   }
 
+  bool handleContentStripScroll(PointerScrollEvent event) {
+    return _contentStripVisible && (_contentStripKey.currentState?.handlePointerScroll(event) ?? false);
+  }
+
   /// Handle left navigation from first track control - go to volume (or last button on TV)
   void navigateFromTrackToVolume() {
     if (PlatformDetector.isTV()) {
@@ -631,16 +636,24 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                     clipBehavior: Clip.none,
                     children: [
                       _buildBottomControlsContent(context, hasFrame: true),
-                      // Down arrow hint when strip content is available
                       if (widget.useDpadNavigation && _hasStripContent)
-                        const ContentStripHint(Symbols.keyboard_arrow_down_rounded),
+                        ContentStripHint(
+                          Symbols.keyboard_arrow_up_rounded,
+                          key: const ValueKey('desktop_content_strip_open'),
+                          tooltip: t.videoControls.chaptersButton,
+                          semanticLabel: t.videoControls.chaptersButton,
+                          onPressed: _showContentStrip,
+                        ),
                     ],
                   ),
                 // Content strip (TV/dpad only) — replaces normal controls
                 if (_contentStripVisible && widget.useDpadNavigation)
                   ContentStripPanel(
                     padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 32),
-                    chevron: Symbols.keyboard_arrow_up_rounded,
+                    chevron: Symbols.keyboard_arrow_down_rounded,
+                    chevronKey: const ValueKey('desktop_content_strip_close'),
+                    chevronSemanticLabel: t.common.close,
+                    onChevronPressed: _onContentStripNavigateUp,
                     child: ContentStrip(
                       key: _contentStripKey,
                       player: widget.player,
@@ -652,6 +665,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       onSeekRequested: widget.onSeekRequested,
                       onSeekCompleted: widget.onSeekCompleted,
                       useFocusNavigation: true,
+                      showFocusNavigationLabel: PlatformDetector.isTV(),
                       onNavigateUp: _onContentStripNavigateUp,
                       onFocusActivity: widget.onFocusActivity,
                     ),

@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart' show PointerScrollEvent;
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -10,6 +11,9 @@ import 'package:provider/provider.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/shader_preset.dart';
@@ -25,6 +29,7 @@ import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/models/track_controls_state.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
+import 'package:plezy/widgets/video_controls/widgets/content_strip.dart';
 import 'package:plezy/widgets/video_controls/painters/buffer_range_painter.dart';
 import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
 import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
@@ -32,10 +37,9 @@ import 'package:plezy/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 import 'package:plezy/widgets/video_controls/video_control_button.dart';
 import 'package:plezy/widgets/video_controls/widgets/video_timeline_bar.dart';
-
+import '../test_helpers/prefs.dart';
 import '../test_helpers/watch_together_fakes.dart';
 import '../test_helpers/media_items.dart';
-import '../test_helpers/prefs.dart';
 import '../test_helpers/theme.dart';
 
 void main() {
@@ -2201,6 +2205,104 @@ void main() {
       expect(data.flagsCollection.isEnabled, ui.Tristate.isFalse);
       expect(data.hasAction(ui.SemanticsAction.tap), isFalse);
       semantics.dispose();
+    });
+  });
+
+  group('DesktopVideoControls content strip', () {
+    setUp(() async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
+    });
+
+    testWidgets('desktop chapter strip supports pointer interaction', (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(800, 600);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final player = FakeSyncPlayer(duration: Duration.zero);
+      addTearDown(player.dispose);
+      final settings = await SettingsService.getInstance();
+      final volume = VideoVolumeController(player: player, settings: settings, initialVolume: 100);
+      addTearDown(volume.dispose);
+
+      await tester.pumpWidget(
+        ChangeNotifierProvider(
+          create: (_) => WatchTogetherProvider(),
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: DesktopVideoControls(
+                player: player,
+                volumeController: volume,
+                metadata: MediaItem(
+                  id: 'video',
+                  backend: MediaBackend.plex,
+                  kind: MediaKind.movie,
+                  title: 'Test video',
+                ),
+                chapters: List.generate(
+                  12,
+                  (index) => MediaChapter(id: index, title: 'Chapter ${index + 1}', startTimeOffset: index * 60000),
+                ),
+                chaptersLoaded: true,
+                onPlayPause: () {},
+                seekTimeSmall: 10,
+                onSeekToPreviousChapter: () {},
+                onSeekToNextChapter: () {},
+                onSeek: (_) {},
+                onSeekEnd: (_) {},
+                getReplayIcon: (_) => Icons.replay,
+                getForwardIcon: (_) => Icons.fast_forward,
+                onBack: () {},
+                useDpadNavigation: true,
+                trackControlsState: const TrackControlsState(canControl: true),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final openToggle = find.byKey(const ValueKey('desktop_content_strip_open'));
+      await tester.tap(openToggle);
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(ContentStrip), findsOneWidget);
+      expect(find.text(t.videoControls.chapters), findsNothing);
+
+      final closeToggle = find.byKey(const ValueKey('desktop_content_strip_close'));
+      final closeButton = tester.widget<IconButton>(
+        find.descendant(of: closeToggle, matching: find.byType(IconButton)),
+      );
+      expect(closeButton.tooltip, isNull);
+      final closeBackground = tester.widget<DecoratedBox>(
+        find.descendant(of: closeToggle, matching: find.byType(DecoratedBox)).first,
+      );
+      expect((closeBackground.decoration as BoxDecoration).color, Colors.black.withValues(alpha: 0.4));
+
+      final scrollable = find.descendant(of: find.byType(ContentStrip), matching: find.byType(Scrollable)).first;
+      final position = tester.state<ScrollableState>(scrollable).position;
+      expect(position.maxScrollExtent, greaterThan(0));
+      expect(position.pixels, 0);
+
+      final scrollPosition = tester.getCenter(find.text('Chapter 3'));
+      final handled = tester
+          .state<DesktopVideoControlsState>(find.byType(DesktopVideoControls))
+          .handleContentStripScroll(PointerScrollEvent(position: scrollPosition, scrollDelta: const Offset(0, 160)));
+      await tester.pump();
+
+      expect(handled, isTrue);
+      expect(position.pixels, greaterThan(0));
+
+      await tester.tap(closeToggle);
+      await tester.pump();
+
+      expect(find.byType(ContentStrip), findsNothing);
+      expect(openToggle, findsOneWidget);
     });
   });
 }
