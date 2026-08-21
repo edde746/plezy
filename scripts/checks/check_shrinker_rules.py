@@ -49,13 +49,23 @@ _MEMBER_LOOKUP = re.compile(
 _DESCRIPTOR_CLASS = re.compile(r"L([\w/$]+);")
 _JVM_PACKAGE = re.compile(r"^\s*package\s+([\w.]+)", re.MULTILINE)
 _JVM_IMPORT = re.compile(r"^\s*import\s+(?:static\s+)?([\w.]+)(?:\s+as\s+(\w+))?\s*;?\s*$", re.MULTILINE)
-_JVM_CLASS_FOR_NAME = re.compile(r"\bClass\s*\.\s*forName\s*\(\s*" + _STRING_LITERAL.pattern)
+# The closing paren keeps a concatenated argument ("pkg." + name) from being
+# half-claimed as a bare literal prefix; such calls fall through to the sweep.
+_JVM_CLASS_FOR_NAME = re.compile(r"\bClass\s*\.\s*forName\s*\(\s*" + _STRING_LITERAL.pattern + r"\s*\)")
 # Receiver forms this check can resolve statically: Type::class.java (Kotlin) and
 # Type.class (Java). Anything else (javaClass, a variable) leaves group 1 empty.
 _JVM_MEMBER_LOOKUP = re.compile(
     r"(?:\b([\w.]+)(?:::class(?:\s*\.\s*java)?|\.class)\s*)?"
     r"\.\s*getDeclared(?:Field|Method)\s*\(\s*" + _STRING_LITERAL.pattern
 )
+
+# Every reflective-lookup shape this check can see at all. The literal-matching
+# patterns above must claim each occurrence; anything left over is a lookup the
+# check cannot trace, and the sweep in [_check_jvm_reflection] fails loud on it
+# instead of silently passing a release build that R8 may shrink into breaking.
+_JVM_CLASS_FOR_NAME_ANY = re.compile(r"\bClass\s*\.\s*forName\s*\(")
+_JVM_MEMBER_LOOKUP_ANY = re.compile(r"\.\s*getDeclared(?:Field|Method)\s*\(")
+
 # Only -keep variants without allowshrinking/allowobfuscation keep names.
 _KEEP = re.compile(
     r"^-(keepclasseswithmembernames|keepclasseswithmembers|keepclassmembernames|keepclassmembers|keepnames|keep)"
@@ -247,6 +257,16 @@ def _check_jvm_reflection(root: Path, keeps: list[Keep], errors: list[str]) -> N
         package = package_match.group(1) if package_match else ""
         imports = _jvm_imports(text)
 
+        claimed = [match.span() for match in _JVM_CLASS_FOR_NAME.finditer(text)]
+        claimed += [match.span() for match in _JVM_MEMBER_LOOKUP.finditer(text)]
+
+        def _unclaimed(pattern: re.Pattern[str]) -> list[re.Match[str]]:
+            return [
+                match
+                for match in pattern.finditer(text)
+                if not any(start <= match.start() and match.end() <= end for start, end in claimed)
+            ]
+
         for match in _JVM_CLASS_FOR_NAME.finditer(text):
             name = _binary_name(match.group(1))
             if name.startswith(PLATFORM_PREFIXES):
@@ -275,6 +295,21 @@ def _check_jvm_reflection(root: Path, keeps: list[Keep], errors: list[str]) -> N
                     f"{label} resolves {owner}.{member} with getDeclaredField/getDeclaredMethod "
                     f"but no -keep rule pins that member name"
                 )
+
+        # Fail loud on reflective lookups the literal patterns cannot claim: a
+        # constant, variable, or concatenated name is invisible to this check,
+        # so staying silent would green-light a release build R8 may break.
+        for _ in _unclaimed(_JVM_CLASS_FOR_NAME_ANY):
+            errors.append(
+                f"{label} calls Class.forName with a name this check cannot trace to a single string "
+                f"literal; inline the name or extend {Path(__file__).name}"
+            )
+        for _ in _unclaimed(_JVM_MEMBER_LOOKUP_ANY):
+            errors.append(
+                f"{label} looks up a member with getDeclaredField/getDeclaredMethod under a name this "
+                f"check cannot trace to a single string literal; inline the name or extend "
+                f"{Path(__file__).name}"
+            )
 
 
 def validate(root: Path) -> list[str]:

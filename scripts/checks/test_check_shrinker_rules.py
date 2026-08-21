@@ -267,6 +267,35 @@ class ShrinkerRulesCheckerTest(unittest.TestCase):
         self.assertEqual(1, len(errors))
         self.assertIn("cannot resolve", errors[0])
 
+    def test_non_literal_class_for_name_fails_loudly(self) -> None:
+        # A concatenated or constant name is invisible to the literal-matching
+        # patterns; staying silent would green-light a release R8 may break.
+        self._write_source(
+            "android/app/src/main/kotlin/com/edde746/plezy/boot/PluginLoader.kt",
+            'package com.edde746.plezy.boot\n\n'
+            'internal fun loadPlugin(name: String): Class<*> = Class.forName("com.example." + name)\n',
+        )
+        self._write_rules(FULL_RULES + "-keep class com.example.** { *; }\n")
+
+        errors = CHECKER.validate(self.root)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn("cannot trace to a single string", errors[0])
+
+    def test_non_literal_member_lookup_fails_loudly(self) -> None:
+        self._write_source(
+            "android/app/src/main/kotlin/com/edde746/plezy/Probe.kt",
+            'package com.edde746.plezy\n\n'
+            'private const val FIELD_NAME = "pendingResult"\n\n'
+            'internal fun grab(target: Any) = target.javaClass.getDeclaredField(FIELD_NAME)\n',
+        )
+        self._write_rules(FULL_RULES)
+
+        errors = CHECKER.validate(self.root)
+
+        self.assertEqual(1, len(errors))
+        self.assertIn("cannot trace to a single string", errors[0])
+
     def test_same_package_receiver_resolves_against_the_file_package(self) -> None:
         self._write_source(
             "android/app/src/main/kotlin/com/example/app/Host.kt",
