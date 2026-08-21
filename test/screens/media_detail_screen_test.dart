@@ -98,6 +98,76 @@ void main() {
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
   });
 
+  testWidgets('wide non-TV hero lets a logo-less title use the full width', (tester) async {
+    // Non-TV (iPad/desktop) hero: without a clear logo the fallback title used
+    // to be boxed at the logo's 400px width cap, so a long title clipped early
+    // on a wide display even with room to spare (#1796). It should now lay out
+    // wider than that cap.
+    TvDetectionService.debugSetAppleTVOverride(false);
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const title = 'The Surprisingly Long Movie Title That Needs Two Whole Lines';
+    final movie = testMediaItem(
+      id: 'wide_movie',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: title,
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    PlexApiCache.initialize(db);
+    JellyfinApiCache.initialize(db);
+    final downloadManager = DownloadManagerService(
+      database: db,
+      storageService: DownloadStorageService.instance,
+      clientResolver: (serverId, {clientScopeId}) => null,
+    );
+    downloadManager.recoveryFuture = Future<void>.value();
+    final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+    await downloadProvider.ensureInitialized();
+
+    final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+    final multiServerProvider = testMultiServer(clients: [client]).provider;
+    final watchStateOverlay = WatchStateStore();
+
+    addTearDown(() async {
+      watchStateOverlay.dispose();
+      downloadProvider.dispose();
+      downloadManager.dispose();
+      await db.close();
+    });
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+            ChangeNotifierProvider<WatchStateStore>.value(value: watchStateOverlay),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(title), findsWidgets);
+    // Old logo width cap was 400 (desiredLogoWidth in _buildHeroHeaderContent).
+    expect(tester.getSize(find.text(title).first).width, greaterThan(400));
+  });
+
   testWidgets('TV detail exposes hero information as one semantic node', (tester) async {
     final semantics = tester.ensureSemantics();
     await SettingsService.getInstance();
