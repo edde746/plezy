@@ -389,6 +389,44 @@ class PlayerNavigationCoordinator {
   }
 }
 
+/// Whether a Back press should answer a visible skip prompt instead of walking
+/// the screen's staged Back chain.
+///
+/// Mirrors the "sole affordance on screen" rule Select already uses in
+/// `_activatePlayerSurfaceSelect`: the prompt owns the key only while the
+/// chrome is down, the button is up, and the viewer can actually drive
+/// playback. With the chrome up the button is an ordinary focusable control
+/// and `skipButtonDismissed` would not hide it anyway, so Back stays the
+/// chrome's own key there; without [canControl] the button is inert, and
+/// eating a guest's exit press for a control they cannot operate is worse than
+/// leaving the prompt up.
+///
+/// Both Back flavours count. A local layer takes the dismiss key ahead of the
+/// screen's fullscreen and exit stages, the same way an open sheet already
+/// swallows a physical Escape — and Escape is only a fullscreen key when
+/// [shouldPhysicalEscapeExitFullscreen] holds, so excluding it would leave it
+/// exiting the player outright on macOS, on a windowed player, or with player
+/// navigation turned on.
+///
+/// Phones are excluded: there Back is unconditionally "leave the player"
+/// (#1938), and a stage sitting above the coordinator would quietly revoke
+/// that. So is an open playback prompt, whose own Back stage lives on the
+/// screen and would otherwise never be reached.
+bool shouldDismissSkipMarkerOnBack({
+  required PlayerNavigationKey navigationKey,
+  required bool controlsVisible,
+  required bool skipMarkerButtonVisible,
+  required bool canControl,
+  required bool isMobile,
+  required bool playbackPromptOpen,
+}) {
+  if (isMobile || playbackPromptOpen) return false;
+  if (navigationKey != PlayerNavigationKey.back && navigationKey != PlayerNavigationKey.physicalEscape) {
+    return false;
+  }
+  return canControl && !controlsVisible && skipMarkerButtonVisible;
+}
+
 // ignore: unused-code
 PlayerBackDisposition resolvePlayerBackDisposition({
   required PlayerNavigationKey navigationKey,
@@ -577,6 +615,12 @@ class PlexVideoControls extends StatefulWidget {
   /// Optional focus node for Play Next dialog button (for TV navigation from timeline)
   final FocusNode? playNextFocusNode;
 
+  /// Whether a screen-level playback prompt (e.g. "Still watching?") owns the
+  /// remote. The Play Next dialog announces itself through
+  /// [playNextFocusNode]; the others have no node here, and a local layer must
+  /// not answer a Back the prompt is waiting for.
+  final bool playbackPromptOpen;
+
   /// Shared controller for player chrome visibility, auto-hide, and layout state.
   final PlayerChromeController chromeController;
 
@@ -685,6 +729,7 @@ class PlexVideoControls extends StatefulWidget {
     required this.canNavigateMediaItems,
     this.hasFirstFrame,
     this.playNextFocusNode,
+    this.playbackPromptOpen = false,
     required this.chromeController,
     this.shaderService,
     this.onShaderChanged,
@@ -794,6 +839,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   int _hiddenSeekRepeatCount = 0;
   // Current marker state
   MediaMarker? _currentMarker;
+
+  /// Latched for the whole Back press; see [_handleLocalPlayerNavigationKeyEvent].
+  bool _skipMarkerOwnsBackPress = false;
   late List<MediaMarker> _markers = widget.initialMarkers ?? [];
   late bool _markersLoaded = widget.initialMarkers != null;
   // Playback state subscription for auto-hide timer

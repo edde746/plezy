@@ -90,7 +90,11 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     unawaited(_playOrPause());
   }
 
-  KeyEventResult _handleLocalPlayerNavigationKeyEvent(KeyEvent event, PlayerNavigationKey navigationKey) {
+  KeyEventResult _handleLocalPlayerNavigationKeyEvent(
+    KeyEvent event,
+    PlayerNavigationKey navigationKey,
+    bool isMobile,
+  ) {
     if (navigationKey == PlayerNavigationKey.none || navigationKey == PlayerNavigationKey.home) {
       return KeyEventResult.ignored;
     }
@@ -109,6 +113,38 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         widget.chromeController.setContentStripVisible(false);
         _restartHideTimerForCurrentPlaybackState();
       });
+    }
+
+    // A skip prompt is a local layer like the sheet and the content strip
+    // above it: Select takes the skip, Back declines it. Without this stage the
+    // only key that reads as "no thanks" on a remote is also the one that walks
+    // the screen's exit chain, so declining an intro costs the viewer the rest
+    // of the episode.
+    //
+    // The claim is latched for the whole press rather than re-derived per
+    // event. handleBackKeyAction consumes the key-down and acts on the key-up,
+    // and the button's own 7s dismiss timer — armed for every prompt while
+    // auto-skip is off, which is the default — can fire in between. Asking the
+    // full question again on the key-up would hand that press back to the
+    // screen and exit the player, which is the bug this stage exists to
+    // prevent.
+    //
+    // The button vanishing is the only race the latch covers. The chrome
+    // coming up, or a prompt opening, genuinely moves the key back to the
+    // screen's stages, so those release the claim mid-press.
+    final skipMarkerOwnsPress = event is KeyDownEvent
+        ? shouldDismissSkipMarkerOnBack(
+            navigationKey: navigationKey,
+            controlsVisible: _showControls,
+            skipMarkerButtonVisible: _isSkipMarkerButtonVisible,
+            canControl: widget.canControl,
+            isMobile: isMobile,
+            playbackPromptOpen: widget.playbackPromptOpen,
+          )
+        : _skipMarkerOwnsBackPress && !_showControls && !widget.playbackPromptOpen;
+    _skipMarkerOwnsBackPress = event is KeyUpEvent ? false : skipMarkerOwnsPress;
+    if (skipMarkerOwnsPress) {
+      return handlePlayerNavigationKeyAction(event, navigationKey, _dismissSkipMarker);
     }
 
     // The enclosing player screen is the sole owner of fullscreen, chrome,
@@ -202,7 +238,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
 
   KeyEventResult _handleControlsKeyEvent(KeyEvent event, bool isMobile) {
     final navigationKey = classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV());
-    final navigationResult = _handleLocalPlayerNavigationKeyEvent(event, navigationKey);
+    final navigationResult = _handleLocalPlayerNavigationKeyEvent(event, navigationKey, isMobile);
     if (navigationResult != KeyEventResult.ignored) {
       return navigationResult;
     }

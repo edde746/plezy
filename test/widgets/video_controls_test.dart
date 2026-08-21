@@ -924,6 +924,59 @@ void main() {
     });
   });
 
+  group('shouldDismissSkipMarkerOnBack', () {
+    bool call({
+      PlayerNavigationKey navigationKey = PlayerNavigationKey.back,
+      bool controlsVisible = false,
+      bool skipMarkerButtonVisible = true,
+      bool canControl = true,
+      bool isMobile = false,
+      bool playbackPromptOpen = false,
+    }) {
+      return shouldDismissSkipMarkerOnBack(
+        navigationKey: navigationKey,
+        controlsVisible: controlsVisible,
+        skipMarkerButtonVisible: skipMarkerButtonVisible,
+        canControl: canControl,
+        isMobile: isMobile,
+        playbackPromptOpen: playbackPromptOpen,
+      );
+    }
+
+    test('declines a skip prompt while the button is the sole affordance', () {
+      expect(call(), isTrue);
+    });
+
+    test('claims physical Escape too, which has no fullscreen role here', () {
+      expect(call(navigationKey: PlayerNavigationKey.physicalEscape), isTrue);
+    });
+
+    test('leaves Back to the screen when no skip button is up', () {
+      expect(call(skipMarkerButtonVisible: false), isFalse);
+    });
+
+    test('keeps Back on the chrome while the controls are visible', () {
+      expect(call(controlsVisible: true), isFalse);
+    });
+
+    test('leaves a phone Back unconditional, as #1938 requires', () {
+      expect(call(isMobile: true), isFalse);
+    });
+
+    test('does not eat the exit press for a viewer who cannot skip', () {
+      expect(call(canControl: false), isFalse);
+    });
+
+    test('leaves Back to a screen-level prompt that is waiting for it', () {
+      expect(call(playbackPromptOpen: true), isFalse);
+    });
+
+    test('ignores keys the screen owns outright', () {
+      expect(call(navigationKey: PlayerNavigationKey.home), isFalse);
+      expect(call(navigationKey: PlayerNavigationKey.none), isFalse);
+    });
+  });
+
   group('shouldPhysicalEscapeExitFullscreen', () {
     test('uses fullscreen-first behavior for normal Windows and Linux navigation', () {
       expect(
