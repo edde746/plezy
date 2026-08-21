@@ -153,9 +153,10 @@ class TrackerCoordinator {
 
   /// Drop [service]'s queued writes for the active profile.
   ///
-  /// Called on explicit disconnect, before another account can bind: a queued
-  /// row created under the departing account would otherwise be replayed
-  /// through its successor, silently editing the wrong account's history.
+  /// Called on explicit disconnect and on session invalidation, before another
+  /// account can bind: a queued row created under the departing account would
+  /// otherwise be replayed through its successor, silently editing the wrong
+  /// account's history.
   /// Best-effort like [flushWriteQueue]: a purge that cannot be persisted is
   /// logged and the rows simply keep waiting.
   Future<void> purgeWriteQueueForService(TrackerService service) async {
