@@ -1626,8 +1626,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Backend-aware metadata lookup for offline UI. Routes through
   /// [DownloadManagerService] which dispatches to [PlexApiCache] or
   /// [JellyfinApiCache] based on the connection's `kind`.
+  ///
+  /// Resolves via the active profile's persisted scope — never the download
+  /// creator's `clientScopeId` — so a shared download can't leak another
+  /// user's cached watch state or token-stamped URLs. A profile with no
+  /// persisted scope (or no cached row under its own namespace) gets null and
+  /// the caller falls back to its lightweight seed metadata.
   Future<MediaItem?> lookupOfflineMetadata(ServerId serverId, String itemId) =>
-      _downloadManager.lookupMetadata(serverId, itemId);
+      _downloadManager.lookupMetadata(serverId, itemId, preferActiveScope: true, activeProfileId: _activeProfileId);
 
   /// Refresh only metadata from API cache (after watch state sync).
   ///
