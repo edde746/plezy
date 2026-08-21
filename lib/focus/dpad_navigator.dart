@@ -73,9 +73,10 @@ extension DpadKeyExtension on LogicalKeyboardKey {
 
 /// Base class for suppressing key events after a key category triggers an
 /// action (e.g. opening a sheet). While suppressed, every event of the matched
-/// key category is consumed — including a [KeyDownEvent], because an armer
-/// running in the [HardwareKeyboard] handler phase (the hotkey recorder) arms
-/// against the very KeyDown that is then re-dispatched through the focus tree.
+/// key category is consumed — including a [KeyDownEvent] when
+/// [consumeKeyDowns] is set, because an armer running in the
+/// [HardwareKeyboard] handler phase (the hotkey recorder) arms against the
+/// very KeyDown that is then re-dispatched through the focus tree.
 ///
 /// Suppression ends with the physical press: a global [HardwareKeyboard]
 /// observer watches for the matching [KeyUpEvent] and clears the armed state
@@ -83,10 +84,19 @@ extension DpadKeyExtension on LogicalKeyboardKey {
 /// focus-phase consumers still swallow it — which guarantees a stale armed
 /// state (a KeyUp delivered to a focus chain that never consulted us) can
 /// never swallow the next press.
+///
+/// Armers that target an in-flight KeyUp ([consumeKeyDowns] unset) treat a
+/// matching [KeyDownEvent] as proof the suppressed press already ended without
+/// its KeyUp reaching us (e.g. a closing TV IME session ate it): the armed
+/// state is cleared and the fresh press passes through unconsumed.
 class _KeyUpSuppressor {
   final bool Function(LogicalKeyboardKey) _keyMatcher;
 
-  _KeyUpSuppressor(this._keyMatcher);
+  /// Whether a matching [KeyDownEvent] is consumed while armed. See the class
+  /// documentation for why armers targeting an in-flight KeyUp must unset it.
+  final bool consumeKeyDowns;
+
+  _KeyUpSuppressor(this._keyMatcher, {this.consumeKeyDowns = true});
 
   bool _suppressed = false;
 
@@ -115,11 +125,18 @@ class _KeyUpSuppressor {
   void clearSuppression() => _suppressed = false;
 
   /// Returns `true` (consumed) when the event belongs to the matched key
-  /// category and suppression is active. Clears suppression on [KeyUpEvent].
+  /// category and suppression is active. Clears suppression on [KeyUpEvent],
+  /// and on a stale [KeyDownEvent] when [consumeKeyDowns] is unset.
   bool consumeIfSuppressed(KeyEvent event) {
     if (!_suppressed) return false;
     if (!_keyMatcher(event.logicalKey)) return false;
     if (event is KeyUpEvent) _suppressed = false;
+    if (event is KeyDownEvent && !consumeKeyDowns) {
+      // The in-flight KeyUp never arrived; this is a fresh press, not the
+      // suppressed one. Clear and let it through.
+      _suppressed = false;
+      return false;
+    }
     return true;
   }
 }
@@ -136,10 +153,13 @@ class SelectKeyUpSuppressor {
 /// Global helper to suppress the next BACK key-up event.
 ///
 /// Armed when a modal (dialog, sheet) closes while a back key is still held —
-/// e.g. by [BackKeySuppressorObserver] when a route pops mid-press — so the
-/// in-flight key-up doesn't propagate to the underlying screen's back handler.
+/// e.g. by [BackKeySuppressorObserver] when a route pops mid-press — or when a
+/// down-only back handler moves focus before the matching KeyUp is dispatched.
+/// A matching KeyDown while armed clears the arming instead of consuming: it
+/// can only mean the suppressed press's KeyUp was swallowed off-app, so the
+/// fresh press must act normally.
 class BackKeyUpSuppressor {
-  static final _instance = _KeyUpSuppressor((k) => k.isBackKey);
+  static final _instance = _KeyUpSuppressor((k) => k.isBackKey, consumeKeyDowns: false);
 
   static void suppressBackUntilKeyUp() => _instance.suppress();
 

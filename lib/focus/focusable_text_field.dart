@@ -242,9 +242,11 @@ KeyEventResult _handleInputKey({
         // KeyUp is then delivered to the NEW focus chain, whose shared
         // handlers act on KeyUp — a second back action. Arm the suppressor
         // (after onBack, so a modal opened by it cannot clear the arming) so
-        // whichever chain receives the KeyUp swallows it. This cannot pin: the
-        // suppressor's hardware observer clears the armed state once the
-        // physical press ends — see _KeyUpSuppressor.
+        // whichever chain receives the KeyUp swallows it. This cannot pin:
+        // the suppressor's hardware observer clears the armed state once the
+        // physical press ends, and if the IME swallows that KeyUp entirely,
+        // the next back KeyDown is treated as stale arming and passes
+        // through — see _KeyUpSuppressor.
         BackKeyUpSuppressor.suppressBackUntilKeyUp();
       }
       return finish(KeyEventResult.handled, 'onBack');

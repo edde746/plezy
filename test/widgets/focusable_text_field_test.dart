@@ -1154,8 +1154,8 @@ void main() {
                   buttonFocusNode.requestFocus();
                 },
               ),
-              // No suppressor-aware handler here: the armed state goes stale
-              // because the KeyUp is never consumed anywhere.
+              // No suppressor-aware handler here, and the IME swallows the
+              // press's KeyUp entirely: nothing ever ends the armed state.
               FilledButton(focusNode: buttonFocusNode, onPressed: () {}, child: const Text('Plain')),
             ],
           ),
@@ -1166,11 +1166,11 @@ void main() {
     fieldFocusNode.requestFocus();
     await tester.pump();
 
+    // TV back acts on KeyDown and arms the suppressor for the matching
+    // KeyUp — which never arrives (the closing IME session ate it).
     await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
     await tester.pump();
     expect(fieldBacks, 1);
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
-    await tester.pump();
 
     // The stale armed suppressor must clear itself on the next KeyDown
     // without consuming it — the second press still runs onBack.
