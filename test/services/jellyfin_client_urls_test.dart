@@ -3005,13 +3005,13 @@ void main() {
       final artistAlbums = captured[2].queryParameters;
       final albumTracks = captured[3].queryParameters;
 
-      expect(albumBrowse['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(albumBrowse['Fields'], 'PremiereDate,OriginalTitle,SortName,DateCreated');
       expect(albumBrowse['EnableUserData'], 'false');
       expect(trackBrowse['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
       expect(albumBrowse['IncludeItemTypes'], 'MusicAlbum');
       expect(trackBrowse['IncludeItemTypes'], 'Audio');
       expect(trackBrowse.containsKey('EnableUserData'), isFalse);
-      expect(artistAlbums['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      expect(artistAlbums['Fields'], 'PremiereDate,OriginalTitle,SortName,DateCreated');
       expect(artistAlbums['EnableUserData'], 'false');
       expect(albumTracks['Fields'], 'UserData,PremiereDate,OriginalTitle,SortName');
     });
@@ -4391,8 +4391,9 @@ void main() {
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['Limit'], '30');
       // Album FOLDER dtos: count/user-data fields would each cost the server
-      // a recursive per-album COUNT query (#1552).
-      expect(captured!.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName');
+      // a recursive per-album COUNT query (#1552). DateCreated is a direct dto
+      // property and backs the see-all sheet's "Date Added" sort.
+      expect(captured!.queryParameters['Fields'], 'PremiereDate,OriginalTitle,SortName,DateCreated');
       expect(captured!.queryParameters['EnableUserData'], 'false');
       client.close();
     });

@@ -137,8 +137,12 @@ const _baseFolderRowFields = 'SortName';
 /// count fields are needed; queried with `EnableUserData=false` like the
 /// filesystem folder rows. Trade-off: fully played albums lose the watched
 /// checkmark on this row (Jellyfin web's latest-albums row shows no play
-/// state either).
-const _baseMusicAlbumRowFields = 'PremiereDate,OriginalTitle,SortName';
+/// state either). `DateCreated` stays in the set despite the slimness goal:
+/// it is a direct dto property (no COUNT query), and the Latest Albums
+/// see-all sheet offers the "Date Added" sort, whose [MediaItem.recencySortKey]
+/// degrades to null-comparing no-ops without it — the same gap #1552's
+/// DateCreated work closed for catalog and hub rows.
+const _baseMusicAlbumRowFields = 'PremiereDate,OriginalTitle,SortName,DateCreated';
 
 /// Played-track hub rows (Recently Played / Most Played): Audio LEAF dtos.
 /// Keeps `UserData` — a cheap direct lookup on leaves that drives the
