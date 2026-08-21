@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../media/ids.dart';
 
@@ -304,8 +306,8 @@ class SyncRuleExecutor {
     return _database.completeSyncRuleExecution(globalKey);
   }
 
-  /// Keep [rule.episodeCount] unwatched episodes queued for a show/season
-  /// (0 = all). Always "unwatched" — watched/all filtering doesn't apply here.
+  /// Keep [rule.episodeCount] episodes queued for a show/season (0 = all),
+  /// honoring the rule's watched filter.
   Future<SyncRuleResult?> _executeEpisodeRule({
     required SyncRuleItem rule,
     required MediaServerClient client,
@@ -316,32 +318,38 @@ class SyncRuleExecutor {
     required AssociateSyncRuleDownload associateDownload,
     required QueueSyncRuleDownload queueSingleDownload,
   }) async {
+    // Honor the rule's filter: 'unwatched' rules track only unwatched episodes
+    // (and exclude ones watched locally ahead of server sync); 'all' rules
+    // (Custom Amount (Any)) include watched episodes too.
+    final unwatchedOnly = rule.downloadFilter == SyncRuleFilter.unwatched;
     final fromServer = <MediaItem>[];
     final sourceMetadata = metadata[rule.globalKey];
     await collectEpisodes(
       client,
       rule.ratingKey,
-      unwatchedOnly: true,
+      unwatchedOnly: unwatchedOnly,
       out: fromServer,
       fallback: sourceMetadata,
       includeSpecials: rule.targetType != ContentTypes.show || rule.includeSpecials,
     );
 
-    final unwatchedEpisodes = await _excludeLocallyWatched(
-      episodes: fromServer,
-      serverId: ServerId(rule.serverId),
-      profileId: profileId,
-      clientScopeId: clientScopeId,
-    );
+    final candidates = unwatchedOnly
+        ? await _excludeLocallyWatched(
+            episodes: fromServer,
+            serverId: ServerId(rule.serverId),
+            profileId: profileId,
+            clientScopeId: clientScopeId,
+          )
+        : fromServer;
 
-    if (unwatchedEpisodes.isEmpty) {
-      appLogger.d('Sync rule ${rule.globalKey}: no unwatched episodes available');
+    if (candidates.isEmpty) {
+      appLogger.d('Sync rule ${rule.globalKey}: no candidate episodes available');
       await _completeRuleExecution(rule.globalKey);
       return null;
     }
 
     int alreadyHave = 0;
-    for (final ep in unwatchedEpisodes) {
+    for (final ep in candidates) {
       final gk = buildGlobalKey(ServerId(rule.serverId), ep.id);
       if (_isActiveDownload(downloads[gk])) {
         alreadyHave++;
@@ -349,8 +357,8 @@ class SyncRuleExecutor {
       }
     }
 
-    // episodeCount == 0 means "all unwatched" — target is total unwatched count
-    final targetCount = rule.episodeCount > 0 ? rule.episodeCount : unwatchedEpisodes.length;
+    // episodeCount == 0 means "all candidates" — target is the full count.
+    final targetCount = rule.episodeCount > 0 ? rule.episodeCount : candidates.length;
     final deficit = targetCount - alreadyHave;
     if (deficit <= 0) {
       appLogger.d('Sync rule ${rule.globalKey}: no deficit ($alreadyHave/$targetCount already have)');
@@ -358,8 +366,16 @@ class SyncRuleExecutor {
       return null;
     }
 
+    // Random rules fill the deficit with random candidates. Shuffling only
+    // affects which NOT-yet-downloaded episodes get picked — already-downloaded
+    // ones are skipped below regardless of order, so existing downloads are
+    // never disturbed (no churn across reconciles).
+    if (rule.randomEpisodes) {
+      candidates.shuffle(Random());
+    }
+
     int queued = 0;
-    for (final ep in unwatchedEpisodes) {
+    for (final ep in candidates) {
       if (queued >= deficit) break;
 
       final gk = buildGlobalKey(ServerId(rule.serverId), ep.id);

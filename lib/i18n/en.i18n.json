@@ -1537,6 +1537,8 @@
     "unwatchedOnly": "Unwatched only",
     "nextNUnwatched": "Next ${count} unwatched",
     "customAmount": "Custom amount...",
+    "customAmountAny": "Custom amount (any)...",
+    "randomEpisodes": "Random episodes",
     "includeSpecials": "Include Specials",
     "howManyEpisodes": "How many episodes?",
     "invalidEpisodeCount": "Enter a valid episode count.",

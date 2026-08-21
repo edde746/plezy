@@ -106,6 +106,9 @@ class SyncRules extends Table {
   IntColumn get lastExecutedAt => integer().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
+  // When true, the rule fills its episode quota with randomly chosen episodes
+  // instead of release order. Only meaningful for show/season rules.
+  BoolColumn get randomEpisodes => boolean().withDefault(const Constant(false))();
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
 
   /// Gates collection/playlist backfill into [SyncRuleDownloads] before

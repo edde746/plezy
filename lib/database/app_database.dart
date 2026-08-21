@@ -365,7 +365,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration {
@@ -734,6 +734,13 @@ class AppDatabase extends _$AppDatabase {
         if (from < 21) {
           appLogger.i('Dropping unused Connections.isDefault column (v21 migration)');
           await m.alterTable(TableMigration(connections));
+        }
+        if (from < 22) {
+          appLogger.i('Adding randomEpisodes column to SyncRules (v22 migration)');
+          await _ignoreAlreadyExists(
+            'SyncRules.randomEpisodes column',
+            () => m.addColumn(syncRules, syncRules.randomEpisodes),
+          );
         }
       },
     );
@@ -1196,6 +1203,7 @@ class AppDatabase extends _$AppDatabase {
     required int episodeCount,
     int mediaIndex = 0,
     String downloadFilter = 'unwatched',
+    bool randomEpisodes = false,
     bool includeSpecials = true,
   }) async {
     // [insertOnConflictUpdate] defaults the conflict target to the primary
@@ -1214,6 +1222,7 @@ class AppDatabase extends _$AppDatabase {
         createdAt: DateTime.now().millisecondsSinceEpoch,
         mediaIndex: Value(mediaIndex),
         downloadFilter: Value(downloadFilter),
+        randomEpisodes: Value(randomEpisodes),
         includeSpecials: Value(includeSpecials),
       ),
       onConflict: DoUpdate(
@@ -1225,6 +1234,7 @@ class AppDatabase extends _$AppDatabase {
           episodeCount: Value(episodeCount),
           mediaIndex: Value(mediaIndex),
           downloadFilter: Value(downloadFilter),
+          randomEpisodes: Value(randomEpisodes),
           includeSpecials: Value(includeSpecials),
         ),
         target: [syncRules.globalKey],
