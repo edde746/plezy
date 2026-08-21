@@ -336,6 +336,23 @@ void main() {
     expect(focusLabel(), 'PlayPause');
   });
 
+  playerTest('hiding in the frame gap after show cannot strand controlsPresented', (tester) async {
+    chrome.show(restartAutoHide: false);
+    // One pump: the subtree mounts at opacity 0 and the post-frame callback
+    // flips the fade-in target on — but the fade-in build has not run yet.
+    await tester.pump();
+
+    // A pointer exit landing in that gap must not trust an opaque flag the
+    // renderer never realized: hide() retires presentation immediately, and
+    // the never-started fade-in cannot strand the flag behind a fade-out
+    // whose onEnd will never fire.
+    expect(chrome.hide(), isTrue);
+    await tester.pump();
+
+    expect(chrome.controlsVisible, isFalse);
+    expect(chrome.controlsPresented, isFalse, reason: 'back must resolve to the route pop, not hide-the-chrome');
+  });
+
   // The player surface must own the remote from the moment it mounts, whatever
   // the chrome is doing. When it does not, the screen node answers the first
   // key with its chrome-raising self-heal instead of a playback shortcut.

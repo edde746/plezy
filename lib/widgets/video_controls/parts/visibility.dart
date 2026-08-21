@@ -281,8 +281,14 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
         _controlsOpaque = false;
       });
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        // Only flips the render target so the freshly mounted AnimatedOpacity
+        // animates up instead of inserting at full opacity. The controller's
+        // opaque flag follows the real fade-in completion (AnimatedOpacity.onEnd
+        // in video_controls.dart): marking it here would let a hide() landing
+        // before the next build trust an opacity the renderer never realized —
+        // hide() would keep controlsPresented while the fade-in target never
+        // rendered, so no fade-out runs and markControlsHidden never arrives.
         if (!mounted || !_showControls || !_controlsMounted) return;
-        widget.chromeController.markControlsOpaque();
         _setControlsState(() => _controlsOpaque = true);
       });
     } else if (controlsVisible && !_controlsMounted) {

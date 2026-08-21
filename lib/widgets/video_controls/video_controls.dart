@@ -1272,6 +1272,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                     if (_controlsMounted) {
                                       setState(() => _controlsMounted = false);
                                     }
+                                  } else {
+                                    // The fade-in genuinely completed, so a later
+                                    // hide() can rely on a real fade-out retiring
+                                    // controlsPresented via markControlsHidden.
+                                    widget.chromeController.markControlsOpaque();
                                   }
                                 },
                                 child: Builder(
