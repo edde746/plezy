@@ -321,6 +321,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         canNavigateMediaItems: authority.canNavigateMediaItems,
                         hasFirstFrame: _firstFrame.uiReady,
                         playNextFocusNode: _episode.showPlayNextDialog ? _playNextConfirmFocusNode : null,
+                        playbackPromptOpen: _showStillWatchingPrompt,
                         chromeController: _chromeController,
                         shaderService: _shaderService,
                         // ignore: no-empty-block - state update triggers rebuild to reflect shader change

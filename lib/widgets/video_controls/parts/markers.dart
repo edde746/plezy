@@ -234,6 +234,28 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     _performAutoSkip();
   }
 
+  /// The viewer's "no thanks" to a skip prompt: stops any running auto-skip
+  /// countdown and hides the button for the rest of this marker.
+  ///
+  /// The mirror of [_activateSkipMarker]. The focus hand-back carries its own
+  /// chrome guard rather than relying on the caller's: with the chrome up the
+  /// button stays visible and keeps focus, so releasing it there would pull the
+  /// remote off a control the viewer can still see.
+  void _dismissSkipMarker() {
+    if (!_isSkipMarkerButtonVisible) return;
+    // Cancelled here rather than left to the global key handler's
+    // _cancelAutoSkipFromUserInteraction: gamepad and companion-remote presses
+    // are synthesized straight onto the focus chain and never reach
+    // HardwareKeyboard, so for those this is the only thing that stops the
+    // countdown.
+    _cancelAutoSkipTimer();
+    _cancelSkipButtonDismissTimer();
+    _setControlsState(() {
+      _skipButtonDismissed = true;
+    });
+    if (!_showControls) _releaseSkipMarkerFocusToSurface();
+  }
+
   Widget _buildSkipMarkerButton() {
     final isAutoSkipActive = _autoSkipTimer?.isActive ?? false;
     return SkipMarkerButton(

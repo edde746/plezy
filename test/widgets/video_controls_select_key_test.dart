@@ -21,6 +21,8 @@ import 'package:plezy/widgets/video_controls/desktop_video_controls.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
+import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
+import 'package:plezy/focus/dpad_navigator.dart';
 
 import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
@@ -48,6 +50,17 @@ void main() {
   late FocusNode screenFocusNode;
   var toggles = 0;
 
+  /// What the player screen would have done with each Back that escaped the
+  /// controls. The harness cannot run the real staged chain, so it records the
+  /// disposition the screen would have resolved: an empty list means the
+  /// controls answered the press themselves.
+  final screenBackDispositions = <PlayerBackDisposition>[];
+
+  /// Back key-downs that reached the screen node. A stage that claims the press
+  /// consumes the down as well as the up, so this separates "the controls
+  /// declined the press" from "a later guard handed it back".
+  var screenBackKeyDowns = 0;
+
   Future<void> setNavigationEnabled(bool value) => settings.write(SettingsService.videoPlayerNavigationEnabled, value);
 
   setUp(() async {
@@ -71,10 +84,13 @@ void main() {
     hasFirstFrame = ValueNotifier<bool>(true);
     screenFocusNode = FocusNode(debugLabel: 'VideoPlayerScreen');
     toggles = 0;
+    screenBackDispositions.clear();
+    screenBackKeyDowns = 0;
   });
 
   tearDown(() async {
     TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.setForceTVSync(false);
     PlatformDetector.debugSetIsDesktopOSOverride(null);
     hasFirstFrame.dispose();
     screenFocusNode.dispose();
@@ -92,7 +108,7 @@ void main() {
   /// so the controls' own `autofocus` cannot win it back. Without that, the
   /// surface would take focus by default and the startup claim would look
   /// correct even when it is not.
-  Widget shell(Widget child) => InputModeTracker(
+  Widget shell(Widget child, {TargetPlatform platform = TargetPlatform.windows}) => InputModeTracker(
     child: MultiProvider(
       providers: [
         Provider<AppDatabase>.value(value: database),
@@ -100,25 +116,50 @@ void main() {
         ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
       ],
       child: MaterialApp(
-        theme: ThemeData(platform: TargetPlatform.windows, extensions: const [testMonoTokens]),
+        theme: ThemeData(platform: platform, extensions: const [testMonoTokens]),
         home: Scaffold(
           body: SizedBox(
             width: 1280,
             height: 720,
-            child: Focus(focusNode: screenFocusNode, autofocus: true, child: child),
+            child: Focus(
+              focusNode: screenFocusNode,
+              autofocus: true,
+              onKeyEvent: (node, event) {
+                if (event is KeyDownEvent && event.logicalKey.isBackKey) screenBackKeyDowns++;
+                if (event is KeyUpEvent && event.logicalKey.isBackKey) {
+                  screenBackDispositions.add(
+                    resolvePlayerBackDisposition(
+                      navigationKey: classifyPlayerNavigationKey(event, isAppleTV: PlatformDetector.isAppleTV()),
+                      contentStripVisible: chrome.contentStripVisible,
+                      controlsVisible: chrome.controlsVisible,
+                      physicalEscapeExitsFullscreen: false,
+                    ),
+                  );
+                }
+                return KeyEventResult.ignored;
+              },
+              child: child,
+            ),
           ),
         ),
       ),
     ),
   );
 
-  Future<void> pumpPlayer(WidgetTester tester, {List<MediaMarker>? markers}) async {
-    await tester.pumpWidget(shell(const SizedBox.expand()));
+  Future<void> pumpPlayer(
+    WidgetTester tester, {
+    List<MediaMarker>? markers,
+    TargetPlatform platform = TargetPlatform.windows,
+    bool canControl = true,
+    bool playbackPromptOpen = false,
+  }) async {
+    await tester.pumpWidget(shell(const SizedBox.expand(), platform: platform));
     await tester.pump();
     expect(screenFocusNode.hasPrimaryFocus, isTrue, reason: 'precondition: the screen node owns the remote');
 
     await tester.pumpWidget(
       shell(
+        platform: platform,
         PlexVideoControls(
           player: player,
           volumeController: volume,
@@ -128,6 +169,8 @@ void main() {
           chromeController: chrome,
           hasFirstFrame: hasFirstFrame,
           canNavigateMediaItems: false,
+          canControl: canControl,
+          playbackPromptOpen: playbackPromptOpen,
           onPlayPauseRequested: (_) async => toggles++,
         ),
       ),
@@ -149,9 +192,22 @@ void main() {
 
   /// Mounts the player, runs [body], then unmounts and disarms the auto-hide
   /// timer so the harness's pending-timer check stays honest.
-  void playerTest(String description, Future<void> Function(WidgetTester tester) body, {List<MediaMarker>? markers}) {
+  void playerTest(
+    String description,
+    Future<void> Function(WidgetTester tester) body, {
+    List<MediaMarker>? markers,
+    TargetPlatform platform = TargetPlatform.windows,
+    bool canControl = true,
+    bool playbackPromptOpen = false,
+  }) {
     testWidgets(description, (tester) async {
-      await pumpPlayer(tester, markers: markers);
+      await pumpPlayer(
+        tester,
+        markers: markers,
+        platform: platform,
+        canControl: canControl,
+        playbackPromptOpen: playbackPromptOpen,
+      );
       await body(tester);
       chrome.cancelAutoHide();
       await tester.pumpWidget(const SizedBox.shrink());
@@ -315,6 +371,179 @@ void main() {
       expect(chrome.controlsVisible, isFalse);
       expect(focusLabel(), 'PlayerSurface');
     });
+  });
+
+  // Declining a skip prompt is the mirror of taking it. Back used to fall
+  // through to the screen's staged chain and exit the player outright, so the
+  // only key on a remote that means "no thanks" also ended the episode.
+  // Desktop, not TV, because Apple TV runs Back on key-down: the normal
+  // down-consume/up-act path is where the claim has to hold.
+  group('declining a skip prompt', () {
+    final introMarker = MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000);
+
+    Future<void> showPrompt(WidgetTester tester) async {
+      player.emitPosition(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+      expect(find.byType(SkipMarkerButton), findsOneWidget, reason: 'precondition: the prompt is up');
+    }
+
+    playerTest('Back hides the prompt without skipping or exiting', markers: [introMarker], (tester) async {
+      await showPrompt(tester);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(find.byType(SkipMarkerButton), findsNothing, reason: 'the prompt is declined');
+      expect(player.state.position, const Duration(seconds: 15), reason: 'declining must not skip');
+      expect(focusLabel(), 'PlayerSurface', reason: 'the vanished button must hand the remote back');
+      expect(screenBackDispositions, isEmpty, reason: 'the press must not reach the exit chain');
+    });
+
+    playerTest('the next Back belongs to the screen again', markers: [introMarker], (tester) async {
+      await showPrompt(tester);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(screenBackDispositions, [PlayerBackDisposition.exitPlayer], reason: 'one press declines, the next leaves');
+    });
+
+    // The button's own 7s auto-dismiss is armed for every prompt while
+    // auto-skip is off, which is the default. handleBackKeyAction acts on the
+    // key-up, so a timer landing mid-press used to flip the gate and hand the
+    // press to the screen -- exiting the player on the very press meant to
+    // keep it open.
+    playerTest('a mid-press auto-dismiss cannot turn the press into an exit', markers: [introMarker], (tester) async {
+      await showPrompt(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 8));
+      expect(find.byType(SkipMarkerButton), findsNothing, reason: 'precondition: the timer fired mid-press');
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
+      await tester.pumpAndSettle();
+
+      expect(screenBackDispositions, isEmpty, reason: 'the claim is latched for the whole press');
+    });
+
+    playerTest('physical Escape declines it too, having no fullscreen role here', markers: [introMarker], (
+      tester,
+    ) async {
+      await showPrompt(tester);
+
+      await press(tester, LogicalKeyboardKey.escape);
+
+      expect(find.byType(SkipMarkerButton), findsNothing);
+      expect(screenBackDispositions, isEmpty, reason: 'Escape must not exit the player either');
+    });
+
+    playerTest('a screen-level prompt keeps its own Back', markers: [introMarker], playbackPromptOpen: true, (
+      tester,
+    ) async {
+      await showPrompt(tester);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(find.byType(SkipMarkerButton), findsOneWidget, reason: 'the prompt is not ours to answer');
+      expect(screenBackKeyDowns, 1, reason: 'the press is never claimed, not merely handed back');
+      expect(screenBackDispositions, isNotEmpty, reason: 'the prompt stage lives on the screen');
+    });
+
+    playerTest('a viewer who cannot skip keeps their exit press', markers: [introMarker], canControl: false, (
+      tester,
+    ) async {
+      await showPrompt(tester);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(find.byType(SkipMarkerButton), findsOneWidget, reason: 'the button is inert, not dismissable');
+      expect(screenBackDispositions, [PlayerBackDisposition.exitPlayer]);
+    });
+
+    playerTest('the chrome owns a press that starts under it', markers: [introMarker], (tester) async {
+      await showPrompt(tester);
+      chrome.show();
+      await tester.pumpAndSettle();
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(screenBackKeyDowns, 1, reason: 'the press is never claimed, not merely handed back');
+      expect(screenBackDispositions, [PlayerBackDisposition.hideControls]);
+    });
+
+    // The gesture the feature exists for: "no thanks" while the countdown runs.
+    playerTest('declining stops a running auto-skip countdown', markers: [introMarker], (tester) async {
+      await settings.write(SettingsService.autoSkipIntro, true);
+      await showPrompt(tester);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+      await tester.pump(const Duration(seconds: 10));
+
+      expect(player.state.position, const Duration(seconds: 15), reason: 'a declined countdown must not fire');
+      expect(screenBackDispositions, isEmpty);
+    });
+
+    // The latch covers the button vanishing mid-press, not the chrome rising.
+    // With the OSD up Back belongs to the chrome, so a press that starts under
+    // a bare prompt and ends under the OSD has to be handed back.
+    playerTest('the claim is released when the chrome comes up mid-press', markers: [introMarker], (tester) async {
+      await showPrompt(tester);
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
+      await tester.pump();
+      chrome.show();
+      await tester.pumpAndSettle();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
+      await tester.pumpAndSettle();
+
+      expect(screenBackDispositions, [
+        PlayerBackDisposition.hideControls,
+      ], reason: 'with the chrome up the press is the chrome to stage');
+    });
+
+    playerTest('a phone Back stays unconditional', markers: [introMarker], platform: TargetPlatform.android, (
+      tester,
+    ) async {
+      await showPrompt(tester);
+
+      await press(tester, LogicalKeyboardKey.gameButtonB);
+
+      expect(find.byType(SkipMarkerButton), findsOneWidget, reason: 'the prompt does not own a phone Back');
+      expect(screenBackDispositions, [PlayerBackDisposition.exitPlayer], reason: '#1938: mobile Back exits, always');
+    });
+  });
+
+  // Android TV is the platform the report came from, and it is materially
+  // different: the marker autofocuses the button, so the key is dispatched
+  // from the button's node upward rather than from the surface. The forced-TV
+  // override is the only way to get a non-Apple TV, since the Apple override
+  // sets both isTV and isAppleTV.
+  group('declining a skip prompt on Android TV', () {
+    setUp(() async {
+      TvDetectionService.debugSetAppleTVOverride(null);
+      await TvDetectionService.getInstance(forceTv: true);
+      TvDetectionService.setForceTVSync(true);
+      PlatformDetector.debugSetIsDesktopOSOverride(false);
+      await setNavigationEnabled(true);
+    });
+
+    playerTest(
+      'Back declines the focused prompt and hands the remote back',
+      markers: [MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000)],
+      (tester) async {
+        InputModeTracker.reportNonPointerInput();
+        player.emitPosition(const Duration(seconds: 15));
+        await tester.pumpAndSettle();
+        expect(focusLabel(), 'SkipMarkerButton', reason: 'precondition: TV autofocuses the sole affordance');
+
+        await press(tester, LogicalKeyboardKey.gameButtonB);
+
+        expect(find.byType(SkipMarkerButton), findsNothing);
+        expect(player.state.position, const Duration(seconds: 15), reason: 'declining must not skip');
+        expect(focusLabel(), 'PlayerSurface', reason: 'the vanished button must hand the remote back');
+        expect(screenBackKeyDowns, 0, reason: 'the prompt answered the press');
+        expect(screenBackDispositions, isEmpty);
+      },
+    );
   });
 
   group('skip intro on a television', () {
