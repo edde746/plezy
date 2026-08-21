@@ -4,22 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
-import '../../connection/connection_registry.dart';
+import '../../connection/connection.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/media_backend.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../profiles/active_profile_provider.dart';
-import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_activation.dart';
 import '../../profiles/profile_avatar.dart';
 import '../../profiles/profile_connection.dart';
-import '../../profiles/profile_connection_registry.dart';
-import '../../profiles/profile_registry.dart';
-import '../../profiles/profiles_view.dart';
+import '../../profiles/profile_merge.dart';
 import '../../services/app_exit_service.dart';
-import '../../services/storage_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
@@ -52,37 +48,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   final Map<String, FocusNode> _profileFocusNodes = {};
   final Map<String, FocusNode> _profileMenuFocusNodes = {};
   final Map<String, GlobalKey<AppMenuButtonState<_TileAction>>> _profileMenuKeys = {};
-  bool _focusRequested = false;
   bool _switching = false;
-  Stream<ProfilesView>? _viewStream;
-  StorageService? _viewStreamStorage;
-  StorageService? _storage;
-  Future<StorageService>? _storageFuture;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _ensureViewStream();
-    if (_storage == null) {
-      unawaited(
-        (_storageFuture ??= StorageService.getInstance()).then((s) {
-          setStateIfMounted(() => _storage = s);
-        }),
-      );
-    }
-  }
-
-  void _ensureViewStream() {
-    if (_viewStream != null && identical(_viewStreamStorage, _storage)) return;
-    _viewStreamStorage = _storage;
-    _viewStream = watchProfilesView(
-      profiles: context.read<ProfileRegistry>(),
-      profileConnections: context.read<ProfileConnectionRegistry>(),
-      connections: context.read<ConnectionRegistry>(),
-      plexHome: context.read<PlexHomeService>(),
-      storage: _storage,
-    );
-  }
 
   @override
   void dispose() {
@@ -97,7 +63,16 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
 
   @override
   Widget build(BuildContext context) {
-    _ensureViewStream();
+    // Watch the whole provider: with the view stream gone it is this
+    // screen's only rebuild source, so the old stream+select double-rebuild
+    // concern no longer applies.
+    final activeProvider = context.watch<ActiveProfileProvider>();
+    // Gate on initialization: rendering the not-yet-loaded profile list as
+    // real data flashes the "No profiles available" error state on open.
+    final loading = !activeProvider.isInitialized;
+    final profiles = activeProvider.profiles;
+    _pruneProfileFocusResources(profiles.map((p) => p.id).toSet());
+    final activeId = activeProvider.activeId;
     return PopScope(
       canPop: !widget.requireSelection || _allowPop,
       onPopInvokedWithResult: (didPop, _) {
@@ -105,62 +80,46 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
           unawaited(AppExitService.requestExit());
         }
       },
-      child: StreamBuilder<ProfilesView>(
-        stream: _viewStream,
-        builder: (context, snapshot) {
-          // No initialData: rendering ProfilesView.empty while the first
-          // combine is in flight flashes the "No profiles available" error
-          // state on every open.
-          final loading = snapshot.data == null;
-          final view = snapshot.data ?? ProfilesView.empty;
-          _pruneProfileFocusResources(view.profiles.map((p) => p.id).toSet());
-          // `context.select` only rebuilds when `activeId` actually
-          // changes. `context.watch` would rebuild on every provider
-          // notification — combined with the stream, that doubles the
-          // build cost on each profile-switch.
-          final activeId = context.select<ActiveProfileProvider, String?>((p) => p.activeId);
-          return Stack(
-            children: [
-              FocusedScrollScaffold(
-                title: Text(t.screens.switchProfile),
-                automaticallyImplyLeading: !widget.requireSelection,
-                onBackPressed: widget.requireSelection ? () => unawaited(AppExitService.requestExit()) : null,
-                slivers: [
-                  if (view.profiles.isEmpty)
-                    SliverFillRemaining(
-                      child: loading
-                          ? const Center(child: CircularProgressIndicator())
-                          : EmptyStateWidget(
-                              message: t.messages.noProfilesAvailable,
-                              subtitle: t.messages.contactAdminForProfiles,
-                              icon: Symbols.person_off_rounded,
-                            ),
-                    )
-                  else
-                    ..._buildSections(view, activeId),
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                    sliver: SliverToBoxAdapter(
-                      child: FocusableWrapper(
-                        disableScale: true,
-                        borderRadius: 100,
-                        useBackgroundFocus: true,
-                        descendantsAreFocusable: false,
-                        onSelect: _switching ? null : _addLocalProfile,
-                        child: OutlinedButton.icon(
-                          onPressed: _switching ? null : _addLocalProfile,
-                          icon: const AppIcon(Symbols.person_add_rounded, fill: 1),
-                          label: Text(t.profiles.addPlezyProfile),
+      child: Stack(
+        children: [
+          FocusedScrollScaffold(
+            title: Text(t.screens.switchProfile),
+            automaticallyImplyLeading: !widget.requireSelection,
+            onBackPressed: widget.requireSelection ? () => unawaited(AppExitService.requestExit()) : null,
+            slivers: [
+              if (profiles.isEmpty)
+                SliverFillRemaining(
+                  child: loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : EmptyStateWidget(
+                          message: t.messages.noProfilesAvailable,
+                          subtitle: t.messages.contactAdminForProfiles,
+                          icon: Symbols.person_off_rounded,
                         ),
-                      ),
+                )
+              else
+                ..._buildSections(activeProvider, activeId),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                sliver: SliverToBoxAdapter(
+                  child: FocusableWrapper(
+                    disableScale: true,
+                    borderRadius: 100,
+                    useBackgroundFocus: true,
+                    descendantsAreFocusable: false,
+                    onSelect: _switching ? null : _addLocalProfile,
+                    child: OutlinedButton.icon(
+                      onPressed: _switching ? null : _addLocalProfile,
+                      icon: const AppIcon(Symbols.person_add_rounded, fill: 1),
+                      label: Text(t.profiles.addPlezyProfile),
                     ),
                   ),
-                ],
+                ),
               ),
-              if (_switching) const ProfileSwitchingOverlay(),
             ],
-          );
-        },
+          ),
+          if (_switching) const ProfileSwitchingOverlay(),
+        ],
       ),
     );
   }
@@ -178,7 +137,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   }
 
   void _pruneProfileFocusResources(Set<String> activeIds) {
-    // Runs during build (from the StreamBuilder). Detach the map entries
+    // Runs during build. Detach the map entries
     // synchronously so tiles never receive a stale node, but defer the
     // actual dispose to after the frame: on TV the pruned tile's node is
     // often the one holding primary focus (the profile just signed out /
@@ -215,75 +174,90 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     _profileMenuKeys[profile.id]?.currentState?.showButtonMenu();
   }
 
-  List<Widget> _buildSections(ProfilesView view, String? activeId) {
-    return [_profileList(view.profiles, view, activeId, autofocusFirst: true)];
+  List<Widget> _buildSections(ActiveProfileProvider activeProvider, String? activeId) {
+    return [_profileList(activeProvider.profiles, activeProvider, activeId, autofocusFirst: true)];
   }
 
-  SliverList _profileList(List<Profile> profiles, ProfilesView view, String? activeId, {required bool autofocusFirst}) {
+  SliverList _profileList(
+    List<Profile> profiles,
+    ActiveProfileProvider activeProvider,
+    String? activeId, {
+    required bool autofocusFirst,
+  }) {
+    // The tile keys and `findChildIndexCallback` below are one mechanism, not
+    // two independent safeguards. A refreshed profile source can re-sort this
+    // list after first paint; the key stops the sliver handing a tile's
+    // Element the next profile's focus node, and the lookup lets it map that
+    // key to its new index. Without the lookup the tile is destroyed and
+    // re-inflated instead of moved, which keeps primary focus but resets
+    // FocusableWrapper's chrome — a focused tile with no highlight (#1792).
     return SliverList(
-      delegate: SliverChildBuilderDelegate((context, index) {
-        final profile = profiles[index];
-        final isActive = profile.id == activeId;
-        final tokensRef = tokens(context);
-        final tileRadii = groupItemRadii(context, index, profiles.length);
-        final isFirstSelectable = autofocusFirst && index == 0;
-        final profileFocusNode = _profileFocusNode(profile);
-        final menuFocusNode = _profileMenuFocusNode(profile);
-        final menuKey = _profileMenuKey(profile);
-        // All tile actions are disabled while a switch is binding: the
-        // overlay's barrier blocks pointers but not DPAD key events, and a
-        // Manage/Delete flow racing the in-flight switch corrupts state
-        // (e.g. a delete confirmation left open when the switch settles).
-        final actionsEnabled = !widget.requireSelection && !_switching;
-        final onManage = actionsEnabled ? () => _manageProfile(profile) : null;
-        final onDelete = profile.isLocal && actionsEnabled ? () => _deleteProfile(profile) : null;
-        final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && actionsEnabled
-            ? () => _signOutPlexAccount(profile)
-            : null;
-        final hasMenu = onManage != null || onDelete != null || onSignOut != null;
+      delegate: SliverChildBuilderDelegate(
+        (context, index) {
+          final profile = profiles[index];
+          final isActive = profile.id == activeId;
+          final tokensRef = tokens(context);
+          final tileRadii = groupItemRadii(context, index, profiles.length);
+          final isFirstSelectable = autofocusFirst && index == 0;
+          final profileFocusNode = _profileFocusNode(profile);
+          final menuFocusNode = _profileMenuFocusNode(profile);
+          final menuKey = _profileMenuKey(profile);
+          // All tile actions are disabled while a switch is binding: the
+          // overlay's barrier blocks pointers but not DPAD key events, and a
+          // Manage/Delete flow racing the in-flight switch corrupts state
+          // (e.g. a delete confirmation left open when the switch settles).
+          final actionsEnabled = !widget.requireSelection && !_switching;
+          final onManage = actionsEnabled ? () => _manageProfile(profile) : null;
+          final onDelete = profile.isLocal && actionsEnabled ? () => _deleteProfile(profile) : null;
+          final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && actionsEnabled
+              ? () => _signOutPlexAccount(profile)
+              : null;
+          final hasMenu = onManage != null || onDelete != null || onSignOut != null;
 
-        if (isFirstSelectable && !_focusRequested) {
-          _focusRequested = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) profileFocusNode.requestFocus();
-          });
-        }
-
-        return Padding(
-          padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
-          child: FocusableWrapper(
-            autofocus: isFirstSelectable,
-            focusNode: profileFocusNode,
-            disableScale: true,
-            borderRadii: tileRadii,
-            enableLongPress: hasMenu,
-            onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
-            onNavigateRight: hasMenu ? () => menuFocusNode.requestFocus() : null,
-            onSelect: _switching || (isActive && !widget.requireSelection) ? null : () => _switchTo(profile),
-            child: Card(
-              shape: RoundedRectangleBorder(borderRadius: tileRadii),
-              clipBehavior: Clip.antiAlias,
-              child: _ProfileTile(
-                borderRadius: tileRadii,
-                profile: profile,
-                isActive: isActive && !widget.requireSelection,
-                chips: _chipsFor(profile, view),
-                onTap: () => _switchTo(profile),
-                onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
-                // Manage available for any profile — adding/removing
-                // borrowed connections is supported on plex_home too. Delete
-                // stays local-only (Plex Home users are owned by Plex).
-                onManage: onManage,
-                onDelete: onDelete,
-                onSignOut: onSignOut,
-                menuFocusNode: menuFocusNode,
-                menuKey: menuKey,
-                onMenuNavigateLeft: () => profileFocusNode.requestFocus(),
+          return Padding(
+            key: ValueKey(profile.id),
+            padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
+            child: FocusableWrapper(
+              autofocus: isFirstSelectable,
+              focusNode: profileFocusNode,
+              disableScale: true,
+              borderRadii: tileRadii,
+              enableLongPress: hasMenu,
+              onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
+              onNavigateRight: hasMenu ? () => menuFocusNode.requestFocus() : null,
+              onSelect: _switching || (isActive && !widget.requireSelection) ? null : () => _switchTo(profile),
+              child: Card(
+                shape: RoundedRectangleBorder(borderRadius: tileRadii),
+                clipBehavior: Clip.antiAlias,
+                child: _ProfileTile(
+                  borderRadius: tileRadii,
+                  profile: profile,
+                  avatarUrl: activeProvider.avatarUrlFor(profile.id),
+                  isActive: isActive && !widget.requireSelection,
+                  chips: _chipsFor(profile, activeProvider),
+                  onTap: () => _switchTo(profile),
+                  onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
+                  // Manage available for any profile — adding/removing
+                  // borrowed connections is supported on plex_home too. Delete
+                  // stays local-only (Plex Home users are owned by Plex).
+                  onManage: onManage,
+                  onDelete: onDelete,
+                  onSignOut: onSignOut,
+                  menuFocusNode: menuFocusNode,
+                  menuKey: menuKey,
+                  onMenuNavigateLeft: () => profileFocusNode.requestFocus(),
+                ),
               ),
             ),
-          ),
-        );
-      }, childCount: profiles.length),
+          );
+        },
+        childCount: profiles.length,
+        findChildIndexCallback: (key) {
+          final id = (key as ValueKey<String>).value;
+          final index = profiles.indexWhere((profile) => profile.id == id);
+          return index < 0 ? null : index;
+        },
+      ),
     );
   }
 
@@ -311,26 +285,64 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     );
   }
 
-  List<_ChipData> _chipsFor(Profile profile, ProfilesView view) {
+  List<_ChipData> _chipsFor(Profile profile, ActiveProfileProvider activeProvider) {
     final chips = <_ChipData>[];
     // Plex Home profiles implicitly own their parent Plex connection (no
-    // join-table row), so prepend it before any borrowed connections.
+    // join-table row), so prepend it before any borrowed connections. The
+    // profile *is* the Home user there, so its own name identifies the user
+    // half of the label.
     if (profile.isPlexHome) {
       final parentId = profile.parentConnectionId;
       if (parentId != null) {
-        final conn = view.connectionsById[parentId];
-        if (conn != null) chips.add(_ChipData(backend: conn.backend, label: conn.displayLabel));
+        final conn = activeProvider.connectionsById[parentId];
+        if (conn != null) chips.add(_chipFor(conn, user: profile.displayName));
       }
     }
     final pcs = visibleProfileConnections(
       profile,
-      view.connectionsByProfile[profile.id] ?? const <ProfileConnection>[],
+      activeProvider.connectionsByProfile[profile.id] ?? const <ProfileConnection>[],
     );
     for (final pc in pcs) {
-      final conn = view.connectionsById[pc.connectionId];
-      if (conn != null) chips.add(_ChipData(backend: conn.backend, label: conn.displayLabel));
+      final conn = activeProvider.connectionsById[pc.connectionId];
+      if (conn != null) chips.add(_chipFor(conn, user: _plexHomeUserName(activeProvider, conn, pc.userIdentifier)));
     }
     return chips;
+  }
+
+  /// A Plex account connection labels itself with the account owner's name,
+  /// which under a profile tile reads as the profile being signed in as that
+  /// person — wrong for a Plex Home user, and wrong again for a local profile
+  /// that borrowed a Home user out of someone else's account.
+  ///
+  /// Both halves of that relation go through a single translated string so a
+  /// locale can order them itself; several put the account first (`ja`, `ko`,
+  /// `tr`, `zh`). [user] is null only when the Home cache cannot resolve the
+  /// connection's uuid yet, which falls back to naming the account alone.
+  _ChipData _chipFor(Connection conn, {required String? user}) {
+    return _ChipData(
+      backend: conn.backend,
+      label: switch (conn) {
+        PlexAccountConnection(:final accountLabel) when user != null => t.profiles.plexAccountUserChip(
+          user: user,
+          account: accountLabel,
+        ),
+        PlexAccountConnection(:final accountLabel) => t.profiles.plexAccountChip(account: accountLabel),
+        _ => conn.displayLabel,
+      },
+    );
+  }
+
+  /// Home user behind a borrowed Plex connection, or null when the live cache
+  /// has no match for [userIdentifier] (not loaded yet, or the row predates
+  /// the account's current Home membership).
+  String? _plexHomeUserName(ActiveProfileProvider activeProvider, Connection conn, String userIdentifier) {
+    if (conn is! PlexAccountConnection || userIdentifier.isEmpty) return null;
+    final users = activeProvider.plexHomeByConnectionId[conn.id];
+    if (users == null) return null;
+    for (final user in users) {
+      if (user.uuid == userIdentifier) return user.displayName;
+    }
+    return null;
   }
 
   Future<void> _addLocalProfile() async {
@@ -363,6 +375,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
 
 class _ProfileTile extends StatelessWidget {
   final Profile profile;
+  final String? avatarUrl;
   final bool isActive;
   final BorderRadius borderRadius;
   final List<_ChipData> chips;
@@ -377,6 +390,7 @@ class _ProfileTile extends StatelessWidget {
 
   const _ProfileTile({
     required this.profile,
+    required this.avatarUrl,
     required this.isActive,
     required this.borderRadius,
     required this.chips,
@@ -403,7 +417,7 @@ class _ProfileTile extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            ProfileAvatar(profile: profile, size: 44),
+            ProfileAvatar(profile: profile, size: 44, avatarUrl: avatarUrl),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
@@ -542,7 +556,12 @@ class _ConnectionChips extends StatelessWidget {
               children: [
                 BackendBadge(backend: c.backend, size: 12),
                 const SizedBox(width: 4),
-                Text(c.label, style: theme.textTheme.labelSmall),
+                // Account labels are often an email address, and a chip in a
+                // Wrap gets unbounded main-axis space — without this the row
+                // overflows the tile instead of ellipsizing.
+                Flexible(
+                  child: Text(c.label, style: theme.textTheme.labelSmall, overflow: .ellipsis),
+                ),
               ],
             ),
           ),

@@ -28,6 +28,16 @@ mixin _JellyfinMusicMethods on _JellyfinClientInternals {
     return _mapItems(_itemsArray(response.data));
   }
 
+  /// MediaBrowser `BaseItemDto`s carry no single/EP/live/compilation
+  /// taxonomy, so the discography is a single albums group — the neutral
+  /// contract's MediaBrowser-family shape.
+  @override
+  Future<List<ArtistDiscographyGroup>> fetchArtistDiscography(MediaItem artist) async {
+    final albums = await fetchArtistAlbums(artist);
+    if (albums.isEmpty) return const <ArtistDiscographyGroup>[];
+    return [ArtistDiscographyGroup(kind: DiscographyGroupKind.albums, items: albums)];
+  }
+
   /// Tracks of [albumId] in disc/track order. `AlbumIds` (not `ParentId`) so
   /// tag-based albums whose files share one physical folder still resolve;
   /// `ParentIndexNumber,IndexNumber` yields correct multi-disc ordering.
@@ -66,13 +76,17 @@ mixin _JellyfinMusicMethods on _JellyfinClientInternals {
     return _mapItems(_itemsArray(response.data));
   }
 
-  /// Lyrics for [track] from `/Audio/{id}/Lyrics`. Jellyfin's `LyricDto`
+  /// Lyrics for [track] from Jellyfin's `/Audio/{id}/Lyrics`. `LyricDto`
   /// carries per-line `Start` offsets in ticks when the source is an LRC /
   /// synced provider; `IsSynced` is absent on some server versions, so
-  /// synced-ness is inferred from any line carrying a `Start`. 404 means
-  /// the track has no lyrics → `null`.
+  /// synced-ness is inferred from any line carrying a `Start`. A Jellyfin 404
+  /// means the track has no lyrics → `null`; Emby is rejected before the request.
   @override
   Future<Lyrics?> fetchLyrics(MediaItem track) async {
+    if (!dialect.supportsLyrics) {
+      // Emby 4.9.5 binds `Lyrics` as an audio container and starts a failing ffmpeg transcode, so this call is harmful.
+      return null;
+    }
     try {
       final response = await _http.get('/Audio/${_segment(track.id)}/Lyrics');
       throwIfHttpError(response);

@@ -270,15 +270,15 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   void _handleTouchPointerDown(PointerDownEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
-    _twoFingerDoubleTapTracker.pointerDown(event.pointer, event.position);
-    if (_twoFingerDoubleTapTracker.isChordActive) {
+    _twoFingerTapTracker.pointerDown(event.pointer, event.position);
+    if (_twoFingerTapTracker.isChordActive) {
       _suppressTouchTaps();
       _cancelEdgeAdjustmentGesture();
       return;
     }
     final hit = _edgeAdjustmentSurfaceHit(event.position);
     _handleEdgeAdjustmentEvent(
-      _edgeAdjustmentGesturesAllowed && hit != null
+      _mobileTouchGesturesAllowed && hit != null
           ? _edgeAdjustmentTracker.pointerDown(event.pointer, hit.position, hit.size)
           : const MobileEdgeAdjustmentEvent.none(),
     );
@@ -286,13 +286,13 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   void _handleTouchPointerMove(PointerMoveEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
-    _twoFingerDoubleTapTracker.pointerMove(event.pointer, event.position);
-    if (_twoFingerDoubleTapTracker.isChordActive) {
+    _twoFingerTapTracker.pointerMove(event.pointer, event.position);
+    if (_twoFingerTapTracker.isChordActive) {
       _suppressTouchTaps();
       _cancelEdgeAdjustmentGesture();
       return;
     }
-    if (!_edgeAdjustmentGesturesAllowed) {
+    if (!_mobileTouchGesturesAllowed) {
       _cancelEdgeAdjustmentGesture();
       return;
     }
@@ -306,21 +306,34 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   void _handleTouchPointerUp(PointerUpEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
-    final isResetGesture = _twoFingerDoubleTapTracker.pointerUp(event.pointer, event.position);
+    final isTwoFingerTap = _twoFingerTapTracker.pointerUp(event.pointer, event.position);
     final hit = _edgeAdjustmentSurfaceHit(event.position);
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerUp(event.pointer, hit?.position ?? event.localPosition));
-    if (_isTouchTapSuppressed || isResetGesture) _suppressTouchTaps();
-    if (isResetGesture) widget.onResetVideoZoom?.call();
+    if (_isTouchTapSuppressed || isTwoFingerTap) _suppressTouchTaps();
+    // Toggle playback with the chrome left down (#1505), the moment the chord
+    // resolves and in every player state. Deliberately no _toggleControls()/
+    // chromeController.show(): covering the frame the viewer paused to read is
+    // the problem this gesture exists to solve. The centred transport disc still
+    // confirms the command via _announceTransportCommand, which only renders
+    // while the chrome is hidden.
+    //
+    // The chord previously also reset the video zoom on a double tap. That was
+    // dropped rather than deferred: recognising a pair means holding this toggle
+    // back for kDoubleTapTimeout, and pausing late is pausing on the wrong
+    // frame. Zoom reset lives in the video settings sheet, its presets, the
+    // keyboard shortcut, and — for touch — pinching back through the 100% detent
+    // in VideoFilterManager.snapPinchZoomScale.
+    if (isTwoFingerTap && _mobileTouchGesturesAllowed) unawaited(_playOrPause());
   }
 
   void _handleTouchPointerCancel(PointerCancelEvent event) {
     if (event.kind != PointerDeviceKind.touch) return;
-    _twoFingerDoubleTapTracker.pointerCancel(event.pointer);
+    _twoFingerTapTracker.pointerCancel(event.pointer);
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.pointerCancel(event.pointer));
-    if (_twoFingerDoubleTapTracker.isChordActive) _suppressTouchTaps();
+    if (_twoFingerTapTracker.isChordActive) _suppressTouchTaps();
   }
 
-  bool get _edgeAdjustmentGesturesAllowed {
+  bool get _mobileTouchGesturesAllowed {
     return PlatformDetector.isMobile(context) &&
         !PlatformDetector.isTV() &&
         !_isScreenLocked &&
@@ -537,18 +550,33 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _handleEdgeAdjustmentEvent(_edgeAdjustmentTracker.cancel());
   }
 
-  /// Timing-based double-click detection: avoids `onDoubleTap`'s ~300 ms
-  /// tap-resolution delay and the arena competition it introduces.
   void _handleOuterTap() {
-    if (PlatformDetector.isMobile(context) && _isTouchTapSuppressed) return;
+    if (PlatformDetector.isMobile(context)) {
+      if (_isTouchTapSuppressed) return;
+      // Mobile taps get the single-tap action only; the skip zones own touch
+      // double taps.
+      if (widget.canControl && _clickVideoTogglesPlayback) {
+        _playOrPause();
+      } else {
+        _toggleControls();
+      }
+      return;
+    }
 
+    _handleDesktopClickToggle();
+  }
+
+  /// Desktop click contract shared by the outer video surface and the controls
+  /// overlay: the single-click action fires immediately and a second click
+  /// within [kDoubleTapTimeout] toggles fullscreen. Timing-based detection
+  /// avoids `onDoubleTap`'s ~300 ms tap-resolution delay and the arena
+  /// competition it introduces.
+  void _handleDesktopClickToggle() {
     if (widget.canControl && _clickVideoTogglesPlayback) {
       _playOrPause();
     } else {
       _toggleControls();
     }
-
-    if (PlatformDetector.isMobile(context)) return;
 
     final now = DateTime.now();
     if (_lastSkipTapTime != null && now.difference(_lastSkipTapTime!) < kDoubleTapTimeout) {
@@ -609,10 +637,51 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _showSkipFeedback(isForward: isForward);
   }
 
+  /// Wrap an absolute live action so it takes down the badge a pending live
+  /// skip raised.
+  ///
+  /// Live relative skips bypass [_hiddenSeek] for the parent's epoch
+  /// accumulator (#1253), so the jump the reopen announces finds no pending
+  /// target here and nothing retires the readout. The absolute action cancels
+  /// that queued skip, so its promised total is no longer going anywhere.
+  ValueChanged<int>? _liveSeekAbandoningBurst(ValueChanged<int>? onLiveSeek) {
+    if (onLiveSeek == null) return null;
+    return (offset) {
+      _dismissSkipFeedback();
+      onLiveSeek(offset);
+    };
+  }
+
+  /// Wrap an action that replaces what is playing — a live channel switch, the
+  /// next or previous item — so the badge goes with the timeline it described.
+  ///
+  /// The pending skip is cancelled by the switch itself (live keeps its offset
+  /// in the parent accumulator, video re-keys on the new item), but neither
+  /// route runs through [_hiddenSeek], so nothing else takes the readout down.
+  VoidCallback? _abandoningBurst(VoidCallback? action) {
+    if (action == null) return null;
+    return () {
+      // Cancel as well as hide: a held-arrow target stays armed across the
+      // asynchronous switch and would otherwise debounce into a seek on the
+      // outgoing player before the new item re-keys the controls. The focused
+      // desktop timeline coalesces into its own accumulator, so it needs the
+      // same treatment.
+      _hiddenSeek.cancel();
+      _desktopControlsKey.currentState?.abandonPendingSeek();
+      _dismissSkipFeedback();
+      action();
+    };
+  }
+
   /// Handle a completed skip-zone double tap.
   void _handleDoubleTapSkip({required bool isForward}) {
     if (!widget.canControl) return;
 
+    // This tap supersedes any burst the keyboard/D-pad left pending, and it
+    // shares the badge with it. Retire that burst first, or its abandonment —
+    // triggered by this tap's own seek — would take down the readout this tap
+    // is about to put up.
+    _hiddenSeek.cancel();
     _registerSkipFeedback(isForward: isForward, seconds: _seekTimeSmall);
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
@@ -629,6 +698,9 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   /// Show animated visual feedback for skip gesture
   void _showSkipFeedback({required bool isForward}) {
+    // Reads `tokens(context)` below, so a caller reaching here after disposal
+    // would touch a defunct element rather than merely no-op.
+    if (!mounted) return;
     // Cancel BOTH timers: a skip landing during the fade-out window must not
     // leave the old hide timer pending, or it kills the fresh readout and zeroes
     // the accumulated count mid-display.
@@ -662,32 +734,26 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     });
   }
 
+  /// Take the skip readout down at once, because the burst it was counting will
+  /// never be committed. Fading it out would keep showing a total the player is
+  /// not going to seek to; zeroing it without hiding would flash `0s`.
+  void _dismissSkipFeedback() {
+    _feedbackTimer?.cancel();
+    _feedbackTimer = null;
+    _feedbackHideTimer?.cancel();
+    _feedbackHideTimer = null;
+    if (!_showDoubleTapFeedback && _accumulatedSkipSeconds == 0) return;
+    _setControlsState(() {
+      _showDoubleTapFeedback = false;
+      _doubleTapFeedbackOpacity = 0.0;
+      _accumulatedSkipSeconds = 0;
+    });
+  }
+
   /// Handle tap on controls overlay - route to skip zones or toggle controls
   void _handleControlsOverlayTap(TapUpDetails details, Size size) {
-    final isMobile = PlatformDetector.isMobile(context);
-
-    if (!isMobile) {
-      final DateTime now = DateTime.now();
-
-      // Always perform the single-click behavior immediately
-      if (widget.canControl && _clickVideoTogglesPlayback) {
-        _playOrPause();
-      } else {
-        _toggleControls();
-      }
-
-      final bool isDoubleClick = _lastSkipTapTime != null && now.difference(_lastSkipTapTime!) < kDoubleTapTimeout;
-
-      if (isDoubleClick) {
-        _lastSkipTapTime = null;
-
-        _toggleFullscreen();
-
-        return;
-      }
-
-      // Record this click as a candidate for double-click detection
-      _lastSkipTapTime = now;
+    if (!PlatformDetector.isMobile(context)) {
+      _handleDesktopClickToggle();
       return;
     }
 

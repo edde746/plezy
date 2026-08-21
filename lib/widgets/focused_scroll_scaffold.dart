@@ -3,6 +3,7 @@ import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import 'desktop_app_bar.dart';
 import 'ios_status_bar_tap_scroll_to_top.dart';
+import 'system_bottom_inset.dart';
 
 /// A scaffold widget that wraps Focus + Scaffold + CustomScrollView
 /// with consistent keyboard navigation handling and app bar styling.
@@ -122,6 +123,9 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
                     automaticallyImplyLeading: widget.automaticallyImplyLeading,
                   ),
                 ...widget.slivers,
+                // Keeps the last row scrollable clear of the Android
+                // navigation bar / iOS home indicator; zero-height elsewhere.
+                const SliverSystemBottomInset(),
               ],
             ),
           ),

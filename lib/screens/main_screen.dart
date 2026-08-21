@@ -7,6 +7,7 @@ import 'dart:io' show Platform, exit;
 export '../navigation/main_screen_scope.dart'
     show MainScreenFocusScope, MainScreenScopeAspect, SideNavigationBleedBuilder;
 
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyDownEvent, KeyRepeatEvent, KeyUpEvent, LogicalKeyboardKey;
@@ -31,6 +32,7 @@ import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
 import '../navigation/profile_navigation_scope.dart';
+import '../navigation/settings_shortcut.dart';
 import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
@@ -67,6 +69,7 @@ import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
+import 'video_player_screen.dart';
 import 'profile/profile_teardown.dart';
 import '../services/system_shelf_service.dart';
 import '../watch_together/watch_together.dart';
@@ -77,14 +80,120 @@ import '../watch_together/watch_together.dart';
 // browse rail can import the scope without an import cycle through this file.
 
 @visibleForTesting
-bool shouldHandleMacOsRootEscape({
-  required bool isMacOS,
+bool shouldHandleDesktopRootEscape({
+  required bool isDesktop,
   required bool isPhysicalKeyboardEvent,
   required LogicalKeyboardKey logicalKey,
   required bool isCurrentRoute,
   required bool isHomeTab,
 }) {
-  return isMacOS && isPhysicalKeyboardEvent && logicalKey == LogicalKeyboardKey.escape && isCurrentRoute && isHomeTab;
+  return isDesktop && isPhysicalKeyboardEvent && logicalKey == LogicalKeyboardKey.escape && isCurrentRoute && isHomeTab;
+}
+
+/// Whether a lifecycle resume should raise the "ask for a profile on open"
+/// picker.
+///
+/// Mobile-only: on desktop `resumed` fires on every window focus gain
+/// (alt-tab, click), which is far too frequent — the startup prompt is
+/// sufficient there. Never during active video playback: waking the device
+/// mid-stream must resume the stream, not stack the root-navigator picker
+/// over the live player route, whose focus self-heal fights the picker for
+/// the remote (#2034) — the playback session already belongs to the profile
+/// that started it.
+@visibleForTesting
+bool shouldShowProfileSelectionOnResume({
+  required bool resumedFromBackground,
+  required bool isOffline,
+  required bool alreadyShowingProfileSelection,
+  required bool isMobilePlatform,
+  required bool hasActiveVideoPlayback,
+}) {
+  return resumedFromBackground &&
+      !isOffline &&
+      !alreadyShowingProfileSelection &&
+      isMobilePlatform &&
+      !hasActiveVideoPlayback;
+}
+
+/// Latches whether the app has genuinely left the foreground since the last
+/// `resumed`, and consumes that fact on the next resume so the "ask for a
+/// profile on open" rule can re-apply exactly once per backgrounding.
+///
+/// System overlays (Fire TV Alexa, notification shade, Control Center) only
+/// produce `inactive -> resumed` — the app never left the foreground — so
+/// they must not prompt (#1990). iOS returns from the background as
+/// `hidden -> inactive -> resumed`, so inspecting only the immediately
+/// previous state would miss a real return; latching the deepest state seen
+/// handles both. The startup flow owns the cold open, so a first `resumed`
+/// with no prior backgrounding does not prompt.
+@visibleForTesting
+class ProfileSelectionResumeGate {
+  bool _wasBackgrounded = false;
+
+  /// Whether a genuine backgrounding has been observed since the last resume.
+  bool get wasBackgrounded => _wasBackgrounded;
+
+  /// Feeds one lifecycle transition through the gate. Returns true exactly
+  /// once per backgrounding: on the first `resumed` after the sequence
+  /// reached `hidden`/`paused`/`detached`. Consuming resets the latch.
+  bool consumePromptOn(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        final shouldPrompt = _wasBackgrounded;
+        _wasBackgrounded = false;
+        return shouldPrompt;
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _wasBackgrounded = true;
+        return false;
+      case AppLifecycleState.inactive:
+        return false;
+    }
+  }
+}
+
+/// Latches when the app leaves the foreground and, on the next `resumed`,
+/// reports whether it stayed backgrounded long enough that on-screen content
+/// should be refetched (#2043).
+///
+/// TV launchers resume the resident process rather than cold-starting it, so
+/// "opening the app" hours later otherwise shows the in-memory grids from the
+/// previous session. The [staleAfter] threshold keeps short interruptions
+/// (app switch, notification shade, desktop alt-tab reaching `hidden`) from
+/// refetching and resetting scroll/focus state, and `inactive`-only overlays
+/// never latch at all — same shape as [ProfileSelectionResumeGate].
+@visibleForTesting
+class ContentRefreshResumeGate {
+  ContentRefreshResumeGate({this.staleAfter = const Duration(minutes: 5), DateTime Function()? now})
+    : _now = now ?? DateTime.now;
+
+  /// Minimum time spent backgrounded before a resume triggers a refresh.
+  final Duration staleAfter;
+  final DateTime Function() _now;
+
+  DateTime? _backgroundedAt;
+
+  /// Feeds one lifecycle transition through the gate. Returns true exactly
+  /// once per backgrounding: on the first `resumed` after the sequence
+  /// reached `hidden`/`paused`/`detached` at least [staleAfter] ago. Keeps
+  /// the *earliest* backgrounded timestamp, so `hidden -> paused` churn while
+  /// backgrounded doesn't restart the clock.
+  bool consumeRefreshOn(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.resumed:
+        final backgroundedAt = _backgroundedAt;
+        _backgroundedAt = null;
+        return backgroundedAt != null && _now().difference(backgroundedAt) >= staleAfter;
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        _backgroundedAt ??= _now();
+        return false;
+      case AppLifecycleState.inactive:
+        return false;
+    }
+  }
 }
 
 @visibleForTesting
@@ -149,33 +258,6 @@ bool shouldPassTvosMenuToSystem({
       isRouteCurrent &&
       hasVisibleTabs &&
       isCurrentTabRoot;
-}
-
-@visibleForTesting
-class TvosMenuPolicyPublisher {
-  TvosMenuPolicyPublisher(this._compute, this._publish);
-
-  final ValueGetter<bool> _compute;
-  final ValueChanged<bool> _publish;
-  int _transactionDepth = 0;
-
-  void run(VoidCallback transaction) {
-    _transactionDepth++;
-    try {
-      transaction();
-    } finally {
-      _transactionDepth--;
-      if (_transactionDepth == 0) {
-        _publish(_compute());
-      }
-    }
-  }
-
-  void update() {
-    if (_transactionDepth == 0) {
-      _publish(_compute());
-    }
-  }
 }
 
 @visibleForTesting
@@ -246,6 +328,7 @@ class _MainScreenState extends State<MainScreen>
   OfflineModeProvider? _offlineModeProvider;
   MultiServerProvider? _multiServerProvider;
   CatalogSourcesProvider? _catalogSourcesProvider;
+  ValueListenable<bool>? _showExploreTabListenable;
   RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
   bool _lastHasLiveTv = false;
   bool _lastHasExplore = false;
@@ -260,6 +343,15 @@ class _MainScreenState extends State<MainScreen>
 
   /// Prevents double-pushing the profile selection screen
   bool _isShowingProfileSelection = false;
+
+  /// Latches a genuine backgrounding so "ask for a profile on open" fires
+  /// exactly once on the next resume, while transient focus losses
+  /// (`inactive`, e.g. the Fire TV Alexa overlay) never prompt.
+  final _profileSelectionResumeGate = ProfileSelectionResumeGate();
+
+  /// Latches a genuine backgrounding and, on resume, reports whether the app
+  /// was gone long enough that the content tabs should refetch (#2043).
+  final _contentRefreshResumeGate = ContentRefreshResumeGate();
 
   late List<Widget> _screens;
 
@@ -278,9 +370,11 @@ class _MainScreenState extends State<MainScreen>
   final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
   final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
+  // Hover/touch rail expansion is an M3E modal overlay: the rail draws over
+  // the content, so this only drives the scrim behind it — never the
+  // content offset.
   bool _isSidebarInteractionExpanded = false;
   bool _isOverlaySheetOpen = false;
-  late final TvosMenuPolicyPublisher _tvosMenuPolicyPublisher;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
   /// the splash can await its first settle before navigating here. We just
@@ -327,7 +421,6 @@ class _MainScreenState extends State<MainScreen>
   @override
   void initState() {
     super.initState();
-    _tvosMenuPolicyPublisher = TvosMenuPolicyPublisher(() => _shouldPassTvosMenuToSystem, _setTvosMenuPassthrough);
     _isOffline = widget.isOfflineMode;
     _offlineUntilConnected = widget.isOfflineMode;
 
@@ -347,10 +440,14 @@ class _MainScreenState extends State<MainScreen>
       _lastHasLiveTv = false;
     }
     try {
-      _lastHasExplore = context.read<CatalogSourcesProvider>().hasAnySource;
+      _lastHasExplore = context.read<CatalogSourcesProvider>().hasAnySource && _showExploreTabSetting;
     } catch (_) {
       _lastHasExplore = false;
     }
+    // Re-evaluate Explore tab visibility when the appearance toggle flips
+    // mid-session; the catalog-sources listener covers source changes.
+    _showExploreTabListenable = SettingsService.instanceOrNull?.listenable(SettingsService.showExploreTab);
+    _showExploreTabListenable?.addListener(_handleCatalogSourcesChanged);
     _currentTab = _defaultTabForMode(_isOffline);
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
     _autoSwitchedToDownloads = _isOffline && _currentTab == NavigationTabId.downloads;
@@ -520,7 +617,7 @@ class _MainScreenState extends State<MainScreen>
     }
 
     if (!mounted) return;
-    _fullRefreshContentTabs();
+    _primeContentTabs();
   }
 
   /// Single-shot "resume queued downloads once any client is online" rule,
@@ -887,6 +984,7 @@ class _MainScreenState extends State<MainScreen>
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
+    _showExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
     }
@@ -945,13 +1043,39 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_isOffline && !_isShowingProfileSelection) {
-      // Only show profile selection on resume for mobile platforms.
-      // On desktop, "resumed" fires on every window focus gain (alt-tab, click),
-      // which is too frequent — the initial prompt on startup is sufficient.
-      if (Platform.isAndroid || Platform.isIOS) {
-        _showProfileSelectionOnResume();
-      }
+    // Always consume: the gates latch backgrounding on every lifecycle event.
+    final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(state);
+    final refreshStaleContent = _contentRefreshResumeGate.consumeRefreshOn(state);
+    if (shouldShowProfileSelectionOnResume(
+      resumedFromBackground: resumedFromBackground,
+      isOffline: _isOffline,
+      alreadyShowingProfileSelection: _isShowingProfileSelection,
+      isMobilePlatform: Platform.isAndroid || Platform.isIOS,
+      hasActiveVideoPlayback: VideoPlayerScreenState.activeGlobalKey != null,
+    )) {
+      _showProfileSelectionOnResume();
+    }
+    if (refreshStaleContent) _refreshContentAfterStaleResume();
+  }
+
+  /// Refetch the content tabs after the app resumes from a long backgrounding.
+  ///
+  /// TV launchers resume the resident process rather than cold-starting it, so
+  /// without this the tabs keep showing the in-memory content from the previous
+  /// session — the Libraries grid could sit hours stale until the user switched
+  /// libraries (#2043). Goes through [Refreshable.refresh], each screen's
+  /// non-destructive refetch: Discover refreshes Continue Watching in place,
+  /// Libraries refetches the selected library's loaded tabs, Search re-runs a
+  /// non-empty query. Skipped while playback is up — nothing content-stale is
+  /// on screen and the playback path must stay quiet.
+  void _refreshContentAfterStaleResume() {
+    if (_isOffline || !_startupServicesPrimed || !mounted) return;
+    if (VideoPlayerScreenState.activeGlobalKey != null) return;
+    if (!context.read<MultiServerProvider>().hasConnectedServers) return;
+    appLogger.d('Refreshing content tabs after stale resume');
+    unawaited(context.read<LibrariesProvider>().refresh());
+    for (final tab in _contentTabs) {
+      _onScreen<Refreshable>(tab, (screen) => screen.refresh());
     }
   }
 
@@ -1078,8 +1202,10 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
+  bool get _showExploreTabSetting => SettingsService.instanceOrNull?.read(SettingsService.showExploreTab) ?? true;
+
   void _handleCatalogSourcesChanged() {
-    final hasExplore = _catalogSourcesProvider?.hasAnySource ?? false;
+    final hasExplore = (_catalogSourcesProvider?.hasAnySource ?? false) && _showExploreTabSetting;
     if (hasExplore == _lastHasExplore) return;
     _lastHasExplore = hasExplore;
 
@@ -1190,11 +1316,6 @@ class _MainScreenState extends State<MainScreen>
     _updateTvosMenuPassthrough();
   }
 
-  void _handleSidebarInteractionExpandedChanged(bool expanded) {
-    if (_isSidebarInteractionExpanded == expanded) return;
-    setState(() => _isSidebarInteractionExpanded = expanded);
-  }
-
   void _handleOverlaySheetOpenChanged(bool open) {
     if (_isOverlaySheetOpen == open) return;
     _isOverlaySheetOpen = open;
@@ -1202,7 +1323,7 @@ class _MainScreenState extends State<MainScreen>
   }
 
   double _sideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
-    final isExpanded = alwaysExpanded || _isSidebarFocused || _isSidebarInteractionExpanded;
+    final isExpanded = alwaysExpanded || _isSidebarFocused;
     return isExpanded
         ? SideNavigationRailState.expandedWidth
         : SideNavigationRailState.collapsedWidthForContext(context);
@@ -1226,13 +1347,9 @@ class _MainScreenState extends State<MainScreen>
     unawaited(TvosSystemNavigationService.setMenuPassthroughEnabled(enabled));
   }
 
-  void _runNavigationTransaction(VoidCallback transaction) {
-    _tvosMenuPolicyPublisher.run(transaction);
-  }
-
   void _updateTvosMenuPassthrough() {
     if (!mounted) return;
-    _tvosMenuPolicyPublisher.update();
+    _setTvosMenuPassthrough(_shouldPassTvosMenuToSystem);
   }
 
   /// Suppress stray back events after a child route pops.
@@ -1339,13 +1456,16 @@ class _MainScreenState extends State<MainScreen>
     return KeyEventResult.handled;
   }
 
-  /// On macOS, native fullscreen is window state shared by every route.
-  /// Player Escape therefore leaves it alone; only root Home owns the
-  /// conventional Escape-to-leave-fullscreen behavior.
-  KeyEventResult _handleMacOsRootEscape(KeyEvent event) {
+  /// Desktop physical-keyboard Escape at root Home is reserved for leaving
+  /// window fullscreen; it never arms the press-back-again quit, so an Escape
+  /// aimed at fullscreen can't close the app (#1748). Remotes, gamepad B, and
+  /// system back keep the double-press exit path. On macOS this also keeps
+  /// player Escape away from native fullscreen, which is window state shared
+  /// by every route.
+  KeyEventResult _handleDesktopRootEscape(KeyEvent event) {
     final tabs = _getVisibleTabs(_isOffline);
-    final shouldHandle = shouldHandleMacOsRootEscape(
-      isMacOS: Platform.isMacOS,
+    final shouldHandle = shouldHandleDesktopRootEscape(
+      isDesktop: PlatformDetector.isDesktopOS(),
       isPhysicalKeyboardEvent: event.isPhysicalKeyboardEvent,
       logicalKey: event.logicalKey,
       isCurrentRoute: ModalRoute.of(context)?.isCurrent == true,
@@ -1382,6 +1502,15 @@ class _MainScreenState extends State<MainScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _onScreen<SearchInputFocusable>(NavigationTabId.search, (screen) => screen.focusSearchInput());
     });
+    return KeyEventResult.handled;
+  }
+
+  /// Handle Cmd+, (macOS) / Ctrl+, (Windows/Linux) to open settings (#1909).
+  /// Only sees the chord while this route has focus; [SettingsShortcut] above
+  /// the profile navigator covers pushed content routes.
+  KeyEventResult _handleSettingsShortcut(KeyEvent event) {
+    if (!isSettingsShortcut(event)) return KeyEventResult.ignored;
+    _openSettings();
     return KeyEventResult.handled;
   }
 
@@ -1541,14 +1670,12 @@ class _MainScreenState extends State<MainScreen>
 
   void _openSettings() {
     if (PlatformDetector.shouldUseSideNavigation(context)) {
-      _runNavigationTransaction(() {
-        _selectTab(NavigationTabId.settings);
-        _focusContent(restorePreviousFocus: false);
-      });
+      _selectTab(NavigationTabId.settings);
+      _focusContent(restorePreviousFocus: false);
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+    Navigator.push(context, buildSettingsRoute());
   }
 
   void _handleLibrariesScreenSelected(String libraryGlobalKey) {
@@ -1561,12 +1688,10 @@ class _MainScreenState extends State<MainScreen>
 
     final controller = OverlaySheetController.of(context);
     final groupByServer = SettingsService.instanceOrNull?.read(SettingsService.groupLibrariesByServer) ?? false;
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.62;
 
     controller
         .show<String>(
           showDragHandle: true,
-          constraints: BoxConstraints(maxHeight: maxHeight),
           builder: (sheetContext) {
             return Consumer2<LibrariesProvider, HiddenLibrariesProvider>(
               builder: (context, librariesProvider, hiddenLibrariesProvider, _) {
@@ -1634,14 +1759,25 @@ class _MainScreenState extends State<MainScreen>
     if (_screenKeys[tab]?.currentState case final T state) fn(state);
   }
 
-  /// Full-refresh the primary content tabs. Shared by the online-entry hook
-  /// ([_primeOnlineServices]) and the profile-switch invalidation
-  /// ([_invalidateAllScreens]), which refresh the same set.
+  /// Full-refresh the primary content tabs. Used by the profile-switch
+  /// invalidation ([_invalidateAllScreens]), which must refetch everything for
+  /// the new identity.
   void _fullRefreshContentTabs() {
-    for (final tab in const [NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search]) {
+    for (final tab in _contentTabs) {
       _onScreen<FullRefreshable>(tab, (screen) => screen.fullRefresh());
     }
   }
+
+  /// Online-entry variant used by [_primeOnlineServices] on cold start and on
+  /// reconnect-from-offline. Screens that already started their own load skip
+  /// it; see [FullRefreshable.primeRefresh].
+  void _primeContentTabs() {
+    for (final tab in _contentTabs) {
+      _onScreen<FullRefreshable>(tab, (screen) => screen.primeRefresh());
+    }
+  }
+
+  static const _contentTabs = [NavigationTabId.discover, NavigationTabId.libraries, NavigationTabId.search];
 
   Widget _buildBottomNavigationBar(BuildContext context, {required bool hideLabels}) {
     final tabs = _getBottomNavigationTabs(context);
@@ -1732,17 +1868,19 @@ class _MainScreenState extends State<MainScreen>
             canPop: false,
             child: Focus(
               onKeyEvent: (node, event) {
-                final rootEscapeResult = _handleMacOsRootEscape(event);
+                final rootEscapeResult = _handleDesktopRootEscape(event);
                 if (rootEscapeResult == KeyEventResult.handled) return rootEscapeResult;
                 final fullscreenResult = _handleFullscreenShortcut(event);
                 if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
                 final searchResult = _handleSearchShortcut(event);
                 if (searchResult == KeyEventResult.handled) return searchResult;
+                final settingsResult = _handleSettingsShortcut(event);
+                if (settingsResult == KeyEventResult.handled) return settingsResult;
                 return _handleBackKey(event);
               },
               child: TweenAnimationBuilder<double>(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
+                duration: SideNavigationRailState.expandDuration,
+                curve: SideNavigationRailState.expandCurve,
                 tween: Tween<double>(end: targetContentOffset),
                 child: FocusScope(
                   node: _contentFocusScope,
@@ -1766,8 +1904,6 @@ class _MainScreenState extends State<MainScreen>
                       );
                       return MainScreenFocusScope(
                         focusSidebar: _focusSidebar,
-                        focusContent: _focusContent,
-                        isSidebarFocused: _isSidebarFocused,
                         sideNavigationWidth: targetContentOffset,
                         reservedSideNavigationWidth: reservedContentOffset,
                         foregroundLeft: contentLayout.left,
@@ -1793,6 +1929,19 @@ class _MainScreenState extends State<MainScreen>
                                   child: contentChild!,
                                 ),
                               ),
+                              // Scrim behind the modal (hover/touch) rail
+                              // overlay; purely visual so content stays
+                              // interactive and hover-out still collapses.
+                              Positioned.fill(
+                                child: IgnorePointer(
+                                  child: AnimatedOpacity(
+                                    opacity: _isSidebarInteractionExpanded ? 1.0 : 0.0,
+                                    duration: SideNavigationRailState.expandDuration,
+                                    curve: SideNavigationRailState.expandCurve,
+                                    child: const ColoredBox(color: Color(0x66000000)),
+                                  ),
+                                ),
+                              ),
                               Positioned(
                                 top: 0,
                                 bottom: 0,
@@ -1807,21 +1956,20 @@ class _MainScreenState extends State<MainScreen>
                                     isSidebarFocused: _isSidebarFocused,
                                     alwaysExpanded: alwaysExpanded,
                                     isReconnecting: _isReconnecting,
-                                    onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
                                     onDestinationSelected: (tab) {
-                                      _runNavigationTransaction(() {
-                                        final restorePreviousFocus = tab == _currentTab;
-                                        _selectTab(tab);
-                                        _focusContent(restorePreviousFocus: restorePreviousFocus);
-                                      });
+                                      final restorePreviousFocus = tab == _currentTab;
+                                      _selectTab(tab);
+                                      _focusContent(restorePreviousFocus: restorePreviousFocus);
                                     },
                                     onLibrarySelected: (key) {
-                                      _runNavigationTransaction(() {
-                                        _selectLibrary(key);
-                                        _focusContent(restorePreviousFocus: false);
-                                      });
+                                      _selectLibrary(key);
+                                      _focusContent(restorePreviousFocus: false);
                                     },
                                     onNavigateToContent: _focusContent,
+                                    onInteractionExpandedChanged: (expanded) {
+                                      if (_isSidebarInteractionExpanded == expanded) return;
+                                      setState(() => _isSidebarInteractionExpanded = expanded);
+                                    },
                                     onReconnect: _triggerReconnect,
                                   ),
                                 ),

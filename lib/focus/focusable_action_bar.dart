@@ -11,19 +11,10 @@ import 'owned_focus_node_binding.dart';
 typedef FocusableActionBuilder = Widget Function(BuildContext context, FocusableActionBuildState state);
 
 class FocusableActionBuildState {
-  final FocusNode focusNode;
-  final bool isFocused;
   final bool showFocus;
-  final bool isKeyboardMode;
   final Duration animationDuration;
 
-  const FocusableActionBuildState({
-    required this.focusNode,
-    required this.isFocused,
-    required this.showFocus,
-    required this.isKeyboardMode,
-    required this.animationDuration,
-  });
+  const FocusableActionBuildState({required this.showFocus, required this.animationDuration});
 }
 
 class FocusableAction {
@@ -41,6 +32,12 @@ class FocusableAction {
   final Widget? child;
   final FocusableActionBuilder? builder;
 
+  /// Row gap between this action and the one before it, overriding the bar's
+  /// uniform [FocusableActionBar.spacing]. Lets visually joined pairs (the
+  /// detail screen's split Play button) sit tighter than the rest of the row.
+  /// Ignored on the first action.
+  final double? spacingBefore;
+
   const FocusableAction({
     this.icon = Symbols.circle_rounded,
     this.iconColor,
@@ -53,6 +50,7 @@ class FocusableAction {
     this.onPressed,
     this.child,
     this.builder,
+    this.spacingBefore,
   });
 }
 
@@ -78,7 +76,6 @@ class FocusableActionBar extends StatefulWidget {
   final ValueChanged<bool>? onFocusChange;
 
   final double spacing;
-  final MainAxisSize mainAxisSize;
 
   const FocusableActionBar({
     super.key,
@@ -90,7 +87,6 @@ class FocusableActionBar extends StatefulWidget {
     this.onBack,
     this.onFocusChange,
     this.spacing = 0,
-    this.mainAxisSize = MainAxisSize.min,
   });
 
   @override
@@ -198,10 +194,10 @@ class FocusableActionBarState extends State<FocusableActionBar> {
     final duration = FocusTheme.getAnimationDuration(context);
 
     final row = Row(
-      mainAxisSize: widget.mainAxisSize,
+      mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < widget.actions.length; i++) ...[
-          if (i > 0 && widget.spacing > 0) SizedBox(width: widget.spacing),
+          if (i > 0 && _gapBefore(i) > 0) SizedBox(width: _gapBefore(i)),
           _buildButton(i, isKeyboard, duration),
         ],
       ],
@@ -215,19 +211,15 @@ class FocusableActionBarState extends State<FocusableActionBar> {
     return AnimatedOpacity(opacity: isKeyboard && !_hasAnyFocus ? 0.6 : 1.0, duration: duration, child: row);
   }
 
+  double _gapBefore(int index) => widget.actions[index].spacingBefore ?? widget.spacing;
+
   Widget _buildButton(int index, bool isKeyboard, Duration duration) {
     final action = widget.actions[index];
     final enabled = action.onPressed != null;
     final isFocused = _focusStates[index];
     final showFocus = isFocused && isKeyboard;
     final opacity = isKeyboard && _hasAnyFocus && !isFocused ? 0.6 : 1.0;
-    final buildState = FocusableActionBuildState(
-      focusNode: _focusNodes[index],
-      isFocused: isFocused,
-      showFocus: showFocus,
-      isKeyboardMode: isKeyboard,
-      animationDuration: duration,
-    );
+    final buildState = FocusableActionBuildState(showFocus: showFocus, animationDuration: duration);
     final customChild = action.builder?.call(context, buildState);
 
     return Focus(

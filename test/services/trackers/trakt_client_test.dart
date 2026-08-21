@@ -21,7 +21,6 @@ TrackerSession _session({
     accessToken: accessToken,
     refreshToken: refreshToken,
     expiresAt: expiresAt ?? now - 60,
-    scope: 'public',
     createdAt: now - 3600,
     username: username,
   );
@@ -77,61 +76,24 @@ void main() {
       client.dispose();
     });
 
-    test('uses a newer broadcast session when another client refreshed first', () async {
+    test('coalesces simultaneous refreshes into one token request', () async {
       final releaseRefreshResponse = Completer<void>();
-      var invalidated = 0;
-      late final TraktClient client;
-      client = TraktClient(
+      final updates = <String?>[];
+      var refreshPosts = 0;
+      final client = TraktClient(
         _session(),
-        onSessionInvalidated: () => invalidated++,
-        onSessionUpdated: (_) {},
+        onSessionInvalidated: () => fail('refresh should not invalidate the session'),
+        onSessionUpdated: (session) => updates.add(session.refreshToken),
         httpClient: MockClient((request) async {
           expect(request.url.path, '/oauth/token');
-          expect(json.decode(request.body), containsPair('refresh_token', 'refresh-old'));
+          refreshPosts++;
           await releaseRefreshResponse.future;
-          return http.Response(json.encode({'error': 'invalid_grant'}), 400);
+          return http.Response(_tokenBody(), 200);
         }),
       );
 
-      final refresh = client.refresh();
-      client.updateSession(_session(accessToken: 'access-new', refreshToken: 'refresh-new', expiresAt: _now() + 86400));
-      releaseRefreshResponse.complete();
-
-      final session = await refresh;
-
-      expect(session.accessToken, 'access-new');
-      expect(session.refreshToken, 'refresh-new');
-      expect(invalidated, 0);
-
-      client.dispose();
-    });
-
-    test('coalesces simultaneous refreshes for the same refresh token across clients', () async {
-      final releaseRefreshResponse = Completer<void>();
-      final updates = <String>[];
-      var refreshPosts = 0;
-      Future<http.Response> handleRequest(http.Request request) async {
-        expect(request.url.path, '/oauth/token');
-        refreshPosts++;
-        await releaseRefreshResponse.future;
-        return http.Response(_tokenBody(), 200);
-      }
-
-      final first = TraktClient(
-        _session(),
-        onSessionInvalidated: () => fail('first client should not invalidate'),
-        onSessionUpdated: (session) => updates.add('first:${session.refreshToken}'),
-        httpClient: MockClient(handleRequest),
-      );
-      final second = TraktClient(
-        _session(),
-        onSessionInvalidated: () => fail('second client should not invalidate'),
-        onSessionUpdated: (session) => updates.add('second:${session.refreshToken}'),
-        httpClient: MockClient(handleRequest),
-      );
-
-      final firstRefresh = first.refresh();
-      final secondRefresh = second.refresh();
+      final firstRefresh = client.refresh();
+      final secondRefresh = client.refresh();
       await Future<void>.delayed(Duration.zero);
       releaseRefreshResponse.complete();
 
@@ -139,10 +101,9 @@ void main() {
 
       expect(refreshPosts, 1);
       expect(sessions.map((s) => s.refreshToken), ['refresh-new', 'refresh-new']);
-      expect(updates, ['first:refresh-new', 'second:refresh-new']);
+      expect(updates, ['refresh-new']);
 
-      first.dispose();
-      second.dispose();
+      client.dispose();
     });
 
     test('keeps the session connected after retryable refresh failures', () async {
@@ -177,50 +138,6 @@ void main() {
       expect(client.session.refreshToken, 'refresh-old');
 
       client.dispose();
-    });
-
-    test('coalesced waiters invalidate after permanent refresh failures', () async {
-      final releaseRefreshResponse = Completer<void>();
-      var ownerInvalidated = 0;
-      var waiterInvalidated = 0;
-      var refreshPosts = 0;
-
-      Future<http.Response> handleRequest(http.Request request) async {
-        expect(request.url.path, '/oauth/token');
-        refreshPosts++;
-        await releaseRefreshResponse.future;
-        return http.Response(json.encode({'error': 'invalid_grant'}), 400);
-      }
-
-      final owner = TraktClient(
-        _session(),
-        onSessionInvalidated: () => ownerInvalidated++,
-        onSessionUpdated: (_) => fail('failed refresh should not publish owner session'),
-        httpClient: MockClient(handleRequest),
-      );
-      final waiter = TraktClient(
-        _session(),
-        onSessionInvalidated: () => waiterInvalidated++,
-        onSessionUpdated: (_) => fail('failed refresh should not publish waiter session'),
-        httpClient: MockClient(handleRequest),
-      );
-
-      final ownerRefresh = owner.refresh();
-      final waiterRefresh = waiter.refresh();
-      final ownerExpectation = expectLater(ownerRefresh, throwsA(isA<TrackerAuthException>()));
-      final waiterExpectation = expectLater(waiterRefresh, throwsA(isA<TrackerAuthException>()));
-      await Future<void>.delayed(Duration.zero);
-      releaseRefreshResponse.complete();
-
-      await ownerExpectation;
-      await waiterExpectation;
-
-      expect(refreshPosts, 1);
-      expect(ownerInvalidated, 1);
-      expect(waiterInvalidated, 1);
-
-      owner.dispose();
-      waiter.dispose();
     });
   });
 }

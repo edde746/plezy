@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_action_bar.dart';
+import '../../media/artist_discography.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/media_item.dart';
@@ -15,6 +16,7 @@ import '../../utils/formatters.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/music_navigation.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/collapsible_text.dart';
@@ -45,6 +47,12 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
         StandardItemLoader<ArtistDetailScreen> {
   final FocusNode _bioFocusNode = FocusNode(debugLabel: 'artist_bio');
 
+  /// Discography sections in display order. A single flat `albums` group
+  /// (Plex with no singles/live/compilations, or any Jellyfin/Emby artist)
+  /// renders the flat grid. The sections mirror the concatenation order of
+  /// [items], so [updateItem]'s in-place swap stays visible.
+  List<ArtistDiscographyGroup> _discographyGroups = const [];
+
   @override
   Object get mediaItem => widget.artist;
 
@@ -58,7 +66,13 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
   bool get hasItems => items.isNotEmpty;
 
   @override
-  Future<List<MediaItem>> fetchItems() => mediaClient.fetchArtistAlbums(widget.artist);
+  Future<List<MediaItem>> fetchItems() async {
+    final groups = await mediaClient.fetchArtistDiscography(widget.artist);
+    _discographyGroups = groups;
+    // Flat concatenation keeps BaseMediaListDetailScreen/StandardItemLoader/
+    // updateItem working against one list; the grouped slivers slice it.
+    return [for (final group in groups) ...group.items];
+  }
 
   @override
   Future<void> loadItems() async {
@@ -79,11 +93,7 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
     await playFetchedTracks(
       context,
       fetch: () => mediaClient.fetchPlayableDescendants(widget.artist.id),
-      playContext: MusicPlayContext(
-        id: widget.artist.id,
-        title: widget.artist.displayTitle,
-        kind: MusicPlayContextKind.artist,
-      ),
+      playContext: MusicPlayContext(title: widget.artist.displayTitle, kind: MusicPlayContextKind.artist),
       onError: (e, stackTrace) =>
           showErrorSnackBar(context, localizedLoadErrorMessage(e, stackTrace, context: widget.artist.displayTitle)),
       onEmpty: () => showAppSnackBar(context, emptyMessage),
@@ -172,6 +182,52 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
     );
   }
 
+  /// Discography slivers. One group (or a backend without grouping) renders
+  /// exactly today's flat grid; multiple groups render a titled section per
+  /// group. Every section's grid shares the screen-global focus index space
+  /// so D-pad navigation and [navigateToGrid] restore work across sections.
+  List<Widget> _buildDiscographySlivers(BuildContext context) {
+    if (_discographyGroups.length <= 1) {
+      return [buildFocusableGrid(items: items, onRefresh: updateItem, shape: CardShape.square)];
+    }
+
+    final sectionTitleStyle = Theme.of(
+      context,
+    ).textTheme.titleLarge?.copyWith(fontWeight: .bold, fontSize: PlatformDetector.isTV() ? 28 : null);
+
+    final slivers = <Widget>[];
+    var offset = 0;
+    for (final group in _discographyGroups) {
+      final groupItems = items.sublist(offset, offset + group.items.length);
+      final sectionOffset = offset;
+      offset += group.items.length;
+      slivers.add(
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Text(_discographyGroupTitle(group.kind), style: sectionTitleStyle),
+          ),
+        ),
+      );
+      slivers.add(
+        buildFocusableGrid(
+          items: groupItems,
+          onRefresh: updateItem,
+          shape: CardShape.square,
+          indexOffset: sectionOffset,
+        ),
+      );
+    }
+    return slivers;
+  }
+
+  String _discographyGroupTitle(DiscographyGroupKind kind) => switch (kind) {
+    DiscographyGroupKind.albums => t.libraries.groupings.albums,
+    DiscographyGroupKind.singlesAndEps => t.music.discography.singlesAndEps,
+    DiscographyGroupKind.live => t.music.discography.live,
+    DiscographyGroupKind.compilations => t.music.discography.compilations,
+  };
+
   @override
   Widget build(BuildContext context) {
     return buildDetailScaffold(
@@ -180,7 +236,7 @@ class _ArtistDetailScreenState extends BaseMediaListDetailScreen<ArtistDetailScr
         SliverToBoxAdapter(child: _buildHeader()),
         ...buildStateSlivers(),
         // Albums arrive newest-first from both backends — no client-side sort.
-        if (hasItems) buildFocusableGrid(items: items, onRefresh: updateItem, shape: CardShape.square),
+        if (hasItems) ..._buildDiscographySlivers(context),
         // Keep the last rows reachable above the floating mini-player.
         SliverToBoxAdapter(child: SizedBox(height: context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0)),
       ],

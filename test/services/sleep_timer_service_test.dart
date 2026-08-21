@@ -18,10 +18,6 @@ void main() {
     timer.cancelTimer();
   });
 
-  // ============================================================
-  // Initial state
-  // ============================================================
-
   group('initial state', () {
     test('isActive is false on a fresh / cancelled service', () {
       expect(timer.isActive, isFalse);
@@ -37,10 +33,6 @@ void main() {
       expect(identical(a, b), isTrue);
     });
   });
-
-  // ============================================================
-  // startTimer — bookkeeping
-  // ============================================================
 
   group('startTimer', () {
     test('sets isActive, duration, originalDuration, and endTime', () {
@@ -80,10 +72,6 @@ void main() {
       timer.cancelTimer();
     });
   });
-
-  // ============================================================
-  // cancelTimer
-  // ============================================================
 
   group('cancelTimer', () {
     test('clears all state and prevents a later prompt', () {
@@ -185,10 +173,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // restartTimer / restartIfNeeded / markNeedsRestart
-  // ============================================================
-
   group('restartTimer', () {
     test('restartTimer after cancel is a no-op (originalDuration cleared)', () {
       timer.startTimer(const Duration(minutes: 1), () {});
@@ -247,10 +231,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // extendTimer
-  // ============================================================
-
   group('extendTimer', () {
     test('shifts endTime and grows duration by the additional time', () {
       timer.startTimer(const Duration(minutes: 10), () {});
@@ -273,10 +253,6 @@ void main() {
       expect(timer.duration, isNull);
     });
   });
-
-  // ============================================================
-  // executeCompletion
-  // ============================================================
 
   group('executeCompletion', () {
     test('runs the stored callback and emits onCompleted', () async {
@@ -311,10 +287,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Change notifications
-  // ============================================================
-
   group('change notifications', () {
     test('startTimer and cancelTimer each notify listeners at least once', () {
       var notifications = 0;
@@ -347,10 +319,6 @@ void main() {
       timer.cancelTimer();
     });
   });
-
-  // ============================================================
-  // armEndOfVideo / notifyVideoCompleted
-  // ============================================================
 
   group('armEndOfVideo', () {
     test('sets isActive and isEndOfVideoMode without starting a periodic timer', () {

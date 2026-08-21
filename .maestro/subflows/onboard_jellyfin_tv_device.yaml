@@ -1,12 +1,7 @@
 appId: com.edde746.plezy
 ---
-# Onboarding for a device that already reports itself as a TV.
-#
-# `onboard_jellyfin_tv.yaml` exists for the phone emulator CI runs on: it
-# onboards through the handheld layout and then walks Settings to flip
-# "Force TV mode". A real Android TV box takes the TV layout from the first
-# frame, so that walk has no handheld chrome to tap and the toggle would only
-# re-assert what PlatformDetector already reports.
+# Onboard a device that reports itself as a TV; unlike the phone flow, it starts
+# in TV layout and needs no Force TV mode walk.
 - retry:
     maxRetries: 1
     commands:
@@ -32,9 +27,8 @@ appId: com.edde746.plezy
 - tapOn: "(?s)Server URLs.*"
 - inputText: ${JELLYFIN_URL}
 - tapOn: "Find server"
-# A TV-sized layout offers Quick Connect first because typing on a remote is
-# slow. The code path needs a second device to approve, so fall back to the
-# username form the phone flow already uses.
+# Quick Connect is awkward on a remote and needs another device, so use the
+# username form as fallback.
 - extendedWaitUntil:
     visible: "(?s)^(?:Username|Cancel)$"
     timeout: 30000

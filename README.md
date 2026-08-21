@@ -3,7 +3,7 @@
   Plezy
 </h1>
 
-A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
+A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
 
 <p>
   <a href="https://plezy.app">Website</a> ·
@@ -38,9 +38,9 @@ Package managers:
   brew tap edde746/plezy https://github.com/edde746/plezy
   brew install --cask plezy
   ```
-- [AUR](https://aur.archlinux.org/packages/plezy-bin) (Arch Linux) - Community maintained by [@jianglai](https://github.com/jianglai):
+- [Pacman](https://archlinux.org/packages/extra/x86_64/plezy/) (Arch Linux) - Official package:
   ```bash
-  yay -S plezy-bin
+  sudo pacman -S plezy
   ```
 - **WinGet** (Windows):
   ```bash
@@ -52,11 +52,11 @@ Package managers:
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
 - Libraries, collections, and playlists — video and audio
 - Discover hub — Continue Watching, Next Up, trending, and recommendations
-- Cross-server search across every connected Plex and Jellyfin server
+- Cross-server search across every connected Plex, Jellyfin, and Emby server
 - Filtering, sorting, and alphabetical jump navigation
 - Folder browsing and folder playback — home-video libraries open in folder view
 - Resolution, HDR/Dolby Vision, and audio-format badges on cards and detail pages
-- Favorites and unwatched library filters[^jf]
+- Favorites and unwatched library filters[^mb]
 - Extras — trailers, deleted scenes, behind-the-scenes
 
 ### <img src="assets/readme_icons/explore.svg" height="20" alt="" align="center" /> Explore & Requests
@@ -119,9 +119,9 @@ Package managers:
 
 ### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
 - Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support
-- Multiple servers at once — Plex and Jellyfin side by side
+- Multiple servers at once — Plex, Jellyfin, and Emby side by side
 - Profiles with per-profile downloads, watch state, and settings; Plex Home switching with PIN
-- Jellyfin local-server discovery, multiple URLs per server, and Quick Connect sign-in
+- Jellyfin and Emby local-server discovery and multiple URLs per server; Quick Connect sign-in[^jf]
 - TV layout options — corner spotlight backdrop, full-card artwork, and Force TV mode on desktop
 - Customizable keyboard shortcuts[^desktop]
 - Metadata and artwork editing
@@ -129,9 +129,10 @@ Package managers:
 - Localized in English plus 21 translations
 
 [^jf]: Jellyfin only.
+[^mb]: Jellyfin and Emby only.
 [^plex]: Plex only.
 [^connect]: Requires connecting the service under Settings > Services.
-[^hdr]: In-app HDR toggle on Windows, macOS, iOS, and tvOS. Dolby Vision on Android and Apple TV.
+[^hdr]: In-app HDR toggle on Windows, macOS, iOS, tvOS, and Linux — Linux needs a colour-managed Wayland compositor. Dolby Vision on Android and Apple TV.
 [^pass]: Desktop, Android TV, and Apple TV.
 [^mpv]: Requires the mpv player backend — unavailable on iOS and tvOS, and Android defaults to ExoPlayer.
 [^pip]: Android, iOS, and macOS — not on Android TV or Apple TV.
@@ -148,7 +149,7 @@ Package managers:
 
 ### Prerequisites
 - Flutter SDK 3.44.0+
-- A Plex account or Jellyfin server with user credentials
+- A Plex account, or a Jellyfin or Emby server with user credentials
 
 ### Setup
 
@@ -189,7 +190,7 @@ scripts/setup_hooks.sh
 End-to-end tests (Android emulator plus a Dockerized Jellyfin fixture):
 
 ```bash
-python3 scripts/run_maestro.py basic
+python3 scripts/maestro/run_maestro.py basic
 ```
 
 ## Contributing
@@ -203,5 +204,5 @@ Plezy is licensed under [GPL-3.0](LICENSE).
 ## Acknowledgments
 
 - Built with [Flutter](https://flutter.dev)
-- Supports [Plex Media Server](https://www.plex.tv) and [Jellyfin](https://jellyfin.org)
+- Supports [Plex Media Server](https://www.plex.tv), [Jellyfin](https://jellyfin.org), and [Emby](https://emby.media)
 - Playback powered by [mpv](https://mpv.io), [MPVKit](https://github.com/mpvkit/MPVKit), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), [libass-android](https://github.com/peerless2012/libass-android), and [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)

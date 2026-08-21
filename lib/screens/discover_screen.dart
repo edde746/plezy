@@ -22,6 +22,7 @@ import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import '../widgets/toolbar_scrim.dart';
+import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
@@ -50,6 +51,7 @@ import '../utils/formatters.dart';
 import '../utils/hub_icons.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
@@ -57,7 +59,7 @@ import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
-import 'settings/settings_screen.dart';
+import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
@@ -101,18 +103,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final TvSpotlightController _spotlight = TvSpotlightController();
   bool _isTabVisible = true;
 
-  // Track initial load so we can focus hero when content first appears
   bool _initialLoadComplete = false;
   bool _pendingTvBrowseRailFocus = false;
 
-  // Hub navigation keys
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final _hubFocusMemory = HubFocusMemory();
 
-  // Hero and app bar focus
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
   final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
@@ -153,7 +152,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
   }
 
-  /// Get all hub states (continue watching + other hubs)
   List<GlobalKey<HubSectionState>> get _allHubKeys {
     final keys = <GlobalKey<HubSectionState>>[];
     if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
@@ -600,6 +598,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     unawaited(_discover.load());
   }
 
+  @override
+  void primeRefresh() {
+    // `initState` already fired `load()`. On cold start that pass is still
+    // running when the online-entry hook primes the tab, and asking again only
+    // queues an identical trailing pass — the whole home fan-out twice (#1784).
+    // When nothing is in flight (reconnect-from-offline, or a first pass that
+    // gave up because no server was online yet) a real refresh is still owed.
+    if (_discover.isLoadInFlight) return;
+    fullRefresh();
+  }
+
   /// Whether the loaded hubs span more than one connected server.
   bool _hubsSpanMultipleServers() {
     final serverIds = _hubs.where((hub) => hub.serverId != null).map((hub) => hub.serverId).toSet();
@@ -634,7 +643,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       return;
     }
 
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+    Navigator.push(context, buildSettingsRoute());
   }
 
   /// Build the [FocusableAction] wrapping the user menu.
@@ -652,12 +661,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         key: _userMenuKey,
         enabled: !_switchingProfile,
         icon: active != null
-            ? ProfileAvatar(profile: active, size: 32)
+            ? ProfileAvatar(profile: active, size: 32, avatarUrl: activeProvider.avatarUrlFor(active.id))
             : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
         tooltip: t.profiles.sectionTitle,
         anchorAlignment: AppMenuAnchorAlignment.end,
         onSelected: (value) => unawaited(_handleUserMenuAction(context, value)),
-        entriesBuilder: (context) => _userMenuItems(context, activeProfile: active, profiles: profiles),
+        entriesBuilder: (context) =>
+            _userMenuItems(context, activeProfile: active, profiles: profiles, activeProvider: activeProvider),
       ),
     );
   }
@@ -666,6 +676,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     BuildContext context, {
     required Profile? activeProfile,
     required List<Profile> profiles,
+    required ActiveProfileProvider activeProvider,
   }) {
     final theme = Theme.of(context);
     final switchable = profiles.where((p) => p.id != activeProfile?.id).toList();
@@ -674,7 +685,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       for (final p in switchable)
         AppMenuItem<String>(
           value: 'profile:${p.id}',
-          leading: ProfileAvatar(profile: p, size: 24),
+          leading: ProfileAvatar(profile: p, size: 24, avatarUrl: activeProvider.avatarUrlFor(p.id)),
           label: p.displayName,
           trailing: p.isPinProtected
               ? AppIcon(Symbols.lock_rounded, fill: 1, size: 14, color: theme.colorScheme.onSurfaceVariant)
@@ -734,6 +745,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
             ),
           const Spacer(),
+          // TV only: a fullscreen leanback app hides the system clock, while a
+          // phone status bar and a desktop menu bar already show one.
+          if (PlatformDetector.isTV()) ...[
+            SystemClock(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w500),
+            ),
+            const SizedBox(width: 12),
+          ],
           Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
             builder: (context, watchTogether, companionRemote, _) {
               final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
@@ -743,7 +762,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: _focusContentFromAppBar,
                 actions: [
-                  FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: _discover.load),
+                  FocusableAction(
+                    icon: Symbols.refresh_rounded,
+                    iconColor: foregroundColor,
+                    onPressed: () async {
+                      final outcome = await _discover.refreshNow();
+                      if (!context.mounted) return;
+                      switch (outcome) {
+                        case DiscoverRefreshOutcome.failed:
+                          showErrorSnackBar(context, t.errors.unableToLoad(context: t.discover.title));
+                        case DiscoverRefreshOutcome.degraded:
+                          appLogger.w('Discover refresh completed with partial server failures');
+                        case DiscoverRefreshOutcome.cancelled:
+                        case DiscoverRefreshOutcome.refreshed:
+                          break;
+                      }
+                    },
+                  ),
                   // Watch Together
                   FocusableAction(
                     onPressed: () =>
@@ -896,7 +931,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               if (_isLoading) LoadingIndicatorBox.sliver,
               if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
               if (!_isLoading && _errorMessage == null) ...[
-                // On Deck / Continue Watching
                 if (continueWatchingHub != null)
                   SliverToBoxAdapter(
                     child: HubSection(
@@ -1127,7 +1161,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             fill: 1,
                             color: Theme.of(context).colorScheme.onSurface,
                             size: 18,
-                            semanticLabel: '${_isAutoScrollPaused ? t.common.play : t.common.pause} auto-scroll',
+                            semanticLabel: _isAutoScrollPaused
+                                ? t.accessibility.autoScrollPlay
+                                : t.accessibility.autoScrollPause,
                           ),
                         ),
                       ),
@@ -1218,14 +1254,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
     );
 
-    // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
-    // Spoiler protection
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
 
-    // Build semantic label for hero item
     final heroLabel = isEpisode ? "${heroItem.grandparentTitle}, ${heroItem.title}" : heroItem.title;
 
     return Semantics(
@@ -1379,10 +1412,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             ),
                           ],
 
-                          // On small screens: show button before summary
                           if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
 
-                          // Summary with episode info (Apple TV style)
                           if (heroItem.summary != null && !shouldHideSpoiler) ...[
                             const SizedBox(height: 12),
                             RichText(
@@ -1427,7 +1458,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             ),
                           ],
 
-                          // On large screens: show button after summary
                           if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
                         ],
                       ),

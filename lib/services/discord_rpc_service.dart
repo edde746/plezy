@@ -139,7 +139,6 @@ class DiscordRPCService {
     _playbackSpeed = 1.0;
 
     if (_isEnabled && _isConnected) {
-      // Upload thumbnail in background, don't block playback
       unawaited(_uploadThumbnailAndUpdatePresence(revision, metadata, client));
     }
   }
@@ -148,9 +147,7 @@ class DiscordRPCService {
   void updatePosition(Duration position) {
     final isSeek = _timeline.updatePosition(position);
 
-    // Update presence if position jumped significantly (seek detected)
     if (_isEnabled && _isConnected && _playbackStartTime != null && isSeek) {
-      // Throttle updates to max once per second
       final now = DateTime.now();
       if (_lastPresenceUpdate == null || now.difference(_lastPresenceUpdate!) > const Duration(seconds: 1)) {
         _lastPresenceUpdate = now;
@@ -172,7 +169,6 @@ class DiscordRPCService {
   Future<void> resumePlayback() async {
     if (_currentMetadata == null) return;
 
-    // Reset start time for elapsed time display
     _playbackStartTime = DateTime.now();
 
     if (_isEnabled && _isConnected) {
@@ -182,7 +178,6 @@ class DiscordRPCService {
 
   /// Pause - clear timestamp but keep showing what's playing
   Future<void> pausePlayback() async {
-    // Clear start time so Discord stops counting
     _playbackStartTime = null;
 
     if (_isEnabled && _isConnected) {
@@ -309,12 +304,9 @@ class DiscordRPCService {
 
   Future<String?> _uploadThumbnail(MediaItem metadata, MediaServerClient client) async {
     try {
-      // Get the thumbnail path (prefer show poster for episodes)
       final thumbPath = metadata.grandparentThumbPath ?? metadata.thumbPath;
       if (thumbPath == null || thumbPath.isEmpty) return null;
 
-      // Check cache first (with expiry check). Key by backend so the same
-      // path on Plex and Jellyfin doesn't collide.
       final cacheKey = '${client.backend.id}:$thumbPath';
       final cached = _posterUrlCache[cacheKey];
       if (cached != null && !cached.isExpired) {

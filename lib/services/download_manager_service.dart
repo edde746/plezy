@@ -43,6 +43,17 @@ typedef _NativeTaskForId = Future<Task?> Function(String taskId);
 typedef _NativeResumeTask = Future<bool> Function(DownloadTask task);
 typedef _EpisodeStorageDeletion = ({String? seasonDirUri, String? showDirUri});
 
+/// The background_downloader entry points the recovery path drives. Injected as a whole
+/// in tests so relocated-storage recovery can be exercised without platform channels.
+typedef NativeDownloaderOps = ({
+  Future<List<Task>> Function() allTasks,
+  Future<List<TaskRecord>> Function() allRecords,
+  Future<void> Function(String taskId) deleteRecord,
+  Future<bool> Function(Iterable<String> taskIds) cancelTaskIds,
+  Future<int> Function() cleanUpOrphanedTempFiles,
+  Future<(List<Task>, List<Task>)> Function() rescheduleKilledTasks,
+});
+
 typedef NativeTaskPartition = ({List<Task> current, List<Task> stale});
 
 typedef DownloadLocationSnapshot = ({String? path, String? type});
@@ -59,6 +70,40 @@ NativeTaskPartition partitionNativeTasks(Iterable<Task> tasks, String? currentTa
     }
   }
   return (current: current, stale: stale);
+}
+
+/// Whether [task] writes into a directory left behind by a previous location of the
+/// app's private storage.
+///
+/// A [BaseDirectory.root] task carries its whole target directory in the downloader's
+/// own persisted store, so one enqueued before the app moved to adoptable storage (or
+/// before an iOS container UUID change) resumes writing where the app owns nothing.
+/// Legitimate root-anchored tasks sit under [baseAppDirPath] or under the configured
+/// [customRootPath], which does not move with the app; anything else is a leftover with
+/// no recoverable partial data.
+///
+/// [rootBasePath] is the downloader's own resolved path for [BaseDirectory.root]
+/// (`Task.baseDirectoryPath`). It is needed because the [Task] constructor strips one
+/// leading separator from `directory`, so the stored value must be rejoined the same way
+/// `Task.filePath` does before it can be compared with a real directory.
+@visibleForTesting
+bool isRelocatedRootTaskDirectory({
+  required Task task,
+  required String rootBasePath,
+  required String baseAppDirPath,
+  String? customRootPath,
+}) {
+  // A SAF task also declares BaseDirectory.root, but its directory is a content:// tree
+  // URI owned by a document provider, not a path that moves with the app.
+  if (task is UriTask) return false;
+  if (task.baseDirectory != BaseDirectory.root) return false;
+  if (task.directory.isEmpty) return false;
+  final directory = path.join(rootBasePath, task.directory);
+  if (path.equals(directory, baseAppDirPath) || path.isWithin(baseAppDirPath, directory)) return false;
+  if (customRootPath != null && (path.equals(directory, customRootPath) || path.isWithin(customRootPath, directory))) {
+    return false;
+  }
+  return true;
 }
 
 const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
@@ -97,6 +142,7 @@ class DownloadManagerService {
   final Future<void> Function(MediaServerClient)? _queueProcessorOverride;
   final Future<void> Function()? _nativeRecoveryOverride;
   final Future<void> Function()? _fileDownloaderInitializerOverride;
+  final NativeDownloaderOps? _nativeOpsOverride;
 
   final DownloadLocationSnapshot Function()? _downloadLocationReader;
   final Future<void> Function(String?)? _downloadPathWriter;
@@ -225,6 +271,7 @@ class DownloadManagerService {
     @visibleForTesting Future<void> Function(MediaServerClient)? queueProcessorOverride,
     @visibleForTesting Future<void> Function()? fileDownloaderInitializerOverride,
     @visibleForTesting Future<void> Function()? nativeRecoveryOverride,
+    @visibleForTesting NativeDownloaderOps? nativeOpsOverride,
     @visibleForTesting DownloadLocationSnapshot Function()? downloadLocationReader,
     @visibleForTesting Future<void> Function(String?)? downloadPathWriter,
     @visibleForTesting Future<void> Function(String?)? downloadPathTypeWriter,
@@ -235,6 +282,7 @@ class DownloadManagerService {
        _nativeRecoveryOverride = nativeRecoveryOverride,
        _database = database,
        _fileDownloaderInitializerOverride = fileDownloaderInitializerOverride,
+       _nativeOpsOverride = nativeOpsOverride,
        _storageService = storageService,
        _clientResolver = clientResolver,
        _http = http ?? httpClient,
@@ -246,6 +294,17 @@ class DownloadManagerService {
        _artworkService = DownloadArtworkService(storageService: storageService, http: http ?? httpClient);
 
   bool get downloadsSupported => _downloadsSupportedOverride ?? platformDownloadsSupported;
+
+  NativeDownloaderOps get _nativeOps =>
+      _nativeOpsOverride ??
+      (
+        allTasks: () => FileDownloader().allTasks(group: _downloadGroup),
+        allRecords: () => FileDownloader().database.allRecords(group: _downloadGroup),
+        deleteRecord: FileDownloader().database.deleteRecordWithId,
+        cancelTaskIds: FileDownloader().cancelTasksWithIds,
+        cleanUpOrphanedTempFiles: FileDownloader().cleanUpOrphanedTempFiles,
+        rescheduleKilledTasks: FileDownloader().rescheduleKilledTasks,
+      );
 
   bool _skipDownloadsUnsupported(String operation) {
     if (downloadsSupported) return false;
@@ -459,47 +518,41 @@ class DownloadManagerService {
 
   /// Returns the cache namespace visible to [activeProfileId] for [serverId].
   ///
-  /// Jellyfin prefers the persisted profile-to-user binding so a cold launch
-  /// and a profile switch cannot inherit the physical download row's creator
-  /// scope. A live scope is used only when no persisted binding exists.
+  /// MediaBrowser backends prefer the persisted profile-to-user binding so a
+  /// cold launch and a profile switch cannot inherit the physical download
+  /// row's creator scope. A live scope is used only when no persisted binding
+  /// exists.
   Future<String?> profileClientScopeIdForServer(ServerId serverId, String? activeProfileId) async {
     if (activeProfileId == null || activeProfileId.isEmpty) return null;
     final backend = await _backendForServer(serverId);
-    if (backend == MediaBackend.plex) {
-      return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
+    if (backend == null) return null;
+    if (backend.usesMediaBrowserApi) {
+      final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
+      return persisted ?? activeClientScopeIdForServer(serverId);
     }
-    if (backend != MediaBackend.jellyfin) return null;
-    final persisted = await JellyfinCacheResolver(_database).findProfileScopeId(serverId, activeProfileId);
-    return persisted ?? activeClientScopeIdForServer(serverId);
+    return buildPlexProfileScopeId(serverId: serverId, profileId: activeProfileId);
   }
 
   /// Bulk-load pinned metadata. Profile-visible hydration reads only exact
   /// owner namespaces; it never pre-merges another user's rows.
-  Future<Map<String, MediaItem>> getAllPinnedMetadata({bool preferActiveScope = false, String? activeProfileId}) async {
-    if (preferActiveScope) {
-      if (activeProfileId == null || activeProfileId.isEmpty) return {};
-      final ownerKeys = await _database.getDownloadOwnerKeysForProfile(activeProfileId);
-      final allowedByBackend = <MediaBackend, Set<ServerId>>{
-        for (final backend in MediaBackend.values) backend: <ServerId>{},
-      };
-      for (final item in await _database.getAllDownloadedMetadata()) {
-        if (!ownerKeys.contains(item.globalKey)) continue;
-        final serverId = ServerId(item.serverId);
-        final backend = await _backendForServer(serverId);
-        if (backend == null) continue;
-        final scopeId = await profileClientScopeIdForServer(serverId, activeProfileId);
-        if (scopeId != null) allowedByBackend[backend]!.add(ServerId(scopeId));
-      }
-      final results = await Future.wait(
-        MediaBackend.values.map(
-          (backend) => ApiCache.forBackend(backend).getAllPinnedMetadata(cacheServerIds: allowedByBackend[backend]),
-        ),
-      );
-      return {for (final result in results) ...result};
+  Future<Map<String, MediaItem>> getAllPinnedMetadata({String? activeProfileId}) async {
+    if (activeProfileId == null || activeProfileId.isEmpty) return {};
+    final ownerKeys = await _database.getDownloadOwnerKeysForProfile(activeProfileId);
+    final allowedByBackend = <MediaBackend, Set<ServerId>>{
+      for (final backend in MediaBackend.values) backend: <ServerId>{},
+    };
+    for (final item in await _database.getAllDownloadedMetadata()) {
+      if (!ownerKeys.contains(item.globalKey)) continue;
+      final serverId = ServerId(item.serverId);
+      final backend = await _backendForServer(serverId);
+      if (backend == null) continue;
+      final scopeId = await profileClientScopeIdForServer(serverId, activeProfileId);
+      if (scopeId != null) allowedByBackend[backend]!.add(ServerId(scopeId));
     }
-
     final results = await Future.wait(
-      MediaBackend.values.map((backend) => ApiCache.forBackend(backend).getAllPinnedMetadata()),
+      MediaBackend.values.map(
+        (backend) => ApiCache.forBackend(backend).getAllPinnedMetadata(cacheServerIds: allowedByBackend[backend]),
+      ),
     );
     return {for (final result in results) ...result};
   }
@@ -568,16 +621,19 @@ class DownloadManagerService {
   /// is currently offline (the connection persists across launches).
   ///
   /// [JellyfinCacheResolver] reconciles bare machine ids with compound
-  /// `${serverMachineId}/$userId` connection ids without treating `_` or `%`
-  /// as wildcards.
+  /// `${serverMachineId}/$userId` MediaBrowser connection ids without treating
+  /// `_` or `%` as wildcards.
   Future<MediaBackend?> _backendForServer(ServerId serverId) async {
     // Prefer a live client — `MediaServerClient.backend` is in memory.
     final live = _getClient(serverId);
     if (live != null) return live.backend;
     final row = await JellyfinCacheResolver(_database).findConnection(serverId);
     if (row == null) return null;
+    // Keep the persisted discriminator intact even though both MediaBrowser
+    // values dispatch to the same cache implementation.
     return switch (row.kind) {
       'jellyfin' => MediaBackend.jellyfin,
+      'emby' => MediaBackend.emby,
       'plex' => MediaBackend.plex,
       _ => null,
     };
@@ -590,8 +646,8 @@ class DownloadManagerService {
   /// When [_backendForServer] can't resolve the backend (no live client and
   /// no `connections` row — happens when a server has been removed but old
   /// download rows still reference it), fan out to every registered backend
-  /// cache instead of silently defaulting to Plex. Otherwise Jellyfin items
-  /// would render with blank metadata after a connection is severed.
+  /// cache instead of silently defaulting to Plex. Otherwise MediaBrowser
+  /// items would render with blank metadata after a connection is severed.
   Future<MediaItem?> _lookupMetadata(ServerId serverId, String itemId, {String? clientScopeId}) async {
     final backend = await _backendForServer(serverId);
     final live = _getClient(serverId, clientScopeId: clientScopeId);
@@ -712,8 +768,8 @@ class DownloadManagerService {
     }
   }
 
-  /// Backend-aware "ensure cached & pin". Jellyfin loads playback extras so
-  /// both item metadata and native media segments are available offline; other
+  /// Backend-aware "ensure cached & pin". MediaBrowser backends load playback
+  /// extras; Jellyfin can additionally cache native media segments. Other
   /// backends only need the item metadata row. Then pin cached rows so they
   /// survive general cache eviction.
   Future<void> _pinMetadataForOffline(MediaServerClient client, MediaItem metadata) async {
@@ -722,7 +778,7 @@ class DownloadManagerService {
       appLogger.w('Cannot pin metadata without serverId');
       return;
     }
-    if (client.backend == MediaBackend.jellyfin) {
+    if (client.backend.usesMediaBrowserApi) {
       try {
         await client.fetchPlaybackExtras(metadata.id);
       } catch (e) {
@@ -795,10 +851,10 @@ class DownloadManagerService {
         )
         .configureNotificationForGroup(
           _downloadGroup,
-          running: const TaskNotification('{displayName}', 'Downloading...'),
-          complete: const TaskNotification('{displayName}', 'Download complete'),
-          error: const TaskNotification('{displayName}', 'Download failed'),
-          paused: const TaskNotification('{displayName}', 'Download paused'),
+          running: TaskNotification('{displayName}', t.downloads.notificationDownloading),
+          complete: TaskNotification('{displayName}', t.downloads.notificationComplete),
+          error: TaskNotification('{displayName}', t.downloads.errorDownloadFailed),
+          paused: TaskNotification('{displayName}', t.downloads.notificationPaused),
           progressBar: true,
         );
 
@@ -832,17 +888,23 @@ class DownloadManagerService {
         await nativeRecoveryOverride();
         return;
       }
-      unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Initializing FileDownloader', category: 'downloads')));
-      await _initializeFileDownloader();
+      // Strictly before the downloader is wired up. Initialization registers our status
+      // callbacks and calls resumeFromBackground, which can deliver a failure a relocated
+      // task already hit on the old path — and a failed row is no longer restartable.
+      // rescheduleKilledTasks, further down, would re-enqueue it against that path again.
+      await _purgeRelocatedDownloadRecords();
 
-      final deletedTempFiles = await FileDownloader().cleanUpOrphanedTempFiles();
+      unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Initializing FileDownloader', category: 'downloads')));
+      await (_fileDownloaderInitializerOverride?.call() ?? _initializeFileDownloader());
+
+      final deletedTempFiles = await _nativeOps.cleanUpOrphanedTempFiles();
       if (deletedTempFiles > 0) {
         appLogger.i('Deleted $deletedTempFiles orphaned downloader temp file(s)');
       }
 
       // Let background_downloader re-enqueue tasks killed by the OS
       unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Rescheduling killed tasks', category: 'downloads')));
-      final (rescheduled, _) = await FileDownloader().rescheduleKilledTasks();
+      final (rescheduled, _) = await _nativeOps.rescheduleKilledTasks();
       if (rescheduled.isNotEmpty) {
         appLogger.i('Rescheduled ${rescheduled.length} killed download task(s)');
       }
@@ -929,11 +991,13 @@ class DownloadManagerService {
   }
 
   Future<void> _reconcileNativeDownloadTasks() async {
-    if (!downloadsSupported || !_fileDownloaderInitialized) return;
+    if (!downloadsSupported) return;
+    // An injected ops seam stands in for a wired-up downloader.
+    if (_nativeOpsOverride == null && !_fileDownloaderInitialized) return;
 
     final List<Task> nativeTasks;
     try {
-      nativeTasks = await FileDownloader().allTasks(group: _downloadGroup);
+      nativeTasks = await _nativeOps.allTasks();
     } catch (e) {
       appLogger.w('Failed to enumerate native download tasks during recovery', error: e);
       return;
@@ -941,15 +1005,47 @@ class DownloadManagerService {
     if (nativeTasks.isEmpty) return;
 
     final tasksByGlobalKey = <String, List<Task>>{};
+    final rootTasks = <Task>[];
     for (final task in nativeTasks) {
+      if (task.baseDirectory == BaseDirectory.root) {
+        rootTasks.add(task);
+        continue;
+      }
       final globalKey = task.metaData;
       if (globalKey.isEmpty) continue;
       (tasksByGlobalKey[globalKey] ??= []).add(task);
     }
-    if (tasksByGlobalKey.isEmpty) return;
+
+    // A root-anchored task carries its absolute directory in the downloader's own
+    // persisted store, so one enqueued before the app's private storage moved resumes
+    // writing where the app no longer owns anything. Those cannot be resumed at all.
+    final relocatedTasksByGlobalKey = <String, List<Task>>{};
+    if (rootTasks.isNotEmpty) {
+      final rootBasePath = await Task.baseDirectoryPath(BaseDirectory.root);
+      final baseAppDirPath = await _storageService.baseAppDirectoryPath();
+      final customRootPath = _storageService.customFileRootPath;
+      for (final task in rootTasks) {
+        final relocated = isRelocatedRootTaskDirectory(
+          task: task,
+          rootBasePath: rootBasePath,
+          baseAppDirPath: baseAppDirPath,
+          customRootPath: customRootPath,
+        );
+        if (relocated) {
+          (relocatedTasksByGlobalKey[task.metaData] ??= []).add(task);
+        } else if (task.metaData.isNotEmpty) {
+          (tasksByGlobalKey[task.metaData] ??= []).add(task);
+        }
+      }
+    }
+    if (relocatedTasksByGlobalKey.isEmpty && tasksByGlobalKey.isEmpty) return;
 
     final rows = await _database.select(_database.downloadedMedia).get();
     final rowsByGlobalKey = {for (final row in rows) row.globalKey: row};
+
+    for (final entry in relocatedTasksByGlobalKey.entries) {
+      await _discardRelocatedNativeTasks(entry.key, entry.value, rowsByGlobalKey[entry.key]);
+    }
 
     for (final entry in tasksByGlobalKey.entries) {
       final globalKey = entry.key;
@@ -989,6 +1085,98 @@ class DownloadManagerService {
     }
   }
 
+  /// Drop downloader records whose target directory belongs to a previous location of the
+  /// app's private storage, and requeue the download so it restarts under the current one.
+  ///
+  /// Runs before the downloader is initialized, and therefore before
+  /// [FileDownloader.rescheduleKilledTasks], for two reasons. Reschedule re-enqueues every
+  /// enqueued/running record it finds missing natively, carrying the relocated absolute
+  /// directory over verbatim. And initialization registers our status callbacks and calls
+  /// [FileDownloader.resumeFromBackground], which can deliver a failure such a task already
+  /// hit — marking the row failed, which [_requeueRelocatedDownload] deliberately will not
+  /// restart. Reading and deleting records needs no initialization: the record store is
+  /// Dart-side, as [discardInterruptedNativeDownloadsAfterStorageFailure] also relies on.
+  Future<void> _purgeRelocatedDownloadRecords() async {
+    if (!downloadsSupported) return;
+
+    final List<TaskRecord> records;
+    try {
+      records = await _nativeOps.allRecords();
+    } catch (e) {
+      appLogger.w('Failed to enumerate download records during recovery', error: e);
+      return;
+    }
+    final rootRecords = records.where((record) => record.task.baseDirectory == BaseDirectory.root).toList();
+    if (rootRecords.isEmpty) return;
+
+    final rootBasePath = await Task.baseDirectoryPath(BaseDirectory.root);
+    final baseAppDirPath = await _storageService.baseAppDirectoryPath();
+    final customRootPath = _storageService.customFileRootPath;
+    for (final record in rootRecords) {
+      if (!isRelocatedRootTaskDirectory(
+        task: record.task,
+        rootBasePath: rootBasePath,
+        baseAppDirPath: baseAppDirPath,
+        customRootPath: customRootPath,
+      )) {
+        continue;
+      }
+
+      final globalKey = record.task.metaData;
+      appLogger.i(
+        'Dropping download record ${record.taskId} for $globalKey targeting relocated '
+        'storage: ${record.task.directory}',
+      );
+      try {
+        await _nativeOps.deleteRecord(record.taskId);
+      } catch (e) {
+        appLogger.w('Failed to drop relocated download record ${record.taskId}', error: e);
+        continue;
+      }
+      await _cancelNativeTaskIds(globalKey, [record.taskId], reason: 'relocated app storage before rescheduling');
+      if (globalKey.isNotEmpty) await _requeueRelocatedDownload(globalKey);
+    }
+  }
+
+  /// Cancel [tasks] that target storage the app no longer owns and put a restartable
+  /// download back in the queue so it downloads again under the current location.
+  Future<void> _discardRelocatedNativeTasks(String globalKey, List<Task> tasks, DownloadedMediaItem? row) async {
+    appLogger.i(
+      'Discarding ${tasks.length} download task(s) for $globalKey targeting relocated storage: '
+      '${tasks.map((task) => task.directory).toSet().join(', ')}',
+    );
+    await _cancelNativeTaskIds(
+      globalKey,
+      tasks.map((task) => task.taskId),
+      reason: 'relocated app storage during recovery',
+    );
+    if (row != null) await _requeueRelocatedDownload(row.globalKey, row: row);
+  }
+
+  /// Send a download whose bytes are stranded on a previous storage location back to the
+  /// queue. A finished or already-abandoned row keeps its status: there is nothing to
+  /// restart, and its stored path is relative and therefore still valid.
+  Future<void> _requeueRelocatedDownload(String globalKey, {DownloadedMediaItem? row}) async {
+    final current = row ?? await _database.getDownloadedMedia(globalKey);
+    if (current == null) return;
+
+    final restartable = switch (DownloadStatus.values[current.status]) {
+      DownloadStatus.queued || DownloadStatus.downloading || DownloadStatus.paused => true,
+      DownloadStatus.completed || DownloadStatus.failed || DownloadStatus.cancelled || DownloadStatus.partial => false,
+    };
+    if (!restartable) return;
+
+    await _database.updateBgTaskId(globalKey, null);
+    await _database.updateDownloadStatus(globalKey, DownloadStatus.queued.index);
+    await _database.addToQueue(mediaGlobalKey: globalKey);
+  }
+
+  @visibleForTesting
+  Future<void> debugRecoverRelocatedDownloads() async {
+    await _purgeRelocatedDownloadRecords();
+    await _reconcileNativeDownloadTasks();
+  }
+
   @visibleForTesting
   Future<void> debugReconcileSafGrantOwnership({List<Task> nativeTasks = const []}) {
     return _reconcileSafGrantOwnership(nativeTasks: nativeTasks);
@@ -1001,7 +1189,7 @@ class DownloadManagerService {
         tasks = nativeTasks;
       } else {
         try {
-          tasks = await FileDownloader().allTasks(group: _downloadGroup);
+          tasks = await _nativeOps.allTasks();
         } catch (error) {
           appLogger.w('SAF grant reconciliation deferred: native task enumeration failed', error: error);
           return;
@@ -1144,7 +1332,7 @@ class DownloadManagerService {
     if (ids.isEmpty) return;
 
     try {
-      final cancelled = await FileDownloader().cancelTasksWithIds(ids);
+      final cancelled = await _nativeOps.cancelTaskIds(ids);
       if (cancelled) {
         appLogger.d('Cancelled ${ids.length} native task(s) for $globalKey ($reason): ${ids.join(', ')}');
       }
@@ -1769,7 +1957,7 @@ class DownloadManagerService {
       final requiresWiFi = settings.read(SettingsService.downloadOnWifiOnly);
       final MediaItem resolvedMetadata = metadata;
 
-      final becameInactive = await _serializeSafOwnership(() async {
+      await _serializeSafOwnership(() async {
         if (_queueBlockedByStorageFailure) return true;
         final metadata = resolvedMetadata;
         final safBaseUri = _storageService.safBaseUri;
@@ -1830,11 +2018,13 @@ class DownloadManagerService {
 
           await File(downloadFilePath).parent.create(recursive: true);
 
+          final taskLocation = await _storageService.resolveTaskDirectory(downloadFilePath);
+
           task = DownloadTask(
             url: resolution.videoUrl!,
             filename: path.basename(downloadFilePath),
-            directory: path.dirname(downloadFilePath),
-            baseDirectory: BaseDirectory.root,
+            directory: taskLocation.directory,
+            baseDirectory: taskLocation.baseDirectory,
             group: _downloadGroup,
             updates: Updates.statusAndProgress,
             requiresWiFi: requiresWiFi,
@@ -1861,7 +2051,6 @@ class DownloadManagerService {
 
         return _enqueuePreparedTask(globalKey, task, safRootUri != null ? 'SAF download' : 'download');
       });
-      if (becameInactive) return true;
       return true;
     } catch (e, st) {
       if (await _isCancelledOrDeleted(globalKey)) {
@@ -1999,7 +2188,7 @@ class DownloadManagerService {
         case TaskStatus.failed:
           await _onDownloadFailed(globalKey, update.task.taskId, update.exception);
         case TaskStatus.notFound:
-          await _onDownloadPermanentlyFailed(globalKey, update.task.taskId, 'File not found (404)');
+          await _onDownloadPermanentlyFailed(globalKey, update.task.taskId, t.downloads.errorFileNotFound);
         case TaskStatus.canceled:
           if (_pausingKeys.contains(globalKey) || _cancellingKeys.contains(globalKey)) break;
           await _onDownloadCanceled(globalKey, update.task.taskId);
@@ -2142,7 +2331,7 @@ class DownloadManagerService {
       await _handleStorageFullFailure(globalKey, taskId);
       return;
     }
-    final errorMessage = exception?.description ?? 'Download failed';
+    final errorMessage = exception?.description ?? t.downloads.errorDownloadFailed;
     final retryCount = existing.retryCount;
 
     // DNS/connection errors fail instantly and exhaust native retries in milliseconds,
@@ -2388,7 +2577,11 @@ class DownloadManagerService {
       appLogger.i('Download completed for $globalKey');
     } catch (e) {
       appLogger.e('Post-download processing failed for $globalKey', error: e);
-      await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: 'Post-processing failed: $e');
+      await _transitionStatus(
+        globalKey,
+        DownloadStatus.failed,
+        errorMessage: t.downloads.errorPostProcessing(error: e),
+      );
       await _database.removeFromQueue(globalKey);
     } finally {
       _completingKeys.remove(globalKey);
@@ -3564,7 +3757,7 @@ class DownloadManagerService {
   /// Save metadata for a media item (show, season, movie, or episode)
   /// Used to persist parent metadata (shows/seasons) for offline display.
   ///
-  /// Both backends now have read-path cache-through, so the work is just to
+  /// All backends have read-path cache-through, so the work is just to
   /// hit `client.fetchItem` (idempotent) and pin the resulting row.
   Future<void> saveMetadata(MediaItem metadata, MediaServerClient client) async {
     if (metadata.serverId == null) {

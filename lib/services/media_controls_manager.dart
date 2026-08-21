@@ -31,6 +31,7 @@ class MediaControlsManager {
   bool? _lastCanStop;
   bool? _lastCanSkip;
   bool? _lastCanSetSpeed;
+  Duration? _lastSkipInterval;
   bool _updatesSuspended = false;
 
   MediaControlsManager() {
@@ -124,11 +125,18 @@ class MediaControlsManager {
   /// default, so anything the caller leaves disabled here is explicitly
   /// un-advertised rather than shown as a dead button.
   ///
-  /// [canSkip] is never honored on iOS/macOS: enabling the
-  /// MPRemoteCommandCenter skip commands displaces the next/previous track
-  /// buttons on the lock screen / Control Center, and next/previous are the
-  /// primary transport there. Android's fast-forward/rewind actions are
-  /// independent of next/previous, so skip is safe to advertise.
+  /// [canSkip] on iOS/macOS (and tvOS, which reports [TargetPlatform.iOS])
+  /// is honored only when the caller also sets [preferSkipOverTrackButtons]:
+  /// the MPRemoteCommandCenter skip commands displace the next/previous
+  /// track buttons on the lock screen / Control Center / iPhone remote card.
+  /// Video wants exactly that — in-track ±skip is the primary transport
+  /// there (#1994) — while music keeps next/previous. Android's
+  /// fast-forward/rewind actions are independent of next/previous, so skip
+  /// is always safe to advertise.
+  ///
+  /// [skipInterval] is the advertised skip step (the number in the
+  /// lock-screen glyph); the OS echoes it back on each skip event. Sent on
+  /// iOS/macOS only — Android hardcodes 15-second events.
   Future<void> setControlsEnabled({
     bool canPlayPause = false,
     bool canGoNext = false,
@@ -137,13 +145,24 @@ class MediaControlsManager {
     bool canStop = false,
     bool canSkip = false,
     bool canSetSpeed = false,
+    bool preferSkipOverTrackButtons = false,
+    Duration? skipInterval,
   }) async {
     if (_updatesSuspended) return;
 
-    final effectiveCanSkip =
-        canSkip && defaultTargetPlatform != TargetPlatform.iOS && defaultTargetPlatform != TargetPlatform.macOS;
+    final isDarwin = defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS;
+    final effectiveCanSkip = canSkip && (!isDarwin || preferSkipOverTrackButtons);
 
     try {
+      // Intervals go out before the commands are advertised so the first
+      // lock-screen render already shows the right glyph. The platform side
+      // re-enables the skip commands as part of this call, which is
+      // consistent: it only runs while skip is being advertised.
+      if (isDarwin && effectiveCanSkip && skipInterval != null && skipInterval != _lastSkipInterval) {
+        await OsMediaControls.setSkipIntervals(forward: skipInterval, backward: skipInterval);
+        _lastSkipInterval = skipInterval;
+      }
+
       final controlsToEnable = <MediaControl>[];
       final controlsToDisable = <MediaControl>[];
 
@@ -224,6 +243,7 @@ class MediaControlsManager {
       _lastCanSeek = null;
       _lastCanStop = null;
       _lastCanSkip = null;
+      _lastSkipInterval = null;
       _lastCanSetSpeed = null;
       appLogger.d('Media controls cleared');
     } catch (e) {

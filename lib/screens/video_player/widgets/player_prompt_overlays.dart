@@ -46,6 +46,28 @@ class VideoPlayerMacPipPlaceholder extends StatelessWidget {
   }
 }
 
+/// The player's loading spinner.
+///
+/// Labelled rather than silent: a bare [CircularProgressIndicator] contributes
+/// no semantics at all, so a screen reader announced nothing while the picture
+/// was still coming up. The label also makes "the first frame has not rendered
+/// yet" an observable state instead of something inferred from the chrome,
+/// which a television no longer raises on startup (#1765).
+class PlayerLoadingIndicator extends StatelessWidget {
+  final double strokeWidth;
+
+  const PlayerLoadingIndicator({super.key, this.strokeWidth = 4});
+
+  @override
+  Widget build(BuildContext context) {
+    return CircularProgressIndicator(
+      color: Colors.white,
+      strokeWidth: strokeWidth,
+      semanticsLabel: t.videoControls.loadingVideo,
+    );
+  }
+}
+
 class VideoPlayerBufferingOverlay extends StatelessWidget {
   final ValueListenable<bool> isBuffering;
   final ValueListenable<bool> hasFirstFrame;
@@ -77,7 +99,7 @@ class VideoPlayerBufferingOverlay extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
-                        child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
+                        child: const PlayerLoadingIndicator(strokeWidth: 3),
                       ),
                     ),
                   ),
@@ -236,7 +258,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
                   return Row(
                     children: [
                       Text(
-                        'Next Episode',
+                        t.videoControls.nextEpisode,
                         style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
                       ),
                       if (isShuffleActive) ...[

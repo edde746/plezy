@@ -356,6 +356,11 @@ void main() {
     expect(result.videoUrl, 'content://offline/movie-1');
     expect(result.externalSubtitles, hasLength(1));
     expect(result.externalSubtitles.single.uri, Uri.file(subtitlePath).toString());
+    expect(
+      result.subtitleSidecars.single.preload,
+      isTrue,
+      reason: 'local sidecars load with the media so they stay selectable as secondary subtitles (#1860)',
+    );
   });
 
   test('cache-only playback extras fills missing Plex marker types from chapters', () async {

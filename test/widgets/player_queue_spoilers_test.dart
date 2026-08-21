@@ -74,7 +74,6 @@ void main() {
         child: ContentStrip(
           player: _FakePlayer(),
           chapters: const [],
-          chaptersLoaded: true,
           canControl: true,
           showQueueTab: true,
           onQueueItemSelected: (_) {},
@@ -103,7 +102,6 @@ void main() {
           key: stripKey,
           player: player,
           chapters: [chapter],
-          chaptersLoaded: true,
           canControl: true,
           showQueueTab: true,
           onQueueItemSelected: (item) => selectedItem = item,
@@ -125,7 +123,6 @@ void main() {
           key: stripKey,
           player: player,
           chapters: const [],
-          chaptersLoaded: true,
           canControl: true,
           showQueueTab: true,
           onQueueItemSelected: (item) => selectedItem = item,
@@ -166,7 +163,6 @@ void main() {
           key: stripKey,
           player: player,
           chapters: [initialChapter],
-          chaptersLoaded: true,
           canControl: true,
           showQueueTab: true,
           onQueueItemSelected: (_) {},
@@ -186,7 +182,6 @@ void main() {
           key: stripKey,
           player: player,
           chapters: [replacementChapter],
-          chaptersLoaded: true,
           canControl: true,
           showQueueTab: true,
           onQueueItemSelected: (_) {},
@@ -205,7 +200,6 @@ void main() {
           key: stripKey,
           player: player,
           chapters: [replacementChapter],
-          chaptersLoaded: true,
           canControl: true,
           showQueueTab: false,
           onQueueItemSelected: null,
@@ -235,7 +229,6 @@ void main() {
           key: stripKey,
           player: player,
           chapters: [chapter],
-          chaptersLoaded: true,
           canControl: false,
           useFocusNavigation: true,
         ),
@@ -261,7 +254,7 @@ void main() {
     await tester.pumpWidget(
       _queueHarness(
         playback: playback,
-        child: ContentStrip(player: player, chapters: [chapter], chaptersLoaded: true, canControl: true),
+        child: ContentStrip(player: player, chapters: [chapter], canControl: true),
       ),
     );
     await tester.pump();
@@ -280,7 +273,6 @@ void main() {
         child: ContentStrip(
           player: _FakePlayer(),
           chapters: const [],
-          chaptersLoaded: true,
           canControl: true,
           showQueueTab: true,
           onQueueItemSelected: null,
@@ -327,7 +319,6 @@ PlaybackStateProvider _playbackWithQueue() {
   playback.setPlaybackFromLocalQueue(
     LocalPlayQueue(
       id: 'test-queue',
-      backendId: MediaBackend.plex.id,
       currentIndex: 0,
       items: [
         _episode('spoiler-episode', title: 'Spoiler Episode'),

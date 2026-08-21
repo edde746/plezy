@@ -9,6 +9,25 @@ import 'package:path_provider/path_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/log_redaction_manager.dart';
 
+/// What the consented storage repair leaves the startup gate able to do.
+///
+/// A bare "did it run" boolean cannot express the restart case, and getting it
+/// wrong is destructive: after a seed-and-restart repair the plugin still holds
+/// the bad document in memory, so re-running initialization would flush that
+/// stale map back over the freshly seeded store and orphan every ciphertext
+/// token in the database (#1732).
+enum StartupRepairResult {
+  /// Nothing was repaired — the user declined, or there was nothing to do.
+  none,
+
+  /// The store was repaired and initialization can be retried in this process.
+  retry,
+
+  /// The store was repaired but the process must restart before it is usable.
+  /// Initialization must not run again, and nothing may write a preference.
+  restart,
+}
+
 /// Named steps of the startup gate.
 ///
 /// The gate used to report a bare `error.runtimeType` with no indication of
@@ -187,6 +206,11 @@ class StartupFailureRecord {
   String get headline => '[$phaseId] $errorType: $message';
 
   /// Full plain-text block for the clipboard and the diagnostics upload.
+  ///
+  /// Includes [repairable] because the uploaded text is usually all a
+  /// maintainer gets. Without it a report of "still broken" cannot be told
+  /// apart from "the screen offered no way forward" and "a repair was offered
+  /// and not taken" — the ambiguity that stalled #1732 for two days.
   String describe() {
     final buffer = StringBuffer()
       ..writeln('Plezy startup failure')
@@ -195,6 +219,7 @@ class StartupFailureRecord {
       ..writeln('When: ${timestamp.toUtc().toIso8601String()}')
       ..writeln('Phase: $phaseId')
       ..writeln('Error: $errorType')
+      ..writeln('Repair offered: ${repairable ? 'yes' : 'no'}')
       ..writeln('Message: $message');
     final stack = stackTrace;
     if (stack != null && stack.isNotEmpty) {

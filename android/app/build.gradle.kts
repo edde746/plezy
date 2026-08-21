@@ -64,7 +64,7 @@ val mpvDir = layout.buildDirectory.dir("libmpv").get().asFile
 val mpvAar = "libmpv-release.aar"
 val mpvUrl = "https://github.com/edde746/libmpv-android/releases/download/$mpvVersion/$mpvAar"
 
-val media3Version = "1.10.1"
+val media3Version = "1.11.0"
 val mpvFfmpegVersion = "8.0.1"
 val mpvFfmpegSourceSha256 = "05ee0b03119b45c0bdb4df654b96802e909e0a752f72e4fe3794f487229e5a41"
 val mpvFfmpegSourceUrl = "https://ffmpeg.org/releases/ffmpeg-$mpvFfmpegVersion.tar.xz"
@@ -324,6 +324,11 @@ android {
   buildToolsVersion = "36.1.0"
   ndkVersion = "29.0.14206865"
 
+  // Android Automotive OS driver-distraction state (CarUxRestrictionsManager). This is a platform
+  // stub, not a shipped dependency: the classes exist only on AAOS images, so every use is guarded
+  // by FEATURE_AUTOMOTIVE and the manifest declares `uses-library android.car required=false`.
+  useLibrary("android.car")
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -331,8 +336,6 @@ android {
 
   defaultConfig {
     applicationId = "com.edde746.plezy"
-    // You can update the following values to match your application needs.
-    // For more information, see: https://flutter.dev/to/review-gradle-config.
     minSdk = 25 // Fire OS 6.x (API 25); overrides libmpv-android's minSdk=26
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode
@@ -513,6 +516,12 @@ dependencies {
   // Android TV Watch Next integration
   implementation("androidx.tvprovider:tvprovider:1.1.0")
 
+  // Only used to cancel the legacy periodic shelf refresh job (2.13.0's
+  // removed ShelfRefreshWorker) that WorkManager persisted on updated
+  // devices. Same version background_downloader pins, so the merged
+  // classpath stays coherent.
+  implementation("androidx.work:work-runtime-ktx:2.11.0")
+
   // Media3 ExoPlayer for Android
   implementation("androidx.media3:media3-decoder:$media3Version")
   implementation("androidx.media3:media3-exoplayer:$media3Version")
@@ -532,6 +541,7 @@ dependencies {
   // Real android.util.* implementations for tests exercising media3 classes
   // (MatroskaExtractor uses SparseArray, which is a no-op stub on plain JVM)
   testImplementation("org.robolectric:robolectric:4.16.1")
+  testImplementation("androidx.work:work-testing:2.11.0")
   androidTestImplementation("androidx.test:runner:1.7.0")
   androidTestImplementation("androidx.test.ext:junit:1.3.0")
 }

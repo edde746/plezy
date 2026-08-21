@@ -27,13 +27,8 @@ import '../test_helpers/playback_report_fakes.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
-// Direct `syncPendingItems` coverage exercises retry retention, Plex/Jellyfin
-// progress replay, profile interruption, and scoped Jellyfin routing. Direct
-// `syncWatchStatesFromServer` coverage exercises active-profile and
-// active-scope routing plus selected watched outcomes. Trigger coalescing and
-// throttle sequencing inside `_performBidirectionalSync`, direct cache-row and
-// refresh-callback assertions, and non-default watched-threshold sources remain
-// outside this suite.
+// Direct calls cover retry retention, progress replay, profile interruption, and
+// scoped routing; trigger coalescing and cache/refresh seams remain out of scope.
 
 /// Minimal [OfflineModeSource] that lets tests flip the offline flag and
 /// observe `addListener`/`removeListener` traffic via the protected
@@ -162,10 +157,6 @@ JellyfinConnection _jellyfinConnection(String userId) => testJellyfinConnection(
 void main() {
   setUp(resetSharedPreferencesForTest);
 
-  // ============================================================
-  // Initial state
-  // ============================================================
-
   group('initial state', () {
     test('a freshly constructed service is not syncing and has no pending count', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
@@ -212,10 +203,6 @@ void main() {
       expect(svc.getWatchedThreshold(ServerId('unknown-server')), 0.9);
     });
   });
-
-  // ============================================================
-  // queueMarkWatched / queueMarkUnwatched
-  // ============================================================
 
   group('queueMarkWatched / queueMarkUnwatched', () {
     test('queueMarkWatched persists a "watched" action and bumps pending count', () async {
@@ -351,7 +338,7 @@ void main() {
       await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
       var action = await db.getLatestWatchAction('srv:42');
       for (var i = 0; i < OfflineWatchSyncService.maxSyncAttempts; i++) {
-        await db.updateSyncAttempt(action!.id, 'server error');
+        await db.updateSyncAttemptIfUnchanged(action!.id, action.updatedAt, 'server error');
         action = await db.getLatestWatchAction('srv:42');
       }
 
@@ -465,11 +452,6 @@ void main() {
       expect(await svc.getPendingSyncCount(), 0);
     });
   });
-
-  // ============================================================
-  // queueProgressUpdate (also exercised so we can test the progress branches
-  // of getLocalWatchStatus / getLocalViewOffset).
-  // ============================================================
 
   group('syncPendingItems profile scoping', () {
     test('defers entirely when no profile is active', () async {
@@ -604,9 +586,106 @@ void main() {
     });
   });
 
-  // ============================================================
-  // getLocalWatchStatus
-  // ============================================================
+  group('queued progress superseded by a watch-state write', () {
+    MediaItem itemFor(String id) =>
+        testMediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv');
+
+    // The online mark writes straight to the server and queues nothing, so
+    // nothing purges the queue the way insertWatchAction does for the offline
+    // mark. Replaying the stale row afterwards rewrites the resume position the
+    // mark cleared, which pins the item to Continue Watching on MediaBrowser.
+    test('a watched event drops the queued progress row for that item', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
+      expect(await svc.getPendingSyncCount(), 1);
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'));
+      await pumpEventQueue();
+
+      expect(await svc.getPendingSyncCount(), 0);
+      expect(await db.getLatestWatchAction('srv:42'), isNull);
+    });
+
+    test('an unwatched event drops it too', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'), isNowWatched: false);
+      await pumpEventQueue();
+
+      expect(await svc.getPendingSyncCount(), 0);
+    });
+
+    test('other items and queued manual marks are left alone', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '43', viewOffset: 50000, duration: 100000);
+      await svc.queueMarkWatched(serverId: ServerId('srv'), itemId: '44');
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'));
+      await pumpEventQueue();
+
+      expect(await db.getLatestWatchAction('srv:42'), isNull);
+      expect((await db.getLatestWatchAction('srv:43'))?.actionType, 'progress');
+      expect((await db.getLatestWatchAction('srv:44'))?.actionType, 'watched');
+    });
+
+    test('progress recorded after the mark survives — that is a rewatch', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'));
+      await pumpEventQueue();
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 5000, duration: 100000);
+
+      expect((await db.getLatestWatchAction('srv:42'))?.viewOffset, 5000);
+    });
+
+    test('a superseded row never reaches the server on the next sync', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+      svc.setActiveProfileId('p1');
+
+      final client = _RecordingMediaClient(serverId: ServerId('srv'), backend: MediaBackend.jellyfin);
+      mgr.debugRegisterClientForTesting(client);
+      await svc.queueProgressUpdate(serverId: ServerId('srv'), itemId: '42', viewOffset: 50000, duration: 100000);
+
+      WatchStateNotifier().notifyWatched(item: itemFor('42'));
+      await pumpEventQueue();
+      await svc.syncPendingItems();
+
+      // The whole point: no position write, so the resume bookmark the mark
+      // cleared stays cleared.
+      expect(client.stopped, isEmpty);
+      expect(client.started, isEmpty);
+    });
+  });
 
   group('getLocalWatchStatus', () {
     test('returns null when no local action exists', () async {
@@ -658,10 +737,6 @@ void main() {
       expect(await svc.getLocalWatchStatus('srv:2'), isTrue);
     });
   });
-
-  // ============================================================
-  // getLocalViewOffset
-  // ============================================================
 
   group('getLocalViewOffset', () {
     test('returns null when no local action exists', () async {
@@ -720,10 +795,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // getPendingSyncCount
-  // ============================================================
-
   group('getPendingSyncCount', () {
     test('counts every queued action (manual + progress)', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
@@ -754,10 +825,6 @@ void main() {
       expect(await svc.getPendingSyncCount(), 1);
     });
   });
-
-  // ============================================================
-  // getLocalWatchStatusesBatched
-  // ============================================================
 
   group('getLocalWatchStatusesBatched', () {
     test('empty input returns empty map without touching the DB', () async {
@@ -876,7 +943,7 @@ void main() {
       mgr.debugRegisterClientForTesting(clientA);
 
       final queuedScope = await svc.queueMarkWatched(serverId: ServerId('plex-machine'), itemId: 'item-1');
-      expect(queuedScope, clientA.profileScopeId);
+      expect(queuedScope.clientScopeId, clientA.profileScopeId);
       expect((await db.getPendingWatchActions()).single.clientScopeId, clientA.profileScopeId);
 
       await svc.syncPendingItems();
@@ -939,7 +1006,7 @@ void main() {
       final returnedScope = await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
 
       final queued = await db.getPendingWatchActions();
-      expect(returnedScope, 'jf-machine/user-a');
+      expect(returnedScope.clientScopeId, 'jf-machine/user-a');
       expect(queued.single.clientScopeId, 'jf-machine/user-a');
     });
 
@@ -1040,7 +1107,7 @@ void main() {
       final returnedScope = await svc.queueMarkWatched(serverId: ServerId('jf-machine'), itemId: 'item-1');
 
       final queued = await db.getPendingWatchActions();
-      expect(returnedScope, 'jf-machine/user-b');
+      expect(returnedScope.clientScopeId, 'jf-machine/user-b');
       expect(queued.single.clientScopeId, 'jf-machine/user-b');
     });
 
@@ -1383,10 +1450,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // clearAll
-  // ============================================================
-
   group('clearAll', () {
     test('removes every queued action and notifies listeners', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
@@ -1408,10 +1471,6 @@ void main() {
       expect(notifications, 1);
     });
   });
-
-  // ============================================================
-  // startConnectivityMonitoring + dispose
-  // ============================================================
 
   group('startConnectivityMonitoring + dispose', () {
     test('attaches a listener to the source', () {

@@ -612,8 +612,8 @@ class _SettingsHarness {
     activeProfile.dispose();
     await plexHome.dispose();
     await database.close();
-    expect(trackerHttpClients, hasLength(5));
-    expect(trackerHttpClients.toSet(), hasLength(5));
+    expect(trackerHttpClients, hasLength(6));
+    expect(trackerHttpClients.toSet(), hasLength(6));
     for (final client in trackerHttpClients) {
       expect(client.closeCount, 1);
     }
@@ -642,7 +642,12 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     profileConnections: profileConnections,
     plexHomeUserFetcher: (_) async => const [],
   );
-  final activeProfile = ActiveProfileProvider(registry: profiles, plexHome: plexHome, connections: connections);
+  final activeProfile = ActiveProfileProvider(
+    registry: profiles,
+    plexHome: plexHome,
+    connections: connections,
+    profileConnections: profileConnections,
+  );
   final libraries = LibrariesProvider();
   final hiddenLibraries = HiddenLibrariesProvider(storageService: _FakeHiddenLibrariesStorage());
   await hiddenLibraries.ensureInitialized();

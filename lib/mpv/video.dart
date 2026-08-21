@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'models.dart';
 import 'player/player.dart';
 import 'player/video_rect_support.dart';
 
@@ -39,7 +40,16 @@ class Video extends StatefulWidget {
 }
 
 class _VideoState extends State<Video> {
-  Rect? _lastRect;
+  // The integer physical bounds last handed to the native side, and the scale
+  // that went with them. Cached as what was *sent*, not as the logical rect it
+  // was derived from, because the rounding in _updateVideoRect is what decides
+  // whether a layout change is visible to the plane at all.
+  bool _hasSentRect = false;
+  int _sentLeft = 0;
+  int _sentTop = 0;
+  int _sentRight = 0;
+  int _sentBottom = 0;
+  double _sentDevicePixelRatio = 0;
   bool _hasFirstFrame = false;
   StreamSubscription<void>? _playbackRestartSubscription;
 
@@ -63,6 +73,11 @@ class _VideoState extends State<Video> {
       _playbackRestartSubscription?.cancel();
       _listenForPlaybackRestart();
       _syncExternalFirstFrame();
+      // The cache describes the old player's native surface. Keeping it would
+      // let the next frame short-circuit as "geometry unchanged", and the
+      // replacement surface stays sizeless — invisible, with no Texture
+      // fallback left to cover for it.
+      _hasSentRect = false;
     }
   }
 
@@ -108,21 +123,6 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
-    final player = widget.player;
-    if (player is PlayerBase) {
-      return ValueListenableBuilder<int?>(
-        valueListenable: player.textureIdListenable,
-        builder: (context, textureId, _) => _buildVideoSurfaceForId(textureId),
-      );
-    }
-    return _buildVideoSurfaceForId(player.textureId);
-  }
-
-  Widget _buildVideoSurfaceForId(int? textureId) {
-    if (textureId != null) {
-      return Texture(textureId: textureId);
-    }
-
     if (widget.player is VideoRectSupport) {
       return LayoutBuilder(
         builder: (context, constraints) {
@@ -144,24 +144,72 @@ class _VideoState extends State<Video> {
     final size = renderBox.size;
     final dpr = MediaQuery.devicePixelRatioOf(context);
 
-    final newRect = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
+    // Rounded outward, the same way the native SetRect biases: it floors the
+    // position and rounds the buffer size up so the plane always covers at
+    // least the region Flutter cut out for it. Truncating the far edges here
+    // would undo that a layer earlier - at a fractional layout position the
+    // plane comes up a physical pixel short and the desktop shows through the
+    // seam, where the point of the plane is that the seam is black. Ceil and
+    // floor are identity on an already-integral value, so an integral layout
+    // sends exactly the numbers it sent before.
+    final left = (position.dx * dpr).floor();
+    final top = (position.dy * dpr).floor();
+    final right = ((position.dx + size.width) * dpr).ceil();
+    final bottom = ((position.dy + size.height) * dpr).ceil();
 
-    if (_lastRect != null &&
-        (newRect.left - _lastRect!.left).abs() < 1 &&
-        (newRect.top - _lastRect!.top).abs() < 1 &&
-        (newRect.width - _lastRect!.width).abs() < 1 &&
-        (newRect.height - _lastRect!.height).abs() < 1) {
+    // Keyed on the four integers actually sent rather than on a logical-pixel
+    // tolerance. A sub-logical-pixel move is a real move at scale 2 or 3 -
+    // worth up to three physical pixels of stale placement - while anything too
+    // small to change one of these numbers cannot reach the plane at all and is
+    // not worth the channel round-trip.
+    //
+    // The scale is part of what the native side is being told, so it has to be
+    // part of what decides whether to tell it. Moving a window between a
+    // scale-1 and a scale-2 output can leave all four bounds identical while
+    // devicePixelRatio changes, and dropping that call leaves the native
+    // surface at the old buffer resolution: soft at half resolution after
+    // docking to a HiDPI output, overdrawn at double after undocking. The Steam
+    // Deck's dock is exactly this.
+    if (_hasSentRect &&
+        _sentLeft == left &&
+        _sentTop == top &&
+        _sentRight == right &&
+        _sentBottom == bottom &&
+        _sentDevicePixelRatio == dpr) {
       return;
     }
 
-    _lastRect = newRect;
+    _hasSentRect = true;
+    _sentLeft = left;
+    _sentTop = top;
+    _sentRight = right;
+    _sentBottom = bottom;
+    _sentDevicePixelRatio = dpr;
 
-    (widget.player as VideoRectSupport).setVideoRect(
-      left: (position.dx * dpr).toInt(),
-      top: (position.dy * dpr).toInt(),
-      right: ((position.dx + size.width) * dpr).toInt(),
-      bottom: ((position.dy + size.height) * dpr).toInt(),
-      devicePixelRatio: dpr,
-    );
+    final player = widget.player as VideoRectSupport;
+    player.setVideoRect(left: left, top: top, right: right, bottom: bottom, devicePixelRatio: dpr).catchError((
+      Object e,
+    ) {
+      // Geometry is the only thing that makes the native surface visible,
+      // so a rejected rect is a black video area, not a cosmetic glitch.
+      // Post-frame callbacks have nobody to rethrow to, so route it to the
+      // player's error stream rather than leaving an unhandled async error.
+      //
+      // Drop the sent-rect cache too: it was recorded before the call
+      // resolved, and keeping it would short-circuit every later identical
+      // layout pass, freezing the failure in place. Cleared, the next layout
+      // or resize retries for free.
+      if (mounted &&
+          _sentLeft == left &&
+          _sentTop == top &&
+          _sentRight == right &&
+          _sentBottom == bottom &&
+          _sentDevicePixelRatio == dpr) {
+        _hasSentRect = false;
+      }
+      if (!player.errorController.isClosed) {
+        player.errorController.add(PlayerError('Failed to set video rect: $e'));
+      }
+    });
   }
 }

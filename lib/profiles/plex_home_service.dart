@@ -421,15 +421,7 @@ class PlexHomeService {
   PlexHome? materializePlexHome(String connectionId) {
     final users = _byConnection[connectionId];
     if (users == null || users.isEmpty) return null;
-    return PlexHome(
-      id: 0,
-      name: '',
-      guestUserID: null,
-      guestUserUUID: '',
-      guestEnabled: false,
-      subscription: false,
-      users: users,
-    );
+    return PlexHome(id: 0, users: users);
   }
 
   /// Await startup cache hydration, then materialize the home attached to

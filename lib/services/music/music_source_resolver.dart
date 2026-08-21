@@ -1,4 +1,5 @@
 import '../../database/app_database.dart';
+import '../../i18n/strings.g.dart';
 import '../../media/media_item.dart';
 import '../../media/media_server_client.dart';
 import '../../media/media_source_info.dart';
@@ -82,7 +83,10 @@ class ServerMusicSourceResolver implements MusicSourceResolver {
     final result = context.result;
     final url = result.videoUrl;
     if (url == null) {
-      throw PlaybackException('No audio URL available for ${track.title ?? track.id}');
+      throw PlaybackException(
+        t.music.noAudioUrl(track: track.title ?? track.id),
+        reason: PlaybackFailureReason.noPlayableSource,
+      );
     }
 
     return MusicSource(

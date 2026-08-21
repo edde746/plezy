@@ -1,10 +1,11 @@
-import '../media/media_backend.dart';
+import '../media/media_browser_dialect.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_part.dart';
+import '../media/media_rating.dart';
 import '../media/media_role.dart';
 import '../media/media_stream.dart';
 import '../media/media_version.dart';
@@ -14,10 +15,6 @@ import '../utils/json_utils.dart';
 import '../utils/resolution_label.dart';
 import 'file_info_parser.dart';
 import 'jellyfin_display_metadata.dart';
-
-// Re-export so existing callers that pulled `resolutionLabelFromHeight`
-// from this file keep compiling without a bulk import rewrite.
-export '../utils/resolution_label.dart' show resolutionLabelFromHeight;
 
 Map<String, dynamic>? jellyfinFirstVideoStream(Object? streams) {
   if (streams is! List) return null;
@@ -127,6 +124,40 @@ class JellyfinImageAbsolutizer {
   }
 }
 
+/// Absolute URL of a Jellyfin user's own profile picture, or `null` when the
+/// user has none (absent [tag]) — returning null keeps us from firing a
+/// request that can only 404.
+///
+/// Unlike item artwork this endpoint carries **no `api_key`**: the user-image
+/// GET has never been authenticated (no `[Authorize]`, and Jellyfin sets no
+/// ASP.NET `FallbackPolicy`) on any release from 10.6 through 12.0-dev.
+/// Leaving the token out keeps it off the image cache key and out of anything
+/// that logs or persists the URL.
+///
+/// The legacy `/Users/{id}/Images/Primary` route is used rather than 10.9's
+/// `/UserImage` because Plezy declares no minimum server version; upstream
+/// still routes the legacy shape and annotates it "Kept for backwards
+/// compatibility". The `{imageType}` segment is bound but ignored server-side
+/// — it always serves the profile image.
+///
+/// [tag] is the server's `PrimaryImageTag`, `MD5(imagePath + lastModified)`,
+/// so the URL changes exactly when the picture does and is a safe immutable
+/// cache key. [maxSize] is honoured up to 10.10 and silently ignored from
+/// 10.11 on, so callers must still bound the decode themselves.
+String? jellyfinUserImageUrl({
+  required String baseUrl,
+  required String userId,
+  required String? tag,
+  int maxSize = 240,
+}) {
+  if (baseUrl.isEmpty || userId.isEmpty || tag == null || tag.isEmpty) return null;
+  final uri = JellyfinImageAbsolutizer.joinUri(
+    baseUrl: baseUrl,
+    urlOrPath: '/Users/${Uri.encodeComponent(userId)}/Images/Primary',
+  );
+  return uri.replace(queryParameters: {'tag': tag, 'maxWidth': '$maxSize', 'maxHeight': '$maxSize'}).toString();
+}
+
 /// Pure mapping functions from Jellyfin's `BaseItemDto` JSON shape into the
 /// neutral [MediaItem] / [MediaLibrary] domain types.
 ///
@@ -145,17 +176,22 @@ class JellyfinMappers {
     return '/Items/${_segment(id)}/Images/$type$indexPart$tagPart';
   }
 
-  /// Map a Jellyfin `BaseItemDto` (the `Items[]` shape returned by most
+  /// Map a MediaBrowser `BaseItemDto` (the `Items[]` shape returned by most
   /// browse endpoints) into a [MediaItem]. Returns `null` when the server
   /// payload is missing `Id` — the mapped item would otherwise carry an
   /// empty-string id that breaks cache keys and image URLs (e.g.
   /// `/Items//Images/Primary`). Callers should filter nulls with
   /// `.whereType<MediaItem>()`.
+  ///
+  /// [dialect] stamps the produced item so downstream UI resolves the right
+  /// backend badge/label. Jellyfin and Emby DTOs are field-identical, so the
+  /// mapping itself is shared.
   static MediaItem? mediaItem(
     Map<String, dynamic> item, {
     required ServerId serverId,
     String? serverName,
     required JellyfinImageAbsolutizer? absolutizer,
+    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
   }) {
     final id = item['Id'] as String?;
     if (id == null || id.isEmpty) return null;
@@ -177,6 +213,7 @@ class JellyfinMappers {
         : <String>[seriesBackdropPath];
 
     final mapped = JellyfinMediaItem(
+      dialect: dialect,
       id: id,
       kind: kind,
       guid: id,
@@ -236,20 +273,25 @@ class JellyfinMappers {
       addedAt: jellyfinIsoToEpochSeconds(item['DateCreated'] as String?),
       updatedAt: jellyfinIsoToEpochSeconds(item['DateLastSaved'] as String? ?? item['DateModified'] as String?),
       rating: (item['CommunityRating'] as num?)?.toDouble(),
+      ratings: _ratingSources(item, kind),
       isFavorite: _userData(item)?['IsFavorite'] as bool?,
-      genres: _stringList(item['Genres']),
+      genres: _stringListOrNamePairs(item['Genres'], item['GenreItems']),
       directors: _peopleByType(item['People'], 'Director'),
       writers: _peopleByType(item['People'], 'Writer'),
       producers: _peopleByType(item['People'], 'Producer'),
       countries: _stringList(item['ProductionLocations']),
       collections: null,
-      labels: _stringList(item['Tags']),
+      labels: _stringListOrNamePairs(item['Tags'], item['TagItems']),
       styles: null,
       moods: null,
       roles: _actors(item['People']),
       mediaVersions: _mediaVersions(item['MediaSources']),
-      libraryId: item['ParentLibraryId'] as String? ?? item['ParentId'] as String?,
-      libraryTitle: item['ParentLibraryName'] as String? ?? item['SeriesStudio'] as String?,
+      // Neither dialect sends a library field on an item DTO: `ParentId` is a
+      // season or physical folder and `SeriesStudio` is a studio, never the
+      // owning CollectionFolder. Library identity comes only from explicit
+      // stamps — scoped search, the Ancestors lookup, caller passthrough.
+      libraryId: null,
+      libraryTitle: null,
       audioLanguage: item['PreferredMetadataLanguage'] as String?,
       // Only present when the item came out of `/Playlists/{id}/Items`; the
       // playlist write endpoints address rows by this id, not the media id.
@@ -261,18 +303,23 @@ class JellyfinMappers {
     return absolutizer == null ? mapped : absolutizer.applyTo(mapped);
   }
 
-  /// Map a Jellyfin "view" (returned by `/Users/{userId}/Views`) into a
+  /// Map a MediaBrowser "view" (returned by `/Users/{userId}/Views`) into a
   /// [MediaLibrary]. The CollectionType field maps onto [MediaKind] roughly.
   /// Returns `null` when the view is missing `Id` — same rationale as
   /// [mediaItem].
-  static MediaLibrary? library(Map<String, dynamic> view, {required ServerId serverId, String? serverName}) {
+  static MediaLibrary? library(
+    Map<String, dynamic> view, {
+    required ServerId serverId,
+    String? serverName,
+    MediaBrowserDialect dialect = MediaBrowserDialect.jellyfin,
+  }) {
     final id = view['Id'] as String?;
     if (id == null || id.isEmpty) return null;
     final collectionType = view['CollectionType'] as String?;
     final type = view['Type'] as String?;
     return MediaLibrary(
       id: id,
-      backend: MediaBackend.jellyfin,
+      backend: dialect.backend,
       title: view['Name'] as String? ?? t.libraries.fallbackTitle,
       kind: _libraryKindFromCollectionType(collectionType, type),
       defaultBrowseKinds: _defaultBrowseKindsFromCollectionType(collectionType, type),
@@ -368,6 +415,36 @@ class JellyfinMappers {
     return total - unplayed;
   }
 
+  /// Jellyfin's two rating slots, community score first.
+  ///
+  /// `BaseItemDto` has no per-source array — the server collapses whatever the
+  /// metadata fetchers found into these two fields, so this is at most two
+  /// entries. Both arrive on every response; neither is gated behind `Fields`.
+  ///
+  /// `CommunityRating` is 0-10 but its provenance is unknowable from the DTO
+  /// (TMDB `vote_average`, IMDb via OMDb, or a local NFO — last writer wins),
+  /// so it stays the generic `audience` source with no brand badge.
+  /// `CriticRating` is the Rotten Tomatoes Tomatometer as a 0-100 percent, so
+  /// it is divided rather than range-sniffed: a Tomatometer of 9 means 9%.
+  static List<MediaRatingSource>? _ratingSources(Map<String, dynamic> item, MediaKind kind) {
+    // Photo items reuse CommunityRating for the EXIF 0-5 star rating.
+    if (kind == MediaKind.photo) return null;
+
+    final ratings = <MediaRatingSource>[];
+    if (_finiteRating(item['CommunityRating']) case final community? when community >= 0 && community <= 10) {
+      ratings.add(MediaRatingSource(source: 'audience', value: community));
+    }
+    if (_finiteRating(item['CriticRating']) case final critic? when critic >= 0 && critic <= 100) {
+      ratings.add(MediaRatingSource(source: 'rottenTomatoesCritic', value: critic / 10));
+    }
+    return ratings.isEmpty ? null : ratings;
+  }
+
+  static double? _finiteRating(Object? value) {
+    final rating = flexibleDouble(value);
+    return rating != null && rating.isFinite ? rating : null;
+  }
+
   static String? _firstString(Object? list) {
     if (list is List && list.isNotEmpty && list.first is String) return list.first as String;
     return null;
@@ -383,6 +460,25 @@ class JellyfinMappers {
 
   static List<String>? _stringList(Object? list) {
     return stringListFromRaw(list);
+  }
+
+  /// A `Genres`/`Tags` style list, falling back to its `…Items` name-pair
+  /// sibling when the plain array is absent.
+  ///
+  /// Emby never returns the plain `Tags` array on an item DTO — only
+  /// `TagItems` — whatever `Fields` the request asks for (measured on Emby
+  /// 4.9.5), so reading the plain key alone silently drops every tag.
+  static List<String>? _stringListOrNamePairs(Object? plain, Object? namePairs) {
+    final direct = stringListFromRaw(plain);
+    if (direct != null && direct.isNotEmpty) return direct;
+    if (namePairs is! List) return direct;
+    final result = <String>[];
+    for (final entry in namePairs) {
+      if (entry is! Map<String, dynamic>) continue;
+      final name = entry['Name'];
+      if (name is String && name.trim().isNotEmpty) result.add(name.trim());
+    }
+    return nullIfEmptyList(result) ?? direct;
   }
 
   static List<String>? _peopleByType(Object? list, String type) {

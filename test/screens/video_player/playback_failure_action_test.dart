@@ -59,6 +59,26 @@ void main() {
     });
   });
 
+  group('HTTP 503', () {
+    test('the open-phase watchdog tag is terminal for on-demand playback', () {
+      // The tag only exists once the watchdog has already waited out the
+      // reconnect loop's chances (#1830) — no further retry recovers it.
+      expect(resolve(cause: PlayerError.serverHttp503), PlaybackFailureAction.serverBusyDialog);
+    });
+
+    test('live TV keeps its fallback ladder', () {
+      // The watchdog never arms for live opens, but a defensively passed tag
+      // must still ride the ladder rather than kill a recoverable stream.
+      expect(resolve(cause: PlayerError.serverHttp503, isLive: true), PlaybackFailureAction.liveRetry);
+    });
+
+    test('a latched fatal status outranks the watchdog tag', () {
+      // A 500/404 seen on the same open is the more specific diagnosis.
+      expect(resolve(cause: PlayerError.serverHttp503, statuses: {500}), PlaybackFailureAction.serverLimitDialog);
+      expect(resolve(cause: PlayerError.serverHttp503, statuses: {404}), PlaybackFailureAction.mediaUnreadableDialog);
+    });
+  });
+
   group('live fallback ladder', () {
     test('climbs every rung below the bound', () {
       for (var level = 0; level < maxLiveFallbackLevel; level++) {

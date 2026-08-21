@@ -1,3 +1,4 @@
+import '../../media/media_rating.dart';
 import '../../media/media_kind.dart';
 import '../../models/catalog/catalog_metadata.dart';
 import '../../models/catalog/catalog_item.dart';
@@ -31,7 +32,8 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
   final Map<CatalogRowId, List<CatalogItem>> _rowCache = {};
   final Map<CatalogRowId, DateTime> _rowCacheLoadedAt = {};
   final KeyedFutureCoalescer<CatalogRowId, List<CatalogItem>> _rowLoads = KeyedFutureCoalescer();
-  final FutureCoalescer<SimklAllItems> _watchlistLoad = FutureCoalescer();
+  // Coalesces the Simkl all-items fetch; distinct from the mixin's `_watchlistLoad` (membership snapshot).
+  final FutureCoalescer<SimklAllItems> _simklAllItemsLoad = FutureCoalescer();
   final Set<int> _animeIds = {};
   SimklAllItems? _watchlistCache;
   int _watchlistCacheGeneration = 0;
@@ -146,7 +148,7 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     final cached = _watchlistCache;
     if (cached != null) return Future.value(cached);
     final generation = _watchlistCacheGeneration;
-    return _watchlistLoad.run(() async {
+    return _simklAllItemsLoad.run(() async {
       final response = await _client.getAllItems(extended: 'full');
       if (generation == _watchlistCacheGeneration) _watchlistCache = response;
       return response;
@@ -211,14 +213,14 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
     if (type == SimklCatalogType.anime && simklId != null) _animeIds.add(simklId);
   }
 
-  static List<CatalogRatingSource>? _ratingsFor(SimklRatings? ratings) {
+  static List<MediaRatingSource>? _ratingsFor(SimklRatings? ratings) {
     if (ratings == null) return null;
-    final result = <CatalogRatingSource>[];
+    final result = <MediaRatingSource>[];
     for (final (source, rating) in [('simkl', ratings.simkl), ('imdb', ratings.imdb), ('mal', ratings.mal)]) {
       final value = rating?.rating;
       if (value == null || value < 0 || value > 10) continue;
       final votes = rating!.votes;
-      result.add(CatalogRatingSource(source: source, value: value, votes: votes != null && votes >= 0 ? votes : null));
+      result.add(MediaRatingSource(source: source, value: value, votes: votes != null && votes >= 0 ? votes : null));
     }
     return result.isEmpty ? null : result;
   }
@@ -564,7 +566,7 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
 
   @override
   Future<CatalogItemIds?> resolveItemIds(MediaKind kind, ExternalIds external) async =>
-      external.hasAny ? CatalogItemIds.fromExternal(external) : null;
+      external.hasCatalogIds ? CatalogItemIds.fromExternal(external) : null;
 
   @override
   Future<WatchlistKeyPage> fetchWatchlistKeyPage(int page, int limit) async {
@@ -612,7 +614,7 @@ class SimklCatalogSource with CatalogWatchlistMachinery implements CatalogSource
   void _invalidateWatchlistCache() {
     _watchlistCacheGeneration++;
     _watchlistCache = null;
-    _watchlistLoad.reset();
+    _simklAllItemsLoad.reset();
     _rowCache.remove(CatalogRowId.watchlist);
     _rowCacheLoadedAt.remove(CatalogRowId.watchlist);
   }

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../../../models/anilist/anilist_media.dart';
+import '../../../models/trackers/anime_list_snapshot.dart';
 
 import '../../../utils/json_utils.dart';
 import '../tracker.dart';
@@ -221,7 +222,7 @@ class AnilistClient implements DisposableTrackerClient {
 
   AnilistClient(TrackerSession session, {required this.onSessionInvalidated, http.Client? httpClient})
     : _session = session,
-      _http = TrackerHttpClient(service: TrackerService.anilist, logLabel: 'AniList', httpClient: httpClient);
+      _http = TrackerHttpClient(logLabel: 'AniList', httpClient: httpClient);
 
   TrackerSession get session => _session;
 
@@ -237,15 +238,33 @@ class AnilistClient implements DisposableTrackerClient {
   }
 
   /// Update the viewer's media-list entry for an AniList media ID.
-  Future<void> saveMediaListEntry({required int mediaId, required int progress, required String status}) async {
-    const mutation = '''
+  ///
+  /// [repeat] is the absolute finished-rewatch count and is written only when
+  /// provided (completing a rewatch). The argument is omitted from the
+  /// document otherwise: AniList's treatment of an explicit null is
+  /// undocumented and must not clear the stored count.
+  Future<void> saveMediaListEntry({
+    required int mediaId,
+    required int progress,
+    required String status,
+    int? repeat,
+  }) async {
+    final mutation = repeat == null
+        ? '''
       mutation(\$mediaId: Int, \$progress: Int, \$status: MediaListStatus) {
         SaveMediaListEntry(mediaId: \$mediaId, progress: \$progress, status: \$status) {
           id
         }
       }
+    '''
+        : '''
+      mutation(\$mediaId: Int, \$progress: Int, \$status: MediaListStatus, \$repeat: Int) {
+        SaveMediaListEntry(mediaId: \$mediaId, progress: \$progress, status: \$status, repeat: \$repeat) {
+          id
+        }
+      }
     ''';
-    await query(mutation, variables: {'mediaId': mediaId, 'progress': progress, 'status': status});
+    await query(mutation, variables: {'mediaId': mediaId, 'progress': progress, 'status': status, 'repeat': ?repeat});
   }
 
   Future<void> deleteMediaListEntry(int mediaId) async {
@@ -307,11 +326,17 @@ class AnilistClient implements DisposableTrackerClient {
     return (scoreRaw / 10).round().clamp(1, 10).toInt();
   }
 
-  Future<int?> getAnimeEpisodeCount(int mediaId) async {
+  /// Episode count plus the viewer's list entry in one request, so the
+  /// rewatch-preserving scrobble path costs no extra call.
+  Future<AnimeListSnapshot?> getAnimeListSnapshot(int mediaId) async {
     const mediaQuery = '''
       query(\$mediaId: Int) {
         Media(id: \$mediaId, type: ANIME) {
           episodes
+          mediaListEntry {
+            status
+            repeat
+          }
         }
       }
     ''';
@@ -319,7 +344,14 @@ class AnilistClient implements DisposableTrackerClient {
     final media = data['Media'];
     if (media is! Map) return null;
     final count = flexibleInt(media['episodes']);
-    return count != null && count > 0 ? count : null;
+    final entry = media['mediaListEntry'];
+    final status = entry is Map ? entry['status'] : null;
+    return AnimeListSnapshot(
+      episodeCount: count != null && count > 0 ? count : null,
+      rewatching: status == 'REPEATING',
+      completed: status == 'COMPLETED',
+      rewatchCount: entry is Map ? (flexibleInt(entry['repeat']) ?? 0) : 0,
+    );
   }
 
   Future<AnilistPage> getTrendingAnime({int page = 1, int limit = 25}) =>

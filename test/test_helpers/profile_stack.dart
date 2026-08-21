@@ -59,7 +59,13 @@ class ProfileStack {
       profileConnections: profileConnections,
       profiles: profiles,
       plexHome: plexHome,
-      active: ActiveProfileProvider(registry: profiles, plexHome: plexHome, connections: connections, storage: storage),
+      active: ActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+      ),
       storage: storage,
       ownsDatabase: db == null,
     );

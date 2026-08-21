@@ -68,7 +68,7 @@ export async function loadHomepageStoreMetadata({
 		}
 		appStorePrice = normalizeUsdStorePrice(app?.price, app?.currency);
 	} catch {
-		// App Store metadata is optional and must not suppress Play Store metadata.
+		// Optional lookup; preserve metadata from the other store.
 	}
 
 	try {
@@ -82,7 +82,7 @@ export async function loadHomepageStoreMetadata({
 		}
 		playStorePrice = normalizeUsdStorePrice(app.price, app.currency);
 	} catch {
-		// Play Store metadata is optional and must not suppress App Store metadata.
+		// Optional lookup; preserve metadata from the other store.
 	}
 
 	const ratings = [appStoreRating, playStoreRating].filter(

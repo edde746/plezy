@@ -53,16 +53,17 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series Season 2', 'Parent Series'],
     );
 
     expect(searchTerms, ['Parent Series Season 2', 'Parent Series']);
-    expect(match?.id, 'series-1');
-    expect(match?.libraryId, 'library-1');
-    expect(match?.libraryTitle, 'Shows');
+    expect(matches, hasLength(1));
+    expect(matches.single.id, 'series-1');
+    expect(matches.single.libraryId, 'library-1');
+    expect(matches.single.libraryTitle, 'Shows');
   });
 
   test('rejects a title hit whose provider ids do not intersect', () async {
@@ -76,13 +77,13 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series'],
     );
 
-    expect(match, isNull);
+    expect(matches, isEmpty);
   });
 
   test('uses the year window only for the first title and broadens the later limit', () async {
@@ -102,14 +103,14 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series Season 2', 'Parent Series'],
       year: 2024,
     );
 
-    expect(match?.id, 'series-1');
+    expect(matches.map((item) => item.id), ['series-1']);
     expect(searches, hasLength(2));
     expect(searches.first.queryParameters['years'], '2023,2024,2025');
     expect(searches.first.queryParameters['Limit'], '20');
@@ -118,7 +119,7 @@ void main() {
   });
 
   test('requires an agreed sequel season to exist in the matched series', () async {
-    Future<String?> lookupWithSeasons(List<int> seasonNumbers) async {
+    Future<List<String>> lookupWithSeasons(List<int> seasonNumbers) async {
       final client = testJellyfinClient(
         httpClient: MockClient((request) async {
           if (request.url.path == '/Items') {
@@ -140,18 +141,18 @@ void main() {
       );
       addTearDown(client.close);
 
-      final match = await client.findByExternalIds(
+      final matches = await client.findByExternalIds(
         const ExternalIds(tmdb: 42),
         kind: MediaKind.show,
         titles: const ['Parent Series'],
         year: 2024,
         season: const ExternalSeasonRef(tvdb: 2, tmdb: 2),
       );
-      return match?.id;
+      return [for (final item in matches) item.id];
     }
 
-    expect(await lookupWithSeasons([1]), isNull);
-    expect(await lookupWithSeasons([1, 2]), 'series-1');
+    expect(await lookupWithSeasons([1]), isEmpty);
+    expect(await lookupWithSeasons([1, 2]), ['series-1']);
   });
 
   test('does not gate when TVDB and TMDB seasons disagree and Jellyfin order is unknown', () async {
@@ -168,13 +169,61 @@ void main() {
     );
     addTearDown(client.close);
 
-    final match = await client.findByExternalIds(
+    final matches = await client.findByExternalIds(
       const ExternalIds(tmdb: 42),
       kind: MediaKind.show,
       titles: const ['Parent Series'],
       season: const ExternalSeasonRef(tvdb: 2, tmdb: 1),
     );
 
-    expect(match?.id, 'series-1');
+    expect(matches.map((item) => item.id), ['series-1']);
+  });
+
+  test('returns every library copy of a title, each stamped with its own library', () async {
+    final client = testJellyfinClient(
+      httpClient: MockClient((request) async {
+        if (request.url.path == '/Items') {
+          return _json({
+            'Items': [
+              {
+                'Id': 'movie-4k',
+                'Type': 'Movie',
+                'Name': 'The Matrix',
+                'ProviderIds': {'Tmdb': '603'},
+              },
+              {
+                'Id': 'movie-hd',
+                'Type': 'Movie',
+                'Name': 'The Matrix',
+                'ProviderIds': {'Tmdb': '603'},
+              },
+            ],
+          });
+        }
+        if (request.url.path == '/Items/movie-4k/Ancestors') {
+          return _json([
+            {'Id': 'library-4k', 'Name': 'Movies 4K', 'Type': 'CollectionFolder'},
+          ]);
+        }
+        if (request.url.path == '/Items/movie-hd/Ancestors') {
+          return _json([
+            {'Id': 'library-hd', 'Name': 'Movies', 'Type': 'CollectionFolder'},
+          ]);
+        }
+        fail('Unexpected request: ${request.url}');
+      }),
+    );
+    addTearDown(client.close);
+
+    final matches = await client.findByExternalIds(
+      const ExternalIds(tmdb: 603),
+      kind: MediaKind.movie,
+      titles: const ['The Matrix'],
+    );
+
+    expect(matches.map((item) => (item.id, item.libraryId, item.libraryTitle)), [
+      ('movie-4k', 'library-4k', 'Movies 4K'),
+      ('movie-hd', 'library-hd', 'Movies'),
+    ]);
   });
 }

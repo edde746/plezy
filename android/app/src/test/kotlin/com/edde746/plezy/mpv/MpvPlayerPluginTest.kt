@@ -49,6 +49,30 @@ class MpvPlayerPluginTest {
   }
 
   @Test
+  fun audioSpdifCodecsWithoutContextAnswersEmptySoMpvDecodes() {
+    // mpv force-passthroughs every codec named in audio-spdif with no decode fallback, so
+    // with no context to inspect the audio route the only safe answer is "" (#1703, #1991).
+    val result = RecordingResult()
+
+    MpvPlayerPlugin().onMethodCall(MethodCall("getAudioSpdifCodecs", null), result)
+
+    assertEquals("", result.successValue)
+    assertNull(result.errorCode)
+    assertEquals(1, result.completionCount)
+  }
+
+  @Test
+  fun hardwareDecodeSessionsKeepTheLegacyGpuVo() {
+    // gpu-next under hwdec=mediacodec fails every frame on Tegra (the
+    // cross-stage samplerExternalOES linker bug): solid blue screen with
+    // audio on the Shield (#2010). DV reshaping — the reason gpu-next exists
+    // on Android (#1902) — only happens under software decode anyway, so
+    // gpu-next is offered exactly there and nowhere else.
+    assertEquals("gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = true))
+    assertEquals("gpu-next,gpu", MpvPlayerCore.initialVideoOutput(hardwareDecoding = false))
+  }
+
+  @Test
   fun setPropertyWithoutCoreReportsNotInitializedForVideoAndAudio() {
     for (plugin in listOf(MpvPlayerPlugin(), MpvAudioPlayerPlugin())) {
       val result = RecordingResult()

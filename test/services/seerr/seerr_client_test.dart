@@ -297,7 +297,7 @@ void main() {
       expect(page.totalResults, 37);
     });
 
-    test('adds the current Plezy locale to every catalog GET', () async {
+    test('adds the current Plezy locale to the catalog GETs Seerr localizes', () async {
       final urls = <Uri>[];
       final client = clientWith(
         MockClient((request) async {
@@ -309,8 +309,6 @@ void main() {
         }),
       );
 
-      await client.getPopularMovies();
-      await client.getPopularTv();
       await client.getUpcomingMovies();
       await client.getUpcomingTv();
       await client.getTrending();
@@ -321,8 +319,6 @@ void main() {
       await client.getTv(4);
 
       expect(urls.map((url) => url.path).toSet(), {
-        '/api/v1/discover/movies',
-        '/api/v1/discover/tv',
         '/api/v1/discover/movies/upcoming',
         '/api/v1/discover/tv/upcoming',
         '/api/v1/discover/trending',
@@ -336,6 +332,29 @@ void main() {
       for (final url in urls) {
         expect(url.queryParameters['language'], expectedLanguage, reason: url.path);
       }
+    });
+
+    test('popular rows omit language so Seerr cannot filter them by original language', () async {
+      // Overseerr and Jellyseerr pass `/discover/movies` and `/discover/tv`'s
+      // `language` straight into `originalLanguage`, i.e. TMDB's
+      // `with_original_language`. Sending the app locale collapsed both shelves
+      // to titles originally made in that language (#1763).
+      final urls = <Uri>[];
+      final client = clientWith(
+        MockClient((request) async {
+          urls.add(request.url);
+          return _json({'page': 1, 'totalPages': 1, 'results': []});
+        }),
+      );
+
+      await client.getPopularMovies(page: 2);
+      await client.getPopularTv();
+
+      expect(urls.map((url) => url.path).toList(), ['/api/v1/discover/movies', '/api/v1/discover/tv']);
+      for (final url in urls) {
+        expect(url.queryParameters.containsKey('language'), isFalse, reason: url.path);
+      }
+      expect(urls.first.queryParameters['page'], '2', reason: 'paging must survive the locale opt-out');
     });
 
     test('createRequest posts the movie payload without seasons', () async {

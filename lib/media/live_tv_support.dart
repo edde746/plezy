@@ -1,16 +1,10 @@
+import 'media_source_info.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
 import '../models/livetv_program.dart';
 import '../models/media_grab_operation.dart';
 import '../models/media_subscription.dart';
-
-class LiveTvActivityResult<T> {
-  final T value;
-  final String? activityUuid;
-
-  const LiveTvActivityResult({required this.value, this.activityUuid});
-}
 
 /// Program info captured when a live session starts. Plex's tune response
 /// carries the airing program; Jellyfin streams the channel without a
@@ -60,15 +54,28 @@ abstract class LiveTvPlaybackSession {
   /// value.
   CaptureBuffer? get captureBuffer;
 
+  /// Server-side subtitle streams this session can deliver by rebuilding the
+  /// stream. Plex burns the selected stream into the live transcode — the
+  /// only delivery for a DVB tuner's bitmap subtitles, which are separate
+  /// elementary streams that `subtitles=none` drops from the HLS output
+  /// (issue #1983). Empty when the backend exposes none: Jellyfin's
+  /// negotiated URL is fixed at start, and in-band captions (CEA-608/708)
+  /// ride the copied video bitstream and stay player-selectable, so they are
+  /// deliberately not listed here (issue #1590).
+  List<MediaSubtitleTrack> get subtitleTracks;
+
   /// Whether [streamUrlAt] supports a non-null offset.
   bool get canTimeShift;
 
   /// Build the playable stream URL. [offsetSeconds] positions the stream
   /// that many seconds from the capture-buffer origin — watch-from-start and
   /// time-shift seek are the same operation; `null` plays the live edge.
-  /// Returns `null` on failure, or when an offset is requested but
-  /// unsupported.
-  Future<String?> streamUrlAt({int? offsetSeconds});
+  /// [subtitleTrack] must be one of [subtitleTracks]; the backend delivers it
+  /// in the rebuilt stream (Plex selects it server-side and burns it).
+  /// Returns `null` on failure, when an offset is requested but unsupported,
+  /// or when the subtitle selection cannot be confirmed — burning against an
+  /// unconfirmed selection would weld a wrong stream into the picture.
+  Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack});
 
   /// Send a playback heartbeat (`'playing'` / `'paused'` / `'stopped'`).
   /// [positionMs] is elapsed playback time; [durationMs] the program
@@ -151,13 +158,6 @@ abstract class LiveTvSupport {
   /// `/livetv/dvrs/{dvrKey}/grid`; Jellyfin queries `/LiveTv/Programs`.
   Future<List<LiveTvProgram>> fetchSchedule({DateTime? from, DateTime? to});
 
-  /// Resolve a playable stream URL for [channelKey].
-  ///
-  /// Jellyfin returns a negotiated HLS stream URL plus the play session id. Plex
-  /// returns `null` because its stream URL is only valid after a tune;
-  /// playback callers use [startPlayback], which owns that difference.
-  Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey});
-
   /// Start a playback session for [channelKey] — the single entry the player
   /// uses for initial launch and channel switching. Plex requires [dvrKey]
   /// (tune + transcode-session setup); Jellyfin ignores it and negotiates an
@@ -197,7 +197,7 @@ abstract class LiveTvSupport {
 /// recording APIs.
 abstract class LiveTvDvrSupport {
   Future<List<LiveTvDvr>> fetchDvrs();
-  Future<LiveTvActivityResult<void>> reloadGuide(String dvrId);
+  Future<void> reloadGuide(String dvrId);
 
   Future<List<SubscriptionTemplate>> getSubscriptionTemplate(String guid);
   Future<List<MediaSubscription>> fetchRecordingRules({bool includeGrabs = true, bool includeStorage = true});

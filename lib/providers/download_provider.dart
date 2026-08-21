@@ -115,13 +115,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   DownloadProvider({required this._downloadManager, required this._database})
     : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
     _metadataStore = _DownloadMetadataStore(_downloadManager, _database)..addListener(_onMetadataStoreChanged);
-    // Listen to progress updates from the download manager
     _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
 
-    // Listen to deletion progress updates
     _deletionProgressSubscription = _downloadManager.deletionProgressStream.listen(_onDeletionProgressUpdate);
 
-    // Load persisted downloads from database
     _initFuture = _loadPersistedDownloads();
 
     // Lets the diagnostics service score whether downloads actually advance
@@ -401,15 +398,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // Initialize artwork directory path for synchronous access
       await storageService.getArtworkDirectory();
 
-      // Load all downloads from database
       final downloads = await _downloadManager.getAllDownloads();
 
-      // Bulk-load all pinned metadata across both backends in a single pass
+      // Bulk-load all pinned metadata across every backend in a single pass
       // instead of per-item DB calls.
-      final allMetadata = await _downloadManager.getAllPinnedMetadata(
-        preferActiveScope: true,
-        activeProfileId: _activeProfileId,
-      );
+      final allMetadata = await _downloadManager.getAllPinnedMetadata(activeProfileId: _activeProfileId);
 
       for (final item in downloads) {
         _downloads[item.globalKey] = DownloadProgress(
@@ -428,7 +421,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         }
       }
 
-      // Load sync rules from database
       await _loadSyncRules();
 
       // Apply queued offline watch actions on top of the server-time metadata
@@ -638,10 +630,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             // Fallback: synthesize from episode metadata (missing year, summary)
             // Only Plex consumers read `raw['key']` (library-section + folder
             // navigation), so we synthesize the Plex URI for Plex shows and
-            // emit a Jellyfin-shaped item for Jellyfin (Id + Type=Series).
+            // emit a MediaBrowser-shaped item for Jellyfin or Emby
+            // (`Id` + `Type=Series`).
             final synthesizedRaw = switch (meta.backend) {
               MediaBackend.plex => <String, dynamic>{'key': '/library/metadata/$showRatingKey'},
-              MediaBackend.jellyfin => <String, dynamic>{'Id': showRatingKey, 'Type': 'Series'},
+              MediaBackend.jellyfin || MediaBackend.emby => <String, dynamic>{'Id': showRatingKey, 'Type': 'Series'},
             };
             shows[showRatingKey] = MediaItem(
               id: showRatingKey,
@@ -844,7 +837,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return null;
     }
 
-    // Calculate aggregate statistics
     int completedCount = 0;
     int downloadingCount = 0;
     int queuedCount = 0;
@@ -867,7 +859,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
     }
 
-    // Determine overall status
     final DownloadStatus overallStatus;
     if (completedCount == totalEpisodes) {
       overallStatus = DownloadStatus.completed;
@@ -912,22 +903,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// For shows/seasons, returns aggregate progress of all child episodes
   /// For episodes/movies, returns direct progress
   DownloadProgress? getProgress(String globalKey) {
-    // First check if we have direct progress (for episodes/movies)
     final directProgress = _downloads[globalKey];
     if (directProgress != null) {
       if (!_ownsDownloadKey(globalKey)) return null;
       return directProgress;
     }
 
-    // If no direct progress, check if this is a show or season
-    // and calculate aggregate progress from episodes
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return null;
 
     final serverId = parsed.serverId;
     final ratingKey = parsed.ratingKey;
 
-    // Try to get metadata to determine type
     final meta = _metadata[globalKey];
     if (meta == null) {
       // No metadata stored yet, might be a container (show/season/artist/
@@ -1296,11 +1283,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     await _claimDownloadForProfile(globalKey, ownership, client);
     if (!_isQueueOwnershipCurrent(ownership)) return false;
 
-    // Update local state immediately for UI feedback
     _downloads[globalKey] = DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued);
     safeNotifyListeners();
 
-    // Actually trigger download via DownloadManagerService
     if (!_isQueueOwnershipCurrent(ownership)) return false;
     await _downloadManager.queueDownload(metadata: metadataToStore, client: client, mediaIndex: resolvedIndex);
     return true;
@@ -1379,7 +1364,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Queue every track under an album/artist. Expansion is one
   /// recursive-leaves call ([MediaServerClient.fetchPlayableDescendants]) on
-  /// both backends — Plex branches album→/children, Jellyfin retries
+  /// every backend — Plex branches album→/children, while MediaBrowser retries
   /// tag-only artists by album-artist credit.
   Future<int> _queueMusicContainerDownload(
     MediaItem container,
@@ -1679,10 +1664,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return;
     }
 
-    final allMetadata = await _downloadManager.getAllPinnedMetadata(
-      preferActiveScope: true,
-      activeProfileId: _activeProfileId,
-    );
+    final allMetadata = await _downloadManager.getAllPinnedMetadata(activeProfileId: _activeProfileId);
     if (isStale()) return;
     int cacheHits = 0;
     int networkFills = 0;
@@ -1719,6 +1701,25 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
+  /// Deletes [globalKey] if it is a completed episode/movie download; returns
+  /// the deleted item's display title, or null when it is not an auto-remove
+  /// candidate.
+  ///
+  /// Shared core of the auto-remove-watched rule. The watched judgment stays
+  /// with the caller: the sweep in [autoDeleteWatchedDownloads] trusts server
+  /// metadata, while [OfflineWatchProvider] fires right after a local
+  /// mark-watched that metadata cannot reflect yet.
+  Future<String?> deleteWatchedDownloadCandidate(String globalKey, {required String logContext}) async {
+    final meta = _resolvedMetadata(globalKey);
+    if (meta == null) return null;
+    if (!meta.isEpisode && !meta.isMovie) return null;
+    if (_downloads[globalKey]?.status != DownloadStatus.completed) return null;
+
+    appLogger.i('Auto-deleting $logContext download: ${meta.title} ($globalKey)');
+    await deleteDownload(globalKey);
+    return meta.title ?? t.common.unknown;
+  }
+
   /// Auto-delete downloaded episodes/movies that are now marked as watched.
   ///
   /// Only deletes individual episodes and movies, never show/season containers.
@@ -1734,7 +1735,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     for (final globalKey in completedKeys) {
       final meta = _resolvedMetadata(globalKey);
       if (meta == null) continue;
-      if (!meta.isEpisode && !meta.isMovie) continue;
       if (!meta.isWatched) continue;
 
       // Don't delete the episode that's currently playing
@@ -1746,9 +1746,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       if (_isKeptByAnyFilterRule(meta)) continue;
 
       try {
-        appLogger.i('Auto-deleting watched download: ${meta.title} ($globalKey)');
-        await deleteDownload(globalKey);
-        deletedTitles.add(meta.title ?? 'Unknown');
+        final title = await deleteWatchedDownloadCandidate(globalKey, logContext: 'watched');
+        if (title != null) deletedTitles.add(title);
       } catch (e) {
         appLogger.w('Failed to auto-delete watched download $globalKey: $e');
       }
@@ -2124,7 +2123,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     );
 
     return results.where((r) => r.queuedCount > 0).map((r) {
-      final title = r.title ?? 'Unknown';
+      final title = r.title ?? t.common.unknown;
       return '$title (${r.queuedCount})';
     }).toList();
   }

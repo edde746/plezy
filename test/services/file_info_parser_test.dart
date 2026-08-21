@@ -49,7 +49,6 @@ void main() {
       final out = walkStreams(streams, reader);
 
       expect(out.videoStream?['id'], '100');
-      expect(out.audioStream?['id'], '101');
       expect(out.videoStream?['frameRate'], closeTo(23.976, 1e-6));
       expect(out.audioTracks.map((t) => t.id), [101, 102]);
       expect(out.audioTracks[0].channels, 6);
@@ -81,7 +80,6 @@ void main() {
       final streams = ['not a map', 42, null];
       final out = walkStreams(streams, reader);
       expect(out.videoStream, isNull);
-      expect(out.audioStream, isNull);
       expect(out.audioTracks, isEmpty);
       expect(out.subtitleTracks, isEmpty);
     });
@@ -109,7 +107,6 @@ void main() {
       final out = walkStreams(streams, reader);
 
       expect(out.videoStream?['Index'], 0);
-      expect(out.audioStream?['Index'], 1);
       expect(out.videoStream?['RealFrameRate'], closeTo(23.976, 1e-6));
       expect(out.audioTracks.map((t) => t.id), [1, 2]);
       expect(out.audioTracks[0].selected, isTrue);

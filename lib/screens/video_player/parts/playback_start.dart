@@ -5,13 +5,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
-    _hasRenderedFirstFrame = false;
+    _firstFrame.resetRenderedForAttempt();
     _hasFatalPlaybackError = false;
+    // 503s observed from here on belong to this attempt's open.
+    _http503Watchdog.disarm();
 
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {
       try {
-        _hasFirstFrame.value = false;
+        _firstFrame.resetUiForOpen();
         await currentPlayer.requestAudioFocus();
         await _setLiveStreamOptions(currentPlayer);
         if (!attempt.isCurrent) return;
@@ -20,7 +22,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // spinner covers Plex's tune / Jellyfin's stream negotiation).
         final channel = widget.live!.channel;
         final session = await _startLiveSession(channel);
-        if (session == null) throw Exception('Failed to start live channel');
+        if (session == null) {
+          throw PlaybackException(t.liveTv.failedToStartChannel, reason: PlaybackFailureReason.serverUnavailable);
+        }
         if (!mounted || !attempt.isCurrent) {
           _abandonLiveSession(session);
           return;
@@ -57,7 +61,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Build the stream URL (with optional offset for time-shift)
         final streamUrl = await session.streamUrlAt(offsetSeconds: offsetSeconds);
         if (streamUrl == null || !mounted) {
-          throw Exception('Failed to build stream path');
+          throw PlaybackException(t.liveTv.failedToBuildStreamUrl, reason: PlaybackFailureReason.noPlayableSource);
         }
 
         // Track stream start epoch for position calculations
@@ -123,6 +127,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             selectedMediaSourceId: _requestedMediaSourceId,
             qualityPreset: _selectedQualityPreset,
             selectedAudioStreamId: _selectedAudioStreamId,
+            preferredAudioTrack: _preferredAudioTrack,
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
@@ -138,7 +143,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // headers were resolved there too. Just await the result.
         final playbackDataFuture = _playbackDataFuture;
         if (playbackDataFuture == null) {
-          throw StateError('Playback data was not prepared before playback start');
+          throw PlaybackException(t.messages.playbackDataNotPrepared);
         }
         playbackContext = await playbackDataFuture;
         if (!mounted || player != currentPlayer) return;
@@ -151,7 +156,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
       final result = playbackContext.result;
       final streamHeaders = playbackContext.streamHeaders;
-      var subtitleSelection = await _resolveSubtitleSelectionForOpen(
+      final subtitleSelection = await _resolveSubtitleSelectionForOpen(
         metadata: _currentMetadata,
         result: result,
         preferredAudioTrack: _preferredAudioTrack,
@@ -162,7 +167,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       // Initial start has no previous session to protect, so commit as soon
       // as the resolve lands (reload-style flows commit at the open
       // boundary instead).
-      var session = PlaybackSession.fromContext(
+      final session = PlaybackSession.fromContext(
         playbackContext,
         requestedQualityPreset: _selectedQualityPreset,
         requestedMediaSourceId: _requestedMediaSourceId,
@@ -175,7 +180,6 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       // when MediaCodec has already produced its first paused frame.
       final settingsService = await SettingsService.getInstance();
       if (!attempt.isCurrent) return;
-      final displayCriteria = result.mediaInfo?.displayCriteria;
       var audioFocusReady = false;
 
       Future<void> ensureAudioFocus() async {
@@ -190,205 +194,119 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         audioFocusReady = true;
       }
 
-      final frameRatePlan = await _prepareFrameRateForOpen(
+      Duration? resumePosition;
+      PlexClient? plexClientForTracks;
+      Completer<void>? wtStartupHold;
+
+      final flow = await _openResolvedMedia(
         currentPlayer: currentPlayer,
         settingsService: settingsService,
-        preKnownFps: displayCriteria?.fps,
-        preKnownWidth: displayCriteria?.width ?? 0,
-        preKnownHeight: displayCriteria?.height ?? 0,
-        hasVideoUrl: result.videoUrl != null,
+        metadata: _currentMetadata,
+        result: result,
+        session: session,
+        subtitleSelection: subtitleSelection,
+        headers: streamHeaders,
+        isLocalMedia: _isOfflinePlayback,
+        isCurrent: () => attempt.isCurrent,
+        // When a Watch Together session is active the sync layer owns the
+        // start: open paused everywhere and let the host coordinate one
+        // simultaneous group start.
+        watchTogetherOwnsStart: _watchTogetherOwnsPlaybackStart,
+        resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
+        resumePosition: () => resumePosition,
+        plexClient: () => plexClientForTracks,
+        getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
+        preferredAudioTrack: _preferredAudioTrack,
+        primarySubtitleTranscoding: () => _isTranscoding,
         ensureAudioFocus: ensureAudioFocus,
+        clearFirstFrameForOpen: true,
+        deferAutomotiveStart: true,
+        beforePrime: () async {
+          // Request audio focus before starting playback (Android)
+          // This causes other media apps (Spotify, podcasts, etc.) to pause.
+          // Fired in parallel with MPV setup in `_initializePlayer`; we await
+          // the in-flight future here (usually already resolved).
+          await ensureAudioFocus();
+          if (!attempt.isCurrent) return false;
+
+          resumePosition = await _resolveOpenResumePosition(
+            metadata: _currentMetadata,
+            isOffline: _isOfflinePlayback,
+            offlineWatchService: offlineWatchService,
+          );
+          return mounted && player == currentPlayer;
+        },
+        afterMediaOpened: (shouldAutoPlay, holdPlaybackStart, wtOwnsStart) async {
+          // Attach player to Watch Together session for sync (if in session).
+          // With a frame-rate startup gate pending, sync readiness waits for
+          // its release so the group start can't fire mid display switch.
+          if (mounted && !_isOfflinePlayback) {
+            if (wtOwnsStart && holdPlaybackStart) {
+              wtStartupHold = Completer<void>();
+            }
+            _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
+            _notifyWatchTogetherMediaChange();
+          }
+          if (shouldAutoPlay && PlatformDetector.isAutomotive()) {
+            await _playWithPlaybackIntent(currentPlayer);
+            if (!attempt.isCurrent) return false;
+          }
+          return true;
+        },
+        beforeTrackSetup: () async {
+          // Versions/mediaInfo come from the committed session; rebuild so the
+          // controls pick them up.
+          if (!mounted) return false;
+          final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
+          plexClientForTracks = mediaClient is PlexClient ? mediaClient : null;
+          _resetScrubPreviewForNewItem(
+            metadata: _currentMetadata,
+            mediaInfo: result.mediaInfo,
+            mediaClient: mediaClient,
+          );
+
+          await _initVideoFilterAndPip();
+          if (!attempt.isCurrent) return false;
+
+          if (player == currentPlayer) {
+            // Auto-PiP: set up callback for API 26-30 path and initial state
+            if (_autoPipEnabled) {
+              void autoPipEnteringCallback() {
+                if (!mounted || player != currentPlayer) return;
+                _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
+                _preparePipFiltersForEntry();
+              }
+
+              _autoPipEnteringCallback = autoPipEnteringCallback;
+              PipService.onAutoPipEntering = autoPipEnteringCallback;
+              if (currentPlayer.state.playing) {
+                unawaited(_updateAutoPipState(isPlaying: true));
+              }
+            }
+
+            // Shader Service (MPV only)
+            _shaderService = ShaderService(currentPlayer);
+            if (_shaderService!.isSupported) {
+              // Ambient Lighting Service
+              _ambientLightingService = AmbientLightingService(currentPlayer);
+              _shaderService!.ambientLightingService = _ambientLightingService;
+              _videoFilterManager?.ambientLightingService = _ambientLightingService;
+
+              await _visualEffects.applySavedPreset();
+              await _visualEffects.restoreAmbientLighting();
+            }
+          }
+          return attempt.isCurrent;
+        },
+        wtStartupHold: () => wtStartupHold,
+        onMediaAvailabilityChanged: (available) => primaryMediaOpened = available,
       );
-      if (frameRatePlan == null) return;
-      final shouldHoldPlaybackStart = frameRatePlan.holdPlaybackStart;
-
-      // When a Watch Together session is active the sync layer owns the
-      // start: open paused everywhere and let the host coordinate one
-      // simultaneous group start.
-      final wtOwnsStart = _watchTogetherOwnsPlaybackStart();
-      Completer<void>? wtStartupHold;
-      late _ExternalSubtitleOpenPlan externalSubtitlePlan;
-
-      // Open video through Player
-      if (result.videoUrl != null) {
-        // Reset first frame flag and frame rate retry counter for new video
-        _hasFirstFrame.value = false;
-        _frameRate.resetForNewItem();
-        if (frameRatePlan.countsAsApplied) {
-          _frameRate.applied = true;
-        }
-
-        // Request audio focus before starting playback (Android)
-        // This causes other media apps (Spotify, podcasts, etc.) to pause.
-        // Fired in parallel with MPV setup in `_initializePlayer`; we await
-        // the in-flight future here (usually already resolved).
-        await ensureAudioFocus();
-        if (!attempt.isCurrent) return;
-
-        final resumePosition = await _resolveOpenResumePosition(
-          metadata: _currentMetadata,
-          isOffline: _isOfflinePlayback,
-          offlineWatchService: offlineWatchService,
-        );
-        if (!mounted || player != currentPlayer) return;
-
-        await _primeDisplayCriteria(
-          player: currentPlayer,
-          settingsService: settingsService,
-          displayCriteria: displayCriteria,
-          isTranscoding: result.isTranscoding,
-        );
-
-        frameRatePlan.armStartupRefreshGate(currentPlayer);
-        externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
-          player: currentPlayer,
-          externalSubtitles: subtitleSelection.sidecarsAtOpen,
-        );
-        final shouldAutoPlay =
-            !shouldHoldPlaybackStart && !wtOwnsStart && externalSubtitlePlan.canStartBeforeTrackSetup;
-
-        // Backends that support at-open sidecars receive them with open()
-        // so tracks are discovered in a single prepare/loadfile cycle. Any
-        // backend that cannot do that still uses the post-open sub-add path.
-        final openTiming = _playbackOpenTiming(
-          isTranscoding: result.isTranscoding,
-          resumePosition: resumePosition,
-          durationMs: _currentMetadata.durationMs,
-        );
-        final openResult = await _openMediaOnPlayer(
-          player: currentPlayer,
-          settingsService: settingsService,
-          videoUrl: result.videoUrl!,
-          isTranscoding: result.isTranscoding,
-          isLocalMedia: _isOfflinePlayback,
-          selectedVersion: result.selectedVersion,
-          timing: openTiming,
-          headers: streamHeaders,
-          play: shouldAutoPlay && !PlatformDetector.isAutomotive(),
-          externalSubtitlesAtOpen: externalSubtitlePlan.subtitlesAtOpen,
-          shouldContinue: () => attempt.isCurrent,
-          onMediaAvailabilityChanged: (available) => primaryMediaOpened = available,
-        );
-        if (!openResult.didOpen || !attempt.isCurrent) return;
-        if (openResult.sidecarFallbackUsed) {
-          session = _commitSidecarFallbackSession(session);
-          subtitleSelection = session.subtitleSelection;
-          externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(player: currentPlayer, externalSubtitles: const []);
-        }
-
-        // Attach player to Watch Together session for sync (if in session).
-        // With a frame-rate startup gate pending, sync readiness waits for
-        // its release so the group start can't fire mid display switch.
-        if (mounted && !_isOfflinePlayback) {
-          if (wtOwnsStart && shouldHoldPlaybackStart) {
-            wtStartupHold = Completer<void>();
-          }
-          _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
-          _notifyWatchTogetherMediaChange();
-        }
-        if (shouldAutoPlay && PlatformDetector.isAutomotive()) {
-          await _playWithPlaybackIntent(currentPlayer);
-          if (!attempt.isCurrent) return;
-        }
-      } else {
-        externalSubtitlePlan = _prepareExternalSubtitleOpenPlan(
-          player: currentPlayer,
-          externalSubtitles: subtitleSelection.sidecarsAtOpen,
-          waitForFileLoaded: false,
-        );
-      }
-
-      // Versions/mediaInfo come from the committed session; rebuild so the
-      // controls pick them up.
-      if (mounted) {
-        final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
-        _resetScrubPreviewForNewItem(metadata: _currentMetadata, mediaInfo: result.mediaInfo, mediaClient: mediaClient);
-
-        await _initVideoFilterAndPip();
-        if (!attempt.isCurrent) return;
-
-        if (player == currentPlayer) {
-          // Auto-PiP: set up callback for API 26-30 path and initial state
-          if (_autoPipEnabled) {
-            void autoPipEnteringCallback() {
-              if (!mounted || player != currentPlayer) return;
-              _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
-              _preparePipFiltersForEntry();
-            }
-
-            _autoPipEnteringCallback = autoPipEnteringCallback;
-            PipService.onAutoPipEntering = autoPipEnteringCallback;
-            if (currentPlayer.state.playing) {
-              unawaited(_updateAutoPipState(isPlaying: true));
-            }
-          }
-
-          // Shader Service (MPV only)
-          _shaderService = ShaderService(currentPlayer);
-          if (_shaderService!.isSupported) {
-            // Ambient Lighting Service
-            _ambientLightingService = AmbientLightingService(currentPlayer);
-            _shaderService!.ambientLightingService = _ambientLightingService;
-            _videoFilterManager?.ambientLightingService = _ambientLightingService;
-
-            await _applySavedShaderPreset();
-            await _restoreAmbientLighting();
-          }
-        }
-        if (!attempt.isCurrent) return;
-
-        // Track manager: owns track selection, external subtitle loading, and Plex
-        // immediate stream writes. Jellyfin persists selected stream indexes through
-        // playback progress reports instead.
-        _trackManager = _buildTrackManager(
-          forPlayer: currentPlayer,
-          metadata: _currentMetadata,
-          plexClient: mediaClient is PlexClient ? mediaClient : null,
-          getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
-          preferredAudioTrack: _preferredAudioTrack,
-          preferredSubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.primaryTrack),
-          preferredSecondarySubtitleTrack: SubtitlePreference.trackOrNull(subtitleSelection.secondaryTrack),
-        );
-
-        // Store only the active sidecars for re-use after backend fallback.
-        _trackManager!.cacheExternalSubtitles(subtitleSelection.sidecarsAtOpen);
-
-        final resumeForStartupFrame =
-            frameRatePlan.needsStartupRefresh && externalSubtitlePlan.requiresPostOpenAdd && !wtOwnsStart;
-        await _applyTracksAfterOpen(
-          trackManager: _trackManager!,
-          externalSubtitlePlan: externalSubtitlePlan,
-          // When a startup gate below owns the resume, skip this one to
-          // avoid a double-play. Post-open external-subtitle paths are the
-          // exception: after they attach we must resume once so mpv can
-          // produce the startup frame that the decoder-refresh gate is waiting
-          // for.
-          // Watch Together stays paused for the group start, so selection is
-          // armed through the resume-skipped branch.
-          shouldResumeAfterSubtitleLoad: () =>
-              (!shouldHoldPlaybackStart || resumeForStartupFrame) && !wtOwnsStart && mounted && player == currentPlayer,
-          applySelectionWhenResumeSkipped: wtOwnsStart && !shouldHoldPlaybackStart,
-        );
-
-        await _releaseFrameRateStartupGate(
-          currentPlayer: currentPlayer,
-          settingsService: settingsService,
-          plan: frameRatePlan,
-          resumeAfterStartupGate: (reason) => _finishPlaybackAfterStartupGate(
-            currentPlayer: currentPlayer,
-            externalSubtitlePlan: externalSubtitlePlan,
-            reason: reason,
-            shouldResume: !wtOwnsStart,
-            watchTogetherOwnsStart: wtOwnsStart,
-            wtStartupHold: wtStartupHold,
-          ),
-          playbackResumedForStartupFrame: resumeForStartupFrame,
-        );
-        // Backstop: if the gate never ran its resume path (unmounted race),
-        // don't leave Watch Together readiness held forever.
-        if (wtStartupHold != null && !wtStartupHold.isCompleted) {
-          wtStartupHold.complete();
-        }
+      if (flow == null) return;
+      // Backstop: if the gate never ran its resume path (unmounted race),
+      // don't leave Watch Together readiness held forever.
+      final startupHold = wtStartupHold;
+      if (startupHold != null && !startupHold.isCompleted) {
+        startupHold.complete();
       }
     } on PlaybackException catch (e, st) {
       appLogger.w('Playback initialization failed', error: e, stackTrace: st);
@@ -396,7 +314,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (!primaryMediaOpened) {
           _hasFatalPlaybackError = true;
         }
-        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
+        _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
         showErrorSnackBar(context, e.message);
       }
     } catch (e, st) {
@@ -405,7 +323,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (!primaryMediaOpened) {
           _hasFatalPlaybackError = true;
         }
-        _hasFirstFrame.value = true; // Hide spinner on every current startup failure
+        _firstFrame.forceUiReadyOnFailure(); // Hide spinner on every current startup failure
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
       }
     }

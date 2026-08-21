@@ -102,21 +102,14 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   override func configurePlatformMpvOptions(mpv: OpaquePointer) {
-    // AVFoundation stays the macOS output. Spatialization is only reachable
-    // through the AVFoundation renderer — allowedAudioSpatializationFormats is a
-    // property of AVSampleBufferAudioRenderer (macOS 12+), and the AO opts
-    // compressed playback into the multichannel format — and the E-AC3 JOC sink
-    // lives there too. CoreAudio writes straight to the HAL device and exposes no
-    // spatialization control at all, so it is a fallback, not an alternative.
-    checkError(mpv_set_option_string(mpv, "ao", "avfoundation,coreaudio"))
-    // Unbound the AO's PCM lookahead, restoring the renderer-owned queue depth
-    // 2.9.1 shipped (#1711). The macOS-only 0.5s bound MPVKit 1.0.15 added is the
-    // only change to this path between 2.9.1 and 2.10, and 2.10 skips audio at
-    // roughly that cadence. Its purpose was making mpv's software --volume, which
-    // is baked into the samples handed to the AO, audible before the queue
-    // drains; that latency is back, and belongs to the AO's gain domain rather
-    // than to how far ahead it may buffer.
-    checkError(mpv_set_option_string(mpv, "ao-avfoundation-max-lookahead", "0"))
+    // CoreAudio first: every format normally plays through the one HAL-backed
+    // timing path, deliberately giving up AVFoundation spatialization. The
+    // avfoundation fallback mirrors upstream mpv's macOS probe order and only
+    // engages when CoreAudio's init fails outright — macOS 27 beta rejects
+    // ao_coreaudio's channel-layout setup with paramErr (-50), and a
+    // single-entry ao list would turn that into playback with no audio at
+    // all (#1964).
+    checkError(mpv_set_option_string(mpv, "ao", "coreaudio,avfoundation"))
   }
 
   func reattachMetalLayer() {

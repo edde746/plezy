@@ -18,15 +18,38 @@ print(value)
 PY
 }
 
+# For keys that are genuinely optional, where absence means "not offered"
+# rather than a broken manifest. Pinned values never come through here: a
+# missing checksum or commit has to stay fatal.
+manifest_optional() {
+  python3 - "$NATIVE_INPUTS_MANIFEST" "$1" "$2" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as source:
+    manifest = json.load(source)
+value = manifest["inputs"][sys.argv[2]].get(sys.argv[3], "")
+if not isinstance(value, str):
+    raise SystemExit(f"invalid manifest value: {sys.argv[2]}.{sys.argv[3]}")
+print(value)
+PY
+}
+
 FFMPEG_VERSION="$(manifest_value ffmpeg version)"
 FFMPEG_URL="$(manifest_value ffmpeg url)"
 FFMPEG_SHA256="$(manifest_value ffmpeg sha256)"
+DAV1D_VERSION="$(manifest_value dav1d version)"
+DAV1D_URL="$(manifest_value dav1d url)"
+DAV1D_MIRROR="$(manifest_optional dav1d mirror)"
+DAV1D_REF="$(manifest_value dav1d ref)"
+DAV1D_COMMIT="$(manifest_value dav1d commit)"
 SHADERC_VERSION="$(manifest_value shaderc version)"
 SHADERC_URL="$(manifest_value shaderc url)"
 SHADERC_REF="$(manifest_value shaderc ref)"
 SHADERC_COMMIT="$(manifest_value shaderc commit)"
 LIBPLACEBO_VERSION="$(manifest_value libplacebo version)"
 LIBPLACEBO_URL="$(manifest_value libplacebo url)"
+LIBPLACEBO_MIRROR="$(manifest_optional libplacebo mirror)"
 LIBPLACEBO_REF="$(manifest_value libplacebo ref)"
 LIBPLACEBO_COMMIT="$(manifest_value libplacebo commit)"
 MPV_VERSION="$(manifest_value mpv version)"
@@ -55,11 +78,18 @@ download_verified() {
 
   mkdir -p "$(dirname "$destination")"
   temporary="$(mktemp "${destination}.tmp.XXXXXX")"
+  # Retries cover the transfer only. A checksum mismatch below is never retried:
+  # that is a tampered or moved artefact, not a flaky connection, and trying
+  # again would only turn a loud failure into an intermittent one.
   if ! curl \
     --fail \
     --location \
     --silent \
     --show-error \
+    --retry 3 \
+    --retry-connrefused \
+    --retry-delay 5 \
+    --connect-timeout 30 \
     --proto '=https,file' \
     --tlsv1.2 \
     --output "$temporary" \
@@ -85,23 +115,44 @@ checkout_verified_ref() {
   local ref="$2"
   local expected_commit="$3"
   local destination="$4"
+  local mirror="${5:-}"
   local actual_commit
+  local source
+  local attempt
 
   if [[ ! "$expected_commit" =~ ^[0-9a-f]{40}$ ]]; then
     echo "Invalid Git commit pin for $url at $ref" >&2
     return 1
   fi
 
+  # Retries and the mirror cover the transfer, never the verification. The commit
+  # pin below is checked identically whichever source answered, so a mirror can
+  # only supply the same tree or fail - it cannot substitute another one.
+  #
+  # This exists because code.videolan.org, the only source fetched over git,
+  # refused connections for well over two minutes at a time across several CI
+  # runs and took every build with it.
   rm -rf "$destination"
-  if ! git clone --quiet --depth 1 --branch "$ref" --no-checkout \
-    "$url" "$destination"; then
-    rm -rf "$destination"
+  for source in "$url" ${mirror:+"$mirror"}; do
+    for attempt in 1 2 3; do
+      if git clone --quiet --depth 1 --branch "$ref" --no-checkout \
+        "$source" "$destination"; then
+        break 2
+      fi
+      rm -rf "$destination"
+      # No point pausing before giving up on this source.
+      if [ "$attempt" -lt 3 ]; then sleep $((attempt * 5)); fi
+    done
+    echo "Could not clone $source at $ref after 3 attempts" >&2
+  done
+  if [ ! -d "$destination" ]; then
+    echo "No source produced $ref for $url" >&2
     return 1
   fi
 
   actual_commit="$(git -C "$destination" rev-parse 'HEAD^{commit}')"
   if [ "$actual_commit" != "$expected_commit" ]; then
-    echo "Git ref mismatch for $url at $ref" >&2
+    echo "Git ref mismatch for $ref" >&2
     echo "Expected: $expected_commit" >&2
     echo "Actual:   $actual_commit" >&2
     rm -rf "$destination"
@@ -137,7 +188,37 @@ main() {
   echo "==> Install prefix: $prefix"
   echo ""
 
-  # ─── Step 1: ffmpeg (static libraries) ─────────────────────────────────────
+  # ─── Step 1: dav1d (static library) ────────────────────────────────────────
+  # The bundled ffmpeg has no AV1 software decoder: its native av1 decoder is
+  # hardware-accelerated only, and no libaom/libdav1d is linked in. When hwdec
+  # is unavailable or cannot serve the source (an AV1 file on a GPU without AV1
+  # decode), AV1 has no path at all - every packet fails, video hits EOF and
+  # the plane goes black while audio keeps playing. dav1d is the software
+  # floor under AV1, exactly as libass is for subtitles. It must come before
+  # ffmpeg, whose configure resolves --enable-libdav1d against dav1d's
+  # pkg-config file.
+  echo "==> Building dav1d $DAV1D_VERSION (static)..."
+  checkout_verified_ref \
+    "$DAV1D_URL" "$DAV1D_REF" "$DAV1D_COMMIT" \
+    "$srcdir/dav1d-v${DAV1D_VERSION}" "$DAV1D_MIRROR"
+  cd "dav1d-v${DAV1D_VERSION}"
+
+  meson setup build \
+    --prefix="$prefix" \
+    --default-library=static \
+    -Denable_tools=false \
+    -Denable_tests=false \
+    -Denable_examples=false \
+    -Denable_docs=false
+
+  ninja -C build -j"$jobs"
+  ninja -C build install
+  cd "$srcdir"
+  echo ""
+  echo "==> dav1d done."
+  echo ""
+
+  # ─── Step 2: ffmpeg (static libraries) ─────────────────────────────────────
   echo "==> Building ffmpeg $FFMPEG_VERSION (static, decoder-only)..."
   download_verified "$FFMPEG_URL" "$FFMPEG_SHA256" "$srcdir/ffmpeg.tar.xz"
   tar -xJf "$srcdir/ffmpeg.tar.xz"
@@ -159,10 +240,11 @@ main() {
     --disable-bsfs \
     --enable-bsf=aac_adtstoasc,av1_metadata,extract_extradata,h264_metadata,h264_mp4toannexb,hevc_metadata,hevc_mp4toannexb,vp9_metadata \
     --disable-filters \
-    --enable-filter=aformat,aresample,format,null,scale \
+    --enable-filter=aformat,aresample,format,loudnorm,null,scale \
     --enable-gnutls \
     --enable-vaapi \
-    --enable-vdpau \
+    --enable-libdav1d \
+    --disable-vdpau \
     --disable-debug \
     --disable-stripping
 
@@ -173,7 +255,7 @@ main() {
   echo "==> ffmpeg done."
   echo ""
 
-  # ─── Step 2: shaderc (static library) ───────────────────────────────────────
+  # ─── Step 3: shaderc (static library) ───────────────────────────────────────
   echo "==> Building shaderc $SHADERC_VERSION (static)..."
   checkout_verified_ref \
     "$SHADERC_URL" "$SHADERC_REF" "$SHADERC_COMMIT" \
@@ -197,11 +279,11 @@ main() {
   echo "==> shaderc done."
   echo ""
 
-  # ─── Step 3: libplacebo (static library) ───────────────────────────────────
+  # ─── Step 4: libplacebo (static library) ───────────────────────────────────
   echo "==> Building libplacebo $LIBPLACEBO_VERSION (static)..."
   checkout_verified_ref \
     "$LIBPLACEBO_URL" "$LIBPLACEBO_REF" "$LIBPLACEBO_COMMIT" \
-    "$srcdir/libplacebo-v${LIBPLACEBO_VERSION}"
+    "$srcdir/libplacebo-v${LIBPLACEBO_VERSION}" "$LIBPLACEBO_MIRROR"
   cd "libplacebo-v${LIBPLACEBO_VERSION}"
   git submodule update --init --recursive
 
@@ -220,12 +302,24 @@ main() {
   echo "==> libplacebo done."
   echo ""
 
-  # ─── Step 4: mpv (shared libmpv) ───────────────────────────────────────────
+  # ─── Step 5: mpv (shared libmpv) ───────────────────────────────────────────
   echo "==> Building mpv $MPV_VERSION (shared libmpv only)..."
   download_verified "$MPV_URL" "$MPV_SHA256" "$srcdir/mpv.tar.gz"
   tar -xzf "$srcdir/mpv.tar.gz"
   cd "mpv-${MPV_VERSION}"
 
+  # The runner's only video path is a Wayland subsurface, and it hands mpv
+  # MPV_RENDER_PARAM_WL_DISPLAY so VAAPI can find the device instead of falling
+  # back to software decoding. A libmpv built without Wayland cannot use that.
+  # VDPAU goes with X11 - it has no Wayland backend at all.
+  #
+  # drm/vaapi-drm/egl are pinned enabled, not left on auto: mpv's `drm` feature
+  # silently drops to disabled when libdisplay-info is missing, and every VAAPI
+  # path that does not depend on a display server - vaapi-copy's standalone
+  # render-node device and the GL dmabuf interop - is derived from it. Shipping
+  # that build quietly lands every source on software decoding (the 2.13.0
+  # Fedora report). Enabled means the configure fails when the pieces are
+  # absent instead of degrading in silence.
   meson setup build \
     --prefix="$prefix" \
     -Dlibmpv=true \
@@ -239,13 +333,17 @@ main() {
     -Dvulkan=disabled \
     -Dd3d11=disabled \
     -Dgl=enabled \
+    -Degl=enabled \
+    -Ddrm=enabled \
     -Dvaapi=enabled \
-    -Dvdpau=enabled \
+    -Dvaapi-drm=enabled \
+    -Dvaapi-wayland=enabled \
     -Dalsa=enabled \
     -Dpulse=enabled \
     -Dpipewire=enabled \
-    -Dwayland=disabled \
-    -Dx11=enabled
+    -Dvdpau=disabled \
+    -Dwayland=enabled \
+    -Dx11=disabled
 
   ninja -C build -j"$jobs"
   ninja -C build install

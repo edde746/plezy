@@ -60,7 +60,9 @@ class KeyEventSimulatorController {
   /// Simulates a full key press (down and up) in one frame.
   void simulateKeyPress(LogicalKeyboardKey logicalKey) {
     if (_disposed) return;
-    _log('simulateKeyPress scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+    if (TextInputDiagnostics.enabled) {
+      _log('simulateKeyPress scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+    }
     _schedule((focusNode) {
       final physicalKey = _physicalKeyFor(logicalKey);
       _dispatchKeyEvent(focusNode, _keyDownEvent(logicalKey, physicalKey));
@@ -71,7 +73,9 @@ class KeyEventSimulatorController {
   /// Simulates key down and remembers its focus until key up.
   void simulateKeyDown(LogicalKeyboardKey logicalKey) {
     if (_disposed) return;
-    _log('simulateKeyDown scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+    if (TextInputDiagnostics.enabled) {
+      _log('simulateKeyDown scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+    }
     _schedule((focusNode) {
       _heldFocusNodes[logicalKey] = focusNode;
       _dispatchKeyEvent(focusNode, _keyDownEvent(logicalKey, _physicalKeyFor(logicalKey)));
@@ -81,7 +85,9 @@ class KeyEventSimulatorController {
   /// Simulates key up on the focus that received the matching key down.
   void simulateKeyUp(LogicalKeyboardKey logicalKey) {
     if (_disposed) return;
-    _log('simulateKeyUp scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+    if (TextInputDiagnostics.enabled) {
+      _log('simulateKeyUp scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+    }
     scheduleFrameIfIdle();
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (!_disposed) _dispatchKeyUp(logicalKey);
@@ -147,7 +153,9 @@ class KeyEventSimulatorController {
     final focusNode = heldFocusNode ?? FocusManager.instance.primaryFocus;
     if (focusNode == null) return;
     if (heldFocusNode != null && heldFocusNode.context == null) {
-      _log('simulateKeyUp dropped detached held focus logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+      if (TextInputDiagnostics.enabled) {
+        _log('simulateKeyUp dropped detached held focus logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+      }
       return;
     }
 
@@ -173,21 +181,27 @@ class KeyEventSimulatorController {
   }
 
   void _dispatchKeyEvent(FocusNode focusNode, KeyEvent event) {
-    _log('dispatch start focus=${focusNode.debugLabel} key=(${_describeSimulatedKey(event)})');
+    if (TextInputDiagnostics.enabled) {
+      _log('dispatch start focus=${focusNode.debugLabel} key=(${_describeSimulatedKey(event)})');
+    }
     FocusNode? node = focusNode;
     while (node != null) {
       if (node.onKeyEvent != null) {
         final result = node.onKeyEvent!(node, event);
-        _log('dispatch node=${node.debugLabel} result=$result key=(${_describeSimulatedKey(event)})');
+        if (TextInputDiagnostics.enabled) {
+          _log('dispatch node=${node.debugLabel} result=$result key=(${_describeSimulatedKey(event)})');
+        }
         if (result != KeyEventResult.ignored) {
-          _log('dispatch stopped node=${node.debugLabel} result=$result');
+          if (TextInputDiagnostics.enabled) _log('dispatch stopped node=${node.debugLabel} result=$result');
           break;
         }
       }
       node = node.parent;
     }
     if (node == null) {
-      _log('dispatch reached root ignored key=(${_describeSimulatedKey(event)})');
+      if (TextInputDiagnostics.enabled) {
+        _log('dispatch reached root ignored key=(${_describeSimulatedKey(event)})');
+      }
     }
   }
 

@@ -12,8 +12,10 @@
 // resolution and server-tagging.
 
 import 'package:json_annotation/json_annotation.dart';
+import '../media/artist_discography.dart';
 import '../media/ids.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
+import '../i18n/strings.g.dart';
 
 import '../media/media_backend.dart';
 import '../media/media_display_criteria.dart';
@@ -23,6 +25,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_part.dart';
 import '../media/media_playlist.dart';
+import '../media/media_rating.dart';
 import '../media/media_role.dart';
 import '../media/media_source_info.dart';
 import '../media/media_stream.dart';
@@ -30,7 +33,6 @@ import '../media/media_version.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/json_utils.dart';
-import '../utils/obfuscation_utils.dart';
 import 'file_info_parser.dart';
 import 'plex_constants.dart';
 
@@ -39,14 +41,6 @@ part 'plex_mappers.g.dart';
 /// Shared suffix of both unmatched-agent URL schemes: legacy
 /// `com.plexapp.agents.none://` and new-style `tv.plex.agents.none://`.
 const _unmatchedAgentMarker = 'agents.none://';
-
-Map<String, dynamic> _obfuscatePlaylistJson(Map<String, dynamic> json) {
-  final copy = Map<String, dynamic>.from(json);
-  for (final key in const ['title', 'summary']) {
-    if (copy[key] is String) copy[key] = obfuscateText(copy[key] as String);
-  }
-  return copy;
-}
 
 Map? _firstPartMap(Object? raw) {
   final parts = _partMaps(raw);
@@ -237,8 +231,8 @@ List<MediaPart> _mediaPartsFromReadValue(Object? raw) {
 }
 
 String _hubTitleFromJson(Object? raw) {
-  final title = raw as String? ?? 'Unknown';
-  return kBlurArtwork ? obfuscateText(title) : title;
+  final title = raw as String? ?? t.common.unknown;
+  return title;
 }
 
 Object? _readHubItems(Map json, String _) {
@@ -300,6 +294,24 @@ class PlexRoleDto {
   factory PlexRoleDto.fromJson(Map<String, dynamic> json) => _$PlexRoleDtoFromJson(json);
 }
 
+/// One entry of Plex's `Rating[]` child array, present on
+/// `/library/metadata/{id}` responses but never on section listings.
+///
+/// [image] is a source URI (`imdb://image.rating`,
+/// `rottentomatoes://image.rating.ripe`, `themoviedb://image.rating`) and
+/// [type] is `critic` or `audience`; together they attribute [value].
+@JsonSerializable(createToJson: false)
+class PlexRatingDto {
+  final String? image;
+  final String? type;
+  @JsonKey(fromJson: flexibleDouble)
+  final double? value;
+
+  const PlexRatingDto({this.image, this.type, this.value});
+
+  factory PlexRatingDto.fromJson(Map<String, dynamic> json) => _$PlexRatingDtoFromJson(json);
+}
+
 @JsonSerializable(createToJson: false)
 class PlexMediaVersionDto {
   @JsonKey(fromJson: flexibleIntOrZero)
@@ -350,6 +362,11 @@ class PlexLibraryDto {
   final String title;
   @JsonKey(defaultValue: '')
   final String type;
+
+  /// `"clip"` on home-video ("Other Videos") sections. Only present in the
+  /// `/media/providers` listing; the legacy `/library/sections` fallback
+  /// omits it, degrading those sections to [MediaKind.movie].
+  final String? subtype;
   final String? agent;
   final String? scanner;
   final String? language;
@@ -371,6 +388,7 @@ class PlexLibraryDto {
     required this.key,
     required this.title,
     required this.type,
+    this.subtype,
     this.agent,
     this.scanner,
     this.language,
@@ -390,6 +408,7 @@ class PlexLibraryDto {
       key: key,
       title: title,
       type: type,
+      subtype: subtype,
       agent: agent,
       scanner: scanner,
       language: language,
@@ -464,8 +483,7 @@ class PlexPlaylistDto {
     this.serverName,
   });
 
-  factory PlexPlaylistDto.fromJson(Map<String, dynamic> json) =>
-      _$PlexPlaylistDtoFromJson(kBlurArtwork ? _obfuscatePlaylistJson(json) : json);
+  factory PlexPlaylistDto.fromJson(Map<String, dynamic> json) => _$PlexPlaylistDtoFromJson(json);
 
   PlexPlaylistDto copyWith({ServerId? serverId, String? serverName}) {
     return PlexPlaylistDto(
@@ -605,6 +623,10 @@ class PlexMetadataDto {
   final List<PlexRoleDto>? role;
   @JsonKey(name: 'Media', includeToJson: false)
   final List<PlexMediaVersionDto>? mediaVersions;
+  @JsonKey(name: 'Rating', includeToJson: false)
+  final List<PlexRatingDto>? ratingSources;
+  @JsonKey(fromJson: flexibleInt)
+  final int? imdbRatingCount;
   @JsonKey(name: 'Genre', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? genre;
   @JsonKey(name: 'Director', fromJson: _tagListFromJson, includeToJson: false)
@@ -623,6 +645,10 @@ class PlexMetadataDto {
   final List<String>? style;
   @JsonKey(name: 'Mood', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? mood;
+  @JsonKey(name: 'Format', fromJson: _tagListFromJson, includeToJson: false)
+  final List<String>? format;
+  @JsonKey(name: 'Subformat', fromJson: _tagListFromJson, includeToJson: false)
+  final List<String>? subformat;
   final String? audioLanguage;
   final String? subtitleLanguage;
   @JsonKey(fromJson: flexibleInt)
@@ -693,6 +719,8 @@ class PlexMetadataDto {
     this.childCount,
     this.role,
     this.mediaVersions,
+    this.ratingSources,
+    this.imdbRatingCount,
     this.genre,
     this.director,
     this.writer,
@@ -702,6 +730,8 @@ class PlexMetadataDto {
     this.label,
     this.style,
     this.mood,
+    this.format,
+    this.subformat,
     this.audioLanguage,
     this.subtitleLanguage,
     this.subtitleMode,
@@ -725,8 +755,7 @@ class PlexMetadataDto {
     this.flattenSeasons,
   });
 
-  factory PlexMetadataDto.fromJson(Map<String, dynamic> rawJson) {
-    final json = kBlurArtwork ? _obfuscateJson(rawJson) : rawJson;
+  factory PlexMetadataDto.fromJson(Map<String, dynamic> json) {
     try {
       return _$PlexMetadataDtoFromJson(json);
     } on TypeError catch (e, st) {
@@ -767,14 +796,6 @@ class PlexMetadataDto {
     if (clearLogoUrl != null) enriched['clearLogo'] = clearLogoUrl;
     if (backgroundSquareUrl != null) enriched['backgroundSquare'] = backgroundSquareUrl;
     return PlexMetadataDto.fromJson(enriched);
-  }
-
-  static Map<String, dynamic> _obfuscateJson(Map<String, dynamic> json) {
-    final copy = Map<String, dynamic>.from(json);
-    for (final key in const ['title', 'summary', 'tagline', 'grandparentTitle', 'parentTitle', 'studio']) {
-      if (copy[key] is String) copy[key] = obfuscateText(copy[key] as String);
-    }
-    return copy;
   }
 
   String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), ratingKey) : ratingKey;
@@ -825,6 +846,8 @@ class PlexMetadataDto {
     int? childCount,
     List<PlexRoleDto>? role,
     List<PlexMediaVersionDto>? mediaVersions,
+    List<PlexRatingDto>? ratingSources,
+    int? imdbRatingCount,
     List<String>? genre,
     List<String>? director,
     List<String>? writer,
@@ -834,6 +857,8 @@ class PlexMetadataDto {
     List<String>? label,
     List<String>? style,
     List<String>? mood,
+    List<String>? format,
+    List<String>? subformat,
     String? audioLanguage,
     String? subtitleLanguage,
     int? subtitleMode,
@@ -895,6 +920,8 @@ class PlexMetadataDto {
       childCount: childCount ?? this.childCount,
       role: role ?? this.role,
       mediaVersions: mediaVersions ?? this.mediaVersions,
+      ratingSources: ratingSources ?? this.ratingSources,
+      imdbRatingCount: imdbRatingCount ?? this.imdbRatingCount,
       genre: genre ?? this.genre,
       director: director ?? this.director,
       writer: writer ?? this.writer,
@@ -904,6 +931,8 @@ class PlexMetadataDto {
       label: label ?? this.label,
       style: style ?? this.style,
       mood: mood ?? this.mood,
+      format: format ?? this.format,
+      subformat: subformat ?? this.subformat,
       audioLanguage: audioLanguage ?? this.audioLanguage,
       subtitleLanguage: subtitleLanguage ?? this.subtitleLanguage,
       subtitleMode: subtitleMode ?? this.subtitleMode,
@@ -937,14 +966,82 @@ Map<String, Object?>? _rawMetadata(PlexMetadataDto dto) {
   return raw.isEmpty ? null : raw;
 }
 
+/// Every attributed score a Plex payload carries, headline first.
+///
+/// Section listings only ever send the scalar pair ([rating]/[ratingImage] and
+/// [audienceRating]/[audienceRatingImage]), so they yield one or two entries.
+/// `/library/metadata/{id}` additionally sends the `Rating[]` child array —
+/// IMDb, both Rotten Tomatoes panels, TMDB — with no extra query parameter, so
+/// detail responses yield up to four. Plex offers no listing parameter that
+/// includes the array, which is why cards stay shorter than detail screens.
+///
+/// Entries are deduped on `(source, value)` because the array repeats whichever
+/// source the scalar pair was drawn from. Insertion order keeps the server's
+/// own headline first, so `ratings.first` matches the scalar `rating` the
+/// cards and sorts already use.
+List<MediaRatingSource>? plexRatingSources({
+  Object? rating,
+  Object? ratingImage,
+  Object? audienceRating,
+  Object? audienceRatingImage,
+  Iterable<({Object? image, Object? type, Object? value})> ratingSources = const [],
+  int? imdbVotes,
+}) {
+  final ratings = <MediaRatingSource>[];
+
+  void add(Object? rawValue, {required String fallbackSource, Object? image, Object? type}) {
+    final value = normalizedPlexRating(rawValue);
+    if (value == null) return;
+    final source = _plexRatingSource(image: image, type: type, fallback: fallbackSource);
+    if (ratings.any((rating) => rating.source == source && rating.value == value)) return;
+    ratings.add(MediaRatingSource(source: source, value: value, votes: source == 'imdb' ? imdbVotes : null));
+  }
+
+  add(rating, fallbackSource: 'critic', image: ratingImage);
+  add(audienceRating, fallbackSource: 'audience', image: audienceRatingImage);
+  for (final entry in ratingSources) {
+    add(entry.value, fallbackSource: 'audience', image: entry.image, type: entry.type);
+  }
+  return ratings.isEmpty ? null : ratings;
+}
+
+String _plexRatingSource({Object? image, Object? type, required String fallback}) {
+  final scheme = Uri.tryParse(_nonEmptyRatingString(image) ?? '')?.scheme.toLowerCase();
+  if (scheme == 'imdb') return 'imdb';
+  if (scheme == 'themoviedb' || scheme == 'tmdb') return 'tmdb';
+  final ratingType = _nonEmptyRatingString(type)?.toLowerCase() ?? fallback;
+  if (scheme == 'rottentomatoes') {
+    return ratingType == 'critic' ? 'rottenTomatoesCritic' : 'rottenTomatoesAudience';
+  }
+  return switch (ratingType) {
+    'critic' => 'critic',
+    'audience' => 'audience',
+    _ => fallback,
+  };
+}
+
+/// Coerce a Plex score onto the neutral 0-10 scale, rejecting out-of-range
+/// noise. Plex sends percentages as 0-10 already; a stray 0-100 value is
+/// folded rather than dropped.
+double? normalizedPlexRating(Object? value) {
+  final rating = flexibleDouble(value);
+  if (rating == null || !rating.isFinite || rating < 0 || rating > 100) return null;
+  return rating > 10 ? rating / 10 : rating;
+}
+
+String? _nonEmptyRatingString(Object? value) {
+  if (value is! String) return null;
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? null : trimmed;
+}
+
 /// Pure JSON/DTO→neutral-type mappers for Plex. Mirrors [JellyfinMappers].
 ///
-/// Methods come in two flavours:
-///   * `<type>FromJson` — accept raw Plex JSON and parse + map in one step.
-///     Used by tests and by callers that haven't already parsed a DTO.
-///   * `<type>` (DTO-typed) — accept an already-parsed DTO. Used by the
-///     [PlexClient] which keeps a DTO step internally for caching, copying,
-///     and OnDeck composition.
+/// Methods accept already-parsed DTOs (`mediaItem`, `mediaHub`, …); the
+/// [PlexClient] keeps the DTO step internally for caching, copying, and
+/// OnDeck composition. A few raw-JSON helpers remain for callers without a
+/// DTO surface: [mediaItemFromCacheJson] (offline cache),
+/// [mediaVersionFromJson], and [displayCriteriaFromJson].
 ///
 /// Pure: no HTTP, no client state, no token-aware image-URL resolution.
 /// Token-aware image URLs are layered on at the [PlexClient] boundary via
@@ -954,18 +1051,25 @@ Map<String, Object?>? _rawMetadata(PlexMetadataDto dto) {
 class PlexMappers {
   PlexMappers._();
 
-  /// Map a Plex `Metadata` JSON entry directly into a [PlexMediaItem].
-  static PlexMediaItem mediaItemFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
-    final dto = PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId, serverName: serverName);
-    return mediaItem(dto);
-  }
-
   /// Parse a Plex `/library/metadata/{id}` JSON object into a neutral
   /// [MediaItem]. Used by the offline cache layer to convert persisted Plex
   /// JSON back into MediaItem without depending on the Plex client surface.
   static MediaItem mediaItemFromCacheJson(Map<String, dynamic> json, {required ServerId serverId}) {
     final dto = PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId);
     return mediaItem(dto);
+  }
+
+  /// Plex's release-format taxonomy for an album row. `Format` tags EP/Single
+  /// mark Singles & EPs; otherwise `Subformat` live/compilation mark those
+  /// sections; everything else is a standard album. Matching is
+  /// case-insensitive, mirroring Plex's own filter semantics.
+  static DiscographyGroupKind discographyKind(PlexMetadataDto dto) {
+    bool hasTag(List<String>? tags, Set<String> wanted) =>
+        tags?.any((tag) => wanted.contains(tag.toLowerCase())) ?? false;
+    if (hasTag(dto.format, const {'ep', 'single'})) return DiscographyGroupKind.singlesAndEps;
+    if (hasTag(dto.subformat, const {'live'})) return DiscographyGroupKind.live;
+    if (hasTag(dto.subformat, const {'compilation'})) return DiscographyGroupKind.compilations;
+    return DiscographyGroupKind.albums;
   }
 
   /// Map a parsed [PlexMetadataDto] into a [PlexMediaItem].
@@ -1011,10 +1115,18 @@ class PlexMappers {
       addedAt: dto.addedAt,
       updatedAt: dto.updatedAt,
       rating: dto.rating,
-      audienceRating: dto.audienceRating,
       userRating: dto.userRating,
-      ratingImage: dto.ratingImage,
-      audienceRatingImage: dto.audienceRatingImage,
+      ratings: plexRatingSources(
+        rating: dto.rating,
+        ratingImage: dto.ratingImage,
+        audienceRating: dto.audienceRating,
+        audienceRatingImage: dto.audienceRatingImage,
+        ratingSources: [
+          for (final entry in dto.ratingSources ?? const <PlexRatingDto>[])
+            (image: entry.image, type: entry.type, value: entry.value),
+        ],
+        imdbVotes: dto.imdbRatingCount,
+      ),
       genres: dto.genre,
       directors: dto.director,
       writers: dto.writer,
@@ -1030,12 +1142,10 @@ class PlexMappers {
       libraryTitle: dto.librarySectionTitle,
       audioLanguage: dto.audioLanguage,
       subtitleLanguage: dto.subtitleLanguage,
-      subtitleMode: dto.subtitleMode,
       trailerKey: dto.primaryExtraKey,
       playlistItemId: dto.playlistItemID,
       playQueueItemId: dto.playQueueItemID,
       subtype: dto.subtype,
-      extraType: dto.extraType,
       serverId: dto.serverId,
       serverName: dto.serverName,
       raw: _rawMetadata(dto),
@@ -1128,7 +1238,10 @@ class PlexMappers {
       id: dto.key,
       backend: MediaBackend.plex,
       title: dto.title,
-      kind: MediaKind.fromString(dto.type),
+      // Home-video sections come back as `type="movie" subtype="clip"`; map
+      // them to the clip kind MediaBrowser `homevideos` views already use so
+      // they share the folder-first grouping and wide grid cells (#2036).
+      kind: dto.type == 'movie' && dto.subtype == 'clip' ? MediaKind.clip : MediaKind.fromString(dto.type),
       language: dto.language,
       updatedAt: dto.updatedAt,
       createdAt: dto.createdAt,
@@ -1137,19 +1250,6 @@ class PlexMappers {
       serverId: dto.serverId,
       serverName: dto.serverName,
     );
-  }
-
-  /// Map a Plex `/library/sections` Directory entry into a [MediaLibrary].
-  static MediaLibrary mediaLibraryFromJson(
-    Map<String, dynamic> json, {
-    ServerId? serverId,
-    String? serverName,
-    bool isShared = false,
-  }) {
-    final dto = PlexLibraryDto.fromJson(
-      json,
-    ).copyWith(serverId: serverIdOrNull(serverId), serverName: serverName, isShared: isShared);
-    return mediaLibrary(dto);
   }
 
   /// Map a parsed [PlexHubDto] into a [MediaHub].
@@ -1165,11 +1265,6 @@ class PlexMappers {
       serverId: dto.serverId,
       serverName: dto.serverName,
     );
-  }
-
-  /// Map a Plex `/hubs` Hub JSON entry directly into a [MediaHub].
-  static MediaHub mediaHubFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
-    return mediaHub(PlexHubDto.fromJson(json, serverId: serverId, serverName: serverName));
   }
 
   /// Map a parsed [PlexPlaylistDto] into a [MediaPlaylist].
@@ -1193,12 +1288,6 @@ class PlexMappers {
       serverId: dto.serverId,
       serverName: dto.serverName,
     );
-  }
-
-  /// Map a Plex `/playlists` Metadata entry directly into a [MediaPlaylist].
-  static MediaPlaylist mediaPlaylistFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
-    final dto = PlexPlaylistDto.fromJson(json).copyWith(serverId: serverId, serverName: serverName);
-    return mediaPlaylist(dto);
   }
 }
 

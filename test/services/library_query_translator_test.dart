@@ -89,7 +89,7 @@ void main() {
       expect(params['Fields'], 'UserData');
       expect(params['IncludeItemTypes'], isNotEmpty);
       expect(params['EnableTotalRecordCount'], 'true');
-      expect(params['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(params['EnableImageTypes'], 'Primary,Backdrop,Logo');
       expect(params['ImageTypeLimit'], '3');
     });
 

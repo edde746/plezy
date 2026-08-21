@@ -75,7 +75,6 @@ void main() {
       // (no network in the test environment).
       expect(result.accountLabel, isNotEmpty);
 
-      // The migrated row is now in the registry.
       final stored = await registry.list();
       expect(stored.length, 1);
       expect(stored.single, isA<PlexAccountConnection>());

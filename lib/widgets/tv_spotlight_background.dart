@@ -1,22 +1,20 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:material_symbols_icons/symbols.dart';
 
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
-import '../providers/watch_state_store.dart';
 import '../services/device_performance.dart';
 import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
 import '../services/settings_service.dart';
-import 'app_icon.dart';
 import 'cycling_media_backdrop.dart';
 import 'fitting_title_text.dart';
+import 'fitted_metadata_line.dart';
 import 'settings_builder.dart';
 import 'media_rating_badge.dart';
 import 'optimized_media_image.dart' show ClearLogoImage, blurArtwork;
@@ -29,10 +27,7 @@ class TvSpotlightBackground extends StatelessWidget {
   final double contentBottom;
   final double? contentTop;
   final double? contentLeft;
-  final VoidCallback? onPrimaryAction;
-  final Widget? actions;
   final bool compact;
-  final bool showPrimaryAction;
   final bool showInfo;
   final String? Function(String? artworkPath)? localArtworkPathResolver;
   final bool allowNetwork;
@@ -48,10 +43,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.contentBottom = 360,
     this.contentTop,
     this.contentLeft,
-    this.onPrimaryAction,
-    this.actions,
     this.compact = false,
-    this.showPrimaryAction = true,
     this.showInfo = true,
     this.localArtworkPathResolver,
     this.allowNetwork = true,
@@ -227,10 +219,6 @@ class TvSpotlightBackground extends StatelessWidget {
             ),
           ),
         ],
-        if (showPrimaryAction || actions != null) ...[
-          SizedBox(height: (compact ? 18 : 26) * scale),
-          actions ?? _buildPrimaryAction(context, media),
-        ],
       ],
     );
   }
@@ -306,53 +294,52 @@ class TvSpotlightBackground extends StatelessWidget {
       fontWeight: .w700,
       letterSpacing: 0.1,
     );
-    final children = <Widget>[];
 
-    void addSeparator() {
-      if (children.isNotEmpty) children.add(Text('  •  ', maxLines: 1, style: textStyle));
-    }
-
-    void addTextPart(String text) {
-      addSeparator();
-      children.add(Text(text, maxLines: 1, style: textStyle));
-    }
-
-    void addWidgetPart(Widget widget) {
-      addSeparator();
-      children.add(widget);
-    }
-
-    if (media.isEpisode && episodeLabel != null) addTextPart(episodeLabel);
+    final parts = <MetadataLinePart>[];
+    if (media.isEpisode && episodeLabel != null) parts.add(MetadataLineText(episodeLabel, dropPriority: 0));
     if (media.isMovie) {
-      addTextPart(t.discover.movie);
+      parts.add(MetadataLineText(t.discover.movie, dropPriority: 3));
     } else if (media.isShow) {
-      addTextPart(t.discover.tvShow);
+      parts.add(MetadataLineText(t.discover.tvShow, dropPriority: 3));
     }
-    final ratingBadge = MediaRatingBadge.inlineForMedia(
-      item: media,
-      foregroundColor: textStyle.color,
-      iconSize: textStyle.fontSize,
-      spacing: 4 * scale,
-      textStyle: textStyle,
-    );
-    if (ratingBadge != null) {
-      addWidgetPart(ratingBadge);
+    // Hub listings carry the scalar rating pair, so the dashboard spotlight
+    // shows every score the shelf request already returned — no per-item
+    // hydration to lengthen it.
+    final ratings = mediaRatingsFor(media);
+    if (ratings.isNotEmpty) parts.add(MetadataLineRatings(ratings, dropPriority: 4));
+    if (media.contentRating != null) {
+      parts.add(MetadataLineText(formatContentRating(media.contentRating!), dropPriority: 2));
     }
-    if (media.contentRating != null) addTextPart(formatContentRating(media.contentRating!));
-    if (media.durationMs != null) addTextPart(formatDurationTextual(media.durationMs!));
+    if (media.durationMs != null) {
+      parts.add(MetadataLineText(formatDurationTextual(media.durationMs!), dropPriority: 1));
+    }
     if (media.isEpisode && media.originallyAvailableAt != null) {
-      addTextPart(formatFullDate(media.originallyAvailableAt!));
+      parts.add(MetadataLineText(formatFullDate(media.originallyAvailableAt!), dropPriority: 0));
     } else if (media.year != null) {
-      addTextPart(media.year.toString());
+      parts.add(MetadataLineText(media.year.toString(), dropPriority: 0));
     }
-    if (metadataTrailing case final metadata?) addWidgetPart(metadata);
 
-    if (children.isEmpty) return const SizedBox.shrink();
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const NeverScrollableScrollPhysics(),
-      child: Row(mainAxisSize: MainAxisSize.min, children: children),
+    final line = parts.isEmpty
+        ? null
+        : FittedMetadataLine(
+            textStyle: textStyle,
+            parts: parts,
+            ratingIconSize: textStyle.fontSize,
+            ratingSpacing: 4 * scale,
+            ratingEntrySpacing: 12 * scale,
+          );
+    final trailing = metadataTrailing;
+    if (trailing == null) return line ?? const SizedBox.shrink();
+    if (line == null) return trailing;
+    // The trailing fact is caller-owned and always shown; the line fits
+    // itself into whatever width the trailing widget leaves over.
+    return Row(
+      mainAxisSize: .min,
+      children: [
+        Flexible(child: line),
+        Text(FittedMetadataLine.separator, maxLines: 1, style: textStyle),
+        trailing,
+      ],
     );
   }
 
@@ -369,32 +356,4 @@ class TvSpotlightBackground extends StatelessWidget {
   double _metadataFontSize(double scale) => (compact ? 16 : 18) * scale;
 
   double _summaryFontSize(double scale) => (compact ? 18 : 20) * scale;
-
-  Widget _buildPrimaryAction(BuildContext context, MediaItem media) {
-    final scale = _scale(context);
-    media = context.withFreshWatchState(media);
-    final hasProgress = media.hasActiveProgress;
-    final minutesLeft = hasProgress && media.durationMs != null && media.viewOffsetMs != null
-        ? ((media.durationMs! - media.viewOffsetMs!) / 60_000).round()
-        : 0;
-
-    return GestureDetector(
-      onTap: onPrimaryAction,
-      child: Container(
-        padding: .symmetric(horizontal: (compact ? 24 : 30) * scale, vertical: (compact ? 12 : 15) * scale),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32 * scale)),
-        child: Row(
-          mainAxisSize: .min,
-          children: [
-            AppIcon(Symbols.play_arrow_rounded, fill: 1, size: (compact ? 24 : 28) * scale, color: Colors.black),
-            SizedBox(width: (compact ? 10 : 12) * scale),
-            Text(
-              hasProgress ? t.discover.minutesLeft(minutes: minutesLeft) : t.common.play,
-              style: TextStyle(color: Colors.black, fontSize: (compact ? 16 : 18) * scale, fontWeight: .w800),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -93,12 +93,19 @@ abstract class BaseSharedPreferencesService {
     try {
       return await _openSharedCache();
     } catch (error, stackTrace) {
-      if (!PrefsRecovery.isCorruptStoreError(error)) rethrow;
-      // The preflight accepted this document and the plugin still rejected it,
-      // so it has now cached something we cannot reason about. Repair can
+      // The preflight accepted this document and the plugin still rejected it.
+      // Classify by re-reading the bytes, never by the error's type: the
+      // desktop backends surface a UTF-8 decode failure as a
+      // `FileSystemException`, which is indistinguishable from a denied or
+      // locked file, and a permission error must never be offered a
+      // destructive repair. A null result means the document on disk is fine,
+      // so whatever went wrong keeps its own type and its own path.
+      final damage = await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: false);
+      if (damage == null) rethrow;
+      // The plugin has now cached something we cannot reason about. Repair can
       // still quarantine the file, but the process has to restart afterwards.
       appLogger.e('Preference store could not be parsed', error: error, stackTrace: stackTrace);
-      throw CorruptPreferenceStoreException(error, stackTrace, reopenSafe: false);
+      throw damage;
     }
   }
 
@@ -132,7 +139,12 @@ abstract class BaseSharedPreferencesService {
   /// unreadable value — quarantining that one would reopen onto the stale
   /// in-memory map and write the bad value straight back.
   static Future<PrefsRepairOutcome> repairCorruptStore({bool reopenSafe = true}) async {
-    final (:salvaged, :backupPath) = await PrefsRecovery.quarantine();
+    final (:salvaged, :backupPath, :shape) = await PrefsRecovery.quarantine();
+    // Conservative by construction: the warning is dropped only for bytes
+    // proven to contain nothing. What the salvage recovered cannot stand in
+    // for that — a store truncated mid-value matches no entry at all while
+    // still holding most of a vault key in plaintext.
+    final backupHoldsCredentials = !(shape?.allZero ?? false);
 
     _resetGeneration++;
     _initializations.clear();
@@ -151,29 +163,40 @@ abstract class BaseSharedPreferencesService {
       appLogger.w('Preference store quarantined; a restart is required before it can be reopened');
       return PrefsRepairOutcome(
         backupPath: backupPath,
+        backupHoldsCredentials: backupHoldsCredentials,
         vaultKeySalvaged: seeded && salvaged.vaultKey != null,
-        sessionsSalvaged: seeded ? salvaged.sessions.length : 0,
         sessionsLost: seeded ? salvaged.losses : salvaged.losses + salvaged.sessions.length,
         requiresRestart: true,
       );
     }
 
     _cacheFuture = null;
-    final repaired = _cacheLoader().then((cache) async {
-      final vaultKey = salvaged.vaultKey;
-      if (vaultKey != null) await cache.setString(credentialVaultKeyPref, vaultKey);
-      for (final entry in salvaged.sessions.entries) {
-        await cache.setString(entry.key, entry.value);
-      }
-      return cache;
-    });
+    late final Future<SharedPreferencesWithCache> repaired;
+    repaired = _cacheLoader()
+        .then((cache) async {
+          final vaultKey = salvaged.vaultKey;
+          if (vaultKey != null) await cache.setString(credentialVaultKeyPref, vaultKey);
+          for (final entry in salvaged.sessions.entries) {
+            await cache.setString(entry.key, entry.value);
+          }
+          return cache;
+        })
+        .onError<Object>((error, stackTrace) {
+          // The same self-healing reset `sharedCache` installs, for the same
+          // reason. Without it a reopen that fails *after* the store was
+          // already quarantined would leave a permanently rejected future in
+          // `_cacheFuture`, and every later retry would replay that stale error
+          // for the rest of the process — with the on-disk cause already gone.
+          if (identical(_cacheFuture, repaired)) _cacheFuture = null;
+          Error.throwWithStackTrace(error, stackTrace);
+        });
     _cacheFuture = repaired;
     await repaired;
 
     return PrefsRepairOutcome(
       backupPath: backupPath,
+      backupHoldsCredentials: backupHoldsCredentials,
       vaultKeySalvaged: salvaged.vaultKey != null,
-      sessionsSalvaged: salvaged.sessions.length,
       sessionsLost: salvaged.losses,
     );
   }
@@ -205,9 +228,7 @@ abstract class BaseSharedPreferencesService {
       backupPath: backupPath,
       // The vault key survives unless it was the unreadable value itself.
       vaultKeySalvaged: key != credentialVaultKeyPref,
-      sessionsSalvaged: 0,
       sessionsLost: key == credentialVaultKeyPref ? 0 : 1,
-      settingsReset: false,
     );
   }
 

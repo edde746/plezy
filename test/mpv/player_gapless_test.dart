@@ -122,6 +122,53 @@ void main() {
     });
   });
 
+  group('setNext prefetch-playlist policy', () {
+    // The armed entry's stream must be opened while the current track still
+    // plays (mpv prefetch) so the network round-trip never sits on the
+    // gapless boundary (#1869) — but never for fd-backed local entries,
+    // where an early open would consume the fd while playlist-pos still
+    // reads 0 and break the "provably never opened" close proof.
+    (int, String?) prefetchWrite(_AudioCoreMock core) {
+      final index = core.calls.lastIndexWhere(
+        (c) => c.method == 'setProperty' && _AudioCoreMock._args(c)['name'] == 'prefetch-playlist',
+      );
+      if (index == -1) return (-1, null);
+      return (index, _AudioCoreMock._args(core.calls[index])['value'] as String?);
+    }
+
+    int appendIndex(_AudioCoreMock core) => core.calls.lastIndexWhere((c) {
+      if (c.method != 'command') return false;
+      final args = (_AudioCoreMock._args(c)['args'] as List).cast<Object?>();
+      return args.length >= 3 && args[0] == 'loadfile' && args[2] == 'append';
+    });
+
+    test('a network arm enables prefetch before the entry joins the playlist', () async {
+      final core = _AudioCoreMock();
+      await run(core, (player, transitions) async {
+        await openFirst(player);
+        await player.setNext(Media('https://example.test/t2.flac'));
+
+        final (writeIndex, value) = prefetchWrite(core);
+        expect(value, 'yes');
+        expect(writeIndex, lessThan(appendIndex(core)), reason: 'the option must be live before the append');
+      });
+    });
+
+    test('an fd-backed arm disables prefetch before the entry joins the playlist', () async {
+      final core = _AudioCoreMock();
+      await run(core, (player, transitions) async {
+        await openFirst(player);
+        await player.setNext(Media('https://example.test/t2.flac'));
+        await player.setNext(Media('content://downloads/t3'));
+
+        final (writeIndex, value) = prefetchWrite(core);
+        expect(value, 'no', reason: 'a prefetch would consume the fd and invite a double close');
+        expect(writeIndex, lessThan(appendIndex(core)));
+        expect(core.commands('loadfile').last, ['loadfile', 'fdclose://7', 'append']);
+      });
+    });
+  });
+
   group('armed fd ownership', () {
     test('clearing an unconsumed arm closes the fd (pos 0 before and after)', () async {
       final core = _AudioCoreMock();

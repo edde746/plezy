@@ -15,13 +15,47 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   bool _isFullscreen = false;
   bool _isListening = false;
   bool _wasMaximized = false;
+  int _scopeDepth = 0;
+  bool _scopeOwnsFullscreen = false;
 
   bool get isFullscreen => _isFullscreen;
+
+  /// Whether the fullscreen currently active was entered while a scope opened
+  /// by [beginScope] was on screen.
+  ///
+  /// Fullscreen that predates the scope belongs to the app window — the
+  /// "start in fullscreen" setting, or a toggle from the browse UI — and must
+  /// outlive the scope that happens to be open. Only fullscreen the scope
+  /// itself entered is the scope's to drop (edde746/plezy#1624).
+  bool get scopeOwnsFullscreen => _scopeOwnsFullscreen;
+
+  /// Opens a fullscreen ownership scope. Nested opens (the video player
+  /// replacing itself for the next episode, where the incoming screen's
+  /// initState runs before the outgoing screen's dispose) carry ownership
+  /// across the swap rather than resetting it.
+  void beginScope() {
+    _scopeDepth++;
+    if (_scopeDepth == 1) {
+      _scopeOwnsFullscreen = false;
+    }
+  }
+
+  /// Closes a scope opened by [beginScope].
+  void endScope() {
+    if (_scopeDepth == 0) return;
+    _scopeDepth--;
+    if (_scopeDepth == 0) {
+      _scopeOwnsFullscreen = false;
+    }
+  }
 
   /// Manually set fullscreen state (called by NSWindowDelegate callbacks on macOS)
   void setFullscreen(bool value) {
     if (_isFullscreen != value) {
       _isFullscreen = value;
+      if (_scopeDepth > 0) {
+        _scopeOwnsFullscreen = value;
+      }
       notifyListeners();
     }
   }
@@ -107,13 +141,6 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
     }
   }
 
-  void stopMonitoring() {
-    if (_isListening) {
-      windowManager.removeListener(this);
-      _isListening = false;
-    }
-  }
-
   bool _shouldMonitor() {
     return PlatformDetector.isDesktopOS();
   }
@@ -126,11 +153,5 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   @override
   void onWindowLeaveFullScreen() {
     setFullscreen(false);
-  }
-
-  @override
-  void dispose() {
-    stopMonitoring();
-    super.dispose();
   }
 }

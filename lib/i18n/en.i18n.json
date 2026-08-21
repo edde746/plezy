@@ -11,13 +11,14 @@
     "waitingForAuth": "Waiting for authentication...\nSign in from your browser.",
     "useBrowser": "Use browser",
     "or": "or",
-    "connectToJellyfin": "Connect to Jellyfin",
+    "connectToMediaBrowser": "Connect to ${product}",
     "useQuickConnect": "Use Quick Connect",
     "quickConnectInstructions": "Open Quick Connect in Jellyfin and enter this code.",
     "quickConnectWaiting": "Waiting for approval…",
     "quickConnectCancel": "Cancel",
     "quickConnectExpired": "Quick Connect expired. Try again.",
-    "localDataRecoveryRequired": "Plezy could not safely recover local sign-in and pending playback data. Please sign in again."
+    "localDataRecoveryRequired": "Plezy could not safely recover local sign-in and pending playback data. Please sign in again.",
+    "pinCheckRejected": "The Plex PIN check was rejected"
   },
   "common": {
     "cancel": "Cancel",
@@ -64,7 +65,23 @@
     "loading": "Loading...",
     "fullscreen": "Fullscreen",
     "exitFullscreen": "Exit fullscreen",
-    "pressBackAgainToExit": "Press back again to exit"
+    "pressBackAgainToExit": "Press back again to exit",
+    "ratingSource": {
+      "critic": "Critics",
+      "audience": "Audience",
+      "imdb": "IMDb",
+      "tmdb": "TMDB",
+      "rottenTomatoes": "Rotten Tomatoes",
+      "simkl": "Simkl",
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "trakt": "Trakt",
+      "rottenTomatoesCritic": "Rotten Tomatoes critics",
+      "rottenTomatoesAudience": "Rotten Tomatoes audience"
+    },
+    "notAvailable": "N/A",
+    "url": "URL",
+    "letterKeys": "ABC"
   },
   "screens": {
     "licenses": "Licenses",
@@ -107,6 +124,7 @@
     "darkTheme": "Dark",
     "oledTheme": "OLED",
     "libraryDensity": "Library Density",
+    "displayScale": "Display Scale",
     "compact": "Compact",
     "comfortable": "Comfortable",
     "tvCornerSpotlightBackdrop": "Corner Spotlight Backdrop",
@@ -156,6 +174,11 @@
     "bufferSizeMB": "${size}MB",
     "bufferSizeAuto": "Auto (Recommended)",
     "bufferSizeWarning": "${heap}MB memory available. A ${size}MB buffer may affect playback.",
+    "playbackBuffer": "Playback Buffer",
+    "playbackBufferAuto": "Auto (Recommended)",
+    "playbackBufferLarge": "Large",
+    "playbackBufferExtraLarge": "Extra Large",
+    "playbackBufferDescription": "Buffer more against unstable connections. Also limited by Buffer Size.",
     "defaultQualityTitle": "Default Quality",
     "musicQualityTitle": "Music Quality",
     "subtitleStyling": "Subtitle Styling",
@@ -172,6 +195,11 @@
     "followServerTrackSelectionsDescription": "On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice",
     "showChapterMarkersOnTimeline": "Show chapter markers on seek bar",
     "showChapterMarkersOnTimelineDescription": "Segment the seek bar at chapter boundaries",
+    "specialsOrdering": "Specials in episode order",
+    "specialsOrderingDescription": "Where specials play in a show's watch order",
+    "specialsOrderingServer": "Follow server order",
+    "specialsOrderingAirDate": "Interleave by air date",
+    "specialsOrderingLast": "After regular seasons",
     "clickVideoTogglesPlayback": "Click on video to toggle play/pause",
     "clickVideoTogglesPlaybackDescription": "Click video to play/pause instead of showing controls.",
     "videoPlayerControls": "Video Player Controls",
@@ -269,7 +297,7 @@
     "matchDynamicRangeDescription": "Switch HDR on for HDR content, then back to SDR",
     "displaySwitchDelay": "Display Switch Delay",
     "tunneledPlayback": "Tunneled Playback",
-    "tunneledPlaybackDescription": "Use video tunneling. Disable if HDR playback shows black video.",
+    "tunneledPlaybackDescription": "Use video tunneling. Disable if HDR playback shows black video or motion stutters.",
     "audioPassthrough": "Audio Passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.",
     "audioPassthroughDescriptionAppleTv": "Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.",
@@ -281,30 +309,6 @@
     "downmixCenterBoostShort": "dB",
     "audioDownmixNormalize": "Normalize Volume on Downmix",
     "audioDownmixNormalizeDescription": "Lower the mix to prevent clipping. Turn off to keep the original volume (may distort loud scenes).",
-    "atmosDiagnostics": "Atmos Output Test",
-    "atmosDiagnosticsDescription": "Diagnose Dolby Atmos output by playing test signals through the system player",
-    "atmosTestHlsAtmos": "Apple Atmos stream",
-    "atmosTestHlsAtmosDescription": "Known-good Dolby Atmos stream. The receiver should show Dolby Atmos.",
-    "atmosTestHlsControl": "Apple surround stream",
-    "atmosTestHlsControlDescription": "Non-Atmos control stream. The receiver should show surround without Atmos.",
-    "atmosTestRawStream": "Raw EAC3 stream",
-    "atmosTestRawStreamDescription": "Streams the test file exactly like in-player Atmos playback. Needs the test file URL.",
-    "atmosTestRawFile": "Raw EAC3 file",
-    "atmosTestRawFileDescription": "Plays the test file with a known length. Needs the test file URL.",
-    "atmosTestAsbarNative": "Sample-buffer renderer (native)",
-    "atmosTestAsbarNativeDescription": "Feeds the file's untouched compressed audio straight to the system renderer. Needs the test file URL.",
-    "atmosTestAsbarGenerated": "Sample-buffer renderer (rebuilt)",
-    "atmosTestAsbarGeneratedDescription": "Same, but with the audio description rebuilt the way playback builds it. Needs the test file URL.",
-    "atmosTestSessionMode": "Use movie playback session mode",
-    "atmosTestSessionModeDescription": "Off uses the mode Dolby documents. On uses the mode playback used previously.",
-    "atmosTestShowRoutePicker": "Choose AirPlay output",
-    "atmosTestHideRoutePicker": "Hide AirPlay output picker",
-    "atmosTestRoutePickerDescription": "Send the test to an AirPlay receiver. Only AirPlay reports the resolved audio mode.",
-    "atmosTestStop": "Stop test",
-    "atmosTestUrl": "Test file URL",
-    "atmosTestUrlDescription": "HTTP URL of a raw .ec3 Dolby Atmos file (e.g. extracted with ffmpeg)",
-    "atmosTestUrlMissing": "Set the test file URL first",
-    "atmosTestStatus": "Status",
     "dvConversionMode": "Dolby Vision Conversion",
     "dvConversionModeDescription": "Choose how ExoPlayer handles Dolby Vision Profile 7 files.",
     "dvConversionAuto": "Auto",
@@ -328,6 +332,8 @@
     "showNavBarLabels": "Show Navigation Bar Labels",
     "showNavBarLabelsDescription": "Display text labels under navigation bar icons",
     "startupSection": "Startup Section",
+    "showExploreTab": "Show Explore Tab",
+    "showExploreTabDescription": "Display the Explore tab with content from Plex Discover and connected trackers",
     "liveTvDefaultFavorites": "Default to Favorite Channels",
     "liveTvDefaultFavoritesDescription": "Show only favorite channels when opening Live TV",
     "display": "Display",
@@ -338,7 +344,18 @@
     "player": "Player",
     "subtitlesAndConfig": "Subtitles & Configuration",
     "seekAndTiming": "Seek & Timing",
-    "behavior": "Behavior"
+    "behavior": "Behavior",
+    "rememberPlayerChanges": "Remember Player Changes",
+    "rememberPlayerChangesDescription": "Where a change made during playback is saved and reapplied from",
+    "scopePlaybackSpeed": "Playback Speed",
+    "scopeShaderPreset": "Shader Preset",
+    "scopeAspectRatio": "Aspect Ratio",
+    "scopeSyncOffsets": "Audio & Subtitle Sync",
+    "playerScopeOff": "Don't save",
+    "playerScopeGlobal": "Everywhere",
+    "playerScopeLibrary": "Per library",
+    "playerScopeTitle": "Per show or movie",
+    "exportDialogTitle": "Export Plezy settings"
   },
   "search": {
     "hint": "Search movies, shows, music...",
@@ -494,7 +511,9 @@
     "flagExternal": "External",
     "flagHearingImpaired": "Hearing impaired",
     "flagDub": "Dub",
-    "flagOriginal": "Original"
+    "flagOriginal": "Original",
+    "channelsMono": "Mono",
+    "dolbyVisionProfile": "Profile ${profile}"
   },
   "mediaMenu": {
     "markAsWatched": "Mark as Watched",
@@ -505,9 +524,35 @@
     "shufflePlay": "Shuffle Play",
     "shuffleNotAvailableOffline": "Shuffle not available offline",
     "fileInfo": "File Info",
-    "deleteFromServer": "Delete from server",
-    "confirmDelete": "Delete this media and its files from your server?",
+    "deleteEpisodeFromServer": "Delete episode from server",
+    "deleteSeasonFromServer": "Delete season from server",
+    "deleteShowFromServer": "Delete show from server",
+    "deleteMovieFromServer": "Delete movie from server",
+    "deleteEpisodeTitle": "Delete this episode?",
+    "deleteSeasonTitle": "Delete this season?",
+    "deleteShowTitle": "Delete this show?",
+    "deleteMovieTitle": "Delete this movie?",
+    "deleteEpisodeConfirm": "Delete episode",
+    "deleteSeasonConfirm": "Delete season",
+    "deleteShowConfirm": "Delete show",
+    "deleteMovieConfirm": "Delete movie",
+    "deleteAnyway": "Delete anyway",
+    "confirmDeleteTarget": "Permanently delete ${title} from your server?",
     "deleteMultipleWarning": "This includes all episodes and their files.",
+    "deleteEpisodeCountWarning": {
+      "one": "This deletes all ${n} episode in it, and its file.",
+      "other": "This deletes all ${n} episodes in it, and their files."
+    },
+    "deleteMultiPartWarning": {
+      "one": "This item is stored as ${n} file, which will be deleted.",
+      "other": "This item is stored across ${n} files, and all of them will be deleted."
+    },
+    "deleteSharedFileHeading": {
+      "one": "${n} other episode is stored in the same file and will be deleted too:",
+      "other": "${n} other episodes are stored in the same file and will be deleted too:"
+    },
+    "deleteScopeUnverifiedProbeFailed": "Plezy could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.",
+    "deleteScopeUnverifiedNoFileInfo": "Your server did not provide file details for this item, so Plezy cannot check which files this will remove. It may delete more than the item named above.",
     "mediaDeletedSuccessfully": "Media item deleted successfully",
     "mediaFailedToDelete": "Failed to delete media item",
     "rate": "Rate",
@@ -545,7 +590,12 @@
     "alphabetNavigation": "Alphabet navigation",
     "alphabetScrollHint": "Swipe up or down to move by letter",
     "rowColumnPosition": "Row ${row} of ${rowCount}, column ${column} of ${columnCount}",
-    "rowPosition": "Row ${row} of ${rowCount}"
+    "rowPosition": "Row ${row} of ${rowCount}",
+    "autoScrollPlay": "Play auto-scroll",
+    "autoScrollPause": "Pause auto-scroll",
+    "hueShort": "H",
+    "saturationShort": "S",
+    "valueShort": "V"
   },
   "tooltips": {
     "shufflePlay": "Shuffle play",
@@ -559,12 +609,7 @@
   "videoControls": {
     "audioLabel": "Audio",
     "subtitlesLabel": "Subtitles",
-    "resetToZero": "Reset to 0ms",
     "addTime": "+${amount}${unit}",
-    "minusTime": "-${amount}${unit}",
-    "playsLater": "${label} plays later",
-    "playsEarlier": "${label} plays earlier",
-    "noOffset": "No offset",
     "letterbox": "Letterbox",
     "fillScreen": "Fill screen",
     "stretch": "Stretch",
@@ -585,6 +630,7 @@
     "pauseButton": "Pause",
     "playbackPaused": "Paused",
     "playbackResumed": "Playing",
+    "loadingVideo": "Loading video",
     "showPlaybackControls": "Show playback controls",
     "hidePlaybackControls": "Hide playback controls",
     "seekBackwardButton": "Seek backward ${seconds} seconds",
@@ -635,13 +681,23 @@
     "noChaptersAvailable": "No chapters available",
     "queue": "Queue",
     "noQueueItems": "No items in queue",
+    "noAudioDevicesAvailable": "No audio devices available",
     "searchSubtitles": "Search Subtitles",
     "language": "Language",
     "noSubtitlesFound": "No subtitles found",
     "subtitleDownloaded": "Subtitle downloaded",
     "subtitleDownloadedNotApplied": "Subtitle downloaded, but it could not be selected",
     "subtitleDownloadFailed": "Failed to download subtitle",
-    "searchLanguages": "Search languages..."
+    "searchLanguages": "Search languages...",
+    "skipIntro": "Skip Intro",
+    "skipCredits": "Skip Credits",
+    "nextEpisode": "Next Episode",
+    "subtitleTrack": "Track ${n}",
+    "subtitleFile": "Subtitle ${name}",
+    "forcedTrack": "${label} (Forced)",
+    "osdSubtitlesOff": "Subtitles: Off",
+    "osdSubtitles": "Subtitles: ${track}",
+    "osdAudio": "Audio: ${track}"
   },
   "userStatus": {},
   "messages": {
@@ -697,9 +753,18 @@
     "serverLimitBody": "Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.",
     "mediaUnreadableTitle": "File unavailable",
     "mediaUnreadableBody": "The server found this item but could not read its file (HTTP 404). The file was probably moved, deleted, or its storage is offline. Ask the server owner to check the file and rescan the library.",
+    "serverBusyTitle": "Stream unavailable",
+    "serverBusyBody": "The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file's storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file's storage.",
     "logsUploaded": "Logs uploaded",
     "logsUploadFailed": "Failed to upload logs",
-    "logId": "Log ID"
+    "logId": "Log ID",
+    "burnedSubtitlesUseMenu": "Subtitles are burned into this stream. Change them from the subtitle menu.",
+    "noVideoUrl": "No video URL available",
+    "playbackNoMediaSources": "The server returned no playable media sources",
+    "playbackDataNotPrepared": "Playback was started before its data was ready",
+    "streamSelectionUnavailable": "Stream selection is not available for this source",
+    "streamSelectionFailed": "Could not apply the selected streams",
+    "serverUnavailableForProfile": "No server is available for the active profile"
   },
   "subtitlingStyling": {
     "text": "Text",
@@ -718,6 +783,8 @@
     "overrideStrip": "Remove styling",
     "positionTop": "Top",
     "positionBottom": "Bottom",
+    "anchorToScreen": "Anchor to Screen",
+    "anchorToScreenDescription": "Show text subtitles in the black bars below widescreen video",
     "bold": "Bold",
     "italic": "Italic",
     "renderResolution": "Render Resolution",
@@ -738,7 +805,8 @@
     "presetLoaded": "Preset loaded",
     "presetDeleted": "Preset deleted",
     "confirmDeletePreset": "Are you sure you want to delete this preset?",
-    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment"
+    "configPlaceholder": "gpu-api=vulkan\nhwdec=auto\n# comment",
+    "embeddedVoHint": "vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded."
   },
   "dialog": {
     "confirmAction": "Confirm Action"
@@ -780,6 +848,8 @@
     "noConnectionsHint": "No connections — add one to use this profile.",
     "noConnections": "No connections",
     "plexHomeAccount": "Plex Home account",
+    "plexAccountChip": "Plex account: ${account}",
+    "plexAccountUserChip": "${user} via ${account}",
     "connectionDefault": "Default",
     "connectionAs": "as ${displayName}",
     "makeDefault": "Make default",
@@ -788,7 +858,7 @@
     "borrowAddTo": "Add to ${displayName}",
     "borrowExplain": "Borrow another profile's connection. PIN-protected profiles require a PIN.",
     "borrowEmpty": "Nothing to borrow yet.",
-    "borrowEmptySubtitle": "Connect Plex or Jellyfin to another profile first.",
+    "borrowEmptySubtitle": "Connect Plex, Jellyfin, or Emby to another profile first.",
     "borrowLoadFailed": "Available connections could not be loaded. Try again.",
     "borrowFromProfile": "From ${displayName}",
     "borrowConnectionBorrowed": "Connection borrowed.",
@@ -803,18 +873,19 @@
     "pinProtectionOptional": "PIN protection (optional)",
     "pinExplain": "4-digit PIN required to switch profiles.",
     "continueButton": "Continue",
-    "pinsDontMatch": "PINs don't match"
+    "pinsDontMatch": "PINs don't match",
+    "tokenIdentityMismatch": "The Plex profile token resolved to an unexpected server"
   },
   "connections": {
     "sectionTitle": "Connections",
     "addConnection": "Add connection",
-    "addConnectionSubtitleNoProfile": "Sign in with Plex or connect a Jellyfin server",
-    "addConnectionSubtitleScoped": "Add to ${displayName}: Plex, Jellyfin, or another profile connection",
+    "addConnectionSubtitleNoProfile": "Sign in with Plex or connect a Jellyfin or Emby server",
+    "addConnectionSubtitleScoped": "Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection",
     "sessionExpiredOne": "Session expired for ${name}",
     "sessionExpiredMany": "Session expired for ${count} servers",
     "signInAgain": "Sign in again",
-    "editJellyfinTitle": "Edit Jellyfin connection",
-    "editJellyfinIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
+    "editMediaBrowserTitle": "Edit ${product} connection",
+    "editMediaBrowserIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
   },
   "discover": {
     "title": "Discover",
@@ -840,7 +911,11 @@
     "movie": "Movie",
     "tvShow": "TV Show",
     "minutesLeft": "${minutes} min left",
-    "moreLikeThis": "More Like This"
+    "moreLikeThis": "More Like This",
+    "titleCount": {
+      "one": "${n} title",
+      "other": "${n} titles"
+    }
   },
   "errors": {
     "searchFailed": "Search failed: ${error}",
@@ -952,7 +1027,7 @@
     "title": "About",
     "openSourceLicenses": "Open Source Licenses",
     "versionLabel": "Version ${version}",
-    "appDescription": "A beautiful Plex and Jellyfin client for Flutter",
+    "appDescription": "A beautiful Plex, Jellyfin, and Emby client for Flutter",
     "viewLicensesDescription": "View licenses of third-party libraries"
   },
   "serverSelection": {
@@ -974,6 +1049,7 @@
   "startup": {
     "failedTitle": "Plezy could not start",
     "failedBody": "Something went wrong during startup. The details below identify what failed.",
+    "failedBodyRepairable": "Plezy's saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.",
     "phaseLabel": "Step",
     "showDetails": "Show details",
     "hideDetails": "Hide details",
@@ -984,10 +1060,14 @@
     "repairTitle": "Repair stored data?",
     "repairBodyCommon": "Plezy's settings file is damaged and cannot be read. Repairing resets every setting to its default.",
     "repairBodyOneCredential": "One saved sign-in is damaged and cannot be read. Repairing removes just that one; your other settings are left alone.",
-    "repairBodySessionsAtRisk": "Servers and profiles normally stay signed in, but trackers (MAL, AniList, Simkl, Trakt) and Seerr may need to be reconnected. Plezy will tell you exactly what it kept.",
+    "repairBodySignInsKept": "Your servers and profiles should stay signed in.",
+    "repairBodySignInsLost": "The key protecting your saved sign-ins cannot be recovered from this file, so you will have to sign in to every server and profile again. Nothing on your media server is affected.",
+    "repairBodySessionsUncertain": "Trackers (MAL, AniList, Simkl, Trakt) and Seerr are stored separately and may or may not survive. Plezy will tell you exactly what it kept.",
     "repairConfirm": "Repair",
     "repairSucceeded": "Storage repaired",
     "repairNeedsRestart": "Storage repaired — restart required",
+    "restartRequiredBody": "Your data was repaired, but Plezy has to start fresh before it can use it. Close Plezy and open it again.",
+    "quitPlezy": "Quit Plezy",
     "repairFailed": "Repair failed",
     "repairKeptSignIns": "Your servers and profiles are still signed in.",
     "repairLostSignIns": "The key protecting your saved sign-ins could not be recovered. You will have to sign in to every server and profile again.",
@@ -1043,7 +1123,10 @@
     "characters": "Characters",
     "addToWatchlist": "Add to Watchlist",
     "removeFromWatchlist": "Remove from Watchlist",
+    "addedToWatchlist": "Added to watchlist",
+    "removedFromWatchlist": "Removed from watchlist",
     "watchlistUpdateFailed": "Couldn't update watchlist",
+    "watchlistNoMatch": "Couldn't match this item to a watchlist",
     "notInLibrary": "Not in your library",
     "inTheseLibraries": "In these libraries",
     "checkingLibrary": "Checking your library...",
@@ -1057,7 +1140,6 @@
       "rankPopular": "#${n} popular",
       "rankAiring": "#${n} airing",
       "rankRated": "#${n} rated",
-      "rankFavorited": "#${n} favorited",
       "rankTrending": "#${n} trending",
       "rankSeasonal": "#${n} in ${season}",
       "watchingNow": "${n} watching",
@@ -1132,18 +1214,16 @@
       "creator": "Creator",
       "composer": "Composer"
     },
-    "ratingSource": {
-      "critic": "Critics",
-      "audience": "Audience",
-      "imdb": "IMDb",
-      "tmdb": "TMDB",
-      "rottenTomatoes": "Rotten Tomatoes",
-      "simkl": "Simkl",
-      "mal": "MyAnimeList",
-      "anilist": "AniList",
-      "trakt": "Trakt",
-      "rottenTomatoesCritic": "Rotten Tomatoes critics",
-      "rottenTomatoesAudience": "Rotten Tomatoes audience"
+    "relation": {
+      "prequel": "Prequel",
+      "sequel": "Sequel",
+      "sideStory": "Side story",
+      "spinOff": "Spin-off",
+      "alternativeVersion": "Alternative version",
+      "summary": "Summary",
+      "parentStory": "Parent story",
+      "adaptation": "Adaptation",
+      "other": "Related"
     },
     "broadcast": "Airs ${day} at ${time}",
     "broadcastWithZone": "Airs ${day} at ${time} ${timezone}",
@@ -1184,17 +1264,6 @@
     "totalResults": {
       "one": "${n} result",
       "other": "${n} results"
-    },
-    "relation": {
-      "prequel": "Prequel",
-      "sequel": "Sequel",
-      "sideStory": "Side story",
-      "spinOff": "Spin-off",
-      "alternativeVersion": "Alternative version",
-      "summary": "Summary",
-      "parentStory": "Parent story",
-      "adaptation": "Adaptation",
-      "other": "Related"
     }
   },
   "liveTv": {
@@ -1226,6 +1295,9 @@
     "watchChannel": "Watch Channel",
     "favorites": "Favorites",
     "reorderFavorites": "Reorder Favorites",
+    "noFavoriteChannels": "No favorite channels",
+    "noFavoriteChannelsHint": "Show all channels, then long-press a channel to add it to your favorites.",
+    "showAllChannels": "Show All Channels",
     "favoritesLoadFailed": "Could not load favorites. Check your connection and try again.",
     "favoritesUpdateFailed": "Could not update favorites. Check your connection and try again.",
     "joinSession": "Join Session in Progress",
@@ -1264,7 +1336,12 @@
     "recordingRuleUpdated": "Recording rule updated",
     "guideReloadRequested": "Guide refresh requested",
     "rulesProcessRequested": "Rule re-evaluation requested",
-    "recordShow": "Record show"
+    "recordShow": "Record show",
+    "startingInMinutes": "Starting in ${minutes} min",
+    "dayAtTime": "${day} at ${time}",
+    "invalidPlaybackData": "${product} returned invalid Live TV playback data",
+    "failedToStartChannel": "Could not start the live channel",
+    "failedToBuildStreamUrl": "Could not build the stream URL"
   },
   "collections": {
     "title": "Collections",
@@ -1341,7 +1418,14 @@
     "nextTrack": "Next track",
     "repeat": "Repeat",
     "repeatAll": "Repeat all",
-    "repeatOne": "Repeat one"
+    "repeatOne": "Repeat one",
+    "instantMixNoServer": "No server is available for an instant mix",
+    "noAudioUrl": "No audio URL is available for ${track}",
+    "discography": {
+      "singlesAndEps": "Singles & EPs",
+      "live": "Live",
+      "compilations": "Compilations"
+    }
   },
   "watchTogether": {
     "title": "Watch Together",
@@ -1408,7 +1492,8 @@
     "renameRoom": "Rename Room",
     "removeRoom": "Remove",
     "guestSwitchUnavailable": "Couldn't switch — server unavailable for sync",
-    "guestSwitchFailed": "Couldn't switch — content not found on this server"
+    "guestSwitchFailed": "Couldn't switch — content not found on this server",
+    "defaultDisplayName": "User"
   },
   "downloads": {
     "title": "Downloads",
@@ -1514,7 +1599,17 @@
       "statusUnknown": "Not checked yet",
       "settingsUnavailable": "Couldn't open system settings on this device",
       "linkUnavailable": "Couldn't open dontkillmyapp.com on this device"
-    }
+    },
+    "unknownShow": "Unknown Show",
+    "unknownSeason": "Unknown Season",
+    "unknownAlbum": "Unknown Album",
+    "completedOfTotal": "${completed}/${total} completed",
+    "errorFileNotFound": "File not found (404)",
+    "errorDownloadFailed": "Download failed",
+    "errorPostProcessing": "Post-processing failed: ${error}",
+    "notificationDownloading": "Downloading...",
+    "notificationComplete": "Download complete",
+    "notificationPaused": "Download paused"
   },
   "shaders": {
     "title": "Shaders",
@@ -1605,7 +1700,8 @@
       "failedToConnectAnyAddress": "Failed to connect to any address",
       "connectionLostAfterAttempts": "Connection lost after ${attempts} attempts",
       "connectionLost": "Connection lost"
-    }
+    },
+    "closedBeforeAuth": "The connection closed before authentication"
   },
   "videoSettings": {
     "playbackSpeed": "Playback Speed",
@@ -1616,9 +1712,15 @@
     "audioSync": "Audio Sync",
     "subtitleSync": "Subtitle Sync",
     "hdr": "HDR",
+    "hdrUnsupported": "HDR isn't available here — this desktop compositor or video output can't carry it.",
+    "hdrToneMapping": "HDR Tone Mapping",
+    "hdrToneMappingCompositor": "Compositor",
+    "hdrToneMappingCompositorDescription": "Pass the source's HDR metadata through and let the desktop compositor map it.",
+    "hdrToneMappingPlayer": "Player",
+    "hdrToneMappingPlayerDescription": "Map to the display's peak brightness in the player, then tell the compositor the result.",
+    "hdrToneMappingFailed": "Couldn't change HDR tone mapping — the previous mode is still active.",
     "audioOutput": "Audio Output",
     "performanceOverlay": "Performance Overlay",
-    "audioPassthrough": "Audio Passthrough",
     "audioOutputDolbyAtmos": "Dolby Atmos",
     "audioOutputDolbyAudio": "Dolby Audio",
     "audioOutputSurround": "Surround",
@@ -1635,6 +1737,7 @@
     "decoder": "Decoder",
     "rawDecoder": "Raw Decoder",
     "tunneling": "Tunneling",
+    "passthrough": "Passthrough",
     "aspect": "Aspect",
     "rotation": "Rotation",
     "dvSource": "DV Source",
@@ -1662,7 +1765,17 @@
     "speed": "Speed",
     "player": "Player",
     "memory": "Memory",
-    "uiFps": "UI FPS"
+    "uiFps": "UI FPS",
+    "fps": "FPS",
+    "decoderAndroidHw": "Android HW",
+    "decoderNvidiaHw": "NVIDIA HW",
+    "decoderQualcommHw": "Qualcomm HW",
+    "decoderMediatekHw": "MediaTek HW",
+    "decoderExynosHw": "Exynos HW",
+    "decoderSoftware": "Software",
+    "decoderHardware": "Hardware",
+    "tunnelingActive": "Active",
+    "dvRpuFailed": "${converted} (${failures} failed)"
   },
   "externalPlayer": {
     "title": "External Player",
@@ -1756,9 +1869,7 @@
     "producer": "Producer",
     "country": "Country",
     "collection": "Collection",
-    "label": "Label",
-    "style": "Style",
-    "mood": "Mood"
+    "label": "Label"
   },
   "matchScreen": {
     "match": "Match...",
@@ -1820,7 +1931,17 @@
     "statusAvailable": "Available",
     "statusPartiallyAvailable": "Partially available",
     "statusRequested": "Requested",
-    "statusProcessing": "Processing"
+    "statusProcessing": "Processing",
+    "couldNotReach": "Could not reach ${url}: ${error}",
+    "noInstanceAtUrl": "No Seerr instance at ${url} (HTTP ${status})",
+    "notInitialized": "This Seerr instance has not completed first-run setup",
+    "noPlexTokenForReauth": "No Plex token is available to sign in again",
+    "noStoredCredentials": "No stored credentials are available to sign in again",
+    "signInRejected": "Sign-in was rejected",
+    "noSessionCookie": "Seerr did not issue a session cookie",
+    "freshCookieRejected": "Seerr rejected the new session cookie",
+    "noUserInformation": "Seerr did not return user information",
+    "sessionRejectedAfterReauth": "The session was rejected after signing in again"
   },
   "services": {
     "title": "Services",
@@ -1836,11 +1957,12 @@
       "mal": "MyAnimeList",
       "anilist": "AniList",
       "simkl": "Simkl",
-      "seerr": "Seerr"
+      "seerr": "Seerr",
+      "mdblist": "MDBList"
     },
     "deviceCode": {
       "title": "Activate Plezy on ${service}",
-      "body": "Visit ${url} and enter this code:",
+      "instructions": "Scan the QR code, or visit the address below and enter this code:",
       "openToActivate": "Open ${service} to activate",
       "copyCode": "Copy activation code",
       "waitingForAuthorization": "Waiting for authorization…",
@@ -1849,7 +1971,9 @@
     "oauthProxy": {
       "title": "Sign in to ${service}",
       "body": "Scan this QR code or open the URL on any device.",
-      "openToSignIn": "Open ${service} to sign in",
+      "openToSignIn": "Open ${service} to sign in"
+    },
+    "pendingAuth": {
       "copyUrl": "Copy sign-in URL",
       "urlCopied": "URL copied"
     },
@@ -1869,12 +1993,12 @@
     }
   },
   "addServer": {
-    "addJellyfinTitle": "Add Jellyfin server",
+    "addMediaBrowserTitle": "Add ${product} server",
     "serverUrls": "Server URLs",
     "serverUrlsHelper": "Multiple URLs allowed, separated by commas.",
     "findServer": "Find server",
-    "searchingLocalServers": "Looking for local Jellyfin servers...",
-    "localServers": "Local Jellyfin servers",
+    "searchingLocalMediaBrowserServers": "Looking for local ${product} servers...",
+    "localMediaBrowserServers": "Local ${product} servers",
     "username": "Username",
     "password": "Password",
     "signIn": "Sign in",
@@ -1886,16 +2010,34 @@
     "addPlexTitle": "Sign in with Plex",
     "pinExpired": "PIN expired before sign-in. Please try again.",
     "failedToRegisterAccount": "Failed to register account: ${error}",
-    "enterJellyfinUrlError": "Enter your Jellyfin server URL",
+    "enterMediaBrowserUrlError": "Enter your ${product} server URL",
     "addConnectionTitle": "Add connection",
     "addConnectionTitleScoped": "Add to ${name}",
     "signInWithPlexCard": "Sign in with Plex",
     "signInWithPlexCardSubtitle": "Authorize this device. Shared servers are added.",
     "signInWithPlexCardSubtitleScoped": "Authorize a Plex account. Home users become profiles.",
-    "connectToJellyfinCard": "Connect to Jellyfin",
-    "connectToJellyfinCardSubtitle": "Enter your server URL, username, and password.",
-    "connectToJellyfinCardSubtitleScoped": "Sign in to a Jellyfin server. Binds to ${name}.",
+    "connectToMediaBrowserCard": "Connect to ${product}",
+    "connectToMediaBrowserCardSubtitle": "Enter your server URL, username, and password.",
+    "connectToMediaBrowserCardSubtitleScoped": "Sign in to your ${product} server. Binds to ${name}.",
     "borrowFromAnotherProfile": "Borrow from another profile",
-    "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN."
+    "borrowFromAnotherProfileSubtitle": "Reuse another profile's connection. PIN-protected profiles require a PIN.",
+    "invalidCredentials": "Invalid username or password",
+    "authResponseNotJson": "The authentication response was not valid JSON",
+    "quickConnectRejected": "Quick Connect was rejected by the server",
+    "quickConnectNotJson": "The Quick Connect response was not valid JSON",
+    "quickConnectMissingFields": "The Quick Connect response is missing a code or secret",
+    "quickConnectPollRejected": "Quick Connect polling was rejected by the server",
+    "serverTimedOut": "The server did not respond in time",
+    "responseNotJson": "The server response was not valid JSON",
+    "responseMissingIdentity": "The response is missing an ID or server name — is this a ${product} server?",
+    "probeFailed": "Could not reach the server: ${error}",
+    "enterAtLeastOneUrl": "Enter at least one ${product} server URL",
+    "noReachableServer": "No reachable ${product} server was found",
+    "urlsPointToDifferentServers": "These URLs point to different ${product} servers",
+    "urlDoesNotMatchServer": "This URL does not match the ${product} server",
+    "redirectUnsupported": "The server redirected to an unsupported URL",
+    "redirectDifferentHost": "The server redirected to a different host. Enter the final ${product} URL directly.",
+    "redirectInsecure": "The server redirected from HTTPS to an insecure URL",
+    "redirectUnsupportedEnterFinal": "The server redirected to an unsupported URL. Enter the final ${product} URL directly."
   }
 }

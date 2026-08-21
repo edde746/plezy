@@ -148,7 +148,7 @@
   }
 
   $effect(() => {
-    // Re-check scroll state when active tab changes.
+    // Re-check scroll state after the active tab changes.
     const currentActive = active;
     const el = document.getElementById(`screenshots-${currentActive}-panel`);
 
@@ -156,7 +156,7 @@
     scrollContainer = el ?? undefined;
 
     if (el) {
-      // Double rAF ensures browser has computed layout after DOM update
+      // Double rAF waits for layout after the DOM update.
       const raf = requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (currentActive === active && el === scrollContainer) updateScrollState();
@@ -179,7 +179,6 @@
       descriptionGap="2rem"
     >
       <div class="screenshot-controls">
-        <!-- Device tabs -->
         <div class="device-tabs" role="group" aria-label="Screenshot device">
           {#each devices as device}
             {@const DeviceIcon = device.icon}
@@ -198,7 +197,6 @@
           {/each}
         </div>
 
-        <!-- Scroll arrows -->
         <div class="scroll-arrows">
           <button
             type="button"

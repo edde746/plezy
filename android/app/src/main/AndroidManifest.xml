@@ -1,19 +1,22 @@
+<!-- android:installLocation="auto" is what makes the app eligible to be moved to adoptable
+     storage (a USB drive adopted by an Android TV, an adopted SD card), which relocates the
+     private data directory — and therefore downloads — along with the APK. Plezy declares none
+     of the components this is unsafe for: no app widget, IME, live wallpaper, device admin,
+     accessibility service, sync adapter or account authenticator. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:installLocation="auto">
     <!-- Allow minSdk=25 despite libmpv-android declaring minSdk=26 -->
     <uses-sdk tools:overrideLibrary="dev.jdtech.mpv" />
 
-    <!-- Internet access permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>
 
 
-    <!-- PIP and media session foreground service permissions -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
     <uses-permission android:name="android.permission.REORDER_TASKS"/>
 
-    <!-- Background download notifications and foreground service -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
 
@@ -24,15 +27,11 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
 
 
-    <!-- Android TV support (not required, but allow detection) -->
     <uses-feature android:name="android.software.leanback" android:required="false" />
-    <!-- Android TV Watch Next integration -->
     <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <!-- Touchscreen not required for TV -->
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
-    <!-- Android Automotive OS support -->
     <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
 
     <application
@@ -44,6 +43,9 @@
         android:largeHeap="true"
         android:networkSecurityConfig="@xml/network_security_config"
         android:usesCleartextTraffic="true">
+        <!-- Driver-distraction state on Android Automotive OS. Optional: the platform library is
+             absent on every other form factor, and CarRestrictionsMonitor falls back silently. -->
+        <uses-library android:name="android.car" android:required="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -54,10 +56,6 @@
             android:configChanges="orientation|keyboardHidden|keyboard|navigation|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            <!-- Specifies an Android theme to apply to this Activity as soon as
-                 the Android process has started. This theme is visible to the user
-                 while the Flutter UI initializes. After that, this theme continues
-                 to determine the Window background behind the Flutter UI. -->
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
@@ -68,7 +66,6 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
-                <!-- Allow app to appear in Android TV launcher -->
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
             <!-- Deep link handler for Watch Next items -->
@@ -79,7 +76,6 @@
                 <data android:scheme="plezy" android:host="play"/>
             </intent-filter>
         </activity>
-        <!-- FileProvider for sharing downloaded files with external players -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.edde746.plezy.fileprovider"

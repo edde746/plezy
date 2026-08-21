@@ -10,10 +10,14 @@ bool _canUseJellyfinStaticStreamFallback(Object error) {
 }
 
 mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
-  /// Backend-neutral [PlaybackExtras] for [itemId]. Jellyfin exposes chapters
-  /// at the item level (`raw['Chapters']`) and native skip segments through a
-  /// separate `/MediaSegments/{itemId}` endpoint. Segment loading is best-effort
-  /// so older servers still use chapter title fallback.
+  // Implemented by _JellyfinBrowseMethods (cross-part call, same pattern as
+  // _JellyfinImageDownloadMethods' redeclarations).
+  Future<MediaItem?> fetchItemFreshCacheFirst(String id);
+
+  /// Backend-neutral [PlaybackExtras] for [itemId]. Both dialects expose
+  /// chapters at the item level (`raw['Chapters']`), while only Jellyfin exposes
+  /// native skip segments through `/MediaSegments/{itemId}`. Segment loading is
+  /// best-effort so unsupported and older servers use chapter title fallback.
   @override
   Future<PlaybackExtras> fetchPlaybackExtras(
     String itemId, {
@@ -22,7 +26,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool forceChapterFallback = false,
     bool forceRefresh = false,
   }) async {
-    final item = await fetchItem(itemId);
+    final item = await fetchItemFreshCacheFirst(itemId);
     final markers = item == null ? const <MediaMarker>[] : await _fetchMediaSegmentMarkers(itemId);
     return jellyfinPlaybackExtrasFromRaw(
       item?.raw,
@@ -72,6 +76,20 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     required MediaSourceInfo mediaSource,
   }) async {
     if (!capabilities.scrubThumbnails) return null;
+
+    // Emby has neither the `Trickplay` item field nor the tile route; its
+    // preview transport is a Roku-format BIF at `/Videos/{id}/index.bif` —
+    // the same wire format Plex serves, parsed by the same service. A server
+    // whose extraction task has not run answers with a header-only BIF, which
+    // parses to zero frames and leaves the service unavailable.
+    if (dialect == MediaBrowserDialect.emby) {
+      // load() swallows download/parse failures internally; an unavailable
+      // service just suppresses the tooltip.
+      final service = BifThumbnailService();
+      await service.load(() => _downloadEmbyBifFile(item.id), aspectRatio: mediaSource.videoAspectRatio);
+      return service;
+    }
+
     final manifest = mediaSource.trickplayByWidth;
     if (manifest == null || manifest.isEmpty) return null;
     return JellyfinTrickplayService.create(
@@ -82,7 +100,27 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     );
   }
 
+  /// Fetch Emby's scrub-preview BIF for [itemId]. [Width] is required by
+  /// Emby's `GET /Videos/{id}/index.bif`; 320 is the width its extraction
+  /// task generates (`<name>-320-10.bif`). Returns null on failure so
+  /// thumbnails stay silently unavailable.
+  Future<Uint8List?> _downloadEmbyBifFile(String itemId) async {
+    try {
+      final bytes = await _http.getBytes(
+        '/Videos/${Uri.encodeComponent(itemId)}/index.bif?Width=320',
+        timeout: const Duration(seconds: 30),
+      );
+      return bytes.isEmpty ? null : bytes;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<List<MediaMarker>> _fetchMediaSegmentMarkers(String itemId) async {
+    if (!dialect.supportsMediaSegments) {
+      // Emby 4.9.5 returns 404 for `/MediaSegments/{itemId}`; empty markers preserve the chapter-name fallback.
+      return const [];
+    }
     final endpoint = JellyfinApiCache.mediaSegmentsEndpoint(itemId);
     try {
       return await fetchWithCacheFallback<List<MediaMarker>>(
@@ -120,20 +158,20 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     }
   }
 
+  @override
   String _withApiKey(String urlOrPath) {
     final uri = JellyfinImageAbsolutizer.joinUri(baseUrl: connection.baseUrl, urlOrPath: urlOrPath);
     final params = Map<String, String>.from(uri.queryParameters)..['api_key'] = connection.accessToken;
     return uri.replace(queryParameters: params).toString();
   }
 
-  /// Jellyfin playback URL resolution.
+  /// MediaBrowser playback URL resolution.
   ///
-  /// Always POSTs `/Items/{id}/PlaybackInfo` so Jellyfin can resolve external
+  /// Always POSTs `/Items/{id}/PlaybackInfo` so the server can resolve external
   /// audio/subtitle streams server-side. Uses the returned `TranscodingUrl`
   /// when the caller asked for a capped quality; otherwise — and on any
-  /// DirectPlay decision — builds the static direct stream URL
-  /// (`/Videos/{id}/stream?Static=true&api_key=...`) itself, because Jellyfin
-  /// never returns a direct-play URL of its own.
+  /// DirectPlay decision — builds the shared static direct stream URL
+  /// (`/Videos/{id}/stream?Static=true&api_key=...`) itself.
   ///
   /// The returned `MediaSourceInfo` is what the player uses for track-picker
   /// labels and auto-track selection by language.
@@ -150,7 +188,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       preferredSignature: options.preferredVersionSignature,
     );
     if (bundle == null) {
-      throw PlaybackException('Item ${metadata.id} returned no MediaSources');
+      throw PlaybackException(t.messages.playbackNoMediaSources, reason: PlaybackFailureReason.noPlayableSource);
     }
     var mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
       bundle.selectedSource,
@@ -159,7 +197,6 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     );
     var effectiveSourceId = bundle.selectedSourceId;
     var effectiveContainer = bundle.container;
-    var includeExternalSubtitleDelivery = false;
 
     String? videoUrl;
     String? playSessionId;
@@ -176,8 +213,38 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final preset = options.qualityPreset;
     final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
     final wantsOriginal = isTrack ? audioPreset.isOriginal : preset.isOriginal;
-    final requestedAudioStreamId = _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
+    final requestedAudioStreamId = options.selectedAudioStreamId == null
+        ? options.preferredAudioTrack == null
+              ? null
+              : findSourceAudioTrackForIntent(options.preferredAudioTrack!, mediaInfo.audioTracks)?.id
+        : _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
     final requestedSubtitleStreamId = _validJellyfinSubtitleStreamId(options.preferredSubtitleTrack, mediaInfo);
+    // A real external subtitle file stays a file the client fetches, on a transcode as much as on
+    // a direct play - it is the one case where the client genuinely holds it. Jellyfin decides
+    // delivery from the profile and matches on format alone, never on whether a stream is embedded
+    // or a file, so the two rules are only expressible per request: withhold `External` when the
+    // selected stream is embedded (the server then burns it in), and offer it when the selection is
+    // a file. Deciding it per selection is what lets both hold at once.
+    //
+    // The *effective* selection, not just an explicit one: the normal launch path sends no
+    // preferred track and lets the server's `DefaultSubtitleStreamIndex` decide. Reading only the
+    // explicit request would withhold `External` for a default that is a real file, so the server
+    // would burn it while the client still fetched the same file as a sidecar - two copies on
+    // screen, and a transcode nobody needed.
+    final effectiveSubtitleStreamId = requestedSubtitleStreamId == -1
+        ? null
+        : requestedSubtitleStreamId ?? mediaInfo.defaultSubtitleStreamIndex;
+    // Text only, because that is all the profile can actually deliver externally: a bitmap file
+    // falls through to `Encode` and gets burned in whatever we ask for, so classifying one as
+    // externally delivered would leave the client fetching a copy of pixels already in the video.
+    final requestedSubtitleIsExternalFile =
+        effectiveSubtitleStreamId != null &&
+        mediaInfo.subtitleTracks.any(
+          (track) =>
+              track.id == effectiveSubtitleStreamId &&
+              track.isExternalFile &&
+              CodecUtils.isTextSubtitleCodec(track.codec),
+        );
     final int? maxStreamingBitrate = wantsOriginal
         ? null
         : isTrack
@@ -199,6 +266,11 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         audioStreamIndex: requestedAudioStreamId,
         subtitleStreamIndex: requestedSubtitleStreamId,
         audioProfile: isTrack,
+        // A capped preset is the only way a transcode is asked for, and on one the server
+        // burns the selected embedded stream in rather than serving it as a file the client
+        // would fetch as well. A selected external *file* keeps `External`, so it is still
+        // delivered as a file - the one case where the client genuinely holds it.
+        burnSubtitles: !wantsOriginal && !requestedSubtitleIsExternalFile,
       );
       chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
     } catch (error, stackTrace) {
@@ -241,7 +313,6 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         videoUrl = _withApiKey(transcodingUrl);
         playMethod = 'Transcode';
         isTranscoding = true;
-        includeExternalSubtitleDelivery = true;
       } else if (!wantsOriginal) {
         fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
@@ -251,13 +322,26 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
     // Tracks have no subtitle streams to assemble (a `Lyric` stream may be
     // present, but lyrics flow through fetchLyrics, not the subtitle path).
+    //
+    // The burned row is excluded so it cannot be painted twice; the rest stay fetchable, which is
+    // what keeps a secondary track renderable over a transcode.
+    //
+    // Recomputed against the negotiated `mediaInfo`: the request's own view came from the
+    // pre-negotiation source, and when nothing was explicitly asked for it is the *server's*
+    // default that decides, which the response can report differently. An explicit request still
+    // wins, and an off request still burns nothing.
+    final negotiatedSubtitleStreamId = requestedSubtitleStreamId == -1
+        ? null
+        : requestedSubtitleStreamId ?? mediaInfo.defaultSubtitleStreamIndex;
+    final burnedSourceStreamId = isTranscoding && !requestedSubtitleIsExternalFile ? negotiatedSubtitleStreamId : null;
     final subtitleSidecars = isTrack
         ? const <PlaybackSubtitleSidecar>[]
         : _buildExternalSubtitles(
             metadata.id,
             effectiveSourceId,
             mediaInfo,
-            includeExternalDelivery: includeExternalSubtitleDelivery,
+            isTranscoding: isTranscoding,
+            burnedSourceStreamId: burnedSourceStreamId,
           );
     mediaInfo = _withSidecarBackedSubtitleIdentity(mediaInfo, subtitleSidecars);
     // Jellyfin's streaming endpoint resolves a blank MediaSourceId to its own
@@ -373,9 +457,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// Restrict sidecar identity to the subtitle rows this open actually fetched
   /// as sidecars.
   ///
-  /// Plezy's device profile declares every subtitle format with
+  /// Plezy's device profile declares every *text* subtitle format with
   /// `Method: External`, so Jellyfin returns `DeliveryMethod: External` and a
-  /// `DeliveryUrl` even for streams embedded in a direct-played container.
+  /// `DeliveryUrl` even for text streams embedded in a direct-played container
+  /// whose container cannot carry subtitles in the delivered form.
   /// [_buildExternalSubtitles] correctly skips those, and the native player
   /// reads them out of the container instead — but the leftover delivery URL
   /// makes the shared track matchers demand a sidecar that will never load,
@@ -403,23 +488,44 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final streamIndex = track.index ?? track.id;
     final codec = track.codec;
     if (sourceId == null || codec == null || codec.isEmpty) return null;
+    // The endpoint keys off the *format*, not the codec name Jellyfin reports: it calls SRT streams
+    // `subrip` and WebVTT ones `webvtt`, so the raw name would ask for `Stream.subrip` and get
+    // nothing. Only load-bearing since extracted rows without a `DeliveryUrl` started coming
+    // through here.
+    final extension = CodecUtils.getSubtitleExtension(codec);
     final path = Uri(
-      pathSegments: ['Videos', itemId, sourceId, 'Subtitles', streamIndex.toString(), 'Stream.$codec'],
+      pathSegments: ['Videos', itemId, sourceId, 'Subtitles', streamIndex.toString(), 'Stream.$extension'],
     ).path;
     return path.startsWith('/') ? path : '/$path';
   }
 
+  /// Sidecars this open should fetch.
+  ///
+  /// Never the row the server burned in, whatever its source: those pixels are already in the
+  /// video, and fetching a copy would draw it twice.
+  ///
+  /// Never a bitmap on a transcode either. The profile only ever offers `External` for text, so a
+  /// bitmap falls through to `Encode` and is burned whatever we ask for - an external bitmap *file*
+  /// included, which is why this is not just an embedded-row rule.
+  ///
+  /// Otherwise: a real external file always, since it is a file whether the video is transcoded or
+  /// not; and an embedded text row only on a transcode, where Jellyfin can extract it on demand.
+  /// That is how a *secondary* track still renders over a transcode whose primary is painted into
+  /// the picture. On a direct play embedded rows are absent on purpose - the native player reads
+  /// them out of the container itself.
   List<PlaybackSubtitleSidecar> _buildExternalSubtitles(
     String itemId,
     String? mediaSourceId,
     MediaSourceInfo mediaInfo, {
-    bool includeExternalDelivery = false,
+    bool isTranscoding = false,
+    int? burnedSourceStreamId,
   }) {
     final externalSubtitles = <PlaybackSubtitleSidecar>[];
     for (final track in mediaInfo.subtitleTracks) {
-      if (!track.isExternalFile && !(includeExternalDelivery && track.usesExternalDelivery)) {
-        continue;
-      }
+      if (burnedSourceStreamId != null && track.id == burnedSourceStreamId) continue;
+      final isText = CodecUtils.isTextSubtitleCodec(track.codec);
+      if (isTranscoding && !isText) continue;
+      if (!track.isExternalFile && !isTranscoding) continue;
       final path = track.key ?? _jellyfinSubtitleFallbackPath(itemId, mediaSourceId, track);
       if (path == null) continue;
       // Jellyfin's subtitle URL is a path relative to baseUrl; build the
@@ -428,6 +534,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       externalSubtitles.add(
         PlaybackSubtitleSidecar(
           sourceStreamId: track.id,
+          // A real external file is a cheap static fetch, so it loads with the
+          // media whether or not it is selected — that is what lets the track
+          // sheet offer it as a secondary subtitle without a reopen (#1860).
+          // An embedded row extracted on a transcode stays lazy: extraction can
+          // stall while the transcoder spins up, which is exactly what used to
+          // trip the sidecar open guard (#1738).
+          preload: track.isExternalFile,
           track: SubtitleTrack.uri(
             url,
             title:
@@ -453,13 +566,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// [sourceId] wins when present because Jellyfin plugins may reorder merged
   /// `MediaSources` between requests. [sourceIndex] is clamped to the valid
   /// range as a fallback to mirror Plex's `parseVideoPlaybackDataFromJson`.
+  @override
   Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(
     String itemId, {
     int sourceIndex = 0,
     String? sourceId,
     String? preferredSignature,
   }) async {
-    final item = await fetchItem(itemId);
+    final item = await fetchItemFreshCacheFirst(itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
     final sources = raw['MediaSources'];
@@ -505,6 +619,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// item only has a single MediaSource, [mediaSourceId] equals [itemId] and
   /// can be omitted; for items with multiple versions Jellyfin uses the
   /// param to pick which file to serve.
+  @override
   String buildDirectStreamUrl(
     String itemId, {
     String? container,
@@ -529,6 +644,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// Audio sibling of [buildDirectStreamUrl]: `/Audio/{id}/stream` with the
   /// same `Static=true` + `api_key` + `DeviceId` self-authentication. Used
   /// for track direct-play fallback, downloads, and external players.
+  @override
   String buildAudioDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
@@ -578,6 +694,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
   /// [audioProfile] extends the DeviceProfile with music direct-play and
   /// audio→mp3 transcode entries for track playback; the video profiles (and
   /// the request body when false) are untouched either way.
+  @override
   Future<Map<String, dynamic>> getPlaybackInfo(
     String itemId, {
     int? maxStreamingBitrate = 100_000_000,
@@ -593,6 +710,10 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     bool? allowVideoStreamCopy,
     bool? allowAudioStreamCopy,
     bool audioProfile = false,
+
+    /// Drop `External` subtitle delivery from the profile, so the server burns
+    /// the selected subtitle into a transcode instead of serving it alongside.
+    bool burnSubtitles = false,
   }) async {
     final query = <String, String>{
       'userId': connection.userId,
@@ -675,27 +796,40 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
                 'AudioCodec': 'flac,mp3,aac,alac,opus,vorbis,wav,wma',
               },
           ],
-          // Embed is listed first so a direct-played container reports its
-          // subtitle streams as `DeliveryMethod: Embed`, matching what the
-          // native player actually reads. External stays declared for every
-          // format because a remux or transcode drops those streams from the
-          // rendition and the server must hand us sidecar URLs instead; the
-          // server picks per play method, so both entries are required.
-          'SubtitleProfiles': const <Map<String, Object?>>[
-            {'Format': 'srt', 'Method': 'Embed'},
-            {'Format': 'ass', 'Method': 'Embed'},
-            {'Format': 'ssa', 'Method': 'Embed'},
-            {'Format': 'vtt', 'Method': 'Embed'},
-            {'Format': 'pgssub', 'Method': 'Embed'},
-            {'Format': 'dvdsub', 'Method': 'Embed'},
-            {'Format': 'dvbsub', 'Method': 'Embed'},
-            {'Format': 'srt', 'Method': 'External'},
-            {'Format': 'ass', 'Method': 'External'},
-            {'Format': 'ssa', 'Method': 'External'},
-            {'Format': 'vtt', 'Method': 'External'},
-            {'Format': 'pgssub', 'Method': 'External'},
-            {'Format': 'dvdsub', 'Method': 'External'},
-            {'Format': 'dvbsub', 'Method': 'External'},
+          // `Embed` covers direct play and an mkv remux, where the native
+          // player reads the subtitle stream straight out of the container.
+          // Jellyfin only offers it when the delivered container can carry
+          // subtitles, so it is unreachable on an HLS transcode (ts/mp4) and
+          // is listed for every format purely for the direct paths.
+          //
+          // `External` asks the server to extract a stream and serve it as a
+          // subtitle file. It is offered only when the caller is not asking for
+          // a transcode: on a transcode the owner decision is that the server
+          // delivers the picture complete, so every subtitle is burned in and
+          // the client fetches nothing alongside it. Jellyfin matches an
+          // external profile by text-vs-image format and never consults whether
+          // the stream is embedded or a real file, so the list cannot express
+          // "files as files, embedded burned" - offering text `External` at all
+          // is what made embedded text arrive as a sidecar.
+          //
+          // With no matching `External` entry the server finds no external
+          // profile and falls through to `Encode`, which is also why image
+          // formats never appear here: a bitmap handed over as a separate
+          // stream alongside a transcode is not something the client can render.
+          'SubtitleProfiles': <Map<String, Object?>>[
+            const {'Format': 'srt', 'Method': 'Embed'},
+            const {'Format': 'ass', 'Method': 'Embed'},
+            const {'Format': 'ssa', 'Method': 'Embed'},
+            const {'Format': 'vtt', 'Method': 'Embed'},
+            const {'Format': 'pgssub', 'Method': 'Embed'},
+            const {'Format': 'dvdsub', 'Method': 'Embed'},
+            const {'Format': 'dvbsub', 'Method': 'Embed'},
+            if (!burnSubtitles) ...const [
+              {'Format': 'srt', 'Method': 'External'},
+              {'Format': 'ass', 'Method': 'External'},
+              {'Format': 'ssa', 'Method': 'External'},
+              {'Format': 'vtt', 'Method': 'External'},
+            ],
           ],
         },
       },
@@ -760,11 +894,26 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         'PlayMethod': playMethod ?? 'DirectPlay',
         'RepeatMode': 'RepeatNone',
         'PlaybackOrder': 'Default',
-        'PlaySessionId': ?playSessionId,
+        'PlaySessionId': ?_resolvePlaySessionId(playSessionId, itemId),
         'LiveStreamId': ?liveStreamId,
       },
     );
     throwIfHttpError(response);
+  }
+
+  /// Session id for a `/Sessions/Playing*` body.
+  ///
+  /// Normally the caller forwards the id returned by the PlaybackInfo
+  /// negotiation. Callers that never negotiated one — the offline
+  /// watch-progress sync, which replays a recorded position — leave it null,
+  /// which Emby rejects with HTTP 400 (see
+  /// [MediaBrowserDialect.requiresPlaySessionId]). The synthesized id is
+  /// derived from [itemId] so the started/progress/stopped triple of one replay
+  /// lands on a single server-side session row instead of orphaning each call.
+  String? _resolvePlaySessionId(String? playSessionId, String itemId) {
+    if (playSessionId != null) return playSessionId;
+    if (!dialect.requiresPlaySessionId) return null;
+    return 'plezy-replay-$itemId';
   }
 
   /// Tell the server the user has started playing [itemId].
@@ -843,7 +992,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         'MediaSourceId': ?mediaSourceId,
         'PositionTicks': msToJellyfinTicks(position.inMilliseconds),
         'Failed': false,
-        'PlaySessionId': ?playSessionId,
+        'PlaySessionId': ?_resolvePlaySessionId(playSessionId, itemId),
         'LiveStreamId': ?liveStreamId,
       },
     );

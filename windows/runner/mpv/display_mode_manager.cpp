@@ -72,8 +72,6 @@ DisplayModeManager::DisplayModeManager() {}
 
 DisplayModeManager::~DisplayModeManager() {}
 
-// --- Monitor identification ---
-
 std::wstring DisplayModeManager::GetMonitorDeviceName(HWND window) {
   HMONITOR monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
   if (!monitor) return {};
@@ -140,8 +138,6 @@ bool DisplayModeManager::IsWin11_24H2OrNewer() {
   return VerifyVersionInfoW(&osvi, VER_BUILDNUMBER, condition_mask) != FALSE;
 }
 
-// --- Refresh rate / resolution ---
-
 std::vector<DisplayMode> DisplayModeManager::EnumerateDisplayModes(HWND window) {
   std::wstring device_name = GetMonitorDeviceName(window);
   if (device_name.empty()) return {};
@@ -158,7 +154,6 @@ std::vector<DisplayMode> DisplayModeManager::EnumerateDisplayModes(HWND window) 
     modes.push_back(mode);
   }
 
-  // Remove duplicates.
   std::sort(modes.begin(), modes.end(), [](const DisplayMode& a, const DisplayMode& b) {
     if (a.width != b.width) return a.width < b.width;
     if (a.height != b.height) return a.height < b.height;

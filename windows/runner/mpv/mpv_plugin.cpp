@@ -38,14 +38,12 @@ MpvPlayerPlugin::MpvPlayerPlugin(
       platform_thread_id_(::GetCurrentThreadId()),
       audio_only_(audio_only),
       platform_task_message_(audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage) {
-  // Create method channel.
   method_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), channel_name, &flutter::StandardMethodCodec::GetInstance());
 
   method_channel_->SetMethodCallHandler(
       [this](const auto& call, auto result) { HandleMethodCall(call, std::move(result)); });
 
-  // Create event channel.
   event_channel_ = std::make_unique<flutter::EventChannel<flutter::EncodableValue>>(
       registrar->messenger(), channel_name + "/events", &flutter::StandardMethodCodec::GetInstance());
 
@@ -78,7 +76,6 @@ MpvPlayerPlugin::~MpvPlayerPlugin() {
 
   DrainPlatformTasks();
 
-  // Unregister window proc delegate.
   if (proc_id_) {
     registrar_->UnregisterTopLevelWindowProcDelegate(proc_id_.value());
     proc_id_ = std::nullopt;

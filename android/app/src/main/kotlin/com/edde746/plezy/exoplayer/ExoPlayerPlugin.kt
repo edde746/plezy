@@ -61,9 +61,16 @@ class ExoPlayerPlugin :
     val headers: Map<String, String>?,
     val startPositionMs: Long,
     val hasStartPosition: Boolean,
-    val autoPlay: Boolean,
+    /**
+     * Whether to start playing once open. Mutable because a play or pause arriving while this
+     * request is queued behind a backend handover has no player to reach — the outgoing core is
+     * being disposed and the replacement does not exist yet — so the latest intent is recorded here
+     * instead. Without that, a pause the caller was told succeeded is silently undone by the open.
+     */
+    var autoPlay: Boolean,
     val isLive: Boolean,
     val externalSubtitles: List<Map<String, Any?>>?,
+    val contentFrameRate: Float,
     private val result: MethodChannel.Result?
   ) {
     private val completed = AtomicBoolean(false)
@@ -285,11 +292,18 @@ class ExoPlayerPlugin :
     }
 
     val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
+    // Auto sizing is decided natively (LoadControlPolicy). `bufferSizeBytes` still arrives
+    // on Auto because Dart derives one for mpv's demuxer, which shares the property, and
+    // the fallback replay below needs it.
+    val bufferSizeAuto = call.argument<Boolean>("bufferSizeAuto") ?: false
     val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: true
     val dvConversionMode = call.argument<String>("dvConversionMode") ?: "auto"
     val audioPassthroughEnabled = call.argument<Boolean>("audioPassthroughEnabled") ?: false
     val assVideoLatencyFrames = call.argument<Int>("assVideoLatencyFrames") ?: 0
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1.0f
+    // ExoPlayer-only: mpv's read-ahead is owned by the mpv.conf editor, so there is no
+    // fallback replay for this one. Resolved in the core; unrecognised means Auto (#1816).
+    val bufferTier = call.argument<String>("bufferTier") ?: "auto"
     configuredBufferSizeBytes = bufferSizeBytes
     // Seed the request here rather than waiting for Dart's separate setAudioPassthrough
     // call, so a fallback raised before that arrives still derives audio-spdif correctly.
@@ -315,6 +329,14 @@ class ExoPlayerPlugin :
         fallbackInProgress = false
       }
 
+      // An initialize without an intervening dispose would otherwise orphan the previous core
+      // along with its ExoPlayer, audio sink, codecs and surface views — nothing else holds a
+      // reference, so they would never be released.
+      playerCore?.let { stale ->
+        playerCore = null
+        stale.dispose()
+      }
+
       try {
         val core = ExoPlayerCore(currentActivity).apply {
           delegate = this@ExoPlayerPlugin
@@ -323,8 +345,10 @@ class ExoPlayerPlugin :
         playerCore = core
         val success = core.initialize(
           bufferSizeBytes = bufferSizeBytes,
+          bufferSizeAuto = bufferSizeAuto,
           tunnelingEnabled = tunnelingEnabled,
-          audioPassthroughEnabled = audioPassthroughEnabled
+          audioPassthroughEnabled = audioPassthroughEnabled,
+          bufferTier = bufferTier
         )
         if (!success) {
           if (playerCore === core) playerCore = null
@@ -366,6 +390,8 @@ class ExoPlayerPlugin :
     val autoPlay = call.argument<Boolean>("autoPlay") ?: true
     val isLive = call.argument<Boolean>("isLive") ?: false
     val externalSubtitles = call.argument<List<Map<String, Any?>>>("externalSubtitles")
+    // Server-reported frame rate for this item; -1 when the metadata did not carry one.
+    val contentFrameRate = call.argument<Number>("contentFrameRate")?.toFloat() ?: -1f
 
     if (uri == null) {
       result.error("INVALID_ARGS", "Missing 'uri'", null)
@@ -386,6 +412,7 @@ class ExoPlayerPlugin :
       autoPlay = autoPlay,
       isLive = isLive,
       externalSubtitles = externalSubtitles?.map { it.toMap() },
+      contentFrameRate = contentFrameRate,
       result = result
     )
     terminalEventGeneration = null
@@ -445,7 +472,8 @@ class ExoPlayerPlugin :
         autoPlay = autoPlay,
         mediaGeneration = request.mediaGeneration,
         isLive = isLive,
-        externalSubtitleList = request.externalSubtitles
+        externalSubtitleList = request.externalSubtitles,
+        contentFrameRate = request.contentFrameRate
       )
       request.success()
     }
@@ -806,6 +834,9 @@ class ExoPlayerPlugin :
   }
 
   private fun handlePlay(result: MethodChannel.Result) {
+    // A backend handover leaves nothing to command: record the intent on the queued open instead,
+    // so the replacement starts the way the caller last asked.
+    pendingOpen?.autoPlay = true
     if (usingMpvFallback) {
       handleFallbackMpvProperty("pause", "no", result)
       return
@@ -817,6 +848,10 @@ class ExoPlayerPlugin :
   }
 
   private fun handlePause(result: MethodChannel.Result) {
+    // See handlePlay. This direction matters more: the caller is told the pause succeeded, and a
+    // queued open that still carried autoPlay would start playing anyway — on a car, that is
+    // playback after the vehicle said no.
+    pendingOpen?.autoPlay = false
     if (usingMpvFallback) {
       handleFallbackMpvProperty("pause", "yes", result)
       return
@@ -1034,6 +1069,7 @@ class ExoPlayerPlugin :
     val subtitlePosition = call.argument<Number>("subtitlePosition")?.toInt() ?: 100
     val bold = call.argument<Boolean>("bold") ?: false
     val italic = call.argument<Boolean>("italic") ?: false
+    val anchorToScreen = call.argument<Boolean>("anchorToScreen") ?: false
 
     if (usingMpvFallback) {
       // MPV fallback handles styling via setProperty, no-op here
@@ -1041,7 +1077,7 @@ class ExoPlayerPlugin :
       return
     }
 
-    playerCore?.setSubtitleStyle(fontSize, textColor, borderSize, borderColor, bgColor, bgOpacity, subtitlePosition, bold, italic)
+    playerCore?.setSubtitleStyle(fontSize, textColor, borderSize, borderColor, bgColor, bgOpacity, subtitlePosition, bold, italic, anchorToScreen)
     result.success(null)
   }
 
@@ -1276,8 +1312,10 @@ class ExoPlayerPlugin :
     val observedProps = observedProperties.toList()
     val bufferSize = configuredBufferSizeBytes
 
+    // vo is owned by MpvPlayerCore's init: the fallback core hardware-decodes
+    // (hwdec below), so it gets the legacy gpu VO — gpu-next under mediacodec
+    // fails every frame on Tegra (#2010) and reshapes no DV anyway.
     core.setProperty("hwdec", "mediacodec,mediacodec-copy")
-    core.setProperty("vo", "gpu")
     core.setProperty("ao", "audiotrack")
 
     if (bufferSize != null && bufferSize > 0) {
@@ -1381,6 +1419,8 @@ class ExoPlayerPlugin :
       autoPlay = playWhenReady,
       isLive = false,
       externalSubtitles = currentExternalSubtitles?.map { it.toMap() },
+      // The mpv fallback core paces frames itself; the rate only gates ExoPlayer tunneling.
+      contentFrameRate = -1f,
       result = null
     )
     fallbackInProgress = true

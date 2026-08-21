@@ -16,8 +16,7 @@ class MainFlutterWindow: NSWindow {
     self.contentViewController = flutterViewController
     self.setFrame(windowFrame, display: true)
 
-    // Apply initial window configuration BEFORE frame restoration
-    // This prevents the window from shrinking on launch
+    // Configure window chrome before restoring the saved frame.
     self.titlebarAppearsTransparent = true
     self.titleVisibility = .hidden
     self.styleMask.insert(.fullSizeContentView)
@@ -26,28 +25,23 @@ class MainFlutterWindow: NSWindow {
     let toolbar = ForwardingToolbar(flutterViewController: flutterViewController)
     self.toolbar = toolbar
 
-    // Register MPV player plugin for video playback
     MpvPlayerPlugin.register(
       with: flutterViewController.registrar(forPlugin: "MpvPlayerPlugin"))
 
-    // Register the audio-only MPV player plugin for music playback
     MpvAudioPlayerPlugin.register(
       with: flutterViewController.registrar(forPlugin: "MpvAudioPlayerPlugin"))
 
-    // Register window utils plugin for dynamic titlebar/fullscreen control from Dart
     WindowUtilsPlugin.register(
       with: flutterViewController.registrar(forPlugin: "WindowUtilsPlugin"))
     WindowUtilsPlugin.setWindow(self)
     WindowUtilsPlugin.installWindowDelegate()
     WindowUtilsPlugin.syncWindowChrome()
 
-    // Register Launch Services lookups used to detect installed external players
     AppLookupPlugin.register(
       with: flutterViewController.registrar(forPlugin: "AppLookupPlugin"))
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
-    // Enable window position/size persistence
     self.setFrameAutosaveName("com.edde746.plezy.MainWindow")
     WindowUtilsPlugin.syncWindowChrome()
 

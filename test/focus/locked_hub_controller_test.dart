@@ -24,4 +24,23 @@ void main() {
     expect(memory.getForHubOnly('unseen', 0, fallback: 9), 0);
     expect(memory.getForHub('unseen', 0), 0);
   });
+
+  test('remapForHub rewrites an existing entry without moving the column hint', () {
+    final memory = HubFocusMemory();
+
+    memory.setForHub('continue_watching', 3);
+    memory.remapForHub('continue_watching', 0);
+
+    expect(memory.getForHubOnly('continue_watching', 5), 0);
+    // The cross-hub column hint still reflects the user's last navigation.
+    expect(memory.getForHub('unseen_hub', 5), 3);
+  });
+
+  test('remapForHub is a no-op for hubs without memory', () {
+    final memory = HubFocusMemory();
+
+    memory.remapForHub('unseen_hub', 4);
+
+    expect(memory.getForHubOnly('unseen_hub', 5, fallback: 1), 1);
+  });
 }

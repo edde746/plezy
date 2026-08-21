@@ -99,9 +99,9 @@ Future<void> showLibraryManagementSheet(
 }
 
 List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
-  // Refresh metadata is the only admin action both backends support — Plex
-  // hits `/library/sections/{id}/refresh?force=1`, Jellyfin posts to
-  // `/Items/{id}/Refresh` (the library view is itself an item).
+  // Refresh metadata is the only admin action every backend supports — Plex
+  // hits `/library/sections/{id}/refresh?force=1`; MediaBrowser servers post
+  // to `/Items/{id}/Refresh` (the library view is itself an item).
   final refresh = ContextMenuItem(
     value: 'refresh',
     icon: Symbols.sync_rounded,
@@ -112,7 +112,7 @@ List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
     isDestructive: true,
   );
   // Scan / analyze / empty trash hit Plex-only endpoints, so backend
-  // capability gating keeps them out of Jellyfin menus. The library-qualified
+  // capability gating keeps them out of MediaBrowser menus. The library-qualified
   // resolver independently requires the exact owning Plex server.
   if (library.backend != MediaBackend.plex) return [refresh];
   return [
@@ -289,7 +289,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   final ScrollController _dialogScrollController = ScrollController();
   final ScrollController _sheetScrollController = ScrollController();
 
-  // Keyboard navigation: column 0 = row, 1 = visibility button, 2 = options button.
   @override
   List<MediaLibrary> get reorderItems => _tempLibraries;
 
@@ -395,7 +394,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
               descendantsAreFocusable: false,
               autofocus: InputModeTracker.isKeyboardMode(context),
               onKeyEvent: handleReorderKeyEvent,
-              child: _buildFlatLibraryList(_dialogScrollController, hiddenLibraryKeys),
+              child: _buildFlatLibraryList(_dialogScrollController, hiddenLibraryKeys, shrinkWrap: false),
             ),
           ),
         ),
@@ -403,6 +402,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
     }
 
     return Column(
+      mainAxisSize: .min,
       children: [
         BottomSheetHeader(title: t.libraries.manageLibraries, icon: Symbols.edit_rounded),
         Flexible(
@@ -411,7 +411,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
             descendantsAreFocusable: false,
             autofocus: InputModeTracker.isKeyboardMode(context),
             onKeyEvent: handleReorderKeyEvent,
-            child: _buildFlatLibraryList(_sheetScrollController, hiddenLibraryKeys),
+            child: _buildFlatLibraryList(_sheetScrollController, hiddenLibraryKeys, shrinkWrap: true),
           ),
         ),
       ],
@@ -421,12 +421,17 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
   /// Build flat library list with a server subtitle when multiple servers are
   /// connected. The TV dialog passes [_dialogScrollController] so focused rows
   /// can be scrolled into view; the bottom sheet passes its own controller.
-  Widget _buildFlatLibraryList(ScrollController scrollController, Set<String> hiddenLibraryKeys) {
+  Widget _buildFlatLibraryList(
+    ScrollController scrollController,
+    Set<String> hiddenLibraryKeys, {
+    required bool shrinkWrap,
+  }) {
     final showServerNames = _hasMultipleServers();
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
     return ReorderableListView.builder(
       scrollController: scrollController,
+      shrinkWrap: shrinkWrap,
       onReorderItem: _reorderLibraries,
       itemCount: _tempLibraries.length,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -462,16 +467,13 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet>
     final isHidden = hiddenLibraryKeys.contains(library.globalKey);
     final colorScheme = Theme.of(context).colorScheme;
 
-    // Determine background color based on state
     Color? tileColor;
     if (isMoving) {
       tileColor = colorScheme.primaryContainer;
     } else if (isFocused && focusedColumn == 0) {
-      // Only highlight row when row itself is focused (column 0)
       tileColor = colorScheme.surfaceContainerHighest;
     }
 
-    // Button focus states
     final isVisibilityButtonFocused = isFocused && focusedColumn == 1;
     final isOptionsButtonFocused = isFocused && focusedColumn == 2;
 

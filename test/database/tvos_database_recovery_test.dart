@@ -122,6 +122,9 @@ Future<List<List<Object>>> _criticalRows(AppDatabase db) async => [
   await (db.select(db.offlineWatchProgress)..orderBy([(t) => OrderingTerm.asc(t.id)])).get(),
 ];
 
+Future<bool> _hasProfile(AppDatabase db, String id) async =>
+    (await ProfileRegistry(db).list()).any((profile) => profile.id == id);
+
 Future<void> _seedCriticalRows(AppDatabase db) async {
   await ConnectionRegistry(db).upsert(_connection('server-1'));
   await ProfileRegistry(db).upsert(_profile('local-1'));
@@ -164,8 +167,9 @@ Future<void> _seedCriticalRows(AppDatabase db) async {
       OfflineWatchProgressCompanion(createdAt: Value(3000 + index), updatedAt: Value(4000 + index)),
     );
   }
-  await db.updateSyncAttempt(rows.first.id, 'retry-without-protected-payload');
-  await db.updateSyncAttempt(rows.first.id, 'retry-without-protected-payload');
+  final revisedFirst = await (db.select(db.offlineWatchProgress)..where((t) => t.id.equals(rows.first.id))).getSingle();
+  await db.updateSyncAttemptIfUnchanged(revisedFirst.id, revisedFirst.updatedAt, 'retry-without-protected-payload');
+  await db.updateSyncAttemptIfUnchanged(revisedFirst.id, revisedFirst.updatedAt, 'retry-without-protected-payload');
 }
 
 void main() {
@@ -393,7 +397,7 @@ void main() {
       );
 
       await ProfileRegistry(first.database).upsert(_profile('after-$failurePhase'));
-      expect(await ProfileRegistry(first.database).get('after-$failurePhase'), isNotNull);
+      expect(await _hasProfile(first.database, 'after-$failurePhase'), isTrue);
     });
   }
 
@@ -451,7 +455,7 @@ void main() {
 
     final restored = await open();
     expect(restored.recoveryOutcome, TvosDatabaseRecoveryOutcome.restored);
-    expect(await ProfileRegistry(restored.database).get('survives-large-settings'), isNotNull);
+    expect(await _hasProfile(restored.database, 'survives-large-settings'), isTrue);
   });
 
   group('startup classification', () {
@@ -510,7 +514,7 @@ void main() {
         ProfileRegistry(restarted.database).upsert(_profile('blocked-after-restart')),
         throwsA(isA<TvosDatabaseDurabilityException>()),
       );
-      expect(await ProfileRegistry(restarted.database).get('blocked-after-restart'), isNull);
+      expect(await _hasProfile(restarted.database, 'blocked-after-restart'), isFalse);
 
       await restarted.database.acknowledgeTvosDatabaseRecoveryRequired();
       expect(prefs.getBool(TvosDatabaseRecoveryStore.recoveryRequiredKey), isNull);
@@ -519,7 +523,7 @@ void main() {
 
       final restored = await open();
       expect(restored.recoveryOutcome, TvosDatabaseRecoveryOutcome.restored);
-      expect(await ProfileRegistry(restored.database).get('acknowledged'), isNotNull);
+      expect(await _hasProfile(restored.database, 'acknowledged'), isTrue);
     });
 
     test('successful restore clears recovery-required gate on a materialized candidate', () async {
@@ -536,7 +540,7 @@ void main() {
       final missing = await open();
       expect(missing.recoveryOutcome, TvosDatabaseRecoveryOutcome.recoveryRequired);
       expect(prefs.getBool(TvosDatabaseRecoveryStore.recoveryRequiredKey), isTrue);
-      expect(await ProfileRegistry(missing.database).get('restored-after-restart'), isNull);
+      expect(await _hasProfile(missing.database, 'restored-after-restart'), isFalse);
       await missing.database.close();
       database = null;
 
@@ -547,7 +551,7 @@ void main() {
 
       expect(restarted.recoveryOutcome, TvosDatabaseRecoveryOutcome.restored);
       expect(prefs.getBool(TvosDatabaseRecoveryStore.recoveryRequiredKey), isNull);
-      expect(await ProfileRegistry(restarted.database).get('restored-after-restart'), isNotNull);
+      expect(await _hasProfile(restarted.database, 'restored-after-restart'), isTrue);
     });
 
     test('failed marker removal replays a successful restore idempotently on restart', () async {
@@ -682,7 +686,7 @@ void main() {
 
       expect(result.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
       await ProfileRegistry(result.database).upsert(_profile('database-remains-authoritative'));
-      expect(await ProfileRegistry(result.database).get('database-remains-authoritative'), isNotNull);
+      expect(await _hasProfile(result.database, 'database-remains-authoritative'), isTrue);
     });
 
     test('existing database remains authoritative when recovery image exceeds its budget', () async {
@@ -695,7 +699,7 @@ void main() {
 
       expect(result.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
       await ProfileRegistry(result.database).upsert(_profile('database-survives-recovery-budget'));
-      expect(await ProfileRegistry(result.database).get('database-survives-recovery-budget'), isNotNull);
+      expect(await _hasProfile(result.database, 'database-survives-recovery-budget'), isTrue);
     });
 
     test('startup invalidation failure blocks identity mutation until durable retry', () async {
@@ -726,7 +730,7 @@ void main() {
         throwsA(isA<TvosDatabaseDurabilityException>()),
       );
       expect(failedInvalidations, 2);
-      expect(await ProfileRegistry(existing.database).get('blocked-by-stale-image'), isNull);
+      expect(await _hasProfile(existing.database, 'blocked-by-stale-image'), isFalse);
       expect(prefs.getString(TvosDatabaseRecoveryStore.manifestKey), staleManifest);
       await existing.database.close();
       database = null;
@@ -734,8 +738,8 @@ void main() {
       final probeFile = File('${tempDir.path}/stale-image-probe.db');
       final staleRestore = await AppDatabase.open(isTvos: true, databaseFile: probeFile, preferences: prefs);
       expect(staleRestore.recoveryOutcome, TvosDatabaseRecoveryOutcome.restored);
-      expect(await ProfileRegistry(staleRestore.database).get('stale-image'), isNotNull);
-      expect(await ProfileRegistry(staleRestore.database).get('blocked-by-stale-image'), isNull);
+      expect(await _hasProfile(staleRestore.database, 'stale-image'), isTrue);
+      expect(await _hasProfile(staleRestore.database, 'blocked-by-stale-image'), isFalse);
       await staleRestore.database.close();
       await _deleteDatabase(probeFile);
 
@@ -743,7 +747,7 @@ void main() {
       final retried = await open(store: store);
       expect(retried.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
       await ProfileRegistry(retried.database).upsert(_profile('committed-after-retry'));
-      expect(await ProfileRegistry(retried.database).get('committed-after-retry'), isNotNull);
+      expect(await _hasProfile(retried.database, 'committed-after-retry'), isTrue);
       expect(prefs.getString(TvosDatabaseRecoveryStore.manifestKey), isNot(staleManifest));
       await retried.database.close();
       database = null;
@@ -751,9 +755,9 @@ void main() {
 
       final recovered = await open();
       expect(recovered.recoveryOutcome, TvosDatabaseRecoveryOutcome.restored);
-      expect(await ProfileRegistry(recovered.database).get('stale-image'), isNotNull);
-      expect(await ProfileRegistry(recovered.database).get('committed-after-retry'), isNotNull);
-      expect(await ProfileRegistry(recovered.database).get('blocked-by-stale-image'), isNull);
+      expect(await _hasProfile(recovered.database, 'stale-image'), isTrue);
+      expect(await _hasProfile(recovered.database, 'committed-after-retry'), isTrue);
+      expect(await _hasProfile(recovered.database, 'blocked-by-stale-image'), isFalse);
     });
 
     test('existing database repairs an interrupted manifest authoritatively', () async {
@@ -767,13 +771,13 @@ void main() {
 
       final repaired = await open();
       expect(repaired.recoveryOutcome, TvosDatabaseRecoveryOutcome.adoptedExistingDatabase);
-      expect(await ProfileRegistry(repaired.database).get('authoritative'), isNotNull);
+      expect(await _hasProfile(repaired.database, 'authoritative'), isTrue);
       expect(prefs.getString(TvosDatabaseRecoveryStore.manifestKey), contains('committed'));
       await closeAndDelete();
 
       final restored = await open();
       expect(restored.recoveryOutcome, TvosDatabaseRecoveryOutcome.restored);
-      expect(await ProfileRegistry(restored.database).get('authoritative'), isNotNull);
+      expect(await _hasProfile(restored.database, 'authoritative'), isTrue);
     });
   });
 
@@ -1023,8 +1027,8 @@ void main() {
       actionType: OfflineActionType.watched.id,
     );
     final rows = await result.database.getPendingWatchActions();
-    await result.database.updateSyncAttempt(rows.first.id, 'retry');
-    await result.database.deleteWatchAction(rows.last.id);
+    await result.database.updateSyncAttemptIfUnchanged(rows.first.id, rows.first.updatedAt, 'retry');
+    await result.database.deleteWatchActionIfUnchanged(rows.last.id, rows.last.updatedAt);
     await result.database.insertWatchAction(
       profileId: 'p2',
       serverId: ServerId('s1'),
@@ -1053,8 +1057,6 @@ void main() {
 
     await connections.upsert(_connection('c1'));
     await connections.upsert(_connection('c2'));
-    await connections.setDefault('c2');
-    await connections.recordAuthSuccess('c2', DateTime.fromMillisecondsSinceEpoch(9000));
     await profiles.upsert(_profile('p1'));
     await profiles.upsert(_profile('p2'));
     await profiles.markUsed('p1', DateTime.fromMillisecondsSinceEpoch(9100));

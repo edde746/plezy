@@ -190,6 +190,105 @@ void main() {
         throwsA(isA<CorruptPreferenceStoreException>()),
       );
     });
+
+    // #1732 was reported as "FormatException at offset 0" and nothing else.
+    // These fix which byte shapes can produce that, because the diagnostic
+    // deliberately discards the document and the offset is all a report has.
+    group('byte-level damage', () {
+      test('an all-zero document is rejected at offset 0', () async {
+        // The shape an interrupted write leaves behind when the file system
+        // extended the file's metadata but never flushed its contents.
+        await store.writeAsBytes(List<int>.filled(64, 0));
+
+        final damage = await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: true, storeFileOverride: store);
+
+        expect(damage, isNotNull);
+        expect(damage!.causeType, 'FormatException');
+        expect(damage.offset, 0);
+        expect(damage.shape?.length, 64);
+        expect(damage.shape?.validUtf8, isTrue);
+        expect(damage.shape?.allZero, isTrue);
+      });
+
+      test('a leading NUL before an intact document is rejected at offset 0', () async {
+        await store.writeAsBytes([0, ...utf8.encode('{"$credentialVaultKeyPref":"$_validVaultKey"}')]);
+
+        final damage = await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: true, storeFileOverride: store);
+
+        expect(damage?.offset, 0);
+        // Byte-level garbage at the front, but the entries behind it are still
+        // verbatim, so this is the offset-0 shape a salvage can still rescue.
+        expect(damage?.shape?.allZero, isFalse);
+        expect(PrefsRecovery.salvage(await store.readAsString()).vaultKey, _validVaultKey);
+      });
+
+      test('bytes that are not UTF-8 are damage, not an unreadable file', () async {
+        // `File.readAsString` reports this as a FileSystemException, which is
+        // indistinguishable from a denied or locked file — so the preflight
+        // used to wave it through and the app died with no Repair button.
+        await store.writeAsBytes([0xFF, 0xFE, ...utf8.encode('{"theme":"dark"}')]);
+
+        final damage = await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: true, storeFileOverride: store);
+
+        expect(damage, isNotNull);
+        expect(damage!.causeType, 'FormatException');
+        expect(damage.shape?.validUtf8, isFalse);
+        await expectLater(
+          PrefsRecovery.assertStoreReadable(storeFileOverride: store),
+          throwsA(isA<CorruptPreferenceStoreException>()),
+        );
+      });
+
+      test('a UTF-8 BOM is stripped by the decoder and accepted', () async {
+        // Ruled out as a cause of #1732: the decoder consumes the BOM, so the
+        // document behind it parses and the app boots.
+        await store.writeAsBytes([0xEF, 0xBB, 0xBF, ...utf8.encode('{"theme":"dark"}')]);
+
+        expect(await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: true, storeFileOverride: store), isNull);
+      });
+
+      test('a whitespace-only document fails past offset 0', () async {
+        // Also ruled out: the parser skips the whitespace first, so the offset
+        // lands at the end of the document rather than at its first byte.
+        await store.writeAsString('   \n');
+
+        final damage = await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: true, storeFileOverride: store);
+
+        expect(damage, isNotNull);
+        expect(damage!.offset, isNot(0));
+      });
+
+      test('a structural rejection carries no offset', () async {
+        await store.writeAsString('{"theme":"dark","broken":null}');
+
+        final damage = await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: true, storeFileOverride: store);
+
+        expect(damage?.offset, isNull);
+      });
+
+      test('reopenSafe and the byte shape reach the rendered message', () async {
+        // The whole point of carrying them: a report of this class should be
+        // diagnosable without asking the user for the file.
+        await store.writeAsBytes(List<int>.filled(8, 0));
+
+        final damage = await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: false, storeFileOverride: store);
+
+        expect(damage.toString(), contains('reopenSafe: false'));
+        expect(damage.toString(), contains('8 bytes'));
+        expect(damage.toString(), contains('every byte zero'));
+        // Still never the document itself.
+        expect(damage.toString(), isNot(contains(_validVaultKey)));
+      });
+
+      test('an unreadable store is not classified as damage', () async {
+        // A denied or locked file must keep its own error and its own
+        // non-repairable path; offering a destructive repair for it would be
+        // worse than reporting it.
+        final missing = File('${store.parent.path}/definitely-absent.json');
+
+        expect(await PrefsRecovery.describeCurrentStoreDamage(reopenSafe: true, storeFileOverride: missing), isNull);
+      });
+    });
   });
 
   group('quarantine', () {
@@ -212,6 +311,18 @@ void main() {
       await PrefsRecovery.deleteBackup(result.backupPath!);
 
       expect(await File(result.backupPath!).exists(), isFalse);
+    });
+
+    test('salvages a store whose bytes are not valid UTF-8', () async {
+      // `readAsString` raises FileSystemException for a decode failure, so the
+      // old strict read aborted the whole repair and left the damaged store
+      // live — the app stayed dead with a "Repair failed" snackbar.
+      await store.writeAsBytes([0xFF, 0xFE, ...utf8.encode('{"$credentialVaultKeyPref":"$_validVaultKey"}')]);
+
+      final result = await PrefsRecovery.quarantine(storeFileOverride: store);
+
+      expect(await store.exists(), isFalse);
+      expect(result.salvaged.vaultKey, _validVaultKey);
     });
   });
 

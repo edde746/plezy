@@ -48,7 +48,7 @@ class DeviceIdentityService {
 
   static Future<DeviceIdentity> _resolve() async {
     final deviceInfo = DeviceInfoPlugin();
-    final isTv = TvDetectionService.isTVSync();
+    final isTv = PlatformDetector.isTV();
 
     try {
       if (Platform.isAndroid) {
@@ -63,7 +63,7 @@ class DeviceIdentityService {
       }
       if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
-        if (TvDetectionService.isAppleTVSync()) {
+        if (PlatformDetector.isAppleTV()) {
           return DeviceIdentity(platform: 'tvOS', deviceModel: 'Apple TV', deviceName: iosInfo.name, isTv: true);
         }
         return DeviceIdentity(platform: 'iOS', deviceModel: iosInfo.model, deviceName: iosInfo.name, isTv: isTv);

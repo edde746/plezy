@@ -54,10 +54,10 @@ class MediaImageHelper {
   /// Minimum DPR for TV to ensure sharp artwork on large screens
   static const double _tvMinDpr = 2.0;
 
-  /// Reduced tier caps: tiles at 1.5× DPR, backdrops at ~720p. Smaller
-  /// transcodes mean fewer bytes fetched AND cheaper decodes on weak 32-bit
-  /// hardware; the art cap is masked by the gradient scrims drawn over it.
-  static const double _reducedMaxDpr = 1.5;
+  /// Reduced-tier art caps: backdrops at ~720p, masked by the gradient scrims
+  /// drawn over them. Tiles (posters/thumbs/squares) deliberately keep full
+  /// resolution — capping them reads as blur on large TV panels (#2020) —
+  /// while backdrops are the largest RGBA decodes on screen.
   static const int _reducedMaxArtWidth = 1280;
   static const int _reducedMaxArtHeight = 720;
 
@@ -89,7 +89,6 @@ class MediaImageHelper {
     } catch (_) {
       dpr = reportedDpr;
     }
-    if (DevicePerformance.isReduced) return min(dpr, _reducedMaxDpr);
     if (PlatformDetector.isTV()) dpr = max(dpr, _tvMinDpr);
     return dpr;
   }
@@ -162,7 +161,6 @@ class MediaImageHelper {
     required double maxWidth,
     required double maxHeight,
     required double devicePixelRatio,
-    bool enableTranscoding = true,
     ImageType imageType = ImageType.poster,
   }) {
     if (thumbPath == null || thumbPath.isEmpty) return '';
@@ -174,7 +172,6 @@ class MediaImageHelper {
       // scaling and cache-bucket rounding — Jellyfin's image endpoint
       // honours those query params.
       if (basePath.contains('api_key=')) {
-        if (!enableTranscoding) return basePath;
         final (width, height) = calculateOptimalDimensions(
           maxWidth: maxWidth,
           maxHeight: maxHeight,
@@ -196,7 +193,7 @@ class MediaImageHelper {
       // EPG / external URL — proxy through the server's transcoder. Plex
       // implements [externalImageUrl] via `/photo/:/transcode?url=...`;
       // backends without a comparable endpoint return the URL unchanged.
-      if (client == null || !enableTranscoding) return basePath;
+      if (client == null) return basePath;
       final (width, height) = calculateOptimalDimensions(
         maxWidth: maxWidth,
         maxHeight: maxHeight,
@@ -215,7 +212,7 @@ class MediaImageHelper {
       return '';
     }
 
-    if (!enableTranscoding || !shouldTranscode(basePath)) {
+    if (!shouldTranscode(basePath)) {
       return client.thumbnailUrl(basePath);
     }
 
@@ -241,35 +238,31 @@ class MediaImageHelper {
   static (int memWidth, int memHeight) getMemCacheDimensions({
     required int displayWidth,
     required int displayHeight,
-    double scaleFactor = 1.0,
     ImageType imageType = ImageType.poster,
   }) {
     // Bucket to match roundDimensions() so the mem-cache key and CNIP
     // maxHeight stay stable across sub-bucket resize deltas. Without this,
     // LayoutBuilder rebuilds during window resize churn the cache key on
     // every pixel and evict valid entries from Flutter's image cache.
-    final bucketedWidth = _bucketUp(displayWidth * scaleFactor, _widthRoundingFactor);
-    final bucketedHeight = _bucketUp(displayHeight * scaleFactor, _heightRoundingFactor);
+    final bucketedWidth = _bucketUp(displayWidth, _widthRoundingFactor);
+    final bucketedHeight = _bucketUp(displayHeight, _heightRoundingFactor);
 
     // Full-tier caps are a 1080p baseline scaled to the display, so slots on
     // a 4K surface decode at the resolution they render at instead of being
-    // GPU-upscaled from phone-sized budgets. Reduced-tier caps stay fixed
-    // (the factor is pinned to 1.0 there, and the explicit pairs keep the
-    // low-RAM budget independent of display probing).
+    // GPU-upscaled from phone-sized budgets. On the reduced tier the factor
+    // is pinned to 1.0, so tiles keep the fixed 1080p baseline there; only
+    // art gets an explicit smaller pair.
     final budget = DevicePerformance.displayBudgetFactor();
     int scaled(int cap) => (cap * budget).round();
     final (int maxW, int maxH) = switch (imageType) {
-      // Reduced-tier caps match the smaller fetch sizes so oversized
-      // originals (failed transcodes, external images) can't decode past
-      // the tile budget on low-RAM hardware.
-      ImageType.poster when DevicePerformance.isReduced => (480, 720),
       ImageType.poster => (scaled(720), scaled(1080)),
       // Square music artwork fills the same grid cells as posters, so both
       // axes cap at the poster width budget.
-      ImageType.square when DevicePerformance.isReduced => (480, 480),
       ImageType.square => (scaled(720), scaled(720)),
-      ImageType.thumb when DevicePerformance.isReduced => (640, 360),
       ImageType.thumb => (scaled(960), scaled(540)),
+      // Reduced-tier backdrops match the ~720p fetch cap so oversized
+      // originals (failed transcodes, external images) can't decode past
+      // the low-RAM art budget.
       ImageType.art when DevicePerformance.isReduced => (_reducedMaxArtWidth, _reducedMaxArtHeight),
       ImageType.art => (scaled(1920), scaled(1080)),
       ImageType.logo => (scaled(600), scaled(300)),
@@ -313,11 +306,10 @@ class MediaImageHelper {
     required String imageUrl,
     required int memWidth,
     required int memHeight,
-    String? cacheKey,
   }) {
     final provider = CachedNetworkImageProvider(
       imageUrl,
-      cacheKey: cacheKey ?? _serverArtworkCacheKey(imageUrl),
+      cacheKey: _serverArtworkCacheKey(imageUrl),
       cacheManager: PlexImageCacheManager.instance,
       headers: const {'User-Agent': 'Plezy'},
     );

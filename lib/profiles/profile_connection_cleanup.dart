@@ -89,7 +89,7 @@ class ProfileConnectionCleanup {
 
   /// Sign out of a Plex account: remove the account [Connection], every join
   /// row referencing it, and everything owned by its virtual Plex Home
-  /// profiles — including borrowed Jellyfin connections left unreferenced,
+  /// profiles — including borrowed MediaBrowser connections left unreferenced,
   /// which previously survived as orphans and wedged the session (#1423).
   ///
   /// Pass a read-only [plannedRemoval] from
@@ -131,9 +131,9 @@ class ProfileConnectionCleanup {
 
   /// In-session mirror of the boot guard (`main.dart`: "stored connections
   /// exist but no profiles resolved — returning to auth"): prune orphaned
-  /// Jellyfin connections, then decide whether any selectable profile remains.
-  /// [plexHomeUsers] is [PlexHomeService.current]; stale entries for removed
-  /// accounts are harmless because the connection map is re-read here.
+  /// MediaBrowser connections, then decide whether any selectable profile
+  /// remains. [plexHomeUsers] is [PlexHomeService.current]; stale entries for
+  /// removed accounts are harmless because the connection map is re-read here.
   Future<({PostRemovalRoute route, List<Profile> profiles})> resolvePostRemovalState({
     required ProfileRegistry profileRegistry,
     required Map<String, List<PlexHomeUser>> plexHomeUsers,
@@ -152,6 +152,8 @@ class ProfileConnectionCleanup {
     return (route: PostRemovalRoute.staySignedIn, profiles: merged);
   }
 
+  /// The Jellyfin-era method name is retained for existing callers;
+  /// [JellyfinConnection] represents both Jellyfin and Emby.
   Future<int> pruneUnreferencedJellyfinConnections() async {
     final all = await connections.list();
     final referencedConnectionIds = (await profileConnections.listAll()).map((row) => row.connectionId).toSet();

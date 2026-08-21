@@ -6,13 +6,10 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
-import '../../media/media_kind.dart';
 import '../../media/media_playlist.dart';
 import '../../services/media_list_playback_launcher.dart';
-import '../../services/music/music_playback_service.dart';
 import '../../services/playlist_items_loader.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/content_utils.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/continuation_pagination_coordinator.dart';
 import '../../utils/music_navigation.dart';
@@ -26,7 +23,6 @@ import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/download_provider.dart';
 import '../../utils/platform_detector.dart';
-import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
@@ -36,6 +32,7 @@ import '../focusable_detail_screen_mixin.dart';
 import '../libraries/content_state_builder.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
 import '../../widgets/overlay_sheet.dart';
+import '../../widgets/system_bottom_inset.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
@@ -75,9 +72,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// now-playing) instead of the video play-queue launcher.
   bool get _isAudioPlaylist => widget.playlist.playlistType == 'audio';
 
-  MusicPlayContext get _musicPlayContext =>
-      MusicPlayContext(id: widget.playlist.id, title: widget.playlist.title, kind: MusicPlayContextKind.playlist);
-
   @override
   Future<void> playItems() => _isAudioPlaylist ? _playAudioPlaylist(shuffle: false) : super.playItems();
 
@@ -92,14 +86,15 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       showAppSnackBar(context, emptyMessage);
       return;
     }
-    await playFetchedTracks(
+    await playAudioPlaylist(
       context,
-      fetch: () async => _isPlaylistFullyLoaded ? items : await fetchAllPlaylistItems(mediaClient, widget.playlist.id),
-      playContext: _musicPlayContext,
+      client: mediaClient,
+      playlist: widget.playlist,
+      shuffle: shuffle,
+      startTrack: startTrack,
+      preloadedItems: _isPlaylistFullyLoaded ? items : null,
       onError: (e, stackTrace) =>
           showErrorSnackBar(context, localizedLoadErrorMessage(e, stackTrace, context: widget.playlist.title)),
-      startTrack: startTrack,
-      shuffle: shuffle,
     );
   }
 
@@ -139,18 +134,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         ),
     ];
   }
-
-  /// Synthesise a [MediaItem] view of the current playlist for the
-  /// download_utils helpers.
-  MediaItem _playlistAsMetadata() => MediaItem(
-    id: widget.playlist.id,
-    backend: widget.playlist.backend,
-    kind: MediaKind.playlist,
-    title: widget.playlist.title,
-    thumbPath: widget.playlist.thumbPath,
-    serverId: widget.playlist.serverId ?? mediaClient.serverId,
-    serverName: widget.playlist.serverName,
-  );
 
   // Focus management for regular (non-smart) reorderable lists
   final FocusNode _listFocusNode = FocusNode(debugLabel: 'playlist_list');
@@ -297,58 +280,21 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
   }
 
-  Future<void> _downloadPlaylist() async {
-    final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+  Future<void> _downloadPlaylist() => downloadPlaylist(
+    context,
+    client: mediaClient,
+    downloadProvider: Provider.of<DownloadProvider>(context, listen: false),
+    playlist: widget.playlist,
+  );
 
-    try {
-      final allItems = await fetchAllPlaylistItems(mediaClient, widget.playlist.id);
-      if (!mounted) return;
-      final result = await showListDownloadOptionsAndQueue(
-        context,
-        rootMetadata: _playlistAsMetadata(),
-        targetType: ContentTypes.playlist,
-        items: allItems,
-        client: mediaClient,
-        downloadProvider: downloadProvider,
-      );
-      if (result == null || !mounted) return;
-
-      showSuccessSnackBar(context, result.toSnackBarMessage());
-    } on CellularDownloadBlockedException {
-      if (mounted) {
-        showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-      }
-    } catch (e) {
-      if (mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
-    }
-  }
-
-  Future<void> _deletePlaylist() async {
-    final confirmed = await showDeleteConfirmation(
-      context,
-      title: t.playlists.deleteConfirm,
-      message: t.playlists.deleteMessage(name: widget.playlist.title),
-    );
-
-    if (!confirmed || !mounted) return;
-
-    bool success = false;
-    try {
-      success = await mediaClient.deletePlaylist(widget.playlist);
-    } catch (e) {
-      appLogger.e('Failed to delete playlist', error: e);
-    }
-
-    if (!mounted) return;
-    if (success) {
-      showSuccessSnackBar(context, t.playlists.deleted);
-      Navigator.pop(context, true); // Signal the parent list to refresh.
-    } else {
-      showErrorSnackBar(context, t.playlists.errorDeleting);
-    }
-  }
+  Future<void> _deletePlaylist() => deletePlaylistWithConfirm(
+    context,
+    client: mediaClient,
+    playlist: widget.playlist,
+    confirmTitle: t.playlists.deleteConfirm,
+    // Signal the parent list to refresh.
+    onDeleted: () => Navigator.pop(context, true),
+  );
 
   /// The item that should sit immediately before the moved item at [newIndex],
   /// or null when moving to position 0. Pushes per-backend id-extraction down
@@ -747,7 +693,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
             buildFocusableGrid(items: items, onRefresh: updateItem, shape: _isAudioPlaylist ? CardShape.square : null)
           else
             // Plex regular playlists: sliver reorderable list
-            _buildReorderableList(isKeyboardMode),
+            _buildReorderableList(),
           if (_continuation.isLoading || _continuation.error != null)
             ContinuationStatusSliver(
               error: _continuation.error,
@@ -757,6 +703,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
               onBack: handleBackFromContent,
             ),
         ],
+        const SliverSystemBottomInset(),
       ],
     );
 
@@ -796,7 +743,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   /// Build a reorderable list for regular playlists with focus support
-  Widget _buildReorderableList(bool _) {
+  Widget _buildReorderableList() {
     return SliverReorderableList(
       onReorderItem: _onReorder,
       itemCount: items.length,

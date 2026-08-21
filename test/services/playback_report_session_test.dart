@@ -170,4 +170,44 @@ void main() {
     expect(await session.report(_snapshot('playing', positionMs: 4000)), isTrue);
     expect(client.calls, ['stopped-attempt:3000:null', 'stopped:3000:null', 'started:4000:null:null:null']);
   });
+
+  test('onDelivered fires only for snapshots the backend actually received', () async {
+    // Callers that must know what the server saw — watched-threshold crossing
+    // detection (#1740) — cannot use report()'s bool: a same-state heartbeat
+    // arriving while the start report is in flight resolves true but is
+    // coalesced away.
+    final client = _RecordingClient()..startGate = Completer<void>();
+    final delivered = <int>[];
+    final session = PlaybackReportSession(
+      client: client,
+      itemId: 'item-1',
+      onDelivered: (snapshot) => delivered.add(snapshot.position.inMilliseconds),
+    );
+
+    final first = session.report(_snapshot('playing', positionMs: 1000));
+    final second = session.report(_snapshot('playing', positionMs: 2000));
+    await Future<void>.delayed(Duration.zero);
+
+    client.startGate!.complete();
+    expect(await Future.wait([first, second]), [true, true]);
+
+    expect(client.calls, ['started:1000:null:null:null']);
+    expect(delivered, [1000], reason: 'the 2000ms snapshot was dropped, so it was never delivered');
+  });
+
+  test('onDelivered reports progress and stopped snapshots as they are sent', () async {
+    final client = _RecordingClient();
+    final delivered = <String>[];
+    final session = PlaybackReportSession(
+      client: client,
+      itemId: 'item-1',
+      onDelivered: (snapshot) => delivered.add('${snapshot.state}:${snapshot.position.inMilliseconds}'),
+    );
+
+    await session.report(_snapshot('playing', positionMs: 1000));
+    await session.report(_snapshot('paused', positionMs: 2000));
+    await session.report(_snapshot('stopped', positionMs: 3000));
+
+    expect(delivered, ['playing:1000', 'paused:2000', 'stopped:3000']);
+  });
 }

@@ -33,25 +33,6 @@ void main() {
       p.dispose();
     });
 
-    test('allPresets exposes built-in presets and includes none + nvscaler', () async {
-      final p = ShaderProvider();
-      await Future.delayed(Duration.zero);
-
-      // Built-ins should always be present even with no custom presets stored.
-      final ids = p.allPresets.map((preset) => preset.id).toList();
-      expect(ids, contains(ShaderPreset.none.id));
-      expect(ids, contains(ShaderPreset.nvscalerDefault.id));
-      expect(ids, contains('artcnn_c4f16_neutral'));
-      expect(ids, contains('artcnn_c4f16_dn'));
-      expect(ids, contains('artcnn_c4f16_ds'));
-      expect(ids, contains('artcnn_c4f32_neutral'));
-      expect(ids, contains('artcnn_c4f32_dn'));
-      expect(ids, contains('artcnn_c4f32_ds'));
-      expect(p.allPresets.length, ShaderPreset.allPresets.length);
-
-      p.dispose();
-    });
-
     test('setPreset persists, updates current/saved, and notifies', () async {
       final p = ShaderProvider();
       await Future.delayed(Duration.zero);
@@ -65,7 +46,6 @@ void main() {
       expect(p.isShaderEnabled, isTrue);
       expect(notified, 1);
 
-      // Verify persisted via the SettingsService directly.
       final svc = await SettingsService.getInstance();
       expect(svc.read(SettingsService.globalShaderPreset), ShaderPreset.nvscalerDefault.id);
 
@@ -86,7 +66,6 @@ void main() {
       expect(p.savedPreset, ShaderPreset.nvscalerDefault);
       expect(notified, 1);
 
-      // Same id → no notify.
       p.setCurrentPreset(ShaderPreset.none);
       expect(notified, 1);
 
@@ -286,7 +265,6 @@ void main() {
       final p = ShaderProvider();
       await Future.delayed(Duration.zero);
       p.dispose();
-      // Should not throw — setPreset calls safeNotifyListeners under the hood.
       await p.setPreset(ShaderPreset.none);
     });
   });

@@ -148,6 +148,39 @@ void main() {
     expect(chromeController.isHeld(PlayerChromeHold.promptInteraction), isFalse);
     expect(notifications, 0);
   });
+
+  testWidgets('the buffering spinner announces loading until the first frame renders', (tester) async {
+    PipService().isPipActive.value = false;
+    final isBuffering = ValueNotifier<bool>(false);
+    final hasFirstFrame = ValueNotifier<bool>(false);
+    final isExiting = ValueNotifier<bool>(false);
+    addTearDown(isBuffering.dispose);
+    addTearDown(hasFirstFrame.dispose);
+    addTearDown(isExiting.dispose);
+    final semantics = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      _wrapPrompt(
+        VideoPlayerBufferingOverlay(isBuffering: isBuffering, hasFirstFrame: hasFirstFrame, isExiting: isExiting),
+      ),
+    );
+
+    // The TV player no longer raises its chrome on startup (#1765), so this
+    // label is what tells "the player is still waiting for its first frame"
+    // apart from "it has stopped waiting" — the readiness gate the Maestro TV
+    // flows use in place of the Pause button.
+    expect(find.bySemanticsLabel('Loading video'), findsOneWidget);
+
+    hasFirstFrame.value = true;
+    await tester.pump();
+    expect(find.bySemanticsLabel('Loading video'), findsNothing);
+
+    isBuffering.value = true;
+    await tester.pump();
+    expect(find.bySemanticsLabel('Loading video'), findsOneWidget, reason: 'a mid-playback stall loads again');
+
+    semantics.dispose();
+  });
 }
 
 Widget _wrapPrompt(Widget child) {

@@ -1,4 +1,5 @@
 import 'library_query.dart';
+import '../services/settings_service.dart' show SettingsService, SpecialsOrdering;
 import 'media_item.dart';
 import 'media_kind.dart';
 import 'media_server_client.dart';
@@ -86,9 +87,8 @@ Future<MediaItem?> fetchFirstEpisodeForSeason(
 /// A season number of 0 (or missing) denotes the Specials folder. Season
 /// selection treats it as a last resort for "what to watch next" — see
 /// [defaultPlaybackSeasonIndex] and [firstUnwatchedSeasonIndex], which open on
-/// the first regular season. Episode ordering ([compareEpisodesByWatchOrder])
-/// instead places Specials by air date, only falling back to Specials-last when
-/// an episode has no air date.
+/// the first regular season. Episode ordering ([sortEpisodesByWatchOrder])
+/// places Specials per the [SettingsService.specialsOrdering] preference.
 bool isSpecialSeasonNumber(int? seasonNumber) => (seasonNumber ?? 0) == 0;
 
 /// Prefer the first regular season over specials, falling back to the first
@@ -143,18 +143,17 @@ MediaItem? firstUnwatchedEpisode(List<MediaItem> episodes) {
 /// Orders episodes into the **aired watch order** — the sequence they're meant
 /// to be played in: primarily by air date ([MediaItem.originallyAvailableAt]),
 /// so a Special that aired between two regular episodes is played between them,
-/// the way Plex's own play queue and clients do (#1416). This is the single
-/// shared definition of episode order, used by the offline next/prev queue, the
-/// Jellyfin online queue, the offline OnDeck list, and the count-capped
-/// "download / sync next N" selection — keeping streaming, offline, and
-/// download order consistent across both backends.
+/// the way Plex's own play queue and clients do (#1416).
 ///
 /// Episodes without a usable air date sort *after* dated ones, falling back to
-/// season → episode order with Specials last. So undated Specials never wedge
-/// into the middle of the aired run, and a "next N" cut still leads with regular
+/// [compareEpisodesSpecialsLast]. So undated Specials never wedge into the
+/// middle of the aired run, and a "next N" cut still leads with regular
 /// episodes — preserving the #1414 guarantee that the whole Specials folder is
-/// never front-loaded. The trailing id comparison keeps ties deterministic
-/// (Dart's [List.sort] is not stable) so the "next N" cut is stable across runs.
+/// never front-loaded.
+///
+/// Prefer [sortEpisodesByWatchOrder], which honors the user's
+/// [SettingsService.specialsOrdering] preference — many shows fill season 0
+/// with same-day featurettes that would hijack auto-advance (#1952).
 int compareEpisodesByWatchOrder(MediaItem a, MediaItem b) {
   final aDate = _airDateKey(a);
   final bDate = _airDateKey(b);
@@ -166,8 +165,18 @@ int compareEpisodesByWatchOrder(MediaItem a, MediaItem b) {
   } else if (aDate != null && bDate == null) {
     return -1;
   }
-  // Same air date, or both undated: regular seasons before Specials, then by
-  // season number, episode number, and id.
+  // Same air date, or both undated.
+  return compareEpisodesSpecialsLast(a, b);
+}
+
+/// Orders episodes with Specials strictly after the regular seasons, then by
+/// season number and episode number (#1414). The watch order for
+/// [SpecialsOrdering.specialsLast], the client-side fallback for
+/// [SpecialsOrdering.respectServer], and the tie/undated fallback inside
+/// [compareEpisodesByWatchOrder]. The trailing id comparison keeps ties
+/// deterministic (Dart's [List.sort] is not stable) so a "next N" cut is
+/// stable across runs.
+int compareEpisodesSpecialsLast(MediaItem a, MediaItem b) {
   final aSpecial = isSpecialSeasonNumber(a.parentIndex);
   final bSpecial = isSpecialSeasonNumber(b.parentIndex);
   if (aSpecial != bSpecial) return aSpecial ? 1 : -1;
@@ -187,9 +196,30 @@ String? _airDateKey(MediaItem episode) {
   return (date == null || date.isEmpty) ? null : date;
 }
 
-/// In-place sort by [compareEpisodesByWatchOrder]. See that function for the
-/// ordering rationale.
-void sortEpisodesByWatchOrder(List<MediaItem> episodes) => episodes.sort(compareEpisodesByWatchOrder);
+/// The user's [SettingsService.specialsOrdering] preference, defaulting to
+/// [SpecialsOrdering.respectServer] when settings are unavailable.
+SpecialsOrdering effectiveSpecialsOrdering() =>
+    SettingsService.instanceOrNull?.read(SettingsService.specialsOrdering) ?? SpecialsOrdering.respectServer;
+
+/// In-place sort into the shared episode watch order used by the offline
+/// next/prev queue, the offline OnDeck list, the count-capped "download /
+/// sync next N" selection, and (mode-adjusted) the online queue builders.
+///
+/// [ordering] defaults to [effectiveSpecialsOrdering]:
+/// - [SpecialsOrdering.airDate] — aired interleave
+///   ([compareEpisodesByWatchOrder], #1416);
+/// - [SpecialsOrdering.specialsLast] — Specials after the regular seasons
+///   ([compareEpisodesSpecialsLast], #1952);
+/// - [SpecialsOrdering.respectServer] — this function has no server order to
+///   respect, so it falls back to Specials-last: the safe order for "next N"
+///   cuts (#1414) and offline auto-advance. Online queue builders implement
+///   the mode themselves: `createShowPlayQueue` picks the Plex source URI and
+///   the Jellyfin/Plex `fetchClientSideEpisodeQueue` overrides decide between
+///   preserving the response order and calling back into this sort.
+void sortEpisodesByWatchOrder(List<MediaItem> episodes, {SpecialsOrdering? ordering}) {
+  final mode = ordering ?? effectiveSpecialsOrdering();
+  episodes.sort(mode == SpecialsOrdering.airDate ? compareEpisodesByWatchOrder : compareEpisodesSpecialsLast);
+}
 
 /// The episode after [currentIdx] in [ordered] that is backed by a different
 /// file than the current one. Plex lists each episode of a multi-episode file

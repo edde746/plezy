@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
@@ -9,6 +10,7 @@ import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
+import 'package:plezy/profiles/profile_connection.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/services/storage_service.dart';
@@ -78,12 +80,12 @@ final class _RecordingPreferencesPlatform extends SharedPreferencesAsyncPlatform
       delegate.getKeys(parameters, options);
 }
 
-PlexHomeUser _homeUser(String uuid, {String name = 'Home User'}) {
+PlexHomeUser _homeUser(String uuid, {int id = 1, String name = 'Home User', String thumb = ''}) {
   return PlexHomeUser(
-    id: 1,
+    id: id,
     uuid: uuid,
     title: name,
-    thumb: '',
+    thumb: thumb,
     hasPassword: false,
     restricted: false,
     updatedAt: null,
@@ -103,10 +105,26 @@ PlexAccountConnection _account(String id) {
   );
 }
 
+JellyfinConnection _jellyfin(String id, {required DateTime createdAt, required String primaryImageTag}) {
+  return JellyfinConnection(
+    id: id,
+    baseUrl: 'https://jellyfin.example',
+    serverName: 'Jellyfin',
+    serverMachineId: 'machine-$id',
+    userId: 'user-$id',
+    userName: 'User $id',
+    accessToken: 'token-$id',
+    deviceId: 'device-$id',
+    primaryImageTag: primaryImageTag,
+    createdAt: createdAt,
+  );
+}
+
 void main() {
   late AppDatabase db;
   late ProfileRegistry registry;
   late ConnectionRegistry connections;
+  late ProfileConnectionRegistry profileConnections;
   late PlexHomeService plexHome;
   late ActiveProfileProvider provider;
   late StorageService storage;
@@ -122,9 +140,10 @@ void main() {
     connections = ConnectionRegistry(db);
     storage = await StorageService.getInstance();
     fetchedHomeUsers = const [];
+    profileConnections = ProfileConnectionRegistry(db);
     plexHome = PlexHomeService(
       connections: connections,
-      profileConnections: ProfileConnectionRegistry(db),
+      profileConnections: profileConnections,
       storage: storage,
       plexHomeUserFetcher: (_) async => fetchedHomeUsers,
     );
@@ -132,6 +151,7 @@ void main() {
       registry: registry,
       plexHome: plexHome,
       connections: connections,
+      profileConnections: profileConnections,
       storage: storage,
     );
   });
@@ -217,6 +237,196 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       expect(notifications, 0);
+    });
+
+    group('avatarUrlFor', () {
+      test('returns the linked Jellyfin user picture after initialize', () async {
+        final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+        final connection = _jellyfin('first', createdAt: DateTime(2025, 1, 1), primaryImageTag: 'avatar-tag');
+        await registry.upsert(profile);
+        await connections.upsert(connection);
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'first', userIdentifier: 'user-first'),
+        );
+
+        await provider.initialize();
+
+        expect(
+          provider.avatarUrlFor(profile.id),
+          'https://jellyfin.example/Users/user-first/Images/Primary'
+          '?tag=avatar-tag&maxWidth=240&maxHeight=240',
+        );
+      });
+
+      test('returns null for profiles without links and unknown profile ids', () async {
+        await registry.upsert(Profile.local(id: 'unlinked', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+
+        await provider.initialize();
+
+        expect(provider.avatarUrlFor('unlinked'), isNull);
+        expect(provider.avatarUrlFor('unknown'), isNull);
+      });
+
+      test('resolves a virtual Plex Home profile to its own thumb', () async {
+        final account = _account('plex.acct');
+        final user = _homeUser('home-user', thumb: 'https://images.example/home.jpg');
+        fetchedHomeUsers = [user];
+        await connections.upsert(account);
+        expect(await plexHome.refresh(account), isTrue);
+
+        await provider.initialize();
+
+        final profileId = plexHomeProfileId(accountConnectionId: account.id, homeUserUuid: user.uuid);
+        expect(provider.avatarUrlFor(profileId), 'https://images.example/home.jpg');
+      });
+
+      test('linking an older connection updates the selected picture', () async {
+        final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+        final newer = _jellyfin('newer', createdAt: DateTime(2026, 1, 2), primaryImageTag: 'newer-tag');
+        final older = _jellyfin('older', createdAt: DateTime(2025, 12, 31), primaryImageTag: 'older-tag');
+        await registry.upsert(profile);
+        await connections.upsert(newer);
+        await connections.upsert(older);
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'newer', userIdentifier: 'user-newer'),
+        );
+        await provider.initialize();
+        expect(
+          provider.avatarUrlFor(profile.id),
+          'https://jellyfin.example/Users/user-newer/Images/Primary'
+          '?tag=newer-tag&maxWidth=240&maxHeight=240',
+        );
+
+        final changed = Completer<void>();
+        void listener() {
+          if (provider.avatarUrlFor(profile.id)?.contains('older-tag') ?? false) {
+            if (!changed.isCompleted) changed.complete();
+          }
+        }
+
+        provider.addListener(listener);
+        addTearDown(() => provider.removeListener(listener));
+
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'older', userIdentifier: 'user-older'),
+        );
+        await changed.future.timeout(const Duration(seconds: 2));
+
+        expect(
+          provider.avatarUrlFor(profile.id),
+          'https://jellyfin.example/Users/user-older/Images/Primary'
+          '?tag=older-tag&maxWidth=240&maxHeight=240',
+        );
+      });
+
+      test('a corrected connection creation time re-picks the avatar without a restart', () async {
+        // createdAt is a real column, not part of toConfigJson, so the
+        // connection diff guard has to compare it explicitly. Nothing in
+        // normal operation rewrites it — ConnectionRegistry pins creation
+        // order across re-auth — but a restore or a backfill can, and
+        // swallowing that would leave a stale avatar until the next launch.
+        final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+        await registry.upsert(profile);
+        await connections.upsert(_jellyfin('a', createdAt: DateTime(2025, 1, 1), primaryImageTag: 'a-tag'));
+        await connections.upsert(_jellyfin('b', createdAt: DateTime(2026, 1, 1), primaryImageTag: 'b-tag'));
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'a', userIdentifier: 'user-a'),
+        );
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'b', userIdentifier: 'user-b'),
+        );
+        await provider.initialize();
+        expect(provider.avatarUrlFor(profile.id), contains('tag=a-tag'));
+
+        final changed = Completer<void>();
+        void listener() {
+          if ((provider.avatarUrlFor(profile.id)?.contains('b-tag') ?? false) && !changed.isCompleted) {
+            changed.complete();
+          }
+        }
+
+        provider.addListener(listener);
+        addTearDown(() => provider.removeListener(listener));
+
+        // Straight to the table: the registry deliberately refuses to restamp
+        // an existing row, so this stands in for an out-of-band correction.
+        await (db.update(db.connections)..where((t) => t.id.equals('a'))).write(
+          ConnectionsCompanion(createdAt: Value(DateTime(2027, 1, 1).millisecondsSinceEpoch)),
+        );
+        await changed.future.timeout(const Duration(seconds: 2));
+
+        expect(provider.avatarUrlFor(profile.id), contains('tag=b-tag'));
+      });
+
+      test('token and timestamp churn on a link does not notify listeners', () async {
+        await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+        await connections.upsert(_jellyfin('jellyfin', createdAt: DateTime(2025, 1, 1), primaryImageTag: 'avatar-tag'));
+        await profileConnections.upsert(
+          const ProfileConnection(
+            profileId: 'p1',
+            connectionId: 'jellyfin',
+            userToken: 'initial-token',
+            userIdentifier: 'user-jellyfin',
+          ),
+        );
+        await provider.initialize();
+
+        var notifications = 0;
+        void listener() => notifications++;
+        provider.addListener(listener);
+        addTearDown(() => provider.removeListener(listener));
+
+        final churnObserved = Completer<void>();
+        final rowSubscription = profileConnections.watchAll().listen((rows) {
+          final row = rows.single;
+          if (row.userToken == 'refreshed-token' && row.tokenAcquiredAt != null && !churnObserved.isCompleted) {
+            churnObserved.complete();
+          }
+        });
+        addTearDown(rowSubscription.cancel);
+
+        await profileConnections.recordToken('p1', 'jellyfin', 'refreshed-token');
+        await churnObserved.future.timeout(const Duration(seconds: 2));
+        await Future<void>(() {});
+
+        expect(notifications, 0);
+      });
+
+      test('changing a Plex link user changes the picture and notifies listeners', () async {
+        final profile = Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+        final account = _account('plex.acct');
+        final firstUser = _homeUser('home-1', thumb: 'https://images.example/first.jpg');
+        final secondUser = _homeUser('home-2', id: 2, thumb: 'https://images.example/second.jpg');
+        fetchedHomeUsers = [firstUser, secondUser];
+        await registry.upsert(profile);
+        await connections.upsert(account);
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'plex.acct', userIdentifier: 'home-1'),
+        );
+        expect(await plexHome.refresh(account), isTrue);
+        await provider.initialize();
+        expect(provider.avatarUrlFor(profile.id), firstUser.thumb);
+
+        var notifications = 0;
+        final changed = Completer<void>();
+        void listener() {
+          notifications++;
+          if (provider.avatarUrlFor(profile.id) == secondUser.thumb && !changed.isCompleted) {
+            changed.complete();
+          }
+        }
+
+        provider.addListener(listener);
+        addTearDown(() => provider.removeListener(listener));
+
+        await profileConnections.upsert(
+          const ProfileConnection(profileId: 'p1', connectionId: 'plex.acct', userIdentifier: 'home-2'),
+        );
+        await changed.future.timeout(const Duration(seconds: 2));
+
+        expect(provider.avatarUrlFor(profile.id), secondUser.thumb);
+        expect(notifications, greaterThan(0));
+      });
     });
 
     test('initialize resolves the stored active profile id', () async {

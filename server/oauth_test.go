@@ -15,9 +15,7 @@ import (
 	"time"
 )
 
-// mockUpstream runs an httptest server that impersonates MAL/AniList. It
-// records the last token-exchange form submission and returns a canned
-// access_token/refresh_token response.
+// mockUpstream records token exchanges and returns a canned response.
 type mockUpstream struct {
 	srv        *httptest.Server
 	mu         sync.Mutex
@@ -26,9 +24,7 @@ type mockUpstream struct {
 	tokenCode  int
 }
 
-// httpGet / httpPost / httpDo wrap the stdlib calls to fail the test on error.
-// Keeps test bodies one-liner without tripping `go vet`'s
-// "using resp before checking errors" rule.
+// Request helpers fail tests on client errors.
 func httpGet(t *testing.T, url string) *http.Response {
 	t.Helper()
 	resp, err := http.Get(url)
@@ -65,7 +61,7 @@ func newMockUpstream(t *testing.T) *mockUpstream {
 	m.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/oauth/authorize":
-			// Unused in tests — we assert on the 302 Location from our proxy.
+			// Authorization is asserted on the proxy's redirect.
 			w.WriteHeader(http.StatusOK)
 		case "/oauth/token":
 			if err := r.ParseForm(); err != nil {
@@ -101,8 +97,7 @@ func (m *mockUpstream) form() url.Values {
 	return m.lastForm
 }
 
-// newOAuthHarness boots a relay-less httptest server that mounts /auth/* only,
-// with `mal` and `anilist` services pointed at a shared mock upstream.
+// newOAuthHarness mounts /auth/* against shared mock providers.
 type oauthHarness struct {
 	proxy    *oauthProxy
 	srv      *httptest.Server
@@ -137,7 +132,7 @@ func newOAuthHarnessWithResolver(t *testing.T, clientIPs clientIPResolver) *oaut
 	registerOAuthRoutes(mux, proxy)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
-	// Rewire baseURL to the real httptest URL so redirect_uri computes correctly.
+	// Use the real server URL when constructing redirect_uri.
 	proxy.baseURL = srv.URL
 	return &oauthHarness{proxy: proxy, srv: srv, base: srv.URL, upstream: up}
 }
@@ -197,7 +192,6 @@ func postOAuthStart(t *testing.T, h *oauthHarness, service, xff string) *http.Re
 	return httpDo(t, req)
 }
 
-// ====== /auth/start ======
 
 func TestOAuthStartSeparatesDeviceCapabilityFromBrowserState(t *testing.T) {
 	h := newOAuthHarness(t)
@@ -247,7 +241,7 @@ func TestOAuthStartRateLimitedPerIP(t *testing.T) {
 	h := newOAuthHarness(t)
 	ip := "5.5.5.5"
 	for range oauthStartBurst {
-		_, _, _ = h.startSession(t, "mal", ip) // should all succeed
+		_, _, _ = h.startSession(t, "mal", ip)
 	}
 	body, _ := json.Marshal(map[string]string{"service": "mal"})
 	req, err := http.NewRequest(http.MethodPost, h.base+"/auth/start", bytes.NewReader(body))
@@ -364,7 +358,6 @@ func TestOAuthStartMethodNotAllowed(t *testing.T) {
 	}
 }
 
-// ====== /auth/:service (authorize redirect) ======
 
 func TestOAuthAuthorizeMALRedirectIncludesPKCE(t *testing.T) {
 	h := newOAuthHarness(t)
@@ -439,7 +432,7 @@ func TestOAuthAuthorizeUnknownSessionRendersError(t *testing.T) {
 func TestOAuthAuthorizeWrongServiceRejected(t *testing.T) {
 	h := newOAuthHarness(t)
 	_, browserState, _ := h.startSession(t, "mal", "1.1.1.3")
-	// Try to use the MAL browser state against the AniList authorize endpoint.
+	// A browser state is valid only for its original service.
 	resp := httpGet(t, h.base+"/auth/anilist?state="+url.QueryEscape(browserState))
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusNotFound {
@@ -447,7 +440,6 @@ func TestOAuthAuthorizeWrongServiceRejected(t *testing.T) {
 	}
 }
 
-// ====== /auth/:service/callback + /auth/result ======
 
 type oauthResultResponse struct {
 	status       int
@@ -693,7 +685,6 @@ func TestOAuthCallbackUnknownSessionIgnored(t *testing.T) {
 	}
 }
 
-// ====== Cleanup ======
 
 func TestOAuthCleanupRemovesBothIndexesAndSuppressesStaleCompletion(t *testing.T) {
 	h := newOAuthHarness(t)
@@ -725,7 +716,6 @@ func TestOAuthCleanupRemovesBothIndexesAndSuppressesStaleCompletion(t *testing.T
 	}
 }
 
-// ====== /auth/done ======
 
 func TestOAuthDoneRendersSuccessPage(t *testing.T) {
 	h := newOAuthHarness(t)
@@ -740,7 +730,6 @@ func TestOAuthDoneRendersSuccessPage(t *testing.T) {
 	}
 }
 
-// ====== Disabled proxy returns 503 ======
 
 func TestOAuthRoutesReturn503WhenDisabled(t *testing.T) {
 	mux := http.NewServeMux()
@@ -755,7 +744,6 @@ func TestOAuthRoutesReturn503WhenDisabled(t *testing.T) {
 	}
 }
 
-// ====== Path dispatch ======
 
 func TestOAuthAuthRootRejectsBadPaths(t *testing.T) {
 	h := newOAuthHarness(t)
@@ -768,12 +756,9 @@ func TestOAuthAuthRootRejectsBadPaths(t *testing.T) {
 	}
 }
 
-// ====== Long-poll timeout ======
 
 func TestOAuthResultBlocksUntilCancel(t *testing.T) {
-	// Pending sessions must NOT respond immediately; the long-poll contract is
-	// that /auth/result blocks until the session completes or the client
-	// cancels. The 204-after-server-timeout path takes 50s so isn't asserted.
+	// Pending sessions must block until completion or client cancellation.
 	h := newOAuthHarness(t)
 	sess, _, _ := h.startSession(t, "mal", "5.5.5.1")
 

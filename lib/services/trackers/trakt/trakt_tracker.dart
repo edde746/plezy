@@ -104,10 +104,6 @@ class TraktTracker extends TrackerBase
   @override
   String? historyRowIdentity(TrackerContext ctx) => trackerExternalRowIdentity(ctx.external);
 
-  /// Push a rotated token pair into the live client instead of rebuilding it —
-  /// a second client would race the next refresh.
-  void updateSession(TrackerSession session) => client?.updateSession(session);
-
   @override
   Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {
     final client = this.client;

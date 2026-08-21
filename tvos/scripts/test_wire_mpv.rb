@@ -17,17 +17,15 @@ class WireMpvTest < Minitest::Test
     MpvPipController.swift
     MpvAudioPlayerCore.swift
     MpvAudioPlayerPlugin.swift
-    AtmosProbePlugin.swift
   ].freeze
   AFFECTED_NAMES = %w[
     MpvAudioPlayerCore.swift
     MpvAudioPlayerPlugin.swift
-    AtmosProbePlugin.swift
   ].freeze
   MPVKIT_PIN = {
     'location' => 'https://github.com/edde746/MPVKit',
-    'revision' => '39df1216941c1442e9163d2a574ca37ef2c2b4ff',
-    'version' => '1.0.16',
+    'revision' => 'ee423a7e8727eeee4748f08cb7d3c00e935ed45e',
+    'version' => '1.0.23',
   }.freeze
 
   def setup

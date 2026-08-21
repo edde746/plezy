@@ -7,9 +7,21 @@ tags:
   - playback
 ---
 - runFlow: ../subflows/onboard_jellyfin_tv.yaml
-- tapOn:
-    point: "6%,22%"
-- tapOn: "Search"
+# Reach Search by D-pad: taps switch to pointer mode and hide the TV rail label,
+# while percentage coordinates are not portable across TV sizes.
+- pressKey: "Remote Dpad Left"
+- extendedWaitUntil:
+    visible: "Search"
+    timeout: 15000
+- repeat:
+    times: 12
+    while:
+      notVisible:
+        text: "Search"
+        focused: true
+    commands:
+      - pressKey: "Remote Dpad Down"
+- pressKey: "Remote Dpad Center"
 - extendedWaitUntil:
     visible: "Search movies, shows, music..."
     timeout: 10000
@@ -24,13 +36,19 @@ tags:
 - waitForAnimationToEnd:
     timeout: 5000
 - tapOn: "(?s)^Play S1E1$"
+# The player starts with chrome hidden (#1765); wait for its loading label
+# rather than using Pause as readiness.
 - extendedWaitUntil:
-    visible: "Pause"
+    notVisible: "(?s)^Play S1E1$"
+    timeout: 30000
+- extendedWaitUntil:
+    notVisible: "Loading video"
     timeout: 30000
 - pressKey: "Remote Media Fast Forward"
 - pressKey: "Remote Media Fast Forward"
+# Wait for Cancel, not Next Episode (the credits-skip action), before pressing Back.
 - extendedWaitUntil:
-    visible: "Next Episode"
+    visible: "(?s)^Cancel$"
     timeout: 20000
 - runFlow:
     when:
@@ -42,7 +60,10 @@ tags:
       platform: Android
     commands:
       - pressKey: "back"
-- assertNotVisible: "Next Episode"
+# Dismissal is animated, so give it a bounded wait rather than one instant look.
+- extendedWaitUntil:
+    notVisible: "(?s)^Cancel$"
+    timeout: 10000
 - assertNotVisible: "Overview"
 - pressKey: "Remote Dpad Up"
 - extendedWaitUntil:

@@ -79,6 +79,255 @@ void main() {
     });
   });
 
+  group('isRelocatedRootTaskDirectory', () {
+    const baseAppDir = '/mnt/expand/9f2a/user/0/com.edde746.plezy/app_flutter';
+    // Task strips one leading separator from `directory`, so a root-anchored task is
+    // rejoined against the downloader's own root base before it can be compared.
+    const rootBase = '/';
+
+    test('flags an absolute directory left behind by the previous app location', () {
+      final task = _rootTask('t', 'srv:item-1', '/data/user/0/com.edde746.plezy/app_flutter/downloads/srv/item-1');
+
+      expect(task.directory, 'data/user/0/com.edde746.plezy/app_flutter/downloads/srv/item-1');
+      expect(isRelocatedRootTaskDirectory(task: task, rootBasePath: rootBase, baseAppDirPath: baseAppDir), isTrue);
+    });
+
+    test('accepts a directory inside the live app storage', () {
+      final task = _rootTask('t', 'srv:item-1', '$baseAppDir/downloads/srv/item-1');
+
+      expect(isRelocatedRootTaskDirectory(task: task, rootBasePath: rootBase, baseAppDirPath: baseAppDir), isFalse);
+    });
+
+    test('accepts a directory inside the configured custom download root', () {
+      final task = _rootTask('t', 'srv:item-1', '/Volumes/External/Plezy/Movies/Arrival (2016)');
+
+      expect(
+        isRelocatedRootTaskDirectory(
+          task: task,
+          rootBasePath: rootBase,
+          baseAppDirPath: baseAppDir,
+          customRootPath: '/Volumes/External/Plezy',
+        ),
+        isFalse,
+      );
+    });
+
+    test('ignores a SAF task, whose root-anchored directory is a content tree URI', () {
+      final task = UriDownloadTask(
+        taskId: 't',
+        url: 'https://example.test/video.mp4',
+        filename: 'video.mp4',
+        directoryUri: Uri.parse('content://com.android.externalstorage.documents/tree/usb%3APlezy'),
+        metaData: 'srv:item-1',
+      );
+
+      expect(task.baseDirectory, BaseDirectory.root);
+      expect(isRelocatedRootTaskDirectory(task: task, rootBasePath: rootBase, baseAppDirPath: baseAppDir), isFalse);
+    });
+
+    test('ignores a task anchored to a base directory the downloader re-resolves itself', () {
+      final task = _downloadTask('t', 'srv:item-1');
+
+      expect(task.baseDirectory, isNot(BaseDirectory.root));
+      expect(isRelocatedRootTaskDirectory(task: task, rootBasePath: rootBase, baseAppDirPath: baseAppDir), isFalse);
+    });
+  });
+
+  group('relocated task recovery', () {
+    late Directory tmpRoot;
+    late PathProviderPlatform previousPathProvider;
+
+    setUp(() async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      DownloadStorageService.resetForTesting();
+      tmpRoot = await Directory.systemTemp.createTemp('dms_relocated_');
+      previousPathProvider = PathProviderPlatform.instance;
+      PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+      await DownloadStorageService.instance.initialize(await SettingsService.getInstance());
+    });
+
+    tearDown(() async {
+      DownloadStorageService.resetForTesting();
+      SettingsService.resetForTesting();
+      PathProviderPlatform.instance = previousPathProvider;
+      if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+    });
+
+    late List<String> cancelledIds;
+    late List<String> deletedRecordIds;
+    late List<String> callOrder;
+
+    Future<DownloadManagerService> managerFor(
+      AppDatabase db, {
+      List<Task> nativeTasks = const [],
+      List<TaskRecord> records = const [],
+    }) async {
+      cancelledIds = [];
+      deletedRecordIds = [];
+      callOrder = [];
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (_, {clientScopeId}) => null,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async => callOrder.add('initialize'),
+        nativeOpsOverride: (
+          allTasks: () async => nativeTasks,
+          allRecords: () async {
+            callOrder.add('allRecords');
+            return records;
+          },
+          deleteRecord: (taskId) async {
+            callOrder.add('deleteRecord:$taskId');
+            deletedRecordIds.add(taskId);
+          },
+          cancelTaskIds: (taskIds) async {
+            callOrder.add('cancel:${taskIds.join(",")}');
+            cancelledIds.addAll(taskIds);
+            return true;
+          },
+          cleanUpOrphanedTempFiles: () async => 0,
+          rescheduleKilledTasks: () async {
+            callOrder.add('reschedule');
+            return (<Task>[], <Task>[]);
+          },
+        ),
+      );
+      addTearDown(manager.dispose);
+      return manager;
+    }
+
+    Future<void> seedRow(AppDatabase db, DownloadStatus status, {String? taskId, String? videoFilePath}) async {
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: 'srv:item-1',
+        type: 'movie',
+        status: status.index,
+      );
+      if (taskId != null) await db.updateBgTaskId('srv:item-1', taskId);
+      if (videoFilePath != null) await db.updateVideoFilePath('srv:item-1', videoFilePath);
+    }
+
+    test('cancels a still-live task targeting the previous app location and requeues it', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, DownloadStatus.downloading, taskId: 'task-a');
+      final manager = await managerFor(
+        db,
+        nativeTasks: [_rootTask('task-a', 'srv:item-1', '$_previousAppDir/downloads/srv/item-1')],
+      );
+
+      await manager.debugRecoverRelocatedDownloads();
+
+      expect(cancelledIds, ['task-a']);
+      final row = await db.getDownloadedMedia('srv:item-1');
+      expect(row?.status, DownloadStatus.queued.index);
+      expect(row?.bgTaskId, isNull);
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:item-1');
+    });
+
+    test('drops a relocated record before rescheduling can re-enqueue it', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, DownloadStatus.downloading, taskId: 'task-a');
+      // A killed task survives only as a downloader record: rescheduleKilledTasks would
+      // re-enqueue it against the old volume, so it must be gone before that runs.
+      final manager = await managerFor(
+        db,
+        records: [
+          TaskRecord(
+            _rootTask('task-a', 'srv:item-1', '$_previousAppDir/downloads/srv/item-1'),
+            TaskStatus.enqueued,
+            0.4,
+            1024,
+          ),
+        ],
+      );
+
+      await manager.debugRecoverRelocatedDownloads();
+
+      expect(deletedRecordIds, ['task-a']);
+      expect(cancelledIds, ['task-a']);
+      final row = await db.getDownloadedMedia('srv:item-1');
+      expect(row?.status, DownloadStatus.queued.index);
+      expect(row?.bgTaskId, isNull);
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:item-1');
+    });
+
+    test('keeps a record that still points inside the live app storage', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, DownloadStatus.downloading, taskId: 'task-a');
+      final liveDir = p.join(
+        await DownloadStorageService.instance.baseAppDirectoryPath(),
+        'downloads',
+        'srv',
+        'item-1',
+      );
+      final task = _rootTask('task-a', 'srv:item-1', liveDir);
+      final manager = await managerFor(
+        db,
+        nativeTasks: [task],
+        records: [TaskRecord(task, TaskStatus.enqueued, 0.4, 1024)],
+      );
+
+      await manager.debugRecoverRelocatedDownloads();
+
+      expect(deletedRecordIds, isEmpty);
+      expect(cancelledIds, isEmpty);
+      final row = await db.getDownloadedMedia('srv:item-1');
+      expect(row?.status, DownloadStatus.downloading.index);
+      expect(row?.bgTaskId, 'task-a');
+      expect(await db.getNextQueueItem(), isNull);
+    });
+
+    test('cancels a stale task for a finished download without disturbing the row', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, DownloadStatus.completed, videoFilePath: 'downloads/srv/item-1/video.mkv');
+      final manager = await managerFor(
+        db,
+        nativeTasks: [_rootTask('task-a', 'srv:item-1', '$_previousAppDir/downloads/srv/item-1')],
+      );
+
+      await manager.debugRecoverRelocatedDownloads();
+
+      expect(cancelledIds, ['task-a']);
+      final row = await db.getDownloadedMedia('srv:item-1');
+      expect(row?.status, DownloadStatus.completed.index);
+      expect(row?.videoFilePath, 'downloads/srv/item-1/video.mkv');
+      expect(await db.getNextQueueItem(), isNull);
+    });
+
+    test('startup drops relocated records before wiring up the downloader', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      await seedRow(db, DownloadStatus.downloading, taskId: 'task-a');
+      final manager = await managerFor(
+        db,
+        records: [
+          TaskRecord(
+            _rootTask('task-a', 'srv:item-1', '$_previousAppDir/downloads/srv/item-1'),
+            TaskStatus.enqueued,
+            0.4,
+            1024,
+          ),
+        ],
+      );
+
+      await manager.recoverInterruptedDownloads();
+
+      // Initialization delivers statuses accumulated while suspended, which can mark the
+      // row failed and make it unrestartable; rescheduleKilledTasks then re-enqueues every
+      // enqueued record it finds missing natively, stale absolute directory and all. The
+      // record has to be gone before either.
+      expect(callOrder, ['allRecords', 'deleteRecord:task-a', 'cancel:task-a', 'initialize', 'reschedule']);
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, 'srv:item-1');
+    });
+  });
+
   group('artworkStorageKey', () {
     test('removes Jellyfin api_key from persisted artwork keys', () {
       final url = 'https://jf.example/Items/item-1/Images/Primary?tag=abc&api_key=secret-token';
@@ -211,7 +460,7 @@ void main() {
         clientResolver: (_, {clientScopeId}) => null,
       );
 
-      final all = await manager.getAllPinnedMetadata(preferActiveScope: true, activeProfileId: 'profile-b');
+      final all = await manager.getAllPinnedMetadata(activeProfileId: 'profile-b');
       final item = await manager.lookupMetadata(
         ServerId('jf-machine'),
         'item-1',
@@ -269,7 +518,7 @@ void main() {
         clientResolver: (_, {clientScopeId}) => null,
       );
 
-      final all = await manager.getAllPinnedMetadata(preferActiveScope: true, activeProfileId: 'profile-b');
+      final all = await manager.getAllPinnedMetadata(activeProfileId: 'profile-b');
       final item = await manager.lookupMetadata(
         serverId,
         'item-1',
@@ -479,7 +728,7 @@ void main() {
       expect(await PlexApiCache.instance.getMetadata(transferScope.cacheServerId, 'item-1'), isNull);
 
       await db.clearAllDownloadOwners();
-      expect(await db.getDownloadOwnerCount(globalKey), 0);
+      expect(await db.getValidDownloadOwnersForKey(globalKey), isEmpty);
       await db.adoptLegacyDownloadsForProfile('profile-b');
       await transferManager.adoptTransferredPlexMetadataForProfile('profile-b');
 
@@ -2526,6 +2775,20 @@ DownloadTask _downloadTask(String taskId, String globalKey) {
     url: 'https://example.test/video.mp4',
     filename: 'video.mp4',
     directory: 'downloads',
+    metaData: globalKey,
+  );
+}
+
+/// Where the app's private storage lived before it was moved to another volume.
+const _previousAppDir = '/data/user/0/com.edde746.plezy/app_flutter';
+
+DownloadTask _rootTask(String taskId, String globalKey, String directory) {
+  return DownloadTask(
+    taskId: taskId,
+    url: 'https://example.test/video.mp4',
+    filename: 'video.mp4',
+    directory: directory,
+    baseDirectory: BaseDirectory.root,
     metaData: globalKey,
   );
 }

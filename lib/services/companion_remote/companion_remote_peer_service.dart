@@ -973,7 +973,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
             completer.completeError(
               RemotePeerError(
                 type: RemotePeerErrorType.connectionFailed,
-                message: t.companionRemote.pairing.failedToConnect(error: 'Connection closed before authentication'),
+                message: t.companionRemote.pairing.failedToConnect(error: t.companionRemote.closedBeforeAuth),
               ),
             );
           }
@@ -991,17 +991,11 @@ class CompanionRemotePeerService with KeepaliveMixin {
           if (!_ownsRemoteChannel(channel, connectionGeneration)) return;
           appLogger.e('CompanionRemote: Connection error', error: error);
 
+          final wasAuthenticated = _isAuthenticated;
           if (!completer.isCompleted) {
             completer.completeError(error);
           }
 
-          _errorController.add(
-            RemotePeerError(
-              type: RemotePeerErrorType.connectionFailed,
-              message: t.companionRemote.pairing.failedToConnect(error: error.toString()),
-              originalError: error,
-            ),
-          );
           _isAuthenticated = false;
           _channel = null;
           _channelSubscription = null;
@@ -1009,7 +1003,25 @@ class CompanionRemotePeerService with KeepaliveMixin {
           _selectedAuthContextId = null;
           _selectedHostClientId = null;
           stopKeepalive();
-          _connectionStateController.add(RemoteSessionStatus.error);
+
+          if (wasAuthenticated) {
+            // A socket error on an established session (connection reset after
+            // Android backgrounding, Wi-Fi power save, network handoff) is a
+            // disconnect, not a terminal failure: surface it exactly like
+            // onDone so the owner runs its reconnect flow instead of dropping
+            // the user back to discovery.
+            _deviceDisconnectedController.add(null);
+            _connectionStateController.add(RemoteSessionStatus.disconnected);
+          } else {
+            _errorController.add(
+              RemotePeerError(
+                type: RemotePeerErrorType.connectionFailed,
+                message: t.companionRemote.pairing.failedToConnect(error: error.toString()),
+                originalError: error,
+              ),
+            );
+            _connectionStateController.add(RemoteSessionStatus.error);
+          }
         },
       );
     } catch (e) {

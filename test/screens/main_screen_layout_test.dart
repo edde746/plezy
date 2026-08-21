@@ -69,42 +69,20 @@ void main() {
     expect(shouldPass(isOverlaySheetOpen: true), isFalse);
     expect(shouldPass(isRouteCurrent: false), isFalse);
     expect(shouldPass(isAppleTV: false), isFalse);
+    expect(shouldPass(isShowingProfileSelection: true), isFalse);
+    expect(shouldPass(hasVisibleTabs: false), isFalse);
   });
 
-  test('tvOS Menu policy transaction publishes only the settled navigation state', () {
-    var desired = false;
-    final published = <bool>[];
-    final publisher = TvosMenuPolicyPublisher(() => desired, published.add);
-
-    publisher.run(() {
-      desired = true;
-      publisher.update();
-      desired = false;
-    });
-
-    expect(published, [false]);
-  });
-
-  test('tvOS Menu policy publishes retained sidebar Home state immediately', () {
-    final desired = true;
-    final published = <bool>[];
-    final publisher = TvosMenuPolicyPublisher(() => desired, published.add);
-
-    publisher.update();
-
-    expect(published, [true]);
-  });
-
-  test('macOS physical Escape is reserved for native fullscreen only at root Home', () {
+  test('desktop physical Escape is reserved for window fullscreen only at root Home', () {
     bool shouldHandle({
-      bool isMacOS = true,
+      bool isDesktop = true,
       bool isPhysicalKeyboardEvent = true,
       LogicalKeyboardKey logicalKey = LogicalKeyboardKey.escape,
       bool isCurrentRoute = true,
       bool isHomeTab = true,
     }) {
-      return shouldHandleMacOsRootEscape(
-        isMacOS: isMacOS,
+      return shouldHandleDesktopRootEscape(
+        isDesktop: isDesktop,
         isPhysicalKeyboardEvent: isPhysicalKeyboardEvent,
         logicalKey: logicalKey,
         isCurrentRoute: isCurrentRoute,
@@ -115,8 +93,10 @@ void main() {
     expect(shouldHandle(), isTrue);
     expect(shouldHandle(isHomeTab: false), isFalse);
     expect(shouldHandle(isCurrentRoute: false), isFalse);
+    // A remote/gamepad-synthesized escape is not a physical keyboard Escape;
+    // it keeps the press-back-again exit path.
     expect(shouldHandle(isPhysicalKeyboardEvent: false), isFalse);
-    expect(shouldHandle(isMacOS: false), isFalse);
+    expect(shouldHandle(isDesktop: false), isFalse);
     expect(shouldHandle(logicalKey: LogicalKeyboardKey.gameButtonB), isFalse);
   });
 
@@ -152,6 +132,132 @@ void main() {
       ),
       ProfileInvalidationAction.none,
     );
+  });
+
+  test('resume prompt is suppressed during active video playback (#2034)', () {
+    bool should({
+      bool resumedFromBackground = true,
+      bool isOffline = false,
+      bool alreadyShowingProfileSelection = false,
+      bool isMobilePlatform = true,
+      bool hasActiveVideoPlayback = false,
+    }) {
+      return shouldShowProfileSelectionOnResume(
+        resumedFromBackground: resumedFromBackground,
+        isOffline: isOffline,
+        alreadyShowingProfileSelection: alreadyShowingProfileSelection,
+        isMobilePlatform: isMobilePlatform,
+        hasActiveVideoPlayback: hasActiveVideoPlayback,
+      );
+    }
+
+    expect(should(), isTrue);
+    // Waking the device mid-stream resumes the stream; the picker would
+    // fight the player's focus self-heal for the remote.
+    expect(should(hasActiveVideoPlayback: true), isFalse);
+    expect(should(resumedFromBackground: false), isFalse);
+    expect(should(isOffline: true), isFalse);
+    expect(should(alreadyShowingProfileSelection: true), isFalse);
+    // Desktop "resumed" fires on every window focus gain; startup prompt only.
+    expect(should(isMobilePlatform: false), isFalse);
+  });
+
+  group('ProfileSelectionResumeGate', () {
+    test('does not prompt for overlay-style focus loss and regain (#1990)', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.inactive), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('prompts exactly once after a genuine backgrounding', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.inactive), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.paused), isFalse);
+      expect(gate.wasBackgrounded, isTrue);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isTrue);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isFalse);
+      expect(gate.wasBackgrounded, isFalse);
+    });
+
+    test('prompts after an iOS-style hidden -> inactive -> resumed return', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.hidden), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.inactive), isFalse);
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isTrue);
+    });
+
+    test('latches every backgrounding state', () {
+      for (final state in [AppLifecycleState.hidden, AppLifecycleState.paused, AppLifecycleState.detached]) {
+        final gate = ProfileSelectionResumeGate();
+        expect(gate.consumePromptOn(state), isFalse);
+        expect(gate.consumePromptOn(AppLifecycleState.resumed), isTrue, reason: '$state');
+      }
+    });
+
+    test('does not prompt without a prior backgrounding (cold open)', () {
+      final gate = ProfileSelectionResumeGate();
+      expect(gate.consumePromptOn(AppLifecycleState.resumed), isFalse);
+    });
+  });
+
+  group('ContentRefreshResumeGate', () {
+    // Injectable clock: tests advance `now` instead of sleeping.
+    ContentRefreshResumeGate gateAt(DateTime Function() now) =>
+        ContentRefreshResumeGate(staleAfter: const Duration(minutes: 5), now: now);
+
+    test('refreshes once after a backgrounding longer than the threshold (#2043)', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.paused), isFalse);
+      now = now.add(const Duration(hours: 18));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isTrue);
+      // Consumed: an immediate second resume must not refresh again.
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('does not refresh after a short backgrounding', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.hidden), isFalse);
+      now = now.add(const Duration(minutes: 4, seconds: 59));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('does not refresh for overlay-style inactive -> resumed', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.inactive), isFalse);
+      now = now.add(const Duration(hours: 1));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('does not refresh on a cold-open resume with no prior backgrounding', () {
+      final gate = gateAt(DateTime.now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+    });
+
+    test('keeps the earliest backgrounded time across hidden -> paused churn', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.hidden), isFalse);
+      now = now.add(const Duration(minutes: 4));
+      // A later deeper state must not restart the clock.
+      expect(gate.consumeRefreshOn(AppLifecycleState.paused), isFalse);
+      now = now.add(const Duration(minutes: 2));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isTrue);
+    });
+
+    test('resume resets the latch for the next backgrounding', () {
+      var now = DateTime(2026, 8, 20, 12);
+      final gate = gateAt(() => now);
+      expect(gate.consumeRefreshOn(AppLifecycleState.paused), isFalse);
+      now = now.add(const Duration(minutes: 1));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isFalse);
+      // The stale clock must start from the *new* backgrounding, not the old one.
+      expect(gate.consumeRefreshOn(AppLifecycleState.paused), isFalse);
+      now = now.add(const Duration(minutes: 5));
+      expect(gate.consumeRefreshOn(AppLifecycleState.resumed), isTrue);
+    });
   });
 
   testWidgets('side navigation bleed animates from the previous value', (tester) async {

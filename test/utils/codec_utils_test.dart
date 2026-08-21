@@ -65,6 +65,9 @@ void main() {
         'dvdsub',
         'vobsub',
         'dvb_sub',
+        // Jellyfin's own spelling. The transcode profile asks it to burn `dvbsub`, so a picker that
+        // does not recognise the name never offers the track it just negotiated.
+        'dvbsub',
         'dvb_subtitle',
         'PGS',
       ]) {
@@ -157,6 +160,29 @@ void main() {
       expect(CodecUtils.formatAudioCodec('dca'), 'DTS');
       expect(CodecUtils.formatAudioCodec('dtshd'), 'DTS-HD');
       expect(CodecUtils.formatAudioCodec('dts-hd'), 'DTS-HD');
+    });
+
+    test('RFC 6381 codec IDs from ExoPlayer map to friendly names', () {
+      // AAC-LC as reported for MP4/HLS direct play (#1899).
+      expect(CodecUtils.formatAudioCodec('mp4a.40.2'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('MP4A.40.2'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a.40.5'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a.40.29'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a'), 'AAC');
+      // MPEG layer audio object types under the mp4a prefix.
+      expect(CodecUtils.formatAudioCodec('mp4a.69'), 'MP3');
+      expect(CodecUtils.formatAudioCodec('mp4a.6B'), 'MP3');
+      // Dolby and DTS sample entry names.
+      expect(CodecUtils.formatAudioCodec('ac-3'), 'AC3');
+      expect(CodecUtils.formatAudioCodec('ec-3'), 'E-AC3');
+      expect(CodecUtils.formatAudioCodec('ac-4'), 'AC4');
+      expect(CodecUtils.formatAudioCodec('ac-4.02.01.01'), 'AC4');
+      expect(CodecUtils.formatAudioCodec('mlpa'), 'TrueHD');
+      expect(CodecUtils.formatAudioCodec('dtsc'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('dtse'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('dtsh'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('dtsl'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('dtsx'), 'DTS:X');
     });
 
     test('mp3 aliases', () {

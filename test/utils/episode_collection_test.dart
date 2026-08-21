@@ -9,6 +9,8 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/utils/download_version_utils.dart';
 import 'package:plezy/media/episode_collection.dart';
+import 'package:plezy/services/settings_service.dart';
+import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
 
 MediaItem _season(String id, {int index = 1, int? leafCount, int? viewedLeafCount, int? childCount}) => testMediaItem(
@@ -124,10 +126,11 @@ void main() {
     await collectEpisodes(client, 'show-1', unwatchedOnly: false, out: withoutSpecials, includeSpecials: false);
     expect(withoutSpecials.map((e) => e.id), ['s1e1', 's1e2']);
 
-    // Default keeps Specials, interleaved into aired order.
+    // Default (respectServer: no server order client-side) keeps Specials
+    // after the regular episodes.
     final withSpecials = <MediaItem>[];
     await collectEpisodes(client, 'show-1', unwatchedOnly: false, out: withSpecials);
-    expect(withSpecials.map((e) => e.id), ['s1e1', 's0e1', 's1e2']);
+    expect(withSpecials.map((e) => e.id), ['s1e1', 's1e2', 's0e1']);
   });
 
   test('defaultPlaybackSeason skips specials when a regular season exists', () {
@@ -236,7 +239,7 @@ void main() {
 
     // Raw container order would clump the Specials folder first.
     final episodes = [s0e1, s0e2, s1e1, s1e2, s1e5];
-    sortEpisodesByWatchOrder(episodes);
+    sortEpisodesByWatchOrder(episodes, ordering: SpecialsOrdering.airDate);
 
     expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's0e1', 's1e5', 's0e2']);
   });
@@ -250,7 +253,7 @@ void main() {
 
     // Raw /grandchildren order would lead with the Specials folder.
     final episodes = [s0e1, s0e2, s1e1, s1e2, s2e1];
-    sortEpisodesByWatchOrder(episodes);
+    sortEpisodesByWatchOrder(episodes, ordering: SpecialsOrdering.airDate);
 
     // With no air dates, a "next 2 unwatched" cut still takes S01E01/S01E02.
     expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's2e1', 's0e1', 's0e2']);
@@ -264,9 +267,86 @@ void main() {
     final s0e1 = _episode('s0e1', parentIndex: 0, index: 1);
 
     final episodes = [s0e1, s1e2, s1e1];
-    sortEpisodesByWatchOrder(episodes);
+    sortEpisodesByWatchOrder(episodes, ordering: SpecialsOrdering.airDate);
 
     expect(episodes.map((e) => e.id), ['s1e1', 's1e2', 's0e1']);
+  });
+
+  test('sortEpisodesByWatchOrder places same-day Specials after the regular episode, before the next one', () {
+    // Aftershow featurettes share the air date of the episode they accompany
+    // (e.g. House of the Dragon "Inside the Episode", #1952). Interleave mode
+    // plays them between that episode and the next week's.
+    final s3e4 = _episode('s3e4', parentIndex: 3, index: 4, originallyAvailableAt: '2026-07-06');
+    final s0e76 = _episode('s0e76', parentIndex: 0, index: 76, originallyAvailableAt: '2026-07-06');
+    final s0e84 = _episode('s0e84', parentIndex: 0, index: 84, originallyAvailableAt: '2026-07-06');
+    final s3e5 = _episode('s3e5', parentIndex: 3, index: 5, originallyAvailableAt: '2026-07-13');
+
+    final episodes = [s0e84, s3e5, s0e76, s3e4];
+    sortEpisodesByWatchOrder(episodes, ordering: SpecialsOrdering.airDate);
+
+    expect(episodes.map((e) => e.id), ['s3e4', 's0e76', 's0e84', 's3e5']);
+  });
+
+  test('sortEpisodesByWatchOrder keeps dated Specials after regular seasons in specialsLast mode', () {
+    // The #1952 preference: Specials never enter the regular run, even with
+    // air dates that would interleave them.
+    final s3e4 = _episode('s3e4', parentIndex: 3, index: 4, originallyAvailableAt: '2026-07-06');
+    final s0e76 = _episode('s0e76', parentIndex: 0, index: 76, originallyAvailableAt: '2026-07-06');
+    final s0e84 = _episode('s0e84', parentIndex: 0, index: 84, originallyAvailableAt: '2026-07-06');
+    final s3e5 = _episode('s3e5', parentIndex: 3, index: 5, originallyAvailableAt: '2026-07-13');
+    final s4e1 = _episode('s4e1', parentIndex: 4, index: 1, originallyAvailableAt: '2027-06-01');
+
+    final episodes = [s0e84, s3e5, s4e1, s0e76, s3e4];
+    sortEpisodesByWatchOrder(episodes, ordering: SpecialsOrdering.specialsLast);
+
+    expect(episodes.map((e) => e.id), ['s3e4', 's3e5', 's4e1', 's0e76', 's0e84']);
+  });
+
+  test('sortEpisodesByWatchOrder respectServer has no server order, so it falls back to Specials-last', () {
+    // Offline queue, downloads "next N", and offline OnDeck sort stored rows
+    // with no server order to respect; the safe fallback keeps Specials out
+    // of the regular run (#1414/#1952).
+    final s3e4 = _episode('s3e4', parentIndex: 3, index: 4, originallyAvailableAt: '2026-07-06');
+    final s0e76 = _episode('s0e76', parentIndex: 0, index: 76, originallyAvailableAt: '2026-07-06');
+    final s3e5 = _episode('s3e5', parentIndex: 3, index: 5, originallyAvailableAt: '2026-07-13');
+
+    final episodes = [s0e76, s3e5, s3e4];
+    sortEpisodesByWatchOrder(episodes, ordering: SpecialsOrdering.respectServer);
+    expect(episodes.map((e) => e.id), ['s3e4', 's3e5', 's0e76']);
+  });
+
+  test('sortEpisodesByWatchOrder follows the specialsOrdering preference by default', () async {
+    // Every client-side call site (offline next/prev, download "next N",
+    // offline OnDeck) sorts without an explicit mode, so flipping the setting
+    // must change the order (#1952).
+    resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+
+    final s3e4 = _episode('s3e4', parentIndex: 3, index: 4, originallyAvailableAt: '2026-07-06');
+    final s0e76 = _episode('s0e76', parentIndex: 0, index: 76, originallyAvailableAt: '2026-07-06');
+    final s3e5 = _episode('s3e5', parentIndex: 3, index: 5, originallyAvailableAt: '2026-07-13');
+
+    // Default respectServer: Specials-last client-side.
+    final episodes = [s0e76, s3e5, s3e4];
+    sortEpisodesByWatchOrder(episodes);
+    expect(episodes.map((e) => e.id), ['s3e4', 's3e5', 's0e76']);
+
+    await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.airDate);
+    sortEpisodesByWatchOrder(episodes);
+    expect(episodes.map((e) => e.id), ['s3e4', 's0e76', 's3e5']);
+
+    await SettingsService.instance.write(SettingsService.specialsOrdering, SpecialsOrdering.specialsLast);
+    sortEpisodesByWatchOrder(episodes);
+    expect(episodes.map((e) => e.id), ['s3e4', 's3e5', 's0e76']);
+  });
+
+  test('compareEpisodesSpecialsLast ignores air dates entirely', () {
+    // A Special that aired before every regular episode still sorts last.
+    final s0e1 = _episode('s0e1', parentIndex: 0, index: 1, originallyAvailableAt: '2020-01-01');
+    final s1e1 = _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2021-01-01');
+
+    expect(compareEpisodesSpecialsLast(s0e1, s1e1), greaterThan(0));
+    expect(compareEpisodesSpecialsLast(s1e1, s0e1), lessThan(0));
   });
 
   test('compareEpisodesByWatchOrder breaks index ties on id for deterministic cuts', () {

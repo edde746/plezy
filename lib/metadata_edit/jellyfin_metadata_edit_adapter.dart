@@ -1,5 +1,4 @@
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
@@ -13,9 +12,6 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
   JellyfinMetadataEditAdapter(this.client);
 
   @override
-  MediaBackend get backend => MediaBackend.jellyfin;
-
-  @override
   MediaServerClient get mediaClient => client;
 
   @override
@@ -26,7 +22,7 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
   Future<MetadataEditDraft> load(MediaItem item) async {
     final raw = await client.fetchEditableMetadataItem(item.id);
     if (raw == null) {
-      throw StateError('Editable Jellyfin metadata item is unavailable');
+      throw StateError('Editable MediaBrowser metadata item is unavailable');
     }
     final values = <String, Object?>{};
     _writeCommonValues(values, raw, item);
@@ -56,8 +52,8 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
     final dto = Map<String, dynamic>.from(raw);
 
     dto['ProviderIds'] = _stringMap(dto['ProviderIds']);
-    dto['Tags'] = metadataStringList(dto['Tags']);
-    dto['Genres'] = metadataStringList(dto['Genres']);
+    dto['Tags'] = _namedStringList(dto, 'Tags', 'TagItems');
+    dto['Genres'] = _namedStringList(dto, 'Genres', 'GenreItems');
     dto['People'] = _mapList(dto['People']);
     dto['Studios'] = _mapList(dto['Studios']);
     dto['LockedFields'] = metadataStringList(dto['LockedFields']);
@@ -101,6 +97,17 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
       peopleChanged = true;
     }
     if (peopleChanged) dto['People'] = people;
+
+    // Emby ignores the plain `Genres`/`Tags` string lists on `POST /Items/{id}`
+    // and reads the `GenreItems`/`TagItems` name-pair arrays instead. The
+    // fetched DTO carries the *old* pairs, so mirroring unconditionally (not
+    // only when the field changed) is what keeps a save from silently
+    // reinstating the previous genres. See
+    // [MediaBrowserDialect.metadataWritesUseNamePairLists].
+    if (client.dialect.metadataWritesUseNamePairLists) {
+      dto['GenreItems'] = _toNamePairs(dto['Genres']);
+      dto['TagItems'] = _toNamePairs(dto['Tags']);
+    }
 
     final success = await client.updateMetadataItem(draft.sourceItem.id, dto);
     if (success) {
@@ -178,12 +185,12 @@ class JellyfinMetadataEditAdapter extends MetadataEditAdapter {
         ? metadataFirstString(raw['Taglines'])
         : item.tagline ?? '';
     values['summary'] = raw['Overview'] as String? ?? item.summary ?? '';
-    values['genre'] = metadataStringList(raw['Genres']);
+    values['genre'] = _namedStringList(raw, 'Genres', 'GenreItems');
     values['director'] = _peopleByType(raw['People'], 'Director');
     values['writer'] = _peopleByType(raw['People'], 'Writer');
     values['producer'] = _peopleByType(raw['People'], 'Producer');
     values['country'] = metadataStringList(raw['ProductionLocations']);
-    values['label'] = metadataStringList(raw['Tags']);
+    values['label'] = _namedStringList(raw, 'Tags', 'TagItems');
   }
 
   void _writeArtworkValues(Map<String, Object?> values, MediaItem item) {
@@ -242,6 +249,18 @@ List<String> _nameList(Object? value) {
       .toList();
 }
 
+/// Effective value of a `Genres`/`Tags` style field, preferring the plain string
+/// array and falling back to its `…Items` name-pair sibling.
+///
+/// Emby never returns the plain `Tags` array at all — only `TagItems`, whatever
+/// `Fields` the request asks for (measured on Emby 4.9.5). Reading the plain key
+/// alone would show an empty tag editor for an item that has tags and, worse,
+/// write that emptiness back on the next save.
+List<String> _namedStringList(Map<String, dynamic> dto, String key, String pairKey) {
+  final plain = metadataStringList(dto[key]);
+  return plain.isNotEmpty ? plain : _nameList(dto[pairKey]);
+}
+
 List<String> _peopleByType(Object? value, String type) {
   return _mapList(value)
       .where((person) => (person['Type'] as String?)?.toLowerCase() == type.toLowerCase())
@@ -266,6 +285,13 @@ List<Map<String, dynamic>> _replaceNamePairs(List<Map<String, dynamic>> existing
   final used = <int>{};
   return names.map((name) => _preserveNamedMap(existing, used, name)).toList();
 }
+
+/// Project a `Genres`/`Tags` string list into the `[{'Name': …}]` shape Emby
+/// requires on write. The server assigns the `Id` for a new entry, so omitting
+/// it is correct — it resolves an existing tag by name and creates one when
+/// there is no match.
+List<Map<String, dynamic>> _toNamePairs(Object? names) =>
+    metadataStringList(names).map((name) => <String, dynamic>{'Name': name}).toList();
 
 Map<String, dynamic> _preserveNamedMap(
   List<Map<String, dynamic>> existing,

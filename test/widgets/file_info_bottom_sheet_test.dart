@@ -42,6 +42,52 @@ void main() {
     expect(find.text('Subtitles'), findsOneWidget);
   });
 
+  testWidgets('audio-only file drops the video section and keeps the copyable path', (tester) async {
+    const path = '/music/Boards of Canada/Geogaddi/01 Ready Lets Go.flac';
+    const fileInfo = MediaFileInfo(
+      versions: [
+        MediaFileVersion(
+          container: 'flac',
+          parts: [
+            MediaFilePart(
+              filePath: path,
+              fileSize: 35651584,
+              streams: [
+                MediaStreamDetails(
+                  kind: MediaStreamKind.audio,
+                  ordinal: 1,
+                  codec: 'flac',
+                  channels: 2,
+                  channelLayout: 'stereo',
+                  sampleRate: 44100,
+                  bitDepth: 16,
+                ),
+                MediaStreamDetails(kind: MediaStreamKind.lyric, ordinal: 1, codec: 'lrc'),
+              ],
+            ),
+          ],
+        ),
+      ],
+    );
+
+    await _pumpSheet(tester, fileInfo: fileInfo, title: 'Ready Lets Go');
+
+    expect(find.text('Ready Lets Go'), findsOneWidget);
+    expect(find.text('File'), findsOneWidget);
+    expect(find.text('Audio'), findsOneWidget);
+    expect(find.text('Lyrics'), findsOneWidget);
+    expect(find.text('stereo (2 ch)'), findsOneWidget);
+    expect(find.text('44.1 kHz'), findsOneWidget);
+    expect(find.text('16 bit'), findsOneWidget);
+    expect(find.text(path), findsOneWidget);
+
+    // Nothing video-shaped may leak into a track's sheet.
+    expect(find.text('Video'), findsNothing);
+    expect(find.text('Embedded Images'), findsNothing);
+    expect(find.text('Resolution'), findsNothing);
+    expect(find.text('Frame Rate'), findsNothing);
+  });
+
   testWidgets('absent fields and empty sections are omitted instead of rendering blank labels', (tester) async {
     const fileInfo = MediaFileInfo(
       versions: [

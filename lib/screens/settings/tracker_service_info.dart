@@ -6,6 +6,7 @@ import '../../models/catalog/catalog_item.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/anilist/anilist_tracker.dart';
 import '../../services/trackers/mal/mal_tracker.dart';
+import '../../services/trackers/mdblist/mdblist_tracker.dart';
 import '../../services/trackers/simkl/simkl_tracker.dart';
 import '../../services/trackers/tracker.dart';
 import '../../services/trackers/tracker_constants.dart';
@@ -87,6 +88,12 @@ class TrackerServiceInfo {
       logoSource: CatalogSourceId.simkl,
       ratingSource: SimklTracker.instance,
       startConnection: startSimklConnection,
+    ),
+    TrackerServiceInfo.shared(
+      TrackerConfig.mdblist(),
+      logoSource: CatalogSourceId.mdblist,
+      ratingSource: MdblistTracker.instance,
+      startConnection: startMdblistConnection,
     ),
   ];
 }

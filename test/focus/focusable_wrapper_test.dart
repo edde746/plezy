@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:ui' show SemanticsAction, Tristate;
 
 import 'package:flutter/material.dart';
@@ -53,6 +54,108 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  Widget buildScrollableWrappers({
+    required ScrollController controller,
+    required FocusNode topNode,
+    required FocusNode bottomNode,
+  }) {
+    return InputModeTracker(
+      child: MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            controller: controller,
+            child: Column(
+              children: [
+                FocusableWrapper(focusNode: topNode, onSelect: () {}, child: const SizedBox(width: 100, height: 100)),
+                for (var i = 0; i < 20; i++) const SizedBox(width: 100, height: 100),
+                FocusableWrapper(
+                  focusNode: bottomNode,
+                  onSelect: () {},
+                  child: const SizedBox(width: 100, height: 100),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  testWidgets('pointer-mode focus gain does not auto-scroll', (tester) async {
+    final topNode = FocusNode(debugLabel: 'top');
+    final bottomNode = FocusNode(debugLabel: 'bottom');
+    final controller = ScrollController();
+    addTearDown(topNode.dispose);
+    addTearDown(bottomNode.dispose);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(buildScrollableWrappers(controller: controller, topNode: topNode, bottomNode: bottomNode));
+
+    // Programmatic focus parking without a keyboard session (the media-detail
+    // entry pattern) must not move the viewport.
+    bottomNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(bottomNode.hasFocus, isTrue);
+    expect(controller.offset, 0);
+  });
+
+  testWidgets('keyboard-mode focus gain auto-scrolls into view', (tester) async {
+    final topNode = FocusNode(debugLabel: 'top');
+    final bottomNode = FocusNode(debugLabel: 'bottom');
+    final controller = ScrollController();
+    addTearDown(topNode.dispose);
+    addTearDown(bottomNode.dispose);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(buildScrollableWrappers(controller: controller, topNode: topNode, bottomNode: bottomNode));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    bottomNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(bottomNode.hasFocus, isTrue);
+    expect(controller.offset, greaterThan(0));
+  });
+
+  testWidgets('dialog close restoring pointer-parked focus keeps the scroll position', (tester) async {
+    // Issue #2031: entry code parks focus on an item, the user scrolls away by
+    // touch/mouse, and closing a context menu (a dialog route) hands focus back
+    // to the parked node — which must not scroll itself back into view.
+    final topNode = FocusNode(debugLabel: 'top');
+    final bottomNode = FocusNode(debugLabel: 'bottom');
+    final controller = ScrollController();
+    addTearDown(topNode.dispose);
+    addTearDown(bottomNode.dispose);
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(buildScrollableWrappers(controller: controller, topNode: topNode, bottomNode: bottomNode));
+
+    topNode.requestFocus();
+    await tester.pumpAndSettle();
+    controller.jumpTo(1200);
+    await tester.pump();
+
+    final navContext = tester.element(find.byType(SingleChildScrollView));
+    // Deliberately unawaited: the future completes when the dialog pops below.
+    unawaited(
+      showDialog<void>(
+        context: navContext,
+        builder: (_) => const AlertDialog(title: Text('menu')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(topNode.hasFocus, isFalse);
+
+    Navigator.of(navContext).pop();
+    await tester.pumpAndSettle();
+
+    expect(topNode.hasFocus, isTrue);
+    expect(controller.offset, 1200);
   });
 
   testWidgets('context menu key does not suppress the next select', (tester) async {

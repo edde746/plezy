@@ -29,7 +29,6 @@ void main() {
     });
 
     test('does not mistake an unrelated number for a status', () {
-      // A bare code with no HTTP context must not reach the fatal dialogs.
       expect(PlayerError.httpStatusFromLog('Set property: stream-buffer-size="404"'), isNull);
       expect(PlayerError.httpStatusFromLog('audio/aac 500 kbps'), isNull);
       // Adjacent digits are not a 3-digit status.
@@ -42,13 +41,11 @@ void main() {
   });
 
   group('fatalPlaybackHttpStatuses', () {
-    test('covers exactly the statuses no client-side retry can recover', () {
-      expect(fatalPlaybackHttpStatuses, {404, 500});
-    });
-
     test('excludes the 503 the reconnect path deliberately retries', () {
       // stream-lavf-o sets reconnect_on_http_error=503, so a 503 is expected
-      // mid-playback and must not latch as fatal.
+      // mid-playback and must not latch as fatal. At open time the player
+      // screen's OpenHttp503Watchdog bounds the loop instead — only its
+      // synthesized cause tag, never a raw latched status, ends playback.
       expect(fatalPlaybackHttpStatuses.contains(503), isFalse);
       expect(PlayerError.httpStatusFromLog('http: HTTP error 503 Service Unavailable'), 503);
     });

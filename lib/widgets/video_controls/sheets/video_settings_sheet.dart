@@ -14,8 +14,10 @@ import 'package:provider/provider.dart';
 import '../../../models/shader_preset.dart';
 import '../../../media/playback_rate.dart';
 import '../../../mpv/mpv.dart';
+import '../../../mpv/player/player_native.dart';
 import '../../../providers/shader_provider.dart';
 import '../../../services/file_picker_service.dart';
+import '../../../services/scoped_player_prefs.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../services/video_filter_manager.dart';
@@ -37,18 +39,7 @@ import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 import 'version_quality_sheet.dart';
 
-enum _SettingsView {
-  menu,
-  speed,
-  zoom,
-  versionQuality,
-  sleep,
-  audioSync,
-  subtitleSync,
-  audioDevice,
-  shader,
-  dvConversion,
-}
+enum _SettingsView { menu, speed, zoom, versionQuality, sleep, audioDevice, shader, dvConversion, hdrToneMapping }
 
 class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
@@ -92,6 +83,76 @@ class _SettingsMenuItem extends StatelessWidget {
   }
 }
 
+/// Ordering for the sheet's asynchronous pref writes, keyed on the pref key.
+///
+/// Shared by the toggle rows and the tone-mapping picker rather than owned by
+/// either. A pick closes the sheet, so anything scoped to a widget cannot rank
+/// a write against one started by a *later* sheet - which is exactly the race
+/// here, since reopening and picking again is one tap. Keys are distinct per
+/// pref and [LatestAsyncWrite] keeps a generation and tail per key, so the two
+/// users never rank against each other.
+final LatestAsyncWrite<String> _prefWrites = LatestAsyncWrite<String>();
+
+/// Moves a setting on the device, records it, and puts both halves back when the
+/// recording fails.
+///
+/// Device first is a decision, not an accident: a refusal is a validation. A
+/// rejected `hdr-enabled` is how the plane reports that this session can never
+/// carry HDR, so nothing may be recorded for a value the device would not take.
+/// The price is a window in which the device leads the store, and closing that
+/// window is what [_undoSettingWrite] is for - without it a rejected storage
+/// write leaves the plane on the newly chosen policy while the switch and the
+/// stored preference both still name the old one, for the rest of the session,
+/// until the next player initialisation happens to replay the stored value.
+///
+/// Call this inside [LatestAsyncWrite.commitIfLatest] so a newer intent for the
+/// same key cannot land between the failed write and the undo.
+///
+/// Rethrows whichever half failed, carrying its own stack: the caller owns what
+/// the user sees, and for HDR that is a specific message about a surface no
+/// retry can fix.
+Future<void> _applyThenPersist<T>(Pref<T> pref, T value, FutureOr<void> Function(T value)? apply) async {
+  if (apply == null) return SettingsService.instance.write(pref, value);
+  // Read before the store is touched: SharedPreferencesWithCache moves its
+  // in-process copy ahead of the platform write it may then fail, so asking
+  // afterwards would answer with the value that did not persist.
+  final restore = SettingsService.instance.read(pref);
+  await apply(value);
+  try {
+    await SettingsService.instance.write(pref, value);
+  } catch (error, stackTrace) {
+    await _undoSettingWrite(pref, restore, apply);
+    Error.throwWithStackTrace(error, stackTrace);
+  }
+}
+
+/// Puts the store and the device back on [restore] after the store refused a
+/// value the device had already taken.
+///
+/// Each half is attempted independently, the preference first: it is what the
+/// next player initialisation replays into the device, so getting it right
+/// salvages the session even when the device half then fails too. Failures are
+/// logged and swallowed because the caller is already rethrowing the refusal
+/// that started this, which is the one carrying a cause worth reporting.
+Future<void> _undoSettingWrite<T>(Pref<T> pref, T restore, FutureOr<void> Function(T value) apply) async {
+  try {
+    // Rewriting the value already in the store looks redundant and is not: the
+    // refused write moved SharedPreferencesWithCache's in-process copy before
+    // the platform call it failed, and that copy is what SettingsService.read
+    // answers with for the rest of the session. It is moved back here before
+    // the platform call too, so it is repaired even if this write is refused
+    // as well.
+    await SettingsService.instance.write(pref, restore);
+  } catch (error, stackTrace) {
+    appLogger.w('Failed to restore the stored "${pref.key}"', error: error, stackTrace: stackTrace);
+  }
+  try {
+    await apply(restore);
+  } catch (error, stackTrace) {
+    appLogger.w('Failed to restore "${pref.key}" on the device', error: error, stackTrace: stackTrace);
+  }
+}
+
 class _SettingsToggleItem extends StatefulWidget {
   final Pref<bool> pref;
   final IconData icon;
@@ -105,8 +166,6 @@ class _SettingsToggleItem extends StatefulWidget {
 }
 
 class _SettingsToggleItemState extends State<_SettingsToggleItem> {
-  static final LatestAsyncWrite<String> _writes = LatestAsyncWrite<String>();
-
   bool? _pendingValue;
   int _writeGeneration = 0;
 
@@ -129,7 +188,7 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
     final pref = widget.pref;
     final callback = widget.onAfterWrite;
     final generation = ++_writeGeneration;
-    final writeToken = _writes.begin(pref.key);
+    final writeToken = _prefWrites.begin(pref.key);
     setState(() {
       _pendingValue = next;
     });
@@ -144,10 +203,11 @@ class _SettingsToggleItemState extends State<_SettingsToggleItem> {
     int writeToken,
   ) async {
     try {
-      final committed = await _writes.commitIfLatest(pref.key, writeToken, () async {
-        if (callback != null) await callback(next);
-        await SettingsService.instance.write(pref, next);
-      });
+      final committed = await _prefWrites.commitIfLatest(
+        pref.key,
+        writeToken,
+        () => _applyThenPersist(pref, next, callback),
+      );
       if (!committed || !mounted || generation != _writeGeneration) return;
       setState(() {
         _pendingValue = null;
@@ -274,11 +334,32 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late double _zoomScale;
   String _dvConversionMode = 'auto';
   int _dvConversionWriteGeneration = 0;
+  // Linux only, and answered by the native side. Starts false so the toggle
+  // never flashes into view on an output that cannot carry HDR.
+  bool _linuxHdrSupported = false;
+  // Re-probes that answer when the app is shown or resumed. Null wherever the
+  // capability is a constant and there is nothing to re-probe.
+  AppLifecycleListener? _hdrSupportLifecycle;
+  // The lifecycle hooks miss the case that matters most here: dragging the
+  // window to another monitor changes the answer without the app ever being
+  // hidden. Only the plane sees that, so it says so.
+  StreamSubscription<void>? _hdrOutputChanged;
+  late HdrToneMapping _hdrToneMapping;
 
   TrackControlsState get _state => widget.trackControlsState;
 
+  // An explicit value from the caller wins. Otherwise the capability is static
+  // per platform, except on the Linux video plane where it depends on the
+  // compositor, the output and the plane's bit depth, so it has to be asked for.
   bool get _supportsHdrControl =>
-      widget.supportsHdrControl ?? (Platform.isIOS || Platform.isMacOS || Platform.isWindows);
+      widget.supportsHdrControl ??
+      (_probesHdrSupport ? _linuxHdrSupported : Platform.isIOS || Platform.isMacOS || Platform.isWindows);
+
+  // The Linux plane is the only path whose answer moves, and an explicit value
+  // from the caller replaces the question altogether. Asked through
+  // PlayerNative.usesLinuxVideoPlane, not Platform.isLinux, so the probe and the
+  // tone-mapping row it gates resolve the same way under the test override.
+  bool get _probesHdrSupport => PlayerNative.usesLinuxVideoPlane && widget.supportsHdrControl == null;
 
   bool get _showDebugDvConversionMode {
     if (!kDebugMode) return false;
@@ -292,7 +373,20 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _audioSyncOffset = _state.audioSyncOffset;
     _subtitleSyncOffset = _state.subtitleSyncOffset;
     _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
+    _hdrToneMapping = SettingsService.instance.read(SettingsService.hdrToneMapping);
     _loadDebugDvConversionMode();
+    if (_probesHdrSupport) {
+      _hdrSupportLifecycle = AppLifecycleListener(onResume: _refreshLinuxHdrSupport, onShow: _refreshLinuxHdrSupport);
+      _hdrOutputChanged = widget.player.streams.hdrOutputChanged.listen((_) => _refreshLinuxHdrSupport());
+    }
+    _refreshLinuxHdrSupport();
+  }
+
+  @override
+  void dispose() {
+    _hdrSupportLifecycle?.dispose();
+    _hdrOutputChanged?.cancel();
+    super.dispose();
   }
 
   @override
@@ -313,6 +407,79 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     });
   }
 
+  // Asked again rather than cached for the sheet's lifetime. The native answer
+  // is "this client can describe HDR *and* the output is in HDR right now", and
+  // the second half moves when the window changes monitor or the display's HDR
+  // mode is switched under us. The plane handles that internally and sends
+  // nothing to Dart, so this rides the hooks that do exist: the app being shown
+  // or resumed, and the menu coming back into view.
+  Future<void> _refreshLinuxHdrSupport() async {
+    if (!_probesHdrSupport) return;
+    final player = widget.player;
+    final supported = await player.isHdrOutputSupported();
+    if (!mounted || player != widget.player || supported == _linuxHdrSupported) return;
+    setState(() {
+      _linuxHdrSupported = supported;
+    });
+  }
+
+  // What the native side answers when the plane can never carry HDR - an 8-bit
+  // EGL config, or a compositor without the colour-management protocol. Fixed
+  // for the session, unlike a merely-SDR output, which is now accepted and
+  // honoured once an HDR output is reached.
+  static const String _hdrUnsupportedCode = 'HDR_UNSUPPORTED';
+
+  // Rethrown so the switch still springs back. The message is what keeps that
+  // from reading as a lost tap: retrying cannot help for the rest of the session.
+  Future<void> _setHdrEnabled(bool enabled) async {
+    try {
+      await widget.player.setProperty('hdr-enabled', enabled ? 'yes' : 'no');
+    } on PlatformException catch (error) {
+      if (mounted && error.code == _hdrUnsupportedCode) showErrorSnackBar(context, t.videoSettings.hdrUnsupported);
+      rethrow;
+    }
+  }
+
+  void _setHdrToneMapping(HdrToneMapping mode) {
+    final targetPlayer = widget.player;
+    // The tiles stay tappable until close() runs, so two picks can be in flight.
+    // The native side happens to queue HDR transactions in order, but that is not
+    // an invariant this file can see: last write wins locally instead.
+    //
+    // Deliberately not gated on `mounted`: dismissing the sheet mid-write would
+    // otherwise leave mpv in the new mode while the stored setting still named
+    // the old one, and the next playback start would push the old one back.
+    // A superseded pick can still persist transiently - the staleness check is
+    // before the body, not inside it - but the winner is serialized behind it
+    // and overwrites it, so the settled value is the last pick.
+    final key = SettingsService.hdrToneMapping.key;
+    final writeToken = _prefWrites.begin(key);
+    unawaited(() async {
+      try {
+        final committed = await _prefWrites.commitIfLatest(
+          key,
+          writeToken,
+          () => _applyThenPersist(
+            SettingsService.hdrToneMapping,
+            mode,
+            (value) => targetPlayer.setProperty('hdr-tone-mapping', value.name),
+          ),
+        );
+        if (!committed || !mounted || targetPlayer != widget.player) return;
+        setState(() {
+          _hdrToneMapping = mode;
+        });
+        OverlaySheetController.of(context).close();
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to set the HDR tone-mapping mode', error: error, stackTrace: stackTrace);
+        // The tick stays on the old mode by design (the stored setting was
+        // left alone), but a dead tap needs saying so - the HDR toggle's
+        // refusal shows a snackbar, and this is the same shape of refusal.
+        if (mounted) showErrorSnackBar(context, t.videoSettings.hdrToneMappingFailed);
+      }
+    }());
+  }
+
   void _setDebugDvConversionMode(String mode) {
     final targetPlayer = widget.player;
     final generation = ++_dvConversionWriteGeneration;
@@ -331,22 +498,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   void _navigateTo(_SettingsView view) {
-    // Sync views open as a compact top bar instead of a sub-view
-    if (view == _SettingsView.audioSync || view == _SettingsView.subtitleSync) {
-      _openSyncBar(view);
-      return;
-    }
     setState(() {
       _currentView = view;
     });
     OverlaySheetController.maybeOf(context)?.refocus();
   }
 
-  void _openSyncBar(_SettingsView view) {
+  // Sync adjustments open as a compact top bar instead of a sub-view.
+  void _openSyncBar({required bool isSubtitle}) {
     final controller = OverlaySheetController.maybeOf(context);
     if (controller == null) return;
 
-    final isSubtitle = view == _SettingsView.subtitleSync;
     final title = isSubtitle ? t.videoSettings.subtitleSync : t.videoSettings.audioSync;
     final icon = isSubtitle ? Symbols.subtitles_rounded : Symbols.sync_rounded;
     final propertyName = isSubtitle ? 'sub-delay' : 'audio-delay';
@@ -372,13 +534,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
             onOffsetChanged: (offset) async {
-              final settings = SettingsService.instance;
-              if (isSubtitle) {
-                await settings.write(SettingsService.subtitleSyncOffset, offset);
-              } else {
-                await settings.write(SettingsService.audioSyncOffset, offset);
-              }
-              _state.onSyncOffsetChanged?.call(propertyName, offset);
+              final pref = isSubtitle ? ScopedPlayerPrefs.subtitleSyncOffset : ScopedPlayerPrefs.audioSyncOffset;
+              await ScopedPlayerPrefs.write(pref, _state.metadata, offset);
             },
           ),
         )
@@ -397,6 +554,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     setState(() {
       _currentView = _SettingsView.menu;
     });
+    // The HDR rows live on the menu only, so this is the moment a stale answer
+    // becomes visible again.
+    _refreshLinuxHdrSupport();
     OverlaySheetController.maybeOf(context)?.refocus();
   }
 
@@ -412,16 +572,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return _versionQualityTitle();
       case _SettingsView.sleep:
         return t.videoSettings.sleepTimer;
-      case _SettingsView.audioSync:
-        return t.videoSettings.audioSync;
-      case _SettingsView.subtitleSync:
-        return t.videoSettings.subtitleSync;
       case _SettingsView.audioDevice:
         return t.videoSettings.audioOutput;
       case _SettingsView.shader:
         return t.shaders.title;
       case _SettingsView.dvConversion:
-        return 'DV Conversion Mode';
+        return t.settings.dvConversionMode;
+      case _SettingsView.hdrToneMapping:
+        return t.videoSettings.hdrToneMapping;
     }
   }
 
@@ -437,16 +595,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.art_track_rounded;
       case _SettingsView.sleep:
         return Symbols.bedtime_rounded;
-      case _SettingsView.audioSync:
-        return Symbols.sync_rounded;
-      case _SettingsView.subtitleSync:
-        return Symbols.subtitles_rounded;
       case _SettingsView.audioDevice:
         return Symbols.speaker_rounded;
       case _SettingsView.shader:
         return Symbols.auto_fix_high_rounded;
       case _SettingsView.dvConversion:
         return Symbols.hdr_strong_rounded;
+      case _SettingsView.hdrToneMapping:
+        return Symbols.tonality_rounded;
     }
   }
 
@@ -467,6 +623,11 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       _ => t.settings.dvConversionAuto,
     };
   }
+
+  String _formatHdrToneMapping(HdrToneMapping mode) => switch (mode) {
+    HdrToneMapping.compositor => t.videoSettings.hdrToneMappingCompositor,
+    HdrToneMapping.player => t.videoSettings.hdrToneMappingPlayer,
+  };
 
   String _formatSleepTimer(SleepTimerService sleepTimer) {
     if (!sleepTimer.isActive) return t.common.off;
@@ -529,6 +690,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final isDesktop = PlatformDetector.isDesktop(context);
 
     return ListView(
+      shrinkWrap: true,
       children: [
         // Playback Speed - hidden for live TV and when user cannot control playback
         if (_state.canControl && !_state.isLive)
@@ -579,41 +741,47 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           },
         ),
 
-        // Audio Sync
         _SettingsMenuItem(
           icon: Symbols.sync_rounded,
           title: t.videoSettings.audioSync,
           valueText: formatSyncOffset(_audioSyncOffset.toDouble()),
           isHighlighted: _audioSyncOffset != 0,
-          onTap: () => _navigateTo(_SettingsView.audioSync),
+          onTap: () => _openSyncBar(isSubtitle: false),
         ),
 
-        // Subtitle Sync
         _SettingsMenuItem(
           icon: Symbols.subtitles_rounded,
           title: t.videoSettings.subtitleSync,
           valueText: formatSyncOffset(_subtitleSyncOffset.toDouble()),
           isHighlighted: _subtitleSyncOffset != 0,
-          onTap: () => _navigateTo(_SettingsView.subtitleSync),
+          onTap: () => _openSyncBar(isSubtitle: true),
         ),
 
-        // HDR Toggle
         if (_supportsHdrControl)
           _SettingsToggleItem(
             pref: SettingsService.enableHDR,
             icon: Symbols.hdr_strong_rounded,
             title: t.videoSettings.hdr,
-            onAfterWrite: (value) => widget.player.setProperty('hdr-enabled', value ? 'yes' : 'no'),
+            onAfterWrite: _setHdrEnabled,
           ),
 
-        // Auto-Play Next Episode Toggle
+        // Only meaningful where the plane can actually carry HDR, and only the
+        // Linux plane lets us pick the curve: elsewhere the platform decides who
+        // tone-maps.
+        if (_supportsHdrControl && PlayerNative.usesLinuxVideoPlane)
+          _SettingsMenuItem(
+            icon: Symbols.tonality_rounded,
+            title: t.videoSettings.hdrToneMapping,
+            valueText: _formatHdrToneMapping(_hdrToneMapping),
+            onTap: () => _navigateTo(_SettingsView.hdrToneMapping),
+          ),
+
         _SettingsToggleItem(
           pref: SettingsService.autoPlayNextEpisode,
           icon: Symbols.skip_next_rounded,
           title: t.videoControls.autoPlayNext,
         ),
 
-        // Audio Output Device (Desktop only)
         if (isDesktop)
           StreamBuilder<AudioDevice>(
             stream: widget.player.streams.audioDevice,
@@ -632,14 +800,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             },
           ),
 
-        // Audio Passthrough (desktop, Android TV, and Apple TV)
-        if (PlatformDetector.supportsAudioPassthrough())
-          _SettingsToggleItem(
-            pref: SettingsService.audioPassthrough,
-            icon: Symbols.surround_sound_rounded,
-            title: t.videoSettings.audioPassthrough,
-            onAfterWrite: widget.player.setAudioPassthrough,
-          ),
+        // Audio Passthrough is not here: it configures the audio output route rather
+        // than this playback, and applying it mid-stream bounces the audio renderer and
+        // re-decides video tunneling. It lives in Settings > Video Playback next to
+        // Tunneled Playback, which is applied the same way — at the next player start.
 
         // Dolby playback badge. The Dolby application guide requires the app
         // to reflect AVAudioSession.renderingMode; Apple only resolves that
@@ -647,7 +811,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         // "not Dolby" when the system reports notApplicable.
         if (PlatformDetector.isAppleTV()) _AudioRenderingModeItem(player: widget.player),
 
-        // Audio Normalization
         _SettingsToggleItem(
           pref: SettingsService.audioNormalization,
           icon: Symbols.graphic_eq_rounded,
@@ -655,7 +818,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onAfterWrite: widget.player.setAudioNormalization,
         ),
 
-        // Stereo Downmix
         _SettingsToggleItem(
           pref: SettingsService.audioDownmix,
           icon: Symbols.headphones_rounded,
@@ -730,7 +892,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
 
         if (kDebugMode)
-          for (final status in const [500, 404])
+          for (final status in const [500, 404, 503])
             FocusableListTile(
               leading: AppIcon(Symbols.bug_report_rounded, fill: 1, color: tokens(context).textMuted),
               title: Text('Simulate HTTP $status from server'),
@@ -760,6 +922,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final primary = Theme.of(context).colorScheme.primary;
 
     return ListView(
+      shrinkWrap: true,
       children: [
         for (final mode in modes)
           FocusableListTile(
@@ -767,6 +930,29 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             subtitle: Text(mode.subtitle, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
             trailing: _dvConversionMode == mode.value ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
             onTap: () => _setDebugDvConversionMode(mode.value),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHdrToneMappingView() {
+    final modes = [
+      (value: HdrToneMapping.compositor, subtitle: t.videoSettings.hdrToneMappingCompositorDescription),
+      (value: HdrToneMapping.player, subtitle: t.videoSettings.hdrToneMappingPlayerDescription),
+    ];
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return ListView(
+      children: [
+        for (final mode in modes)
+          FocusableListTile(
+            title: Text(
+              _formatHdrToneMapping(mode.value),
+              style: TextStyle(color: _hdrToneMapping == mode.value ? primary : null),
+            ),
+            subtitle: Text(mode.subtitle, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+            trailing: _hdrToneMapping == mode.value ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+            onTap: () => _setHdrToneMapping(mode.value),
           ),
       ],
     );
@@ -800,6 +986,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         ];
 
         return ListView.builder(
+          shrinkWrap: true,
           itemCount: speeds.length,
           itemBuilder: (context, index) {
             final speed = speeds[index];
@@ -812,8 +999,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
               onTap: () async {
                 await widget.player.setRate(speed);
-                // Save as default playback speed
-                await SettingsService.instance.write(SettingsService.defaultPlaybackSpeed, speed);
+                // Save at the configured persistence scope (global by default).
+                await ScopedPlayerPrefs.write(ScopedPlayerPrefs.playbackSpeed, _state.metadata, speed);
                 if (context.mounted) {
                   OverlaySheetController.of(context).close(); // Close sheet after selection
                 }
@@ -830,6 +1017,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final primary = Theme.of(context).colorScheme.primary;
 
     return ListView(
+      shrinkWrap: true,
       children: [
         FocusableListTile(
           leading: AppIcon(Symbols.restart_alt_rounded, fill: 1, color: tokens(context).textMuted),
@@ -931,6 +1119,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             }
 
             return ListView(
+              shrinkWrap: true,
               children: [
                 for (final d in ungrouped) _buildDeviceTile(d, currentDevice),
                 for (final entry in groups.entries) ...[
@@ -952,7 +1141,25 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildFlatDeviceList(List<AudioDevice> devices, AudioDevice currentDevice) {
+    // The device list arrives asynchronously, so an empty list is the normal
+    // first frame. Without a placeholder the shrink-wrapped page would render
+    // as a bare header and then jump once devices land.
+    //
+    // A fixed placeholder rather than FiltersBottomSheet's hold-the-outgoing-
+    // height technique: this page is entered from the menu, whose height is
+    // unrelated to a device list, so holding it would be arbitrary. One small
+    // upward move when the devices land beats two.
+    if (devices.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        child: Center(
+          heightFactor: 1,
+          child: Text(t.videoControls.noAudioDevicesAvailable, style: TextStyle(color: tokens(context).textMuted)),
+        ),
+      );
+    }
     return ListView.builder(
+      shrinkWrap: true,
       itemCount: devices.length,
       itemBuilder: (context, index) => _buildDeviceTile(devices[index], currentDevice),
     );
@@ -983,6 +1190,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // +1 for the import button at the end
         return ListView.builder(
+          shrinkWrap: true,
           itemCount: presets.length + 1,
           itemBuilder: (context, index) {
             if (index == presets.length) {
@@ -1022,7 +1230,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   _state.onToggleAmbientLighting?.call();
                 }
                 await _state.shaderService!.applyPreset(preset);
-                await shaderProvider.setPreset(preset);
+                await ScopedPlayerPrefs.write(ScopedPlayerPrefs.shaderPreset, _state.metadata, preset.id);
+                shaderProvider.setCurrentPreset(preset);
                 if (!context.mounted) return;
                 _state.onShaderChanged?.call();
                 OverlaySheetController.of(context).close();
@@ -1051,7 +1260,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _state.onToggleAmbientLighting?.call();
         }
         await _state.shaderService!.applyPreset(preset);
-        await shaderProvider.setPreset(preset);
+        await ScopedPlayerPrefs.write(ScopedPlayerPrefs.shaderPreset, _state.metadata, preset.id);
+        shaderProvider.setCurrentPreset(preset);
         if (!mounted) return;
         _state.onShaderChanged?.call();
       }
@@ -1139,15 +1349,14 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildVersionQualityView();
           case _SettingsView.sleep:
             return _buildSleepView();
-          case _SettingsView.audioSync:
-          case _SettingsView.subtitleSync:
-            return _buildMenuView(); // Sync views open as top bars, fallback to menu
           case _SettingsView.audioDevice:
             return _buildAudioDeviceView();
           case _SettingsView.shader:
             return _buildShaderView();
           case _SettingsView.dvConversion:
             return _buildDvConversionView();
+          case _SettingsView.hdrToneMapping:
+            return _buildHdrToneMappingView();
         }
       }(),
     );
@@ -1202,9 +1411,7 @@ class _CompactSyncBarState extends State<_CompactSyncBar> {
             player: widget.player,
             propertyName: widget.propertyName,
             initialOffset: widget.initialOffset,
-            labelText: widget.title,
             onOffsetChanged: widget.onOffsetChanged,
-            compact: true,
             sliderFocusNode: widget.sliderFocusNode,
             resetFocusNode: _resetFocusNode,
             closeFocusNode: _closeFocusNode,

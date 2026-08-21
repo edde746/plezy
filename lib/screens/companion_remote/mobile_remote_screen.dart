@@ -203,7 +203,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         ),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: .fromLTRB(16, 16, 16, 16 + MediaQuery.paddingOf(context).bottom),
             children: [
               SegmentedButton<int>(
                 showSelectedIcon: false,

@@ -10,6 +10,9 @@ import '../services/trackers/anilist/anilist_tracker.dart';
 import '../services/trackers/mal/mal_auth_service.dart';
 import '../services/trackers/mal/mal_client.dart';
 import '../services/trackers/mal/mal_tracker.dart';
+import '../services/trackers/mdblist/mdblist_auth_service.dart';
+import '../services/trackers/mdblist/mdblist_client.dart';
+import '../services/trackers/mdblist/mdblist_tracker.dart';
 import '../services/trackers/oauth_proxy_client.dart';
 import '../services/trackers/simkl/simkl_auth_service.dart';
 import '../services/trackers/simkl/simkl_client.dart';
@@ -35,10 +38,10 @@ typedef TrackerSessionConnectPipeline =
       required void Function(TrackerSession enriched) assign,
     });
 
-/// Owns the active MAL / AniList / Simkl / Trakt sessions for the
+/// Owns the active MAL / AniList / Simkl / Trakt / MDBList sessions for the
 /// currently-selected Plex profile. Single rebind seam:
-/// [onActiveProfileChanged] loads all four sessions from their stores and
-/// pushes them to their trackers.
+/// [onActiveProfileChanged] loads every session from its store and pushes it
+/// to the matching tracker.
 class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   /// [httpClientFactory] must return a fresh client for each eager auth owner.
   /// Every returned client is closed when this provider is disposed.
@@ -62,13 +65,17 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           ? AnilistAuthService()
           : AnilistAuthService(proxy: OAuthProxyClient(httpClient: httpClientFactory())),
       _simklAuth = httpClientFactory == null ? SimklAuthService() : SimklAuthService(httpClient: httpClientFactory()),
-      _traktAuth = httpClientFactory == null ? TraktAuthService() : TraktAuthService(httpClient: httpClientFactory());
+      _traktAuth = httpClientFactory == null ? TraktAuthService() : TraktAuthService(httpClient: httpClientFactory()),
+      _mdblistAuth = httpClientFactory == null
+          ? MdblistAuthService()
+          : MdblistAuthService(httpClient: httpClientFactory());
 
   final TrackerSessionConnectPipeline _connectPipeline;
   final MalAuthService _malAuth;
   final AnilistAuthService _anilistAuth;
   final SimklAuthService _simklAuth;
   final TraktAuthService _traktAuth;
+  final MdblistAuthService _mdblistAuth;
 
   final _TrackerSlot _mal = _TrackerSlot(
     TrackerService.mal,
@@ -90,7 +97,15 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     (session, {required onInvalidated, onUpdated}) =>
         TraktTracker.instance.rebindSession(session, onSessionInvalidated: onInvalidated, onSessionUpdated: onUpdated),
   );
-  late final List<_TrackerSlot> _slots = [_mal, _anilist, _simkl, _trakt];
+  final _TrackerSlot _mdblist = _TrackerSlot(
+    TrackerService.mdblist,
+    (session, {required onInvalidated, onUpdated}) => MdblistTracker.instance.rebindSession(
+      session,
+      onSessionInvalidated: onInvalidated,
+      onSessionUpdated: onUpdated,
+    ),
+  );
+  late final List<_TrackerSlot> _slots = [_mal, _anilist, _simkl, _trakt, _mdblist];
 
   String _activeUserUuid = '';
   int _profileBindingGeneration = 0;
@@ -102,11 +117,13 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   TrackerSession? get anilist => _anilist.session;
   TrackerSession? get simkl => _simkl.session;
   TrackerSession? get trakt => _trakt.session;
+  TrackerSession? get mdblist => _mdblist.session;
 
   bool get isMalConnected => _mal.session != null;
   bool get isAnilistConnected => _anilist.session != null;
   bool get isSimklConnected => _simkl.session != null;
   bool get isTraktConnected => _trakt.session != null;
+  bool get isMdblistConnected => _mdblist.session != null;
 
   /// The live MAL client for the Explore catalog, shared with the scrobble
   /// tracker so both ride one session (MAL rotates refresh tokens — a second
@@ -122,16 +139,19 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// is gated on the provider's profile-bound session.
   TraktClient? get traktCatalogClient => _trakt.session == null ? null : TraktTracker.instance.client;
 
-  /// Live AniList and Simkl clients for Explore. Like [malCatalogClient],
-  /// these are gated on this provider's profile-bound sessions so a fresh
-  /// profile subtree cannot observe clients still bound to the prior profile.
+  /// Live AniList, Simkl, and MDBList clients for Explore. Like
+  /// [malCatalogClient], these are gated on this provider's profile-bound
+  /// sessions so a fresh profile subtree cannot observe clients still bound
+  /// to the prior profile.
   AnilistClient? get anilistCatalogClient => _anilist.session == null ? null : AnilistTracker.instance.client;
   SimklClient? get simklCatalogClient => _simkl.session == null ? null : SimklTracker.instance.client;
+  MdblistClient? get mdblistCatalogClient => _mdblist.session == null ? null : MdblistTracker.instance.client;
 
   String? get malUsername => _mal.session?.username;
   String? get anilistUsername => _anilist.session?.username;
   String? get simklUsername => _simkl.session?.username;
   String? get traktUsername => _trakt.session?.username;
+  String? get mdblistUsername => _mdblist.session?.username;
 
   bool isConnecting(TrackerService service) => _connecting == service;
 
@@ -245,6 +265,34 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
   }
 
+  Future<bool> connectMdblist({required void Function(DeviceCode code) onCodeReady}) => _runConnect(
+    _mdblist,
+    authorize: () => _mdblistAuth.authorize(
+      onCodeReady: onCodeReady,
+      shouldCancel: _isConnectCancelled,
+      onCancel: _cancelCompleter!.future,
+    ),
+    enrich: _enrichMdblist,
+  );
+
+  /// Like Trakt, MDBList can revoke its token server-side. Local state goes
+  /// first, so a failed revoke still leaves the user disconnected here — the
+  /// token just stays valid on MDBList's side until it expires.
+  Future<void> disconnectMdblist() async {
+    final session = _mdblist.session;
+    await _clearAndRebind(_mdblist);
+    if (session == null) return;
+
+    // `revoke` logs and swallows its own failures; disposal is the only thing
+    // this caller still owns.
+    final client = MdblistClient(session, onSessionInvalidated: () {});
+    try {
+      await client.revoke();
+    } finally {
+      client.dispose();
+    }
+  }
+
   bool _isConnectCancelled() => _cancelCompleter?.isCompleted ?? false;
 
   Future<bool> _runConnect(
@@ -352,6 +400,13 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     fetchUsername: (client) async => (await client.getUserSettings()).username,
   );
 
+  Future<TrackerSession> _enrichMdblist(TrackerSession raw) => enrichTrackerSessionUsername(
+    session: raw,
+    failureMessage: 'MDBList: getUser failed (non-fatal)',
+    createClient: () => MdblistClient(raw, onSessionInvalidated: () {}),
+    fetchUsername: (client) async => (await client.getUser())?['username'] as String?,
+  );
+
   /// Push a slot's session to its tracker, snapshotting the active profile and
   /// bumping the slot's rebind generation first. Bumping here is what lets a
   /// stale client callback — or a racing profile load — detect that it has been
@@ -386,6 +441,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _anilistAuth.dispose();
     _simklAuth.dispose();
     _traktAuth.dispose();
+    _mdblistAuth.dispose();
     super.dispose();
   }
 }

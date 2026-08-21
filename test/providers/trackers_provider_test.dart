@@ -9,6 +9,7 @@ import 'package:plezy/services/trackers/tracker_constants.dart';
 import 'package:plezy/services/trackers/tracker_coordinator.dart';
 import 'package:plezy/services/trackers/tracker_session.dart';
 import 'package:plezy/services/trackers/mal/mal_tracker.dart';
+import 'package:plezy/services/trackers/mdblist/mdblist_tracker.dart';
 import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
 import 'package:plezy/services/trackers/trakt/trakt_tracker.dart';
 
@@ -19,6 +20,7 @@ final _malStore = trackerAccountStore(TrackerService.mal);
 final _anilistStore = trackerAccountStore(TrackerService.anilist);
 final _simklStore = trackerAccountStore(TrackerService.simkl);
 final _traktStore = trackerAccountStore(TrackerService.trakt);
+final _mdblistStore = trackerAccountStore(TrackerService.mdblist);
 
 TrackerSession _mal({String? username}) => TrackerSession(
   accessToken: 'mal-at',
@@ -68,18 +70,23 @@ void main() {
       expect(p.anilist, isNull);
       expect(p.simkl, isNull);
       expect(p.trakt, isNull);
+      expect(p.mdblist, isNull);
       expect(p.isMalConnected, isFalse);
       expect(p.isAnilistConnected, isFalse);
       expect(p.isSimklConnected, isFalse);
       expect(p.isTraktConnected, isFalse);
+      expect(p.isMdblistConnected, isFalse);
+      expect(p.mdblistCatalogClient, isNull);
       expect(p.malUsername, isNull);
       expect(p.anilistUsername, isNull);
       expect(p.simklUsername, isNull);
       expect(p.traktUsername, isNull);
+      expect(p.mdblistUsername, isNull);
       expect(p.isConnecting(TrackerService.mal), isFalse);
       expect(p.isConnecting(TrackerService.anilist), isFalse);
       expect(p.isConnecting(TrackerService.simkl), isFalse);
       expect(p.isConnecting(TrackerService.trakt), isFalse);
+      expect(p.isConnecting(TrackerService.mdblist), isFalse);
       p.dispose();
     });
 
@@ -94,8 +101,8 @@ void main() {
         },
       );
 
-      expect(clients, hasLength(5));
-      expect(clients.toSet(), hasLength(5));
+      expect(clients, hasLength(6));
+      expect(clients.toSet(), hasLength(6));
       for (final client in clients) {
         expect(client.closeCount, 0);
       }
@@ -115,6 +122,7 @@ void main() {
       await _simklStore.save(uuid, _simkl(username: 'carol'));
       await _traktStore.save(uuid, _trakt(username: 'dave'));
 
+      await _mdblistStore.save(uuid, _session(TrackerService.mdblist, 'eve'));
       // Reset cached singletons so the provider reads fresh prefs state.
       BaseSharedPreferencesService.resetForTesting();
 
@@ -127,10 +135,13 @@ void main() {
       expect(p.isAnilistConnected, isTrue);
       expect(p.isSimklConnected, isTrue);
       expect(p.isTraktConnected, isTrue);
+      expect(p.isMdblistConnected, isTrue);
       expect(p.malUsername, 'alice');
       expect(p.anilistUsername, 'bob');
       expect(p.simklUsername, 'carol');
       expect(p.traktUsername, 'dave');
+      expect(p.mdblistUsername, 'eve');
+      expect(p.mdblistCatalogClient, same(MdblistTracker.instance.client));
       expect(notified, greaterThanOrEqualTo(1));
 
       p.dispose();
@@ -142,6 +153,7 @@ void main() {
       await _anilistStore.save(uuid, _anilist(username: 'bob'));
       await _simklStore.save(uuid, _simkl(username: 'carol'));
       await _traktStore.save(uuid, _trakt(username: 'dave'));
+      await _mdblistStore.save(uuid, _session(TrackerService.mdblist, 'eve'));
       BaseSharedPreferencesService.resetForTesting();
 
       final p = TrackersProvider();
@@ -153,6 +165,8 @@ void main() {
       expect(p.isAnilistConnected, isFalse);
       expect(p.isSimklConnected, isFalse);
       expect(p.isTraktConnected, isFalse);
+      expect(p.isMdblistConnected, isFalse);
+      expect(p.mdblistCatalogClient, isNull);
 
       p.dispose();
     });
@@ -264,7 +278,13 @@ void main() {
       // Post-dispose rebind should not throw.
       await _bindProfile(p, 'any-uuid');
     });
-    for (final service in [TrackerService.mal, TrackerService.anilist, TrackerService.simkl, TrackerService.trakt]) {
+    for (final service in [
+      TrackerService.mal,
+      TrackerService.anilist,
+      TrackerService.simkl,
+      TrackerService.trakt,
+      TrackerService.mdblist,
+    ]) {
       test('$service stale connect cannot save or replace a newer binding after dispose', () async {
         const oldUuid = 'profile-old';
         const newUuid = 'profile-new';
@@ -422,6 +442,7 @@ void _resetTrackerBindings() {
   AnilistTracker.instance.rebindSession(null, onSessionInvalidated: () {});
   SimklTracker.instance.rebindSession(null, onSessionInvalidated: () {});
   TraktTracker.instance.rebindSession(null, onSessionInvalidated: () {});
+  MdblistTracker.instance.rebindSession(null, onSessionInvalidated: () {});
 }
 
 TrackerAccountStore _store(TrackerService service) => switch (service) {
@@ -429,6 +450,7 @@ TrackerAccountStore _store(TrackerService service) => switch (service) {
   TrackerService.anilist => _anilistStore,
   TrackerService.simkl => _simklStore,
   TrackerService.trakt => _traktStore,
+  TrackerService.mdblist => _mdblistStore,
 };
 
 TrackerSession _session(TrackerService service, String owner) => switch (service) {
@@ -453,6 +475,13 @@ TrackerSession _session(TrackerService service, String owner) => switch (service
     createdAt: 1900000000,
     username: owner,
   ),
+  TrackerService.mdblist => TrackerSession(
+    accessToken: '$owner-mdblist-at',
+    refreshToken: '$owner-mdblist-rt',
+    expiresAt: 2000000000,
+    createdAt: 1900000000,
+    username: owner,
+  ),
 };
 
 Future<bool> _connect(TrackersProvider provider, TrackerService service) => switch (service) {
@@ -460,6 +489,7 @@ Future<bool> _connect(TrackersProvider provider, TrackerService service) => swit
   TrackerService.anilist => provider.connectAnilist(onCodeReady: (_) {}),
   TrackerService.simkl => provider.connectSimkl(onCodeReady: (_) {}),
   TrackerService.trakt => provider.connectTrakt(onCodeReady: (_) {}),
+  TrackerService.mdblist => provider.connectMdblist(onCodeReady: (_) {}),
 };
 
 TrackerSession? _providerSession(TrackersProvider provider, TrackerService service) => switch (service) {
@@ -467,6 +497,7 @@ TrackerSession? _providerSession(TrackersProvider provider, TrackerService servi
   TrackerService.anilist => provider.anilist,
   TrackerService.simkl => provider.simkl,
   TrackerService.trakt => provider.trakt,
+  TrackerService.mdblist => provider.mdblist,
 };
 
 Object? _boundClient(TrackerService service) => switch (service) {
@@ -474,6 +505,7 @@ Object? _boundClient(TrackerService service) => switch (service) {
   TrackerService.anilist => AnilistTracker.instance.client,
   TrackerService.simkl => SimklTracker.instance.client,
   TrackerService.trakt => TraktTracker.instance.client,
+  TrackerService.mdblist => MdblistTracker.instance.client,
 };
 
 TrackerSession? _boundSession(TrackerService service) => switch (service) {
@@ -481,6 +513,7 @@ TrackerSession? _boundSession(TrackerService service) => switch (service) {
   TrackerService.anilist => AnilistTracker.instance.client?.session,
   TrackerService.simkl => SimklTracker.instance.client?.session,
   TrackerService.trakt => TraktTracker.instance.client?.session,
+  TrackerService.mdblist => MdblistTracker.instance.client?.session,
 };
 
 class _ControlledConnectPipeline {

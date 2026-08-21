@@ -5,8 +5,13 @@ import 'plex_constants.dart';
 /// Browse responses retain up to three backdrops so hero surfaces can rotate
 /// artwork without allowing image-tag payloads to grow without bound.
 const jellyfinBackdropImageLimit = 3;
+
+/// `Thumb` is deliberately absent: `JellyfinMappers` never reads
+/// `ImageTags['Thumb']`, and `parentThumbPath`/`grandparentThumbPath` are built
+/// from the season/series *Primary* tags. Asking for it added a dead image type
+/// to ~40 requests and widened the server's inherited-image parent walk.
 const jellyfinImageQueryParameters = <String, String>{
-  'EnableImageTypes': 'Primary,Backdrop,Thumb,Logo',
+  'EnableImageTypes': 'Primary,Backdrop,Logo',
   'ImageTypeLimit': '$jellyfinBackdropImageLimit',
 };
 

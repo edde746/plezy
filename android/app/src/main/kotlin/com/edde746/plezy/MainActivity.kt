@@ -10,18 +10,24 @@ import android.content.res.Configuration
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.view.InputDevice
 import android.view.KeyEvent
+import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import android.view.WindowInsets
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
+import com.edde746.plezy.car.CarRestrictionsMonitor
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
@@ -45,6 +51,20 @@ class MainActivity : FlutterActivity() {
   companion object {
     private const val TAG = "MainActivity"
     private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
+
+    // Flutter's TextInputPlugin issues showSoftInput before the FlutterView is
+    // the IMM's served view (the InputConnection restart is deferred to the
+    // next channel message), so on TV the D-pad-driven first open is dropped
+    // with "Ignoring showSoftInput() as view ... is not served" and never
+    // retried (flutter/flutter#177360). These bounded retries re-issue the
+    // show once the view is served; the restart budget repairs the sibling
+    // failure mode where the keyboard shows but its key session never bound
+    // ("Ignoring onBind: cur seq=-1"), leaving Gboard blind to D-pad
+    // (#1051, #1079).
+    private const val IME_SHOW_RETRY_LIMIT = 4
+    private const val IME_SHOW_RETRY_INTERVAL_MS = 300L
+    private const val IME_LEAK_RESTART_BUDGET = 2
+    private const val IME_LEAK_RESTART_MIN_INTERVAL_MS = 1000L
     private const val EXIT_DIAGNOSTICS_PREFS = "plezy_exit_diagnostics"
     private const val LAST_EXIT_DEDUPE_KEY = "last_reported_exit"
     private const val LAST_STARTUP_PHASE_KEY = "last_startup_phase"
@@ -74,8 +94,18 @@ class MainActivity : FlutterActivity() {
   private val DEVICE_ADJUSTMENT_CHANNEL = "com.plezy/device_adjustment"
   private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
+  private val CAR_RESTRICTIONS_CHANNEL = "com.plezy/car_restrictions"
   private var watchNextPlugin: WatchNextPlugin? = null
+  private var carRestrictions: CarRestrictionsMonitor? = null
+  private var carRestrictionsChannel: MethodChannel? = null
   private var nativeTextInputFocused = false
+  private val imeRecoveryHandler = Handler(Looper.getMainLooper())
+  private var imeShowAttempts = 0
+  private var imeLeakRestartBudget = 0
+  private var imeRestartedOnShow = false
+  private var imeWasVisible = false
+  private var lastImeLeakRestartUptime = 0L
+  private var imeVisibilityListener: ViewTreeObserver.OnGlobalLayoutListener? = null
   private var originalWindowBrightness: Float? = null
   private var flutterTextureView: FlutterTextureView? = null
   private var flutterSurfaceReconnectPending = false
@@ -89,7 +119,6 @@ class MainActivity : FlutterActivity() {
     }
   }
 
-  // Auto PiP state
   private var autoPipReady = false
   private var autoPipWidth: Int = 16
   private var autoPipHeight: Int = 9
@@ -157,6 +186,82 @@ class MainActivity : FlutterActivity() {
     val forward = !nativeTextInputFocused && !isImeVisible() && !imm.isAcceptingText
     logTextInputDiag { "shouldForwardDpadBeforeIme=$forward ${describeImeState()}" }
     return forward
+  }
+
+  private fun inputMethodManager(): InputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+
+  private fun flutterView(): View? = findViewById(FLUTTER_VIEW_ID)
+
+  // Re-issues a soft-input show that the engine dropped because the
+  // FlutterView was not yet the IMM's served view when TextInput.show ran
+  // (flutter/flutter#177360). Flutter never retries on its own — its Dart
+  // side believes the keyboard is already up — so without this the first
+  // D-pad-driven open on TV can silently do nothing.
+  private val imeShowRetry = object : Runnable {
+    override fun run() {
+      if (!nativeTextInputFocused) return
+      if (isImeVisible()) return
+      val view = flutterView()
+      val imm = inputMethodManager()
+      if (view != null && imm.isActive(view)) {
+        logTextInputDiag { "imeShowRetry re-showing attempt=$imeShowAttempts ${describeImeState()}" }
+        imm.showSoftInput(view, 0)
+      } else {
+        logTextInputDiag { "imeShowRetry waiting attempt=$imeShowAttempts served=${view != null && imm.isActive(view)}" }
+      }
+      imeShowAttempts++
+      if (imeShowAttempts < IME_SHOW_RETRY_LIMIT) {
+        imeRecoveryHandler.postDelayed(this, IME_SHOW_RETRY_INTERVAL_MS)
+      }
+    }
+  }
+
+  private fun startNativeTextInputSession() {
+    imeShowAttempts = 0
+    imeLeakRestartBudget = IME_LEAK_RESTART_BUDGET
+    imeRestartedOnShow = false
+    imeRecoveryHandler.removeCallbacks(imeShowRetry)
+    imeRecoveryHandler.postDelayed(imeShowRetry, IME_SHOW_RETRY_INTERVAL_MS)
+  }
+
+  private fun endNativeTextInputSession() {
+    imeRecoveryHandler.removeCallbacks(imeShowRetry)
+  }
+
+  private fun restartNativeTextInput(reason: String) {
+    val view = flutterView() ?: return
+    logTextInputDiag { "restartInput reason=$reason ${describeImeState()}" }
+    inputMethodManager().restartInput(view)
+  }
+
+  // A visible IME owns D-pad navigation: a healthy Gboard consumes these keys
+  // at the ImeInputStage, before the app. One arriving here therefore means
+  // the IME's key session never bound ("Ignoring onBind: cur seq=-1") — the
+  // Chromecast/Google TV failure of #1051/#1079. Repair by rebinding, and eat
+  // the press so Flutter focus cannot wander behind the stuck keyboard. The
+  // bounded budget guarantees keys flow again (and Flutter can close the
+  // session) if rebinding cannot heal the device.
+  private fun consumeLeakedImeNavigationKey(event: KeyEvent): Boolean {
+    if (!nativeTextInputFocused || imeLeakRestartBudget <= 0) return false
+    when (event.keyCode) {
+      KeyEvent.KEYCODE_DPAD_UP,
+      KeyEvent.KEYCODE_DPAD_DOWN,
+      KeyEvent.KEYCODE_DPAD_LEFT,
+      KeyEvent.KEYCODE_DPAD_RIGHT,
+      KeyEvent.KEYCODE_DPAD_CENTER -> Unit
+      else -> return false
+    }
+    if (!isImeVisible()) return false
+    if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+      val now = SystemClock.uptimeMillis()
+      if (now - lastImeLeakRestartUptime >= IME_LEAK_RESTART_MIN_INTERVAL_MS) {
+        lastImeLeakRestartUptime = now
+        imeLeakRestartBudget--
+        restartNativeTextInput("leaked-dpad-while-ime-visible")
+      }
+    }
+    logTextInputDiag { "consuming leaked IME key ${describeKeyEvent(event)} budget=$imeLeakRestartBudget" }
+    return true
   }
 
   private fun getAndroidTvDetection(): Map<String, Any> {
@@ -429,6 +534,24 @@ class MainActivity : FlutterActivity() {
       )
     )
 
+    // Watch IME visibility so a fresh session can be rebound the moment the
+    // keyboard first shows: on Chromecast-class devices the initial bind can
+    // land against a stale sequence, leaving the IME without a key session
+    // (D-pad dead, #1051/#1079). One restartInput at first-show — before the
+    // user has typed or moved the key highlight — repairs it invisibly.
+    val visibilityListener = ViewTreeObserver.OnGlobalLayoutListener {
+      val visible = isImeVisible()
+      if (visible == imeWasVisible) return@OnGlobalLayoutListener
+      imeWasVisible = visible
+      logTextInputDiag { "ime visibility changed visible=$visible ${describeImeState()}" }
+      if (visible && nativeTextInputFocused && !imeRestartedOnShow) {
+        imeRestartedOnShow = true
+        restartNativeTextInput("first-show-rebind")
+      }
+    }
+    window.decorView.viewTreeObserver.addOnGlobalLayoutListener(visibilityListener)
+    imeVisibilityListener = visibilityListener
+
     // Handle Watch Next deep link from initial launch
     handleWatchNextIntent(intent)
   }
@@ -443,6 +566,9 @@ class MainActivity : FlutterActivity() {
     if (isDpadKeyCode(event.keyCode)) {
       logTextInputDiag { "activity.dispatchKeyEvent before ${describeKeyEvent(event)} ${describeImeState()}" }
     }
+    // Reaching the activity means the ImeInputStage already declined this
+    // key, so consumption below cannot starve a healthy IME.
+    if (consumeLeakedImeNavigationKey(event)) return true
     val handled = super.dispatchKeyEvent(event)
     if (isDpadKeyCode(event.keyCode)) {
       logTextInputDiag {
@@ -460,6 +586,12 @@ class MainActivity : FlutterActivity() {
 
   override fun onDestroy() {
     externalPlayerChannel.dispose()
+    endNativeTextInputSession()
+    imeVisibilityListener?.let { window.decorView.viewTreeObserver.removeOnGlobalLayoutListener(it) }
+    imeVisibilityListener = null
+    carRestrictions?.release()
+    carRestrictions = null
+    carRestrictionsChannel = null
     activityStarted = false
     flutterSurfaceReconnectPending = false
     flutterTextureView = null
@@ -471,6 +603,29 @@ class MainActivity : FlutterActivity() {
     if (contentId != null) {
       // Notify the plugin to send event to Flutter
       watchNextPlugin?.notifyDeepLink(contentId)
+    }
+  }
+
+  // Connects the car UX-restriction monitor on first use, retrying while the platform signal is
+  // unavailable: a car service that was not ready during startup can still answer later, and on a
+  // phone every attempt fails cheaply on the FEATURE_AUTOMOTIVE check. The connect itself never
+  // blocks, so this is safe on the main thread; readiness arrives through the callback below.
+  private fun startCarRestrictionsIfNeeded() {
+    val existing = carRestrictions
+    if (existing?.supported == true) return
+    val monitor = existing ?: CarRestrictionsMonitor(applicationContext).also { carRestrictions = it }
+    monitor.start { restricted ->
+      runOnUiThread {
+        // `supported` rides along because it can go false again when the car service dies, and Dart
+        // must then fall back to lifecycle gating rather than read a stale verdict.
+        carRestrictionsChannel?.invokeMethod(
+          "onChanged",
+          mapOf(
+            "supported" to monitor.supported,
+            "requiresDistractionOptimization" to restricted
+          )
+        )
+      }
     }
   }
 
@@ -602,6 +757,28 @@ class MainActivity : FlutterActivity() {
       }
     }
 
+    val carChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CAR_RESTRICTIONS_CHANNEL)
+    carRestrictionsChannel = carChannel
+    carChannel.setMethodCallHandler { call, result ->
+      when (call.method) {
+        "getState" -> {
+          startCarRestrictionsIfNeeded()
+          val monitor = carRestrictions
+          val supported = monitor?.supported == true
+          result.success(
+            mapOf(
+              "supported" to supported,
+              // Tells Dart the difference between "this device has no car service" and "the verdict
+              // is coming": only the latter is worth waiting for.
+              "pending" to (monitor?.pending == true),
+              "requiresDistractionOptimization" to (supported && monitor.requiresDistractionOptimization)
+            )
+          )
+        }
+        else -> result.notImplemented()
+      }
+    }
+
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_ADJUSTMENT_CHANNEL).setMethodCallHandler { call, result ->
       handleDeviceAdjustmentCall(call.method, call.arguments, result)
     }
@@ -613,6 +790,11 @@ class MainActivity : FlutterActivity() {
           nativeTextInputFocused = call.arguments as? Boolean ?: false
           logTextInputDiag {
             "methodChannel setNativeTextInputFocused old=$oldValue new=$nativeTextInputFocused ${describeImeState()}"
+          }
+          if (nativeTextInputFocused && !oldValue) {
+            startNativeTextInputSession()
+          } else if (!nativeTextInputFocused && oldValue) {
+            endNativeTextInputSession()
           }
           result.success(null)
         }

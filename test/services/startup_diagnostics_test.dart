@@ -13,12 +13,14 @@ StartupFailureRecord _record({
   StartupPhase? phase = StartupPhase.database,
   Object error = const FormatException('boom'),
   StackTrace? stackTrace,
+  bool repairable = false,
 }) => StartupFailureRecord.fromError(
   phase: phase,
   error: error,
   stackTrace: stackTrace,
   appVersion: '2.11.0+124',
   platform: 'windows 11',
+  repairable: repairable,
 );
 
 void main() {
@@ -118,6 +120,14 @@ void main() {
       expect(text, contains('Error: StateError'));
       expect(text, contains('2.11.0+124'));
       expect(text, contains('windows 11'));
+    });
+
+    test('describe() states whether a repair was on offer', () {
+      // An uploaded record is usually the only artefact a maintainer gets. On
+      // #1732 it could not distinguish "the screen offered no way forward"
+      // from "a repair was offered and not taken", and the thread stalled.
+      expect(_record(repairable: true).describe(), contains('Repair offered: yes'));
+      expect(_record().describe(), contains('Repair offered: no'));
     });
 
     test('headline stays one line', () {

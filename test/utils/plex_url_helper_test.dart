@@ -23,21 +23,4 @@ void main() {
       expect('/path?'.withPlexToken('tk'), '/path?&X-Plex-Token=tk');
     });
   });
-
-  group('toPlexUrl', () {
-    test('prefixes base URL and appends token', () {
-      expect(
-        '/library/metadata/1'.toPlexUrl('http://server:32400', 'abc'),
-        'http://server:32400/library/metadata/1?X-Plex-Token=abc',
-      );
-    });
-
-    test('prefixes base URL and skips token when null', () {
-      expect('/library/metadata/1'.toPlexUrl('http://server:32400', null), 'http://server:32400/library/metadata/1');
-    });
-
-    test('uses & when base URL already contains ?', () {
-      expect('?foo=bar'.toPlexUrl('http://s', 'tk'), 'http://s?foo=bar&X-Plex-Token=tk');
-    });
-  });
 }

@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../scripts/generate_iso_639_data.dart';
+import '../../scripts/codegen/generate_iso_639_data.dart';
 
 void main() {
   late String validSource;

@@ -50,13 +50,8 @@ class _AbortAwareClient extends http.BaseClient {
   }
 }
 
-/// Failure-path coverage for the Jellyfin HTTP layer.
-///
-/// The original test suite covered the 200-OK happy paths and a single 404
-/// (handled inside `fetchItem`). Anything else — auth rejection, server
-/// errors, malformed JSON — was untested. These cases are the exact shapes
-/// that surface in the field when a Jellyfin server is mid-update or the
-/// access token has been revoked, so they're worth pinning.
+/// Failure-path coverage for Jellyfin HTTP errors, malformed responses, and
+/// revoked credentials beyond the existing happy-path and 404 tests.
 void main() {
   // fetchChildren writes through `JellyfinApiCache.instance` on a
   // successful 200, so the singleton needs to exist for tests that exercise
@@ -311,7 +306,33 @@ void main() {
       expect(client.connection.baseUrl, 'https://primary.example.com');
     });
 
-    test('hub surfaces retry transient failures without hopping endpoints', () async {
+    test('hub surfaces do not replay a timeout, and do not hop endpoints', () async {
+      // `Client.send` resolves on response headers, so a hub row that times out
+      // is usually a server still working on an expensive query. Replaying it
+      // makes the server start over — the 23s cold-start stall in #1784.
+      final attemptsByPath = <String, int>{};
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async {
+          expect(req.url.host, 'primary.example.com', reason: 'retry-wrapped hub fetches must not fail over');
+          attemptsByPath.update(req.url.path, (n) => n + 1, ifAbsent: () => 1);
+          throw TimeoutException('slow row');
+        }),
+      );
+      addTearDown(client.close);
+
+      await expectLater(client.fetchContinueWatching(), throwsA(isA<MediaServerHttpException>()));
+
+      expect(attemptsByPath.values, everyElement(1));
+      expect(client.connection.baseUrl, 'https://primary.example.com');
+    });
+
+    test('hub surfaces retry an immediate connection error without hopping endpoints', () async {
+      // A refused/reset socket costs the server nothing and is often a one-off,
+      // so unlike a timeout it is worth asking again on the same endpoint.
       final attemptsByPath = <String, int>{};
       final client = JellyfinClient.forTesting(
         connection: _conn(
@@ -321,7 +342,7 @@ void main() {
         httpClient: MockClient((req) async {
           expect(req.url.host, 'primary.example.com', reason: 'retry-wrapped hub fetches must not fail over');
           final attempt = attemptsByPath.update(req.url.path, (n) => n + 1, ifAbsent: () => 1);
-          if (attempt == 1) throw TimeoutException('slow row');
+          if (attempt == 1) throw http.ClientException('connection reset', req.url);
           return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
         }),
       );

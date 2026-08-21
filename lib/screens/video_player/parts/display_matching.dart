@@ -135,7 +135,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   void _onFullscreenChanged() {
     if (_displayModeService == null) return;
     if (FullscreenStateManager().isFullscreen) {
-      if (_hasFirstFrame.value && !_displayModeService!.anyChangeApplied) {
+      if (_firstFrame.uiReady.value && !_displayModeService!.anyChangeApplied) {
         _applyWindowsDisplayMatching();
       }
     } else if (_displayModeService!.anyChangeApplied) {

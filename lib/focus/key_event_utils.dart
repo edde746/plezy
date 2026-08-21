@@ -123,6 +123,23 @@ KeyEventResult handleOneShotSelect(KeyEvent event, VoidCallback onActivate) {
   return KeyEventResult.handled;
 }
 
+/// Whether the primary focus currently belongs to an active text editor.
+///
+/// Ancestor key handlers use this to stay off keys a focused field owns.
+/// Flutter dispatches a key event from the focused node upwards, and the
+/// editing shortcuts that turn Backspace into a deletion live in
+/// [DefaultTextEditingShortcuts] at the very top of the app — *above* any
+/// screen. An ancestor that claims Backspace as "back" therefore both steals
+/// the navigation and stops the character from ever being deleted (#1741).
+///
+/// [EditableText] builds its [Focus] internally, so the focused node's context
+/// resolves to the owning [EditableTextState].
+bool isTextEditingFocused() {
+  final context = FocusManager.instance.primaryFocus?.context;
+  if (context == null) return false;
+  return context.findAncestorStateOfType<EditableTextState>() != null;
+}
+
 /// Expands a UTF-16 [range] to whole extended grapheme clusters in [text].
 ///
 /// Flutter selections use UTF-16 code-unit offsets. Custom editors must pass a

@@ -47,6 +47,35 @@ void main() {
       expect(hosts, ['clients.plex.tv']);
     });
 
+    test('pollPinUntilClaimed retries a transient transport failure while sign-in completes', () async {
+      var pollCount = 0;
+      final client = MediaServerHttpClient(
+        client: MockClient((request) async {
+          pollCount++;
+          if (pollCount == 1) {
+            throw http.ClientException('The Internet connection appears to be offline.', request.url);
+          }
+          return http.Response(
+            jsonEncode({'authToken': 'claimed-token'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+      final auth = PlexAuthService.forTesting(http: client);
+
+      final token = await auth.pollPinUntilClaimed(
+        1,
+        timeout: const Duration(seconds: 1),
+        initialBackoff: Duration.zero,
+        maxBackoff: Duration.zero,
+      );
+
+      expect(token, 'claimed-token');
+      expect(pollCount, 2);
+    });
+
     test('switchToUser tolerates drifted field shapes on the 201 body (#1488)', () async {
       final client = MediaServerHttpClient(
         client: MockClient((request) async {
@@ -81,7 +110,6 @@ void main() {
     test('fetchServers tolerates scalar drift in server and connection fields', () async {
       final server = _serverJson()
         ..['owned'] = '1'
-        ..['presence'] = 1
         ..['product'] = 42
         ..['lastSeenAt'] = 123;
       final connection = (server['connections'] as List).single as Map<String, dynamic>
@@ -99,7 +127,6 @@ void main() {
       final servers = await PlexAuthService.forTesting(http: client).fetchServers('token');
 
       expect(servers.single.owned, isTrue);
-      expect(servers.single.presence, isTrue);
       expect(servers.single.product, '42');
       expect(servers.single.lastSeenAt, isNull);
       expect(connection['port'], '32400');

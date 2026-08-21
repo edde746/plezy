@@ -8,7 +8,6 @@ import 'simkl_title.dart';
 class SimklDetail {
   final String? title;
   final int? year;
-  final String? type;
   final String? animeType;
   final String? originalTitle;
   final String? englishTitle;
@@ -45,7 +44,6 @@ class SimklDetail {
   const SimklDetail({
     this.title,
     this.year,
-    this.type,
     this.animeType,
     this.originalTitle,
     this.englishTitle,
@@ -83,7 +81,6 @@ class SimklDetail {
   factory SimklDetail.fromJson(Map<String, dynamic> json) => SimklDetail(
     title: json['title'] as String?,
     year: flexibleInt(json['year']),
-    type: json['type'] as String?,
     animeType: json['anime_type'] as String?,
     originalTitle: json['title_romaji'] as String?,
     englishTitle: json['en_title'] as String?,

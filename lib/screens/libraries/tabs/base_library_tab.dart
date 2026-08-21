@@ -12,9 +12,10 @@ import '../content_state_builder.dart';
 ///
 /// Type parameter T: The type of items this tab displays
 ///
-/// Subclasses must implement:
-/// - [loadData]: Load data from the Plex API
-/// - [buildContent]: Build the UI for displaying loaded items
+/// State subclasses must implement:
+/// - [BaseLibraryTabState.loadItems]: Load the tab's items, typically by
+///   passing a fetch to [BaseLibraryTabState.runLoadTransaction]
+/// - [BaseLibraryTabState.buildContent]: Build the UI for displaying loaded items
 ///
 /// Optional overrides:
 /// - [emptyIcon]: Icon to show when there are no items
@@ -54,8 +55,14 @@ abstract class BaseLibraryTab<T> extends StatefulWidget {
   });
 }
 
-/// State mixin that provides the common implementation for library tabs
-/// This preserves AutomaticKeepAliveClientMixin functionality
+/// State base class that provides the common implementation for library tabs.
+/// This preserves AutomaticKeepAliveClientMixin functionality.
+///
+/// [loadItems] is the single load hook. Simple tabs implement it by handing
+/// their fetch to [runLoadTransaction], which owns the shared load transaction
+/// (generation tracking, localized error mapping, and post-frame
+/// [BaseLibraryTab.onDataLoaded] notification). Paginated tabs implement
+/// [loadItems] with their own pipeline and report via [markItemsLoaded].
 abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State<W>
     with AutomaticKeepAliveClientMixin, Refreshable, LibraryTabStateMixin {
   @override
@@ -160,9 +167,8 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     }
   }
 
-  /// Load items from the API
-  /// This is the main data loading function that subclasses must implement
-  Future<List<T>> loadData();
+  /// Load the tab's items. Typically delegates to [runLoadTransaction].
+  Future<void> loadItems();
 
   /// Build the content widget given the loaded items
   /// This is called by ContentStateBuilder when items are available
@@ -253,8 +259,10 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   // ignore: no-empty-block - default no-op, subclasses override to focus their first item
   void focusFirstItem() {}
 
-  /// Load items with error handling and state management
-  Future<void> loadItems() async {
+  /// Shared load transaction: generation tracking, localized error mapping,
+  /// and post-frame [BaseLibraryTab.onDataLoaded] notification.
+  @protected
+  Future<void> runLoadTransaction(Future<List<T>> Function() fetch) async {
     if (!mounted) return;
     final loadGeneration = beginLibraryLoad();
     final libraryGlobalKey = widget.library.globalKey;
@@ -266,7 +274,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
     });
 
     try {
-      final loadedItems = await loadData();
+      final loadedItems = await fetch();
       if (!isCurrentLibraryLoad(loadGeneration, libraryGlobalKey)) return;
 
       setState(() {

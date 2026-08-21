@@ -38,8 +38,6 @@ class SimklAllItemsMedia {
 
 @JsonSerializable(createToJson: false)
 class SimklAllItemsEntry {
-  /// User-list status (`plantowatch`, `watching`, ...), not production state.
-  final String? status;
   @JsonKey(name: 'added_to_watchlist_at')
   final String? addedAt;
   @JsonKey(name: 'user_rating', fromJson: flexibleDouble)
@@ -54,7 +52,6 @@ class SimklAllItemsEntry {
   final int? notAiredEpisodes;
 
   const SimklAllItemsEntry({
-    this.status,
     this.addedAt,
     this.userRating,
     this.show,
@@ -65,8 +62,6 @@ class SimklAllItemsEntry {
   });
 
   SimklAllItemsMedia? get media => movie ?? show;
-
-  bool get isShow => show != null;
 
   factory SimklAllItemsEntry.fromJson(Map<String, dynamic> json) => _$SimklAllItemsEntryFromJson(json);
 }

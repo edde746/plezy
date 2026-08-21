@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 
 import '../../mpv/mpv.dart';
+import '../../services/driver_distraction.dart';
 import '../../utils/app_logger.dart';
 import '../primitives.dart';
 
@@ -119,15 +120,33 @@ class AttachedPlayer {
 
   /// Start or resume playback. Records a ledger expectation so the resulting
   /// playing event is consumed as an ack.
+  ///
+  /// Refused while a vehicle requires distraction optimization: the sync layer
+  /// mirrors whatever the room is doing, and a host that keeps playing must not
+  /// restart video in a car that is driving (`DD-3`). The room's state is left
+  /// alone, so the guest catches up once the car is parked.
   Future<bool> play() {
+    if (!automotivePlaybackAllowedNow()) {
+      appLogger.d('Watch Together play refused: the vehicle requires distraction optimization');
+      return Future.value(false);
+    }
     final expectation = _expect(_Expectation.playing(true, _nowMs() + _expectationTtlMs));
     return _guarded('play', (player) => player.play(), expectation);
   }
 
   Future<bool> pause() {
+    // One acknowledgement per event: a pause issued while another is still unacknowledged would
+    // leave the surplus in the ledger, and the user's next real pause would be consumed as its ack.
+    if (_awaitingPlaying(false)) return pauseWithoutAck();
     final expectation = _expect(_Expectation.playing(false, _nowMs() + _expectationTtlMs));
     return _guarded('pause', (player) => player.pause(), expectation);
   }
+
+  /// Pauses without recording an expectation, for a player that is not playing right now — a
+  /// buffering one still intends to, so the command matters, but no `playing(false)` event is
+  /// coming to acknowledge. Recording one anyway would leave it in the ledger for its whole
+  /// lifetime and let it swallow the user's next real pause.
+  Future<bool> pauseWithoutAck() => _guarded('pause', (player) => player.pause());
 
   Future<bool> setRate(double rate) {
     final expectation = _expect(_Expectation.rate(rate, _nowMs() + _expectationTtlMs));
@@ -137,8 +156,12 @@ class AttachedPlayer {
   /// Seek issued by the sync layer. Routed through the screen's seek
   /// delegate when provided (Plex transcode restarts need the full path),
   /// falling back to a plain player seek.
-  Future<bool> seek(Duration target) {
-    return _guarded('seek', (player) async {
+  ///
+  /// A seek can start playback without anyone calling [play] — mpv leaves `pause=false` at end of
+  /// file, so seeking off it resumes — which would walk straight past the vehicle guard on [play].
+  /// While the vehicle requires distraction optimization the seek is therefore followed by a pause.
+  Future<bool> seek(Duration target) async {
+    final seeked = await _guarded('seek', (player) async {
       final delegate = _remoteSeek;
       if (delegate != null) {
         try {
@@ -150,11 +173,27 @@ class AttachedPlayer {
       }
       await player.seek(target);
     });
+    if (seeked && !automotivePlaybackAllowedNow()) {
+      // Decided after the seek, because that is when a player resumed by it reports itself playing
+      // — and only then is there a transition to acknowledge. Acknowledging it keeps this peer's
+      // enforced pause off the room, exactly like the one the restriction listener issues.
+      await (playing ? pause() : pauseWithoutAck());
+    }
+    return seeked;
   }
 
   _Expectation _expect(_Expectation expectation) {
     _expectations.add(expectation);
     return expectation;
+  }
+
+  /// Whether an unconsumed acknowledgement for this playing value is already outstanding.
+  ///
+  /// Two commands in the same direction produce one event, so a second expectation would outlive
+  /// it and consume the user's next real transition instead.
+  bool _awaitingPlaying(bool value) {
+    _pruneExpired();
+    return _expectations.any((e) => e.kind == _ExpectationKind.playing && e.playingValue == value);
   }
 
   Future<bool> _guarded(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../utils/scroll_utils.dart';
+import 'input_mode_tracker.dart';
 import 'owned_focus_node_binding.dart';
 
 /// Manages the internal/external FocusNode lifecycle for list-tile widgets and
@@ -39,7 +40,10 @@ mixin FocusableTileStateMixin<T extends StatefulWidget> on State<T> {
   }
 
   void _onFocusChange() {
-    if (effectiveFocusNode.hasFocus) {
+    // Reveal on focus is keyboard/D-pad-only: pointer-mode focus is
+    // programmatic and invisible, so revealing it would yank the scroll view
+    // (issue #2031).
+    if (effectiveFocusNode.hasFocus && InputModeTracker.currentMode == InputMode.keyboard) {
       scrollContextToCenter(context);
     }
   }

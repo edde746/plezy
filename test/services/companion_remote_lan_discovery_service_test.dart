@@ -104,6 +104,20 @@ void main() {
         await listener.close();
       }
     });
+
+    test('stopListening after dispose is a no-op instead of throwing', () {
+      // Regression: CompanionRemoteProvider's async crypto-rebuild path can
+      // call stopListening() on a service that was already disposed, and
+      // _emitHosts() then added to the closed broadcast controller ("Bad
+      // state: Cannot add new events after calling close").
+      final service = LanDiscoveryService();
+      service.startListeningForContexts([
+        _authContext(id: 'context-a', discoveryKey: List<int>.generate(32, (index) => index + 128)),
+      ]);
+      service.dispose();
+
+      expect(service.stopListening, returnsNormally);
+    });
   });
 }
 

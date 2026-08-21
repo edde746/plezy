@@ -80,8 +80,6 @@ class TvBrowseRailLayout {
 
   static double railInteractionExpansionForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
-  static double itemGapForScale(double _) => 0;
-
   static double fullCardItemGapForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
   static double viewAllItemWidthForScale(double scale) => (104 * scale).clamp(88, 132).toDouble();
@@ -90,12 +88,10 @@ class TvBrowseRailLayout {
 
   static double hubStripHeightForScale(double scale) => 36 * scale;
 
-  static double hubStripGapForScale(double _) => 0;
-
   static double nextHubPeekHeightForScale(double scale) => 30 * scale;
 
   static double hubSectionHeightFor({required double scale, required double activeRailHeight}) {
-    return hubStripHeightForScale(scale) + hubStripGapForScale(scale) + activeRailHeight;
+    return hubStripHeightForScale(scale) + activeRailHeight;
   }
 
   static double viewportHeightFor({required int hubCount, required double scale, required double sectionHeight}) {
@@ -135,7 +131,7 @@ class TvBrowseRailLayout {
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
-    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : itemGapForScale(scale);
+    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : 0.0;
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final emptyEpisodeThumbnailHub =
         hub.items.isEmpty && hub.type == 'episode' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
@@ -466,9 +462,11 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       return;
     }
 
-    final oldActiveHubKey = oldWidget.hubs.isEmpty
-        ? null
-        : _hubKey(oldWidget.hubs[_hubIndex.clamp(0, oldWidget.hubs.length - 1)]);
+    final oldActiveHub = oldWidget.hubs.isEmpty ? null : oldWidget.hubs[_hubIndex.clamp(0, oldWidget.hubs.length - 1)];
+    final oldActiveHubKey = oldActiveHub == null ? null : _hubKey(oldActiveHub);
+    final oldFocusedItem = oldActiveHub != null && _itemIndex < oldActiveHub.items.length
+        ? oldActiveHub.items[_itemIndex]
+        : null;
 
     if (widget.hubs.isEmpty) {
       _hubIndex = 0;
@@ -492,6 +490,19 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
     final hub = _activeHub;
     if (hub == null) return;
+    var followedFocusedItem = false;
+    if (_hasUserInteracted && oldFocusedItem != null && _hubKey(hub) == oldActiveHubKey) {
+      // Keep the selection on the media it was on when the active hub's items
+      // reorder underneath it — a Continue Watching refresh after playback
+      // moves the just-played item to the front (#1987). When the exact item
+      // left the list, follow its series' replacement entry (finished episode
+      // → next episode); otherwise fall through to the positional clamp.
+      final followedIndex = followItemIndex(hub.items, oldFocusedItem);
+      if (followedIndex != -1 && followedIndex != _itemIndex) {
+        _itemIndex = followedIndex;
+        followedFocusedItem = true;
+      }
+    }
     _itemIndex = _itemIndex.clamp(0, _totalItemCount(hub) == 0 ? 0 : _totalItemCount(hub) - 1);
     final selectedInitialItem = _selectInitialItemIfPossible();
     // notify:false — this runs during the build phase and the enclosing
@@ -507,7 +518,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     _rememberTrailingStates();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (selectedInitialItem) _scrollToItem(animate: false);
+      if (selectedInitialItem || followedFocusedItem) _scrollToItem(animate: false);
       if (shouldJumpAlignActiveHub) {
         _scrollActiveHubToTop(animate: false);
       } else if (shouldAnimateAlignActiveHub) {
@@ -1200,7 +1211,6 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                   builder: (context, isActive, _) =>
                       _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
                 ),
-                SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
                 _buildHubRail(
                   hub: hub,
                   hubIndex: hubIndex,

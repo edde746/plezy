@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as path;
 
-import '../../scripts/upload_symbols.dart';
+import '../../scripts/release/upload_symbols.dart';
 
 void main() {
   late Directory repository;

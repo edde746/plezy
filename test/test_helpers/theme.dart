@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/theme/mono_tokens.dart';
 
 /// Default [MonoTokens] for widget tests: production-shaped metrics with
-/// 1ms animations and no ink splashes, so a single `pump` settles the tree.
+/// 1ms animations, so a single `pump` settles the tree.
 ///
 /// Use as `ThemeData(extensions: const [testMonoTokens])`.
 const testMonoTokens = MonoTokens(
@@ -21,7 +21,6 @@ const testMonoTokens = MonoTokens(
   outline: Colors.white24,
   text: Colors.white,
   textMuted: Colors.white70,
-  splashFactory: NoSplash.splashFactory,
 );
 
 /// [testMonoTokens] with realistic animation durations, for tests that step
@@ -42,5 +41,4 @@ const testMonoTokensAnimated = MonoTokens(
   outline: Color(0xFF333333),
   text: Colors.white,
   textMuted: Color(0xFFAAAAAA),
-  splashFactory: NoSplash.splashFactory,
 );

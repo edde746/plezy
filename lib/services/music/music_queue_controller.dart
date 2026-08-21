@@ -45,17 +45,28 @@ class MusicQueueController {
   MediaItem? trackAt(int queueIndex) =>
       queueIndex >= 0 && queueIndex < _order.length ? _items[_order[queueIndex]] : null;
 
-  /// Replace the queue with [tracks], starting at [startIndex]. With
-  /// [shuffle] the start track is anchored first and the rest shuffle after
-  /// it (it keeps playing / plays first).
-  void load(List<MediaItem> tracks, {int startIndex = 0, bool shuffle = false}) {
+  /// Replace the queue with [tracks], starting at [startIndex]. A null
+  /// [startIndex] (the default) means *no explicit start* — playback simply
+  /// begins at the head.
+  ///
+  /// [shuffle] reads that distinction. With an explicit [startIndex] the
+  /// start track is anchored first and the rest shuffle after it (it keeps
+  /// playing / plays first); with none the whole list shuffles, head
+  /// included. Collapsing "no start track" into index 0 is what pinned every
+  /// shuffled playlist to its first track (#1811).
+  void load(List<MediaItem> tracks, {int? startIndex, bool shuffle = false}) {
     _items
       ..clear()
       ..addAll(tracks);
     _order = List.generate(tracks.length, (i) => i);
     _shuffled = false;
-    _cursor = tracks.isEmpty ? -1 : startIndex.clamp(0, tracks.length - 1);
-    if (shuffle && tracks.isNotEmpty) _shuffleAnchoringCurrent();
+    _cursor = tracks.isEmpty ? -1 : (startIndex ?? 0).clamp(0, tracks.length - 1);
+    if (!shuffle || tracks.isEmpty) return;
+    if (startIndex == null) {
+      _shuffleAll();
+    } else {
+      _shuffleAnchoringCurrent();
+    }
   }
 
   void clear() {
@@ -170,6 +181,14 @@ class MusicQueueController {
         if (i != anchor) i,
     ]..shuffle(_random);
     _order = [anchor, ...rest];
+    _cursor = 0;
+    _shuffled = true;
+  }
+
+  /// Shuffle every entry, head included — a session started *as* shuffled
+  /// has no track that must play first.
+  void _shuffleAll() {
+    _order.shuffle(_random);
     _cursor = 0;
     _shuffled = true;
   }

@@ -5,13 +5,13 @@ import '../media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../media/library_query.dart';
-import '../media/media_backend.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../media/media_sort.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
+import '../widgets/system_bottom_inset.dart';
 import '../utils/app_logger.dart';
 import '../utils/continuation_pagination_coordinator.dart';
 import '../utils/error_message_utils.dart';
@@ -202,7 +202,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     setState(() {
       _filteredItems = List.from(_items);
 
-      // Apply sorting
       if (_selectedSort != null) {
         final sortKey = _selectedSort!.key;
         _filteredItems.sort((a, b) {
@@ -275,7 +274,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   }
 
   bool _shouldUsePaginatedLoader(MediaServerClient client) =>
-      client.backend == MediaBackend.jellyfin && widget.hub.id.endsWith('.recent');
+      client.backend.usesMediaBrowserApi && widget.hub.id.endsWith('.recent');
 
   @override
   Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) async {
@@ -357,7 +356,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
       _applySort();
       if (!usesCustomLoader && !_usesPaginatedLoader && client != null && loadedCount < totalCount) {
-        _replaceContinuationItems = client.backend == MediaBackend.plex;
+        _replaceContinuationItems = !client.backend.usesMediaBrowserApi;
         if (_replaceContinuationItems) {
           _continuation.setContinuation(startIndex: 0, totalCount: 1);
         } else {
@@ -540,21 +539,16 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                       final libraryDensity = svc.read(SettingsService.libraryDensity);
                       final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
 
-                      // Determine hub content type for layout decisions
                       final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
                       final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
 
-                      // Mixed hub = has both episodes AND non-episodes
                       final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-                      // Episode-only = all items are episodes with thumbnails
                       final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
-                      // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
                       final useWideLayout =
                           episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
-                      // Music hubs render square album/artist artwork
                       final isSquareHub =
                           _filteredItems.isNotEmpty &&
                           _filteredItems.every((item) => item.cardShape(episodePosterMode) == CardShape.square);
@@ -564,8 +558,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                         itemCount: _filteredItems.length,
                         density: libraryDensity,
                         padding: const EdgeInsets.all(8),
-                        usePaddingAware: true,
-                        horizontalPadding: 16,
                         useWideAspectRatio: useWideLayout,
                         fullBleedImage: fullCardLayout,
                         shape: isSquareHub ? CardShape.square : null,
@@ -611,6 +603,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                     onNavigateUp: () => _focusNodeForIndex(_filteredItems.length - 1).requestFocus(),
                     onBack: handleBackFromContent,
                   ),
+                const SliverSystemBottomInset(),
               ],
             ),
           ),

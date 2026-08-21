@@ -8,28 +8,6 @@ import '../models/watch_session.dart';
 import '../primitives.dart';
 import 'attached_player.dart';
 
-/// Callbacks the coordinator surfaces to the provider/UI layer.
-class HostCoordinatorCallbacks {
-  /// Phase transitions (drives the waiting pill and chrome).
-  final void Function(PlaybackPhase phase)? onPhaseChanged;
-
-  /// The set of peers the room is waiting on changed.
-  final void Function(List<String> peerIds)? onWaitingOnChanged;
-
-  /// The safety timeout excused these peers and the room resumed.
-  final void Function(List<String> peerIds)? onResumedWithout;
-
-  /// A guest's control request was applied (drives action toasts).
-  final void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
-
-  const HostCoordinatorCallbacks({
-    this.onPhaseChanged,
-    this.onWaitingOnChanged,
-    this.onResumedWithout,
-    this.onRemoteAction,
-  });
-}
-
 /// Host-side policy engine: owns the authoritative [PlaybackState].
 ///
 /// Inputs are local player signals (via [AttachedPlayer]'s intent-classified
@@ -45,9 +23,24 @@ class HostPlaybackCoordinator {
     required this.myPeerId,
     required this._controlMode,
     required this._sendState,
-    this._callbacks = const HostCoordinatorCallbacks(),
+    this.onPhaseChanged,
+    this.onWaitingOnChanged,
+    this.onResumedWithout,
+    this.onRemoteAction,
     int Function()? nowMs,
   }) : _nowMs = nowMs ?? watchTogetherSystemNowMs;
+
+  /// Phase transitions (drives the waiting pill and chrome).
+  final void Function(PlaybackPhase phase)? onPhaseChanged;
+
+  /// The set of peers the room is waiting on changed.
+  final void Function(List<String> peerIds)? onWaitingOnChanged;
+
+  /// The safety timeout excused these peers and the room resumed.
+  final void Function(List<String> peerIds)? onResumedWithout;
+
+  /// A guest's control request was applied (drives action toasts).
+  final void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
 
   // Tuning constants.
   static const int stallGraceMs = 500;
@@ -66,7 +59,6 @@ class HostPlaybackCoordinator {
 
   final String myPeerId;
   final void Function(PlaybackState state, {String? toPeerId}) _sendState;
-  final HostCoordinatorCallbacks _callbacks;
   final int Function() _nowMs;
 
   ControlMode _controlMode;
@@ -450,7 +442,7 @@ class HostPlaybackCoordinator {
     if (_phase == PlaybackPhase.playing) return;
     _intendedPlaying = true;
     _pendingActor = actor;
-    if (actor != myPeerId) _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.play);
+    if (actor != myPeerId) onRemoteAction?.call(actor, PlaybackActionHint.play);
 
     final player = _player;
     if (!_localReady) {
@@ -483,7 +475,7 @@ class HostPlaybackCoordinator {
     _pendingActor = null;
     _cancelPendingStart();
     _cancelSafety();
-    if (actor != myPeerId) _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.pause);
+    if (actor != myPeerId) onRemoteAction?.call(actor, PlaybackActionHint.pause);
 
     final player = _player;
     if (player != null && player.playing) {
@@ -501,7 +493,7 @@ class HostPlaybackCoordinator {
     if (player == null || !player.seekable) return;
     final durationMs = player.duration.inMilliseconds;
     if (durationMs <= 0 || targetMs < 0 || targetMs > durationMs) return;
-    _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.seek);
+    onRemoteAction?.call(actor, PlaybackActionHint.seek);
     unawaited(
       player.seek(Duration(milliseconds: targetMs)).then((didSeek) {
         if (didSeek) _afterHostSeek(targetMs, actor: actor);
@@ -521,7 +513,7 @@ class HostPlaybackCoordinator {
   void _applyRemoteRate(double rate, {required String actor}) {
     final player = _player;
     if (player == null || !rate.isFinite || rate < _minimumRemoteRate || rate > _maximumRemoteRate) return;
-    _callbacks.onRemoteAction?.call(actor, PlaybackActionHint.rate);
+    onRemoteAction?.call(actor, PlaybackActionHint.rate);
     unawaited(
       player.setRate(rate).then((didSet) {
         if (!didSet) return;
@@ -650,10 +642,23 @@ class HostPlaybackCoordinator {
       _pendingStartPositionMs = null;
       final currentPlayer = _player;
       if (currentPlayer == null || _phase != PlaybackPhase.playing) return;
+      // A vehicle that requires distraction optimization refuses the play. The room would
+      // otherwise sit in a playing phase the host is not honouring, with nothing to correct it, so
+      // put it back to paused: the host is the authority on what it is actually doing.
+      void settle(bool started) {
+        // Only this attachment's own refusal counts. A reload detaches mid-flight and its disposed
+        // player also answers false, but that pause belongs to the source switch, which deliberately
+        // holds the phase so the replacement can pick the room up again.
+        if (started || _player != currentPlayer || _phase != PlaybackPhase.playing) return;
+        _intendedPlaying = false;
+        _setPhase(PlaybackPhase.paused);
+        _broadcast();
+      }
+
       if (startPos != null && (currentPlayer.position.inMilliseconds - startPos).abs() > 250) {
-        unawaited(currentPlayer.seek(Duration(milliseconds: startPos)).then((_) => currentPlayer.play()));
+        unawaited(currentPlayer.seek(Duration(milliseconds: startPos)).then((_) => currentPlayer.play()).then(settle));
       } else {
-        unawaited(currentPlayer.play());
+        unawaited(currentPlayer.play().then(settle));
       }
     }
 
@@ -682,7 +687,7 @@ class HostPlaybackCoordinator {
       _excused.addAll(gating);
       _stalledPeers.removeAll(gating);
       appLogger.w('WatchTogether: Resuming without ${gating.join(', ')} after ${safetyTimeoutMs ~/ 1000}s');
-      _callbacks.onResumedWithout?.call(gating.toList()..sort());
+      onResumedWithout?.call(gating.toList()..sort());
       _scheduleAllReadyCheck(0);
     });
   }
@@ -750,7 +755,7 @@ class HostPlaybackCoordinator {
   void _setPhase(PlaybackPhase phase) {
     if (_phase == phase) return;
     _phase = phase;
-    _callbacks.onPhaseChanged?.call(phase);
+    onPhaseChanged?.call(phase);
     _restartHeartbeat();
   }
 
@@ -764,7 +769,11 @@ class HostPlaybackCoordinator {
       anchorPositionMs = _pendingStartPositionMs ?? player?.position.inMilliseconds ?? 0;
       anchorHostTimeMs = _pendingStartAtMs!;
     } else {
-      anchorPositionMs = anchorPositionOverrideMs ?? player?.position.inMilliseconds ?? 0;
+      // An in-place reload detaches the player, and the reply-on-demand paths
+      // still answer while it is gone. Without the last broadcast to fall back
+      // on, they publish an authoritative 0 and every guest hard-seeks to 0:00.
+      anchorPositionMs =
+          anchorPositionOverrideMs ?? player?.position.inMilliseconds ?? _lastBroadcast?.anchorPositionMs ?? 0;
       anchorHostTimeMs = _nowMs();
     }
 
@@ -789,7 +798,7 @@ class HostPlaybackCoordinator {
       final previousWaiting = _lastBroadcast?.waitingOn ?? const [];
       _lastBroadcast = state;
       if (!orderedStringListsEqual(previousWaiting, waitingOn)) {
-        _callbacks.onWaitingOnChanged?.call(waitingOn);
+        onWaitingOnChanged?.call(waitingOn);
       }
     }
     _sendState(state, toPeerId: toPeerId);

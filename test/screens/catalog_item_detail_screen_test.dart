@@ -4,25 +4,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/focus/focusable_action_bar.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/catalog/catalog_cast_member.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
+import 'package:plezy/models/seerr/seerr_session.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/catalog_item_detail_screen.dart';
 import 'package:plezy/services/catalog/catalog_source.dart';
 import 'package:plezy/services/catalog/catalog_library_matcher.dart';
+import 'package:plezy/services/catalog/seerr_catalog_source.dart';
 import 'package:plezy/services/multi_server_manager.dart';
+import 'package:plezy/services/seerr/seerr_client.dart';
+import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
 import 'package:plezy/widgets/hub_section.dart';
+import 'package:plezy/widgets/focusable_list_tile.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/optimized_media_image.dart';
 import 'package:provider/provider.dart';
@@ -113,11 +122,43 @@ class _FakeCatalogSource implements CatalogSource {
 
 class _FakeCatalogSourcesProvider extends CatalogSourcesProvider {
   final CatalogSource source;
+  final SeerrCatalogSource? seerr;
 
-  _FakeCatalogSourcesProvider(this.source);
+  _FakeCatalogSourcesProvider(this.source, {this.seerr});
 
   @override
-  List<CatalogSource> get connectedSources => [source];
+  List<CatalogSource> get connectedSources => [source, ?seerr];
+
+  @override
+  SeerrCatalogSource? get seerrSource => seerr;
+}
+
+/// A real [SeerrCatalogSource]: the Request gate reads the session's
+/// permission bitmask through [SeerrCatalogSource.canRequest]. None of these
+/// tests open the request sheet, so no Seerr HTTP is expected.
+SeerrCatalogSource _seerrSource({int permissions = SeerrPermission.request}) {
+  final client = SeerrClient(
+    SeerrSession(
+      baseUrl: 'https://seerr.example.com',
+      method: SeerrAuthMethod.local,
+      identifier: 'a@b.c',
+      secret: 'pw',
+      cookie: 'cookie',
+      userId: 1,
+      permissions: permissions,
+      displayName: 'Alice',
+      instanceLabel: 'Seerr',
+      createdAt: 0,
+    ),
+    onSessionInvalidated: () {},
+    httpClient: MockClient((request) async => http.Response('unexpected Seerr request', 500)),
+  );
+  final source = SeerrCatalogSource(client);
+  addTearDown(() {
+    source.dispose();
+    client.dispose();
+  });
+  return source;
 }
 
 class _FakeCatalogLibraryMatcher extends CatalogLibraryMatcher {
@@ -145,6 +186,53 @@ class _ExternalIdGatedMatcher extends CatalogLibraryMatcher {
   }
 }
 
+/// Serves one scripted result per `match` call, so a test can model the bare
+/// row lookup and the detail-enriched lookup independently.
+class _ScriptedMatcher extends CatalogLibraryMatcher {
+  _ScriptedMatcher(super.multiServer, this.passes);
+
+  final List<List<MediaItem> Function()> passes;
+  int calls = 0;
+
+  @override
+  Future<List<MediaItem>> match(CatalogItem item) async {
+    final pass = passes[calls < passes.length ? calls : passes.length - 1];
+    calls++;
+    return pass();
+  }
+}
+
+/// A Plex Discover row whose bare form carries only its own id; the detail
+/// body adds the external ids (#1715), which is what triggers a second pass.
+const _bareRow = CatalogItem(
+  source: CatalogSourceId.trakt,
+  kind: MediaKind.movie,
+  title: 'Row-only Movie',
+  ids: CatalogItemIds(trakt: 5),
+);
+const _enrichedRow = CatalogItem(
+  source: CatalogSourceId.trakt,
+  kind: MediaKind.movie,
+  title: 'Row-only Movie',
+  ids: CatalogItemIds(trakt: 5, tmdb: 99),
+);
+
+MediaItem _libraryCopy({
+  required String id,
+  String? libraryTitle,
+  String? videoResolution,
+  String? serverName = 'Living Room',
+}) => testMediaItem(
+  id: id,
+  serverId: 'server-1',
+  serverName: serverName,
+  libraryId: libraryTitle == null ? null : id,
+  libraryTitle: libraryTitle,
+  mediaVersions: videoResolution == null
+      ? null
+      : [MediaVersion(id: '$id-v', videoResolution: videoResolution, videoCodec: 'hevc', container: 'mkv')],
+);
+
 const _item = CatalogItem(
   source: CatalogSourceId.trakt,
   kind: MediaKind.movie,
@@ -160,8 +248,9 @@ Future<void> _pumpDetail(
   bool pushedRoute = false,
   CatalogItem item = _item,
   CatalogLibraryMatcher Function(MultiServerProvider multiServer)? matcherBuilder,
+  SeerrCatalogSource? seerr,
 }) async {
-  final sources = _FakeCatalogSourcesProvider(source);
+  final sources = _FakeCatalogSourcesProvider(source, seerr: seerr);
   final serverManager = MultiServerManager();
   final multiServer = testMultiServerProvider(serverManager);
   final matcher = matcherBuilder?.call(multiServer) ?? _FakeCatalogLibraryMatcher(multiServer, matches);
@@ -283,6 +372,194 @@ void main() {
     expect(find.text('Movies'), findsOneWidget);
   });
 
+  group('Seerr request action', () {
+    testWidgets('appears once the detail load supplies the tmdb id', (tester) async {
+      // #1959: Plex Discover's hub/search/related endpoints ignore
+      // includeGuids, so a row item carries no tmdb id until fetchDetail
+      // brings one. The Request gate must read the enriched item, not the
+      // row form the screen opened with.
+      final detailCompleter = Completer<CatalogDetail>();
+      final source = _FakeCatalogSource(detailCompleter: detailCompleter);
+
+      await _pumpDetail(tester, source, item: _bareRow, seerr: _seerrSource());
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+
+      detailCompleter.complete(const CatalogDetail(item: _enrichedRow));
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+    });
+
+    testWidgets('appears immediately when the row item already carries a tmdb id', (tester) async {
+      final source = _FakeCatalogSource();
+
+      await _pumpDetail(tester, source, seerr: _seerrSource());
+
+      expect(find.byTooltip(t.seerr.request), findsOneWidget);
+    });
+
+    testWidgets('stays hidden without the request permission', (tester) async {
+      final source = _FakeCatalogSource();
+
+      await _pumpDetail(tester, source, seerr: _seerrSource(permissions: 0));
+
+      expect(find.byTooltip(t.seerr.request), findsNothing);
+    });
+  });
+
+  testWidgets('lists every library copy of one title, best quality first', (tester) async {
+    // #1754: one movie held by both a 4K library and an HD library on the same
+    // server. Library names are user-chosen, so each row also states the
+    // resolution the user is actually choosing between.
+    final source = _FakeCatalogSource();
+
+    await _pumpDetail(
+      tester,
+      source,
+      matches: [
+        _libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080'),
+        _libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k'),
+      ],
+    );
+
+    expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
+    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text('4K Movies'), findsOneWidget);
+
+    final subtitles = tester.widgetList<Text>(find.textContaining('Living Room')).map((text) => text.data!).toList();
+    expect(subtitles, hasLength(2));
+    expect(subtitles.first, contains('4K'), reason: 'the 4K copy sorts above the HD one');
+    expect(subtitles.last, contains('1080p'));
+  });
+
+  testWidgets('a re-resolve that comes back short keeps the copies already found', (tester) async {
+    // The cross-server fan-out logs and skips per-server failures, so a later
+    // pass can answer without a server that replied to the first one. Those
+    // rows are still valid and must not be wiped.
+    late _ScriptedMatcher matcher;
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
+        () => [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies')],
+        () => const [],
+      ]),
+    );
+
+    expect(matcher.calls, 2);
+    expect(find.text(t.explore.inTheseLibraries), findsOneWidget);
+    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+  });
+
+  testWidgets('a failed re-resolve does not claim the title left the library', (tester) async {
+    late _ScriptedMatcher matcher;
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
+        () => [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies')],
+        () => throw StateError('server unreachable'),
+      ]),
+    );
+
+    expect(matcher.calls, 2);
+    expect(find.text('Movies'), findsOneWidget);
+    expect(find.text(t.explore.notInLibrary), findsNothing);
+  });
+
+  testWidgets('a re-resolve that lost its library stamp keeps the one already shown', (tester) async {
+    // Jellyfin stamps a copy's library with a best-effort ancestors lookup
+    // that returns the item bare when it fails. A row that fell back to the
+    // server name would be indistinguishable from its sibling in the same
+    // server's other library.
+    late _ScriptedMatcher matcher;
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
+        () => [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080')],
+        () => [_libraryCopy(id: 'hd-copy', serverName: null)],
+      ]),
+    );
+
+    expect(matcher.calls, 2);
+    expect(find.text('Movies'), findsOneWidget);
+    final subtitles = tester.widgetList<Text>(find.textContaining('Living Room')).map((text) => text.data!);
+    expect(subtitles.single, contains('1080p'), reason: 'the quality hint survives an unstamped re-resolve too');
+  });
+
+  testWidgets('a re-resolve that finds another library adds it to the list', (tester) async {
+    // The exact `plex://` guid only sees libraries on the modern agent; a
+    // legacy-agent sibling arrives with the enriched imdb/tmdb pass (#1754).
+    // The first pass being non-empty must not suppress the second.
+    late _ScriptedMatcher matcher;
+    final source = _FakeCatalogSource(detail: const CatalogDetail(item: _enrichedRow));
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => matcher = _ScriptedMatcher(multiServer, [
+        () => [_libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k')],
+        () => [
+          _libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k'),
+          _libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080'),
+        ],
+      ]),
+    );
+
+    expect(matcher.calls, 2);
+    expect(find.text('4K Movies'), findsOneWidget, reason: 'the copy both passes agree on is not doubled');
+    expect(find.text('Movies'), findsOneWidget);
+  });
+
+  testWidgets('focus stays on a library copy when a later pass adds one above it', (tester) async {
+    // Merging re-sorts, so the rows can move. Focus nodes are keyed by the
+    // copy, not by row index, or a dpad user would be thrown to another copy.
+    final detailCompleter = Completer<CatalogDetail>();
+    final source = _FakeCatalogSource(detailCompleter: detailCompleter);
+
+    await _pumpDetail(
+      tester,
+      source,
+      item: _bareRow,
+      matcherBuilder: (multiServer) => _ScriptedMatcher(multiServer, [
+        () => [_libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080')],
+        () => [
+          _libraryCopy(id: 'hd-copy', libraryTitle: 'Movies', videoResolution: '1080'),
+          _libraryCopy(id: 'uhd-copy', libraryTitle: '4K Movies', videoResolution: '4k'),
+        ],
+      ]),
+    );
+
+    final tile = tester.widget<FocusableListTile>(
+      find.ancestor(of: find.text('Movies'), matching: find.byType(FocusableListTile)),
+    );
+    tile.focusNode!.requestFocus();
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_server-1:hd-copy');
+
+    detailCompleter.complete(const CatalogDetail(item: _enrichedRow));
+    await tester.pumpAndSettle();
+
+    expect(find.text('4K Movies'), findsOneWidget);
+    expect(
+      FocusManager.instance.primaryFocus?.debugLabel,
+      'catalog_library_match_server-1:hd-copy',
+      reason: 'the 4K copy sorted above the focused HD copy without stealing focus',
+    );
+  });
+
   testWidgets('fetchDetail failure leaves the opening item rendered', (tester) async {
     final source = _FakeCatalogSource(detailError: StateError('detail unavailable'));
 
@@ -328,10 +605,10 @@ void main() {
       title: 'Rated Movie',
       ids: CatalogItemIds(tmdb: 11),
       ratings: [
-        CatalogRatingSource(source: 'simkl', value: 8.1, votes: 11),
-        CatalogRatingSource(source: 'mal', value: 8.3, votes: 13),
-        CatalogRatingSource(source: 'critic', value: 7.2, votes: 14),
-        CatalogRatingSource(source: 'audience', value: 8.8, votes: 15),
+        MediaRatingSource(source: 'simkl', value: 8.1, votes: 11),
+        MediaRatingSource(source: 'mal', value: 8.3, votes: 13),
+        MediaRatingSource(source: 'critic', value: 7.2, votes: 14),
+        MediaRatingSource(source: 'audience', value: 8.8, votes: 15),
       ],
     );
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
@@ -352,10 +629,10 @@ void main() {
       title: 'Attributed Movie',
       ids: CatalogItemIds(tmdb: 21),
       ratings: [
-        CatalogRatingSource(source: 'rottenTomatoesCritic', value: 8.4),
-        CatalogRatingSource(source: 'rottenTomatoesAudience', value: 4.1),
-        CatalogRatingSource(source: 'imdb', value: 7.9, votes: 12),
-        CatalogRatingSource(source: 'tmdb', value: 7.5),
+        MediaRatingSource(source: 'rottenTomatoesCritic', value: 8.4),
+        MediaRatingSource(source: 'rottenTomatoesAudience', value: 4.1),
+        MediaRatingSource(source: 'imdb', value: 7.9, votes: 12),
+        MediaRatingSource(source: 'tmdb', value: 7.5),
       ],
     );
     final source = _FakeCatalogSource(detail: const CatalogDetail(item: item));
@@ -381,7 +658,7 @@ void main() {
     expect(find.text('41%'), findsOneWidget);
     expect(find.text('7.9 (12 votes)'), findsOneWidget);
     expect(find.text('75%'), findsOneWidget);
-    expect(find.text('${t.explore.ratingSource.rottenTomatoesCritic} 8.4'), findsNothing);
+    expect(find.text('${t.common.ratingSource.rottenTomatoesCritic} 8.4'), findsNothing);
   });
 
   testWidgets('seasonal rank keeps its season window instead of claiming all-time rank', (tester) async {
@@ -831,19 +1108,31 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
+    // Copies render best-first, so the 4K one leads whatever order the
+    // matcher returned them in.
     final matches = [
-      testMediaItem(id: 'match_1', libraryTitle: 'Movies', serverName: 'Living Room'),
-      testMediaItem(id: 'match_2', libraryTitle: 'Favorites', serverName: 'Bedroom'),
+      testMediaItem(
+        id: 'match_1',
+        libraryTitle: 'Movies',
+        serverName: 'Living Room',
+        mediaVersions: const [MediaVersion(id: 'v1', videoResolution: '4k')],
+      ),
+      testMediaItem(
+        id: 'match_2',
+        libraryTitle: 'Favorites',
+        serverName: 'Bedroom',
+        mediaVersions: const [MediaVersion(id: 'v2', videoResolution: '1080')],
+      ),
     ];
     await _pumpDetail(tester, _FakeCatalogSource(), matches: matches);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_0');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_match_1');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_1');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_match_2');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
@@ -851,7 +1140,7 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_1');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'catalog_library_match_match_2');
   });
 
   testWidgets('pending watchlist action keeps initial focus and its press retries the snapshot', (tester) async {

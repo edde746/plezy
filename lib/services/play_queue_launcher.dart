@@ -15,10 +15,6 @@ import '../i18n/strings.g.dart';
 import 'media_list_playback_launcher.dart';
 import 'plex_client.dart';
 
-// Re-export the result types so existing imports of this file keep working.
-export 'media_list_playback_launcher.dart'
-    show PlayQueueResult, PlayQueueSuccess, PlayQueueEmpty, PlayQueueCancelled, PlayQueueError;
-
 /// Plex-specific play queue launcher.
 ///
 /// Centralizes the common pattern of:

@@ -22,6 +22,11 @@ import '../services/settings_service.dart';
 import 'app_logger.dart';
 import 'global_key_utils.dart';
 import 'platform_detector.dart';
+import 'download_version_utils.dart';
+import 'media_version_resolver.dart';
+import 'provider_extensions.dart';
+import 'quality_preset_labels.dart';
+import '../i18n/strings.g.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
 
@@ -306,24 +311,39 @@ Future<bool?> navigateToVideoPlayer(
   }
 
   try {
-    // Check if external player is enabled
+    // Check if external player is enabled. The platform guard comes first so
+    // platforms that can never launch an external player skip the settings
+    // lookup, and the singleton the saved-version resolve above already
+    // initialized is reused — getInstance() is awaited at most once per
+    // launch on this path.
     try {
-      final settingsService = await SettingsService.getInstance();
-      if (PlatformDetector.supportsExternalPlayers() && settingsService.read(SettingsService.useExternalPlayer)) {
-        bool launched = false;
+      if (PlatformDetector.supportsExternalPlayers()) {
+        final settingsService = SettingsService.instanceOrNull ?? await SettingsService.getInstance();
+        if (settingsService.read(SettingsService.useExternalPlayer)) {
+          bool launched = false;
 
-        if (isOffline) {
-          final globalKey = metadata.globalKey;
-          final videoPath = await downloadProvider.getVideoFilePath(
-            globalKey,
-            mediaIndex: mediaIndex,
-            mediaSourceId: mediaSourceId,
-          );
-          if (videoPath != null && context.mounted) {
-            final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+          if (isOffline) {
+            final globalKey = metadata.globalKey;
+            final videoPath = await downloadProvider.getVideoFilePath(
+              globalKey,
+              mediaIndex: mediaIndex,
+              mediaSourceId: mediaSourceId,
+            );
+            if (videoPath != null && context.mounted) {
+              final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+              launched = await ExternalPlayerService.launch(
+                context: context,
+                videoUrl: videoUrl,
+                metadata: metadata,
+                client: mediaClient,
+                offlineWatchService: offlineWatchService,
+                mediaIndex: mediaIndex,
+                mediaSourceId: mediaSourceId,
+              );
+            }
+          } else if (context.mounted) {
             launched = await ExternalPlayerService.launch(
               context: context,
-              videoUrl: videoUrl,
               metadata: metadata,
               client: mediaClient,
               offlineWatchService: offlineWatchService,
@@ -331,22 +351,13 @@ Future<bool?> navigateToVideoPlayer(
               mediaSourceId: mediaSourceId,
             );
           }
-        } else if (context.mounted) {
-          launched = await ExternalPlayerService.launch(
-            context: context,
-            metadata: metadata,
-            client: mediaClient,
-            offlineWatchService: offlineWatchService,
-            mediaIndex: mediaIndex,
-            mediaSourceId: mediaSourceId,
-          );
-        }
 
-        if (launched) {
-          // External playback never reaches the in-player session commit, so
-          // record the local last-played history here.
-          if (!isOffline) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
-          return null;
+          if (launched) {
+            // External playback never reaches the in-player session commit, so
+            // record the local last-played history here.
+            if (!isOffline) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
+            return null;
+          }
         }
       }
     } catch (e) {
@@ -428,6 +439,80 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   }
 
   return result;
+}
+
+/// Sum of [MediaPart.sizeBytes] across all parts of [version]. Returns
+/// null when any part is missing a size (a partial sum would be misleading
+/// for the "Original" row in the quality picker).
+int? _versionSizeBytes(MediaVersion? version) {
+  if (version == null || version.parts.isEmpty) return null;
+  var total = 0;
+  for (final p in version.parts) {
+    final s = p.sizeBytes;
+    if (s == null || s <= 0) return null;
+    total += s;
+  }
+  return total > 0 ? total : null;
+}
+
+/// The shared "Play Version..." flow behind the detail screen's split Play
+/// segment and the context menu entry: pick a version when the item has a
+/// choice, pick a transcode quality when the backend can transcode, persist
+/// the pick, and launch playback.
+///
+/// Returns true when playback navigation started; false when the user
+/// dismissed a picker or the context went away. The returned future completes
+/// after the player route pops, so callers can refresh on return.
+Future<bool> promptAndPlayVersion(BuildContext context, MediaItem item) async {
+  final itemServerId = serverIdOrNull(item.serverId);
+  final client = context.tryGetMediaClientForServer(itemServerId);
+  final itemServerOnline =
+      itemServerId != null && context.read<MultiServerProvider>().serverManager.isClientOnline(itemServerId);
+  // Same flag the in-player Version & Quality sheet reads — keeps both
+  // surfaces honest about what the active backend can actually do. Also
+  // requires a reachable server: capabilities are static, and a server
+  // dropping between surface build and tap must not offer transcodes.
+  final canTranscode = itemServerOnline && (client?.capabilities.videoTranscoding ?? false);
+  final versions = client == null
+      ? item.mediaVersions ?? const <MediaVersion>[]
+      : await resolveMediaVersions(item, client);
+  if (!context.mounted) return false;
+
+  int selectedVersionIndex = 0;
+  if (versions.length > 1) {
+    final picked = await showVersionPickerDialog(context, versions, t.mediaMenu.playVersion);
+    if (picked == null || !context.mounted) return false;
+    selectedVersionIndex = picked;
+  }
+
+  final selectedVersion = selectedVersionIndex < versions.length ? versions[selectedVersionIndex] : null;
+  TranscodeQualityPreset selectedQuality = TranscodeQualityPreset.original;
+  if (canTranscode) {
+    final picked = await showQualityPickerDialog(
+      context,
+      sourceBitrateKbps: selectedVersion?.bitrate,
+      sourceDurationMs: item.durationMs,
+      sourceSizeBytes: _versionSizeBytes(selectedVersion),
+    );
+    if (picked == null || !context.mounted) return false;
+    selectedQuality = picked;
+  }
+
+  // Remember the pick so Continue Watching / plain Play resume this version
+  // (#1492) — same store the in-player version switch writes.
+  if (versions.length > 1) {
+    await saveMediaVersionPreferenceFor(item, index: selectedVersionIndex, versions: versions);
+    if (!context.mounted) return false;
+  }
+
+  await navigateToVideoPlayer(
+    context,
+    metadata: item,
+    selectedMediaIndex: selectedVersionIndex,
+    selectedMediaSourceId: selectedVersion?.id,
+    selectedQualityPreset: selectedQuality,
+  );
+  return true;
 }
 
 /// Resolves the current Watch Together media and opens the video player.

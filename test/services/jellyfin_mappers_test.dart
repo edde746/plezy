@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_browser_dialect.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_stream.dart';
@@ -23,6 +24,7 @@ void main() {
         'PremiereDate': '2010-07-16T00:00:00.0000000Z',
         'OfficialRating': 'PG-13',
         'CommunityRating': 8.8,
+        'CriticRating': 88,
         'Genres': ['Action', 'Sci-Fi'],
         'People': [
           {'Type': 'Actor', 'Name': 'Leo', 'Id': 'p1', 'PrimaryImageTag': 'tag1', 'Role': 'Cobb'},
@@ -63,6 +65,9 @@ void main() {
       expect(item.contentRating, 'PG-13');
       expect(item.studio, 'Warner Bros');
       expect(item.rating, 8.8);
+      expect(item.ratings?.map((rating) => rating.source).toList(), ['audience', 'rottenTomatoesCritic']);
+      // CriticRating is the 0-100 Tomatometer; the neutral scale is 0-10.
+      expect(item.ratings?.map((rating) => rating.value).toList(), [8.8, 8.8]);
       expect(item.genres, ['Action', 'Sci-Fi']);
       expect(item.directors, ['Christopher Nolan']);
       expect(item.countries, ['United States']);
@@ -77,7 +82,6 @@ void main() {
       expect(item.viewOffsetMs, 3000000); // 3000s in ms
       expect(item.viewCount, 1);
 
-      // Image paths.
       expect(item.thumbPath, '/Items/abc123/Images/Primary?tag=thumbtag');
       expect(item.artPath, '/Items/abc123/Images/Backdrop/0?tag=backtag');
       expect(item.backdropPaths, [
@@ -87,9 +91,63 @@ void main() {
       ]);
       expect(item.clearLogoPath, '/Items/abc123/Images/Logo?tag=logotag');
 
-      // Multi-server fields.
       expect(item.serverId, _serverId);
       expect(item.serverName, 'Home');
+    });
+
+    test('Emby dialect stamps backend and preserves opaque item and media source ids', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': '7330',
+          'Name': 'Movie',
+          'Type': 'Movie',
+          'MediaSources': [
+            {'Id': 'mediasource_7330', 'MediaStreams': <Map<String, dynamic>>[]},
+          ],
+        },
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+        dialect: MediaBrowserDialect.emby,
+      )!;
+
+      expect(item.id, '7330');
+      expect(item.backend, MediaBackend.emby);
+      expect(item.mediaVersions!.single.id, 'mediasource_7330');
+      expect(item.mediaVersions!.single.parts.single.id, 'mediasource_7330');
+    });
+
+    test('divides the Tomatometer rather than range-sniffing it', () {
+      // A CriticRating of 9 means 9%, not 9.0/10 — folding by magnitude would
+      // silently promote a rotten score to fresh.
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'movie-rotten', 'Type': 'Movie', 'CriticRating': 9},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.ratings?.single.source, 'rottenTomatoesCritic');
+      expect(item.ratings?.single.value, 0.9);
+    });
+
+    test('omits ratings for photos, whose CommunityRating is an EXIF 0-5 star', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'photo-1', 'Type': 'Photo', 'CommunityRating': 4},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.kind, MediaKind.photo);
+      expect(item.ratings, isNull);
+    });
+
+    test('reports no ratings when the server sent neither score', () {
+      final item = JellyfinMappers.mediaItem(
+        {'Id': 'movie-bare', 'Type': 'Movie'},
+        serverId: ServerId(_serverId),
+        absolutizer: null,
+      )!;
+
+      expect(item.ratings, isNull);
     });
 
     test('preserves backdrop indices, deduplicates tags, and absolutizes every valid path', () {
@@ -496,6 +554,30 @@ void main() {
       expect(video.dolbyVision, isFalse);
       expect(video.dolbyVisionProfile, isNull);
     });
+
+    test('never derives library identity from ParentId, SeriesStudio, or ParentLibrary fields', () {
+      // None of these are a library: ParentId resolves to a season or physical
+      // folder, SeriesStudio is a studio, and ParentLibraryId/Name are not
+      // fields either dialect actually sends. Library identity comes only
+      // from explicit stamps (scoped search, the Ancestors lookup).
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'movie-1',
+          'Type': 'Movie',
+          'Name': 'Movie',
+          'ParentId': 'folder-1',
+          'SeriesStudio': 'Studio X',
+          'ParentLibraryId': 'lib-1',
+          'ParentLibraryName': 'Movies',
+        },
+        serverId: ServerId(_serverId),
+        serverName: 'Home',
+        absolutizer: null,
+      )!;
+
+      expect(item.libraryId, isNull);
+      expect(item.libraryTitle, isNull);
+    });
   });
 
   group('JellyfinMappers.library', () {
@@ -516,6 +598,16 @@ void main() {
         expect(lib.kind, entry.value, reason: 'CollectionType ${entry.key}');
         expect(lib.backend, MediaBackend.jellyfin);
       }
+    });
+
+    test('Emby dialect stamps the library backend', () {
+      final library = JellyfinMappers.library(
+        {'Id': 'view-movies', 'Name': 'Movies', 'CollectionType': 'movies'},
+        serverId: ServerId(_serverId),
+        dialect: MediaBrowserDialect.emby,
+      )!;
+
+      expect(library.backend, MediaBackend.emby);
     });
 
     test('maps content-type-less collection folders to a movie and show root browse', () {
@@ -657,6 +749,57 @@ void main() {
         JellyfinMappers.library({'Name': 'Library', 'CollectionType': 'movies'}, serverId: ServerId(_serverId)),
         isNull,
       );
+    });
+  });
+
+  group('jellyfinUserImageUrl', () {
+    test('builds an absolute, tag-keyed user image URL', () {
+      final url = jellyfinUserImageUrl(baseUrl: 'https://jelly.example', userId: 'user-1', tag: 'abc123');
+
+      final uri = Uri.parse(url!);
+      expect(uri.origin, 'https://jelly.example');
+      expect(uri.path, '/Users/user-1/Images/Primary');
+      expect(uri.queryParameters['tag'], 'abc123');
+    });
+
+    test('carries no api_key — the user image endpoint is anonymous', () {
+      final url = jellyfinUserImageUrl(baseUrl: 'https://jelly.example', userId: 'user-1', tag: 'abc123')!;
+
+      // Item artwork self-authenticates via api_key; baking the access token
+      // into an avatar URL would put it in the image cache key for no reason.
+      expect(url, isNot(contains('api_key')));
+      expect(url, isNot(contains('secret')));
+    });
+
+    test('returns null when the user has no picture', () {
+      expect(jellyfinUserImageUrl(baseUrl: 'https://jelly.example', userId: 'user-1', tag: null), isNull);
+      expect(jellyfinUserImageUrl(baseUrl: 'https://jelly.example', userId: 'user-1', tag: ''), isNull);
+    });
+
+    test('returns null when the connection is missing a base URL or user id', () {
+      expect(jellyfinUserImageUrl(baseUrl: '', userId: 'user-1', tag: 'abc123'), isNull);
+      expect(jellyfinUserImageUrl(baseUrl: 'https://jelly.example', userId: '', tag: 'abc123'), isNull);
+    });
+
+    test('joins a base URL that carries a subpath and a trailing slash', () {
+      final url = jellyfinUserImageUrl(baseUrl: 'https://host.example/jellyfin/', userId: 'user-1', tag: 'abc123');
+
+      expect(Uri.parse(url!).path, '/jellyfin/Users/user-1/Images/Primary');
+    });
+
+    test('escapes a user id that would otherwise break the path', () {
+      final url = jellyfinUserImageUrl(baseUrl: 'https://jelly.example', userId: 'a/b', tag: 'abc123');
+
+      expect(Uri.parse(url!).pathSegments, ['Users', 'a/b', 'Images', 'Primary']);
+    });
+
+    test('requests a bounded size for servers that still honour it', () {
+      final uri = Uri.parse(
+        jellyfinUserImageUrl(baseUrl: 'https://jelly.example', userId: 'user-1', tag: 'abc123', maxSize: 96)!,
+      );
+
+      expect(uri.queryParameters['maxWidth'], '96');
+      expect(uri.queryParameters['maxHeight'], '96');
     });
   });
 }

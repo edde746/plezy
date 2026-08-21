@@ -24,7 +24,7 @@ class _ProbeTabState extends BaseLibraryTabState<String, _ProbeTab> {
   int focusFirstItemCalls = 0;
 
   @override
-  Future<List<String>> loadData() async => widget.loadedItems;
+  Future<void> loadItems() => runLoadTransaction(() async => widget.loadedItems);
 
   @override
   Widget buildContent(List<String> items) => const SizedBox.shrink();
@@ -56,7 +56,7 @@ class _ControlledTab extends BaseLibraryTab<String> {
 
 class _ControlledTabState extends BaseLibraryTabState<String, _ControlledTab> {
   @override
-  Future<List<String>> loadData() => widget.load(widget.library);
+  Future<void> loadItems() => runLoadTransaction(() => widget.load(widget.library));
 
   @override
   Widget buildContent(List<String> items) => ListView(children: items.map(Text.new).toList());

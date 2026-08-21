@@ -93,7 +93,6 @@ void main() {
       expect(matrix.originalTitle, 'Matrix, The');
       expect(matrix.languages, ['en']);
       expect(matrix.isAdult, isFalse);
-      expect(matrix.relevance, 42.5);
       expect(matrix.posterUrl, 'https://image.tmdb.org/t/p/w600_and_h900_bestv2/matrix.jpg');
       expect(matrix.backdropUrl, 'https://image.tmdb.org/t/p/w1920_and_h800_multi_faces/matrix-backdrop.jpg');
       expect(matrix.posterVariants?.keys, [92, 154, 185, 342, 500, 600, 780]);

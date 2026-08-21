@@ -11,6 +11,7 @@ import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import 'connection.dart';
 import 'connection_registry.dart';
+import 'plex_account_setup.dart';
 
 /// One-shot helpers that bridge between the legacy single-Plex-account
 /// SharedPreferences state (`StorageService.plexToken` +
@@ -97,25 +98,12 @@ class ConnectionBootstrap {
     if (existing.whereType<PlexAccountConnection>().isNotEmpty) return;
 
     try {
-      final auth = await PlexAuthService.create();
-      try {
-        final info = await auth.getUserInfo(devToken);
-        final servers = await auth.fetchServers(devToken);
-        final clientId = await storage.getOrCreateClientIdentifier();
-        final conn = PlexAccountConnection(
-          id: 'plex.$clientId',
-          accountToken: devToken,
-          clientIdentifier: clientId,
-          accountLabel: (info['username'] as String?) ?? (info['email'] as String?) ?? 'Plex',
-          servers: servers,
-          createdAt: DateTime.now(),
-          lastAuthenticatedAt: DateTime.now(),
-        );
-        await connectionRegistry.upsert(conn);
-        appLogger.i('Seeded Plex account from PLEX_TOKEN dart-define as ${conn.id}');
-      } finally {
-        auth.dispose();
-      }
+      // The dev seed always keys its row by the device client id and aborts
+      // on an identity-lookup failure — a bad PLEX_TOKEN must not seed a
+      // mislabelled row.
+      final build = await buildPlexAccountConnection(devToken, keyByAccountUuid: false, tolerateUserInfoFailure: false);
+      await connectionRegistry.upsert(build.connection);
+      appLogger.i('Seeded Plex account from PLEX_TOKEN dart-define as ${build.connection.id}');
     } catch (e, st) {
       appLogger.w('PLEX_TOKEN seed failed', error: e, stackTrace: st);
     }
@@ -138,31 +126,17 @@ class ConnectionBootstrap {
     }
 
     try {
-      final clientId = await storage.getOrCreateClientIdentifier();
-      final servers = await serverRegistry.getServers();
-
-      String accountLabel = 'Plex';
-      String accountUuid = '';
-      try {
-        final info = await _plexUserInfoFetcher(token);
-        accountLabel = (info['username'] as String?) ?? (info['email'] as String?) ?? 'Plex';
-        accountUuid = (info['uuid'] as String?)?.trim() ?? '';
-      } catch (e) {
-        appLogger.d('Plex migration: account label lookup failed (using fallback): $e');
-      }
-
-      final conn = PlexAccountConnection(
-        id: 'plex.${accountUuid.isNotEmpty ? accountUuid : clientId}',
-        accountToken: token,
-        clientIdentifier: clientId,
-        accountLabel: accountLabel,
-        servers: servers,
-        createdAt: DateTime.now(),
-        lastAuthenticatedAt: DateTime.now(),
+      final build = await buildPlexAccountConnection(
+        token,
+        clientIdentifier: await storage.getOrCreateClientIdentifier(),
+        fetchUserInfo: _plexUserInfoFetcher,
+        // The migration wraps the cached legacy server list; a network server
+        // fetch could fail exactly when the migration must succeed offline.
+        fetchServers: (_) => serverRegistry.getServers(),
       );
-      await connectionRegistry.upsert(conn);
-      appLogger.i('Migrated legacy Plex account into ConnectionRegistry as ${conn.id}');
-      return conn;
+      await connectionRegistry.upsert(build.connection);
+      appLogger.i('Migrated legacy Plex account into ConnectionRegistry as ${build.connection.id}');
+      return build.connection;
     } catch (e, st) {
       appLogger.w('Plex account migration failed', error: e, stackTrace: st);
       return null;

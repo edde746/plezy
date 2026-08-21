@@ -105,18 +105,18 @@ void main() {
       expect(controller.controlsVisible, isFalse);
     });
 
-    test('show stores focus target and notifies even when already visible', () {
+    test('show stores play/pause focus request and notifies even when already visible', () {
       final controller = PlayerChromeController();
       addTearDown(controller.dispose);
       var notifications = 0;
       controller.addListener(() => notifications++);
 
-      controller.show(focusTarget: PlayerChromeFocusTarget.playPause);
+      controller.show(focusPlayPause: true);
 
       expect(notifications, 1);
-      expect(controller.pendingFocusTarget, PlayerChromeFocusTarget.playPause);
-      expect(controller.takeFocusTarget(), PlayerChromeFocusTarget.playPause);
-      expect(controller.takeFocusTarget(), isNull);
+      expect(controller.pendingPlayPauseFocus, isTrue);
+      expect(controller.takePlayPauseFocus(), isTrue);
+      expect(controller.takePlayPauseFocus(), isFalse);
     });
 
     test('hide keeps controls presented until the opacity animation completes', () {
@@ -131,6 +131,25 @@ void main() {
       controller.markControlsHidden();
 
       expect(controller.controlsPresented, isFalse);
+    });
+
+    test('a hidden start is also unpresented, so back is not classified as hide-the-chrome', () {
+      final controller = PlayerChromeController(initiallyVisible: false);
+      addTearDown(controller.dispose);
+
+      expect(controller.controlsVisible, isFalse);
+      expect(controller.controlsPresented, isFalse);
+      expect(controller.hide(), isFalse, reason: 'there is nothing to hide, so back must fall through to the route');
+    });
+
+    test('showing after a hidden start restores both visibility and presentation', () {
+      final controller = PlayerChromeController(initiallyVisible: false);
+      addTearDown(controller.dispose);
+
+      controller.show();
+
+      expect(controller.controlsVisible, isTrue);
+      expect(controller.controlsPresented, isTrue);
     });
 
     test('a stale fade-out completion cannot hide controls that were shown again', () {

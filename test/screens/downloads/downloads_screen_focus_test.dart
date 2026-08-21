@@ -335,8 +335,6 @@ Future<void> _pumpScreen(
           theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),
           home: MainScreenFocusScope(
             focusSidebar: onSidebar ?? () {},
-            focusContent: () {},
-            isSidebarFocused: false,
             sideNavigationWidth: 0,
             child: DownloadsScreen(key: screenKey),
           ),

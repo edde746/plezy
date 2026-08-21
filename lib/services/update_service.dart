@@ -77,37 +77,22 @@ class UpdateService {
   /// Check if the macOS app was installed via Homebrew.
   /// Homebrew casks live under /opt/homebrew/Caskroom/ or /usr/local/Caskroom/.
   static bool _isHomebrewInstall() {
-    try {
-      final execPath = Platform.resolvedExecutable;
-      return execPath.contains('/Caskroom/') || execPath.contains('/homebrew/');
-    } catch (error, stackTrace) {
-      appLogger.e('Failed to determine Homebrew install status', error: error, stackTrace: stackTrace);
-      return false;
-    }
+    final execPath = Platform.resolvedExecutable;
+    return execPath.contains('/Caskroom/') || execPath.contains('/homebrew/');
   }
 
   /// Check if the Windows app was installed via winget.
   /// The Inno Setup installer writes a .winget marker file when invoked with /WINGET=1.
   static bool _isWingetInstall() {
-    try {
-      final exeDir = File(Platform.resolvedExecutable).parent.path;
-      return File('$exeDir\\.winget').existsSync();
-    } catch (error, stackTrace) {
-      appLogger.e('Failed to determine winget install status', error: error, stackTrace: stackTrace);
-      return false;
-    }
+    final exeDir = File(Platform.resolvedExecutable).parent.path;
+    return File('$exeDir\\.winget').existsSync();
   }
 
   /// Check if the Windows app is an installed copy (not portable).
   /// The Inno Setup installer places unins000.exe next to the executable.
   static bool _isInstalledApp() {
-    try {
-      final exeDir = File(Platform.resolvedExecutable).parent.path;
-      return File('$exeDir\\unins000.exe').existsSync();
-    } catch (error, stackTrace) {
-      appLogger.e('Failed to determine Windows installation status', error: error, stackTrace: stackTrace);
-      return false;
-    }
+    final exeDir = File(Platform.resolvedExecutable).parent.path;
+    return File('$exeDir\\unins000.exe').existsSync();
   }
 
   static Future<void> skipVersion(String version) async {

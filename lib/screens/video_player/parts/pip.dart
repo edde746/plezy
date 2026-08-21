@@ -37,9 +37,15 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
     if (needsVideoFilter && _videoFilterManager == null && settings != null) {
       _videoFilterManager = VideoFilterManager(
         player: currentPlayer,
-        initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
+        // iOS and tvOS zoom the native video layer; mpv's video-zoom would
+        // force vo_avfoundation's Core Image path and kill HDR/DV passthrough.
+        nativeVideoZoom: Platform.isIOS,
+        initialBoxFitMode: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.boxFitMode, _currentMetadata),
         initialPlayerSize: initialPlayerSize,
-        onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
+        // Reads _currentMetadata at invocation time so a cycle after an
+        // in-place episode swap keys against the item actually on screen.
+        onBoxFitModeChanged: (mode) =>
+            unawaited(ScopedPlayerPrefs.write(ScopedPlayerPrefs.boxFitMode, _currentMetadata, mode)),
       );
       unawaited(_videoFilterManager!.updateVideoFilter());
     }
@@ -154,7 +160,7 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
     filterManager.exitPipMode();
     if (restoreAmbient) {
       filterManager.clearPipAmbientLightingFlag();
-      unawaited(_restoreAmbientLighting());
+      unawaited(_visualEffects.restoreAmbientLighting());
     }
     _pipFiltersPrepared = false;
   }

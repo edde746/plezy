@@ -62,7 +62,6 @@ class VideoControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the effective color: explicit color > active amber > default white
     final effectiveColor = color ?? (isActive ? Colors.amber : Colors.white);
 
     final button = IconButton(
@@ -85,9 +84,9 @@ class VideoControlButton extends StatelessWidget {
         semanticLabel: effectiveSemanticLabel,
         semanticValue: semanticValue,
         checked: checked,
-        borderRadius: 20, // Circular for icon buttons
-        autoScroll: false, // Video controls don't scroll
-        useBackgroundFocus: true, // Use background highlight for video controls
+        borderRadius: 20,
+        autoScroll: false,
+        useBackgroundFocus: true,
         child: result,
       );
     } else if (effectiveSemanticLabel != null) {

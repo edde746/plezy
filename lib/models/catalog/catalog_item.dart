@@ -1,12 +1,13 @@
 import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
+import '../../media/media_rating.dart';
 import '../../utils/external_ids.dart';
 import 'catalog_cast_member.dart';
 import 'catalog_metadata.dart';
 
 /// External catalog providers that can back the Explore tab.
-enum CatalogSourceId { plex, trakt, mal, anilist, simkl, seerr }
+enum CatalogSourceId { plex, trakt, mal, anilist, simkl, seerr, mdblist }
 
 /// Normalized airing/production status across providers (Trakt `status`,
 /// MAL `status`). Null when unknown or uninteresting (released movies).
@@ -213,7 +214,7 @@ class CatalogItem {
   final String? accentColor;
 
   /// Scores beyond [rating], each with its own source label.
-  final List<CatalogRatingSource>? ratings;
+  final List<MediaRatingSource>? ratings;
 
   /// Leaderboard positions. A list because providers return several windows
   /// at once (all-time and seasonal).
@@ -312,12 +313,6 @@ class CatalogItem {
   /// answer different questions and neither can be derived from the other.
   final double? recommendationPercent;
 
-  /// Play state the catalog provider itself reports.
-  final CatalogPlayState? playState;
-
-  /// Provider search relevance. Ordering input only — never rendered.
-  final double? relevance;
-
   /// Production/background prose (MAL `background`) — trivia about how the
   /// title came to exist, distinct from the plot [overview].
   final String? background;
@@ -380,8 +375,6 @@ class CatalogItem {
     this.isAdult,
     this.recommendationCount,
     this.recommendationPercent,
-    this.playState,
-    this.relevance,
     this.background,
     this.cast,
     this.unairedEpisodeCount,
@@ -393,8 +386,8 @@ class CatalogItem {
   /// Detail wins for descriptive content: a detail body carries the untruncated
   /// overview, the full rating and ids the row object never had. The row wins
   /// only for values that exist *because of the row it came from* — leaderboard
-  /// position, recommendation provenance, when the user listed it, their own
-  /// score, and search relevance — none of which a detail endpoint knows.
+  /// position, recommendation provenance, when the user listed it, and their
+  /// own score — none of which a detail endpoint knows.
   /// Ids merge per key so a row's imdb id survives a detail body that only
   /// returns tmdb.
   CatalogItem enrichedWith(CatalogItem detail) => CatalogItem(
@@ -446,7 +439,6 @@ class CatalogItem {
     budget: detail.budget ?? budget,
     revenue: detail.revenue ?? revenue,
     isAdult: detail.isAdult ?? isAdult,
-    playState: detail.playState ?? playState,
     unairedEpisodeCount: detail.unairedEpisodeCount ?? unairedEpisodeCount,
     // Row-only context: a detail endpoint cannot know these.
     ranks: ranks ?? detail.ranks,
@@ -454,7 +446,6 @@ class CatalogItem {
     userRating: userRating ?? detail.userRating,
     recommendationCount: recommendationCount ?? detail.recommendationCount,
     recommendationPercent: recommendationPercent ?? detail.recommendationPercent,
-    relevance: relevance ?? detail.relevance,
     background: detail.background ?? background,
     cast: detail.cast ?? cast,
     recommenders: recommenders ?? detail.recommenders,
@@ -493,6 +484,7 @@ class CatalogItem {
     contentRating: certification,
     durationMs: runtimeMinutes == null ? null : Duration(minutes: runtimeMinutes!).inMilliseconds,
     rating: rating,
+    ratings: ratings,
     genres: genres,
     thumbPath: posterUrl,
     artPath: backdropUrl,
@@ -554,8 +546,6 @@ class CatalogItem {
     if (isAdult != null) 'isAdult': isAdult,
     if (recommendationCount != null) 'recommendationCount': recommendationCount,
     if (recommendationPercent != null) 'recommendationPercent': recommendationPercent,
-    if (playState != null) 'playState': playState!.toJson(),
-    if (relevance != null) 'relevance': relevance,
     if (background != null) 'background': background,
     if (cast != null) 'cast': [for (final c in cast!) c.toJson()],
   };
@@ -594,7 +584,7 @@ class CatalogItem {
     logoUrl: json['logoUrl'] as String?,
     bannerUrl: json['bannerUrl'] as String?,
     accentColor: json['accentColor'] as String?,
-    ratings: decodeCatalogList(json['ratings'], CatalogRatingSource.fromJson),
+    ratings: decodeCatalogList(json['ratings'], MediaRatingSource.fromJson),
     ranks: decodeCatalogList(json['ranks'], CatalogRank.fromJson),
     audience: _decodeObject(json['audience'], CatalogAudience.fromJson),
     broadcast: _decodeObject(json['broadcast'], CatalogBroadcast.fromJson),
@@ -622,10 +612,8 @@ class CatalogItem {
     isAdult: json['isAdult'] as bool?,
     recommendationCount: json['recommendationCount'] as int?,
     recommendationPercent: (json['recommendationPercent'] as num?)?.toDouble(),
-    playState: _decodeObject(json['playState'], CatalogPlayState.fromJson),
     unairedEpisodeCount: json['unairedEpisodeCount'] as int?,
     recommenders: decodeCatalogList(json['recommenders'], CatalogRecommender.fromJson),
-    relevance: (json['relevance'] as num?)?.toDouble(),
     background: json['background'] as String?,
     cast: decodeCatalogList(json['cast'], CatalogCastMember.fromJson),
   );

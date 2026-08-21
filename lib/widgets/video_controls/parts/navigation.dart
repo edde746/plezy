@@ -7,7 +7,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
       playbackState: playbackState,
       onToggleAlwaysOnTop: Platform.isMacOS ? null : _toggleAlwaysOnTop,
     );
-    final useDpad = _videoPlayerNavigationEnabled || PlatformDetector.isTV();
+    final useDpad = playerDirectionalNavigationEnabled();
 
     return Listener(
       behavior: HitTestBehavior.translucent,
@@ -17,8 +17,8 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         player: widget.player,
         volumeController: widget.volumeController,
         metadata: widget.metadata,
-        onNext: widget.onNext,
-        onPrevious: widget.onPrevious,
+        onNext: _abandoningBurst(widget.onNext),
+        onPrevious: _abandoningBurst(widget.onPrevious),
         onPlayPause: () => unawaited(_playOrPause()),
         chapters: _chapters,
         chaptersLoaded: _chaptersLoaded,
@@ -46,9 +46,9 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         isAtLiveEdge: widget.isAtLiveEdge,
         streamStartEpoch: widget.streamStartEpoch,
         currentPositionEpoch: widget.currentPositionEpoch,
-        onLiveSeek: widget.onLiveSeek,
+        onLiveSeek: _liveSeekAbandoningBurst(widget.onLiveSeek),
         onLiveSeekBy: widget.onLiveSeekBy,
-        onJumpToLive: widget.onJumpToLive,
+        onJumpToLive: _abandoningBurst(widget.onJumpToLive),
         useDpadNavigation: useDpad,
         serverId: widget.metadata.serverId,
         showQueueTab: playbackState.isQueueActive && widget.canNavigateMediaItems,
@@ -65,6 +65,11 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
   }
 
   void _onQueueItemSelected(MediaItem item) {
+    // Same contract as next/previous: the switch is asynchronous, so a burst
+    // still armed here would debounce into a seek on the outgoing item.
+    _hiddenSeek.cancel();
+    _desktopControlsKey.currentState?.abandonPendingSeek();
+    _dismissSkipFeedback();
     final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
     videoPlayerState?.navigateToQueueItem(item);
   }

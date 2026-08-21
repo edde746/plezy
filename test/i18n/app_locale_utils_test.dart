@@ -47,19 +47,4 @@ void main() {
       );
     });
   });
-
-  group('AppLocaleExternalFormats', () {
-    test('preserves Traditional Chinese for downstream formatters and Plex', () {
-      expect(AppLocale.zhHant.intlLocaleName, 'zh_TW');
-      expect(AppLocale.zhHant.durationLocaleName, 'zh_Hant');
-      expect(AppLocale.zhHant.plexLanguageCode, 'zh-TW');
-    });
-
-    test('keeps existing locales on their language code', () {
-      expect(AppLocale.hu.intlLocaleName, 'hu');
-      expect(AppLocale.hu.durationLocaleName, 'hu');
-      expect(AppLocale.hu.plexLanguageCode, 'hu');
-      expect(AppLocale.zh.plexLanguageCode, 'zh');
-    });
-  });
 }

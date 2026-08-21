@@ -178,12 +178,10 @@ void main() {
       await tester.pumpWidget(
         _PaginatedProbe(
           onState: (s) => state = s,
-          // Empty list mirrors the "library has no items" wire response.
           fetcher: (start, size, abort) async => const LibraryPage<MediaItem>(items: [], totalCount: 0),
         ),
       );
 
-      // Initial page reports totalSize = 0.
       await state.loadInitialPage(20);
       await tester.pump();
 
@@ -243,7 +241,6 @@ void main() {
       state.ensureIndexLoaded(350, pageSize: 200);
       await tester.pumpAndSettle();
 
-      // The probe records its calls; the second one should target start=200.
       expect(state.fetchArgs.length, greaterThanOrEqualTo(2));
       final pageFetch = state.fetchArgs.last;
       expect(pageFetch.start, 200);
@@ -259,7 +256,6 @@ void main() {
           onState: (s) => state = s,
           fetcher: (start, size, abort) async {
             if (start == 0) {
-              // Initial page always succeeds so totalSize > 0.
               return _result(start: 0, size: size, totalSize: 400);
             }
             rangeAttempt++;
@@ -267,7 +263,6 @@ void main() {
               // First range fetch fails — triggers retry path.
               throw MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'boom');
             }
-            // Retry fetch succeeds.
             return _result(start: start, size: size, totalSize: 400);
           },
         ),
@@ -327,7 +322,6 @@ void main() {
       // we'd see another fetch attempt.
       await tester.pump(const Duration(milliseconds: 1500));
 
-      // Only the failed fetch happened — no retry on cancellation.
       expect(state.fetchCalls, beforeFetches + 1);
     });
 
@@ -414,7 +408,6 @@ void main() {
         ),
       );
 
-      // No initial load — totalSize stays 0.
       state.removeLoadedItemAndShift(0);
       expect(state.totalSize, 0);
     });

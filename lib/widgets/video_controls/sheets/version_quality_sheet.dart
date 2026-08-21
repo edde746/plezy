@@ -9,6 +9,7 @@ import '../../../utils/quality_preset_labels.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'sheet_selection_column.dart';
+import 'sheet_split_columns.dart';
 
 String versionQualityPickerTitle({required bool showVersions, required bool showQuality}) {
   return showQuality
@@ -73,14 +74,7 @@ class VersionQualityPicker extends StatelessWidget {
     );
 
     if (showVersions && showQuality) {
-      return Row(
-        crossAxisAlignment: .start,
-        children: [
-          Expanded(child: versionColumn),
-          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
-          Expanded(child: qualityColumn),
-        ],
-      );
+      return SheetSplitColumns(start: versionColumn, end: qualityColumn);
     } else if (showVersions) {
       return versionColumn;
     } else {

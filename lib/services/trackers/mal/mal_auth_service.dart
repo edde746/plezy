@@ -51,7 +51,7 @@ class MalAuthService extends OAuthProxyAuthServiceBase {
         'grant_type': 'refresh_token',
         'refresh_token': current.requireRefreshToken(TrackerService.mal),
       },
-      timeout: TrackerConstants.requestTimeout,
+      timeout: TrackerConstants.refreshTimeout,
       operation: 'MAL token refresh',
     );
 

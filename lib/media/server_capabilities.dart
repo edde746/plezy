@@ -115,6 +115,35 @@ class ServerCapabilities {
     instantMix: true,
   );
 
+  /// Defaults for an Emby server.
+  ///
+  /// `continueWatchingRemoval` is the one flag where Emby is ahead of Jellyfin:
+  /// `POST /Users/{uid}/Items/{id}/HideFromResume` drops an item from Continue
+  /// Watching while keeping its resume position, and Jellyfin 10.11 has no
+  /// equivalent route.
+  ///
+  /// Scrub thumbnails take a different transport than Jellyfin's: Emby has no
+  /// `Trickplay` item field or sprite-sheet route, so the player loads a
+  /// Roku-format BIF from `/Videos/{id}/index.bif` instead — the same wire
+  /// format Plex serves, parsed by the same `BifThumbnailService`. Emby only
+  /// fills the endpoint once its own preview-extraction task has run; a server
+  /// that has not generated frames answers with a header-only BIF, which
+  /// parses to zero frames and keeps the seek-bar tooltip suppressed.
+  static const ServerCapabilities emby = ServerCapabilities(
+    liveTv: true,
+    liveTvDvr: false,
+    videoTranscoding: true,
+    richHubs: false,
+    numericUserRating: false,
+    userFavorites: true,
+    continueWatchingRemoval: true,
+    externalSubtitleSearch: false,
+    richMetadataEdit: true,
+    scrubThumbnails: true,
+    folderGrouping: true,
+    instantMix: true,
+  );
+
   /// Every flag here is fixed per backend *kind* except [videoTranscoding],
   /// which Plex probes per server (`PlexClient.capabilities`) — so that is the
   /// only override this type needs. Widen the parameter list if another flag

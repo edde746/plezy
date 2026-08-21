@@ -1,5 +1,4 @@
 import '../i18n/strings.g.dart';
-import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
@@ -119,7 +118,6 @@ class MetadataEditDraft {
 }
 
 abstract class MetadataEditAdapter {
-  MediaBackend get backend;
   MediaServerClient get mediaClient;
 
   bool supportsKind(MediaKind kind);

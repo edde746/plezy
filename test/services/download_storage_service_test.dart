@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:plezy/media/ids.dart';
 
+import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -50,10 +51,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // SAF mode (Android-only). On host (macOS/Linux) it is always false.
-  // ============================================================
-
   group('SAF mode', () {
     test('isUsingSaf is false on the host (non-Android)', () async {
       final settings = await SettingsService.getInstance();
@@ -79,10 +76,6 @@ void main() {
       expect(dss.isSafUri('file:///tmp/foo'), isFalse);
     });
   });
-
-  // ============================================================
-  // Default download directory + custom-path switching
-  // ============================================================
 
   group('downloads directory resolution', () {
     test('defaults to <appSupport>/downloads on desktop hosts', () async {
@@ -175,10 +168,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Artwork directory
-  // ============================================================
-
   group('artwork directory', () {
     test('initializes alongside support directory by default and caches sync path', () async {
       final settings = await SettingsService.getInstance();
@@ -249,10 +238,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Path resolution helpers (relative <-> absolute)
-  // ============================================================
-
   group('toRelativePath / toAbsolutePath', () {
     test('strips a single base-dir prefix to make a path relative', () async {
       final settings = await SettingsService.getInstance();
@@ -271,11 +256,22 @@ void main() {
       final dss = DownloadStorageService.instance;
       await dss.initialize(settings);
 
-      // Content URIs and non-base absolute paths must round-trip untouched —
-      // the production code only strips paths that literally start with the
-      // base dir.
+      // Content URIs and non-base absolute paths must round-trip untouched — the
+      // production code only strips paths contained by the base dir.
       const uri = '/Volumes/External/Movies/x.mkv';
       expect(await dss.toRelativePath(uri), uri);
+    });
+
+    test('leaves a sibling directory whose name merely starts with the base dir alone', () async {
+      final settings = await SettingsService.getInstance();
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      // `<base>-external` is a string prefix match but not inside the base dir. Stripping it
+      // would yield "-external/..." and silently re-root the file inside app storage.
+      final sibling = '${p.join(tmpRoot.path, 'support')}-external';
+      final outside = p.join(sibling, 'downloads', 'srv', '1', 'video.mkv');
+      expect(await dss.toRelativePath(outside), outside);
     });
 
     test('toAbsolutePath joins relative paths against the base dir', () async {
@@ -310,9 +306,82 @@ void main() {
     });
   });
 
-  // ============================================================
-  // ensureAbsolutePath / getReadablePath
-  // ============================================================
+  group('resolveTaskDirectory', () {
+    test('describes an app-storage target relative to the base directory', () async {
+      final settings = await SettingsService.getInstance();
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      final videoPath = await dss.getVideoFilePath(ServerId('srv'), 'item-1', 'mkv');
+      final location = await dss.resolveTaskDirectory(videoPath);
+
+      // Desktop hosts anchor downloads at the support directory; mobile uses documents.
+      expect(location.baseDirectory, BaseDirectory.applicationSupport);
+      expect(location.directory, p.join('downloads', 'srv', 'item-1'));
+      expect(p.isAbsolute(location.directory), isFalse);
+      expect(location.directory, isNot(contains(tmpRoot.path)));
+    });
+
+    test('reanchors an enqueued target after the app storage directory moves', () async {
+      final settings = await SettingsService.getInstance();
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      final videoPath = await dss.getVideoFilePath(ServerId('srv'), 'item-1', 'mkv');
+      final location = await dss.resolveTaskDirectory(videoPath);
+      final storedTarget = p.join(location.directory, p.basename(videoPath));
+      expect(await dss.toAbsolutePath(storedTarget), videoPath);
+
+      // Stand in for the app being moved to another volume: the same base-directory
+      // lookup now resolves somewhere else, and the enqueued target must follow it.
+      final movedRoot = await Directory.systemTemp.createTemp('dss_moved_');
+      addTearDown(() async {
+        if (await movedRoot.exists()) await movedRoot.delete(recursive: true);
+      });
+      PathProviderPlatform.instance = FakePathProvider(movedRoot);
+
+      expect(
+        await dss.toAbsolutePath(storedTarget),
+        p.join(movedRoot.path, 'support', 'downloads', 'srv', 'item-1', 'video.mkv'),
+      );
+    });
+
+    test('keeps a custom download root absolute because it does not move with the app', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.customDownloadPathType, 'file');
+      final customRoot = p.join(tmpRoot.path, 'external', 'PlezyDownloads');
+      await settings.write(SettingsService.customDownloadPath, customRoot);
+
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      final videoPath = await dss.getVideoFilePath(ServerId('srv'), 'item-1', 'mkv');
+      expect(videoPath, startsWith(customRoot));
+
+      final location = await dss.resolveTaskDirectory(videoPath);
+      expect(location.baseDirectory, BaseDirectory.root);
+      expect(location.directory, p.dirname(videoPath));
+    });
+
+    test('keeps a custom root that only shares a name prefix with the app base dir', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.customDownloadPathType, 'file');
+      // Sibling of the base dir, not inside it: downloads must still land here, not be
+      // rewritten to "-external/..." underneath app storage.
+      final customRoot = '${p.join(tmpRoot.path, 'support')}-external';
+      await settings.write(SettingsService.customDownloadPath, customRoot);
+
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      final videoPath = await dss.getVideoFilePath(ServerId('srv'), 'item-1', 'mkv');
+      expect(videoPath, startsWith(customRoot));
+
+      final location = await dss.resolveTaskDirectory(videoPath);
+      expect(location.baseDirectory, BaseDirectory.root);
+      expect(location.directory, p.dirname(videoPath));
+    });
+  });
 
   group('ensureAbsolutePath', () {
     test('keeps an existing absolute path that points at a real file', () async {
@@ -413,10 +482,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // SAF path-component helpers (no platform calls — pure formatting)
-  // ============================================================
-
   group('SAF path components & names', () {
     test('movie components/filename use sanitized "Title (Year)"', () async {
       final dss = DownloadStorageService.instance;
@@ -479,10 +544,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Real on-disk media directory helpers
-  // ============================================================
-
   group('media directories on disk', () {
     test('getMediaDirectory creates serverId/ratingKey under downloads', () async {
       final settings = await SettingsService.getInstance();
@@ -533,10 +594,6 @@ void main() {
     });
   });
 
-  // ============================================================
-  // DownloadStorageException
-  // ============================================================
-
   group('DownloadStorageException', () {
     test('toString embeds message, path, and cause', () {
       final ex = DownloadStorageException('boom', '/tmp/x', StateError('inner'));
@@ -547,10 +604,6 @@ void main() {
     });
   });
 }
-
-// ============================================================
-// MediaItem fixtures (only the fields the SUT actually reads)
-// ============================================================
 
 MediaItem _movie({required String title, int? year}) {
   return testMediaItem(
