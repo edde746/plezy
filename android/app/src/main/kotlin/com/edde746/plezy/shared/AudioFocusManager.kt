@@ -14,7 +14,8 @@ class AudioFocusManager(
   private val onPause: () -> Unit,
   private val onResume: () -> Unit,
   private val isPaused: () -> Boolean,
-  private val log: (String) -> Unit = { Log.d(TAG, it) }
+  private val log: (String) -> Unit = { Log.d(TAG, it) },
+  private val contentType: Int = AudioAttributes.CONTENT_TYPE_MOVIE
 ) {
   companion object {
     private const val TAG = "AudioFocusManager"
@@ -62,7 +63,7 @@ class AudioFocusManager(
         .setAudioAttributes(
           AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
-            .setContentType(AudioAttributes.CONTENT_TYPE_MOVIE)
+            .setContentType(contentType)
             .build()
         )
         .setOnAudioFocusChangeListener(audioFocusChangeListener, handler)

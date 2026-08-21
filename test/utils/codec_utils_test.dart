@@ -26,19 +26,64 @@ void main() {
       expect(CodecUtils.getSubtitleExtension('mov_text'), 'srt');
     });
 
-    test('maps pgs/hdmv_pgs_subtitle -> sup', () {
+    test('maps pgs codecs -> sup', () {
       expect(CodecUtils.getSubtitleExtension('pgs'), 'sup');
+      expect(CodecUtils.getSubtitleExtension('pgssub'), 'sup');
       expect(CodecUtils.getSubtitleExtension('HDMV_PGS_SUBTITLE'), 'sup');
     });
 
-    test('maps dvd_subtitle/dvdsub -> sub', () {
+    test('maps dvd/vobsub/dvb bitmap codecs -> sub', () {
       expect(CodecUtils.getSubtitleExtension('dvd_subtitle'), 'sub');
       expect(CodecUtils.getSubtitleExtension('dvdsub'), 'sub');
+      expect(CodecUtils.getSubtitleExtension('vobsub'), 'sub');
+      expect(CodecUtils.getSubtitleExtension('dvb_sub'), 'sub');
+      expect(CodecUtils.getSubtitleExtension('dvb_subtitle'), 'sub');
     });
 
     test('defaults to srt for unknown codec', () {
       expect(CodecUtils.getSubtitleExtension('weirdcodec'), 'srt');
       expect(CodecUtils.getSubtitleExtension(''), 'srt');
+    });
+  });
+
+  group('CodecUtils subtitle classification', () {
+    test('isTextSubtitleCodec recognizes text codecs only', () {
+      for (final codec in ['srt', 'subrip', 'ass', 'ssa', 'webvtt', 'vtt', 'mov_text', 'ASS']) {
+        expect(CodecUtils.isTextSubtitleCodec(codec), isTrue, reason: codec);
+      }
+      for (final codec in ['pgs', 'dvd_subtitle', 'vobsub', 'weird', null]) {
+        expect(CodecUtils.isTextSubtitleCodec(codec), isFalse, reason: '$codec');
+      }
+    });
+
+    test('isImageSubtitleCodec recognizes bitmap codecs only', () {
+      for (final codec in [
+        'pgs',
+        'pgssub',
+        'hdmv_pgs_subtitle',
+        'dvd_subtitle',
+        'dvdsub',
+        'vobsub',
+        'dvb_sub',
+        // Jellyfin's own spelling. The transcode profile asks it to burn `dvbsub`, so a picker that
+        // does not recognise the name never offers the track it just negotiated.
+        'dvbsub',
+        'dvb_subtitle',
+        'PGS',
+      ]) {
+        expect(CodecUtils.isImageSubtitleCodec(codec), isTrue, reason: codec);
+      }
+      for (final codec in ['srt', 'ass', 'mov_text', 'weird', null]) {
+        expect(CodecUtils.isImageSubtitleCodec(codec), isFalse, reason: '$codec');
+      }
+    });
+
+    test('isTranscodableSubtitleCodec covers text and image, not unknown', () {
+      for (final codec in ['srt', 'ass', 'pgs', 'vobsub', 'dvd_subtitle']) {
+        expect(CodecUtils.isTranscodableSubtitleCodec(codec), isTrue, reason: codec);
+      }
+      expect(CodecUtils.isTranscodableSubtitleCodec('weird'), isFalse);
+      expect(CodecUtils.isTranscodableSubtitleCodec(null), isFalse);
     });
   });
 
@@ -115,6 +160,29 @@ void main() {
       expect(CodecUtils.formatAudioCodec('dca'), 'DTS');
       expect(CodecUtils.formatAudioCodec('dtshd'), 'DTS-HD');
       expect(CodecUtils.formatAudioCodec('dts-hd'), 'DTS-HD');
+    });
+
+    test('RFC 6381 codec IDs from ExoPlayer map to friendly names', () {
+      // AAC-LC as reported for MP4/HLS direct play (#1899).
+      expect(CodecUtils.formatAudioCodec('mp4a.40.2'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('MP4A.40.2'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a.40.5'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a.40.29'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('mp4a'), 'AAC');
+      // MPEG layer audio object types under the mp4a prefix.
+      expect(CodecUtils.formatAudioCodec('mp4a.69'), 'MP3');
+      expect(CodecUtils.formatAudioCodec('mp4a.6B'), 'MP3');
+      // Dolby and DTS sample entry names.
+      expect(CodecUtils.formatAudioCodec('ac-3'), 'AC3');
+      expect(CodecUtils.formatAudioCodec('ec-3'), 'E-AC3');
+      expect(CodecUtils.formatAudioCodec('ac-4'), 'AC4');
+      expect(CodecUtils.formatAudioCodec('ac-4.02.01.01'), 'AC4');
+      expect(CodecUtils.formatAudioCodec('mlpa'), 'TrueHD');
+      expect(CodecUtils.formatAudioCodec('dtsc'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('dtse'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('dtsh'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('dtsl'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('dtsx'), 'DTS:X');
     });
 
     test('mp3 aliases', () {

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/providers/theme_provider.dart';
+import 'package:plezy/screens/settings/settings_utils.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart' as settings;
 
@@ -9,6 +11,7 @@ import '../test_helpers/prefs.dart';
 
 void main() {
   setUp(resetSharedPreferencesForTest);
+  setUpAll(() => LocaleSettings.setLocaleSync(AppLocale.en));
 
   group('ThemeProvider', () {
     test('exposes a non-null themeMode immediately and flips after init', () async {
@@ -41,11 +44,9 @@ void main() {
       expect(p.themeMode, next);
       expect(notified, 1);
 
-      // Same value → no notify.
       await p.setThemeMode(next);
       expect(notified, 1);
 
-      // Verify persisted via SettingsService.
       final svc = await settings.SettingsService.getInstance();
       expect(svc.read(settings.SettingsService.themeMode), next);
 
@@ -103,27 +104,39 @@ void main() {
       p.dispose();
     });
 
-    test('themeModeDisplayName and themeModeIcon match the active mode', () async {
+    test('themeModeLabel and themeModeIcon match the active mode', () async {
       final p = ThemeProvider();
       await Future.delayed(Duration.zero);
 
       await p.setThemeMode(settings.ThemeMode.light);
-      expect(p.themeModeDisplayName, 'Light');
+      expect(themeModeLabel(p.themeMode), t.settings.lightTheme);
       expect(p.themeModeIcon, Symbols.light_mode_rounded);
 
       await p.setThemeMode(settings.ThemeMode.dark);
-      expect(p.themeModeDisplayName, 'Dark');
+      expect(themeModeLabel(p.themeMode), t.settings.darkTheme);
       expect(p.themeModeIcon, Symbols.dark_mode_rounded);
 
       await p.setThemeMode(settings.ThemeMode.oled);
-      expect(p.themeModeDisplayName, 'OLED');
+      expect(themeModeLabel(p.themeMode), t.settings.oledTheme);
       expect(p.themeModeIcon, Symbols.contrast_rounded);
 
       await p.setThemeMode(settings.ThemeMode.system);
-      expect(p.themeModeDisplayName, 'System');
+      expect(themeModeLabel(p.themeMode), t.settings.systemTheme);
       expect(p.themeModeIcon, Symbols.brightness_auto_rounded);
 
       p.dispose();
+    });
+
+    test('themeModeLabel follows a non-English locale for every mode', () async {
+      await LocaleSettings.setLocale(AppLocale.de);
+      try {
+        expect(themeModeLabel(settings.ThemeMode.system), 'System');
+        expect(themeModeLabel(settings.ThemeMode.light), 'Hell');
+        expect(themeModeLabel(settings.ThemeMode.dark), 'Dunkel');
+        expect(themeModeLabel(settings.ThemeMode.oled), 'OLED');
+      } finally {
+        LocaleSettings.setLocaleSync(AppLocale.en);
+      }
     });
 
     test('reload re-reads after external mutation', () async {
@@ -163,8 +176,44 @@ void main() {
       final p = ThemeProvider();
       await Future.delayed(Duration.zero);
       p.dispose();
-      // Should not throw — reload calls safeNotifyListeners under the hood.
       await p.reload();
     });
+  });
+
+  testWidgets('regex dialog localizes its field label and validation error', (tester) async {
+    // `runAsync`: a deferred locale library loads on the real event loop, and
+    // the widget tester's fake async never pumps it. Awaiting the load
+    // directly hangs the test whenever the library is not already resident —
+    // running this file alone, under a name filter, or sharded away from the
+    // `themeModeLabel` test above that happens to load `de` first.
+    await tester.runAsync(() => LocaleSettings.setLocale(AppLocale.de));
+    addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
+
+    await tester.pumpWidget(
+      material.MaterialApp(
+        home: material.Scaffold(
+          body: material.Builder(
+            builder: (context) => material.TextButton(
+              onPressed: () => showRegexInputDialog(
+                context: context,
+                title: 'Muster',
+                currentValue: '^intro',
+                defaultValue: '',
+                onSave: (_) async {},
+              ),
+              child: const material.Text('Öffnen'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Öffnen'));
+    await tester.pumpAndSettle();
+    expect(find.text('Regulärer Ausdruck'), findsOneWidget);
+
+    await tester.enterText(find.byType(material.TextField), '[');
+    await tester.pump();
+    expect(find.text('Ungültiger regulärer Ausdruck'), findsOneWidget);
   });
 }

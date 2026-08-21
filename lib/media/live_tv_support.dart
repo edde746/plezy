@@ -1,21 +1,10 @@
+import 'media_source_info.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
-import '../models/livetv_lineup.dart';
 import '../models/livetv_program.dart';
-import '../models/livetv_server_status.dart';
-import '../models/livetv_session.dart';
 import '../models/media_grab_operation.dart';
-import '../models/media_grabber_device.dart';
-import '../models/media_provider_info.dart';
 import '../models/media_subscription.dart';
-
-class LiveTvActivityResult<T> {
-  final T value;
-  final String? activityUuid;
-
-  const LiveTvActivityResult({required this.value, this.activityUuid});
-}
 
 /// Program info captured when a live session starts. Plex's tune response
 /// carries the airing program; Jellyfin streams the channel without a
@@ -43,7 +32,7 @@ class LiveProgramInfo {
 ///   the server has seekable history) and rebuilds its stream URL for
 ///   time-shift; heartbeats go to `/:/timeline` and return capture-buffer
 ///   updates.
-/// - **Jellyfin** negotiates one direct stream URL up front; no time-shift,
+/// - **Jellyfin** negotiates one HLS transcode URL up front; no time-shift,
 ///   heartbeats go through `/Sessions/Playing*`, and [recover] re-uses the
 ///   same URL.
 ///
@@ -57,10 +46,23 @@ class LiveProgramInfo {
 abstract class LiveTvPlaybackSession {
   LiveProgramInfo get program;
 
+  /// Whether a TV app may retain this server session while backgrounded.
+  LiveTvBackgroundPolicy get backgroundPolicy;
+
   /// Seekable-history snapshot from session start. Heartbeats may return
   /// fresher ones ([reportTimeline]); the caller owns tracking the current
   /// value.
   CaptureBuffer? get captureBuffer;
+
+  /// Server-side subtitle streams this session can deliver by rebuilding the
+  /// stream. Plex burns the selected stream into the live transcode — the
+  /// only delivery for a DVB tuner's bitmap subtitles, which are separate
+  /// elementary streams that `subtitles=none` drops from the HLS output
+  /// (issue #1983). Empty when the backend exposes none: Jellyfin's
+  /// negotiated URL is fixed at start, and in-band captions (CEA-608/708)
+  /// ride the copied video bitstream and stay player-selectable, so they are
+  /// deliberately not listed here (issue #1590).
+  List<MediaSubtitleTrack> get subtitleTracks;
 
   /// Whether [streamUrlAt] supports a non-null offset.
   bool get canTimeShift;
@@ -68,9 +70,12 @@ abstract class LiveTvPlaybackSession {
   /// Build the playable stream URL. [offsetSeconds] positions the stream
   /// that many seconds from the capture-buffer origin — watch-from-start and
   /// time-shift seek are the same operation; `null` plays the live edge.
-  /// Returns `null` on failure, or when an offset is requested but
-  /// unsupported.
-  Future<String?> streamUrlAt({int? offsetSeconds});
+  /// [subtitleTrack] must be one of [subtitleTracks]; the backend delivers it
+  /// in the rebuilt stream (Plex selects it server-side and burns it).
+  /// Returns `null` on failure, when an offset is requested but unsupported,
+  /// or when the subtitle selection cannot be confirmed — burning against an
+  /// unconfirmed selection would weld a wrong stream into the picture.
+  Future<String?> streamUrlAt({int? offsetSeconds, MediaSubtitleTrack? subtitleTrack});
 
   /// Send a playback heartbeat (`'playing'` / `'paused'` / `'stopped'`).
   /// [positionMs] is elapsed playback time; [durationMs] the program
@@ -80,9 +85,18 @@ abstract class LiveTvPlaybackSession {
 
   /// Re-establish playback after stream death. Plex re-tunes (the previous
   /// capture session expires while the player exhausts its reconnect
-  /// attempts) applying the degradation flags; Jellyfin returns itself —
-  /// the session-less URL is simply re-opened. Returns `null` on failure.
+  /// attempts) applying the degradation flags; Jellyfin returns itself so
+  /// its negotiated HLS URL is re-opened. Returns `null` on failure.
   Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio});
+}
+
+enum LiveTvBackgroundPolicy {
+  /// Keep the tuned session alive so its capture buffer can be resumed.
+  retainSession,
+
+  /// Stop the session when a TV app is backgrounded and leave playback when
+  /// the app resumes.
+  stopAndExit,
 }
 
 enum FavoriteChannelPersistenceMode {
@@ -96,33 +110,44 @@ enum FavoriteChannelPersistenceMode {
 class LiveTvStreamResolution {
   final String url;
   final String? playSessionId;
+  final String? mediaSourceId;
+  final String? liveStreamId;
+  final String? playMethod;
 
-  const LiveTvStreamResolution({required this.url, this.playSessionId});
+  const LiveTvStreamResolution({
+    required this.url,
+    this.playSessionId,
+    this.mediaSourceId,
+    this.liveStreamId,
+    this.playMethod,
+  });
 }
 
 /// Backend-neutral live-TV operations. Implementations are obtained via
-/// [MediaServerClient.liveTv]; the getter returns `null` when the server has no
-/// live-TV support configured.
+/// [MediaServerClient.liveTv]. Runtime availability is reported by
+/// [isAvailable]; recording and DVR administration are exposed separately by
+/// the optional [dvr] adapter.
 ///
 /// Plex servers expose multiple per-DVR lineups (`/livetv/dvrs`), Jellyfin
 /// servers expose a single flat channel list. The interface flattens both:
 /// callers that need DVR identity for Plex's per-lineup channel fetch use
-/// [fetchDvrs]; callers that only need the channel list pass the optional
-/// [lineup] (Plex provider identifier) to [fetchChannels].
+/// [LiveTvDvrSupport.fetchDvrs]; callers that only need the channel list pass
+/// the optional [lineup] (Plex provider identifier) to [fetchChannels].
 ///
 /// Stream URL resolution differs sharply by backend: Plex's DVR allocates a
-/// transcode session and returns a session-scoped path; Jellyfin negotiates
-/// a direct-play URL. [startPlayback] owns that difference behind
+/// transcode session and returns a session-scoped HLS path; Jellyfin negotiates
+/// an HLS transcode URL. [startPlayback] owns that difference behind
 /// [LiveTvPlaybackSession] — it is the only entry playback callers use.
 abstract class LiveTvSupport {
+  /// Recording and DVR administration, when implemented by this backend.
+  /// Jellyfin's channel, guide, and playback support remains available while
+  /// this is `null` until its recording API is wired.
+  LiveTvDvrSupport? get dvr;
+
   /// Fast probe — `true` when this server has live-TV configured. Plex calls
   /// `/livetv/dvrs` and returns true when any DVR exists; Jellyfin probes
   /// `/LiveTv/Channels?limit=1`.
   Future<bool> isAvailable();
-
-  /// Plex returns one entry per configured DVR; Jellyfin returns an empty
-  /// list (it has no per-DVR partitioning).
-  Future<List<LiveTvDvr>> fetchDvrs();
 
   /// Channel list. Plex callers may pass [lineup] (the EPG provider
   /// identifier from a DVR's lineup) to scope to a specific provider's
@@ -133,17 +158,10 @@ abstract class LiveTvSupport {
   /// `/livetv/dvrs/{dvrKey}/grid`; Jellyfin queries `/LiveTv/Programs`.
   Future<List<LiveTvProgram>> fetchSchedule({DateTime? from, DateTime? to});
 
-  /// Resolve a playable stream URL for [channelKey].
-  ///
-  /// Jellyfin returns a negotiated stream URL plus the play session id. Plex
-  /// returns `null` because its stream URL is only valid after a tune;
-  /// playback callers use [startPlayback], which owns that difference.
-  Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey});
-
   /// Start a playback session for [channelKey] — the single entry the player
   /// uses for initial launch and channel switching. Plex requires [dvrKey]
-  /// (tune + transcode-session setup); Jellyfin ignores it and negotiates a
-  /// direct stream URL. Returns `null` when the channel can't be started.
+  /// (tune + transcode-session setup); Jellyfin ignores it and negotiates an
+  /// HLS transcode URL. Returns `null` when the channel can't be started.
   Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey});
 
   /// Source URI to stamp into [FavoriteChannel] entries. Plex uses
@@ -160,77 +178,32 @@ abstract class LiveTvSupport {
   FavoriteChannelPersistenceMode get favoritePersistenceMode;
 
   /// Read the user's favorite channels for this server. Plex pulls from the
-  /// cloud-synced list; Jellyfin queries `IsFavorite=true` with locally
-  /// stored ordering.
+  /// cloud-synced list; Jellyfin reads its locally stored ordering. A
+  /// successful read returns the complete list, including `[]` when no
+  /// favorites are stored. Unavailable or invalid reads complete with an error.
   Future<List<FavoriteChannel>> fetchFavoriteChannels();
 
   /// Persist the favorites list (and order, where supported). Plex pushes
   /// to its cloud sync endpoint; Jellyfin POSTs/DELETEs the
-  /// `/Users/{userId}/FavoriteItems/{channelId}` flag and saves the order
+  /// `/UserFavoriteItems/{channelId}?userId=...` flag and saves the order
   /// locally.
   Future<void> setFavoriteChannels(List<FavoriteChannel> channels);
+}
 
-  Future<LiveTvServerStatus> fetchLiveTvServerStatus();
-  Future<LiveTvDvr?> fetchDvr(String dvrId);
-  Future<LiveTvActivityResult<LiveTvDvr?>> createDvr({
-    required List<String> devices,
-    required List<String> lineups,
-    String? language,
-    String? country,
-    String? postalCode,
-  });
-  Future<void> deleteDvr(String dvrId);
-  Future<void> updateDvrPrefs(String dvrId, Map<String, Object?> prefs);
-  Future<void> attachDeviceToDvr(String dvrId, String deviceId);
-  Future<void> detachDeviceFromDvr(String dvrId, String deviceId);
-  Future<void> addLineupToDvr(String dvrId, String lineupUri);
-  Future<void> removeLineupFromDvr(String dvrId, String lineupUri);
-  Future<LiveTvActivityResult<void>> reloadGuide(String dvrId);
-  Future<void> cancelGuideReload(String dvrId);
-
-  Future<List<MediaGrabber>> fetchGrabbers({String? protocol});
-  Future<List<MediaGrabberDevice>> fetchGrabberDevices();
-  Future<LiveTvActivityResult<List<MediaGrabberDevice>>> discoverGrabberDevices();
-  Future<MediaGrabberDevice?> fetchGrabberDevice(String deviceId);
-  Future<MediaGrabberDevice?> addGrabberDevice(String uri, {String? grabberId});
-  Future<void> updateGrabberDevice(String deviceId, {bool? enabled, String? title});
-  Future<void> deleteGrabberDevice(String deviceId);
-  Future<List<MediaGrabberDeviceChannel>> fetchGrabberDeviceChannels(String deviceId);
-  Future<LiveTvActivityResult<MediaGrabberDevice?>> scanGrabberDevice(
-    String deviceId, {
-    String? source,
-    Map<String, Object?> prefs = const {},
-    String? network,
-    String? country,
-  });
-  Future<MediaGrabberDevice?> cancelGrabberDeviceScan(String deviceId);
-  Future<MediaGrabberDevice?> saveGrabberDeviceChannelMap(String deviceId, MediaGrabberChannelMapRequest request);
-  Future<void> updateGrabberDevicePrefs(String deviceId, Map<String, Object?> prefs);
-  String buildGrabberDeviceThumbUrl(String deviceId, int version);
-
-  Future<List<LiveTvCountry>> fetchEpgCountries();
-  Future<List<LiveTvLanguage>> fetchEpgLanguages();
-  Future<List<LiveTvRegion>> fetchEpgRegions(String country, String epgId);
-  Future<LiveTvLineupResult> fetchEpgLineups(String country, String epgId, {String? postalCode, String? region});
-  Future<List<LiveTvChannel>> fetchEpgChannelsForLineup(String lineupUri);
-  Future<List<LiveTvLineup>> fetchEpgChannelsForLineups(List<String> lineupUris);
-  Future<List<ChannelMapping>> computeEpgChannelMap({required String deviceUri, required String lineupUri});
-  Future<LiveTvActivityResult<Map<String, dynamic>?>> findBestLineup({
-    required String deviceUri,
-    required String lineupGroupUri,
-  });
+/// Optional Plex-style recording and DVR administration capability.
+///
+/// Kept separate from [LiveTvSupport] so backends that support channels,
+/// guide data, and playback do not need placeholder methods for unsupported
+/// recording APIs.
+abstract class LiveTvDvrSupport {
+  Future<List<LiveTvDvr>> fetchDvrs();
+  Future<void> reloadGuide(String dvrId);
 
   Future<List<SubscriptionTemplate>> getSubscriptionTemplate(String guid);
   Future<List<MediaSubscription>> fetchRecordingRules({bool includeGrabs = true, bool includeStorage = true});
-  Future<MediaSubscription?> fetchRecordingRule(
-    String subscriptionId, {
-    bool includeGrabs = true,
-    bool includeStorage = true,
-  });
   Future<MediaSubscription?> createRecordingRule(MediaSubscriptionCreateRequest request);
   Future<MediaSubscription?> updateRecordingRule(String subscriptionId, Map<String, Object?> prefs);
   Future<void> deleteRecordingRule(String subscriptionId);
-  Future<MediaSubscription?> moveRecordingRule(String subscriptionId, {String? afterSubscriptionId});
   Future<void> processRecordingRules();
   Future<List<MediaGrabOperation>> fetchScheduledRecordings();
   Future<void> cancelGrab(String operationId);
@@ -239,13 +212,4 @@ abstract class LiveTvSupport {
     required List<String> ratingKeys,
     bool includeStorage = true,
   });
-
-  Future<List<MediaProviderInfo>> fetchMediaProviders();
-  Future<void> registerMediaProvider(String url);
-  Future<void> refreshMediaProviders();
-  Future<void> unregisterMediaProvider(String providerId);
-  Future<List<LiveTvSession>> fetchLiveTvSessionsDetailed();
-  Future<LiveTvSession?> fetchLiveTvSession(String sessionId);
-  Uri buildNotificationWebSocketUri({List<String>? filters});
-  Uri buildNotificationEventSourceUri({List<String>? filters});
 }

@@ -4,11 +4,9 @@ import '../../utils/json_utils.dart';
 
 part 'plex_subtitle_search_result.g.dart';
 
-int _flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
-
 @JsonSerializable()
 class PlexSubtitleSearchResult {
-  @JsonKey(fromJson: _flexibleIntOrZero)
+  @JsonKey(fromJson: flexibleIntOrZero)
   final int id;
   @JsonKey(readValue: readStringField, defaultValue: '')
   final String key;

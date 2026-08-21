@@ -11,6 +11,7 @@ class OrientationHelper {
   /// This should be called when leaving full-screen experiences like
   /// the video player to restore the app's default orientation behavior.
   static void restoreDefaultOrientations(BuildContext context) {
+    if (PlatformDetector.isAutomotive()) return;
     final isPhone = PlatformDetector.isPhone(context);
 
     if (isPhone) {
@@ -30,6 +31,7 @@ class OrientationHelper {
   /// Used by the video player to force landscape orientation during playback.
   static void setLandscapeOrientation() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    if (PlatformDetector.isAutomotive()) return;
     SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
   }
 

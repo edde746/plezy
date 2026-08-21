@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../connection/plex_account_setup.dart';
+import '../database/app_database.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
+import '../profiles/profile_connection_registry.dart';
+import '../profiles/profile_selection_policy.dart';
 import '../services/plex_auth_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
@@ -20,17 +24,26 @@ import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
 import '../focus/key_event_utils.dart';
 import '../media/media_backend.dart';
+import '../media/media_browser_dialect.dart';
+import '../navigation/profile_session_screen.dart';
 import '../utils/navigation_transitions.dart';
 import '../widgets/backend_badge.dart';
 import '../widgets/dialog_action_button.dart';
 import 'auth/plex_pin_auth_flow.dart';
-import 'main_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import 'settings/add_jellyfin_screen.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  const AuthScreen({
+    super.key,
+    this.initialErrorMessage,
+    this.initializeServices = true,
+    this.databaseRecoveryRequired = false,
+  });
 
+  final String? initialErrorMessage;
+  final bool initializeServices;
+  final bool databaseRecoveryRequired;
   @override
   State<AuthScreen> createState() => _AuthScreenState();
 }
@@ -41,11 +54,16 @@ class _AuthScreenState extends State<AuthScreen> {
   // Reuse a one-shot service for the debug-token verify path; the Plex
   // PIN/QR flow inside [PlexPinAuthFlow] owns its own service instance.
   PlexAuthService? _verifyOnlyService;
+  Future<void>? _recoveryAcknowledgement;
+  bool _recoveryAcknowledged = false;
 
   @override
   void initState() {
     super.initState();
-    unawaited(_initVerifyService());
+    _errorMessage = widget.initialErrorMessage;
+    // Debug-token verification only — release builds must not hold an idle
+    // auth service (and its HTTP client) for a dialog that can't open.
+    if (kDebugMode && widget.initializeServices) unawaited(_initVerifyService());
   }
 
   Future<void> _initVerifyService() async {
@@ -83,11 +101,33 @@ class _AuthScreenState extends State<AuthScreen> {
     await activeProfiles.activate(profile);
   }
 
+  Future<bool> _prepareDatabaseRecoveryForSignIn() async {
+    if (!widget.databaseRecoveryRequired || _recoveryAcknowledged) return true;
+    final acknowledgement = _recoveryAcknowledgement ??= context
+        .read<AppDatabase>()
+        .acknowledgeTvosDatabaseRecoveryRequired();
+    try {
+      await acknowledgement;
+      _recoveryAcknowledged = true;
+      if (mounted) setState(() => _errorMessage = null);
+      return mounted;
+    } catch (_) {
+      _recoveryAcknowledgement = null;
+      if (mounted) setState(() => _errorMessage = t.auth.localDataRecoveryRequired);
+      return false;
+    }
+  }
+
+  Future<void> _startPlexAfterRecovery(VoidCallback start) async {
+    if (await _prepareDatabaseRecoveryForSignIn()) start();
+  }
+
   /// Persist the new Plex account into the connection pipeline, resolve the
   /// initial active profile when possible, and navigate to the main screen.
   /// The top-level [ActiveProfileBinder] picks up the active profile id and
   /// connects servers via [MultiServerManager.refreshTokensForProfile].
   Future<void> _connectToAllServersAndNavigate(String plexToken) async {
+    if (!await _prepareDatabaseRecoveryForSignIn()) return;
     if (!mounted) return;
 
     setState(() {
@@ -96,44 +136,47 @@ class _AuthScreenState extends State<AuthScreen> {
     });
 
     final connectionRegistry = context.read<ConnectionRegistry>();
+    final profileConnections = context.read<ProfileConnectionRegistry>();
     final plexHome = context.read<PlexHomeService>();
-    final svc = await PlexAuthService.create();
 
     try {
-      final userInfo = await svc.getUserInfo(plexToken);
-      final username = userInfo['username'] as String? ?? '';
-      final email = userInfo['email'] as String? ?? '';
-      final accountUuid = (userInfo['uuid'] as String?)?.trim() ?? '';
-
-      final servers = await svc.fetchServers(plexToken);
       final storage = await StorageService.getInstance();
+      final registration = await registerPlexAccountFromToken(
+        token: plexToken,
+        connections: connectionRegistry,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHome: plexHome,
+      );
+      final accountConnection = registration.connection;
 
-      if (servers.isEmpty) {
-        await storage.clearCredentials();
+      if (accountConnection.servers.isEmpty) {
+        // Nothing to roll back — the registered account row is exactly what
+        // a retry will upsert over; wiping global credentials here would
+        // also nuke the device identity and every server-endpoint cache.
         if (!mounted) return;
         setState(() {
           _isAuthenticating = false;
-          _errorMessage = t.serverSelection.noServersFoundForAccount(username: username, email: email);
+          _errorMessage = t.serverSelection.noServersFoundForAccount(
+            username: registration.username,
+            email: registration.email,
+          );
         });
         return;
       }
 
-      final clientId = await storage.getOrCreateClientIdentifier();
-      final accountConnection = PlexAccountConnection(
-        // Key the row by the plex.tv account UUID so signing into a second
-        // Plex account on the same device produces a distinct row. The
-        // clientIdentifier is per-device and would collide. Falls back to
-        // clientId only if plex.tv didn't return a uuid (rare).
-        id: 'plex.${accountUuid.isNotEmpty ? accountUuid : clientId}',
-        accountToken: plexToken,
-        clientIdentifier: clientId,
-        accountLabel: username.isNotEmpty ? username : (email.isNotEmpty ? email : 'Plex'),
-        servers: servers,
-        createdAt: DateTime.now(),
-        lastAuthenticatedAt: DateTime.now(),
-      );
-      await connectionRegistry.upsert(accountConnection);
-      await plexHome.refresh(accountConnection);
+      if (!registration.homeUsersFetched && plexHome.current[accountConnection.id] == null) {
+        // A failed home-user fetch is NOT "multiple users, let them pick":
+        // with no home users and no locals there is no profile to select,
+        // and navigating lands in a dead session. Surface a retry instead.
+        if (!mounted) return;
+        setState(() {
+          _isAuthenticating = false;
+          _errorMessage = t.profiles.failedToLoadHomeUsers;
+        });
+        return;
+      }
+
       if (!mounted) return;
       final activeProfiles = context.read<ActiveProfileProvider>();
       await _selectInitialProfile(plexHome, activeProfiles, accountConnection);
@@ -155,8 +198,7 @@ class _AuthScreenState extends State<AuthScreen> {
         activeProfile: activeProfiles.active,
         hasProfiles: activeProfiles.profiles.isNotEmpty,
         accountHasHomeUsers: plexHome.current[accountConnection.id]?.isNotEmpty == true,
-        requireProfileSelectionOnOpen:
-            settings.read(SettingsService.requireProfileSelectionOnOpen) && activeProfiles.hasMultipleProfiles,
+        requireProfileSelectionOnOpen: activeProfiles.requiresSelectionOnOpen(settings),
       );
       if (promptHandled) {
         final selected = await Navigator.of(
@@ -172,7 +214,9 @@ class _AuthScreenState extends State<AuthScreen> {
       await context.read<UserProfileProvider>().initialize();
 
       if (!mounted) return;
-      unawaited(Navigator.pushReplacement(context, fadeRoute(MainScreen(initialPromptHandled: promptHandled))));
+      unawaited(
+        Navigator.pushReplacement(context, fadeRoute(ProfileSessionScreen(initialPromptHandled: promptHandled))),
+      );
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       if (!mounted) return;
@@ -180,8 +224,6 @@ class _AuthScreenState extends State<AuthScreen> {
         _isAuthenticating = false;
         _errorMessage = t.serverSelection.failedToLoadServers(error: e);
       });
-    } finally {
-      svc.dispose();
     }
   }
 
@@ -190,13 +232,18 @@ class _AuthScreenState extends State<AuthScreen> {
     _showDebugTokenDialog();
   }
 
-  Future<void> _connectToJellyfin() async {
-    final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddJellyfinScreen()));
+  Future<void> _connectToMediaBrowser(MediaBrowserDialect dialect) async {
+    if (!await _prepareDatabaseRecoveryForSignIn()) return;
+    if (!mounted) return;
+    final added = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => AddJellyfinScreen(dialect: dialect)),
+    );
     if (!mounted || added != true) return;
     // The connection persisted and the manager registered the client; move
     // straight to the main screen. [MainScreen] reads the active client
     // from the server provider, so no client argument is needed here.
-    unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen())));
+    unawaited(Navigator.pushReplacement(context, fadeRoute(const ProfileSessionScreen())));
   }
 
   void _showDebugTokenDialog() {
@@ -220,7 +267,7 @@ class _AuthScreenState extends State<AuthScreen> {
         body: Center(
           child: Container(
             constraints: BoxConstraints(maxWidth: isDesktop ? 800 : 400),
-            padding: const EdgeInsets.all(24),
+            padding: .fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
             child: isDesktop
                 ? Row(
                     crossAxisAlignment: .center,
@@ -297,6 +344,7 @@ class _AuthScreenState extends State<AuthScreen> {
     return PlexPinAuthFlow(
       onTokenReceived: _connectToAllServersAndNavigate,
       autoStartQrOnTV: false,
+      initializeService: widget.initializeServices,
       initialButtonsBuilder: _buildInitialButtons,
     );
   }
@@ -304,6 +352,12 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget _buildInitialButtons(BuildContext context, VoidCallback startBrowser, VoidCallback startQr, bool busy) {
     final isTV = PlatformDetector.isTV();
     final isAppleTV = PlatformDetector.isAppleTV();
+    void startBrowserAfterRecovery() => unawaited(_startPlexAfterRecovery(startBrowser));
+    void startQrAfterRecovery() => unawaited(_startPlexAfterRecovery(startQr));
+    const jellyfinDialect = MediaBrowserDialect.jellyfin;
+    const embyDialect = MediaBrowserDialect.emby;
+    void connectToJellyfin() => unawaited(_connectToMediaBrowser(jellyfinDialect));
+    void connectToEmby() => unawaited(_connectToMediaBrowser(embyDialect));
     return Column(
       mainAxisSize: .min,
       crossAxisAlignment: .stretch,
@@ -311,9 +365,10 @@ class _AuthScreenState extends State<AuthScreen> {
         if (isTV) ...[
           FocusableButton(
             autofocus: true,
-            onPressed: busy ? null : startQr,
+            onPressed: busy ? null : startQrAfterRecovery,
+            useBackgroundFocus: true,
             child: ElevatedButton(
-              onPressed: busy ? null : startQr,
+              onPressed: busy ? null : startQrAfterRecovery,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
               child: Row(
                 mainAxisAlignment: .center,
@@ -329,9 +384,9 @@ class _AuthScreenState extends State<AuthScreen> {
           if (!isAppleTV) ...[
             const SizedBox(height: 12),
             FocusableButton(
-              onPressed: busy ? null : startBrowser,
+              onPressed: busy ? null : startBrowserAfterRecovery,
               child: OutlinedButton(
-                onPressed: busy ? null : startBrowser,
+                onPressed: busy ? null : startBrowserAfterRecovery,
                 style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
                 child: Text(t.auth.useBrowser),
               ),
@@ -339,9 +394,10 @@ class _AuthScreenState extends State<AuthScreen> {
           ],
         ] else ...[
           FocusableButton(
-            onPressed: busy ? null : startBrowser,
+            onPressed: busy ? null : startBrowserAfterRecovery,
+            useBackgroundFocus: true,
             child: ElevatedButton.icon(
-              onPressed: busy ? null : startBrowser,
+              onPressed: busy ? null : startBrowserAfterRecovery,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
               icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
               label: Text(t.auth.signInWithPlex),
@@ -349,9 +405,9 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
           const SizedBox(height: 12),
           FocusableButton(
-            onPressed: busy ? null : startQr,
+            onPressed: busy ? null : startQrAfterRecovery,
             child: OutlinedButton(
-              onPressed: busy ? null : startQr,
+              onPressed: busy ? null : startQrAfterRecovery,
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
               child: Text(t.auth.showQRCode),
             ),
@@ -375,12 +431,22 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
         const SizedBox(height: 12),
         FocusableButton(
-          onPressed: _connectToJellyfin,
+          onPressed: connectToJellyfin,
           child: OutlinedButton.icon(
-            onPressed: _connectToJellyfin,
+            onPressed: connectToJellyfin,
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
             icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
-            label: Text(t.auth.connectToJellyfin),
+            label: Text(t.auth.connectToMediaBrowser(product: jellyfinDialect.productName)),
+          ),
+        ),
+        const SizedBox(height: 12),
+        FocusableButton(
+          onPressed: connectToEmby,
+          child: OutlinedButton.icon(
+            onPressed: connectToEmby,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            icon: const BackendBadge(backend: MediaBackend.emby, size: 18),
+            label: Text(t.auth.connectToMediaBrowser(product: embyDialect.productName)),
           ),
         ),
         if (kDebugMode) ...[
@@ -505,8 +571,8 @@ class _DebugTokenDialogState extends State<_DebugTokenDialog> with ControllerDis
         ],
       ),
       actions: [
-        DialogActionButton(onPressed: _busy ? () {} : () => Navigator.of(context).pop(), label: t.common.cancel),
-        DialogActionButton(onPressed: _busy ? () {} : _submit, label: t.auth.authenticate, isPrimary: true),
+        DialogActionButton(onPressed: _busy ? null : () => Navigator.of(context).pop(), label: t.common.cancel),
+        DialogActionButton(onPressed: _busy ? null : _submit, label: t.auth.authenticate, isPrimary: true),
       ],
     );
   }

@@ -48,7 +48,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       }
 
       if (mounted && player != null) {
-        await player!.play();
+        await _playWithPlaybackIntent(player!);
       }
 
       unawaited(
@@ -135,7 +135,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   void _onFullscreenChanged() {
     if (_displayModeService == null) return;
     if (FullscreenStateManager().isFullscreen) {
-      if (_hasFirstFrame.value && !_displayModeService!.anyChangeApplied) {
+      if (_firstFrame.uiReady.value && !_displayModeService!.anyChangeApplied) {
         _applyWindowsDisplayMatching();
       }
     } else if (_displayModeService!.anyChangeApplied) {
@@ -143,7 +143,9 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Restore Windows display mode to original state.
+  /// Restore Windows display mode to original state. Fullscreen-exit only:
+  /// `dispose()` runs its own fire-and-forget variant because it cannot await
+  /// the HDR settle below.
   Future<void> _restoreWindowsDisplayMode() async {
     if (_displayModeService == null || !_displayModeService!.anyChangeApplied) return;
 

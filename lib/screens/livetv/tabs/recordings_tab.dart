@@ -1,5 +1,4 @@
 import 'dart:async';
-import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -18,8 +17,11 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/dialogs.dart';
 import '../../../utils/formatters.dart';
 import '../../../widgets/app_icon.dart';
-import '../../../widgets/overlay_sheet.dart';
+import '../../../widgets/settings_section.dart';
+import '../live_tv_refresh_mixin.dart';
+import '../live_tv_server_iteration.dart';
 import '../livetv_recording_actions.dart';
+import '../livetv_styles.dart';
 
 class RecordingsTab extends StatefulWidget {
   final VoidCallback? onNavigateUp;
@@ -56,27 +58,40 @@ class _RuleEntry {
 
 enum _RuleAction { edit, delete }
 
-class RecordingsTabState extends State<RecordingsTab> {
+class RecordingsTabState extends State<RecordingsTab> with WidgetsBindingObserver, LiveTvRefreshMixin<RecordingsTab> {
   List<_ServerRecordings> _serverRecordings = [];
   bool _isLoading = true;
   bool _adminBlocked = false;
   String? _error;
-  Timer? _refreshTimer;
   bool _pendingFocus = false;
+  int _loadGeneration = 0;
+  Future<void>? _loadFuture;
+  bool _loadPending = false;
   final _firstTileFocusNode = FocusNode(debugLabel: 'recordings_tab_first_tile');
+
+  @override
+  Duration get refreshInterval => const Duration(seconds: 30);
+
+  @override
+  void onRefreshTick() => unawaited(_load());
+
+  // Same three gates as WhatsOnTab, but re-selecting the tab also reloads: a
+  // recording scheduled from the guide has to show up on arrival, not on the
+  // next 30s tick.
+  @override
+  void onRefreshResumed(LiveTvRefreshResumeReason reason) {
+    if (reason == LiveTvRefreshResumeReason.tabSelected) unawaited(_load());
+  }
 
   @override
   void initState() {
     super.initState();
-    _load();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) _load();
-    });
+    unawaited(_load());
   }
 
   @override
   void dispose() {
-    _refreshTimer?.cancel();
+    _loadGeneration++;
     _firstTileFocusNode.dispose();
     super.dispose();
   }
@@ -92,21 +107,34 @@ class RecordingsTabState extends State<RecordingsTab> {
     }
   }
 
-  void pauseRefresh() => _refreshTimer?.cancel();
-
-  void resumeRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) _load();
-    });
-    _load();
-  }
-
   /// Public reload helper for the parent screen's refresh action.
   Future<void> reload() => _load();
 
-  Future<void> _load() async {
+  bool _isCurrentLoad(int generation) => mounted && generation == _loadGeneration;
+
+  Future<void> _load() {
+    if (!mounted) return Future.value();
+    final inFlight = _loadFuture;
+    if (inFlight != null) {
+      _loadPending = true;
+      return inFlight;
+    }
+
+    final load = _drainLoads().whenComplete(() => _loadFuture = null);
+    _loadFuture = load;
+    return load;
+  }
+
+  Future<void> _drainLoads() async {
+    do {
+      _loadPending = false;
+      await _loadOnce();
+    } while (mounted && _loadPending);
+  }
+
+  Future<void> _loadOnce() async {
     if (!mounted) return;
+    final loadGeneration = ++_loadGeneration;
     setState(() {
       _isLoading = _serverRecordings.isEmpty;
       _error = null;
@@ -116,28 +144,32 @@ class RecordingsTabState extends State<RecordingsTab> {
     final results = <_ServerRecordings>[];
     var anyAdminError = false;
     var anyOtherError = false;
-    final seenServers = <String>{};
 
-    for (final serverInfo in multiServer.liveTvServers) {
-      if (!seenServers.add(serverInfo.serverId)) continue;
-      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
-      if (client == null) continue;
-      if (!client.capabilities.liveTvDvr) continue;
-      try {
-        final grabs = await client.liveTv.fetchScheduledRecordings();
-        final rules = await client.liveTv.fetchRecordingRules();
+    await forEachLiveTvServer(
+      multiServer,
+      resolveClient: multiServer.getClientForServer,
+      isCurrent: () => _isCurrentLoad(loadGeneration),
+      body: (client, serverInfo) async {
+        final dvr = client.liveTvDvr;
+        if (dvr == null) return;
+        final grabs = await dvr.fetchScheduledRecordings();
+        if (!_isCurrentLoad(loadGeneration)) return;
+        final rules = await dvr.fetchRecordingRules();
+        if (!_isCurrentLoad(loadGeneration)) return;
         results.add(_ServerRecordings(serverId: serverInfo.serverId, client: client, grabs: grabs, rules: rules));
-      } catch (e) {
-        appLogger.e('Failed to load recordings for ${serverInfo.serverId}', error: e);
-        if (e is MediaServerHttpException && e.statusCode == 403) {
+      },
+      onError: (client, serverInfo, error, stackTrace) {
+        if (!_isCurrentLoad(loadGeneration)) return;
+        appLogger.e('Failed to load recordings for ${serverInfo.serverId}', error: error);
+        if (error is MediaServerHttpException && error.statusCode == 403) {
           anyAdminError = true;
         } else {
           anyOtherError = true;
         }
-      }
-    }
+      },
+    );
 
-    if (!mounted) return;
+    if (!_isCurrentLoad(loadGeneration)) return;
     setState(() {
       _serverRecordings = results;
       _isLoading = false;
@@ -146,7 +178,7 @@ class RecordingsTabState extends State<RecordingsTab> {
     });
     if (_pendingFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) focusContent();
+        if (_isCurrentLoad(loadGeneration)) focusContent();
       });
     }
   }
@@ -226,36 +258,40 @@ class RecordingsTabState extends State<RecordingsTab> {
       return Center(child: _EmptyMessage(text: t.liveTv.noScheduledRecordings));
     }
 
-    return OverlaySheetHost(
-      child: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        children: [
-          if (grabs.isNotEmpty) ...[
-            _SectionHeader(t.liveTv.scheduledRecordings),
-            for (var i = 0; i < grabs.length; i++)
-              _GrabTile(
-                entry: grabs[i],
-                autofocus: i == 0,
-                focusNode: i == 0 ? _firstTileFocusNode : null,
-                onTap: () => _onCancelGrab(grabs[i]),
-                onNavigateUp: i == 0 ? widget.onNavigateUp : null,
-                onBack: widget.onBack,
-              ),
-          ],
-          if (rules.isNotEmpty) ...[
-            _SectionHeader(t.liveTv.recordingRules),
-            for (var i = 0; i < rules.length; i++)
-              _RuleTile(
-                entry: rules[i],
-                autofocus: grabs.isEmpty && i == 0,
-                focusNode: grabs.isEmpty && i == 0 ? _firstTileFocusNode : null,
-                onTap: () => _onRuleTap(rules[i]),
-                onNavigateUp: grabs.isEmpty && i == 0 ? widget.onNavigateUp : null,
-                onBack: widget.onBack,
-              ),
-          ],
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 8),
+      children: [
+        if (grabs.isNotEmpty)
+          SettingsGroup(
+            title: t.liveTv.scheduledRecordings,
+            children: [
+              for (var i = 0; i < grabs.length; i++)
+                _GrabTile(
+                  entry: grabs[i],
+                  autofocus: i == 0,
+                  focusNode: i == 0 ? _firstTileFocusNode : null,
+                  onTap: () => _onCancelGrab(grabs[i]),
+                  onNavigateUp: i == 0 ? widget.onNavigateUp : null,
+                  onBack: widget.onBack,
+                ),
+            ],
+          ),
+        if (rules.isNotEmpty)
+          SettingsGroup(
+            title: t.liveTv.recordingRules,
+            children: [
+              for (var i = 0; i < rules.length; i++)
+                _RuleTile(
+                  entry: rules[i],
+                  autofocus: grabs.isEmpty && i == 0,
+                  focusNode: grabs.isEmpty && i == 0 ? _firstTileFocusNode : null,
+                  onTap: () => _onRuleTap(rules[i]),
+                  onNavigateUp: grabs.isEmpty && i == 0 ? widget.onNavigateUp : null,
+                  onBack: widget.onBack,
+                ),
+            ],
+          ),
+      ],
     );
   }
 }
@@ -277,23 +313,6 @@ class _EmptyMessage extends StatelessWidget {
           const SizedBox(height: 12),
           Text(text, textAlign: TextAlign.center, style: theme.textTheme.bodyLarge),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String label;
-
-  const _SectionHeader(this.label);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
       ),
     );
   }
@@ -344,12 +363,7 @@ class _GrabTile extends StatelessWidget {
         canRequestFocus: false,
         onTap: onTap,
         child: Container(
-          decoration: isRecording
-              ? BoxDecoration(
-                  color: theme.colorScheme.primary.withValues(alpha: 0.08),
-                  border: Border(left: BorderSide(color: theme.colorScheme.primary, width: 3)),
-                )
-              : null,
+          color: isRecording ? airingFill(context) : null,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
@@ -376,9 +390,9 @@ class _GrabTile extends StatelessWidget {
                 ),
               ),
               if (isRecording)
-                _StatusBadge(label: t.liveTv.recordingInProgress, color: theme.colorScheme.primary)
+                StatusPill(label: t.liveTv.recordingInProgress, color: Colors.red)
               else if (isError)
-                _StatusBadge(label: t.common.error, color: theme.colorScheme.error),
+                StatusPill(label: t.common.error, color: theme.colorScheme.error),
             ],
           ),
         ),
@@ -462,25 +476,6 @@ class _RuleTile extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _StatusBadge({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: color, borderRadius: const BorderRadius.all(Radius.circular(4))),
-      child: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 11),
       ),
     );
   }

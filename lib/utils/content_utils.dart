@@ -17,7 +17,6 @@ class ContentTypes {
 
   static const Set<String> musicTypes = {artist, album, track};
   static const Set<String> videoTypes = {movie, show, season, episode};
-  static const Set<String> playableTypes = {movie, episode, clip, track};
 }
 
 class ContentTypeHelper {
@@ -26,17 +25,6 @@ class ContentTypeHelper {
   static bool isMusicContent(String type) => ContentTypes.musicTypes.contains(type.toLowerCase());
 
   static bool isVideoContent(String type) => ContentTypes.videoTypes.contains(type.toLowerCase());
-
-  static bool isMusicLibrary(dynamic lib) {
-    if (lib == null) return false;
-    try {
-      // ignore: avoid_dynamic_calls — duck-typed across library shapes
-      final type = (lib as dynamic).kind?.id as String?;
-      return type?.toLowerCase() == ContentTypes.artist;
-    } catch (e) {
-      return false;
-    }
-  }
 
   static IconData getLibraryIcon(String type) {
     switch (type.toLowerCase()) {
@@ -62,8 +50,6 @@ String formatContentRating(String? contentRating) {
     return '';
   }
 
-  // Remove common country prefixes like "gb/", "us/", "de/", etc.
-  // The pattern matches: lowercase letters followed by a forward slash
   final regex = RegExp(r'^[a-z]{2,3}/(.+)$', caseSensitive: false);
   final match = regex.firstMatch(contentRating);
 

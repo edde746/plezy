@@ -7,12 +7,7 @@ part of 'plex_home.dart';
 // **************************************************************************
 
 PlexHome _$PlexHomeFromJson(Map<String, dynamic> json) => PlexHome(
-  id: (json['id'] as num?)?.toInt() ?? 0,
-  name: json['name'] as String? ?? '',
-  guestUserID: (json['guestUserID'] as num?)?.toInt(),
-  guestUserUUID: json['guestUserUUID'] as String? ?? '',
-  guestEnabled: json['guestEnabled'] as bool? ?? false,
-  subscription: json['subscription'] as bool? ?? false,
+  id: flexibleIntOrZero(json['id']),
   users:
       (json['users'] as List<dynamic>?)
           ?.map((e) => PlexHomeUser.fromJson(e as Map<String, dynamic>))
@@ -22,10 +17,5 @@ PlexHome _$PlexHomeFromJson(Map<String, dynamic> json) => PlexHome(
 
 Map<String, dynamic> _$PlexHomeToJson(PlexHome instance) => <String, dynamic>{
   'id': instance.id,
-  'name': instance.name,
-  'guestUserID': instance.guestUserID,
-  'guestUserUUID': instance.guestUserUUID,
-  'guestEnabled': instance.guestEnabled,
-  'subscription': instance.subscription,
   'users': instance.users.map((e) => e.toJson()).toList(),
 };

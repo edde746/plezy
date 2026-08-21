@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 
+import '../../../i18n/strings.g.dart';
 import '../../../models/livetv_capture_buffer.dart';
 import '../../../mpv/mpv.dart';
 import '../../../focus/focusable_wrapper.dart';
@@ -59,6 +60,34 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
     return formatClockTime(dt, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context));
   }
 
+  bool get _hasSeekableRange => _rangeEnd > _rangeStart;
+
+  int _normalizedEpoch(int epoch) {
+    if (!_hasSeekableRange) return _rangeStart;
+    return epoch.clamp(_rangeStart, _rangeEnd);
+  }
+
+  int _semanticTarget(int displayPos, int deltaSeconds) {
+    final current = _normalizedEpoch(displayPos);
+    return (current + deltaSeconds).clamp(_rangeStart, _rangeEnd);
+  }
+
+  String _semanticEpochValue(int epoch, {bool isCurrent = false}) {
+    if ((isCurrent && widget.isAtLiveEdge) || (_hasSeekableRange && epoch >= _rangeEnd)) {
+      return t.liveTv.live;
+    }
+    return _formatEpochTime(context, epoch);
+  }
+
+  void _semanticSeekBy(int displayPos, int deltaSeconds) {
+    final seek = widget.onSeekEnd;
+    if (!widget.enabled || seek == null || !_hasSeekableRange) return;
+
+    final current = _normalizedEpoch(displayPos);
+    final target = _semanticTarget(current, deltaSeconds);
+    if (target != current) seek(target);
+  }
+
   double _epochToFraction(int epoch) {
     final range = _rangeEnd - _rangeStart;
     if (range <= 0) return 1.0; // No range yet → show at live edge (right)
@@ -95,9 +124,11 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
   Widget _buildHorizontalLayout(int displayPos) {
     return Row(
       children: [
-        Text(
-          _formatEpochTime(context, displayPos),
-          style: const TextStyle(color: Colors.white70, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()]),
+        ExcludeSemantics(
+          child: Text(
+            _formatEpochTime(context, displayPos),
+            style: const TextStyle(color: Colors.white70, fontSize: 13, fontFeatures: [FontFeature.tabularFigures()]),
+          ),
         ),
         const SizedBox(width: 8),
         Expanded(child: _buildSlider(displayPos)),
@@ -114,9 +145,15 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
           const SizedBox(height: 4),
           Align(
             alignment: .centerLeft,
-            child: Text(
-              _formatEpochTime(context, displayPos),
-              style: const TextStyle(color: Colors.white70, fontSize: 12, fontFeatures: [FontFeature.tabularFigures()]),
+            child: ExcludeSemantics(
+              child: Text(
+                _formatEpochTime(context, displayPos),
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                ),
+              ),
             ),
           ),
         ],
@@ -126,6 +163,10 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
 
   Widget _buildSlider(int displayPos) {
     final positionFraction = _epochToFraction(displayPos);
+    final normalizedDisplayPos = _normalizedEpoch(displayPos);
+    final semanticsEnabled = widget.enabled && widget.onSeekEnd != null && _hasSeekableRange;
+    final canIncrease = semanticsEnabled && normalizedDisplayPos < _rangeEnd;
+    final canDecrease = semanticsEnabled && normalizedDisplayPos > _rangeStart;
 
     return FocusableWrapper(
       focusNode: widget.focusNode,
@@ -143,28 +184,41 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
             // from pointer-down, so ancestor recognizers can't steal the drag
             // (#1302). A plain tap is onStart+onEnd, which seeks to the
             // tapped position.
-            child: RawGestureDetector(
-              behavior: HitTestBehavior.opaque,
-              gestures: widget.enabled
-                  ? <Type, GestureRecognizerFactory>{
-                      EagerHorizontalDragGestureRecognizer:
-                          GestureRecognizerFactoryWithHandlers<EagerHorizontalDragGestureRecognizer>(
-                            () =>
-                                EagerHorizontalDragGestureRecognizer(debugOwner: this)
-                                  ..dragStartBehavior = DragStartBehavior.down,
-                            (instance) {
-                              instance.onStart = (details) => _onDragStart(details, _widthOf(context));
-                              instance.onUpdate = (details) => _onDragUpdate(details, _widthOf(context));
-                              instance.onEnd = (_) => _onDragEnd();
-                              instance.onCancel = _onDragEnd;
-                            },
-                          ),
-                    }
-                  : const <Type, GestureRecognizerFactory>{},
-              child: SizedBox(
-                width: double.infinity,
-                height: 24,
-                child: CustomPaint(painter: _LiveTimelinePainter(positionFraction: positionFraction)),
+            child: Semantics(
+              label: t.videoControls.timelineSlider,
+              slider: true,
+              value: _semanticEpochValue(normalizedDisplayPos, isCurrent: true),
+              increasedValue: canIncrease ? _semanticEpochValue(_semanticTarget(normalizedDisplayPos, 10)) : null,
+              decreasedValue: canDecrease ? _semanticEpochValue(_semanticTarget(normalizedDisplayPos, -10)) : null,
+              enabled: semanticsEnabled,
+              onIncrease: canIncrease ? () => _semanticSeekBy(normalizedDisplayPos, 10) : null,
+              onDecrease: canDecrease ? () => _semanticSeekBy(normalizedDisplayPos, -10) : null,
+              child: RawGestureDetector(
+                behavior: HitTestBehavior.opaque,
+                excludeFromSemantics: true,
+                gestures: widget.enabled
+                    ? <Type, GestureRecognizerFactory>{
+                        EagerHorizontalDragGestureRecognizer:
+                            GestureRecognizerFactoryWithHandlers<EagerHorizontalDragGestureRecognizer>(
+                              () =>
+                                  EagerHorizontalDragGestureRecognizer(debugOwner: this)
+                                    ..dragStartBehavior = DragStartBehavior.down,
+                              (instance) {
+                                instance.onStart = (details) => _onDragStart(details, _widthOf(context));
+                                instance.onUpdate = (details) => _onDragUpdate(details, _widthOf(context));
+                                instance.onEnd = (_) => _onDragEnd();
+                                instance.onCancel = _onDragEnd;
+                              },
+                            ),
+                      }
+                    : const <Type, GestureRecognizerFactory>{},
+                child: ExcludeSemantics(
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 24,
+                    child: CustomPaint(painter: _LiveTimelinePainter(positionFraction: positionFraction)),
+                  ),
+                ),
               ),
             ),
           );

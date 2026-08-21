@@ -3,17 +3,27 @@ import 'package:plezy/utils/track_label_builder.dart';
 
 void main() {
   group('TrackLabel', () {
-    test('joined concatenates primary and secondary with " · "', () {
-      expect(const TrackLabel('Tamil', 'E-AC3 · 5.1').joined, 'Tamil · E-AC3 · 5.1');
-    });
-
-    test('joined is just primary when secondary is null', () {
-      expect(const TrackLabel('Tamil').joined, 'Tamil');
-    });
-
     test('equality compares both parts', () {
       expect(const TrackLabel('A', 'B'), const TrackLabel('A', 'B'));
       expect(const TrackLabel('A'), isNot(const TrackLabel('A', 'B')));
+    });
+  });
+
+  group('titleSaysForced', () {
+    test('matches the forced token anywhere in the title', () {
+      expect(titleSaysForced('Forced'), isTrue);
+      expect(titleSaysForced('FORCED'), isTrue);
+      expect(titleSaysForced('FR Forced [ASS]'), isTrue);
+      expect(titleSaysForced('French (Forced)'), isTrue);
+      expect(titleSaysForced('forced.eng'), isTrue);
+    });
+
+    test('requires a whole token, not a substring', () {
+      expect(titleSaysForced('unforced'), isFalse);
+      expect(titleSaysForced('Reinforced'), isFalse);
+      expect(titleSaysForced('French'), isFalse);
+      expect(titleSaysForced(''), isFalse);
+      expect(titleSaysForced(null), isFalse);
     });
   });
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ScrollReveal from './ScrollReveal.svelte';
+  import SectionHeader from './SectionHeader.svelte';
   import DevicePhoneIcon from '~icons/heroicons/device-phone-mobile-solid';
   import DeviceTabletIcon from '~icons/heroicons/device-tablet-solid';
   import DesktopIcon from '~icons/heroicons/computer-desktop-solid';
@@ -98,11 +98,21 @@
   };
 
   let active: DeviceType = $state('phone');
+  let loaded: Record<DeviceType, boolean> = $state({
+    phone: true,
+    tablet: false,
+    desktop: false,
+    tv: false,
+  });
   let scrollContainer: HTMLElement | undefined = $state();
   let canScrollLeft = $state(false);
   let canScrollRight = $state(false);
   let intendedScrollLeft: number | undefined;
 
+  function selectDevice(device: DeviceType) {
+    loaded[device] = true;
+    active = device;
+  }
   function updateScrollState() {
     if (!scrollContainer) return;
     if (intendedScrollLeft !== undefined && Math.abs(scrollContainer.scrollLeft - intendedScrollLeft) < 2) {
@@ -138,7 +148,7 @@
   }
 
   $effect(() => {
-    // Re-check scroll state when active tab changes.
+    // Re-check scroll state after the active tab changes.
     const currentActive = active;
     const el = document.getElementById(`screenshots-${currentActive}-panel`);
 
@@ -146,7 +156,7 @@
     scrollContainer = el ?? undefined;
 
     if (el) {
-      // Double rAF ensures browser has computed layout after DOM update
+      // Double rAF waits for layout after the DOM update.
       const raf = requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (currentActive === active && el === scrollContainer) updateScrollState();
@@ -160,21 +170,21 @@
   });
 </script>
 
-<section id="screenshots" class="screenshots-section">
+<section id="screenshots" class="bleed-section">
   <div class="screenshots-header">
-    <ScrollReveal>
-      <p class="section-label">Preview</p>
-      <h2 class="section-heading">Designed with care</h2>
-      <p class="section-description">An experience that feels right at home on every device.</p>
-
+    <SectionHeader
+      label="Preview"
+      heading="Designed with care"
+      description="An experience that feels right at home on every device."
+      descriptionGap="2rem"
+    >
       <div class="screenshot-controls">
-        <!-- Device tabs -->
         <div class="device-tabs" role="group" aria-label="Screenshot device">
           {#each devices as device}
             {@const DeviceIcon = device.icon}
             <button
               type="button"
-              onclick={() => active = device.id}
+              onclick={() => selectDevice(device.id)}
               aria-pressed={active === device.id}
               aria-controls={`screenshots-${device.id}-panel`}
               aria-label={`Show ${device.label} screenshots`}
@@ -187,7 +197,6 @@
           {/each}
         </div>
 
-        <!-- Scroll arrows -->
         <div class="scroll-arrows">
           <button
             type="button"
@@ -211,7 +220,7 @@
           </button>
         </div>
       </div>
-    </ScrollReveal>
+    </SectionHeader>
   </div>
 
   <div class="screenshot-panels">
@@ -228,103 +237,95 @@
           if (active === device.id) updateScrollState();
         }}
       >
-        {#each screenshot.shots as shot}
-          <div class="screenshot-item">
-            <div class={`screenshot-frame ${screenshot.frameClass}`}>
-              <enhanced:img
-                src={shot.image}
-                alt={shot.alt}
-                loading="eager"
-                class="screenshot-image"
-                sizes={screenshot.sizes}
-              />
+        {#if loaded[device.id]}
+          {#each screenshot.shots as shot}
+            <div class="screenshot-item">
+              <div class={`screenshot-frame ${screenshot.frameClass}`}>
+                <enhanced:img
+                  src={shot.image}
+                  alt={shot.alt}
+                  loading="lazy"
+                  class="screenshot-image"
+                  sizes={screenshot.sizes}
+                />
+              </div>
             </div>
-          </div>
-        {/each}
+          {/each}
+        {/if}
       </div>
     {/each}
   </div>
 </section>
 
 <style>
-  .screenshots-section {
-    overflow: hidden;
-    padding-block: 4rem;
-  }
-
   .screenshots-header {
     max-width: 64rem;
     margin-inline: auto;
-    margin-bottom: 2rem;
+    margin-bottom: clamp(2rem, 5vw, 3.5rem);
     padding-inline: 1.5rem;
-  }
-
-  .section-label {
-    margin-bottom: 0.75rem;
-    color: var(--color-accent);
-    font-size: 0.875rem;
-    font-weight: 500;
-    letter-spacing: 0.025em;
-    line-height: 1.25rem;
-    text-transform: uppercase;
-  }
-
-  .section-heading {
-    margin-bottom: 1rem;
-    font-size: 2.25rem;
-    font-weight: 700;
-    line-height: 2.5rem;
-  }
-
-  .section-description {
-    max-width: 32rem;
-    margin-bottom: 1.5rem;
-    color: var(--color-text-muted);
-    font-size: 1.125rem;
-    line-height: 1.75rem;
   }
 
   .screenshot-controls {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .device-tabs {
     display: flex;
     width: fit-content;
-    gap: 0.25rem;
-    border-radius: 0.75rem;
-    background: rgb(255 255 255 / 0.04);
+    max-width: 100%;
+    gap: var(--group-gap);
+    overflow-x: auto;
+    border-radius: var(--radius-full);
     padding: 0.25rem;
+    background: var(--color-surface);
+    scrollbar-width: none;
+  }
+
+  .device-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .device-button {
     display: flex;
+    min-height: 2.75rem;
+    flex-shrink: 0;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.5rem;
-    padding: 0.5rem 1rem;
+    border-radius: var(--radius-pill);
+    padding-inline: 0.875rem;
     color: var(--color-text-muted);
-    font-size: 0.875rem;
-    font-weight: 500;
-    line-height: 1.25rem;
-    transition: background-color 150ms ease, color 150ms ease;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    transition:
+      border-radius var(--motion-expressive) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
-  .device-button:not(.active):hover {
-    color: color-mix(in srgb, var(--color-text) 80%, transparent);
+  .device-button:not(.active):hover,
+  .device-button:not(.active):focus-visible {
+    color: var(--color-text);
+    background: rgb(237 237 237 / 0.12);
   }
 
   .device-button.active {
-    color: var(--color-text);
-    background: rgb(255 255 255 / 0.1);
+    color: var(--color-on-primary);
+    background: var(--color-text);
+  }
+
+  .device-button.active:hover,
+  .device-button.active:focus-visible {
+    border-radius: var(--radius-md);
+    background: #fff;
   }
 
   .device-button :global(svg),
   .scroll-arrow :global(svg) {
-    width: 1rem;
-    height: 1rem;
+    width: 1.125rem;
+    height: 1.125rem;
   }
 
   .device-label {
@@ -334,28 +335,33 @@
   .scroll-arrows {
     display: none;
     align-items: center;
-    gap: 0.25rem;
+    gap: var(--group-gap);
     margin-left: auto;
   }
 
   .scroll-arrow {
     display: flex;
-    width: 2rem;
-    height: 2rem;
+    width: 2.75rem;
+    height: 2.75rem;
     align-items: center;
     justify-content: center;
-    border-radius: 0.5rem;
-    background: rgb(255 255 255 / 0.04);
-    color: color-mix(in srgb, var(--color-text-muted) 30%, transparent);
-    transition: background-color 150ms ease, color 150ms ease;
+    border-radius: var(--radius-pill);
+    color: var(--color-text-subtle);
+    background: var(--color-surface);
+    transition:
+      border-radius var(--motion-expressive) var(--ease-standard),
+      color var(--motion-fast) var(--ease-standard),
+      background-color var(--motion-fast) var(--ease-standard);
   }
 
   .scroll-arrow.enabled {
     color: var(--color-text);
   }
 
-  .scroll-arrow.enabled:hover {
-    background: rgb(255 255 255 / 0.1);
+  .scroll-arrow.enabled:hover,
+  .scroll-arrow.enabled:focus-visible {
+    border-radius: var(--radius-md);
+    background: var(--color-surface-highest);
   }
 
   .screenshot-panels {
@@ -371,10 +377,11 @@
     width: 100%;
     gap: 1.25rem;
     overflow-x: auto;
-    opacity: 0;
     padding-bottom: 1rem;
+    opacity: 0;
     pointer-events: none;
-    transition: opacity 220ms ease;
+    scroll-snap-type: x mandatory;
+    transition: opacity var(--motion-normal) var(--ease-standard);
   }
 
   .screenshot-strip.panel-active {
@@ -393,8 +400,6 @@
   .screenshot-frame {
     height: 100%;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
   }
 
   .phone-frame {
@@ -410,60 +415,35 @@
     border-radius: 0.75rem;
   }
 
-  .tv-frame {
-    border-width: 2px;
-    border-color: color-mix(in srgb, var(--color-border) 30%, transparent);
-    background: #000;
-  }
-
   .screenshot-image {
     display: block;
     width: auto;
     height: 100%;
+    object-fit: contain;
   }
 
   .content-pad {
-    /* Left padding aligns with max-w-5xl (64rem) + px-6 */
     padding-left: max(1.5rem, calc((100vw - 64rem) / 2 + 1.5rem));
     padding-right: 1.5rem;
+    scroll-padding-left: max(1.5rem, calc((100vw - 64rem) / 2 + 1.5rem));
   }
 
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
 
-  @media (min-width: 640px) {
-    .screenshots-section {
-      padding-block: 6rem;
-    }
-
-    .screenshots-header {
-      margin-bottom: 3rem;
-    }
-
-    .section-description {
-      margin-bottom: 2.5rem;
-    }
-
+  @media (min-width: 560px) {
     .device-label {
       display: inline;
     }
   }
 
   @media (min-width: 768px) {
-    .screenshots-section {
-      padding-block: 8rem;
-    }
-
-    .section-heading {
-      font-size: 3rem;
-      line-height: 1;
-    }
-
     .scroll-arrows {
       display: flex;
     }
@@ -471,11 +451,11 @@
 
   @media (min-width: 1024px) {
     .screenshot-panels {
-      min-height: calc(480px + 1rem);
+      min-height: calc(500px + 1rem);
     }
 
     .screenshot-item {
-      height: 480px;
+      height: 500px;
     }
   }
 </style>

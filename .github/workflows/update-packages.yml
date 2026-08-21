@@ -4,14 +4,71 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to update packages for
+        required: true
+        type: string
 
 jobs:
+  resolve-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+    steps:
+      - name: Require the default branch for manual runs
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/${{ github.event.repository.default_branch }}" ]]; then
+            echo "Manual package updates may only run from the default branch." >&2
+            exit 1
+          fi
+
+      - name: Resolve published release tag
+        id: release
+        env:
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [ "$GITHUB_EVENT_NAME" = "release" ]; then
+            REQUESTED_TAG="$EVENT_TAG"
+          else
+            REQUESTED_TAG="$INPUT_TAG"
+          fi
+
+          if [ -z "$REQUESTED_TAG" ]; then
+            echo "A release tag is required." >&2
+            exit 1
+          fi
+
+          RELEASE=$(gh release view "$REQUESTED_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json tagName,isDraft,publishedAt)
+          RESOLVED_TAG=$(jq -r '.tagName' <<< "$RELEASE")
+          IS_DRAFT=$(jq -r '.isDraft' <<< "$RELEASE")
+          PUBLISHED_AT=$(jq -r '.publishedAt // empty' <<< "$RELEASE")
+
+          if [ "$RESOLVED_TAG" != "$REQUESTED_TAG" ] || \
+             [ "$IS_DRAFT" != "false" ] || [ -z "$PUBLISHED_AT" ]; then
+            echo "Tag '$REQUESTED_TAG' is not an exact published release tag." >&2
+            exit 1
+          fi
+
+          echo "tag=$RESOLVED_TAG" >> "$GITHUB_OUTPUT"
+
   update-homebrew:
+    needs: resolve-release
     runs-on: macos-latest
     permissions:
       contents: write
+    env:
+      RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.repository.default_branch }}
           fetch-depth: 0
@@ -19,16 +76,14 @@ jobs:
       - name: Download and hash release
         id: release
         run: |
-          VERSION="${{ github.event.release.tag_name || github.ref_name }}"
-          curl -L -o plezy-macos.dmg \
-            "https://github.com/edde746/plezy/releases/download/$VERSION/plezy-macos.dmg"
+          curl --fail-with-body -L -o plezy-macos.dmg \
+            "https://github.com/edde746/plezy/releases/download/$RELEASE_TAG/plezy-macos.dmg"
           SHA256=$(shasum -a 256 plezy-macos.dmg | cut -d' ' -f1)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
 
       - name: Update cask
         run: |
-          sed -i '' "s/version \".*\"/version \"${{ steps.release.outputs.version }}\"/" Casks/plezy.rb
+          sed -i '' "s/version \".*\"/version \"$RELEASE_TAG\"/" Casks/plezy.rb
           sed -i '' "s/sha256 \".*\"/sha256 \"${{ steps.release.outputs.sha256 }}\"/" Casks/plezy.rb
 
       - name: Commit
@@ -38,41 +93,47 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Casks/plezy.rb
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update cask to ${{ steps.release.outputs.version }}"
+            git commit -m "chore: update cask to $RELEASE_TAG"
             git push origin "HEAD:$BRANCH"
           else
             echo "No cask changes to commit."
           fi
 
   update-winget:
+    needs: resolve-release
     runs-on: windows-latest
     steps:
-      - uses: vedantmgoyal9/winget-releaser@v2
+      - uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
         with:
           identifier: edde746.Plezy
           installers-regex: 'plezy-windows-installer\.exe$'
+          release-tag: ${{ needs.resolve-release.outputs.tag }}
           token: ${{ secrets.WINGET_TOKEN }}
 
   update-appcast-branch:
+    needs: resolve-release
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Download appcast.xml from release
         run: |
-          gh release download "${{ github.event.release.tag_name }}" \
+          gh release download "$RELEASE_TAG" \
             --pattern "appcast.xml"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push to appcast branch
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           BLOB=$(git hash-object -w appcast.xml)
           TREE=$(printf "100644 blob %s\tappcast.xml\n" "$BLOB" | git mktree)
-          COMMIT=$(git commit-tree "$TREE" -m "Update appcast for $VERSION")
+          COMMIT=$(git commit-tree "$TREE" -m "Update appcast for $RELEASE_TAG")
           git push origin "$COMMIT:refs/heads/appcast" --force

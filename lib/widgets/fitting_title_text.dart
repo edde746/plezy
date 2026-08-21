@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/platform_detector.dart';
 
 class FittingTitleText extends StatelessWidget {
   final String text;
@@ -23,6 +24,12 @@ class FittingTitleText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseStyle = style ?? DefaultTextStyle.of(context).style;
+    if (PlatformDetector.isAutomotive()) {
+      return Align(
+        alignment: alignment,
+        child: Text(text, style: baseStyle, maxLines: maxLines, overflow: overflow, textAlign: textAlign),
+      );
+    }
     return LayoutBuilder(
       builder: (context, constraints) {
         var fittedStyle = baseStyle;

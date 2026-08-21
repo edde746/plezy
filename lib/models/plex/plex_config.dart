@@ -1,5 +1,7 @@
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../utils/device_identity.dart';
+
 class PlexConfig {
   final String baseUrl;
   final String? token;
@@ -8,6 +10,10 @@ class PlexConfig {
   final String version;
   final String platform;
   final String? device;
+
+  /// Friendly device name — Plex dashboards and Tautulli show it as the
+  /// session's "Player".
+  final String? deviceName;
   final bool acceptJson;
   final String? machineIdentifier;
   final String? languageCode;
@@ -20,6 +26,7 @@ class PlexConfig {
     required this.version,
     this.platform = 'Flutter',
     this.device,
+    this.deviceName,
     this.acceptJson = true,
     this.machineIdentifier,
     this.languageCode,
@@ -37,14 +44,16 @@ class PlexConfig {
     String? languageCode,
   }) async {
     final packageInfo = await PackageInfo.fromPlatform();
+    final identity = await DeviceIdentityService.resolve();
     return PlexConfig(
       baseUrl: baseUrl,
       token: token,
       clientIdentifier: clientIdentifier,
       product: product ?? 'Plezy',
       version: packageInfo.version,
-      platform: platform ?? 'Flutter',
-      device: device,
+      platform: platform ?? identity.platform,
+      device: device ?? sanitizeHeaderValue(identity.deviceModel),
+      deviceName: sanitizeHeaderValue(identity.deviceName),
       acceptJson: acceptJson,
       machineIdentifier: machineIdentifier,
       languageCode: languageCode,
@@ -59,6 +68,7 @@ class PlexConfig {
       'X-Plex-Platform': platform,
       'X-Plex-Client-Profile-Name': 'Generic',
       'X-Plex-Device': ?device,
+      'X-Plex-Device-Name': ?deviceName,
       if (acceptJson) 'Accept': 'application/json',
       'Accept-Charset': 'utf-8',
       'Accept-Language': ?_normalizedLanguageCode,
@@ -85,6 +95,7 @@ class PlexConfig {
     String? version,
     String? platform,
     String? device,
+    String? deviceName,
     bool? acceptJson,
     String? machineIdentifier,
     String? languageCode,
@@ -97,6 +108,7 @@ class PlexConfig {
       version: version ?? this.version,
       platform: platform ?? this.platform,
       device: device ?? this.device,
+      deviceName: deviceName ?? this.deviceName,
       acceptJson: acceptJson ?? this.acceptJson,
       machineIdentifier: machineIdentifier ?? this.machineIdentifier,
       languageCode: languageCode ?? this.languageCode,

@@ -10,6 +10,14 @@ import QuartzCore
   import Metal
 #endif
 
+struct MpvLifecycleUnavailableError: LocalizedError {
+  let errorDescription: String?
+
+  init(_ description: String) {
+    errorDescription = description
+  }
+}
+
 protocol MpvPlayerDelegate: AnyObject {
   func onPropertyChange(name: String, value: Any?)
   func onEvent(name: String, data: [String: Any]?)
@@ -80,6 +88,27 @@ struct ServerDisplayCriteria {
   }
 }
 
+final class MpvWakeupCallbackContext {
+  private let lock = NSLock()
+  private weak var core: MpvPlayerCoreBase?
+
+  init(core: MpvPlayerCoreBase) {
+    self.core = core
+  }
+
+  func dispatchWakeup() {
+    lock.lock()
+    defer { lock.unlock() }
+    core?.readEventsFromCallback()
+  }
+
+  func detach() {
+    lock.lock()
+    core = nil
+    lock.unlock()
+  }
+}
+
 class MpvPlayerCoreBase: NSObject {
   weak var delegate: MpvPlayerDelegate?
 
@@ -88,12 +117,18 @@ class MpvPlayerCoreBase: NSObject {
   #else
     var videoLayer: MpvVideoLayer?
   #endif
-  var mpv: OpaquePointer?
   var isInitialized = false
-  var isDisposing = false
   var isPipActive = false
-  var isBackgrounded = false
-  private var wakeupCallbackContext: UnsafeMutableRawPointer?
+
+  private struct LifecycleState {
+    var mpv: OpaquePointer?
+    var isTerminal = false
+    var isBackgrounded = false
+    var wakeupCallbackContext: UnsafeMutableRawPointer?
+  }
+
+  private let lifecycleLock = NSLock()
+  private var lifecycleState = LifecycleState()
   private var cachedHDREnabled = true
   private var cachedLastSigPeak = 0.0
   private var cachedDoviProfile: Int64 = 0
@@ -173,6 +208,11 @@ class MpvPlayerCoreBase: NSObject {
 
   private let cacheLock = NSLock()
   private var cachedPaused = true
+  private var confirmedPaused = true
+  private var resolvedPauseGeneration: UInt64 = 0
+  private var pauseIntentGeneration: UInt64 = 0
+  private var pauseObservationRevision: UInt64 = 0
+  private var pendingPauseIntents: [UInt64: Bool] = [:]
   private var cachedDuration = 0.0
   private var cachedTimePos = 0.0
   private var cachedWidth = 0.0
@@ -185,7 +225,47 @@ class MpvPlayerCoreBase: NSObject {
     queue.setSpecific(key: queueKey, value: ())
   }
 
-  func configurePlatformMpvOptions() {}
+  @discardableResult
+  func beginDisposal() -> Bool {
+    lifecycleLock.lock()
+    defer { lifecycleLock.unlock() }
+    guard !lifecycleState.isTerminal else { return false }
+    lifecycleState.isTerminal = true
+    return true
+  }
+
+  func setBackgrounded(_ backgrounded: Bool) {
+    lifecycleLock.lock()
+    lifecycleState.isBackgrounded = backgrounded
+    lifecycleLock.unlock()
+  }
+
+  var hasActiveMpv: Bool {
+    lifecycleLock.lock()
+    defer { lifecycleLock.unlock() }
+    return !lifecycleState.isTerminal && lifecycleState.mpv != nil
+  }
+
+  private var isLifecycleActive: Bool {
+    lifecycleLock.lock()
+    defer { lifecycleLock.unlock() }
+    return !lifecycleState.isTerminal
+  }
+
+  private var isLifecycleBackgrounded: Bool {
+    lifecycleLock.lock()
+    defer { lifecycleLock.unlock() }
+    return lifecycleState.isBackgrounded
+  }
+
+  private func withActiveMpv<T>(_ body: (OpaquePointer) -> T) -> T? {
+    lifecycleLock.lock()
+    defer { lifecycleLock.unlock() }
+    guard !lifecycleState.isTerminal, let mpv = lifecycleState.mpv else { return nil }
+    return body(mpv)
+  }
+
+  func configurePlatformMpvOptions(mpv: OpaquePointer) {}
 
   func updateEDRMode(sigPeak: Double) {}
 
@@ -346,68 +426,97 @@ class MpvPlayerCoreBase: NSObject {
 
     applyDvConversionModeEnvironment()
 
-    mpv = mpv_create()
-    guard let mpv else {
+    let created = createMpvContext { [self] mpv in
+      var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(renderLayer).toOpaque()))
+      checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))
+      applySharedMpvOptions(mpv: mpv)
+      configurePlatformMpvOptions(mpv: mpv)
+    }
+    guard created else { return false }
+
+    let observed: Void? = withActiveMpv { mpv in
+      mpv_observe_property(mpv, Self.internalSigPeakObserverId, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
+      mpv_observe_property(mpv, Self.internalWidthObserverId, "width", MPV_FORMAT_DOUBLE)
+      mpv_observe_property(mpv, Self.internalHeightObserverId, "height", MPV_FORMAT_DOUBLE)
+      mpv_observe_property(
+        mpv, Self.internalDoviProfileObserverId,
+        "current-tracks/video/dolby-vision-profile", MPV_FORMAT_INT64)
+      mpv_observe_property(
+        mpv, Self.internalDoviLevelObserverId,
+        "current-tracks/video/dolby-vision-level", MPV_FORMAT_INT64)
+      mpv_observe_property(
+        mpv, Self.internalContainerFpsObserverId,
+        "container-fps", MPV_FORMAT_DOUBLE)
+      mpv_observe_property(mpv, Self.internalVideoGammaObserverId, "video-params/gamma", MPV_FORMAT_STRING)
+      mpv_observe_property(mpv, Self.internalVideoPrimariesObserverId, "video-params/primaries", MPV_FORMAT_STRING)
+      mpv_observe_property(
+        mpv, Self.internalVideoColorMatrixObserverId,
+        "video-params/colormatrix", MPV_FORMAT_STRING)
+    }
+    return observed != nil
+  }
+
+  /// Create the mpv context, apply pre-init options via `configure`, run
+  /// `mpv_initialize`, and install the wakeup callback. Everything here is
+  /// instance-scoped (per-instance dispatch queue, request table, and retained
+  /// wakeup context), so the video core and the audio-only core can each own
+  /// an independent context and be created/destroyed at any time.
+  func createMpvContext(configure: (OpaquePointer) -> Void) -> Bool {
+    guard let mpv = mpv_create() else {
       print("[MpvPlayerCore] Failed to create MPV context")
       return false
     }
 
-    // TEMP: always "v" (tvOS builds in release) so the avfoundation VO's
-    // osd-perf timing lines show up — restore the DEBUG/warn split after the
-    // subtitle-timing investigation.
-    checkError(mpv_request_log_messages(mpv, "v"))
+    #if DEBUG
+      let defaultLogLevel = "v"
+    #else
+      let defaultLogLevel = "warn"
+    #endif
+    checkError(mpv_request_log_messages(mpv, defaultLogLevel))
 
-    var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(renderLayer).toOpaque()))
-    checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))
-    applySharedMpvOptions()
-    configurePlatformMpvOptions()
+    configure(mpv)
 
     let initResult = mpv_initialize(mpv)
     if initResult < 0 {
       print("[MpvPlayerCore] mpv_initialize failed: \(safeString(mpv_error_string(initResult)))")
       mpv_terminate_destroy(mpv)
-      self.mpv = nil
       return false
     }
 
-    // mpv stores this context without retaining it. Retain manually so the
-    // Swift core cannot deallocate while mpv can still fire wakeup callbacks.
-    let wakeupContext = Unmanaged.passRetained(self).toOpaque()
-    wakeupCallbackContext = wakeupContext
+    // mpv stores this context without retaining it. The core owns the context,
+    // while the context keeps only a weak callback target; disposal atomically
+    // detaches it before removing the C callback. A late callback can therefore
+    // neither retain/dereference a dead core nor enqueue work against a replacement.
+    let callbackOwner = MpvWakeupCallbackContext(core: self)
+    let wakeupContext = Unmanaged.passRetained(callbackOwner).toOpaque()
 
+    lifecycleLock.lock()
+    guard !lifecycleState.isTerminal, lifecycleState.mpv == nil else {
+      lifecycleLock.unlock()
+      mpv_terminate_destroy(mpv)
+      Unmanaged<MpvWakeupCallbackContext>.fromOpaque(wakeupContext).release()
+      return false
+    }
+    lifecycleState.mpv = mpv
+    lifecycleState.wakeupCallbackContext = wakeupContext
     mpv_set_wakeup_callback(
       mpv,
       { context in
         guard let context else { return }
-        let core = Unmanaged<MpvPlayerCoreBase>.fromOpaque(context).takeUnretainedValue()
-        core.readEvents()
+        Unmanaged<MpvWakeupCallbackContext>.fromOpaque(context)
+          .takeUnretainedValue()
+          .dispatchWakeup()
       },
       wakeupContext
     )
-
-    mpv_observe_property(mpv, Self.internalSigPeakObserverId, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
-    mpv_observe_property(mpv, Self.internalWidthObserverId, "width", MPV_FORMAT_DOUBLE)
-    mpv_observe_property(mpv, Self.internalHeightObserverId, "height", MPV_FORMAT_DOUBLE)
-    mpv_observe_property(
-      mpv, Self.internalDoviProfileObserverId,
-      "current-tracks/video/dolby-vision-profile", MPV_FORMAT_INT64)
-    mpv_observe_property(
-      mpv, Self.internalDoviLevelObserverId,
-      "current-tracks/video/dolby-vision-level", MPV_FORMAT_INT64)
-    mpv_observe_property(
-      mpv, Self.internalContainerFpsObserverId,
-      "container-fps", MPV_FORMAT_DOUBLE)
-    mpv_observe_property(mpv, Self.internalVideoGammaObserverId, "video-params/gamma", MPV_FORMAT_STRING)
-    mpv_observe_property(mpv, Self.internalVideoPrimariesObserverId, "video-params/primaries", MPV_FORMAT_STRING)
-    mpv_observe_property(
-      mpv, Self.internalVideoColorMatrixObserverId,
-      "video-params/colormatrix", MPV_FORMAT_STRING)
+    lifecycleLock.unlock()
     return true
   }
 
   func setLogLevel(_ level: String) {
-    guard let mpv else { return }
-    mpv_request_log_messages(mpv, level)
+    _ = withActiveMpv { mpv in
+      mpv_request_log_messages(mpv, level)
+    }
   }
 
   func setProperty(_ name: String, value: String) {
@@ -419,6 +528,10 @@ class MpvPlayerCoreBase: NSObject {
     value: String,
     completion: @escaping (Result<Void, Error>) -> Void
   ) {
+    guard isLifecycleActive else {
+      completeOnMain { completion(.failure(self.lifecycleUnavailableError())) }
+      return
+    }
     #if targetEnvironment(simulator)
       if name == "hwdec" {
         if value != "no" {
@@ -431,14 +544,20 @@ class MpvPlayerCoreBase: NSObject {
 
     if isManagedRendererProperty(name) {
       print("[MpvPlayerCore] Ignoring managed renderer property: \(name)=\(value)")
-      completion(.success(()))
+      completeOnMain { completion(.success(())) }
       return
     }
 
     updateVideoGravityIfNeeded(name: name, value: value)
 
     if name == "pause" {
-      setCachedPaused(value == "yes" || value == "true" || value == "1")
+      let paused = parseBoolProperty(value)
+      let intent = beginCachedPauseIntent(paused)
+      setRawStringPropertyAsync(name, value: value) { [weak self] result in
+        self?.finishCachedPauseIntent(intent, result: result)
+        completion(result)
+      }
+      return
     }
 
     if name == "hdr-enabled" {
@@ -449,13 +568,13 @@ class MpvPlayerCoreBase: NSObject {
 
     if name == "dv-conversion-mode" {
       setDvConversionMode(value)
-      completion(.success(()))
+      completeOnMain { completion(.success(())) }
       return
     }
 
     if name == "dv-conversion-log" {
       setDvConversionLogEnabled(parseBoolProperty(value))
-      completion(.success(()))
+      completeOnMain { completion(.success(())) }
       return
     }
 
@@ -536,17 +655,12 @@ class MpvPlayerCoreBase: NSObject {
     value: Int64,
     completion: @escaping (Result<Void, Error>) -> Void
   ) {
-    guard let mpv else {
-      completion(.success(()))
-      return
-    }
-
-    let requestId = registerRequest(.void(completion))
     var propertyValue = value
-    let status = name.withCString { namePointer in
-      mpv_set_property_async(mpv, requestId, namePointer, MPV_FORMAT_INT64, &propertyValue)
+    submitAsyncRequest(.void(completion)) { mpv, requestId in
+      name.withCString { namePointer in
+        mpv_set_property_async(mpv, requestId, namePointer, MPV_FORMAT_INT64, &propertyValue)
+      }
     }
-    completeRequestIfSubmissionFailed(requestId: requestId, status: status)
   }
 
   func setHDREnabled(_ enabled: Bool, completion: ((Result<Void, Error>) -> Void)? = nil) {
@@ -594,31 +708,28 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   func getPropertyAsync(_ name: String, completion: @escaping (Result<String?, Error>) -> Void) {
+    guard isLifecycleActive else {
+      completeOnMain { completion(.failure(self.lifecycleUnavailableError())) }
+      return
+    }
     if name == "dv-conversion-mode" {
-      completion(.success(getDvConversionMode()))
+      completeOnMain { completion(.success(self.getDvConversionMode())) }
       return
     }
 
     if name == "dv-conversion-log" {
-      completion(.success(getDvConversionLogEnabled() ? "yes" : "no"))
+      completeOnMain { completion(.success(self.getDvConversionLogEnabled() ? "yes" : "no")) }
       return
     }
 
-    guard let mpv else {
-      completion(.success(nil))
-      return
+    submitAsyncRequest(.getProperty(completion)) { mpv, requestId in
+      name.withCString { namePointer in
+        mpv_get_property_async(mpv, requestId, namePointer, MPV_FORMAT_STRING)
+      }
     }
-
-    let requestId = registerRequest(.getProperty(completion))
-    let status = name.withCString { namePointer in
-      mpv_get_property_async(mpv, requestId, namePointer, MPV_FORMAT_STRING)
-    }
-    completeRequestIfSubmissionFailed(requestId: requestId, status: status)
   }
 
   func observeProperty(_ name: String, format: String) {
-    guard mpv != nil else { return }
-
     let mpvFormat: mpv_format
     switch format {
     case "double":
@@ -633,7 +744,9 @@ class MpvPlayerCoreBase: NSObject {
       return
     }
 
-    mpv_observe_property(mpv, 0, name, mpvFormat)
+    _ = withActiveMpv { mpv in
+      mpv_observe_property(mpv, 0, name, mpvFormat)
+    }
   }
 
   func command(_ args: [String]) {
@@ -641,20 +754,19 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   func commandAsync(_ args: [String], completion: @escaping (Result<Void, Error>) -> Void) {
-    guard let mpv, !args.isEmpty else {
-      completion(.success(()))
+    guard !args.isEmpty else {
+      completeOnMain { completion(.success(())) }
       return
     }
-
-    let requestId = registerRequest(.void(completion))
 
     var cargs: [UnsafeMutablePointer<CChar>?] = args.map { strdup($0) }
     cargs.append(nil)
 
-    cargs.withUnsafeBufferPointer { buffer in
-      var constPointers = buffer.map { UnsafePointer($0) }
-      let result = mpv_command_async(mpv, requestId, &constPointers)
-      completeRequestIfSubmissionFailed(requestId: requestId, status: result)
+    submitAsyncRequest(.void(completion)) { mpv, requestId in
+      cargs.withUnsafeBufferPointer { buffer in
+        var constPointers = buffer.map { UnsafePointer($0) }
+        return mpv_command_async(mpv, requestId, &constPointers)
+      }
     }
 
     for pointer in cargs {
@@ -667,19 +779,14 @@ class MpvPlayerCoreBase: NSObject {
     value: String,
     completion: @escaping (Result<Void, Error>) -> Void
   ) {
-    guard let mpv else {
-      completion(.success(()))
-      return
-    }
-
-    let requestId = registerRequest(.void(completion))
-    let status = name.withCString { namePointer in
-      value.withCString { valuePointer in
-        var propertyValue: UnsafePointer<CChar>? = valuePointer
-        return mpv_set_property_async(mpv, requestId, namePointer, MPV_FORMAT_STRING, &propertyValue)
+    submitAsyncRequest(.void(completion)) { mpv, requestId in
+      name.withCString { namePointer in
+        value.withCString { valuePointer in
+          var propertyValue: UnsafePointer<CChar>? = valuePointer
+          return mpv_set_property_async(mpv, requestId, namePointer, MPV_FORMAT_STRING, &propertyValue)
+        }
       }
     }
-    completeRequestIfSubmissionFailed(requestId: requestId, status: status)
   }
 
   var isPaused: Bool {
@@ -708,7 +815,6 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   func disposeSharedState(destroySynchronously: Bool) {
-    isDisposing = true
     cancelPendingRequests()
 
     cacheLock.lock()
@@ -722,10 +828,18 @@ class MpvPlayerCoreBase: NSObject {
     serverDisplayCriteriaActive = false
     cacheLock.unlock()
 
-    let mpvHandle = mpv
-    let callbackContext = wakeupCallbackContext
-    mpv = nil
-    wakeupCallbackContext = nil
+    lifecycleLock.lock()
+    lifecycleState.isTerminal = true
+    let mpvHandle = lifecycleState.mpv
+    let callbackContext = lifecycleState.wakeupCallbackContext
+    lifecycleState.mpv = nil
+    lifecycleState.wakeupCallbackContext = nil
+    lifecycleLock.unlock()
+    if let callbackContext {
+      Unmanaged<MpvWakeupCallbackContext>.fromOpaque(callbackContext)
+        .takeUnretainedValue()
+        .detach()
+    }
 
     let destroy = {
       if let mpvHandle {
@@ -733,7 +847,7 @@ class MpvPlayerCoreBase: NSObject {
         mpv_terminate_destroy(mpvHandle)
       }
       if let callbackContext {
-        Unmanaged<MpvPlayerCoreBase>.fromOpaque(callbackContext).release()
+        Unmanaged<MpvWakeupCallbackContext>.fromOpaque(callbackContext).release()
       }
     }
 
@@ -748,8 +862,7 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  private func applySharedMpvOptions() {
-    guard let mpv else { return }
+  private func applySharedMpvOptions(mpv: OpaquePointer) {
     #if os(macOS)
       checkError(mpv_set_option_string(mpv, "vo", "gpu-next"))
       checkError(mpv_set_option_string(mpv, "gpu-api", "vulkan"))
@@ -765,6 +878,11 @@ class MpvPlayerCoreBase: NSObject {
         // doesn't dim the video, so skip the per-frame CI composite that
         // round-trips BT.2020/PQ through linear P3.
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
+        // Host-clock presentation: samples carry mpv's scheduled display
+        // time against a free-running timebase, so audio-clock drift never
+        // accumulates in the VO (#1776). Media-time presentation is only
+        // needed for PiP, which tvOS does not have.
+        checkError(mpv_set_option_string(mpv, "avfoundation-presentation", "host"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
       #else
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
@@ -825,17 +943,21 @@ class MpvPlayerCoreBase: NSObject {
     #endif
   }
 
+  private func completeOnMain(_ completion: @escaping () -> Void) {
+    if Thread.isMainThread {
+      completion()
+    } else {
+      DispatchQueue.main.async(execute: completion)
+    }
+  }
+
   private func cancelPendingRequests() {
     pendingRequestsLock.lock()
     let pending = pendingRequests
     pendingRequests.removeAll()
     pendingRequestsLock.unlock()
 
-    let error = NSError(
-      domain: "mpv",
-      code: -1,
-      userInfo: [NSLocalizedDescriptionKey: "Player disposed"]
-    )
+    let error = MpvLifecycleUnavailableError("Player disposed")
     for (_, request) in pending {
       DispatchQueue.main.async {
         switch request {
@@ -864,12 +986,43 @@ class MpvPlayerCoreBase: NSObject {
     return pendingRequests.removeValue(forKey: requestId)
   }
 
+  private func lifecycleUnavailableError() -> MpvLifecycleUnavailableError {
+    MpvLifecycleUnavailableError("Player is not initialized or has been disposed")
+  }
+
   private func mpvError(_ status: CInt) -> NSError {
     NSError(
       domain: "mpv",
       code: Int(status),
       userInfo: [NSLocalizedDescriptionKey: safeString(mpv_error_string(status))]
     )
+  }
+
+  private func submitAsyncRequest(
+    _ request: PendingRequest,
+    submission: (OpaquePointer, UInt64) -> CInt
+  ) {
+    var requestId: UInt64?
+    guard
+      let status = withActiveMpv({ mpv in
+        let id = registerRequest(request)
+        requestId = id
+        return submission(mpv, id)
+      }),
+      let requestId
+    else {
+      let error = lifecycleUnavailableError()
+      completeOnMain {
+        switch request {
+        case .void(let completion):
+          completion(.failure(error))
+        case .getProperty(let completion):
+          completion(.failure(error))
+        }
+      }
+      return
+    }
+    completeRequestIfSubmissionFailed(requestId: requestId, status: status)
   }
 
   private func completeRequestIfSubmissionFailed(requestId: UInt64, status: CInt) {
@@ -886,29 +1039,27 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   private func completeVoidRequest(requestId: UInt64, error status: CInt) {
-    guard let request = takeRequest(requestId) else { return }
+    guard case .void(let completion) = takeRequest(requestId) else { return }
+    let result: Result<Void, Error> =
+      status < 0 ? .failure(mpvError(status)) : .success(())
     DispatchQueue.main.async {
-      switch request {
-      case .void(let completion):
-        if status < 0 {
-          completion(.failure(self.mpvError(status)))
-        } else {
-          completion(.success(()))
-        }
-      case .getProperty:
-        break
-      }
+      completion(result)
     }
   }
 
   private func completeGetPropertyRequest(_ event: mpv_event) {
-    guard let request = takeRequest(event.reply_userdata) else { return }
-    guard case .getProperty(let completion) = request else { return }
+    guard case .getProperty(let completion) = takeRequest(event.reply_userdata) else { return }
+
+    if event.error < 0 {
+      let error = mpvError(event.error)
+      DispatchQueue.main.async {
+        completion(.failure(error))
+      }
+      return
+    }
 
     var value: String?
-    if event.error >= 0,
-      let propertyPointer = event.data?.assumingMemoryBound(to: mpv_event_property.self)
-    {
+    if let propertyPointer = event.data?.assumingMemoryBound(to: mpv_event_property.self) {
       let property = propertyPointer.pointee
       if property.format == MPV_FORMAT_STRING, let data = property.data {
         let cstring = data.assumingMemoryBound(to: UnsafePointer<CChar>?.self).pointee
@@ -921,11 +1072,11 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  private func readEvents() {
+  fileprivate func readEventsFromCallback() {
     queue.async { [weak self] in
-      guard let self, !self.isDisposing, let mpv = self.mpv else { return }
+      guard let self else { return }
 
-      while true {
+      while let mpv = self.withActiveMpv({ $0 }) {
         let event = mpv_wait_event(mpv, 0)
         guard let event else { break }
 
@@ -935,6 +1086,20 @@ class MpvPlayerCoreBase: NSObject {
 
         self.handleEvent(event.pointee)
       }
+    }
+  }
+
+  func dispatchDelegateEvent(name: String, data: [String: Any]?) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self, self.isLifecycleActive else { return }
+      self.delegate?.onEvent(name: name, data: data)
+    }
+  }
+
+  func dispatchDelegateProperty(name: String, value: Any?) {
+    DispatchQueue.main.async { [weak self] in
+      guard let self, self.isLifecycleActive else { return }
+      self.delegate?.onPropertyChange(name: name, value: value)
     }
   }
 
@@ -955,10 +1120,11 @@ class MpvPlayerCoreBase: NSObject {
     case MPV_EVENT_GET_PROPERTY_REPLY:
       completeGetPropertyRequest(event)
 
+    case MPV_EVENT_START_FILE:
+      dispatchDelegateEvent(name: "start-file", data: nil)
+
     case MPV_EVENT_FILE_LOADED:
-      DispatchQueue.main.async {
-        self.delegate?.onEvent(name: "file-loaded", data: nil)
-      }
+      dispatchDelegateEvent(name: "file-loaded", data: nil)
 
     case MPV_EVENT_END_FILE:
       if let endFilePtr = event.data?.assumingMemoryBound(to: mpv_event_end_file.self) {
@@ -968,37 +1134,29 @@ class MpvPlayerCoreBase: NSObject {
           data["error"] = Int(endFile.error)
           data["message"] = safeString(mpv_error_string(endFile.error))
         }
-        DispatchQueue.main.async {
-          self.delegate?.onEvent(name: "end-file", data: data)
-        }
+        dispatchDelegateEvent(name: "end-file", data: data)
       } else {
-        DispatchQueue.main.async {
-          self.delegate?.onEvent(name: "end-file", data: nil)
-        }
+        dispatchDelegateEvent(name: "end-file", data: nil)
       }
 
     case MPV_EVENT_SHUTDOWN:
       print("[MpvPlayerCore] MPV shutdown event")
 
     case MPV_EVENT_PLAYBACK_RESTART:
-      DispatchQueue.main.async {
-        self.delegate?.onEvent(name: "playback-restart", data: nil)
-      }
+      dispatchDelegateEvent(name: "playback-restart", data: nil)
 
     case MPV_EVENT_LOG_MESSAGE:
-      if isBackgrounded { break }
+      if isLifecycleBackgrounded { break }
       if let messagePointer = event.data?.assumingMemoryBound(to: mpv_event_log_message.self) {
         let message = messagePointer.pointee
         let prefix = message.prefix.map { safeString($0) } ?? ""
         let level = message.level.map { safeString($0) } ?? ""
         let text = message.text.map { safeString($0) } ?? ""
 
-        DispatchQueue.main.async {
-          self.delegate?.onEvent(
-            name: "log-message",
-            data: ["prefix": prefix, "level": level, "text": text]
-          )
-        }
+        dispatchDelegateEvent(
+          name: "log-message",
+          data: ["prefix": prefix, "level": level, "text": text]
+        )
       }
 
     default:
@@ -1091,11 +1249,9 @@ class MpvPlayerCoreBase: NSObject {
     }
 
     if Self.internalObserverIds.contains(replyUserdata) { return }
-    if isBackgrounded && !Self.criticalProperties.contains(name) { return }
+    if isLifecycleBackgrounded && !Self.criticalProperties.contains(name) { return }
 
-    DispatchQueue.main.async {
-      self.delegate?.onPropertyChange(name: name, value: value)
-    }
+    dispatchDelegateProperty(name: name, value: value)
   }
 
   private func updateCachedProperty(name: String, value: Any?) {
@@ -1104,7 +1260,11 @@ class MpvPlayerCoreBase: NSObject {
 
     switch name {
     case "pause":
-      if let paused = value as? Bool { cachedPaused = paused }
+      if let paused = value as? Bool {
+        pauseObservationRevision &+= 1
+        confirmedPaused = paused
+        if pendingPauseIntents.isEmpty { cachedPaused = paused }
+      }
     case "duration":
       if let duration = value as? Double { cachedDuration = duration }
     case "time-pos":
@@ -1118,16 +1278,149 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  private func setCachedPaused(_ paused: Bool) {
+  #if DEBUG
+    func observeCachedPauseForTesting(_ paused: Bool) {
+      updateCachedProperty(name: "pause", value: paused)
+    }
+  #endif
+
+  private func retirePauseIntents(through generation: UInt64) {
+    pendingPauseIntents = pendingPauseIntents.filter { $0.key > generation }
+  }
+
+  func beginCachedPauseIntent(
+    _ paused: Bool
+  ) -> (generation: UInt64, observationRevision: UInt64, paused: Bool) {
     cacheLock.lock()
+    pauseIntentGeneration &+= 1
+    let intent = (
+      generation: pauseIntentGeneration,
+      observationRevision: pauseObservationRevision,
+      paused: paused
+    )
+    pendingPauseIntents[intent.generation] = paused
     cachedPaused = paused
+    cacheLock.unlock()
+    return intent
+  }
+
+  func finishCachedPauseIntent(
+    _ intent: (generation: UInt64, observationRevision: UInt64, paused: Bool),
+    result: Result<Void, Error>
+  ) {
+    cacheLock.lock()
+    pendingPauseIntents.removeValue(forKey: intent.generation)
+    if intent.generation >= resolvedPauseGeneration {
+      resolvedPauseGeneration = intent.generation
+      if case .success = result,
+        intent.observationRevision == pauseObservationRevision
+      {
+        confirmedPaused = intent.paused
+      }
+      retirePauseIntents(through: intent.generation)
+    }
+    if let latest = pendingPauseIntents.lazy
+      .filter({ $0.key > self.resolvedPauseGeneration })
+      .max(by: { $0.key < $1.key })
+    {
+      cachedPaused = latest.value
+    } else {
+      cachedPaused = confirmedPaused
+    }
     cacheLock.unlock()
   }
 
-  private func convertNode(_ node: mpv_node) -> Any? {
+  private static let maximumNodeDepth = 32
+  private static let maximumNodeEntries = 4_096
+  private static let maximumNodeByteCount = 16 * 1_024 * 1_024
+  private static let maximumSideDataDimension: Int64 = 16_384
+  private static let maximumSideDataPixels: Int64 = 64 * 1_024 * 1_024
+
+  private struct NodeConversionBudget {
+    var remainingEntries = MpvPlayerCoreBase.maximumNodeEntries
+    var remainingBytes = MpvPlayerCoreBase.maximumNodeByteCount
+  }
+
+  func convertNode(_ node: mpv_node) -> Any? {
+    var budget = NodeConversionBudget()
+    return convertNode(node, depth: 0, budget: &budget)
+  }
+
+  func validateSideDataDimensions(width: Int64, height: Int64) -> Bool {
+    guard width > 0, height > 0,
+      width <= Self.maximumSideDataDimension,
+      height <= Self.maximumSideDataDimension
+    else { return false }
+    let (pixels, overflow) = width.multipliedReportingOverflow(by: height)
+    return !overflow && pixels <= Self.maximumSideDataPixels
+  }
+
+  private func dimensionValue(_ node: mpv_node) -> Int64? {
+    switch node.format {
+    case MPV_FORMAT_INT64:
+      return node.u.int64
+    case MPV_FORMAT_DOUBLE:
+      let value = node.u.double_
+      guard value.isFinite, value.rounded() == value,
+        value >= Double(Int64.min), value <= Double(Int64.max)
+      else { return nil }
+      return Int64(value)
+    default:
+      return nil
+    }
+  }
+
+  private func convertNodeString(
+    _ pointer: UnsafePointer<CChar>,
+    budget: inout NodeConversionBudget
+  ) -> String? {
+    let length = strnlen(pointer, budget.remainingBytes + 1)
+    guard length <= budget.remainingBytes else { return nil }
+    budget.remainingBytes -= length
+    if let string = String(validatingUTF8: pointer) {
+      return string
+    }
+    let bytes = UnsafeBufferPointer(
+      start: UnsafeRawPointer(pointer).assumingMemoryBound(to: UInt8.self),
+      count: length
+    )
+    return String(bytes.map { Character(Unicode.Scalar($0)) })
+  }
+
+  private func hasValidSideDataDimensions(_ list: mpv_node_list, count: Int) -> Bool {
+    var hasByteArray = false
+    var widthNode: mpv_node?
+    var heightNode: mpv_node?
+    for index in 0..<count {
+      let value = list.values[index]
+      hasByteArray = hasByteArray || value.format == MPV_FORMAT_BYTE_ARRAY
+      guard let keyPointer = list.keys[index] else { continue }
+      if strcmp(keyPointer, "width") == 0 || strcmp(keyPointer, "w") == 0 {
+        widthNode = value
+      } else if strcmp(keyPointer, "height") == 0 || strcmp(keyPointer, "h") == 0 {
+        heightNode = value
+      }
+    }
+    guard hasByteArray, widthNode != nil || heightNode != nil else { return true }
+    guard let widthNode, let heightNode,
+      let width = dimensionValue(widthNode),
+      let height = dimensionValue(heightNode)
+    else { return false }
+    return validateSideDataDimensions(width: width, height: height)
+  }
+
+  private func convertNode(
+    _ node: mpv_node,
+    depth: Int,
+    budget: inout NodeConversionBudget
+  ) -> Any? {
+    guard depth <= Self.maximumNodeDepth, budget.remainingEntries > 0 else { return nil }
+    budget.remainingEntries -= 1
+
     switch node.format {
     case MPV_FORMAT_STRING:
-      return node.u.string.map { safeString($0) }
+      guard let string = node.u.string else { return nil }
+      return convertNodeString(string, budget: &budget)
 
     case MPV_FORMAT_FLAG:
       return node.u.flag != 0
@@ -1138,11 +1431,24 @@ class MpvPlayerCoreBase: NSObject {
     case MPV_FORMAT_DOUBLE:
       return node.u.double_
 
+    case MPV_FORMAT_BYTE_ARRAY:
+      guard let byteArray = node.u.ba?.pointee else { return nil }
+      let byteCount = byteArray.size
+      guard byteCount <= budget.remainingBytes else { return nil }
+      guard byteCount == 0 || byteArray.data != nil else { return nil }
+      budget.remainingBytes -= byteCount
+      guard byteCount > 0, let data = byteArray.data else { return Data() }
+      return Data(bytes: data, count: byteCount)
+
     case MPV_FORMAT_NODE_ARRAY:
       guard let list = node.u.list?.pointee else { return nil }
+      let count = Int(list.num)
+      guard list.num >= 0, count <= budget.remainingEntries else { return nil }
+      guard count == 0 || list.values != nil else { return nil }
       var array = [Any]()
-      for index in 0..<Int(list.num) {
-        if let item = convertNode(list.values[index]) {
+      array.reserveCapacity(count)
+      for index in 0..<count {
+        if let item = convertNode(list.values[index], depth: depth + 1, budget: &budget) {
           array.append(item)
         }
       }
@@ -1150,10 +1456,16 @@ class MpvPlayerCoreBase: NSObject {
 
     case MPV_FORMAT_NODE_MAP:
       guard let list = node.u.list?.pointee else { return nil }
+      let count = Int(list.num)
+      guard list.num >= 0, count <= budget.remainingEntries else { return nil }
+      guard count == 0 || (list.values != nil && list.keys != nil) else { return nil }
+      guard hasValidSideDataDimensions(list, count: count) else { return nil }
       var dictionary = [String: Any]()
-      for index in 0..<Int(list.num) {
-        if let key = list.keys?[index].map({ safeString($0) }),
-          let value = convertNode(list.values[index])
+      dictionary.reserveCapacity(count)
+      for index in 0..<count {
+        if let keyPointer = list.keys[index],
+          let key = convertNodeString(keyPointer, budget: &budget),
+          let value = convertNode(list.values[index], depth: depth + 1, budget: &budget)
         {
           dictionary[key] = value
         }

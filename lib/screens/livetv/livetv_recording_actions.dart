@@ -27,8 +27,9 @@ enum RecordOutcome { scheduled, updated, alreadyScheduled, adminRequired, target
 /// - 409 (duplicate): surface "Already scheduled" via info snackbar.
 /// - Other: generic failure snackbar.
 Future<RecordOutcome?> recordProgram(BuildContext context, MediaServerClient client, LiveTvProgram program) async {
+  final dvr = client.liveTvDvr;
   final guid = program.guid;
-  if (guid == null || guid.isEmpty) {
+  if (dvr == null || guid == null || guid.isEmpty) {
     if (!context.mounted) return null;
     showSnackBar(context, t.liveTv.recordNotAvailable, type: SnackBarType.error);
     return RecordOutcome.failed;
@@ -36,7 +37,7 @@ Future<RecordOutcome?> recordProgram(BuildContext context, MediaServerClient cli
 
   List<SubscriptionTemplate> templates;
   try {
-    templates = await client.liveTv.getSubscriptionTemplate(guid);
+    templates = await dvr.getSubscriptionTemplate(guid);
   } catch (e) {
     appLogger.e('Failed to fetch recording template', error: e);
     if (!context.mounted) return null;
@@ -101,8 +102,9 @@ Future<RecordOutcome?> editRecordingRule(BuildContext context, MediaServerClient
 }
 
 Future<bool> confirmCancelGrab(BuildContext context, MediaServerClient client, MediaGrabOperation op) async {
+  final dvr = client.liveTvDvr;
   final operationKey = op.operationKey;
-  if (operationKey.isEmpty) {
+  if (dvr == null || operationKey.isEmpty) {
     showSnackBar(context, t.liveTv.recordingFailed, type: SnackBarType.error);
     return false;
   }
@@ -116,7 +118,7 @@ Future<bool> confirmCancelGrab(BuildContext context, MediaServerClient client, M
   );
   if (!confirmed) return false;
   try {
-    await client.liveTv.cancelGrab(operationKey);
+    await dvr.cancelGrab(operationKey);
     if (context.mounted) {
       showSnackBar(context, t.liveTv.recordingCancelled, type: SnackBarType.success);
     }
@@ -131,6 +133,11 @@ Future<bool> confirmCancelGrab(BuildContext context, MediaServerClient client, M
 }
 
 Future<bool> confirmDeleteRule(BuildContext context, MediaServerClient client, MediaSubscription rule) async {
+  final dvr = client.liveTvDvr;
+  if (dvr == null) {
+    showSnackBar(context, t.liveTv.recordingFailed, type: SnackBarType.error);
+    return false;
+  }
   final confirmed = await showConfirmDialog(
     context,
     title: t.liveTv.deleteRuleTitle,
@@ -140,7 +147,7 @@ Future<bool> confirmDeleteRule(BuildContext context, MediaServerClient client, M
   );
   if (!confirmed) return false;
   try {
-    await client.liveTv.deleteRecordingRule(rule.key);
+    await dvr.deleteRecordingRule(rule.key);
     if (context.mounted) {
       showSnackBar(context, t.liveTv.recordingRuleDeleted, type: SnackBarType.success);
     }

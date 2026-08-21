@@ -31,6 +31,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       color: Colors.amber.withValues(alpha: 0.1),
       child: Column(
+        mainAxisSize: .min,
         children: [
           Text(
             t.videoControls.timerActive,
@@ -70,6 +71,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
                   sleepTimer.cancelTimer();
                   onCancel?.call();
                 },
+                useBackgroundFocus: true,
                 child: FilledButton.icon(
                   icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
                   label: Text(t.common.cancel),

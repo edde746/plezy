@@ -1,5 +1,63 @@
 import '../utils/json_utils.dart';
 
+typedef MediaDisplayColorTags = ({String? transfer, String? primaries, String? matrix});
+
+enum MediaDisplayColorType {
+  dolbyVision(true),
+  hlg(true),
+  pq(true),
+  sdr(false),
+  unknown(false);
+
+  const MediaDisplayColorType(this.isHdr);
+
+  final bool isHdr;
+
+  MediaDisplayColorTags get defaultTags => _defaultDisplayColorTags[this]!;
+}
+
+const _defaultDisplayColorTags = <MediaDisplayColorType, MediaDisplayColorTags>{
+  MediaDisplayColorType.dolbyVision: (transfer: null, primaries: null, matrix: null),
+  MediaDisplayColorType.hlg: (transfer: 'arib-std-b67', primaries: 'bt2020', matrix: 'bt2020nc'),
+  MediaDisplayColorType.pq: (transfer: 'smpte2084', primaries: 'bt2020', matrix: 'bt2020nc'),
+  MediaDisplayColorType.sdr: (transfer: 'bt709', primaries: 'bt709', matrix: 'bt709'),
+  MediaDisplayColorType.unknown: (transfer: null, primaries: null, matrix: null),
+};
+
+/// Classifies already-extracted display metadata without relying on a backend
+/// JSON shape. Compatibility IDs describe the Dolby Vision base layer.
+MediaDisplayColorType classifyMediaDisplayColor({
+  bool isDolbyVision = false,
+  int? doviCompatibilityId,
+  String? range,
+  String? transfer,
+  String? primaries,
+  String? matrix,
+  bool assumeSdr = false,
+}) {
+  final tags = _normalizedColorTags(range, transfer, primaries, matrix);
+  if (doviCompatibilityId == 4 || tags.contains('hlg') || tags.contains('arib')) {
+    return MediaDisplayColorType.hlg;
+  }
+  if (doviCompatibilityId == 1 ||
+      doviCompatibilityId == 6 ||
+      tags.contains('hdr') ||
+      tags.contains('pq') ||
+      tags.contains('smpte2084') ||
+      tags.contains('st2084') ||
+      tags.contains('bt2020')) {
+    return MediaDisplayColorType.pq;
+  }
+  if (doviCompatibilityId == 2) {
+    return MediaDisplayColorType.sdr;
+  }
+  if (isDolbyVision) return MediaDisplayColorType.dolbyVision;
+  if (tags.contains('sdr') || tags.contains('bt709') || assumeSdr) {
+    return MediaDisplayColorType.sdr;
+  }
+  return MediaDisplayColorType.unknown;
+}
+
 /// Backend-neutral display metadata used to prime native display matching
 /// before the decoder has emitted mpv/video properties.
 class MediaDisplayCriteria {
@@ -58,16 +116,15 @@ class MediaDisplayCriteria {
 
   bool get canPrimeNativeDisplayCriteria => hasDimensions && (hasDisplayMetadata || hasFrameRate);
 
-  bool get isHdr {
-    if ((doviProfile ?? 0) > 0 && doviCompatibilityId != 2) return true;
-    final tags = _normalizedColorTags(transfer, primaries, matrix);
-    return tags.contains('hlg') ||
-        tags.contains('arib') ||
-        tags.contains('pq') ||
-        tags.contains('smpte2084') ||
-        tags.contains('st2084') ||
-        tags.contains('bt2020');
-  }
+  MediaDisplayColorType get colorType => classifyMediaDisplayColor(
+    isDolbyVision: (doviProfile ?? 0) > 0,
+    doviCompatibilityId: doviCompatibilityId,
+    transfer: transfer,
+    primaries: primaries,
+    matrix: matrix,
+  );
+
+  bool get isHdr => colorType.isHdr;
 
   bool get isUsable => hasFrameRate || canPrimeNativeDisplayCriteria;
 
@@ -97,5 +154,9 @@ String? _stringOrNull(Object? value) {
 
 bool _hasValue(String? value) => value != null && value.isNotEmpty;
 
-String _normalizedColorTags(String? transfer, String? primaries, String? matrix) =>
-    [transfer, primaries, matrix].whereType<String>().join(' ').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+String _normalizedColorTags(String? range, String? transfer, String? primaries, String? matrix) => [
+  range,
+  transfer,
+  primaries,
+  matrix,
+].whereType<String>().join(' ').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');

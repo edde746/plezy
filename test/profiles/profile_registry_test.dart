@@ -22,7 +22,7 @@ void main() {
       expect(await registry.list(), isEmpty);
     });
 
-    test('upsert + get round-trips a local profile', () async {
+    test('upsert + list round-trips a local profile', () async {
       final profile = Profile.local(
         id: 'local-1',
         displayName: 'Owner',
@@ -31,14 +31,14 @@ void main() {
       );
       await registry.upsert(profile);
 
-      final fetched = await registry.get('local-1');
+      final fetched = await _profileById(registry, 'local-1');
       expect(fetched, isNotNull);
       expect(fetched!.kind, ProfileKind.local);
       expect(fetched.displayName, 'Owner');
       expect(fetched.pinHash, profile.pinHash);
     });
 
-    test('upsert + get round-trips a plex_home profile', () async {
+    test('list never serves plex_home rows (Plex Home users are not persisted profiles)', () async {
       final profile = Profile.plexHome(
         id: 'plex-home-acct-uuid',
         displayName: 'Admin',
@@ -50,13 +50,10 @@ void main() {
       );
       await registry.upsert(profile);
 
-      final fetched = await registry.get(profile.id);
-      expect(fetched, isNotNull);
-      expect(fetched!.kind, ProfileKind.plexHome);
-      expect(fetched.avatarThumbUrl, profile.avatarThumbUrl);
-      expect(fetched.parentConnectionId, 'acct');
-      expect(fetched.plexAdmin, isTrue);
-      expect(fetched.plexProtected, isTrue);
+      // The read surface is deliberately local-only: Plex Home users are
+      // materialized live by PlexHomeService and any leftover persisted rows
+      // are dropped by [ProfileRegistry.dropAllPlexHomeRows].
+      expect(await _profileById(registry, profile.id), isNull);
     });
 
     test('list orders by sortOrder then createdAt', () async {
@@ -69,21 +66,21 @@ void main() {
     test('remove deletes a profile', () async {
       await registry.upsert(Profile.local(id: 'p', displayName: 'P', createdAt: DateTime(2026, 1, 1)));
       await registry.remove('p');
-      expect(await registry.get('p'), isNull);
+      expect(await _profileById(registry, 'p'), isNull);
     });
 
     test('markUsed updates lastUsedAt', () async {
       await registry.upsert(Profile.local(id: 'p', displayName: 'P', createdAt: DateTime(2026, 1, 1)));
       final ts = DateTime(2026, 1, 5, 12, 0);
       await registry.markUsed('p', ts);
-      final fetched = await registry.get('p');
+      final fetched = await _profileById(registry, 'p');
       expect(fetched!.lastUsedAt, ts);
     });
 
     test('upsert is idempotent (replaces existing row)', () async {
       await registry.upsert(Profile.local(id: 'p', displayName: 'Original', createdAt: DateTime(2026, 1, 1)));
       await registry.upsert(Profile.local(id: 'p', displayName: 'Renamed', createdAt: DateTime(2026, 1, 1)));
-      final fetched = await registry.get('p');
+      final fetched = await _profileById(registry, 'p');
       expect(fetched!.displayName, 'Renamed');
     });
 
@@ -106,4 +103,11 @@ void main() {
       await assertion;
     });
   });
+}
+
+Future<Profile?> _profileById(ProfileRegistry registry, String id) async {
+  for (final profile in await registry.list()) {
+    if (profile.id == id) return profile;
+  }
+  return null;
 }

@@ -6,6 +6,7 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/utils/media_hub_ordering.dart';
+import '../test_helpers/media_items.dart';
 
 const Object _defaultServerId = Object();
 
@@ -20,7 +21,7 @@ MediaLibrary _library(String id, {ServerId? serverId}) {
 }
 
 MediaItem _item(String id, {String? libraryId, Object? serverId = _defaultServerId}) {
-  return MediaItem(
+  return testMediaItem(
     id: id,
     backend: MediaBackend.plex,
     kind: MediaKind.movie,

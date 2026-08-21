@@ -2,7 +2,6 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../i18n/strings.g.dart';
 import '../utils/json_utils.dart';
-import 'mixins/multi_server_fields.dart';
 
 part 'livetv_channel.g.dart';
 
@@ -35,11 +34,12 @@ String liveTvChannelScopeKey(LiveTvChannel channel) =>
 List<LiveTvChannel> filterLiveTvChannelsForFavorites({
   required List<LiveTvChannel> channels,
   required bool favoritesOnly,
+  required bool favoritesLoaded,
   required Iterable<FavoriteChannel> favorites,
   required String Function(LiveTvChannel channel) sourceForChannel,
 }) {
-  if (!favoritesOnly || favorites.isEmpty) return channels;
-
+  if (!favoritesOnly || !favoritesLoaded) return channels;
+  if (favorites.isEmpty) return const [];
   final channelMap = {
     for (final channel in channels) favoriteChannelKey(sourceForChannel(channel), channel.key): channel,
   };
@@ -48,7 +48,7 @@ List<LiveTvChannel> filterLiveTvChannelsForFavorites({
 }
 
 @JsonSerializable(createToJson: false)
-class LiveTvChannel with MultiServerFields {
+class LiveTvChannel {
   @JsonKey(readValue: _readChannelKey)
   final String key;
   @JsonKey(readValue: _readChannelIdentifier)
@@ -67,10 +67,8 @@ class LiveTvChannel with MultiServerFields {
   @JsonKey(fromJson: flexibleBool)
   final bool? drm;
 
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverId;
-  @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverName;
   @JsonKey(includeFromJson: false, includeToJson: false)

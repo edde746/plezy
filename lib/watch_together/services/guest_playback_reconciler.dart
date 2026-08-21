@@ -4,33 +4,9 @@ import '../../utils/app_logger.dart';
 import '../models/playback_state.dart';
 import '../models/sync_message.dart';
 import '../models/watch_session.dart';
+import '../primitives.dart';
 import 'attached_player.dart';
 import 'clock_sync.dart';
-
-/// Callbacks the reconciler surfaces to the provider/UI layer.
-class GuestReconcilerCallbacks {
-  /// The host's state names media we don't have loaded — navigate/reload.
-  final void Function(String ratingKey, String serverId, String? mediaTitle)? onMediaSwitchNeeded;
-
-  final void Function(ControlMode mode)? onControlModeChanged;
-  final void Function(PlaybackPhase phase)? onPhaseChanged;
-  final void Function(List<String> waitingOn)? onWaitingOnChanged;
-
-  /// A hard correction is in flight (drives the syncing pill).
-  final void Function(bool correcting)? onCorrectingChanged;
-
-  /// Another peer caused a transition (drives action toasts).
-  final void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
-
-  const GuestReconcilerCallbacks({
-    this.onMediaSwitchNeeded,
-    this.onControlModeChanged,
-    this.onPhaseChanged,
-    this.onWaitingOnChanged,
-    this.onCorrectingChanged,
-    this.onRemoteAction,
-  });
-}
 
 /// Guest-side reconciliation loop: converges the local player onto the
 /// host's authoritative [PlaybackState].
@@ -47,12 +23,30 @@ class GuestPlaybackReconciler {
     required this.myPeerId,
     required this._sendToHost,
     required ClockSync clockSync,
-    this._callbacks = const GuestReconcilerCallbacks(),
+    this.onMediaSwitchNeeded,
+    this.onControlModeChanged,
+    this.onPhaseChanged,
+    this.onWaitingOnChanged,
+    this.onCorrectingChanged,
+    this.onRemoteAction,
     int Function()? nowMs,
   }) : _clock = clockSync,
-       _nowMs = nowMs ?? _systemNowMs;
+       _nowMs = nowMs ?? watchTogetherSystemNowMs;
 
-  static int _systemNowMs() => DateTime.now().millisecondsSinceEpoch;
+  /// The host's state names media we don't have loaded — navigate/reload.
+  /// Fires on EVERY such state (the heartbeat is the retry channel for
+  /// failed switches); the provider's dispatcher dedups.
+  final void Function(String ratingKey, String serverId, String? mediaTitle)? onMediaSwitchNeeded;
+
+  final void Function(ControlMode mode)? onControlModeChanged;
+  final void Function(PlaybackPhase phase)? onPhaseChanged;
+  final void Function(List<String> waitingOn)? onWaitingOnChanged;
+
+  /// A hard correction is in flight (drives the syncing pill).
+  final void Function(bool correcting)? onCorrectingChanged;
+
+  /// Another peer caused a transition (drives action toasts).
+  final void Function(String peerId, PlaybackActionHint hint)? onRemoteAction;
 
   // Tuning constants.
   static const int tickMs = 500;
@@ -74,7 +68,6 @@ class GuestPlaybackReconciler {
   final String myPeerId;
   final void Function(SyncMessage message) _sendToHost;
   final ClockSync _clock;
-  final GuestReconcilerCallbacks _callbacks;
   final int Function() _nowMs;
 
   PlaybackState? _latestState;
@@ -102,6 +95,7 @@ class GuestPlaybackReconciler {
   bool _nudgeDisabled = false;
   bool _nudgeConfirmed = false;
   Timer? _nudgeConfirmTimer;
+  double? _nudgeTargetRate;
   int _lastHardSeekMs = -hardSeekCooldownMs;
   final List<int> _driftSamples = [];
 
@@ -118,7 +112,6 @@ class GuestPlaybackReconciler {
   Timer? _statusRefreshTimer;
 
   PlaybackState? get latestState => _latestState;
-  bool get isCorrecting => _correcting;
 
   // ---------------------------------------------------------------------
   // Public inputs
@@ -211,6 +204,9 @@ class GuestPlaybackReconciler {
     _settleTimer = null;
     _settling = false;
     _nudging = false;
+    _nudgeDisabled = false;
+    _nudgeConfirmed = false;
+    _nudgeTargetRate = null;
     _nudgeConfirmTimer?.cancel();
     _nudgeConfirmTimer = null;
     _scheduledStartTimer?.cancel();
@@ -226,23 +222,22 @@ class GuestPlaybackReconciler {
   void onState(PlaybackState state) {
     if (state.seq <= _lastSeq) return; // Stale or reordered.
     _lastSeq = state.seq;
-    final previous = _latestState;
     _latestState = state;
 
     if (state.controlMode != _reportedControlMode) {
       _reportedControlMode = state.controlMode;
-      _callbacks.onControlModeChanged?.call(state.controlMode);
+      onControlModeChanged?.call(state.controlMode);
     }
     if (state.phase != _reportedPhase) {
       _reportedPhase = state.phase;
-      _callbacks.onPhaseChanged?.call(state.phase);
+      onPhaseChanged?.call(state.phase);
     }
-    if (!_listEquals(state.waitingOn, _reportedWaitingOn)) {
+    if (!orderedStringListsEqual(state.waitingOn, _reportedWaitingOn)) {
       _reportedWaitingOn = state.waitingOn;
-      _callbacks.onWaitingOnChanged?.call(state.waitingOn);
+      onWaitingOnChanged?.call(state.waitingOn);
     }
     if (state.actionHint != null && state.actorPeerId != null && state.actorPeerId != myPeerId) {
-      _callbacks.onRemoteAction?.call(state.actorPeerId!, state.actionHint!);
+      onRemoteAction?.call(state.actorPeerId!, state.actionHint!);
     }
 
     // Close the optimistic window only on an explicit transition (the host
@@ -259,14 +254,11 @@ class GuestPlaybackReconciler {
       _sendStatus(force: true);
     }
 
-    // The host moved to media we don't have — hand off to the switch flow.
-    if (_attachedMediaKey != null && state.mediaKey != _attachedMediaKey) {
-      _callbacks.onMediaSwitchNeeded?.call(state.ratingKey, state.serverId, state.mediaTitle);
-      return;
-    }
-    if (previous?.mediaKey != state.mediaKey && _attachedMediaKey == null) {
-      // Not in the player yet — let the provider navigate.
-      _callbacks.onMediaSwitchNeeded?.call(state.ratingKey, state.serverId, state.mediaTitle);
+    // Not attached to the host's media (detached, or attached to something
+    // else) — hand off to the switch flow on every state so a failed switch
+    // retries on the next heartbeat. The provider's dispatcher dedups.
+    if (_attachedMediaKey == null || state.mediaKey != _attachedMediaKey) {
+      onMediaSwitchNeeded?.call(state.ratingKey, state.serverId, state.mediaTitle);
       return;
     }
 
@@ -502,6 +494,7 @@ class GuestPlaybackReconciler {
     if (_nudging && (player.rate - targetRate).abs() < 0.001) return;
 
     _nudging = true;
+    _nudgeTargetRate = targetRate;
     unawaited(player.setRate(targetRate));
 
     // Arm the capability check once per (un-confirmed) nudge episode — a
@@ -510,11 +503,13 @@ class GuestPlaybackReconciler {
       _nudgeConfirmTimer = Timer(const Duration(milliseconds: nudgeConfirmMs), () {
         _nudgeConfirmTimer = null;
         final currentPlayer = _player;
-        if (currentPlayer == null || !_nudging) return;
-        if ((currentPlayer.rate - targetRate).abs() > 0.005) {
-          appLogger.w('WatchTogether: Rate nudges not taking effect — disabling for this session');
+        final expectedRate = _nudgeTargetRate;
+        if (currentPlayer == null || !_nudging || expectedRate == null) return;
+        if ((currentPlayer.rate - expectedRate).abs() > 0.005) {
+          appLogger.w('WatchTogether: Rate nudges not taking effect — disabling for this attachment');
           _nudgeDisabled = true;
           _nudging = false;
+          _nudgeTargetRate = null;
           unawaited(currentPlayer.setRate(_latestState?.rate ?? 1.0));
         } else {
           _nudgeConfirmed = true;
@@ -526,6 +521,7 @@ class GuestPlaybackReconciler {
   void _exitNudgeIfNeeded(PlaybackState state) {
     if (!_nudging) return;
     _nudging = false;
+    _nudgeTargetRate = null;
     final player = _player;
     if (player != null) {
       unawaited(player.setRate(state.rate));
@@ -558,7 +554,7 @@ class GuestPlaybackReconciler {
   void _setCorrecting(bool value) {
     if (_correcting == value) return;
     _correcting = value;
-    _callbacks.onCorrectingChanged?.call(value);
+    onCorrectingChanged?.call(value);
   }
 
   // ---------------------------------------------------------------------
@@ -586,13 +582,5 @@ class GuestPlaybackReconciler {
     }
     _lastSentStatus = status;
     _sendToHost(SyncMessage.status(status, peerId: myPeerId));
-  }
-
-  static bool _listEquals(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
   }
 }

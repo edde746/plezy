@@ -100,6 +100,161 @@ ValidatePlistVersion() {
   fi
 }
 
+CopyAppFrameworkInfoPlist() {
+  local plist="$1"
+  local minimum_os_version="${2:-${TVOS_DEPLOYMENT_TARGET:-}}"
+
+  if [[ -z "$minimum_os_version" ]]; then
+    echo " └─ERROR: TVOS_DEPLOYMENT_TARGET is not set for App.framework Info.plist"
+    return 1
+  fi
+
+  cp "$PROJECT_DIR/scripts/Info.plist" "$plist"
+  SetPlistString "$plist" MinimumOSVersion "$minimum_os_version"
+}
+
+ValidateMinimumOSVersion() {
+  local plist="$1"
+  local label="$2"
+  local expected="$3"
+  local current=""
+
+  current="$(/usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$plist" 2>/dev/null || true)"
+  if [[ "$current" != "$expected" ]]; then
+    echo " └─ERROR: $label MinimumOSVersion is $current, expected $expected"
+    return 1
+  fi
+}
+
+VersionLessThan() {
+  awk -v lhs="$1" -v rhs="$2" '
+    BEGIN {
+      split(lhs, left, ".")
+      split(rhs, right, ".")
+      for (i = 1; i <= 3; i++) {
+        l = left[i] == "" ? 0 : left[i] + 0
+        r = right[i] == "" ? 0 : right[i] + 0
+        if (l < r) exit 0
+        if (l > r) exit 1
+      }
+      exit 1
+    }
+  '
+}
+
+FrameworkExecutable() {
+  local framework="$1"
+  local plist="$framework/Info.plist"
+  local executable_name=""
+
+  executable_name="$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "$plist" 2>/dev/null || true)"
+  if [[ -z "$executable_name" ]]; then
+    executable_name="$(basename "$framework" .framework)"
+  fi
+
+  printf "%s/%s\n" "$framework" "$executable_name"
+}
+
+MachOMinimumOSVersion() {
+  local executable="$1"
+
+  otool -l "$executable" 2>/dev/null | awk '
+    $1 == "cmd" && ($2 == "LC_BUILD_VERSION" || $2 == "LC_VERSION_MIN_APPLETVOS" || $2 == "LC_VERSION_MIN_IPHONEOS") {
+      in_version_command = 1
+      next
+    }
+    in_version_command && ($1 == "minos" || $1 == "version") {
+      print $2
+      exit
+    }
+    $1 == "cmd" {
+      in_version_command = 0
+    }
+  '
+}
+
+NormalizeFrameworkMinimumOSVersion() {
+  local framework="$1"
+  local app_minimum_os_version="$2"
+  local executable=""
+  local macho_minimum_os_version=""
+  local plist_minimum_os_version="$app_minimum_os_version"
+
+  executable="$(FrameworkExecutable "$framework")"
+  if [[ ! -f "$executable" ]]; then
+    echo " └─ERROR: framework executable missing: $executable"
+    return 1
+  fi
+
+  macho_minimum_os_version="$(MachOMinimumOSVersion "$executable")"
+  if [[ -n "$macho_minimum_os_version" ]] && VersionLessThan "$plist_minimum_os_version" "$macho_minimum_os_version"; then
+    plist_minimum_os_version="$macho_minimum_os_version"
+  fi
+
+  SetPlistString "$framework/Info.plist" MinimumOSVersion "$plist_minimum_os_version"
+  ValidateMinimumOSVersion "$framework/Info.plist" "$(basename "$framework")" "$plist_minimum_os_version"
+}
+
+CodeSignFramework() {
+  local framework="$1"
+  local executable=""
+
+  executable="$(FrameworkExecutable "$framework")"
+  if [[ ! -f "$executable" ]]; then
+    echo " └─ERROR: framework executable missing: $executable"
+    return 1
+  fi
+
+  if [[ "${PLATFORM_NAME:-}" != "appletvsimulator" && -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" && "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]]; then
+    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "$framework"
+  fi
+}
+
+EmbedFlutterFrameworks() {
+  if [[ "${TARGET_NAME:-}" != "Runner" ]]; then
+    return 0
+  fi
+
+  local minimum_os_version="${TVOS_DEPLOYMENT_TARGET:-}"
+  local runner_plist="$TARGET_BUILD_DIR/$WRAPPER_NAME/Info.plist"
+  if [[ -z "$minimum_os_version" && -f "$runner_plist" ]]; then
+    minimum_os_version="$(/usr/libexec/PlistBuddy -c "Print :MinimumOSVersion" "$runner_plist" 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$minimum_os_version" ]]; then
+    echo " └─ERROR: could not resolve tvOS MinimumOSVersion for embedded Flutter frameworks"
+    return 1
+  fi
+
+  local app_frameworks_dir="$TARGET_BUILD_DIR/$WRAPPER_NAME/Frameworks"
+  mkdir -p "$app_frameworks_dir"
+
+  local framework=""
+  for framework in App.framework Flutter.framework; do
+    local source="$BUILT_PRODUCTS_DIR/$framework"
+    local destination="$app_frameworks_dir/$framework"
+
+    if [[ ! -d "$source" ]]; then
+      echo " └─ERROR: built framework missing: $source"
+      return 1
+    fi
+
+    NormalizeFrameworkMinimumOSVersion "$source" "$minimum_os_version"
+    rm -rf "$destination"
+    cp -R "$source" "$app_frameworks_dir"
+    NormalizeFrameworkMinimumOSVersion "$destination" "$minimum_os_version"
+  done
+
+  for framework in "$app_frameworks_dir"/*.framework; do
+    if [[ ! -d "$framework" ]]; then
+      continue
+    fi
+
+    NormalizeFrameworkMinimumOSVersion "$framework" "$minimum_os_version"
+    CodeSignFramework "$framework"
+  done
+}
+
 SyncRunnerVersion() {
   ReadPubspecVersion
 
@@ -129,6 +284,8 @@ SyncRunnerVersion() {
     SetPlistString "$top_shelf_plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
     ValidatePlistVersion "$top_shelf_plist" "TopShelfExtension"
   fi
+
+  EmbedFlutterFrameworks
 }
 
 EngineOutputExists() {
@@ -148,6 +305,55 @@ ResolveEngineOutput() {
 
   echo " └─ERROR: none of these Flutter engine outputs exist: $*" >&2
   return 1
+}
+
+ResolveDartAotRuntime() {
+  local host_tools="$1"
+  local packaged_runtime="$host_tools/dart-sdk/bin/dartaotruntime"
+  if [[ -x "$packaged_runtime" ]] && "$packaged_runtime" --version >/dev/null 2>&1; then
+    printf '%s\n' "$packaged_runtime"
+    return 0
+  fi
+
+  local flutter_runtime="${FLUTTER_ROOT:-}/bin/cache/dart-sdk/bin/dartaotruntime"
+  local packaged_version_file="$host_tools/dart-sdk/version"
+  local flutter_version_file="${FLUTTER_ROOT:-}/bin/cache/dart-sdk/version"
+  if [[ ! -x "$flutter_runtime" || ! -f "$packaged_version_file" || ! -f "$flutter_version_file" ]]; then
+    echo " └─ERROR: the packaged Dart runtime cannot execute on this host and no compatible Flutter runtime was found" >&2
+    return 1
+  fi
+
+  local packaged_version
+  local flutter_version
+  packaged_version="$(tr -d '[:space:]' < "$packaged_version_file")"
+  flutter_version="$(tr -d '[:space:]' < "$flutter_version_file")"
+  if [[ "$packaged_version" != "$flutter_version" ]]; then
+    echo " └─ERROR: the packaged Dart runtime cannot execute on this host and Flutter's Dart version does not match ($flutter_version != $packaged_version)" >&2
+    return 1
+  fi
+  if ! "$flutter_runtime" --version >/dev/null 2>&1; then
+    echo " └─ERROR: Flutter's Dart runtime cannot execute on this host" >&2
+    return 1
+  fi
+
+  printf '%s\n' "$flutter_runtime"
+}
+
+ResolveFrontendServer() {
+  local host_tools="$1"
+  local dart_aot_runtime="$2"
+  local frontend_server="$host_tools/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
+  if [[ "$dart_aot_runtime" != "$host_tools/dart-sdk/bin/dartaotruntime" ]]; then
+    frontend_server="$FLUTTER_ROOT/bin/cache/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
+  elif [[ ! -f "$frontend_server" ]]; then
+    frontend_server="$host_tools/gen/frontend_server_aot.dart.snapshot"
+  fi
+
+  if [[ ! -f "$frontend_server" ]]; then
+    echo " └─ERROR: compatible frontend_server snapshot was not found" >&2
+    return 1
+  fi
+  printf '%s\n' "$frontend_server"
 }
 
 BuildAppDebug() {
@@ -173,8 +379,8 @@ BuildAppDebug() {
   rm -rf "$OUTDIR/Flutter.framework"
   cp -R "$DEVICE_TOOLS/Flutter.framework" "$OUTDIR"
   # The engine tarball's Flutter.framework/Info.plist declares MinimumOSVersion
-  # 13.0 but the binary is linked with minos=14.0. Apple's validator compares
-  # both against the host app — align the plist to 14.0 so the upload passes.
+  # 13.0 but the binary is linked with the resolved deployment target. Apple's
+  # validator compares both against the host app, so keep the plist aligned.
   plutil -replace MinimumOSVersion -string "$TVOS_DEPLOYMENT_TARGET" "$OUTDIR/Flutter.framework/Info.plist"
 
 
@@ -196,6 +402,8 @@ BuildAppDebug() {
     return 1
   fi
 
+  DART_AOT_RUNTIME=$(ResolveDartAotRuntime "$HOST_TOOLS") || return 1
+
   # flutter build bundle produces: AssetManifest, FontManifest, NOTICES,
   # shaders, fonts, assets, packages, plus a kernel_blob.bin and
   # isolate_snapshot_data compiled against the stock flutter engine. We
@@ -212,12 +420,9 @@ BuildAppDebug() {
     return 1
   }
 
-  echo " └─Compiling tvOS kernel via local engine frontend_server"
-  FRONTEND_SERVER="$HOST_TOOLS/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
-  if [ ! -f "$FRONTEND_SERVER" ]; then
-    FRONTEND_SERVER="$HOST_TOOLS/gen/frontend_server_aot.dart.snapshot"
-  fi
-  "$HOST_TOOLS/dart-sdk/bin/dartaotruntime" \
+  echo " └─Compiling tvOS kernel via compatible frontend_server"
+  FRONTEND_SERVER=$(ResolveFrontendServer "$HOST_TOOLS" "$DART_AOT_RUNTIME") || return 1
+  "$DART_AOT_RUNTIME" \
     "$FRONTEND_SERVER" \
     --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
     --tfa --target=flutter \
@@ -268,7 +473,7 @@ BuildAppDebug() {
   strip "$OUTDIR/App.framework/App"
 
   echo " └─copy frameworks"
-  cp "$PROJECT_DIR/scripts/Info.plist" "$OUTDIR/App.framework/Info.plist"
+  CopyAppFrameworkInfoPlist "$OUTDIR/App.framework/Info.plist" "$tvos_deployment_target"
 
   # Two destinations:
   # 1. BUILT_PRODUCTS_DIR — Swift/linker search path. For plain builds this
@@ -340,8 +545,8 @@ BuildAppRelease() {
   rm -rf "$OUTDIR/Flutter.framework"
   cp -R "$DEVICE_TOOLS/Flutter.framework" "$OUTDIR"
   # The engine tarball's Flutter.framework/Info.plist declares MinimumOSVersion
-  # 13.0 but the binary is linked with minos=14.0. Apple's validator compares
-  # both against the host app — align the plist to 14.0 so the upload passes.
+  # 13.0 but the binary is linked with the resolved deployment target. Apple's
+  # validator compares both against the host app, so keep the plist aligned.
   plutil -replace MinimumOSVersion -string "$TVOS_DEPLOYMENT_TARGET" "$OUTDIR/Flutter.framework/Info.plist"
 
   tvos_deployment_target="$TVOS_DEPLOYMENT_TARGET"
@@ -357,6 +562,8 @@ BuildAppRelease() {
     echo " └─ERROR: flutter CLI not found (set FLUTTER_ROOT or add flutter to PATH)"
     return 1
   fi
+
+  DART_AOT_RUNTIME=$(ResolveDartAotRuntime "$HOST_TOOLS") || return 1
 
   echo " └─Generate flutter_assets via flutter build bundle (release)"
   mkdir -p "$OUTDIR/App.framework/flutter_assets"
@@ -378,11 +585,8 @@ BuildAppRelease() {
   echo " └─Compiling AOT kernel via local engine frontend_server"
   # The snapshot under dart-sdk/bin/snapshots/ is the actual AOT-compiled one;
   # the one under gen/ is a stale/placeholder kernel.
-  FRONTEND_SERVER="$HOST_TOOLS/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot"
-  if [ ! -f "$FRONTEND_SERVER" ]; then
-    FRONTEND_SERVER="$HOST_TOOLS/gen/frontend_server_aot.dart.snapshot"
-  fi
-  "$HOST_TOOLS/dart-sdk/bin/dartaotruntime" \
+  FRONTEND_SERVER=$(ResolveFrontendServer "$HOST_TOOLS" "$DART_AOT_RUNTIME") || return 1
+  "$DART_AOT_RUNTIME" \
     "$FRONTEND_SERVER" \
     --sdk-root "$HOST_TOOLS/flutter_patched_sdk" \
     --aot --tfa --target=flutter \
@@ -423,7 +627,7 @@ BuildAppRelease() {
 
   strip "$OUTDIR/App.framework/App"
 
-  cp "$PROJECT_DIR/scripts/Info.plist" "$OUTDIR/App.framework/Info.plist"
+  CopyAppFrameworkInfoPlist "$OUTDIR/App.framework/Info.plist" "$tvos_deployment_target"
 
   echo " └─copy frameworks"
   # BUILT_PRODUCTS_DIR = linker search path. DO NOT use TARGET_BUILD_DIR

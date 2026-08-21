@@ -71,4 +71,33 @@ class TrackerContext {
       animeProgress: animeProgress,
     );
   }
+
+  /// Serialized into the persisted tracker write queue so a failed watched
+  /// write replays against exactly the item it was built for — no second
+  /// metadata fetch, no re-resolution against a library that may have changed.
+  Map<String, Object?> toJson() => {
+    'external': external.toJson(),
+    if (anime != null) 'anime': anime!.toJson(),
+    'isMovie': isMovie,
+    'ratingKey': ratingKey,
+    if (libraryGlobalKey != null) 'libraryGlobalKey': libraryGlobalKey,
+    if (season != null) 'season': season,
+    if (episodeNumber != null) 'episodeNumber': episodeNumber,
+    if (animeProgress != null) 'animeProgress': animeProgress,
+  };
+
+  /// Throws on a malformed row; the queue archives and discards the batch.
+  factory TrackerContext.fromJson(Map<String, Object?> json) {
+    final anime = json['anime'];
+    return TrackerContext._(
+      external: ExternalIds.fromJson((json['external'] as Map).cast<String, Object?>()),
+      anime: anime == null ? null : AnimeIds.fromJson((anime as Map).cast<String, Object?>()),
+      isMovie: json['isMovie'] as bool,
+      ratingKey: json['ratingKey'] as String,
+      libraryGlobalKey: json['libraryGlobalKey'] as String?,
+      season: (json['season'] as num?)?.toInt(),
+      episodeNumber: (json['episodeNumber'] as num?)?.toInt(),
+      animeProgress: (json['animeProgress'] as num?)?.toInt(),
+    );
+  }
 }

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Fallback for user-entered hosts only: a self-hosted Plex/Jellyfin/Seerr
+         server, or a custom Watch Together relay, may be plain HTTP or fronted
+         by a private CA the device owner installed. Their hostnames are not
+         knowable at build time, so they can only be covered here. -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- First-party / fixed endpoints. These carry account tokens, OAuth
+         codes, crash payloads and update metadata, and by construction never
+         live behind a private CA. System anchors only, i.e. the pre-2.9.1
+         behaviour. Every hard-coded https:// host in lib/ must appear here.
+         Pinned by test/android/network_security_config_test.dart. -->
+    <domain-config>
+        <!-- plex.tv, clients.plex.tv, app.plex.tv, discover.provider.plex.tv,
+             epg.provider.plex.tv (lib/services/plex_auth_service.dart:53-54,167,
+             lib/services/plex_discover_client.dart:57,
+             lib/services/plex_client/parts/live_tv.dart:3).
+             Does NOT match *.plex.direct — user PMS keeps base-config. -->
+        <domain includeSubdomains="true">plex.tv</domain>
+        <!-- ice.plezy.app: relay + /auth OAuth proxy + /posters
+             (lib/watch_together/services/watch_together_relay_endpoint.dart:8,
+             lib/services/trackers/oauth_proxy_client.dart:22,
+             lib/services/discord_rpc_service.dart:55);
+             bugs.plezy.app: Sentry DSN (lib/main.dart:90). -->
+        <domain includeSubdomains="true">plezy.app</domain>
+        <!-- api.trakt.tv incl. /oauth/device/*, /oauth/token
+             (lib/services/trakt/trakt_constants.dart:16,21-24). -->
+        <domain includeSubdomains="true">trakt.tv</domain>
+        <!-- api.myanimelist.net + myanimelist.net/v1/oauth2/token
+             (lib/services/trackers/mal/mal_constants.dart:19-20). -->
+        <domain includeSubdomains="true">myanimelist.net</domain>
+        <!-- graphql.anilist.co (lib/services/trackers/anilist/anilist_constants.dart:9). -->
+        <domain includeSubdomains="true">anilist.co</domain>
+        <!-- api.simkl.com + simkl.com/pin
+             (lib/services/trackers/simkl/simkl_constants.dart:21,33). -->
+        <domain includeSubdomains="true">simkl.com</domain>
+        <!-- data.simkl.in (lib/services/trackers/simkl/simkl_constants.dart:22). -->
+        <domain includeSubdomains="true">simkl.in</domain>
+        <!-- cdn.jsdelivr.net: appcast (lib/services/update_service.dart:18) and
+             anime-list mappings (anime_lists_mapping_store.dart:37,
+             fribb_mapping_store.dart:49). -->
+        <domain includeSubdomains="true">jsdelivr.net</domain>
+        <!-- Release check (lib/services/update_service.dart:161). -->
+        <domain includeSubdomains="true">api.github.com</domain>
+        <!-- TMDB artwork (lib/services/catalog/seerr_catalog_source.dart:163). -->
+        <domain includeSubdomains="true">image.tmdb.org</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

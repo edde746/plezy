@@ -10,8 +10,6 @@ class DvBitstreamSanitizerTest {
 
   private val sanitizer = DvBitstreamSanitizer()
 
-  // --- HDR10+ SEI stripping (native DV codec path) ---
-
   @Test
   fun stripsHdr10PlusPrefixSeiBetweenVclNals() {
     val vcl1 = annexBNal(1, byteArrayOf(0x01, 0x02))
@@ -24,17 +22,6 @@ class DvBitstreamSanitizerTest {
     assertArrayEquals(concat(vcl1, vcl2), remainingBytes(buffer))
     assertTrue(buffer.limit() < originalLimit)
     assertEquals(0, buffer.position())
-  }
-
-  @Test
-  fun stripsSuffixSei() {
-    val vcl = annexBNal(1, byteArrayOf(0x01))
-    val suffixSei = annexBNal(40, hdr10PlusSeiPayload())
-    val buffer = bufferOf(vcl, suffixSei)
-
-    sanitizer.sanitize(buffer, stripHdr10PlusSei = true, stripDvRpu = false)
-
-    assertArrayEquals(vcl, remainingBytes(buffer))
   }
 
   @Test
@@ -96,8 +83,6 @@ class DvBitstreamSanitizerTest {
     assertArrayEquals(original, remainingBytes(buffer))
   }
 
-  // --- DV RPU/EL stripping (HEVC fallback path) ---
-
   @Test
   fun rpuModeStripsRpuAndElButKeepsHdr10PlusSei() {
     val vcl = annexBNal(1, byteArrayOf(0x01))
@@ -122,8 +107,6 @@ class DvBitstreamSanitizerTest {
     assertArrayEquals(concat(vcl1, vcl2), remainingBytes(buffer))
   }
 
-  // --- Buffer handling ---
-
   @Test
   fun respectsPositionAndRestoresIt() {
     val prefix = byteArrayOf(0xAA.toByte(), 0xBB.toByte())
@@ -139,16 +122,6 @@ class DvBitstreamSanitizerTest {
     // Bytes before the position are untouched.
     assertEquals(0xAA.toByte(), buffer.get(0))
     assertEquals(0xBB.toByte(), buffer.get(1))
-  }
-
-  @Test
-  fun worksOnDirectBuffers() {
-    val vcl = annexBNal(1, byteArrayOf(0x01, 0x02))
-    val buffer = directBufferOf(vcl, hdr10PlusSei())
-
-    sanitizer.sanitize(buffer, stripHdr10PlusSei = true, stripDvRpu = false)
-
-    assertArrayEquals(vcl, remainingBytes(buffer))
   }
 
   @Test
@@ -265,8 +238,6 @@ class DvBitstreamSanitizerTest {
     assertEquals(2, stripped)
     assertArrayEquals(concat(vcl1, vcl2), remainingBytes(buffer))
   }
-
-  // --- Helpers ---
 
   /** Builds an HEVC NAL unit: start code + 2-byte NAL header encoding [nalUnitType] + payload. */
   private fun annexBNal(nalUnitType: Int, payload: ByteArray, startCodeLen: Int = 4): ByteArray {

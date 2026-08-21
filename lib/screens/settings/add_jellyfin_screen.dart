@@ -14,23 +14,43 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../media/media_browser_dialect.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_connection.dart';
-import '../../profiles/profile_registry.dart';
 import '../../services/jellyfin_auth_service.dart';
 import '../../services/jellyfin_endpoint_discovery.dart';
 import '../../services/jellyfin_lan_discovery_service.dart';
 import '../../services/storage_service.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/device_identity.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../profile/profile_switch_screen.dart';
 import 'async_form_state_mixin.dart';
 import 'connection_persistence.dart';
 import '../../widgets/loading_indicator_box.dart';
+
+@visibleForTesting
+Future<String> resolveJellyfinClientVersion({Future<PackageInfo> Function()? packageInfoLoader}) async {
+  const fallbackVersion = '1.0';
+  try {
+    final packageInfo = await (packageInfoLoader == null ? PackageInfo.fromPlatform() : packageInfoLoader());
+    final version = packageInfo.version.trim();
+    if (version.isNotEmpty) return version;
+    appLogger.w('Package version is empty; using Jellyfin client version $fallbackVersion');
+  } catch (error, stackTrace) {
+    appLogger.w(
+      'Failed to resolve package version; using Jellyfin client version $fallbackVersion',
+      error: error,
+      stackTrace: stackTrace,
+    );
+  }
+  return fallbackVersion;
+}
 
 @visibleForTesting
 bool shouldCreateLocalJellyfinProfile({
@@ -50,30 +70,31 @@ bool shouldPromptForJellyfinProfileSelection({
   return targetProfile == null && activeProfile == null && hasProfiles;
 }
 
-/// Three-step form to add a Jellyfin server:
+/// Three-step form to add a Jellyfin or Emby server:
 ///   1. Probe URL candidates (`/System/Info/Public`).
-///   2. Username + password (`/Users/AuthenticateByName`) **or** Quick Connect
-///      (`/QuickConnect/Initiate` → poll → `/Users/AuthenticateWithQuickConnect`).
+///   2. Username + password (`/Users/AuthenticateByName`) or Quick Connect
+///      when supported by the selected [dialect].
 ///   3. Persist via [ConnectionRegistry] and create a [ProfileConnection]
 ///      row binding the server to [targetProfile] (or the active profile,
 ///      if not provided). When the target *is* the active profile we also
 ///      register the client with the manager so libraries refresh
 ///      immediately; otherwise the binder picks it up on the next switch.
 class AddJellyfinScreen extends StatefulWidget {
-  /// When set, the new Jellyfin connection is bound to this profile via a
+  /// When set, the new MediaBrowser connection is bound to this profile via a
   /// [ProfileConnection] row. When null, falls back to the currently active
   /// profile (typical for the global Connections screen entry point).
   final Profile? targetProfile;
+  final MediaBrowserDialect dialect;
   final FutureOr<JellyfinConnectionAuthService> Function()? _authServiceFactory;
   final FutureOr<List<DiscoveredJellyfinServer>> Function()? _localDiscoveryFactory;
 
   const AddJellyfinScreen({
     super.key,
     this.targetProfile,
-    @visibleForTesting FutureOr<JellyfinConnectionAuthService> Function()? authServiceFactory,
-    @visibleForTesting FutureOr<List<DiscoveredJellyfinServer>> Function()? localDiscoveryFactory,
-  }) : _authServiceFactory = authServiceFactory,
-       _localDiscoveryFactory = localDiscoveryFactory;
+    this.dialect = MediaBrowserDialect.jellyfin,
+    @visibleForTesting this._authServiceFactory,
+    @visibleForTesting this._localDiscoveryFactory,
+  });
 
   @override
   State<AddJellyfinScreen> createState() => _AddJellyfinScreenState();
@@ -139,7 +160,10 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       final factory = widget._localDiscoveryFactory;
       final servers = factory != null
           ? await factory()
-          : await JellyfinLanDiscoveryService().discover(responseWindow: const Duration(milliseconds: 1300));
+          : await JellyfinLanDiscoveryService().discover(
+              dialect: widget.dialect,
+              responseWindow: const Duration(milliseconds: 1300),
+            );
       if (!mounted || attemptId != _localDiscoveryAttemptId) return;
       setState(() {
         _localServers = servers;
@@ -147,18 +171,13 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         _syncDiscoveredServerFocusNodes(servers);
       });
     } catch (e, st) {
-      appLogger.w('Add Jellyfin local discovery failed', error: e, stackTrace: st);
+      appLogger.w('Add ${widget.dialect.productName} local discovery failed', error: e, stackTrace: st);
       if (!mounted || attemptId != _localDiscoveryAttemptId) return;
       setState(() => _isDiscoveringLocalServers = false);
     }
   }
 
   void _syncDiscoveredServerFocusNodes(List<DiscoveredJellyfinServer> servers) {
-    final ids = servers.map((server) => server.id).toSet();
-    final removed = _discoveredServerFocusNodes.keys.where((id) => !ids.contains(id)).toList(growable: false);
-    for (final id in removed) {
-      _discoveredServerFocusNodes.remove(id)?.dispose();
-    }
     for (final server in servers) {
       _discoveredServerFocusNodes.putIfAbsent(
         server.id,
@@ -183,9 +202,9 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   }
 
   Future<void> _probe() async {
-    final input = JellyfinEndpointDiscovery.buildUserInputCandidates(_enteredUrls());
+    final input = JellyfinEndpointDiscovery.buildUserInputCandidates(_enteredUrls(), dialect: widget.dialect);
     if (input.probeBaseUrls.isEmpty) {
-      setErrorText(t.addServer.enterJellyfinUrlError);
+      setErrorText(t.addServer.enterMediaBrowserUrlError(product: widget.dialect.productName));
       return;
     }
     final autoStartQuickConnect = await runAsync<bool>(
@@ -196,7 +215,10 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           baseUrlsToPersist: input.explicitBaseUrls,
           baseUrlValidationGroups: input.validationBaseUrlGroups,
         );
-        final qcEnabled = await auth.isQuickConnectEnabled(endpoint.activeBaseUrl);
+        final serverDialect = endpoint.serverInfo.dialect ?? widget.dialect;
+        final qcEnabled = widget.dialect.supportsQuickConnect && serverDialect.supportsQuickConnect
+            ? await auth.isQuickConnectEnabled(endpoint.activeBaseUrl)
+            : false;
         if (!mounted) return false;
         setState(() {
           _serverEndpoint = endpoint;
@@ -212,7 +234,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         return autoStart;
       },
       errorMapper: (e) =>
-          e is MediaServerUrlException ? e.message : t.addServer.couldNotReachServer(error: e.toString()),
+          e is MediaServerUrlException ? e.display ?? e.message : t.addServer.couldNotReachServer(error: e.toString()),
     );
     // Sequenced after the probe's runAsync so busy stays set straight through
     // /QuickConnect/Initiate. Started from inside the probe body, the probe's
@@ -249,8 +271,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         await _persistAndExit(connection);
       },
       errorMapper: (e) {
-        if (e is MediaServerAuthException) return e.message;
-        appLogger.e('Add Jellyfin failed', error: e);
+        if (e is MediaServerAuthException) return e.display ?? e.message;
+        appLogger.e('Add ${widget.dialect.productName} failed', error: e);
         return t.addServer.signInFailed(error: e.toString());
       },
     );
@@ -260,6 +282,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     final info = _serverInfo;
     final endpoint = _serverEndpoint;
     if (info == null || endpoint == null) return;
+    if (!widget.dialect.supportsQuickConnect || !(info.dialect ?? widget.dialect).supportsQuickConnect) return;
     final attemptId = ++_qcAttemptId;
     setState(() => _qcCancelled = false);
     await runAsync<void>(
@@ -296,7 +319,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         await _persistAndExit(connection);
       },
       errorMapper: (e) {
-        if (e is MediaServerAuthException) return e.message;
+        if (e is MediaServerAuthException) return e.display ?? e.message;
         appLogger.e('Jellyfin Quick Connect failed', error: e);
         return t.addServer.quickConnectFailed(error: e.toString());
       },
@@ -342,23 +365,13 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     _discoveredServerFocusNodes[_localServers.last.id]?.requestFocus();
   }
 
-  List<String> _enteredUrls() {
-    return _urlController.text
-        .split(RegExp(r'[\n,]+'))
-        .map((url) => url.trim())
-        .where((url) => url.isNotEmpty)
-        .toList(growable: false);
-  }
+  List<String> _enteredUrls() => JellyfinEndpointDiscovery.parseUserEnteredUrls(_urlController.text);
 
   /// Shared persistence path for both username/password and Quick Connect:
-  /// upsert the connection, attach a ProfileConnection to the bound profile,
-  /// register with the live manager when binding to the active profile, and
-  /// pop with success.
+  /// atomically provision the optional first-run profile, connection, and
+  /// ownership row, then bind and pop only after durable success.
   Future<void> _persistAndExit(JellyfinConnection connection) async {
     if (!mounted) return;
-    // Bind to the target profile (caller's choice) or the active one. On a
-    // first-run Jellyfin-only sign-in there is no profile yet, so create and
-    // activate a local profile before registering the server.
     final activeProvider = context.read<ActiveProfileProvider>();
     await activeProvider.initialize();
     if (!mounted) return;
@@ -371,6 +384,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     )) {
       await Navigator.of(
         context,
+        rootNavigator: true,
       ).push<bool>(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen(requireSelection: true)));
       if (!mounted) return;
       boundProfile = activeProvider.active;
@@ -379,29 +393,28 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         return;
       }
     }
+
+    Profile? firstRunProfile;
     if (shouldCreateLocalJellyfinProfile(
       targetProfile: targetProfile,
       activeProfile: boundProfile,
       hasProfiles: activeProvider.profiles.isNotEmpty,
     )) {
       final now = DateTime.now();
-      final profile = Profile.local(
+      firstRunProfile = Profile.local(
         id: 'local-${const Uuid().v4()}',
         displayName: connection.userName.isNotEmpty ? connection.userName : connection.serverName,
         sortOrder: now.millisecondsSinceEpoch,
         createdAt: now,
       );
-      await context.read<ProfileRegistry>().upsert(profile);
-      await activeProvider.activate(profile);
-      if (!mounted) return;
-      boundProfile = activeProvider.active ?? profile;
+      boundProfile = firstRunProfile;
     }
+
     final bindProfile = boundProfile;
     if (bindProfile == null) {
       setErrorText(t.messages.noProfilesAvailable);
       return;
     }
-    final boundToActive = bindProfile.id == activeProvider.activeId;
 
     await persistAndBindConnection(
       context: context,
@@ -413,9 +426,10 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         userIdentifier: connection.userId,
         tokenAcquiredAt: DateTime.now(),
       ),
-      addToManager: null,
+      firstRunProfile: firstRunProfile,
     );
 
+    final boundToActive = bindProfile.id == activeProvider.activeId;
     if (!mounted) return;
     if (boundToActive) {
       await context.read<ActiveProfileBinder>().rebindIfActive(bindProfile.id);
@@ -428,29 +442,35 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   Future<JellyfinConnectionAuthService> _buildAuthService() async {
     final authServiceFactory = widget._authServiceFactory;
     if (authServiceFactory != null) return await authServiceFactory();
-    final pkg = await PackageInfo.fromPlatform();
+    final clientVersion = await resolveJellyfinClientVersion();
     final deviceName = await _resolveDeviceName();
-    return JellyfinConnectionAuthService(clientName: 'Plezy', clientVersion: pkg.version, deviceName: deviceName);
+    return JellyfinConnectionAuthService(
+      clientName: 'Plezy',
+      clientVersion: clientVersion,
+      deviceName: deviceName,
+      dialect: widget.dialect,
+    );
   }
 
+  /// The raw name, not a header-sanitized one: the Jellyfin `MediaBrowser`
+  /// header percent-encodes it, so the device list shows it verbatim.
   Future<String> _resolveDeviceName() async {
-    // PackageInfo doesn't expose a device name; fall back to a generic label.
-    // Jellyfin only shows this in the admin "Devices" list — fine to keep
-    // simple until we add proper device_info_plus integration.
-    return 'Plezy';
+    final identity = await DeviceIdentityService.resolve();
+    final name = identity.deviceName?.trim();
+    return name == null || name.isEmpty ? 'Plezy' : name;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return FocusedScrollScaffold(
-      title: Text(t.addServer.addJellyfinTitle),
+      title: Text(t.addServer.addMediaBrowserTitle(product: widget.dialect.productName)),
       slivers: [
-        if (_qcInitiation != null)
+        if (widget.dialect.supportsQuickConnect && _qcInitiation != null)
           SliverFillRemaining(
             hasScrollBody: false,
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: .fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
               child: Center(child: _buildQuickConnectPanel(theme)),
             ),
           )
@@ -473,8 +493,12 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       FocusableTextFormField(
         controller: _urlController,
         focusNode: _urlFocus,
+        // Native on every TV: on Apple TV `automatic` would route this
+        // wrap-to-4-lines field to the Flutter overlay, but it is logically
+        // single-line URL input the system keyboard handles (#1051, #1079).
+        tvTextInputPresentation: TvTextInputPresentation.platform,
         autofocus: true,
-        tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
+        tvTextInputAutoOpenBehavior: deferredUrlFieldAutoOpen,
         keyboardType: TextInputType.url,
         minLines: 1,
         maxLines: 4,
@@ -495,7 +519,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         decoration: InputDecoration(
           labelText: t.addServer.serverUrls,
           // URL example — intentionally not localized.
-          hintText: 'https://jellyfin.example.com',
+          hintText: widget.dialect.exampleBaseUrl,
           helperText: _serverInfo == null ? t.addServer.serverUrlsHelper : null,
           prefixIcon: const AppIcon(Symbols.link_rounded, fill: 1),
         ),
@@ -546,7 +570,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             labelText: t.addServer.password,
             prefixIcon: const AppIcon(Symbols.lock_rounded, fill: 1),
           ),
-          // Empty password is valid for some Jellyfin setups, so don't
+          // Empty passwords are valid on some MediaBrowser servers, so don't
           // require a value.
         ),
         const SizedBox(height: 16),
@@ -560,7 +584,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             label: Text(t.addServer.signIn),
           ),
         ),
-        if (_quickConnectEnabled) ...[
+        if (widget.dialect.supportsQuickConnect && _quickConnectEnabled) ...[
           const SizedBox(height: 12),
           FocusableButton(
             focusNode: _quickConnectFocus,
@@ -574,10 +598,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           ),
         ],
       ],
-      if (errorText != null) ...[
-        const SizedBox(height: 12),
-        Text(errorText!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
-      ],
+      ...buildInlineError(theme),
     ];
   }
 
@@ -586,7 +607,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(tokens(context).radiusMd),
       ),
       child: Row(
         children: [
@@ -598,7 +619,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
               children: [
                 Text(_serverInfo!.serverName, style: theme.textTheme.titleSmall),
                 Text(
-                  'Jellyfin ${_serverInfo!.version}',
+                  '${widget.dialect.productName} ${_serverInfo!.version}',
                   style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
                 ),
               ],
@@ -638,7 +659,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                t.addServer.searchingLocalServers,
+                t.addServer.searchingLocalMediaBrowserServers(product: widget.dialect.productName),
                 style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
               ),
             ),
@@ -648,13 +669,19 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     }
 
     if (_localServers.isEmpty) return const [];
+    final tokensRef = tokens(context);
     return [
       const SizedBox(height: 16),
-      Text(t.addServer.localServers, style: theme.textTheme.titleSmall),
+      Text(
+        t.addServer.localMediaBrowserServers(product: widget.dialect.productName),
+        style: theme.textTheme.titleSmall,
+      ),
       const SizedBox(height: 8),
-      for (final server in _localServers) ...[
+      for (final (i, server) in _localServers.indexed) ...[
+        if (i > 0) SizedBox(height: tokensRef.groupGap),
         _DiscoveredJellyfinServerTile(
           server: server,
+          borderRadius: groupItemRadii(context, i, _localServers.length),
           focusNode: _discoveredServerFocusNodes[server.id],
           onNavigateUp: () {
             final index = _localServers.indexOf(server);
@@ -674,8 +701,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           },
           onTap: busy ? null : () => unawaited(_useDiscoveredServer(server)),
         ),
-        const SizedBox(height: 8),
       ],
+      const SizedBox(height: 8),
     ];
   }
 
@@ -729,14 +756,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
               label: Text(t.auth.quickConnectCancel),
             ),
           ),
-          if (errorText != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              errorText!,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
-            ),
-          ],
+          ...buildInlineError(theme, gap: 16, center: true),
         ],
       ),
     );
@@ -745,6 +765,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
 
 class _DiscoveredJellyfinServerTile extends StatelessWidget {
   final DiscoveredJellyfinServer server;
+  final BorderRadius borderRadius;
   final FocusNode? focusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateDown;
@@ -752,6 +773,7 @@ class _DiscoveredJellyfinServerTile extends StatelessWidget {
 
   const _DiscoveredJellyfinServerTile({
     required this.server,
+    required this.borderRadius,
     required this.focusNode,
     required this.onNavigateUp,
     required this.onNavigateDown,
@@ -771,14 +793,14 @@ class _DiscoveredJellyfinServerTile extends StatelessWidget {
       onNavigateUp: onNavigateUp,
       onNavigateDown: onNavigateDown,
       child: CardFocusBorder(
-        borderRadius: 12,
+        borderRadii: borderRadius,
         strokeAlign: BorderSide.strokeAlignInside,
         child: Material(
           color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: borderRadius,
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: borderRadius,
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(

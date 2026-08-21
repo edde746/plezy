@@ -3,6 +3,7 @@ import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import 'desktop_app_bar.dart';
 import 'ios_status_bar_tap_scroll_to_top.dart';
+import 'system_bottom_inset.dart';
 
 /// A scaffold widget that wraps Focus + Scaffold + CustomScrollView
 /// with consistent keyboard navigation handling and app bar styling.
@@ -26,6 +27,12 @@ class FocusedScrollScaffold extends StatefulWidget {
   /// Optional actions to display in the app bar (e.g., IconButton widgets).
   final List<Widget>? actions;
 
+  /// Whether app-bar controls participate in keyboard/controller traversal.
+  ///
+  /// They remain excluded while initial focus is assigned so the first
+  /// content control still receives focus when the screen opens.
+  final bool focusableAppBarActions;
+
   /// Whether the app bar should remain visible when scrolling.
   /// Defaults to true.
   final bool pinned;
@@ -44,6 +51,7 @@ class FocusedScrollScaffold extends StatefulWidget {
     required this.title,
     required this.slivers,
     this.actions,
+    this.focusableAppBarActions = false,
     this.pinned = true,
     this.automaticallyImplyLeading = true,
     this.onBackPressed,
@@ -56,6 +64,7 @@ class FocusedScrollScaffold extends StatefulWidget {
 class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
   final _scopeNode = FocusScopeNode();
   bool _focusRequested = false;
+  bool _appBarFocusEnabled = false;
 
   @override
   void dispose() {
@@ -64,13 +73,16 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
   }
 
   void _requestInitialFocus() {
-    if (_focusRequested || !mounted || !InputModeTracker.isKeyboardMode(context)) return;
+    if (_focusRequested || !mounted || !InputModeTracker.isKeyboardMode(context, listen: false)) return;
     _focusRequested = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (_scopeNode.focusedChild != null) return;
       _scopeNode.requestFocus();
       _scopeNode.nextFocus();
+      if (widget.focusableAppBarActions && !_appBarFocusEnabled) {
+        setState(() => _appBarFocusEnabled = true);
+      }
     });
   }
 
@@ -94,15 +106,26 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
           child: Scaffold(
             body: CustomScrollView(
               slivers: [
-                ExcludeFocus(
-                  child: CustomAppBar(
+                if (!widget.focusableAppBarActions || !_appBarFocusEnabled)
+                  ExcludeFocus(
+                    child: CustomAppBar(
+                      title: widget.title,
+                      pinned: widget.pinned,
+                      actions: widget.actions,
+                      automaticallyImplyLeading: widget.automaticallyImplyLeading,
+                    ),
+                  )
+                else
+                  CustomAppBar(
                     title: widget.title,
                     pinned: widget.pinned,
                     actions: widget.actions,
                     automaticallyImplyLeading: widget.automaticallyImplyLeading,
                   ),
-                ),
                 ...widget.slivers,
+                // Keeps the last row scrollable clear of the Android
+                // navigation bar / iOS home indicator; zero-height elsewhere.
+                const SliverSystemBottomInset(),
               ],
             ),
           ),

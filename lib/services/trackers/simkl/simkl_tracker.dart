@@ -5,21 +5,30 @@ import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/external_ids.dart';
 import '../../../utils/json_utils.dart';
-import '../../settings_service.dart';
 import '../tracker.dart';
 import '../tracker_constants.dart';
 import '../tracker_id_resolver.dart';
+import '../tracker_write_queue.dart';
+import '../tracker_rating_match.dart';
+import '../tracker_session.dart';
 import 'simkl_client.dart';
-import 'simkl_session.dart';
 
-/// Simkl scrobble tracker. Fires `POST /sync/history` once playback crosses
-/// the watched threshold (Simkl has no real-time `/scrobble/*` endpoints).
+/// Simkl tracker.
+///
+/// In-player playback is reported in real time through `POST /scrobble/start`,
+/// `/pause` and `/stop` — Simkl's own rules then decide watched state: a `stop`
+/// at >= 80% progress marks the item watched, below that it saves a resumable
+/// playback so partially watched items survive (issue #1719). `POST
+/// /sync/history` stays for the marks that never pass through the player:
+/// manual, container, offline replay and external players.
 ///
 /// General-purpose: accepts any Plex external ID (tvdb/imdb/tmdb) directly,
 /// so it fires for non-anime TV and movies too. Prefers Fribb's simkl_id
 /// when present for stricter anime match, otherwise falls back to whatever
 /// Plex exposes.
-class SimklTracker extends TrackerBase {
+class SimklTracker extends TrackerBase
+    with ClientBackedTracker<SimklClient>
+    implements TrackerRatingSource, RealtimeScrobbleTracker, EpisodeHistoryTracker {
   static SimklTracker? _instance;
   static SimklTracker get instance => _instance ??= SimklTracker._();
   SimklTracker._();
@@ -33,24 +42,55 @@ class SimklTracker extends TrackerBase {
   @override
   bool get needsFribb => false;
 
-  SimklClient? _client;
+  /// Simkl counts a `/scrobble/stop` as a watch from this progress upwards and
+  /// files anything below it as resumable playback instead.
+  static const double _scrobbleWatchedPercent = 80.0;
+
+  /// The bound client is replaced on every session rebind, so its identity is
+  /// the account identity.
+  @override
+  Object? get scrobbleBinding => client;
 
   @override
-  bool get hasActiveClient => _client != null;
+  bool get canReportPlayback => isEnabledWithSession;
 
   @override
-  bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableSimklScrobble);
+  ScrobblePolicy get scrobblePolicy => const ScrobblePolicy(
+    // Simkl serialises scrobble writes behind a 20-second per-user lock and
+    // fails whatever queues up with a 400, so a re-sent `start` waits it out.
+    resendThrottle: Duration(seconds: 20),
+    // Simkl asks for nothing on a seek, so it receives no seek checkpoints.
+    seekThrottle: null,
+  );
 
-  void rebindSession(SimklSession? session, {required void Function() onSessionInvalidated, http.Client? httpClient}) {
-    _client?.dispose();
-    _client = session != null
-        ? SimklClient(session, onSessionInvalidated: onSessionInvalidated, httpClient: httpClient)
-        : null;
+  /// Prefers the server's external ids, which are always present when Simkl can
+  /// write at all; its own id is a fallback, not part of the identity, because it
+  /// only appears once an anime mapping has been downloaded.
+  @override
+  String? historyRowIdentity(TrackerContext ctx) {
+    final external = trackerExternalRowIdentity(ctx.external);
+    if (external != null) return external;
+    final simklId = ctx.anime?.simkl;
+    return simklId == null ? null : 'simkl=$simklId';
   }
 
+  void rebindSession(
+    TrackerSession? session, {
+    required void Function() onSessionInvalidated,
+    http.Client? httpClient,
+  }) {
+    rebindTrackerClient(
+      session,
+      createClient: (session) =>
+          SimklClient(session, onSessionInvalidated: onSessionInvalidated, httpClient: httpClient),
+    );
+  }
+
+  /// [watchedAt] is ignored: the history body Simkl accepts here carries no
+  /// timestamp, so a replayed write records as "now".
   @override
-  Future<void> markWatched(TrackerContext ctx) async {
-    final client = _client;
+  Future<void> markWatched(TrackerContext ctx, {DateTime? watchedAt}) async {
+    final client = this.client;
     if (client == null) return;
 
     final ids = _buildIds(external: ctx.external, anime: ctx.anime);
@@ -64,7 +104,7 @@ class SimklTracker extends TrackerBase {
 
   @override
   Future<void> markUnwatched(TrackerContext ctx) async {
-    final client = _client;
+    final client = this.client;
     if (client == null) return;
 
     final ids = _buildIds(external: ctx.external, anime: ctx.anime);
@@ -72,6 +112,57 @@ class SimklTracker extends TrackerBase {
 
     await client.removeFromHistory(_historyBody(ctx, ids));
     appLogger.d('Simkl: marked unwatched (ids=$ids, isMovie=${ctx.isMovie})');
+  }
+
+  @override
+  Future<void> scrobble(TrackerContext ctx, TrackerScrobbleState state, double progressPercent) async {
+    final client = this.client;
+    if (client == null) return;
+
+    final ids = _buildIds(external: ctx.external, anime: ctx.anime);
+    if (ids.isEmpty) return;
+
+    final action = switch (state) {
+      TrackerScrobbleState.start => 'start',
+      TrackerScrobbleState.pause => 'pause',
+      TrackerScrobbleState.stop => 'stop',
+      TrackerScrobbleState.seek => null,
+    };
+    if (action == null) return;
+    await client.scrobble(
+      action,
+      _scrobbleBody(ctx, ids, progressPercent),
+      allowConflict: state == TrackerScrobbleState.stop,
+    );
+    appLogger.d('Simkl: scrobble $action @ ${progressPercent.toStringAsFixed(1)}% (ids=$ids)');
+  }
+
+  @override
+  Future<void> reconcileWatchedAfterStop(TrackerContext ctx, double progressPercent) async {
+    // At or above Simkl's own rule the stop already marked it watched; sending
+    // history too would write the same watch twice.
+    if (progressPercent >= _scrobbleWatchedPercent) return;
+    appLogger.d('Simkl: stop below ${_scrobbleWatchedPercent.toStringAsFixed(0)}% — recording watch explicitly');
+    await markWatched(ctx);
+  }
+
+  /// Scrobble takes a single `movie`/`show` object plus a sibling `episode`,
+  /// unlike the plural history/ratings shapes. `show` also covers anime:
+  /// Simkl routes by id and maps TVDB season/episode numbering to AniDB
+  /// itself.
+  Map<String, dynamic> _scrobbleBody(TrackerContext ctx, Map<String, Object> ids, double progressPercent) {
+    // Simkl accepts at most two decimal places on `progress`.
+    final progress = double.parse(progressPercent.toStringAsFixed(2));
+    return ctx.isMovie
+        ? {
+            'progress': progress,
+            'movie': {'ids': ids},
+          }
+        : {
+            'progress': progress,
+            'show': {'ids': ids},
+            'episode': {'season': ctx.season, 'number': ctx.episodeNumber},
+          };
   }
 
   Map<String, dynamic> _historyBody(TrackerContext ctx, Map<String, Object> ids) {
@@ -98,12 +189,19 @@ class SimklTracker extends TrackerBase {
           };
   }
 
-  Future<int?> getRating(TrackerRatingContext ctx) async {
-    final client = _client;
-    if (client == null) throw const TrackerRatingUnavailableException('Simkl');
+  /// Resolve the active client + matchable ids, or throw if rating is
+  /// unavailable (no session, or no usable external/anime ids).
+  (SimklClient, Map<String, Object>) _ratingTarget(TrackerRatingContext ctx) {
+    final activeClient = client;
+    if (activeClient == null) throw const TrackerRatingUnavailableException('Simkl');
     final ids = _buildIds(external: ctx.ids.external, anime: ctx.ids.anime);
     if (ids.isEmpty) throw const TrackerRatingUnavailableException('Simkl');
+    return (activeClient, ids);
+  }
 
+  @override
+  Future<int?> getRating(TrackerRatingContext ctx) async {
+    final (client, ids) = _ratingTarget(ctx);
     final types = ctx.isMovie ? const ['movies'] : const ['shows', 'anime'];
     for (final type in types) {
       final entries = await client.getRatings(type);
@@ -111,8 +209,8 @@ class SimklTracker extends TrackerBase {
         if (entry is! Map) continue;
         final map = entry.cast<String, dynamic>();
         final media = map[ctx.isMovie ? 'movie' : 'show'];
-        final remoteIds = _nestedIds(media) ?? _nestedIds(map);
-        if (!_idsMatch(remoteIds, ids)) continue;
+        final remoteIds = trackerNestedIds(media) ?? trackerNestedIds(map);
+        if (!trackerIdsMatch(remoteIds, ids)) continue;
         final rating = flexibleInt(map['user_rating']) ?? flexibleInt(map['rating']);
         return rating != null && rating > 0 ? rating.clamp(1, 10).toInt() : null;
       }
@@ -120,23 +218,17 @@ class SimklTracker extends TrackerBase {
     return null;
   }
 
+  @override
   Future<void> rate(TrackerRatingContext ctx, int score) async {
-    final client = _client;
-    if (client == null) throw const TrackerRatingUnavailableException('Simkl');
-    final ids = _buildIds(external: ctx.ids.external, anime: ctx.ids.anime);
-    if (ids.isEmpty) throw const TrackerRatingUnavailableException('Simkl');
-
+    final (client, ids) = _ratingTarget(ctx);
     final clamped = score.clamp(1, 10).toInt();
     await client.addRatings(_ratingBody(ctx, ids, rating: clamped));
     appLogger.d('Simkl: updated score (ids=$ids, score=$clamped)');
   }
 
+  @override
   Future<void> clearRating(TrackerRatingContext ctx) async {
-    final client = _client;
-    if (client == null) throw const TrackerRatingUnavailableException('Simkl');
-    final ids = _buildIds(external: ctx.ids.external, anime: ctx.ids.anime);
-    if (ids.isEmpty) throw const TrackerRatingUnavailableException('Simkl');
-
+    final (client, ids) = _ratingTarget(ctx);
     await client.removeRatings(_ratingBody(ctx, ids));
     appLogger.d('Simkl: cleared score (ids=$ids)');
   }
@@ -150,25 +242,6 @@ class SimklTracker extends TrackerBase {
         : {
             'shows': [item],
           };
-  }
-
-  Map<String, dynamic>? _nestedIds(Object? value) {
-    if (value is! Map) return null;
-    final ids = value['ids'];
-    return ids is Map ? ids.cast<String, dynamic>() : null;
-  }
-
-  bool _idsMatch(Map<String, dynamic>? remoteIds, Map<String, Object> localIds) {
-    if (remoteIds == null) return false;
-    for (final entry in localIds.entries) {
-      final remote = remoteIds[entry.key];
-      if (remote == null) continue;
-      if (entry.value is String && remote.toString() == entry.value) return true;
-      final remoteInt = flexibleInt(remote);
-      final localInt = flexibleInt(entry.value);
-      if (remoteInt != null && localInt != null && remoteInt == localInt) return true;
-    }
-    return false;
   }
 
   /// Prefer Fribb's simkl_id for precision; otherwise send whatever Plex

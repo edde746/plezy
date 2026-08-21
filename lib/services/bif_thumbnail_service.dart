@@ -1,7 +1,7 @@
-import '../utils/isolate_helper.dart';
 import 'dart:typed_data';
 
-import 'plex_client.dart';
+import '../utils/isolate_helper.dart';
+
 import 'scrub_preview_source.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -69,13 +69,14 @@ class BifThumbnailService implements ScrubPreviewSource {
 
   double? _aspectRatio;
 
-  /// Download and parse the BIF file for [partId].
+  /// Download and parse the BIF file through [fetchBytes] (Plex's
+  /// `/library/parts/{id}/indexes/sd`, Emby's `/Videos/{id}/index.bif`).
   /// Returns silently on failure (thumbnails simply won't be available).
-  Future<void> load(PlexClient client, int partId, {double? aspectRatio}) async {
+  Future<void> load(Future<Uint8List?> Function() fetchBytes, {double? aspectRatio}) async {
     _aspectRatio = aspectRatio;
     _entries = null;
     try {
-      final bytes = await client.downloadBifFile(partId);
+      final bytes = await fetchBytes();
       if (bytes == null || bytes.isEmpty) return;
       const fiftyMb = 50 * 1024 * 1024;
       const twoHundredMb = 200 * 1024 * 1024;

@@ -1,3 +1,4 @@
+import '../media/media_item.dart' show CardShape;
 import '../services/settings_service.dart' show LibraryDensity;
 
 /// Shared sizing math for media cards rendered in list mode.
@@ -8,18 +9,26 @@ class MediaCardListLayout {
     return 70 + LibraryDensity.factor(density) * 50;
   }
 
-  static double posterWidth({required int density, required bool usesWideAspectRatio}) {
+  /// [shape] wins over [usesWideAspectRatio] when provided.
+  static double posterWidth({required int density, bool usesWideAspectRatio = false, CardShape? shape}) {
     final base = basePosterWidth(density);
-    return usesWideAspectRatio ? base * 1.6 : base;
+    return _resolveShape(shape, usesWideAspectRatio) == CardShape.wide ? base * 1.6 : base;
   }
 
-  static double posterHeight({required int density, required bool usesWideAspectRatio}) {
+  static double posterHeight({required int density, bool usesWideAspectRatio = false, CardShape? shape}) {
     final base = basePosterWidth(density);
-    return usesWideAspectRatio ? base * 0.9 : base * 1.5;
+    return switch (_resolveShape(shape, usesWideAspectRatio)) {
+      CardShape.wide => base * 0.9,
+      CardShape.square => base,
+      CardShape.poster => base * 1.5,
+    };
   }
 
-  static double estimatedRowHeight({required int density, required bool usesWideAspectRatio}) {
-    final poster = posterHeight(density: density, usesWideAspectRatio: usesWideAspectRatio);
+  static double estimatedRowHeight({required int density, bool usesWideAspectRatio = false, CardShape? shape}) {
+    final poster = posterHeight(density: density, usesWideAspectRatio: usesWideAspectRatio, shape: shape);
     return poster + padding * 2;
   }
+
+  static CardShape _resolveShape(CardShape? shape, bool usesWideAspectRatio) =>
+      shape ?? (usesWideAspectRatio ? CardShape.wide : CardShape.poster);
 }

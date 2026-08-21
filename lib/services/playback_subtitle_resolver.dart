@@ -1,0 +1,391 @@
+import 'package:collection/collection.dart';
+
+import '../media/media_item.dart';
+import '../media/media_server_user_profile.dart';
+import '../media/media_source_info.dart';
+import '../mpv/mpv.dart';
+import '../utils/subtitle_forced_semantics.dart';
+import 'playback_initialization_types.dart';
+import 'subtitle_preference.dart';
+import 'track_selection_service.dart';
+
+/// A source-catalog subtitle choice.
+///
+/// Keeping "off" distinct from a numeric stream id prevents backend wire
+/// conventions (notably Plex's `0`) from colliding with real Jellyfin ids.
+final class PlaybackSourceSubtitleChoice {
+  final bool isOff;
+  final int? sourceStreamId;
+
+  const PlaybackSourceSubtitleChoice.off() : this._(isOff: true);
+
+  const PlaybackSourceSubtitleChoice.source(int sourceStreamId) : this._(isOff: false, sourceStreamId: sourceStreamId);
+
+  const PlaybackSourceSubtitleChoice._({required this.isOff, this.sourceStreamId});
+
+  @override
+  bool operator ==(Object other) =>
+      other is PlaybackSourceSubtitleChoice && other.isOff == isOff && other.sourceStreamId == sourceStreamId;
+
+  @override
+  int get hashCode => Object.hash(isOff, sourceStreamId);
+}
+
+/// Effective subtitle choice for one player open.
+///
+/// The source IDs remain stable across player reloads, while [primaryTrack]
+/// and [secondaryTrack] carry the matching metadata used to select the newly
+/// discovered native tracks after open.
+class PlaybackSubtitleSelection {
+  final SubtitleTrack primaryTrack;
+  final int? primarySourceStreamId;
+  final PlaybackSubtitleSidecar? primarySidecar;
+  final SubtitleTrack? secondaryTrack;
+  final int? secondarySourceStreamId;
+  final PlaybackSubtitleSidecar? secondarySidecar;
+  final List<PlaybackSubtitleSidecar> preloadedSidecars;
+
+  /// The primary preference the resolver could not serve when this selection
+  /// is off. Distinguishes "the carried choice declined and the ladder fell
+  /// through" from a deliberate off (#1785): the open flow hands the declined
+  /// preference back to the track manager so late-arriving native tracks may
+  /// still serve it, and progress reports must not persist the fallout as an
+  /// explicit server-side off. A user or server decision leaves this null.
+  final SubtitlePreference? declinedPreference;
+
+  const PlaybackSubtitleSelection({
+    required this.primaryTrack,
+    this.primarySourceStreamId,
+    this.primarySidecar,
+    this.secondaryTrack,
+    this.secondarySourceStreamId,
+    this.secondarySidecar,
+    this.preloadedSidecars = const [],
+    this.declinedPreference,
+  });
+
+  const PlaybackSubtitleSelection.off({this.preloadedSidecars = const [], this.declinedPreference})
+    : primaryTrack = SubtitleTrack.off,
+      primarySourceStreamId = null,
+      primarySidecar = null,
+      secondaryTrack = null,
+      secondarySourceStreamId = null,
+      secondarySidecar = null;
+
+  bool get isOff => primaryTrack.id == SubtitleTrack.off.id;
+
+  List<SubtitleTrack> get sidecarsAtOpen {
+    final tracks = <SubtitleTrack>[];
+    final added = <SubtitleTrack>{};
+    void add(SubtitleTrack? track) {
+      if (track != null && added.add(track)) tracks.add(track);
+    }
+
+    for (final sidecar in preloadedSidecars) {
+      add(sidecar.track);
+    }
+    add(primarySidecar?.track);
+    add(secondarySidecar?.track);
+    return tracks;
+  }
+}
+
+/// Resolves the server subtitle catalog before opening the native player,
+/// combining the active choice with any sidecars marked for preloading.
+class PlaybackSubtitleResolver {
+  const PlaybackSubtitleResolver._();
+
+  static SubtitlePreference? _sourceBackedPreference(
+    SubtitlePreference? preferred,
+    MediaSourceInfo? mediaInfo,
+    List<_SubtitleCandidate> candidates, {
+    required bool preserveSourceIdentity,
+  }) {
+    SubtitlePreference resolveIntent(SubtitleIntentPreference preference) {
+      final row = findSourceTrackForIntent(
+        preference.intent,
+        mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
+      );
+      if (row != null) {
+        for (final candidate in candidates) {
+          if (candidate.sourceStreamId == row.id) return SubtitlePreference.track(candidate.track);
+        }
+      }
+      // Keep the declined intent: selectSubtitleTrack's intent branch and the
+      // priority ladder decide (falling to the server's own selection).
+      return preference;
+    }
+
+    // Crossing an item/source boundary strips identity from every reference.
+    final pref = preserveSourceIdentity ? preferred : SubtitlePreference.demoteToIntent(preferred);
+    switch (pref) {
+      case null || SubtitleOffPreference():
+        return pref;
+      case SubtitleIntentPreference():
+        return resolveIntent(pref);
+      case SubtitleTrackPreference(:final track):
+        if (track.id.startsWith('source:')) {
+          final sourceStreamId = int.tryParse(track.id.substring('source:'.length));
+          final exactCandidate = candidates
+              .where((candidate) => candidate.sourceStreamId == sourceStreamId)
+              .firstOrNull;
+          if (exactCandidate != null) return SubtitlePreference.track(exactCandidate.track);
+          // The row vanished from this source: the id is stale, so only its
+          // semantics may carry forward (hard-gated, unlike the old fuzzy
+          // rematch — a class-crossing lookalike must not inherit the id).
+          final demoted = SubtitlePreference.demoteToIntent(pref);
+          return demoted is SubtitleIntentPreference ? resolveIntent(demoted) : demoted;
+        }
+        // Same-item raw native/uri reference: identity-match it back to this
+        // item's own rows so the selection is source-backed where possible.
+        final sourceMatch = findPlexTrackForMpvSubtitle(
+          track,
+          mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[],
+        );
+        if (sourceMatch != null) {
+          for (final candidate in candidates) {
+            if (candidate.sourceStreamId == sourceMatch.id) return SubtitlePreference.track(candidate.track);
+          }
+        }
+        return pref;
+    }
+  }
+
+  static PlaybackSubtitleSelection resolve({
+    required MediaItem metadata,
+    required MediaSourceInfo? mediaInfo,
+    required List<PlaybackSubtitleSidecar> sidecars,
+    MediaServerUserProfile? profileSettings,
+    AudioTrack? preferredAudioTrack,
+    SubtitlePreference? preferredSubtitleTrack,
+    SubtitlePreference? preferredSecondarySubtitleTrack,
+    bool preserveSourceIdentity = true,
+    bool isTranscoding = false,
+  }) {
+    final candidates = <_SubtitleCandidate>[];
+    final matchedSidecars = <PlaybackSubtitleSidecar>{};
+
+    for (final sourceTrack in mediaInfo?.subtitleTracks ?? const <MediaSubtitleTrack>[]) {
+      final sidecar = sidecars.where((candidate) => candidate.sourceStreamId == sourceTrack.id).firstOrNull;
+      if (sidecar != null) matchedSidecars.add(sidecar);
+      candidates.add(
+        _SubtitleCandidate(
+          track: subtitleTrackForSource(sourceTrack, sidecar: sidecar),
+          sourceStreamId: sourceTrack.id,
+          sidecar: sidecar,
+        ),
+      );
+    }
+
+    // Legacy/offline sidecars may not have cached source metadata. They still
+    // participate in normal default/profile selection and remain playable.
+    for (final sidecar in sidecars) {
+      if (matchedSidecars.contains(sidecar)) continue;
+      candidates.add(
+        _SubtitleCandidate(track: sidecar.track, sourceStreamId: sidecar.sourceStreamId, sidecar: sidecar),
+      );
+    }
+
+    final preloadedSidecars = sidecars.where((sidecar) => sidecar.preload).toList(growable: false);
+    final availableTracks = candidates.map((candidate) => candidate.track).toList(growable: false);
+    final service = TrackSelectionService(
+      profileSettings: profileSettings,
+      metadata: metadata,
+      plexMediaInfo: mediaInfo,
+    );
+    final selectedAudio = service.selectAudioTrack(_audioTracksForSource(mediaInfo), preferredAudioTrack)?.track;
+    final primaryPreference = _sourceBackedPreference(
+      preferredSubtitleTrack,
+      mediaInfo,
+      candidates,
+      preserveSourceIdentity: preserveSourceIdentity,
+    );
+    final primaryResult = service.selectSubtitleTrack(availableTracks, primaryPreference, selectedAudio);
+    final primary = primaryResult?.track;
+    // A non-off preference that still lands on off (or resolves to a track
+    // this catalog cannot back) was declined, not chosen — keep it on the
+    // selection so the open flow can retry it against native tracks (#1785).
+    final declinedPreference = primaryPreference != null && primaryPreference is! SubtitleOffPreference
+        ? primaryPreference
+        : null;
+    if (primary == null || primary.id == SubtitleTrack.off.id) {
+      return PlaybackSubtitleSelection.off(
+        preloadedSidecars: preloadedSidecars,
+        declinedPreference: declinedPreference,
+      );
+    }
+
+    final primaryCandidate = candidates.where((candidate) => candidate.track.id == primary.id).firstOrNull;
+    if (primaryCandidate == null) {
+      return PlaybackSubtitleSelection.off(
+        preloadedSidecars: preloadedSidecars,
+        declinedPreference: declinedPreference,
+      );
+    }
+
+    _SubtitleCandidate? secondaryCandidate;
+    final secondaryPreference = _sourceBackedPreference(
+      preferredSecondarySubtitleTrack,
+      mediaInfo,
+      candidates,
+      preserveSourceIdentity: preserveSourceIdentity,
+    );
+    if (secondaryPreference != null && secondaryPreference is! SubtitleOffPreference) {
+      final secondary = switch (secondaryPreference) {
+        SubtitleOffPreference() => null,
+        SubtitleTrackPreference(:final track) => service.findBestSubtitleMatch(availableTracks, track),
+        SubtitleIntentPreference(:final intent) => findNativeTrackForIntent(intent, availableTracks),
+      };
+      secondaryCandidate = candidates
+          .where((candidate) => candidate.track.id == secondary?.id && candidate.track.id != primary.id)
+          .firstOrNull;
+      // A transcode carries exactly one subtitle - the burned primary - so an embedded secondary has
+      // no route at all: no sidecar to fetch and no native track to land on. Kept in the committed
+      // selection it made `TrackManager` wait out its thirty-second deadline for a track that could
+      // never arrive, and then read as selected while nothing was on screen.
+      if (isTranscoding && secondaryCandidate?.sidecar == null) secondaryCandidate = null;
+    }
+
+    return PlaybackSubtitleSelection(
+      primaryTrack: primaryCandidate.track,
+      primarySourceStreamId: primaryCandidate.sourceStreamId,
+      primarySidecar: primaryCandidate.sidecar,
+      secondaryTrack: secondaryCandidate?.track,
+      secondarySourceStreamId: secondaryCandidate?.sourceStreamId,
+      secondarySidecar: secondaryCandidate?.sidecar,
+      preloadedSidecars: preloadedSidecars,
+    );
+  }
+
+  /// Whether a subtitle change has to go back to the server rather than being applied to the
+  /// running player.
+  ///
+  /// Two independent reasons, both only on a transcode.
+  ///
+  /// Something is burned in right now: burned pixels are not a track, so turning them off
+  /// client-side leaves them on screen and selecting something else draws it *over* them. Every
+  /// change from that state needs a fresh negotiation, whatever it changes to.
+  ///
+  /// Or the target itself can only come from the server. On a transcode the only subtitle the
+  /// client holds is a real external file; an embedded row is delivered by being burned in, so
+  /// selecting one has to be negotiated. Applying it locally instead finds nothing attached and
+  /// reports success over a picture that never changed.
+  ///
+  /// Turning off with nothing burned is a genuine local no-op, and a direct play never burns.
+  static bool burnRequiresRenegotiation({
+    required bool isTranscoding,
+    required int? currentSourceStreamId,
+    required bool currentSelectionHasSidecar,
+    required bool targetIsOff,
+    required bool targetIsExternalFile,
+  }) {
+    if (!isTranscoding) return false;
+    if (currentSourceStreamId != null && !currentSelectionHasSidecar) return true;
+    return !targetIsOff && !targetIsExternalFile;
+  }
+
+  /// Stable source descriptor used for an explicit user selection. Supplying
+  /// this as the next open's preferred track makes it the highest-priority
+  /// choice without retaining a stale sidecar URL.
+  static SubtitleTrack? preferredTrackForSource(MediaSourceInfo? mediaInfo, int sourceStreamId) {
+    final sourceTrack = mediaInfo?.subtitleTracks.where((track) => track.id == sourceStreamId).firstOrNull;
+    return sourceTrack == null ? null : subtitleTrackForSource(sourceTrack);
+  }
+
+  static SubtitleTrack subtitleTrackForSource(MediaSubtitleTrack sourceTrack, {PlaybackSubtitleSidecar? sidecar}) {
+    final playable = sidecar?.track;
+    return SubtitleTrack(
+      id: 'source:${sourceTrack.id}',
+      // The row's own title first: server display titles collapse to the bare
+      // language ("English") and are identical across same-language rows, so
+      // a carried intent built from them cannot tell a Signs/Songs track from
+      // the full dialogue track on the next episode (#1785).
+      title: sourceTrack.title ?? playable?.title ?? sourceTrack.displayTitle ?? sourceTrack.language,
+      language: playable?.language ?? sourceTrack.languageCode ?? sourceTrack.language,
+      codec: playable?.codec ?? sourceTrack.codec,
+      isDefault: sourceTrack.selected,
+      // Effective forced-ness: an intent captured from this committed track
+      // must stay in the same class as the row it came from (#1716).
+      isForced: sourceTrack.effectiveForced,
+      isExternal: playable != null,
+      isContainer: playable?.isContainer ?? false,
+      uri: playable?.uri,
+    );
+  }
+
+  /// Resolve a server source row to a track already loaded by the player.
+  /// Standalone sidecars match only by their stable URL key (or current source
+  /// identity), while a container sidecar uses normal Plex/native metadata
+  /// matching across the subtitle tracks extracted from that container.
+  static SubtitleTrack? nativeTrackForSource({
+    required MediaSubtitleTrack sourceTrack,
+    required List<SubtitleTrack> nativeTracks,
+    required List<MediaSubtitleTrack> allSourceTracks,
+    required bool isResolvedSidecar,
+    required bool isContainerSidecar,
+    int? currentSourceStreamId,
+    SubtitleTrack? selectedNativeTrack,
+  }) {
+    if (isResolvedSidecar) {
+      if (isContainerSidecar) {
+        final containerTracks = nativeTracks.where((track) => track.isContainer).toList(growable: false);
+        return findMpvTrackForPlexSubtitle(sourceTrack, containerTracks, allPlexTracks: allSourceTracks);
+      }
+      final key = sourceTrack.key;
+      if (key != null && key.isNotEmpty) {
+        for (final candidate in nativeTracks) {
+          if (candidate.isExternal && candidate.uri?.contains(key) == true) return candidate;
+        }
+      }
+      if (currentSourceStreamId == sourceTrack.id &&
+          selectedNativeTrack != null &&
+          selectedNativeTrack.id != SubtitleTrack.off.id &&
+          selectedNativeTrack.isExternal) {
+        return selectedNativeTrack;
+      }
+      return null;
+    }
+    return findMpvTrackForPlexSubtitle(sourceTrack, nativeTracks, allPlexTracks: allSourceTracks);
+  }
+
+  static PlaybackSourceSubtitleChoice advanceSourceChoice(
+    List<MediaSubtitleTrack> tracks,
+    PlaybackSourceSubtitleChoice currentChoice,
+    int advances,
+  ) {
+    final choices = <PlaybackSourceSubtitleChoice>[
+      const PlaybackSourceSubtitleChoice.off(),
+      ...tracks.map((track) => PlaybackSourceSubtitleChoice.source(track.id)),
+    ];
+    final currentIndex = choices.indexOf(currentChoice);
+    final normalizedCurrentIndex = currentIndex < 0 ? 0 : currentIndex;
+    return choices[(normalizedCurrentIndex + advances) % choices.length];
+  }
+
+  /// Stable semantic descriptor for a source audio row — the audio twin of
+  /// [subtitleTrackForSource]. The row's own title comes first: server
+  /// display titles collapse to the bare language and cannot tell a
+  /// commentary or alternate mix from the main track on another item.
+  static AudioTrack audioTrackForSource(MediaAudioTrack track) {
+    return AudioTrack(
+      id: 'source:${track.id}',
+      title: track.title ?? track.displayTitle ?? track.language,
+      language: track.languageCode ?? track.language,
+      codec: track.codec,
+      channels: track.channels,
+      isDefault: track.selected,
+    );
+  }
+
+  static List<AudioTrack> _audioTracksForSource(MediaSourceInfo? mediaInfo) {
+    return [for (final track in mediaInfo?.audioTracks ?? const <MediaAudioTrack>[]) audioTrackForSource(track)];
+  }
+}
+
+class _SubtitleCandidate {
+  final SubtitleTrack track;
+  final int? sourceStreamId;
+  final PlaybackSubtitleSidecar? sidecar;
+
+  const _SubtitleCandidate({required this.track, required this.sourceStreamId, required this.sidecar});
+}

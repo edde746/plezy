@@ -4,7 +4,7 @@ import '../media/media_source_info.dart';
 import '../media/media_version.dart';
 import '../models/transcode_quality_preset.dart';
 import 'playback_context.dart';
-import 'playback_initialization_types.dart';
+import 'playback_subtitle_resolver.dart';
 
 /// Immutable snapshot of everything that describes the item currently loaded
 /// in the player: the resolver output plus the effective (post-fallback,
@@ -24,8 +24,14 @@ class PlaybackSession {
   /// Effective media version id, refined from the resolver's clamped
   /// version index when the version list provides one.
   final String? mediaSourceId;
+  final PlaybackSubtitleSelection subtitleSelection;
 
-  const PlaybackSession({required this.context, required this.qualityPreset, this.mediaSourceId});
+  const PlaybackSession({
+    required this.context,
+    required this.qualityPreset,
+    this.mediaSourceId,
+    this.subtitleSelection = const PlaybackSubtitleSelection.off(),
+  });
 
   /// Derives the effective selections from a resolved [context]:
   /// quality falls back to original when the backend rejected the requested
@@ -34,6 +40,7 @@ class PlaybackSession {
     PlaybackContext context, {
     required TranscodeQualityPreset requestedQualityPreset,
     String? requestedMediaSourceId,
+    PlaybackSubtitleSelection subtitleSelection = const PlaybackSubtitleSelection.off(),
   }) {
     final result = context.result;
     final fellBackToOriginal = result.fallbackReason != null && !requestedQualityPreset.isOriginal;
@@ -41,7 +48,19 @@ class PlaybackSession {
       context: context,
       qualityPreset: fellBackToOriginal ? TranscodeQualityPreset.original : requestedQualityPreset,
       mediaSourceId:
-          mediaSourceIdForIndex(result.availableVersions, result.selectedMediaIndex) ?? requestedMediaSourceId,
+          result.selectedMediaSourceId ??
+          mediaSourceIdForIndex(result.availableVersions, result.selectedMediaIndex) ??
+          requestedMediaSourceId,
+      subtitleSelection: subtitleSelection,
+    );
+  }
+
+  PlaybackSession withSubtitleSelection(PlaybackSubtitleSelection selection) {
+    return PlaybackSession(
+      context: context,
+      qualityPreset: qualityPreset,
+      mediaSourceId: mediaSourceId,
+      subtitleSelection: selection,
     );
   }
 
@@ -50,27 +69,23 @@ class PlaybackSession {
     return versions[index].id;
   }
 
-  PlaybackInitializationResult get result => context.result;
-
   MediaItem get metadata => context.metadata;
 
   MediaServerClient? get reportingClient => context.reportingClient;
 
-  bool get isTranscoding => result.isTranscoding;
+  bool get isTranscoding => context.result.isTranscoding;
 
-  bool get isOffline => result.isOffline;
+  bool get isOffline => context.result.isOffline;
 
-  String? get playSessionId => result.playSessionId;
+  String? get playSessionId => context.result.playSessionId;
 
-  String? get playMethod => result.playMethod;
+  String? get playMethod => context.result.playMethod;
 
-  int? get audioStreamId => result.activeAudioStreamId;
+  int? get audioStreamId => context.result.activeAudioStreamId;
 
-  int get mediaIndex => result.selectedMediaIndex;
+  int get mediaIndex => context.result.selectedMediaIndex;
 
-  List<MediaVersion> get availableVersions => result.availableVersions;
+  List<MediaVersion> get availableVersions => context.result.availableVersions;
 
-  MediaSourceInfo? get mediaInfo => result.mediaInfo;
-
-  Map<String, String>? get streamHeaders => context.streamHeaders;
+  MediaSourceInfo? get mediaInfo => context.result.mediaInfo;
 }

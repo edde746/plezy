@@ -9,7 +9,7 @@ part of 'plex_subtitle_search_result.dart';
 PlexSubtitleSearchResult _$PlexSubtitleSearchResultFromJson(
   Map<String, dynamic> json,
 ) => PlexSubtitleSearchResult(
-  id: _flexibleIntOrZero(json['id']),
+  id: flexibleIntOrZero(json['id']),
   key: readStringField(json, 'key') as String? ?? '',
   codec: readStringField(json, 'codec') as String?,
   language: readStringField(json, 'language') as String?,

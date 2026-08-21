@@ -1,0 +1,85 @@
+{
+  "*": {
+    "Plex": "Brand name",
+    "Jellyfin": "Brand name",
+    "Emby": "Brand name",
+    "Plezy": "Brand name",
+    "Simkl": "Brand name",
+    "BL": "Technical token",
+    "EL": "Technical token",
+    "RPU": "Technical token",
+    "dontkillmyapp.com": "External technical resource name"
+  },
+  "lib/screens/auth_screen.dart": {
+    "Debug: Enter Plex Token": "kDebugMode developer authentication affordance",
+    "Plex Auth Token": "kDebugMode developer authentication affordance",
+    "Enter your Plex.tv token": "kDebugMode developer authentication affordance",
+    "Auth service not ready": "kDebugMode developer authentication diagnostic"
+  },
+  "lib/screens/settings/settings_screen.dart": {
+    "Test Sentry": "kDebugMode developer diagnostic affordance",
+    "Send a test error": "kDebugMode developer diagnostic affordance",
+    "Test ANR": "kDebugMode developer diagnostic affordance",
+    "Block the main thread for 10 seconds": "kDebugMode developer diagnostic affordance",
+    "Blocking main thread...": "kDebugMode developer diagnostic affordance"
+  },
+  "lib/widgets/video_controls/sheets/video_settings_sheet.dart": {
+    "Trigger MPV Fallback": "kDebugMode developer playback affordance",
+    "Simulate HTTP $status from server": "kDebugMode developer playback affordance"
+  },
+  "lib/screens/settings/seerr_connect_screen.dart": {
+    "https://seerr.example.com": "Intentional server URL example"
+  },
+  "lib/screens/settings/external_player_screen.dart": {
+    "myplayer://play?url=": "Intentional URL scheme example",
+    "com.example.player": "Intentional Android package example",
+    "mpv": "Intentional executable example",
+    "/usr/bin/player": "Intentional executable path example"
+  },
+  "lib/screens/settings/appearance_settings_screen.dart": {
+    "English": "Language endonym",
+    "Svenska": "Language endonym",
+    "Français": "Language endonym",
+    "Italiano": "Language endonym",
+    "Nederlands": "Language endonym",
+    "Deutsch": "Language endonym",
+    "Magyar": "Language endonym",
+    "简体中文": "Language endonym",
+    "繁體中文": "Language endonym",
+    "한국어": "Language endonym",
+    "Español": "Language endonym",
+    "Português": "Language endonym",
+    "日本語": "Language endonym",
+    "Русский": "Language endonym",
+    "Polski": "Language endonym",
+    "Dansk": "Language endonym",
+    "Norsk bokmål": "Language endonym",
+    "Български": "Language endonym",
+    "Türkçe": "Language endonym",
+    "Azərbaycanca": "Language endonym",
+    "Қазақша": "Language endonym",
+    "Oʻzbekcha": "Language endonym"
+  },
+  "lib/screens/settings/logs_screen.dart": {
+    "Android ${info.version.release} (API ${info.version.sdkInt})": "English bug-report diagnostic",
+    "TV mode: yes$suffix": "English bug-report diagnostic",
+    "Renderer: $renderer": "English bug-report diagnostic",
+    "Background: ${backgroundWork.describeSync()}": "English bug-report diagnostic",
+    "iOS ${info.systemVersion}": "English bug-report diagnostic",
+    "macOS ${info.osRelease}": "English bug-report diagnostic",
+    "Linux ${info.versionId ?? info.id}": "English bug-report diagnostic",
+    "Effects: ${DevicePerformance.describeSync()}": "English bug-report diagnostic",
+    "Display: ${DevicePerformance.describeDisplay()}": "English bug-report diagnostic"
+  },
+  "lib/services/startup_diagnostics.dart": {
+    "Plezy startup failure": "English bug-report diagnostic",
+    "Version: $appVersion": "English bug-report diagnostic",
+    "Platform: $platform": "English bug-report diagnostic",
+    "When: ${timestamp.toUtc().toIso8601String()}": "English bug-report diagnostic",
+    "Phase: $phaseId": "English bug-report diagnostic",
+    "Error: $errorType": "English bug-report diagnostic",
+    "Repair offered: ${repairable ? 'yes' : 'no'}": "English bug-report diagnostic",
+    "Message: $message": "English bug-report diagnostic",
+    "Stack trace:": "English bug-report diagnostic"
+  }
+}

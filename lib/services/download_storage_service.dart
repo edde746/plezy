@@ -1,12 +1,14 @@
 import 'dart:convert';
 import '../media/ids.dart';
 import 'dart:io';
+import 'package:background_downloader/background_downloader.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
 import 'settings_service.dart';
@@ -27,7 +29,15 @@ class DownloadStorageException implements Exception {
 class DownloadStorageService {
   static DownloadStorageService? _instance;
   static DownloadStorageService get instance => _instance ??= DownloadStorageService._();
-  DownloadStorageService._();
+  DownloadStorageService._() : _safAvailableOverride = false;
+
+  @visibleForTesting
+  DownloadStorageService.forTestingSaf(String baseUri) : _safAvailableOverride = true {
+    _customDownloadPath = baseUri;
+    _customPathType = 'saf';
+  }
+
+  final bool _safAvailableOverride;
 
   /// Drop the cached singleton so the next [instance] call returns a fresh
   /// service. Test-only.
@@ -43,7 +53,8 @@ class DownloadStorageService {
   String? _customDownloadPath;
   String _customPathType = 'file';
 
-  bool get isUsingSaf => Platform.isAndroid && _customPathType == 'saf' && _customDownloadPath != null;
+  bool get isUsingSaf =>
+      (Platform.isAndroid || _safAvailableOverride) && _customPathType == 'saf' && _customDownloadPath != null;
 
   String? get safBaseUri => isUsingSaf ? _customDownloadPath : null;
 
@@ -69,14 +80,27 @@ class DownloadStorageService {
     }
   }
 
+  /// Whether [_getBaseAppDir] resolves to the documents directory (mobile) or the
+  /// support directory (desktop). Single source of truth for that split, shared
+  /// with [resolveTaskDirectory] so the two can never disagree.
+  static bool get _baseAppDirIsDocuments => Platform.isAndroid || Platform.isIOS;
+
   /// Get the base app directory for storing data.
   /// Uses ApplicationDocumentsDirectory on mobile, ApplicationSupportDirectory on desktop.
   Future<Directory> _getBaseAppDir() {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (_baseAppDirIsDocuments) {
       return getApplicationDocumentsDirectory();
     }
     return getApplicationSupportDirectory();
   }
+
+  /// Absolute path of the app-private directory that relative download paths are
+  /// anchored to. Moves with the app, so it must be read fresh rather than stored.
+  Future<String> baseAppDirectoryPath() async => (await _getBaseAppDir()).path;
+
+  /// Configured custom download root when it is a filesystem path, otherwise null.
+  /// A `saf` root is a `content://` tree URI instead — see [safBaseUri].
+  String? get customFileRootPath => _customPathType == 'file' ? _customDownloadPath : null;
 
   /// Format episode filename base: S{XX}E{XX} - {Title}
   String _formatEpisodeFileName(MediaItem episode) {
@@ -338,16 +362,36 @@ class DownloadStorageService {
     // Strip the base directory prefix iteratively — background_downloader
     // recovery paths can contain the base dir doubled (e.g.
     // /data/.../app_flutter/data/.../app_flutter/downloads/...).
+    //
+    // Containment, not a string prefix: a custom download root that merely starts with the
+    // base dir's name (`<base>-external`) is a sibling the app does not own, and stripping
+    // it would silently re-root the download inside app storage.
     var result = absolutePath;
-    while (result.startsWith(baseDir.path)) {
-      result = result.substring(baseDir.path.length);
-      if (result.startsWith('/') || result.startsWith('\\')) {
-        result = result.substring(1);
-      }
+    while (path.isWithin(baseDir.path, result)) {
+      result = path.relative(result, from: baseDir.path);
     }
     if (result != absolutePath) return result;
 
     return absolutePath;
+  }
+
+  /// Base directory and directory to enqueue a download for [absolutePath] with.
+  ///
+  /// A target inside the app's own storage is described relative to a base directory
+  /// that background_downloader re-resolves from the live app context on every launch,
+  /// so a task persisted across a restart survives the private data directory moving —
+  /// an iOS container UUID change, or an Android app moved to adoptable storage. Only a
+  /// custom download root, which lives outside that storage and therefore does not move
+  /// with the app, keeps [BaseDirectory.root] and its absolute path.
+  Future<({BaseDirectory baseDirectory, String directory})> resolveTaskDirectory(String absolutePath) async {
+    final relativePath = await toRelativePath(absolutePath);
+    if (relativePath == absolutePath) {
+      return (baseDirectory: BaseDirectory.root, directory: path.dirname(absolutePath));
+    }
+    return (
+      baseDirectory: _baseAppDirIsDocuments ? BaseDirectory.applicationDocuments : BaseDirectory.applicationSupport,
+      directory: path.dirname(relativePath),
+    );
   }
 
   /// Convert a relative file path to an absolute path (for file operations)
@@ -467,6 +511,28 @@ class DownloadStorageService {
 
   /// Get the extension-less episode filename used for SAF lookups.
   String getEpisodeSafBaseName(MediaItem episode) => _formatEpisodeFileName(episode);
+
+  /// Directory components and file name of a SAF download target. Used by both
+  /// the enqueue path that writes the file and the completion path that looks
+  /// it back up, so the two stay on the same layout. [serverId] is only read
+  /// for kinds without a dedicated folder scheme.
+  ({List<String> components, String fileName}) safTarget(
+    MediaItem metadata,
+    String extension, {
+    int? showYear,
+    required String? serverId,
+  }) {
+    if (metadata.isMovie) {
+      return (components: getMovieSafPathComponents(metadata), fileName: getMovieSafFileName(metadata, extension));
+    }
+    if (metadata.isEpisode) {
+      return (
+        components: getEpisodeSafPathComponents(metadata, showYear: showYear),
+        fileName: getEpisodeSafFileName(metadata, extension),
+      );
+    }
+    return (components: [serverId!, metadata.id], fileName: 'video.$extension');
+  }
 
   bool isSafUri(String storedPath) {
     return storedPath.startsWith('content://');

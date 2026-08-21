@@ -1,0 +1,81 @@
+appId: com.edde746.plezy
+name: Language picker offers the new locales and switching one relocalizes the app
+
+tags:
+  - e2e
+  - regression
+  - settings
+  - i18n
+---
+# Guards 7677d159 and 100d7729: selecting Turkish and reading root navigation
+# labels proves the generated locale is wired end to end. Start clean because
+# the language preference persists and affects every later selector.
+- runFlow: ../subflows/onboard_jellyfin.yaml
+- runFlow: ../subflows/open_settings.yaml
+- tapOn: "(?s)^Appearance.*"
+- extendedWaitUntil:
+    visible: "(?s).*Theme.*"
+    timeout: 15000
+- tapOn: "(?s)^Language.*"
+- extendedWaitUntil:
+    visible: "Azərbaycanca"
+    timeout: 10000
+- assertVisible: "English"
+- assertVisible: "Қазақша"
+# The dialog holds 22 endonyms and only the first 16 fit on a phone, so the two
+# locales that sort last need scrolling into view.
+- repeat:
+    times: 8
+    while:
+      notVisible: "Türkçe"
+    commands:
+      - swipe:
+          start: 50%, 80%
+          end: 50%, 45%
+          duration: 300
+- assertVisible: "Türkçe"
+- assertVisible: "Oʻzbekcha"
+- tapOn: "Türkçe"
+# Selecting a language rebuilds the app from the root route, so everything
+# below runs against the Turkish tree.
+- extendedWaitUntil:
+    visible: "(?s)^Kitaplıklar.*"
+    timeout: 30000
+- assertVisible: "(?s)^Ana Sayfa.*"
+- assertVisible: "(?s)^Ara.*"
+- assertVisible: "(?s)^İndirmeler.*"
+- assertVisible: "Keşfet"
+- assertNotVisible: "(?s)^Libraries.*"
+- assertNotVisible: "Discover"
+# Restore English before leaving the device; the locale preference outlives launchApp.
+- repeat:
+    times: 3
+    while:
+      notVisible: "Ayarlar"
+    commands:
+      - tapOn: "(?s)^M(?:.*Profiller.*)?$"
+      - waitForAnimationToEnd:
+          timeout: 3000
+- tapOn:
+    text: "Ayarlar"
+    below:
+      text: "Profiller"
+- extendedWaitUntil:
+    visible: "(?s)^Görünüm.*"
+    timeout: 15000
+- assertVisible: "(?s)^Servisler.*"
+- assertVisible: "(?s)^Video Oynatma.*"
+- tapOn: "(?s)^Görünüm.*"
+- extendedWaitUntil:
+    visible: "(?s).*Tema.*"
+    timeout: 15000
+- tapOn: "(?s)^Dil.*"
+- extendedWaitUntil:
+    visible: "English"
+    timeout: 10000
+- tapOn: "English"
+- extendedWaitUntil:
+    visible: "(?s)^Libraries.*"
+    timeout: 30000
+- assertVisible: "Discover"
+- assertNotVisible: "(?s)^Kitaplıklar.*"

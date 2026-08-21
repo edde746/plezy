@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../i18n/strings.g.dart';
 import '../../media/library_first_character.dart';
 import 'alpha_jump_helper.dart';
 
@@ -126,6 +127,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
     _dragFraction = newFraction;
 
     final letter = _helper.letterAtFraction(newFraction);
+    if (letter == _dragLetter) return;
 
     setState(() => _dragLetter = letter);
     widget.onJump(_helper.indexForLetter(letter) ?? 0);
@@ -140,88 +142,117 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
     _scheduleHide();
   }
 
+  int get _semanticLetterIndex {
+    if (_helper.letters.isEmpty) return -1;
+    final index = _helper.letters.indexOf(_dragLetter ?? widget.currentLetter);
+    return index < 0 ? 0 : index;
+  }
+
+  void _stepSemantics(int delta) {
+    final currentIndex = _semanticLetterIndex;
+    if (currentIndex < 0) return;
+    final targetIndex = (currentIndex + delta).clamp(0, _helper.letters.length - 1);
+    if (targetIndex == currentIndex) return;
+    final letter = _helper.letters[targetIndex];
+    _show();
+    _scheduleHide();
+    widget.onJump(_helper.indexForLetter(letter) ?? 0);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _opacityController,
-      builder: (context, child) {
-        final opacity = _opacityController.value;
-        // Prevent stealing taps when fully hidden
-        if (opacity == 0.0) return const SizedBox.shrink();
+    final semanticIndex = _semanticLetterIndex;
+    return Semantics(
+      label: t.accessibility.alphabetNavigation,
+      value: _dragLetter ?? widget.currentLetter,
+      hint: t.accessibility.alphabetScrollHint,
+      increasedValue: semanticIndex >= 0 && semanticIndex < _helper.letters.length - 1
+          ? _helper.letters[semanticIndex + 1]
+          : null,
+      decreasedValue: semanticIndex > 0 ? _helper.letters[semanticIndex - 1] : null,
+      onIncrease: semanticIndex >= 0 && semanticIndex < _helper.letters.length - 1 ? () => _stepSemantics(1) : null,
+      onDecrease: semanticIndex > 0 ? () => _stepSemantics(-1) : null,
+      child: AnimatedBuilder(
+        animation: _opacityController,
+        builder: (context, child) {
+          final opacity = _opacityController.value;
+          return IgnorePointer(
+            ignoring: opacity == 0.0,
+            child: Opacity(opacity: opacity, child: child),
+          );
+        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final trackHeight = constraints.maxHeight;
+            _trackHeight = trackHeight;
 
-        return Opacity(opacity: opacity, child: child);
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final trackHeight = constraints.maxHeight;
-          _trackHeight = trackHeight;
+            final fraction = _isDragging && _dragFraction != null
+                ? _dragFraction!
+                : _helper.fractionForLetter(widget.currentLetter);
+            final usableHeight = trackHeight - _handleHeight;
+            final handleTop = usableHeight > 0 ? (fraction * usableHeight) : 0.0;
 
-          final fraction = _isDragging && _dragFraction != null
-              ? _dragFraction!
-              : _helper.fractionForLetter(widget.currentLetter);
-          final usableHeight = trackHeight - _handleHeight;
-          final handleTop = usableHeight > 0 ? (fraction * usableHeight) : 0.0;
-
-          final colorScheme = Theme.of(context).colorScheme;
-
-          return SizedBox(
-            width: _touchTargetWidth + _bubbleSize + _bubbleMarginRight,
-            height: trackHeight,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Handle pill with touch target — only around the pill's position,
-                // not the full track, so it doesn't steal scroll gestures.
-                // Extra vertical padding makes it easier to grab.
-                Positioned(
-                  right: 0,
-                  top: handleTop - _touchTargetVerticalPadding,
-                  child: MouseRegion(
-                    cursor: SystemMouseCursors.resizeUpDown,
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onVerticalDragStart: _onDragStart,
-                      onVerticalDragUpdate: _onDragUpdate,
-                      onVerticalDragEnd: _onDragEnd,
-                      child: SizedBox(
-                        width: _touchTargetWidth,
-                        height: _handleHeight + _touchTargetVerticalPadding * 2,
-                        child: Align(
-                          alignment: .centerRight,
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 2),
-                            width: _handleWidth,
-                            height: _handleHeight,
-                            decoration: BoxDecoration(
-                              color: colorScheme.onSurface.withValues(alpha: 0.5),
-                              borderRadius: const BorderRadius.all(Radius.circular(_handleRadius)),
+            final colorScheme = Theme.of(context).colorScheme;
+            return SizedBox(
+              width: _touchTargetWidth + _bubbleSize + _bubbleMarginRight,
+              height: trackHeight,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Handle pill with touch target — only around the pill's position,
+                  // not the full track, so it doesn't steal scroll gestures.
+                  // Extra vertical padding makes it easier to grab.
+                  Positioned(
+                    right: 0,
+                    top: handleTop - _touchTargetVerticalPadding,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.resizeUpDown,
+                      child: GestureDetector(
+                        excludeFromSemantics: true,
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragStart: _onDragStart,
+                        onVerticalDragUpdate: _onDragUpdate,
+                        onVerticalDragEnd: _onDragEnd,
+                        child: SizedBox(
+                          width: _touchTargetWidth,
+                          height: _handleHeight + _touchTargetVerticalPadding * 2,
+                          child: Align(
+                            alignment: .centerRight,
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 2),
+                              width: _handleWidth,
+                              height: _handleHeight,
+                              decoration: BoxDecoration(
+                                color: colorScheme.onSurface.withValues(alpha: 0.5),
+                                borderRadius: const BorderRadius.all(Radius.circular(_handleRadius)),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-                // Letter bubble (only while dragging)
-                if (_isDragging && _dragLetter != null)
-                  Positioned(
-                    right: _touchTargetWidth + _bubbleMarginRight,
-                    top: handleTop + (_handleHeight - _bubbleSize) / 2,
-                    child: Container(
-                      width: _bubbleSize,
-                      height: _bubbleSize,
-                      decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
-                      alignment: .center,
-                      child: Text(
-                        _dragLetter!,
-                        style: TextStyle(color: colorScheme.onPrimary, fontSize: _bubbleFontSize, fontWeight: .bold),
+                  // Letter bubble (only while dragging)
+                  if (_isDragging && _dragLetter != null)
+                    Positioned(
+                      right: _touchTargetWidth + _bubbleMarginRight,
+                      top: handleTop + (_handleHeight - _bubbleSize) / 2,
+                      child: Container(
+                        width: _bubbleSize,
+                        height: _bubbleSize,
+                        decoration: BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle),
+                        alignment: .center,
+                        child: Text(
+                          _dragLetter!,
+                          style: TextStyle(color: colorScheme.onPrimary, fontSize: _bubbleFontSize, fontWeight: .bold),
+                        ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          );
-        },
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }

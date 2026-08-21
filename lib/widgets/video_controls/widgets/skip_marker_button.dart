@@ -3,6 +3,7 @@ import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../focus/focusable_wrapper.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../media/media_source_info.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../app_icon.dart';
@@ -16,8 +17,7 @@ class SkipMarkerButton extends StatelessWidget {
   final int autoSkipDelay;
   final double autoSkipProgress;
   final FocusNode focusNode;
-  final VoidCallback onCancelAutoSkip;
-  final VoidCallback onPerformAutoSkip;
+  final VoidCallback onActivate;
   final VoidCallback onFocusDown;
 
   const SkipMarkerButton({
@@ -30,8 +30,7 @@ class SkipMarkerButton extends StatelessWidget {
     required this.autoSkipDelay,
     required this.autoSkipProgress,
     required this.focusNode,
-    required this.onCancelAutoSkip,
-    required this.onPerformAutoSkip,
+    required this.onActivate,
     required this.onFocusDown,
   });
 
@@ -43,11 +42,11 @@ class SkipMarkerButton extends StatelessWidget {
     final showNextEpisode = creditsAtEnd && hasNextEpisode;
     String baseButtonText;
     if (showNextEpisode) {
-      baseButtonText = 'Next Episode';
+      baseButtonText = t.videoControls.nextEpisode;
     } else if (isCredits) {
-      baseButtonText = 'Skip Credits';
+      baseButtonText = t.videoControls.skipCredits;
     } else {
-      baseButtonText = 'Skip Intro';
+      baseButtonText = t.videoControls.skipIntro;
     }
 
     final remainingSeconds = isAutoSkipActive && shouldShowAutoSkip
@@ -131,10 +130,5 @@ class SkipMarkerButton extends StatelessWidget {
     );
   }
 
-  void _activate() {
-    if (isAutoSkipActive) {
-      onCancelAutoSkip();
-    }
-    onPerformAutoSkip();
-  }
+  void _activate() => onActivate();
 }

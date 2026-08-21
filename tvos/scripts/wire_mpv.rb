@@ -24,48 +24,62 @@ sources = [
   { name: 'MpvPlayerCore.swift',       path: '../ios/Runner/MpvPlayer/MpvPlayerCore.swift',   tree: '<source_root>' },
   { name: 'MpvPlayerPlugin.swift',     path: '../ios/Runner/MpvPlayer/MpvPlayerPlugin.swift', tree: '<source_root>' },
   { name: 'MpvPipController.swift',    path: '../ios/Runner/MpvPlayer/MpvPipController.swift', tree: '<source_root>' },
+  { name: 'MpvAudioPlayerCore.swift', path: '../shared/apple/MpvPlayer/MpvAudioPlayerCore.swift', tree: '<source_root>' },
+  { name: 'MpvAudioPlayerPlugin.swift', path: '../shared/apple/MpvPlayer/MpvAudioPlayerPlugin.swift', tree: '<source_root>' },
 ]
 
 sources_phase = runner_target.source_build_phase
 sources.each do |src|
-  existing = mpv_group.files.find { |f| f.display_name == src[:name] }
-  if existing
-    puts "[skip] #{src[:name]} already present"
-    next
+  ref = mpv_group.files.find { |file| file.display_name == src[:name] }
+  unless ref
+    ref = mpv_group.new_file(src[:path])
+    ref.name = src[:name]
+    ref.source_tree = src[:tree]
+    puts "[add ] #{src[:name]} reference"
   end
-  ref = mpv_group.new_file(src[:path])
-  ref.name = src[:name]
-  ref.source_tree = src[:tree]
-  sources_phase.add_file_reference(ref, true)
-  puts "[add ] #{src[:name]}"
+
+  if sources_phase.files_references.include?(ref)
+    puts "[skip] #{src[:name]} source membership already present"
+  else
+    sources_phase.add_file_reference(ref, true)
+    puts "[add ] #{src[:name]} source membership"
+  end
 end
 
-# Swift Package: MPVKit.
+# Swift Package: MPVKit. Restore each graph edge independently so a project
+# with a surviving package reference cannot silently omit the Runner linkage.
 pkg_url = 'https://github.com/edde746/MPVKit'
-pkg_revision = '1fc33029bc0317583866c62811dc0ab2aa2415b6'
-existing_pkg = project.root_object.package_references.find do |p|
-  p.repositoryURL == pkg_url rescue false
+pkg_version = '1.0.23'
+pkg = project.root_object.package_references.find do |candidate|
+  candidate.repositoryURL == pkg_url rescue false
 end
 
-if existing_pkg
-  existing_pkg.requirement = { 'kind' => 'revision', 'revision' => pkg_revision }
-  puts "[set ] MPVKit SPM package revision"
-else
+unless pkg
   pkg = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
   pkg.repositoryURL = pkg_url
-  pkg.requirement = { 'kind' => 'revision', 'revision' => pkg_revision }
   project.root_object.package_references << pkg
+  puts "[add ] MPVKit SPM package reference"
+end
+pkg.requirement = { 'kind' => 'exactVersion', 'version' => pkg_version }
+puts "[set ] MPVKit SPM package version"
 
+product = runner_target.package_product_dependencies.find do |candidate|
+  candidate.product_name == 'MPVKit'
+end
+unless product
   product = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
-  product.package = pkg
   product.product_name = 'MPVKit'
   runner_target.package_product_dependencies << product
+  puts "[add ] MPVKit Runner product dependency"
+end
+product.package = pkg
 
-  frameworks_phase = runner_target.frameworks_build_phase
+frameworks_phase = runner_target.frameworks_build_phase
+unless frameworks_phase.files.any? { |build_file| build_file.product_ref == product }
   build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
   build_file.product_ref = product
   frameworks_phase.files << build_file
-  puts "[add ] MPVKit SPM package + framework linkage"
+  puts "[add ] MPVKit framework linkage"
 end
 
 project.save

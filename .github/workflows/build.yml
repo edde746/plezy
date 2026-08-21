@@ -1,8 +1,13 @@
 name: Build
+run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag) || format('Build {0}', github.sha) }}
 
 on:
   workflow_dispatch:
     inputs:
+      release_tag:
+        description: Tag for a draft release; omit to build Actions artifacts only
+        default: ''
+        type: string
       build_android:
         description: Build Android
         default: true
@@ -25,21 +30,36 @@ on:
         type: boolean
 
 env:
-  SENTRY_DART_DEFINE: ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }}
-  GIT_COMMIT_DART_DEFINE: --dart-define=GIT_COMMIT=${{ github.sha }}
-  SENTRY_ENV_DART_DEFINE: --dart-define=SENTRY_ENVIRONMENT=github
-  DONATIONS_DART_DEFINE: --dart-define=ENABLE_DONATIONS=true
+  # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
+  FLUTTER_VERSION: "3.44.0"
+  # Shared by every release build command; SENTRY_DIST stays per-platform.
+  RELEASE_DART_DEFINES: --dart-define=ENABLE_UPDATE_CHECK=true ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }} --dart-define=GIT_COMMIT=${{ github.sha }} --dart-define=SENTRY_ENVIRONMENT=github --dart-define=ENABLE_DONATIONS=true
+  TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
   LINUX_APT_PACKAGES: >
     clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev
     libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
     libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev
     libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
     libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev
-    libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev liblua5.2-dev
+    libdisplay-info-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev liblua5.2-dev
     ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
 
 jobs:
+  validate-trusted-ref:
+    name: Validate trusted build ref
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Require the protected main branch
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Release builds may only run from refs/heads/main." >&2
+            exit 1
+          fi
+
   build-android:
+    needs: validate-trusted-ref
     if: ${{ inputs.build_android }}
     runs-on: ubuntu-latest
     permissions:
@@ -47,38 +67,39 @@ jobs:
       attestations: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
           distribution: "temurin"
-          java-version: "17"
+          java-version: "21"
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache Gradle
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
@@ -94,7 +115,7 @@ jobs:
           EOF
 
       - name: Build APKs
-        run: flutter build apk --release --split-per-abi --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-android-apk ${{ env.DONATIONS_DART_DEFINE }} --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
+        run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-android-apk --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
@@ -114,7 +135,7 @@ jobs:
           tar -czf plezy-android-x86_64.tar.gz -C build/app/outputs/flutter-apk app-x86_64-release.apk --transform 's/app-x86_64-release.apk/plezy.apk/'
 
       - name: Attest APKs
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
         with:
           subject-path: |
             plezy-android-arm64-v8a.tar.gz
@@ -122,7 +143,7 @@ jobs:
             plezy-android-x86_64.tar.gz
 
       - name: Upload APKs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: android-apk
           path: |
@@ -131,6 +152,7 @@ jobs:
             plezy-android-x86_64.tar.gz
 
   build-ios:
+    needs: validate-trusted-ref
     if: ${{ inputs.build_ios }}
     runs-on: macos-26
     permissions:
@@ -138,39 +160,40 @@ jobs:
       attestations: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache CocoaPods
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ios/Pods
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
-          key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pods-
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-ios-pods-${{ hashFiles('**/Podfile.lock') }}
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-ios ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/ios
+        run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-ios --split-debug-info=debug-info/ios
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
@@ -186,17 +209,18 @@ jobs:
           zip -r plezy-ios.ipa Payload
 
       - name: Attest IPA
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
         with:
           subject-path: plezy-ios.ipa
 
       - name: Upload IPA
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ios-ipa
           path: plezy-ios.ipa
 
   build-macos:
+    needs: validate-trusted-ref
     if: ${{ inputs.build_macos }}
     runs-on: macos-26
     permissions:
@@ -204,39 +228,40 @@ jobs:
       attestations: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: "stable"
-          flutter-version: "3.44.0"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache CocoaPods
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             macos/Pods
             ~/Library/Caches/CocoaPods
             ~/.cocoapods
-          key: ${{ runner.os }}-macos-pods-${{ hashFiles('**/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-macos-pods-
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-macos-pods-${{ hashFiles('**/Podfile.lock') }}
 
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Build macOS
-        run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-macos ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/macos
+        run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-macos --split-debug-info=debug-info/macos
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
@@ -251,13 +276,11 @@ jobs:
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
         run: |
-          # Create temporary keychain
           KEYCHAIN_PATH=$RUNNER_TEMP/build.keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
 
-          # Import certificate to keychain
           CERTIFICATE_PATH=$RUNNER_TEMP/certificate.p12
           echo "$MACOS_CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
           security import $CERTIFICATE_PATH -k $KEYCHAIN_PATH -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
@@ -355,7 +378,7 @@ jobs:
           echo "MACOS_DMG_SIZE=$(stat -f%z plezy-macos.dmg)" >> $GITHUB_ENV
 
       - name: Attest macOS DMG
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
         with:
           subject-path: plezy-macos.dmg
 
@@ -365,7 +388,7 @@ jobs:
           echo "${{ env.MACOS_DMG_SIZE }}" > macos-dmg-size.txt
 
       - name: Upload macOS DMG
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: macos-dmg
           path: |
@@ -373,113 +396,157 @@ jobs:
             macos-ed-signature.txt
             macos-dmg-size.txt
 
-  build-windows-x64:
+  build-windows:
+    needs: validate-trusted-ref
+    name: Build Windows (${{ matrix.arch }})
     if: ${{ inputs.build_windows }}
-    runs-on: windows-latest
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+            flutter_setup: action
+            native_cache_path: build/windows/x64/_deps
+          - arch: arm64
+            runner: windows-11-arm
+            flutter_setup: git
+            native_cache_path: |
+              build/windows/arm64/_deps
+              build/windows/arm64/mpv-dev-arm64
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          channel: "stable"
-          flutter-version: "3.44.0"
-          cache: true
-          pub-cache: false
-
-      - name: Cache Pub dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~\AppData\Local\Pub\Cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
-
-      - name: Cache Windows native dependencies
-        uses: actions/cache@v4
-        with:
-          path: build/windows/x64/_deps
-          key: windows-native-x64-${{ hashFiles('windows/CMakeLists.txt') }}
-
-      - name: Install dependencies
-        run: flutter pub get --enforce-lockfile --no-example
-
-      - name: Build Windows x64
-        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-windows-x64 ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-x64
-
-      - name: Upload symbols to bugs.plezy.app
-        if: github.repository == 'edde746/plezy'
-        shell: pwsh
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-windows-x64
-        run: .\scripts\upload-symbols.ps1 windows-x64
-
-      - name: Upload x64 build
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64-build
-          path: build/windows/x64/runner/Release/
-
-  build-windows-arm64:
-    if: ${{ inputs.build_windows }}
-    runs-on: windows-11-arm
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
+          persist-credentials: false
 
       - name: Cache Windows native dependencies
         id: windows-native-cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
-          path: |
-            build/windows/arm64/_deps
-            build/windows/arm64/mpv-dev-arm64
-          key: windows-native-arm64-${{ hashFiles('windows/CMakeLists.txt') }}
+          path: ${{ matrix.native_cache_path }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-windows-native-${{ matrix.arch }}-${{ hashFiles('windows/CMakeLists.txt') }}
 
       - name: Install 7-Zip
-        if: steps.windows-native-cache.outputs.cache-hit != 'true'
+        if: matrix.arch == 'arm64' && steps.windows-native-cache.outputs.cache-hit != 'true'
+        shell: pwsh
         run: choco install 7zip -y
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        if: matrix.flutter_setup == 'action'
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          channel: "master"
-          flutter-version: "3.44.0"
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
+      - name: Set up Flutter from its pinned commit
+        if: matrix.flutter_setup == 'git'
+        uses: ./.github/actions/setup-flutter-git
+
       - name: Cache Pub dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~\AppData\Local\Pub\Cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Install dependencies
-        run: flutter pub get --no-example
+        shell: pwsh
+        run: flutter pub get --enforce-lockfile --no-example
 
-      - name: Build Windows arm64
-        run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-windows-arm64 ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-arm64
+      - name: Install patched Flutter engine (DComp)
+        shell: pwsh
+        run: |
+          flutter precache --windows
+          .\windows\tool\install-patched-engine.ps1
+
+      - name: Build Windows ${{ matrix.arch }}
+        shell: pwsh
+        run: flutter build windows --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-windows-${{ matrix.arch }} --split-debug-info=debug-info/windows-${{ matrix.arch }}
+
+      - name: Verify Windows bundle contents
+        shell: pwsh
+        run: |
+          $bundleDir = "build/windows/${{ matrix.arch }}/runner/Release"
+          if (-not (Test-Path -LiteralPath $bundleDir -PathType Container)) {
+            throw "Windows bundle directory does not exist: $bundleDir"
+          }
+
+          $bundlePath = (Resolve-Path -LiteralPath $bundleDir).Path
+          $foundFiles = @(
+            Get-ChildItem -LiteralPath $bundlePath -File -Recurse |
+              ForEach-Object {
+                $_.FullName.Substring($bundlePath.Length + 1).Replace('\', '/')
+              } |
+              Sort-Object
+          )
+
+          Write-Host "Files found in ${bundleDir}:"
+          $foundFiles | ForEach-Object { Write-Host "  $_" }
+
+          $requiredFiles = @(
+            "plezy.exe"
+            "flutter_windows.dll"
+            "sqlite3.dll"
+            "libmpv-2.dll"
+            "data/app.so"
+            "data/icudtl.dat"
+            "data/flutter_assets/NativeAssetsManifest.json"
+            # MSVC runtime bundled by InstallRequiredSystemLibraries in
+            # windows/CMakeLists.txt; without it the app crashes at startup on
+            # machines whose system-wide redist is older than the CI toolset.
+            "msvcp140.dll"
+            "vcruntime140.dll"
+          )
+          $forbiddenFiles = @(
+            "plezy.lib"
+            "plezy.exp"
+            "simdutf.lib"
+          )
+
+          $bundleErrors = @()
+          foreach ($file in $requiredFiles) {
+            if ($foundFiles -notcontains $file) {
+              Write-Output "::error::Required Windows bundle file is missing: $file"
+              $bundleErrors += "missing $file"
+            }
+          }
+          foreach ($file in $forbiddenFiles) {
+            if ($foundFiles -contains $file) {
+              Write-Output "::error::Forbidden link by-product is present in the Windows bundle: $file"
+              $bundleErrors += "present $file"
+            }
+          }
+
+          # sentry.dll is the inproc-backend native SDK; crashpad_handler.exe is
+          # intentionally absent (windows/CMakeLists.txt sets
+          # SENTRY_NATIVE_BACKEND=inproc), so do not assert on it here.
+
+          if ($bundleErrors.Count -gt 0) {
+            throw "Windows bundle verification failed: $($bundleErrors -join '; ')"
+          }
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
         shell: pwsh
         env:
           BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-windows-arm64
-        run: .\scripts\upload-symbols.ps1 windows-arm64
+          SENTRY_DIST: github-windows-${{ matrix.arch }}
+        run: .\scripts\upload-symbols.ps1 windows-${{ matrix.arch }}
 
-      - name: Upload arm64 build
-        uses: actions/upload-artifact@v4
+      - name: Upload ${{ matrix.arch }} build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: windows-arm64-build
-          path: build/windows/arm64/runner/Release/
+          name: windows-${{ matrix.arch }}-build
+          path: build/windows/${{ matrix.arch }}/runner/Release/
 
   package-windows:
-    needs: [build-windows-x64, build-windows-arm64]
+    needs: build-windows
     if: ${{ inputs.build_windows }}
     runs-on: windows-latest
     permissions:
@@ -487,19 +554,31 @@ jobs:
       attestations: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - name: Setup Dart
-        uses: dart-lang/setup-dart@v1
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
+          pub-cache: false
+
+      - name: Install dependencies
+        shell: pwsh
+        run: flutter pub get --enforce-lockfile --no-example
 
       - name: Download x64 build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-x64-build
           path: build-x64
 
       - name: Download arm64 build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-arm64-build
           path: build-arm64
@@ -514,47 +593,57 @@ jobs:
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
 
+      # Unsigned on purpose: the Store re-signs the bundle during
+      # certification. See windows/build-msix.ps1.
+      - name: Build Store package (MSIX)
+        run: .\windows\build-msix.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
+
       - name: Sign installer for WinSparkle (EdDSA)
         if: env.SPARKLE_PRIVATE_KEY != ''
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         shell: pwsh
         run: |
-          mkdir _signer | Out-Null
-          @{name="signer"; environment=@{sdk=">=3.0.0 <4.0.0"}; dependencies=@{cryptography="^2.7.0"}} | ConvertTo-Json -Depth 3 | Out-File _signer/pubspec.yaml
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/edde746/auto_updater/main/packages/auto_updater/bin/sign_update.dart" -OutFile _signer/sign.dart
-          Push-Location _signer
-          dart pub get
-          Set-Content -Path ed25519_key.pem -Value $env:SPARKLE_PRIVATE_KEY -Encoding ascii -NoNewline
-          $output = dart run sign.dart ../plezy-windows-installer.exe ed25519_key.pem
-          Pop-Location
-          Remove-Item _signer -Recurse -Force
-          $sig = [regex]::Match($output, 'edSignature="([^"]*)"').Groups[1].Value
-          Set-Content -Path win-ed-signature.txt -Value $sig -Encoding ascii -NoNewline
-          Set-Content -Path win-installer-size.txt -Value (Get-Item plezy-windows-installer.exe).Length.ToString() -Encoding ascii -NoNewline
+          $keyPath = Join-Path $env:RUNNER_TEMP "plezy-winsparkle-ed25519.pem"
+          try {
+            Set-Content -Path $keyPath -Value $env:SPARKLE_PRIVATE_KEY -Encoding ascii -NoNewline
+            $output = & dart run auto_updater:sign_update plezy-windows-installer.exe $keyPath
+            if ($LASTEXITCODE -ne 0) {
+              throw "WinSparkle signer failed with exit code $LASTEXITCODE"
+            }
+            $match = [regex]::Match($output, 'edSignature="([^"]*)"')
+            if (-not $match.Success) {
+              throw "WinSparkle signer returned no EdDSA signature"
+            }
+            Set-Content -Path win-ed-signature.txt -Value $match.Groups[1].Value -Encoding ascii -NoNewline
+            Set-Content -Path win-installer-size.txt -Value (Get-Item plezy-windows-installer.exe).Length.ToString() -Encoding ascii -NoNewline
+          } finally {
+            Remove-Item -Path $keyPath -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Attest Windows artifacts
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
         with:
           subject-path: |
             plezy-windows-x64-portable.7z
             plezy-windows-arm64-portable.7z
             plezy-windows-installer.exe
+            plezy-windows.msixbundle
 
       - name: Upload x64 portable
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: windows-x64-portable
           path: plezy-windows-x64-portable.7z
 
       - name: Upload arm64 portable
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: windows-arm64-portable
           path: plezy-windows-arm64-portable.7z
 
       - name: Upload installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: windows-installer
           path: |
@@ -562,38 +651,65 @@ jobs:
             win-ed-signature.txt
             win-installer-size.txt
 
-  build-linux-x64:
+      # Deliberately not attached to the GitHub release in create-release: a
+      # Store-identity package cannot be installed without the Store's
+      # certificate, so it is only useful as a Partner Center upload.
+      - name: Upload Store package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: windows-msix
+          path: plezy-windows.msixbundle
+
+  build-linux:
+    needs: validate-trusted-ref
+    name: Build Linux (${{ matrix.arch }})
     if: ${{ inputs.build_linux }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     permissions:
       id-token: write
       attestations: write
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-latest
+            flutter_channel: stable
+            pkg_config_arch: x86_64-linux-gnu
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+            flutter_channel: master
+            pkg_config_arch: aarch64-linux-gnu
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
-          channel: "stable"
-          flutter-version: "3.44.0"
+          channel: ${{ matrix.flutter_channel }}
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
 
       - name: Cache Pub dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
             ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
 
       - name: Cache APT packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
+        uses: awalsh128/cache-apt-pkgs-action@553a35bb8ebd9fcabcb1c9451aa4c98e1b4ca8a9 # latest
         with:
           packages: ${{ env.LINUX_APT_PACKAGES }}
-          version: 1.1
+          version: trusted-build-v1.1
 
       - name: Install Linux dependencies
+        shell: bash
         run: |
           read -r -a packages <<< "$LINUX_APT_PACKAGES"
 
@@ -611,291 +727,154 @@ jobs:
 
       - name: Cache libmpv build
         id: libmpv-cache
-        uses: actions/cache@v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: libmpv-prefix
-          key: libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh') }}
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh', 'linux/packaging/native-inputs.json') }}
 
       - name: Build libmpv
         if: steps.libmpv-cache.outputs.cache-hit != 'true'
+        shell: bash
         run: bash linux/packaging/build-libmpv.sh
 
       - name: Install fpm
-        run: sudo gem install fpm
+        shell: bash
+        run: sudo gem install fpm --version 1.17.0 --no-document
 
       - name: Install dependencies
+        shell: bash
         run: flutter pub get --enforce-lockfile --no-example
 
-      - name: Build Linux x64
-        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-linux-x64 ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/linux-x64
+      - name: Build Linux ${{ matrix.arch }}
+        shell: bash
+        run: flutter build linux --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-linux-${{ matrix.arch }} --split-debug-info=debug-info/linux-${{ matrix.arch }}
         env:
-          PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig
+          PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/${{ matrix.pkg_config_arch }}/pkgconfig
 
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
+        shell: bash
         env:
           BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-linux-x64
-        run: ./scripts/upload-symbols.sh linux-x64
+          SENTRY_DIST: github-linux-${{ matrix.arch }}
+        run: ./scripts/upload-symbols.sh linux-${{ matrix.arch }}
 
-      - name: Build Linux Packages
-        run: ARCH_SUFFIX=x64 OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
-
-      - name: Copy libmpv into bundle
+      - name: Resolve bundle directory
+        shell: bash
         run: |
-          BUNDLE_LIB=build/linux/x64/release/bundle/lib
+          if [[ "${{ matrix.arch }}" == "x64" ]]; then
+            bundle_dir=build/linux/x64/release/bundle
+          else
+            bundle_dir=$(find build/linux -path "*/release/bundle" -type d | head -1)
+          fi
+          if [[ -z "$bundle_dir" || ! -d "$bundle_dir" ]]; then
+            echo "ERROR: Linux bundle directory not found" >&2
+            exit 1
+          fi
+          echo "BUNDLE_DIR=$bundle_dir" >> "$GITHUB_ENV"
+
+      # Everything below resolves the bundle *before* packaging, so the packages
+      # and the tarball are cut from one identical tree.
+      #
+      # The plane needs the pinned Wayland-enabled libmpv: a distro libmpv still
+      # plays and still does HDR, but silently drops hwdec to vaapi-copy - which
+      # was measured, not assumed. So libmpv travels with us and no artifact
+      # depends on a host one. That removed the host `mpv` dependency, and with it
+      # the transitive pull of everything libmpv itself needs - libass, pulse,
+      # pipewire, fontconfig and the rest. bundle-libs.sh is what supplies those,
+      # so it has to run before packaging too, or the packages would carry libmpv
+      # and nothing it links.
+      - name: Copy libmpv into bundle
+        shell: bash
+        run: |
+          BUNDLE_LIB="$BUNDLE_DIR/lib"
           LIBMPV_DIR=$(dirname "$(find libmpv-prefix -name 'libmpv.so' | head -1)")
           cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
           cp -a libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
 
-      - name: Bundle shared libraries for portable tarball
-        run: bash linux/packaging/bundle-libs.sh build/linux/x64/release/bundle
+      - name: Bundle shared libraries
+        shell: bash
+        run: bash linux/packaging/bundle-libs.sh "$BUNDLE_DIR"
 
       - name: Copy wrapper script into bundle
-        run: cp linux/packaging/plezy.sh build/linux/x64/release/bundle/plezy.sh
+        shell: bash
+        run: cp linux/packaging/plezy.sh "$BUNDLE_DIR/plezy.sh"
 
-      - name: Verify no missing dependencies
-        run: |
-          cd build/linux/x64/release/bundle
-          MISSING=$(LD_LIBRARY_PATH=lib ldd ./plezy 2>&1 | grep "not found" || true)
-          if [[ -n "$MISSING" ]]; then
-            echo "ERROR: Unresolved dependencies found:" >&2
-            echo "$MISSING" >&2
-            exit 1
-          fi
-          echo "All dependencies resolved."
+      # Same check the package smoke build runs, against the artifact that
+      # actually ships: a library nobody declares is a broken install, and it is
+      # invisible until a user on a clean machine tries to launch.
+      #
+      # This also stands in for the `ldd ./plezy | grep "not found"` step that
+      # used to run after packaging. That one folded ldd's stderr into grep's
+      # input and dropped its exit status, so ldd failing outright - a missing
+      # loader, an exec-format mismatch, no ldd at all - left the match empty and
+      # printed "All dependencies resolved." This guard runs ldd over every
+      # object under lib/ as well as the executable, fails on an unresolved
+      # soname, fails when ldd cannot read an object, and refuses to pass when
+      # the walk found no host libraries at all. Packaging below only reads the
+      # bundle, so a second shell ldd afterwards could only restate a weaker
+      # subset of what this already proved about the very same tree.
+      - name: Verify every unbundled library the bundle needs is declared
+        shell: bash
+        run: python3 linux/packaging/check-bundle-host-deps.py "$BUNDLE_DIR"
 
-      - name: Create tarball
-        run: |
-          cd build/linux/x64/release/bundle
-          tar -czf $GITHUB_WORKSPACE/plezy-linux-x64.tar.gz *
-
-      - name: Attest Linux x64 artifacts
-        uses: actions/attest-build-provenance@v2
-        with:
-          subject-path: |
-            plezy-linux-x64.tar.gz
-            plezy-linux-x64.deb
-            plezy-linux-x64.rpm
-            plezy-linux-x64.pkg.tar.zst
-
-      - name: Upload Linux x64 artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64
-          path: |
-            plezy-linux-x64.tar.gz
-            plezy-linux-x64.deb
-            plezy-linux-x64.rpm
-            plezy-linux-x64.pkg.tar.zst
-
-  build-linux-arm64:
-    if: ${{ inputs.build_linux }}
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      id-token: write
-      attestations: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: "master"
-          flutter-version: "3.44.0"
-          cache: true
-          pub-cache: false
-
-      - name: Cache Pub dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.pub-cache
-          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
-
-      - name: Cache APT packages
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: ${{ env.LINUX_APT_PACKAGES }}
-          version: 1.1
-
-      - name: Install Linux dependencies
-        run: |
-          read -r -a packages <<< "$LINUX_APT_PACKAGES"
-
-          for attempt in 1 2 3; do
-            if sudo apt-get update -o Acquire::Retries=3 && sudo apt-get install -y -o Acquire::Retries=3 "${packages[@]}"; then
-              exit 0
-            fi
-
-            sudo apt-get clean
-            sudo rm -rf /var/lib/apt/lists/*
-            sleep $((attempt * 15))
-          done
-
-          exit 1
-
-      - name: Cache libmpv build
-        id: libmpv-cache
-        uses: actions/cache@v4
-        with:
-          path: libmpv-prefix
-          key: libmpv-${{ runner.arch }}-${{ hashFiles('linux/packaging/build-libmpv.sh') }}
-
-      - name: Build libmpv
-        if: steps.libmpv-cache.outputs.cache-hit != 'true'
-        run: bash linux/packaging/build-libmpv.sh
-
-      - name: Install fpm
-        run: sudo gem install fpm
-
-      - name: Install dependencies
-        run: flutter pub get --no-example
-
-      - name: Build Linux arm64
-        run: flutter build linux --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} --dart-define=SENTRY_DIST=github-linux-arm64 ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/linux-arm64
-        env:
-          PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/aarch64-linux-gnu/pkgconfig
-
-      - name: Upload symbols to bugs.plezy.app
-        if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-linux-arm64
-        run: ./scripts/upload-symbols.sh linux-arm64
-
-      - name: Find bundle directory
-        id: find-bundle
-        run: |
-          BUNDLE_DIR=$(find build/linux -path "*/release/bundle" -type d | head -1)
-          echo "bundle_dir=$BUNDLE_DIR" >> $GITHUB_OUTPUT
-
+      # Last, from the fully resolved tree above. The host-dependency guard is
+      # skipped because the named step above just ran it against this same
+      # bundle; the internal run exists for by-hand packaging outside CI.
       - name: Build Linux Packages
+        shell: bash
         run: |
-          BUILD_DIR=${{ steps.find-bundle.outputs.bundle_dir }} \
-          ARCH_SUFFIX=arm64 \
-          OUTPUT_DIR=$GITHUB_WORKSPACE \
+          BUILD_DIR="$BUNDLE_DIR" \
+          ARCH_SUFFIX=${{ matrix.arch }} \
+          OUTPUT_DIR="$GITHUB_WORKSPACE" \
+          PLEZY_SKIP_HOST_DEP_CHECK=1 \
           python3 linux/packaging/build-packages.py
 
-      - name: Copy libmpv into bundle
-        run: |
-          BUNDLE_LIB=${{ steps.find-bundle.outputs.bundle_dir }}/lib
-          LIBMPV_DIR=$(dirname "$(find libmpv-prefix -name 'libmpv.so' | head -1)")
-          cp -a "$LIBMPV_DIR"/libmpv.so* "$BUNDLE_LIB/"
-          cp -a libmpv-prefix/lib/libshaderc_shared.so* "$BUNDLE_LIB/"
-
-      - name: Bundle shared libraries for portable tarball
-        run: bash linux/packaging/bundle-libs.sh ${{ steps.find-bundle.outputs.bundle_dir }}
-
-      - name: Copy wrapper script into bundle
-        run: cp linux/packaging/plezy.sh ${{ steps.find-bundle.outputs.bundle_dir }}/plezy.sh
-
-      - name: Verify no missing dependencies
-        run: |
-          cd ${{ steps.find-bundle.outputs.bundle_dir }}
-          MISSING=$(LD_LIBRARY_PATH=lib ldd ./plezy 2>&1 | grep "not found" || true)
-          if [[ -n "$MISSING" ]]; then
-            echo "ERROR: Unresolved dependencies found:" >&2
-            echo "$MISSING" >&2
-            exit 1
-          fi
-          echo "All dependencies resolved."
+      # The depends lists reached fpm above; only the packages it wrote can show
+      # they arrived. Same script the smoke build runs, so the two jobs cannot
+      # drift on what counts as declared - and unlike the smoke build, this one
+      # covers arm64 and the artifacts users actually install.
+      - name: Verify the declared dependencies reached the package metadata
+        shell: bash
+        run: python3 linux/packaging/check-package-deps.py "$GITHUB_WORKSPACE" --arch ${{ matrix.arch }}
 
       - name: Create tarball
+        shell: bash
         run: |
-          cd ${{ steps.find-bundle.outputs.bundle_dir }}
-          tar -czf $GITHUB_WORKSPACE/plezy-linux-arm64.tar.gz *
+          cd "$BUNDLE_DIR"
+          tar -czf "$GITHUB_WORKSPACE/plezy-linux-${{ matrix.arch }}.tar.gz" *
 
-      - name: Attest Linux arm64 artifacts
-        uses: actions/attest-build-provenance@v2
+      - name: Attest Linux ${{ matrix.arch }} artifacts
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
         with:
           subject-path: |
-            plezy-linux-arm64.tar.gz
-            plezy-linux-arm64.deb
-            plezy-linux-arm64.rpm
-            plezy-linux-arm64.pkg.tar.zst
+            plezy-linux-${{ matrix.arch }}.tar.gz
+            plezy-linux-${{ matrix.arch }}.deb
+            plezy-linux-${{ matrix.arch }}.rpm
+            plezy-linux-${{ matrix.arch }}.pkg.tar.zst
 
-      - name: Upload Linux arm64 artifacts
-        uses: actions/upload-artifact@v4
+      - name: Upload Linux ${{ matrix.arch }} artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: linux-arm64
+          name: linux-${{ matrix.arch }}
           path: |
-            plezy-linux-arm64.tar.gz
-            plezy-linux-arm64.deb
-            plezy-linux-arm64.rpm
-            plezy-linux-arm64.pkg.tar.zst
+            plezy-linux-${{ matrix.arch }}.tar.gz
+            plezy-linux-${{ matrix.arch }}.deb
+            plezy-linux-${{ matrix.arch }}.rpm
+            plezy-linux-${{ matrix.arch }}.pkg.tar.zst
 
   create-release:
-    needs: [build-android, build-ios, build-macos, build-windows-x64, build-windows-arm64, package-windows, build-linux-x64, build-linux-arm64]
-    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && (inputs.build_android || inputs.build_ios || inputs.build_macos || inputs.build_windows || inputs.build_linux) }}
+    needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
+    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux && inputs.release_tag != '' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           sparse-checkout: pubspec.yaml
           sparse-checkout-cone-mode: false
-
-      - name: Download Android artifacts
-        if: ${{ inputs.build_android }}
-        uses: actions/download-artifact@v4
-        with:
-          name: android-apk
-          path: artifacts/android-apk
-
-      - name: Download iOS artifact
-        if: ${{ inputs.build_ios }}
-        uses: actions/download-artifact@v4
-        with:
-          name: ios-ipa
-          path: artifacts/ios-ipa
-
-      - name: Download macOS artifact
-        if: ${{ inputs.build_macos }}
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-dmg
-          path: artifacts/macos-dmg
-
-      - name: Download Windows x64 artifact
-        if: ${{ inputs.build_windows }}
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-x64-portable
-          path: artifacts/windows-x64-portable
-
-      - name: Download Windows arm64 artifact
-        if: ${{ inputs.build_windows }}
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-arm64-portable
-          path: artifacts/windows-arm64-portable
-
-      - name: Download Windows installer artifact
-        if: ${{ inputs.build_windows }}
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-installer
-          path: artifacts/windows-installer
-
-      - name: Download Linux x64 artifacts
-        if: ${{ inputs.build_linux }}
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-x64
-          path: artifacts/linux-x64
-
-      - name: Download Linux arm64 artifacts
-        if: ${{ inputs.build_linux }}
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-arm64
-          path: artifacts/linux-arm64
-
-      - name: Display structure of downloaded files
-        run: ls -R artifacts
+          persist-credentials: false
 
       - name: Read version from pubspec.yaml
         id: version
@@ -904,6 +883,80 @@ jobs:
           BUILD_NUMBER=$(grep '^version:' pubspec.yaml | sed 's/.*+//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Validate release tag
+        if: ${{ inputs.release_tag != '' }}
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use semantic versioning: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_TAG" != "$VERSION" ]]; then
+            echo "Release tag $RELEASE_TAG does not match pubspec version $VERSION." >&2
+            exit 1
+          fi
+
+      - name: Download Android artifacts
+        if: ${{ inputs.build_android }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: android-apk
+          path: artifacts/android-apk
+
+      - name: Download iOS artifact
+        if: ${{ inputs.build_ios }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ios-ipa
+          path: artifacts/ios-ipa
+
+      - name: Download macOS artifact
+        if: ${{ inputs.build_macos }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: macos-dmg
+          path: artifacts/macos-dmg
+
+      - name: Download Windows x64 artifact
+        if: ${{ inputs.build_windows }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: windows-x64-portable
+          path: artifacts/windows-x64-portable
+
+      - name: Download Windows arm64 artifact
+        if: ${{ inputs.build_windows }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: windows-arm64-portable
+          path: artifacts/windows-arm64-portable
+
+      - name: Download Windows installer artifact
+        if: ${{ inputs.build_windows }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: windows-installer
+          path: artifacts/windows-installer
+
+      - name: Download Linux x64 artifacts
+        if: ${{ inputs.build_linux }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: linux-x64
+          path: artifacts/linux-x64
+
+      - name: Download Linux arm64 artifacts
+        if: ${{ inputs.build_linux }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: linux-arm64
+          path: artifacts/linux-arm64
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
 
       - name: Generate appcast.xml
         run: |
@@ -1005,11 +1058,13 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: ${{ steps.release-files.outputs.files }}
           draft: true
           prerelease: false
-          generate_release_notes: true
+          name: ${{ inputs.release_tag }}
+          tag_name: ${{ inputs.release_tag }}
+          target_commitish: ${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

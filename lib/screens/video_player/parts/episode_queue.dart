@@ -70,10 +70,11 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
         );
 
         appLogger.d('Sequential play queue created with ${playQueue.items!.length} items');
+      } else {
+        appLogger.w('Plex returned no usable sequential play queue; falling back to a local series queue');
       }
-    } catch (e) {
-      // Non-critical: Sequential playback will fall back to non-queue navigation
-      appLogger.d('Could not create play queue for sequential playback', error: e);
+    } catch (e, st) {
+      appLogger.w('Could not create Plex play queue; falling back to a local series queue', error: e, stackTrace: st);
     }
   }
 
@@ -81,71 +82,100 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     if (!mounted || widget.isLive) return;
 
     final targetMetadata = metadata ?? _currentMetadata;
-
-    if (_offlineLibraryMode) {
-      // Offline mode: find next/previous from downloaded episodes
-      _loadAdjacentEpisodesOffline();
-      return;
-    }
-
     try {
-      final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
-        context: context,
-        metadata: targetMetadata,
-      );
-
-      if (mounted && _currentMetadata.globalKey == targetMetadata.globalKey && (attempt == null || attempt.isCurrent)) {
-        _setPlayerState(() {
-          _nextEpisode = adjacentEpisodes.next;
-          _previousEpisode = adjacentEpisodes.previous;
-        });
-      }
-    } catch (e) {
-      // Non-critical: Failed to load next/previous episode metadata
-      appLogger.d('Could not load adjacent episodes', error: e);
+      final adjacentEpisodes = _offlineLibraryMode
+          ? _loadAdjacentEpisodesOffline(targetMetadata)
+          : await _episode.navigation.loadAdjacentEpisodes(
+              context: context,
+              metadata: targetMetadata,
+              // The part actually being played, so the queue can skip sibling
+              // entries of a Plex multi-episode file (#1500). MediaSourceInfo
+              // carries the Plex numeric part id; MediaPart.id is its string form.
+              playedPartId: _currentMediaInfo?.partId?.toString(),
+            );
+      _commitAdjacentEpisodes(targetMetadata, adjacentEpisodes, attempt);
+    } catch (e, st) {
+      appLogger.w('Could not load adjacent episodes', error: e, stackTrace: st);
+      _commitAdjacentEpisodes(targetMetadata, const AdjacentEpisodes.failed(), attempt);
     }
   }
 
-  /// Load next/previous episodes from locally downloaded content
-  void _loadAdjacentEpisodesOffline() {
-    if (!_currentMetadata.isEpisode) return;
+  /// Load next/previous episodes from locally downloaded content.
+  AdjacentEpisodes _loadAdjacentEpisodesOffline(MediaItem metadata) {
+    if (!metadata.isEpisode) return const AdjacentEpisodes.unavailable();
 
-    final showKey = _currentMetadata.grandparentId;
-    if (showKey == null) return;
+    final showKey = metadata.grandparentId;
+    if (showKey == null) return const AdjacentEpisodes.unavailable();
 
     try {
       final downloadProvider = context.read<DownloadProvider>();
       final episodes = downloadProvider.getDownloadedEpisodesForShow(showKey);
+      if (episodes.isEmpty) return const AdjacentEpisodes.failed();
 
-      if (episodes.isEmpty) return;
+      // The shared client-side watch order (Specials placed per the
+      // specialsOrdering preference; no server order exists offline), so
+      // offline next/prev matches what "download next N" selects and the
+      // offline OnDeck list (#1416/#1414/#1952). Copy first so the provider's
+      // cached list isn't reordered.
+      final sorted = List<MediaItem>.from(episodes);
+      sortEpisodesByWatchOrder(sorted);
+      final currentIdx = sorted.indexWhere((ep) => ep.id == metadata.id);
+      if (currentIdx == -1) return const AdjacentEpisodes.failed();
 
-      // Sort by aired date, falling back to season/episode number
-      final sorted = List<MediaItem>.from(episodes)
-        ..sort((a, b) {
-          final aDate = a.originallyAvailableAt ?? '';
-          final bDate = b.originallyAvailableAt ?? '';
-          if (aDate.isEmpty && bDate.isEmpty) {
-            final seasonCmp = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
-            if (seasonCmp != 0) return seasonCmp;
-            return (a.index ?? 0).compareTo(b.index ?? 0);
-          }
-          if (aDate.isEmpty) return 1;
-          if (bDate.isEmpty) return -1;
-          return aDate.compareTo(bDate);
-        });
-
-      final currentIdx = sorted.indexWhere((ep) => ep.id == _currentMetadata.id);
-
-      if (currentIdx == -1) return;
-
-      if (mounted) {
-        _setPlayerState(() {
-          _previousEpisode = currentIdx > 0 ? sorted[currentIdx - 1] : null;
-          _nextEpisode = currentIdx < sorted.length - 1 ? sorted[currentIdx + 1] : null;
-        });
-      }
-    } catch (e) {
-      appLogger.d('Could not load offline adjacent episodes', error: e);
+      // Same-file siblings are skipped by file-path intersection of the
+      // stored metadata (#1500) — offline media info doesn't carry the
+      // server part id, so the helpers compare the items' own parts.
+      final previous = previousEpisodeSkippingSameFile(sorted, currentIdx);
+      final next = nextEpisodeSkippingSameFile(sorted, currentIdx);
+      return AdjacentEpisodes(
+        next: next,
+        previous: previous,
+        nextStatus: next == null ? QueueNavigationStatus.boundary : QueueNavigationStatus.found,
+        previousStatus: previous == null ? QueueNavigationStatus.boundary : QueueNavigationStatus.found,
+      );
+    } catch (e, st) {
+      appLogger.w('Could not load offline adjacent episodes', error: e, stackTrace: st);
+      return const AdjacentEpisodes.failed();
     }
+  }
+
+  void _commitAdjacentEpisodes(MediaItem targetMetadata, AdjacentEpisodes adjacentEpisodes, _PlaybackAttempt? attempt) {
+    if (!mounted || _currentMetadata.globalKey != targetMetadata.globalKey || (attempt != null && !attempt.isCurrent)) {
+      return;
+    }
+    _setPlayerState(() {
+      _episode.next = adjacentEpisodes.next;
+      _episode.previous = adjacentEpisodes.previous;
+      _episode.nextStatus = adjacentEpisodes.nextStatus;
+    });
+    _primeNextEpisodePlaybackMetadata(adjacentEpisodes.next);
+  }
+
+  /// Best-effort prefetch of the next episode's full metadata row into the
+  /// API cache while the current episode plays (#1867).
+  ///
+  /// Adjacency comes from queue containers, so the per-item metadata row
+  /// (Plex `/library/metadata/{id}`, Jellyfin `/Users/{uid}/Items/{id}`) is
+  /// cold at the exact moment the transition needs it. Both backends'
+  /// [MediaServerClient.fetchItem] fetch network-first and write that same
+  /// row — the one playback initialization falls back to when the server is
+  /// transiently unreachable — so a warm row turns a connectivity blip at
+  /// the transition into a normal start instead of a failed advance.
+  ///
+  /// Documented best-effort: the transition path performs its own fetch and
+  /// error handling, so a failed prime costs nothing.
+  void _primeNextEpisodePlaybackMetadata(MediaItem? next) {
+    if (next == null || _offlineLibraryMode || !mounted) return;
+    if (_episode.primedNextGlobalKey == next.globalKey) return;
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(next.serverId));
+    if (client == null) return;
+    _episode.primedNextGlobalKey = next.globalKey;
+    unawaited(() async {
+      try {
+        await client.fetchItem(next.id);
+      } catch (e) {
+        appLogger.d('Next-episode metadata prime failed', error: e);
+      }
+    }());
   }
 }

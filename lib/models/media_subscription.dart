@@ -5,31 +5,13 @@ import 'media_grab_operation.dart';
 
 part 'media_subscription.g.dart';
 
-List<MediaSubscription> _parseSubscriptions(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) MediaSubscription.fromJson(item),
-  ];
-}
+List<MediaSubscription> _parseSubscriptions(Object? raw) => parseFlexibleJsonList(raw, MediaSubscription.fromJson);
 
-List<SubscriptionSetting> _parseSettings(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) SubscriptionSetting.fromJson(item),
-  ];
-}
+List<SubscriptionSetting> _parseSettings(Object? raw) => parseFlexibleJsonList(raw, SubscriptionSetting.fromJson);
 
-List<MediaGrabOperation> _parseGrabOperations(Object? raw) {
-  final list = flexibleList(raw) ?? const [];
-  return [
-    for (final item in list)
-      if (item is Map<String, dynamic>) MediaGrabOperation.fromJson(item),
-  ];
-}
+List<MediaGrabOperation> _parseGrabOperations(Object? raw) => parseFlexibleJsonList(raw, MediaGrabOperation.fromJson);
 
-Map<String, dynamic>? _mapFromJson(Object? raw) => raw is Map<String, dynamic> ? raw : null;
+Map<String, dynamic>? _mapFromJson(Object? raw) => firstFlexibleMap(raw);
 
 /// Template wrapper returned by `/media/subscriptions/template`.
 @JsonSerializable(createToJson: false)
@@ -164,20 +146,14 @@ class MediaSubscriptionCreateRequest {
   final int? targetSectionLocationID;
   final int? type;
   final String? parameters;
-  final Map<String, Object?> hints;
   final Map<String, Object?> prefs;
-  final Map<String, Object?> params;
-  final String? providers;
 
   const MediaSubscriptionCreateRequest({
     this.targetLibrarySectionID,
     this.targetSectionLocationID,
     this.type,
     this.parameters,
-    this.hints = const {},
     this.prefs = const {},
-    this.params = const {},
-    this.providers,
   });
 
   factory MediaSubscriptionCreateRequest.fromTemplate(
@@ -190,9 +166,15 @@ class MediaSubscriptionCreateRequest {
       for (final setting in subscription.settings)
         if (setting.id.isNotEmpty) setting.id: setting.value ?? setting.defaultValue,
     };
+    // The template's location id belongs to the template's section; when the
+    // caller redirects to another section it must not be sent along (the
+    // server then uses the new section's default location).
+    final overridingSection =
+        targetLibrarySectionID != null && targetLibrarySectionID != subscription.targetLibrarySectionID;
     return MediaSubscriptionCreateRequest(
       targetLibrarySectionID: targetLibrarySectionID ?? subscription.targetLibrarySectionID,
-      targetSectionLocationID: targetSectionLocationID ?? subscription.targetSectionLocationID,
+      targetSectionLocationID:
+          targetSectionLocationID ?? (overridingSection ? null : subscription.targetSectionLocationID),
       type: subscription.type,
       parameters: subscription.parameters,
       prefs: {...templatePrefs, ...prefs},

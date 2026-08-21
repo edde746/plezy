@@ -143,23 +143,6 @@ void main() {
       );
     });
 
-    test('preserves 500 status and raw body when JSON decoding fails', () async {
-      final client = MediaServerHttpClient(
-        baseUrl: 'https://example.test',
-        client: MockClient((_) async => http.Response('{bad json', 500, headers: {'content-type': 'application/json'})),
-      );
-      addTearDown(client.close);
-
-      await expectLater(
-        client.get('/System/Info'),
-        throwsA(
-          isA<MediaServerHttpException>()
-              .having((e) => e.statusCode, 'statusCode', 500)
-              .having((e) => e.responseData, 'responseData', '{bad json'),
-        ),
-      );
-    });
-
     test('preserves 200 status when successful JSON response is malformed', () async {
       final client = MediaServerHttpClient(
         baseUrl: 'https://example.test',

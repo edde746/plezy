@@ -32,7 +32,7 @@ class EpisodeCard extends StatefulWidget {
   final MediaItem episode;
   final MediaServerClient? client;
   final VoidCallback onTap;
-  final Future<void> Function(String)? onRefresh;
+  final Future<void> Function(MediaItem source)? onRefresh;
   final Future<void> Function()? onListRefresh;
   final bool autofocus;
   final bool isOffline;
@@ -92,7 +92,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
           children: [
             const Padding(
               padding: .only(top: 2),
-              child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
+              child: AppIcon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
             ),
             const SizedBox(width: 2),
             Text(
@@ -125,7 +125,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
   Widget _buildContent(BuildContext context, {required bool hideSpoilers}) {
     final episode = _effectiveEpisode(context);
     final shouldBlur = hideSpoilers && episode.shouldHideSpoiler;
-    final qualityLabels = buildMediaQualityLabels(episode);
+    final qualityLabels = [...buildMediaQualityLabels(episode), ?buildMediaSizeLabel(episode)];
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -146,7 +146,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
             item: episode,
             onRefresh: widget.onRefresh,
             onListRefresh: widget.onListRefresh,
-            onTap: widget.onTap,
             child: InkWell(
               key: Key(episode.id),
               mouseCursor: SystemMouseCursors.click,
@@ -163,12 +162,12 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                   color: Theme.of(context).colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Row(
                   crossAxisAlignment: .start,
                   children: [
                     SizedBox(
-                      width: 160,
+                      width: 144,
                       child: Stack(
                         children: [
                           ClipRRect(
@@ -226,7 +225,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                       ),
                     ),
 
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 10),
 
                     Expanded(
                       child: Column(
@@ -292,7 +291,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           ),
 
                           if (!shouldBlur && episode.summary != null && episode.summary!.isNotEmpty) ...[
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 4),
                             if (PlatformDetector.isTV())
                               Text(
                                 episode.summary!,
@@ -307,13 +306,14 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                 text: episode.summary!,
                                 maxLines: 3,
                                 small: true,
+                                suppressExpandSemantics: true,
                                 style: Theme.of(
                                   context,
                                 ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
                               ),
                           ],
 
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           _buildEpisodeMetaRow(context, episode, qualityLabels),
                         ],
                       ),

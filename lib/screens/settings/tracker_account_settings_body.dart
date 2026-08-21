@@ -7,6 +7,7 @@ import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../services/trackers/tracker_constants.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
@@ -52,40 +53,52 @@ class TrackerAccountSettingsBody extends StatelessWidget {
     return SettingsPage(
       title: title,
       children: [
-        ListTile(
-          leading: const AppIcon(Symbols.account_circle_rounded, fill: 1),
-          title: Text(accountTitle),
-          subtitle: accountSubtitle != null ? Text(accountSubtitle!) : null,
+        SettingsGroup(
+          children: [
+            ListTile(
+              leading: const AppIcon(Symbols.account_circle_rounded, fill: 1),
+              title: Text(accountTitle),
+              subtitle: accountSubtitle != null ? Text(accountSubtitle!) : null,
+            ),
+          ],
         ),
-        SettingsSectionHeader(t.settings.behavior),
-        for (final toggle in toggles)
-          SettingSwitchTile(
-            pref: toggle.pref,
-            icon: toggle.icon,
-            title: toggle.title,
-            subtitle: toggle.subtitle,
-            onAfterWrite: toggle.onAfterWrite,
-          ),
-        SettingsBuilder(
-          prefs: [SettingsService.trackerFilterModePref(service), SettingsService.trackerFilterIdsPref(service)],
-          builder: (context) {
-            final settings = SettingsService.instance;
-            return ListTile(
-              leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
-              title: Text(t.trackers.libraryFilter.title),
-              subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(settings, service)),
-              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-              onTap: () => Navigator.of(
-                context,
-              ).push(MaterialPageRoute<void>(builder: (_) => TrackerLibraryFilterScreen(service: service))),
-            );
-          },
+        SettingsGroup(
+          title: t.settings.behavior,
+          children: [
+            for (final toggle in toggles)
+              SettingSwitchTile(
+                pref: toggle.pref,
+                icon: toggle.icon,
+                title: toggle.title,
+                subtitle: toggle.subtitle,
+                onAfterWrite: toggle.onAfterWrite,
+              ),
+            SettingsBuilder(
+              prefs: [SettingsService.trackerFilterModePref(service), SettingsService.trackerFilterIdsPref(service)],
+              builder: (context) {
+                final settings = SettingsService.instance;
+                return FocusableListTile(
+                  leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
+                  title: Text(t.services.libraryFilter.title),
+                  subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(settings, service)),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: () => Navigator.of(
+                    context,
+                  ).push(MaterialPageRoute<void>(builder: (_) => TrackerLibraryFilterScreen(service: service))),
+                );
+              },
+            ),
+          ],
         ),
-        const Divider(height: 32),
-        ListTile(
-          leading: AppIcon(Symbols.link_off_rounded, fill: 1, color: Theme.of(context).colorScheme.error),
-          title: Text(t.common.disconnect, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-          onTap: () => unawaited(Future<void>.sync(onDisconnect)),
+        const SizedBox(height: 24),
+        SettingsGroup(
+          children: [
+            FocusableListTile(
+              leading: AppIcon(Symbols.link_off_rounded, fill: 1, color: Theme.of(context).colorScheme.error),
+              title: Text(t.common.disconnect, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              onTap: () => unawaited(Future<void>.sync(onDisconnect)),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
       ],

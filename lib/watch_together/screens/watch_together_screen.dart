@@ -18,6 +18,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/app_icon.dart';
 import '../../utils/video_player_navigation.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/app_menu.dart';
@@ -25,7 +26,7 @@ import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 import '../services/recent_rooms_service.dart';
-import '../services/watch_together_peer_service.dart';
+import '../services/watch_together_relay_endpoint.dart';
 import '../widgets/join_session_dialog.dart';
 import '../../widgets/loading_indicator_box.dart';
 
@@ -87,14 +88,18 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   bool _isJoining = false;
   String? _enteringRoomCode;
   bool? _healthOk;
-  String? _customRelayUrl;
+  String? _profileId;
+  late WatchTogetherRelayEndpoint _relayEndpoint;
   List<RecentRoom> _recentRooms = [];
 
   @override
   void initState() {
     super.initState();
-    _customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
-    _recentRooms = RecentRoomsService.getRecentRooms();
+    _profileId = context.read<ActiveProfileProvider>().activeId;
+    _relayEndpoint = WatchTogetherRelayEndpoint.resolve(
+      SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl),
+    );
+    _recentRooms = _loadRecentRooms();
     _checkHealth();
   }
 
@@ -102,11 +107,17 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
 
   String? get _plexDisplayName => context.read<ActiveProfileProvider>().active?.displayName;
 
+  List<RecentRoom> _loadRecentRooms() {
+    final profileId = _profileId;
+    if (profileId == null || profileId.isEmpty) return const [];
+    return RecentRoomsService.getRecentRooms(profileId: profileId, endpoint: _relayEndpoint);
+  }
+
   Future<void> _checkHealth() async {
     final client = HttpClient();
     try {
       client.connectionTimeout = const Duration(seconds: 5);
-      final request = await client.getUrl(Uri.parse(WatchTogetherPeerService.healthUrlFor(_customRelayUrl)));
+      final request = await client.getUrl(_relayEndpoint.healthUri);
       final response = await request.close().namedTimeout(
         const Duration(seconds: 5),
         operation: 'WatchTogether health check',
@@ -135,7 +146,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
           child: Column(
             mainAxisSize: .min,
             children: [
-              Icon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
+              AppIcon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
               const SizedBox(height: 24),
               Text(t.watchTogether.title, style: theme.textTheme.headlineMedium, textAlign: TextAlign.center),
               const SizedBox(height: 8),
@@ -152,7 +163,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                     padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
-                        Icon(Symbols.warning_rounded, color: theme.colorScheme.onErrorContainer),
+                        AppIcon(Symbols.warning_rounded, color: theme.colorScheme.onErrorContainer),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -171,9 +182,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                 child: FocusableButton(
                   autofocus: _recentRooms.isEmpty,
                   onPressed: _isBusy ? null : _createSession,
+                  useBackgroundFocus: true,
                   child: FilledButton.icon(
                     onPressed: _isBusy ? null : _createSession,
-                    icon: _isCreating ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.add_rounded),
+                    icon: _isCreating ? const LoadingIndicatorBox(size: 20) : const AppIcon(Symbols.add_rounded),
                     label: Text(_isCreating ? t.watchTogether.creating : t.watchTogether.createSession),
                   ),
                 ),
@@ -185,7 +197,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
                   onPressed: _isBusy ? null : _joinSession,
                   child: OutlinedButton.icon(
                     onPressed: _isBusy ? null : _joinSession,
-                    icon: _isJoining ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.group_add_rounded),
+                    icon: _isJoining ? const LoadingIndicatorBox(size: 20) : const AppIcon(Symbols.group_add_rounded),
                     label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinSession),
                   ),
                 ),
@@ -215,33 +227,64 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     );
   }
 
-  Future<void> _createSession() async {
-    final controlMode = await _showControlModeDialog();
-    if (controlMode == null || !mounted) return;
+  /// Persists [code] as a recent room for the active profile and refreshes the
+  /// list. A null [controlMode] leaves any stored mode untouched.
+  Future<void> _recordRecentRoom(String code, {ControlMode? controlMode}) async {
+    final profileId = _profileId;
+    if (profileId == null || profileId.isEmpty) return;
+    await RecentRoomsService.addOrUpdateRoom(
+      code,
+      profileId: profileId,
+      endpoint: _relayEndpoint,
+      controlMode: controlMode,
+    );
+    setStateIfMounted(() => _recentRooms = _loadRecentRooms());
+  }
 
-    setState(() => _isCreating = true);
-
+  /// Runs [action] behind a busy flag, logging [logMessage] and showing
+  /// [failureMessage] in a snackbar when it throws.
+  Future<void> _runSessionAction({
+    required void Function(bool busy) setBusy,
+    required String logMessage,
+    required String failureMessage,
+    required Future<void> Function() action,
+  }) async {
+    setState(() => setBusy(true));
     try {
-      final sessionId = await widget.watchTogether.createSession(
-        controlMode: controlMode,
-        displayName: _plexDisplayName,
-      );
-      await RecentRoomsService.addOrUpdateRoom(sessionId, controlMode: controlMode);
-      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+      await action();
     } catch (e) {
-      appLogger.e('Failed to create session', error: e);
+      appLogger.e(logMessage, error: e);
       if (mounted) {
-        showErrorSnackBar(context, '${t.watchTogether.failedToCreate}: $e');
+        showErrorSnackBar(context, '$failureMessage: $e');
       }
     } finally {
       if (mounted) {
-        setState(() => _isCreating = false);
+        setState(() => setBusy(false));
       }
     }
   }
 
+  Future<void> _createSession() async {
+    final controlMode = await _showControlModeDialog();
+    if (controlMode == null || !mounted) return;
+
+    await _runSessionAction(
+      setBusy: (busy) => _isCreating = busy,
+      logMessage: 'Failed to create session',
+      failureMessage: t.watchTogether.failedToCreate,
+      action: () async {
+        final sessionId = await widget.watchTogether.createSession(
+          controlMode: controlMode,
+          relayEndpoint: _relayEndpoint,
+          displayName: _plexDisplayName,
+        );
+        await _recordRecentRoom(sessionId, controlMode: controlMode);
+      },
+    );
+  }
+
   Future<ControlMode?> _showControlModeDialog() {
-    return showDialog<ControlMode>(
+    return showScopedDialog<ControlMode>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(t.watchTogether.controlMode),
@@ -266,61 +309,57 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
     final sessionId = await showJoinSessionDialog(context);
     if (sessionId == null || !mounted) return;
 
-    setState(() => _isJoining = true);
-
-    try {
-      await widget.watchTogether.joinSession(sessionId, displayName: _plexDisplayName);
-      await RecentRoomsService.addOrUpdateRoom(sessionId);
-      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
-    } catch (e) {
-      appLogger.e('Failed to join session', error: e);
-      if (mounted) {
-        showErrorSnackBar(context, '${t.watchTogether.failedToJoin}: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isJoining = false);
-      }
-    }
+    await _runSessionAction(
+      setBusy: (busy) => _isJoining = busy,
+      logMessage: 'Failed to join session',
+      failureMessage: t.watchTogether.failedToJoin,
+      action: () async {
+        await widget.watchTogether.joinSession(sessionId, relayEndpoint: _relayEndpoint, displayName: _plexDisplayName);
+        await _recordRecentRoom(sessionId);
+      },
+    );
   }
 
   Future<void> _enterRoom(RecentRoom room) async {
-    setState(() => _enteringRoomCode = room.code);
-
-    try {
-      await widget.watchTogether.enterRoom(
-        room.code,
-        controlMode: room.controlMode ?? ControlMode.anyone,
-        displayName: _plexDisplayName,
-      );
-      await RecentRoomsService.addOrUpdateRoom(room.code);
-      setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
-    } catch (e) {
-      appLogger.e('Failed to enter room', error: e);
-      if (mounted) {
-        showErrorSnackBar(context, '${t.watchTogether.failedToJoin}: $e');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _enteringRoomCode = null);
-      }
-    }
+    await _runSessionAction(
+      setBusy: (busy) => _enteringRoomCode = busy ? room.code : null,
+      logMessage: 'Failed to enter room',
+      failureMessage: t.watchTogether.failedToJoin,
+      action: () async {
+        await widget.watchTogether.enterRoom(
+          room.code,
+          relayEndpoint: _relayEndpoint,
+          controlMode: room.controlMode ?? ControlMode.anyone,
+          displayName: _plexDisplayName,
+        );
+        await _recordRecentRoom(room.code);
+      },
+    );
   }
 
   Future<void> _renameRoom(RecentRoom room) async {
-    final name = await showDialog<String>(
+    final name = await showScopedDialog<String>(
       context: context,
       builder: (_) => _RenameRoomDialog(room: room),
     );
     if (name == null || !mounted) return;
 
-    await RecentRoomsService.renameRoom(room.code, name.isEmpty ? null : name);
-    setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+    final profileId = _profileId;
+    if (profileId == null || profileId.isEmpty) return;
+    await RecentRoomsService.renameRoom(
+      room.code,
+      name.isEmpty ? null : name,
+      profileId: profileId,
+      endpoint: _relayEndpoint,
+    );
+    setStateIfMounted(() => _recentRooms = _loadRecentRooms());
   }
 
   Future<void> _removeRoom(RecentRoom room) async {
-    await RecentRoomsService.removeRoom(room.code);
-    setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+    final profileId = _profileId;
+    if (profileId == null || profileId.isEmpty) return;
+    await RecentRoomsService.removeRoom(room.code, profileId: profileId, endpoint: _relayEndpoint);
+    setStateIfMounted(() => _recentRooms = _loadRecentRooms());
   }
 }
 
@@ -421,7 +460,7 @@ class _RecentRoomTile extends StatelessWidget {
           type: MaterialType.transparency,
           child: ListTile(
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-            leading: isEntering ? const LoadingIndicatorBox(size: 24) : const Icon(Symbols.meeting_room_rounded),
+            leading: isEntering ? const LoadingIndicatorBox(size: 24) : const AppIcon(Symbols.meeting_room_rounded),
             title: Text(title, maxLines: 1, overflow: .ellipsis),
             subtitle: room.name != null
                 ? Text(
@@ -429,8 +468,12 @@ class _RecentRoomTile extends StatelessWidget {
                     style: TextStyle(fontFamily: 'monospace', color: theme.colorScheme.onSurfaceVariant),
                   )
                 : null,
-            trailing: IconButton(icon: const Icon(Symbols.more_vert_rounded), onPressed: () => _showActions(context)),
+            trailing: IconButton(
+              icon: const AppIcon(Symbols.more_vert_rounded),
+              onPressed: () => _showActions(context),
+            ),
             onTap: isBusy ? null : onTap,
+            onLongPress: () => _showActions(context),
           ),
         ),
       ),
@@ -438,8 +481,8 @@ class _RecentRoomTile extends StatelessWidget {
   }
 
   void _showActions(BuildContext context) {
-    OverlaySheetController.showAdaptive(
-      context,
+    OverlaySheetController.of(context).show(
+      showDragHandle: true,
       builder: (context) => AppMenuSheet<String>(
         entries: [
           AppMenuItem(value: 'rename', icon: Symbols.edit_rounded, label: t.watchTogether.renameRoom),
@@ -483,7 +526,7 @@ class _ActiveSessionContent extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(
+                    AppIcon(
                       watchTogether.isHost ? Symbols.star_rounded : Symbols.group_rounded,
                       color: theme.colorScheme.primary,
                     ),
@@ -507,7 +550,7 @@ class _ActiveSessionContent extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(
+                    AppIcon(
                       session.controlMode == ControlMode.anyone
                           ? Symbols.groups_rounded
                           : Symbols.admin_panel_settings_rounded,
@@ -538,7 +581,7 @@ class _ActiveSessionContent extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Symbols.people_rounded, color: theme.colorScheme.primary),
+                    AppIcon(Symbols.people_rounded, color: theme.colorScheme.primary),
                     const SizedBox(width: 12),
                     Text(
                       '${t.watchTogether.participants} (${watchTogether.participantCount})',
@@ -552,7 +595,7 @@ class _ActiveSessionContent extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
                       children: [
-                        Icon(
+                        AppIcon(
                           participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
                           size: 20,
                           color: participant.isHost ? Colors.amber : theme.colorScheme.onSurfaceVariant,
@@ -609,7 +652,7 @@ class _ActiveSessionContent extends StatelessWidget {
                 foregroundColor: theme.colorScheme.error,
                 side: BorderSide(color: theme.colorScheme.error),
               ),
-              icon: Icon(watchTogether.isHost ? Symbols.close_rounded : Symbols.logout_rounded),
+              icon: AppIcon(watchTogether.isHost ? Symbols.close_rounded : Symbols.logout_rounded),
               label: Text(watchTogether.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession),
             ),
           ),
@@ -627,8 +670,11 @@ class _ActiveSessionContent extends StatelessWidget {
       isDestructive: true,
     );
 
-    if (confirmed) {
+    if (!confirmed) return;
+    try {
       await watchTogether.leaveSession();
+    } catch (error, stackTrace) {
+      appLogger.e('WatchTogether: Session leave failed', error: error, stackTrace: stackTrace);
     }
   }
 }
@@ -689,7 +735,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
           children: [
             Row(
               children: [
-                Icon(Symbols.play_circle_rounded, color: theme.colorScheme.primary),
+                AppIcon(Symbols.play_circle_rounded, color: theme.colorScheme.primary),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -714,9 +760,10 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
               child: FocusableButton(
                 autofocus: true,
                 onPressed: _isJoining ? null : _joinCurrentPlayback,
+                useBackgroundFocus: true,
                 child: FilledButton.icon(
                   onPressed: _isJoining ? null : _joinCurrentPlayback,
-                  icon: _isJoining ? const LoadingIndicatorBox() : const Icon(Symbols.play_arrow_rounded),
+                  icon: _isJoining ? const LoadingIndicatorBox() : const AppIcon(Symbols.play_arrow_rounded),
                   label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinCurrentPlayback),
                 ),
               ),
@@ -759,7 +806,7 @@ class _SessionCodeRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Icon(Symbols.content_copy_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
+              AppIcon(Symbols.content_copy_rounded, size: 14, color: theme.colorScheme.onSurfaceVariant),
             ],
           ),
         ),

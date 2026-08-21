@@ -1,5 +1,5 @@
 /// Type of an embedded or sidecar stream within a media file.
-enum MediaStreamKind { video, audio, subtitle, unknown }
+enum MediaStreamKind { video, audio, subtitle, image, data, lyric, unknown }
 
 /// A single audio, video, or subtitle stream inside a media part.
 class MediaStream {

@@ -6,10 +6,10 @@ import '../../../i18n/strings.g.dart';
 import '../../../media/media_version.dart';
 import '../../../models/transcode_quality_preset.dart';
 import '../../../utils/quality_preset_labels.dart';
-import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
-import 'sheet_column_header.dart';
+import 'sheet_selection_column.dart';
+import 'sheet_split_columns.dart';
 
 String versionQualityPickerTitle({required bool showVersions, required bool showQuality}) {
   return showQuality
@@ -74,14 +74,7 @@ class VersionQualityPicker extends StatelessWidget {
     );
 
     if (showVersions && showQuality) {
-      return Row(
-        crossAxisAlignment: .start,
-        children: [
-          Expanded(child: versionColumn),
-          VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
-          Expanded(child: qualityColumn),
-        ],
-      );
+      return SheetSplitColumns(start: versionColumn, end: qualityColumn);
     } else if (showVersions) {
       return versionColumn;
     } else {
@@ -114,7 +107,7 @@ class VersionQualityPicker extends StatelessWidget {
   }
 }
 
-class _VersionColumn extends StatefulWidget {
+class _VersionColumn extends StatelessWidget {
   final List<MediaVersion> versions;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
@@ -128,47 +121,26 @@ class _VersionColumn extends StatefulWidget {
   });
 
   @override
-  State<_VersionColumn> createState() => _VersionColumnState();
-}
-
-class _VersionColumnState extends State<_VersionColumn> {
-  final _initialScroll = InitialItemScrollController();
-
-  @override
-  void dispose() {
-    _initialScroll.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    _initialScroll.maybeScrollTo(widget.selectedIndex);
-
-    return Column(
-      children: [
-        if (widget.showHeader) SheetColumnHeader(label: t.videoControls.versionColumnHeader),
-        Expanded(
-          child: ListView.builder(
-            controller: _initialScroll.controller,
-            itemCount: widget.versions.length,
-            itemBuilder: (context, index) {
-              final version = widget.versions[index];
-              final isSelected = index == widget.selectedIndex;
-              return _SelectionTile(
-                key: index == 0 ? _initialScroll.firstItemKey : null,
-                label: version.displayLabel,
-                isSelected: isSelected,
-                onTap: () => widget.onSelected(index),
-              );
-            },
-          ),
-        ),
-      ],
+    return SheetSelectionColumn(
+      headerLabel: showHeader ? t.videoControls.versionColumnHeader : null,
+      itemCount: versions.length,
+      initialIndex: selectedIndex,
+      itemBuilder: (context, index, scope) {
+        final version = versions[index];
+        final isSelected = index == selectedIndex;
+        return _SelectionTile(
+          key: scope.keyFor(index),
+          label: version.displayLabel,
+          isSelected: isSelected,
+          onTap: () => onSelected(index),
+        );
+      },
     );
   }
 }
 
-class _QualityColumn extends StatefulWidget {
+class _QualityColumn extends StatelessWidget {
   final TranscodeQualityPreset selected;
   final bool enabledForTranscoding;
   final int? sourceBitrateKbps;
@@ -188,57 +160,35 @@ class _QualityColumn extends StatefulWidget {
   });
 
   @override
-  State<_QualityColumn> createState() => _QualityColumnState();
-}
-
-class _QualityColumnState extends State<_QualityColumn> {
-  final _initialScroll = InitialItemScrollController();
-
-  @override
-  void dispose() {
-    _initialScroll.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final presets = TranscodeQualityPreset.displayOrder;
-    final selectedIndex = presets.indexOf(widget.selected);
 
-    _initialScroll.maybeScrollTo(selectedIndex);
+    return SheetSelectionColumn(
+      headerLabel: showHeader ? t.videoControls.qualityColumnHeader : null,
+      itemCount: presets.length,
+      initialIndex: presets.indexOf(selected),
+      itemBuilder: (context, index, scope) {
+        final preset = presets[index];
+        final isSelected = preset == selected;
+        final isOriginal = preset.isOriginal;
+        final enabled = isOriginal || enabledForTranscoding;
 
-    return Column(
-      children: [
-        if (widget.showHeader) SheetColumnHeader(label: t.videoControls.qualityColumnHeader),
-        Expanded(
-          child: ListView.builder(
-            controller: _initialScroll.controller,
-            itemCount: presets.length,
-            itemBuilder: (context, index) {
-              final preset = presets[index];
-              final isSelected = preset == widget.selected;
-              final isOriginal = preset.isOriginal;
-              final enabled = isOriginal || widget.enabledForTranscoding;
+        final trailing = qualityPresetSizeEstimate(
+          preset: preset,
+          sourceBitrateKbps: sourceBitrateKbps,
+          sourceDurationMs: sourceDurationMs,
+          sourceSizeBytes: sourceSizeBytes,
+        );
 
-              final trailing = qualityPresetSizeEstimate(
-                preset: preset,
-                sourceBitrateKbps: widget.sourceBitrateKbps,
-                sourceDurationMs: widget.sourceDurationMs,
-                sourceSizeBytes: widget.sourceSizeBytes,
-              );
-
-              return _SelectionTile(
-                key: index == 0 ? _initialScroll.firstItemKey : null,
-                label: qualityPresetLabel(preset),
-                trailingText: trailing,
-                isSelected: isSelected,
-                enabled: enabled,
-                onTap: enabled ? () => widget.onSelected(preset) : null,
-              );
-            },
-          ),
-        ),
-      ],
+        return _SelectionTile(
+          key: scope.keyFor(index),
+          label: qualityPresetLabel(preset),
+          trailingText: trailing,
+          isSelected: isSelected,
+          enabled: enabled,
+          onTap: enabled ? () => onSelected(preset) : null,
+        );
+      },
     );
   }
 }

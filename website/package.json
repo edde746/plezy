@@ -6,7 +6,9 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
+		"audit": "python3 ../scripts/checks/check_bun_audit.py --project . --baseline bun_audit_baseline.json",
 		"preview": "vite preview",
+		"test": "bun test",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
@@ -15,16 +17,22 @@
 		"@iconify/json": "^2.2.474",
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/enhanced-img": "^0.10.4",
-		"@sveltejs/kit": "^2.50.1",
+		"@sveltejs/kit": "^2.70.2",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"google-play-scraper": "^10.1.2",
 		"svelte": "^5.48.2",
 		"svelte-check": "^4.3.5",
 		"typescript": "^5.9.3",
 		"unplugin-icons": "^23.0.1",
-		"vite": "^7.3.1"
+		"vite": "^7.3.6"
 	},
 	"dependencies": {
 		"@sveltejs/adapter-static": "^3.0.10"
+	},
+	"overrides": {
+		"postcss": "8.5.26",
+		"sharp": "0.35.3",
+		"undici": "7.29.0",
+		"nanoid": "3.3.18"
 	}
 }

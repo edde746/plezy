@@ -15,6 +15,10 @@ class MediaLibrary {
   /// (poster shape, sort options). For mixed libraries this is [MediaKind.unknown].
   final MediaKind kind;
 
+  /// Explicit item kinds for this library's flat root browse. Mixed libraries
+  /// use this when no single [kind] can describe the server's root view.
+  final List<MediaKind> defaultBrowseKinds;
+
   /// Optional ISO language code of the library's metadata locale.
   final String? language;
 
@@ -37,6 +41,7 @@ class MediaLibrary {
     required this.backend,
     required this.title,
     this.kind = MediaKind.unknown,
+    this.defaultBrowseKinds = const [],
     this.language,
     this.updatedAt,
     this.createdAt,
@@ -47,32 +52,4 @@ class MediaLibrary {
   });
 
   String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
-
-  MediaLibrary copyWith({
-    String? id,
-    MediaBackend? backend,
-    String? title,
-    MediaKind? kind,
-    String? language,
-    int? updatedAt,
-    int? createdAt,
-    bool? hidden,
-    bool? isShared,
-    String? serverId,
-    String? serverName,
-  }) {
-    return MediaLibrary(
-      id: id ?? this.id,
-      backend: backend ?? this.backend,
-      title: title ?? this.title,
-      kind: kind ?? this.kind,
-      language: language ?? this.language,
-      updatedAt: updatedAt ?? this.updatedAt,
-      createdAt: createdAt ?? this.createdAt,
-      hidden: hidden ?? this.hidden,
-      isShared: isShared ?? this.isShared,
-      serverId: serverId ?? this.serverId,
-      serverName: serverName ?? this.serverName,
-    );
-  }
 }

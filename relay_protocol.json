@@ -1,0 +1,42 @@
+{
+  "protocolVersion": 2,
+  "legacyProtocolVersion": 0,
+  "clientMessageTypes": {
+    "create": "create",
+    "join": "join",
+    "broadcast": "broadcast",
+    "sendTo": "sendTo",
+    "ping": "ping",
+    "leave": "leave",
+    "endSession": "endSession"
+  },
+  "serverMessageTypes": {
+    "created": "created",
+    "joined": "joined",
+    "peerJoined": "peerJoined",
+    "peerLeft": "peerLeft",
+    "message": "message",
+    "error": "error",
+    "pong": "pong",
+    "left": "left",
+    "ended": "ended"
+  },
+  "errorCodes": {
+    "rateLimited": "rate_limited",
+    "invalidMessage": "invalid_message",
+    "roomExists": "room_exists",
+    "roomNotFound": "room_not_found",
+    "roomFull": "room_full",
+    "notInRoom": "not_in_room",
+    "alreadyInRoom": "already_in_room",
+    "peerIdUnavailable": "peer_id_unavailable",
+    "protocolMismatch": "protocol_mismatch"
+  },
+  "limits": {
+    "maxRoomSize": 8,
+    "maxMessageSize": 65536,
+    "maxSessionIdLength": 64,
+    "maxPeerIdLength": 128
+  },
+  "idPattern": "^[A-Za-z0-9_-]+$"
+}

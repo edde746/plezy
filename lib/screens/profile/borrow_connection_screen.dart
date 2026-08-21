@@ -17,8 +17,8 @@ import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_merge.dart';
 import '../../profiles/profile_registry.dart';
-import '../../services/plex_auth_service.dart';
 import '../../services/storage_service.dart';
+import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
@@ -60,7 +60,22 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     _candidatesFuture = _loadCandidates();
   }
 
+  void _retryCandidates() {
+    setState(() {
+      _candidatesFuture = _loadCandidates();
+    });
+  }
+
   Future<List<_BorrowCandidate>> _loadCandidates() async {
+    try {
+      return await _loadCandidatesUnchecked();
+    } catch (error, stackTrace) {
+      appLogger.w('Borrow candidate load failed', error: error, stackTrace: stackTrace);
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<List<_BorrowCandidate>> _loadCandidatesUnchecked() async {
     final pcRegistry = context.read<ProfileConnectionRegistry>();
     final connRegistry = context.read<ConnectionRegistry>();
     final profileRegistry = context.read<ProfileRegistry>();
@@ -159,7 +174,54 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     return FutureBuilder<List<_BorrowCandidate>>(
       future: _candidatesFuture,
       builder: (context, snapshot) {
-        final candidates = snapshot.data ?? const <_BorrowCandidate>[];
+        late final Widget candidateSliver;
+        if (snapshot.connectionState != ConnectionState.done) {
+          candidateSliver = LoadingIndicatorBox.sliver;
+        } else if (snapshot.hasError) {
+          candidateSliver = SliverFillRemaining(
+            child: ErrorStateWidget(
+              message: t.profiles.borrowLoadFailed,
+              onRetry: _retryCandidates,
+              actionAutofocus: true,
+              actionUseBackgroundFocus: true,
+            ),
+          );
+        } else {
+          final candidates = snapshot.requireData;
+          if (candidates.isEmpty) {
+            candidateSliver = SliverFillRemaining(
+              child: EmptyStateWidget(
+                message: t.profiles.borrowEmpty,
+                subtitle: t.profiles.borrowEmptySubtitle,
+                icon: Symbols.share_rounded,
+                iconSize: 48,
+              ),
+            );
+          } else {
+            candidateSliver = SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                final cand = candidates[index];
+                final tokensRef = tokens(context);
+                final tileRadii = groupItemRadii(context, index, candidates.length);
+                return Padding(
+                  padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
+                  child: FocusableWrapper(
+                    autofocus: index == 0,
+                    disableScale: true,
+                    borderRadii: tileRadii,
+                    onSelect: _busy ? null : () => _borrow(cand),
+                    child: Card(
+                      shape: RoundedRectangleBorder(borderRadius: tileRadii),
+                      clipBehavior: Clip.antiAlias,
+                      child: _BorrowTile(candidate: cand, borderRadius: tileRadii, onTap: () => _borrow(cand)),
+                    ),
+                  ),
+                );
+              }, childCount: candidates.length),
+            );
+          }
+        }
+
         return FocusedScrollScaffold(
           title: Text(t.profiles.borrowAddTo(displayName: widget.targetProfile.displayName)),
           slivers: [
@@ -169,34 +231,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
                 child: Text(t.profiles.borrowExplain, style: Theme.of(context).textTheme.bodySmall),
               ),
             ),
-            if (snapshot.connectionState != ConnectionState.done)
-              LoadingIndicatorBox.sliver
-            else if (candidates.isEmpty)
-              SliverFillRemaining(
-                child: EmptyStateWidget(
-                  message: t.profiles.borrowEmpty,
-                  subtitle: t.profiles.borrowEmptySubtitle,
-                  icon: Symbols.share_rounded,
-                  iconSize: 48,
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate((context, index) {
-                  final cand = candidates[index];
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    child: FocusableWrapper(
-                      autofocus: index == 0,
-                      disableScale: true,
-                      onSelect: _busy ? null : () => _borrow(cand),
-                      child: Card(
-                        child: _BorrowTile(candidate: cand, onTap: () => _borrow(cand)),
-                      ),
-                    ),
-                  );
-                }, childCount: candidates.length),
-              ),
+            candidateSliver,
           ],
         );
       },
@@ -213,6 +248,13 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
           await _borrowPlex(cand);
         case JellyfinConnection():
           await _borrowJellyfin(cand);
+      }
+    } catch (e, st) {
+      // Without this, a throw from the verify/borrow steps (network, DB)
+      // dies in the unawaited caller and the user gets no feedback.
+      appLogger.w('Borrow failed', error: e, stackTrace: st);
+      if (mounted) {
+        showErrorSnackBar(context, t.profiles.borrowFailed);
       }
     } finally {
       if (mounted) {
@@ -252,83 +294,48 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     final parentId = cand.source.parentConnectionId;
     final homeUuid = cand.source.plexHomeUserUuid;
     if (parentId == null || homeUuid == null) return false;
+    // Built before the await: capturing the prompt needs a live element.
+    final promptForPin = dialogPinPrompt(context, cand.source.displayName);
     final parent = await context.read<ConnectionRegistry>().getPlexAccount(parentId);
     if (parent == null) {
       if (mounted) showErrorSnackBar(context, t.profiles.sourceProfileMissingParentAccount);
       return false;
     }
-    final auth = await PlexAuthService.create();
-    try {
-      final result = await switchPlexHomeUserWithPin(
-        auth: auth,
-        accountToken: parent.accountToken,
-        homeUserUuid: homeUuid,
-        requiresPin: true,
-        promptForPin: ({String? errorMessage}) async {
-          if (!mounted) return null;
-          return showPinEntryDialog(context, cand.source.displayName, errorMessage: errorMessage);
-        },
-        logLabel: cand.source.displayName,
-      );
-      if (!result.succeeded) {
-        if (result.status == PlexHomeSwitchStatus.failed && mounted) {
-          showErrorSnackBar(context, t.profiles.failedToVerifyPin);
-        }
-        return false;
+    final result = await mintPlexHomeUserToken(
+      account: parent,
+      homeUserUuid: homeUuid,
+      requiresPin: true,
+      promptForPin: promptForPin,
+      logLabel: cand.source.displayName,
+    );
+    if (!result.succeeded) {
+      if (result.status == PlexHomeSwitchStatus.failed && mounted) {
+        showErrorSnackBar(context, t.profiles.failedToVerifyPin);
       }
-      return true;
-    } finally {
-      auth.dispose();
+      return false;
     }
+    return true;
   }
 
   Future<void> _borrowPlex(_BorrowCandidate cand) async {
     final pcRegistry = context.read<ProfileConnectionRegistry>();
-    final auth = await PlexAuthService.create();
-    try {
-      final account = cand.connection as PlexAccountConnection;
-      final result = await switchPlexHomeUserWithPin(
-        auth: auth,
-        accountToken: account.accountToken,
-        homeUserUuid: cand.pc.userIdentifier,
-        requiresPin: cand.source.plexProtected,
-        promptForPin: ({String? errorMessage}) async {
-          if (!mounted) return null;
-          return showPinEntryDialog(context, cand.source.displayName, errorMessage: errorMessage);
-        },
-        logLabel: cand.source.displayName,
-      );
-      if (!result.succeeded) {
-        if (result.status == PlexHomeSwitchStatus.failed && mounted) {
-          showErrorSnackBar(context, t.profiles.borrowFailed);
-        }
-        return;
-      }
-      await pcRegistry.upsert(
-        ProfileConnection(
-          profileId: widget.targetProfile.id,
-          connectionId: account.id,
-          userToken: result.userToken!,
-          userIdentifier: cand.pc.userIdentifier,
-          tokenAcquiredAt: DateTime.now(),
-        ),
-      );
-      if (mounted) {
-        unawaited(context.read<ActiveProfileBinder>().rebindIfActive(widget.targetProfile.id));
-        if (widget.popOnSuccess) {
-          Navigator.of(context).pop(true);
-          return;
-        }
-        showSuccessSnackBar(context, t.profiles.borrowConnectionBorrowed);
-      }
-    } catch (e, st) {
-      appLogger.w('Borrow failed', error: e, stackTrace: st);
-      if (mounted) {
+    final account = cand.connection as PlexAccountConnection;
+    final result = await mintPlexHomeUserToken(
+      account: account,
+      homeUserUuid: cand.pc.userIdentifier,
+      requiresPin: cand.source.plexProtected,
+      promptForPin: dialogPinPrompt(context, cand.source.displayName),
+      persistTo: pcRegistry,
+      persistProfileId: widget.targetProfile.id,
+      logLabel: cand.source.displayName,
+    );
+    if (!result.succeeded) {
+      if (result.status == PlexHomeSwitchStatus.failed && mounted) {
         showErrorSnackBar(context, t.profiles.borrowFailed);
       }
-    } finally {
-      auth.dispose();
+      return;
     }
+    _finishBorrow();
   }
 
   Future<void> _borrowJellyfin(_BorrowCandidate cand) async {
@@ -343,14 +350,19 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
         tokenAcquiredAt: DateTime.now(),
       ),
     );
-    if (mounted) {
-      unawaited(context.read<ActiveProfileBinder>().rebindIfActive(widget.targetProfile.id));
-      if (widget.popOnSuccess) {
-        Navigator.of(context).pop(true);
-        return;
-      }
-      showSuccessSnackBar(context, t.profiles.borrowConnectionBorrowed);
+    _finishBorrow();
+  }
+
+  /// Shared tail of every successful borrow: rebind the target profile when
+  /// it is the active one, then pop with the result or confirm in place.
+  void _finishBorrow() {
+    if (!mounted) return;
+    unawaited(context.read<ActiveProfileBinder>().rebindIfActive(widget.targetProfile.id));
+    if (widget.popOnSuccess) {
+      Navigator.of(context).pop(true);
+      return;
     }
+    showSuccessSnackBar(context, t.profiles.borrowConnectionBorrowed);
   }
 }
 
@@ -366,16 +378,18 @@ class _BorrowCandidate {
 
 class _BorrowTile extends StatelessWidget {
   final _BorrowCandidate candidate;
+  final BorderRadius borderRadius;
   final VoidCallback onTap;
 
-  const _BorrowTile({required this.candidate, required this.onTap});
+  const _BorrowTile({required this.candidate, required this.borderRadius, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return InkWell(
+      canRequestFocus: false,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: borderRadius,
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(

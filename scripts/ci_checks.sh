@@ -1,12 +1,8 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# Git sets GIT_DIR (and friends) for hook invocations. Inside `flutter pub
-# run`, that leaks into Flutter's own SDK-version probe (`git describe` from
-# Flutter's checkout) and makes Flutter misreport its version as
-# `1.35.1-0.0.pre-1`, which then fails dependency resolution. Strip those
-# vars so the script behaves the same when invoked from a hook as it does
-# from a plain shell.
+# Hook-invoked Flutter commands inherit GIT_* variables and can misreport the SDK
+# version; clear them so hooks and direct invocations behave identically.
 unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_PREFIX
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -37,7 +33,6 @@ have_dart_code_linter() {
 
 FAILED=0
 
-# 1. dart format (mirrors ci.yml "Verify formatting")
 section "dart format"
 files=()
 while IFS= read -r -d '' f; do files+=("$f"); done < <(
@@ -59,56 +54,68 @@ else
   rm -f "$out"
 fi
 
-# 2. Codegen freshness (build_runner outputs newer than their sources)
 section "codegen freshness"
-stale=()
-while IFS= read -r -d '' src; do
-  for gen in "${src%.dart}.g.dart" "${src%.dart}.freezed.dart"; do
-    if [ -f "$gen" ] && [ "$src" -nt "$gen" ]; then
-      stale+=("${src#./}")
-      break
-    fi
-  done
-done < <(find lib -name "*.dart" ! -name "*.g.dart" ! -name "*.freezed.dart" -type f -print0 2>/dev/null)
-if [ ${#stale[@]} -eq 0 ]; then
-  ok "no stale generated files"
-else
-  fail "${#stale[@]} dart source(s) newer than their generated .g/.freezed:"
-  printf '    %s\n' "${stale[@]}"
-  echo "    Run: scripts/codegen.sh"
-  FAILED=1
-fi
-
-# 3. Native formatting
-section "native format"
 out="$(mktemp)"
-if scripts/format_native.sh --check >"$out" 2>&1; then
-  ok "native files correctly formatted"
+if scripts/codegen.sh --check >"$out" 2>&1; then
+  ok "generated files are current"
 else
-  fail "native formatting issues"
+  fail "generated files are stale"
   sed 's/^/    /' "$out"
   FAILED=1
 fi
 rm -f "$out"
 
-# 3. flutter analyze (mirrors ci.yml "Analyze code")
-section "flutter analyze"
-out="$(mktemp)"
-flutter analyze >"$out" 2>&1 || true
-if grep -q "error •" "$out"; then
-  fail "errors"
-  grep -E "error •|warning •" "$out" | sed 's/^/    /'
-  FAILED=1
-elif grep -q "warning •" "$out"; then
-  fail "warnings (treated as failure, matching CI)"
-  grep "warning •" "$out" | sed 's/^/    /'
-  FAILED=1
+section "translation hygiene"
+if python3 scripts/checks/clean_translations.py --check --strict; then
+  ok "locale files normalized and no unused keys found"
 else
-  ok "no errors or warnings"
+  fail "translation files need cleanup or contain unused keys"
+  FAILED=1
+fi
+
+section "hardcoded UI strings"
+if python3 scripts/checks/check_hardcoded_strings.py; then
+  ok "user-facing strings use the translation layer"
+else
+  fail "hardcoded user-facing English strings found"
+  FAILED=1
+fi
+
+section "workflow and script guards"
+if bash scripts/ci_guard_checks.sh; then
+  ok "workflow and script guards passed"
+else
+  fail "workflow or script guard failed"
+  FAILED=1
+fi
+
+section "icon consistency"
+if dart run scripts/checks/check_icon_consistency.dart; then
+  ok "production icons use AppIcon and rounded Symbols"
+else
+  fail "icon consistency violations found"
+  FAILED=1
+fi
+
+section "native format"
+out="$(mktemp)"
+if scripts/format_native.sh --check >"$out" 2>&1; then
+  ok "native files correctly formatted"
+else
+  fail "native formatting check failed"
+  sed 's/^/    /' "$out"
+  FAILED=1
 fi
 rm -f "$out"
 
-# 4. Unused code (mirrors ci.yml "Check for unused code")
+section "Dart analyzer"
+if dart run scripts/checks/check_analyzer.dart; then
+  ok "no unapproved diagnostics"
+else
+  fail "analyzer errors, warnings, unexpected infos, or tool failure"
+  FAILED=1
+fi
+
 section "dart_code_linter: unused code"
 if ! have_dart_code_linter; then
   skip "dart_code_linter unresolved — run 'flutter pub get'"
@@ -125,7 +132,6 @@ else
   rm -f "$out"
 fi
 
-# 5. Unused files (mirrors ci.yml "Check for unused files")
 section "dart_code_linter: unused files"
 if ! have_dart_code_linter; then
   skip "dart_code_linter unresolved — run 'flutter pub get'"

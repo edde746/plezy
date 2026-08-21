@@ -2,67 +2,76 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
+
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_playlist.dart';
+import 'package:plezy/models/plex/play_queue_response.dart';
+import 'package:plezy/providers/playback_state_provider.dart';
+import 'package:plezy/services/media_list_playback_launcher.dart';
 import 'package:plezy/services/play_queue_launcher.dart';
 import 'package:plezy/services/plex_client.dart';
 
-// NOTE on coverage scope:
-// `PlayQueueLauncher` is almost entirely network/UI glue:
-//   - every public method calls into [PlexClient.createPlayQueue] or
-//     [PlexClient.createShowPlayQueue] (network),
-//   - then setups [PlaybackStateProvider] (Provider),
-//   - then calls [navigateToVideoPlayer] (Navigator + DownloadProvider +
-//     SettingsService singleton + Provider).
-//
-// Without re-implementing that entire dependency tree, the only meaningful
-// unit-testable surface is:
-//   - The `PlayQueueResult` sealed hierarchy (constructor + identity).
-//   - `launchShuffledShow` short-circuits BEFORE any network call when the
-//     metadata is not a show or season — that's a pure pre-flight branch.
-//   - `launchFromCollectionOrPlaylist` short-circuits when the input is
-//     neither a `PlexMetadata` nor a `PlexPlaylist`.
-//
-// Everything else (success/empty-queue/error paths) requires a full
-// PlexClient fake + a Provider tree + a real Navigator. Skipped.
+import '../test_helpers/media_items.dart';
+
+// Focused orchestration coverage lives here: the network response must be
+// published to PlaybackStateProvider before navigation, and a navigation
+// failure remains an owned PlayQueueError rather than a reported success.
+// Jellyfin cancellation ownership is covered by
+// jellyfin_sequential_launcher_test.dart.
 
 class _StubPlexClient implements PlexClient {
+  _StubPlexClient({this.response});
+
+  final PlayQueueResponse? response;
+
+  @override
+  Future<PlayQueueResponse?> createPlayQueue({
+    String? uri,
+    int? playlistID,
+    required String type,
+    String? key,
+    int shuffle = 0,
+    int repeat = 0,
+    int continuous = 0,
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) async {
+    return response;
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+Future<BuildContext> _pumpContext(WidgetTester tester) async {
+  late BuildContext capturedContext;
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) {
+            capturedContext = context;
+            return const SizedBox.shrink();
+          },
+        ),
+      ),
+    ),
+  );
+  return capturedContext;
+}
+
+PlayQueueResponse _queueWith(MediaItem item) {
+  return PlayQueueResponse(
+    playQueueID: 73,
+    playQueueSelectedItemID: 41,
+    playQueueShuffled: false,
+    playQueueTotalCount: 1,
+    items: [item],
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  // ============================================================
-  // PlayQueueResult sealed hierarchy
-  // ============================================================
-
-  group('PlayQueueResult', () {
-    test('PlayQueueSuccess is a const, identity-comparable singleton', () {
-      const a = PlayQueueSuccess();
-      const b = PlayQueueSuccess();
-      expect(identical(a, b), isTrue);
-      expect(a, isA<PlayQueueResult>());
-    });
-
-    test('PlayQueueEmpty is a const, identity-comparable singleton', () {
-      const a = PlayQueueEmpty();
-      const b = PlayQueueEmpty();
-      expect(identical(a, b), isTrue);
-      expect(a, isA<PlayQueueResult>());
-    });
-
-    test('PlayQueueError carries the wrapped error', () {
-      final error = StateError('boom');
-      final result = PlayQueueError(error);
-      expect(result.error, same(error));
-      expect(result, isA<PlayQueueResult>());
-    });
-  });
-
-  // ============================================================
-  // Pre-flight branches that don't touch the network
-  // ============================================================
 
   group('launchShuffledShow pre-flight guard', () {
     testWidgets('returns PlayQueueError when metadata is not a show or season', (tester) async {
@@ -82,7 +91,7 @@ void main() {
       final launcher = PlexPlayQueueLauncher(context: capturedContext, client: _StubPlexClient());
       final result = await launcher.launchShuffledShow(
         // movie is not show / season.
-        metadata: MediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie),
+        metadata: testMediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie),
         showLoadingIndicator: false,
       );
 
@@ -114,34 +123,60 @@ void main() {
     });
   });
 
-  // ============================================================
-  // Constructor
-  // ============================================================
-
-  group('constructor', () {
-    testWidgets('stores all wired arguments', (tester) async {
-      late BuildContext capturedContext;
-      await tester.pumpWidget(
-        Builder(
-          builder: (context) {
-            capturedContext = context;
-            return const SizedBox.shrink();
-          },
-        ),
-      );
-
-      final client = _StubPlexClient();
+  group('queue application ownership', () {
+    testWidgets('publishes the Plex queue before navigating to its selected item', (tester) async {
+      final context = await _pumpContext(tester);
+      final item = const MediaItem.plex(id: 'movie-1', kind: MediaKind.movie, title: 'Movie', playQueueItemId: 41);
+      final playbackState = PlaybackStateProvider();
+      final navigated = <MediaItem>[];
       final launcher = PlexPlayQueueLauncher(
-        context: capturedContext,
-        client: client,
-        serverId: 'srv-A',
-        serverName: 'Plex',
+        context: context,
+        client: _StubPlexClient(response: _queueWith(item)),
+        playbackStateForTesting: playbackState,
+        navigateForTesting: (selected) async {
+          expect(playbackState.isQueueActive, isTrue);
+          expect(playbackState.playQueueId, 73);
+          expect(playbackState.currentQueueItem, same(item));
+          expect(playbackState.loadedItems.single, same(item));
+          navigated.add(selected);
+        },
+      );
+      const playlist = MediaPlaylist(id: '12', backend: MediaBackend.plex, title: 'Playlist', playlistType: 'video');
+
+      final result = await launcher.launchFromCollectionOrPlaylist(
+        item: playlist,
+        shuffle: false,
+        showLoadingIndicator: false,
       );
 
-      expect(launcher.context, capturedContext);
-      expect(identical(launcher.client, client), isTrue);
-      expect(launcher.serverId, 'srv-A');
-      expect(launcher.serverName, 'Plex');
+      expect(result, isA<PlayQueueSuccess>());
+      expect(navigated, hasLength(1));
+      expect(navigated.single, same(item));
+    });
+
+    testWidgets('navigation failure is returned as PlayQueueError, not success', (tester) async {
+      final context = await _pumpContext(tester);
+      final item = const MediaItem.plex(id: 'movie-1', kind: MediaKind.movie, playQueueItemId: 41);
+      final failure = StateError('navigation failed');
+      final playbackState = PlaybackStateProvider();
+      final launcher = PlexPlayQueueLauncher(
+        context: context,
+        client: _StubPlexClient(response: _queueWith(item)),
+        playbackStateForTesting: playbackState,
+        navigateForTesting: (_) async => throw failure,
+      );
+      const playlist = MediaPlaylist(id: '12', backend: MediaBackend.plex, title: 'Playlist', playlistType: 'video');
+
+      final result = await launcher.launchFromCollectionOrPlaylist(
+        item: playlist,
+        shuffle: false,
+        showLoadingIndicator: false,
+      );
+
+      expect(result, isA<PlayQueueError>());
+      expect((result as PlayQueueError).error, same(failure));
+      expect(playbackState.isQueueActive, isTrue);
+      expect(playbackState.currentQueueItem, same(item));
     });
   });
 }

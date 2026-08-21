@@ -1,27 +1,15 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-  List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
-
+mixin _JellyfinCollectionMethods on _JellyfinClientInternals {
   static const int _collectionsPageSize = 36;
 
   String? _boxSetsViewId;
 
   @override
-  Future<List<MediaItem>> fetchCollections(String libraryId) async {
-    final all = <MediaItem>[];
-    var start = 0;
-    while (true) {
-      final page = await fetchCollectionsPage(libraryId, start: start, size: _collectionsPageSize);
-      all.addAll(page.items);
-      if (page.items.isEmpty) break;
-      start += page.items.length;
-      if (start >= page.totalCount) break;
-    }
-    return all;
-  }
+  Future<List<MediaItem>> fetchCollections(String libraryId) => drainPages<MediaItem>(
+    (start, size) => fetchCollectionsPage(libraryId, start: start, size: size),
+    pageSize: _collectionsPageSize,
+  );
 
   @override
   Future<LibraryPage<MediaItem>> fetchCollectionsPage(
@@ -54,7 +42,7 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _itemsPage(response.data, offset: s, requestedSize: pageSize);
+    return _pagedItems(response.data, offset: s, requestedSize: pageSize, map: _mapItems);
   }
 
   Future<String?> _fetchBoxSetsViewId({AbortController? abort}) async {
@@ -71,14 +59,6 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
       }
     }
     return null;
-  }
-
-  LibraryPage<MediaItem> _itemsPage(Object? data, {required int offset, int? requestedSize}) {
-    final rawItems = _itemsArray(data);
-    final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
-    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
-    final total = rawTotal is int ? rawTotal : fallbackTotal;
-    return LibraryPage<MediaItem>(items: _mapItems(rawItems), totalCount: total, offset: offset);
   }
 
   @override
@@ -104,7 +84,7 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
       abort: abort,
     );
     throwIfHttpError(response);
-    return _itemsPage(response.data, offset: s, requestedSize: size);
+    return _pagedItems(response.data, offset: s, requestedSize: size, map: _mapItems);
   }
 
   @override
@@ -163,5 +143,55 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
     final response = await _http.delete('/Items/${_segment(item.id)}');
     throwIfHttpError(response);
     return true;
+  }
+
+  /// `/Items?ids=` rather than `/Users/{id}/Items/{id}`: the single-item route
+  /// ignores `Fields` and returns the whole dto (measured 33 KB / ~150 ms on a
+  /// remote server), while the list route honours it and answers with a ~0.5 KB
+  /// body in ~40 ms. Images and user data are switched off for the same reason.
+  ///
+  /// An id the user cannot see comes back as an empty `Items` array, which is
+  /// the same answer as "not allowed" for gating purposes.
+  ///
+  /// A context menu waits on this, so the probe carries a real wall-clock
+  /// ceiling: [MediaServerHttpClient] applies its `timeout` to the connect and
+  /// receive phases separately (so it alone would allow roughly double), and
+  /// `allowEndpointFailover: false` keeps a dead endpoint from walking the
+  /// candidate list while the user holds a long-press. On expiry the request is
+  /// aborted rather than left running, and the timeout propagates so the caller
+  /// fails closed.
+  // No `@override`: like [fetchSeasonEpisodesPage], this satisfies an optional
+  // capability interface that the concrete client implements, not a member of
+  // the mixin's superclass constraint.
+  Future<bool?> fetchDeletePermission(MediaItem item) async {
+    final abort = AbortController();
+    try {
+      final response = await _http
+          .get(
+            '/Items',
+            queryParameters: {
+              'ids': item.id,
+              'userId': connection.userId,
+              'Fields': 'CanDelete',
+              'EnableImages': 'false',
+              'EnableUserData': 'false',
+              'EnableTotalRecordCount': 'false',
+            },
+            timeout: MediaServerTimeouts.jellyfinDeletePermission,
+            abort: abort,
+            allowEndpointFailover: false,
+          )
+          .namedTimeout(MediaServerTimeouts.jellyfinDeletePermission, operation: 'jellyfin delete permission');
+      throwIfHttpError(response);
+      final items = _itemsArray(response.data);
+      if (items.isEmpty) return false;
+      return items.first['CanDelete'] as bool?;
+    } on TimeoutException catch (e) {
+      // Stop the request rather than leave it running, and hand the caller the
+      // same exception shape `MediaServerHttpClient` raises for its own
+      // per-phase expiries.
+      abort.abort();
+      throw MediaServerHttpException.from(e);
+    }
   }
 }

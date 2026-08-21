@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/library_query.dart';
@@ -12,6 +15,11 @@ import 'package:plezy/services/jellyfin_sequential_launcher.dart';
 import 'package:plezy/services/media_list_playback_launcher.dart';
 import 'package:plezy/services/playlist_items_loader.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/widgets/dialog_action_button.dart';
+import 'package:plezy/i18n/strings.g.dart';
+
+import '../test_helpers/paged_fakes.dart';
+import '../test_helpers/media_items.dart';
 
 /// Recording fake that satisfies [JellyfinClient] via `implements` +
 /// `noSuchMethod`. The launcher only needs the
@@ -23,6 +31,14 @@ class _RecordingJellyfinClient implements JellyfinClient {
   final List<MediaItem> playableFolderDescendantsResponse;
   final List<MediaItem> seriesEpisodesResponse;
   final List<MediaItem> playlistItemsResponse;
+  final Completer<void>? playableDescendantsGate;
+  final Completer<void>? playableFolderDescendantsGate;
+  final Completer<void>? seriesEpisodesGate;
+  final Completer<void>? playlistPageGate;
+  final List<AbortController?> playableDescendantAborts = [];
+  final List<AbortController?> playableFolderAborts = [];
+  final List<AbortController?> seriesEpisodeAborts = [];
+  final List<AbortController?> playlistPageAborts = [];
   final List<String> fetchPlayableDescendantsCalls = [];
   final List<String> fetchPlayableFolderDescendantsCalls = [];
   final List<String> fetchSeriesEpisodesCalls = [];
@@ -33,23 +49,33 @@ class _RecordingJellyfinClient implements JellyfinClient {
     this.playableFolderDescendantsResponse = const [],
     this.seriesEpisodesResponse = const [],
     this.playlistItemsResponse = const [],
+    this.playableDescendantsGate,
+    this.playableFolderDescendantsGate,
+    this.seriesEpisodesGate,
+    this.playlistPageGate,
   });
 
   @override
-  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId, {AbortController? abort}) async {
     fetchPlayableDescendantsCalls.add(parentId);
+    playableDescendantAborts.add(abort);
+    await _waitForGate(playableDescendantsGate, abort);
     return playableDescendantsResponse;
   }
 
   @override
-  Future<List<MediaItem>> fetchPlayableFolderDescendants(String parentId) async {
+  Future<List<MediaItem>> fetchPlayableFolderDescendants(String parentId, {AbortController? abort}) async {
     fetchPlayableFolderDescendantsCalls.add(parentId);
+    playableFolderAborts.add(abort);
+    await _waitForGate(playableFolderDescendantsGate, abort);
     return playableFolderDescendantsResponse;
   }
 
   @override
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {AbortController? abort}) async {
     fetchSeriesEpisodesCalls.add(seriesId);
+    seriesEpisodeAborts.add(abort);
+    await _waitForGate(seriesEpisodesGate, abort);
     return seriesEpisodesResponse;
   }
 
@@ -62,17 +88,21 @@ class _RecordingJellyfinClient implements JellyfinClient {
   @override
   Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
     final offset = start ?? 0;
-    final limit = size ?? 100;
+    final limit = size ?? fakeMediaPageSize;
     fetchPlaylistItemsCalls.add((id: id, offset: offset, limit: limit));
-    if (offset >= playlistItemsResponse.length) {
-      return LibraryPage<MediaItem>(items: const [], totalCount: playlistItemsResponse.length, offset: offset);
+    playlistPageAborts.add(abort);
+    await _waitForGate(playlistPageGate, abort);
+    return fakeLibraryPage(playlistItemsResponse, start: start, size: size);
+  }
+
+  Future<void> _waitForGate(Completer<void>? gate, AbortController? abort) async {
+    if (gate == null) return;
+    if (abort == null) {
+      await gate.future;
+      return;
     }
-    final end = (offset + limit).clamp(0, playlistItemsResponse.length);
-    return LibraryPage<MediaItem>(
-      items: playlistItemsResponse.sublist(offset, end),
-      totalCount: playlistItemsResponse.length,
-      offset: offset,
-    );
+    await Future.any<void>([gate.future, abort.trigger]);
+    abort.throwIfAborted();
   }
 
   @override
@@ -82,7 +112,17 @@ class _RecordingJellyfinClient implements JellyfinClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-MediaItem _ep(String id, {ServerId? serverId}) => MediaItem(
+/// Playlist fetch that fails before the loading dialog's first frame,
+/// exercising `executeWithLoading`'s early-failure path.
+class _ThrowingJellyfinClient extends _RecordingJellyfinClient {
+  @override
+  Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
+    fetchPlaylistItemsCalls.add((id: id, offset: start ?? 0, limit: size ?? fakeMediaPageSize));
+    throw Exception('connection refused');
+  }
+}
+
+MediaItem _ep(String id, {ServerId? serverId}) => testMediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,
@@ -90,7 +130,7 @@ MediaItem _ep(String id, {ServerId? serverId}) => MediaItem(
   serverId: serverId ?? ServerId('srv-jf'),
 );
 
-MediaItem _movie(String id, {ServerId? serverId}) => MediaItem(
+MediaItem _movie(String id, {ServerId? serverId}) => testMediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.movie,
@@ -98,7 +138,7 @@ MediaItem _movie(String id, {ServerId? serverId}) => MediaItem(
   serverId: serverId ?? ServerId('srv-jf'),
 );
 
-MediaItem _clip(String id, {ServerId? serverId}) => MediaItem(
+MediaItem _clip(String id, {ServerId? serverId}) => testMediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.clip,
@@ -106,7 +146,7 @@ MediaItem _clip(String id, {ServerId? serverId}) => MediaItem(
   serverId: serverId ?? ServerId('srv-jf'),
 );
 
-MediaItem _track(String id, {ServerId? serverId}) => MediaItem(
+MediaItem _track(String id, {ServerId? serverId}) => testMediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.track,
@@ -152,7 +192,7 @@ void main() {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);
 
-      final orphan = MediaItem(
+      final orphan = testMediaItem(
         id: 'col-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -176,10 +216,15 @@ void main() {
         context: ctx,
         clientForTesting: fakeClient,
         playbackStateForTesting: playback,
-        navigateForTesting: (m) async => navigated.add(m),
+        navigateForTesting: (m) async {
+          expect(playback.isQueueActive, isTrue);
+          expect(playback.loadedItems, orderedEquals(fetched));
+          expect(playback.currentQueueItem, same(fetched.first));
+          navigated.add(m);
+        },
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-99',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -279,7 +324,12 @@ void main() {
       // container. If a future change reverts to fetchChildren the test
       // fails because a Series row would leak into the queue.
       final ctx = await pumpContext(tester);
-      final movie = MediaItem(id: 'movie-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-jf');
+      final movie = testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        serverId: 'srv-jf',
+      );
       final ep1 = _ep('series-A-ep1');
       final ep2 = _ep('series-A-ep2');
       final fakeClient = _RecordingJellyfinClient(playableDescendantsResponse: [movie, ep1, ep2]);
@@ -293,7 +343,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-mixed',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -329,7 +379,7 @@ void main() {
         navigateForTesting: (_) async {},
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -366,7 +416,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-start',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -400,7 +450,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -433,7 +483,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final folder = MediaItem(
+      final folder = testMediaItem(
         id: 'folder-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.unknown,
@@ -471,7 +521,7 @@ void main() {
         navigateForTesting: (_) async {},
       );
 
-      final folder = MediaItem(
+      final folder = testMediaItem(
         id: 'folder-shuffle',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.unknown,
@@ -503,7 +553,7 @@ void main() {
         },
       );
 
-      final folder = MediaItem(
+      final folder = testMediaItem(
         id: 'music-folder',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.unknown,
@@ -521,7 +571,7 @@ void main() {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);
 
-      final movie = MediaItem(id: 'm1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-jf');
+      final movie = testMediaItem(id: 'm1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-jf');
 
       final result = await launcher.launchShuffledShow(metadata: movie, showLoadingIndicator: false);
 
@@ -533,7 +583,12 @@ void main() {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);
 
-      final season = MediaItem(id: 's1', backend: MediaBackend.jellyfin, kind: MediaKind.season, serverId: 'srv-jf');
+      final season = testMediaItem(
+        id: 's1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.season,
+        serverId: 'srv-jf',
+      );
 
       final result = await launcher.launchShuffledShow(metadata: season, showLoadingIndicator: false);
 
@@ -545,7 +600,7 @@ void main() {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);
 
-      final orphan = MediaItem(id: 'show-orphan', backend: MediaBackend.jellyfin, kind: MediaKind.show);
+      final orphan = testMediaItem(id: 'show-orphan', backend: MediaBackend.jellyfin, kind: MediaKind.show);
 
       final result = await launcher.launchShuffledShow(metadata: orphan, showLoadingIndicator: false);
 
@@ -569,7 +624,7 @@ void main() {
         navigateForTesting: (m) async => navigated.add(m),
       );
 
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 'show-1',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.show,
@@ -605,7 +660,7 @@ void main() {
         navigateForTesting: (_) async {},
       );
 
-      final season = MediaItem(
+      final season = testMediaItem(
         id: 'season-2',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.season,
@@ -634,7 +689,7 @@ void main() {
         },
       );
 
-      final show = MediaItem(
+      final show = testMediaItem(
         id: 'show-empty',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.show,
@@ -663,7 +718,7 @@ void main() {
         },
       );
 
-      final collection = MediaItem(
+      final collection = testMediaItem(
         id: 'col-empty',
         backend: MediaBackend.jellyfin,
         kind: MediaKind.collection,
@@ -679,6 +734,306 @@ void main() {
       expect(result, isA<PlayQueueEmpty>());
       expect(playback.isQueueActive, isFalse);
       expect(didNavigate, isFalse);
+    });
+
+    testWidgets('fetch starts before the loading dialog first frame renders', (tester) async {
+      final ctx = await pumpContext(tester);
+      final gate = Completer<void>();
+      final fakeClient = _RecordingJellyfinClient(playlistItemsResponse: [_ep('a'), _ep('b')], playlistPageGate: gate);
+      final playback = PlaybackStateProvider();
+      var didNavigate = false;
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {
+          didNavigate = true;
+        },
+      );
+      const playlist = MediaPlaylist(
+        id: 'pl-early-fetch',
+        backend: MediaBackend.jellyfin,
+        title: 'Early fetch',
+        playlistType: 'video',
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchFromCollectionOrPlaylist(item: playlist, shuffle: false);
+
+      // No frame has been pumped, so the dialog has not built yet — but the
+      // network operation must already be in flight.
+      expect(fakeClient.fetchPlaylistItemsCalls, hasLength(1));
+      expect(find.byType(DialogActionButton), findsNothing);
+
+      gate.complete();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(await resultFuture, isA<PlayQueueSuccess>());
+      expect(didNavigate, isTrue);
+      expect(find.byType(DialogActionButton), findsNothing);
+    });
+
+    testWidgets('operation failure before the dialog first frame still dismisses the dialog', (tester) async {
+      final ctx = await pumpContext(tester);
+      final fakeClient = _ThrowingJellyfinClient();
+      final playback = PlaybackStateProvider();
+      var didNavigate = false;
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {
+          didNavigate = true;
+        },
+      );
+      const playlist = MediaPlaylist(
+        id: 'pl-early-error',
+        backend: MediaBackend.jellyfin,
+        title: 'Early error',
+        playlistType: 'video',
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchFromCollectionOrPlaylist(item: playlist, shuffle: false);
+      // The failure lands before the dialog's first frame; it must not
+      // surface as an unhandled error, and the dialog must still come down.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(await resultFuture, isA<PlayQueueError>());
+      expect(didNavigate, isFalse);
+      expect(playback.isQueueActive, isFalse);
+      expect(find.byType(DialogActionButton), findsNothing);
+      expect(find.byType(SnackBar), findsOneWidget);
+    });
+
+    testWidgets('dialog Cancel aborts playlist launch idempotently without queue or snackbar', (tester) async {
+      final ctx = await pumpContext(tester);
+      final gate = Completer<void>();
+      final fakeClient = _RecordingJellyfinClient(playlistItemsResponse: [_ep('a'), _ep('b')], playlistPageGate: gate);
+      final playback = PlaybackStateProvider();
+      var didNavigate = false;
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {
+          didNavigate = true;
+        },
+      );
+      const playlist = MediaPlaylist(
+        id: 'pl-cancel',
+        backend: MediaBackend.jellyfin,
+        title: 'Cancel me',
+        playlistType: 'video',
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchFromCollectionOrPlaylist(item: playlist, shuffle: false);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(fakeClient.fetchPlaylistItemsCalls, hasLength(1));
+      expect(fakeClient.playlistPageAborts.single, isNotNull);
+      expect(find.text(t.common.cancel), findsOneWidget);
+      final cancelButton = tester.widget<DialogActionButton>(find.byType(DialogActionButton));
+      cancelButton.onPressed!();
+      cancelButton.onPressed!();
+      await tester.pump();
+      expect(await resultFuture, isA<PlayQueueCancelled>());
+      expect(fakeClient.playlistPageAborts.single!.isAborted, isTrue);
+      expect(fakeClient.fetchPlaylistItemsCalls, hasLength(1));
+      expect(playback.isQueueActive, isFalse);
+      expect(didNavigate, isFalse);
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('disposing the initiating navigator aborts its active playlist launch', (tester) async {
+      late BuildContext initiatingContext;
+      late StateSetter replaceProfileSubtree;
+      var showProfileSubtree = true;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatefulBuilder(
+            builder: (context, setState) {
+              replaceProfileSubtree = setState;
+              if (!showProfileSubtree) {
+                return const Scaffold(body: Text('replacement profile', key: Key('replacement-profile')));
+              }
+              return Navigator(
+                onGenerateRoute: (_) => MaterialPageRoute<void>(
+                  builder: (_) => Scaffold(
+                    body: Builder(
+                      builder: (context) {
+                        initiatingContext = context;
+                        return const Text('initiating profile');
+                      },
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      );
+      final gate = Completer<void>();
+      final fakeClient = _RecordingJellyfinClient(playlistItemsResponse: [_ep('a')], playlistPageGate: gate);
+      final playback = PlaybackStateProvider();
+      var didNavigate = false;
+      final launcher = JellyfinSequentialLauncher(
+        context: initiatingContext,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {
+          didNavigate = true;
+        },
+      );
+      const playlist = MediaPlaylist(
+        id: 'pl-teardown',
+        backend: MediaBackend.jellyfin,
+        title: 'Teardown',
+        playlistType: 'video',
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchFromCollectionOrPlaylist(item: playlist, shuffle: false);
+      await tester.pump();
+      expect(fakeClient.fetchPlaylistItemsCalls, hasLength(1));
+
+      replaceProfileSubtree(() => showProfileSubtree = false);
+      await tester.pump();
+
+      expect(await resultFuture, isA<PlayQueueCancelled>());
+      expect(fakeClient.playlistPageAborts.single!.isAborted, isTrue);
+      expect(fakeClient.fetchPlaylistItemsCalls, hasLength(1));
+      expect(playback.isQueueActive, isFalse);
+      expect(didNavigate, isFalse);
+      expect(find.byKey(const Key('replacement-profile')), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('collection cancellation suppresses mapping and publication', (tester) async {
+      final ctx = await pumpContext(tester);
+      final fakeClient = _RecordingJellyfinClient(
+        playableDescendantsResponse: [_ep('a')],
+        playableDescendantsGate: Completer<void>(),
+      );
+      final playback = PlaybackStateProvider();
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {},
+      );
+      final collection = testMediaItem(
+        id: 'col-cancel',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.collection,
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchFromCollectionOrPlaylist(
+        item: collection,
+        shuffle: true,
+        showLoadingIndicator: false,
+      );
+      await tester.pump();
+      fakeClient.playableDescendantAborts.single!.abort();
+
+      expect(await resultFuture, isA<PlayQueueCancelled>());
+      expect(fakeClient.fetchPlayableDescendantsCalls, ['col-cancel']);
+      expect(playback.isQueueActive, isFalse);
+    });
+
+    testWidgets('folder cancellation suppresses filtering and publication', (tester) async {
+      final ctx = await pumpContext(tester);
+      final fakeClient = _RecordingJellyfinClient(
+        playableFolderDescendantsResponse: [_clip('a')],
+        playableFolderDescendantsGate: Completer<void>(),
+      );
+      final playback = PlaybackStateProvider();
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {},
+      );
+      final folder = testMediaItem(
+        id: 'folder-cancel',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.unknown,
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchFromFolder(folder: folder, shuffle: true, showLoadingIndicator: false);
+      await tester.pump();
+      fakeClient.playableFolderAborts.single!.abort();
+
+      expect(await resultFuture, isA<PlayQueueCancelled>());
+      expect(fakeClient.fetchPlayableFolderDescendantsCalls, ['folder-cancel']);
+      expect(playback.isQueueActive, isFalse);
+    });
+
+    testWidgets('show cancellation suppresses shuffle and publication', (tester) async {
+      final ctx = await pumpContext(tester);
+      final fakeClient = _RecordingJellyfinClient(
+        seriesEpisodesResponse: [_ep('a')],
+        seriesEpisodesGate: Completer<void>(),
+      );
+      final playback = PlaybackStateProvider();
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {},
+      );
+      final show = testMediaItem(
+        id: 'show-cancel',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.show,
+        serverId: 'srv-jf',
+      );
+
+      final resultFuture = launcher.launchShuffledShow(metadata: show, showLoadingIndicator: false);
+      await tester.pump();
+      fakeClient.seriesEpisodeAborts.single!.abort();
+
+      expect(await resultFuture, isA<PlayQueueCancelled>());
+      expect(fakeClient.fetchSeriesEpisodesCalls, ['show-cancel']);
+      expect(playback.isQueueActive, isFalse);
+    });
+  });
+
+  group('fetchAllPlaylistItems cancellation', () {
+    test('aborts after a page await without returning a partial list or requesting page two', () async {
+      final abort = AbortController();
+      final fakeClient = _RecordingJellyfinClient(
+        playlistItemsResponse: List.generate(playlistItemsPageSize + 1, (i) => _ep('p$i')),
+        playlistPageGate: Completer<void>(),
+      );
+
+      final resultFuture = fetchAllPlaylistItems(fakeClient, 'pl-abort', abort: abort);
+      expect(fakeClient.fetchPlaylistItemsCalls.map((call) => call.offset), [0]);
+      abort.abort();
+
+      await expectLater(
+        resultFuture,
+        throwsA(isA<MediaServerHttpException>().having((e) => e.isCancellation, 'isCancellation', isTrue)),
+      );
+      expect(fakeClient.fetchPlaylistItemsCalls.map((call) => call.offset), [0]);
+    });
+
+    test('null controller preserves two-page complete-list success', () async {
+      final items = List.generate(playlistItemsPageSize + 1, (i) => _ep('p$i'));
+      final fakeClient = _RecordingJellyfinClient(playlistItemsResponse: items);
+
+      final result = await fetchAllPlaylistItems(fakeClient, 'pl-success');
+
+      expect(result.map((item) => item.id), items.map((item) => item.id));
+      expect(fakeClient.fetchPlaylistItemsCalls.map((call) => call.offset), [0, playlistItemsPageSize]);
+      expect(fakeClient.playlistPageAborts, [null, null]);
     });
   });
 }

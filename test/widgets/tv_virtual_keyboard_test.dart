@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/focus/dpad_navigator.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/tv_virtual_keyboard.dart';
@@ -42,6 +43,39 @@ void main() {
     expect(find.byType(Dialog), findsOneWidget);
   });
 
+  testWidgets('held select activates the highlighted key once', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+    await tester.sendKeyRepeatEvent(LogicalKeyboardKey.select);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+
+    expect(controller.text, '1');
+    expect(find.byType(Dialog), findsOneWidget);
+  });
+
+  testWidgets('unowned keyboard keys remain available to ancestor handlers', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    final result = _dispatchKey(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.f12,
+        logicalKey: LogicalKeyboardKey.f12,
+        timeStamp: Duration.zero,
+      ),
+    );
+
+    expect(result, KeyEventResult.ignored);
+    expect(controller.text, isEmpty);
+    expect(find.byType(Dialog), findsOneWidget);
+  });
   testWidgets('directional pad enter activates highlighted key', (tester) async {
     final controller = TextEditingController();
     addTearDown(controller.dispose);
@@ -60,6 +94,38 @@ void main() {
 
     expect(controller.text, '1');
     expect(find.byType(Dialog), findsOneWidget);
+  });
+
+  testWidgets('directional navigation selects the expected key and wraps around spacers', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(controller.text, '2');
+
+    // Re-open at the first key, then wrap left past the leading spacer to 0.
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    await _pumpKeyboard(tester, controller: controller);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(controller.text, '20');
+  });
+
+  testWidgets('external controller changes rebuild the preview', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+    controller.text = 'updated externally';
+    await tester.pump();
+
+    expect(find.text('updated externally'), findsOneWidget);
   });
 
   testWidgets('keyboard enter inserts newline for multiline input', (tester) async {
@@ -121,9 +187,9 @@ void main() {
     await _pumpKeyboard(tester, controller: controller);
 
     expect(find.text('='), findsOneWidget);
-    expect(find.byIcon(Icons.functions_rounded), findsOneWidget);
+    expect(find.byIcon(Symbols.functions_rounded), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.functions_rounded));
+    await tester.tap(find.byIcon(Symbols.functions_rounded));
     await tester.pumpAndSettle();
 
     expect(find.text('ABC'), findsOneWidget);
@@ -182,6 +248,79 @@ void main() {
     expect(find.byType(Dialog), findsNothing);
     expect(underlyingBackEvents, 0);
   });
+
+  testWidgets('rendered backspace deletes whole graphemes and keeps the keyboard open', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    for (final grapheme in ['😀', 'e\u0301', '🇯🇵', '👨‍👩‍👧‍👦']) {
+      controller.value = TextEditingValue(
+        text: 'A${grapheme}B',
+        selection: TextSelection.collapsed(offset: 1 + grapheme.length),
+      );
+      await _pumpKeyboard(tester, controller: controller);
+
+      await tester.tap(find.byIcon(Symbols.backspace_rounded));
+      await tester.pump();
+
+      expect(controller.text, 'AB');
+      expect(controller.selection, const TextSelection.collapsed(offset: 1));
+      expect(find.byType(Dialog), findsOneWidget);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+    }
+  });
+
+  testWidgets('physical delete removes a whole grapheme and dismisses the keyboard', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    for (final grapheme in ['😀', 'e\u0301', '🇯🇵', '👨‍👩‍👧‍👦']) {
+      controller.value = TextEditingValue(text: 'A${grapheme}B', selection: const TextSelection.collapsed(offset: 1));
+      await _pumpKeyboard(tester, controller: controller);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.delete);
+      await tester.pumpAndSettle();
+
+      expect(controller.text, 'AB');
+      expect(controller.selection, const TextSelection.collapsed(offset: 1));
+      expect(find.byType(Dialog), findsNothing);
+    }
+  });
+
+  testWidgets('grapheme selection deletion preserves formatter and callback ordering', (tester) async {
+    const grapheme = '🇯🇵';
+    final controller = TextEditingController()
+      ..value = TextEditingValue(
+        text: 'A${grapheme}B',
+        selection: TextSelection(baseOffset: grapheme.length, extentOffset: 1),
+      );
+    final formatterCandidates = <TextEditingValue>[];
+    final changes = <String>[];
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(
+      tester,
+      controller: controller,
+      maxLength: 8,
+      inputFormatters: [
+        TextInputFormatter.withFunction((_, nextValue) {
+          formatterCandidates.add(nextValue);
+          return nextValue;
+        }),
+      ],
+      onChanged: changes.add,
+    );
+
+    await tester.tap(find.byIcon(Symbols.backspace_rounded));
+    await tester.pump();
+
+    expect(formatterCandidates.single.text, 'AB');
+    expect(controller.text, 'AB');
+    expect(controller.selection, const TextSelection.collapsed(offset: 1));
+    expect(changes, ['AB']);
+  });
 }
 
 Future<void> _pumpKeyboard(
@@ -189,6 +328,9 @@ Future<void> _pumpKeyboard(
   required TextEditingController controller,
   TextInputType? keyboardType,
   int? maxLines,
+  List<TextInputFormatter>? inputFormatters,
+  int? maxLength,
+  ValueChanged<String>? onChanged,
   ValueChanged<String>? onSubmitted,
 }) async {
   TvDetectionService.debugSetAppleTVOverride(true);
@@ -212,6 +354,9 @@ Future<void> _pumpKeyboard(
     controller: controller,
     keyboardType: keyboardType,
     maxLines: maxLines,
+    inputFormatters: inputFormatters,
+    maxLength: maxLength,
+    onChanged: onChanged,
     onSubmitted: onSubmitted,
   );
   await tester.pumpAndSettle();

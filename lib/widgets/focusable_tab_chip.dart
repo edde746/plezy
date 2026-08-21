@@ -5,6 +5,27 @@ import '../focus/input_mode_tracker.dart';
 import '../utils/platform_detector.dart';
 import 'focus_builders.dart';
 
+/// Horizontally scrollable host for a row of [FocusableTabChip]s.
+///
+/// App-bar titles and header rows give the strip a bounded width; a plain
+/// Row overflows it on narrow windows (visible as the striped overflow
+/// indicator). The strip shrink-wraps like `mainAxisSize: min` and scrolls
+/// instead. D-pad stays correct: chips center themselves on focus via the
+/// chip mixin, so LEFT/RIGHT reaches off-screen tabs.
+class TabChipStrip extends StatelessWidget {
+  final List<Widget> children;
+
+  const TabChipStrip({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(mainAxisSize: .min, children: children),
+    );
+  }
+}
+
 /// A focusable tab chip that shows a color change when focused or selected.
 ///
 /// Used for tab navigation in LibrariesScreen. Handles:
@@ -69,24 +90,6 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
 
   @override
   String get debugLabel => 'tab_chip_${widget.label}';
-
-  @override
-  void initState() {
-    super.initState();
-    initFocusNode();
-  }
-
-  @override
-  void didUpdateWidget(FocusableTabChip oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    updateFocusNode(oldWidget.focusNode);
-  }
-
-  @override
-  void dispose() {
-    disposeFocusNode();
-    super.dispose();
-  }
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     return handleChipKeyEvent(
@@ -153,6 +156,8 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       focusNode: focusNode,
       onKeyEvent: _handleKeyEvent,
       onTap: widget.onSelect,
+      semanticLabel: widget.label,
+      selected: widget.isSelected,
       padding: hasImage ? const EdgeInsets.all(8) : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       backgroundColor: backgroundColor,
       borderRadius: hasImage ? 12 : 20,

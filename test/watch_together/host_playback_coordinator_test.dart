@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/services/car_ux_restrictions_service.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/models/playback_state.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
 import 'package:plezy/watch_together/services/attached_player.dart';
@@ -15,15 +17,19 @@ class _Harness {
   _Harness(
     FakeAsync async, {
     ControlMode controlMode = ControlMode.hostOnly,
-    HostCoordinatorCallbacks callbacks = const HostCoordinatorCallbacks(),
+    void Function(List<String>)? onResumedWithout,
+    void Function(String, PlaybackActionHint)? onRemoteAction,
+    Duration duration = const Duration(minutes: 45),
+    bool seekable = true,
   }) {
     int nowMs() => _epochMs + async.elapsed.inMilliseconds;
-    player = FakeSyncPlayer(position: const Duration(minutes: 2));
+    player = FakeSyncPlayer(position: const Duration(minutes: 2), duration: duration, seekable: seekable);
     coordinator = HostPlaybackCoordinator(
       myPeerId: 'host',
       controlMode: controlMode,
       sendState: (state, {toPeerId}) => sent.add((state, toPeerId)),
-      callbacks: callbacks,
+      onResumedWithout: onResumedWithout,
+      onRemoteAction: onRemoteAction,
       nowMs: nowMs,
     );
     attached = AttachedPlayer(player: player, onLost: () {}, nowMs: nowMs);
@@ -256,7 +262,7 @@ void main() {
     test('guest stall: room pauses, safety timeout excuses them, resume fires', () {
       fakeAsync((async) {
         final resumedWithout = <List<String>>[];
-        final h = _Harness(async, callbacks: HostCoordinatorCallbacks(onResumedWithout: resumedWithout.add));
+        final h = _Harness(async, onResumedWithout: resumedWithout.add);
         h.coordinator.onPeerJoined('guest', compatible: true);
         h.attachForMedia(async);
         h.guestReports(async);
@@ -414,7 +420,7 @@ void main() {
         final h = _Harness(
           async,
           controlMode: ControlMode.anyone,
-          callbacks: HostCoordinatorCallbacks(onRemoteAction: (peer, hint) => actions.add((peer, hint))),
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
         );
         h.coordinator.onPeerJoined('guest', compatible: true);
         h.attachForMedia(async);
@@ -443,6 +449,132 @@ void main() {
         async.flushMicrotasks();
         expect(h.last.phase, PlaybackPhase.playing);
         h.dispose();
+      });
+    });
+
+    test('invalid remote seeks and rates are rejected without side effects', () {
+      fakeAsync((async) {
+        final actions = <(String, PlaybackActionHint)>[];
+        final h = _Harness(
+          async,
+          controlMode: ControlMode.anyone,
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
+        );
+        h.attachForMedia(async);
+        h.hostBecomesReady(async);
+        final durationMs = h.player.state.duration.inMilliseconds;
+        final broadcastsBefore = h.broadcasts.length;
+        final seqBefore = h.last.seq;
+        final anchorBefore = h.last.anchorPositionMs;
+        final rateBefore = h.last.rate;
+        h.player.commandLog.clear();
+
+        for (final targetMs in [-1, durationMs + 1]) {
+          h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.seek, positionMs: targetMs));
+        }
+        for (final rate in [0.25 - 0.000001, 8.0 + 0.000001, double.nan, double.infinity, double.negativeInfinity]) {
+          h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.rate, rate: rate));
+        }
+        async.flushMicrotasks();
+
+        expect(h.player.commandLog, isEmpty);
+        expect(actions, isEmpty);
+        expect(h.broadcasts, hasLength(broadcastsBefore));
+        expect(h.last.seq, seqBefore);
+        expect(h.last.anchorPositionMs, anchorBefore);
+        expect(h.last.rate, rateBefore);
+        h.dispose();
+      });
+    });
+
+    test('inclusive remote seek and rate boundaries are applied exactly', () {
+      fakeAsync((async) {
+        final actions = <(String, PlaybackActionHint)>[];
+        final h = _Harness(
+          async,
+          controlMode: ControlMode.anyone,
+          onRemoteAction: (peer, hint) => actions.add((peer, hint)),
+        );
+        h.attachForMedia(async);
+        h.hostBecomesReady(async);
+        final durationMs = h.player.state.duration.inMilliseconds;
+        final seqBefore = h.last.seq;
+        h.player.commandLog.clear();
+
+        for (final targetMs in [0, durationMs]) {
+          h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.seek, positionMs: targetMs));
+          async.flushMicrotasks();
+          expect(h.last.anchorPositionMs, targetMs);
+          expect(h.last.actorPeerId, 'guest');
+          expect(h.last.actionHint, PlaybackActionHint.seek);
+        }
+        for (final rate in [0.25, 8.0]) {
+          h.coordinator.onControlRequest('guest', ControlRequest(kind: ControlRequestKind.rate, rate: rate));
+          async.flushMicrotasks();
+          expect(h.last.rate, rate);
+          expect(h.last.actorPeerId, 'guest');
+          expect(h.last.actionHint, PlaybackActionHint.rate);
+        }
+
+        expect(h.player.commandLog, ['seek:0', 'seek:$durationMs', 'rate:0.25', 'rate:8.0']);
+        expect(h.last.seq, seqBefore + 4);
+        expect(actions, [
+          ('guest', PlaybackActionHint.seek),
+          ('guest', PlaybackActionHint.seek),
+          ('guest', PlaybackActionHint.rate),
+          ('guest', PlaybackActionHint.rate),
+        ]);
+        h.dispose();
+      });
+    });
+
+    test('remote seeks require seekability and a positive known duration', () {
+      fakeAsync((async) {
+        for (final config in [
+          (seekable: false, duration: const Duration(minutes: 45)),
+          (seekable: true, duration: Duration.zero),
+        ]) {
+          final actions = <(String, PlaybackActionHint)>[];
+          final h = _Harness(
+            async,
+            controlMode: ControlMode.anyone,
+            duration: config.duration,
+            seekable: config.seekable,
+            onRemoteAction: (peer, hint) => actions.add((peer, hint)),
+          );
+          h.attachForMedia(async);
+          h.hostBecomesReady(async);
+          async.elapse(Duration(milliseconds: h.last.anchorHostTimeMs - (_epochMs + async.elapsed.inMilliseconds)));
+          h.player.commandLog.clear();
+          actions.clear();
+          final broadcastsBefore = h.broadcasts.length;
+          final seqBefore = h.last.seq;
+
+          h.coordinator.onControlRequest(
+            'guest',
+            const ControlRequest(kind: ControlRequestKind.seek, positionMs: 1000),
+          );
+          async.flushMicrotasks();
+
+          expect(h.player.commandLog, isEmpty);
+          expect(actions, isEmpty);
+          expect(h.broadcasts, hasLength(broadcastsBefore));
+          expect(h.last.seq, seqBefore);
+
+          h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.rate, rate: 0.25));
+          h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.pause));
+          h.coordinator.onControlRequest('guest', const ControlRequest(kind: ControlRequestKind.play));
+          async.flushMicrotasks();
+          async.elapse(Duration(milliseconds: h.last.anchorHostTimeMs - (_epochMs + async.elapsed.inMilliseconds)));
+
+          expect(h.player.commandLog, ['rate:0.25', 'pause', 'play']);
+          expect(actions, [
+            ('guest', PlaybackActionHint.rate),
+            ('guest', PlaybackActionHint.pause),
+            ('guest', PlaybackActionHint.play),
+          ]);
+          h.dispose();
+        }
       });
     });
 
@@ -583,6 +715,64 @@ void main() {
         h.coordinator.onStateRequested('guest');
         final targeted = h.sent.where((entry) => entry.$2 == 'guest').map((entry) => entry.$1);
         expect(targeted.where((s) => s.phase == PlaybackPhase.loading && s.ratingKey == 'rk1'), isNotEmpty);
+        h.dispose();
+      });
+    });
+
+    test('the reply-on-demand paths hold the anchor while the player is detached', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachForMedia(async, hasFirstFrame: true);
+        h.hostBecomesReady(async);
+        final anchored = h.last.anchorPositionMs;
+        expect(anchored, const Duration(minutes: 2).inMilliseconds);
+
+        // The state every in-place source reload passes through. Heartbeats
+        // suppress themselves here; the on-demand replies do not, so they are
+        // the paths that would otherwise publish a position of 0.
+        h.coordinator.detachPlayer();
+        async.flushMicrotasks();
+
+        h.coordinator.onStateRequested('guest');
+        h.coordinator.onPeerJoined('guest2', compatible: true);
+        h.coordinator.onReconnected();
+        async.flushMicrotasks();
+
+        for (final (state, toPeerId) in h.sent.skip(h.sent.length - 3)) {
+          expect(
+            state.anchorPositionMs,
+            anchored,
+            reason: 'reply to ${toPeerId ?? 'the room'} must hold the anchor, not collapse it to 0',
+          );
+        }
+        h.dispose();
+      });
+    });
+  });
+
+  group('driver distraction', () {
+    tearDown(() {
+      TvDetectionService.debugReset();
+      CarUxRestrictionsService.debugSetOverride(null);
+    });
+
+    test('a start the vehicle refuses puts the room back to paused', () {
+      fakeAsync((async) {
+        final h = _Harness(async);
+        h.attachForMedia(async);
+        h.hostBecomesReady(async);
+        expect(h.last.phase, PlaybackPhase.playing);
+
+        // The car starts moving during the scheduled-start delay, so the play the
+        // host had already announced is refused.
+        TvDetectionService.debugSetAutomotiveOverride(true);
+        CarUxRestrictionsService.debugSetOverride(CarUxRestrictionState.restricted);
+        final delay = h.last.anchorHostTimeMs - (_epochMs + async.elapsed.inMilliseconds);
+        async.elapse(Duration(milliseconds: delay));
+        async.flushMicrotasks();
+
+        expect(h.player.state.playing, isFalse, reason: 'DD-3: driving must not start video');
+        expect(h.last.phase, PlaybackPhase.paused, reason: 'the room must not be told the host is playing');
         h.dispose();
       });
     });

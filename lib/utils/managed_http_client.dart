@@ -11,9 +11,10 @@ import 'app_logger.dart';
 /// closing at the wrong time can leave callbacks racing a torn-down Dart bridge.
 /// This wrapper tracks requests until their response stream finishes, aborts
 /// active requests during shutdown, and only closes the inner client once the
-/// active set has drained.
+/// active set has drained — or, when [forceCloseOnDrainTimeout] opts in,
+/// force-closes a drain-resistant inner client instead of leaking its sockets.
 class ManagedHttpClient extends http.BaseClient {
-  ManagedHttpClient(this._inner, {required this.debugLabel}) {
+  ManagedHttpClient(this._inner, {required this.debugLabel, this.forceCloseOnDrainTimeout = false}) {
     _instances.add(this);
   }
 
@@ -28,6 +29,14 @@ class ManagedHttpClient extends http.BaseClient {
 
   final http.Client _inner;
   final String debugLabel;
+
+  /// Whether [_inner] tolerates [http.Client.close] with requests still in
+  /// flight. dart:io clients do — `HttpClient.close(force: true)` promptly
+  /// fails pending requests, including a TCP connect that `package:http`
+  /// cannot abort because the abort handler is only registered once `openUrl`
+  /// completes. Native-callback clients (CupertinoClient) do not; they keep
+  /// the deferred-close behavior.
+  final bool forceCloseOnDrainTimeout;
   final Set<_TrackedRequest> _active = <_TrackedRequest>{};
 
   bool _closing = false;
@@ -90,6 +99,18 @@ class ManagedHttpClient extends http.BaseClient {
       try {
         await Future.wait(_active.map((request) => request.done), eagerError: false).timeout(drainTimeout);
       } on TimeoutException {
+        if (forceCloseOnDrainTimeout) {
+          // A request stuck in TCP connect holds the drain open until the OS
+          // connect timeout (~75 s of SYN retries on Darwin). The inner client
+          // fails in-flight requests promptly on close, so reclaim the sockets
+          // instead of deferring.
+          appLogger.d(
+            'HTTP client drain timed out, force-closing',
+            error: {'client': debugLabel, 'activeRequests': _active.length},
+          );
+          _closeInner();
+          return;
+        }
         appLogger.w('HTTP client drain timed out', error: {'client': debugLabel, 'activeRequests': _active.length});
       }
     }
@@ -212,7 +233,12 @@ class ManagedHttpClient extends http.BaseClient {
   }
 
   void _tryCloseInner() {
-    if (_innerClosed || _active.isNotEmpty) return;
+    if (_active.isNotEmpty) return;
+    _closeInner();
+  }
+
+  void _closeInner() {
+    if (_innerClosed) return;
     try {
       _inner.close();
       _innerClosed = true;
@@ -240,6 +266,9 @@ class _ManagedStreamedResponseWithUrl extends http.StreamedResponse implements h
   final Uri url;
 }
 
+/// Deliberately not `AbortController`: this layer stays a plain [http.Client]
+/// with no media-server dependency, and it needs two independent latches
+/// (aborted vs. drained) plus the response canceller.
 class _TrackedRequest {
   _TrackedRequest(this.url);
 

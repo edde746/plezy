@@ -12,7 +12,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private weak var window: UIWindow?
   private var mainBlankView: UIView?
   private var isVisible = false
-  private var isDisposed = false
   private static var activeDisplayCriteriaKey: String?
   private var lastDisplayCriteriaMutation: DisplayCriteriaMutation = .skipped
   #if os(tvOS)
@@ -87,14 +86,12 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     withoutLayerAnimations {
       if let frame {
         containerView.frame = frame
-        videoLayer.frame = containerView.bounds
       } else if let superview = containerView.superview {
         containerView.frame = superview.bounds
-        videoLayer.frame = containerView.bounds
       } else if let window {
         containerView.frame = window.bounds
-        videoLayer.frame = containerView.bounds
       }
+      fitVideoLayer(videoLayer, in: containerView)
 
       mainBlankView?.frame = window?.bounds ?? .zero
 
@@ -106,6 +103,46 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     #if os(iOS)
       updateEDRMode(sigPeak: lastSigPeak)
     #endif
+  }
+
+  /// Size the video layer to the container via bounds/position, never `frame`:
+  /// `frame` is undefined while the custom-zoom transform is non-identity.
+  private func fitVideoLayer(_ layer: MpvVideoLayer, in container: UIView) {
+    layer.bounds = CGRect(origin: .zero, size: container.bounds.size)
+    layer.position = CGPoint(x: container.bounds.midX, y: container.bounds.midY)
+  }
+
+  /// Apply custom viewer zoom by scaling the video layer about its center.
+  ///
+  /// Zoom must never reach mpv's `video-zoom` on this VO: any nonzero zoom
+  /// flips vo_avfoundation into a Core Image re-render of every frame, which
+  /// destroys HDR/Dolby Vision passthrough (DV frames render near-black on
+  /// tvOS). A CALayer transform keeps the sample-buffer scanout path intact.
+  /// The transform must sit on the display layer itself — a
+  /// `sublayerTransform` on the container is ignored by the video plane.
+  /// The layer's bounds never change, so the VO's bounds KVO stays quiet, and
+  /// the inline OSD sibling layer keeps its own geometry. PiP is unaffected:
+  /// the Dart side resets zoom before entry, and the system presents the
+  /// layer's buffers, not its on-screen transform.
+  func setVideoZoom(_ scale: Double) {
+    let clamped = min(max(scale, 0.25), 4.0)
+    Self.log("setVideoZoom(\(scale)) -> \(clamped)")
+    DispatchQueue.main.async { [weak self] in
+      guard let self, let container = self.containerView, let videoLayer = self.videoLayer else {
+        return
+      }
+      let zoomed = abs(clamped - 1.0) >= 0.0005
+      self.withoutLayerAnimations {
+        // Clip only while zoomed: at 100% the layer tree stays identical to a
+        // build without custom zoom, so the unzoomed path cannot regress
+        // (e.g. hardware-plane promotion of the sample-buffer layer).
+        container.clipsToBounds = zoomed
+        videoLayer.transform =
+          zoomed
+          ? CATransform3DMakeScale(CGFloat(clamped), CGFloat(clamped), 1)
+          : CATransform3DIdentity
+      }
+    }
   }
 
   func externalDisplayDidChange() {
@@ -258,8 +295,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
       guard let window = containerView?.window ?? self.window else { return false }
       let displayManager = window.avDisplayManager
 
-      if width <= 0 || height <= 0 {
-        clearDisplayCriteria(displayManager, reason: "no video dimensions")
+      if !self.validateSideDataDimensions(width: Int64(width), height: Int64(height)) {
+        clearDisplayCriteria(displayManager, reason: "invalid video dimensions")
         return false
       }
 
@@ -777,11 +814,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   #endif
 
   func dispose(preserveDisplayCriteria: Bool = false) {
-    // Guard double-dispose: the plugin calls dispose() then drops the
-    // strong ref, which fires deinit → dispose() again. The second call
-    // would re-enter and crash on weak-ref formation during dealloc.
-    guard !isDisposed else { return }
-    isDisposed = true
+    guard beginDisposal() else { return }
 
     #if os(tvOS)
       if preserveDisplayCriteria {
@@ -867,7 +900,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func enterBackground() {
-    isBackgrounded = true
+    setBackgrounded(true)
     if isPipActive || isPipStarting {
       print("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
       return
@@ -878,7 +911,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   @objc private func enterForeground() {
-    isBackgrounded = false
+    setBackgrounded(false)
     if isPipActive {
       print("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
       return
@@ -890,7 +923,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
   #if os(iOS)
     @objc private func sceneDidActivate() {
-      isBackgrounded = false
+      setBackgrounded(false)
       if isPipActive {
         return
       }

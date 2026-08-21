@@ -144,16 +144,40 @@ void main() {
       expect(await registry.listForConnection('c1'), isEmpty);
     });
 
-    test('removeAllForProfile drops every row for a profile', () async {
+    test('removeAllForConnection re-promotes a default for a surviving profile', () async {
       await registry.upsert(
         const ProfileConnection(profileId: 'p1', connectionId: 'c1', userToken: 't', userIdentifier: 'u'),
+        makeDefault: true,
       );
       await registry.upsert(
         const ProfileConnection(profileId: 'p1', connectionId: 'c2', userToken: 't', userIdentifier: 'u'),
       );
-      final removed = await registry.removeAllForProfile('p1');
-      expect(removed, 2);
-      expect(await registry.listForProfile('p1'), isEmpty);
+      // c1 is default; removing it connection-wide must leave p1 with c2 as
+      // its new default rather than defaultless.
+      await registry.removeAllForConnection('c1');
+      final remaining = await registry.listForProfile('p1');
+      expect(remaining, hasLength(1));
+      expect(remaining.single.connectionId, 'c2');
+      expect(remaining.single.isDefault, isTrue);
+    });
+
+    test('promoteMissingDefaults repairs a profile the FK cascade left defaultless', () async {
+      await registry.upsert(
+        const ProfileConnection(profileId: 'p1', connectionId: 'c1', userToken: 't', userIdentifier: 'u'),
+        makeDefault: true,
+      );
+      await registry.upsert(
+        const ProfileConnection(profileId: 'p1', connectionId: 'c2', userToken: 't', userIdentifier: 'u'),
+      );
+      // Deleting the connection cascades away p1's default join row (c1) via
+      // the connectionId FK, silently leaving p1 with no default flag.
+      await (db.delete(db.connections)..where((t) => t.id.equals('c1'))).go();
+      final beforeRepair = await registry.listForProfile('p1');
+      expect(beforeRepair.single.connectionId, 'c2');
+      expect(beforeRepair.single.isDefault, isFalse);
+
+      await registry.promoteMissingDefaults();
+      expect((await registry.listForProfile('p1')).single.isDefault, isTrue);
     });
 
     test('upsert succeeds for a virtual plex_home profile id with no parent row', () async {

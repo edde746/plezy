@@ -82,7 +82,12 @@ class LiveSeekAccumulator {
     if (window == null) return;
 
     final base = _pendingEpoch ?? currentEpoch();
+    final clampedBase = base.clamp(window.start, window.end);
     final target = (base + deltaSeconds).clamp(window.start, window.end);
+    // Do not rebuild the stream when a relative skip is clamped back to the
+    // position it already occupies (most commonly fast-forward at live edge).
+    // Once a burst has a pending target, keep its normal debounce semantics.
+    if (_pendingEpoch == null && target == clampedBase) return;
     if (target != _pendingEpoch) {
       _pendingEpoch = target;
       onChanged?.call();

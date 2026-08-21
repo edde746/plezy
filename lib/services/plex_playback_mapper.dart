@@ -10,6 +10,10 @@ import 'plex_mappers.dart';
 
 const _streamReader = PlexFileInfoStreamReader();
 
+void _logMalformedStream(Object error, StackTrace stackTrace, Map<String, dynamic> _) {
+  appLogger.w('Skipping malformed Plex stream metadata', error: error, stackTrace: stackTrace);
+}
+
 List<Map> _mapList(Object? raw) {
   final values = flexibleList(raw);
   if (values == null || values.isEmpty) return const [];
@@ -61,6 +65,8 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   required String baseUrl,
   required String? token,
   int mediaIndex = 0,
+  String? selectedMediaSourceId,
+  String? preferredVersionSignature,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
 }) {
   String? videoUrl;
@@ -68,7 +74,6 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   List<MediaVersion> availableVersions = [];
   var selectedMediaIndex = 0;
   var selectedPartIndex = 0;
-  final markers = plexMarkersFromCacheJson(metadataJson);
 
   if (metadataJson != null) {
     final mediaList = _mapList(metadataJson['Media']);
@@ -76,6 +81,24 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
       availableVersions = mediaList
           .map((media) => PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(media)))
           .toList();
+
+      // Re-resolve version evidence against this (authoritative) Media list:
+      // stable id first, then signature. The positional index is the last
+      // resort — and all an explicit user pick carries besides its id, so a
+      // saved-preference signature can never override one.
+      final requestedSourceId = selectedMediaSourceId?.trim();
+      var resolvedBySourceId = false;
+      if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
+        final byId = availableVersions.indexWhere((v) => v.id == requestedSourceId);
+        if (byId >= 0) {
+          mediaIndex = byId;
+          resolvedBySourceId = true;
+        }
+      }
+      if (!resolvedBySourceId && preferredVersionSignature != null && preferredVersionSignature.isNotEmpty) {
+        final bySignature = MediaVersion.findMatchingIndex(availableVersions, {preferredVersionSignature});
+        if (bySignature != null) mediaIndex = bySignature;
+      }
 
       if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
         mediaIndex = 0;
@@ -102,7 +125,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
         if (partKey != null) {
           videoUrl = '$baseUrl$partKey'.withPlexToken(token);
 
-          final streams = walkStreams(flexibleList(part['Stream']), _streamReader);
+          final streams = walkStreams(flexibleList(part['Stream']), _streamReader, onMalformed: _logMalformedStream);
           final chapters = plexChaptersFromCacheJson(metadataJson);
 
           mediaInfo = MediaSourceInfo(
@@ -111,8 +134,9 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
             subtitleTracks: streams.subtitleTracks,
             chapters: chapters,
             partId: flexibleInt(part['id']),
+            mediaSourceId: availableVersions[mediaIndex].id,
             displayCriteria: PlexMappers.displayCriteriaFromJson(Map<String, dynamic>.from(media), streams.videoStream),
-            videoAspectRatio: (media['aspectRatio'] as num?)?.toDouble(),
+            videoAspectRatio: flexibleDouble(media['aspectRatio']),
           );
         }
       }
@@ -123,63 +147,99 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
     videoUrl: videoUrl,
     mediaInfo: mediaInfo,
     availableVersions: availableVersions,
-    markers: markers,
     selectedMediaIndex: selectedMediaIndex,
     selectedPartIndex: selectedPartIndex,
   );
 }
 
+/// Build the file-info payload from a `/library/metadata/{id}` response.
+///
+/// Every `Media` (version) and every `Part` (file) is mapped — split files and
+/// multi-version libraries both produce more than one, and the sheet shows all
+/// of them.
 MediaFileInfo? parsePlexFileInfoFromJson(Map<String, dynamic>? metadataJson) {
   final mediaList = _mapList(metadataJson?['Media']);
-  if (mediaList.isNotEmpty) {
-    final media = mediaList.first;
-    final partList = _mapList(media['Part']);
-    final version = PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(media));
-    final partIndex = partList.isEmpty ? 0 : _firstPlayablePartIndex(version).clamp(0, partList.length - 1).toInt();
-    final part = partList.isNotEmpty ? partList[partIndex] : null;
+  if (mediaList.isEmpty) return null;
 
-    // One pass over the streams array, capturing both the raw video / audio
-    // map pointers (for fields the parsed track classes don't carry —
-    // colorSpace, bitDepth, …) and the parsed track lists.
-    final parsedTracks = walkStreams(flexibleList(part?['Stream']), _streamReader);
-    final videoStream = parsedTracks.videoStream;
-    final audioStream = parsedTracks.audioStream;
+  final versions = <MediaFileVersion>[
+    for (final media in mediaList) _plexFileVersion(Map<String, dynamic>.from(media)),
+  ];
+  return MediaFileInfo(versions: versions);
+}
 
-    return MediaFileInfo(
-      // Media level properties
-      container: media['container'] as String?,
-      videoCodec: media['videoCodec'] as String?,
-      videoResolution: media['videoResolution'] as String?,
-      videoFrameRate: media['videoFrameRate'] as String?,
-      videoProfile: media['videoProfile'] as String?,
-      width: media['width'] as int?,
-      height: media['height'] as int?,
-      aspectRatio: (media['aspectRatio'] as num?)?.toDouble(),
-      bitrate: media['bitrate'] as int?,
-      duration: media['duration'] as int?,
-      audioCodec: media['audioCodec'] as String?,
-      audioProfile: media['audioProfile'] as String?,
-      audioChannels: media['audioChannels'] as int?,
-      optimizedForStreaming: flexibleBool(media['optimizedForStreaming']),
-      has64bitOffsets: flexibleBool(media['has64bitOffsets']),
-      // Part level properties (file)
-      filePath: part?['file'] as String?,
-      fileSize: part?['size'] as int?,
-      // Video stream details
-      colorSpace: videoStream?['colorSpace'] as String?,
-      colorRange: videoStream?['colorRange'] as String?,
-      colorPrimaries: videoStream?['colorPrimaries'] as String?,
-      chromaSubsampling: videoStream?['chromaSubsampling'] as String?,
-      frameRate: (videoStream?['frameRate'] as num?)?.toDouble(),
-      bitDepth: videoStream?['bitDepth'] as int?,
-      videoBitrate: videoStream?['bitrate'] as int?,
-      // Audio stream details
-      audioChannelLayout: audioStream?['audioChannelLayout'] as String?,
-      // All audio and subtitle tracks
-      audioTracks: parsedTracks.audioTracks,
-      subtitleTracks: parsedTracks.subtitleTracks,
-    );
+/// `Media.proxyType` value Plex uses for an optimized version.
+const _plexOptimizedProxyType = 42;
+
+DateTime? _plexEpochSeconds(Object? value) {
+  final seconds = flexibleInt(value);
+  return seconds == null ? null : DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
+}
+
+MediaFileVersion _plexFileVersion(Map<String, dynamic> media) {
+  return MediaFileVersion(
+    id: media['id']?.toString(),
+    title: media['title'] as String?,
+    container: media['container'] as String?,
+    bitrateKbps: flexibleInt(media['bitrate']),
+    durationMs: flexibleInt(media['duration']),
+    width: flexibleInt(media['width']),
+    height: flexibleInt(media['height']),
+    aspectRatio: flexibleDouble(media['aspectRatio']),
+    videoResolutionLabel: media['videoResolution'] as String?,
+    videoCodec: media['videoCodec'] as String?,
+    videoProfile: media['videoProfile'] as String?,
+    videoFrameRateLabel: media['videoFrameRate'] as String?,
+    audioCodec: media['audioCodec'] as String?,
+    audioProfile: media['audioProfile'] as String?,
+    audioChannels: flexibleInt(media['audioChannels']),
+    optimizedForStreaming: flexibleBoolNullable(media['optimizedForStreaming']),
+    has64bitOffsets: flexibleBoolNullable(media['has64bitOffsets']),
+    // Plex marks a server-generated optimized copy with proxyType 42 and
+    // names the profile that produced it in `target`.
+    isOptimizedVersion: media['proxyType'] == null ? null : flexibleInt(media['proxyType']) == _plexOptimizedProxyType,
+    optimizationTarget: media['target'] as String?,
+    deletedAt: _plexEpochSeconds(media['deletedAt']),
+    displayOffsetPercent: flexibleInt(media['displayOffset']),
+    parts: [for (final part in _mapList(media['Part'])) _plexFilePart(Map<String, dynamic>.from(part))],
+  );
+}
+
+MediaFilePart _plexFilePart(Map<String, dynamic> part) {
+  return MediaFilePart(
+    id: part['id']?.toString(),
+    filePath: part['file'] as String?,
+    fileSize: flexibleInt(part['size']),
+    container: part['container'] as String?,
+    durationMs: flexibleInt(part['duration']),
+    optimizedForStreaming: flexibleBoolNullable(part['optimizedForStreaming']),
+    has64bitOffsets: flexibleBoolNullable(part['has64bitOffsets']),
+    hasThumbnail: flexibleBoolNullable(part['hasThumbnail']),
+    indexes: part['indexes'] as String?,
+    packetLength: flexibleInt(part['packetLength']),
+    previewFailureCode: flexibleInt(part['failureBIFResultCode']),
+    previewRetryCount: flexibleInt(part['failureBIFRetryCount']),
+    exists: flexibleBoolNullable(part['exists']),
+    accessible: flexibleBoolNullable(part['accessible']),
+    streamKey: part['key'] as String?,
+    streams: _plexStreamDetails(part['Stream']),
+  );
+}
+
+/// One malformed stream must not discard the rest of the table, so each entry
+/// is projected independently.
+List<MediaStreamDetails> _plexStreamDetails(Object? rawStreams) {
+  final streams = <MediaStreamDetails>[];
+  final ordinals = <MediaStreamKind, int>{};
+  for (final raw in _mapList(rawStreams)) {
+    try {
+      final stream = Map<String, dynamic>.from(raw);
+      final kind = plexStreamKind(stream);
+      final ordinal = (ordinals[kind] ?? 0) + 1;
+      ordinals[kind] = ordinal;
+      streams.add(plexStreamDetails(stream, ordinal));
+    } catch (error, stackTrace) {
+      _logMalformedStream(error, stackTrace, const <String, dynamic>{});
+    }
   }
-
-  return null;
+  return streams;
 }

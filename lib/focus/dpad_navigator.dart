@@ -53,7 +53,15 @@ extension DpadKeyExtension on LogicalKeyboardKey {
   bool get isBackKey => _backKeys.contains(this);
   bool get isContextMenuKey => _contextMenuKeys.contains(this);
 
-  bool get isNavigationKey =>
+  /// Whether this key is a shell / remote control key rather than a text
+  /// character — D-pad direction, select, back, context menu, or Tab.
+  ///
+  /// Use it to decide "is this a printable character?" and "must this route
+  /// consume the key so it cannot leak to the route below?". It is NOT evidence
+  /// that the viewer wants to navigate by focus — `eventRequestsFocusNavigation`
+  /// in focus_navigation_intent.dart answers that, and conflating the two is what
+  /// made a plain Enter switch the whole app into keyboard mode.
+  bool get isReservedControlKey =>
       isDpadDirection || isSelectKey || isBackKey || isContextMenuKey || this == LogicalKeyboardKey.tab;
 
   bool get isLeftKey => this == LogicalKeyboardKey.arrowLeft;

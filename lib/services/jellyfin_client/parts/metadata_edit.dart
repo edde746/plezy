@@ -1,9 +1,6 @@
 part of '../../jellyfin_client.dart';
 
-mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
-  JellyfinConnection get connection;
-  FailoverHttpClient get _http;
-
+mixin _JellyfinMetadataEditMethods on _JellyfinClientInternals {
   Future<Map<String, dynamic>?> fetchEditableMetadataItem(String itemId) async {
     if (isOfflineMode) return null;
     final response = await _http.get('/Users/${_segment(connection.userId)}/Items/${_segment(itemId)}');
@@ -43,13 +40,6 @@ mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
     return data is Map<String, dynamic> ? data : const <String, dynamic>{};
   }
 
-  Future<List<Map<String, dynamic>>> getItemImageInfos(String itemId) async {
-    final response = await _http.get('/Items/${_segment(itemId)}/Images');
-    throwIfHttpError(response);
-    final data = response.data;
-    return data is List ? data.whereType<Map<String, dynamic>>().toList() : const <Map<String, dynamic>>[];
-  }
-
   Future<bool> downloadRemoteImage(String itemId, {required String imageType, required String imageUrl}) async {
     final response = await _http.post(
       '/Items/${_segment(itemId)}/RemoteImages/Download',
@@ -60,6 +50,14 @@ mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
     return response.statusCode >= 200 && response.statusCode < 300;
   }
 
+  /// Upload custom artwork for [itemId].
+  ///
+  /// The body must be base64 **text**, not the raw bytes: both dialects reject
+  /// a binary body with HTTP 500 (Emby 4.9.5 says so explicitly — `The input is
+  /// not a valid Base-64 string` — and Jellyfin 10.11 answers a bare
+  /// `Error processing request.`), and both accept the encoded form with 204.
+  /// The `Content-Type` still names the *image* type, which is how the server
+  /// decides the on-disk extension.
   Future<bool> uploadItemImage(
     String itemId, {
     required String imageType,
@@ -68,7 +66,7 @@ mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
   }) async {
     final response = await _http.post(
       '/Items/${_segment(itemId)}/Images/${_segment(imageType)}',
-      body: bytes,
+      body: base64Encode(bytes),
       headers: {'Content-Type': contentType},
     );
     throwIfHttpError(response);

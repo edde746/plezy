@@ -21,12 +21,3 @@ String buildProfileScopedGlobalKey(String profileId, ServerId serverId, String r
   if (idx <= 0) return null;
   return (serverId: ServerId(globalKey.substring(0, idx)), ratingKey: globalKey.substring(idx + 1));
 }
-
-/// Parses a profile-owned sync-rule key, returning `null` for legacy public keys.
-({String profileId, ServerId serverId, String ratingKey})? parseProfileScopedGlobalKey(String globalKey) {
-  final idx = globalKey.indexOf(profileScopedGlobalKeySeparator);
-  if (idx < 0) return null;
-  final publicKey = parseGlobalKey(globalKey.substring(idx + 1));
-  if (publicKey == null) return null;
-  return (profileId: globalKey.substring(0, idx), serverId: publicKey.serverId, ratingKey: publicKey.ratingKey);
-}

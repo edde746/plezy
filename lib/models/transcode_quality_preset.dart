@@ -24,16 +24,6 @@ enum TranscodeQualityPreset {
 
   bool get isOriginal => this == TranscodeQualityPreset.original;
 
-  String get storageKey => name;
-
-  static TranscodeQualityPreset fromStorage(String? stored) {
-    if (stored == null) return TranscodeQualityPreset.original;
-    for (final v in TranscodeQualityPreset.values) {
-      if (v.name == stored) return v;
-    }
-    return TranscodeQualityPreset.original;
-  }
-
   /// Resolution height (e.g. 720, 1080) parsed from [videoResolution]. Null for original.
   int? get resolutionHeight {
     final r = videoResolution;

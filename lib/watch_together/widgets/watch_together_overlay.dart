@@ -5,19 +5,24 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../widgets/bottom_sheet_header.dart';
+import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 
 class WatchTogetherSessionIndicator extends StatelessWidget {
-  final VoidCallback? onLeaveSession;
+  final VoidCallback? onCancelAutoHide;
+  final VoidCallback? onStartAutoHide;
 
-  const WatchTogetherSessionIndicator({super.key, this.onLeaveSession});
+  const WatchTogetherSessionIndicator({super.key, this.onCancelAutoHide, this.onStartAutoHide});
 
   @override
   Widget build(BuildContext context) {
@@ -36,8 +41,11 @@ class WatchTogetherSessionIndicator extends StatelessWidget {
   }
 
   void _showSessionMenu(BuildContext context, WatchTogetherProvider provider) {
-    OverlaySheetController.of(context).show(
-      builder: (context) => _SessionMenuSheet(provider: provider, onLeaveSession: onLeaveSession),
+    onCancelAutoHide?.call();
+    unawaited(
+      OverlaySheetController.of(context)
+          .show(showDragHandle: true, builder: (context) => _SessionMenuSheet(provider: provider))
+          .whenComplete(() => onStartAutoHide?.call()),
     );
   }
 }
@@ -61,53 +69,62 @@ class _SessionIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black54,
-      borderRadius: const BorderRadius.all(Radius.circular(20)),
-      child: InkWell(
-        onTap: onTap,
+    final semanticValue = [
+      '${t.watchTogether.participants}: $participantCount',
+      if (isHost) t.watchTogether.youAreHost,
+      if (isSyncing) t.watchTogether.syncing,
+    ].join(', ');
+
+    return FocusableWrapper(
+      onSelect: onTap,
+      semanticLabel: t.watchTogether.openSessionControls,
+      semanticValue: semanticValue,
+      descendantsAreFocusable: false,
+      borderRadius: 20,
+      useBackgroundFocus: true,
+      child: Material(
+        color: Colors.black54,
         borderRadius: const BorderRadius.all(Radius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisSize: .min,
-            children: [
-              // Sync indicator or group icon
-              if (isSyncing)
-                SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: PlatformDetector.isTV()
-                      ? const Icon(Symbols.sync_rounded, size: 16, color: Colors.white)
-                      : const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              else
-                Icon(Symbols.group, size: 18, color: isHost ? Colors.amber : Colors.white),
-
-              const SizedBox(width: 6),
-
-              // Participant count
-              Text(
-                '$participantCount',
-                style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 14),
-              ),
-
-              // Host badge
-              if (isHost) ...[
+        child: InkWell(
+          canRequestFocus: false,
+          onTap: onTap,
+          borderRadius: const BorderRadius.all(Radius.circular(20)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisSize: .min,
+              children: [
+                if (isSyncing)
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: PlatformDetector.isTV()
+                        ? const AppIcon(Symbols.sync_rounded, size: 16, color: Colors.white)
+                        : const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                else
+                  AppIcon(Symbols.group_rounded, size: 18, color: isHost ? Colors.amber : Colors.white),
                 const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: const BoxDecoration(
-                    color: Colors.amber,
-                    borderRadius: BorderRadius.all(Radius.circular(4)),
-                  ),
-                  child: Text(
-                    t.watchTogether.hostBadge,
-                    style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: .bold),
-                  ),
+                Text(
+                  '$participantCount',
+                  style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 14),
                 ),
+                if (isHost) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: const BoxDecoration(
+                      color: Colors.amber,
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
+                    ),
+                    child: Text(
+                      t.watchTogether.hostBadge,
+                      style: const TextStyle(color: Colors.black, fontSize: 10, fontWeight: .bold),
+                    ),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -117,139 +134,128 @@ class _SessionIndicator extends StatelessWidget {
 
 class _SessionMenuSheet extends StatelessWidget {
   final WatchTogetherProvider provider;
-  final VoidCallback? onLeaveSession;
 
-  const _SessionMenuSheet({required this.provider, this.onLeaveSession});
+  const _SessionMenuSheet({required this.provider});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: .min,
-          crossAxisAlignment: .stretch,
-          children: [
-            // Header
-            Row(
-              children: [
-                Icon(Symbols.group, color: theme.colorScheme.primary),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: .start,
-                    children: [
-                      Text(t.watchTogether.title, style: theme.textTheme.titleMedium),
-                      Text(
-                        provider.isHost ? t.watchTogether.youAreHost : t.watchTogether.watchingWithOthers,
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+    return Column(
+      mainAxisSize: .min,
+      children: [
+        BottomSheetHeader(
+          title: t.watchTogether.title,
+          icon: Symbols.group_rounded,
+          iconColor: theme.colorScheme.primary,
+          action: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: const BorderRadius.all(Radius.circular(12)),
+            ),
+            child: Text(
+              provider.controlMode == ControlMode.hostOnly
+                  ? t.watchTogether.hostControls
+                  : t.watchTogether.anyoneControls,
+              style: theme.textTheme.labelSmall,
+            ),
+          ),
+        ),
+        Flexible(
+          child: ListView(
+            shrinkWrap: true,
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                provider.isHost ? t.watchTogether.youAreHost : t.watchTogether.watchingWithOthers,
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+              if (provider.sessionId != null) ...[
+                const SizedBox(height: 12),
+                FocusableWrapper(
+                  onSelect: () => _copySessionCode(context, provider.sessionId!),
+                  semanticLabel: t.watchTogether.copySessionCode,
+                  semanticValue: provider.sessionId!,
+                  descendantsAreFocusable: false,
+                  borderRadius: 8,
+                  useBackgroundFocus: true,
+                  child: InkWell(
+                    canRequestFocus: false,
+                    onTap: () => _copySessionCode(context, provider.sessionId!),
+                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: const BorderRadius.all(Radius.circular(8)),
                       ),
-                    ],
-                  ),
-                ),
-                // Control mode badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: const BorderRadius.all(Radius.circular(12)),
-                  ),
-                  child: Text(
-                    provider.controlMode == ControlMode.hostOnly
-                        ? t.watchTogether.hostControls
-                        : t.watchTogether.anyoneControls,
-                    style: theme.textTheme.labelSmall,
+                      child: Row(
+                        mainAxisSize: .min,
+                        children: [
+                          Text(
+                            '${t.watchTogether.sessionCode}: ',
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          ),
+                          Text(
+                            provider.sessionId!,
+                            style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontWeight: .bold),
+                          ),
+                          const SizedBox(width: 8),
+                          AppIcon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
-            ),
-
-            // Session code with copy button
-            if (provider.sessionId != null) ...[
-              const SizedBox(height: 12),
-              InkWell(
-                onTap: () => _copySessionCode(context, provider.sessionId!),
-                borderRadius: const BorderRadius.all(Radius.circular(8)),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    borderRadius: const BorderRadius.all(Radius.circular(8)),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              Text(t.watchTogether.participants, style: theme.textTheme.titleSmall),
+              const SizedBox(height: 8),
+              for (final participant in provider.participants)
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: participant.isHost
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.surfaceContainerHighest,
+                    child: AppIcon(
+                      participant.isHost ? Symbols.star_rounded : Symbols.person_rounded,
+                      color: participant.isHost ? Colors.white : theme.colorScheme.onSurfaceVariant,
+                      size: 20,
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: .min,
-                    children: [
-                      Text(
-                        '${t.watchTogether.sessionCode}: ',
-                        style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                      Text(
-                        provider.sessionId!,
-                        style: theme.textTheme.bodySmall?.copyWith(fontFamily: 'monospace', fontWeight: .bold),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(Symbols.content_copy_rounded, size: 16, color: theme.colorScheme.onSurfaceVariant),
-                    ],
-                  ),
+                  title: Text(participant.displayName),
+                  subtitle: participant.isHost ? Text(t.watchTogether.host) : null,
+                  trailing: participant.isBuffering
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: PlatformDetector.isTV()
+                              ? const AppIcon(Symbols.hourglass_empty_rounded, size: 16)
+                              : const CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : null,
+                  dense: true,
+                  contentPadding: .zero,
                 ),
-              ),
-            ],
-
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-
-            // Participants list
-            Text(t.watchTogether.participants, style: theme.textTheme.titleSmall),
-            const SizedBox(height: 8),
-            ...provider.participants.map(
-              (p) => ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: p.isHost ? theme.colorScheme.primary : theme.colorScheme.surfaceContainerHighest,
-                  child: Icon(
-                    p.isHost ? Symbols.star : Symbols.person,
-                    color: p.isHost ? Colors.white : theme.colorScheme.onSurfaceVariant,
-                    size: 20,
-                  ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 8),
+              FocusableListTile(
+                leading: AppIcon(Symbols.logout_rounded, color: theme.colorScheme.error),
+                title: Text(
+                  provider.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession,
+                  style: TextStyle(color: theme.colorScheme.error),
                 ),
-                title: Text(p.displayName),
-                subtitle: p.isHost ? Text(t.watchTogether.host) : null,
-                trailing: p.isBuffering
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: PlatformDetector.isTV()
-                            ? const Icon(Symbols.hourglass_empty_rounded, size: 16)
-                            : const CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : null,
-                dense: true,
+                onTap: () => unawaited(_confirmLeave(context)),
                 contentPadding: .zero,
               ),
-            ),
-
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-
-            // Actions
-            ListTile(
-              leading: Icon(Symbols.logout, color: theme.colorScheme.error),
-              title: Text(
-                provider.isHost ? t.watchTogether.endSession : t.watchTogether.leaveSession,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-              onTap: () {
-                OverlaySheetController.of(context).close();
-                _confirmLeave(context);
-              },
-              contentPadding: .zero,
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
+      ],
     );
   }
 
@@ -258,7 +264,7 @@ class _SessionMenuSheet extends StatelessWidget {
     showSuccessSnackBar(context, t.watchTogether.sessionCodeCopied);
   }
 
-  void _confirmLeave(BuildContext context) async {
+  Future<void> _confirmLeave(BuildContext context) async {
     final confirmed = await showConfirmDialog(
       context,
       title: provider.isHost ? t.watchTogether.endSessionQuestion : t.watchTogether.leaveSessionQuestion,
@@ -267,10 +273,15 @@ class _SessionMenuSheet extends StatelessWidget {
       isDestructive: true,
     );
 
-    if (confirmed) {
-      unawaited(provider.leaveSession());
-      onLeaveSession?.call();
+    if (!confirmed) return;
+    if (context.mounted) {
+      OverlaySheetController.closeAdaptive(context);
     }
+    unawaited(
+      provider.leaveSession().catchError((Object error, StackTrace stackTrace) {
+        appLogger.e('WatchTogether: Overlay leave failed', error: error, stackTrace: stackTrace);
+      }),
+    );
   }
 }
 
@@ -390,12 +401,15 @@ class WaitingForParticipantsIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<WatchTogetherProvider, (bool, List<String>)>(
-      selector: (_, provider) => (provider.isWaitingForPeers, provider.waitingOnNames),
+    return Selector<WatchTogetherProvider, (bool, String)>(
+      selector: (_, provider) {
+        final waiting = provider.isWaitingForPeers;
+        return (waiting, waiting ? _label(provider.waitingOnNames) : '');
+      },
       builder: (context, value, child) {
-        final (isWaiting, names) = value;
+        final (isWaiting, label) = value;
         if (!isWaiting) return const SizedBox.shrink();
-        return _StatusPill(tvIcon: Symbols.hourglass_empty_rounded, label: _label(names));
+        return _StatusPill(tvIcon: Symbols.hourglass_empty_rounded, label: label);
       },
     );
   }
@@ -424,7 +438,7 @@ class _StatusPill extends StatelessWidget {
                 width: 14,
                 height: 14,
                 child: PlatformDetector.isTV()
-                    ? Icon(tvIcon, size: 14, color: Colors.white)
+                    ? AppIcon(tvIcon, size: 14, color: Colors.white)
                     : const CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               ),
               const SizedBox(width: 8),

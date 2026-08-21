@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../i18n/strings.g.dart';
+import '../media/catalog_item_ref.dart';
 import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -11,7 +12,9 @@ import '../screens/media_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
 import '../services/settings_service.dart';
 import '../utils/global_key_utils.dart';
-import 'plex_library_section_helpers.dart';
+import 'catalog_navigation_helper.dart';
+import 'music_navigation.dart';
+import 'plex_library_section_utils.dart';
 import 'video_player_navigation.dart';
 
 /// Result of media navigation indicating what action was taken
@@ -22,7 +25,7 @@ enum MediaNavigationResult {
   /// Navigation completed, parent list should be refreshed (e.g., collection deleted)
   listRefreshNeeded,
 
-  /// Item type not supported (e.g., music content)
+  /// Item type not supported (e.g., photos)
   unsupported,
 
   /// Item is a library section — navigated to that library
@@ -111,13 +114,22 @@ MediaDetailNavigationTarget mediaDetailNavigationTargetFor(MediaItem item, {Medi
   return MediaDetailNavigationTarget(metadata: metadataOverride ?? item);
 }
 
+bool shouldOpenEpisodeDetailsForActivation({
+  required bool playDirectly,
+  required ContinueWatchingAction continueWatchingAction,
+  required EpisodeAction episodeAction,
+}) {
+  if (playDirectly) return continueWatchingAction == ContinueWatchingAction.details;
+  return episodeAction == EpisodeAction.details;
+}
+
 /// Navigates to the appropriate screen based on the item type.
 ///
 /// Accepts a [MediaItem] or a [MediaPlaylist] (typed as [Object] because Dart
 /// has no nominal union type).
 ///
-/// For episodes, starts playback directly via video player unless [playDirectly]
-/// is paired with the Continue Watching details setting.
+/// For episodes, normal card activation follows the Episode Action setting;
+/// [playDirectly] surfaces instead follow the Continue Watching action setting.
 /// For movies, starts playback directly if [playDirectly] is true and the
 /// Continue Watching details setting is disabled; otherwise navigates to media
 /// detail screen.
@@ -125,16 +137,17 @@ MediaDetailNavigationTarget mediaDetailNavigationTargetFor(MediaItem item, {Medi
 /// For playlists, navigates to playlist detail screen.
 /// For collections, navigates to collection detail screen.
 /// For other types (shows), navigates to media detail screen.
-/// For music types (artist, album, track), returns [MediaNavigationResult.unsupported].
+/// For artists/albums, navigates to the music detail screens; tracks start
+/// playback in their album queue.
 ///
-/// The [onRefresh] callback is invoked with the item's id after returning from
-/// the detail screen, allowing the caller to refresh state.
+/// The [onRefresh] callback is invoked with the source item after returning
+/// from the detail screen, preserving its server-qualified identity.
 ///
 /// Set [isOffline] to true for downloaded content without server access.
 ///
-/// Set [playDirectly] to true for Continue Watching activation; the user's
-/// Continue Watching action setting decides whether resumable movies/episodes
-/// play immediately or open details first.
+/// Set [playDirectly] to true for Continue Watching / Next Up / On Deck
+/// activation; those surfaces use the Continue Watching action setting instead
+/// of the normal Episode Action setting.
 ///
 /// Returns a [MediaNavigationResult] indicating what action was taken:
 /// - [MediaNavigationResult.navigated]: Navigation completed, item refresh handled
@@ -143,30 +156,49 @@ MediaDetailNavigationTarget mediaDetailNavigationTargetFor(MediaItem item, {Medi
 Future<MediaNavigationResult> navigateToMediaItem(
   BuildContext context,
   Object item, {
-  void Function(String)? onRefresh,
+  void Function(MediaItem source)? onRefresh,
   bool isOffline = false,
   bool playDirectly = false,
 }) async {
   if (item is MediaPlaylist) {
-    await Navigator.push(context, MaterialPageRoute(builder: (context) => PlaylistDetailScreen(playlist: item)));
-    return MediaNavigationResult.navigated;
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => PlaylistDetailScreen(playlist: item)),
+    );
+    return result == true ? MediaNavigationResult.listRefreshNeeded : MediaNavigationResult.navigated;
   }
 
   if (item is! MediaItem) {
     return MediaNavigationResult.unsupported;
   }
   final mi = item;
-  final shouldOpenContinueWatchingDetails =
-      playDirectly &&
-      (SettingsService.instanceOrNull?.read(SettingsService.continueWatchingAction) ?? ContinueWatchingAction.play) ==
-          ContinueWatchingAction.details;
+
+  // Catalog stand-ins (Explore tab) have no server id — every server-backed
+  // route below would break on them. Route to the catalog flow instead.
+  if (mi.isCatalogItem) {
+    final catalogItem = mi.catalogItem;
+    if (catalogItem == null) return MediaNavigationResult.unsupported;
+    await navigateToCatalogItem(context, catalogItem);
+    return MediaNavigationResult.navigated;
+  }
+  final settings = SettingsService.instanceOrNull;
+  final continueWatchingAction = settings?.read(SettingsService.continueWatchingAction) ?? ContinueWatchingAction.play;
+  final episodeAction = settings?.read(SettingsService.episodeAction) ?? EpisodeAction.play;
+  final shouldOpenContinueWatchingDetails = playDirectly && continueWatchingAction == ContinueWatchingAction.details;
+  final shouldOpenEpisodeDetails = shouldOpenEpisodeDetailsForActivation(
+    playDirectly: playDirectly,
+    continueWatchingAction: continueWatchingAction,
+    episodeAction: episodeAction,
+  );
 
   // Handle library section items (shared whole-library entries) — Plex-only;
-  // [PlexLibrarySection.isLibrarySection] reads the stashed `key` from `raw`.
-  if (mi.isLibrarySection) {
-    final sectionKey = mi.librarySectionKey;
-    if (sectionKey != null && mi.serverId != null) {
-      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), sectionKey);
+  // `PlexMappers` stashes the section path in `raw['key']`. Jellyfin "views"
+  // never appear inside a [MediaItem], so the gate never fires for them.
+  final rawKey = mi.raw?['key'];
+  if (rawKey is String && rawKey.startsWith('/library/sections/')) {
+    final sectionId = plexLibrarySectionIdFromString(rawKey);
+    if (sectionId != null && mi.serverId != null) {
+      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), '$sectionId');
       MainScreenFocusScope.of(context, listen: false)?.selectLibrary?.call(libraryGlobalKey);
       return MediaNavigationResult.librarySelected;
     }
@@ -186,19 +218,27 @@ Future<MediaNavigationResult> navigateToMediaItem(
       return MediaNavigationResult.navigated;
 
     case MediaKind.artist:
+      await navigateToArtist(context, mi);
+      return MediaNavigationResult.navigated;
+
     case MediaKind.album:
+      await navigateToAlbum(context, mi);
+      return MediaNavigationResult.navigated;
+
     case MediaKind.track:
-      // Music types not supported
-      return MediaNavigationResult.unsupported;
+      // Tracks start playback in their album queue instead of opening a
+      // detail surface.
+      await playTrackWithAlbumContext(context, mi);
+      return MediaNavigationResult.navigated;
 
     case MediaKind.clip:
     case MediaKind.episode:
-      if (shouldOpenContinueWatchingDetails && mi.kind == MediaKind.episode) {
+      if (mi.kind == MediaKind.episode && shouldOpenEpisodeDetails) {
         return navigateToMediaItemDetails(context, mi, onRefresh: onRefresh, isOffline: isOffline);
       }
       final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
       if (result == true && context.mounted) {
-        onRefresh?.call(mi.id);
+        onRefresh?.call(mi);
       }
       return MediaNavigationResult.navigated;
 
@@ -206,7 +246,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
       if (playDirectly && !shouldOpenContinueWatchingDetails) {
         final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
         if (result == true && context.mounted) {
-          onRefresh?.call(mi.id);
+          onRefresh?.call(mi);
         }
         return MediaNavigationResult.navigated;
       }
@@ -224,9 +264,19 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
   BuildContext context,
   MediaItem mi, {
   bool isOffline = false,
-  void Function(String)? onRefresh,
+  void Function(MediaItem source)? onRefresh,
   MediaItem? metadataOverride,
 }) async {
+  // Catalog stand-ins (Explore tab) must never reach MediaDetailScreen — it
+  // hard-requires a server id. Guarded here (not only in navigateToMediaItem)
+  // so secondary entry points like card-title clicks are covered too.
+  if (mi.isCatalogItem) {
+    final catalogItem = mi.catalogItem;
+    if (catalogItem == null) return MediaNavigationResult.unsupported;
+    await navigateToCatalogItem(context, catalogItem);
+    return MediaNavigationResult.navigated;
+  }
+
   final target = mediaDetailNavigationTargetFor(mi, metadataOverride: metadataOverride);
   final result = await Navigator.push<bool>(
     context,
@@ -239,7 +289,7 @@ Future<MediaNavigationResult> navigateToMediaItemDetails(
     ),
   );
   if (result == true && context.mounted) {
-    onRefresh?.call(mi.id);
+    onRefresh?.call(mi);
   }
   return MediaNavigationResult.navigated;
 }

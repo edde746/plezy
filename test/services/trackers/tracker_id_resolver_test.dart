@@ -10,6 +10,7 @@ import 'package:plezy/services/trackers/anime_lists_mapping_store.dart';
 import 'package:plezy/services/trackers/fribb_mapping_store.dart';
 import 'package:plezy/services/trackers/tracker_id_resolver.dart';
 import 'package:plezy/utils/external_ids.dart';
+import '../../test_helpers/media_items.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
   final Map<String, ExternalIds> externalIdsByItem;
@@ -30,14 +31,26 @@ class _FakeMediaServerClient implements MediaServerClient {
 class _FakeFribbLookup implements FribbMappingLookup {
   final List<FribbMappingRow> rows;
   int lookups = 0;
+  int? lastAnidbId;
 
   _FakeFribbLookup(this.rows);
 
+  /// Mirrors the real store: an AniDB id is the dataset's primary key and
+  /// resolves at most one row, so it short-circuits the tvdb/tmdb/imdb ladder.
   @override
-  Future<List<FribbMappingRow>> lookup({int? tvdbId, int? tmdbId, String? imdbId}) async {
+  Future<List<FribbMappingRow>> lookup({int? anidbId, int? tvdbId, int? tmdbId, String? imdbId}) async {
     lookups++;
+    lastAnidbId = anidbId;
+    if (anidbId != null) {
+      final hit = rows.where((row) => row.anidbId == anidbId).firstOrNull;
+      if (hit != null) return [hit];
+    }
+    if (tvdbId == null && tmdbId == null && imdbId == null) return const [];
     return rows;
   }
+
+  @override
+  Future<FribbMappingRow?> lookupByMal(int malId) async => rows.where((row) => row.malId == malId).firstOrNull;
 }
 
 class _FakeAnimeProgressLookup implements AnimeEpisodeProgressLookup {
@@ -91,7 +104,7 @@ class _FakeAnimeListsLookup implements AnimeListsMappingLookup {
   Future<Set<int>> lookupAnimeIdsForShow({int? tvdbId, int? tmdbId}) async => const <int>{};
 }
 
-MediaItem _episode({int season = 23, int number = 6}) => MediaItem(
+MediaItem _episode({int season = 23, int number = 6}) => testMediaItem(
   id: 'episode-$season-$number',
   backend: MediaBackend.plex,
   kind: MediaKind.episode,
@@ -106,9 +119,12 @@ TrackerIdResolver _resolver({
   required _FakeAnimeProgressLookup animeProgress,
   _FakeFribbLookup? lookup,
   AnimeListsMappingLookup animeLists = const _FakeAnimeListsLookup(),
+  ExternalIds showIds = const ExternalIds(tvdb: 81797, tmdb: 37854, imdb: 'tt0388629'),
+  bool Function()? needsFribb,
 }) {
   return TrackerIdResolver(
-    _FakeMediaServerClient({'show-1': const ExternalIds(tvdb: 81797, tmdb: 37854, imdb: 'tt0388629')}),
+    _FakeMediaServerClient({'show-1': showIds}),
+    needsFribb: needsFribb,
     store: lookup ?? _FakeFribbLookup(rows),
     animeLists: animeLists,
     animeProgress: animeProgress,
@@ -133,7 +149,14 @@ void main() {
       final resolver = _resolver(
         animeProgress: animeProgress,
         rows: const [
-          FribbMappingRow(tvdbId: 81797, tmdbId: 37854, imdbId: 'tt0388629', malId: 21, anilistId: 21, type: 'TV'),
+          FribbMappingRow(
+            tvdbId: 81797,
+            tmdbIds: [37854],
+            imdbIds: ['tt0388629'],
+            malId: 21,
+            anilistId: 21,
+            type: 'TV',
+          ),
         ],
       );
 
@@ -280,6 +303,99 @@ void main() {
       expect(second?.anime?.mal, 102);
       expect(client.externalIdCalls, ['show-1']);
       expect(lookup.lookups, 2);
+    });
+  });
+
+  group('TrackerIdResolver AniDB-only items', () {
+    const hamaRow = FribbMappingRow(anidbId: 11905, malId: 21, anilistId: 30, simklId: 40, type: 'TV');
+
+    test('a HAMA show resolves its anime through the AniDB id alone', () async {
+      final lookup = _FakeFribbLookup(const [hamaRow]);
+      final resolver = _resolver(
+        rows: const [hamaRow],
+        lookup: lookup,
+        animeProgress: _FakeAnimeProgressLookup(4),
+        showIds: const ExternalIds(anidb: 11905),
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 1, number: 4));
+
+      expect(lookup.lastAnidbId, 11905);
+      expect(ids?.anime?.mal, 21);
+      expect(ids?.anime?.anilist, 30);
+      expect(ids?.animeProgressScope, AnimeProgressScope.show);
+      expect(ids?.animeProgress, 4);
+    });
+
+    test('an AniDB id does not describe a season beside season 1', () async {
+      final lookup = _FakeFribbLookup(const [hamaRow]);
+      final resolver = _resolver(
+        rows: const [hamaRow],
+        lookup: lookup,
+        animeProgress: _FakeAnimeProgressLookup(null),
+        showIds: const ExternalIds(anidb: 11905),
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 2, number: 4));
+
+      expect(lookup.lastAnidbId, isNull, reason: 'season 2 means the library is TVDB-numbered');
+      expect(ids?.anime?.mal, isNull);
+    });
+
+    test('a catalog id still wins the ladder when both are present', () async {
+      final lookup = _FakeFribbLookup(const [
+        hamaRow,
+        FribbMappingRow(anidbId: 222, tvdbId: 81797, malId: 999, type: 'TV'),
+      ]);
+      final resolver = _resolver(
+        rows: const [],
+        lookup: lookup,
+        animeProgress: _FakeAnimeProgressLookup(null),
+        showIds: const ExternalIds(anidb: 11905, tvdb: 81797),
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 1, number: 4));
+
+      expect(ids?.anime?.mal, 21, reason: 'AniDB names exactly one row, so it leads the ladder');
+    });
+
+    test('an item with no ids at all resolves to nothing', () async {
+      final resolver = _resolver(
+        rows: const [hamaRow],
+        animeProgress: _FakeAnimeProgressLookup(null),
+        showIds: const ExternalIds(),
+      );
+
+      expect(await resolver.resolveShowForEpisode(_episode(season: 1, number: 4)), isNull);
+    });
+
+    test('trackers that never map anime get nothing from an AniDB-only item', () async {
+      final resolver = _resolver(
+        rows: const [hamaRow],
+        animeProgress: _FakeAnimeProgressLookup(null),
+        showIds: const ExternalIds(anidb: 11905),
+        needsFribb: () => false,
+      );
+
+      expect(
+        await resolver.resolveShowForEpisode(_episode(season: 1, number: 4)),
+        isNull,
+        reason: 'Trakt and Simkl cannot address an AniDB id',
+      );
+    });
+
+    test('trackers that never map anime still get a catalog-id context', () async {
+      final resolver = _resolver(
+        rows: const [],
+        animeProgress: _FakeAnimeProgressLookup(null),
+        showIds: const ExternalIds(tvdb: 81797),
+        needsFribb: () => false,
+      );
+
+      final ids = await resolver.resolveShowForEpisode(_episode(season: 1, number: 4));
+
+      expect(ids?.external.tvdb, 81797);
+      expect(ids?.anime, isNull);
     });
   });
 }

@@ -1,6 +1,8 @@
 package com.edde746.plezy.libass.media.extractor
 
+import android.util.Log
 import androidx.annotation.OptIn
+import androidx.media3.common.ParserException
 import androidx.media3.common.util.ParsableByteArray
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.extractor.ExtractorInput
@@ -20,6 +22,8 @@ open class AssMatroskaExtractor(
 
   private var currentAttachmentName: String? = null
   private var currentAttachmentMime: String? = null
+  internal var acceptedFontBytes = 0L
+    private set
 
   internal val subtitleSample = subtitleSampleField.get(this) as ParsableByteArray
 
@@ -75,19 +79,54 @@ open class AssMatroskaExtractor(
   override fun binaryElement(id: Int, contentSize: Int, input: ExtractorInput) {
     when (id) {
       ID_FILE_DATA -> {
+        if (contentSize < 0) {
+          throw ParserException.createForMalformedContainer(
+            "Negative Matroska attachment size",
+            null
+          )
+        }
+
         val attachmentName = requireNotNull(currentAttachmentName)
         val attachmentMime = requireNotNull(currentAttachmentMime)
-
-        if (attachmentMime in fontMimeTypes) {
-          val data = ByteArray(contentSize)
-          input.readFully(data, 0, contentSize)
-          assHandler.addFont(attachmentName, data)
-        } else {
+        if (attachmentMime !in fontMimeTypes) {
           input.skipFully(contentSize)
+          return
         }
+        if (contentSize == 0) {
+          input.skipFully(0)
+          return
+        }
+
+        val size = contentSize.toLong()
+        val rejectionReason = when {
+          size > MAX_FONT_BYTES -> "per-font limit"
+          size > MAX_TOTAL_FONT_BYTES - acceptedFontBytes -> "aggregate limit"
+          else -> null
+        }
+        if (rejectionReason != null) {
+          onFontRejected(contentSize, acceptedFontBytes, rejectionReason)
+          input.skipFully(contentSize)
+          return
+        }
+
+        val data = ByteArray(contentSize)
+        input.readFully(data, 0, contentSize)
+        acceptedFontBytes += size
+        assHandler.addFont(attachmentName, data)
       }
       else -> super.binaryElement(id, contentSize, input)
     }
+  }
+
+  protected open fun onFontRejected(
+    contentSize: Int,
+    acceptedBytes: Long,
+    reason: String
+  ) {
+    Log.w(
+      TAG,
+      "Skipping embedded font: $reason (bytes=$contentSize, accepted=$acceptedBytes)"
+    )
   }
 
   private fun clearAttachment() {
@@ -96,6 +135,9 @@ open class AssMatroskaExtractor(
   }
 
   companion object {
+    private const val TAG = "AssMatroskaExtractor"
+    internal const val MAX_FONT_BYTES = 16L * 1024 * 1024
+    internal const val MAX_TOTAL_FONT_BYTES = 32L * 1024 * 1024
     const val ID_EBML = 0x1A45DFA3
     const val ID_VIDEO = 0xE0
     const val ID_ATTACHMENTS = 0x1941A469

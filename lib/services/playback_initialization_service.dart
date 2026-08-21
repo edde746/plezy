@@ -2,19 +2,19 @@ import 'dart:io';
 import '../media/ids.dart';
 
 import 'package:path/path.dart' as p;
+import '../i18n/strings.g.dart';
 
 import '../database/app_database.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
-import '../models/download_models.dart';
-import '../models/transcode_quality_preset.dart';
 import '../mpv/models.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import 'cached_playback_metadata_service.dart';
 import 'download_storage_service.dart';
+import 'downloaded_video_source.dart';
 import 'playback_initialization_types.dart';
 
 // Re-export so existing callers (video_player_screen) can keep importing
@@ -52,6 +52,29 @@ class PlaybackInitializationService {
     int mediaIndex = 0,
     String? selectedMediaSourceId,
   }) async {
+    final source = await _resolveOfflineVideoSource(
+      serverId,
+      ratingKey,
+      mediaIndex: mediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
+    );
+    return source?.path;
+  }
+
+  /// Resolve the downloaded copy of an item to its playable local path plus
+  /// the version that is actually on disk.
+  ///
+  /// Strict by default: a version mismatch returns null so online flows keep
+  /// streaming an explicitly requested non-downloaded version. With
+  /// [allowAnyDownloadedVersion] the single downloaded version is returned on
+  /// mismatch instead — for offline flows where the alternative is failing.
+  Future<DownloadedVideoSource?> _resolveOfflineVideoSource(
+    ServerId serverId,
+    String ratingKey, {
+    required int mediaIndex,
+    String? selectedMediaSourceId,
+    bool allowAnyDownloadedVersion = false,
+  }) async {
     if (database == null) {
       return null;
     }
@@ -64,58 +87,16 @@ class PlaybackInitializationService {
         ..where((tbl) => tbl.globalKey.equals(buildGlobalKey(ServerId(serverId), ratingKey)));
 
       final downloadedItem = await query.getSingleOrNull();
-
-      // Return null if not found or not completed
-      if (downloadedItem == null || downloadedItem.status != DownloadStatus.completed.index) {
+      if (downloadedItem == null) {
         return null;
       }
 
-      final downloadedSourceId = downloadedItem.mediaSourceId;
-      final requestedSourceId = selectedMediaSourceId?.trim();
-      final comparedBySourceId =
-          requestedSourceId != null &&
-          requestedSourceId.isNotEmpty &&
-          downloadedSourceId != null &&
-          downloadedSourceId.isNotEmpty;
-      if (comparedBySourceId && downloadedSourceId != requestedSourceId) {
-        appLogger.d(
-          '[VersionTrace] Offline video source is $downloadedSourceId, '
-          'but requested source $requestedSourceId — skipping offline',
-        );
-        return null;
-      }
-
-      // Fall back to index when either side lacks a stable source id.
-      if (!comparedBySourceId && downloadedItem.mediaIndex != mediaIndex) {
-        appLogger.d(
-          '[VersionTrace] Offline video is version ${downloadedItem.mediaIndex}, '
-          'but requested version $mediaIndex — skipping offline',
-        );
-        return null;
-      }
-
-      // Return null if no video file path
-      if (downloadedItem.videoFilePath == null) {
-        return null;
-      }
-
-      final storageService = DownloadStorageService.instance;
-      final storedPath = downloadedItem.videoFilePath!;
-
-      // Get readable path (handles both SAF URIs and file paths)
-      final readablePath = await storageService.getReadablePath(storedPath);
-
-      // For file paths (not SAF), verify the file exists
-      if (!storageService.isSafUri(storedPath)) {
-        final file = File(readablePath);
-        if (!await file.exists()) {
-          appLogger.w('Offline video file not found: $readablePath (stored as: $storedPath)');
-          return null;
-        }
-      }
-
-      appLogger.d('Found offline video: $readablePath');
-      return readablePath;
+      return await resolveDownloadedVideoSource(
+        downloadedItem,
+        requestedMediaIndex: mediaIndex,
+        requestedMediaSourceId: selectedMediaSourceId,
+        allowAnyDownloadedVersion: allowAnyDownloadedVersion,
+      );
     } catch (e) {
       appLogger.w('Error checking offline video path', error: e);
       return null;
@@ -128,54 +109,47 @@ class PlaybackInitializationService {
   ///
   /// Downloaded/offline path: when [preferOffline] finds a downloaded copy,
   /// builds from cached [MediaSourceInfo] and local sidecars immediately.
-  Future<PlaybackInitializationResult> getPlaybackData({
-    required MediaItem metadata,
-    required int selectedMediaIndex,
-    String? selectedMediaSourceId,
+  Future<PlaybackInitializationResult> getPlaybackData(
+    PlaybackInitializationOptions options, {
     bool preferOffline = false,
-    TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
-    int? selectedAudioStreamId,
-    String? sessionIdentifier,
-    String? transcodeSessionId,
   }) async {
+    final metadata = options.metadata;
     final serverId = metadata.serverId ?? client?.serverId;
 
-    String? offlineVideoPath;
+    DownloadedVideoSource? offlineSource;
     if (serverId != null && (preferOffline || client == null) && database != null) {
-      offlineVideoPath = await getOfflineVideoPath(
+      offlineSource = await _resolveOfflineVideoSource(
         ServerId(serverId),
         metadata.id,
-        mediaIndex: selectedMediaIndex,
-        selectedMediaSourceId: selectedMediaSourceId,
+        mediaIndex: options.selectedMediaIndex,
+        selectedMediaSourceId: options.selectedMediaSourceId,
+        // With no client there is nothing to stream from, so any downloaded
+        // version beats failing. With a client the strict match must stand:
+        // an explicitly requested non-downloaded version streams from the
+        // server (issue #1440).
+        allowAnyDownloadedVersion: client == null,
       );
     }
 
     // Downloaded playback must not wait on a live server. Cached media info
     // preserves track labels where available; the local file is enough to play.
-    if (offlineVideoPath != null) {
+    if (offlineSource != null) {
       appLogger.d('Using offline playback for ${metadata.id}');
       return _buildOfflineResult(
         metadata: metadata,
-        offlineVideoPath: offlineVideoPath,
-        selectedMediaIndex: selectedMediaIndex,
+        offlineVideoPath: offlineSource.path,
+        selectedMediaIndex: offlineSource.mediaIndex,
+        selectedMediaSourceId: offlineSource.mediaSourceId,
       );
     }
 
-    if (client == null) throw PlaybackException('No video URL available');
+    if (client == null) {
+      throw PlaybackException(t.messages.noVideoUrl, reason: PlaybackFailureReason.noPlayableSource);
+    }
 
     PlaybackInitializationResult result;
     try {
-      result = await client!.getPlaybackInitialization(
-        PlaybackInitializationOptions(
-          metadata: metadata,
-          selectedMediaIndex: selectedMediaIndex,
-          selectedMediaSourceId: selectedMediaSourceId,
-          qualityPreset: qualityPreset,
-          selectedAudioStreamId: selectedAudioStreamId,
-          sessionIdentifier: sessionIdentifier,
-          transcodeSessionId: transcodeSessionId,
-        ),
-      );
+      result = await client!.getPlaybackInitialization(options);
     } catch (e) {
       rethrow;
     }
@@ -189,6 +163,7 @@ class PlaybackInitializationService {
     required MediaItem metadata,
     required String offlineVideoPath,
     required int selectedMediaIndex,
+    String? selectedMediaSourceId,
   }) async {
     MediaSourceInfo? mediaInfo;
     try {
@@ -205,7 +180,7 @@ class PlaybackInitializationService {
       appLogger.d('Could not load cached media info for offline playback', error: e);
     }
 
-    final sidecarSubtitles = await _discoverSidecarSubtitles(
+    final subtitleSidecars = await _discoverSidecarSubtitles(
       offlineVideoPath,
       metadata: metadata,
       mediaInfo: mediaInfo,
@@ -215,10 +190,11 @@ class PlaybackInitializationService {
       availableVersions: const [],
       videoUrl: _formatVideoUrl(offlineVideoPath),
       mediaInfo: mediaInfo,
-      externalSubtitles: sidecarSubtitles,
+      subtitleSidecars: subtitleSidecars,
       isOffline: true,
       playMethod: 'DirectPlay',
       selectedMediaIndex: selectedMediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
     );
   }
 
@@ -245,12 +221,12 @@ class PlaybackInitializationService {
   /// use `{video}_subs/{trackId}.{ext}` with a legacy `{videoDir}/subtitles/*`
   /// fallback. SAF videos are `content://` URIs, so sidecars live in the
   /// app-managed subtitle directory keyed by server/item id.
-  Future<List<SubtitleTrack>> _discoverSidecarSubtitles(
+  Future<List<PlaybackSubtitleSidecar>> _discoverSidecarSubtitles(
     String videoPath, {
     required MediaItem metadata,
     MediaSourceInfo? mediaInfo,
   }) async {
-    final subtitles = <SubtitleTrack>[];
+    final subtitles = <PlaybackSubtitleSidecar>[];
     final dirs = videoPath.startsWith('content://')
         ? await _safSidecarSubtitleDirs(metadata)
         : await _fileSidecarSubtitleDirs(videoPath);
@@ -268,13 +244,19 @@ class PlaybackInitializationService {
             : null;
 
         subtitles.add(
-          SubtitleTrack.uri(
-            'file://${entity.path}',
-            title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? 'Subtitle $fileName',
-            language: cachedTrack?.languageCode,
-            codec: cachedTrack?.codec,
-            isDefault: cachedTrack?.selected ?? false,
-            isForced: cachedTrack?.forced ?? false,
+          PlaybackSubtitleSidecar(
+            sourceStreamId: trackId,
+            // Local files cost nothing to attach, and preloading keeps every
+            // downloaded sidecar selectable as a secondary subtitle (#1860).
+            preload: true,
+            track: SubtitleTrack.uri(
+              Uri.file(entity.path).toString(),
+              title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? t.videoControls.subtitleFile(name: fileName),
+              language: cachedTrack?.languageCode,
+              codec: cachedTrack?.codec,
+              isDefault: cachedTrack?.selected ?? false,
+              isForced: cachedTrack?.forced ?? false,
+            ),
           ),
         );
       }
