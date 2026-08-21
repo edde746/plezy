@@ -4110,6 +4110,15 @@ class Translations$downloads$en {
 	/// en: 'Synced ${count} new episodes for ${title}'
 	String syncedNewEpisodes({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}';
 
+	/// en: 'Sync now'
+	String get syncNow => 'Sync now';
+
+	/// en: 'Downloads are up to date'
+	String get downloadsUpToDate => 'Downloads are up to date';
+
+	/// en: 'Sync complete · ${queued} queued, ${removed} removed'
+	String syncComplete({required Object queued, required Object removed}) => 'Sync complete · ${queued} queued, ${removed} removed';
+
 	/// en: 'Sync rules'
 	String get activeSyncRules => 'Sync rules';
 
@@ -7846,6 +7855,9 @@ extension on Translations {
 			'downloads.syncRuleCleanupBusy' => 'Sync rules are currently updating. Try again in a moment.',
 			'downloads.syncRuleCleanupUnavailable' => 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
+			'downloads.syncNow' => 'Sync now',
+			'downloads.downloadsUpToDate' => 'Downloads are up to date',
+			'downloads.syncComplete' => ({required Object queued, required Object removed}) => 'Sync complete · ${queued} queued, ${removed} removed',
 			'downloads.activeSyncRules' => 'Sync rules',
 			'downloads.noSyncRules' => 'No sync rules',
 			'downloads.manageSyncRule' => 'Manage sync',
@@ -7964,11 +7976,11 @@ extension on Translations {
 			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.noNetworkInterface' => 'No network interface found',
 			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Failed to start remote server: ${error}',

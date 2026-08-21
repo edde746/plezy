@@ -17,6 +17,7 @@ import 'package:plezy/models/download_models.dart';
 import 'package:plezy/navigation/main_screen_scope.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/offline_mode_provider.dart';
 import 'package:plezy/screens/downloads/downloads_screen.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
@@ -330,6 +331,10 @@ Future<void> _pumpScreen(
           ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
           ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
           ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
+          ChangeNotifierProvider<OfflineModeProvider>(
+            create: (_) =>
+                OfflineModeProvider(multiServerProvider.serverManager, multiServerProvider: multiServerProvider),
+          ),
         ],
         child: MaterialApp(
           theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),

@@ -1213,7 +1213,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   OfflineModeProvider? _connectivitySyncProvider;
   Timer? _syncDebounce;
   final Set<String> _pendingSyncKeys = <String>{};
-  bool _isAutoDeleteRunning = false;
   bool _lastConnectivityWasWifi = false;
   bool _lastConnectivityHadNetwork = true;
   bool _shutdownStarted = false;
@@ -1426,26 +1425,30 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     List<String>? targetKeys,
     bool force = false,
   }) async {
-    if (_isAutoDeleteRunning) {
+    // Provider-owned guard so manual ("Sync now") and automatic reconciles
+    // never overlap; it also drives the Downloads screen's sync spinner.
+    if (!downloadProvider.beginReconcile()) {
       if (targetKeys != null) _pendingSyncKeys.addAll(targetKeys);
       return;
     }
-    _isAutoDeleteRunning = true;
     try {
-      await downloadProvider.refreshMetadataFromCache();
       final activeGlobalKey = VideoPlayerScreenState.activeGlobalKey;
-      final settings = SettingsService.instanceOrNull;
-      if (settings != null && settings.read(SettingsService.autoRemoveWatchedDownloads)) {
-        final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeGlobalKey: activeGlobalKey);
-        if (deleted.isNotEmpty) {
-          final msg = deleted.length == 1
-              ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
-              : t.messages.autoRemovedWatchedDownloads(n: deleted.length);
-          showMainSnackBar(msg);
-        }
-      }
 
       if (targetKeys != null) {
+        // Targeted per-watch-event path: refresh, delete watched (if enabled),
+        // then sync only the rules the event touched.
+        await downloadProvider.refreshMetadataFromCache();
+        final settings = SettingsService.instanceOrNull;
+        if (settings != null && settings.read(SettingsService.autoRemoveWatchedDownloads)) {
+          final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeGlobalKey: activeGlobalKey);
+          if (deleted.isNotEmpty) {
+            final msg = deleted.length == 1
+                ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
+                : t.messages.autoRemovedWatchedDownloads(n: deleted.length);
+            showMainSnackBar(msg);
+          }
+        }
+
         for (final key in targetKeys) {
           if (!downloadProvider.hasSyncRule(key)) continue;
           final result = await downloadProvider.executeSyncRuleFor(key, _serverManager);
@@ -1455,13 +1458,26 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           }
         }
       } else {
-        final synced = await downloadProvider.executeSyncRules(_serverManager, force: force);
-        if (synced.isNotEmpty) {
-          showMainSnackBar(t.downloads.syncedNewEpisodes(count: synced.length.toString(), title: synced.first));
+        // Global path: shared with the manual "Sync now" button.
+        final summary = await downloadProvider.syncAllRules(
+          _serverManager,
+          activeGlobalKey: activeGlobalKey,
+          force: force,
+        );
+        if (summary.deletedTitles.isNotEmpty) {
+          final msg = summary.deletedTitles.length == 1
+              ? t.messages.autoRemovedWatchedDownload(title: summary.deletedTitles.first)
+              : t.messages.autoRemovedWatchedDownloads(n: summary.deletedTitles.length);
+          showMainSnackBar(msg);
+        }
+        if (summary.syncedTitles.isNotEmpty) {
+          showMainSnackBar(
+            t.downloads.syncedNewEpisodes(count: summary.syncedTitles.length.toString(), title: summary.syncedTitles.first),
+          );
         }
       }
     } finally {
-      _isAutoDeleteRunning = false;
+      downloadProvider.endReconcile();
       if (_pendingSyncKeys.isNotEmpty) {
         final queuedKeys = _pendingSyncKeys.toList();
         _pendingSyncKeys.clear();
