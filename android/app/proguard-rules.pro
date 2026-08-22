@@ -19,19 +19,12 @@
 # growOutputBuffer's JNI descriptor names this type, so it may not be renamed either.
 -keep class androidx.media3.decoder.SimpleDecoderOutputBuffer { *; }
 
-# MatroskaExtractor.init is final and its ExtractorOutput / subtitle scratch buffer live
-# in private fields, so the extractor wrappers reach both by name: AssMatroskaExtractor
-# (android/libass/.../media/extractor/AssMatroskaExtractor.kt) resolves extractorOutput
-# and subtitleSample with getDeclaredField to redirect ASS subtitle samples, and
-# MatroskaLatmSupport (android/app/.../exoplayer/MatroskaLatmSupport.kt) resolves
-# extractorOutput the same way to wrap LATM tracks.
-#
-# R8 renaming either field makes getDeclaredField throw; AssMatroskaExtractor resolves
-# them in its companion object, so the throw surfaces as ExceptionInInitializerError
-# while constructing the extractor — every MKV direct-play, release builds only. Only
-# the *names* need pinning: MatroskaExtractor uses both fields itself, so they survive
-# shrinking through the compile-time subclass references.
--keepclassmembernames class androidx.media3.extractor.mkv.MatroskaExtractor {
-  private androidx.media3.extractor.ExtractorOutput extractorOutput;
-  private androidx.media3.common.util.ParsableByteArray subtitleSample;
+# ffmpeg_demuxer_jni.cc resolves the AVIO input proxy's callbacks by name
+# (FindClass on the interface, GetMethodID for position/read/length). Keeping
+# the interface members pins the names on every implementation, including the
+# anonymous proxy inside FfmpegExtractor.
+-keep interface com.edde746.plezy.exoplayer.FfmpegDemuxerJni$Input {
+  long position();
+  int read(byte[], int);
+  long length();
 }

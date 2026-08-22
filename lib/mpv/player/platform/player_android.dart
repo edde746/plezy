@@ -15,8 +15,9 @@ class PlayerAndroid extends PlayerBase {
   int? _bufferSizeBytes;
   bool _bufferSizeIsAuto = false;
   String _bufferTier = 'auto';
-  bool _tunnelingEnabled = true;
+  bool _tunnelingEnabled = false;
   String _dvConversionMode = 'auto';
+  String _demuxerMode = 'auto';
   bool _audioNormalizationEnabled = false;
   bool _audioPassthroughEnabled = false;
   bool _downmixEnabled = false;
@@ -120,6 +121,7 @@ class PlayerAndroid extends PlayerBase {
         'bufferTier': _bufferTier,
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,
+        'demuxerMode': _demuxerMode,
         'audioPassthroughEnabled': _audioPassthroughEnabled,
         // Cheap (32-bit) TV boxes run the hardware video path a frame behind a GL
         // subtitle overlay; render the ASS one frame earlier there to realign.
@@ -356,6 +358,10 @@ class PlayerAndroid extends PlayerBase {
           () => invoke('setDvConversionMode', {'mode': value}),
           () => _dvConversionMode == value,
         );
+        break;
+      case 'demuxer-mode':
+        _demuxerMode = value;
+        await _applyWhenInitialized(() => invoke('setDemuxerMode', {'mode': value}), () => _demuxerMode == value);
         break;
       case 'sub-visibility':
         if (value == 'no') {

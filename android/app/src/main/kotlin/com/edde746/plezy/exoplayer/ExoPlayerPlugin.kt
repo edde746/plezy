@@ -258,6 +258,7 @@ class ExoPlayerPlugin :
       "setBoxFitMode" -> handleSetBoxFitMode(call, result)
       "setVideoZoom" -> handleSetVideoZoom(call, result)
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
+      "setDemuxerMode" -> handleSetDemuxerMode(call, result)
       "setAudioNormalization" -> handleSetAudioNormalization(call, result)
       "setAudioPassthrough" -> handleSetAudioPassthrough(call, result)
       "setAudioDownmix" -> handleSetAudioDownmix(call, result)
@@ -296,7 +297,7 @@ class ExoPlayerPlugin :
     // on Auto because Dart derives one for mpv's demuxer, which shares the property, and
     // the fallback replay below needs it.
     val bufferSizeAuto = call.argument<Boolean>("bufferSizeAuto") ?: false
-    val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: true
+    val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: false
     val dvConversionMode = call.argument<String>("dvConversionMode") ?: "auto"
     val audioPassthroughEnabled = call.argument<Boolean>("audioPassthroughEnabled") ?: false
     val assVideoLatencyFrames = call.argument<Int>("assVideoLatencyFrames") ?: 0
@@ -304,6 +305,7 @@ class ExoPlayerPlugin :
     // ExoPlayer-only: mpv's read-ahead is owned by the mpv.conf editor, so there is no
     // fallback replay for this one. Resolved in the core; unrecognised means Auto (#1816).
     val bufferTier = call.argument<String>("bufferTier") ?: "auto"
+    val demuxerMode = call.argument<String>("demuxerMode") ?: "auto"
     configuredBufferSizeBytes = bufferSizeBytes
     // Seed the request here rather than waiting for Dart's separate setAudioPassthrough
     // call, so a fallback raised before that arrives still derives audio-spdif correctly.
@@ -348,7 +350,8 @@ class ExoPlayerPlugin :
           bufferSizeAuto = bufferSizeAuto,
           tunnelingEnabled = tunnelingEnabled,
           audioPassthroughEnabled = audioPassthroughEnabled,
-          bufferTier = bufferTier
+          bufferTier = bufferTier,
+          demuxerMode = demuxerMode
         )
         if (!success) {
           if (playerCore === core) playerCore = null
@@ -1133,6 +1136,18 @@ class ExoPlayerPlugin :
       } else {
         result.error("INVALID_ARGS", "Invalid DV conversion mode: $mode", null)
       }
+    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
+  }
+
+  private fun handleSetDemuxerMode(call: MethodCall, result: MethodChannel.Result) {
+    val mode = call.argument<String>("mode")
+    if (mode == null) {
+      result.error("INVALID_ARGS", "Missing 'mode'", null)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.setDemuxerMode(mode)
+      result.success(null)
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }
 

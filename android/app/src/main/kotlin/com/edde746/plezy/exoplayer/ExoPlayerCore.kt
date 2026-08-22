@@ -64,6 +64,7 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
+import androidx.media3.extractor.text.SubtitleTranscodingExtractorOutput
 import androidx.media3.extractor.ts.TsExtractor
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
@@ -71,6 +72,7 @@ import androidx.media3.ui.SubtitleView
 import com.edde746.plezy.AndroidRuntimeDiagnostics
 import com.edde746.plezy.libass.media.AssHandler
 import com.edde746.plezy.libass.media.parser.AssSubtitleParserFactory
+import com.edde746.plezy.libass.media.text.AssSubtitleExtractorOutput
 import com.edde746.plezy.libass.media.widget.AssSubtitleSurfaceView
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.DeviceQuirks
@@ -229,6 +231,12 @@ class ExoPlayerCore(private val activity: Activity) :
   private var trackSelector: DefaultTrackSelector? = null
   private var tunnelingUserEnabled: Boolean = true
   private var tunnelingDisabledForAudioCodec: Boolean = false
+
+  // Tunnelled playback is driven by the audio codec's clock, so without a
+  // hardware audio decoder media3 never tunnels regardless of the flag —
+  // used to skip selector churn for no-op flips (see
+  // updateCurrentTunnelingState). True until an evaluation says otherwise.
+  private var selectedAudioHasHwDecoder: Boolean = true
   private var tunnelingDisabledForVideoCodec: Boolean = false
   private var tunnelingDisabledForDecodedPcm: Boolean = false
   private var tunnelingDisabledForAudioRecovery: Boolean = false
@@ -555,6 +563,14 @@ class ExoPlayerCore(private val activity: Activity) :
 
   @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
 
+  // Container-demuxer placement; read per media item when extractors are built.
+  @Volatile private var demuxerPreference: FfmpegDemuxerPolicy.Preference = FfmpegDemuxerPolicy.Preference.AUTO
+
+  fun setDemuxerMode(mode: String) {
+    demuxerPreference = FfmpegDemuxerPolicy.fromWire(mode)
+    emitLog("info", "init", "demuxer mode: ${demuxerPreference.wireName}")
+  }
+
   private fun getConfiguredDvMode(): DvConversionMode {
     val override = debugDvModeOverride
     if (override != null) return override
@@ -572,7 +588,10 @@ class ExoPlayerCore(private val activity: Activity) :
     // Read-ahead depth, as the wire name Dart sends. Kept a String because `LoadControlPolicy`
     // is internal and this function is not; unrecognised names resolve to Auto, which is also
     // the default (#1816).
-    bufferTier: String = "auto"
+    bufferTier: String = "auto",
+    // Which containers the FFmpeg demuxer takes ahead of media3's extractors.
+    // Wire values from [FfmpegDemuxerPolicy.Preference]; unrecognised resolves to auto.
+    demuxerMode: String = "auto"
   ): Boolean {
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
@@ -581,6 +600,7 @@ class ExoPlayerCore(private val activity: Activity) :
 
     tunnelingUserEnabled = tunnelingEnabled
     this.audioPassthroughEnabled = audioPassthroughEnabled
+    demuxerPreference = FfmpegDemuxerPolicy.fromWire(demuxerMode)
     this.dvMode = getConfiguredDvMode()
     DoviBridge.logSupportSummary(activity)
     Log.i(
@@ -726,6 +746,11 @@ class ExoPlayerCore(private val activity: Activity) :
         // High-bitrate Plex DVR MPEG-TS recordings can have sparse PCR packets; the default
         // 600-packet window may leave duration unknown and seeking disabled.
         .setTsExtractorTimestampSearchBytes(TS_TIMESTAMP_SEARCH_PACKETS * TsExtractor.TS_PACKET_SIZE)
+        // Raw subtitle samples from MatroskaExtractor: the external text
+        // pipeline below feeds libass dialogue first and then re-adds cue
+        // transcoding — with the internal wrapper enabled the dialogue bytes
+        // would already be consumed before our wrapper could see them.
+        .setMatroskaExtractorFlags(MatroskaExtractor.FLAG_EMIT_RAW_SUBTITLE_DATA)
 
       // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
       val handler = AssHandler()
@@ -735,39 +760,72 @@ class ExoPlayerCore(private val activity: Activity) :
       // composition object and blanks palette-only fade updates (#1953).
       val subtitleParserFactory = PgsSubtitleParserFactory(AssSubtitleParserFactory(handler))
 
-      // Wrap extractors: replace MatroskaExtractor with ASS+DV variant,
-      // wrap MP4 extractors with DV converter when enabled.
-      // Reads this.dvMode each time (not captured) so DV7→8.1 retry can
-      // change mode and reload without reinitializing the player.
+      // Wrap extractors: FFmpeg demuxes the containers media3 is weak at
+      // (primary, before the list) and anything media3 cannot sniff (catch-all,
+      // behind it); give MatroskaExtractor the same libass/transcoding text
+      // pipeline so the media3 fallback (ffmpeg unavailable, media3-only
+      // preference) keeps ASS rendering; wrap MKV/MP4 extractors with the DV
+      // converter when enabled.
+      // Reads this.dvMode and this.demuxerPreference each time (not captured) so
+      // DV7→8.1 retry and demuxer-mode changes can reload without
+      // reinitializing the player.
       val wrappedExtractorsFactory = androidx.media3.extractor.ExtractorsFactory {
         val currentDvMode = this.dvMode
         val doviEnabled = currentDvMode != DvConversionMode.DISABLED
-        extractorsFactory.createExtractors().map { extractor ->
-          when {
-            extractor is MatroskaExtractor -> {
-              val assExtractor = ZlibMatroskaExtractor(subtitleParserFactory, handler)
-              val inner = if (doviEnabled) {
-                DoviExtractorWrapper(assExtractor, currentDvMode) { level, prefix, message ->
+        val currentDemuxerPreference = this.demuxerPreference
+        Log.i(TAG, "[init] extractors: demuxer=${currentDemuxerPreference.wireName}")
+        // media3 invokes the factory once per player session and reuses the
+        // extractor instances for every item, so both roles are always built
+        // and each sniff reads the live preference instead of a captured one.
+        val liveDemuxerPreference = { this@ExoPlayerCore.demuxerPreference }
+        val ffmpegPrimary =
+          listOfNotNull(
+            FfmpegExtractor.create(
+              FfmpegExtractor.Role.PRIMARY,
+              liveDemuxerPreference,
+              currentDvMode,
+              subtitleParserFactory,
+              handler
+            )
+          )
+        val ffmpegCatchAll =
+          listOfNotNull(
+            FfmpegExtractor.create(
+              FfmpegExtractor.Role.CATCH_ALL,
+              liveDemuxerPreference,
+              currentDvMode,
+              subtitleParserFactory,
+              handler
+            )
+          )
+        (
+          ffmpegPrimary + extractorsFactory.createExtractors().map { extractor ->
+            when {
+              extractor is MatroskaExtractor -> {
+                val withTextPipeline = OutputWrappingExtractor(extractor) { out ->
+                  AssSubtitleExtractorOutput(SubtitleTranscodingExtractorOutput(out, subtitleParserFactory), handler)
+                }
+                if (doviEnabled) {
+                  DoviExtractorWrapper(withTextPipeline, currentDvMode) { level, prefix, message ->
+                    emitLog(level, prefix, message)
+                  }.also {
+                    activeDoviMkvWrapper = it
+                  }
+                } else {
+                  withTextPipeline
+                }
+              }
+              doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
+                DoviExtractorWrapper(extractor, currentDvMode) { level, prefix, message ->
                   emitLog(level, prefix, message)
                 }.also {
-                  activeDoviMkvWrapper = it
+                  activeDoviMp4Wrapper = it
                 }
-              } else {
-                assExtractor
               }
-              // Wrap with approximate seeking for MKV files without Cues
-              CuelessSeekExtractorWrapper(inner)
+              else -> extractor
             }
-            doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
-              DoviExtractorWrapper(extractor, currentDvMode) { level, prefix, message ->
-                emitLog(level, prefix, message)
-              }.also {
-                activeDoviMp4Wrapper = it
-              }
-            }
-            else -> extractor
-          }
-        }.toTypedArray()
+          } + ffmpegCatchAll
+          ).toTypedArray()
       }
 
       val mediaSourceFactory = DefaultMediaSourceFactory(dataSourceFactory!!, wrappedExtractorsFactory)
@@ -2699,6 +2757,18 @@ class ExoPlayerCore(private val activity: Activity) :
 
   private fun updateCurrentTunnelingState(reason: String, shouldTunnel: Boolean): Boolean {
     if (shouldTunnel == currentTunneledPlayback) return false
+    // A switch to "off" that the selected audio decoder could never have
+    // honored anyway is transparent to media3: tunnelled playback needs a
+    // tunneling-capable audio codec (it owns the AV-sync clock), so a
+    // software decoder already ignored the flag. Writing the selector
+    // parameter regardless forces a renderer rebuild that can tear down a
+    // live codec mid-queueInputBuffer — observed as
+    // "queueInputBuffer ... Released state" right after tracks arrive from
+    // the ffmpeg demuxer. Record the state without the churn.
+    if (!shouldTunnel && !selectedAudioHasHwDecoder) {
+      currentTunneledPlayback = false
+      return false
+    }
     currentTunneledPlayback = shouldTunnel
     val speed = exoPlayer?.playbackParameters?.speed ?: 1f
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
@@ -2726,6 +2796,7 @@ class ExoPlayerCore(private val activity: Activity) :
     }
 
     val newDisabled = !hasHardwareAudioDecoder(mimeType)
+    selectedAudioHasHwDecoder = !newDisabled
     if (newDisabled != tunnelingDisabledForAudioCodec) {
       tunnelingDisabledForAudioCodec = newDisabled
       emitLog("info", "tunneling", "Audio codec ${format.codecs} ($mimeType): tunneling ${if (newDisabled) "DISABLED (no hw decoder)" else "enabled"}")
