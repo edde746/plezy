@@ -200,6 +200,25 @@ void main() {
       expect(CodecUtils.formatAudioCodec('alac'), 'ALAC');
       expect(CodecUtils.formatAudioCodec('weird'), 'WEIRD');
     });
+
+    test('audio MIME types from ExoPlayer Format.sampleMimeType map to friendly names (#2063)', () {
+      expect(CodecUtils.formatAudioCodec('audio/mp4a-latm'), 'AAC');
+      expect(CodecUtils.formatAudioCodec('audio/mpeg'), 'MP3');
+      expect(CodecUtils.formatAudioCodec('audio/ac3'), 'AC3');
+      expect(CodecUtils.formatAudioCodec('audio/eac3'), 'E-AC3');
+      expect(CodecUtils.formatAudioCodec('audio/eac3-joc'), 'E-AC3');
+      expect(CodecUtils.formatAudioCodec('audio/true-hd'), 'TrueHD');
+      expect(CodecUtils.formatAudioCodec('audio/vnd.dts'), 'DTS');
+      expect(CodecUtils.formatAudioCodec('audio/vnd.dts.hd'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('audio/vnd.dts.hd;profile=lbr'), 'DTS-HD');
+      expect(CodecUtils.formatAudioCodec('audio/vnd.dts.uhd;audio=p2'), 'DTS:X');
+      expect(CodecUtils.formatAudioCodec('audio/flac'), 'FLAC');
+      expect(CodecUtils.formatAudioCodec('audio/opus'), 'Opus');
+      expect(CodecUtils.formatAudioCodec('audio/vorbis'), 'Vorbis');
+      expect(CodecUtils.formatAudioCodec('audio/ac4'), 'AC4');
+      expect(CodecUtils.formatAudioCodec('audio/raw'), 'PCM');
+      expect(CodecUtils.formatAudioCodec('audio/alac'), 'ALAC');
+    });
   });
 
   group('CodecUtils.formatAudioChannels', () {

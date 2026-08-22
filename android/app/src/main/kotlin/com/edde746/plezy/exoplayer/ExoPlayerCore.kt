@@ -563,6 +563,10 @@ class ExoPlayerCore(private val activity: Activity) :
 
   @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
 
+  // The FFmpeg extractor from the current session; getStats reads its
+  // measured audio bitrate for the playing item.
+  @Volatile private var activeFfmpegExtractor: FfmpegExtractor? = null
+
   // Container-demuxer placement; read per media item when extractors are built.
   @Volatile private var demuxerPreference: FfmpegDemuxerPolicy.Preference = FfmpegDemuxerPolicy.Preference.FFMPEG
 
@@ -785,7 +789,7 @@ class ExoPlayerCore(private val activity: Activity) :
               currentDvMode,
               subtitleParserFactory,
               handler
-            )
+            )?.also { activeFfmpegExtractor = it }
           )
         (
           ffmpegFirst + extractorsFactory.createExtractors().map { extractor ->
@@ -3772,6 +3776,7 @@ class ExoPlayerCore(private val activity: Activity) :
     dv7RetryAttempted = override != null
     activeDoviMkvWrapper = null
     activeDoviMp4Wrapper = null
+    activeFfmpegExtractor = null
     val debugMode = override?.name ?: "AUTO"
     emitLog("info", "dv-debug", "P7 DV conversion mode set to $debugMode (active=$dvMode)")
     reloadCurrentMediaForDvMode()
@@ -3808,6 +3813,7 @@ class ExoPlayerCore(private val activity: Activity) :
     lastDvPlaybackInfo = null
     activeDoviMkvWrapper = null
     activeDoviMp4Wrapper = null
+    activeFfmpegExtractor = null
     stopFrameWatchdog()
     cancelDecoderHangCheck()
     cancelResumeStallWatchdog()
@@ -4273,7 +4279,12 @@ class ExoPlayerCore(private val activity: Activity) :
       "audioMimeType" to audioFormat?.sampleMimeType,
       "audioSampleRate" to audioFormat?.sampleRate,
       "audioChannels" to audioFormat?.channelCount,
-      "audioBitrate" to audioFormat?.bitrate,
+      // Container-declared bitrate when present; otherwise the FFmpeg
+      // demuxer's measured value (Matroska rarely carries BPS tags — #2063).
+      "audioBitrate" to (
+        audioFormat?.bitrate?.takeIf { it > 0 }
+          ?: audioFormat?.id?.let { activeFfmpegExtractor?.measuredAudioBitrateBps(it) }
+        ),
       "audioDecoderName" to audioDecoderInitName,
       "audioOutputEncoding" to audioTrackConfig?.encoding,
       "audioOutputChannels" to audioTrackConfig?.channelConfig?.let { Integer.bitCount(it) },

@@ -118,6 +118,10 @@ internal class FfmpegExtractor private constructor(
   private var subtitleKinds: Array<SubtitleKind> = emptyArray()
   private val latmOutputs = ArrayList<LatmTrackOutput>()
 
+  // Per-audio-stream measured bitrate, parallel to trackOutputs. Written by
+  // the loader thread, read by ExoPlayerCore.getStats on another thread.
+  @Volatile private var bitrateMeters: Array<StreamBitrateMeter?> = emptyArray()
+
   // Seek index for the primary stream: (presentation time, input position) of
   // video keyframes or periodic audio packets. The SeekMap reads it on the
   // playback thread while the loader thread appends, hence the lock.
@@ -231,6 +235,21 @@ internal class FfmpegExtractor private constructor(
       opened = false
       FfmpegDemuxerJni.nativeClose()
     }
+    // media3's extractors may demux a later item while this instance keeps
+    // the previous one's stream layout; a stale measurement must not leak
+    // into stats.
+    bitrateMeters = emptyArray()
+  }
+
+  /**
+   * Measured average bitrate (bps) of the audio stream whose index matches
+   * [formatId] (this extractor sets `Format.id` to the stream index), or null
+   * when this instance is not demuxing that stream. Fallback for containers
+   * that declare no per-track bitrate (#2063).
+   */
+  fun measuredAudioBitrateBps(formatId: String?): Int? {
+    val index = formatId?.toIntOrNull() ?: return null
+    return bitrateMeters.getOrNull(index)?.bitrateBps()
   }
 
   // The in-call `reconciles` counter resets on every read() invocation, so it
@@ -286,6 +305,7 @@ internal class FfmpegExtractor private constructor(
     durationUs = FfmpegDemuxerJni.nativeDurationUs().takeIf { it >= 0 } ?: C.TIME_UNSET
     trackOutputs = arrayOfNulls(count)
     subtitleKinds = Array(count) { SubtitleKind.NONE }
+    bitrateMeters = arrayOfNulls(count)
     latmOutputs.clear()
     // Fonts go in before any text track exists so AssHandler's store flushes
     // them into libass when the first ASS track is created.
@@ -360,6 +380,7 @@ internal class FfmpegExtractor private constructor(
           val pcmEncoding = numbers[FfmpegDemuxerJni.INFO_PCM_ENCODING].toInt()
           if (pcmEncoding >= 0) builder.setPcmEncoding(pcmEncoding)
           if (primaryAudio < 0) primaryAudio = index
+          bitrateMeters[index] = StreamBitrateMeter()
         }
         C.TRACK_TYPE_TEXT -> {
           val kind = when (mime) {
@@ -485,6 +506,7 @@ internal class FfmpegExtractor private constructor(
             null
           )
           recordSeekPoint(streamIndex, ptsUs, packetOut[FfmpegDemuxerJni.OUT_POSITION], isKeyframe)
+          bitrateMeters.getOrNull(streamIndex)?.onPacket(ptsUs, size)
           return Extractor.RESULT_CONTINUE
         }
         FfmpegDemuxerJni.CODE_EOF -> return Extractor.RESULT_END_OF_INPUT
