@@ -305,7 +305,7 @@ class ExoPlayerPlugin :
     // ExoPlayer-only: mpv's read-ahead is owned by the mpv.conf editor, so there is no
     // fallback replay for this one. Resolved in the core; unrecognised means Auto (#1816).
     val bufferTier = call.argument<String>("bufferTier") ?: "auto"
-    val demuxerMode = call.argument<String>("demuxerMode") ?: "auto"
+    val demuxerMode = call.argument<String>("demuxerMode") ?: "ffmpeg"
     configuredBufferSizeBytes = bufferSizeBytes
     // Seed the request here rather than waiting for Dart's separate setAudioPassthrough
     // call, so a fallback raised before that arrives still derives audio-spdif correctly.

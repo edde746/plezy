@@ -17,7 +17,7 @@ class PlayerAndroid extends PlayerBase {
   String _bufferTier = 'auto';
   bool _tunnelingEnabled = false;
   String _dvConversionMode = 'auto';
-  String _demuxerMode = 'auto';
+  String _demuxerMode = 'ffmpeg';
   bool _audioNormalizationEnabled = false;
   bool _audioPassthroughEnabled = false;
   bool _downmixEnabled = false;

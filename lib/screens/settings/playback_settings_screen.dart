@@ -474,9 +474,8 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   );
 
   String _demuxerModeLabel(DemuxerPreference mode) => switch (mode) {
-    DemuxerPreference.auto => t.settings.demuxerAuto,
-    DemuxerPreference.ffmpegFirst => t.settings.demuxerFfmpegFirst,
-    DemuxerPreference.media3Only => t.settings.demuxerMedia3Only,
+    DemuxerPreference.ffmpeg => t.settings.demuxerFfmpeg,
+    DemuxerPreference.media3 => t.settings.demuxerMedia3,
   };
 
   Widget _bufferSizeTile() {

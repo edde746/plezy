@@ -564,7 +564,7 @@ class ExoPlayerCore(private val activity: Activity) :
   @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
 
   // Container-demuxer placement; read per media item when extractors are built.
-  @Volatile private var demuxerPreference: FfmpegDemuxerPolicy.Preference = FfmpegDemuxerPolicy.Preference.AUTO
+  @Volatile private var demuxerPreference: FfmpegDemuxerPolicy.Preference = FfmpegDemuxerPolicy.Preference.FFMPEG
 
   fun setDemuxerMode(mode: String) {
     demuxerPreference = FfmpegDemuxerPolicy.fromWire(mode)
@@ -589,9 +589,9 @@ class ExoPlayerCore(private val activity: Activity) :
     // is internal and this function is not; unrecognised names resolve to Auto, which is also
     // the default (#1816).
     bufferTier: String = "auto",
-    // Which containers the FFmpeg demuxer takes ahead of media3's extractors.
-    // Wire values from [FfmpegDemuxerPolicy.Preference]; unrecognised resolves to auto.
-    demuxerMode: String = "auto"
+    // Whether FFmpeg demuxes ahead of media3's extractors. Wire values from
+    // [FfmpegDemuxerPolicy.Preference]; unrecognised resolves to FFmpeg.
+    demuxerMode: String = "ffmpeg"
   ): Boolean {
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
@@ -775,23 +775,12 @@ class ExoPlayerCore(private val activity: Activity) :
         val currentDemuxerPreference = this.demuxerPreference
         Log.i(TAG, "[init] extractors: demuxer=${currentDemuxerPreference.wireName}")
         // media3 invokes the factory once per player session and reuses the
-        // extractor instances for every item, so both roles are always built
-        // and each sniff reads the live preference instead of a captured one.
+        // extractor instances for every item, so the sniff reads the live
+        // preference instead of a captured one.
         val liveDemuxerPreference = { this@ExoPlayerCore.demuxerPreference }
-        val ffmpegPrimary =
+        val ffmpegFirst =
           listOfNotNull(
             FfmpegExtractor.create(
-              FfmpegExtractor.Role.PRIMARY,
-              liveDemuxerPreference,
-              currentDvMode,
-              subtitleParserFactory,
-              handler
-            )
-          )
-        val ffmpegCatchAll =
-          listOfNotNull(
-            FfmpegExtractor.create(
-              FfmpegExtractor.Role.CATCH_ALL,
               liveDemuxerPreference,
               currentDvMode,
               subtitleParserFactory,
@@ -799,7 +788,7 @@ class ExoPlayerCore(private val activity: Activity) :
             )
           )
         (
-          ffmpegPrimary + extractorsFactory.createExtractors().map { extractor ->
+          ffmpegFirst + extractorsFactory.createExtractors().map { extractor ->
             when {
               extractor is MatroskaExtractor -> {
                 val withTextPipeline = OutputWrappingExtractor(extractor) { out ->
@@ -824,7 +813,7 @@ class ExoPlayerCore(private val activity: Activity) :
               }
               else -> extractor
             }
-          } + ffmpegCatchAll
+          }
           ).toTypedArray()
       }
 

@@ -41,20 +41,17 @@ import java.io.IOException
  * returns RESULT_SEEK or resumes in place when the loader already positioned
  * the input at the requested byte.
  *
- * [role] places the instance: [Role.PRIMARY] sits before media3's extractors
- * and sniffs only what [FfmpegDemuxerPolicy] hands to FFmpeg; [Role.CATCH_ALL]
- * sits behind them and accepts any container media3 could not sniff.
+ * The instance sits before media3's extractors and sniffs everything FFmpeg
+ * can probe while [FfmpegDemuxerPolicy] enables it; media3's list behind it
+ * is the fallback for anything FFmpeg cannot open.
  */
 @OptIn(UnstableApi::class)
 internal class FfmpegExtractor private constructor(
-  private val role: Role,
   private val preferenceSupplier: () -> FfmpegDemuxerPolicy.Preference,
   private val dvMode: DvConversionMode,
   private val subtitleParserFactory: SubtitleParser.Factory,
   private val assHandler: AssHandler
 ) : Extractor {
-
-  enum class Role { PRIMARY, CATCH_ALL }
 
   companion object {
     private const val TAG = "FfmpegExtractor"
@@ -69,13 +66,12 @@ internal class FfmpegExtractor private constructor(
 
     /** Null when the native library is unavailable. */
     fun create(
-      role: Role,
       preferenceSupplier: () -> FfmpegDemuxerPolicy.Preference,
       dvMode: DvConversionMode,
       subtitleParserFactory: SubtitleParser.Factory,
       assHandler: AssHandler
     ): FfmpegExtractor? = if (FfmpegDemuxerJni.available) {
-      FfmpegExtractor(role, preferenceSupplier, dvMode, subtitleParserFactory, assHandler)
+      FfmpegExtractor(preferenceSupplier, dvMode, subtitleParserFactory, assHandler)
     } else {
       null
     }
@@ -135,14 +131,10 @@ internal class FfmpegExtractor private constructor(
     // media3 materializes the extractor array once per player session, so the
     // policy must be read live at sniff time — a preference captured at
     // construction would freeze for the session.
-    val preference = preferenceSupplier()
+    if (!FfmpegDemuxerPolicy.enabled(preferenceSupplier())) return false
     val probed = probe(input) ?: return false
-    val accepted = when (role) {
-      Role.PRIMARY -> FfmpegDemuxerPolicy.primaryAccepts(preference, probed)
-      Role.CATCH_ALL -> FfmpegDemuxerPolicy.catchAllEnabled(preference)
-    }
-    if (accepted) Log.i(TAG, "sniff accepted $probed (role=$role)")
-    return accepted
+    Log.i(TAG, "sniff accepted $probed")
+    return true
   }
 
   private fun probe(input: ExtractorInput): String? {

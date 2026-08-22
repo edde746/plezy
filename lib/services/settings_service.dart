@@ -113,15 +113,14 @@ extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
   };
 }
 
-/// Which containers the Android FFmpeg demuxer takes ahead of media3's own
-/// extractors. Wire values are read natively by `FfmpegDemuxerPolicy`.
-enum DemuxerPreference { auto, ffmpegFirst, media3Only }
+/// Which demuxer parses direct-played files on Android. Wire values are read
+/// natively by `FfmpegDemuxerPolicy`; unknown values resolve to FFmpeg there.
+enum DemuxerPreference { ffmpeg, media3 }
 
 extension DemuxerPreferenceNativeValue on DemuxerPreference {
   String get nativeValue => switch (this) {
-    DemuxerPreference.auto => 'auto',
-    DemuxerPreference.ffmpegFirst => 'ffmpeg',
-    DemuxerPreference.media3Only => 'media3',
+    DemuxerPreference.ffmpeg => 'ffmpeg',
+    DemuxerPreference.media3 => 'media3',
   };
 }
 
@@ -478,7 +477,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const demuxerMode = EnumPref<DemuxerPreference>(
     'demuxer_mode',
     values: DemuxerPreference.values,
-    defaultValue: DemuxerPreference.auto,
+    defaultValue: DemuxerPreference.ffmpeg,
   );
   static const defaultQualityPreset = EnumPref<TranscodeQualityPreset>(
     'default_quality_preset',
