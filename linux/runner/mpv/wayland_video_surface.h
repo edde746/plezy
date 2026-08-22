@@ -285,20 +285,40 @@ class WaylandVideoSurface {
 
   // Bounds the frame-acknowledgement wait. A compositor is entitled to stop
   // acknowledging frames for an occluded or minimized surface - wlroots
-  // lineage compositors (Hyprland) do exactly that - and frame_pending_ is the
-  // only latch between Present() and the frame callback. Without a bound, one
-  // missed wl_callback freezes the plane on its last buffer for good: every
-  // later render bails on frame_pending(), and nothing else clears it. The
-  // watchdog withdraws the dead callback and asks for a fresh present, which
-  // re-arms the callback; a compositor that keeps ignoring the surface (still
-  // minimized) hits the miss budget and stops being poked until a real
-  // acknowledgement or a new frame turns up.
+  // lineage compositors (Hyprland) and KWin do exactly that - and
+  // frame_pending_ is the only latch between Present() and the frame callback.
+  // Without a bound, one missed wl_callback freezes the plane on its last
+  // buffer for good: every later render bails on frame_pending(), and nothing
+  // else clears it. The watchdog withdraws the dead callback and asks for a
+  // fresh present, which re-arms the callback; a compositor that keeps
+  // ignoring the surface (still hidden) hits the miss budget and backs off to
+  // the slow re-present timer below.
   static constexpr int kFrameAckTimeoutMs = 500;
   static constexpr int kMaxConsecutiveFrameAckMisses = 5;
   void ArmFrameAckWatchdog();
   void CancelFrameAckWatchdog();
   guint frame_ack_source_ = 0;
   int consecutive_frame_acks_missed_ = 0;
+
+  // Keeps a stalled plane recoverable after the miss budget is spent. Stopping
+  // outright would leave no wake-up at all (issue #2067): the giveup just
+  // destroyed the only outstanding wl_callback, so no acknowledgement can ever
+  // arrive; mpv's redraw latch is typically already saturated - the render its
+  // update scheduled bailed on frame_pending() without consuming it, and
+  // OnMpvRenderUpdate only schedules on the latch's false->true edge - so mpv
+  // never notifies again; and a workspace switch is invisible to GTK, so no
+  // visibility change comes either. The timer re-runs the frame callback at a
+  // pace the compositor cannot mind: a present only actually happens when mpv
+  // has produced a new frame (or a refresh is owed), and each one re-arms the
+  // normal watchdog, so a hidden playing plane settles at one present per
+  // timeout-plus-interval and recovers within one interval of being shown
+  // again. A paused hidden plane goes dormant instead - its last render
+  // consumed the latch, so the next mpv frame reaches the plugin as a fresh
+  // update edge.
+  static constexpr int kStalledRepresentIntervalMs = 1000;
+  void ArmStalledRepresentTimer();
+  void CancelStalledRepresentTimer();
+  guint stalled_represent_source_ = 0;
 
   // Creates the preferred-description query. The returned description is ready
   // immediately per the protocol, so get_information follows on ready, and the
