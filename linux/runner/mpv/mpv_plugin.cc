@@ -4,13 +4,16 @@
 #include <deque>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <new>
 #include <optional>
 
+#include "plane_render_executor.h"
 #include "wayland_video_surface.h"
 
 using PlayerPtr = std::unique_ptr<mpv::MpvPlayer>;
 using VideoSurfacePtr = std::unique_ptr<mpv::WaylandVideoSurface>;
+using ExecutorPtr = std::unique_ptr<mpv::PlaneRenderExecutor>;
 
 // One queued HDR transaction: what to apply, and who to tell when it settles.
 //
@@ -44,6 +47,24 @@ struct _MpvPlugin {
   // stale or absent. Sticky, because the render it asks for may first have to
   // wait out an unacknowledged frame.
   gboolean plane_needs_render;
+  // The worker that runs mpv's render + the plane's eglSwapBuffers off the
+  // GTK main thread (issue #2057: an expensive per-frame render - a 4K HDR
+  // tone-map - on the main thread starves input dispatch and Flutter's
+  // raster). Created with the plane; drained and shut down in
+  // release_video_resources *before* the player is disposed, which is the
+  // ordering RenderToSurface's lock-free render relies on. Null when
+  // PLEZY_PLANE_RENDER_MAIN_THREAD selects the inline fallback.
+  ExecutorPtr render_executor;
+  // A render job is somewhere between PreparePresent() and CompletePresent().
+  // Gates render_video_plane - the flight owns the plane's EGL surface - and
+  // defers rect application and HDR transaction starts to the completion.
+  gboolean render_in_flight;
+  // A rect arrived while a job was in flight. Applied at completion, because
+  // wl_egl_window_resize must not race the swap.
+  gboolean rect_apply_deferred;
+  // An HDR transaction was ready to start while a job was in flight. Started
+  // at completion; see run_next_hdr_transaction for why it must wait.
+  gboolean hdr_start_deferred;
   gboolean visible;
   gboolean initialized;
   gboolean audio_only;
@@ -213,6 +234,46 @@ static void release_video_resources(MpvPlugin* self) {
   for (auto& request : queued) {
     if (request.done) request.done(MPV_ERROR_UNINITIALIZED);
   }
+  // Drain the render thread before anything a job touches is torn down:
+  // RenderToSurface's lock-free render is safe only because mpv_gl_, the EGL
+  // context and the plane's EGL surface outlive every job, and this is where
+  // that ordering is enforced. The final job unbinds the EGL context on the
+  // worker - the one thread it is current on - so the teardown queue's worker
+  // can bind it (an EGLContext can be current on at most one thread).
+  bool render_thread_wedged = false;
+  if (self->render_executor) {
+    const EGLDisplay unbind_display = self->video_surface ? self->video_surface->egl_display() : EGL_NO_DISPLAY;
+    self->render_executor->Post(
+        [unbind_display]() -> bool {
+          if (unbind_display != EGL_NO_DISPLAY) {
+            eglMakeCurrent(unbind_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+          }
+          return true;
+        },
+        nullptr);
+    render_thread_wedged = !self->render_executor->ShutdownAndJoin(5000);
+    self->render_executor.reset();
+  }
+  self->render_in_flight = FALSE;
+  self->rect_apply_deferred = FALSE;
+  self->hdr_start_deferred = FALSE;
+  if (render_thread_wedged) {
+    // A job is stuck inside a driver call. Disposing the player frees the
+    // render context under it and destroying the plane frees the EGL surface
+    // it is drawing into - either is a guaranteed crash. Leaking one
+    // session's core and plane keeps the process alive; stop is best-effort,
+    // because the mpv client API is thread-safe and the wedged job holds only
+    // the render API.
+    g_warning("MPV video plane: render thread did not drain; leaking this session's player and plane");
+    if (self->player) {
+      self->player->SetRedrawCallback(nullptr);
+      self->player->SetSourceMetadataCallback(nullptr);
+      self->player->SetEventCallback(nullptr);
+      self->player->Command({"stop"});
+      self->player.release();
+    }
+    if (self->video_surface) self->video_surface.release();
+  }
   if (self->player) {
     // The plane is a raw callback target. Revoke every callback path before
     // tearing it down; Dispose then drains any callback already holding a
@@ -271,6 +332,15 @@ static void apply_pending_rect(MpvPlugin* self) {
   self->video_surface->SetRect(rect.x, rect.y, rect.width, rect.height, rect.scale);
 }
 
+// Runs |job| on the plane render thread and |completion| back on the main
+// thread with the job's result. The inline fallback (PLEZY_PLANE_RENDER_MAIN_THREAD)
+// runs both synchronously, preserving the pre-#2057 single-threaded behaviour.
+static bool post_render_job(MpvPlugin* self, std::function<bool()> job, std::function<void(bool)> completion) {
+  if (self->render_executor) return self->render_executor->Post(std::move(job), std::move(completion));
+  completion(job());
+  return true;
+}
+
 // Renders and presents one frame on the native video plane. Skipped while the
 // plane is hidden or has not been given a rect yet; both of those paths render
 // explicitly once the condition clears, because mpv's redraw latch stays set
@@ -278,11 +348,22 @@ static void apply_pending_rect(MpvPlugin* self) {
 //
 // |force| is for the callers who need pixels regardless of whether mpv has
 // produced a new frame: a resize, or the plane becoming visible again.
+//
+// The render and the swap themselves run on the plane render thread (issue
+// #2057): a frame render that costs a real fraction of the frame budget - a
+// 4K HDR tone-map, say - would otherwise starve input dispatch and Flutter's
+// raster, which share the GTK main thread. Everything up to PreparePresent()
+// and everything from the completion on stays here on the main thread.
 static void render_video_plane(MpvPlugin* self, gboolean force) {
   if (force) self->plane_needs_render = TRUE;
   if (!self->player || !self->video_surface || !self->video_surface->valid()) return;
+  // One job at a time. The flight owns the plane's EGL surface, and a second
+  // prepare would arm a frame callback over a commit that has not happened.
+  // Nothing arriving meanwhile is lost: the completion re-runs this function,
+  // and plane_needs_render and mpv's redraw latch both hold their edge.
+  if (self->render_in_flight) return;
   if (!self->video_surface->visible() || !self->video_surface->has_size()) return;
-  // Present() is held while a colour transition is staged, so a render now would
+  // Presents are held while a colour transition is staged, so a render now would
   // be discarded. The forced render after CommitHdrTransition is what resumes;
   // plane_needs_render stays set meanwhile, so nothing is lost.
   if (self->video_surface->hdr_transition_staged()) return;
@@ -306,15 +387,61 @@ static void render_video_plane(MpvPlugin* self, gboolean force) {
   // 60fps content on a 120Hz output, half of them redrawing the same picture.
   // mpv's redraw latch is what says a new frame actually exists.
   if (!self->plane_needs_render && !self->player->NeedsRedraw()) return;
-  if (self->player->RenderToSurface(
-          self->video_surface->egl_surface(), self->video_surface->width(), self->video_surface->height())) {
-    // Only once a frame has actually been published. Present() returns false on
-    // an eglSwapBuffers failure having already destroyed its frame callback, so
-    // clearing the flag first would drop both the retry and the thing that would
-    // have rescheduled it, and the plane would sit on a stale buffer until an
-    // unrelated event arrived. Its other false returns are all re-tested above
-    // on this same thread, so a swap failure is the only way to get here.
-    if (self->video_surface->Present()) self->plane_needs_render = FALSE;
+  if (!self->video_surface->PreparePresent()) return;
+
+  // Everything the job touches is snapshotted now and stays alive for the
+  // flight's duration: release_video_resources drains the render thread
+  // before the player or the plane is torn down.
+  mpv::MpvPlayer* player = self->player.get();
+  EGLDisplay display = self->video_surface->egl_display();
+  EGLSurface egl_surface = self->video_surface->egl_surface();
+  const int width = self->video_surface->width();
+  const int height = self->video_surface->height();
+  const guint64 generation = self->generation;
+  self->render_in_flight = TRUE;
+  const bool posted = post_render_job(
+      self,
+      [player, display, egl_surface, width, height]() -> bool {
+        if (!player->RenderToSurface(egl_surface, width, height)) return false;
+        // The swap is the child surface's commit. Non-throttled
+        // (eglSwapInterval 0), so it never blocks on the compositor; its cost
+        // is the render's, which is exactly what this thread is for.
+        if (eglSwapBuffers(display, egl_surface) != EGL_TRUE) {
+          g_warning("MPV video plane: eglSwapBuffers failed: 0x%x", eglGetError());
+          return false;
+        }
+        return true;
+      },
+      [self, generation](bool swapped) {
+        // The plane this job rendered for may be gone: release_video_resources
+        // bumps the generation, and completions outlive the executor.
+        if (self->generation != generation) return;
+        self->render_in_flight = FALSE;
+        if (self->video_surface == nullptr) return;
+        // A swap failure leaves plane_needs_render set, so the retry - and the
+        // frame callback CompletePresent just cleared - are both owed to the
+        // next event that moves the plane, exactly as before the split.
+        if (self->video_surface->CompletePresent(swapped)) self->plane_needs_render = FALSE;
+        // Work that had to wait out the flight, in dependency order: geometry
+        // first (wl_egl_window_resize must not race a swap), then the HDR
+        // transaction pump (a transition staged mid-flight would pair an
+        // old-colour buffer with a new description), then the render either
+        // may have asked for.
+        if (self->rect_apply_deferred) {
+          self->rect_apply_deferred = FALSE;
+          apply_pending_rect(self);
+        }
+        if (self->hdr_start_deferred) {
+          self->hdr_start_deferred = FALSE;
+          run_next_hdr_transaction(self);
+        }
+        render_video_plane(self, FALSE);
+      });
+  if (!posted) {
+    // Shutdown has begun; the job will never run. Undo the prepare so the
+    // frame callback does not wait forever on a commit that is not coming.
+    self->render_in_flight = FALSE;
+    self->video_surface->CompletePresent(false);
   }
 }
 
@@ -679,6 +806,19 @@ static void run_next_hdr_transaction(MpvPlugin* self) {
     }
     return;
   }
+  // A render job in flight was prepared before this transaction's turn came;
+  // let it land first. Staging now would raise the present hold *after* that
+  // job's prepare, so the commit its swap performs would pair an old-colour
+  // buffer with whatever the transaction stages - the exact mismatch the
+  // two-phase dance exists to avoid - and the mpv leg would move the output
+  // properties under a frame mid-render. Setting the in-flight flag keeps the
+  // pump's invariant (a non-empty queue implies a transaction in flight); the
+  // render completion re-enters here.
+  if (self->render_in_flight) {
+    self->hdr_transaction_in_flight = true;
+    self->hdr_start_deferred = TRUE;
+    return;
+  }
   PendingHdrRequest request = std::move(self->hdr_queue.front());
   self->hdr_queue.pop_front();
   self->hdr_transaction_in_flight = true;
@@ -830,6 +970,15 @@ static gboolean start_video_plane(MpvPlugin* self, FlView* view, std::string* er
   // coalesces the two into one transaction when they arrive together, and a late
   // parse converges rather than leaving a wrong description standing.
   self->player->SetSourceMetadataCallback([self]() { request_hdr_reapply(self); });
+  // The worker that runs mpv's render + the plane's eglSwapBuffers off the
+  // GTK main thread (issue #2057). The env var is a temporary escape hatch
+  // for driver surprises: the inline fallback preserves the old
+  // single-threaded behaviour through the same code path.
+  if (g_getenv("PLEZY_PLANE_RENDER_MAIN_THREAD") != nullptr) {
+    g_message("MPV video plane: rendering on the GTK main thread (PLEZY_PLANE_RENDER_MAIN_THREAD)");
+  } else {
+    self->render_executor = std::make_unique<mpv::PlaneRenderExecutor>();
+  }
   // A rect that arrived before this plane existed is the only one Dart may ever
   // offer, since it re-sends solely on change. Hand it over now, before the
   // first frame, so the plane is never left sizeless and blank.
@@ -858,6 +1007,7 @@ static void mpv_plugin_dispose(GObject* object) {
 static void mpv_plugin_finalize(GObject* object) {
   MpvPlugin* self = MPV_PLUGIN(object);
   self->hdr_queue.~HdrQueue();
+  self->render_executor.~ExecutorPtr();
   self->video_surface.~VideoSurfacePtr();
   self->player.~PlayerPtr();
   G_OBJECT_CLASS(mpv_plugin_parent_class)->finalize(object);
@@ -1332,10 +1482,18 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         self->pending_rect.scale = scale;
         self->has_pending_rect = TRUE;
         if (self->video_surface) {
-          apply_pending_rect(self);
-          // Re-render at the new size straight away; waiting for the next mpv
-          // frame would leave a stale buffer stretched across the new rect.
-          render_video_plane(self, TRUE);
+          if (self->render_in_flight) {
+            // wl_egl_window_resize must not race the in-flight swap; the
+            // render completion applies the rect. The sticky flag makes it
+            // re-render at the new size, exactly like the immediate path.
+            self->rect_apply_deferred = TRUE;
+            self->plane_needs_render = TRUE;
+          } else {
+            apply_pending_rect(self);
+            // Re-render at the new size straight away; waiting for the next mpv
+            // frame would leave a stale buffer stretched across the new rect.
+            render_video_plane(self, TRUE);
+          }
         }
         response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
       }

@@ -100,6 +100,11 @@ class MpvPlayer {
 
   /// Renders one frame into |surface|'s default framebuffer. The caller
   /// presents it (eglSwapBuffers) once this returns.
+  ///
+  /// Runs on the plane render thread and deliberately holds no lock across
+  /// the render; the caller guarantees by ordering (drain the render thread,
+  /// then Dispose) that the render context outlives every call. The EGL
+  /// context becomes current on the calling thread and stays there.
   /// @return true if the frame was rendered.
   bool RenderToSurface(EGLSurface surface, int width, int height);
 

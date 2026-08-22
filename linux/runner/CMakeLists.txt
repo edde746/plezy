@@ -6,6 +6,7 @@ add_executable(${BINARY_NAME}
   "my_application.cc"
   "mpv/mpv_player.cc"
   "mpv/mpv_plugin.cc"
+  "mpv/plane_render_executor.cc"
   "mpv/wayland_video_surface.cc"
   "${FLUTTER_MANAGED_DIR}/generated_plugin_registrant.cc"
 )
@@ -218,4 +219,17 @@ if(PLEZY_BUILD_MPV_RELIABILITY_TESTS)
   target_link_libraries(video_params_test PRIVATE PkgConfig::MPV)
   apply_mpv_reliability_sanitizer(video_params_test)
   add_test(NAME video_params_test COMMAND video_params_test)
+
+  # The video plane's render worker (issue #2057). GLib for the completion
+  # context, Threads for the worker; no GL, no Wayland - jobs are opaque.
+  add_executable(plane_render_executor_test
+    "mpv/plane_render_executor.cc"
+    "mpv/plane_render_executor_test.cc"
+  )
+  apply_standard_settings(plane_render_executor_test)
+  target_compile_features(plane_render_executor_test PRIVATE cxx_std_14)
+  target_include_directories(plane_render_executor_test PRIVATE "mpv")
+  target_link_libraries(plane_render_executor_test PRIVATE PkgConfig::GTK Threads::Threads)
+  apply_mpv_reliability_sanitizer(plane_render_executor_test)
+  add_test(NAME plane_render_executor_test COMMAND plane_render_executor_test)
 endif()

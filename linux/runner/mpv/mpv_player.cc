@@ -617,16 +617,42 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   surface_depth_bits_ = depth_bits > 0 ? depth_bits : 8;
   mpv_gl_ = candidate_gl;
   mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, callback_context_.get());
+  // Hand the context over unbound: from here on only the plane render thread
+  // makes it current (RenderToSurface), and an EGLContext can be current on at
+  // most one thread. Creation itself had to happen with it current here - mpv
+  // probes GL inside mpv_render_context_create.
+  if (!eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
+    g_warning("MPV: could not unbind the video-plane EGL context after creation: 0x%x", eglGetError());
+  }
   g_message("MPV: Render context created on the Wayland video plane");
   return true;
 }
 
 bool MpvPlayer::RenderToSurface(EGLSurface surface, int width, int height) {
-  std::lock_guard<std::mutex> lock(native_mutex_);
-  if (disposed_ || !mpv_gl_ || egl_context_ == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) return false;
-  if (width < 1 || height < 1) return false;
+  // Runs on the plane render thread. Deliberately not holding native_mutex_
+  // across the render: a 4K HDR tone-map takes tens of milliseconds, and the
+  // mutex has main-thread callers on every seek (ReadSourceHdrMetadata,
+  // UpdateSourceHdrMetadata) - holding it here would rebuild the very stall
+  // this thread exists to remove, behind a lock instead of a thread. The
+  // snapshot below is safe without it because of ordering, not locking: the
+  // plugin drains the render thread (release_video_resources) before
+  // Dispose() hands mpv_gl_ and the EGL context to the teardown queue, so
+  // neither can be freed while a job is running.
+  mpv_render_context* render_context = nullptr;
+  EGLDisplay display = EGL_NO_DISPLAY;
+  EGLContext context = EGL_NO_CONTEXT;
+  int depth_bits = 8;
+  {
+    std::lock_guard<std::mutex> lock(native_mutex_);
+    if (disposed_ || !mpv_gl_ || egl_context_ == EGL_NO_CONTEXT || surface == EGL_NO_SURFACE) return false;
+    if (width < 1 || height < 1) return false;
+    render_context = mpv_gl_;
+    display = egl_display_;
+    context = egl_context_;
+    depth_bits = surface_depth_bits_;
+  }
 
-  if (!eglBindAPI(EGL_OPENGL_ES_API) || !eglMakeCurrent(egl_display_, surface, surface, egl_context_)) {
+  if (!eglBindAPI(EGL_OPENGL_ES_API) || !eglMakeCurrent(display, surface, surface, context)) {
     g_warning("MPV: Failed to activate the video-plane EGL context for render: 0x%x", eglGetError());
     return false;
   }
@@ -642,21 +668,21 @@ bool MpvPlayer::RenderToSurface(EGLSurface surface, int width, int height) {
   // Ignored by the render API's OpenGL backend, which reads the depth param
   // instead, but it is what mpv#16818's gpu-next backend will read, so state
   // it truthfully rather than leave a lie in place for that day.
-  mpv_fbo.internal_format = surface_depth_bits_ >= 16 ? GL_RGBA16F : surface_depth_bits_ >= 10 ? GL_RGB10_A2 : GL_RGBA8;
+  mpv_fbo.internal_format = depth_bits >= 16 ? GL_RGBA16F : depth_bits >= 10 ? GL_RGB10_A2 : GL_RGBA8;
 
   // The default framebuffer is bottom-up relative to mpv's image orientation,
   // so this flips.
   int flip_y = 1;
   // Without this mpv assumes 8 bits and dithers a 10-bit PQ plane down to 8,
   // which bands precisely in the dark ramp PQ spends most of its code space on.
-  int depth = surface_depth_bits_;
+  int depth = depth_bits;
   mpv_render_param params[] = {
       {MPV_RENDER_PARAM_OPENGL_FBO, &mpv_fbo},
       {MPV_RENDER_PARAM_FLIP_Y, &flip_y},
       {MPV_RENDER_PARAM_DEPTH, &depth},
       {MPV_RENDER_PARAM_INVALID, nullptr},
   };
-  mpv_render_context_render(mpv_gl_, params);
+  mpv_render_context_render(render_context, params);
   return true;
 }
 
@@ -702,11 +728,15 @@ void MpvPlayer::Dispose() {
 
   RemoveTrackedSources();
 
-  // The plane's context is left current on this thread by RenderToSurface and
-  // nothing else releases it before the video surface is destroyed - which the
-  // plugin does *after* this call. An EGLContext can be current to at most one
-  // thread, so handing it to the teardown worker while it is still bound here
-  // makes the worker's eglMakeCurrent fail with EGL_BAD_ACCESS; the pair is then
+  // The plane's context is normally already unbound by the time this runs: the
+  // plane render thread makes it current (RenderToSurface) and the plugin's
+  // teardown posts an unbind there before draining the thread ahead of this
+  // call. This main-thread release covers the two paths that still bind it
+  // here - the PLEZY_PLANE_RENDER_MAIN_THREAD inline fallback, and a context
+  // created but never rendered with, where InitRenderContextForSurface's own
+  // unbind failed. An EGLContext can be current to at most one thread, so
+  // handing it to the teardown worker while it is still bound here makes the
+  // worker's eglMakeCurrent fail with EGL_BAD_ACCESS; the pair is then
   // retained, and by the note below the mpv handle cannot be terminated until
   // every pair drains. Repeated open/close would carry a whole stale mpv core
   // across each gap. Only our own context is released: Flutter's must be left
