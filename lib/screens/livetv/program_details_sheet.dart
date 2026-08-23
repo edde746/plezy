@@ -1,4 +1,3 @@
-import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -9,10 +8,10 @@ import '../../mixins/mounted_set_state_mixin.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
 import '../../models/media_subscription.dart';
-import '../../services/image_cache_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/formatters.dart';
+import '../../utils/media_image_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/collapsible_text.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -22,6 +21,11 @@ import 'livetv_styles.dart';
 
 /// Shows a bottom sheet with program details and actions (Play / Watch Channel /
 /// Record / Manage recording).
+///
+/// [posterUrl] must arrive fully resolved (the caller already applied
+/// [MediaImageHelper.getOptimizedImageUrl] for the 80x120 slot); re-optimizing
+/// an absolute URL would route Plex transcode output back through
+/// `externalImageUrl` and ask the server to re-transcode its own transcode.
 ///
 /// [client] is the resolved [MediaServerClient] for the program's owning server.
 /// Recording affordances appear only when the client supports DVR
@@ -281,6 +285,29 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
     );
   }
 
+  Widget _buildPoster(BuildContext context, String posterUrl) {
+    const posterWidth = 80.0;
+    const posterHeight = 120.0;
+    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+    final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
+      displayWidth: (posterWidth * dpr).round(),
+      displayHeight: (posterHeight * dpr).round(),
+      imageType: ImageType.poster,
+    );
+
+    return Image(
+      image: MediaImageHelper.serverArtworkProvider(imageUrl: posterUrl, memWidth: memWidth, memHeight: memHeight),
+      width: posterWidth,
+      height: posterHeight,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) return child;
+        return const SizedBox(width: posterWidth, height: posterHeight);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -317,17 +344,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
               if (widget.posterUrl != null) ...[
                 ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(6)),
-                  child: blurArtwork(
-                    CachedNetworkImage(
-                      imageUrl: widget.posterUrl!,
-                      cacheManager: PlexImageCacheManager.instance,
-                      width: 80,
-                      height: 120,
-                      fit: BoxFit.cover,
-                      memCacheHeight: (120 * MediaQuery.devicePixelRatioOf(context)).round(),
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                    ),
-                  ),
+                  child: blurArtwork(_buildPoster(context, widget.posterUrl!)),
                 ),
                 const SizedBox(width: 14),
               ],

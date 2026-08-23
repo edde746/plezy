@@ -1,9 +1,8 @@
-import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../services/image_cache_service.dart';
 import '../utils/initials_palette.dart';
+import '../utils/media_image_helper.dart';
 import '../widgets/app_icon.dart';
 import 'profile.dart';
 
@@ -70,14 +69,14 @@ class ProfileAvatar extends StatelessWidget {
     final override = avatarUrl;
     final thumb = override != null && override.isNotEmpty ? override : p.avatarThumbUrl;
     if (thumb != null && thumb.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: thumb,
-        cacheManager: PlexImageCacheManager.instance,
+      return Image(
+        image: MediaImageHelper.serverArtworkProvider(imageUrl: thumb, memWidth: memCacheSize, memHeight: memCacheSize),
         fit: BoxFit.cover,
-        memCacheWidth: memCacheSize,
-        memCacheHeight: memCacheSize,
-        placeholder: (_, _) => _initialFallback(theme, p),
-        errorBuilder: (_, _, _) => _initialFallback(theme, p),
+        errorBuilder: (context, error, stackTrace) => _initialFallback(theme, p),
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) return child;
+          return _initialFallback(theme, p);
+        },
       );
     }
     return _initialFallback(theme, p);

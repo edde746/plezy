@@ -36,6 +36,7 @@ import '../utils/desktop_window_padding.dart';
 import '../utils/formatters.dart';
 import '../utils/country_codes.dart';
 import '../utils/language_codes.dart';
+import '../utils/media_image_helper.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/rating_utils.dart';
@@ -1050,6 +1051,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// a provider that returns a single sequel used to spend an entire shelf on
   /// it. Rows flow into columns on wide viewports, like the facts above.
   Widget _buildRelationsSection(ThemeData theme) {
+    final posterTargetPx = (40 * MediaImageHelper.effectiveDevicePixelRatio(context)).ceil();
     return LayoutBuilder(
       builder: (context, constraints) {
         final count = _relationEntries.length;
@@ -1067,7 +1069,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                 for (var index = 0; index < count; index++)
                   SizedBox(
                     width: tileWidth,
-                    child: _buildRelationTile(theme, index, columns: columns, count: count),
+                    child: _buildRelationTile(
+                      theme,
+                      index,
+                      columns: columns,
+                      count: count,
+                      posterTargetPx: posterTargetPx,
+                    ),
                   ),
               ],
             ),
@@ -1077,7 +1085,13 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     );
   }
 
-  Widget _buildRelationTile(ThemeData theme, int index, {required int columns, required int count}) {
+  Widget _buildRelationTile(
+    ThemeData theme,
+    int index, {
+    required int columns,
+    required int count,
+    required int posterTargetPx,
+  }) {
     final entry = _relationEntries[index];
     final item = entry.item;
     final label = relationLabel(entry.type);
@@ -1108,7 +1122,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: OptimizedMediaImage.poster(imagePath: item.posterUrl, width: 40, height: 60),
+                child: OptimizedMediaImage.poster(imagePath: item.posterFor(posterTargetPx), width: 40, height: 60),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1176,6 +1190,12 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     final theme = Theme.of(context);
     final onWatchlist = _isOnWatchlist;
     final tmdbId = item.ids.tmdb;
+    final artworkDpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+    // The backdrop strip spans the full screen width (Positioned left/right: 0
+    // below), and backdropFor is width-keyed: target the rendered width, not
+    // the 320px slot height.
+    final backdropUrl = item.backdropFor((MediaQuery.sizeOf(context).width * artworkDpr).ceil());
+    final posterUrl = item.posterFor((140 * artworkDpr).ceil());
 
     final viewInsets = MediaQuery.paddingOf(context);
     final blockSystemBack = PlatformDetector.isTV() || InputModeTracker.shouldBlockSystemBack(context);
@@ -1200,7 +1220,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                   // SafeArea around the scroll view).
                   child: Stack(
                     children: [
-                      if (item.backdropUrl != null)
+                      if (backdropUrl != null)
                         Positioned(
                           top: 0,
                           left: 0,
@@ -1215,7 +1235,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                             ).createShader(rect),
                             blendMode: BlendMode.dstIn,
                             child: OptimizedMediaImage.thumb(
-                              imagePath: item.backdropUrl,
+                              imagePath: backdropUrl,
                               width: double.infinity,
                               height: 320,
                               fit: BoxFit.cover,
@@ -1233,7 +1253,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
                               children: [
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: OptimizedMediaImage.poster(imagePath: item.posterUrl, width: 140, height: 210),
+                                  child: OptimizedMediaImage.poster(imagePath: posterUrl, width: 140, height: 210),
                                 ),
                                 const SizedBox(width: 20),
                                 Expanded(

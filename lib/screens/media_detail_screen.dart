@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:math' as math;
 import '../media/ids.dart';
 
-import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../navigation/profile_navigation_scope.dart';
 import '../services/device_performance.dart';
-import '../services/image_cache_service.dart';
 import '../services/fullscreen_state_manager.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -2329,18 +2327,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 devicePixelRatio: dpr,
                                 imageType: ImageType.poster,
                               );
-                              final (memWidth, _) = MediaImageHelper.getMemCacheDimensions(
+                              final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
                                 displayWidth: (posterWidth * dpr).round(),
                                 displayHeight: (posterHeight * dpr).round(),
                                 imageType: ImageType.poster,
                               );
-                              return CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                cacheManager: PlexImageCacheManager.instance,
+                              return Image(
+                                image: MediaImageHelper.serverArtworkProvider(
+                                  imageUrl: imageUrl,
+                                  memWidth: memWidth,
+                                  memHeight: memHeight,
+                                ),
                                 fit: BoxFit.cover,
-                                memCacheWidth: memWidth,
-                                placeholder: (context, url) => const PlaceholderContainer(),
                                 errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
+                                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                                  if (wasSynchronouslyLoaded || frame != null) return child;
+                                  return const PlaceholderContainer();
+                                },
                               );
                             },
                           )),

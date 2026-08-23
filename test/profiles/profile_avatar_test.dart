@@ -37,13 +37,27 @@ void main() {
     );
   }
 
+  // Avatars now go through MediaImageHelper.serverArtworkProvider, so they
+  // share the `plex_optimized_<sha1>` disk-key namespace with every other
+  // artwork surface instead of being cached a second time under the raw URL.
+  // That means the assertions are on the resolved provider, not on a
+  // CachedNetworkImage widget.
+  ResizeImage avatarResizeImage(WidgetTester tester) {
+    final image = tester.widget<Image>(find.byType(Image));
+    return image.image as ResizeImage;
+  }
+
+  String avatarUrlOf(WidgetTester tester) {
+    final inner = avatarResizeImage(tester).imageProvider;
+    return (inner as CachedNetworkImageProvider).url;
+  }
+
   testWidgets('avatarUrl renders the derived network image', (tester) async {
     const avatarUrl = 'https://jellyfin.example/Users/user-1/Images/Primary?tag=derived';
 
     await pumpAvatar(tester, profile: localProfile(), avatarUrl: avatarUrl);
 
-    final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
-    expect(image.imageUrl, avatarUrl);
+    expect(avatarUrlOf(tester), avatarUrl);
   });
 
   testWidgets('avatarUrl takes precedence over the profile thumbnail', (tester) async {
@@ -56,8 +70,7 @@ void main() {
       avatarUrl: derivedUrl,
     );
 
-    final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
-    expect(image.imageUrl, derivedUrl);
+    expect(avatarUrlOf(tester), derivedUrl);
   });
 
   testWidgets('a null avatarUrl preserves the profile thumbnail fallback', (tester) async {
@@ -65,8 +78,7 @@ void main() {
 
     await pumpAvatar(tester, profile: localProfile(avatarThumbUrl: profileThumbUrl));
 
-    final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
-    expect(image.imageUrl, profileThumbUrl);
+    expect(avatarUrlOf(tester), profileThumbUrl);
   });
 
   testWidgets('a profile without a picture renders its display-name initial', (tester) async {
@@ -74,7 +86,7 @@ void main() {
 
     await pumpAvatar(tester, profile: profile);
 
-    expect(find.byType(CachedNetworkImage), findsNothing);
+    expect(find.byType(Image), findsNothing);
     expect(find.text(initialOf(profile.displayName)), findsOneWidget);
   });
 
@@ -89,7 +101,7 @@ void main() {
       avatarUrl: '',
     );
 
-    expect(tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage)).imageUrl, plexThumb);
+    expect(avatarUrlOf(tester), plexThumb);
   });
 
   testWidgets('an empty avatarUrl renders initials instead of requesting an empty URL', (tester) async {
@@ -97,7 +109,7 @@ void main() {
 
     await pumpAvatar(tester, profile: profile, avatarUrl: '');
 
-    expect(find.byType(CachedNetworkImage), findsNothing);
+    expect(find.byType(Image), findsNothing);
     expect(find.text(initialOf(profile.displayName)), findsOneWidget);
   });
 
@@ -112,11 +124,10 @@ void main() {
       size: size,
       devicePixelRatio: devicePixelRatio,
     );
-
-    final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
+    final resize = avatarResizeImage(tester);
     final expectedDecodeSize = (size * devicePixelRatio).round();
-    expect(image.memCacheWidth, expectedDecodeSize);
-    expect(image.memCacheHeight, expectedDecodeSize);
+    expect(resize.width, expectedDecodeSize);
+    expect(resize.height, expectedDecodeSize);
   });
 
   testWidgets('a derived avatar keeps the PIN lock badge visible', (tester) async {
@@ -126,7 +137,7 @@ void main() {
       avatarUrl: 'https://jellyfin.example/Users/user-1/Images/Primary?tag=derived',
     );
 
-    expect(find.byType(CachedNetworkImage), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
     expect(find.byIcon(Symbols.lock_rounded), findsOneWidget);
   });
 }
