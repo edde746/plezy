@@ -633,7 +633,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   /// into one running total; a direction flip restarts the count.
   void _registerSkipFeedback({required bool isForward, required int seconds}) {
     final stacking = _showDoubleTapFeedback && _lastDoubleTapWasForward == isForward;
-    _accumulatedSkipSeconds = stacking ? _accumulatedSkipSeconds + seconds : seconds;
+    _accumulatedSkipSeconds.value = stacking ? _accumulatedSkipSeconds.value + seconds : seconds;
     _showSkipFeedback(isForward: isForward);
   }
 
@@ -707,11 +707,15 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _feedbackTimer?.cancel();
     _feedbackHideTimer?.cancel();
 
-    _setControlsState(() {
-      _lastDoubleTapWasForward = isForward;
-      _showDoubleTapFeedback = true;
-      _doubleTapFeedbackOpacity = 1.0;
-    });
+    final feedbackAlreadyVisible =
+        _showDoubleTapFeedback && _lastDoubleTapWasForward == isForward && _doubleTapFeedbackOpacity == 1.0;
+    if (!feedbackAlreadyVisible) {
+      _setControlsState(() {
+        _lastDoubleTapWasForward = isForward;
+        _showDoubleTapFeedback = true;
+        _doubleTapFeedbackOpacity = 1.0;
+      });
+    }
 
     // Capture duration before timer to avoid context access in callback
     final slowDuration = tokens(context).slow;
@@ -726,8 +730,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
           if (mounted) {
             _setControlsState(() {
               _showDoubleTapFeedback = false;
-              _accumulatedSkipSeconds = 0; // Reset when feedback hides
             });
+            _accumulatedSkipSeconds.value = 0;
           }
         });
       }
@@ -742,12 +746,12 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     _feedbackTimer = null;
     _feedbackHideTimer?.cancel();
     _feedbackHideTimer = null;
-    if (!_showDoubleTapFeedback && _accumulatedSkipSeconds == 0) return;
+    if (!mounted || (!_showDoubleTapFeedback && _accumulatedSkipSeconds.value == 0)) return;
     _setControlsState(() {
       _showDoubleTapFeedback = false;
       _doubleTapFeedbackOpacity = 0.0;
-      _accumulatedSkipSeconds = 0;
     });
+    _accumulatedSkipSeconds.value = 0;
   }
 
   /// Handle tap on controls overlay - route to skip zones or toggle controls

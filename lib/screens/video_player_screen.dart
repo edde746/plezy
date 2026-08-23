@@ -607,7 +607,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   late final FocusNode _playNextConfirmFocusNode;
 
   bool _showStillWatchingPrompt = false;
-  int _stillWatchingCountdown = 30;
+  final ValueNotifier<int> _stillWatchingCountdown = ValueNotifier<int>(30);
   Timer? _stillWatchingTimer;
   late final FocusNode _stillWatchingPauseFocusNode;
   late final FocusNode _stillWatchingContinueFocusNode;
@@ -1925,6 +1925,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _http503Watchdog.disarm();
 
     _stillWatchingTimer?.cancel();
+    _stillWatchingCountdown.dispose();
 
     _liveSeek.dispose();
 

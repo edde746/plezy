@@ -797,7 +797,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   double _doubleTapFeedbackOpacity = 0.0;
   bool _lastDoubleTapWasForward = true;
   Timer? _feedbackTimer;
-  int _accumulatedSkipSeconds = 0; // Stacking skip: total skip during active feedback
+  final ValueNotifier<int> _accumulatedSkipSeconds = ValueNotifier<int>(0);
   // Desktop double-click detection (more reliable than Flutter's onDoubleTap).
   // The mobile skip zones do not use this; they pair off _singleTapTimer.
   DateTime? _lastSkipTapTime;
@@ -858,7 +858,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool get _autoSkipCredits => _settings.read(SettingsService.autoSkipCredits);
   int get _autoSkipDelay => _settings.read(SettingsService.autoSkipDelay);
   Timer? _autoSkipTimer;
-  double _autoSkipProgress = 0.0;
+  final ValueNotifier<double> _autoSkipProgress = ValueNotifier<double>(0.0);
+  final ValueNotifier<bool> _autoSkipActive = ValueNotifier<bool>(false);
   // Skip button dismiss state
   bool _skipButtonDismissed = false;
   Timer? _skipButtonDismissTimer;
@@ -1061,12 +1062,15 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _feedbackTimer?.cancel();
     _feedbackHideTimer?.cancel();
+    _accumulatedSkipSeconds.dispose();
     _lockIconTimer?.cancel();
     _edgeAdjustmentIndicatorHideTimer?.cancel();
     _edgeAdjustmentIndicatorClearTimer?.cancel();
     _edgeAdjustmentLifecycleListener?.dispose();
     _edgeAdjustmentLifecycleListener = null;
     _autoSkipTimer?.cancel();
+    _autoSkipProgress.dispose();
+    _autoSkipActive.dispose();
     _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
@@ -1390,9 +1394,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         child: AnimatedOpacity(
                           opacity: _doubleTapFeedbackOpacity,
                           duration: tokens(context).slow,
-                          child: DoubleTapFeedback(
-                            isForward: _lastDoubleTapWasForward,
-                            seconds: _accumulatedSkipSeconds,
+                          child: RepaintBoundary(
+                            child: DoubleTapFeedback(
+                              isForward: _lastDoubleTapWasForward,
+                              seconds: _accumulatedSkipSeconds,
+                              animate: _doubleTapFeedbackOpacity > 0.0,
+                            ),
                           ),
                         ),
                       ),

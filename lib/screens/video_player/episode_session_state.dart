@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+
 import '../../media/media_item.dart';
 import '../../providers/playback_state_provider.dart';
 import '../../services/episode_navigation_service.dart';
@@ -35,7 +37,7 @@ class EpisodeSessionState {
   bool showPlayNextDialog = false;
 
   Timer? autoPlayTimer;
-  int autoPlayCountdown = 5;
+  final ValueNotifier<int> autoPlayCountdown = ValueNotifier<int>(5);
 
   /// Transient episode-transition failure retry (#1867). A failed in-place
   /// reload records the classified reason here so the play-next flow can
@@ -54,5 +56,6 @@ class EpisodeSessionState {
 
   void dispose() {
     autoPlayTimer?.cancel();
+    autoPlayCountdown.dispose();
   }
 }

@@ -12,6 +12,15 @@ import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
 import 'package:provider/provider.dart';
 import '../../test_helpers/media_items.dart';
 
+/// The overlays read the countdown through a `ValueListenable` so the
+/// per-second tick no longer rebuilds the whole player chrome. Tests own the
+/// notifier, matching production where the screen state owns and disposes it.
+ValueNotifier<int> _countdown([int value = -1]) {
+  final notifier = ValueNotifier<int>(value);
+  addTearDown(notifier.dispose);
+  return notifier;
+}
+
 void main() {
   testWidgets('play next prompt tracks chrome visibility for vertical position', (tester) async {
     PipService().isPipActive.value = false;
@@ -27,7 +36,7 @@ void main() {
         VideoPlayerPlayNextOverlay(
           visible: true,
           nextEpisode: _episode(),
-          autoPlayCountdown: -1,
+          autoPlayCountdown: _countdown(),
           cancelFocusNode: cancelFocusNode,
           confirmFocusNode: confirmFocusNode,
           chromeController: chromeController,
@@ -60,7 +69,7 @@ void main() {
         VideoPlayerPlayNextOverlay(
           visible: true,
           nextEpisode: _episode(),
-          autoPlayCountdown: -1,
+          autoPlayCountdown: _countdown(),
           cancelFocusNode: cancelFocusNode,
           confirmFocusNode: confirmFocusNode,
           chromeController: chromeController,
@@ -98,7 +107,7 @@ void main() {
         VideoPlayerPlayNextOverlay(
           visible: true,
           nextEpisode: _episode(),
-          autoPlayCountdown: -1,
+          autoPlayCountdown: _countdown(),
           cancelFocusNode: cancelFocusNode,
           confirmFocusNode: confirmFocusNode,
           chromeController: chromeController,
@@ -129,7 +138,7 @@ void main() {
         VideoPlayerPlayNextOverlay(
           visible: true,
           nextEpisode: _episode(),
-          autoPlayCountdown: -1,
+          autoPlayCountdown: _countdown(),
           cancelFocusNode: cancelFocusNode,
           confirmFocusNode: confirmFocusNode,
           chromeController: chromeController,
@@ -180,6 +189,92 @@ void main() {
     expect(find.bySemanticsLabel('Loading video'), findsOneWidget, reason: 'a mid-playback stall loads again');
 
     semantics.dispose();
+  });
+
+  // The whole point of moving the countdown to a ValueListenable: the digit
+  // updates without the parent being rebuilt. Previously a 1 Hz timer called a
+  // root setState on the player screen, which re-created PlexVideoControls
+  // (~50 props) and rebuilt the entire chrome once per second.
+  testWidgets('play next countdown digit updates without rebuilding the parent', (tester) async {
+    PipService().isPipActive.value = false;
+    final chromeController = PlayerChromeController();
+    final cancelFocusNode = FocusNode(debugLabel: 'TestCancel');
+    final confirmFocusNode = FocusNode(debugLabel: 'TestConfirm');
+    final countdown = ValueNotifier<int>(5);
+    addTearDown(chromeController.dispose);
+    addTearDown(cancelFocusNode.dispose);
+    addTearDown(confirmFocusNode.dispose);
+    addTearDown(countdown.dispose);
+
+    var parentBuilds = 0;
+    await tester.pumpWidget(
+      _wrapPrompt(
+        Builder(
+          builder: (context) {
+            parentBuilds++;
+            return VideoPlayerPlayNextOverlay(
+              visible: true,
+              nextEpisode: _episode(),
+              autoPlayCountdown: countdown,
+              cancelFocusNode: cancelFocusNode,
+              confirmFocusNode: confirmFocusNode,
+              chromeController: chromeController,
+              onCancel: () {},
+              onPlayNext: () {},
+            );
+          },
+        ),
+      ),
+    );
+
+    expect(find.text('5'), findsOneWidget);
+    final buildsAfterMount = parentBuilds;
+
+    countdown.value = 4;
+    await tester.pump();
+    expect(find.text('4'), findsOneWidget);
+    expect(find.text('5'), findsNothing);
+
+    countdown.value = 3;
+    await tester.pump();
+    expect(find.text('3'), findsOneWidget);
+
+    expect(parentBuilds, buildsAfterMount, reason: 'the countdown must not rebuild anything above the overlay');
+  });
+
+  // -1 is the "no automatic advance" sentinel: the prompt shows its action
+  // label instead of a digit, which is the manual play-next case.
+  testWidgets('play next prompt shows its label instead of a digit when the countdown is absent', (tester) async {
+    PipService().isPipActive.value = false;
+    final chromeController = PlayerChromeController();
+    final cancelFocusNode = FocusNode(debugLabel: 'TestCancel');
+    final confirmFocusNode = FocusNode(debugLabel: 'TestConfirm');
+    final countdown = ValueNotifier<int>(2);
+    addTearDown(chromeController.dispose);
+    addTearDown(cancelFocusNode.dispose);
+    addTearDown(confirmFocusNode.dispose);
+    addTearDown(countdown.dispose);
+
+    await tester.pumpWidget(
+      _wrapPrompt(
+        VideoPlayerPlayNextOverlay(
+          visible: true,
+          nextEpisode: _episode(),
+          autoPlayCountdown: countdown,
+          cancelFocusNode: cancelFocusNode,
+          confirmFocusNode: confirmFocusNode,
+          chromeController: chromeController,
+          onCancel: () {},
+          onPlayNext: () {},
+        ),
+      ),
+    );
+    expect(find.text('2'), findsOneWidget);
+
+    countdown.value = -1;
+    await tester.pump();
+    expect(find.text('-1'), findsNothing);
+    expect(find.text('2'), findsNothing);
   });
 }
 

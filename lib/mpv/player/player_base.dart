@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:collection/collection.dart';
-import 'package:flutter/foundation.dart' show protected, visibleForTesting;
+import 'package:flutter/foundation.dart' show listEquals, protected, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../media/media_display_criteria.dart';
@@ -366,13 +366,18 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           if (nowMs - _lastCacheStateMs < 250) break;
           _lastCacheStateMs = nowMs;
           final buffer = Duration(milliseconds: bufferMs);
-          _state = _state.copyWith(buffer: buffer);
+          final rangeStart = _state.position;
+          final previousRanges = _state.bufferRanges;
+          final rangesChanged =
+              previousRanges.length != 1 ||
+              previousRanges.first.start != rangeStart ||
+              previousRanges.first.end != buffer;
+          final ranges = rangesChanged ? [BufferRange(start: rangeStart, end: buffer)] : previousRanges;
+          _state = _state.copyWith(buffer: buffer, bufferRanges: ranges);
           bufferController.add(buffer);
-          // Synthesize a single range for players without demuxer-cache-state (ExoPlayer).
-          // ExoPlayer only buffers ahead of the current position, so use position as start.
-          final ranges = [BufferRange(start: _state.position, end: buffer)];
-          _state = _state.copyWith(bufferRanges: ranges);
-          bufferRangesController.add(ranges);
+          if (rangesChanged) {
+            bufferRangesController.add(ranges);
+          }
         }
         break;
 
@@ -473,22 +478,19 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
 
     // Extract cache-end for the single buffer duration (replaces demuxer-cache-time)
     final cacheEndMs = _millisecondsFromSeconds(cacheState['cache-end']);
-    if (cacheEndMs != null) {
-      final buffer = Duration(milliseconds: cacheEndMs);
-      _state = _state.copyWith(buffer: buffer);
-      bufferController.add(buffer);
-    }
+    final buffer = cacheEndMs == null ? _state.buffer : Duration(milliseconds: cacheEndMs);
 
     // Extract seekable-ranges array
+    List<BufferRange>? parsedRanges;
     final seekableRanges = cacheState['seekable-ranges'];
     if (seekableRanges is List) {
-      final ranges = <BufferRange>[];
+      parsedRanges = <BufferRange>[];
       for (final range in seekableRanges) {
         if (range is! Map) continue;
         final startMs = _millisecondsFromSeconds(range['start']);
         final endMs = _millisecondsFromSeconds(range['end']);
         if (startMs != null && endMs != null) {
-          ranges.add(
+          parsedRanges.add(
             BufferRange(
               start: Duration(milliseconds: startMs),
               end: Duration(milliseconds: endMs),
@@ -496,7 +498,21 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           );
         }
       }
-      _state = _state.copyWith(bufferRanges: ranges);
+    }
+
+    var ranges = _state.bufferRanges;
+    var rangesChanged = false;
+    if (parsedRanges != null && !listEquals(ranges, parsedRanges)) {
+      ranges = parsedRanges;
+      rangesChanged = true;
+    }
+    if (cacheEndMs == null && !rangesChanged) return;
+
+    _state = _state.copyWith(buffer: buffer, bufferRanges: ranges);
+    if (cacheEndMs != null) {
+      bufferController.add(buffer);
+    }
+    if (rangesChanged) {
       bufferRangesController.add(ranges);
     }
   }

@@ -98,7 +98,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
       _setPlayerState(() {
         _episode.showPlayNextDialog = true;
-        _episode.autoPlayCountdown = autoPlayEnabled ? 5 : -1;
+        _episode.autoPlayCountdown.value = autoPlayEnabled ? 5 : -1;
       });
 
       // Auto-focus Play Next button on TV when dialog appears (only in keyboard/TV mode)
@@ -127,10 +127,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         timer.cancel();
         return;
       }
-      _setPlayerState(() {
-        _episode.autoPlayCountdown--;
-      });
-      if (_episode.autoPlayCountdown <= 0) {
+      final nextCountdown = _episode.autoPlayCountdown.value - 1;
+      _episode.autoPlayCountdown.value = nextCountdown;
+      if (nextCountdown <= 0) {
         timer.cancel();
         _playNext();
       }
@@ -177,7 +176,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
     _setPlayerState(() {
       _episode.showPlayNextDialog = true;
-      _episode.autoPlayCountdown = countdown ? 5 : -1;
+      _episode.autoPlayCountdown.value = countdown ? 5 : -1;
     });
 
     if (isKeyboardMode) {
@@ -230,7 +229,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
     _setPlayerState(() {
       _showStillWatchingPrompt = true;
-      _stillWatchingCountdown = 30;
+      _stillWatchingCountdown.value = 30;
     });
 
     if (isKeyboardMode) {
@@ -245,10 +244,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
         timer.cancel();
         return;
       }
-      _setPlayerState(() {
-        _stillWatchingCountdown--;
-      });
-      if (_stillWatchingCountdown <= 0) {
+      final nextCountdown = _stillWatchingCountdown.value - 1;
+      _stillWatchingCountdown.value = nextCountdown;
+      if (nextCountdown <= 0) {
         timer.cancel();
         _onStillWatchingTimeout();
       }
