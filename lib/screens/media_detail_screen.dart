@@ -80,6 +80,7 @@ import '../widgets/media_context_menu.dart';
 import '../widgets/watchlist_source_chooser.dart';
 import 'libraries/state_messages.dart';
 import '../widgets/overlay_sheet.dart';
+import '../widgets/media_details_sheet.dart';
 import '../widgets/placeholder_container.dart';
 import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
@@ -388,6 +389,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   late final FocusNode _overviewFocusNode;
   final _overviewSectionKey = GlobalKey();
 
+  // Focus target for the TV hero information block (opens the details sheet)
+  late final FocusNode _tvDetailInfoFocusNode;
+
   final _castStripKey = GlobalKey<CastMemberStripState>();
   final _castSectionKey = GlobalKey();
   final _seasonsSectionKey = GlobalKey();
@@ -672,6 +676,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _ratingChipFocusNode = FocusNode(debugLabel: 'rating_chip');
     _backButtonFocusNode = FocusNode(debugLabel: 'media_detail_back');
     _overviewFocusNode = FocusNode(debugLabel: 'overview');
+    _tvDetailInfoFocusNode = FocusNode(debugLabel: 'tv_detail_info');
     _infoRowsFocusNode = FocusNode(debugLabel: 'info_rows');
     _loadFullMetadata();
     _initWatchlistState();
@@ -859,6 +864,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _ratingChipFocusNode.dispose();
     _backButtonFocusNode.dispose();
     _overviewFocusNode.dispose();
+    _tvDetailInfoFocusNode.dispose();
     _infoRowsFocusNode.dispose();
     _extrasSelectLongPress.dispose();
     for (final node in _seasonTabFocusNodes) {
@@ -2048,7 +2054,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Focus the first available section above the primary action row.
   void _focusAboveActionRow() {
-    if (PlatformDetector.isTV()) return;
+    if (PlatformDetector.isTV()) {
+      // The hero information block sits directly above the action row and is
+      // the D-pad path to the full details sheet (#2042).
+      _tvDetailInfoFocusNode.requestFocus();
+      return;
+    }
     if (!widget.isOffline) _ratingChipFocusNode.requestFocus();
   }
 
@@ -3426,6 +3437,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             actionHeight;
         final logoWidth = desiredLogoWidth < constraints.maxWidth ? desiredLogoWidth : constraints.maxWidth;
 
+        void openDetails() => _openTvDetailsSheet(context, metadata, hideSpoilers: hideSpoilers);
+
         return ClipRect(
           child: SizedBox(
             height: availableHeight,
@@ -3441,10 +3454,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       key: const ValueKey('tv_detail_information_semantics'),
                       identifier: 'tv_detail_information',
                       container: true,
+                      button: true,
                       label: _tvDetailInformationSemanticLabel(metadata, description: description, genres: genres),
+                      hint: t.mediaMenu.viewDetails,
+                      onTap: openDetails,
                       child: ExcludeSemantics(
-                        // This is one non-interactive announcement. The action
-                        // buttons below remain separate accessible controls.
+                        // One announcement, one action: activating it opens the
+                        // full-information sheet. The action buttons below
+                        // remain separate accessible controls.
                         child: Column(
                           mainAxisSize: .min,
                           crossAxisAlignment: .start,
@@ -3467,49 +3484,76 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               ),
                               SizedBox(height: logoMetadataGap),
                             ],
-                            SizedBox(
-                              height: metadataLineHeight,
-                              child: Align(
-                                alignment: .centerLeft,
-                                child: _buildTvDetailMetadataLine(context, metadata, scale),
+                            // The metadata line sheds badges and the summary
+                            // truncates by design; this block is the focusable
+                            // path to the sheet that shows all of it (#2042).
+                            // Background-only focus chrome: zero layout delta,
+                            // so the hero height budget above stays exact.
+                            FocusableWrapper(
+                              focusNode: _tvDetailInfoFocusNode,
+                              onSelect: openDetails,
+                              onNavigateUp: _backButtonFocusNode.requestFocus,
+                              onNavigateDown: _focusTvDetailActionRow,
+                              onBack: _popMediaDetailIfBackNotSuppressed,
+                              useBackgroundFocus: true,
+                              disableScale: true,
+                              autoScroll: false,
+                              borderRadius: 8,
+                              descendantsAreFocusable: false,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: openDetails,
+                                child: Column(
+                                  mainAxisSize: .min,
+                                  crossAxisAlignment: .start,
+                                  children: [
+                                    SizedBox(
+                                      height: metadataLineHeight,
+                                      child: Align(
+                                        alignment: .centerLeft,
+                                        child: _buildTvDetailMetadataLine(context, metadata, scale),
+                                      ),
+                                    ),
+                                    if (genres.isNotEmpty) ...[
+                                      SizedBox(height: genreGap),
+                                      SizedBox(
+                                        height: genreLineHeight,
+                                        child: Align(
+                                          alignment: .centerLeft,
+                                          child: Text(
+                                            genres.join('  •  '),
+                                            maxLines: 1,
+                                            overflow: .ellipsis,
+                                            style: TextStyle(
+                                              color: mutedForegroundColor,
+                                              fontSize: 16 * scale,
+                                              fontWeight: .w600,
+                                              letterSpacing: 0.1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    if (hasDescription && summaryMaxLines > 0) ...[
+                                      SizedBox(height: summaryGap),
+                                      SizedBox(
+                                        height: summaryLineHeight * summaryMaxLines,
+                                        child: Text(
+                                          description,
+                                          maxLines: summaryMaxLines,
+                                          overflow: .ellipsis,
+                                          style: theme.textTheme.bodyLarge?.copyWith(
+                                            color: mutedForegroundColor,
+                                            fontSize: summaryFontSize,
+                                            height: 1.35,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
                               ),
                             ),
-                            if (genres.isNotEmpty) ...[
-                              SizedBox(height: genreGap),
-                              SizedBox(
-                                height: genreLineHeight,
-                                child: Align(
-                                  alignment: .centerLeft,
-                                  child: Text(
-                                    genres.join('  •  '),
-                                    maxLines: 1,
-                                    overflow: .ellipsis,
-                                    style: TextStyle(
-                                      color: mutedForegroundColor,
-                                      fontSize: 16 * scale,
-                                      fontWeight: .w600,
-                                      letterSpacing: 0.1,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                            if (hasDescription && summaryMaxLines > 0) ...[
-                              SizedBox(height: summaryGap),
-                              SizedBox(
-                                height: summaryLineHeight * summaryMaxLines,
-                                child: Text(
-                                  description,
-                                  maxLines: summaryMaxLines,
-                                  overflow: .ellipsis,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: mutedForegroundColor,
-                                    fontSize: summaryFontSize,
-                                    height: 1.35,
-                                  ),
-                                ),
-                              ),
-                            ],
                           ],
                         ),
                       ),
@@ -3523,6 +3567,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           ),
         );
       },
+    );
+  }
+
+  /// Opens the full-information sheet for the TV hero: the complete metadata
+  /// fields and every rating badge the fitted line may have shed, plus the
+  /// untruncated description (#2042).
+  void _openTvDetailsSheet(BuildContext context, MediaItem metadata, {required bool hideSpoilers}) {
+    final item = _tvDetailFocusedEpisode.value ?? metadata;
+    final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
+    unawaited(
+      OverlaySheetController.of(context).show<void>(
+        builder: (_) => MediaDetailsSheet(item: item, description: description),
+      ),
     );
   }
 

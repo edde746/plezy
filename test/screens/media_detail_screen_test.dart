@@ -43,6 +43,7 @@ import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
 import 'package:plezy/widgets/episode_card.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
+import 'package:plezy/widgets/media_details_sheet.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -136,14 +137,85 @@ void main() {
     expect(node.label, contains('Semantic Movie, 2025'));
     expect(node.label, contains('Drama, Mystery'));
     expect(node.label, contains('One concise detail announcement.'));
-    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
-    expect(tester.widget<Semantics>(information).properties.onTap, isNull);
+    // The block is activatable: select/tap opens the full details sheet
+    // showing everything the fitted line and truncated summary omit (#2042).
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+    expect(tester.widget<Semantics>(information).properties.onTap, isNotNull);
 
     // Visual content and the separate action row remain present.
     expect(find.text('Semantic Movie'), findsOneWidget);
     expect(find.text('One concise detail announcement.'), findsOneWidget);
     expect(find.byType(FocusableActionBar), findsOneWidget);
     semantics.dispose();
+  });
+
+  testWidgets('TV detail hero info block opens the full details sheet on select', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const summary =
+        'A cybersecurity expert becomes a whistleblower after uncovering secrets about aliens, putting him on '
+        'the run from a corporation. Meanwhile, a meteorologist tracks a storm that never ends, and every '
+        'agency denies any connection between the two events.';
+    const movie = MediaItem.plex(
+      id: 'movie_details_sheet',
+      kind: MediaKind.movie,
+      title: 'Disclosure Day',
+      summary: summary,
+      year: 2026,
+      contentRating: 'PG-13',
+      durationMs: 8700000,
+      genres: ['Science Fiction', 'Mystery', 'Action'],
+      ratings: [
+        MediaRatingSource(source: 'rottenTomatoesCritic', value: 8.0),
+        MediaRatingSource(source: 'rottenTomatoesAudience', value: 6.9),
+        MediaRatingSource(source: 'imdb', value: 7.4),
+      ],
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    // The reveal autofocuses the play button for movies; UP from the action
+    // row lands on the hero information block.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_detail_info');
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    final sheet = find.byType(MediaDetailsSheet);
+    expect(sheet, findsOneWidget);
+    // Full description, not the hero's line-capped copy.
+    final sheetSummary = tester.widget<Text>(find.descendant(of: sheet, matching: find.text(summary)));
+    expect(sheetSummary.maxLines, isNull);
+    // Every rating badge and metadata field the fitted hero line may shed.
+    expect(find.descendant(of: sheet, matching: find.text('80%')), findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.text('69%')), findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.text('7.4')), findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.textContaining('2026  •  PG-13  •  2h 25min')), findsOneWidget);
+    expect(find.descendant(of: sheet, matching: find.text('Science Fiction  •  Mystery  •  Action')), findsOneWidget);
+
+    // D-pad back closes the sheet and restores focus to the hero block.
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+    expect(find.byType(MediaDetailsSheet), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_detail_info');
   });
 
   testWidgets('TV detail reveals without waiting for directional input', (tester) async {
