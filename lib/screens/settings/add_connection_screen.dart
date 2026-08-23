@@ -136,14 +136,19 @@ class _BackendCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return FocusableWrapper(
-      disableScale: true,
-      borderRadii: borderRadius,
-      descendantsAreFocusable: false,
-      onSelect: onTap,
-      child: Material(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: borderRadius,
+    // The wrapper sits inside the Material so the focus fill paints above the
+    // opaque surface color (an outside wrapper's fill would be invisible and
+    // fall back to outline chrome).
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      borderRadius: borderRadius,
+      clipBehavior: Clip.antiAlias,
+      child: FocusableWrapper(
+        disableScale: true,
+        useBackgroundFocus: true,
+        borderRadii: borderRadius,
+        descendantsAreFocusable: false,
+        onSelect: onTap,
         child: InkWell(
           onTap: onTap,
           borderRadius: borderRadius,
