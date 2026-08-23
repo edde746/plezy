@@ -42,6 +42,7 @@ import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
 import 'package:plezy/widgets/episode_card.dart';
+import 'package:plezy/widgets/fitting_title_text.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
 
@@ -98,11 +99,12 @@ void main() {
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
   });
 
-  testWidgets('wide non-TV hero lets a logo-less title use the full width', (tester) async {
+  testWidgets('wide non-TV hero gives a logo-less title a capped width wider than the logo box', (tester) async {
     // Non-TV (iPad/desktop) hero: without a clear logo the fallback title used
     // to be boxed at the logo's 400px width cap, so a long title clipped early
     // on a wide display even with room to spare (#1796). It should now lay out
-    // wider than that cap.
+    // wider than that cap — but bounded (twice the logo box), not the whole
+    // hero, so it reads as a title column rather than a banner.
     TvDetectionService.debugSetAppleTVOverride(false);
     await SettingsService.getInstance();
     tester.view.physicalSize = const Size(1400, 900);
@@ -163,9 +165,130 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text(title), findsWidgets);
-    // Old logo width cap was 400 (desiredLogoWidth in _buildHeroHeaderContent).
-    expect(tester.getSize(find.text(title).first).width, greaterThan(400));
+    // The hero title is the only FittingTitleText on this screen (the title
+    // string also appears further down the page), and its box is exactly the
+    // width the hero hands the fallback title — so measure the box itself.
+    final heroTitleBox = find.ancestor(of: find.text(title), matching: find.byType(FittingTitleText));
+    expect(heroTitleBox, findsOneWidget);
+    // The hero here is 1368px wide (1400 minus 16px side padding). The old logo
+    // cap was 400; the title now gets twice that — 800 — and no more: wider
+    // than the logo box, but clearly not the full hero.
+    expect(tester.getSize(heroTitleBox).width, closeTo(800, 0.5));
+  });
+
+  testWidgets('phone-width hero keeps a logo-less title inside the hero', (tester) async {
+    // On a phone the hero is narrower than the title cap, so the cap never
+    // binds: the title simply fills the hero, exactly as it did before #1796.
+    TvDetectionService.debugSetAppleTVOverride(false);
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const title = 'The Surprisingly Long Movie Title That Needs Two Whole Lines';
+    final movie = testMediaItem(
+      id: 'phone_movie',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: title,
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    PlexApiCache.initialize(db);
+    JellyfinApiCache.initialize(db);
+    final downloadManager = DownloadManagerService(
+      database: db,
+      storageService: DownloadStorageService.instance,
+      clientResolver: (serverId, {clientScopeId}) => null,
+    );
+    downloadManager.recoveryFuture = Future<void>.value();
+    final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+    await downloadProvider.ensureInitialized();
+
+    final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+    final multiServerProvider = testMultiServer(clients: [client]).provider;
+    final watchStateOverlay = WatchStateStore();
+
+    addTearDown(() async {
+      watchStateOverlay.dispose();
+      downloadProvider.dispose();
+      downloadManager.dispose();
+      await db.close();
+    });
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+            ChangeNotifierProvider<WatchStateStore>.value(value: watchStateOverlay),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    final heroTitleBox = find.ancestor(of: find.text(title), matching: find.byType(FittingTitleText));
+    expect(heroTitleBox, findsOneWidget);
+    // The hero is the 390 viewport minus 16px side padding = 358. The title
+    // fills it: the 800 cap is far wider than the hero, so it never binds, and
+    // the title is not narrowed below the hero either. This is the "mobile is
+    // unchanged" half of #1796 — a smaller cap would break it.
+    expect(tester.getSize(heroTitleBox).width, closeTo(390 - 32, 0.5));
+  });
+
+  testWidgets('TV hero gives a logo-less title more than the logo box, within its column', (tester) async {
+    // TV side of #1796. The TV foreground is laid out as a ~57% column (the
+    // right 43% of the screen is reserved for artwork), so at 1080p the column
+    // is ≈1062px while the logo box is 790 * scale. The fallback title must be
+    // allowed past the logo box, but can never leave the column.
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const title = 'The Surprisingly Long Movie Title That Needs Two Whole Lines';
+    final movie = testMediaItem(
+      id: 'tv_wide_movie',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: title,
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: withProfileNavigationScope(child: MediaDetailScreen(metadata: movie)),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final heroTitleBox = find.ancestor(of: find.text(title), matching: find.byType(FittingTitleText));
+    expect(heroTitleBox, findsOneWidget);
+    final titleWidth = tester.getSize(heroTitleBox).width;
+    final scale = TvLayoutConstants.scaleForSize(const Size(1920, 1080));
+    final logoBoxWidth = 790 * scale;
+    // spotlightLeft = (24 * scale).clamp(18, 40); the column is what's left
+    // of the screen after the 0.43 right reservation.
+    final columnWidth = 1920 * 0.57 - (24 * scale).clamp(18.0, 40.0);
+    expect(titleWidth, greaterThan(logoBoxWidth));
+    expect(titleWidth, lessThanOrEqualTo(columnWidth + 0.5));
   });
 
   testWidgets('TV detail exposes hero information as one semantic node', (tester) async {

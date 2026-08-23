@@ -3412,6 +3412,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             actionGap +
             actionHeight;
         final logoWidth = desiredLogoWidth < constraints.maxWidth ? desiredLogoWidth : constraints.maxWidth;
+        // Same rule as the non-TV hero: a logo-less title may use up to twice
+        // the logo box, never more than the column. This foreground is already a
+        // ~57% column (see the 0.43 right reservation in _buildTvDetailScreen),
+        // so in practice the column bounds it; the cap keeps both heroes on one rule.
+        final desiredTitleWidth = desiredLogoWidth * 2;
+        final titleWidth = desiredTitleWidth < constraints.maxWidth ? desiredTitleWidth : constraints.maxWidth;
 
         return ClipRect(
           child: SizedBox(
@@ -3441,7 +3447,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 context,
                                 metadata,
                                 width: logoWidth,
-                                titleWidth: constraints.maxWidth,
+                                titleWidth: titleWidth,
                                 height: logoHeight,
                                 titleBuilder: (context, title) => _buildDetailTitle(
                                   context,
@@ -3592,9 +3598,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (metadata.clearLogoPath == null) {
       // A clear-logo image is capped at [width] so it doesn't stretch across a
-      // wide hero, but the text-title fallback for logo-less media wants the
-      // full available width — otherwise FittingTitleText shrinks and clips a
-      // long title inside the logo box even when the display could fit it (#1796).
+      // wide hero, but the text-title fallback for logo-less media gets its own
+      // wider (still bounded) [titleWidth] — otherwise FittingTitleText shrinks
+      // and clips a long title inside the logo box even when the display could
+      // fit it (#1796). Callers decide the bound; it defaults to the logo width.
       return SizedBox(width: titleWidth ?? width, height: height, child: titleFallback(context));
     }
 
@@ -4189,6 +4196,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final showLogo = logoHeight >= 24;
         final effectiveLogoGap = showLogo ? logoGap : 0.0;
         final logoWidth = desiredLogoWidth.clamp(0.0, constraints.maxWidth).toDouble();
+        // Logo-less fallback title: wider than the logo box so a long title isn't
+        // crushed at 400px on a wide display (#1796), but bounded — twice the logo
+        // box, never the whole hero — so it reads as a title column, not a banner.
+        // On phones the hero itself is narrower than this, so nothing changes there.
+        final titleWidth = (desiredLogoWidth * 2).clamp(0.0, constraints.maxWidth).toDouble();
         final titleFontSize = (logoHeight * 0.38).clamp(24.0, 40.0).toDouble();
         final contentHeight =
             (showLogo ? logoHeight + effectiveLogoGap : 0.0) +
@@ -4215,7 +4227,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           context,
                           metadata,
                           width: logoWidth,
-                          titleWidth: constraints.maxWidth,
+                          titleWidth: titleWidth,
                           height: logoHeight,
                           titleBuilder: (context, title) => _buildDetailTitle(
                             context,
