@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
@@ -16,6 +17,19 @@ class ConnectionRegistry {
   ConnectionRegistry(this._db);
 
   final AppDatabase _db;
+  static const DeepCollectionEquality _configEquality = DeepCollectionEquality();
+
+  final Expando<Map<String, Object?>> _decryptedConfigs = Expando<Map<String, Object?>>(
+    'ConnectionRegistry.decryptedConfigs',
+  );
+
+  /// Compares the decrypted persisted config projections retained while rows
+  /// are decoded. The fallback covers models supplied outside this registry.
+  bool hasSameConfig(Connection a, Connection b) {
+    final aConfig = _decryptedConfigs[a] ??= a.toConfigJson();
+    final bConfig = _decryptedConfigs[b] ??= b.toConfigJson();
+    return _configEquality.equals(aConfig, bConfig);
+  }
 
   /// Emits the current set of connections after every mutation. Drift's
   /// `watch()` provides this for free.
@@ -121,6 +135,7 @@ class ConnectionRegistry {
           dialect: kind.dialect!,
         ),
       };
+      _decryptedConfigs[connection] = revealed.config;
       if (revealed.migrated) {
         await upsert(connection);
       }

@@ -22,21 +22,43 @@ class CredentialVault {
   static const String _keyPref = credentialVaultKeyPref;
   static const String _prefix = 'enc:v1:';
   static final AesGcm _algorithm = AesGcm.with256bits();
+  static final Map<String, Future<String?>> _decryptionCache = {};
   static Future<SecretKey>? _secretKey;
+  static int _cacheGeneration = 0;
 
-  /// Drops the memoized key so tests can simulate key loss/divergence.
+  /// Invalidates the memoized key and decrypted credentials after the
+  /// underlying preference store is repaired or replaced.
+  static void invalidateCache() {
+    _cacheGeneration++;
+    _secretKey = null;
+    _decryptionCache.clear();
+  }
+
+  /// Drops memoized vault state so tests can simulate key loss/divergence.
   @visibleForTesting
   static void resetKeyForTesting() {
-    _secretKey = null;
+    invalidateCache();
   }
 
   static bool isProtected(String? value) => value != null && value.startsWith(_prefix);
 
   static Future<String> protect(String value) async {
     if (value.isEmpty || isProtected(value)) return value;
-    final key = await _getSecretKey();
-    final box = await _algorithm.encrypt(utf8.encode(value), secretKey: key);
-    return '$_prefix${jsonEncode({'n': base64Encode(box.nonce), 'c': base64Encode(box.cipherText), 'm': base64Encode(box.mac.bytes)})}';
+    while (true) {
+      final generation = _cacheGeneration;
+      final key = await _getSecretKey();
+      final box = await _algorithm.encrypt(utf8.encode(value), secretKey: key);
+      if (generation != _cacheGeneration) continue;
+
+      final payload = {
+        'n': base64Encode(box.nonce),
+        'c': base64Encode(box.cipherText),
+        'm': base64Encode(box.mac.bytes),
+      };
+      final ciphertext = '$_prefix${jsonEncode(payload)}';
+      _decryptionCache[ciphertext] = Future.value(value);
+      return ciphertext;
+    }
   }
 
   /// Decrypts a protected value, or returns it unchanged when it isn't
@@ -46,6 +68,14 @@ class CredentialVault {
   /// never a reason to crash; callers treat null as "re-acquire the token".
   static Future<String?> reveal(String value) async {
     if (!isProtected(value)) return value;
+    while (true) {
+      final generation = _cacheGeneration;
+      final clear = await _decryptionCache.putIfAbsent(value, () => _decrypt(value, generation));
+      if (generation == _cacheGeneration) return clear;
+    }
+  }
+
+  static Future<String?> _decrypt(String value, int generation) async {
     try {
       final payload = jsonDecode(value.substring(_prefix.length)) as Map<String, dynamic>;
       final box = SecretBox(
@@ -56,6 +86,7 @@ class CredentialVault {
       final clear = await _algorithm.decrypt(box, secretKey: await _getSecretKey());
       return utf8.decode(clear);
     } catch (e) {
+      if (generation != _cacheGeneration) return null;
       appLogger.w('CredentialVault: failed to decrypt stored credential, treating as lost', error: e);
       return null;
     }
