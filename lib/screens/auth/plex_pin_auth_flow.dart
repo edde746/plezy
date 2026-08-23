@@ -296,19 +296,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
           ),
         ),
         const SizedBox(height: 24),
-        FocusableButton(
-          onPressed: _retry,
-          child: OutlinedButton(
-            onPressed: _retry,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-            child: Text(t.common.retry),
-          ),
-        ),
-        const SizedBox(height: 12),
-        FocusableButton(
-          onPressed: _cancel,
-          child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
-        ),
+        _buildRetryCancelRow(),
         if (_errorMessage != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -333,19 +321,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
           style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
         ),
         const SizedBox(height: 16),
-        FocusableButton(
-          onPressed: _retry,
-          child: OutlinedButton(
-            onPressed: _retry,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-            child: Text(t.common.retry),
-          ),
-        ),
-        const SizedBox(height: 12),
-        FocusableButton(
-          onPressed: _cancel,
-          child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
-        ),
+        _buildRetryCancelRow(),
         if (_errorMessage != null) ...[
           const SizedBox(height: 12),
           Text(
@@ -354,6 +330,27 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
             textAlign: TextAlign.center,
           ),
         ],
+      ],
+    );
+  }
+
+  Widget _buildRetryCancelRow() {
+    return Row(
+      mainAxisAlignment: .center,
+      children: [
+        FocusableButton(
+          onPressed: _retry,
+          child: OutlinedButton(
+            onPressed: _retry,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+            child: Text(t.common.retry),
+          ),
+        ),
+        const SizedBox(width: 12),
+        FocusableButton(
+          onPressed: _cancel,
+          child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
+        ),
       ],
     );
   }
