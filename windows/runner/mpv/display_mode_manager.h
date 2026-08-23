@@ -21,6 +21,21 @@ struct DisplayConfigId {
   UINT32 id;
 };
 
+// Complete active display topology captured with QueryDisplayConfig before a
+// display mutation. Restoring it through SetDisplayConfig preserves CCD-level
+// path state -- notably the Dynamic Refresh Rate boost flag
+// (DISPLAYCONFIG_PATH_BOOST_REFRESH_RATE) -- that a DEVMODEW restore cannot
+// express.
+struct DisplayConfigSnapshot {
+  std::vector<DISPLAYCONFIG_PATH_INFO> paths;
+  std::vector<DISPLAYCONFIG_MODE_INFO> modes;
+  // Whether the snapshot was captured virtual-refresh-rate-aware; the apply
+  // flags must match the query flags.
+  bool vrr_aware = false;
+
+  bool valid() const { return !paths.empty(); }
+};
+
 // Windows-runner-internal boundary for deterministic crash-recovery tests.
 // Production uses the Win32/registry implementation in display_mode_manager.cpp.
 class DisplayRecoveryBackend {
@@ -65,7 +80,8 @@ class DisplayModeManager {
   // Get the current display mode.
   DisplayMode GetCurrentMode(HWND window);
 
-  // Save the current mode for later restoration.
+  // Save the current mode (legacy DEVMODE plus a CCD topology snapshot) for
+  // later restoration.
   void SaveOriginalMode(HWND window);
 
   // Change the display mode (refresh rate and/or resolution).
@@ -73,7 +89,9 @@ class DisplayModeManager {
   // Returns true on success.
   bool SetDisplayMode(HWND window, DWORD width, DWORD height, DWORD refresh_rate);
 
-  // Restore the previously saved display mode.
+  // Restore the previously saved display mode. Prefers re-applying the saved
+  // CCD snapshot (which keeps a Dynamic Refresh Rate selection intact); falls
+  // back to the legacy DEVMODE restore.
   bool RestoreOriginalMode(HWND window);
 
   // Returns true if a mode change has been applied (and not yet restored).
@@ -159,9 +177,11 @@ class DisplayModeManager {
   // the recorded display rather than the window's current monitor.
   static bool IsHDREnabledForTarget(const DisplayConfigId& target);
 
-  // Stored original mode for restoration.
+  // Stored original mode for restoration. The snapshot is the preferred
+  // restore source; the DEVMODE is the fallback.
   std::wstring original_device_name_;
   DEVMODEW original_devmode_ = {};
+  DisplayConfigSnapshot original_config_;
   bool mode_changed_ = false;
 
   // Stored original HDR state for restoration.

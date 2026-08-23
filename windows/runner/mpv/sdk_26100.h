@@ -57,4 +57,16 @@ typedef struct _DISPLAYCONFIG_SET_HDR_STATE {
 
 #endif  // NTDDI_WIN11_GE
 
+// DisplayConfig virtual-refresh-rate awareness flags for Dynamic Refresh Rate
+// (Win11 22H2+, SDK 10.0.22621.0+). Guarded individually because, unlike the
+// 24H2 structs above, older SDKs (10.0.19041.0) lack them while 22621 has
+// them without NTDDI_WIN11_GE.
+#ifndef QDC_VIRTUAL_REFRESH_RATE_AWARE
+#define QDC_VIRTUAL_REFRESH_RATE_AWARE 0x00000040
+#endif
+
+#ifndef SDC_VIRTUAL_REFRESH_RATE_AWARE
+#define SDC_VIRTUAL_REFRESH_RATE_AWARE 0x00020000
+#endif
+
 #endif  // SDK_26100_H_
