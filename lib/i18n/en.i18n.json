@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Use your mobile device to control this app",
       "startServer": "Start Server",
       "stopServer": "Stop Server",
-      "minimize": "Minimize"
+      "minimize": "Minimize",
+      "manualAddressHint": "Manual connection address:"
     },
     "pairing": {
       "discoveryDescription": "Plezy devices with the same Plex account appear here",

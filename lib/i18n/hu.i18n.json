@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Használd a mobileszközödet az alkalmazás vezérléséhez",
       "startServer": "Szerver indítása",
       "stopServer": "Szerver leállítása",
-      "minimize": "Kis méret"
+      "minimize": "Kis méret",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Az azonos Plex-fiókot használó Plezy-eszközök itt jelennek meg",

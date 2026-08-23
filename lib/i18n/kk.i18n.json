@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Осы қолданбаны басқару үшін телефоныңызды пайдаланыңыз",
       "startServer": "Серверді іске қосу",
       "stopServer": "Серверді тоқтату",
-      "minimize": "Жию"
+      "minimize": "Жию",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Бірдей Plex тіркелгісіндегі Plezy құрылғылары мұнда көрінеді",

@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Gebruik je mobiele apparaat om deze app te bedienen",
       "startServer": "Server starten",
       "stopServer": "Server stoppen",
-      "minimize": "Minimaliseren"
+      "minimize": "Minimaliseren",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Plezy-apparaten met hetzelfde Plex-account verschijnen hier",

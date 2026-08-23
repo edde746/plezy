@@ -1635,7 +1635,8 @@
       "usePhoneToControl": "모바일 기기로 이 앱을 제어하세요",
       "startServer": "서버 시작",
       "stopServer": "서버 중지",
-      "minimize": "최소화"
+      "minimize": "최소화",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다",

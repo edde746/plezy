@@ -1635,7 +1635,8 @@
       "usePhoneToControl": "使用移动设备控制此应用",
       "startServer": "启动服务器",
       "stopServer": "停止服务器",
-      "minimize": "最小化"
+      "minimize": "最小化",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "使用同一 Plex 账号的 Plezy 设备会显示在这里",

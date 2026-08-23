@@ -6126,6 +6126,9 @@ class Translations$companionRemote$session$en {
 
 	/// en: 'Minimize'
 	String get minimize => 'Minimize';
+
+	/// en: 'Manual connection address:'
+	String get manualAddressHint => 'Manual connection address:';
 }
 
 // Path: companionRemote.pairing
@@ -7944,6 +7947,7 @@ extension on Translations {
 			'companionRemote.session.startServer' => 'Start Server',
 			'companionRemote.session.stopServer' => 'Stop Server',
 			'companionRemote.session.minimize' => 'Minimize',
+			'companionRemote.session.manualAddressHint' => 'Manual connection address:',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy devices with the same Plex account appear here',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
@@ -7981,9 +7985,9 @@ extension on Translations {
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
-			'companionRemote.remote.volumeUp' => 'Up',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',

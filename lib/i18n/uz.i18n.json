@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Ushbu ilovani boshqarish uchun telefoningizdan foydalaning",
       "startServer": "Serverni ishga tushirish",
       "stopServer": "Serverni toʻxtatish",
-      "minimize": "Yigʻish"
+      "minimize": "Yigʻish",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Bir xil Plex hisobidagi Plezy qurilmalari bu yerda koʻrinadi",

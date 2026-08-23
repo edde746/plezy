@@ -47,6 +47,22 @@ void main() {
       expect(p.isHostServerRunning, isFalse);
       p.dispose();
     });
+
+    test('host listen addresses are exposed while running and cleared on stop', () async {
+      final host = _FakeCompanionRemotePeerService();
+      final harness = await _RemoteHarness.create(
+        _FakePeerFactory([host]).call,
+        discoveryServiceFactory: _FakeLanDiscoveryService.new,
+      );
+      addTearDown(harness.close);
+
+      expect(harness.provider.hostServerAddresses, isEmpty);
+      await harness.provider.startHostServer();
+      expect(harness.provider.hostServerAddresses, ['127.0.0.1:48634']);
+
+      await harness.provider.stopHostServer();
+      expect(harness.provider.hostServerAddresses, isEmpty);
+    });
   });
 
   group('CompanionRemoteProvider — dispose hygiene', () {

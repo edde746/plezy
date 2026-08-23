@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Bruk mobilenheten din til å styre denne appen",
       "startServer": "Start server",
       "stopServer": "Stopp server",
-      "minimize": "Minimer"
+      "minimize": "Minimer",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Plezy-enheter med samme Plex-konto vises her",

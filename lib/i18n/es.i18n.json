@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Usa tu dispositivo móvil para controlar esta aplicación",
       "startServer": "Iniciar servidor",
       "stopServer": "Detener servidor",
-      "minimize": "Minimizar"
+      "minimize": "Minimizar",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Los dispositivos Plezy con la misma cuenta Plex aparecen aquí",

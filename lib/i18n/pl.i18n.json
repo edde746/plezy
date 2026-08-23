@@ -1665,7 +1665,8 @@
       "usePhoneToControl": "Użyj urządzenia mobilnego, aby sterować tą aplikacją",
       "startServer": "Uruchom serwer",
       "stopServer": "Zatrzymaj serwer",
-      "minimize": "Minimalizuj"
+      "minimize": "Minimalizuj",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Urządzenia Plezy z tym samym kontem Plex pojawią się tutaj",

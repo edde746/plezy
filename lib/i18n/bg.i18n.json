@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Използвайте мобилното си устройство, за да управлявате това приложение",
       "startServer": "Стартирай сървър",
       "stopServer": "Спри сървър",
-      "minimize": "Минимизирай"
+      "minimize": "Минимизирай",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Plezy устройства със същия Plex акаунт се показват тук",

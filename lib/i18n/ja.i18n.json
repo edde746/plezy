@@ -1635,7 +1635,8 @@
       "usePhoneToControl": "モバイルデバイスでこのアプリを操作できます",
       "startServer": "サーバーを起動",
       "stopServer": "サーバーを停止",
-      "minimize": "最小化"
+      "minimize": "最小化",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "同じPlexアカウントを使用しているPlezyデバイスがここに表示されます",

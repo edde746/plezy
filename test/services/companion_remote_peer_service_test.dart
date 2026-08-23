@@ -447,6 +447,91 @@ void main() {
     expect(managedJoinStarted.isCompleted, isTrue);
   });
 
+  test('race cleanup does not hang behind a candidate that never finishes connecting', () async {
+    final host = CompanionRemotePeerService();
+    final remote = CompanionRemotePeerService();
+    // Accepts the TCP connection but never answers the WebSocket upgrade,
+    // like a beacon-advertised virtual-adapter address that black-holes.
+    final blackHole = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final stalledSockets = <Socket>[];
+    final blackHoleSubscription = blackHole.listen(stalledSockets.add);
+    addTearDown(() async {
+      await remote.dispose();
+      await host.dispose();
+      await blackHoleSubscription.cancel();
+      for (final socket in stalledSockets) {
+        socket.destroy();
+      }
+      await blackHole.close();
+    });
+
+    final session = await host.createSessionForContexts('Test Host', 'macos', [_authContext]);
+    final hostAddress = '127.0.0.1:${session.port}';
+
+    // Pre-fix, probe cleanup awaited a `sink.close()` that never completes
+    // for a still-connecting candidate, so the managed join after a won race
+    // never started; the deadline is what distinguishes pass from hang.
+    final winner = await remote
+        .joinSessionRacingWithContexts(
+          'Test Remote',
+          'ios',
+          ['127.0.0.1:${blackHole.port}', hostAddress],
+          [_authContext],
+          authContextId: _authContext.id,
+          expectedHostClientId: _authContext.clientIdentifier,
+        )
+        .timeout(_ioTimeout);
+
+    expect(winner, hostAddress);
+    final command = host.onCommandReceived.firstWhere((event) => event.type == RemoteCommandType.play);
+    remote.sendCommand(const RemoteCommand(type: RemoteCommandType.play));
+    expect((await command.timeout(_ioTimeout)).type, RemoteCommandType.play);
+  });
+
+  test('manual join to an endpoint that never completes the handshake fails with a timeout', () async {
+    final remote = CompanionRemotePeerService.forTesting(remoteConnectTimeout: const Duration(milliseconds: 400));
+    final blackHole = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final stalledSockets = <Socket>[];
+    final blackHoleSubscription = blackHole.listen(stalledSockets.add);
+    addTearDown(() async {
+      await remote.dispose();
+      await blackHoleSubscription.cancel();
+      for (final socket in stalledSockets) {
+        socket.destroy();
+      }
+      await blackHole.close();
+    });
+
+    await expectLater(
+      remote
+          .joinSessionWithContexts('Test Remote', 'ios', '127.0.0.1:${blackHole.port}', [_authContext])
+          .timeout(_ioTimeout),
+      throwsA(isA<PeerError>().having((error) => error.type, 'type', PeerErrorType.timeout)),
+    );
+  });
+
+  test('disconnect does not hang while the managed connect is still pending', () async {
+    final remote = CompanionRemotePeerService.forTesting(remoteConnectTimeout: const Duration(seconds: 30));
+    final blackHole = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+    final stalledSockets = <Socket>[];
+    final blackHoleSubscription = blackHole.listen(stalledSockets.add);
+    addTearDown(() async {
+      await remote.dispose();
+      await blackHoleSubscription.cancel();
+      for (final socket in stalledSockets) {
+        socket.destroy();
+      }
+      await blackHole.close();
+    });
+
+    final join = remote.joinSessionWithContexts('Test Remote', 'ios', '127.0.0.1:${blackHole.port}', [_authContext]);
+    // Settles with an error once teardown destroys the black-holed socket.
+    unawaited(join.catchError((_) {}));
+    await _flushEventQueue();
+
+    await remote.disconnect().timeout(_ioTimeout);
+  });
+
   test('host and remote dispatch encrypted commands through the same contract', () async {
     final host = CompanionRemotePeerService();
     final remote = CompanionRemotePeerService();

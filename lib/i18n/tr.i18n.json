@@ -1645,7 +1645,8 @@
       "usePhoneToControl": "Bu uygulamayı kontrol etmek için mobil cihazınızı kullanın",
       "startServer": "Sunucuyu Başlat",
       "stopServer": "Sunucuyu Durdur",
-      "minimize": "Küçült"
+      "minimize": "Küçült",
+      "manualAddressHint": ""
     },
     "pairing": {
       "discoveryDescription": "Aynı Plex hesabına sahip Plezy cihazları burada görünür",
