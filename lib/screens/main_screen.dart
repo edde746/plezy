@@ -420,6 +420,11 @@ class _MainScreenState extends State<MainScreen>
 
   late List<Widget> _screens;
 
+  /// Tabs selected at least once in the current MainScreen lifetime. Unvisited
+  /// slots stay as zero-size placeholders; selected tabs remain in the
+  /// IndexedStack so their scroll, focus, and screen state are retained.
+  final Set<NavigationTabId> _mountedTabs = {};
+
   /// One [GlobalKey] per tab, so a tab's live [State] can be reached from
   /// anywhere in this class via [_onScreen]. Deliberately untyped: every
   /// consumer discards the concrete `State<X>` type and pattern-matches on a
@@ -528,6 +533,7 @@ class _MainScreenState extends State<MainScreen>
     _pendingStartupTab = (!_isOffline && preferredStartup != null && preferredStartup != _currentTab)
         ? preferredStartup
         : null;
+    _mountedTabs.add(_currentTab);
     _screens = _buildScreens(_isOffline);
 
     // Warm the TV keyboard's text-layout caches off the first real open
@@ -1190,22 +1196,25 @@ class _MainScreenState extends State<MainScreen>
   }
 
   List<Widget> _buildScreens(bool offline) {
-    return [
-      for (final tab in _getVisibleTabs(offline))
-        switch (tab.id) {
-          NavigationTabId.discover => DiscoverScreen(key: _screenKeys[tab.id]),
-          NavigationTabId.explore => ExploreScreen(key: _screenKeys[tab.id]),
-          NavigationTabId.libraries => LibrariesScreen(
-            key: _screenKeys[tab.id],
-            onLibraryOrderChanged: _onLibraryOrderChanged,
-            onLibrarySelected: _handleLibrariesScreenSelected,
-          ),
-          NavigationTabId.liveTv => LiveTvScreen(key: _screenKeys[tab.id]),
-          NavigationTabId.search => SearchScreen(key: _screenKeys[tab.id]),
-          NavigationTabId.downloads => DownloadsScreen(key: _screenKeys[tab.id]),
-          NavigationTabId.settings => SettingsScreen(key: _screenKeys[tab.id]),
-        },
-    ];
+    return [for (final tab in _getVisibleTabs(offline)) _buildScreenSlot(tab.id)];
+  }
+
+  Widget _buildScreenSlot(NavigationTabId tab) {
+    if (!_mountedTabs.contains(tab)) return const SizedBox.shrink();
+
+    return switch (tab) {
+      NavigationTabId.discover => DiscoverScreen(key: _screenKeys[tab]),
+      NavigationTabId.explore => ExploreScreen(key: _screenKeys[tab]),
+      NavigationTabId.libraries => LibrariesScreen(
+        key: _screenKeys[tab],
+        onLibraryOrderChanged: _onLibraryOrderChanged,
+        onLibrarySelected: _handleLibrariesScreenSelected,
+      ),
+      NavigationTabId.liveTv => LiveTvScreen(key: _screenKeys[tab]),
+      NavigationTabId.search => SearchScreen(key: _screenKeys[tab]),
+      NavigationTabId.downloads => DownloadsScreen(key: _screenKeys[tab]),
+      NavigationTabId.settings => SettingsScreen(key: _screenKeys[tab]),
+    };
   }
 
   /// Normalize tab ID when switching between offline/online modes.
@@ -1261,11 +1270,22 @@ class _MainScreenState extends State<MainScreen>
   /// Rebuilds navigation after a tab's availability flipped: _currentTab may
   /// need normalizing, and passthrough depends on it being the first tab.
   void _handleTabAvailabilityChanged() {
+    final previousTab = _currentTab;
+    final nextTab = _normalizeTabForMode(previousTab, _isOffline);
+    final restoreContentFocus = previousTab != nextTab && _contentFocusScope.hasFocus;
     setState(() {
+      _currentTab = nextTab;
+      _mountedTabs.add(nextTab);
       _screens = _buildScreens(_isOffline);
-      _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
     });
     _updateTvosMenuPassthrough();
+
+    if (restoreContentFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _currentTab != nextTab) return;
+        _onScreen<FocusableTab>(nextTab, (screen) => screen.focusActiveTabIfReady());
+      });
+    }
   }
 
   void _handleLiveTvChanged() {
@@ -1308,10 +1328,10 @@ class _MainScreenState extends State<MainScreen>
 
     final previousTab = _currentTab;
     final wasOffline = _isOffline;
+    final restoreContentFocus = _contentFocusScope.hasFocus;
     setState(() {
       _isReconnecting = false;
       _isOffline = newOffline;
-      _screens = _buildScreens(_isOffline);
       _selectedLibraryGlobalKey = _isOffline ? null : _selectedLibraryGlobalKey;
 
       if (_isOffline) {
@@ -1336,7 +1356,16 @@ class _MainScreenState extends State<MainScreen>
         }
         _autoSwitchedToDownloads = false;
       }
+      _mountedTabs.add(_currentTab);
+      _screens = _buildScreens(_isOffline);
     });
+    final currentTab = _currentTab;
+    if (previousTab != currentTab && restoreContentFocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _currentTab != currentTab) return;
+        _onScreen<FocusableTab>(currentTab, (screen) => screen.focusActiveTabIfReady());
+      });
+    }
     _updateTvosMenuPassthrough();
 
     // Refresh sidebar focus after rebuilding navigation
@@ -1702,8 +1731,13 @@ class _MainScreenState extends State<MainScreen>
     if (!_getVisibleTabs(_isOffline).any((t) => t.id == tab)) return;
 
     final previousTab = _currentTab;
+    final wasMounted = _mountedTabs.contains(tab);
     setState(() {
       _currentTab = tab;
+      if (!wasMounted) {
+        _mountedTabs.add(tab);
+        _screens = _buildScreens(_isOffline);
+      }
       // An explicit selection cancels any deferred startup-section switch.
       _pendingStartupTab = null;
       if (!_isOffline) {
@@ -1716,24 +1750,39 @@ class _MainScreenState extends State<MainScreen>
     _updateTvosMenuPassthrough();
 
     if (previousTab != tab) {
-      // Notify previous screen it's being hidden
+      // The previous tab is necessarily mounted because it was current.
       _onScreen<TabVisibilityAware>(previousTab, (screen) => screen.onTabHidden());
-      // Notify and focus new screen
-      _onScreen<TabVisibilityAware>(tab, (screen) => screen.onTabShown());
-      // Back-to-home keeps the sidebar focused (chain: content → sidebar →
-      // home → exit); stealing focus here left _isSidebarFocused stuck true
-      // while real focus sat on a content card (#1411).
-      // A companion-remote search (focusSearchInput: false) must NOT focus the
-      // search input, since focusing it auto-opens the on-screen keyboard; the
-      // query submit focuses results instead.
-      if (!_isSidebarFocused && (tab != NavigationTabId.search || focusSearchInput)) {
-        _onScreen<FocusableTab>(tab, (screen) => screen.focusActiveTabIfReady());
+    }
+
+    void notifySelectedScreen() {
+      if (previousTab != tab) {
+        _onScreen<TabVisibilityAware>(tab, (screen) => screen.onTabShown());
+        // Back-to-home keeps the sidebar focused (chain: content → sidebar →
+        // home → exit); stealing focus here left _isSidebarFocused stuck true
+        // while real focus sat on a content card (#1411).
+        // A companion-remote search (focusSearchInput: false) must NOT focus the
+        // search input, since focusing it auto-opens the on-screen keyboard; the
+        // query submit focuses results instead.
+        if (!_isSidebarFocused && (tab != NavigationTabId.search || focusSearchInput)) {
+          _onScreen<FocusableTab>(tab, (screen) => screen.focusActiveTabIfReady());
+        }
+      }
+
+      // Discover: always refresh content (even on re-selection)
+      if (!_isOffline && tab == NavigationTabId.discover) {
+        _onDiscoverBecameVisible();
       }
     }
 
-    // Discover: always refresh content (even on re-selection)
-    if (!_isOffline && tab == NavigationTabId.discover) {
-      _onDiscoverBecameVisible();
+    if (wasMounted) {
+      notifySelectedScreen();
+    } else {
+      // A promoted slot does not have a State until this setState has built.
+      // Imperative visibility/focus work must wait rather than silently miss.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _currentTab != tab) return;
+        notifySelectedScreen();
+      });
     }
 
     // Focus search input after rebuild so IndexedStack has made it visible.
@@ -1748,11 +1797,17 @@ class _MainScreenState extends State<MainScreen>
 
   /// Handle library selection from side navigation rail
   void _selectLibrary(String libraryGlobalKey) {
+    if (!_getVisibleTabs(_isOffline).any((tab) => tab.id == NavigationTabId.libraries)) return;
+
     _selectedLibraryGlobalKey = libraryGlobalKey;
     _selectTab(NavigationTabId.libraries);
-    // Tell LibrariesScreen to load this library after tab switch
-    _onScreen<LibraryLoadable>(NavigationTabId.libraries, (screen) => screen.loadLibraryByKey(libraryGlobalKey));
-    _onScreen<FocusableTab>(NavigationTabId.libraries, (screen) => screen.focusActiveTabIfReady());
+    // A first visit promotes LibrariesScreen in _selectTab. Wait for its State
+    // before applying the requested library and focus; neither action may drop.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _onScreen<LibraryLoadable>(NavigationTabId.libraries, (screen) => screen.loadLibraryByKey(libraryGlobalKey));
+      _onScreen<FocusableTab>(NavigationTabId.libraries, (screen) => screen.focusActiveTabIfReady());
+    });
   }
 
   void _openSettings() {
@@ -1839,25 +1894,25 @@ class _MainScreenState extends State<MainScreen>
     );
   }
 
-  /// Invoke [fn] on the tab's current [State] when it exists and implements
-  /// the capability [T]. Screens are only built for visible tabs and mount a
-  /// frame later, so a missing key or a non-matching state is a no-op.
+  /// Invoke [fn] on a mounted tab's current [State] when it implements the
+  /// capability [T]. Passive broadcasts deliberately tolerate an unvisited
+  /// tab; imperative actions select it first and defer until after its build.
   void _onScreen<T>(NavigationTabId tab, void Function(T state) fn) {
     if (_screenKeys[tab]?.currentState case final T state) fn(state);
   }
 
-  /// Full-refresh the primary content tabs. Used by the profile-switch
-  /// invalidation ([_invalidateAllScreens]), which must refetch everything for
-  /// the new identity.
+  /// Full-refresh mounted primary content tabs after profile invalidation.
+  /// Unvisited tabs have no stale UI state and initialize against the rebound
+  /// providers when they are first selected.
   void _fullRefreshContentTabs() {
     for (final tab in _contentTabs) {
       _onScreen<FullRefreshable>(tab, (screen) => screen.fullRefresh());
     }
   }
 
-  /// Online-entry variant used by [_primeOnlineServices] on cold start and on
-  /// reconnect-from-offline. Screens that already started their own load skip
-  /// it; see [FullRefreshable.primeRefresh].
+  /// Online-entry variant used by [_primeOnlineServices]. Only mounted tabs
+  /// need priming: an unvisited tab performs its initial load when selected,
+  /// and mounting it here would restore the startup work this lazy stack avoids.
   void _primeContentTabs() {
     for (final tab in _contentTabs) {
       _onScreen<FullRefreshable>(tab, (screen) => screen.primeRefresh());
@@ -1965,107 +2020,107 @@ class _MainScreenState extends State<MainScreen>
                 if (settingsResult == KeyEventResult.handled) return settingsResult;
                 return _handleBackKey(event);
               },
-              child: TweenAnimationBuilder<double>(
-                duration: SideNavigationRailState.expandDuration,
-                curve: SideNavigationRailState.expandCurve,
-                tween: Tween<double>(end: targetContentOffset),
-                child: FocusScope(
-                  node: _contentFocusScope,
-                  // No autofocus - we control focus programmatically to prevent
-                  // autofocus from stealing focus back after setState() rebuilds
-                  child: _buildTickerAwareStack(),
-                ),
-                builder: (context, contentLeftPadding, contentChild) {
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      final viewportWidth = constraints.maxWidth;
-                      // Layout from the tween END value: deriving it from the
-                      // animated value changed MainScreenFocusScope every tick
-                      // of the sidebar expansion, rebuilding every dependent
-                      // (the whole TV content tree) per frame. The slide is a
-                      // paint-only translate on the content below instead.
-                      final contentLayout = mainScreenSideNavigationContentLayout(
-                        viewportWidth: viewportWidth,
-                        currentSideNavigationWidth: targetContentOffset,
-                        reservedSideNavigationWidth: reservedContentOffset,
-                      );
-                      return MainScreenFocusScope(
-                        focusSidebar: _focusSidebar,
-                        sideNavigationWidth: targetContentOffset,
-                        reservedSideNavigationWidth: reservedContentOffset,
-                        foregroundLeft: contentLayout.left,
-                        foregroundWidth: contentLayout.width,
-                        viewportWidth: viewportWidth,
-                        selectLibrary: _selectLibrary,
-                        openSettings: _openSettings,
-                        child: SideNavigationScope(
-                          child: Stack(
-                            clipBehavior: Clip.hardEdge,
-                            children: [
-                              Positioned.fill(child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)),
-                              Positioned(
-                                top: 0,
-                                bottom: 0,
-                                left: contentLayout.left,
-                                width: contentLayout.width,
-                                // Duration/curve of this tween must stay in
-                                // sync with SideNavigationBleedBuilder, which
-                                // counter-animates viewport-pinned overlays.
-                                child: Transform.translate(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final viewportWidth = constraints.maxWidth;
+                  // Layout from the tween END value: deriving it from the
+                  // animated value changed MainScreenFocusScope every tick
+                  // of the sidebar expansion, rebuilding every dependent
+                  // (the whole TV content tree) per frame. The slide is a
+                  // paint-only translate on the content below instead.
+                  final contentLayout = mainScreenSideNavigationContentLayout(
+                    viewportWidth: viewportWidth,
+                    currentSideNavigationWidth: targetContentOffset,
+                    reservedSideNavigationWidth: reservedContentOffset,
+                  );
+                  return MainScreenFocusScope(
+                    focusSidebar: _focusSidebar,
+                    sideNavigationWidth: targetContentOffset,
+                    reservedSideNavigationWidth: reservedContentOffset,
+                    foregroundLeft: contentLayout.left,
+                    foregroundWidth: contentLayout.width,
+                    viewportWidth: viewportWidth,
+                    selectLibrary: _selectLibrary,
+                    openSettings: _openSettings,
+                    child: SideNavigationScope(
+                      child: Stack(
+                        clipBehavior: Clip.hardEdge,
+                        children: [
+                          Positioned.fill(child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)),
+                          Positioned(
+                            top: 0,
+                            bottom: 0,
+                            left: contentLayout.left,
+                            width: contentLayout.width,
+                            child: TweenAnimationBuilder<double>(
+                              duration: SideNavigationRailState.expandDuration,
+                              curve: SideNavigationRailState.expandCurve,
+                              tween: Tween<double>(end: targetContentOffset),
+                              child: FocusScope(
+                                node: _contentFocusScope,
+                                // No autofocus - we control focus programmatically to prevent
+                                // autofocus from stealing focus back after setState() rebuilds
+                                child: _buildTickerAwareStack(),
+                              ),
+                              // Duration/curve must stay in sync with
+                              // SideNavigationBleedBuilder and the rail's width
+                              // animation so all three track tick for tick.
+                              builder: (context, contentLeftPadding, contentChild) {
+                                return Transform.translate(
                                   offset: Offset(contentLeftPadding - targetContentOffset, 0),
                                   child: contentChild!,
-                                ),
-                              ),
-                              // Scrim behind the modal (hover/touch) rail
-                              // overlay; purely visual so content stays
-                              // interactive and hover-out still collapses.
-                              Positioned.fill(
-                                child: IgnorePointer(
-                                  child: AnimatedOpacity(
-                                    opacity: _isSidebarInteractionExpanded ? 1.0 : 0.0,
-                                    duration: SideNavigationRailState.expandDuration,
-                                    curve: SideNavigationRailState.expandCurve,
-                                    child: const ColoredBox(color: Color(0x66000000)),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 0,
-                                bottom: 0,
-                                left: 0,
-                                child: FocusScope(
-                                  node: _sidebarFocusScope,
-                                  child: SideNavigationRail(
-                                    key: _sideNavKey,
-                                    selectedTab: _currentTab,
-                                    selectedLibraryKey: _selectedLibraryGlobalKey,
-                                    isOfflineMode: _isOffline,
-                                    isSidebarFocused: _isSidebarFocused,
-                                    alwaysExpanded: alwaysExpanded,
-                                    isReconnecting: _isReconnecting,
-                                    onDestinationSelected: (tab) {
-                                      final restorePreviousFocus = tab == _currentTab;
-                                      _selectTab(tab);
-                                      _focusContent(restorePreviousFocus: restorePreviousFocus);
-                                    },
-                                    onLibrarySelected: (key) {
-                                      _selectLibrary(key);
-                                      _focusContent(restorePreviousFocus: false);
-                                    },
-                                    onNavigateToContent: _focusContent,
-                                    onInteractionExpandedChanged: (expanded) {
-                                      if (_isSidebarInteractionExpanded == expanded) return;
-                                      setState(() => _isSidebarInteractionExpanded = expanded);
-                                    },
-                                    onReconnect: _triggerReconnect,
-                                  ),
-                                ),
-                              ),
-                            ],
+                                );
+                              },
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                          // Scrim behind the modal (hover/touch) rail
+                          // overlay; purely visual so content stays
+                          // interactive and hover-out still collapses.
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: AnimatedOpacity(
+                                opacity: _isSidebarInteractionExpanded ? 1.0 : 0.0,
+                                duration: SideNavigationRailState.expandDuration,
+                                curve: SideNavigationRailState.expandCurve,
+                                child: const ColoredBox(color: Color(0x66000000)),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            child: FocusScope(
+                              node: _sidebarFocusScope,
+                              child: SideNavigationRail(
+                                key: _sideNavKey,
+                                selectedTab: _currentTab,
+                                selectedLibraryKey: _selectedLibraryGlobalKey,
+                                isOfflineMode: _isOffline,
+                                isSidebarFocused: _isSidebarFocused,
+                                alwaysExpanded: alwaysExpanded,
+                                isReconnecting: _isReconnecting,
+                                onDestinationSelected: (tab) {
+                                  final restorePreviousFocus = tab == _currentTab;
+                                  _selectTab(tab);
+                                  _focusContent(restorePreviousFocus: restorePreviousFocus);
+                                },
+                                onLibrarySelected: (key) {
+                                  _selectLibrary(key);
+                                  _focusContent(restorePreviousFocus: false);
+                                },
+                                onNavigateToContent: _focusContent,
+                                onInteractionExpandedChanged: (expanded) {
+                                  if (_isSidebarInteractionExpanded == expanded) return;
+                                  setState(() => _isSidebarInteractionExpanded = expanded);
+                                },
+                                onReconnect: _triggerReconnect,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),

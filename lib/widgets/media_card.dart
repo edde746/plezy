@@ -278,6 +278,11 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   CatalogItem? _cachedCatalogItem;
   Color? _catalogAccent;
+  String? _cachedSemanticLabel;
+  AppLocale? _cachedSemanticLocale;
+  bool? _cachedSemanticIsWatched;
+  int? _cachedSemanticViewOffsetMs;
+  int? _cachedSemanticDurationMs;
 
   CatalogItem? get _catalogItem => _cachedCatalogItem;
 
@@ -290,12 +295,39 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   @override
   void didUpdateWidget(covariant MediaCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.item, widget.item)) _cacheCatalogItem(widget.item);
+    if (!identical(oldWidget.item, widget.item)) {
+      _cacheCatalogItem(widget.item);
+      _cachedSemanticLabel = null;
+    }
   }
 
   void _cacheCatalogItem(Object item) {
     _cachedCatalogItem = item is MediaItem ? item.catalogItem : null;
     _catalogAccent = _parseCatalogAccent(_cachedCatalogItem?.accentColor);
+  }
+
+  String _semanticLabel(Object item) {
+    final mediaItem = item is MediaItem ? item : null;
+    final isWatched = mediaItem?.isWatched;
+    final viewOffsetMs = mediaItem?.viewOffsetMs;
+    final durationMs = mediaItem?.durationMs;
+    final locale = LocaleSettings.currentLocale;
+    final cached = _cachedSemanticLabel;
+    if (cached != null &&
+        _cachedSemanticLocale == locale &&
+        _cachedSemanticIsWatched == isWatched &&
+        _cachedSemanticViewOffsetMs == viewOffsetMs &&
+        _cachedSemanticDurationMs == durationMs) {
+      return cached;
+    }
+
+    final label = mediaCardSemanticLabel(item);
+    _cachedSemanticLabel = label;
+    _cachedSemanticLocale = locale;
+    _cachedSemanticIsWatched = isWatched;
+    _cachedSemanticViewOffsetMs = viewOffsetMs;
+    _cachedSemanticDurationMs = durationMs;
+    return label;
   }
 
   // Catalog stand-ins get the catalog menu at the same seams (long-press,
@@ -412,9 +444,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       viewMode = SettingsService.instance.read(SettingsService.viewMode);
     }
 
-    final semanticLabel = mediaCardSemanticLabel(item);
+    final semanticLabel = _semanticLabel(item);
+    final accessibleNavigation = MediaQuery.accessibleNavigationOf(context);
     final enableDetailLinks = widget.onTap == null;
-    final preservePointerDetailSemantics = !PlatformDetector.isTV() || MediaQuery.accessibleNavigationOf(context);
+    final preservePointerDetailSemantics = !PlatformDetector.isTV() || accessibleNavigation;
     final preserveDetailSemantics =
         preservePointerDetailSemantics && enableDetailLinks && item is MediaItem && _hasPointerDetailLinks(item);
     final localPosterPath = _getLocalPosterPath(context, item);

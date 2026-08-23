@@ -211,25 +211,16 @@ class TvBrowseRailLayout {
     required MediaHub hub,
     required TvBrowseRailLayoutMetrics metrics,
     required double viewportWidth,
-    required double scale,
     bool? hasTrailing,
   }) {
     final showTrailing = hasTrailing ?? hub.more;
-    final itemContentWidth = hub.items.length * (metrics.cardWidth + metrics.itemGap);
-    final moreContentWidth = showTrailing ? viewAllItemWidthForScale(scale) + metrics.itemGap : 0.0;
-    final contentWidth = (metrics.railEdgePadding * 2) + itemContentWidth + moreContentWidth;
+    final itemCount = hub.items.length + (showTrailing ? 1 : 0);
+    final contentWidth = (metrics.railEdgePadding * 2) + (itemCount * (metrics.cardWidth + metrics.itemGap));
     return (contentWidth - viewportWidth).clamp(0.0, double.infinity).toDouble();
   }
 
-  static double itemExtentForIndex({
-    required MediaHub hub,
-    required int index,
-    required TvBrowseRailLayoutMetrics metrics,
-    required double scale,
-    bool? hasTrailing,
-  }) {
-    final showTrailing = hasTrailing ?? hub.more;
-    if (index == hub.items.length && showTrailing) return viewAllItemWidthForScale(scale) + metrics.itemGap;
+  static double itemExtentForIndex({required int index, required TvBrowseRailLayoutMetrics metrics}) {
+    assert(index >= 0);
     return metrics.cardWidth + metrics.itemGap;
   }
 
@@ -239,7 +230,6 @@ class TvBrowseRailLayout {
     required TvBrowseRailLayoutMetrics metrics,
     required double viewportWidth,
     required double maxScrollExtent,
-    required double scale,
     bool? hasTrailing,
   }) {
     final showTrailing = hasTrailing ?? hub.more;
@@ -247,17 +237,8 @@ class TvBrowseRailLayout {
     if (totalCount == 0) return 0;
 
     final clampedIndex = index.clamp(0, totalCount - 1).toInt();
-    final normalItemExtent = metrics.cardWidth + metrics.itemGap;
-    final normalItemsBefore = clampedIndex < hub.items.length ? clampedIndex : hub.items.length;
-    final leadingOffset = metrics.railEdgePadding + (normalItemsBefore * normalItemExtent);
-    final targetExtent = itemExtentForIndex(
-      hub: hub,
-      index: clampedIndex,
-      metrics: metrics,
-      scale: scale,
-      hasTrailing: showTrailing,
-    );
-    final targetCenter = leadingOffset + (targetExtent / 2);
+    final itemExtent = metrics.cardWidth + metrics.itemGap;
+    final targetCenter = metrics.railEdgePadding + ((clampedIndex + 0.5) * itemExtent);
     return (targetCenter - (viewportWidth / 2)).clamp(0.0, maxScrollExtent).toDouble();
   }
 
@@ -392,7 +373,6 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   final Map<int, GlobalKey> _hubSectionKeys = {};
   final Map<String, GlobalKey<MediaCardState>> _mediaCardKeys = {};
   final Map<String, TvBrowseRailLayoutMetrics> _metricsByHub = {};
-  final Map<String, double> _scaleByHub = {};
   final Map<String, TvRailTrailing> _lastTrailingByHubKey = {};
   final Map<int, _HubArtworkDim> _artworkDims = {};
 
@@ -879,7 +859,6 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     if (controller.positions.length != 1) return;
     final metrics = _metricsByHub[_hubKey(hub)];
     if (metrics == null) return;
-    final scale = _scaleByHub[_hubKey(hub)] ?? 1.0;
     final position = controller.position;
     final viewportWidth = position.viewportDimension;
     final maxScrollExtent = position.maxScrollExtent;
@@ -890,7 +869,6 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       metrics: metrics,
       viewportWidth: viewportWidth,
       maxScrollExtent: maxScrollExtent,
-      scale: scale,
       hasTrailing: _hasTrailingFor(hub),
     );
 
@@ -914,16 +892,15 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     MediaHub hub,
     TvBrowseRailLayoutMetrics metrics,
     double viewportWidth,
-    double scale,
-    int initialItemIndex,
-  ) {
+    int initialItemIndex, {
+    required bool hasTrailing,
+  }) {
     return _scrollControllers.putIfAbsent(_hubKey(hub), () {
       final maxScrollExtent = TvBrowseRailLayout.estimatedMaxScrollExtent(
         hub: hub,
         metrics: metrics,
         viewportWidth: viewportWidth,
-        scale: scale,
-        hasTrailing: _hasTrailingFor(hub),
+        hasTrailing: hasTrailing,
       );
       final initialScrollOffset = TvBrowseRailLayout.scrollOffsetForIndex(
         hub: hub,
@@ -931,8 +908,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         metrics: metrics,
         viewportWidth: viewportWidth,
         maxScrollExtent: maxScrollExtent,
-        scale: scale,
-        hasTrailing: _hasTrailingFor(hub),
+        hasTrailing: hasTrailing,
       );
       return ScrollController(initialScrollOffset: initialScrollOffset);
     });
@@ -1139,7 +1115,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
                       top: TvBrowseRailLayout.railTopPaddingForScale(scale),
                       right: 0,
                       height: viewportHeight,
-                      child: _buildSemanticSelectionProxy(),
+                      child: _buildSemanticSelectionProxy(context),
                     ),
                     // Unfocused-rail dim: a scrim quad on top instead of
                     // AnimatedOpacity, which would keep a full-viewport
@@ -1239,49 +1215,58 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     );
   }
 
-  Widget _buildSemanticSelectionProxy() {
-    return ListenableBuilder(
+  Widget _buildSemanticSelectionProxy(BuildContext context) {
+    if (!MediaQuery.accessibleNavigationOf(context)) return const SizedBox.shrink();
+
+    return ListenableSelector<(int, int)>(
       listenable: _focusModel,
-      builder: (context, _) {
-        final hub = _activeHub;
-        if (hub == null) return const SizedBox.shrink();
-        final totalCount = _totalItemCount(hub);
-        final hasItem = _itemIndex < hub.items.length;
-        final isTrailing = _itemIndex == hub.items.length && _hasTrailingFor(hub);
-        final trailing = isTrailing ? _trailingFor(hub) : TvRailTrailing.none;
+      selector: () => _focusModel.position,
+      builder: (context, position, _) {
+        final hubIndex = position.$1;
+        if (hubIndex < 0 || hubIndex >= widget.hubs.length) return const SizedBox.shrink();
+
+        final hub = widget.hubs[hubIndex];
+        final itemIndex = position.$2;
+        final trailing = _trailingFor(hub);
+        final hasTrailing = trailing != TvRailTrailing.none;
+        final totalCount = hub.items.length + (hasTrailing ? 1 : 0);
+        final hasItem = itemIndex < hub.items.length;
+        final isTrailing = itemIndex == hub.items.length && hasTrailing;
         final actionable = hasItem || (isTrailing && trailing != TvRailTrailing.loading);
 
+        // The enclosing Focus publishes its focused state independently. Keeping
+        // that state out of this selector avoids rebuilding the label and actions
+        // when focus enters or leaves the rail.
         return Semantics(
           key: const ValueKey('tv_browse_rail_semantic_proxy'),
           identifier: 'tv_browse_rail_selection',
           container: true,
           focusable: true,
-          focused: _focusModel.railHasFocus,
           button: actionable,
-          label: _semanticSelectionLabel(hub),
+          label: _semanticSelectionLabel(hub, itemIndex, trailing),
           onTap: actionable ? () => unawaited(_activateCurrentItem()) : null,
           onLongPress: hasItem && !_isPersonHub(hub) ? _showContextMenuForCurrentItem : null,
-          onScrollLeft: _itemIndex > 0 ? () => _moveItem(-1) : null,
-          onScrollRight: _itemIndex < totalCount - 1 ? () => _moveItem(1) : null,
-          onScrollUp: _hubIndex > 0 ? () => _moveHub(-1) : null,
-          onScrollDown: _hubIndex < widget.hubs.length - 1 ? () => _moveHub(1) : null,
+          onScrollLeft: itemIndex > 0 ? () => _moveItem(-1) : null,
+          onScrollRight: itemIndex < totalCount - 1 ? () => _moveItem(1) : null,
+          onScrollUp: hubIndex > 0 ? () => _moveHub(-1) : null,
+          onScrollDown: hubIndex < widget.hubs.length - 1 ? () => _moveHub(1) : null,
           child: const SizedBox.expand(),
         );
       },
     );
   }
 
-  String _semanticSelectionLabel(MediaHub hub) {
+  String _semanticSelectionLabel(MediaHub hub, int itemIndex, TvRailTrailing trailing) {
     String selection;
-    if (_itemIndex < hub.items.length) {
-      final item = hub.items[_itemIndex];
+    if (itemIndex < hub.items.length) {
+      final item = hub.items[itemIndex];
       if (_isPersonHub(hub)) {
         selection = [item.displayTitle, if (item.parentTitle?.isNotEmpty == true) item.parentTitle!].join(', ');
       } else {
         selection = mediaCardSemanticLabel(item);
       }
     } else {
-      selection = switch (_trailingFor(hub)) {
+      selection = switch (trailing) {
         TvRailTrailing.loading => t.common.loading,
         TvRailTrailing.error => t.common.retry,
         TvRailTrailing.viewAll => t.common.viewAll,
@@ -1368,12 +1353,18 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     required double railViewportWidth,
   }) {
     final isActiveHub = hubIndex == _hubIndex;
-    final totalCount = _totalItemCount(hub);
+    final hasTrailing = _hasTrailingFor(hub);
+    final totalCount = hub.items.length + (hasTrailing ? 1 : 0);
     final inactiveIndex = widget.focusMemory.getForHubOnly(_hubKey(hub), totalCount);
     final focusedIndex = isActiveHub ? _itemIndex : inactiveIndex;
-    final scrollController = _scrollControllerForHub(hub, metrics, railViewportWidth, scale, focusedIndex);
+    final scrollController = _scrollControllerForHub(
+      hub,
+      metrics,
+      railViewportWidth,
+      focusedIndex,
+      hasTrailing: hasTrailing,
+    );
     _metricsByHub[_hubKey(hub)] = metrics;
-    _scaleByHub[_hubKey(hub)] = scale;
 
     final rail = _buildHubRailList(
       hub: hub,
@@ -1423,13 +1414,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         addAutomaticKeepAlives: false,
         addSemanticIndexes: false,
         padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
-        itemExtentBuilder: (itemIndex, _) => TvBrowseRailLayout.itemExtentForIndex(
-          hub: hub,
-          index: itemIndex,
-          metrics: metrics,
-          scale: scale,
-          hasTrailing: _hasTrailingFor(hub),
-        ),
+        // A fixed extent keeps all sliver offset and child-index math O(1).
+        itemExtent: TvBrowseRailLayout.itemExtentForIndex(index: 0, metrics: metrics),
         itemCount: totalCount,
         itemBuilder: (context, itemIndex) {
           // Focus is observed through _focusModel so a d-pad move or a

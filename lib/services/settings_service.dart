@@ -374,6 +374,37 @@ Map<String, HotKey?> _decodeKeyboardHotkeys(dynamic raw) {
   return <String, HotKey?>{..._defaultKeyboardHotkeys(), ...result};
 }
 
+/// Shared fan-out for a group of preferences. The first observer installs one
+/// listener on each preference; additional builders subscribe only to this
+/// notifier. Upstream listeners are removed when the last observer leaves, so
+/// short-lived non-const preference lists retain the old mount/unmount behavior.
+class _PreferenceGroupListenable extends ChangeNotifier {
+  final List<Listenable> _children;
+  late final VoidCallback _relay = notifyListeners;
+
+  _PreferenceGroupListenable(this._children);
+
+  @override
+  void addListener(VoidCallback listener) {
+    final shouldAttach = !hasListeners;
+    super.addListener(listener);
+    if (!shouldAttach) return;
+    for (final child in _children) {
+      child.addListener(_relay);
+    }
+  }
+
+  @override
+  void removeListener(VoidCallback listener) {
+    final wasAttached = hasListeners;
+    super.removeListener(listener);
+    if (!wasAttached || hasListeners) return;
+    for (final child in _children) {
+      child.removeListener(_relay);
+    }
+  }
+}
+
 class SettingsService extends BaseSharedPreferencesService {
   static const String defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
   static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
@@ -717,6 +748,20 @@ class SettingsService extends BaseSharedPreferencesService {
 
   static StringListPref trackerFilterIdsPref(TrackerService s) =>
       StringListPref('tracker_library_filter_ids_${s.name}');
+
+  /// Identity-keyed preference groups. Const list literals are canonicalized,
+  /// so every builder at a call site shares one fan-out for the process
+  /// lifetime. Dynamic lists receive weak entries: they get the same behavior
+  /// as `Listenable.merge` without accumulating in a process-lifetime map.
+  final Expando<_PreferenceGroupListenable> _preferenceGroupListenables = Expando<_PreferenceGroupListenable>(
+    'settings preference groups',
+  );
+
+  Listenable listenableOfAll(List<Pref<Object?>> prefs) {
+    return _preferenceGroupListenables[prefs] ??= _PreferenceGroupListenable(
+      prefs.map(listenableOf).toList(growable: false),
+    );
+  }
 
   SettingsService._();
 

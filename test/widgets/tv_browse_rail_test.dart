@@ -350,19 +350,26 @@ void main() {
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
-            home: Scaffold(
-              body: SizedBox(
-                width: 1280,
-                height: 720,
-                child: TvBrowseRail(
-                  focusMemory: focusMemory,
-                  hubs: [hub],
-                  autofocus: true,
-                  iconForHub: (_, _) => Icons.movie_rounded,
-                  onActivateItem: (_, item) {
-                    activatedItemId = item.id;
-                    return true;
-                  },
+            home: Builder(
+              // The semantic selection proxy is gated on accessibleNavigation:
+              // it only exists while an accessibility service is attached.
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(accessibleNavigation: true),
+                child: Scaffold(
+                  body: SizedBox(
+                    width: 1280,
+                    height: 720,
+                    child: TvBrowseRail(
+                      focusMemory: focusMemory,
+                      hubs: [hub],
+                      autofocus: true,
+                      iconForHub: (_, _) => Icons.movie_rounded,
+                      onActivateItem: (_, item) {
+                        activatedItemId = item.id;
+                        return true;
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -422,15 +429,22 @@ void main() {
         child: InputModeTracker(
           child: MaterialApp(
             theme: monoTheme(dark: true),
-            home: Scaffold(
-              body: SizedBox(
-                width: 1280,
-                height: 720,
-                child: TvBrowseRail(
-                  focusMemory: focusMemory,
-                  hubs: hubs,
-                  autofocus: true,
-                  iconForHub: (_, _) => Icons.movie_rounded,
+            home: Builder(
+              // The semantic selection proxy is gated on accessibleNavigation:
+              // it only exists while an accessibility service is attached.
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(accessibleNavigation: true),
+                child: Scaffold(
+                  body: SizedBox(
+                    width: 1280,
+                    height: 720,
+                    child: TvBrowseRail(
+                      focusMemory: focusMemory,
+                      hubs: hubs,
+                      autofocus: true,
+                      iconForHub: (_, _) => Icons.movie_rounded,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -1456,7 +1470,6 @@ void main() {
       metrics: metrics,
       viewportWidth: position.viewportDimension,
       maxScrollExtent: position.maxScrollExtent,
-      scale: scale,
     );
 
     expect(activeHubIds.last, episodeHub.id);
@@ -1972,7 +1985,6 @@ void main() {
       metrics: metrics,
       viewportWidth: position.viewportDimension,
       maxScrollExtent: position.maxScrollExtent,
-      scale: scale,
     );
     expect(position.pixels, closeTo(expectedOffset, 0.1));
   });
@@ -2067,7 +2079,6 @@ void main() {
       metrics: metrics,
       viewportWidth: position.viewportDimension,
       maxScrollExtent: position.maxScrollExtent,
-      scale: scale,
     );
     expect(position.pixels, closeTo(expectedOffset, 0.1));
   });
@@ -2446,6 +2457,106 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(focusedItemIds.last, episode2.id);
+  });
+
+  // The horizontal rail moved from `itemExtentBuilder` to a constant
+  // `itemExtent`, which is what makes sliver layout math O(1) per realized
+  // child instead of O(n). That only holds while the trailing slot occupies a
+  // card-sized cell, so pin both halves of the contract.
+  test('rail layout uses one uniform extent for media and trailing cells', () {
+    final items = List.generate(
+      12,
+      (index) =>
+          testMediaItem(id: 'movie_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $index'),
+    );
+    final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: items, size: items.length, more: true);
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: hub,
+      availableWidth: 1280,
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.episodeThumbnail,
+      scale: 1.0,
+    );
+    final expectedExtent = metrics.cardWidth + metrics.itemGap;
+
+    // Every index, including the trailing "View All" cell at items.length.
+    for (var index = 0; index <= items.length; index++) {
+      expect(
+        TvBrowseRailLayout.itemExtentForIndex(index: index, metrics: metrics),
+        expectedExtent,
+        reason: 'index $index must use the uniform extent',
+      );
+    }
+
+    final expectedMax = ((metrics.railEdgePadding * 2) + ((items.length + 1) * expectedExtent) - 1280).clamp(
+      0.0,
+      double.infinity,
+    );
+    expect(
+      TvBrowseRailLayout.estimatedMaxScrollExtent(hub: hub, metrics: metrics, viewportWidth: 1280, hasTrailing: true),
+      closeTo(expectedMax, 0.001),
+    );
+  });
+
+  test('rail centers a mid-row cell and clamps the trailing cell to the end', () {
+    final items = List.generate(
+      12,
+      (index) =>
+          testMediaItem(id: 'movie_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $index'),
+    );
+    final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: items, size: items.length, more: true);
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: hub,
+      availableWidth: 1280,
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.episodeThumbnail,
+      scale: 1.0,
+    );
+    final extent = metrics.cardWidth + metrics.itemGap;
+    final maxScrollExtent = TvBrowseRailLayout.estimatedMaxScrollExtent(
+      hub: hub,
+      metrics: metrics,
+      viewportWidth: 1280,
+      hasTrailing: true,
+    );
+
+    expect(
+      TvBrowseRailLayout.scrollOffsetForIndex(
+        hub: hub,
+        index: 4,
+        metrics: metrics,
+        viewportWidth: 1280,
+        maxScrollExtent: maxScrollExtent,
+        hasTrailing: true,
+      ),
+      closeTo((metrics.railEdgePadding + (4.5 * extent) - 640).clamp(0.0, maxScrollExtent), 0.001),
+    );
+
+    // The trailing cell stays reachable and lands at the end of the row.
+    expect(
+      TvBrowseRailLayout.scrollOffsetForIndex(
+        hub: hub,
+        index: items.length,
+        metrics: metrics,
+        viewportWidth: 1280,
+        maxScrollExtent: maxScrollExtent,
+        hasTrailing: true,
+      ),
+      maxScrollExtent,
+    );
+
+    // An index past the end clamps instead of overscrolling.
+    expect(
+      TvBrowseRailLayout.scrollOffsetForIndex(
+        hub: hub,
+        index: 999,
+        metrics: metrics,
+        viewportWidth: 1280,
+        maxScrollExtent: maxScrollExtent,
+        hasTrailing: true,
+      ),
+      maxScrollExtent,
+    );
   });
 }
 
