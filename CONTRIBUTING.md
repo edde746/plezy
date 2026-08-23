@@ -16,6 +16,10 @@
 - Run `scripts/run_tests.sh` to run the test suite (same as `flutter test`, but scaled to your core count)
 - Test your changes thoroughly
 
+### AI-assisted contributions
+
+AI-assisted pull requests must state in the PR description which model(s) were used (e.g. Claude Sonnet 4.5, GPT-5, Gemini 3 Pro).
+
 ### Code Quality Checks
 
 The project includes automated CI checks that run on all pull requests:
