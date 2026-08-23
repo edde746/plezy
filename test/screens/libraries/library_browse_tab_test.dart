@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +16,7 @@ import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/media_sort.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
 import 'package:plezy/screens/libraries/state_messages.dart';
 import 'package:plezy/screens/libraries/tabs/library_browse_tab.dart';
 import 'package:plezy/services/jellyfin_mappers.dart';
@@ -129,6 +131,36 @@ void main() {
     expect(find.byType(EmptyStateWidget), findsOneWidget);
     expect(harness.loadedLibraries, [harness.libraryA.globalKey]);
     expect(groupingChip.focusNode!.hasFocus, isTrue);
+  });
+
+  testWidgets('desktop platform opens the sort chip as an anchored popup and applies the pick', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+
+    const sorts = [MediaSort(key: 'title', title: 'Title'), MediaSort(key: 'year', title: 'Year')];
+    final harness = _BrowseHarness(clientA: _BrowseClient('server-a', 'Library A', sortResponse: Future.value(sorts)));
+    addTearDown(harness.dispose);
+
+    await _pumpHarness(tester, harness);
+    await _pumpUntil(tester, () => harness.clientA.pageRequestCount >= 1);
+
+    // Grouping + sort chips are visible (no filters on this client); the sort
+    // chip is the last one.
+    await tester.tap(find.byType(FocusableFilterChip).last);
+    await tester.pumpAndSettle();
+
+    // Anchored popup, not the bottom sheet.
+    expect(find.byType(SortBottomSheet), findsNothing);
+    expect(find.text('Year'), findsOneWidget);
+
+    final requestsBefore = harness.clientA.pageRequestCount;
+    await tester.tap(find.text('Year'));
+    await tester.pumpAndSettle();
+
+    await _pumpUntil(tester, () => harness.clientA.pageRequestCount > requestsBefore);
+    final sort = harness.clientA.pageQueries.last.sort;
+    expect(sort?.field, 'year');
+
+    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('mixed library all grouping applies its explicit root kinds', (tester) async {
