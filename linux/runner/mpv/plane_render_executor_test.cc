@@ -89,11 +89,12 @@ void TestFailedJobReportsFalse() {
 
   std::atomic<bool> completed{false};
   bool completion_result = true;
-  EXPECT(executor.Post([] { return false; },
-                       [&](bool result) {
-                         completion_result = result;
-                         completed = true;
-                       }));
+  EXPECT(executor.Post(
+      [] { return false; },
+      [&](bool result) {
+        completion_result = result;
+        completed = true;
+      }));
   EXPECT(context.IterateUntil([&] { return completed.load(); }));
   EXPECT(!completion_result);
   EXPECT(executor.ShutdownAndJoin(5000));
@@ -150,11 +151,12 @@ void TestShutdownDrainsQueuedJobsAndRefusesNewOnes() {
         return true;
       },
       nullptr));
-  EXPECT(executor.Post([&] {
-    second_ran = true;
-    return true;
-  },
-                       nullptr));
+  EXPECT(executor.Post(
+      [&] {
+        second_ran = true;
+        return true;
+      },
+      nullptr));
 
   std::thread opener([&] {
     std::this_thread::sleep_for(std::chrono::milliseconds(50));

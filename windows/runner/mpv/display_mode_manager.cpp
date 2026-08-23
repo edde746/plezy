@@ -128,8 +128,8 @@ bool ApplyDisplayConfigSnapshot(const DisplayConfigSnapshot& snapshot, bool save
   if (save_to_database) flags |= SDC_SAVE_TO_DATABASE;
 
   return SetDisplayConfig(
-             static_cast<UINT32>(paths.size()), paths.data(), static_cast<UINT32>(modes.size()), modes.data(),
-             flags) == ERROR_SUCCESS;
+             static_cast<UINT32>(paths.size()), paths.data(), static_cast<UINT32>(modes.size()), modes.data(), flags) ==
+         ERROR_SUCCESS;
 }
 
 // Re-apply the user's persisted display configuration for the current
@@ -737,9 +737,8 @@ class Win32DisplayRecoveryBackend final : public DisplayRecoveryBackend {
     if (ApplyDatabaseCurrentConfig()) {
       DEVMODEW current = {};
       current.dmSize = sizeof(current);
-      if (EnumDisplaySettingsW(device_name.c_str(), ENUM_CURRENT_SETTINGS, &current) &&
-          current.dmPelsWidth == width && current.dmPelsHeight == height &&
-          current.dmDisplayFrequency == refresh_rate) {
+      if (EnumDisplaySettingsW(device_name.c_str(), ENUM_CURRENT_SETTINGS, &current) && current.dmPelsWidth == width &&
+          current.dmPelsHeight == height && current.dmDisplayFrequency == refresh_rate) {
         return true;
       }
     }

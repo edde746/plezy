@@ -20,8 +20,7 @@ internal object FfmpegDemuxerPolicy {
   }
 
   /** Unknown wire values (including the retired "auto") resolve to FFmpeg. */
-  fun fromWire(value: String?): Preference =
-    Preference.entries.firstOrNull { it.wireName == value } ?: Preference.FFMPEG
+  fun fromWire(value: String?): Preference = Preference.entries.firstOrNull { it.wireName == value } ?: Preference.FFMPEG
 
   /** Whether the FFmpeg extractor placed before media3's list demuxes at all. */
   fun enabled(preference: Preference): Boolean = preference == Preference.FFMPEG
