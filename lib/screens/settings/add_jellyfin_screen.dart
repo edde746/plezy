@@ -158,15 +158,23 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   Future<void> _discoverLocalServers() async {
     final attemptId = ++_localDiscoveryAttemptId;
     try {
-       List<Connection> existingConnections = const <Connection>[];
-       try {
-         existingConnections = await context.read<ConnectionRegistry>().list();
-       } on ProviderNotFoundException {
-         // No ConnectionRegistry in the tree (tests / isolated subtrees).
-       }
-       final existing = existingConnections
+      List<Connection> existingConnections = const <Connection>[];
+      try {
+        existingConnections = await context.read<ConnectionRegistry>().list();
+      } on ProviderNotFoundException {
+        // No ConnectionRegistry in the tree (tests / isolated subtrees).
+      }
+      final existing = existingConnections
           .whereType<JellyfinConnection>()
-          .map((c) => DiscoveredJellyfinServer(address: c.baseUrl, id: c.serverMachineId, name: c.serverName));
+          .where((c) => c.dialect == widget.dialect)
+          .map(
+            (c) => DiscoveredJellyfinServer(
+              address: c.baseUrl,
+              id: c.serverMachineId,
+              name: c.serverName,
+              dialect: c.dialect,
+            ),
+          );
 
       final factory = widget._localDiscoveryFactory;
       final lanServers = factory != null
