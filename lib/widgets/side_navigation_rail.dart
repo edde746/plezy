@@ -489,6 +489,14 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   bool get _interactionExpanded => _isHovered || _isTouchExpanded;
 
+  /// True while the rail floats over the content as an M3E modal panel.
+  ///
+  /// Hover/touch expansion leaves the shell at its collapsed content offset,
+  /// so a floating panel covers content and owns its own opaque surface and
+  /// edge shadow. Every docked shape — collapsed, always-open, or D-pad
+  /// focus-expanded — displaces content instead and stays transparent on TV.
+  bool get _isFloatingPanel => _interactionExpanded && !widget.alwaysExpanded;
+
   bool get _showDownloads => !PlatformDetector.isAppleTV();
 
   /// macOS has the system green button; mobile/TV have no OS fullscreen toggle.
@@ -941,14 +949,19 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 decoration: const BoxDecoration(),
                 child: Stack(
                   children: [
-                    // Desktop surface. Hover/touch expansion is an M3E
-                    // modal rail: it overlays the content (the shell keeps
-                    // its collapsed offset), so it casts an edge shadow.
+                    // Rail surface. A docked rail is transparent on TV so the
+                    // full-bleed backdrop continues behind it; content is
+                    // pushed clear of it, never covered. A floating panel
+                    // covers content, so it paints its surface on every
+                    // platform (#2079).
                     Positioned.fill(
                       child: AnimatedOpacity(
-                        opacity: PlatformDetector.isTV() ? 0.0 : 1.0,
-                        duration: t.normal,
-                        curve: Curves.easeOutCubic,
+                        opacity: PlatformDetector.isTV() && !_isFloatingPanel ? 0.0 : 1.0,
+                        // Shares the width morph's duration/curve: a shorter
+                        // fade strands a fully grown, fully transparent panel
+                        // over the content part-way through the collapse.
+                        duration: expandDuration,
+                        curve: expandCurve,
                         child: AnimatedContainer(
                           duration: expandDuration,
                           curve: expandCurve,
@@ -961,11 +974,9 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                             borderRadius: isCollapsed
                                 ? BorderRadius.zero
                                 : BorderRadius.horizontal(
-                                    right: Radius.circular(
-                                      _interactionExpanded && !widget.alwaysExpanded ? overlayCornerRadius : t.radiusLg,
-                                    ),
+                                    right: Radius.circular(_isFloatingPanel ? overlayCornerRadius : t.radiusLg),
                                   ),
-                            boxShadow: _interactionExpanded && !widget.alwaysExpanded
+                            boxShadow: _isFloatingPanel
                                 ? [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 24)]
                                 : const [],
                           ),

@@ -578,6 +578,71 @@ void main() {
     expect(scrimReports.last, isFalse);
   });
 
+  /// #2079: the TV rail is transparent so the full-bleed backdrop shows
+  /// through a *docked* rail, which the shell displaces content around. A
+  /// hover/touch panel floats over content at the collapsed offset instead,
+  /// so a transparent one leaves the menu unreadable on top of the artwork.
+  testWidgets('TV hover panel paints a surface over the content it covers', (tester) async {
+    await TvDetectionService.getInstance();
+    TvDetectionService.setForceTVSync(true);
+    expect(PlatformDetector.isTV(), isTrue);
+
+    await _pumpBasicRail(tester);
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(tester.getSize(rail).width, SideNavigationRailState.tvCollapsedWidth);
+    expect(_railSurfaceOpacity(tester).opacity, 0.0);
+
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
+    await gesture.addPointer(location: const Offset(799, 599));
+    await tester.pump();
+    await gesture.moveTo(tester.getCenter(rail));
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
+    expect(_railSurfaceOpacity(tester).opacity, 1.0);
+
+    await gesture.moveTo(tester.getBottomRight(rail) + const Offset(100, -10));
+    await tester.pumpAndSettle();
+
+    expect(tester.getSize(rail).width, SideNavigationRailState.tvCollapsedWidth);
+    expect(_railSurfaceOpacity(tester).opacity, 0.0);
+  });
+
+  /// The surface fade must not outrun the width morph: a shorter fade would
+  /// leave a fully grown, fully transparent panel over the content part-way
+  /// through the collapse — the #2079 symptom, briefly.
+  testWidgets('TV panel keeps a surface for the whole collapse', (tester) async {
+    await TvDetectionService.getInstance();
+    TvDetectionService.setForceTVSync(true);
+
+    await _pumpBasicRail(tester);
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
+    await gesture.addPointer(location: const Offset(799, 599));
+    await tester.pump();
+    await gesture.moveTo(tester.getCenter(rail));
+    await tester.pumpAndSettle();
+
+    final surface = _railSurfaceOpacity(tester);
+    expect(surface.duration, SideNavigationRailState.expandDuration);
+    expect(surface.curve, SideNavigationRailState.expandCurve);
+  });
+
+  testWidgets('TV always-open rail stays transparent', (tester) async {
+    await TvDetectionService.getInstance();
+    TvDetectionService.setForceTVSync(true);
+
+    await _pumpBasicRail(tester, alwaysExpanded: true);
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
+    expect(_railSurfaceOpacity(tester).opacity, 0.0);
+  });
+
   testWidgets('Apple TV D-pad focus skips hidden downloads item', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
