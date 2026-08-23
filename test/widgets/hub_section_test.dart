@@ -100,6 +100,55 @@ void main() {
     expect(longPressedItem, same(item));
   });
 
+  testWidgets('programmatic hub focus scrolls the page only in keyboard mode', (tester) async {
+    // Regression: switching to the Explore tab hands focus to the first hub;
+    // in touch mode that must not scroll the page (it hid the app bar and
+    // search field). Keyboard/D-pad focus keeps scrolling the hub into view.
+    final item = testMediaItem(
+      id: 'scroll_item',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Scroll Movie',
+    );
+    final hubKey = GlobalKey<HubSectionState>();
+    final scrollController = ScrollController();
+    addTearDown(scrollController.dispose);
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              controller: scrollController,
+              child: Column(
+                children: [
+                  const SizedBox(height: 900),
+                  HubSection(
+                    key: hubKey,
+                    hub: _hubWith(item),
+                    focusMemory: HubFocusMemory(),
+                    icon: Symbols.live_tv_rounded,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    hubKey.currentState!.requestFocusFromMemory();
+    await tester.pumpAndSettle();
+    expect(scrollController.offset, 0, reason: 'touch-mode programmatic focus must not scroll the page');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    expect(InputModeTracker.currentMode, InputMode.keyboard, reason: 'arrow key must enter keyboard mode');
+    hubKey.currentState!.requestFocusFromMemory();
+    await tester.pumpAndSettle();
+    expect(scrollController.offset, greaterThan(0), reason: 'keyboard-mode focus scrolls the hub into view');
+  });
+
   testWidgets('grid poster override uses dense 2:3 TV geometry', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     final item = testMediaItem(

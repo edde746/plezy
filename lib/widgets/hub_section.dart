@@ -252,6 +252,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
   /// Scroll this hub into view in the parent scroll view
   void _scrollHubIntoView() {
+    // Programmatic focus in touch/pointer mode (e.g. a tab switch handing focus
+    // to the first hub) must not scroll the page; only keyboard/D-pad focus
+    // scrolls, mirroring FocusableWrapper.autoScroll.
+    if (InputModeTracker.currentMode != InputMode.keyboard) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       Scrollable.ensureVisible(
