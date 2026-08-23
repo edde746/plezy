@@ -86,9 +86,9 @@ class TvBrowseRailLayout {
 
   static double viewAllPillHeightForScale(double scale) => (44 * scale).clamp(36, 54).toDouble();
 
-  static double hubStripHeightForScale(double scale) => 36 * scale;
+  static double hubStripHeightForScale(double scale) => 30 * scale;
 
-  static double nextHubPeekHeightForScale(double scale) => 30 * scale;
+  static double nextHubPeekHeightForScale(double scale) => 20 * scale;
 
   static double hubSectionHeightFor({required double scale, required double activeRailHeight}) {
     return hubStripHeightForScale(scale) + activeRailHeight;
@@ -159,9 +159,9 @@ class TvBrowseRailLayout {
     final posterHeight = (isPersonHub || isSquareHub)
         ? posterWidth
         : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
-    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 58 : 42) * scale);
+    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
     final containerHeight = (posterHeight + labelHeight).ceilToDouble();
-    final height = containerHeight + focusExtra + (14 * scale);
+    final height = containerHeight + focusExtra + (10 * scale);
 
     return TvBrowseRailLayoutMetrics(
       isPersonHub: isPersonHub,

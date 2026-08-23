@@ -380,9 +380,12 @@ void main() {
     expect(fieldXs, orderedEquals([...fieldXs]..sort()));
 
     // The test font's 1 em/char advance roughly doubles text width, so at this
-    // viewport the whole ratings slot legitimately gives way — dropped as the
-    // least useful part instead of shoving the quality label off the line.
-    expect(find.byType(SvgPicture), findsNothing);
+    // viewport most of the ratings slot legitimately gives way — shed as the
+    // least useful part instead of shoving the quality label off the line. Any
+    // score that does fit must sit fully on screen, never past the right edge.
+    for (final rating in find.byType(SvgPicture).evaluate()) {
+      expect(tester.getBottomRight(find.byWidget(rating.widget)).dx, lessThanOrEqualTo(1280));
+    }
   });
 
   testWidgets('TV detail defaults to first regular season when specials precede it', (tester) async {
