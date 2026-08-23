@@ -848,6 +848,12 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   /// Parse raw config text into a `Map<String, String>` (skip blanks and # comments).
+  ///
+  /// Like mpv's own config-file parser, one pair of matching quotes around the
+  /// whole value is stripped (`sub-font = 'Netflix Sans'`). These values are
+  /// applied through the property API, which takes strings verbatim, so an
+  /// unstripped quote silently selects a nonexistent font family or fails a
+  /// numeric parse (#2025).
   static Map<String, String> parseMpvConfigText(String text) {
     final result = <String, String>{};
     for (final line in text.split('\n')) {
@@ -856,7 +862,10 @@ class SettingsService extends BaseSharedPreferencesService {
       final eqIndex = trimmed.indexOf('=');
       if (eqIndex <= 0) continue;
       final k = trimmed.substring(0, eqIndex).trim();
-      final v = trimmed.substring(eqIndex + 1).trim();
+      var v = trimmed.substring(eqIndex + 1).trim();
+      if (v.length >= 2 && (v[0] == "'" || v[0] == '"') && v[v.length - 1] == v[0]) {
+        v = v.substring(1, v.length - 1);
+      }
       if (k.isNotEmpty) result[k] = v;
     }
     return result;

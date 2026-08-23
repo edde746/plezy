@@ -339,6 +339,64 @@ Future<void> expectCustomConfigCannotOverrideEmbeddedVo(WidgetTester tester) asy
   );
 }
 
+/// The config text follows mpv.conf syntax, where quotes around a value belong
+/// to the syntax, not the value - but the entries are applied as runtime
+/// mpv_set_property writes, which take strings verbatim. An unstripped quote
+/// therefore names a font family that does not exist (a silent fallback) or
+/// fails a numeric parse (a logged skip); either way the line does nothing
+/// (#2025). The parser owns the stripping; this asserts what reaches the wire.
+Future<void> expectQuotedCustomConfigValuesReachWireUnquoted(WidgetTester tester) async {
+  await SettingsService.instance.write(
+    SettingsService.mpvConfigText,
+    // The issue's own lines (single-quoted string, single-quoted float) plus
+    // a double-quoted value for the other quote kind.
+    "sub-font = 'NetflixSans-Bold'\n"
+    "sub-blur = '0.2'\n"
+    'sub-scale="1.5"\n',
+  );
+  final calls = <MethodCall>[];
+  final eventCalls = <MethodCall>[];
+
+  await withMockPlayerChannels(
+    methodChannelName: 'com.plezy/mpv_player',
+    eventChannelName: 'com.plezy/mpv_player/events',
+    methodHandler: (call) async {
+      calls.add(call);
+      return call.method == 'initialize' ? true : null;
+    },
+    eventHandler: (call) async {
+      eventCalls.add(call);
+      return null;
+    },
+    testBody: () async {
+      await _mountPlayerScreen(tester, 'Quoted mpv config video');
+      // `volume-max` is the write immediately after the custom-config pass, so
+      // its arrival is what makes the lists below complete.
+      await pumpUntil(
+        tester,
+        () => _propertyWrites(calls).contains('volume-max'),
+        describe: () => 'writes=${_propertyWrites(calls)} calls=${calls.map((c) => c.method).toList()}',
+      );
+
+      // `.last` rather than the whole list: startup writes its own bundled
+      // fallback `sub-font` first when the font loader succeeds, and the
+      // custom pass lands after it. The config line must win, unquoted.
+      expect(_valueWrites(calls, 'sub-font').last, 'NetflixSans-Bold');
+      expect(_valueWrites(calls, 'sub-blur'), ['0.2']);
+      expect(_valueWrites(calls, 'sub-scale'), ['1.5']);
+
+      // Same deterministic teardown as [expectCustomConfigCannotOverrideEmbeddedVo].
+      await tester.pumpWidget(const SizedBox.shrink());
+      await pumpUntil(
+        tester,
+        () => calls.any((call) => call.method == 'dispose') && eventCalls.any((call) => call.method == 'cancel'),
+        describe: () =>
+            'calls=${calls.map((c) => c.method).toList()} events=${eventCalls.map((c) => c.method).toList()}',
+      );
+    },
+  );
+}
+
 /// A refused subtitle-styling write must not abort initialization: styling is
 /// a preference, and the same refusal that used to land as
 /// SET_PROPERTY_FAILED on the channel used to escape

@@ -71,6 +71,46 @@ void main() {
     test('empty input yields empty map', () {
       expect(SettingsService.parseMpvConfigText(''), isEmpty);
     });
+
+    test('strips one pair of matching single quotes around the value (#2025)', () {
+      final out = SettingsService.parseMpvConfigText("sub-font = 'NetflixSans-Bold'");
+      expect(out, {'sub-font': 'NetflixSans-Bold'});
+    });
+
+    test('strips one pair of matching double quotes around the value', () {
+      final out = SettingsService.parseMpvConfigText('sub-font = "Netflix Sans"');
+      expect(out, {'sub-font': 'Netflix Sans'});
+    });
+
+    test('strips quotes from numeric values so the property API can parse them', () {
+      final out = SettingsService.parseMpvConfigText("sub-pos = '85'\nsub-blur = '0.2'");
+      expect(out, {'sub-pos': '85', 'sub-blur': '0.2'});
+    });
+
+    test('keeps an unmatched leading quote verbatim', () {
+      final out = SettingsService.parseMpvConfigText("k='abc");
+      expect(out, {'k': "'abc"});
+    });
+
+    test('keeps mismatched quote kinds verbatim', () {
+      final out = SettingsService.parseMpvConfigText('k=\'abc"');
+      expect(out, {'k': '\'abc"'});
+    });
+
+    test('keeps interior quotes', () {
+      final out = SettingsService.parseMpvConfigText("k=it's");
+      expect(out, {'k': "it's"});
+    });
+
+    test('empty quoted value yields empty string', () {
+      final out = SettingsService.parseMpvConfigText("flag=''");
+      expect(out, {'flag': ''});
+    });
+
+    test('strips only the outer quote pair', () {
+      final out = SettingsService.parseMpvConfigText('k="\'a\'"');
+      expect(out, {'k': "'a'"});
+    });
   });
 
   group('SettingsService episode action', () {
