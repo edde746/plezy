@@ -231,8 +231,8 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
   Future<void> _reloadSnapshot() async {
     _storage ??= await StorageService.getInstance();
     // Hydrate the Plex Home cache before we read it — `_plexHome.current`
-    // is only populated after start() finishes its disk-cache load.
-    await _plexHome.start();
+    // is only populated after the disk-cache load finishes.
+    await _plexHome.hydrate();
 
     _localProfiles = await _registry.list();
     final initialConns = await _connections.list();

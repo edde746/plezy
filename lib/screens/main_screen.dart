@@ -23,6 +23,9 @@ import '../widgets/auth_error_banner.dart';
 import '../widgets/app_icon.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
+import '../utils/platform_http_client_stub.dart'
+    if (dart.library.io) '../utils/platform_http_client_io.dart'
+    show warmUpPlatformHttpClient;
 import '../utils/snackbar_helper.dart';
 import '../utils/update_dialog.dart';
 import '../utils/video_player_navigation.dart';
@@ -558,7 +561,18 @@ class _MainScreenState extends State<MainScreen>
       _hadProfiles = activeProfile.profiles.isNotEmpty;
       activeProfile.addListener(_onActiveProfileChanged);
       _plexHomeService = context.read<PlexHomeService>();
-      unawaited(_plexHomeService!.start());
+      // `start()` is the live/network entry point: it installs the connection
+      // watch, the refresh timer and an initial `_refreshAll()`. Hydration
+      // already happened from the provider's `create:`, so an offline launch
+      // keeps its cached Plex Home users without reaching the network.
+      // `_handleOfflineStatusChanged` starts it if we come online later.
+      if (!_isOffline) unawaited(_plexHomeService!.start());
+      // Cronet's first `CronetEngine.build()` costs ~460 ms of synchronous JNI
+      // work (Play services Dynamite + GMS HTTP flags) and used to land between
+      // `database_ready` and `credentials_loaded`, i.e. squarely on the path to
+      // this screen. Android clients start on the tuned IOClient and swap to
+      // Cronet once this completes.
+      unawaited(warmUpPlatformHttpClient());
       final manager = context.read<MultiServerProvider>().serverManager;
       // Read the binder so the Provider's `lazy: false` create has fired
       // for sure; start only in online mode so explicit startup offline does
@@ -1332,6 +1346,11 @@ class _MainScreenState extends State<MainScreen>
 
     // Ensure profile settings are warmed when coming back online
     if (!_isOffline) {
+      // A launch that started offline skipped PlexHomeService's live/network
+      // side, so pick it up now that we have a network. `start()` is idempotent,
+      // so repeated offline/online transitions are free.
+      final plexHome = _plexHomeService ??= context.read<PlexHomeService>();
+      unawaited(plexHome.start());
       unawaited(() async {
         final mp = context.read<MultiServerProvider>();
         final binder = context.read<ActiveProfileBinder>();

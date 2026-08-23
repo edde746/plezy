@@ -4,6 +4,17 @@ import 'package:http/http.dart' as http;
 
 import 'app_logger.dart';
 
+/// [http.Client] that can abort and drain its active requests before closing.
+///
+/// Shutdown paths that must not outrun in-flight native callbacks (per-server
+/// failover, server removal, app exit) await this instead of the
+/// fire-and-forget [http.Client.close]. Composite clients that only delegate
+/// to [ManagedHttpClient]s (`AndroidPlatformHttpClient`) implement it so the
+/// awaited drain survives the extra layer.
+abstract interface class GracefulHttpClient implements http.Client {
+  Future<void> closeGracefully({Duration drainTimeout});
+}
+
 /// [http.Client] wrapper that owns native-client shutdown semantics.
 ///
 /// `package:http` clients define closing with active requests as undefined. For
@@ -13,7 +24,7 @@ import 'app_logger.dart';
 /// active requests during shutdown, and only closes the inner client once the
 /// active set has drained — or, when [forceCloseOnDrainTimeout] opts in,
 /// force-closes a drain-resistant inner client instead of leaking its sockets.
-class ManagedHttpClient extends http.BaseClient {
+class ManagedHttpClient extends http.BaseClient implements GracefulHttpClient {
   ManagedHttpClient(this._inner, {required this.debugLabel, this.forceCloseOnDrainTimeout = false}) {
     _instances.add(this);
   }
@@ -61,6 +72,7 @@ class ManagedHttpClient extends http.BaseClient {
     }
   }
 
+  @override
   Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) {
     _closing = true;
     if (_innerClosed) return Future<void>.value();

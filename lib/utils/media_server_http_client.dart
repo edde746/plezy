@@ -237,8 +237,8 @@ class MediaServerHttpClient {
   Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) async {
     _closing = true;
     _abortActiveRequests();
-    if (_client case final ManagedHttpClient managed) {
-      await managed.closeGracefully(drainTimeout: drainTimeout);
+    if (_client case final GracefulHttpClient graceful) {
+      await graceful.closeGracefully(drainTimeout: drainTimeout);
     } else {
       _client.close();
     }

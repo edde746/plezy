@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/utils/managed_http_client.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/utils/platform_http_client_io.dart';
 
 void main() {
   group('MediaServerHttpClient shutdown', () {
@@ -110,6 +111,32 @@ void main() {
       expect(File(filePath).existsSync(), isFalse, reason: 'a cancelled download must not commit the final file');
       expect(File('$filePath.download').existsSync(), isFalse, reason: 'the partial temp file must be cleaned up');
     });
+
+    test('closeGracefully awaits a delegating GracefulHttpClient drain', () async {
+      final transport = _ManualDrainClient();
+      final client = MediaServerHttpClient(client: transport, baseUrl: 'https://example.test/');
+
+      var closed = false;
+      final closing = client.closeGracefully().then((_) => closed = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(transport.drainRequested, isTrue);
+      expect(closed, isFalse, reason: 'must await the delegate drain, not fall back to fire-and-forget close()');
+
+      transport.finishDrain();
+      await closing;
+      expect(closed, isTrue);
+    });
+
+    test('AndroidPlatformHttpClient keeps the graceful-drain contract and rejects sends once closing', () async {
+      final client = AndroidPlatformHttpClient();
+      expect(client, isA<GracefulHttpClient>(), reason: 'per-server awaited drains dispatch on GracefulHttpClient');
+
+      await client.closeGracefully(drainTimeout: Duration.zero);
+      expect(
+        () => client.send(http.Request('GET', Uri.parse('https://example.test/library/sections'))),
+        throwsA(isA<http.ClientException>()),
+      );
+    });
   });
 }
 
@@ -149,4 +176,25 @@ class _HangingBodyClient extends http.BaseClient {
   Future<void> dispose() async {
     await body.close();
   }
+}
+
+/// Delegating client (the AndroidPlatformHttpClient shape) whose drain
+/// completes only when the test says so.
+class _ManualDrainClient extends http.BaseClient implements GracefulHttpClient {
+  final _drained = Completer<void>();
+  bool drainRequested = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) => throw UnimplementedError();
+
+  @override
+  Future<void> closeGracefully({Duration drainTimeout = const Duration(seconds: 2)}) {
+    drainRequested = true;
+    return _drained.future;
+  }
+
+  void finishDrain() => _drained.complete();
+
+  @override
+  void close() {}
 }

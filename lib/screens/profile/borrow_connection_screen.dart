@@ -81,7 +81,10 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
     final profileRegistry = context.read<ProfileRegistry>();
     final plexHome = context.read<PlexHomeService>();
 
-    await plexHome.start();
+    // Cache-only: this picker reads `plexHome.current` immediately and must
+    // not start live refresh, which would reach the network from a screen the
+    // user can open while offline.
+    await plexHome.hydrate();
     final results = await Future.wait([
       pcRegistry.listAll(),
       connRegistry.list(),

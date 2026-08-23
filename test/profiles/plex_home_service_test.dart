@@ -248,6 +248,82 @@ void main() {
       expect(service.current[acct.id]!.first.uuid, 'seeded-uuid');
     });
 
+    // `start()` used to be the only entry point, and it was called from a
+    // provider `create:` — so it began network refresh before SetupScreen had
+    // decided whether the app should go straight offline. `hydrate()` is the
+    // disk-only half, safe to call before that decision.
+    test('hydrate loads the cache without issuing any network fetch', () async {
+      await storage.savePlexHomeUsersCache('plex.hydrate', [_user('cached-uuid').toJson()]);
+      final acct = _account('plex.hydrate');
+      await connections.upsert(acct);
+
+      final fetcher = _QueuedFetcher();
+      addTearDown(fetcher.close);
+      service = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: fetcher.call,
+      );
+
+      await service.hydrate();
+      // Give any stray unawaited refresh a chance to reach the fetcher.
+      await Future<void>.delayed(Duration.zero);
+
+      expect(service.current[acct.id]!.single.uuid, 'cached-uuid');
+      expect(fetcher.requests, isEmpty, reason: 'hydration must not touch the network');
+    });
+
+    test('hydrate still satisfies the stream replay contract', () async {
+      // `stream` re-emits on listen so a late listener behind a combineLatest
+      // does not sit on ConnectionState.waiting forever. That has to hold even
+      // when the live/network side never starts.
+      await storage.savePlexHomeUsersCache('plex.replay', [_user('replay-uuid').toJson()]);
+      final acct = _account('plex.replay');
+      await connections.upsert(acct);
+
+      final fetcher = _QueuedFetcher();
+      addTearDown(fetcher.close);
+      service = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: fetcher.call,
+      );
+
+      await service.hydrate();
+
+      final first = await service.stream.first;
+      expect(first[acct.id]!.single.uuid, 'replay-uuid');
+      expect(fetcher.requests, isEmpty);
+    });
+
+    test('concurrent hydrate calls share one pass and start implies hydration', () async {
+      await storage.savePlexHomeUsersCache('plex.coalesce', [_user('coalesce-uuid').toJson()]);
+      final acct = _account('plex.coalesce');
+      await connections.upsert(acct);
+
+      final fetcher = _QueuedFetcher();
+      addTearDown(fetcher.close);
+      service = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: fetcher.call,
+      );
+
+      // Provider create and a picker opening at the same time.
+      await Future.wait([service.hydrate(), service.hydrate(), service.hydrate()]);
+      expect(service.current[acct.id]!.single.uuid, 'coalesce-uuid');
+      expect(fetcher.requests, isEmpty);
+
+      // start() is self-sufficient: it implies hydration and then goes live.
+      await service.start();
+      await fetcher.waitForCount(1);
+      expect(fetcher.requests, hasLength(1), reason: 'the live side does refresh');
+      expect(service.current[acct.id]!.single.uuid, 'coalesce-uuid');
+    });
+
     test('reloadFromStorage picks up caches written after startup', () async {
       final refreshBlocker = Completer<List<PlexHomeUser>>();
       service = PlexHomeService(

@@ -1561,15 +1561,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         Provider<ProfileConnectionRegistry>(create: (_) => ProfileConnectionRegistry(_appDatabase)),
         Provider<PlexHomeService>(
           create: (context) {
-            // start() resolves StorageService internally — the singleton was
-            // already initialised eagerly during boot, so the await is a
-            // microtask hop in practice.
+            // Hydrate the disk cache eagerly for profile resolution. Live
+            // refresh is started only after MainScreen has settled the
+            // startup offline decision.
             final service = PlexHomeService(
               connections: context.read<ConnectionRegistry>(),
               profileConnections: context.read<ProfileConnectionRegistry>(),
               storage: context.read<StorageService>(),
             );
-            unawaited(service.start());
+            unawaited(service.hydrate());
             return service;
           },
           dispose: (_, s) => s.dispose(),
