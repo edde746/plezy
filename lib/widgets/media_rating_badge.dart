@@ -102,7 +102,9 @@ class InlineRatingBadges extends StatelessWidget {
     if (ratings.isEmpty) return const SizedBox.shrink();
 
     final foreground = foregroundColor ?? Theme.of(context).colorScheme.onSurface;
-    final style = _resolveTextStyle(textStyle, foreground, true);
+    final style = (textStyle ?? TextStyle(color: foreground, fontSize: 13, fontWeight: FontWeight.w700)).copyWith(
+      color: textStyle?.color ?? foreground,
+    );
     final gap = entrySpacing ?? 10;
 
     final children = <Widget>[];
@@ -129,76 +131,6 @@ class InlineRatingBadges extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: children),
     );
   }
-}
-
-/// Every attributed score an item carries, side by side in one pill, so a
-/// badge row's element count does not grow with the number of sources.
-///
-/// A Plex detail response yields up to four (Rotten Tomatoes critic and
-/// audience, IMDb, TMDB); a library listing yields the one or two the server
-/// sends with it; Jellyfin yields its community score and Tomatometer. The
-/// group renders whatever is there and collapses to a single badge when that
-/// is all the response carried — no extra requests are made to lengthen it.
-class MediaRatingBadgeGroup extends StatelessWidget {
-  const MediaRatingBadgeGroup.chip({
-    super.key,
-    required this.item,
-    this.fallbackItem,
-    this.textStyle,
-    this.foregroundColor,
-    this.backgroundColor,
-    this.iconSize,
-    this.padding,
-    this.spacing,
-    this.entrySpacing,
-  });
-
-  final MediaItem item;
-
-  /// Consulted only when [item] carries no ratings at all — an episode row
-  /// borrowing its show's scores.
-  final MediaItem? fallbackItem;
-  final TextStyle? textStyle;
-  final Color? foregroundColor;
-  final Color? backgroundColor;
-  final double? iconSize;
-  final EdgeInsetsGeometry? padding;
-
-  /// Gap between a badge's icon and its value.
-  final double? spacing;
-
-  /// Gap between adjacent scores.
-  final double? entrySpacing;
-
-  @override
-  Widget build(BuildContext context) {
-    final ratings = mediaRatingsFor(item, fallbackItem: fallbackItem);
-    if (ratings.isEmpty) return const SizedBox.shrink();
-
-    final colorScheme = Theme.of(context).colorScheme;
-    final foreground = foregroundColor ?? colorScheme.onSecondaryContainer;
-    return Container(
-      padding: padding ?? const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: backgroundColor ?? colorScheme.secondaryContainer.withValues(alpha: 0.8),
-        borderRadius: const BorderRadius.all(Radius.circular(100)),
-      ),
-      child: InlineRatingBadges(
-        ratings: ratings,
-        textStyle: _resolveTextStyle(textStyle, foreground, false),
-        foregroundColor: foreground,
-        iconSize: iconSize,
-        spacing: spacing,
-        entrySpacing: entrySpacing,
-      ),
-    );
-  }
-}
-
-TextStyle _resolveTextStyle(TextStyle? textStyle, Color foreground, bool isInline) {
-  return (textStyle ??
-          TextStyle(color: foreground, fontSize: 13, fontWeight: isInline ? FontWeight.w700 : FontWeight.w600))
-      .copyWith(color: textStyle?.color ?? foreground);
 }
 
 Widget _buildContent({
