@@ -460,16 +460,13 @@ class _ProfileTile extends StatelessWidget {
                       ),
                       if (isActive) ...[
                         const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            t.profiles.active,
-                            style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onPrimaryContainer),
-                          ),
+                        // Plain inline indicator instead of a boxed badge: a
+                        // filled pill fights the tile's own focus fill.
+                        AppIcon(Symbols.check_circle_rounded, fill: 1, size: 16, color: tokens(context).textMuted),
+                        const SizedBox(width: 4),
+                        Text(
+                          t.profiles.active,
+                          style: theme.textTheme.labelMedium?.copyWith(color: tokens(context).textMuted),
                         ),
                       ],
                     ],
@@ -569,30 +566,30 @@ class _ConnectionChips extends StatelessWidget {
     if (chips.isEmpty) {
       return Text(t.profiles.noConnections, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error));
     }
+    // Plain muted metadata instead of boxed chips: any filled pill fights the
+    // tile's own focus fill (and the opaque theme surfaces read as dark holes
+    // on it), so the connections render like the app's other meta rows.
     return Wrap(
-      spacing: 6,
+      spacing: 12,
       runSpacing: 4,
       children: [
         for (final c in chips)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              mainAxisSize: .min,
-              children: [
-                BackendBadge(backend: c.backend, size: 12),
-                const SizedBox(width: 4),
-                // Account labels are often an email address, and a chip in a
-                // Wrap gets unbounded main-axis space — without this the row
-                // overflows the tile instead of ellipsizing.
-                Flexible(
-                  child: Text(c.label, style: theme.textTheme.labelSmall, overflow: .ellipsis),
+          Row(
+            mainAxisSize: .min,
+            children: [
+              BackendBadge(backend: c.backend, size: 12),
+              const SizedBox(width: 5),
+              // Account labels are often an email address, and an entry in a
+              // Wrap gets unbounded main-axis space — without this the row
+              // overflows the tile instead of ellipsizing.
+              Flexible(
+                child: Text(
+                  c.label,
+                  style: theme.textTheme.labelSmall?.copyWith(color: tokens(context).textMuted),
+                  overflow: .ellipsis,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
       ],
     );
