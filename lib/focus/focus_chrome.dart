@@ -24,6 +24,7 @@ Widget buildFocusChrome(
   bool useBackgroundFocus = false,
   bool useFocusGlow = false,
   bool delegateFocusBorder = false,
+  bool? showGlow,
   Size? glowSize,
   required Widget child,
 }) {
@@ -44,10 +45,12 @@ Widget buildFocusChrome(
   }
 
   // Glow (full-bleed cards) renders in an overlay above siblings so it stays
-  // symmetric; the in-card decoration only carries the border.
+  // symmetric; the in-card decoration only carries the border. [showGlow] lets
+  // callers hold back just the glow (e.g. while a viewport scroll animates)
+  // without touching the border or scale chrome.
   if (useFocusGlow) {
     card = FocusGlowOverlay(
-      isFocused: showFocus,
+      isFocused: showGlow ?? showFocus,
       borderRadius: borderRadius,
       color: focusColor ?? FocusTheme.getFocusBorderColor(context),
       glowSize: glowSize,

@@ -781,6 +781,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
           );
         } else {
           _verticalScrollGeneration++;
+          _focusModel.verticalScrollActive = false;
           _verticalScrollSnapshotController.allowSnapshotting = false;
           _verticalController.jumpTo(target);
         }
@@ -801,6 +802,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         );
       } else {
         _verticalScrollGeneration++;
+        _focusModel.verticalScrollActive = false;
         _verticalScrollSnapshotController.allowSnapshotting = false;
         unawaited(Scrollable.ensureVisible(context, alignment: 0, duration: Duration.zero));
       }
@@ -809,6 +811,12 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
   void _startVerticalScrollAnimation(Future<void> Function() animate) {
     final generation = ++_verticalScrollGeneration;
+    // Suppress the focus glow while the rail animates vertically: the glow
+    // paints in the root overlay, unclipped by the vertical viewport, so on UP
+    // moves it would flash over the rows above while the target row is still
+    // offscreen. Cleared in whenComplete (or by a non-animated jump) so the
+    // glow fades back in once the row has settled.
+    _focusModel.verticalScrollActive = true;
     // Full-tier row effects must stay live. The reduced tier has already
     // resolved those short effects to their final state before this snapshot.
     final useSnapshots = DevicePerformance.isReduced;
@@ -818,6 +826,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     unawaited(
       animate().whenComplete(() {
         if (!mounted || generation != _verticalScrollGeneration) return;
+        _focusModel.verticalScrollActive = false;
         _verticalScrollSnapshotController.allowSnapshotting = false;
       }),
     );
@@ -1445,15 +1454,25 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
           }
 
           final item = hub.items[itemIndex];
-          final focusableCard = ListenableSelector<bool>(
+          // Record: (focused, glow shown). The glow is additionally gated on
+          // the vertical scroll being idle — it paints in the root overlay,
+          // unclipped by the rail's viewport, so on UP moves it would flash
+          // over the spotlight while the target row is still offscreen. The
+          // selection collapses to (false, false) for unfocused cards, so the
+          // flag flip repaints only the focused card.
+          final focusableCard = ListenableSelector<(bool, bool)>(
             listenable: _focusModel,
-            selector: isItemFocused,
-            builder: (context, isFocused, child) => FocusBuilders.buildLockedFocusWrapper(
+            selector: () {
+              final isFocused = isItemFocused();
+              return (isFocused, isFocused && !_focusModel.verticalScrollActive);
+            },
+            builder: (context, focus, child) => FocusBuilders.buildLockedFocusWrapper(
               context: context,
-              isFocused: isFocused,
+              isFocused: focus.$1,
               borderRadius: tokens(context).radiusSm,
               focusScale: fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale,
               useFocusGlow: fullCardLayout,
+              showGlow: focus.$2,
               // The card draws the border itself (poster rect for
               // standard cards, whole card when full-bleed).
               delegateFocusBorder: true,
@@ -1887,10 +1906,22 @@ class _RailClipper extends CustomClipper<Rect> {
 class _RailFocusModel extends ChangeNotifier {
   (int, int) _position = (0, 0);
   bool _railHasFocus = false;
+  bool _verticalScrollActive = false;
 
   (int, int) get position => _position;
   int get hubIndex => _position.$1;
   bool get railHasFocus => _railHasFocus;
+
+  /// Whether the rail is animating a hub row into view vertically. Gates only
+  /// the focus glow (root-overlay paint, unclipped by the vertical viewport);
+  /// border and scale chrome stay tied to the position alone.
+  bool get verticalScrollActive => _verticalScrollActive;
+
+  set verticalScrollActive(bool value) {
+    if (value == _verticalScrollActive) return;
+    _verticalScrollActive = value;
+    notifyListeners();
+  }
 
   void set(int hubIndex, int itemIndex, {bool notify = true}) {
     final next = (hubIndex, itemIndex);
