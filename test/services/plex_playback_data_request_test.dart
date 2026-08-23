@@ -318,6 +318,21 @@ void main() {
       expect(data.mediaInfo?.subtitleTracks.single.id, 401);
     });
 
+    test('forceRefresh bypasses a fresh stream-rich cached row', () async {
+      // The subtitle-download poller relies on this: it must observe the new
+      // external stream appearing server-side while the shared row is fresh.
+      await PlexApiCache.instance.put(cacheScope, endpoint, richPlaybackPayload());
+      final requests = <Uri>[];
+      final client = makeCountingClient(requests);
+      addTearDown(client.close);
+
+      final data = await client.getVideoPlaybackData('42', forceRefresh: true);
+
+      expect(requests, hasLength(1));
+      expect(requests.single.queryParameters['includeStreams'], '1');
+      expect(data.mediaInfo?.subtitleTracks.single.id, 401);
+    });
+
     test('fresh but stream-less cached row still fetches from the network', () async {
       // getPlaybackExtras' lean fetch overwrites the shared row without
       // includeStreams/checkFiles; that shape must never satisfy playback.

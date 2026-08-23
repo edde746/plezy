@@ -1922,11 +1922,18 @@ class PlexClient
   /// Get consolidated video playback data in one cache-aware API call.
   /// Request/decode failures throw. Only a valid absent metadata/media/part
   /// shape returns an aggregate without a playable URL.
+  ///
+  /// [forceRefresh] skips the fresh-cache fast path so server-side stream
+  /// changes become observable. Required by pollers (the OpenSubtitles
+  /// download flow watches for a new external stream to appear): without it,
+  /// each successful network fetch re-stamps the shared cache row, so every
+  /// later poll inside the freshness window is served the stale snapshot.
   Future<PlexVideoPlaybackData> getVideoPlaybackData(
     String ratingKey, {
     int mediaIndex = 0,
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
+    bool forceRefresh = false,
   }) async {
     // Fresh-cache-first: the detail screen writes a strict superset of this
     // query shape (includeChapters+includeMarkers+includeOnDeck+checkFiles+
@@ -1936,24 +1943,26 @@ class PlexClient
     // staleness, thin row (getPlaybackExtras' lean fetch overwrites the shared
     // row without includeStreams/checkFiles), or shape failure falls through
     // to the network-first fetch below unchanged.
-    final freshRow = await cache.getIfFresh(
-      ServerId(cacheServerId),
-      '/library/metadata/$ratingKey',
-      maxAge: playbackMetadataCacheFreshness,
-    );
-    if (freshRow != null) {
-      try {
-        final cachedMetadataJson = _validatedPlaybackMetadataJson(freshRow);
-        if (cachedMetadataJson != null && _plexMetadataHasStreamDetail(cachedMetadataJson)) {
-          return parseVideoPlaybackDataFromJson(
-            cachedMetadataJson,
-            mediaIndex: mediaIndex,
-            selectedMediaSourceId: selectedMediaSourceId,
-            preferredVersionSignature: preferredVersionSignature,
-          );
+    if (!forceRefresh) {
+      final freshRow = await cache.getIfFresh(
+        ServerId(cacheServerId),
+        '/library/metadata/$ratingKey',
+        maxAge: playbackMetadataCacheFreshness,
+      );
+      if (freshRow != null) {
+        try {
+          final cachedMetadataJson = _validatedPlaybackMetadataJson(freshRow);
+          if (cachedMetadataJson != null && _plexMetadataHasStreamDetail(cachedMetadataJson)) {
+            return parseVideoPlaybackDataFromJson(
+              cachedMetadataJson,
+              mediaIndex: mediaIndex,
+              selectedMediaSourceId: selectedMediaSourceId,
+              preferredVersionSignature: preferredVersionSignature,
+            );
+          }
+        } on FormatException {
+          // Malformed cached row: the network fetch below overwrites it.
         }
-      } on FormatException {
-        // Malformed cached row: the network fetch below overwrites it.
       }
     }
     final data = await fetchWithCacheFallback<Map<String, dynamic>>(
