@@ -1209,7 +1209,7 @@ void main() {
       await pumpPhoneDetail(tester, client, show, observer: observer);
 
       expect(find.text('S1E1'), findsOneWidget, reason: 'play button targets the on-deck episode');
-      expect(find.text('Episode S1E1'), findsOneWidget);
+      expect(find.text('1. Episode S1E1'), findsOneWidget);
       final childrenCallsBeforePlayback = client.childrenPageCalls.length;
       observer.pushedRouteNames.clear();
 
@@ -1231,7 +1231,7 @@ void main() {
           reason: 'playback return must not raise the full-screen loader',
         );
         expect(
-          find.text('Episode S1E1'),
+          find.text('1. Episode S1E1'),
           findsOneWidget,
           reason: 'loaded episode rows must survive the playback return',
         );
@@ -1357,6 +1357,83 @@ void main() {
       );
     });
 
+    testWidgets('hero chip strip sheds chips by usefulness instead of wrapping', (tester) async {
+      // The hero metadata strip is a single run: when it cannot fit, chips
+      // drop by usefulness — rating badges from the end first, then the
+      // quality label, certification, and runtime — never by wrapping onto a
+      // second run the height clip would hide. The interactive Rate chip and
+      // the year go last and first, respectively.
+      final movie =
+          testMediaItem(
+            id: 'chip_movie',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            title: 'Chip Movie',
+            year: 2017,
+            contentRating: 'PG-13',
+            durationMs: 6360000,
+            mediaVersions: [MediaVersion(id: 'v1', videoResolution: '1080')],
+            serverId: 'server_1',
+            serverName: 'Server',
+          ).copyWith(
+            // Unbranded sources render a star icon plus the bare value text, so
+            // each badge is findable by its formatted value.
+            ratings: const [
+              MediaRatingSource(source: 'critic', value: 9.2),
+              MediaRatingSource(source: 'simkl', value: 7.4),
+              MediaRatingSource(source: 'mal', value: 6.4),
+            ],
+          );
+      final client = _FakeMediaServerClient(show: movie, childrenByParent: const {});
+
+      await pumpPhoneDetail(tester, client, movie);
+
+      Future<void> resizeTo(double width) async {
+        tester.view.physicalSize = Size(width, 2400);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+
+      final rate = t.mediaMenu.rate;
+      void expectChips({required List<String> present, required List<String> absent}) {
+        // The info rows below the hero repeat some values (e.g. the content
+        // rating), so scope every lookup to the strip: the Wrap carrying the
+        // always-present Rate chip.
+        final strip = find.ancestor(of: find.text(rate), matching: find.byType(Wrap)).first;
+        Finder chip(String text) => find.descendant(of: strip, matching: find.text(text));
+        for (final text in present) {
+          expect(chip(text), findsOneWidget, reason: '"$text" should be on the strip');
+        }
+        for (final text in absent) {
+          expect(chip(text), findsNothing, reason: '"$text" should have been dropped');
+        }
+        // Single run: every survivor sits on the same line as the always-kept
+        // Rate chip.
+        final rateDy = tester.getCenter(find.text(rate)).dy;
+        for (final text in present) {
+          expect(tester.getCenter(chip(text)).dy, moreOrLessEquals(rateDy, epsilon: 4));
+        }
+        expect(tester.takeException(), isNull);
+      }
+
+      // 1100 wide: everything fits (test font ~13px/char puts the full strip
+      // near 740px against ~1068px of hero width).
+      expectChips(present: ['2017', 'PG-13', '1h 46min', '1080p', '9.2', '7.4', '6.4', rate], absent: []);
+
+      // The scores pill sheds badges from the end before anything else.
+      await resizeTo(660);
+      expectChips(present: ['2017', 'PG-13', '1h 46min', '1080p', '9.2', rate], absent: ['7.4', '6.4']);
+
+      // Then the whole pill, the quality label, and the certification go —
+      // never the runtime, year, or Rate.
+      await resizeTo(420);
+      expectChips(present: ['2017', '1h 46min', rate], absent: ['9.2', '7.4', '6.4', '1080p', 'PG-13']);
+
+      // Down to the bone: the year and the interactive Rate chip survive.
+      await resizeTo(320);
+      expectChips(present: ['2017', rate], absent: ['1h 46min', '1080p', 'PG-13', '9.2']);
+    });
+
     testWidgets('portrait phone hero shows square art instead of the cropped backdrop', (tester) async {
       final movie = testMediaItem(
         id: 'square_hero',
@@ -1459,7 +1536,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Episode S2E1'), findsOneWidget);
+      expect(find.text('1. Episode S2E1'), findsOneWidget);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_1');
     });
 
@@ -1488,7 +1565,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 200));
 
-      expect(find.text('Episode S2E2'), findsOneWidget);
+      expect(find.text('2. Episode S2E2'), findsOneWidget);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'initial_episode');
     });
 
@@ -1519,7 +1596,7 @@ void main() {
 
       // The first row keeps _firstEpisodeFocusNode (so season-tab DOWN keeps
       // working) and the initial focus lands on that node instead.
-      expect(find.text('Episode S2E1'), findsOneWidget);
+      expect(find.text('1. Episode S2E1'), findsOneWidget);
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'first_episode');
     });
 
@@ -1540,12 +1617,12 @@ void main() {
 
       // Seed a session patch for one episode (e.g. user toggled it earlier).
       await emit(tester, () => WatchStateNotifier().notifyWatched(item: episode1, isNowWatched: false));
-      expect(episodeRowWatched(tester, 'Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, '1. Episode S1E1'), isFalse);
 
       await emit(tester, () => WatchStateNotifier().notifyWatched(item: show, isNowWatched: true));
 
-      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
-      expect(episodeRowWatched(tester, 'Episode S1E2'), isTrue);
+      expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
+      expect(episodeRowWatched(tester, '2. Episode S1E2'), isTrue);
     });
 
     testWidgets('marking a season watched flips its episode rows', (tester) async {
@@ -1565,8 +1642,8 @@ void main() {
 
       await emit(tester, () => WatchStateNotifier().notifyWatched(item: season1, isNowWatched: true));
 
-      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
-      expect(episodeRowWatched(tester, 'Episode S1E2'), isTrue);
+      expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
+      expect(episodeRowWatched(tester, '2. Episode S1E2'), isTrue);
     });
 
     testWidgets('container mark clears progress, including after a season tab round-trip', (tester) async {
@@ -1590,11 +1667,11 @@ void main() {
         tester,
         () => WatchStateNotifier().notifyProgress(item: episode1, viewOffset: 600000, duration: 1800000),
       );
-      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isTrue);
+      expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isTrue);
 
       await emit(tester, () => WatchStateNotifier().notifyWatched(item: show, isNowWatched: true));
-      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isFalse);
-      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+      expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
 
       // Round-trip through another season tab; the cached page restore must not
       // resurrect the dead progress offset.
@@ -1605,8 +1682,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
-      expect(episodeRowHasProgress(tester, 'Episode S1E1'), isFalse);
-      expect(episodeRowWatched(tester, 'Episode S1E1'), isTrue);
+      expect(episodeRowHasProgress(tester, '1. Episode S1E1'), isFalse);
+      expect(episodeRowWatched(tester, '1. Episode S1E1'), isTrue);
     });
   });
 }

@@ -961,43 +961,174 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Every attributed score in one pill, then the tappable user-rating chip.
+  /// Hero metadata chips fitted to a single run of at most [maxWidth].
   ///
-  /// The scores share a single pill rather than taking a chip each: this row
-  /// is a height-clipped [Wrap], so a per-source chip would push the year,
-  /// certification, and runtime out of the visible band on short heroes.
-  List<Widget> _buildRatingChips(MediaItem metadata) {
+  /// Chips are measured up front and greedily dropped by usefulness —
+  /// mirroring [FittedMetadataLine]'s policy — instead of wrapping onto a
+  /// second run that short heroes clip away entirely: the scores pill sheds
+  /// one badge at a time from the end, then quality labels go rightmost-first,
+  /// then the Plex edition, certification, runtime, and finally the year. The
+  /// tappable user-rating chip is the strip's only interactive element and is
+  /// never dropped.
+  ///
+  /// Only the mobile/desktop hero calls this (TV renders
+  /// [_buildTvDetailMetadataLine] instead), so the non-TV metrics from
+  /// [_buildMetadataChip] apply throughout.
+  List<Widget> _buildFittedHeroChips(BuildContext context, MediaItem metadata, double maxWidth) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isTv = PlatformDetector.isTV();
-    return [
-      if (mediaRatingsFor(metadata).isNotEmpty)
-        MediaRatingBadgeGroup.chip(
-          item: metadata,
-          foregroundColor: colorScheme.onSecondaryContainer,
-          backgroundColor: colorScheme.secondaryContainer.withValues(alpha: 0.8),
-          iconSize: isTv ? 20 : 16,
-          spacing: isTv ? 6 : 4,
-          entrySpacing: isTv ? 12 : 10,
-          padding: EdgeInsets.symmetric(horizontal: isTv ? 14 : 12, vertical: isTv ? 8 : 6),
-          textStyle: TextStyle(color: colorScheme.onSecondaryContainer, fontSize: isTv ? 16 : 13, fontWeight: .w600),
+    final textScaler = MediaQuery.textScalerOf(context);
+    final textDirection = Directionality.of(context);
+    // Text merges its style over the ambient default, so measuring with the
+    // bare chip style would drop the theme's font metrics.
+    final ambientStyle = DefaultTextStyle.of(context).style;
+    final chipTextStyle = TextStyle(color: colorScheme.onSecondaryContainer, fontSize: 13, fontWeight: .w600);
+    const chipPadding = 24.0; // _buildMetadataChip: horizontal 12 each side
+    const chipSpacing = 8.0; // the strip Wrap's spacing
+    const iconSize = 16.0;
+    const iconGap = 4.0;
+    const badgeEntryGap = 10.0;
+
+    double textWidth(String text, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: ambientStyle.merge(style)),
+        textDirection: textDirection,
+        textScaler: textScaler,
+        maxLines: 1,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      return width;
+    }
+
+    // One slot per chip; a slot's units are its droppable atoms — one per
+    // rating badge for the scores pill, the whole chip for everything else.
+    final ratings = mediaRatingsFor(metadata);
+    final slots = <({int dropPriority, List<double> unitWidths, Widget Function(int kept) build})>[];
+
+    void addTextChip(String text, int dropPriority) {
+      slots.add((
+        dropPriority: dropPriority,
+        unitWidths: [chipPadding + textWidth(text, chipTextStyle)],
+        build: (_) => _buildMetadataChip(text),
+      ));
+    }
+
+    if (metadata.year != null) addTextChip('${metadata.year}', 0);
+    if (metadata case PlexMediaItem(:final editionTitle?)) addTextChip(editionTitle, 3);
+    if (metadata.contentRating != null) addTextChip(formatContentRating(metadata.contentRating!), 2);
+    if (metadata.durationMs != null) addTextChip(formatDurationTextual(metadata.durationMs!), 1);
+    for (final label in buildMediaQualityLabels(metadata)) {
+      addTextChip(label, 4);
+    }
+    if (ratings.isNotEmpty) {
+      // Every attributed score shares one pill rather than taking a chip
+      // each, so a long score list can't crowd out the year, certification,
+      // and runtime.
+      slots.add((
+        dropPriority: 5,
+        // The pill's own horizontal padding rides on the first badge: it is
+        // shed last, so the padding is counted for exactly as long as any
+        // part of the pill is still on the strip.
+        unitWidths: [
+          for (final (index, rating) in ratings.indexed)
+            (index == 0 ? chipPadding : 0.0) +
+                inlineRatingBadgeWidth(
+                  rating,
+                  textStyle: ambientStyle.merge(chipTextStyle),
+                  textScaler: textScaler,
+                  textDirection: textDirection,
+                  iconSize: iconSize,
+                  spacing: iconGap,
+                ),
+        ],
+        build: (kept) => Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: colorScheme.secondaryContainer.withValues(alpha: 0.8),
+            borderRadius: const BorderRadius.all(Radius.circular(100)),
+          ),
+          child: InlineRatingBadges(
+            ratings: kept == ratings.length ? ratings : ratings.sublist(0, kept),
+            textStyle: chipTextStyle,
+            foregroundColor: colorScheme.onSecondaryContainer,
+            iconSize: iconSize,
+            spacing: iconGap,
+            entrySpacing: badgeEntryGap,
+          ),
         ),
-      if (!widget.isOffline) _buildUserRatingChip(metadata),
+      ));
+    }
+
+    // The user-rating chip always survives, but its width still counts
+    // against the budget so dropping other chips actually makes room for it.
+    Widget? userRatingChip;
+    var userRatingChipWidth = 0.0;
+    if (!widget.isOffline) {
+      userRatingChip = _buildUserRatingChip(metadata);
+      userRatingChipWidth =
+          chipPadding +
+          iconSize +
+          iconGap +
+          textWidth(_userRatingChipLabel(metadata), const TextStyle(fontSize: 13, fontWeight: .w500));
+    }
+
+    final keptUnits = [for (final slot in slots) slot.unitWidths.length];
+
+    double totalWidth() {
+      var total = userRatingChipWidth;
+      var chipCount = userRatingChip == null ? 0 : 1;
+      for (var index = 0; index < slots.length; index++) {
+        final kept = keptUnits[index];
+        if (kept == 0) continue;
+        var width = 0.0;
+        for (var unit = 0; unit < kept; unit++) {
+          width += slots[index].unitWidths[unit];
+        }
+        if (kept > 1) width += badgeEntryGap * (kept - 1);
+        total += width;
+        chipCount++;
+      }
+      if (chipCount > 1) total += chipSpacing * (chipCount - 1);
+      return total;
+    }
+
+    if (maxWidth.isFinite) {
+      while (totalWidth() > maxWidth) {
+        var dropIndex = -1;
+        for (var index = 0; index < slots.length; index++) {
+          if (keptUnits[index] == 0) continue;
+          if (dropIndex == -1 || slots[index].dropPriority >= slots[dropIndex].dropPriority) dropIndex = index;
+        }
+        if (dropIndex == -1) break;
+        keptUnits[dropIndex]--;
+      }
+    }
+
+    return [
+      for (var index = 0; index < slots.length; index++)
+        if (keptUnits[index] > 0) slots[index].build(keptUnits[index]),
+      ?userRatingChip,
     ];
+  }
+
+  /// Numeric backends show the formatted rating when set; favorite backends
+  /// rely on the filled heart to communicate the favorite state and keep the
+  /// "Rate" label as the action prompt either way.
+  String _userRatingChipLabel(MediaItem metadata) {
+    final isNumeric = _getMediaClientForMetadata(context)?.capabilities.numericUserRating ?? true;
+    final hasRating = metadata.userRating != null && metadata.userRating! > 0;
+    return isNumeric && hasRating ? formatRating(metadata.userRating! / 2.0) : t.mediaMenu.rate;
   }
 
   Widget _buildUserRatingChip(MediaItem metadata) {
     final mediaClient = _getMediaClientForMetadata(context);
     final isNumeric = mediaClient?.capabilities.numericUserRating ?? true;
     final hasRating = metadata.userRating != null && metadata.userRating! > 0;
-    final starValue = hasRating ? metadata.userRating! / 2.0 : 0.0;
     final active = isNumeric ? hasRating : metadata.isFavorite == true;
 
     final iconData = isNumeric ? Symbols.star_rounded : Symbols.favorite_rounded;
     final activeIconColor = isNumeric ? Colors.amber : Colors.redAccent;
-    // Numeric backends show the formatted rating when set; favorite backends
-    // rely on the filled heart to communicate the favorite state and keep the
-    // "Rate" label as the action prompt either way.
-    final label = isNumeric && hasRating ? formatRating(starValue) : t.mediaMenu.rate;
+    final label = _userRatingChipLabel(metadata);
 
     return ListenableBuilder(
       listenable: _ratingChipFocusNode,
@@ -3102,7 +3233,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   onNavigateLeft: () {},
                                   onNavigateRight: () {},
                                 ),
-                                const SizedBox(height: 24),
+                                const SizedBox(height: 12),
                               ],
 
                               // Seasons / Episodes (for TV shows and seasons)
@@ -3135,7 +3266,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   else
                                     _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
                                 ],
-                                const SizedBox(height: 24),
+                                SizedBox(height: isTv ? 24 : 12),
                               ] else if ((isShow && _showEpisodesDirectly) || metadata.isSeason) ...[
                                 // Server says flatten — existing behavior unchanged
                                 Text(key: _seasonsSectionKey, t.libraries.groupings.episodes, style: sectionTitleStyle),
@@ -3148,7 +3279,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   _buildEpisodesList()
                                 else
                                   _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
-                                const SizedBox(height: 24),
+                                SizedBox(height: isTv ? 24 : 12),
                               ],
 
                               // Cast
@@ -3156,7 +3287,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 Text(key: _castSectionKey, t.discover.cast, style: sectionTitleStyle),
                                 const SizedBox(height: 12),
                                 _buildCastSection(metadata),
-                                const SizedBox(height: 24),
+                                SizedBox(height: isTv ? 24 : 12),
                               ],
 
                               // Trailers & Extras Section
@@ -3164,7 +3295,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 Text(key: _extrasSectionKey, t.discover.extras, style: sectionTitleStyle),
                                 const SizedBox(height: 12),
                                 _buildExtrasSection(),
-                                const SizedBox(height: 24),
+                                SizedBox(height: isTv ? 24 : 12),
                               ],
 
                               // Related Hubs (Collections, Similar, More From...)
@@ -3177,6 +3308,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   inset: true,
                                   onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
                                 ),
+                                // 8 on mobile: an inset HubSection already carries ~2px of internal
+                                // bottom padding and the next section ~2px on top, so 8 lands on the
+                                // same ~12px rhythm as the sections above.
                                 SizedBox(height: isTv ? 28 : 8),
                               ],
 
@@ -4220,21 +4354,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         const desiredLogoHeight = 120.0;
         const desiredLogoWidth = 400.0;
         const actionHeight = 48.0;
-        final chips = <Widget>[
-          if (metadata.year != null) _buildMetadataChip('${metadata.year}'),
-          if (metadata case PlexMediaItem(:final editionTitle?)) _buildMetadataChip(editionTitle),
-          if (metadata.contentRating != null) _buildMetadataChip(formatContentRating(metadata.contentRating!)),
-          if (metadata.durationMs != null) _buildMetadataChip(formatDurationTextual(metadata.durationMs!)),
-          for (final label in buildMediaQualityLabels(metadata)) _buildMetadataChip(label),
-          ..._buildRatingChips(metadata),
-        ];
+        // Fitted to a single run: chips shed by usefulness instead of
+        // wrapping onto a second run the height clip below would hide.
+        final chips = _buildFittedHeroChips(context, metadata, constraints.maxWidth);
         // Genres render on their own line below the metadata chips.
         final genreChips = [for (final genre in metadata.genres ?? const <String>[]) _buildMetadataChip(genre)];
 
         final showActions = availableHeight >= actionHeight;
         final remainingAfterActions = availableHeight - (showActions ? actionHeight : 0);
         final showChips = chips.isNotEmpty && remainingAfterActions >= 88;
-        final chipHeight = showChips ? (remainingAfterActions >= 170 ? 68.0 : 32.0) : 0.0;
+        const chipHeight = 32.0;
+        final chipBlockHeight = showChips ? chipHeight : 0.0;
         final chipActionGap = showChips && showActions ? (availableHeight < 180 ? 8.0 : 16.0) : 0.0;
         // Reserve a dedicated genre row, but only when the logo still keeps room
         // afterwards so the title isn't crowded out on short heroes.
@@ -4243,9 +4373,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final showGenres =
             showChips &&
             genreChips.isNotEmpty &&
-            remainingAfterActions - chipHeight - chipActionGap - (genreRowHeight + genreGap) >= 52;
+            remainingAfterActions - chipBlockHeight - chipActionGap - (genreRowHeight + genreGap) >= 52;
         final genreBlockHeight = showGenres ? genreRowHeight + genreGap : 0.0;
-        final remainingForLogo = remainingAfterActions - chipHeight - chipActionGap - genreBlockHeight;
+        final remainingForLogo = remainingAfterActions - chipBlockHeight - chipActionGap - genreBlockHeight;
         final logoGap = remainingForLogo >= 52 && (showChips || showActions)
             ? (availableHeight < 180 ? 8.0 : 12.0)
             : 0.0;
@@ -4256,7 +4386,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final titleFontSize = (logoHeight * 0.38).clamp(24.0, 40.0).toDouble();
         final contentHeight =
             (showLogo ? logoHeight + effectiveLogoGap : 0.0) +
-            chipHeight +
+            chipBlockHeight +
             genreBlockHeight +
             chipActionGap +
             (showActions ? actionHeight : 0.0);
@@ -4293,7 +4423,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       if (showChips)
                         ClipRect(
                           child: ConstrainedBox(
-                            constraints: BoxConstraints(maxHeight: chipHeight),
+                            constraints: const BoxConstraints(maxHeight: chipHeight),
                             child: Align(
                               alignment: .bottomLeft,
                               heightFactor: 1,
