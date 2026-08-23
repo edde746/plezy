@@ -766,8 +766,10 @@ bool _tileIsHighlighted(WidgetTester tester, String name) {
     find.descendant(of: wrapper, matching: find.byType(AnimatedContainer)),
   );
   return containers.any((container) {
-    final border = (container.decoration as BoxDecoration?)?.border?.top;
-    return border != null && border.style != BorderStyle.none && border.color.a > 0;
+    final decoration = container.decoration as BoxDecoration?;
+    final border = decoration?.border?.top;
+    final fill = decoration?.color;
+    return (border != null && border.style != BorderStyle.none && border.color.a > 0) || (fill != null && fill.a > 0);
   });
 }
 

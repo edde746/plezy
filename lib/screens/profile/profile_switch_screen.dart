@@ -218,18 +218,22 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
           return Padding(
             key: ValueKey(profile.id),
             padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
-            child: FocusableWrapper(
-              autofocus: isFirstSelectable,
-              focusNode: profileFocusNode,
-              disableScale: true,
-              borderRadii: tileRadii,
-              enableLongPress: hasMenu,
-              onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
-              onNavigateRight: hasMenu ? () => menuFocusNode.requestFocus() : null,
-              onSelect: _switching || (isActive && !widget.requireSelection) ? null : () => _switchTo(profile),
-              child: Card(
-                shape: RoundedRectangleBorder(borderRadius: tileRadii),
-                clipBehavior: Clip.antiAlias,
+            // The focus fill must paint above the opaque Card surface, so the
+            // wrapper sits inside the Card (clipped by its shape) rather than
+            // around it.
+            child: Card(
+              shape: RoundedRectangleBorder(borderRadius: tileRadii),
+              clipBehavior: Clip.antiAlias,
+              child: FocusableWrapper(
+                autofocus: isFirstSelectable,
+                focusNode: profileFocusNode,
+                disableScale: true,
+                useBackgroundFocus: true,
+                borderRadii: tileRadii,
+                enableLongPress: hasMenu,
+                onLongPress: hasMenu ? () => _openProfileMenu(profile) : null,
+                onNavigateRight: hasMenu ? () => menuFocusNode.requestFocus() : null,
+                onSelect: _switching || (isActive && !widget.requireSelection) ? null : () => _switchTo(profile),
                 child: _ProfileTile(
                   borderRadius: tileRadii,
                   profile: profile,

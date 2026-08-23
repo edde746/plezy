@@ -205,14 +205,17 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
                 final tileRadii = groupItemRadii(context, index, candidates.length);
                 return Padding(
                   padding: EdgeInsets.fromLTRB(16, index == 0 ? 4 : tokensRef.groupGap, 16, 0),
-                  child: FocusableWrapper(
-                    autofocus: index == 0,
-                    disableScale: true,
-                    borderRadii: tileRadii,
-                    onSelect: _busy ? null : () => _borrow(cand),
-                    child: Card(
-                      shape: RoundedRectangleBorder(borderRadius: tileRadii),
-                      clipBehavior: Clip.antiAlias,
+                  // Wrapper inside the Card so the focus fill paints above the
+                  // opaque card surface (mirrors ProfileSwitchScreen tiles).
+                  child: Card(
+                    shape: RoundedRectangleBorder(borderRadius: tileRadii),
+                    clipBehavior: Clip.antiAlias,
+                    child: FocusableWrapper(
+                      autofocus: index == 0,
+                      disableScale: true,
+                      useBackgroundFocus: true,
+                      borderRadii: tileRadii,
+                      onSelect: _busy ? null : () => _borrow(cand),
                       child: _BorrowTile(candidate: cand, borderRadius: tileRadii, onTap: () => _borrow(cand)),
                     ),
                   ),

@@ -284,6 +284,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                   onNavigateRight: _saveNameFocusNode.requestFocus,
                   trailing: FocusableButton(
                     focusNode: _saveNameFocusNode,
+                    useBackgroundFocus: true,
                     onNavigateLeft: _nameFocusNode.requestFocus,
                     onPressed:
                         _nameController.text.trim().isEmpty || _nameController.text.trim() == _profile.displayName
@@ -314,6 +315,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
               else if (_profile.pinHash == null)
                 FocusableButton(
                   focusNode: _setPinFocusNode,
+                  useBackgroundFocus: true,
                   onPressed: _setPin,
                   child: OutlinedButton.icon(
                     onPressed: _setPin,
@@ -329,6 +331,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                   Expanded(child: Text(t.profiles.connectionsLabel, style: theme.textTheme.labelLarge)),
                   FocusableButton(
                     focusNode: _addConnectionFocusNode,
+                    useBackgroundFocus: true,
                     onPressed: _addConnection,
                     child: TextButton.icon(
                       onPressed: _addConnection,
@@ -349,6 +352,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
               if (isLocal)
                 FocusableButton(
                   focusNode: _deleteProfileFocusNode,
+                  useBackgroundFocus: true,
                   onPressed: _deleteProfile,
                   child: OutlinedButton.icon(
                     onPressed: _deleteProfile,

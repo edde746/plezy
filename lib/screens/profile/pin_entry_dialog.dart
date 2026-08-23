@@ -114,6 +114,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
       actions: [
         FocusableButton(
           focusNode: _cancelFocusNode,
+          useBackgroundFocus: true,
           onPressed: _cancel,
           onNavigateUp: _focusPinInput,
           onBack: _cancel,
