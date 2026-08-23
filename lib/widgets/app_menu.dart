@@ -160,6 +160,12 @@ class AppMenuButton<T> extends StatefulWidget {
   final Widget? icon;
   final Widget? child;
   final String? tooltip;
+
+  /// When true, iOS/Android (phones plus Android TV / tvOS) present the menu
+  /// as an untitled bottom sheet — just the drag handle and rows — via
+  /// [showAdaptiveAppMenu]; desktop keeps the anchored popup. False keeps the
+  /// anchored popup on every platform.
+  final bool adaptiveSheet;
   final bool enabled;
   final AppMenuEntryBuilder<T> entriesBuilder;
   final ValueChanged<T>? onSelected;
@@ -170,6 +176,7 @@ class AppMenuButton<T> extends StatefulWidget {
     this.icon,
     this.child,
     this.tooltip,
+    this.adaptiveSheet = false,
     this.enabled = true,
     required this.entriesBuilder,
     this.onSelected,
@@ -189,13 +196,21 @@ class AppMenuButtonState<T> extends State<AppMenuButton<T>> {
 
     final topLeft = renderBox.localToGlobal(Offset.zero);
     final anchorRect = Rect.fromLTWH(topLeft.dx, topLeft.dy, renderBox.size.width, renderBox.size.height);
-    final selected = await showAppMenu<T>(
-      context,
-      entries: widget.entriesBuilder(context),
-      anchorRect: anchorRect,
-      anchorAlignment: widget.anchorAlignment,
-      focusFirstItem: focusFirstItem,
-    );
+    final selected = widget.adaptiveSheet
+        ? await showAdaptiveAppMenu<T>(
+            context,
+            entries: widget.entriesBuilder(context),
+            anchorRect: anchorRect,
+            anchorAlignment: widget.anchorAlignment,
+            focusFirstItem: focusFirstItem,
+          )
+        : await showAppMenu<T>(
+            context,
+            entries: widget.entriesBuilder(context),
+            anchorRect: anchorRect,
+            anchorAlignment: widget.anchorAlignment,
+            focusFirstItem: focusFirstItem,
+          );
     if (!mounted || selected == null) return selected;
     widget.onSelected?.call(selected);
     return selected;

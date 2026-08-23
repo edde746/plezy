@@ -634,6 +634,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     return AppMenuButton<String>(
       key: _libraryDropdownKey,
       tooltip: t.libraries.selectLibrary,
+      adaptiveSheet: true,
       onSelected: (libraryGlobalKey) {
         _loadLibraryContent(libraryGlobalKey);
       },
