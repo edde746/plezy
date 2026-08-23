@@ -951,6 +951,12 @@ class Translations$settings$en {
 	/// en: 'Match display refresh rate to video content'
 	String get matchContentFrameRateDescription => 'Match display refresh rate to video content';
 
+	/// en: 'Match Content Resolution'
+	String get matchContentResolution => 'Match Content Resolution';
+
+	/// en: 'Switch the display to the video's native resolution so your TV handles upscaling. Menus and subtitles are upscaled too during playback'
+	String get matchContentResolutionDescription => 'Switch the display to the video\'s native resolution so your TV handles upscaling. Menus and subtitles are upscaled too during playback';
+
 	/// en: 'Match Refresh Rate'
 	String get matchRefreshRate => 'Match Refresh Rate';
 
@@ -6759,6 +6765,8 @@ extension on Translations {
 			'settings.autoPipDescription' => 'Automatically enter picture-in-picture when you leave the app during playback',
 			'settings.matchContentFrameRate' => 'Match Content Frame Rate',
 			'settings.matchContentFrameRateDescription' => 'Match display refresh rate to video content',
+			'settings.matchContentResolution' => 'Match Content Resolution',
+			'settings.matchContentResolutionDescription' => 'Switch the display to the video\'s native resolution so your TV handles upscaling. Menus and subtitles are upscaled too during playback',
 			'settings.matchRefreshRate' => 'Match Refresh Rate',
 			'settings.matchRefreshRateDescription' => 'Match display refresh rate in fullscreen',
 			'settings.matchDynamicRange' => 'Match Dynamic Range',
@@ -6990,10 +6998,10 @@ extension on Translations {
 			'mediaMenu.deleteSeasonFromServer' => 'Delete season from server',
 			'mediaMenu.deleteShowFromServer' => 'Delete show from server',
 			'mediaMenu.deleteMovieFromServer' => 'Delete movie from server',
-			'mediaMenu.deleteEpisodeTitle' => 'Delete this episode?',
-			'mediaMenu.deleteSeasonTitle' => 'Delete this season?',
 			_ => null,
 		} ?? switch (path) {
+			'mediaMenu.deleteEpisodeTitle' => 'Delete this episode?',
+			'mediaMenu.deleteSeasonTitle' => 'Delete this season?',
 			'mediaMenu.deleteShowTitle' => 'Delete this show?',
 			'mediaMenu.deleteMovieTitle' => 'Delete this movie?',
 			'mediaMenu.deleteEpisodeConfirm' => 'Delete episode',
@@ -7504,10 +7512,10 @@ extension on Translations {
 			'explore.status.airing' => 'Airing',
 			'explore.status.ended' => 'Ended',
 			'explore.status.canceled' => 'Canceled',
-			'explore.status.upcoming' => 'Upcoming',
-			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
 			_ => null,
 		} ?? switch (path) {
+			'explore.status.upcoming' => 'Upcoming',
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
 			'explore.cast' => 'Cast',
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
@@ -8018,10 +8026,10 @@ extension on Translations {
 			'companionRemote.remote.tabDiscover' => 'Discover',
 			'companionRemote.remote.tabLibraries' => 'Libraries',
 			'companionRemote.remote.tabSearch' => 'Search',
-			'companionRemote.remote.tabDownloads' => 'Downloads',
-			'companionRemote.remote.tabSettings' => 'Settings',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Downloads',
+			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',
 			'companionRemote.remote.playPause' => 'Play/Pause',
 			'companionRemote.remote.next' => 'Next',

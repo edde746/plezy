@@ -1099,6 +1099,7 @@ class PlayerNative extends PlayerBase {
     int extraDelayMs = 0,
     int videoWidth = 0,
     int videoHeight = 0,
+    bool matchResolution = false,
   }) async {
     if (_nativeCoreUnavailable || !Platform.isAndroid || !initialized) return false;
     final result = await invoke<bool>('setVideoFrameRate', {
@@ -1107,6 +1108,7 @@ class PlayerNative extends PlayerBase {
       'extraDelayMs': extraDelayMs,
       'videoWidth': videoWidth,
       'videoHeight': videoHeight,
+      'matchResolution': matchResolution,
     });
     return result ?? false;
   }

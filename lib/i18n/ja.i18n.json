@@ -291,6 +291,8 @@
     "autoPipDescription": "再生中にアプリを離れると、自動的にピクチャーインピクチャーに切り替えます",
     "matchContentFrameRate": "コンテンツのフレームレートに合わせる",
     "matchContentFrameRateDescription": "表示のリフレッシュレートを動画コンテンツに合わせます",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "リフレッシュレートを合わせる",
     "matchRefreshRateDescription": "全画面時に表示のリフレッシュレートを合わせます",
     "matchDynamicRange": "ダイナミックレンジを合わせる",

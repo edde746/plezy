@@ -291,6 +291,8 @@
     "autoPipDescription": "재생 중 앱을 떠나면 자동으로 화면 속 화면 모드로 전환합니다",
     "matchContentFrameRate": "콘텐츠 프레임 레이트 맞춤",
     "matchContentFrameRateDescription": "디스플레이 새로 고침 빈도를 동영상 콘텐츠에 맞춤",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "주사율 맞춤",
     "matchRefreshRateDescription": "전체 화면에서 디스플레이 새로 고침 빈도 맞춤",
     "matchDynamicRange": "다이나믹 레인지 맞춤",

@@ -291,6 +291,8 @@
     "autoPipDescription": "Aktivera bild-i-bild om du lämnar appen under uppspelning",
     "matchContentFrameRate": "Matcha innehållets bildfrekvens",
     "matchContentFrameRateDescription": "Matcha skärmens uppdateringsfrekvens med videoinnehållet",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Matcha uppdateringsfrekvens",
     "matchRefreshRateDescription": "Matcha skärmens uppdateringsfrekvens i helskärm",
     "matchDynamicRange": "Matcha dynamiskt omfång",

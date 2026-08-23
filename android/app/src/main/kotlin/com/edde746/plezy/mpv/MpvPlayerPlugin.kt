@@ -464,14 +464,19 @@ open class MpvPlayerPlugin(
     val extraDelayMs = call.argument<Number>("extraDelayMs")?.toLong() ?: 0L
     val videoWidth = call.argument<Number>("videoWidth")?.toInt() ?: 0
     val videoHeight = call.argument<Number>("videoHeight")?.toInt() ?: 0
+    val matchResolution = call.argument<Boolean>("matchResolution") ?: false
 
-    Log.d(tag, "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs, video=${videoWidth}x$videoHeight")
+    Log.d(
+      tag,
+      "setVideoFrameRate: fps=$fps, duration=$duration, extraDelayMs=$extraDelayMs, " +
+        "video=${videoWidth}x$videoHeight, matchResolution=$matchResolution"
+    )
     val core = playerCore
     if (core == null) {
       result.success(false)
       return
     }
-    core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight) { switched ->
+    core.setVideoFrameRate(fps, duration, extraDelayMs, videoWidth, videoHeight, matchResolution) { switched ->
       result.success(switched)
     }
   }

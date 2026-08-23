@@ -291,6 +291,8 @@
     "autoPipDescription": "Video ijro etilayotganda ilovadan chiqilganda avto-PiP rejimiga oʻtish",
     "matchContentFrameRate": "Kadrlar chastotasini moslashtirish",
     "matchContentFrameRateDescription": "Ekran chastotasini video kontentiga moslashtirish",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Yangilanish chastotasini moslashtirish",
     "matchRefreshRateDescription": "Toʻliq ekranda ekran chastotasini moslashtirish",
     "matchDynamicRange": "Dinamik diapazonni moslashtirish",

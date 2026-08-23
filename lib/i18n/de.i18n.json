@@ -291,6 +291,8 @@
     "autoPipDescription": "Beim Verlassen der App während der Wiedergabe automatisch Bild-in-Bild starten",
     "matchContentFrameRate": "Inhalts-Bildrate anpassen",
     "matchContentFrameRateDescription": "Bildwiederholrate des Displays an Videoinhalt anpassen",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Bildwiederholrate anpassen",
     "matchRefreshRateDescription": "Bildwiederholrate im Vollbild anpassen",
     "matchDynamicRange": "Dynamikumfang anpassen",

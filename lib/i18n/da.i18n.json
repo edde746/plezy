@@ -291,6 +291,8 @@
     "autoPipDescription": "Skift automatisk til billede-i-billede, når du forlader appen under afspilning",
     "matchContentFrameRate": "Tilpas billedhastigheden til indholdet",
     "matchContentFrameRateDescription": "Tilpas skærmens opdateringsfrekvens til videoindhold",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Tilpas opdateringsfrekvensen",
     "matchRefreshRateDescription": "Tilpas skærmens opdateringsfrekvens i fuld skærm",
     "matchDynamicRange": "Tilpas dynamikområdet",

@@ -291,6 +291,8 @@
     "autoPipDescription": "Activar automáticamente el modo de imagen en imagen al salir de la aplicación durante la reproducción",
     "matchContentFrameRate": "Ajustar frecuencia de actualización",
     "matchContentFrameRateDescription": "Ajustar la frecuencia de pantalla al contenido de video",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Ajustar frecuencia de refresco",
     "matchRefreshRateDescription": "Ajustar la frecuencia de pantalla en pantalla completa",
     "matchDynamicRange": "Ajustar rango dinámico",

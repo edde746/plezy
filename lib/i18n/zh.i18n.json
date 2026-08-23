@@ -291,6 +291,8 @@
     "autoPipDescription": "播放期间离开应用时自动进入画中画模式",
     "matchContentFrameRate": "匹配内容帧率",
     "matchContentFrameRateDescription": "使显示器刷新率与视频帧率匹配",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "匹配刷新率",
     "matchRefreshRateDescription": "全屏时匹配显示刷新率",
     "matchDynamicRange": "匹配动态范围",

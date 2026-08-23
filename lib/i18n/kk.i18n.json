@@ -291,6 +291,8 @@
     "autoPipDescription": "Видео ойнап жатқанда қолданбадан шыққанда авто-PiP режиміне өту",
     "matchContentFrameRate": "Кадр жиілігін сәйкестендіру",
     "matchContentFrameRateDescription": "Экран жиілігін видео мазмұнына сәйкестендіру",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Жаңарту жиілігін сәйкестендіру",
     "matchRefreshRateDescription": "Толық экранда экран жаңарту жиілігін сәйкестендіру",
     "matchDynamicRange": "Динамикалық диапазонды сәйкестендіру",

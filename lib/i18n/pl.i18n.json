@@ -291,6 +291,8 @@
     "autoPipDescription": "Automatycznie włączaj tryb obrazu w obrazie po opuszczeniu aplikacji podczas odtwarzania",
     "matchContentFrameRate": "Dopasuj częstotliwość klatek do treści",
     "matchContentFrameRateDescription": "Dopasuj częstotliwość odświeżania ekranu do wideo",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Dopasuj częstotliwość odświeżania",
     "matchRefreshRateDescription": "Dopasuj częstotliwość odświeżania w trybie pełnoekranowym",
     "matchDynamicRange": "Dopasuj zakres dynamiki",

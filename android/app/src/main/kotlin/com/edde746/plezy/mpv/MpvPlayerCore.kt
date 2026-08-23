@@ -1205,6 +1205,7 @@ class MpvPlayerCore private constructor(
     extraDelayMs: Long,
     videoWidth: Int,
     videoHeight: Int,
+    matchResolution: Boolean,
     onComplete: (switched: Boolean) -> Unit
   ) {
     val mgr = frameRateManager
@@ -1212,7 +1213,7 @@ class MpvPlayerCore private constructor(
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight) { switched ->
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, matchResolution) { switched ->
       player?.let {
         updateDisplayFpsOverride(it, "frame rate switch, switched=$switched") {
           onComplete(switched)

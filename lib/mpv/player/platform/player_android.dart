@@ -578,6 +578,7 @@ class PlayerAndroid extends PlayerBase {
     int extraDelayMs = 0,
     int videoWidth = 0,
     int videoHeight = 0,
+    bool matchResolution = false,
   }) async {
     if (disposed || !initialized) return false;
     final result = await invoke<bool>('setVideoFrameRate', {
@@ -586,6 +587,7 @@ class PlayerAndroid extends PlayerBase {
       'extraDelayMs': extraDelayMs,
       'videoWidth': videoWidth,
       'videoHeight': videoHeight,
+      'matchResolution': matchResolution,
     });
     return result ?? false;
   }

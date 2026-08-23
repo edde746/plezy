@@ -47,7 +47,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       unawaited(progressTracker.sendProgress('playing'));
     }
 
-    if (Platform.isAndroid && settingsService.read(SettingsService.matchContentFrameRate)) {
+    if (Platform.isAndroid &&
+        (settingsService.read(SettingsService.matchContentFrameRate) ||
+            settingsService.read(SettingsService.matchContentResolution))) {
       await _applyFrameRateMatching();
     }
 

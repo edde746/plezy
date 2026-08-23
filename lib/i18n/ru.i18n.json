@@ -291,6 +291,8 @@
     "autoPipDescription": "Автоматически включать режим «картинка в картинке» при выходе из приложения во время воспроизведения",
     "matchContentFrameRate": "Соответствие частоты кадров контента",
     "matchContentFrameRateDescription": "Подстраивать частоту обновления экрана под видео",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Соответствие частоты обновления",
     "matchRefreshRateDescription": "Подстраивать частоту обновления в полноэкранном режиме",
     "matchDynamicRange": "Соответствие динамического диапазона",

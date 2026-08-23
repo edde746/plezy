@@ -291,6 +291,8 @@
     "autoPipDescription": "Автоматично включвай режима картина в картината при излизане от приложението по време на възпроизвеждане",
     "matchContentFrameRate": "Напасване към кадровата честота на съдържанието",
     "matchContentFrameRateDescription": "Напасни честотата на опресняване на дисплея към видео съдържанието",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Напасване на честотата на опресняване",
     "matchRefreshRateDescription": "Напасни честотата на опресняване на дисплея при цял екран",
     "matchDynamicRange": "Напасване на динамичния диапазон",

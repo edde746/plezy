@@ -291,6 +291,8 @@
     "autoPipDescription": "播放影片時離開應用程式將自動進入子母畫面模式",
     "matchContentFrameRate": "符合影片影格率",
     "matchContentFrameRateDescription": "將顯示器更新率同步至影片影格率",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "同步螢幕更新率",
     "matchRefreshRateDescription": "全螢幕時同步顯示器更新率",
     "matchDynamicRange": "同步動態範圍",

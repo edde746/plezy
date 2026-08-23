@@ -9,8 +9,6 @@ import android.util.Log
 import android.view.Display
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
-import kotlin.math.abs
-import kotlin.math.roundToInt
 
 class FrameRateManager(
   private val activity: Activity,
@@ -21,24 +19,12 @@ class FrameRateManager(
     private const val TAG = "FrameRateManager"
     private const val DISPLAY_SETTLE_MS = 2000L
     private const val WATCHDOG_MARGIN_MS = 3000L
-    private const val RATE_TOLERANCE = 0.1f
   }
-
-  private data class RefreshRateMatch(
-    val reason: String,
-    val priority: Int,
-    val error: Float
-  )
-
-  @RequiresApi(Build.VERSION_CODES.M)
-  private data class DisplayModeCandidate(
-    val mode: Display.Mode,
-    val match: RefreshRateMatch
-  )
 
   private var currentVideoFps: Float = 0f
   private var currentVideoWidth: Int = 0
   private var currentVideoHeight: Int = 0
+  private var currentMatchResolution: Boolean = false
   private var displayListener: DisplayManager.DisplayListener? = null
   private var pendingSettleRunnable: Runnable? = null
   private var watchdogRunnable: Runnable? = null
@@ -46,12 +32,16 @@ class FrameRateManager(
 
   private fun getDisplayManager(): DisplayManager = activity.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
 
-  // Request a display frame-rate switch. Invokes [onComplete] once, either:
-  // - immediately with `switched=false` when no switch is needed (invalid fps,
-  //   no matching mode, or already matching); or
+  // Request a display mode switch for the video's frame rate and/or, with
+  // [matchResolution], its native resolution. Invokes [onComplete] once, either:
+  // - immediately with `switched=false` when no switch is needed (no usable
+  //   fps/resolution target, no matching mode, or already matching); or
   // - after the real DisplayListener event + [DISPLAY_SETTLE_MS] + the caller's
   //   [extraDelayMs], with `switched=true`; or
   // - via a watchdog if the real event never arrives, so the caller doesn't hang.
+  //
+  // fps <= 0 with [matchResolution] requests a resolution-only switch that
+  // keeps the refresh rate as close to the current one as possible.
   //
   // The caller is responsible for pausing playback before calling and resuming
   // it after [onComplete] fires.
@@ -61,20 +51,24 @@ class FrameRateManager(
     extraDelayMs: Long,
     videoWidth: Int = 0,
     videoHeight: Int = 0,
+    matchResolution: Boolean = false,
     onComplete: (switched: Boolean) -> Unit
   ) {
     currentVideoFps = fps
     currentVideoWidth = videoWidth
     currentVideoHeight = videoHeight
-    if (fps <= 0f) {
-      Log.d(TAG, "setVideoFrameRate: Invalid fps ($fps), skipping")
+    currentMatchResolution = matchResolution
+    val hasResolutionTarget = matchResolution && videoWidth > 0 && videoHeight > 0
+    if (fps <= 0f && !hasResolutionTarget) {
+      Log.d(TAG, "setVideoFrameRate: no usable target (fps=$fps, video=${videoWidth}x$videoHeight), skipping")
       onComplete(false)
       return
     }
 
     log(
       "request fps=$fps, duration=${videoDurationMs}ms, extraDelayMs=$extraDelayMs, " +
-        "video=${videoWidth}x$videoHeight, API=${Build.VERSION.SDK_INT}, currentMode=${currentModeDescription()}"
+        "video=${videoWidth}x$videoHeight, matchResolution=$matchResolution, " +
+        "API=${Build.VERSION.SDK_INT}, currentMode=${currentModeDescription()}"
     )
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -129,7 +123,12 @@ class FrameRateManager(
     cb(switched)
   }
 
-  private fun registerDisplayListener(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
+  private fun registerDisplayListener(
+    fps: Float,
+    targetModeId: Int,
+    extraDelayMs: Long,
+    onComplete: (switched: Boolean) -> Unit
+  ) {
     // Resolve any previous pending op before starting a new one.
     firePendingCompletion("superseded", switched = false)
     pendingCompletion = onComplete
@@ -144,7 +143,9 @@ class FrameRateManager(
         getDisplayManager().unregisterDisplayListener(this)
         displayListener = null
 
-        val settle = Runnable { firePendingCompletion("display settled", switched = currentRateMatch(fps) != null) }
+        val settle = Runnable {
+          firePendingCompletion("display settled", switched = currentMatchesRequest(fps, targetModeId))
+        }
         pendingSettleRunnable = settle
         handler.postDelayed(settle, DISPLAY_SETTLE_MS + extraDelayMs)
       }
@@ -154,37 +155,20 @@ class FrameRateManager(
     // Watchdog: if the TV never signals a display change (silently ignoring
     // the mode request), still complete after a bounded wait so the caller
     // doesn't hang.
-    val watchdog = Runnable { firePendingCompletion("watchdog", switched = currentRateMatch(fps) != null) }
+    val watchdog = Runnable { firePendingCompletion("watchdog", switched = currentMatchesRequest(fps, targetModeId)) }
     watchdogRunnable = watchdog
     handler.postDelayed(watchdog, DISPLAY_SETTLE_MS + extraDelayMs + WATCHDOG_MARGIN_MS)
   }
 
-  private fun matchRefreshRate(refreshRate: Float, fps: Float): RefreshRateMatch? {
-    if (refreshRate <= 0f || fps <= 0f) return null
-
-    val exactError = abs(refreshRate - fps)
-    if (exactError < RATE_TOLERANCE) {
-      return RefreshRateMatch(reason = "exact", priority = 0, error = exactError)
-    }
-
-    val multiple = (refreshRate / fps).roundToInt()
-    if (multiple > 1) {
-      val multipleError = abs(refreshRate - (fps * multiple))
-      if (multipleError < RATE_TOLERANCE) {
-        return RefreshRateMatch(reason = "${multiple}x", priority = 1, error = multipleError)
-      }
-    }
-
-    return null
-  }
-
-  private fun currentRateMatch(fps: Float): RefreshRateMatch? {
-    val current = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      currentDisplayMode()?.refreshRate
-    } else {
-      null
-    } ?: return null
-    return matchRefreshRate(current, fps)
+  // Whether the display landed on the requested mode: the exact target, or —
+  // for a rate request — any mode whose refresh presents [fps] (a TV may pick
+  // a different-but-equivalent mode). A resolution-only request (fps <= 0)
+  // only counts the exact target.
+  private fun currentMatchesRequest(fps: Float, targetModeId: Int): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
+    val current = currentDisplayMode() ?: return false
+    if (current.modeId == targetModeId) return true
+    return DisplayModeSelector.matchRefreshRate(current.refreshRate, fps) != null
   }
 
   private fun currentModeDescription(): String = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -214,46 +198,11 @@ class FrameRateManager(
   private fun describeSupportedModes(modes: Array<Display.Mode>): String = modes.joinToString(prefix = "[", postfix = "]") { describeMode(it) }
 
   @RequiresApi(Build.VERSION_CODES.M)
-  private fun findBestModeMatch(
-    fps: Float,
-    currentMode: Display.Mode,
-    supportedModes: Array<Display.Mode>,
-    videoWidth: Int,
-    videoHeight: Int
-  ): DisplayModeCandidate? {
-    // Tier 1 — a matching-refresh mode at the CURRENT resolution: a refresh-only
-    // switch, the least disruptive (no resolution/HDMI renegotiation).
-    supportedModes.asSequence()
-      .filter { it.physicalHeight == currentMode.physicalHeight && it.physicalWidth == currentMode.physicalWidth }
-      .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { DisplayModeCandidate(mode, it) } }
-      .minWithOrNull(
-        compareBy<DisplayModeCandidate> { it.match.priority }
-          .thenBy { it.match.error }
-          .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
-      )
-      ?.let { return it }
-
-    // Tier 2 — no same-resolution match (e.g. a 4K panel with no 4K@24 mode, but a
-    // 1080p@23.976 mode for 1080p content). Allow a resolution change, but never one
-    // that downscales the video below its native size (trading detail for cadence).
-    // Requires known video dimensions; without them keep Tier-1-only behaviour.
-    if (videoWidth <= 0 || videoHeight <= 0) return null
-    val currentArea = currentMode.physicalWidth.toLong() * currentMode.physicalHeight
-    return supportedModes.asSequence()
-      .filter { it.physicalWidth >= videoWidth && it.physicalHeight >= videoHeight }
-      .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { DisplayModeCandidate(mode, it) } }
-      .minWithOrNull(
-        // Prefer the resolution closest to the panel's current one (least change,
-        // keeps panel-native res when a high-res match exists), then refresh match.
-        compareBy<DisplayModeCandidate> { abs(it.mode.physicalWidth.toLong() * it.mode.physicalHeight - currentArea) }
-          .thenBy { it.match.priority }
-          .thenBy { it.match.error }
-      )
-  }
+  private fun Display.Mode.toModeInfo(): DisplayModeSelector.ModeInfo = DisplayModeSelector.ModeInfo(modeId, physicalWidth, physicalHeight, refreshRate)
 
   @RequiresApi(Build.VERSION_CODES.M)
   private fun setDisplayMode(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
-    log("setDisplayMode fps=$fps")
+    log("setDisplayMode fps=$fps, matchResolution=$currentMatchResolution")
     val display = currentDisplay()
     if (display == null) {
       log("display unavailable")
@@ -270,34 +219,43 @@ class FrameRateManager(
     val currentMode = display.mode
     log("supported modes=${describeSupportedModes(supportedModes)}")
 
-    val modeMatch = findBestModeMatch(fps, currentMode, supportedModes, currentVideoWidth, currentVideoHeight)
-    if (modeMatch == null) {
+    val selection = DisplayModeSelector.findBestMode(
+      fps,
+      currentMode.toModeInfo(),
+      supportedModes.map { it.toModeInfo() },
+      currentVideoWidth,
+      currentVideoHeight,
+      currentMatchResolution
+    )
+    if (selection == null) {
       log(
         "no matching display mode for ${fps}fps at ${currentMode.physicalWidth}x${currentMode.physicalHeight} " +
-          "(video=${currentVideoWidth}x$currentVideoHeight)"
+          "(video=${currentVideoWidth}x$currentVideoHeight, matchResolution=$currentMatchResolution)"
       )
       onComplete(false)
       return
     }
 
-    val modeToUse = modeMatch.mode
+    val modeToUse = supportedModes.firstOrNull { it.modeId == selection.mode.modeId }
+    if (modeToUse == null) {
+      log("selected mode #${selection.mode.modeId} disappeared from supported modes")
+      onComplete(false)
+      return
+    }
     if (modeToUse.modeId == currentMode.modeId) {
-      log("current mode already matches ${fps}fps (${modeMatch.match.reason}), no switch needed")
+      log("current mode already matches ${fps}fps (${selection.reason}), no switch needed")
       onComplete(false)
       return
     }
 
-    log(
-      "switching to ${describeMode(modeToUse)} for ${fps}fps " +
-        "(${modeMatch.match.reason}, error=${modeMatch.match.error})"
-    )
+    log("switching to ${describeMode(modeToUse)} for ${fps}fps (${selection.reason})")
     val window = activity.window
     if (window == null) {
       log("window unavailable")
       onComplete(false)
       return
     }
-    registerDisplayListener(fps, extraDelayMs, onComplete)
+    registerDisplayListener(fps, modeToUse.modeId, extraDelayMs, onComplete)
     window.attributes = window.attributes.apply { preferredDisplayModeId = modeToUse.modeId }
   }
 }

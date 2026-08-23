@@ -291,6 +291,8 @@
     "autoPipDescription": "Automatically enter picture-in-picture when you leave the app during playback",
     "matchContentFrameRate": "Match Content Frame Rate",
     "matchContentFrameRateDescription": "Match display refresh rate to video content",
+    "matchContentResolution": "Match Content Resolution",
+    "matchContentResolutionDescription": "Switch the display to the video's native resolution so your TV handles upscaling. Menus and subtitles are upscaled too during playback",
     "matchRefreshRate": "Match Refresh Rate",
     "matchRefreshRateDescription": "Match display refresh rate in fullscreen",
     "matchDynamicRange": "Match Dynamic Range",

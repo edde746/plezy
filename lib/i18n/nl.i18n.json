@@ -291,6 +291,8 @@
     "autoPipDescription": "Schakel over naar beeld-in-beeld als je tijdens het afspelen de app verlaat",
     "matchContentFrameRate": "Inhoudsframesnelheid afstemmen",
     "matchContentFrameRateDescription": "Stem schermverversing af op videocontent",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Verversingssnelheid afstemmen",
     "matchRefreshRateDescription": "Stem schermverversing af in volledig scherm",
     "matchDynamicRange": "Dynamisch bereik afstemmen",

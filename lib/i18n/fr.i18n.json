@@ -291,6 +291,8 @@
     "autoPipDescription": "Passer en mode image dans l’image si vous quittez l’application pendant la lecture",
     "matchContentFrameRate": "Adapter la fréquence d’images au contenu",
     "matchContentFrameRateDescription": "Adapter la fréquence de rafraîchissement de l’écran au contenu vidéo",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Adapter la fréquence de rafraîchissement",
     "matchRefreshRateDescription": "Adapter la fréquence d'affichage en plein écran",
     "matchDynamicRange": "Adapter la plage dynamique",

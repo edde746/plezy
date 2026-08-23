@@ -57,6 +57,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         SettingsService.matchRefreshRate,
         SettingsService.matchDynamicRange,
         SettingsService.matchContentFrameRate,
+        SettingsService.matchContentResolution,
         SettingsService.audioDownmix,
       ],
       builder: (context) {
@@ -67,7 +68,8 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             PlatformDetector.isAppleTV() ||
             (Platform.isWindows &&
                 (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
-            (Platform.isAndroid && svc.read(SettingsService.matchContentFrameRate));
+            (Platform.isAndroid &&
+                (svc.read(SettingsService.matchContentFrameRate) || svc.read(SettingsService.matchContentResolution)));
 
         return SettingsPage(
           title: Text(t.settings.videoPlayback),
@@ -80,6 +82,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 _hardwareDecodingTile(),
                 if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
                 if (Platform.isAndroid) _matchContentFrameRateTile(),
+                if (Platform.isAndroid && PlatformDetector.isTV()) _matchContentResolutionTile(),
                 if (Platform.isWindows) _matchRefreshRateTile(),
                 if (Platform.isWindows) _matchDynamicRangeTile(),
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
@@ -378,6 +381,16 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     icon: Symbols.display_settings_rounded,
     title: t.settings.matchContentFrameRate,
     subtitle: t.settings.matchContentFrameRateDescription,
+  );
+
+  // Android TV only: on phone/tablet panels "match the video's resolution"
+  // would downshift the panel below native for most content, which is
+  // surprising rather than useful. The native switch path itself is generic.
+  Widget _matchContentResolutionTile() => SettingSwitchTile(
+    pref: SettingsService.matchContentResolution,
+    icon: Symbols.aspect_ratio_rounded,
+    title: t.settings.matchContentResolution,
+    subtitle: t.settings.matchContentResolutionDescription,
   );
 
   Widget _matchRefreshRateTile() => SettingSwitchTile(

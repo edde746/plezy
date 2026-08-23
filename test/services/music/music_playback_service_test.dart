@@ -365,6 +365,7 @@ class FakePlayer implements Player {
     int extraDelayMs = 0,
     int videoWidth = 0,
     int videoHeight = 0,
+    bool matchResolution = false,
   }) async => false;
 
   @override

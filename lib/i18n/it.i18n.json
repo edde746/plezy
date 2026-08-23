@@ -291,6 +291,8 @@
     "autoPipDescription": "Attiva automaticamente la modalità Picture-in-Picture quando esci dall'app durante la riproduzione",
     "matchContentFrameRate": "Adatta la frequenza dei fotogrammi",
     "matchContentFrameRateDescription": "Adatta la frequenza di aggiornamento dello schermo al contenuto video",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Adatta la frequenza di aggiornamento",
     "matchRefreshRateDescription": "Adatta la frequenza di aggiornamento dello schermo in modalità a schermo intero",
     "matchDynamicRange": "Adatta la gamma dinamica",

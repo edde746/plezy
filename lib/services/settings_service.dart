@@ -499,6 +499,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableDiscordRPC = BoolPref('enable_discord_rpc');
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
+  static const matchContentResolution = BoolPref('match_content_resolution');
   static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: false);
   static const dvConversionMode = EnumPref<DvConversionModePreference>(
     'dv_conversion_mode',
@@ -1066,6 +1067,7 @@ class SettingsService extends BaseSharedPreferencesService {
     // Scrobble toggle, one per tracker service.
     for (final s in TrackerService.values) scrobblePref(s),
     matchContentFrameRate,
+    matchContentResolution,
     tunneledPlayback,
     dvConversionMode,
     musicVolume,

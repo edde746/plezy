@@ -291,6 +291,8 @@
     "autoPipDescription": "Oynatma zamanı tətbiqdən çıxdıqda avtomatik PiP rejiminə keç",
     "matchContentFrameRate": "Kadr tezliyini uyğunlaşdır",
     "matchContentFrameRateDescription": "Ekran yenilənmə tezliyini video məzmununa uyğunlaşdır",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Yenilənmə tezliyini uyğunlaşdır",
     "matchRefreshRateDescription": "Tam ekranda ekran yenilənmə tezliyini uyğunlaşdır",
     "matchDynamicRange": "Dinamik diapazonu uyğunlaşdır",

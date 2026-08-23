@@ -291,6 +291,8 @@
     "autoPipDescription": "Lejátszás közben az alkalmazás elhagyásakor automatikusan kép a képben módra vált",
     "matchContentFrameRate": "Képkockasebesség illesztése a tartalomhoz",
     "matchContentFrameRateDescription": "A kijelző frissítési frekvenciájának igazítása a videóhoz",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Frissítési frekvencia illesztése",
     "matchRefreshRateDescription": "A kijelző frissítési frekvenciájának igazítása teljes képernyőn",
     "matchDynamicRange": "Dinamikatartomány illesztése",

@@ -291,6 +291,8 @@
     "autoPipDescription": "Entrar automaticamente no modo picture-in-picture ao sair do app durante a reprodução",
     "matchContentFrameRate": "Ajustar à taxa de quadros do conteúdo",
     "matchContentFrameRateDescription": "Ajustar a taxa de atualização da tela ao conteúdo de vídeo",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Ajustar à taxa de atualização",
     "matchRefreshRateDescription": "Ajustar a taxa de atualização da tela em tela cheia",
     "matchDynamicRange": "Ajustar à faixa dinâmica",

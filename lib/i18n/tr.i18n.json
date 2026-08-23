@@ -291,6 +291,8 @@
     "autoPipDescription": "Oynatma sırasında uygulamadan çıktığınızda otomatik olarak pencere içinde pencere moduna geç",
     "matchContentFrameRate": "İçerik Kare Hızını Eşitle",
     "matchContentFrameRateDescription": "Ekran yenileme hızını video içeriğiyle eşitle",
+    "matchContentResolution": "",
+    "matchContentResolutionDescription": "",
     "matchRefreshRate": "Yenileme Hızını Eşitle",
     "matchRefreshRateDescription": "Tam ekranda ekran yenileme hızını eşitle",
     "matchDynamicRange": "Dinamik Aralığı Eşitle",

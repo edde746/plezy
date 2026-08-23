@@ -4177,6 +4177,7 @@ class ExoPlayerCore(private val activity: Activity) :
     extraDelayMs: Long,
     videoWidth: Int,
     videoHeight: Int,
+    matchResolution: Boolean,
     onComplete: (switched: Boolean) -> Unit
   ) {
     val mgr = frameRateManager
@@ -4184,7 +4185,7 @@ class ExoPlayerCore(private val activity: Activity) :
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, onComplete)
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, videoWidth, videoHeight, matchResolution, onComplete)
   }
 
   override fun clearVideoFrameRate() {

@@ -293,6 +293,7 @@ abstract class Player {
     int extraDelayMs = 0,
     int videoWidth = 0,
     int videoHeight = 0,
+    bool matchResolution = false,
   });
 
   /// Clear the video frame rate hint and restore default display mode.
