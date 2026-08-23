@@ -324,6 +324,34 @@ void main() {
       expect(service.current[acct.id]!.single.uuid, 'coalesce-uuid');
     });
 
+    // This is the invariant that actually protects the offline path: hydration
+    // must install no connection watch and no refresh timer, so a Plex account
+    // appearing while the app is still deciding whether it is offline cannot
+    // trigger a network fetch.
+    test('hydration installs no connection watch, so later writes do not refresh', () async {
+      final fetcher = _QueuedFetcher();
+      addTearDown(fetcher.close);
+      service = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: fetcher.call,
+      );
+
+      await service.hydrate();
+
+      // A connection row appears after hydration — exactly what the boot-time
+      // legacy migration does. Live mode would fetch here; hydrated must not.
+      await connections.upsert(_account('plex.late'));
+      await Future<void>.delayed(Duration.zero);
+      expect(fetcher.requests, isEmpty, reason: 'no watchConnections subscription while only hydrated');
+
+      // Going live picks the row up, proving the watch is installed by start().
+      await service.start();
+      await fetcher.waitForCount(1);
+      expect(fetcher.requests.single.token, 'tok-plex.late');
+    });
+
     test('reloadFromStorage picks up caches written after startup', () async {
       final refreshBlocker = Completer<List<PlexHomeUser>>();
       service = PlexHomeService(
