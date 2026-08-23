@@ -119,6 +119,17 @@ class MediaServerHttpException extends MediaServerException {
   }
 }
 
+/// The backend already has a recording scheduled for the requested airing.
+///
+/// Plex signals duplicates with a bare 409, which UI maps by status code.
+/// Jellyfin/Emby answer `POST /LiveTv/Timers` duplicates with a 400 that is
+/// indistinguishable from a malformed request by status alone — only the DVR
+/// adapter knows that call site's semantics, so it rethrows this type and UI
+/// maps it to the "already scheduled" outcome without a backend check.
+class RecordingConflictException extends MediaServerException {
+  const RecordingConflictException(super.message, {super.display});
+}
+
 /// The server explicitly terminated the client's playback session (admin
 /// "stop stream", paused-too-long auto-termination, concurrent-stream limit).
 ///

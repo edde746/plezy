@@ -75,10 +75,20 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
     final thumbPath = (id != null && primaryTag != null)
         ? _absolutizeImagePath('/Items/${_segment(id)}/Images/Primary?tag=${Uri.encodeComponent(primaryTag)}')
         : null;
+    // TimerId is only present while a recording is actually scheduled/running
+    // (the server omits it for cancelled timers). SeriesTimerId alone means a
+    // series rule exists but skips this airing, so the series key is only
+    // stamped when the airing really records — recordingRuleKey drives both
+    // the guide's red dot and the Manage action.
+    final timerId = json['TimerId'] as String?;
+    final seriesTimerId = json['SeriesTimerId'] as String?;
+    final recording = timerId != null && timerId.isNotEmpty;
     return LiveTvProgram(
       key: id,
       ratingKey: id,
-      guid: null,
+      // The program id doubles as the recording seed: getSubscriptionTemplate
+      // feeds it to /LiveTv/Timers/Defaults?programId=.
+      guid: id,
       title: json['Name'] as String? ?? t.liveTv.unknownProgram,
       summary: json['Overview'] as String?,
       type: 'episode',
@@ -95,6 +105,10 @@ mixin _JellyfinLiveTvMethods on _JellyfinClientInternals {
       channelCallSign: json['ChannelCallSign'] as String? ?? json['ChannelName'] as String?,
       live: json['IsLive'] as bool?,
       premiere: json['IsPremiere'] as bool?,
+      subscriptionId: recording ? '$_jfTimerRuleKeyPrefix$timerId' : null,
+      grandparentSubscriptionId: recording && seriesTimerId != null && seriesTimerId.isNotEmpty
+          ? '$_jfSeriesRuleKeyPrefix$seriesTimerId'
+          : null,
       serverId: serverId,
       serverName: serverName,
     );
@@ -139,7 +153,7 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
   _JellyfinLiveTvSupport(this._client);
 
   @override
-  LiveTvDvrSupport? get dvr => null;
+  LiveTvDvrSupport? get dvr => _JellyfinLiveTvDvrSupport(_client);
 
   @override
   Future<bool> isAvailable() => _client.hasLiveTv();

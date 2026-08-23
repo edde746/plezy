@@ -1359,6 +1359,16 @@
     "guideReloadRequested": "Запрошено обновление гайда",
     "rulesProcessRequested": "Запрошен пересчёт правил",
     "recordShow": "Записать передачу",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Начало через ${minutes} мин",
     "dayAtTime": "${day} в ${time}",
     "invalidPlaybackData": "${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире",

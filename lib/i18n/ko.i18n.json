@@ -1332,6 +1332,16 @@
     "guideReloadRequested": "가이드 새로고침 요청됨",
     "rulesProcessRequested": "규칙 재평가 요청됨",
     "recordShow": "프로그램 녹화",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "${minutes}분 후 시작",
     "dayAtTime": "${day} ${time}",
     "invalidPlaybackData": "${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다",

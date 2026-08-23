@@ -13,10 +13,10 @@ class ServerCapabilities {
   /// only those with channels surface in [MultiServerProvider.liveTvServers].
   final bool liveTv;
 
-  /// Server has DVR/recording lineups (Plex `/livetv/dvrs`). Channel listing
-  /// is gated by [liveTv]; this flag enables the additional recordings/scheduling
-  /// UI. Jellyfin's DVR API isn't wired in this app yet, so it stays false even
-  /// when [liveTv] is true.
+  /// Backend has a recording/DVR API wired in this app. Channel listing is
+  /// gated by [liveTv]; this flag enables the additional recordings/scheduling
+  /// UI. Plex serves `/media/subscriptions`; Jellyfin and Emby adapt
+  /// `/LiveTv/Timers` + `/LiveTv/SeriesTimers`.
   final bool liveTvDvr;
 
   /// Server can transcode video.
@@ -99,11 +99,11 @@ class ServerCapabilities {
   /// `TranscodingUrl` when a non-original quality preset is selected.
   ///
   /// `liveTv` is `true` because Jellyfin exposes `/LiveTv/Channels` and
-  /// `/LiveTv/Programs`. Detection + channel listing are wired today;
-  /// EPG and tuning are follow-ups.
+  /// `/LiveTv/Programs`; `liveTvDvr` rides the timer APIs
+  /// (`/LiveTv/Timers`, `/LiveTv/SeriesTimers`).
   static const ServerCapabilities jellyfin = ServerCapabilities(
     liveTv: true,
-    liveTvDvr: false,
+    liveTvDvr: true,
     videoTranscoding: true,
     richHubs: false,
     numericUserRating: false,
@@ -131,7 +131,7 @@ class ServerCapabilities {
   /// parses to zero frames and keeps the seek-bar tooltip suppressed.
   static const ServerCapabilities emby = ServerCapabilities(
     liveTv: true,
-    liveTvDvr: false,
+    liveTvDvr: true,
     videoTranscoding: true,
     richHubs: false,
     numericUserRating: false,

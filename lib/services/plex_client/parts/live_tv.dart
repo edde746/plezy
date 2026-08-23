@@ -462,6 +462,9 @@ mixin _PlexLiveTvClientMethods on _PlexClientInternals implements LiveTvSupport,
       _expectOk(() => _http.delete('/media/subscriptions/$subscriptionId'));
 
   @override
+  bool get supportsRuleProcessing => true;
+
+  @override
   Future<void> processRecordingRules() => _expectOk(() => _http.post('/media/subscriptions/process'));
 
   @override

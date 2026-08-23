@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Rehber yenilemesi istendi",
     "rulesProcessRequested": "Kuralın yeniden değerlendirilmesi istendi",
     "recordShow": "Programı kaydet",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "${minutes} dk içinde başlıyor",
     "dayAtTime": "${day} saat ${time}",
     "invalidPlaybackData": "${product} geçersiz Canlı TV oynatma verileri döndürdü",

@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Műsorújság frissítése kérve",
     "rulesProcessRequested": "Szabályok újraértékelése kérve",
     "recordShow": "Műsor rögzítése",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "${minutes} perc múlva kezdődik",
     "dayAtTime": "${day}, ${time}",
     "invalidPlaybackData": "A(z) ${product} érvénytelen Élő TV-lejátszási adatokat adott vissza",

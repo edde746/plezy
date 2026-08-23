@@ -140,8 +140,8 @@ class LiveTvStreamResolution {
 /// [LiveTvPlaybackSession] — it is the only entry playback callers use.
 abstract class LiveTvSupport {
   /// Recording and DVR administration, when implemented by this backend.
-  /// Jellyfin's channel, guide, and playback support remains available while
-  /// this is `null` until its recording API is wired.
+  /// Plex serves it from `/media/subscriptions`; the MediaBrowser family
+  /// adapts `/LiveTv/Timers` + `/LiveTv/SeriesTimers`.
   LiveTvDvrSupport? get dvr;
 
   /// Fast probe — `true` when this server has live-TV configured. Plex calls
@@ -190,11 +190,13 @@ abstract class LiveTvSupport {
   Future<void> setFavoriteChannels(List<FavoriteChannel> channels);
 }
 
-/// Optional Plex-style recording and DVR administration capability.
+/// Recording and DVR administration capability.
 ///
 /// Kept separate from [LiveTvSupport] so backends that support channels,
 /// guide data, and playback do not need placeholder methods for unsupported
-/// recording APIs.
+/// recording APIs. The payload models are Plex wire shapes; the MediaBrowser
+/// implementation synthesizes them from `/LiveTv/Timers` /
+/// `/LiveTv/SeriesTimers` DTOs.
 abstract class LiveTvDvrSupport {
   Future<List<LiveTvDvr>> fetchDvrs();
   Future<void> reloadGuide(String dvrId);
@@ -204,6 +206,12 @@ abstract class LiveTvDvrSupport {
   Future<MediaSubscription?> createRecordingRule(MediaSubscriptionCreateRequest request);
   Future<MediaSubscription?> updateRecordingRule(String subscriptionId, Map<String, Object?> prefs);
   Future<void> deleteRecordingRule(String subscriptionId);
+
+  /// Whether [processRecordingRules] triggers real server-side work. Plex's
+  /// "re-evaluate rules now" (`POST /media/subscriptions/process`) has no
+  /// MediaBrowser equivalent, so UI hides the affordance when no DVR-capable
+  /// server reports support.
+  bool get supportsRuleProcessing;
   Future<void> processRecordingRules();
   Future<List<MediaGrabOperation>> fetchScheduledRecordings();
   Future<void> cancelGrab(String operationId);

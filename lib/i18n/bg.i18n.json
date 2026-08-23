@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Заявено е опресняване на ТВ програмата",
     "rulesProcessRequested": "Заявена е преоценка на правилата",
     "recordShow": "Запиши предаването",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Започва след ${minutes} мин",
     "dayAtTime": "${day} в ${time}",
     "invalidPlaybackData": "${product} върна невалидни данни за възпроизвеждане на телевизия на живо",

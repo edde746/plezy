@@ -32,6 +32,12 @@ class SubscriptionTemplate {
 /// A Plex recording/download rule (`MediaSubscription`).
 @JsonSerializable(createToJson: false)
 class MediaSubscription {
+  /// Rule-type vocabulary carried in [type]. Plex puts its metadata-type ints
+  /// on the wire and the recordings UI keys series/episode presentation and
+  /// sort order off them, so the MediaBrowser adapter emits the same codes.
+  static const int typeSeries = 2;
+  static const int typeEpisode = 4;
+
   @JsonKey(defaultValue: '', readValue: _readSubscriptionKey)
   final String key;
   @JsonKey(fromJson: flexibleInt)

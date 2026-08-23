@@ -36,6 +36,9 @@ import '../models/jellyfin/jellyfin_user_profile.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_program.dart';
+import '../models/livetv_dvr.dart';
+import '../models/media_grab_operation.dart';
+import '../models/media_subscription.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
 import '../media/media_version.dart';
@@ -83,6 +86,7 @@ part 'jellyfin_client/parts/playlists.dart';
 part 'jellyfin_client/parts/collections.dart';
 part 'jellyfin_client/parts/file_info.dart';
 part 'jellyfin_client/parts/live_tv.dart';
+part 'jellyfin_client/parts/live_tv_dvr.dart';
 part 'jellyfin_client/parts/images_downloads.dart';
 part 'jellyfin_client/parts/metadata_edit.dart';
 

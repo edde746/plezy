@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Guide refresh requested",
     "rulesProcessRequested": "Rule re-evaluation requested",
     "recordShow": "Record show",
+    "recordSettings": {
+      "startEarly": "Start early (seconds)",
+      "endLate": "End late (seconds)",
+      "newOnly": "Only new episodes",
+      "anyChannel": "Record on any channel",
+      "anyTime": "Record at any time",
+      "skipInLibrary": "Skip episodes already in the library",
+      "keepUpTo": "Episodes to keep",
+      "keepUpToHint": "0 keeps every episode"
+    },
     "startingInMinutes": "Starting in ${minutes} min",
     "dayAtTime": "${day} at ${time}",
     "invalidPlaybackData": "${product} returned invalid Live TV playback data",

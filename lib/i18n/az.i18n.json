@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Bələdçi yenilənməsi tələb olundu",
     "rulesProcessRequested": "Qaydaların yenidən qiymətləndirilməsi tələb olundu",
     "recordShow": "Şounu yaz",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "${minutes} dəq sonra başlayır",
     "dayAtTime": "${day}, saat ${time}",
     "invalidPlaybackData": "${product} etibarsız Canlı TV oynatma məlumatı qaytardı",

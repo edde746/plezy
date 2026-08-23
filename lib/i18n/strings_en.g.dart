@@ -3469,6 +3469,8 @@ class Translations$liveTv$en {
 	/// en: 'Record show'
 	String get recordShow => 'Record show';
 
+	late final Translations$liveTv$recordSettings$en recordSettings = Translations$liveTv$recordSettings$en.internal(_root);
+
 	/// en: 'Starting in ${minutes} min'
 	String startingInMinutes({required Object minutes}) => 'Starting in ${minutes} min';
 
@@ -5981,6 +5983,39 @@ class Translations$explore$detail$en {
 	String get background => 'Background';
 }
 
+// Path: liveTv.recordSettings
+class Translations$liveTv$recordSettings$en {
+	Translations$liveTv$recordSettings$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Start early (seconds)'
+	String get startEarly => 'Start early (seconds)';
+
+	/// en: 'End late (seconds)'
+	String get endLate => 'End late (seconds)';
+
+	/// en: 'Only new episodes'
+	String get newOnly => 'Only new episodes';
+
+	/// en: 'Record on any channel'
+	String get anyChannel => 'Record on any channel';
+
+	/// en: 'Record at any time'
+	String get anyTime => 'Record at any time';
+
+	/// en: 'Skip episodes already in the library'
+	String get skipInLibrary => 'Skip episodes already in the library';
+
+	/// en: 'Episodes to keep'
+	String get keepUpTo => 'Episodes to keep';
+
+	/// en: '0 keeps every episode'
+	String get keepUpToHint => '0 keeps every episode';
+}
+
 // Path: music.discography
 class Translations$music$discography$en {
 	Translations$music$discography$en.internal(this._root);
@@ -7664,6 +7699,14 @@ extension on Translations {
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.recordShow' => 'Record show',
+			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
+			'liveTv.recordSettings.endLate' => 'End late (seconds)',
+			'liveTv.recordSettings.newOnly' => 'Only new episodes',
+			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
+			'liveTv.recordSettings.anyTime' => 'Record at any time',
+			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
+			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
+			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
@@ -7977,6 +8020,8 @@ extension on Translations {
 			'companionRemote.remote.tabSearch' => 'Search',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.previous' => 'Previous',
 			'companionRemote.remote.playPause' => 'Play/Pause',
 			'companionRemote.remote.next' => 'Next',
@@ -7985,8 +8030,6 @@ extension on Translations {
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.volumeUp' => 'Up',
 			'companionRemote.remote.fullscreen' => 'Fullscreen',
 			'companionRemote.remote.subtitles' => 'Subtitles',

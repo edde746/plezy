@@ -62,6 +62,10 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   /// when at least one Live TV server has `liveTvDvr` capability.
   List<LiveTvTab> _visibleTabs = [LiveTvTab.guide, LiveTvTab.whatsOn];
 
+  /// Whether any connected DVR supports Plex-style rule re-evaluation;
+  /// gates the recordings tab's bolt action.
+  bool _canProcessRules = false;
+
   // App bar action bar
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
 
@@ -243,10 +247,17 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   /// Re-inits the tab controller when the visible set changes (matches the
   /// libraries-screen pattern at libraries_screen.dart:365).
   void _refreshVisibleTabs(MultiServerProvider multiServer) {
-    final hasDvr = multiServer.liveTvServers.any((s) {
-      final c = multiServer.getClientForServer(ServerId(s.serverId));
-      return c?.liveTvDvr != null;
-    });
+    var hasDvr = false;
+    var canProcessRules = false;
+    for (final s in multiServer.liveTvServers) {
+      final dvr = multiServer.getClientForServer(ServerId(s.serverId))?.liveTvDvr;
+      if (dvr == null) continue;
+      hasDvr = true;
+      canProcessRules = canProcessRules || dvr.supportsRuleProcessing;
+    }
+    if (canProcessRules != _canProcessRules) {
+      setState(() => _canProcessRules = canProcessRules);
+    }
     final newTabs = [LiveTvTab.guide, LiveTvTab.whatsOn, if (hasDvr) LiveTvTab.recordings];
     if (listEquals(_visibleTabs, newTabs)) return;
     final currentTab = tabController.index < _visibleTabs.length ? _visibleTabs[tabController.index] : null;
@@ -696,7 +707,9 @@ class _LiveTvScreenState extends State<LiveTvScreen>
                   tooltip: t.liveTv.reorderFavorites,
                   onPressed: _showReorderFavorites,
                 ),
-              if (isRecordings)
+              // Rule re-evaluation is a Plex-only server operation; hide the
+              // bolt when no connected DVR supports it (MediaBrowser).
+              if (isRecordings && _canProcessRules)
                 FocusableAction(
                   icon: Symbols.bolt_rounded,
                   tooltip: t.liveTv.processRecordingRules,

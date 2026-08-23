@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Aktualisierung des TV-Programms angefordert",
     "rulesProcessRequested": "Regelauswertung angefordert",
     "recordShow": "Sendung aufnehmen",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Beginnt in ${minutes} Min.",
     "dayAtTime": "${day} um ${time}",
     "invalidPlaybackData": "${product} hat ungültige Live-TV-Wiedergabedaten zurückgegeben",

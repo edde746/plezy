@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Aggiornamento della guida richiesto",
     "rulesProcessRequested": "Rielaborazione delle regole richiesta",
     "recordShow": "Registra programma",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Inizia tra ${minutes} min",
     "dayAtTime": "${day} alle ${time}",
     "invalidPlaybackData": "${product} ha restituito dati di riproduzione della TV in diretta non validi",

@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Oppdatering av programguiden er forespurt",
     "rulesProcessRequested": "Ny vurdering av reglene er forespurt",
     "recordShow": "Ta opp program",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Starter om ${minutes} min",
     "dayAtTime": "${day} kl. ${time}",
     "invalidPlaybackData": "${product} returnerte ugyldige avspillingsdata for direkte-TV",

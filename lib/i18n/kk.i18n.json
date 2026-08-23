@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Бағдарламаны жаңарту сұралды",
     "rulesProcessRequested": "Ережелерді қайта бағалау сұралды",
     "recordShow": "Шоуды жазу",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "${minutes} мин кейін басталады",
     "dayAtTime": "${day}, ${time}",
     "invalidPlaybackData": "${product} жарамсыз тікелей TV ойнату деректерін қайтарды",

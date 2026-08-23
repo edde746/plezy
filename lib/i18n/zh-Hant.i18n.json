@@ -1332,6 +1332,16 @@
     "guideReloadRequested": "已要求更新節目表指南",
     "rulesProcessRequested": "已要求重新評估規則",
     "recordShow": "錄製節目",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "${minutes} 分鐘後開始",
     "dayAtTime": "${day} ${time}",
     "invalidPlaybackData": "${product} 傳回了無效的直播電視播放資料",

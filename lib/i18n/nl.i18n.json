@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Vernieuwing van de gids aangevraagd",
     "rulesProcessRequested": "Nieuwe evaluatie van regels aangevraagd",
     "recordShow": "Programma opnemen",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Begint over ${minutes} min",
     "dayAtTime": "${day} om ${time}",
     "invalidPlaybackData": "${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd",

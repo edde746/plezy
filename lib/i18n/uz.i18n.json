@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Jadvalni yangilash soʻraldi",
     "rulesProcessRequested": "Qoidalarni qayta baholash soʻraldi",
     "recordShow": "Shouni yozib olish",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "${minutes} daqiqadan keyin boshlanadi",
     "dayAtTime": "${day}, soat ${time} da",
     "invalidPlaybackData": "${product} Jonli TV ijrosi uchun notoʻgʻri maʼlumot qaytardi",

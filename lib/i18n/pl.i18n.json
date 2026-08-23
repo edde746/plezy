@@ -1359,6 +1359,16 @@
     "guideReloadRequested": "Zażądano odświeżenia przewodnika",
     "rulesProcessRequested": "Zażądano ponownej oceny reguł",
     "recordShow": "Nagraj program",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Rozpocznie się za ${minutes} min",
     "dayAtTime": "${day} o ${time}",
     "invalidPlaybackData": "${product} zwrócił nieprawidłowe dane odtwarzania TV na żywo",

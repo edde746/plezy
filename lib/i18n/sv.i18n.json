@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Uppdatering av programguiden har begärts",
     "rulesProcessRequested": "Ny regelutvärdering har begärts",
     "recordShow": "Spela in program",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Börjar om ${minutes} min",
     "dayAtTime": "${day} kl. ${time}",
     "invalidPlaybackData": "${product} returnerade ogiltiga uppspelningsdata för Live-TV",

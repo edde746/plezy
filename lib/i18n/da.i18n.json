@@ -1341,6 +1341,16 @@
     "guideReloadRequested": "Der er anmodet om en opdatering af guiden",
     "rulesProcessRequested": "Der er anmodet om en ny evaluering af reglerne",
     "recordShow": "Optag program",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "Starter om ${minutes} min",
     "dayAtTime": "${day} kl. ${time}",
     "invalidPlaybackData": "${product} returnerede ugyldige afspilningsdata for Live TV",

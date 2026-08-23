@@ -1332,6 +1332,16 @@
     "guideReloadRequested": "番組表の更新をリクエストしました",
     "rulesProcessRequested": "録画ルールの再評価をリクエストしました",
     "recordShow": "番組を録画",
+    "recordSettings": {
+      "startEarly": "",
+      "endLate": "",
+      "newOnly": "",
+      "anyChannel": "",
+      "anyTime": "",
+      "skipInLibrary": "",
+      "keepUpTo": "",
+      "keepUpToHint": ""
+    },
     "startingInMinutes": "${minutes}分後に開始",
     "dayAtTime": "${day} ${time}",
     "invalidPlaybackData": "${product}から無効なライブTV再生データが返されました",
