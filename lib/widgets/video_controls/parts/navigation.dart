@@ -179,6 +179,7 @@ extension _VideoControlsNavigationMethods on _PlexVideoControlsState {
       final outcome = await switchSource(newSubtitleChoice: PlaybackSourceSubtitleChoice.source(newTrack.id));
       final mappedOutcome = subtitleDownloadApplyOutcomeFor(outcome);
       if (mappedOutcome != SubtitleDownloadApplyOutcome.applied) return mappedOutcome;
+      if (client.backend != MediaBackend.plex) return mappedOutcome;
 
       final expectedSelectedStreamId = expectedDownloadedStreamId ?? newTrack.id;
       for (var attempt = 0; attempt < 4; attempt++) {
