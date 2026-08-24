@@ -108,6 +108,39 @@ class FfmpegExtractorSeekTest {
     }
   }
 
+  /**
+   * A download stored through SAF arrives as `content://`, which media3 reads
+   * with `openAssetFileDescriptor`. The demuxer's index reads therefore have to
+   * open a second descriptor on the same document while the loader still holds
+   * one — the case a `file://` fixture cannot prove.
+   */
+  @Test
+  fun cuedSeekLandsOnTheTargetThroughAContentUri() {
+    withHarness(CUED, contentUri = true) { harness ->
+      harness.pumpUntilSampleDelivered()
+
+      harness.resetByteCounter()
+      harness.seekTo(TARGET_US)
+      val landed = harness.pumpUntilSampleAtLeast(TARGET_US - KEYFRAME_TOLERANCE_US)
+
+      assertTrue("no sample delivered after a content:// seek to ${TARGET_US}us", landed)
+      assertTrue(
+        "content:// seek landed at ${harness.lastSampleUs}us",
+        harness.lastSampleUs <= TARGET_US + KEYFRAME_TOLERANCE_US
+      )
+      assertTrue(
+        "content:// index read opened no descriptor of its own",
+        harness.randomAccessOpens > 0
+      )
+      val budget = harness.fixtureSize / 3
+      assertTrue(
+        "content:// seek read ${harness.bytesRead} bytes of a ${harness.fixtureSize}-byte file; " +
+          "expected under $budget (index seek, not a scan)",
+        harness.bytesRead < budget
+      )
+    }
+  }
+
   @Test
   fun playbackFromTheStartDeliversEverySampleFromTheBeginning() {
     withHarness(CUED) { harness ->
@@ -123,11 +156,14 @@ class FfmpegExtractorSeekTest {
     }
   }
 
-  private fun withHarness(fixture: String, block: (Harness) -> Unit) {
+  private fun withHarness(fixture: String, contentUri: Boolean = false, block: (Harness) -> Unit) {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     val context = instrumentation.targetContext
     val file = copyFixture(instrumentation.context, context, fixture)
-    val harness = Harness(context, file)
+    // The content:// case reads the same asset back through the provider, which
+    // keeps its own copy: this process cannot write into the test APK's dirs.
+    val uri = if (contentUri) FixtureContentProvider.uriFor(fixture) else Uri.fromFile(file)
+    val harness = Harness(context, file, uri)
     try {
       harness.prepare()
       block(harness)
@@ -138,7 +174,8 @@ class FfmpegExtractorSeekTest {
   }
 
   private fun copyFixture(instrumentationContext: Context, targetContext: Context, fixture: String): File {
-    val output = File.createTempFile("ffmpeg-seek-fixture-", ".mkv", targetContext.cacheDir)
+    val cacheDir = targetContext.cacheDir.also { it.mkdirs() }
+    val output = File.createTempFile("ffmpeg-seek-fixture-", ".mkv", cacheDir)
     instrumentationContext.assets.open(fixture).use { input ->
       output.outputStream().use(input::copyTo)
     }
@@ -150,9 +187,8 @@ class FfmpegExtractorSeekTest {
    * source, feeds an ExtractorInput, and honours RESULT_SEEK by re-opening —
    * the same contract media3 implements in ExtractingLoadable.load().
    */
-  private class Harness(context: Context, private val fixture: File) {
+  private class Harness(context: Context, fixture: File, private val uri: Uri) {
     val fixtureSize = fixture.length()
-    private val uri: Uri = Uri.fromFile(fixture)
     private val counting = CountingDataSourceFactory(DefaultDataSource.Factory(context))
     private val io = FfmpegRandomAccessSource(counting) { DataSpec(uri) }
     private val output = CapturingOutput()
