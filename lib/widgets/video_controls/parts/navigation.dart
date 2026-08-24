@@ -177,7 +177,30 @@ extension _VideoControlsNavigationMethods on _PlexVideoControlsState {
       if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
       if (newTrack == null) return SubtitleDownloadApplyOutcome.timedOut;
       final outcome = await switchSource(newSubtitleChoice: PlaybackSourceSubtitleChoice.source(newTrack.id));
-      return subtitleDownloadApplyOutcomeFor(outcome);
+      final mappedOutcome = subtitleDownloadApplyOutcomeFor(outcome);
+      if (mappedOutcome != SubtitleDownloadApplyOutcome.applied) return mappedOutcome;
+
+      final expectedSelectedStreamId = expectedDownloadedStreamId ?? newTrack.id;
+      for (var attempt = 0; attempt < 4; attempt++) {
+        if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
+        try {
+          final tracks = await client.fetchSourceSubtitleTracks(
+            ratingKey,
+            mediaIndex: widget.selectedMediaIndex,
+          );
+          if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
+          final selectedNow = tracks.any(
+            (track) => track.id == expectedSelectedStreamId && track.selected,
+          );
+          if (selectedNow) return mappedOutcome;
+        } catch (e) {
+          appLogger.w('Failed to verify downloaded subtitle selection state', error: e);
+        }
+        if (attempt < 3) {
+          await Future.delayed(const Duration(seconds: 1));
+        }
+      }
+      return SubtitleDownloadApplyOutcome.timedOut;
     } catch (e) {
       appLogger.w('Failed to refresh subtitles after download', error: e);
       return SubtitleDownloadApplyOutcome.failed;

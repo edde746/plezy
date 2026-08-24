@@ -113,6 +113,7 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     throwIfHttpError(response);
 
     final data = response.data;
+    await cache.deleteForItem(ServerId(cacheServerId), ratingKey);
     if (data is Map<String, dynamic> && data.containsKey('NewIndex')) {
       final newIndex = flexibleInt(data['NewIndex']);
       if (newIndex != null) {
@@ -142,6 +143,12 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     int mediaIndex = 0,
     String? mediaSourceId,
   }) async {
+    if (dialect == MediaBrowserDialect.emby) {
+      // Emby subtitle downloads mutate stream state asynchronously. The
+      // playback-bundle helper prefers fresh cache for up to 5 minutes, so
+      // evict before each probe to avoid polling a stale stream list.
+      await cache.deleteForItem(ServerId(cacheServerId), ratingKey);
+    }
     final bundle = await fetchPlaybackBundle(ratingKey, sourceIndex: mediaIndex, sourceId: mediaSourceId);
     if (bundle == null) return const <MediaSubtitleTrack>[];
     final info = jellyfinMediaSourceToMediaSourceInfo(
