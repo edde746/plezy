@@ -220,7 +220,7 @@ class _GuideSearchSheetState extends State<GuideSearchSheet> with ControllerDisp
             decoration: pillInputDecoration(
               context,
               hintText: t.liveTv.searchHint,
-              prefixIcon: const Icon(Symbols.search_rounded, size: 20),
+              prefixIcon: const AppIcon(Symbols.search_rounded),
             ),
             onChanged: _applyFilter,
             onSubmitted: (_) => _focusFirstResultAfterSubmit(),
