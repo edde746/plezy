@@ -5,6 +5,7 @@ import '../models/download_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/downloaded_version_match.dart';
 import 'download_storage_service.dart';
+import 'saf_storage_service.dart';
 
 /// A downloaded copy resolved to a playable location, plus the version that is
 /// actually on disk — which can differ from the requested one when
@@ -17,7 +18,7 @@ typedef DownloadedVideoSource = ({String path, int mediaIndex, String? mediaSour
 /// Returns null when the row cannot back playback: the download is not
 /// complete, it holds a different version than requested (unless
 /// [allowAnyDownloadedVersion]), it has no stored video path, or the stored
-/// file is gone from disk.
+/// file is no longer reachable.
 ///
 /// Version matching is strict by default so online flows keep streaming an
 /// explicitly requested non-downloaded version (issue #1440). With
@@ -64,11 +65,18 @@ Future<DownloadedVideoSource?> resolveDownloadedVideoSource(
   }
 
   final storageService = DownloadStorageService.instance;
-  // SAF URIs (content://) are already playable and come back untouched; file
-  // paths may be stored relative, so resolve them and confirm they still exist.
+  // Reachability, not just presence in the row. A removable SAF volume can be
+  // unmounted — or its grant revoked — while the row still reads `completed`,
+  // and a stale content:// URI is indistinguishable from a live one until the
+  // player fails to open it (issue #2101). File paths may be stored relative,
+  // so resolve them first; SAF URIs are already playable as written.
   final readablePath = await storageService.getReadablePath(storedPath);
-  if (!storageService.isSafUri(storedPath) && !await File(readablePath).exists()) {
-    appLogger.w('Offline video file not found: $readablePath (stored as: $storedPath)');
+  final isReachable = storageService.isSafUri(storedPath)
+      ? await SafStorageService.ops.exists(storedPath, isDir: false)
+      : await File(readablePath).exists();
+  if (!isReachable) {
+    // Returning null is what lets the caller stream from the server instead.
+    appLogger.w('Offline video file not reachable: $readablePath (stored as: $storedPath)');
     return null;
   }
 

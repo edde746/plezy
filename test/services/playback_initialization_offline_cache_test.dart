@@ -19,11 +19,13 @@ import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_service.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_mappers.dart';
+import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/io_fakes.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/saf_fakes.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -36,6 +38,10 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
+    // Downloaded rows below store SAF content:// URIs. Playback resolution
+    // confirms such a copy is still reachable before preferring it over
+    // streaming (issue #2101), so report them as present.
+    SafStorageService.setOpsForTesting(FakeSafStorage());
     tmpRoot = await Directory.systemTemp.createTemp('playback_init_test_');
     previousPathProvider = PathProviderPlatform.instance;
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
@@ -47,6 +53,7 @@ void main() {
   tearDown(() async {
     await db.close();
     DownloadStorageService.resetForTesting();
+    SafStorageService.setOpsForTesting(null);
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
     expect(PathProviderPlatform.instance, same(previousPathProvider));

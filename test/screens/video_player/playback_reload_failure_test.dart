@@ -17,6 +17,7 @@ import 'package:plezy/providers/user_profile_provider.dart';
 import 'package:plezy/screens/video_player_screen.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
+import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:provider/provider.dart';
 
@@ -25,6 +26,7 @@ import '../../test_helpers/media_items.dart';
 import '../../test_helpers/mock_player_channels.dart';
 import '../../test_helpers/multi_server_fixtures.dart';
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/saf_fakes.dart';
 import '../../test_helpers/watch_together_fakes.dart';
 
 /// Regression coverage for the in-place reload rollback: a reload that fails
@@ -43,6 +45,10 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     DownloadStorageService.resetForTesting();
+    // The reload target resolves offline from the content:// row below;
+    // resolution confirms that copy is still reachable before preferring it
+    // over streaming (issue #2101).
+    SafStorageService.setOpsForTesting(FakeSafStorage());
     await SettingsService.getInstance();
     tmpRoot = await Directory.systemTemp.createTemp('playback_reload_failure_test_');
     previousPathProvider = PathProviderPlatform.instance;
@@ -54,6 +60,7 @@ void main() {
   tearDown(() async {
     await db.close();
     DownloadStorageService.resetForTesting();
+    SafStorageService.setOpsForTesting(null);
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
     if (await tmpRoot.exists()) {

@@ -21,12 +21,14 @@ import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/offline_mode_source.dart';
+import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/utils/deletion_notifier.dart';
 import 'package:plezy/utils/notification_permission.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 import 'package:plezy/utils/active_client_scope.dart';
 import '../test_helpers/download_fixtures.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/saf_fakes.dart';
 
 /// Implements only [fetchPlayableDescendants], the surface [collectEpisodes]
 /// uses. Every other call reaches [noSuchMethod] and throws.
@@ -228,6 +230,9 @@ void main() {
     PlexApiCache.initialize(db);
     JellyfinApiCache.initialize(db);
     testClientResolver = null;
+    // Local-path tests store SAF content:// URIs; resolution confirms such a
+    // copy is still reachable before returning it (issue #2101).
+    SafStorageService.setOpsForTesting(FakeSafStorage());
     downloadManager = DownloadManagerService(
       database: db,
       storageService: DownloadStorageService.instance,
@@ -242,6 +247,7 @@ void main() {
   tearDown(() async {
     downloadManager.dispose();
     await db.close();
+    SafStorageService.setOpsForTesting(null);
   });
 
   group('DownloadManagerService — platform support', () {
