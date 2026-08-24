@@ -1502,20 +1502,23 @@ class PlexClient
     int mediaIndex = 0,
     String? mediaSourceId,
   }) async {
-    return _wrapBoolApiCall(
-      () => _http.put(
-        '/library/metadata/$ratingKey/subtitles',
-        queryParameters: {
-          'key': key,
-          if (codec != null && codec.isNotEmpty) 'codec': codec,
-          if (language != null && language.isNotEmpty) 'language': language,
-          'hearingImpaired': hearingImpaired ? 1 : 0,
-          'forced': forced ? 1 : 0,
-          if (providerTitle != null && providerTitle.isNotEmpty) 'providerTitle': providerTitle,
-        },
-      ),
-      'Failed to download subtitle',
+    final response = await _http.put(
+      '/library/metadata/$ratingKey/subtitles',
+      queryParameters: {
+        'key': key,
+        if (codec != null && codec.isNotEmpty) 'codec': codec,
+        if (language != null && language.isNotEmpty) 'language': language,
+        'hearingImpaired': hearingImpaired ? 1 : 0,
+        'forced': forced ? 1 : 0,
+        if (providerTitle != null && providerTitle.isNotEmpty) 'providerTitle': providerTitle,
+      },
     );
+    throwIfHttpError(response);
+    
+    // Invalidate cache so subsequent metadata fetches see the new subtitle
+    await PlexApiCache.instance.deleteForItem(serverId, ratingKey);
+    
+    return response.statusCode >= 200 && response.statusCode < 300;
   }
 
   @override

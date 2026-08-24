@@ -44,6 +44,7 @@ import '../../focus/focus_navigation_intent.dart';
 import '../../focus/transport_keys.dart';
 
 import '../../database/app_database.dart';
+import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
 import '../../models/livetv_capture_buffer.dart';
@@ -166,8 +167,12 @@ MediaSubtitleTrack? findDownloadedExternalSubtitleTrack(
   final newTrack = findNewExternalSubtitleTrack(tracks, existingSourceIds);
   if (newTrack != null) return newTrack;
 
+  // Plex downloaded subtitles have a `key` but aren't marked as `isExternalFile`.
+  // Include tracks with a non-empty `key` as potential downloaded subtitles.
   final externalFileCandidates = tracks
-      .where((track) => track.isExternalFile && track.id != currentSelectedSourceId)
+      .where((track) => 
+          (track.isExternalFile || (track.key != null && track.key!.isNotEmpty)) 
+          && track.id != currentSelectedSourceId)
       .toList(growable: false);
   if (externalFileCandidates.isEmpty) return null;
 
