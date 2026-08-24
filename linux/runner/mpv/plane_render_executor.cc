@@ -1,5 +1,6 @@
 #include "plane_render_executor.h"
 
+#include <atomic>
 #include <chrono>
 
 namespace mpv {
@@ -9,15 +10,29 @@ namespace {
 struct CompletionInvocation {
   PlaneRenderExecutor::Completion completion;
   bool result;
+  // The worker hands this struct to the main context through
+  // g_main_context_invoke_full, whose internal context lock is a GLib futex
+  // that ThreadSanitizer cannot observe. This release/acquire pair republishes
+  // that same happens-before edge in a form TSan models; GLib still provides
+  // the delivery ordering.
+  std::atomic<bool> published{false};
 };
 
 gboolean InvokeCompletion(gpointer data) {
   auto* invocation = static_cast<CompletionInvocation*>(data);
+  // Pairs with the release store in Run(); see CompletionInvocation.
+  (void)invocation->published.load(std::memory_order_acquire);
   invocation->completion(invocation->result);
   return G_SOURCE_REMOVE;
 }
 
-void DestroyCompletionInvocation(gpointer data) { delete static_cast<CompletionInvocation*>(data); }
+void DestroyCompletionInvocation(gpointer data) {
+  auto* invocation = static_cast<CompletionInvocation*>(data);
+  // The destroy notify can also be the first main-thread access when the
+  // source is torn down without dispatching; take the same edge.
+  (void)invocation->published.load(std::memory_order_acquire);
+  delete invocation;
+}
 
 }  // namespace
 
@@ -84,9 +99,10 @@ void PlaneRenderExecutor::Run(const std::shared_ptr<Shared>& shared) {
 
     const bool result = job ? job() : false;
     if (completion) {
+      auto* invocation = new CompletionInvocation{std::move(completion), result};
+      invocation->published.store(true, std::memory_order_release);
       g_main_context_invoke_full(
-          shared->completion_context, G_PRIORITY_DEFAULT, InvokeCompletion,
-          new CompletionInvocation{std::move(completion), result}, DestroyCompletionInvocation);
+          shared->completion_context, G_PRIORITY_DEFAULT, InvokeCompletion, invocation, DestroyCompletionInvocation);
     }
 
     {

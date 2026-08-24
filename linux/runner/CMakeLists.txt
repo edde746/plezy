@@ -232,4 +232,11 @@ if(PLEZY_BUILD_MPV_RELIABILITY_TESTS)
   target_link_libraries(plane_render_executor_test PRIVATE PkgConfig::GTK Threads::Threads)
   apply_mpv_reliability_sanitizer(plane_render_executor_test)
   add_test(NAME plane_render_executor_test COMMAND plane_render_executor_test)
+  if(PLEZY_MPV_RELIABILITY_SANITIZER STREQUAL "thread")
+    # GLib's futex-based GMutex is invisible to TSan; suppress reports that
+    # originate inside libglib. Inert when the sanitizer probe fell back to an
+    # unsanitized build. See mpv/tsan_suppressions.txt.
+    set_tests_properties(plane_render_executor_test PROPERTIES ENVIRONMENT
+      "TSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/mpv/tsan_suppressions.txt")
+  endif()
 endif()
